@@ -1,0 +1,20 @@
+# Build output
+/dist/
+
+# Local-only developer helper (never committed)
+STATUS.md
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# redscript / game compile artifacts (never belong in the repo)
+*.redscripts
+*.redscripts.bk
+*.redscripts.ts
+r6/cache/
