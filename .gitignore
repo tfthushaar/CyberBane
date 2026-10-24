@@ -4,6 +4,9 @@
 # Local-only developer helper (never committed)
 STATUS.md
 
+# Design spec is kept local, not published to the repo
+CYBERBANE_SPEC.md
+
 # Editor / OS
 .vscode/
 .idea/
