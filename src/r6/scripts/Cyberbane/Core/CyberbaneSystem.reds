@@ -40,6 +40,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_sessionStarted: Bool;
   private let m_tickGeneration: Int32;
   private let m_playerAttachCbId: Uint32;
+  private let m_tickCount: Int32;             // monotonic ~1/second, for encounter timing
+  private let m_encounter: ref<CBEncounter>;  // active combat episode
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -116,12 +118,29 @@ public class CyberbaneSystem extends ScriptableSystem {
       return;
     }
     let game = this.GetGameInstance();
+    this.m_tickCount += 1;
     CBRefreshLiveInputs(this, game);
+    CBEncounterTick(this, game);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) {
       this.m_director.Tick(game);
     }
     this.ScheduleFastTick();
+  }
+
+  public func GetTickCount() -> Int32 {
+    return this.m_tickCount;
+  }
+
+  public func GetEncounter() -> ref<CBEncounter> {
+    return this.m_encounter;
+  }
+
+  public func EnsureEncounter() -> ref<CBEncounter> {
+    if !IsDefined(this.m_encounter) {
+      this.m_encounter = new CBEncounter();
+    }
+    return this.m_encounter;
   }
 
   // Runs the slow tick (decay etc.) once per in-game hour, using the fast tick to

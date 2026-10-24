@@ -94,6 +94,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
 
   let tierBefore = sys.GetLastNotifiedTier();
   CBApplyKill(sys, info);
+  CBEncounterRecordKill(sys, info);
   let tierAfter = EnumInt(sys.GetScore().GetTier());
   if tierAfter != tierBefore {
     if tierAfter > tierBefore && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
