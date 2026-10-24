@@ -92,7 +92,15 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   info.at = CBGameSeconds(game);
   CBSetMethodFlags(info, puppet.cbLastAttackType);
 
+  let tierBefore = sys.GetLastNotifiedTier();
   CBApplyKill(sys, info);
+  let tierAfter = EnumInt(sys.GetScore().GetTier());
+  if tierAfter != tierBefore {
+    if tierAfter > tierBefore && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+      CBShowMessage(game, "Cyberbane: Renown rank up - " + CBTierName(tierAfter), 4.0);
+    }
+    sys.SetLastNotifiedTier(tierAfter);
+  }
 }
 
 // Map the victim's affiliation to a Cyberbane faction id (n"" if unmapped).

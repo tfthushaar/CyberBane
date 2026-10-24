@@ -16,6 +16,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_heatPoints: Float;
   private persistent let m_archetype: array<Float>;       // index = ECBArchetype
   private persistent let m_primaryArchetype: Int32;       // -1 = Unknown
+  private persistent let m_lastNotifiedTier: Int32;       // for rank-up notifications
 
   private persistent let m_factions: array<ref<CBFactionState>>;
   private persistent let m_districts: array<ref<CBDistrictState>>;
@@ -151,6 +152,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func GetArchetypeAccumulators() -> array<Float> { return this.m_archetype; }
   public func GetPrimaryArchetypeIndex() -> Int32 { return this.m_primaryArchetype; }
   public func SetPrimaryArchetypeIndex(value: Int32) -> Void { this.m_primaryArchetype = value; }
+  public func GetLastNotifiedTier() -> Int32 { return this.m_lastNotifiedTier; }
+  public func SetLastNotifiedTier(value: Int32) -> Void { this.m_lastNotifiedTier = value; }
 
   // ---- Accumulator mutators (clamped at zero; called by the model layer) -
   public func AddRenownPoints(delta: Float) -> Void {
