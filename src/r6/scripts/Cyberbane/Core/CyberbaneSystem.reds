@@ -142,12 +142,57 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Slow tick (spec §5.5): decay now; rumor spread, tribute, title evaluation and
   // scheduling checks are added as those systems land.
   public func OnSlowTick(elapsedDays: Float) -> Void {
+    let game = this.GetGameInstance();
     CBApplyDecay(this, elapsedDays);
+    CBEvaluateTitles(this, game);
     CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
 
   public func GetRegistry() -> ref<CBNpcRegistry> {
     return this.m_registry;
+  }
+
+  // ---- Titles (spec §12.1, Appendix G) ----------------------------------
+  public func HasTitle(id: CName) -> Bool {
+    return ArrayContains(this.m_titles, id);
+  }
+
+  public func UnlockTitle(id: CName) -> Void {
+    if !ArrayContains(this.m_titles, id) {
+      ArrayPush(this.m_titles, id);
+    }
+  }
+
+  public func GetUnlockedTitles() -> array<CName> {
+    return this.m_titles;
+  }
+
+  public func SetActiveTitle(id: CName) -> Void {
+    this.m_activeTitle = id;
+  }
+
+  // The active title: an explicit choice, else the highest-priority unlocked one.
+  public func GetActiveTitle() -> CName {
+    if NotEquals(this.m_activeTitle, n"") {
+      return this.m_activeTitle;
+    }
+    let content = CyberbaneContent.Get();
+    let best = n"";
+    let bestPriority = -1;
+    for id in this.m_titles {
+      let priority = 0;
+      if IsDefined(content) {
+        let def = content.GetTitle(id);
+        if IsDefined(def) {
+          priority = def.priority;
+        }
+      }
+      if priority > bestPriority {
+        bestPriority = priority;
+        best = id;
+      }
+    }
+    return best;
   }
 
   // Create and register the settings instance once per session, stored on the

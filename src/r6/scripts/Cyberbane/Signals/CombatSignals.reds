@@ -101,6 +101,21 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     }
     sys.SetLastNotifiedTier(tierAfter);
   }
+
+  // Titles mostly trigger off kills/stats, so evaluate promptly here as well as
+  // on the slow tick.
+  CBEvaluateTitles(sys, game);
+
+  // Notable kills the city remembers: gang bosses and MaxTac (spec §7, §9.10).
+  if info.lethal && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+    if info.victimClass == EnumInt(ECBVictimClass.Boss) {
+      CBShowMessage(game, "Cyberbane: Boss down. Word of this spreads fast.", 4.0);
+    } else {
+      if info.victimClass == EnumInt(ECBVictimClass.MaxTac) {
+        CBShowMessage(game, "Cyberbane: MaxTac operative down. They will not forget.", 4.0);
+      }
+    }
+  }
 }
 
 // Map the victim's affiliation to a Cyberbane faction id (n"" if unmapped).

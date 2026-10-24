@@ -58,14 +58,14 @@ public class CBReactionDirector {
         if dist <= CBConfig.NpcEvalRadius() {
           evaluated += 1;
           if whispersOn && !playerInCombat {
-            this.TryWhisper(game, score, npc, dread, dist);
+            this.TryWhisper(game, sys, score, npc, dread, dist);
           }
         }
       }
     }
   }
 
-  private func TryWhisper(game: GameInstance, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dread: Float, dist: Float) -> Void {
+  private func TryWhisper(game: GameInstance, sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dread: Float, dist: Float) -> Void {
     if this.m_whisperCooldownTicks > 0 || npc.cbWhispered || dist > CBConfig.WhisperRadius() {
       return;
     }
@@ -92,8 +92,24 @@ public class CBReactionDirector {
       }
     }
 
-    // A fearful whisper needs V to be at least mildly notable.
-    if Equals(mood, n"fear") && dread < CBConfig.CivTierNotice() {
+    // Topic: the city remembers notable kills. If this NPC's gang has lost a boss
+    // to V, or V has MaxTac kills and this is NCPD, the whisper calls it out.
+    let topic = n"";
+    let fs = sys.FindFaction(faction);
+    if IsDefined(fs) && fs.bossesKilled > 0 {
+      topic = n"bossloss";
+      mood = n"hate";
+    } else {
+      let stats = sys.GetStats();
+      if Equals(faction, n"NCPD") && IsDefined(stats) && CBKillsByClass(stats, EnumInt(ECBVictimClass.MaxTac)) > 0 {
+        topic = n"maxtac";
+        mood = n"fear";
+      }
+    }
+
+    // A generic fearful whisper needs V to be at least mildly notable; topical
+    // whispers (boss / MaxTac) are always eligible.
+    if Equals(topic, n"") && Equals(mood, n"fear") && dread < CBConfig.CivTierNotice() {
       return;
     }
     if RandF() > CBConfig.WhisperChance() {
@@ -102,7 +118,7 @@ public class CBReactionDirector {
 
     npc.cbWhispered = true;
     this.m_whisperCooldownTicks = this.WhisperCooldownTicks();
-    CBShowWhisper(game, faction, mood);
+    CBShowWhisper(game, faction, mood, topic);
   }
 
   private func WhisperCooldownTicks() -> Int32 {

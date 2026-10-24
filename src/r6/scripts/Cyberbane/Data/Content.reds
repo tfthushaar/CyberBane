@@ -85,6 +85,13 @@ public class CBCustomizationDef {
   public let score: Float;
 }
 
+public class CBTitleDef {
+  public let id: CName;            // e.g. n"T_LIVING_LEGEND"
+  public let display: String;      // display name (English; localized in the Hub later)
+  public let priority: Int32;      // higher wins for the auto active title
+  public let hidden: Bool;         // shown as ??? until unlocked
+}
+
 // ---- Content service ------------------------------------------------------
 
 public class CyberbaneContent extends ScriptableService {
@@ -94,6 +101,7 @@ public class CyberbaneContent extends ScriptableService {
   private let m_lookTags: array<ref<CBLookTagDef>>;
   private let m_lookItems: array<ref<CBLookItemDef>>;
   private let m_customizations: array<ref<CBCustomizationDef>>;
+  private let m_titles: array<ref<CBTitleDef>>;
   private let m_built: Bool;
 
   public static func Get() -> ref<CyberbaneContent> {
@@ -113,7 +121,8 @@ public class CyberbaneContent extends ScriptableService {
     CBSeedDistricts(this);
     CBSeedImplants(this);
     CBSeedLooks(this);
-    CBLog.Info(n"Model", s"Content built: \(ArraySize(this.m_factions)) factions, \(ArraySize(this.m_districts)) districts, \(ArraySize(this.m_implants)) implants, \(ArraySize(this.m_lookTags)) look tags.");
+    CBSeedTitles(this);
+    CBLog.Info(n"Model", s"Content built: \(ArraySize(this.m_factions)) factions, \(ArraySize(this.m_districts)) districts, \(ArraySize(this.m_implants)) implants, \(ArraySize(this.m_lookTags)) look tags, \(ArraySize(this.m_titles)) titles.");
   }
 
   // ---- Factions -----------------------------------------------------------
@@ -242,6 +251,26 @@ public class CyberbaneContent extends ScriptableService {
     }
     return null;
   }
+
+  // ---- Titles (spec Appendix G) -------------------------------------------
+  public func AddTitle(def: ref<CBTitleDef>) -> Void {
+    if IsDefined(def) {
+      ArrayPush(this.m_titles, def);
+    }
+  }
+
+  public func GetTitle(id: CName) -> ref<CBTitleDef> {
+    for d in this.m_titles {
+      if Equals(d.id, id) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  public func GetTitles() -> array<ref<CBTitleDef>> {
+    return this.m_titles;
+  }
 }
 
 // ---- Construction helpers (used by the seed files) ------------------------
@@ -297,5 +326,14 @@ public func CBMakeCustomization(key: CName, score: Float) -> ref<CBCustomization
   let d = new CBCustomizationDef();
   d.key = key;
   d.score = score;
+  return d;
+}
+
+public func CBMakeTitle(id: CName, display: String, priority: Int32, hidden: Bool) -> ref<CBTitleDef> {
+  let d = new CBTitleDef();
+  d.id = id;
+  d.display = display;
+  d.priority = priority;
+  d.hidden = hidden;
   return d;
 }
