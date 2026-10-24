@@ -17,6 +17,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_archetype: array<Float>;       // index = ECBArchetype
   private persistent let m_primaryArchetype: Int32;       // -1 = Unknown
   private persistent let m_lastNotifiedTier: Int32;       // for rank-up notifications
+  private persistent let m_lastHeatStage: Int32;          // for heat-point accrual
+  private persistent let m_lastSlowTickAt: Float;         // game seconds of last slow tick
 
   private persistent let m_factions: array<ref<CBFactionState>>;
   private persistent let m_districts: array<ref<CBDistrictState>>;
@@ -113,10 +115,35 @@ public class CyberbaneSystem extends ScriptableSystem {
     if generation != this.m_tickGeneration {
       return;
     }
+    let game = this.GetGameInstance();
+    CBRefreshLiveInputs(this, game);
+    this.CheckSlowTick(game);
     if IsDefined(this.m_director) {
-      this.m_director.Tick(this.GetGameInstance());
+      this.m_director.Tick(game);
     }
     this.ScheduleFastTick();
+  }
+
+  // Runs the slow tick (decay etc.) once per in-game hour, using the fast tick to
+  // detect the boundary so time skips (sleep, fast travel) are handled correctly.
+  private func CheckSlowTick(game: GameInstance) -> Void {
+    let now = CBGameSeconds(game);
+    if this.m_lastSlowTickAt <= 0.0 || now < this.m_lastSlowTickAt {
+      this.m_lastSlowTickAt = now;
+      return;
+    }
+    let elapsed = now - this.m_lastSlowTickAt;
+    if elapsed >= CBConfig.SecondsPerHour() {
+      this.OnSlowTick(elapsed / CBConfig.SecondsPerDay());
+      this.m_lastSlowTickAt = now;
+    }
+  }
+
+  // Slow tick (spec §5.5): decay now; rumor spread, tribute, title evaluation and
+  // scheduling checks are added as those systems land.
+  public func OnSlowTick(elapsedDays: Float) -> Void {
+    CBApplyDecay(this, elapsedDays);
+    CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
 
   public func GetRegistry() -> ref<CBNpcRegistry> {
@@ -231,6 +258,17 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func SetPrimaryArchetypeIndex(value: Int32) -> Void { this.m_primaryArchetype = value; }
   public func GetLastNotifiedTier() -> Int32 { return this.m_lastNotifiedTier; }
   public func SetLastNotifiedTier(value: Int32) -> Void { this.m_lastNotifiedTier = value; }
+  public func GetLastHeatStage() -> Int32 { return this.m_lastHeatStage; }
+  public func SetLastHeatStage(value: Int32) -> Void { this.m_lastHeatStage = value; }
+
+  // Scale all archetype accumulators in place (used by decay).
+  public func DecayArchetypes(factor: Float) -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_archetype) {
+      this.m_archetype[i] = this.m_archetype[i] * factor;
+      i += 1;
+    }
+  }
 
   // ---- Accumulator mutators (clamped at zero; called by the model layer) -
   public func AddRenownPoints(delta: Float) -> Void {
