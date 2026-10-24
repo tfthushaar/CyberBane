@@ -31,8 +31,13 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_cooldowns: ref<CBCooldowns>;
   private persistent let m_peaceDeals: array<ref<CBPeaceDeal>>;   // cap 16
 
-  // Runtime-only (not persisted): derived-value engine, lazily created.
+  // Runtime-only (not persisted): derived-value engine + reaction infrastructure.
   private let m_score: ref<CBScoreEngine>;
+  private let m_registry: ref<CBNpcRegistry>;
+  private let m_director: ref<CBReactionDirector>;
+  private let m_sessionStarted: Bool;
+  private let m_tickGeneration: Int32;
+  private let m_playerAttachCbId: Uint32;
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -44,6 +49,78 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBLog.Info(n"Core", s"Cyberbane \(CyberbaneVersion()) (schema \(CyberbaneSchemaVersion())) attaching.");
     this.EnsureSettings();
     this.Initialize();
+    this.RegisterPlayerAttach();
+  }
+
+  // The player-puppet-attached callback is the reliable "session is ready" signal
+  // (used by Codeware too). It fires on new game, load and respawn.
+  private func RegisterPlayerAttach() -> Void {
+    let ps = GameInstance.GetPlayerSystem(this.GetGameInstance());
+    if IsDefined(ps) {
+      this.m_playerAttachCbId = ps.RegisterPlayerPuppetAttachedCallback(this, n"OnCBPlayerAttached");
+    }
+  }
+
+  private func OnCBPlayerAttached(player: ref<GameObject>) -> Void {
+    this.StartSession();
+  }
+
+  // Session start (spec §5.3): build runtime objects, register the entity callback
+  // once, clean up stray Cyberbane spawns, and (re)start the fast tick.
+  private func StartSession() -> Void {
+    if !IsDefined(this.m_registry) {
+      this.m_registry = new CBNpcRegistry();
+    }
+    if !IsDefined(this.m_director) {
+      this.m_director = new CBReactionDirector();
+    }
+    if !this.m_sessionStarted {
+      this.m_sessionStarted = true;
+      GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/Attached", this, n"OnCBEntityAttached");
+      let des = GameInstance.GetDynamicEntitySystem();
+      if IsDefined(des) {
+        des.DeleteTagged(n"Cyberbane");
+      }
+    }
+    // Bump the generation so any stale tick chain stops, then start a fresh one.
+    this.m_tickGeneration += 1;
+    this.ScheduleFastTick();
+  }
+
+  private cb func OnCBEntityAttached(event: ref<EntityLifecycleEvent>) -> Void {
+    if !IsDefined(this.m_registry) {
+      return;
+    }
+    let puppet = event.GetEntity() as ScriptedPuppet;
+    if IsDefined(puppet) {
+      this.m_registry.Add(puppet);
+    }
+  }
+
+  private func ScheduleFastTick() -> Void {
+    let ds = GameInstance.GetDelaySystem(this.GetGameInstance());
+    if !IsDefined(ds) {
+      return;
+    }
+    let cb = new CBFastTickCallback();
+    cb.game = this.GetGameInstance();
+    cb.generation = this.m_tickGeneration;
+    ds.DelayCallback(cb, CBConfig.FastTickSeconds(), false);
+  }
+
+  // Called by CBFastTickCallback. Stale generations (from a previous session) stop.
+  public func OnFastTick(generation: Int32) -> Void {
+    if generation != this.m_tickGeneration {
+      return;
+    }
+    if IsDefined(this.m_director) {
+      this.m_director.Tick(this.GetGameInstance());
+    }
+    this.ScheduleFastTick();
+  }
+
+  public func GetRegistry() -> ref<CBNpcRegistry> {
+    return this.m_registry;
   }
 
   // Create and register the settings instance once per session, stored on the
