@@ -43,11 +43,15 @@ if ($offenders) {
 }
 
 # --- stamp the version -----------------------------------------------------
+# Read/write as UTF-8 without BOM via .NET so the file's encoding is preserved
+# (Windows PowerShell 5.1's Get-Content/Set-Content would corrupt non-ASCII and
+# add a BOM, which the redscript compiler should not have to tolerate).
 Write-Host "Stamping version $Version (code $code) into Version.reds..."
-$verText = Get-Content -Raw -Path $verFile
+$verText = [System.IO.File]::ReadAllText($verFile)
 $verText = [regex]::Replace($verText, 'CyberbaneVersion\(\) -> String = "[^"]*"', "CyberbaneVersion() -> String = `"$Version`"")
 $verText = [regex]::Replace($verText, 'CyberbaneVersionCode\(\) -> Int32 = \d+', "CyberbaneVersionCode() -> Int32 = $code")
-Set-Content -Path $verFile -Value $verText -Encoding UTF8 -NoNewline
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($verFile, $verText, $utf8NoBom)
 
 # --- package ---------------------------------------------------------------
 if (-not (Test-Path $distDir)) { New-Item -ItemType Directory -Path $distDir | Out-Null }

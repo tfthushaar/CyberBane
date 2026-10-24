@@ -152,6 +152,34 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func GetPrimaryArchetypeIndex() -> Int32 { return this.m_primaryArchetype; }
   public func SetPrimaryArchetypeIndex(value: Int32) -> Void { this.m_primaryArchetype = value; }
 
+  // ---- Accumulator mutators (clamped at zero; called by the model layer) -
+  public func AddRenownPoints(delta: Float) -> Void {
+    this.m_renownPoints = MaxF(0.0, this.m_renownPoints + delta);
+    this.GetScore().MarkDirty();
+  }
+  public func AddKillDreadPoints(delta: Float) -> Void {
+    this.m_killDreadPoints = MaxF(0.0, this.m_killDreadPoints + delta);
+    this.GetScore().MarkDirty();
+  }
+  public func AddDeedDreadPoints(delta: Float) -> Void {
+    this.m_deedDreadPoints = MaxF(0.0, this.m_deedDreadPoints + delta);
+    this.GetScore().MarkDirty();
+  }
+  public func AddHeatPoints(delta: Float) -> Void {
+    this.m_heatPoints = MaxF(0.0, this.m_heatPoints + delta);
+    this.GetScore().MarkDirty();
+  }
+  public func AddArchetype(index: Int32, delta: Float) -> Void {
+    if index >= 0 && index < ArraySize(this.m_archetype) {
+      this.m_archetype[index] = MaxF(0.0, this.m_archetype[index] + delta);
+    }
+  }
+  // Recompute the primary archetype with hysteresis (spec §8.3).
+  public func RefreshPrimaryArchetype() -> Void {
+    this.m_primaryArchetype = CBPrimaryArchetype(this.m_archetype, this.m_primaryArchetype);
+    this.GetScore().MarkDirty();
+  }
+
   // ---- Faction state (lazy, seeded from the content baseline) -----------
   public func FindFaction(id: CName) -> ref<CBFactionState> {
     for f in this.m_factions {
