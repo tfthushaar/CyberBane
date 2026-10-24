@@ -50,6 +50,17 @@ public class CBStats {
   public persistent let maxHeat: Int32;
   public persistent let estimatedPriorKills: Int32;   // bootstrap estimate, display only
   public persistent let quickhackKills: Int32;
+
+  // Total lethal kills across all victim classes (for the mercy ratio, spec §8.2).
+  public func TotalKills() -> Int32 {
+    let total = 0;
+    let i = 0;
+    while i < ArraySize(this.killsByClass) {
+      total += this.killsByClass[i];
+      i += 1;
+    }
+    return total;
+  }
 }
 
 public class CBRumor {

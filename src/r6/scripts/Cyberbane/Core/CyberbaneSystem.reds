@@ -30,6 +30,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_cooldowns: ref<CBCooldowns>;
   private persistent let m_peaceDeals: array<ref<CBPeaceDeal>>;   // cap 16
 
+  // Runtime-only (not persisted): derived-value engine, lazily created.
+  private let m_score: ref<CBScoreEngine>;
+
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
     return GameInstance.GetScriptableSystemsContainer(game).Get(n"CyberbaneSystem") as CyberbaneSystem;
@@ -138,6 +141,81 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetStats() -> ref<CBStats> {
     return this.m_stats;
+  }
+
+  // ---- Accumulator accessors (read by the model layer) ------------------
+  public func GetRenownPoints() -> Float { return this.m_renownPoints; }
+  public func GetKillDreadPoints() -> Float { return this.m_killDreadPoints; }
+  public func GetDeedDreadPoints() -> Float { return this.m_deedDreadPoints; }
+  public func GetHeatPoints() -> Float { return this.m_heatPoints; }
+  public func GetArchetypeAccumulators() -> array<Float> { return this.m_archetype; }
+  public func GetPrimaryArchetypeIndex() -> Int32 { return this.m_primaryArchetype; }
+  public func SetPrimaryArchetypeIndex(value: Int32) -> Void { this.m_primaryArchetype = value; }
+
+  // ---- Faction state (lazy, seeded from the content baseline) -----------
+  public func FindFaction(id: CName) -> ref<CBFactionState> {
+    for f in this.m_factions {
+      if Equals(f.id, id) {
+        return f;
+      }
+    }
+    return null;
+  }
+
+  public func EnsureFaction(id: CName) -> ref<CBFactionState> {
+    let existing = this.FindFaction(id);
+    if IsDefined(existing) {
+      return existing;
+    }
+    let st = new CBFactionState();
+    st.id = id;
+    let content = CyberbaneContent.Get();
+    if IsDefined(content) {
+      let prof = content.GetFaction(id);
+      if IsDefined(prof) {
+        st.standing = prof.baselineStanding;
+      }
+    }
+    ArrayPush(this.m_factions, st);
+    return st;
+  }
+
+  public func GetFactionStates() -> array<ref<CBFactionState>> {
+    return this.m_factions;
+  }
+
+  // ---- District state (lazy) --------------------------------------------
+  public func FindDistrict(id: CName) -> ref<CBDistrictState> {
+    for d in this.m_districts {
+      if Equals(d.id, id) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  public func EnsureDistrict(id: CName) -> ref<CBDistrictState> {
+    let existing = this.FindDistrict(id);
+    if IsDefined(existing) {
+      return existing;
+    }
+    let st = new CBDistrictState();
+    st.id = id;
+    ArrayPush(this.m_districts, st);
+    return st;
+  }
+
+  public func GetDistrictStates() -> array<ref<CBDistrictState>> {
+    return this.m_districts;
+  }
+
+  // ---- Derived-value engine ---------------------------------------------
+  public func GetScore() -> ref<CBScoreEngine> {
+    if !IsDefined(this.m_score) {
+      this.m_score = new CBScoreEngine();
+      this.m_score.Bind(this);
+    }
+    return this.m_score;
   }
 }
 
