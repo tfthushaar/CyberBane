@@ -59,11 +59,41 @@ public class CBDistrictDef {
   }
 }
 
+public class CBImplantDef {
+  public let family: CName;        // cyberware family key (matched to records in S-11)
+  public let score: Float;         // implantScore(item)
+  public let visible: Bool;
+  public let archetype: Int32;     // ECBArchetype nudge, or -1 for none
+}
+
+public class CBLookTagDef {
+  public let tag: CName;           // visual tag (GetVisualTags), resolved in S-10
+  public let score: Float;
+  public let disguise: Float;
+  public let factionTag: CName;    // n"" if none
+}
+
+public class CBLookItemDef {
+  public let record: TweakDBID;    // exact item record match (takes priority over tags)
+  public let score: Float;
+  public let disguise: Float;
+  public let factionTag: CName;
+}
+
+public class CBCustomizationDef {
+  public let key: CName;           // character-customization option key (resolved in S-10)
+  public let score: Float;
+}
+
 // ---- Content service ------------------------------------------------------
 
 public class CyberbaneContent extends ScriptableService {
   private let m_factions: array<ref<CBFactionProfile>>;
   private let m_districts: array<ref<CBDistrictDef>>;
+  private let m_implants: array<ref<CBImplantDef>>;
+  private let m_lookTags: array<ref<CBLookTagDef>>;
+  private let m_lookItems: array<ref<CBLookItemDef>>;
+  private let m_customizations: array<ref<CBCustomizationDef>>;
   private let m_built: Bool;
 
   public static func Get() -> ref<CyberbaneContent> {
@@ -81,7 +111,9 @@ public class CyberbaneContent extends ScriptableService {
     this.m_built = true;   // set first so re-entrant Add* calls don't loop
     CBSeedFactions(this);
     CBSeedDistricts(this);
-    CBLog.Info(n"Model", s"Content built: \(ArraySize(this.m_factions)) factions, \(ArraySize(this.m_districts)) districts.");
+    CBSeedImplants(this);
+    CBSeedLooks(this);
+    CBLog.Info(n"Model", s"Content built: \(ArraySize(this.m_factions)) factions, \(ArraySize(this.m_districts)) districts, \(ArraySize(this.m_implants)) implants, \(ArraySize(this.m_lookTags)) look tags.");
   }
 
   // ---- Factions -----------------------------------------------------------
@@ -137,6 +169,79 @@ public class CyberbaneContent extends ScriptableService {
   public func GetDistricts() -> array<ref<CBDistrictDef>> {
     return this.m_districts;
   }
+
+  // ---- Implants (spec Appendix D) -----------------------------------------
+  public func AddImplant(def: ref<CBImplantDef>) -> Void {
+    if IsDefined(def) {
+      ArrayPush(this.m_implants, def);
+    }
+  }
+
+  // Score + visibility for a cyberware family; returns the default row (family n"")
+  // when no specific match exists.
+  public func GetImplant(family: CName) -> ref<CBImplantDef> {
+    let fallback: ref<CBImplantDef>;
+    for d in this.m_implants {
+      if Equals(d.family, family) {
+        return d;
+      }
+      if Equals(d.family, n"") {
+        fallback = d;
+      }
+    }
+    return fallback;
+  }
+
+  // ---- Looks (spec Appendix E) --------------------------------------------
+  public func AddLookTag(def: ref<CBLookTagDef>) -> Void {
+    if IsDefined(def) {
+      ArrayPush(this.m_lookTags, def);
+    }
+  }
+
+  public func AddLookItem(def: ref<CBLookItemDef>) -> Void {
+    if IsDefined(def) {
+      ArrayPush(this.m_lookItems, def);
+    }
+  }
+
+  public func GetLookTag(tag: CName) -> ref<CBLookTagDef> {
+    for d in this.m_lookTags {
+      if Equals(d.tag, tag) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  public func GetLookItem(record: TweakDBID) -> ref<CBLookItemDef> {
+    for d in this.m_lookItems {
+      if d.record == record {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  public func GetLookTags() -> array<ref<CBLookTagDef>> {
+    return this.m_lookTags;
+  }
+
+  // ---- Customization (spec Appendix E) ------------------------------------
+  public func AddCustomization(def: ref<CBCustomizationDef>) -> Void {
+    if IsDefined(def) {
+      ArrayPush(this.m_customizations, def);
+    }
+  }
+
+  public func GetCustomization(key: CName) -> ref<CBCustomizationDef> {
+    for d in this.m_customizations {
+      if Equals(d.key, key) {
+        return d;
+      }
+    }
+    return null;
+  }
 }
 
 // ---- Construction helpers (used by the seed files) ------------------------
@@ -167,5 +272,30 @@ public func CBMakeDistrict(id: CName, displayKey: String) -> ref<CBDistrictDef> 
   let d = new CBDistrictDef();
   d.id = id;
   d.displayKey = displayKey;
+  return d;
+}
+
+public func CBMakeImplant(family: CName, score: Float, visible: Bool, archetype: Int32) -> ref<CBImplantDef> {
+  let d = new CBImplantDef();
+  d.family = family;
+  d.score = score;
+  d.visible = visible;
+  d.archetype = archetype;
+  return d;
+}
+
+public func CBMakeLookTag(tag: CName, score: Float, disguise: Float, factionTag: CName) -> ref<CBLookTagDef> {
+  let d = new CBLookTagDef();
+  d.tag = tag;
+  d.score = score;
+  d.disguise = disguise;
+  d.factionTag = factionTag;
+  return d;
+}
+
+public func CBMakeCustomization(key: CName, score: Float) -> ref<CBCustomizationDef> {
+  let d = new CBCustomizationDef();
+  d.key = key;
+  d.score = score;
   return d;
 }
