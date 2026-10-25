@@ -54,18 +54,39 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText($verFile, $verText, $utf8NoBom)
 
 # --- package ---------------------------------------------------------------
+# Zip with forward-slash entry paths so mod managers (Vortex) and all extractors
+# read the game-root layout correctly. Windows PowerShell 5.1's Compress-Archive
+# writes backslash separators, which some extractors flatten into one folder, so we
+# build the archive explicitly with System.IO.Compression instead.
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+function New-ModZip {
+  param([string]$SourceDir, [string]$ZipPath)
+  if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
+  $base = (Resolve-Path $SourceDir).Path.TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+  $zip = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+  try {
+    Get-ChildItem -Path $SourceDir -Recurse -File | ForEach-Object {
+      $rel = $_.FullName.Substring($base.Length) -replace '\\', '/'
+      [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+        $zip, $_.FullName, $rel, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+    }
+  } finally {
+    $zip.Dispose()
+  }
+}
+
 if (-not (Test-Path $distDir)) { New-Item -ItemType Directory -Path $distDir | Out-Null }
 
 $mainZip = Join-Path $distDir "Cyberbane-$Version.zip"
-if (Test-Path $mainZip) { Remove-Item $mainZip -Force }
 Write-Host "Packaging $mainZip..."
-Compress-Archive -Path (Join-Path $srcDir '*') -DestinationPath $mainZip
+New-ModZip -SourceDir $srcDir -ZipPath $mainZip
 
 if (Test-Path $optDir) {
   $dbgZip = Join-Path $distDir "CyberbaneDebug-$Version.zip"
-  if (Test-Path $dbgZip) { Remove-Item $dbgZip -Force }
   Write-Host "Packaging $dbgZip..."
-  Compress-Archive -Path (Join-Path $optDir 'CyberbaneDebug/*') -DestinationPath $dbgZip
+  New-ModZip -SourceDir (Join-Path $optDir 'CyberbaneDebug') -ZipPath $dbgZip
 }
 
 Write-Host "Done. Output in $distDir"

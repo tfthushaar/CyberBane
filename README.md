@@ -65,10 +65,26 @@ until it has been checked, and a compatibility note will go out with every relea
 
 ## Installation
 
+Download the latest `Cyberbane-x.y.z.zip` from the
+[Releases page](https://github.com/tfthushaar/CyberBane/releases), then install it one of two ways.
+
+### With Vortex (recommended)
+
 1. Install the required mods listed above.
-2. Install Cyberbane with a mod manager such as Vortex, or by extracting the release archive into
-   your Cyberpunk 2077 game folder. It uses the standard game-folder layout.
-3. Launch the game and open the Hub with F7. You can rebind the key in Mod Settings.
+2. In Vortex, add the zip with "Install From File" (or drag it onto the Mods area), then enable it
+   and click Deploy.
+3. Launch the game and press F7 to open the Hub.
+
+### Manual
+
+1. Install the required mods listed above.
+2. Extract the zip into your Cyberpunk 2077 game folder, the one that holds `bin`, `r6` and
+   `Cyberpunk2077.exe`. The zip's `r6` folder merges into the game's existing `r6` folder, so the
+   scripts land at `r6\scripts\Cyberbane\`. A typical Steam path is
+   `...\steamapps\common\Cyberpunk 2077\`.
+3. Launch the game and press F7 to open the Hub. You can rebind the key in Mod Settings.
+
+To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vortex.
 
 ## Controls
 
