@@ -86,6 +86,10 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     if info.victimClass == EnumInt(ECBVictimClass.Boss) { fs.bossesKilled += 1; }
     if !info.lethal { fs.spared += 1; }
     fs.lastIncidentAt = info.at;
+    // Remember a real combatant record so a later hit squad spawns their kind (S-08).
+    if info.victimClass != EnumInt(ECBVictimClass.Civilian) && TDBID.IsValid(info.recordID) {
+      fs.sampleRecord = info.recordID;
+    }
   }
 
   // District effects.

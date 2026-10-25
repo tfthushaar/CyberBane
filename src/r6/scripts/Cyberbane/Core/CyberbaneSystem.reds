@@ -108,6 +108,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     let puppet = event.GetEntity() as ScriptedPuppet;
     if IsDefined(puppet) {
       this.m_registry.Add(puppet);
+      // Our own spawned hostiles (hit squads, Rival encounters) start aggressive toward V.
+      let des = GameInstance.GetDynamicEntitySystem();
+      if IsDefined(des) {
+        let id = puppet.GetEntityID();
+        if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival") {
+          CBMakeHostileToPlayer(this.GetGameInstance(), puppet);
+        }
+      }
     }
   }
 
@@ -207,9 +215,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     let game = this.GetGameInstance();
     CBApplyDecay(this, elapsedDays);
     CBTributeTick(this, game);
+    CBHitSquadTick(this, game);
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);
     CBRivalProgressionTick(this, game);
+    CBRivalEncounterTick(this, game);
     CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
 

@@ -30,6 +30,11 @@ This project follows [Semantic Versioning](https://semver.org/).
   you extra. The swing is capped, set in Mod Settings, and only ever touches what you pay.
 - **Tribute:** a gang you have made feared, but not yet pushed into open war, may quietly pay
   you eddies to stay on their good side. Pay enough gangs and you earn the Feared Landlord title.
+- **Hit squads:** turn a gang hostile enough and they send people after you. A squad of the
+  kind of member you have fought spawns out of sight and comes for you; squads never stack,
+  sit on a cooldown, and clear themselves if you slip away. Toggle and frequency in Mod Settings.
+- **Rivals that come to you:** a Rival who is hunting you can actually show up in the world,
+  wearing the face and gang you remember, instead of only existing on the Hub.
 - **The Hub:** a reputation screen in Cyberpunk's own style, opened with the Hub key (F7 by
   default, rebindable in Mod Settings). Each press steps through tabs for your standing (Renown,
   Dread, Code, Street Cred, and what the city fears you for), factions, rivals, titles, and a log

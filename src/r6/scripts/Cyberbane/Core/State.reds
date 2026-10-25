@@ -21,6 +21,9 @@ public class CBFactionState {
   public persistent let tributes: Int32;
   public persistent let lastHitSquadAt: Float;
   public persistent let lastPeaceAt: Float;
+  // A real character record of a member V has fought, captured so hit squads spawn
+  // faction-appropriate NPCs without hardcoding TweakDB ids (spec §9.9, S-08).
+  public persistent let sampleRecord: TweakDBID;
 }
 
 public class CBDistrictState {
