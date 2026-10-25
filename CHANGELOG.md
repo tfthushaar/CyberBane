@@ -25,6 +25,11 @@ This project follows [Semantic Versioning](https://semver.org/).
   they recognize you. Turn the systems off and every attitude change is undone.
 - **Enemies that break:** cut down enough of a squad and the survivors can lose their nerve
   and run, though someone always stands and fights. Those who get away can return as Rivals.
+- **Vendor prices move with your reputation:** the more the city fears you (and the cleaner
+  your reputation as a professional), the better your buy prices; a mad-dog reputation costs
+  you extra. The swing is capped, set in Mod Settings, and only ever touches what you pay.
+- **Tribute:** a gang you have made feared, but not yet pushed into open war, may quietly pay
+  you eddies to stay on their good side. Pay enough gangs and you earn the Feared Landlord title.
 - **Rivals:** named, persistent enemies that rank up, carry traits, taunt about your
   history, and remember your deaths across saves. They climb the ranks on their own when
   ignored, and slaying one can raise an avenger from the same crew.

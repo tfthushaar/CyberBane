@@ -174,6 +174,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func OnSlowTick(elapsedDays: Float) -> Void {
     let game = this.GetGameInstance();
     CBApplyDecay(this, elapsedDays);
+    CBTributeTick(this, game);
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);
     CBRivalProgressionTick(this, game);
