@@ -382,6 +382,10 @@ func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
     out += "  " + name + mark + "\n";
     i += 1;
   }
+  if Equals(active, n"") {
+    out += "\nActive title: Auto (highest earned).";
+  }
+  out += "\n[ Ctrl + Hub key ]  cycle the active title / Auto.";
   return out;
 }
 
@@ -404,6 +408,36 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
     }
   }
   return out;
+}
+
+// Cycle the active title: Auto -> each unlocked title -> Auto (spec §12.1 Titles tab).
+public func CBCycleActiveTitle(sys: ref<CyberbaneSystem>) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let unlocked = sys.GetUnlockedTitles();
+  if ArraySize(unlocked) == 0 {
+    return;
+  }
+  let cur = sys.GetActiveTitle();
+  if Equals(cur, n"") {
+    sys.SetActiveTitle(unlocked[0]);   // Auto -> first earned title
+    return;
+  }
+  let idx = -1;
+  let i = 0;
+  while i < ArraySize(unlocked) {
+    if Equals(unlocked[i], cur) {
+      idx = i;
+    }
+    i += 1;
+  }
+  let next = idx + 1;
+  if next >= ArraySize(unlocked) {
+    sys.SetActiveTitle(n"");            // wrap back to Auto
+  } else {
+    sys.SetActiveTitle(unlocked[next]);
+  }
 }
 
 // ---- Small label helpers ---------------------------------------------------

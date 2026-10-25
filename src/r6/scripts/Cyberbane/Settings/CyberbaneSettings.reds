@@ -329,6 +329,10 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FreezeReputation")
   public let freezeReputation: Bool = false;
 
+  // Tracks the last preset we expanded, so picking a preset rewrites the intensity /
+  // frequency sliders once, while later hand-tweaks to those sliders still stick.
+  private let m_appliedPreset: ECBPreset = ECBPreset.Default;
+
   // ---- Registration & lifecycle ----------------------------------------
   public func Register() -> Void {
     ModSettings.RegisterListenerToClass(this);
@@ -348,10 +352,50 @@ public class CyberbaneSettings {
   // Pushes the values that the low-level runtime needs into CyberbaneRuntime.
   // Feature modules read the rest of the fields directly off this instance.
   public func Apply() -> Void {
+    // Expand a newly chosen preset into the individual sliders (spec §13 presets).
+    if NotEquals(this.preset, this.m_appliedPreset) {
+      this.ApplyPreset(this.preset);
+      this.m_appliedPreset = this.preset;
+    }
     let rt = CyberbaneRuntime.Get();
     if IsDefined(rt) {
       rt.SetEnabled(this.enabled);
       rt.SetLogLevel(this.GetLogLevelInt());
+    }
+  }
+
+  // Subtle / Default / Dramatic scale how loud and how frequent reactions are.
+  private func ApplyPreset(p: ECBPreset) -> Void {
+    switch p {
+      case ECBPreset.Subtle:
+        this.civIntensity = 0.6;
+        this.maxReactingCivilians = 3;
+        this.moraleIntensity = 0.6;
+        this.maxBreakFraction = 0.4;
+        this.hostileOnSight = false;
+        this.hitSquadFrequencyMult = 0.5;
+        this.rivalFrequencyMult = 0.6;
+        this.tributeMult = 0.75;
+        break;
+      case ECBPreset.Dramatic:
+        this.civIntensity = 1.5;
+        this.maxReactingCivilians = 10;
+        this.moraleIntensity = 1.4;
+        this.maxBreakFraction = 0.75;
+        this.hostileOnSight = true;
+        this.hitSquadFrequencyMult = 1.6;
+        this.rivalFrequencyMult = 1.5;
+        this.tributeMult = 1.25;
+        break;
+      default:
+        this.civIntensity = 1.0;
+        this.maxReactingCivilians = 6;
+        this.moraleIntensity = 1.0;
+        this.maxBreakFraction = 0.6;
+        this.hostileOnSight = true;
+        this.hitSquadFrequencyMult = 1.0;
+        this.rivalFrequencyMult = 1.0;
+        this.tributeMult = 1.0;
     }
   }
 

@@ -50,6 +50,10 @@ This project follows [Semantic Versioning](https://semver.org/).
   scales with how much blood is between you. From the Hub, hold Shift and press the Hub key to
   buy off the worst gang you can afford; mods can also trigger it through the public API.
 
+- **Presets and titles from the Hub:** a Subtle / Default / Dramatic preset in Mod Settings tunes
+  how loud and frequent reactions are in one pick. From the Hub, Ctrl and the Hub key cycle which
+  title you wear, or leave it on Auto to always show your highest.
+
 ### Compatibility
 
 - A They Will Remember compatibility mode: when it is on, Cyberbane stands down from the

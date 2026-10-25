@@ -75,6 +75,8 @@ Cyberbane adds two controls. Everything else uses the game's normal inputs.
   press after the last tab closes it. Rebind it in Mod Settings. It will not open during combat.
 - **Shift + Hub key (while the Hub is open):** brokers peace with the worst gang you can afford to
   buy off, paying from your eddies on the spot.
+- **Ctrl + Hub key (while the Hub is open):** cycles your active title through the ones you have
+  earned, or back to Auto (which always shows your highest title).
 
 ## Uninstalling
 

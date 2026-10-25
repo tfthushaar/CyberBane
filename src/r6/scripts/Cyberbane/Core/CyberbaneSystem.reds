@@ -138,6 +138,12 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_hud.Refresh(this, game);
       return;
     }
+    // Ctrl + Hub key cycles the active title (Auto -> each earned title -> Auto).
+    if event.IsControlDown() && this.m_hud.IsOpen() {
+      CBCycleActiveTitle(this);
+      this.m_hud.Refresh(this, game);
+      return;
+    }
     // Don't pop the Hub open mid-fight, but always allow closing it.
     if !this.m_hud.IsOpen() {
       let player = GetPlayer(game);
