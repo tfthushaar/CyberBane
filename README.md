@@ -20,7 +20,7 @@ certain way, open the Hub and read the breakdown.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: early release (0.1.0).** Built for Cyberpunk 2077 v2.31 and in active development. This
+**Status: early release (0.1.1).** Built for Cyberpunk 2077 v2.31 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -32,18 +32,21 @@ page describes what the mod does and how it installs.
   work and spare people when you can, and you get treated like a professional. Gun down
   civilians and lean on brutal finishers and the Street starts seeing a mad dog, one edge away
   from a cyberpsycho. It changes how people talk to you and how they deal with you.
-- **Crowds that react.** Depending on how frightening you are, civilians notice you, step out
-  of your path, cower, or flee, and panicked drivers pull away when you draw your weapon in the
-  street.
+- **A city that reads how dangerous you look.** The more frightening you are, the more people
+  back off. Civilians, gang members and even cops can notice you, cower, or flee, and panicked
+  drivers pull away in the street. It is not only your reputation: visible chrome, and how
+  built-up your level, Street Cred and skills are, all feed into how much the street fears you,
+  so a heavily chromed, high-level merc clears a room. Bosses and MaxTac hold their ground.
 - **Gangs with their own values.** Maelstrom cares about chrome, the Animals care about raw
   strength, the Voodoo Boys care about netrunning. The same V gets different treatment from each
   gang depending on your standing and reputation: respect, a warning, or hostility. Masks and hoods
   make you harder to place, and wearing a gang's colours makes that gang slower to recognize you.
-- **Enemies that break and remember.** Cut down most of a squad and the survivors can lose their
-  nerve and run. Anyone who escapes, or who kills you, can return later as a named Rival that is
-  tougher, brings backup, and references your last encounter. The ones you leave alone climb the
-  ranks on their own while you are busy elsewhere, and putting one down can bring a gang-mate
-  gunning for you over a dead crewmate.
+- **Enemies that break, run, and remember.** Wound an enemy badly and it can lose its nerve and
+  try to escape. Catch it and that is the end of it; let it get away and it comes back as a named
+  Rival with a grudge. Rivals are a full nemesis system: they hunt you down and chase you, they
+  climb the ranks on their own while you are busy elsewhere, and every time one escapes it returns
+  a rank higher and scarred. Put down the one hunting you and it is finally finished. Anyone who
+  kills you can also come back, and dropping a crew's member can bring a gang-mate gunning for you.
 - **A city that pays attention.** Frighten a gang enough and they may send tribute to stay on
   your good side, or a hit squad to deal with you. Give a hit squad the slip and a survivor can
   come back as a named Rival who hunts you. Vendors give fear or respect discounts, and fixers pay

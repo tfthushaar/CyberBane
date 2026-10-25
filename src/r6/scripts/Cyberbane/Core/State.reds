@@ -134,3 +134,14 @@ public class CBPeaceDeal {
   public persistent let at: Float;
   public persistent let cost: Int32;
 }
+
+// A wounded enemy that ran. Session-only (not persisted): if it gets away it becomes or
+// promotes a Rival; if V catches and kills it first, it is dropped (spec §10.2).
+public class CBEscapee {
+  public let puppet: wref<ScriptedPuppet>;
+  public let entityId: EntityID;
+  public let faction: CName;
+  public let record: TweakDBID;
+  public let at: Float;
+  public let wasRival: Bool;
+}

@@ -18,6 +18,7 @@ public class CBScoreEngine {
   private let m_streetCred: Float;
   private let m_heatStage: Int32;
   private let m_overallocated: Bool;
+  private let m_menace: Float;        // 0-100 from V's level, street cred and skills (spec §8.6)
 
   // Cached derived headline values.
   private let m_renown: Float;
@@ -53,6 +54,13 @@ public class CBScoreEngine {
   public func SetHeatStage(stage: Int32) -> Void {
     this.m_heatStage = stage;
     this.m_dirty = true;
+  }
+
+  public func SetMenace(menace: Float) -> Void {
+    this.m_menace = menace;
+  }
+  public func GetMenace() -> Float {
+    return this.m_menace;
   }
 
   public func MarkDirty() -> Void {

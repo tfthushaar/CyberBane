@@ -32,6 +32,7 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
   if IsDefined(cd) && des.IsPopulated(n"CB_Rival")
      && (now - cd.lastRivalEncounterAt) > CBConfig.HitSquadDespawnMinutes() * 120.0 {
     des.DeleteTagged(n"CB_Rival");
+    sys.SetActiveRivalId(0);
   }
 
   if des.IsPopulated(n"CB_Rival") {
@@ -47,13 +48,15 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     return;
   }
 
-  // Find a hunting Rival ready to appear.
+  // Find a Rival ready to come after V. Active or already Hunting both count, so your
+  // rivals actually turn up instead of only ever living on the Hub.
   let rivals = sys.GetRivals();
   let i = 0;
   while i < ArraySize(rivals) {
     let r = rivals[i];
     i += 1;
-    if IsDefined(r) && r.state == EnumInt(ECBRivalState.Hunting)
+    let seeking = r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
+    if IsDefined(r) && seeking
        && TDBID.IsValid(r.recordID)
        && (r.nextEligibleAt <= 0.0 || now >= r.nextEligibleAt) {
       if RandF() < 0.35 {
@@ -65,11 +68,14 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
 }
 
 func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Void {
-  let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival");
+  // Spawn close and behind so the Rival perceives V right away and gives chase.
+  let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance());
   if spawned <= 0 {
     return;
   }
+  r.state = EnumInt(ECBRivalState.Hunting);   // it is actively hunting you now
   r.lastSeenAt = now;
+  sys.SetActiveRivalId(r.id);                 // track it for escape / slain handling
   let cd = sys.GetCooldowns();
   if IsDefined(cd) {
     cd.lastRivalEncounterAt = now;

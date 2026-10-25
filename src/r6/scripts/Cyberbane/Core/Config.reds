@@ -89,6 +89,8 @@ public abstract class CBConfig {
   public static func CivTierTerror() -> Float = 80.0
   public static func CivCowerRadius() -> Float = 6.0    // Afraid tier (spec §9.2)
   public static func CivFleeRadius() -> Float = 15.0    // Terror tier (spec §9.2)
+  // How much V's build (level, street cred, skills) adds to how intimidating they look.
+  public static func MenaceFearWeight() -> Float = 0.5
 
   // ---- Whispers (spec §9.10) -------------------------------------------
   public static func WhisperCooldownSeconds() -> Float = 25.0
@@ -100,6 +102,13 @@ public abstract class CBConfig {
   public static func MoraleBreakThreshold() -> Float = 0.25
   public static func MoraleMaxBreakFraction() -> Float = 0.6
   public static func MoraleShockRadius() -> Float = 15.0
+
+  // ---- Low-health combat flee / escape -> Rival (spec §10.2) -----------
+  public static func FleeHealthThreshold() -> Float = 25.0   // health % below which they may run
+  public static func FleeChance() -> Float = 0.5             // else they fight to the death
+  public static func EscapeDistance() -> Float = 60.0        // ran this far from V = got away
+  public static func EscapeTimeoutSeconds() -> Float = 120.0 // give up tracking an escapee after this
+  public static func EscapeeCap() -> Int32 = 24
 
   // ---- Vendors (spec §9.6) ---------------------------------------------
   public static func VendorMaxDiscount() -> Float = 0.20
@@ -124,6 +133,8 @@ public abstract class CBConfig {
   public static func HitSquadMinSpawnDistance() -> Float = 50.0
   public static func HitSquadDespawnMinutes() -> Float = 5.0
   public static func HitSquadDespawnDistance() -> Float = 300.0
+  // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
+  public static func RivalSpawnDistance() -> Float = 35.0
 
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   public static func RivalChanceSurvivor() -> Float = 0.15

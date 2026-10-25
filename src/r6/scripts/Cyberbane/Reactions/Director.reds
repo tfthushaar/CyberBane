@@ -82,9 +82,11 @@ public class CBReactionDirector {
     while i < ArraySize(npcs) && evaluated < CBConfig.NpcEvalPerTick() {
       let npc = npcs[i];
       i += 1;
-      if CBSafetyGate.CanAffect(npc) {
+      // Cheap distance gate first: the Safety Gate queries the workspot system, so only
+      // run it for NPCs actually in range. A dense registry then stays cheap per tick.
+      if IsDefined(npc) {
         let dist = Vector4.Distance(ppos, npc.GetWorldPosition());
-        if dist <= CBConfig.NpcEvalRadius() {
+        if dist <= CBConfig.NpcEvalRadius() && CBSafetyGate.CanAffect(npc) {
           evaluated += 1;
           let faction = CBClassifyFaction(npc);
 
@@ -99,16 +101,16 @@ public class CBReactionDirector {
           }
           let recognized = npc.cbRecoState == 1;
 
-          // Pedestrians react to how frightening V is (spec §9.2), capped per tick.
-          if npc.IsCrowd() {
-            if civOn && civReacted < maxCiv {
-              if CBCrowdReact(game, score, npc, dist, civIntensity) {
-                civReacted += 1;
-              }
-            }
-          } else {
-            if gangOn && hostileOnSight && recognized {
-              this.TryGangHostile(score, player, npc, faction);
+          // Vendetta gangs that recognise V attack on sight (spec §9.3); that overrides
+          // any fear. Everyone else - civilians, gangers, cops - can read how dangerous V
+          // looks and flee (spec §9.2), capped per tick.
+          let turnedHostile = false;
+          if !npc.IsCrowd() && gangOn && hostileOnSight && recognized {
+            turnedHostile = this.TryGangHostile(score, player, npc, faction);
+          }
+          if !turnedHostile && civOn && civReacted < maxCiv {
+            if CBFearReact(game, score, npc, dist, civIntensity, faction) {
+              civReacted += 1;
             }
           }
           if whispersOn && !playerInCombat && recognized {
@@ -120,31 +122,38 @@ public class CBReactionDirector {
   }
 
   // Vendetta gangs attack a recognized V on sight (spec §9.3). Tracked for revert.
-  private func TryGangHostile(score: ref<CBScoreEngine>, player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName) -> Void {
-    if npc.cbHostileByCyberbane || Equals(faction, n"") {
-      return;
+  // Returns true when this NPC is engaging V (hostile or being warned), so the Director
+  // knows not to let it flee from fear instead.
+  private func TryGangHostile(score: ref<CBScoreEngine>, player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName) -> Bool {
+    if Equals(faction, n"") {
+      return false;
     }
     if CBTwrActive() {
-      return;   // They Will Remember owns hostility-on-sight in compat mode (spec §17)
+      return false;   // They Will Remember owns hostility-on-sight in compat mode (spec §17)
     }
     if !Equals(score.GetPosture(faction), ECBPosture.Vendetta) {
-      return;
+      return false;   // not at war with you - they can still be scared off
+    }
+    // From here it is a Vendetta gang member: it is coming for you, not running.
+    if npc.cbHostileByCyberbane {
+      return true;
     }
     // They give you one warning before they open fire (spec §9.3), if enabled. The flip
     // to hostile lands on the next evaluation, which reads as a beat of hesitation.
     if CBWarningsOn() && !npc.cbGangWarned {
       npc.cbGangWarned = true;
       CBShowWhisper(player.GetGame(), faction, n"hate", n"warning");
-      return;
+      return true;
     }
     let agent = npc.GetAttitudeAgent();
     let pagent = player.GetAttitudeAgent();
     if !IsDefined(agent) || !IsDefined(pagent) {
-      return;
+      return true;
     }
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
     npc.cbHostileByCyberbane = true;
     ArrayPush(this.m_hostileNpcs, npc);
+    return true;
   }
 
   private func RevertAllHostile(game: GameInstance) -> Void {

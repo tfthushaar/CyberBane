@@ -63,6 +63,12 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   if IsDefined(instigator) && instigator.IsPlayer() {
     puppet.cbDamagedByPlayer = true;
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
+    // A wounded enemy may lose its nerve and run (spec §10.2).
+    let game = puppet.GetGame();
+    let sys = CyberbaneSystem.Get(game);
+    if IsDefined(sys) {
+      CBCombatFleeCheck(sys, game, puppet);
+    }
   }
   // Record the attacker on the target so V's killer is known at death time.
   let attacker = instigator as ScriptedPuppet;
@@ -72,10 +78,26 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
 }
 
 func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
+  let game = puppet.GetGame();
+  let sysE = CyberbaneSystem.Get(game);
+  // Any death cancels a pending escape: this enemy did not get away (spec §10.2). If it
+  // was the Rival hunting V, V just slew it.
+  if IsDefined(sysE) {
+    sysE.DropEscapeeByEntity(puppet.GetEntityID());
+    let desE = GameInstance.GetDynamicEntitySystem();
+    if IsDefined(desE) && sysE.GetActiveRivalId() > 0 && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival") {
+      let slain = sysE.FindRivalById(sysE.GetActiveRivalId());
+      if IsDefined(slain) {
+        CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBCurrentDistrict(game));
+      }
+      sysE.SetActiveRivalId(0);
+      desE.DeleteTagged(n"CB_Rival");
+    }
+  }
+
   if !puppet.cbDamagedByPlayer {
     return;   // not V's kill (spec §7.1.2)
   }
-  let game = puppet.GetGame();
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && !rt.IsEnabled() {
     return;

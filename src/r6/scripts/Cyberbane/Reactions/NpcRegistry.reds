@@ -4,6 +4,10 @@
 // Codeware callback. Despawned puppets' weak refs go undefined and are dropped by
 // Prune() on the fast tick, so no detach bookkeeping is required.
 
+// Upper bound on tracked NPCs. The director only evaluates the nearest handful per tick,
+// so this just protects against pathological growth; live NPCs near V always fit.
+public func CBRegistryCap() -> Int32 = 200
+
 public class CBNpcRegistry {
   private let m_npcs: array<wref<ScriptedPuppet>>;
 
@@ -13,6 +17,14 @@ public class CBNpcRegistry {
     }
     if puppet.IsPlayer() {
       return;
+    }
+    // Hard cap so the registry can never grow without bound in dense crowds. If it is
+    // full, prune despawned entries first; only skip the add if it is still full.
+    if ArraySize(this.m_npcs) >= CBRegistryCap() {
+      this.Prune();
+      if ArraySize(this.m_npcs) >= CBRegistryCap() {
+        return;
+      }
     }
     ArrayPush(this.m_npcs, puppet);
   }

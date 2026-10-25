@@ -271,15 +271,16 @@ public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance
   }
   let now = CBGameSeconds(game);
   let cd = sys.GetCooldowns();
-  if IsDefined(cd) && (now - cd.lastPromotionAt) < CBConfig.SecondsPerDay() {
+  // Rivals climb often while you leave them be: at most one promotion every ~8 in-game hours.
+  if IsDefined(cd) && (now - cd.lastPromotionAt) < CBConfig.SecondsPerDay() * 0.33 {
     return;
   }
   let content = CyberbaneContent.Get();
-  let neglect = 3.0 * CBConfig.SecondsPerDay();
+  let neglect = CBConfig.SecondsPerDay();   // left alone for a day and they get stronger
   for r in sys.GetRivals() {
     let active = r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
     if active && r.rank < 4 && (now - r.lastSeenAt) > neglect {
-      if RandF() < 0.30 {
+      if RandF() < 0.6 {
         CBPromoteRival(r, content, now);
         if IsDefined(cd) {
           cd.lastPromotionAt = now;

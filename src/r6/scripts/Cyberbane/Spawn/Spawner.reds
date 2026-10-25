@@ -7,7 +7,7 @@
 // is written to the save (persistState / persistSpawn / alwaysSpawned all false).
 
 // Spawn `count` copies of `record` in a short row behind V. Returns how many were queued.
-public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName) -> Int32 {
+public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float) -> Int32 {
   if !TDBID.IsValid(record) || count <= 0 {
     return 0;
   }
@@ -18,7 +18,6 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   }
   let ppos = player.GetWorldPosition();
   let fwd = player.GetWorldForward();
-  let dist = CBConfig.HitSquadMinSpawnDistance() + 12.0;
 
   // Base point behind V (outside the forward view cone).
   let bx = ppos.X - fwd.X * dist;

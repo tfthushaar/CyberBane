@@ -3,6 +3,28 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-10-26
+
+### Changed
+- Everyone now reacts to how dangerous you look, not just civilians. Gang members and the
+  police can also notice you and back off or flee. Visible cyberware now drives fear directly,
+  so a heavily chromed V gets reactions even before building a reputation. Bosses and MaxTac
+  hold their ground, and gangs with a vendetta still attack on sight.
+- Your whole build counts. Your character level, Street Cred and skills now feed into how
+  intimidating you are, so a high-level, skilled, well-known merc gets reactions a fresh
+  character never would.
+
+### Added
+- Wounded enemies can lose their nerve and run. Catch them and that is the end of it; let one
+  get away and it comes back as a named Rival with a grudge.
+- Rivals are a proper nemesis now. They actually turn up and chase you, they climb the ranks
+  while you leave them alone, and every time one escapes it returns a rank higher and scarred.
+  Put down the one hunting you and it is finally finished.
+
+### Performance
+- The background NPC checks now do the heavier work only for nearby NPCs, and the tracked-NPC
+  list is capped, so dense crowds stay smooth.
+
 ## [0.1.0] - 2026-10-25
 
 First public release, available on [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847).

@@ -49,6 +49,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_disguiseFaction: CName;       // gang whose colours V is wearing (spec §9.3)
   private let m_disguiseStrength: Float;      // 0..1, how well the disguise reads
   private let m_activeSquadFaction: CName;    // faction of the hit squad currently out (for Hunter on escape)
+  private let m_escapees: array<ref<CBEscapee>>;   // wounded enemies that ran (session-only, spec §10.2)
+  private let m_activeRivalId: Int32;         // id of the Rival currently spawned as an encounter (0 = none)
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -187,8 +189,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_tickCount % 10 == 0 {
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
+      CBUpdateMenace(this, game);
     }
     CBEncounterTick(this, game);
+    CBProcessEscapees(this, game);
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) {
@@ -516,6 +520,42 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
   public func GetActiveSquadFaction() -> CName {
     return this.m_activeSquadFaction;
+  }
+
+  // The Rival currently out in the world as an encounter (0 = none), for escape escalation.
+  public func SetActiveRivalId(id: Int32) -> Void {
+    this.m_activeRivalId = id;
+  }
+  public func GetActiveRivalId() -> Int32 {
+    return this.m_activeRivalId;
+  }
+
+  // Wounded runaways pending resolution (spec §10.2).
+  public func AddEscapee(e: ref<CBEscapee>) -> Void {
+    if !IsDefined(e) {
+      return;
+    }
+    ArrayPush(this.m_escapees, e);
+    while ArraySize(this.m_escapees) > CBConfig.EscapeeCap() {
+      ArrayErase(this.m_escapees, 0);
+    }
+  }
+  public func GetEscapees() -> array<ref<CBEscapee>> {
+    return this.m_escapees;
+  }
+  public func RemoveEscapee(e: ref<CBEscapee>) -> Void {
+    ArrayRemove(this.m_escapees, e);
+  }
+  // Drop a pending escapee when V catches and kills it (by entity id).
+  public func DropEscapeeByEntity(id: EntityID) -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_escapees) {
+      if Equals(this.m_escapees[i].entityId, id) {
+        ArrayErase(this.m_escapees, i);
+      } else {
+        i += 1;
+      }
+    }
   }
 
   // Record a brokered peace (spec §11.3), newest kept within a small cap.
