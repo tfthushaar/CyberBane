@@ -1,3 +1,13 @@
+<div align="center">
+
+<a href="docs/assets/cyberbane.mp4">
+  <img src="docs/assets/cyberbane-preview.gif" alt="CyberBane: Night City reacts to your reputation in Cyberpunk 2077" width="100%">
+</a>
+
+<sub><a href="docs/assets/cyberbane.mp4">Watch the full video</a></sub>
+
+</div>
+
 # Cyberbane
 
 Cyberbane is a reputation overhaul for Cyberpunk 2077. As you fight, finish jobs, install
