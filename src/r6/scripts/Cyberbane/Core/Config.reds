@@ -87,6 +87,8 @@ public abstract class CBConfig {
   public static func CivTierUneasy() -> Float = 40.0
   public static func CivTierAfraid() -> Float = 60.0
   public static func CivTierTerror() -> Float = 80.0
+  public static func CivCowerRadius() -> Float = 6.0    // Afraid tier (spec §9.2)
+  public static func CivFleeRadius() -> Float = 15.0    // Terror tier (spec §9.2)
 
   // ---- Whispers (spec §9.10) -------------------------------------------
   public static func WhisperCooldownSeconds() -> Float = 25.0
@@ -97,6 +99,7 @@ public abstract class CBConfig {
   // ---- Morale (spec §9.4) ----------------------------------------------
   public static func MoraleBreakThreshold() -> Float = 0.25
   public static func MoraleMaxBreakFraction() -> Float = 0.6
+  public static func MoraleShockRadius() -> Float = 15.0
 
   // ---- Vendors (spec §9.6) ---------------------------------------------
   public static func VendorMaxDiscount() -> Float = 0.20

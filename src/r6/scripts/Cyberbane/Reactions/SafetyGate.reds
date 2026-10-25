@@ -16,8 +16,11 @@ public abstract class CBSafetyGate {
     if puppet.IsDead() {
       return false;
     }
-    // TODO S-13: quest NPC, unique/companion, scene/workspot, AMM-spawned, vendor
-    // mid-transaction, safe zones, braindance, active-quest-area exclusions.
+    if puppet.IsQuest() {
+      return false;   // never touch quest NPCs (spec §16.1)
+    }
+    // TODO S-13: unique/companion exclusion list, scene/workspot, AMM-spawned,
+    // vendor mid-transaction, safe zones, braindance, active-quest-area exclusions.
     return true;
   }
 }

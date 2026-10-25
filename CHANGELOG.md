@@ -18,6 +18,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 - **The city reacts:** recognized NPCs drop overheard whispers whose tone follows the
   faction's posture, your Code and notable kills (gang bosses, MaxTac). On-screen messages
   for rank-ups, titles, massacres and boss/MaxTac kills.
+- **Crowds that react:** pedestrians read how frightening you are and, as you get close,
+  cower or flee; once your reputation turns to terror the panic spreads through the crowd.
+  How many react at once is capped so the streets never empty all at once.
+- **Gangs that turn on you:** a gang you have pushed to a vendetta attacks on sight once
+  they recognize you. Turn the systems off and every attitude change is undone.
+- **Enemies that break:** cut down enough of a squad and the survivors can lose their nerve
+  and run, though someone always stands and fights. Those who get away can return as Rivals.
 - **Rivals:** named, persistent enemies that rank up, carry traits, taunt about your
   history, and remember your deaths across saves. They climb the ranks on their own when
   ignored, and slaying one can raise an avenger from the same crew.

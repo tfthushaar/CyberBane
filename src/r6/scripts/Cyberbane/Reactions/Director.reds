@@ -12,8 +12,14 @@ public let cbRecoState: Int32;   // 0 = unrolled, 1 = recognized, 2 = not recogn
 @addField(ScriptedPuppet)
 public let cbWhispered: Bool;
 
+// Set true when Cyberbane made this NPC hostile-on-sight (for revert, spec §16.4).
+@addField(ScriptedPuppet)
+public let cbHostileByCyberbane: Bool;
+
 public class CBReactionDirector {
   private let m_whisperCooldownTicks: Int32;
+  // NPCs whose attitude Cyberbane overrode, tracked so the kill switch can revert them.
+  private let m_hostileNpcs: array<wref<ScriptedPuppet>>;
 
   public func Tick(game: GameInstance) -> Void {
     let sys = CyberbaneSystem.Get(game);
@@ -22,6 +28,7 @@ public class CBReactionDirector {
     }
     let rt = CyberbaneRuntime.Get();
     if IsDefined(rt) && !rt.IsEnabled() {
+      this.RevertAllHostile(game);   // kill switch: undo attitude overrides (§16.3/§16.4)
       return;
     }
     let reg = sys.GetRegistry();
@@ -39,13 +46,26 @@ public class CBReactionDirector {
       return;
     }
     let whispersOn = true;
+    let gangOn = true;
+    let hostileOnSight = true;
+    let civOn = true;
+    let civIntensity = 1.0;
+    let maxCiv = 6;
     if IsDefined(rt) && rt.HasSettings() {
-      whispersOn = rt.GetSettings().whispers;
+      let s = rt.GetSettings();
+      whispersOn = s.whispers;
+      gangOn = s.gangReactions;
+      hostileOnSight = s.hostileOnSight;
+      civOn = s.civReactions;
+      civIntensity = s.civIntensity;
+      maxCiv = s.maxReactingCivilians;
     }
+    let civReacted = 0;
     let playerInCombat = player.IsInCombat();
     let ppos = player.GetWorldPosition();
     let score = sys.GetScore();
     let dread = score.GetDread();
+    let district = CBCurrentDistrict(game);
 
     let npcs = reg.GetAll();
     let evaluated = 0;
@@ -57,26 +77,73 @@ public class CBReactionDirector {
         let dist = Vector4.Distance(ppos, npc.GetWorldPosition());
         if dist <= CBConfig.NpcEvalRadius() {
           evaluated += 1;
-          if whispersOn && !playerInCombat {
-            this.TryWhisper(game, sys, score, npc, dread, dist);
+          let faction = CBClassifyFaction(npc);
+
+          // Recognition, rolled once per spawn and cached on the puppet (spec §8.7).
+          if npc.cbRecoState == 0 {
+            let p = score.RecognitionChance(district, faction, false, false);
+            npc.cbRecoState = RandF() <= p ? 1 : 2;
+          }
+          let recognized = npc.cbRecoState == 1;
+
+          // Pedestrians react to how frightening V is (spec §9.2), capped per tick.
+          if npc.IsCrowd() {
+            if civOn && civReacted < maxCiv {
+              if CBCrowdReact(game, score, npc, dist, civIntensity) {
+                civReacted += 1;
+              }
+            }
+          } else {
+            if gangOn && hostileOnSight && recognized {
+              this.TryGangHostile(score, player, npc, faction);
+            }
+          }
+          if whispersOn && !playerInCombat && recognized {
+            this.TryWhisper(game, sys, score, npc, dread, dist, faction);
           }
         }
       }
     }
   }
 
-  private func TryWhisper(game: GameInstance, sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dread: Float, dist: Float) -> Void {
-    if this.m_whisperCooldownTicks > 0 || npc.cbWhispered || dist > CBConfig.WhisperRadius() {
+  // Vendetta gangs attack a recognized V on sight (spec §9.3). Tracked for revert.
+  private func TryGangHostile(score: ref<CBScoreEngine>, player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName) -> Void {
+    if npc.cbHostileByCyberbane || Equals(faction, n"") {
       return;
     }
-    let faction = CBClassifyFaction(npc);
-
-    // Recognition, rolled once per spawn and cached on the puppet (spec §8.7).
-    if npc.cbRecoState == 0 {
-      let p = score.RecognitionChance(CBCurrentDistrict(game), faction, false, false);
-      npc.cbRecoState = RandF() <= p ? 1 : 2;
+    if !Equals(score.GetPosture(faction), ECBPosture.Vendetta) {
+      return;
     }
-    if npc.cbRecoState != 1 {
+    let agent = npc.GetAttitudeAgent();
+    let pagent = player.GetAttitudeAgent();
+    if !IsDefined(agent) || !IsDefined(pagent) {
+      return;
+    }
+    agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
+    npc.cbHostileByCyberbane = true;
+    ArrayPush(this.m_hostileNpcs, npc);
+  }
+
+  private func RevertAllHostile(game: GameInstance) -> Void {
+    let player = GetPlayer(game);
+    let pagent: ref<AttitudeAgent>;
+    if IsDefined(player) {
+      pagent = player.GetAttitudeAgent();
+    }
+    for npc in this.m_hostileNpcs {
+      if IsDefined(npc) && npc.cbHostileByCyberbane {
+        let agent = npc.GetAttitudeAgent();
+        if IsDefined(agent) && IsDefined(pagent) {
+          agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+        }
+        npc.cbHostileByCyberbane = false;
+      }
+    }
+    ArrayClear(this.m_hostileNpcs);
+  }
+
+  private func TryWhisper(game: GameInstance, sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dread: Float, dist: Float, faction: CName) -> Void {
+    if this.m_whisperCooldownTicks > 0 || npc.cbWhispered || dist > CBConfig.WhisperRadius() {
       return;
     }
 
