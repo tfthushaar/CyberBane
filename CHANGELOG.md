@@ -3,7 +3,9 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0] - 2026-10-25
+
+First public release, available on [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847).
 
 ### Added
 - **Core runtime:** persistent per-save system and global cross-save service, logging,
@@ -72,4 +74,4 @@ This project follows [Semantic Versioning](https://semver.org/).
 - The systems that touch NPCs now leave companions, vendors, and anyone in a scripted
   scene or workspot alone, on top of the existing hands-off rule for quest characters.
 
-_Cyberbane is in active development and has not had a public release yet._
+_Built for Cyberpunk 2077 v2.31. Cyberbane is in active development, so expect frequent updates._
