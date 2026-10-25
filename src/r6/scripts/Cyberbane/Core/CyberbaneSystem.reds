@@ -45,6 +45,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_playerAttachCbId: Uint32;
   private let m_tickCount: Int32;             // monotonic ~1/second, for encounter timing
   private let m_encounter: ref<CBEncounter>;  // active combat episode
+  private let m_hud: ref<CBHud>;              // the F7 reputation Hub (spec §12.1)
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -84,6 +85,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !this.m_sessionStarted {
       this.m_sessionStarted = true;
       GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/Attached", this, n"OnCBEntityAttached");
+      GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnCBKeyInput");
       let des = GameInstance.GetDynamicEntitySystem();
       if IsDefined(des) {
         des.DeleteTagged(n"Cyberbane");
@@ -107,6 +109,36 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(puppet) {
       this.m_registry.Add(puppet);
     }
+  }
+
+  // Hub toggle (spec §12.1). Fires on key release so a tap advances exactly one tab.
+  private cb func OnCBKeyInput(event: ref<KeyInputEvent>) -> Void {
+    if !Equals(event.GetAction(), EInputAction.IACT_Release) {
+      return;
+    }
+    if !Equals(event.GetKey(), this.GetHubKey()) {
+      return;
+    }
+    if !IsDefined(this.m_hud) {
+      this.m_hud = new CBHud();
+    }
+    // Don't pop the Hub open mid-fight, but always allow closing it.
+    let game = this.GetGameInstance();
+    if !this.m_hud.IsOpen() {
+      let player = GetPlayer(game);
+      if IsDefined(player) && player.IsInCombat() {
+        return;
+      }
+    }
+    this.m_hud.Advance(this, game);
+  }
+
+  private func GetHubKey() -> EInputKey {
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) && rt.HasSettings() {
+      return rt.GetSettings().hubKey;
+    }
+    return EInputKey.IK_F7;
   }
 
   private func ScheduleFastTick() -> Void {

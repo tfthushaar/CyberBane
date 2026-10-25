@@ -36,8 +36,9 @@ This page describes what the mod does and how it installs.
   Fixers add a bonus to gig payouts as your legend grows.
 - **Titles and a history log.** Earn titles such as Butcher of Watson, Chrome Saint, or the top
   title Cyberbane, and review everything you have done in a timeline.
-- **The Hub.** One screen, opened with F7 by default, shows your reputation, the factions,
-  the districts, your rivals, your titles, and the log.
+- **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable). Each
+  press steps through tabs for your reputation, the factions, your rivals, your titles, and the
+  log; the press after the last tab closes it.
 
 Cyberbane works anywhere in the open world. It adds no hand-placed scenes, and it is built to
 leave quests, companions, romances and your saves alone.

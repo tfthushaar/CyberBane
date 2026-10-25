@@ -30,6 +30,10 @@ This project follows [Semantic Versioning](https://semver.org/).
   you extra. The swing is capped, set in Mod Settings, and only ever touches what you pay.
 - **Tribute:** a gang you have made feared, but not yet pushed into open war, may quietly pay
   you eddies to stay on their good side. Pay enough gangs and you earn the Feared Landlord title.
+- **The Hub:** a reputation screen in Cyberpunk's own style, opened with the Hub key (F7 by
+  default, rebindable in Mod Settings). Each press steps through tabs for your standing (Renown,
+  Dread, Code, Street Cred, and what the city fears you for), factions, rivals, titles, and a log
+  of what you have done; the press after the last tab closes it. No menu and no mouse needed.
 - **Rivals:** named, persistent enemies that rank up, carry traits, taunt about your
   history, and remember your deaths across saves. They climb the ranks on their own when
   ignored, and slaying one can raise an avenger from the same crew.
