@@ -82,6 +82,10 @@ public class CBReactionDirector {
           // Recognition, rolled once per spawn and cached on the puppet (spec §8.7).
           if npc.cbRecoState == 0 {
             let p = score.RecognitionChance(district, faction, false, false);
+            // Wearing this gang's colours makes them slower to place you (spec §9.3).
+            if NotEquals(faction, n"") && Equals(faction, sys.GetDisguiseFaction()) {
+              p *= (1.0 - sys.GetDisguiseStrength());
+            }
             npc.cbRecoState = RandF() <= p ? 1 : 2;
           }
           let recognized = npc.cbRecoState == 1;

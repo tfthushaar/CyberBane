@@ -46,6 +46,12 @@ This project follows [Semantic Versioning](https://semver.org/).
   reputation builds locally before it goes city-wide.
 - **Deeds & factions:** notable jobs shift Renown, Dread, faction standing and titles.
 
+- **Gig payouts scale with your legend:** fixers and clients pay the famous more. Sizable job
+  payouts get a bonus on top that grows with your Renown tier.
+- **Panic driving:** when you are terrifying and fighting out in the open, nearby drivers panic
+  and clear the street.
+- **Disguise:** masks and hoods make you harder to place, and dressing in a gang's colours makes
+  that gang slower to recognize you. (The clothing data this reads from is tuned over time.)
 - **Broker peace:** pay a gang you can buy off to drop a hostility or vendetta. The price
   scales with how much blood is between you. From the Hub, hold Shift and press the Hub key to
   buy off the worst gang you can afford; mods can also trigger it through the public API.

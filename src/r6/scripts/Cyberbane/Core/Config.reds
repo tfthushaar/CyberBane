@@ -105,6 +105,12 @@ public abstract class CBConfig {
   public static func VendorMaxDiscount() -> Float = 0.20
   public static func VendorMaxSurcharge() -> Float = 0.15
 
+  // ---- Gig payout bonus (spec §9.7) ------------------------------------
+  // Only payouts at or above this many eddies are treated as job money (not loot).
+  public static func GigBonusMinPayout() -> Int32 = 400
+  // Max fraction added on top of a job payout at the Legend tier.
+  public static func GigBonusMaxFraction() -> Float = 0.20
+
   // ---- Tribute (spec §9.8) ---------------------------------------------
   public static func TributeChance() -> Float = 0.25
   public static func TributeCooldownDays() -> Float = 7.0

@@ -46,6 +46,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_tickCount: Int32;             // monotonic ~1/second, for encounter timing
   private let m_encounter: ref<CBEncounter>;  // active combat episode
   private let m_hud: ref<CBHud>;              // the F7 reputation Hub (spec §12.1)
+  private let m_disguiseFaction: CName;       // gang whose colours V is wearing (spec §9.3)
+  private let m_disguiseStrength: Float;      // 0..1, how well the disguise reads
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -183,8 +185,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRefreshLiveInputs(this, game);
     if this.m_tickCount % 10 == 0 {
       CBUpdateChrome(this, game);
+      CBUpdateLook(this, game);
     }
     CBEncounterTick(this, game);
+    CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) {
       this.m_director.Tick(game);
@@ -491,6 +495,18 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetCooldowns() -> ref<CBCooldowns> {
     return this.m_cooldowns;
+  }
+
+  // Faction-colour disguise (spec §9.3), refreshed by the Look signal.
+  public func SetDisguise(faction: CName, strength: Float) -> Void {
+    this.m_disguiseFaction = faction;
+    this.m_disguiseStrength = strength;
+  }
+  public func GetDisguiseFaction() -> CName {
+    return this.m_disguiseFaction;
+  }
+  public func GetDisguiseStrength() -> Float {
+    return this.m_disguiseStrength;
   }
 
   // Record a brokered peace (spec §11.3), newest kept within a small cap.
