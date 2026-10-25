@@ -1,4 +1,4 @@
-// Cyberbane — Title registry seed (spec Appendix G)
+// Cyberbane - Title registry seed (spec Appendix G)
 //
 // id, display name, priority (higher wins the auto active title: Cyberbane >
 // Living Legend > faction/district > others), hidden (shown as ??? until earned).

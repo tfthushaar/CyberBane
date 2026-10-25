@@ -1,6 +1,6 @@
-// Cyberbane — Tribute (spec §9.8)
+// Cyberbane - Tribute (spec §9.8)
 //
-// A gang you have made feared — but not yet pushed into open war — may quietly pay you
+// A gang you have made feared - but not yet pushed into open war - may quietly pay you
 // to stay on their good side. Once per in-game day each eligible gang rolls a chance to
 // send eddies; paying nudges its standing back up a little and counts toward the Feared
 // Landlord title. Corps and the NCPD never pay tribute.

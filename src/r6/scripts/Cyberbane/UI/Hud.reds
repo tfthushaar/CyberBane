@@ -1,9 +1,9 @@
-// Cyberbane — The Hub (spec §12.1)
+// Cyberbane - The Hub (spec §12.1)
 //
 // A native-styled reputation readout drawn straight onto the gameplay HUD layer and
 // toggled with the Hub key (F7 by default, rebindable in Mod Settings). It needs no
-// menu or mouse: each press of the key steps through the tabs — Legend, Factions,
-// Rivals, Titles, Legend Log — and the press after the last tab closes it. Because it
+// menu or mouse: each press of the key steps through the tabs - Legend, Factions,
+// Rivals, Titles, Legend Log - and the press after the last tab closes it. Because it
 // never takes input focus it is safe to open any time you are not mid-combat, and it
 // reads live data from CyberbaneSystem each time it is shown.
 //

@@ -1,4 +1,4 @@
-// Cyberbane — Chrome signal (spec §7.3)
+// Cyberbane - Chrome signal (spec §7.3)
 //
 // Reads V's equipped cyberware and Humanity to compute Chrome (C) and visible
 // Chrome (C_visible), then pushes them to the score engine. All APIs here are

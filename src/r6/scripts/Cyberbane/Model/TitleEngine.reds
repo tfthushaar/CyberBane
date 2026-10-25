@@ -1,4 +1,4 @@
-// Cyberbane — Title engine (spec Appendix G)
+// Cyberbane - Title engine (spec Appendix G)
 //
 // Evaluated on the slow tick. Each title's condition is checked in code against
 // the current score, stats and faction/district state. Unlocking grants Renown

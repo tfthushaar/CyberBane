@@ -1,4 +1,4 @@
-// Cyberbane — Dynamic spawning (spec §9.9, §10; spike S-08)
+// Cyberbane - Dynamic spawning (spec §9.9, §10; spike S-08)
 //
 // A thin wrapper over DynamicEntitySystem to drop tagged, non-persistent NPCs into the
 // world near V. Spawn points are computed behind V and out of the forward view; navmesh

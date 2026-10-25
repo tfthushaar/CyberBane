@@ -1,4 +1,4 @@
-// Cyberbane — Combat morale (spec §9.4)
+// Cyberbane - Combat morale (spec §9.4)
 //
 // When V kills an NPC, nearby surviving squad-mates take a morale hit. If a survivor's
 // morale falls below the break threshold it panics: a Terror stim broadcast from that

@@ -1,4 +1,4 @@
-// Cyberbane — Rival name pools & epithets (spec Appendix I)
+// Cyberbane - Rival name pools & epithets (spec Appendix I)
 //
 // Names are stored on a Rival as integer indices into these pools (no String in
 // persistent fields). Handle-only factions have no surnames. ASCII only, so the

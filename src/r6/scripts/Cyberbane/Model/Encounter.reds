@@ -1,4 +1,4 @@
-// Cyberbane — Encounter tracker (spec §7.1.3)
+// Cyberbane - Encounter tracker (spec §7.1.3)
 //
 // Groups kills into combat episodes and, on resolve, awards the encounter-level
 // flags and bonuses (spec §8.1/§8.2). An episode starts on V's first kill, and

@@ -1,4 +1,4 @@
-// Cyberbane — Combat signals (spec §7.1)
+// Cyberbane - Combat signals (spec §7.1)
 //
 // Thin hooks on ScriptedPuppet: OnHit records whether V dealt the damage and by
 // what method; OnDeath classifies the victim and applies the kill to the model.
@@ -15,7 +15,7 @@ public let cbDamagedByPlayer: Bool;
 @addField(ScriptedPuppet)
 public let cbLastAttackType: gamedataAttackType;
 
-// The last NPC to damage this puppet — read on the player to attribute V's death.
+// The last NPC to damage this puppet - read on the player to attribute V's death.
 @addField(ScriptedPuppet)
 public let cbLastAttacker: wref<ScriptedPuppet>;
 

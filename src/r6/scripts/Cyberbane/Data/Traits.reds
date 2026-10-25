@@ -1,4 +1,4 @@
-// Cyberbane — Rival traits & weaknesses (spec §10.5)
+// Cyberbane - Rival traits & weaknesses (spec §10.5)
 //
 // Registry metadata (id + display + isWeakness). The concrete stat effects
 // (Tough +30% health, Armored +20 armor, etc.) are applied on spawn by the Rival

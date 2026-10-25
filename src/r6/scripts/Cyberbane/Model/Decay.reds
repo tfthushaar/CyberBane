@@ -1,4 +1,4 @@
-// Cyberbane — Decay (spec §8.9)
+// Cyberbane - Decay (spec §8.9)
 //
 // Applied on the slow tick (each in-game hour) with the fraction of an in-game
 // day that elapsed. Pure: operates on the stored accumulators and faction/district

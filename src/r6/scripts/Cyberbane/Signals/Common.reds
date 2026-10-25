@@ -1,4 +1,4 @@
-// Cyberbane — Signal helpers (spec §7.5, §7.8)
+// Cyberbane - Signal helpers (spec §7.5, §7.8)
 //
 // Small shared helpers for the signal hooks. All signatures compile-verified
 // against Cyberpunk 2077 2.31.

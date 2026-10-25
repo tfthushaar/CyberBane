@@ -1,4 +1,4 @@
-// Cyberbane — Public add-on API (spec §14)
+// Cyberbane - Public add-on API (spec §14)
 //
 // Stable surface for third-party mods to extend the content registries and to
 // read Cyberbane's live reputation values. Content registration goes through the

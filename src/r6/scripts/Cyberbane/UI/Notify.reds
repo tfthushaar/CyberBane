@@ -1,4 +1,4 @@
-// Cyberbane — On-screen messages (spec §12.2)
+// Cyberbane - On-screen messages (spec §12.2)
 //
 // Minimal notification helper using the game's UI_Notifications blackboard
 // (the centre-screen message channel). This is the interim presenter for toasts

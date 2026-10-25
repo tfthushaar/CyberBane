@@ -1,9 +1,9 @@
-// Cyberbane — Safety Gate (spec §16)
+// Cyberbane - Safety Gate (spec §16)
 //
 // Single authority on whether an NPC may be affected by Cyberbane. This is the
 // first-pass gate; the full quest/companion/scene/workspot/braindance checks are
 // spike S-13 and are layered in as those detections are verified. When in doubt,
-// return false (do nothing) — that is the safe default the whole spec is built on.
+// return false (do nothing) - that is the safe default the whole spec is built on.
 
 public abstract class CBSafetyGate {
   public static func CanAffect(puppet: ref<ScriptedPuppet>) -> Bool {

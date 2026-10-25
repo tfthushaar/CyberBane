@@ -1,8 +1,8 @@
-// Cyberbane — Persistent data classes (spec §6.2)
+// Cyberbane - Persistent data classes (spec §6.2)
 //
 // These are stored inside CyberbaneSystem's persistent arrays. Every field is
 // `persistent` so the ref<Class> instances serialise with the save. No String,
-// ResRef or Variant fields are allowed — text is stored as CName or as integer
+// ResRef or Variant fields are allowed - text is stored as CName or as integer
 // indices into localized pools (spec §6.1).
 
 public class CBFactionState {

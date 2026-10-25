@@ -1,4 +1,4 @@
-// Cyberbane — Scoring math (spec §8)
+// Cyberbane - Scoring math (spec §8)
 //
 // Pure, stateless functions. Every input is a primitive and every output is
 // derived with no game calls, so this layer is deterministic and fully testable

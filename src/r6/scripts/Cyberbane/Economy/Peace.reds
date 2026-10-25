@@ -1,4 +1,4 @@
-// Cyberbane — Broker peace & compatibility backoff (spec §11.3, §17)
+// Cyberbane - Broker peace & compatibility backoff (spec §11.3, §17)
 //
 // Broker peace: pay a gang you can buy off to drop a hostility or vendetta. It costs
 // eddies scaled by how much blood is between you, pulls their standing back out of the
@@ -6,8 +6,8 @@
 // public API.
 //
 // Compatibility: when They Will Remember compatibility is on (or auto-detected), Cyberbane
-// stands down from the systems that overlap — hostile-on-sight, hit squads and faction
-// disguises — and leaves the rest running (spec §17).
+// stands down from the systems that overlap - hostile-on-sight, hit squads and faction
+// disguises - and leaves the rest running (spec §17).
 
 public func CBTwrActive() -> Bool {
   let rt = CyberbaneRuntime.Get();

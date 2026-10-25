@@ -1,4 +1,4 @@
-// Cyberbane — Implant registry seed (spec Appendix D)
+// Cyberbane - Implant registry seed (spec Appendix D)
 //
 // Scores feed the Chrome (C) computation (spec §7.3). `family` keys are matched
 // to cyberware records in spike S-11; the names below are stable identifiers.

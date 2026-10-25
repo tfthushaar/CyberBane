@@ -1,4 +1,4 @@
-// Cyberbane — Deed catalogue seed (spec Appendix F)
+// Cyberbane - Deed catalogue seed (spec Appendix F)
 //
 // requiredState: 0 = Succeeded, 1 = Failed, 2 = Any-finished. Journal paths and
 // outcome facts are filled in during spike S-02; the deed effects (Renown, Dread,

@@ -1,4 +1,4 @@
-// Cyberbane — Tunable constants (spec §8, Appendix A)
+// Cyberbane - Tunable constants (spec §8, Appendix A)
 //
 // Every gameplay-tuning number lives here so balance passes touch one file.
 // Values that the player can scale (gain, decay, frequency, intensity) are

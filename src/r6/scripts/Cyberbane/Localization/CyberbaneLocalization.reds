@@ -1,4 +1,4 @@
-// Cyberbane — Localization (spec §15), via Codeware localization.
+// Cyberbane - Localization (spec §15), via Codeware localization.
 //
 // This file carries a module header so it can import Codeware's localization
 // types. The provider registers itself automatically (ModLocalizationProvider

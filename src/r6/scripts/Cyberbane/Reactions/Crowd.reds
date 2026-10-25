@@ -1,7 +1,7 @@
-// Cyberbane — Civilian crowd reactions (spec §9.2)
+// Cyberbane - Civilian crowd reactions (spec §9.2)
 //
 // Pedestrians read V's civilian-perceived Dread (D_civ). The more frightening V is, the
-// closer a civilian has to be before it reacts — from cowering up close at the Afraid
+// closer a civilian has to be before it reacts - from cowering up close at the Afraid
 // tier to fleeing on sight at the Terror tier, where the panic also spreads through the
 // crowd. Reactions use the game's own fear behaviour, driven by a Terror stim broadcast
 // from the civilian, so nothing here is permanent or needs custom audio. The Director

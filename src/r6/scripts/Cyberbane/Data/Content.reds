@@ -1,4 +1,4 @@
-// Cyberbane — Content registries (spec §14)
+// Cyberbane - Content registries (spec §14)
 //
 // Content lives in redscript (compile-checked, no extra dependency). The tables
 // are seeded once into the CyberbaneContent service and can be extended by

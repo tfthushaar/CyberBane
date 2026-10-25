@@ -1,4 +1,4 @@
-// Cyberbane — Hit squads (spec §9.9)
+// Cyberbane - Hit squads (spec §9.9)
 //
 // A gang you have turned hostile can send a squad after you. Checked on the slow tick:
 // eligible gangs (hostile or worse, known enough, off cooldown) roll a small chance that
@@ -90,7 +90,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
 
   let spawned = CBSpawnGroup(game, fs.sampleRecord, n"", size, n"CB_Squad");
   if spawned <= 0 {
-    return;   // nothing queued (e.g. no valid record) — don't start the cooldown
+    return;   // nothing queued (e.g. no valid record) - don't start the cooldown
   }
 
   fs.lastHitSquadAt = now;

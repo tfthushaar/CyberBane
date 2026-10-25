@@ -1,4 +1,4 @@
-// Cyberbane — Score engine (spec §8, stateful)
+// Cyberbane - Score engine (spec §8, stateful)
 //
 // Binds the per-save accumulators (CyberbaneSystem) and the content registries to
 // the pure ScoreMath functions, caches the derived headline values, and exposes

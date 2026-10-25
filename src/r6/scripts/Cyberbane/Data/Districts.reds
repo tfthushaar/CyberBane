@@ -1,4 +1,4 @@
-// Cyberbane — District registry seed (spec Appendix C)
+// Cyberbane - District registry seed (spec Appendix C)
 //
 // Adjacency drives rumor spread (spec §8.5). Values are approximate and meant
 // to be tuned in playtest. District ids are matched to the game's districts in

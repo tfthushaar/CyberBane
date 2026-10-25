@@ -1,4 +1,4 @@
-// Cyberbane — NPC registry (spec §9.1)
+// Cyberbane - NPC registry (spec §9.1)
 //
 // Holds weak references to attached NPC puppets, populated by the Entity/Attached
 // Codeware callback. Despawned puppets' weak refs go undefined and are dropped by

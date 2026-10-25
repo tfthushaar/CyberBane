@@ -1,4 +1,4 @@
-// Cyberbane — Logging (spec §20)
+// Cyberbane - Logging (spec §20)
 //
 // All logging goes through CBLog so the underlying call site is isolated in one
 // place. If the game's log function name/signature needs adjusting after a compile

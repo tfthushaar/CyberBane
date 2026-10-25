@@ -1,4 +1,4 @@
-// Cyberbane — Deed application (spec §7.2)
+// Cyberbane - Deed application (spec §7.2)
 //
 // Applies a completed deed's effects: Renown, deed-Dread, faction standing/renown,
 // deed-gated titles, a rumor and a Legend Log entry. The journal signal (S-02)

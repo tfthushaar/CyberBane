@@ -10,8 +10,8 @@ This project follows [Semantic Versioning](https://semver.org/).
   tunable config, shared types, the full Mod Settings page, and Codeware localization.
 - **Reputation model:** Renown and Dread with their district/faction spread, archetypes
   (Butcher, Ghost, Professional, Chromed, Netrunner, Brawler), titles, and time decay.
-- **Code axis:** a Night-City-flavoured conduct meter — Professional (clean, controlled
-  work, mercy) versus Mad Dog (civilian kills, brutality) — that shifts how people read you.
+- **Code axis:** a Night-City-flavoured conduct meter - Professional (clean, controlled
+  work, mercy) versus Mad Dog (civilian kills, brutality) - that shifts how people read you.
 - **Combat tracking:** kills attributed to you and classified by faction and class; an
   encounter tracker that flags massacres and boss-downs; Street Cred, police Heat and
   chrome (cyberware) all feed the model.

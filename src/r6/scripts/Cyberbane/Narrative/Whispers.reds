@@ -1,4 +1,4 @@
-// Cyberbane — Whispers (spec §9.10)
+// Cyberbane - Whispers (spec §9.10)
 //
 // Text-only overheard lines shown when a recognized NPC is near and V is notable.
 // Seed set of English lines; the full (speaker, mood, tier, topic) pool from

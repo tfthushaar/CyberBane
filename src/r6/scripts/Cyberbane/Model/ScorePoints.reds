@@ -1,4 +1,4 @@
-// Cyberbane — Per-event point tables & archetype selection (spec §8.1–§8.4)
+// Cyberbane - Per-event point tables & archetype selection (spec §8.1 - §8.4)
 //
 // Pure functions. The Signals/Model layers call these to turn a classified
 // event into point deltas. Unwitnessed multipliers are applied by the caller

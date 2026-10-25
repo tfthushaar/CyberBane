@@ -1,4 +1,4 @@
-// Cyberbane — Rival encounters (spec §10, §9.9; spike S-08)
+// Cyberbane - Rival encounters (spec §10, §9.9; spike S-08)
 //
 // A Rival who is hunting you can actually turn up. On the slow tick, if one of your
 // hunting Rivals is off cooldown and you are not already fighting, there is a chance it

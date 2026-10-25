@@ -1,4 +1,4 @@
-// Cyberbane — Settings (spec §13), via Mod Settings.
+// Cyberbane - Settings (spec §13), via Mod Settings.
 //
 // Mod Settings discovers this class by reflection (any field carrying the
 // "ModSettings.mod" runtimeProperty). An instance is created and registered each

@@ -1,4 +1,4 @@
-// Cyberbane — Reputation updates from classified events (spec §8)
+// Cyberbane - Reputation updates from classified events (spec §8)
 //
 // The Signals layer classifies a game event into a CBKillInfo and calls
 // CBApplyKill. This file holds no game calls: it maps a classified kill/defeat to
@@ -58,7 +58,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   let dreadWitness = info.witnessed ? 1.0 : CBConfig.UnwitnessedDreadMult();
   let standingWitness = info.witnessed ? 1.0 : 0.25;
 
-  // Renown — cyberpsycho and Rival kills are scored by their own paths.
+  // Renown - cyberpsycho and Rival kills are scored by their own paths.
   if info.victimClass != EnumInt(ECBVictimClass.Cyberpsycho) && info.victimClass != EnumInt(ECBVictimClass.Rival) {
     sys.AddRenownPoints(CBRenownForKill(info.victimClass) * renownWitness * renownMult);
   }

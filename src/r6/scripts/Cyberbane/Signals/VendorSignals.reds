@@ -1,4 +1,4 @@
-// Cyberbane — Vendor pricing (spec §9.6)
+// Cyberbane - Vendor pricing (spec §9.6)
 //
 // Night City charges the famous and the feared differently. This wraps the game's
 // buy-price function and nudges the result by V's reputation: the more the city dreads

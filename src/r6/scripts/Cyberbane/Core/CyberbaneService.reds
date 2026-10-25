@@ -1,4 +1,4 @@
-// Cyberbane — Global service (spec §6.3)
+// Cyberbane - Global service (spec §6.3)
 //
 // Codeware ScriptableService. Persistent fields are stored globally (shared by
 // all saves), which is what the Death Ledger needs so a killer can become a

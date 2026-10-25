@@ -1,4 +1,4 @@
-// Cyberbane — Rival system (spec §10)
+// Cyberbane - Rival system (spec §10)
 //
 // Named, persistent recurring enemies. This file owns the data lifecycle:
 // creation (with caps), deterministic naming, traits, history, promotion and the

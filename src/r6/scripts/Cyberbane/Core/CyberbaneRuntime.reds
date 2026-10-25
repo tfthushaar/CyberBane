@@ -1,4 +1,4 @@
-// Cyberbane — Runtime service (non-persistent global flags)
+// Cyberbane - Runtime service (non-persistent global flags)
 //
 // Codeware ScriptableService. Holds session-only runtime state that must be
 // reachable without a GameInstance (the service container accessor is static),

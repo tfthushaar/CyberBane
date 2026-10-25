@@ -1,4 +1,4 @@
-// Cyberbane — Death Ledger (spec §10.8)
+// Cyberbane - Death Ledger (spec §10.8)
 //
 // When V dies the game reloads an earlier save, so per-save state rolls back and a
 // "Killer" Rival would never exist. The ledger lives in the global service, so a

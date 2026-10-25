@@ -1,4 +1,4 @@
-// Cyberbane — Look registry seed (spec Appendix E)
+// Cyberbane - Look registry seed (spec Appendix E)
 //
 // Feeds the Look (L) and Disguise (Dg) computations (spec §7.4). Tags are visual
 // tags (GetVisualTags) resolved in spike S-10; gang-specific clothing is added as

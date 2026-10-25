@@ -1,4 +1,4 @@
-// Cyberbane — Faction registry seed (spec Appendix B)
+// Cyberbane - Faction registry seed (spec Appendix B)
 //
 // Flavour values to tune in playtest. `affiliations` (the game's gamedataAffiliation
 // record names that map to each faction) are filled in during spike S-01; the

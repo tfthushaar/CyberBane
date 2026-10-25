@@ -1,4 +1,4 @@
-// Cyberbane — Reaction Director (spec §9.1)
+// Cyberbane - Reaction Director (spec §9.1)
 //
 // Runs on the fast tick: prunes the registry, then evaluates up to NpcEvalPerTick
 // nearby NPCs. For each it runs the Safety Gate, a per-spawn recognition roll, and

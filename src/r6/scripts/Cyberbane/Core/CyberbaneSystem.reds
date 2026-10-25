@@ -1,4 +1,4 @@
-// Cyberbane — Per-save system (spec §6.2, §5.3)
+// Cyberbane - Per-save system (spec §6.2, §5.3)
 //
 // The ScriptableSystem owns all per-save state and is the entry point for the
 // rest of the mod. It is fetched with CyberbaneSystem.Get(game).

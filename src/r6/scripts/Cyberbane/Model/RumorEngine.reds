@@ -1,4 +1,4 @@
-// Cyberbane — Rumor engine (spec §8.5)
+// Cyberbane - Rumor engine (spec §8.5)
 //
 // Notable events create a rumor in their origin district, which raises District
 // Renown there and then spreads to adjacent districts on the slow tick (every 6

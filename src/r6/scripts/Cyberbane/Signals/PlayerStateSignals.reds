@@ -1,4 +1,4 @@
-// Cyberbane — Player-state signals (spec §7.5, §7.6)
+// Cyberbane - Player-state signals (spec §7.5, §7.6)
 //
 // Refreshes the live inputs the score engine needs each fast tick: Street Cred
 // (Renown floor) and police Heat. Chrome and Look are pushed in by their own

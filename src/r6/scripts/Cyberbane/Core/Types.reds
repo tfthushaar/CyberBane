@@ -1,4 +1,4 @@
-// Cyberbane — Shared enums (spec §6.4)
+// Cyberbane - Shared enums (spec §6.4)
 //
 // Enums are prefixed ECB. Integer values are stable and part of the persistent
 // schema: never renumber an existing value; only append new ones.
@@ -91,7 +91,7 @@ enum ECBPosture {
   Vendetta = 4,
 }
 
-// Archetype accumulator count — keep in sync with ECBArchetype.
+// Archetype accumulator count - keep in sync with ECBArchetype.
 public func CBArchetypeCount() -> Int32 = 6
 public func CBVictimClassCount() -> Int32 = 10
 public func CBKillMethodCount() -> Int32 = 11
