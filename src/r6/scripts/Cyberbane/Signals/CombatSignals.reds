@@ -15,6 +15,10 @@ public let cbDamagedByPlayer: Bool;
 @addField(ScriptedPuppet)
 public let cbLastAttackType: gamedataAttackType;
 
+// The last NPC to damage this puppet — read on the player to attribute V's death.
+@addField(ScriptedPuppet)
+public let cbLastAttacker: wref<ScriptedPuppet>;
+
 @wrapMethod(ScriptedPuppet)
 protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   let result = wrappedMethod(evt);
@@ -47,7 +51,8 @@ func CBOnPlayerDeath(player: ref<PlayerPuppet>) -> Void {
   if IsDefined(stats) {
     stats.deaths += 1;
   }
-  CBLog.Info(n"Signals", "Player died; Death Ledger and Rivals land in M5.");
+  CBWriteDeathLedger(sys, player.GetGame(), player);
+  CBLog.Info(n"Signals", "Player died; Death Ledger updated.");
 }
 
 func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void {
@@ -58,6 +63,11 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   if IsDefined(instigator) && instigator.IsPlayer() {
     puppet.cbDamagedByPlayer = true;
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
+  }
+  // Record the attacker on the target so V's killer is known at death time.
+  let attacker = instigator as ScriptedPuppet;
+  if IsDefined(attacker) && !attacker.IsPlayer() {
+    puppet.cbLastAttacker = attacker;
   }
 }
 
@@ -115,6 +125,24 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       if info.victimClass == EnumInt(ECBVictimClass.MaxTac) {
         CBShowMessage(game, "Cyberbane: MaxTac operative down. They will not forget.", 4.0);
       }
+    }
+  }
+
+  // Boss kills spread across districts as rumors (spec §8.5).
+  if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Boss) {
+    CBCreateRumor(sys, game, n"BossKill", 15.0, info.district, info.faction, info.witnessed);
+  }
+
+  // Avenger Rival (spec §10.2): killing an Officer or Boss can summon an avenger
+  // from that faction who hunts V.
+  if info.lethal && NotEquals(info.faction, n"")
+     && (info.victimClass == EnumInt(ECBVictimClass.Boss) || info.victimClass == EnumInt(ECBVictimClass.Officer)) {
+    let freq = 1.0;
+    if IsDefined(rt) && rt.HasSettings() {
+      freq = rt.GetSettings().rivalFrequencyMult;
+    }
+    if RandF() < CBConfig.RivalChanceAvenger() * freq {
+      CBCreateRival(sys, game, info.faction, info.recordID, n"", ECBRivalSource.Avenger, info.district, info.at);
     }
   }
 }

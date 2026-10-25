@@ -27,7 +27,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_activeTitle: CName;            // n"" = auto
   private persistent let m_stats: ref<CBStats>;
   private persistent let m_rumors: array<ref<CBRumor>>;           // cap 64
+  private persistent let m_nextRumorId: Int32;
   private persistent let m_rivals: array<ref<CBRival>>;           // cap 15 active + 32 archived
+  private persistent let m_nextRivalId: Int32;
   private persistent let m_log: array<ref<CBLogEntry>>;           // cap 200, FIFO
   private persistent let m_appliedLedgerIds: array<Int32>;        // cap 100
   private persistent let m_cooldowns: ref<CBCooldowns>;
@@ -85,6 +87,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       if IsDefined(des) {
         des.DeleteTagged(n"Cyberbane");
       }
+      // Apply any deaths recorded in the global ledger for this playthrough.
+      CBApplyDeathLedger(this, this.GetGameInstance());
     }
     // Bump the generation so any stale tick chain stops, then start a fresh one.
     this.m_tickGeneration += 1;
@@ -164,6 +168,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     let game = this.GetGameInstance();
     CBApplyDecay(this, elapsedDays);
     CBEvaluateTitles(this, game);
+    CBRumorTick(this, game);
     CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
 
@@ -212,6 +217,101 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
     }
     return best;
+  }
+
+  // ---- Legend Log (spec §6.5) -------------------------------------------
+  public func AddLogEntry(entry: ref<CBLogEntry>) -> Void {
+    if !IsDefined(entry) {
+      return;
+    }
+    ArrayPush(this.m_log, entry);
+    while ArraySize(this.m_log) > CBConfig.CapLog() {
+      ArrayErase(this.m_log, 0);
+    }
+  }
+
+  public func GetLog() -> array<ref<CBLogEntry>> {
+    return this.m_log;
+  }
+
+  // ---- Rivals (spec §10) ------------------------------------------------
+  public func AllocateRivalId() -> Int32 {
+    let id = this.m_nextRivalId;
+    this.m_nextRivalId += 1;
+    return id;
+  }
+
+  public func GetRivals() -> array<ref<CBRival>> {
+    return this.m_rivals;
+  }
+
+  public func AddRival(rival: ref<CBRival>) -> Void {
+    if IsDefined(rival) {
+      ArrayPush(this.m_rivals, rival);
+    }
+  }
+
+  public func FindRivalById(id: Int32) -> ref<CBRival> {
+    for r in this.m_rivals {
+      if r.id == id {
+        return r;
+      }
+    }
+    return null;
+  }
+
+  public func CountActiveRivals() -> Int32 {
+    let n = 0;
+    for r in this.m_rivals {
+      if r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting) {
+        n += 1;
+      }
+    }
+    return n;
+  }
+
+  public func CountActiveFactionRivals(faction: CName) -> Int32 {
+    let n = 0;
+    for r in this.m_rivals {
+      if Equals(r.faction, faction) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+        n += 1;
+      }
+    }
+    return n;
+  }
+
+  // ---- Rumors (spec §8.5) -----------------------------------------------
+  public func AllocateRumorId() -> Int32 {
+    let id = this.m_nextRumorId;
+    this.m_nextRumorId += 1;
+    return id;
+  }
+  public func GetRumors() -> array<ref<CBRumor>> {
+    return this.m_rumors;
+  }
+  public func AddRumor(rumor: ref<CBRumor>) -> Void {
+    if IsDefined(rumor) {
+      ArrayPush(this.m_rumors, rumor);
+    }
+  }
+  public func RemoveRumorAt(index: Int32) -> Void {
+    if index >= 0 && index < ArraySize(this.m_rumors) {
+      ArrayErase(this.m_rumors, index);
+    }
+  }
+
+  // ---- Death Ledger application tracking (spec §10.8) -------------------
+  public func HasAppliedLedgerId(id: Int32) -> Bool {
+    return ArrayContains(this.m_appliedLedgerIds, id);
+  }
+
+  public func MarkAppliedLedgerId(id: Int32) -> Void {
+    if !ArrayContains(this.m_appliedLedgerIds, id) {
+      ArrayPush(this.m_appliedLedgerIds, id);
+      while ArraySize(this.m_appliedLedgerIds) > CBConfig.CapAppliedLedgerIds() {
+        ArrayErase(this.m_appliedLedgerIds, 0);
+      }
+    }
   }
 
   // Create and register the settings instance once per session, stored on the

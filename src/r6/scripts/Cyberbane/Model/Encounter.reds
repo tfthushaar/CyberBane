@@ -87,6 +87,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     if toasts {
       CBShowMessage(game, "Cyberbane: Massacre. The streets will talk about this.", 4.0);
     }
+    CBCreateRumor(sys, game, n"Massacre", 8.0, CBCurrentDistrict(game), n"", true);
     CBLog.Info(n"Model", s"Massacre resolved (\(enc.kills) kills).");
   }
 

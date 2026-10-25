@@ -21,3 +21,6 @@ desktop.ini
 *.redscripts.bk
 *.redscripts.ts
 r6/cache/
+
+# Local showcase video (never committed)
+/brag-output/

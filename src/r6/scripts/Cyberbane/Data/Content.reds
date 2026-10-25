@@ -92,6 +92,31 @@ public class CBTitleDef {
   public let hidden: Bool;         // shown as ??? until unlocked
 }
 
+// Rival name pools (spec Appendix I). Handle-only factions leave lastNames empty.
+public class CBFactionNames {
+  public let faction: CName;
+  public let firstNames: array<String>;
+  public let lastNames: array<String>;
+}
+
+// Epithets by Rival source (spec Appendix I). `promotion` is used on rank-up.
+public class CBEpithets {
+  public let survivor: array<String>;
+  public let spared: array<String>;
+  public let killer: array<String>;
+  public let avenger: array<String>;
+  public let hunter: array<String>;
+  public let promotion: array<String>;
+}
+
+// Rival traits and weaknesses (spec §10.5). Stat effects are applied on spawn by
+// the Rival spawner (keyed by id); this holds the registry metadata.
+public class CBTraitDef {
+  public let id: CName;
+  public let display: String;
+  public let isWeakness: Bool;
+}
+
 // ---- Content service ------------------------------------------------------
 
 public class CyberbaneContent extends ScriptableService {
@@ -102,6 +127,9 @@ public class CyberbaneContent extends ScriptableService {
   private let m_lookItems: array<ref<CBLookItemDef>>;
   private let m_customizations: array<ref<CBCustomizationDef>>;
   private let m_titles: array<ref<CBTitleDef>>;
+  private let m_factionNames: array<ref<CBFactionNames>>;
+  private let m_epithets: ref<CBEpithets>;
+  private let m_traits: array<ref<CBTraitDef>>;
   private let m_built: Bool;
 
   public static func Get() -> ref<CyberbaneContent> {
@@ -122,7 +150,9 @@ public class CyberbaneContent extends ScriptableService {
     CBSeedImplants(this);
     CBSeedLooks(this);
     CBSeedTitles(this);
-    CBLog.Info(n"Model", s"Content built: \(ArraySize(this.m_factions)) factions, \(ArraySize(this.m_districts)) districts, \(ArraySize(this.m_implants)) implants, \(ArraySize(this.m_lookTags)) look tags, \(ArraySize(this.m_titles)) titles.");
+    CBSeedNames(this);
+    CBSeedTraits(this);
+    CBLog.Info(n"Model", s"Content built: \(ArraySize(this.m_factions)) factions, \(ArraySize(this.m_districts)) districts, \(ArraySize(this.m_implants)) implants, \(ArraySize(this.m_lookTags)) look tags, \(ArraySize(this.m_titles)) titles, \(ArraySize(this.m_factionNames)) name pools, \(ArraySize(this.m_traits)) traits.");
   }
 
   // ---- Factions -----------------------------------------------------------
@@ -271,6 +301,50 @@ public class CyberbaneContent extends ScriptableService {
   public func GetTitles() -> array<ref<CBTitleDef>> {
     return this.m_titles;
   }
+
+  // ---- Rival names & epithets (spec Appendix I) ---------------------------
+  public func AddFactionNames(def: ref<CBFactionNames>) -> Void {
+    if IsDefined(def) {
+      ArrayPush(this.m_factionNames, def);
+    }
+  }
+
+  public func GetFactionNames(faction: CName) -> ref<CBFactionNames> {
+    for d in this.m_factionNames {
+      if Equals(d.faction, faction) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  public func SetEpithets(e: ref<CBEpithets>) -> Void {
+    this.m_epithets = e;
+  }
+
+  public func GetEpithets() -> ref<CBEpithets> {
+    return this.m_epithets;
+  }
+
+  // ---- Rival traits (spec §10.5) ------------------------------------------
+  public func AddTrait(def: ref<CBTraitDef>) -> Void {
+    if IsDefined(def) {
+      ArrayPush(this.m_traits, def);
+    }
+  }
+
+  public func GetTrait(id: CName) -> ref<CBTraitDef> {
+    for d in this.m_traits {
+      if Equals(d.id, id) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  public func GetTraits() -> array<ref<CBTraitDef>> {
+    return this.m_traits;
+  }
 }
 
 // ---- Construction helpers (used by the seed files) ------------------------
@@ -335,5 +409,29 @@ public func CBMakeTitle(id: CName, display: String, priority: Int32, hidden: Boo
   d.display = display;
   d.priority = priority;
   d.hidden = hidden;
+  return d;
+}
+
+public func CBMakeFactionNames(faction: CName, firstNames: array<String>, lastNames: array<String>) -> ref<CBFactionNames> {
+  let d = new CBFactionNames();
+  d.faction = faction;
+  d.firstNames = firstNames;
+  d.lastNames = lastNames;
+  return d;
+}
+
+// Handle-only factions (Maelstrom, Animals, Scavengers, Wraiths): no surnames.
+public func CBMakeHandleNames(faction: CName, handles: array<String>) -> ref<CBFactionNames> {
+  let d = new CBFactionNames();
+  d.faction = faction;
+  d.firstNames = handles;
+  return d;
+}
+
+public func CBMakeTrait(id: CName, display: String, isWeakness: Bool) -> ref<CBTraitDef> {
+  let d = new CBTraitDef();
+  d.id = id;
+  d.display = display;
+  d.isWeakness = isWeakness;
   return d;
 }
