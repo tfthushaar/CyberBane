@@ -117,6 +117,40 @@ public class CBTraitDef {
   public let isWeakness: Bool;
 }
 
+// A deed's effect on one faction (spec §7.2.2).
+public class CBDeedFactionEffect {
+  public let faction: CName;
+  public let standingDelta: Float;
+  public let renownDelta: Float;
+}
+
+// A notable quest/gig/hustle outcome (spec §7.2.2, Appendix F). journalPath and
+// the fact condition (S-02) are content-only Strings, applied when the journal
+// signal detects completion.
+public class CBDeedDef {
+  public let id: CName;
+  public let requiredState: Int32;   // 0 Succeeded, 1 Failed, 2 Any-finished
+  public let journalPath: String;
+  public let renown: Float;
+  public let dread: Float;
+  public let district: CName;
+  public let rumor: Float;
+  public let factionEffects: array<ref<CBDeedFactionEffect>>;
+  public let titles: array<CName>;
+
+  public func AddFactionEffect(faction: CName, standingDelta: Float, renownDelta: Float) -> Void {
+    let e = new CBDeedFactionEffect();
+    e.faction = faction;
+    e.standingDelta = standingDelta;
+    e.renownDelta = renownDelta;
+    ArrayPush(this.factionEffects, e);
+  }
+
+  public func AddTitle(id: CName) -> Void {
+    ArrayPush(this.titles, id);
+  }
+}
+
 // ---- Content service ------------------------------------------------------
 
 public class CyberbaneContent extends ScriptableService {
@@ -130,6 +164,7 @@ public class CyberbaneContent extends ScriptableService {
   private let m_factionNames: array<ref<CBFactionNames>>;
   private let m_epithets: ref<CBEpithets>;
   private let m_traits: array<ref<CBTraitDef>>;
+  private let m_deeds: array<ref<CBDeedDef>>;
   private let m_built: Bool;
 
   public static func Get() -> ref<CyberbaneContent> {
@@ -152,6 +187,7 @@ public class CyberbaneContent extends ScriptableService {
     CBSeedTitles(this);
     CBSeedNames(this);
     CBSeedTraits(this);
+    CBSeedDeeds(this);
     CBLog.Info(n"Model", s"Content built: \(ArraySize(this.m_factions)) factions, \(ArraySize(this.m_districts)) districts, \(ArraySize(this.m_implants)) implants, \(ArraySize(this.m_lookTags)) look tags, \(ArraySize(this.m_titles)) titles, \(ArraySize(this.m_factionNames)) name pools, \(ArraySize(this.m_traits)) traits.");
   }
 
@@ -345,6 +381,26 @@ public class CyberbaneContent extends ScriptableService {
   public func GetTraits() -> array<ref<CBTraitDef>> {
     return this.m_traits;
   }
+
+  // ---- Deeds (spec Appendix F) --------------------------------------------
+  public func AddDeed(def: ref<CBDeedDef>) -> Void {
+    if IsDefined(def) {
+      ArrayPush(this.m_deeds, def);
+    }
+  }
+
+  public func GetDeed(id: CName) -> ref<CBDeedDef> {
+    for d in this.m_deeds {
+      if Equals(d.id, id) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  public func GetDeeds() -> array<ref<CBDeedDef>> {
+    return this.m_deeds;
+  }
 }
 
 // ---- Construction helpers (used by the seed files) ------------------------
@@ -433,5 +489,16 @@ public func CBMakeTrait(id: CName, display: String, isWeakness: Bool) -> ref<CBT
   d.id = id;
   d.display = display;
   d.isWeakness = isWeakness;
+  return d;
+}
+
+public func CBMakeDeed(id: CName, requiredState: Int32, renown: Float, dread: Float, district: CName, rumor: Float) -> ref<CBDeedDef> {
+  let d = new CBDeedDef();
+  d.id = id;
+  d.requiredState = requiredState;
+  d.renown = renown;
+  d.dread = dread;
+  d.district = district;
+  d.rumor = rumor;
   return d;
 }

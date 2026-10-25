@@ -35,6 +35,20 @@ public abstract class CyberbaneAPI {
     }
   }
 
+  public static func RegisterDeed(def: ref<CBDeedDef>) -> Void {
+    let content = CyberbaneContent.Get();
+    if IsDefined(content) {
+      content.AddDeed(def);
+    }
+  }
+
+  public static func RegisterTitle(def: ref<CBTitleDef>) -> Void {
+    let content = CyberbaneContent.Get();
+    if IsDefined(content) {
+      content.AddTitle(def);
+    }
+  }
+
   // ---- Read queries -----------------------------------------------------
   public static func GetRenown(game: GameInstance) -> Float {
     let sys = CyberbaneSystem.Get(game);
