@@ -25,6 +25,9 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
       freqMult = rt.GetSettings().hitSquadFrequencyMult;
     }
   }
+  if CBTwrActive() {
+    return;   // They Will Remember owns hit squads in compat mode (spec §17)
+  }
 
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {

@@ -56,6 +56,13 @@ public class CBHud {
     }
   }
 
+  // Re-render the current tab in place (e.g. after an action like brokering peace).
+  public func Refresh(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    if this.m_tab != 0 {
+      this.Render(sys, game);
+    }
+  }
+
   private func EnsureBuilt() -> Bool {
     if this.m_built && IsDefined(this.m_root) {
       return true;
@@ -308,6 +315,7 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
       shown += 1;
     }
   }
+  out += "\n[ Shift + Hub key ]  buy off the worst gang you can.";
   return out;
 }
 

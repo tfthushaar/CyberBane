@@ -130,8 +130,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !IsDefined(this.m_hud) {
       this.m_hud = new CBHud();
     }
-    // Don't pop the Hub open mid-fight, but always allow closing it.
     let game = this.GetGameInstance();
+    // Shift + Hub key while the Hub is open brokers peace with the worst gang you can
+    // buy off, without changing tab (spec §11.3 Hub action).
+    if event.IsShiftDown() && this.m_hud.IsOpen() {
+      CBBrokerPeaceBest(this, game);
+      this.m_hud.Refresh(this, game);
+      return;
+    }
+    // Don't pop the Hub open mid-fight, but always allow closing it.
     if !this.m_hud.IsOpen() {
       let player = GetPlayer(game);
       if IsDefined(player) && player.IsInCombat() {
@@ -478,6 +485,17 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetCooldowns() -> ref<CBCooldowns> {
     return this.m_cooldowns;
+  }
+
+  // Record a brokered peace (spec §11.3), newest kept within a small cap.
+  public func AddPeaceDeal(deal: ref<CBPeaceDeal>) -> Void {
+    if !IsDefined(deal) {
+      return;
+    }
+    ArrayPush(this.m_peaceDeals, deal);
+    while ArraySize(this.m_peaceDeals) > 16 {
+      ArrayErase(this.m_peaceDeals, 0);
+    }
   }
 
   // ---- Accumulator accessors (read by the model layer) ------------------

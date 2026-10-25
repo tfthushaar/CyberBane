@@ -77,4 +77,14 @@ public abstract class CyberbaneAPI {
   public static func GetVersion() -> String {
     return CyberbaneVersion();
   }
+
+  // ---- Actions ----------------------------------------------------------
+  // Pay a gang you can buy off to drop a hostility / vendetta. Returns true on success.
+  public static func BrokerPeace(game: GameInstance, faction: CName) -> Bool {
+    let sys = CyberbaneSystem.Get(game);
+    if IsDefined(sys) {
+      return CBBrokerPeace(sys, game, faction);
+    }
+    return false;
+  }
 }

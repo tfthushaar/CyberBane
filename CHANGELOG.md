@@ -46,6 +46,15 @@ This project follows [Semantic Versioning](https://semver.org/).
   reputation builds locally before it goes city-wide.
 - **Deeds & factions:** notable jobs shift Renown, Dread, faction standing and titles.
 
+- **Broker peace:** pay a gang you can buy off to drop a hostility or vendetta. The price
+  scales with how much blood is between you. From the Hub, hold Shift and press the Hub key to
+  buy off the worst gang you can afford; mods can also trigger it through the public API.
+
+### Compatibility
+
+- A They Will Remember compatibility mode: when it is on, Cyberbane stands down from the
+  systems that overlap (hostility on sight, hit squads, faction disguises) and keeps the rest.
+
 ### Safety
 
 - The systems that touch NPCs now leave companions, vendors, and anyone in a scripted

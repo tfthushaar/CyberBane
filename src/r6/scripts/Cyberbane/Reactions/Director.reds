@@ -111,6 +111,9 @@ public class CBReactionDirector {
     if npc.cbHostileByCyberbane || Equals(faction, n"") {
       return;
     }
+    if CBTwrActive() {
+      return;   // They Will Remember owns hostility-on-sight in compat mode (spec §17)
+    }
     if !Equals(score.GetPosture(faction), ECBPosture.Vendetta) {
       return;
     }

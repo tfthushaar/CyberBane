@@ -32,8 +32,8 @@ This page describes what the mod does and how it installs.
   ranks on their own while you are busy elsewhere, and putting one down can bring a gang-mate
   gunning for you over a dead crewmate.
 - **A city that pays attention.** Frighten a gang enough and they may send tribute to stay on
-  your good side, or a hit squad to deal with you. Vendors give fear or respect discounts.
-  Fixers add a bonus to gig payouts as your legend grows.
+  your good side, or a hit squad to deal with you. Vendors give fear or respect discounts. You can
+  also buy your way out of a vendetta by brokering peace with a gang from the Hub.
 - **Titles and a history log.** Earn titles such as Butcher of Watson, Chrome Saint, or the top
   title Cyberbane, and review everything you have done in a timeline.
 - **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable). Each
@@ -66,6 +66,15 @@ until it has been checked, and a compatibility note will go out with every relea
 2. Install Cyberbane with a mod manager such as Vortex, or by extracting the release archive into
    your Cyberpunk 2077 game folder. It uses the standard game-folder layout.
 3. Launch the game and open the Hub with F7. You can rebind the key in Mod Settings.
+
+## Controls
+
+Cyberbane adds two controls. Everything else uses the game's normal inputs.
+
+- **Hub key (F7 by default):** opens the Hub, then steps through its tabs one press at a time; the
+  press after the last tab closes it. Rebind it in Mod Settings. It will not open during combat.
+- **Shift + Hub key (while the Hub is open):** brokers peace with the worst gang you can afford to
+  buy off, paying from your eddies on the spot.
 
 ## Uninstalling
 
