@@ -69,7 +69,8 @@ until it has been checked, and a compatibility note will go out with every relea
 
 ## Controls
 
-Cyberbane adds two controls. Everything else uses the game's normal inputs.
+Cyberbane adds one key, the Hub key, with two shortcuts layered on it. Everything else uses the
+game's normal inputs.
 
 - **Hub key (F7 by default):** opens the Hub, then steps through its tabs one press at a time; the
   press after the last tab closes it. Rebind it in Mod Settings. It will not open during combat.
