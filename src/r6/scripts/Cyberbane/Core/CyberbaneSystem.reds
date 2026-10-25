@@ -90,6 +90,9 @@ public class CyberbaneSystem extends ScriptableSystem {
       // Apply any deaths recorded in the global ledger for this playthrough.
       CBApplyDeathLedger(this, this.GetGameInstance());
     }
+    // Seed chrome once up front so it is current before the first slow refresh.
+    CBUpdateChrome(this, this.GetGameInstance());
+
     // Bump the generation so any stale tick chain stops, then start a fresh one.
     this.m_tickGeneration += 1;
     this.ScheduleFastTick();
@@ -124,6 +127,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     let game = this.GetGameInstance();
     this.m_tickCount += 1;
     CBRefreshLiveInputs(this, game);
+    if this.m_tickCount % 10 == 0 {
+      CBUpdateChrome(this, game);
+    }
     CBEncounterTick(this, game);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) {
