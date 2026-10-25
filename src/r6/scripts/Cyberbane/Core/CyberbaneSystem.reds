@@ -300,6 +300,19 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
+  // ---- Deeds (spec §7.2) ------------------------------------------------
+  public func HasDeed(id: CName) -> Bool {
+    return ArrayContains(this.m_deedsDone, id);
+  }
+  public func MarkDeed(id: CName) -> Void {
+    if !ArrayContains(this.m_deedsDone, id) {
+      ArrayPush(this.m_deedsDone, id);
+    }
+  }
+  public func GetDeedsDone() -> array<CName> {
+    return this.m_deedsDone;
+  }
+
   // ---- Death Ledger application tracking (spec §10.8) -------------------
   public func HasAppliedLedgerId(id: Int32) -> Bool {
     return ArrayContains(this.m_appliedLedgerIds, id);

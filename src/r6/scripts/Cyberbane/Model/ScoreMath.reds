@@ -163,6 +163,39 @@ public func CBFactionRespect(renown: Float, chrome: Float, factionRenown: Float,
   return ClampF(p, 0.0, 100.0);
 }
 
+// ---- Chrome (spec §7.3) & Look (spec §7.4) -------------------------------
+// Tier multiplier for an implant (Tier 1..5+). Iconic adds +0.10 at the call site.
+public func CBTierMult(tier: Int32) -> Float {
+  if tier <= 1 { return 0.60; }
+  if tier == 2 { return 0.75; }
+  if tier == 3 { return 0.90; }
+  if tier == 4 { return 1.00; }
+  if tier == 5 { return 1.10; }
+  return 1.20;   // 5+ / 5++
+}
+
+// C = clamp(55*min(usage,1) + implantSum(cap 35) + (overallocated ? 10 : 0), 0, 100).
+public func CBComputeChrome(usage: Float, implantSum: Float, overallocated: Bool) -> Float {
+  let c = 55.0 * MinF(usage, 1.0) + ClampF(implantSum, 0.0, 35.0) + (overallocated ? 10.0 : 0.0);
+  return ClampF(c, 0.0, 100.0);
+}
+
+// C_visible = clamp(visibleImplantScore*2.5 + faceChromeScore, 0, 100). The caller
+// passes Σ(visibleScore × tierMult) as visibleImplantScore.
+public func CBComputeChromeVisible(visibleImplantScore: Float, faceChromeScore: Float) -> Float {
+  return ClampF(visibleImplantScore * 2.5 + faceChromeScore, 0.0, 100.0);
+}
+
+// L = clamp(min(Σ clothingScore, 60) + min(Σ customizationScore, 40), 0, 100).
+public func CBComputeLook(clothingSum: Float, customizationSum: Float) -> Float {
+  return ClampF(MinF(clothingSum, 60.0) + MinF(customizationSum, 40.0), 0.0, 100.0);
+}
+
+// Dg = clamp(Σ disguise(item), 0, 0.6).
+public func CBComputeDisguise(disguiseSum: Float) -> Float {
+  return ClampF(disguiseSum, 0.0, 0.6);
+}
+
 public func CBPostureFromStanding(standing: Float) -> ECBPosture {
   if standing >= CBConfig.PostureAllied() { return ECBPosture.Allied; }
   if standing >= CBConfig.PostureFriendly() { return ECBPosture.Friendly; }
