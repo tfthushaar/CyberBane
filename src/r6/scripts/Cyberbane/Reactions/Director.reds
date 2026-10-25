@@ -16,6 +16,15 @@ public let cbWhispered: Bool;
 @addField(ScriptedPuppet)
 public let cbHostileByCyberbane: Bool;
 
+// Set true once a Vendetta gang member has given V a spoken warning (spec §9.3).
+@addField(ScriptedPuppet)
+public let cbGangWarned: Bool;
+
+func CBWarningsOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().warnings;
+}
+
 public class CBReactionDirector {
   private let m_whisperCooldownTicks: Int32;
   // NPCs whose attitude Cyberbane overrode, tracked so the kill switch can revert them.
@@ -119,6 +128,13 @@ public class CBReactionDirector {
       return;   // They Will Remember owns hostility-on-sight in compat mode (spec §17)
     }
     if !Equals(score.GetPosture(faction), ECBPosture.Vendetta) {
+      return;
+    }
+    // They give you one warning before they open fire (spec §9.3), if enabled. The flip
+    // to hostile lands on the next evaluation, which reads as a beat of hesitation.
+    if CBWarningsOn() && !npc.cbGangWarned {
+      npc.cbGangWarned = true;
+      CBShowWhisper(player.GetGame(), faction, n"hate", n"warning");
       return;
     }
     let agent = npc.GetAttitudeAgent();

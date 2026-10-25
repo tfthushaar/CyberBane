@@ -36,10 +36,19 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let now = CBGameSeconds(game);
   let cd = sys.GetCooldowns();
 
-  // Clear a stale squad once it has had its time (spec §9.9 despawn).
+  // Clear a stale squad once it has had its time (spec §9.9 despawn). A squad that loses
+  // V this way can leave a survivor who becomes a Hunter Rival (spec §9.9 / §10.2).
   if IsDefined(cd) && des.IsPopulated(n"CB_Squad")
      && (now - cd.lastHitSquadAt) > CBConfig.HitSquadDespawnMinutes() * 60.0 {
     des.DeleteTagged(n"CB_Squad");
+    let escaped = sys.GetActiveSquadFaction();
+    if NotEquals(escaped, n"") && RandF() < CBConfig.RivalChanceHunter() {
+      let efs = sys.FindFaction(escaped);
+      if IsDefined(efs) && TDBID.IsValid(efs.sampleRecord) {
+        CBCreateRival(sys, game, escaped, efs.sampleRecord, n"", ECBRivalSource.Hunter, CBCurrentDistrict(game), now);
+      }
+    }
+    sys.SetActiveSquadFaction(n"");
   }
 
   // Global cooldown between squads, and never stack one onto an existing fight.
@@ -94,6 +103,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   }
 
   fs.lastHitSquadAt = now;
+  sys.SetActiveSquadFaction(fs.id);
   let cd = sys.GetCooldowns();
   if IsDefined(cd) {
     cd.lastHitSquadAt = now;

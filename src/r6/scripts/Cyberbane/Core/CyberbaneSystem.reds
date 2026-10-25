@@ -48,6 +48,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_hud: ref<CBHud>;              // the F7 reputation Hub (spec §12.1)
   private let m_disguiseFaction: CName;       // gang whose colours V is wearing (spec §9.3)
   private let m_disguiseStrength: Float;      // 0..1, how well the disguise reads
+  private let m_activeSquadFaction: CName;    // faction of the hit squad currently out (for Hunter on escape)
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -507,6 +508,14 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
   public func GetDisguiseStrength() -> Float {
     return this.m_disguiseStrength;
+  }
+
+  // Faction of the hit squad currently deployed (for a Hunter Rival if it loses V, §9.9).
+  public func SetActiveSquadFaction(faction: CName) -> Void {
+    this.m_activeSquadFaction = faction;
+  }
+  public func GetActiveSquadFaction() -> CName {
+    return this.m_activeSquadFaction;
   }
 
   // Record a brokered peace (spec §11.3), newest kept within a small cap.

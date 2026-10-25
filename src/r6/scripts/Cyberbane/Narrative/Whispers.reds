@@ -27,6 +27,9 @@ public func CBWhisperLine(mood: CName, topic: CName) -> String {
   if Equals(topic, n"maxtac") {
     return "That's the merc who went up against MaxTac and walked away.";
   }
+  if Equals(topic, n"warning") {
+    return "You've got a lot of nerve showing up here. Walk away while you still can.";
+  }
   if Equals(mood, n"respect") {
     return "Now that's a merc worth knowing. Preem.";
   }

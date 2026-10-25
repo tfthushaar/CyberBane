@@ -33,9 +33,10 @@ This page describes what the mod does and how it installs.
   ranks on their own while you are busy elsewhere, and putting one down can bring a gang-mate
   gunning for you over a dead crewmate.
 - **A city that pays attention.** Frighten a gang enough and they may send tribute to stay on
-  your good side, or a hit squad to deal with you. Vendors give fear or respect discounts, and
-  fixers pay the famous a bonus on job payouts. You can also buy your way out of a vendetta by
-  brokering peace with a gang from the Hub.
+  your good side, or a hit squad to deal with you. Give a hit squad the slip and a survivor can
+  come back as a named Rival who hunts you. Vendors give fear or respect discounts, and fixers pay
+  the famous a bonus on job payouts. You can also buy your way out of a vendetta by brokering peace
+  with a gang from the Hub.
 - **Titles and a history log.** Earn titles such as Butcher of Watson, Chrome Saint, or the top
   title Cyberbane, and review everything you have done in a timeline.
 - **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable). Each

@@ -21,8 +21,9 @@ This project follows [Semantic Versioning](https://semver.org/).
 - **Crowds that react:** pedestrians read how frightening you are and, as you get close,
   cower or flee; once your reputation turns to terror the panic spreads through the crowd.
   How many react at once is capped so the streets never empty all at once.
-- **Gangs that turn on you:** a gang you have pushed to a vendetta attacks on sight once
-  they recognize you. Turn the systems off and every attitude change is undone.
+- **Gangs that turn on you:** a gang you have pushed to a vendetta gives you one spoken warning
+  the first time they place you, then attacks on sight. Turn the systems off and every attitude
+  change is undone.
 - **Enemies that break:** cut down enough of a squad and the survivors can lose their nerve
   and run, though someone always stands and fights. Those who get away can return as Rivals.
 - **Vendor prices move with your reputation:** the more the city fears you (and the cleaner
@@ -32,7 +33,8 @@ This project follows [Semantic Versioning](https://semver.org/).
   you eddies to stay on their good side. Pay enough gangs and you earn the Feared Landlord title.
 - **Hit squads:** turn a gang hostile enough and they send people after you. A squad of the
   kind of member you have fought spawns out of sight and comes for you; squads never stack,
-  sit on a cooldown, and clear themselves if you slip away. Toggle and frequency in Mod Settings.
+  sit on a cooldown, and clear themselves if you slip away. Give one the slip and a survivor
+  can come back as a Hunter Rival. Toggle and frequency in Mod Settings.
 - **Rivals that come to you:** a Rival who is hunting you can actually show up in the world,
   wearing the face and gang you remember, instead of only existing on the Hub.
 - **The Hub:** a reputation screen in Cyberpunk's own style, opened with the Hub key (F7 by
