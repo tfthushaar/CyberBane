@@ -290,12 +290,19 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
     let fs = states[i];
     i += 1;
     if IsDefined(fs) {
-      let posture = CBPostureName(score.GetPosture(fs.id));
+      let postureEnum = score.GetPosture(fs.id);
+      let posture = CBPostureName(postureEnum);
       let st = RoundF(fs.standing);
       let fear = RoundF(score.GetFactionFear(fs.id));
       let resp = RoundF(score.GetFactionRespect(fs.id));
       out += CBHudPad(NameToString(fs.id), 16) + CBHudPad(posture, 11)
-        + s"S \(st)   F \(fear)   R \(resp)   kills \(fs.kills)\n";
+        + s"S \(st)   F \(fear)   R \(resp)   kills \(fs.kills)";
+      // While a gang has a vendetta with you they put a price on your head (spec §9.9).
+      if Equals(postureEnum, ECBPosture.Vendetta) {
+        let bounty = 2000 + 200 * fs.kills;
+        out += s"   bounty \(bounty)eb";
+      }
+      out += "\n";
       shown += 1;
     }
   }

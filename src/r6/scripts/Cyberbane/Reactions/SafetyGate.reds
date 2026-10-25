@@ -19,8 +19,20 @@ public abstract class CBSafetyGate {
     if puppet.IsQuest() {
       return false;   // never touch quest NPCs (spec §16.1)
     }
-    // TODO S-13: unique/companion exclusion list, scene/workspot, AMM-spawned,
-    // vendor mid-transaction, safe zones, braindance, active-quest-area exclusions.
+    if puppet.IsPlayerCompanion() {
+      return false;   // never touch companions / crew (spec §16.1)
+    }
+    if puppet.IsVendor() {
+      return false;   // leave vendors and their transactions alone (spec §16)
+    }
+    // NPCs driving a workspot are usually in a scripted beat (scenes, sitting,
+    // leaning, performances). Safe default: leave them be (spec §16, S-13).
+    let ws = GameInstance.GetWorkspotSystem(puppet.GetGame());
+    if IsDefined(ws) && ws.IsActorInWorkspot(puppet) {
+      return false;
+    }
+    // TODO S-13: unique exclusion list, AMM-spawned, safe zones, braindance,
+    // active-quest-area exclusions.
     return true;
   }
 }

@@ -41,4 +41,9 @@ This project follows [Semantic Versioning](https://semver.org/).
   reputation builds locally before it goes city-wide.
 - **Deeds & factions:** notable jobs shift Renown, Dread, faction standing and titles.
 
+### Safety
+
+- The systems that touch NPCs now leave companions, vendors, and anyone in a scripted
+  scene or workspot alone, on top of the existing hands-off rule for quest characters.
+
 _Cyberbane is in active development and has not had a public release yet._
