@@ -111,6 +111,25 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     }
   }
 
+  // Code axis (spec §8.11): clean, non-lethal work reads as professional; killing
+  // civilians reads as a mad dog / cyberpsycho; brutal finishers and cop-killing
+  // chip at it. Dropping hostile gangers in a fight is just business (neutral).
+  if !info.lethal {
+    sys.AddCode(1.0);
+  } else {
+    if info.victimClass == EnumInt(ECBVictimClass.Civilian) {
+      sys.AddCode(-5.0);
+    } else {
+      if info.victimClass == EnumInt(ECBVictimClass.Cop) {
+        sys.AddCode(-0.5);
+      } else {
+        if brutal {
+          sys.AddCode(-0.3);
+        }
+      }
+    }
+  }
+
   CBLog.Verbose(n"Model", s"Kill applied: class=\(info.victimClass) faction=\(NameToString(info.faction)) lethal=\(info.lethal) witnessed=\(info.witnessed).");
 }
 

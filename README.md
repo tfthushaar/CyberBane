@@ -16,6 +16,10 @@ This page describes what the mod does and how it installs.
 - **Reputation you earn.** Two main scores grow from your actions: Renown (how widely you are
   known) and Dread (how frightening you are). Word spreads outward from where things happened,
   so you can be a legend in Watson while Pacifica has never heard of you.
+- **A reputation for how you work.** Night City also reads your conduct. Do clean, controlled
+  work and spare people when you can, and you get treated like a professional. Gun down
+  civilians and lean on brutal finishers and the Street starts seeing a mad dog, one edge away
+  from a cyberpsycho. It changes how people talk to you and how they deal with you.
 - **Crowds that react.** Depending on how frightening you are, civilians notice you, step out
   of your path, cower, or flee, and panicked drivers pull away when you draw your weapon in the
   street.
@@ -24,7 +28,9 @@ This page describes what the mod does and how it installs.
   gang depending on your standing and reputation: respect, a warning, or hostility.
 - **Enemies that break and remember.** Cut down most of a squad and the survivors can lose their
   nerve and run. Anyone who escapes, or who kills you, can return later as a named Rival that is
-  tougher, brings backup, and references your last encounter.
+  tougher, brings backup, and references your last encounter. The ones you leave alone climb the
+  ranks on their own while you are busy elsewhere, and putting one down can bring a gang-mate
+  gunning for you over a dead crewmate.
 - **A city that pays attention.** Frighten a gang enough and they may send tribute to stay on
   your good side, or a hit squad to deal with you. Vendors give fear or respect discounts.
   Fixers add a bonus to gig payouts as your legend grows.

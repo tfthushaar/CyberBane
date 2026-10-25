@@ -17,6 +17,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_archetype: array<Float>;       // index = ECBArchetype
   private persistent let m_primaryArchetype: Int32;       // -1 = Unknown
   private persistent let m_lastNotifiedTier: Int32;       // for rank-up notifications
+  private persistent let m_code: Float;                   // -100..100 merc Code axis (Mad Dog <-> Professional)
   private persistent let m_lastHeatStage: Int32;          // for heat-point accrual
   private persistent let m_lastSlowTickAt: Float;         // game seconds of last slow tick
 
@@ -175,6 +176,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBApplyDecay(this, elapsedDays);
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);
+    CBRivalProgressionTick(this, game);
     CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
 
@@ -431,6 +433,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_stats;
   }
 
+  public func GetCooldowns() -> ref<CBCooldowns> {
+    return this.m_cooldowns;
+  }
+
   // ---- Accumulator accessors (read by the model layer) ------------------
   public func GetRenownPoints() -> Float { return this.m_renownPoints; }
   public func GetKillDreadPoints() -> Float { return this.m_killDreadPoints; }
@@ -443,6 +449,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func SetLastNotifiedTier(value: Int32) -> Void { this.m_lastNotifiedTier = value; }
   public func GetLastHeatStage() -> Int32 { return this.m_lastHeatStage; }
   public func SetLastHeatStage(value: Int32) -> Void { this.m_lastHeatStage = value; }
+
+  // Code axis (spec §8.11): how the Street reads V's conduct, from Mad Dog (-100,
+  // reckless, civilian-killing, edging toward cyberpsychosis) to Professional
+  // (+100, keeps a code, clean work, mercy). Fixers, crews and vendors read it.
+  // Separate from Dread (feared) and Renown (known).
+  public func GetCode() -> Float { return this.m_code; }
+  public func AddCode(delta: Float) -> Void {
+    this.m_code = ClampF(this.m_code + delta, -100.0, 100.0);
+  }
 
   // Scale all archetype accumulators in place (used by decay).
   public func DecayArchetypes(factor: Float) -> Void {

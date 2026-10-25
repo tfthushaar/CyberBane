@@ -234,11 +234,63 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   sys.AddRenownPoints((25.0 + 10.0 * Cast<Float>(rival.rank)) * renownMult);
 
   CBLogRival(sys, n"RivalSlain", at, district, rival.faction, Cast<Float>(rival.rank), rival.id);
+  let content = CyberbaneContent.Get();
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    let content = CyberbaneContent.Get();
     CBShowMessage(game, "Cyberbane: Rival slain - " + CBRivalDisplayName(content, rival), 5.0);
   }
+
+  // Blood-brother vengeance (Nemesis-inspired): a faction member may rise to
+  // avenge the slain Rival, remembering them specifically (detail = slain id).
+  let freq = 1.0;
+  if IsDefined(rt) && rt.HasSettings() {
+    freq = rt.GetSettings().rivalFrequencyMult;
+  }
+  if RandF() < CBConfig.RivalChanceAvenger() * freq {
+    let avenger = CBCreateRival(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger, district, at);
+    if IsDefined(avenger) {
+      CBRivalAddEvent(avenger, ECBRivalEventKind.Created, at, district, rival.id);
+      if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+        CBShowMessage(game, "Cyberbane: " + CBRivalDisplayName(content, avenger) + " is gunning for you over a dead crewmate.", 5.0);
+      }
+    }
+  }
+
   CBEvaluateTitles(sys, game);
+}
+
+// Autonomous rival progression (Nemesis-inspired): Rivals V has ignored for a
+// while climb the ranks on their own, at most one promotion per in-game day
+// (spec §10.1). The underworld moves even when V isn't looking.
+public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().rivals {
+    return;
+  }
+  let now = CBGameSeconds(game);
+  let cd = sys.GetCooldowns();
+  if IsDefined(cd) && (now - cd.lastPromotionAt) < CBConfig.SecondsPerDay() {
+    return;
+  }
+  let content = CyberbaneContent.Get();
+  let neglect = 3.0 * CBConfig.SecondsPerDay();
+  for r in sys.GetRivals() {
+    let active = r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
+    if active && r.rank < 4 && (now - r.lastSeenAt) > neglect {
+      if RandF() < 0.30 {
+        CBPromoteRival(r, content, now);
+        if IsDefined(cd) {
+          cd.lastPromotionAt = now;
+        }
+        if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+          CBShowMessage(game, "Cyberbane: " + CBRivalDisplayName(content, r) + " has climbed the ranks while you were gone.", 5.0);
+        }
+        return;
+      }
+    }
+  }
 }
 
 // Writes a Legend Log entry for a Rival event.

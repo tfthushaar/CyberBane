@@ -92,6 +92,17 @@ public class CBReactionDirector {
       }
     }
 
+    // The Street's read on V's Code shifts tone: a merc known for clean, pro work
+    // earns respect from onlookers; a mad dog edging toward cyberpsychosis earns
+    // dread even where respect was due.
+    let code = sys.GetCode();
+    if code >= 40.0 && Equals(mood, n"fear") {
+      mood = n"respect";
+    }
+    if code <= -40.0 && Equals(mood, n"respect") {
+      mood = n"fear";
+    }
+
     // Topic: the city remembers notable kills. If this NPC's gang has lost a boss
     // to V, or V has MaxTac kills and this is NCPD, the whisper calls it out.
     let topic = n"";
