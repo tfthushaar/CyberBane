@@ -11,15 +11,16 @@
 // palette, so it sits in the world like a stock UI panel. Widget geometry is tuned in
 // game; everything here is reversible (it only adds widgets to the HUD layer).
 
-public func CBHudTabCount() -> Int32 = 5
+public func CBHudTabCount() -> Int32 = 6
 
 public func CBHudTabName(tab: Int32) -> String {
   switch tab {
     case 1: return "LEGEND";
     case 2: return "FACTIONS";
-    case 3: return "RIVALS";
-    case 4: return "TITLES";
-    case 5: return "LEGEND LOG";
+    case 3: return "DISTRICTS";
+    case 4: return "RIVALS";
+    case 5: return "TITLES";
+    case 6: return "LEGEND LOG";
     default: return "";
   }
 }
@@ -222,9 +223,10 @@ func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Str
   switch tab {
     case 1: return CBHudLegend(sys, game);
     case 2: return CBHudFactions(sys);
-    case 3: return CBHudRivals(sys);
-    case 4: return CBHudTitles(sys);
-    case 5: return CBHudLog(sys);
+    case 3: return CBHudDistricts(sys);
+    case 4: return CBHudRivals(sys);
+    case 5: return CBHudTitles(sys);
+    case 6: return CBHudLog(sys);
     default: return "";
   }
 }
@@ -303,6 +305,26 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
         out += s"   bounty \(bounty)eb";
       }
       out += "\n";
+      shown += 1;
+    }
+  }
+  return out;
+}
+
+func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
+  let states = sys.GetDistrictStates();
+  if ArraySize(states) == 0 {
+    return "Your name has not travelled to any district yet.";
+  }
+  let out = "";
+  let shown = 0;
+  let i = 0;
+  while i < ArraySize(states) && shown < 14 {
+    let d = states[i];
+    i += 1;
+    if IsDefined(d) {
+      let rd = RoundF(d.renown);
+      out += CBHudPad(NameToString(d.id), 18) + s"renown \(rd)   kills \(d.kills)\n";
       shown += 1;
     }
   }
