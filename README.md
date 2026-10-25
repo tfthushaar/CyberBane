@@ -8,8 +8,10 @@ and the enemies who got away come back with names and grudges.
 Every reaction comes from something you did. When you want to know why the city treats you a
 certain way, open the Hub and read the breakdown.
 
-**Status: in development.** Cyberbane is still being built and has not been released on Nexus.
-This page describes what the mod does and how it installs.
+**Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
+
+**Status: early release (0.1.0).** Built for Cyberpunk 2077 v2.31 and in active development. This
+page describes what the mod does and how it installs.
 
 ## What it does
 
