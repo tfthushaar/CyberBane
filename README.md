@@ -20,7 +20,7 @@ certain way, open the Hub and read the breakdown.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: early release (0.1.1).** Built for Cyberpunk 2077 v2.31 and in active development. This
+**Status: early release (0.1.5).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -75,8 +75,9 @@ Optional:
 - Native Interactions Framework, which adds the Intimidate interaction.
 - Equipment-EX, which lets your outfit count toward your look.
 
-Cyberbane is being developed for Cyberpunk 2077 v2.31. Each game patch is treated as unsupported
-until it has been checked, and a compatibility note will go out with every release.
+Cyberbane is built for Cyberpunk 2077 v2.5. Install the 2.5 versions of the required frameworks
+above. Each game patch is treated as unsupported until it has been checked, and a compatibility
+note goes out with every release.
 
 ## Installation
 

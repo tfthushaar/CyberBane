@@ -61,8 +61,9 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
   while i < ArraySize(npcs) {
     let npc = npcs[i];
     i += 1;
-    // Cheap distance gate before the heavier eligibility check (Safety Gate workspot query).
-    if IsDefined(npc) && Vector4.Distance(deadPos, npc.GetWorldPosition()) <= CBConfig.MoraleShockRadius() {
+    // Cheap distance gate before the heavier eligibility check (Safety Gate workspot query);
+    // CBNpcSafe keeps us off streaming-out / not-yet-ready NPCs (crash safety).
+    if CBNpcSafe(sys, npc) && Vector4.Distance(deadPos, npc.GetWorldPosition()) <= CBConfig.MoraleShockRadius() {
       if CBMoraleEligible(npc) {
         ArrayPush(nearby, npc);
         if npc.cbMoraleBroken {

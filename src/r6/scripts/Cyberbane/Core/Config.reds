@@ -14,6 +14,26 @@ public abstract class CBConfig {
   public static func FastTickSeconds() -> Float = 1.0          // real seconds
   public static func RumorSpreadHours() -> Float = 6.0         // in-game hours
 
+  // ---- Runtime safety gate (crash fix, spec §16) -----------------------
+  // After a plain menu / scene (no world streaming), sit out this many fast ticks before the
+  // runtime touches the world again.
+  public static func StreamSettleTicks() -> Int32 = 5
+  // After a flood-causing transition (fast travel, time skip, ripperdoc install, load), sit
+  // out this many fast ticks (~seconds at FastTickSeconds) so the resource-streaming flood has
+  // fully drained before we query NPCs / entities - the flood runs on well after the UI clears.
+  public static func FloodSettleTicks() -> Int32 = 30
+  // A jump larger than this many in-game seconds between ticks means a time skip happened
+  // (Skip Time, fast travel, a ripperdoc install), not normal play.
+  public static func TimeJumpSettleSeconds() -> Float = 600.0
+  // Leave a freshly-streamed-in NPC alone for this many ticks after it attaches, so its native
+  // components are ready before we read its position / attitude (avoids access violations during
+  // ambient streaming in dense districts and scenes).
+  public static func NpcReadyTicks() -> Int32 = 3
+  // If at least this many entities attached in a single tick interval, the world is streaming
+  // heavily (a flood) even without a transition - stand down until it settles. This catches
+  // ambient floods (dense districts, scene loads) that no menu/time-jump signal would flag.
+  public static func FloodAttachThreshold() -> Int32 = 25
+
   // ---- Reaction director (spec §9.1, §18) ------------------------------
   public static func NpcEvalRadius() -> Float = 30.0           // metres
   public static func NpcEvalPerTick() -> Int32 = 12

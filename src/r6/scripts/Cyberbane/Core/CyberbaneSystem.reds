@@ -51,6 +51,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_activeSquadFaction: CName;    // faction of the hit squad currently out (for Hunter on escape)
   private let m_escapees: array<ref<CBEscapee>>;   // wounded enemies that ran (session-only, spec §10.2)
   private let m_activeRivalId: Int32;         // id of the Rival currently spawned as an encounter (0 = none)
+  private let m_lastTickGameTime: Float;      // in-game seconds at the last processed tick (time-jump detector)
+  private let m_streamSettleTicks: Int32;     // ticks to sit out after a transition / time jump (crash safety)
+  private let m_attachCount: Int32;           // entities attached since the last tick (streaming-flood detector)
+  private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -107,12 +111,21 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   private cb func OnCBEntityAttached(event: ref<EntityLifecycleEvent>) -> Void {
+    // Count every attach (before any guard) so the fast tick can tell when the world is
+    // streaming heavily - a flood - and stand down even with no menu / time-jump signal.
+    this.m_attachCount += 1;
     if !IsDefined(this.m_registry) {
+      return;
+    }
+    // Don't touch entities while the world is loading / fast travelling / mid-scene: during a
+    // stream flood they attach by the hundreds and the world is still being rebuilt (crash safety).
+    if !CBWorldStable(this.GetGameInstance()) {
       return;
     }
     let puppet = event.GetEntity() as ScriptedPuppet;
     if IsDefined(puppet) {
       this.m_registry.Add(puppet);
+      puppet.cbSeenTick = this.m_tickCount;   // leave it alone until its components are ready
       // Our own spawned hostiles (hit squads, Rival encounters) start aggressive toward V.
       let des = GameInstance.GetDynamicEntitySystem();
       if IsDefined(des) {
@@ -184,12 +197,69 @@ public class CyberbaneSystem extends ScriptableSystem {
       return;
     }
     let game = this.GetGameInstance();
+
+    // Crash safety (spec §16): stand down during loading, fast travel, time skips, ripperdoc
+    // installs, menus and scripted scenes. The engine tears the world down and rebuilds it
+    // across those (the resource-streaming "flood"), and running our native NPC / entity /
+    // spawn queries mid-stream reads a half-built or freed native object and crashes - seen as
+    // a dynamicBuffer assert and as an access violation in DelaySystem/Tick. We keep the tick
+    // chain alive and arm a settle window so we resume only once the world is back and the
+    // flood has drained, not the instant the loading screen clears.
+
+    // No controllable player means a load / teleport / fast-travel is in flight - the biggest
+    // floods. Cover the whole thing.
+    let player = GetPlayer(game);
+    if !IsDefined(player) {
+      this.m_streamSettleTicks = CBConfig.FloodSettleTicks();
+      this.ScheduleFastTick();
+      return;
+    }
+    // A menu / loading screen / scripted scene (incl. the ripperdoc chair) is up: stand down,
+    // and keep whatever longer flood settle is already armed.
+    if !CBWorldStable(game) {
+      if this.m_streamSettleTicks < CBConfig.StreamSettleTicks() {
+        this.m_streamSettleTicks = CBConfig.StreamSettleTicks();
+      }
+      this.ScheduleFastTick();
+      return;
+    }
+
+    // Heavy entity streaming since the last tick (a flood) even with no menu / time-jump signal
+    // - e.g. walking a dense district or a scene loading around you. Stand down until it drains.
+    // The counter is read and reset every tick.
+    let attached = this.m_attachCount;
+    this.m_attachCount = 0;
+    if attached >= CBConfig.FloodAttachThreshold() {
+      this.m_streamSettleTicks = CBConfig.FloodSettleTicks();
+      this.ScheduleFastTick();
+      return;
+    }
+
+    // A large jump in the in-game clock since the last processed tick means a time skip just
+    // happened (Skip Time, fast travel, a ripperdoc install) - each kicks off a streaming flood
+    // that runs on well after the clock moves and the UI clears, so cover it fully.
+    let nowGT = CBGameSeconds(game);
+    if this.m_lastTickGameTime > 0.0 && (nowGT - this.m_lastTickGameTime) > CBConfig.TimeJumpSettleSeconds() {
+      this.m_streamSettleTicks = CBConfig.FloodSettleTicks();
+    }
+    this.m_lastTickGameTime = nowGT;
+    if this.m_streamSettleTicks > 0 {
+      this.m_streamSettleTicks -= 1;
+      this.ScheduleFastTick();
+      return;
+    }
+
     this.m_tickCount += 1;
-    CBRefreshLiveInputs(this, game);
+    // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district)
+    // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
+    // Prevention-system district/heat queries never fire mid-stream. The director reads the
+    // cached district rather than querying every tick.
     if this.m_tickCount % 10 == 0 {
+      CBRefreshLiveInputs(this, game);
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
       CBUpdateMenace(this, game);
+      this.m_currentDistrict = CBCurrentDistrict(game);
     }
     CBEncounterTick(this, game);
     CBProcessEscapees(this, game);
@@ -203,6 +273,12 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetTickCount() -> Int32 {
     return this.m_tickCount;
+  }
+
+  // Cached current district (refreshed on the slow sample). Reading this instead of querying
+  // the Prevention system every tick keeps that query off the hot path during streaming.
+  public func GetCurrentDistrict() -> CName {
+    return this.m_currentDistrict;
   }
 
   public func GetEncounter() -> ref<CBEncounter> {

@@ -16,6 +16,11 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   if !IsDefined(des) || !IsDefined(player) {
     return 0;
   }
+  // Never spawn into a world that is still streaming in (right after fast travel / a load, or
+  // during a scene): the spawn point may not be ready and queuing one mid-stream can crash.
+  if !CBWorldStable(game) {
+    return 0;
+  }
   let ppos = player.GetWorldPosition();
   let fwd = player.GetWorldForward();
 

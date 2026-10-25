@@ -29,11 +29,12 @@ public class CBNpcRegistry {
     ArrayPush(this.m_npcs, puppet);
   }
 
-  // Drop weak refs that have gone undefined (despawned / detached).
+  // Drop weak refs that have gone undefined or detached (despawned / streamed out), so the
+  // registry only ever yields NPCs that are still attached to the world.
   public func Prune() -> Void {
     let i = 0;
     while i < ArraySize(this.m_npcs) {
-      if !IsDefined(this.m_npcs[i]) {
+      if !IsDefined(this.m_npcs[i]) || !this.m_npcs[i].IsAttached() {
         ArrayErase(this.m_npcs, i);
       } else {
         i += 1;

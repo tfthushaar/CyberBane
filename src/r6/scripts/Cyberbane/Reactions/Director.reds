@@ -74,7 +74,7 @@ public class CBReactionDirector {
     let ppos = player.GetWorldPosition();
     let score = sys.GetScore();
     let dread = score.GetDread();
-    let district = CBCurrentDistrict(game);
+    let district = sys.GetCurrentDistrict();   // cached; kept off the hot path (crash safety)
 
     let npcs = reg.GetAll();
     let evaluated = 0;
@@ -82,9 +82,10 @@ public class CBReactionDirector {
     while i < ArraySize(npcs) && evaluated < CBConfig.NpcEvalPerTick() {
       let npc = npcs[i];
       i += 1;
-      // Cheap distance gate first: the Safety Gate queries the workspot system, so only
-      // run it for NPCs actually in range. A dense registry then stays cheap per tick.
-      if IsDefined(npc) {
+      // Only touch an NPC that is attached and past its warm-up ticks (crash safety during
+      // streaming). Cheap distance gate first: the Safety Gate queries the workspot system, so
+      // only run it for NPCs actually in range. A dense registry then stays cheap per tick.
+      if CBNpcSafe(sys, npc) {
         let dist = Vector4.Distance(ppos, npc.GetWorldPosition());
         if dist <= CBConfig.NpcEvalRadius() && CBSafetyGate.CanAffect(npc) {
           evaluated += 1;

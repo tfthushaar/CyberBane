@@ -90,8 +90,8 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
     let e = list[i];
     i += 1;
     if IsDefined(e) {
-      let gone = !IsDefined(e.puppet);   // despawned while alive = got away
-      let far = IsDefined(e.puppet) && IsDefined(player)
+      let gone = !IsDefined(e.puppet) || !e.puppet.IsAttached();   // despawned / streamed out = got away
+      let far = !gone && IsDefined(player)
              && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance();
       if gone || far {
         CBHandleEscape(sys, game, e, now);
