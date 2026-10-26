@@ -20,7 +20,7 @@ certain way, open the Hub and read the breakdown.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: early release (0.1.13).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: early release (0.1.14).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -56,8 +56,10 @@ page describes what the mod does and how it installs.
 - **Gangs send their best.** Keep putting one crew in the ground and they stop sending squads and
   send someone who matters. You get a warning first, then a named heavy walks in with a couple of
   their people, built from the toughest member of that gang you have actually fought and lifted to
-  boss grade so it is a real fight. No story character is ever involved, so nothing gets spoiled,
-  and it works for every gang. The Hub keeps count of the ones you put down.
+  boss grade so it is a real fight. They are sized to your build, so they stay a real fight as you
+  get stronger. No story character is ever used, so nothing gets spoiled and you never meet a
+  duplicate of someone you already killed. It works for every gang. The Hub keeps count of the
+  ones you put down.
 - **Titles and a history log.** Earn titles such as Butcher of Watson, Chrome Saint, or the top
   title Cyberbane, and review everything you have done in a timeline.
 - **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable). Each

@@ -132,6 +132,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   info.witnessed = true;
   info.stealth = false;
   info.instigatorIsPlayer = true;
+  info.victimIsUnique = puppet.IsQuest();   // never keep a story character as a spawn template
   info.district = CBEventDistrict(sys, game);
   info.position = puppet.GetWorldPosition();
   info.at = CBGameSeconds(game);

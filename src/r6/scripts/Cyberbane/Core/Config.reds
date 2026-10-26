@@ -181,10 +181,15 @@ public abstract class CBConfig {
   public static func ApexSpawnDistance() -> Float = 30.0
   // Muscle that comes in with them. Built from the gang's rank-and-file record.
   public static func ApexEscortCount() -> Int32 = 2
-  // The apex is built from a gang elite, which on its own is nowhere near a boss. These lift
-  // the spawned one to boss grade so it reads as the threat the warning promised.
-  public static func ApexHealthMult() -> Float = 6.0
-  public static func ApexArmorMult() -> Float = 3.0
+  // The apex is built from a gang archetype, which on its own is nowhere near a boss, so the
+  // spawned one is lifted to boss grade. The lift scales with how dangerous V actually is
+  // (menace: level, Street Cred and skills), so a maxed-out merc gets a real fight instead of
+  // a sponge that dies in a burst, and someone just starting out is not simply deleted.
+  // Base applies at no build at all, base + range at full menace.
+  public static func ApexHealthMultBase() -> Float = 4.0
+  public static func ApexHealthMultRange() -> Float = 6.0    // 4x .. 10x
+  public static func ApexArmorMultBase() -> Float = 2.0
+  public static func ApexArmorMultRange() -> Float = 3.0     // 2x .. 5x
 
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   // Rivals only land if they actually happen. Raised so leaving people alive or breaking a

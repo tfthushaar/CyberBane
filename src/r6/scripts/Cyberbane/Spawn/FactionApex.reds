@@ -33,7 +33,7 @@ public func CBApexName(content: ref<CyberbaneContent>, faction: CName, seed: Int
 // chew through, and its health pool topped back up because raising the stat does not refill
 // what it already had. Applied at attach, where the puppet is real and its stats exist, and
 // only ever to our own CB_Apex spawn - nothing in the world is touched.
-public func CBApplyApexBuff(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+public func CBApplyApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(puppet) {
     return;
   }
@@ -41,14 +41,25 @@ public func CBApplyApexBuff(game: GameInstance, puppet: ref<ScriptedPuppet>) -> 
   if !IsDefined(stats) {
     return;
   }
+  // Scale to V. Menace already folds in level, Street Cred and skills - the same number the
+  // Hub reports - so a maxed-out merc meets something that can take it, and a early character
+  // meets something beatable rather than a wall.
+  let scale = 0.0;
+  if IsDefined(sys) {
+    let score = sys.GetScore();
+    if IsDefined(score) {
+      scale = ClampF(score.GetMenace() / 100.0, 0.0, 1.0);
+    }
+  }
+  let hpMult = CBConfig.ApexHealthMultBase() + scale * CBConfig.ApexHealthMultRange();
+  let armourMult = CBConfig.ApexArmorMultBase() + scale * CBConfig.ApexArmorMultRange();
+
   let id = Cast<StatsObjectID>(puppet.GetEntityID());
-  let hp = RPGManager.CreateStatModifier(gamedataStatType.Health, gameStatModifierType.Multiplier,
-    CBConfig.ApexHealthMult());
+  let hp = RPGManager.CreateStatModifier(gamedataStatType.Health, gameStatModifierType.Multiplier, hpMult);
   if IsDefined(hp) {
     stats.AddModifier(id, hp);
   }
-  let armour = RPGManager.CreateStatModifier(gamedataStatType.Armor, gameStatModifierType.Multiplier,
-    CBConfig.ApexArmorMult());
+  let armour = RPGManager.CreateStatModifier(gamedataStatType.Armor, gameStatModifierType.Multiplier, armourMult);
   if IsDefined(armour) {
     stats.AddModifier(id, armour);
   }

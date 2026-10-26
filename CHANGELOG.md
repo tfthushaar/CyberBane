@@ -3,6 +3,19 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.14] - 2026-10-27
+
+### Changed
+- The heavy a gang sends now scales with your build. It reads the same measure of how dangerous
+  you are that the rest of the mod uses, your level, Street Cred and skills together, so an early
+  character meets something beatable and a maxed-out merc meets something that can actually take
+  a beating. The Hub shows roughly how tough the next one will be.
+
+### Fixed
+- Cyberbane no longer remembers a one-off story character as the template for the people a gang
+  sends after you. It keeps generic gang archetypes only, so you will never meet a walking
+  duplicate of someone you already put down. Hit squads had the same gap and are covered too.
+
 ## [0.1.13] - 2026-10-27
 
 ### Changed

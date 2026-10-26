@@ -14,6 +14,10 @@ public class CBKillInfo {
   public let witnessed: Bool;
   public let stealth: Bool;
   public let instigatorIsPlayer: Bool;
+  // A one-off story character rather than a generic archetype. Their record is never kept as
+  // a spawn template, because spawning from it would put a visible duplicate of a named
+  // individual on the street.
+  public let victimIsUnique: Bool;
   public let district: CName;
   public let position: Vector4;
   public let at: Float;             // game seconds
@@ -87,7 +91,12 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     if !info.lethal { fs.spared += 1; }
     fs.lastIncidentAt = info.at;
     // Remember a real combatant record so a later hit squad spawns their kind (S-08).
-    if info.victimClass != EnumInt(ECBVictimClass.Civilian) && TDBID.IsValid(info.recordID) {
+    // Generic gang archetypes only. A record is a template the game spawns many separate NPCs
+    // from, so reusing one is "they sent another of those", not the dead one walking back - but
+    // that only holds for generic archetypes. A one-off story character's record would spawn a
+    // visible duplicate of that individual, so it is never kept.
+    if info.victimClass != EnumInt(ECBVictimClass.Civilian) && TDBID.IsValid(info.recordID)
+       && !info.victimIsUnique {
       fs.sampleRecord = info.recordID;
       // An elite, officer or boss makes a far better template for the gang's apex enforcer
       // than a rank-and-file ganger (spec §9.9).

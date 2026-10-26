@@ -168,7 +168,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         }
         // A gang elite is not a boss on its own, so our apex gets lifted to boss grade.
         if des.IsTagged(id, n"CB_Apex") {
-          CBApplyApexBuff(this.GetGameInstance(), puppet);
+          CBApplyApexBuff(this, this.GetGameInstance(), puppet);
         }
       }
     }

@@ -278,9 +278,11 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   out += s"STREET CRED  \(cred)        STYLE  \(style)        HERE  \(district)\n\n";
   let stats = sys.GetStats();
   if IsDefined(stats) {
+    let apexMult = RoundF(CBConfig.ApexHealthMultBase()
+      + ClampF(score.GetMenace() / 100.0, 0.0, 1.0) * CBConfig.ApexHealthMultRange());
     out += s"GANG HEAVIES PUT DOWN   \(stats.apexKills)        RIVALS PUT DOWN   \(stats.rivalsSlain)\n";
-    out += "    Keep hitting one gang and they send their best after you.\n";
-    out += "    These are the ones who did not walk away from it.\n\n";
+    out += "    Keep hitting one gang and they send their best after you. They are\n";
+    out += s"    sized to your build: right now roughly \(apexMult)x what their rank and file take.\n\n";
   }
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
