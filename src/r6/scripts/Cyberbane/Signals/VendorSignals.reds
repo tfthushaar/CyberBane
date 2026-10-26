@@ -47,7 +47,7 @@ func CBVendorBuyModifier(sys: ref<CyberbaneSystem>) -> Float {
     m -= 0.03;
   }
 
-  // Code: a clean professional reputation earns goodwill; a mad dog pays a danger tax.
+  // Code: a clean professional reputation earns goodwill; a cyberpsycho reputation pays a danger tax.
   let code = sys.GetCode();
   if code >= 40.0 {
     m -= 0.05;

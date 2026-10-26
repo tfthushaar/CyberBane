@@ -6,6 +6,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 ## [0.1.14] - 2026-10-27
 
 ### Changed
+- The conduct axis now runs Professional to Cyberpsycho in the Hub. It is what Night City would
+  actually call it, and it reads a lot better than the old wording.
 - The heavy a gang sends now scales with your build. It reads the same measure of how dangerous
   you are that the rest of the mod uses, your level, Street Cred and skills together, so an early
   character meets something beatable and a maxed-out merc meets something that can actually take
@@ -225,7 +227,7 @@ First public release, available on [Nexus Mods](https://www.nexusmods.com/cyberp
 - **Reputation model:** Renown and Dread with their district/faction spread, archetypes
   (Butcher, Ghost, Professional, Chromed, Netrunner, Brawler), titles, and time decay.
 - **Code axis:** a Night-City-flavoured conduct meter - Professional (clean, controlled
-  work, mercy) versus Mad Dog (civilian kills, brutality) - that shifts how people read you.
+  work, mercy) versus Cyberpsycho (civilian kills, brutality) - that shifts how people read you.
 - **Combat tracking:** kills attributed to you and classified by faction and class; an
   encounter tracker that flags massacres and boss-downs; Street Cred, police Heat and
   chrome (cyberware) all feed the model.

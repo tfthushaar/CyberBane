@@ -132,7 +132,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   }
 
   // Code axis (spec §8.11): clean, non-lethal work reads as professional; killing
-  // civilians reads as a mad dog / cyberpsycho; brutal finishers and cop-killing
+  // civilians reads as cyberpsycho behaviour; brutal finishers and cop-killing
   // chip at it. Dropping hostile gangers in a fight is just business (neutral).
   if !info.lethal {
     sys.AddCode(1.0);

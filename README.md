@@ -33,8 +33,9 @@ page describes what the mod does and how it installs.
   so you can be a legend in Watson while Pacifica has never heard of you.
 - **A reputation for how you work.** Night City also reads your conduct. Do clean, controlled
   work and spare people when you can, and you get treated like a professional. Gun down
-  civilians and lean on brutal finishers and the Street starts seeing a mad dog, one edge away
-  from a cyberpsycho. It changes how people talk to you and how they deal with you.
+  civilians and lean on brutal finishers and the Street starts talking about you the way it
+  talks about cyberpsychos, one bad night from going over. It changes how people talk to you
+  and how they deal with you.
 - **A city that reads how dangerous you look.** The more frightening you are, the more people
   back off. Civilians, gang members and even cops can notice you, cower, or flee, and panicked
   drivers pull away in the street. It is not only your reputation: visible chrome, and how

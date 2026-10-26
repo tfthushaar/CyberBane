@@ -220,7 +220,7 @@ public class CBReactionDirector {
     }
 
     // The Street's read on V's Code shifts tone: a merc known for clean, pro work
-    // earns respect from onlookers; a mad dog edging toward cyberpsychosis earns
+    // earns respect from onlookers; someone edging toward cyberpsychosis earns
     // dread even where respect was due.
     let code = sys.GetCode();
     if code >= 40.0 && Equals(mood, n"fear") {

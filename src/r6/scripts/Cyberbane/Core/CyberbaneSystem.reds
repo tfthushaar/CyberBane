@@ -17,7 +17,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_archetype: array<Float>;       // index = ECBArchetype
   private persistent let m_primaryArchetype: Int32;       // -1 = Unknown
   private persistent let m_lastNotifiedTier: Int32;       // for rank-up notifications
-  private persistent let m_code: Float;                   // -100..100 merc Code axis (Mad Dog <-> Professional)
+  private persistent let m_code: Float;                   // -100..100 merc Code axis (Cyberpsycho <-> Professional)
   private persistent let m_lastHeatStage: Int32;          // for heat-point accrual
   private persistent let m_lastSlowTickAt: Float;         // game seconds of last slow tick
 
@@ -1050,7 +1050,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func GetLastHeatStage() -> Int32 { return this.m_lastHeatStage; }
   public func SetLastHeatStage(value: Int32) -> Void { this.m_lastHeatStage = value; }
 
-  // Code axis (spec §8.11): how the Street reads V's conduct, from Mad Dog (-100,
+  // Code axis (spec §8.11): how the Street reads V's conduct, from Cyberpsycho (-100,
   // reckless, civilian-killing, edging toward cyberpsychosis) to Professional
   // (+100, keeps a code, clean work, mercy). Fixers, crews and vendors read it.
   // Separate from Dread (feared) and Renown (known).

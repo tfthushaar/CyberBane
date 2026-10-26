@@ -274,7 +274,8 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   out += "    How much of your cyberware a stranger can see from across the street.\n";
   out += "    Arms read loudest, then eyes, skin and legs.\n\n";
   out += s"CODE              \(code)    ( \(codeLabel) )\n";
-  out += "    How you do the work. Clean and controlled, or a mad dog.\n\n";
+  out += "    How you do the work. Clean and controlled, or one bad night from\n";
+  out += "    going cyberpsycho.\n\n";
   out += s"STREET CRED  \(cred)        STYLE  \(style)        HERE  \(district)\n\n";
   let stats = sys.GetStats();
   if IsDefined(stats) {
@@ -536,7 +537,7 @@ func CBCodeLabel(code: Float) -> String {
     return "Professional";
   }
   if code <= -40.0 {
-    return "Mad Dog";
+    return "Cyberpsycho";
   }
   return "Mixed";
 }
