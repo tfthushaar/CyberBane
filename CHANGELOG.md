@@ -3,6 +3,32 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.10] - 2026-10-26
+
+### Fixed
+- **They Will Remember compatibility was never actually switching itself on.** The setting has
+  an Auto mode, and the README said Cyberbane would spot the mod and stand down from the
+  systems that overlap. The detection behind Auto had never been written, so Auto quietly
+  behaved as Off and both mods ran their own hostility and hit squads side by side. Cyberbane
+  now asks Mod Settings which mods are installed, which is the same list you see in the
+  settings menu, and backs off when it finds They Will Remember. Night City Remembers is
+  recognized too, since it replaces They Will Remember and overlaps the same way. You can
+  still force the compatibility mode on or off yourself. If you have been running either mod
+  alongside Cyberbane, this is the fix you wanted.
+- **Cyberbane now leaves people alone in places the game treats as safe.** Apartments, clinics,
+  bars, memorials and similar spots are tagged as safe areas by the game itself, and Cyberbane
+  was ignoring that: crowd fear, gang reactions, morale breaks and panic driving all still ran
+  inside them. Mourners at the North Oak columbarium would scatter from a well-chromed V, and
+  driving the game's flee behaviour around a cramped interior is a bad idea besides. All four
+  systems now stand down in a safe area. Thanks to the player who tracked their columbarium
+  crashes down to this mod and reported it with the mod list attached.
+
+### Note
+Your build counts toward how frightening you are, not just your reputation, so a New Game Plus
+character carrying maxed-out chrome and skills reads as terrifying from the first minute even
+on a fresh save. That is working as intended out in the city. It is the reason the safe-area
+fix above mattered so much in a quiet interior.
+
 ## [0.1.9] - 2026-10-26
 
 This release fixes the crash the last three releases kept chasing. The earlier fixes all

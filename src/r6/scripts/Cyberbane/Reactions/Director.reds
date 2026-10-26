@@ -46,6 +46,12 @@ public class CBReactionDirector {
     }
     reg.Prune();
 
+    // Somewhere the game calls a safe area - an apartment, a clinic, a bar, a memorial.
+    // Nobody there reacts to V, however frightening V is (spec §16).
+    if sys.IsInSafeZone() {
+      return;
+    }
+
     if this.m_whisperCooldownTicks > 0 {
       this.m_whisperCooldownTicks -= 1;
     }

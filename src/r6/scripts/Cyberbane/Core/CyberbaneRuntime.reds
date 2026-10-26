@@ -12,6 +12,7 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_logLevel: Int32 = 1;   // CBLogLevelInfo
   private let m_settings: ref<CyberbaneSettings>;
   private let m_rewardDepth: Int32;    // nesting depth of the reward hook (see GigBonus)
+  private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -57,6 +58,17 @@ public class CyberbaneRuntime extends ScriptableService {
     if this.m_rewardDepth > 0 {
       this.m_rewardDepth -= 1;
     }
+  }
+
+  // Cached result of the They Will Remember scan. The compat check is read per NPC per
+  // tick, so the scan itself must happen once. Installed mods do not change while the
+  // game is running, so caching it for the session is safe.
+  public func GetTwrDetected() -> Int32 {
+    return this.m_twrDetected;
+  }
+
+  public func SetTwrDetected(present: Bool) -> Void {
+    this.m_twrDetected = present ? 1 : 2;
   }
 
   public func GetLogLevel() -> Int32 {

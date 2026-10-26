@@ -28,6 +28,9 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
       intensity = rt.GetSettings().moraleIntensity;
     }
   }
+  if sys.IsInSafeZone() {
+    return;   // not in a safe area (spec §16)
+  }
   // Bosses and MaxTac never run; the Safety Gate protects quest/companion/scene NPCs.
   // Rivals can run - that is the whole point.
   if !CBSafetyGate.CanAffect(puppet) || puppet.IsBoss() {

@@ -57,6 +57,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
+  private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -272,6 +273,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
 
     this.m_tickCount += 1;
+    // Safe-area check every tick, not on the slow sample: you can walk into a bar or a
+    // clinic in well under ten seconds, and the reaction systems read this.
+    this.m_inSafeZone = CBPlayerInSafeZone(game);
     // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district)
     // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
     // Prevention-system district/heat queries never fire mid-stream. The director reads the
@@ -301,6 +305,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   // the Prevention system every tick keeps that query off the hot path during streaming.
   public func GetCurrentDistrict() -> CName {
     return this.m_currentDistrict;
+  }
+
+  // Player is somewhere the game treats as a safe area. The reaction systems (crowds,
+  // gangs, morale, panic driving) stand down while this is true. Refreshed every tick.
+  public func IsInSafeZone() -> Bool {
+    return this.m_inSafeZone;
   }
 
   // Content service, fetched once (lazily) and cached. Everything goes through CBContent/this so

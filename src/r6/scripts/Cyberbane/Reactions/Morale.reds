@@ -40,6 +40,9 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
   if !IsDefined(reg) {
     return;
   }
+  if sys.IsInSafeZone() {
+    return;   // not in a safe area (spec §16)
+  }
 
   // Losing the group's officer or boss is a far harder blow than a rank-and-file death.
   let bossOrOfficer = info.victimClass == EnumInt(ECBVictimClass.Boss)

@@ -20,6 +20,9 @@ public func CBPanicDrivingTick(sys: ref<CyberbaneSystem>, game: GameInstance, ti
       return;
     }
   }
+  if !IsDefined(sys) || sys.IsInSafeZone() {
+    return;   // not in a safe area (spec §16)
+  }
   let score = sys.GetScore();
   if !IsDefined(score) || score.GetDreadCiv() < CBConfig.CivTierTerror() {
     return;   // only the genuinely feared clear the streets

@@ -31,8 +31,10 @@ public abstract class CBSafetyGate {
     if IsDefined(ws) && ws.IsActorInWorkspot(puppet) {
       return false;
     }
-    // TODO S-13: unique exclusion list, AMM-spawned, safe zones, braindance,
-    // active-quest-area exclusions.
+    // Safe areas are handled one level up, by the reaction systems themselves, via
+    // CBPlayerInSafeZone - it is a property of where V is standing, not of this NPC.
+    // TODO S-13: unique exclusion list, AMM-spawned, braindance, active-quest-area
+    // exclusions.
     return true;
   }
 }

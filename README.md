@@ -20,7 +20,7 @@ certain way, open the Hub and read the breakdown.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: early release (0.1.9).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: early release (0.1.10).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -131,12 +131,16 @@ and rebind the Hub key.
 
 ## Compatibility
 
-- They Will Remember: supported. Cyberbane automatically backs off the systems that overlap
-  (hostility on sight, hit squads, faction-colour disguises) and keeps the rest.
+- They Will Remember: supported. Cyberbane spots it through Mod Settings and backs off the
+  systems that overlap (hostility on sight, hit squads, faction-colour disguises), keeping the
+  rest. Night City Remembers is treated the same way, since it replaces They Will Remember. You
+  can force the compatibility mode on or off yourself in Mod Settings.
 - Responsive NPCs: works alongside. If crowd reactions feel doubled, lower civilian intensity or
   disable one side's crowd reactions.
 - Night City Alive and other crowd or patrol mods: supported.
 - AMM, romance and companion mods, quest NPCs and unique characters: always left untouched.
+- Safe areas: in places the game itself treats as safe, such as apartments, clinics, bars and
+  memorials, Cyberbane's reactions stand down and nobody there responds to you.
 - New Game+: starts a fresh reputation for the new playthrough.
 
 ## Credits

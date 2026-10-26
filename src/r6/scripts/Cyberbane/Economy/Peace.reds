@@ -24,10 +24,44 @@ public func CBTwrActive() -> Bool {
   return CBDetectTwr();   // Auto
 }
 
-// TODO S-16: detect They Will Remember at runtime (a known record / class). Until that
-// is verified in-game, Auto behaves as Off so Cyberbane keeps its own systems.
+// Detect They Will Remember by asking Mod Settings which mods have registered a page.
+//
+// That list is the steadiest signal available: They Will Remember requires Mod Settings,
+// and the names in this list are the ones the player sees in the settings menu, so they
+// do not move when the other mod reorganises its own classes. Matching on "Remember" also
+// catches Night City Remembers, which is a ground-up replacement for They Will Remember
+// and overlaps Cyberbane in exactly the same places.
+//
+// Scanned once and cached on the runtime service - the compat check is read per NPC per
+// tick. An empty list means Mod Settings has not finished registering yet, so that answer
+// is not cached and the scan is retried on the next call.
 func CBDetectTwr() -> Bool {
-  return false;
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) {
+    let cached = rt.GetTwrDetected();
+    if cached != 0 {
+      return cached == 1;
+    }
+  }
+  let mods = ModSettings.GetMods();
+  if ArraySize(mods) == 0 {
+    return false;   // not ready yet; ask again next time rather than caching a guess
+  }
+  let found = false;
+  for mod in mods {
+    if StrContains(NameToString(mod), "Remember") {
+      found = true;
+    }
+  }
+  if IsDefined(rt) {
+    rt.SetTwrDetected(found);
+  }
+  if found {
+    CBLog.Info(n"Core", "They Will Remember detected; standing down the systems that overlap (hostility on sight, hit squads, faction disguises).");
+  } else {
+    CBLog.Info(n"Core", "They Will Remember not detected; Cyberbane is running its own hostility, hit squad and disguise systems.");
+  }
+  return found;
 }
 
 // Pay off a single faction. Returns true only if peace was actually brokered.

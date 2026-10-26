@@ -65,6 +65,26 @@ public func CBWorldStable(game: GameInstance) -> Bool {
   return true;
 }
 
+// Is the player standing in a zone the game itself treats as safe?
+//
+// The engine tags apartments, clinics, bars, memorials and the like as safe areas, and
+// that classification is the right authority on where Cyberbane should keep its hands to
+// itself - people do not scatter from a columbarium because a chromed merc walked in.
+// Reading the game's own zone means this covers every such place without Cyberbane having
+// to carry a list of locations (spec §16, S-13).
+public func CBPlayerInSafeZone(game: GameInstance) -> Bool {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(bbs) {
+    return true;   // cannot tell: assume safe and do nothing
+  }
+  let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
+  if !IsDefined(psm) {
+    return true;
+  }
+  let zone = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.Zones);
+  return zone == EnumInt(gamePSMZones.Safe);
+}
+
 // True only when this NPC is safe to read native state from. Guards every per-NPC query so the
 // runtime never touches a streaming-out (detaching) or freshly-streamed-in (not-yet-ready) NPC.
 public func CBNpcSafe(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
