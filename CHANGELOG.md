@@ -3,6 +3,14 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.7] - 2026-10-26
+
+### Fixed
+- The Hub now shows your current Renown and Dread the moment you open it, including right after
+  a fast travel or sleep. Before this, the Street Cred floor on Renown and your chrome could read
+  as 0 for a short time after a world transition, because those values were only refreshed on a
+  slow timer. Opening the Hub now refreshes them on the spot.
+
 ## [0.1.6] - 2026-10-26
 
 ### Fixed

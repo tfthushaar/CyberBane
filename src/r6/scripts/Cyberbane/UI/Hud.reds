@@ -193,6 +193,16 @@ public class CBHud {
       this.m_root.SetVisible(false);
       return;
     }
+    // Refresh the live inputs so the Hub always shows current values (the Street Cred floor on
+    // Renown, chrome, look, menace), even right after a fast travel when the background tick is
+    // still in its settle window. Gated by CBWorldStable so it only reads player/world state when
+    // the world is ready - never during a transition, so it cannot reintroduce the crash.
+    if CBWorldStable(game) {
+      CBRefreshLiveInputs(sys, game);
+      CBUpdateChrome(sys, game);
+      CBUpdateLook(sys, game);
+      CBUpdateMenace(sys, game);
+    }
     let score = sys.GetScore();
     let titleName = CBHudActiveTitle(sys);
     let tier = IsDefined(score) ? CBTierName(EnumInt(score.GetTier())) : "Nobody";
