@@ -280,8 +280,8 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   if IsDefined(stats) {
     let apexMult = RoundF(CBConfig.ApexHealthMultBase()
       + ClampF(score.GetMenace() / 100.0, 0.0, 1.0) * CBConfig.ApexHealthMultRange());
-    out += s"GANG HEAVIES PUT DOWN   \(stats.apexKills)        RIVALS PUT DOWN   \(stats.rivalsSlain)\n";
-    out += "    Keep hitting one gang and they send their best after you. They are\n";
+    out += s"APEX HUNTERS PUT DOWN   \(stats.apexKills)        RIVALS PUT DOWN   \(stats.rivalsSlain)\n";
+    out += "    Keep hitting one gang and they send an apex hunter after you. They are\n";
     out += s"    sized to your build: right now roughly \(apexMult)x what their rank and file take.\n\n";
   }
   out += CBHudDreadReason(sys) + "\n";

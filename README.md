@@ -53,8 +53,8 @@ page describes what the mod does and how it installs.
   come back as a named Rival who hunts you. Vendors give fear or respect discounts, and fixers pay
   the famous a bonus on job payouts. You can also buy your way out of a vendetta by brokering peace
   with a gang from the Hub.
-- **Gangs send their best.** Keep putting one crew in the ground and they stop sending squads and
-  send someone who matters. You get a warning first, then a named heavy walks in with a couple of
+- **Gangs send an apex hunter.** Keep putting one crew in the ground and they stop sending squads
+  and send someone who matters. You get a warning first, then a named hunter walks in with a couple of
   their people, built from the toughest member of that gang you have actually fought and lifted to
   boss grade so it is a real fight. They are sized to your build, so they stay a real fight as you
   get stronger. No story character is ever used, so nothing gets spoiled and you never meet a
