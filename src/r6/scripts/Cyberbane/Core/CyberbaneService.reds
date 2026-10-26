@@ -24,7 +24,13 @@ public class CyberbaneService extends ScriptableService {
   private persistent let m_ledger: array<ref<CBLedgerEntry>>;   // cap 100 total, 30 per playthrough, FIFO
 
   public static func Get() -> ref<CyberbaneService> {
-    return GameInstance.GetScriptableServiceContainer().GetService(n"CyberbaneService") as CyberbaneService;
+    // The service container is null during world transitions; calling GetService on a null
+    // container crashes, so bail out until it is back (crash safety).
+    let container = GameInstance.GetScriptableServiceContainer();
+    if !IsDefined(container) {
+      return null;
+    }
+    return container.GetService(n"CyberbaneService") as CyberbaneService;
   }
 
   // Bump the global schema version to the current build. (Global migrations, if

@@ -58,7 +58,12 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
-    return GameInstance.GetScriptableSystemsContainer(game).Get(n"CyberbaneSystem") as CyberbaneSystem;
+    // The systems container can be null during world transitions; never deref it then (crash safety).
+    let container = GameInstance.GetScriptableSystemsContainer(game);
+    if !IsDefined(container) {
+      return null;
+    }
+    return container.Get(n"CyberbaneSystem") as CyberbaneSystem;
   }
 
   // ---- Lifecycle --------------------------------------------------------

@@ -3,6 +3,15 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.6] - 2026-10-26
+
+### Fixed
+- Fixed a crash that could still happen after sleeping, fast travelling, skipping time, or
+  entering a braindance. Cyberbane was looking up its own data while the game was mid-transition,
+  before the service that holds it was ready, which crashed the game. Cyberbane now checks that
+  the service is ready first and waits instead of crashing. Thanks to the players who tracked
+  down the exact cause and shared their crash reports.
+
 ## [0.1.5] - 2026-10-26
 
 Updated for Cyberpunk 2077 2.5.
@@ -12,11 +21,10 @@ Updated for Cyberpunk 2077 2.5.
   frameworks (RED4ext, redscript, Codeware, Mod Settings).
 
 ### Fixed
-- Fixed crashes that could happen around fast travel, time skips, cyberware installs at a
-  ripperdoc, and scenes such as holocalls. The cause was Cyberbane reading world data while
-  the game was still streaming it in. Cyberbane now stands its background systems down while
-  the game is loading, fast travelling, skipping time, or in a scene, and only resumes once
-  the world has finished settling.
+- Reworked how Cyberbane runs during world streaming so it no longer reads world data while the
+  game is still loading it in. Cyberbane stands its background systems down during loading, fast
+  travel, time skips, and scenes, and resumes once the world has settled. This fixed the
+  fast-travel crash.
 
 ## [0.1.1] - 2026-10-26
 

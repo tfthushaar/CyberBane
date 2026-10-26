@@ -168,7 +168,14 @@ public class CyberbaneContent extends ScriptableService {
   private let m_built: Bool;
 
   public static func Get() -> ref<CyberbaneContent> {
-    let c = GameInstance.GetScriptableServiceContainer().GetService(n"CyberbaneContent") as CyberbaneContent;
+    // The service container is null during world transitions (sleep, fast travel, Skip Time,
+    // braindance entry). Calling GetService on a null container reads a null context and crashes
+    // - this is what took down the slow tick after a transition. Bail out until it is back.
+    let container = GameInstance.GetScriptableServiceContainer();
+    if !IsDefined(container) {
+      return null;
+    }
+    let c = container.GetService(n"CyberbaneContent") as CyberbaneContent;
     if IsDefined(c) {
       c.EnsureBuilt();
     }

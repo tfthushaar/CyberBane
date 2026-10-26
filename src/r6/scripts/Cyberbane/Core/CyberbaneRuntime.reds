@@ -13,7 +13,14 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_settings: ref<CyberbaneSettings>;
 
   public static func Get() -> ref<CyberbaneRuntime> {
-    return GameInstance.GetScriptableServiceContainer().GetService(n"CyberbaneRuntime") as CyberbaneRuntime;
+    // The service container is null during world transitions (sleep, fast travel, Skip Time,
+    // braindance entry). Calling GetService on a null container reads a null context and crashes,
+    // so bail out and let callers treat the runtime as not-yet-available (crash safety).
+    let container = GameInstance.GetScriptableServiceContainer();
+    if !IsDefined(container) {
+      return null;
+    }
+    return container.GetService(n"CyberbaneRuntime") as CyberbaneRuntime;
   }
 
   public func GetSettings() -> ref<CyberbaneSettings> {
