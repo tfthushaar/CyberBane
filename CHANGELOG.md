@@ -12,6 +12,13 @@ This project follows [Semantic Versioning](https://semver.org/).
   You get a warning line first, then they arrive. No story character is ever involved, so this
   cannot spoil anything or interfere with a quest, and it works for every gang rather than only
   the ones with a famous name. It uses the same setting as hit squads.
+- The Hub counts the gang heavies and Rivals you have put down, so the ones you beat stay on
+  the board.
+
+### Compatibility
+- If another mod already handles gangs coming after you, such as They Will Remember or Night
+  City Remembers, Cyberbane now stands its apex enforcers down alongside its hit squads instead
+  of sending a second wave on top of theirs. This is automatic and needs no setup.
 
 ## [0.1.11] - 2026-10-27
 

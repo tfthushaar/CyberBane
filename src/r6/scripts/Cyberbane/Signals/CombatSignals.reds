@@ -98,6 +98,14 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       // Queue the sweep instead; the next settled fast tick clears the tag (crash safety).
       sysE.RequestRivalSweep();
     }
+    // Putting a gang's apex enforcer down is a trophy worth keeping (spec §9.9). Only counts
+    // when V actually had a hand in it.
+    if IsDefined(desE) && puppet.cbDamagedByPlayer && desE.IsTagged(puppet.GetEntityID(), n"CB_Apex") {
+      let st = sysE.GetStats();
+      if IsDefined(st) {
+        st.apexKills += 1;
+      }
+    }
   }
 
   if !puppet.cbDamagedByPlayer {

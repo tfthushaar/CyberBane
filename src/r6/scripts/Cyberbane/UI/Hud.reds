@@ -276,6 +276,12 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   out += s"CODE              \(code)    ( \(codeLabel) )\n";
   out += "    How you do the work. Clean and controlled, or a mad dog.\n\n";
   out += s"STREET CRED  \(cred)        STYLE  \(style)        HERE  \(district)\n\n";
+  let stats = sys.GetStats();
+  if IsDefined(stats) {
+    out += s"GANG HEAVIES PUT DOWN   \(stats.apexKills)        RIVALS PUT DOWN   \(stats.rivalsSlain)\n";
+    out += "    Keep hitting one gang and they send their best after you.\n";
+    out += "    These are the ones who did not walk away from it.\n\n";
+  }
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
   return out;

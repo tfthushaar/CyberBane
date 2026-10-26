@@ -55,6 +55,7 @@ public class CBStats {
   public persistent let deaths: Int32;
   public persistent let rivalsSlain: Int32;
   public persistent let rivalsSpared: Int32;
+  public persistent let apexKills: Int32;              // gang apex enforcers V has put down
   public persistent let tributeEddies: Int32;
   public persistent let timesRecognized: Int32;
   public persistent let maxHeat: Int32;

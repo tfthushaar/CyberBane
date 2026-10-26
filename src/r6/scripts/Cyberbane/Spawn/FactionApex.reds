@@ -42,6 +42,13 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       return;   // shares the "gangs send people after you" switch
     }
   }
+  // Another mod already owns gangs coming after you. The apex is the same kind of system as a
+  // hit squad, so it stands down with them rather than stacking a second wave of enemies on
+  // top of theirs (spec §17). Detection is the shared They Will Remember / Night City
+  // Remembers scan, so this needs no setup from the player.
+  if CBTwrActive() {
+    return;
+  }
   if NotEquals(sys.GetPendingApexFaction(), n"") {
     return;   // one is already on the way
   }
