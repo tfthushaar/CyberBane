@@ -55,13 +55,16 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
   while i < ArraySize(rivals) {
     let r = rivals[i];
     i += 1;
-    let seeking = r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
-    if IsDefined(r) && seeking
-       && TDBID.IsValid(r.recordID)
-       && (r.nextEligibleAt <= 0.0 || now >= r.nextEligibleAt) {
-      if RandF() < 0.35 {
-        CBSpawnRival(sys, game, r, now);
-        return;
+    // Check the handle before reading anything off it.
+    if IsDefined(r) {
+      let seeking = r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
+      if seeking
+         && TDBID.IsValid(r.recordID)
+         && (r.nextEligibleAt <= 0.0 || now >= r.nextEligibleAt) {
+        if RandF() < 0.35 {
+          CBSpawnRival(sys, game, r, now);
+          return;
+        }
       }
     }
   }

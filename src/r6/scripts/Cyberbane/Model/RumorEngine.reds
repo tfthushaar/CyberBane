@@ -9,7 +9,7 @@
 // lands, origins are n"" and district effects are skipped, but the plumbing runs.
 
 public func CBApplyDistrictRenown(sys: ref<CyberbaneSystem>, districtId: CName, amount: Float) -> Void {
-  if Equals(districtId, n"") || amount <= 0.0 {
+  if !IsDefined(sys) || Equals(districtId, n"") || amount <= 0.0 {
     return;
   }
   let ds = sys.EnsureDistrict(districtId);
@@ -39,23 +39,36 @@ public func CBCreateRumor(sys: ref<CyberbaneSystem>, game: GameInstance, kind: C
   r.lastSpreadAt = now;
   r.hops = 0;
   r.witnessed = witnessed;
-  ArrayPush(r.reached, origin);
+  r.reachedMask = CBMaskSet(0, CBDistrictIndex(origin));   // unknown origin sets no bit
 
   CBApplyDistrictRenown(sys, origin, r.magnitude * (witnessed ? 1.0 : 0.3));
   sys.AddRumor(r);
   CBTrimRumors(sys, now);
 }
 
+// Drop rumors once the store is over its cap, oldest-expired first.
+//
+// Every element is fetched through GetRumorAt, which indexes the live persistent array
+// directly. Never index the array returned by GetRumors(): that getter returns the array
+// *by value*, so indexing the call result reads out of a temporary copy that is torn down
+// at the end of the statement, leaving a handle to freed memory (crash safety).
 func CBTrimRumors(sys: ref<CyberbaneSystem>, now: Float) -> Void {
   let lifetime = CBConfig.RumorLifetimeDays() * CBConfig.SecondsPerDay();
-  while ArraySize(sys.GetRumors()) > CBConfig.CapRumors() {
-    let rumors = sys.GetRumors();
+  let guardTrips = 0;
+  while sys.GetRumorCount() > CBConfig.CapRumors() {
+    // Belt and braces: a store that somehow never shrinks must not spin forever.
+    guardTrips += 1;
+    if guardTrips > CBConfig.CapRumors() * 2 {
+      return;
+    }
     let dropIdx = -1;
     let i = 0;
-    while i < ArraySize(rumors) {
-      if (now - rumors[i].createdAt) > lifetime {
+    let count = sys.GetRumorCount();
+    while i < count {
+      let r = sys.GetRumorAt(i);
+      if !IsDefined(r) || (now - r.createdAt) > lifetime {
         dropIdx = i;
-        i = ArraySize(rumors);
+        i = count;
       } else {
         i += 1;
       }
@@ -74,13 +87,18 @@ public func CBRumorTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
   let now = CBGameSeconds(game);
   let content = CBContent(game);
+  if !IsDefined(content) {
+    return;   // nothing to spread into without the district table
+  }
   let spreadInterval = CBConfig.RumorSpreadHours() * CBConfig.SecondsPerHour();
   let lifetime = CBConfig.RumorLifetimeDays() * CBConfig.SecondsPerDay();
 
   let i = 0;
-  while i < ArraySize(sys.GetRumors()) {
-    let r = sys.GetRumors()[i];
-    if (now - r.createdAt) > lifetime {
+  while i < sys.GetRumorCount() {
+    let r = sys.GetRumorAt(i);
+    // A hole in the store (a rumor that failed to come back from the save) is dropped
+    // rather than dereferenced.
+    if !IsDefined(r) || (now - r.createdAt) > lifetime {
       sys.RemoveRumorAt(i);
       // array shifted: do not advance i
     } else {
@@ -92,26 +110,46 @@ public func CBRumorTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
 }
 
+// Spread a rumor one hop outward: every district adjacent to one it has already reached
+// picks it up at half magnitude.
+//
+// The "already reached" set is a bit per district on the rumor itself, and the walk is a
+// counted loop over the fixed district list - there is no stored list to index into and
+// nothing here can run past the end of anything, whatever a save hands back.
 func CBSpreadRumor(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, r: ref<CBRumor>, now: Float) -> Void {
-  if !IsDefined(content) {
+  if !IsDefined(sys) || !IsDefined(content) || !IsDefined(r) {
     return;
   }
   let spreadMag = r.magnitude * CBConfig.RumorSpreadMagnitudeMult();
-  let newReached: array<CName>;
-  for reachedId in r.reached {
-    let d = content.GetDistrict(reachedId);
-    if IsDefined(d) {
-      for adj in d.adjacency {
-        if !ArrayContains(r.reached, adj) && !ArrayContains(newReached, adj) {
-          ArrayPush(newReached, adj);
+  let reached = r.reachedMask;
+  let addedMask = 0;
+  let count = CBDistrictCount();
+
+  let i = 0;
+  while i < count {
+    if CBMaskHas(reached, i) {
+      let d = content.GetDistrict(CBDistrictAt(i));
+      if IsDefined(d) {
+        for adj in d.adjacency {
+          let bit = CBDistrictIndex(adj);
+          if bit >= 0 && !CBMaskHas(reached, bit) && !CBMaskHas(addedMask, bit) {
+            addedMask = CBMaskSet(addedMask, bit);
+          }
         }
       }
     }
+    i += 1;
   }
-  for adj in newReached {
-    ArrayPush(r.reached, adj);
-    CBApplyDistrictRenown(sys, adj, spreadMag);
+
+  let j = 0;
+  while j < count {
+    if CBMaskHas(addedMask, j) {
+      r.reachedMask = CBMaskSet(r.reachedMask, j);
+      CBApplyDistrictRenown(sys, CBDistrictAt(j), spreadMag);
+    }
+    j += 1;
   }
+
   r.hops += 1;
   r.lastSpreadAt = now;
   r.magnitude = spreadMag;

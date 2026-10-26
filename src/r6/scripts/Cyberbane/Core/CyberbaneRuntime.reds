@@ -11,6 +11,7 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_enabled: Bool = true;
   private let m_logLevel: Int32 = 1;   // CBLogLevelInfo
   private let m_settings: ref<CyberbaneSettings>;
+  private let m_rewardDepth: Int32;    // nesting depth of the reward hook (see GigBonus)
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -41,6 +42,21 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetEnabled(value: Bool) -> Void {
     this.m_enabled = value;
+  }
+
+  // Reward-hook nesting. Granting a reward can grant another one (a job payout that pushes
+  // Street Cred over a level hands out the level reward inside the same call), so the gig
+  // bonus must only ever be worked out by the outermost call - otherwise the inner payout
+  // and its bonus are both counted again by the outer one.
+  public func EnterReward() -> Int32 {
+    this.m_rewardDepth += 1;
+    return this.m_rewardDepth;
+  }
+
+  public func ExitReward() -> Void {
+    if this.m_rewardDepth > 0 {
+      this.m_rewardDepth -= 1;
+    }
   }
 
   public func GetLogLevel() -> Int32 {

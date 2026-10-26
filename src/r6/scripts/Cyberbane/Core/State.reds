@@ -76,7 +76,12 @@ public class CBRumor {
   public persistent let lastSpreadAt: Float;
   public persistent let hops: Int32;               // max 2
   public persistent let witnessed: Bool;
-  public persistent let reached: array<CName>;     // districts already reached
+  // Districts already reached, as a bit per district (CBDistrictIndex). This was an
+  // array<CName> through 0.1.8. A dynamic array nested inside a persisted class is not a
+  // documented-supported shape, and one that did not survive a save/load round trip handed
+  // the engine a buffer header with a nonsense capacity, which is what crashed the slow
+  // tick. A plain Int32 cannot come back malformed (schema 2).
+  public persistent let reachedMask: Int32;
 }
 
 public class CBRivalEvent {
@@ -97,8 +102,10 @@ public class CBRival {
   public persistent let firstName: Int32;          // index into faction name pool
   public persistent let lastName: Int32;
   public persistent let epithet: Int32;            // index into epithet pool
-  public persistent let traits: array<CName>;
-  public persistent let weaknesses: array<CName>;
+  // Traits and weaknesses as a bit per registry entry (CBTraitBit); see the note on
+  // CBRumor.reachedMask for why these are no longer nested CName arrays (schema 2).
+  public persistent let traitMask: Int32;
+  public persistent let weaknessMask: Int32;
   public persistent let encounters: Int32;
   public persistent let escapes: Int32;
   public persistent let killedV: Int32;

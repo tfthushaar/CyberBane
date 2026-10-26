@@ -70,7 +70,7 @@ public class CyberbaneService extends ScriptableService {
     let i = ArraySize(this.m_ledger) - 1;
     // Count newest-first; drop the oldest matching entries beyond the cap.
     while i >= 0 {
-      if Equals(this.m_ledger[i].playthroughId, playthroughId) {
+      if IsDefined(this.m_ledger[i]) && Equals(this.m_ledger[i].playthroughId, playthroughId) {
         count += 1;
       }
       i -= 1;
@@ -78,7 +78,7 @@ public class CyberbaneService extends ScriptableService {
     while count > cap {
       let j = 0;
       while j < ArraySize(this.m_ledger) {
-        if Equals(this.m_ledger[j].playthroughId, playthroughId) {
+        if !IsDefined(this.m_ledger[j]) || Equals(this.m_ledger[j].playthroughId, playthroughId) {
           ArrayErase(this.m_ledger, j);
           count -= 1;
           break;

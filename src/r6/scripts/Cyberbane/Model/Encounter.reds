@@ -39,6 +39,12 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     enc.bossDown = true;
   }
   ArrayPush(enc.killTicks, sys.GetTickCount());
+  // The massacre test only looks at a 30-tick window, so older entries can never change
+  // the answer. Keeping the list bounded matters because a fight V never breaks off would
+  // otherwise grow it for the whole session, and the window scan is quadratic.
+  while ArraySize(enc.killTicks) > CBConfig.CapEncounterKillTicks() {
+    ArrayErase(enc.killTicks, 0);
+  }
   enc.outOfCombatTicks = 0;
 }
 
@@ -87,7 +93,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     if toasts {
       CBShowMessage(game, "Cyberbane: Massacre. The streets will talk about this.", 4.0);
     }
-    CBCreateRumor(sys, game, n"Massacre", 8.0, CBCurrentDistrict(game), n"", true);
+    CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
     CBLog.Info(n"Model", s"Massacre resolved (\(enc.kills) kills).");
   }
 

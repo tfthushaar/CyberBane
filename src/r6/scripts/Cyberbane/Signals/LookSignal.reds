@@ -19,7 +19,7 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   if !IsDefined(score) || !IsDefined(content) || !IsDefined(player) {
     return;
   }
-  let es = GameInstance.GetScriptableSystemsContainer(game).Get(n"EquipmentSystem") as EquipmentSystem;
+  let es = CBGetSystem(game, n"EquipmentSystem") as EquipmentSystem;
   if !IsDefined(es) {
     return;
   }

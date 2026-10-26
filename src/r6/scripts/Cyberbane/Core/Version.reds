@@ -6,11 +6,14 @@
 //
 // Global scope (no module); every symbol is prefixed to avoid collisions.
 
-public func CyberbaneVersion() -> String = "0.1.8"
+public func CyberbaneVersion() -> String = "0.1.9"
 
 // Numeric form: major*10000 + minor*100 + patch. Used for logging and gating.
-public func CyberbaneVersionCode() -> Int32 = 108
+public func CyberbaneVersionCode() -> Int32 = 109
 
 // Current persistent-state schema version (see spec section 19.2). Bump and add a
 // Migrate() step whenever the shape of persistent data changes.
-public func CyberbaneSchemaVersion() -> Int32 = 1
+//
+// 2: rumor "districts reached" and Rival traits/weaknesses moved from nested CName
+//    arrays to Int32 bit sets, so no persisted class holds a dynamic array of values.
+public func CyberbaneSchemaVersion() -> Int32 = 2

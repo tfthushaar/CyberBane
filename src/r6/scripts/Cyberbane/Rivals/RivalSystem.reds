@@ -10,11 +10,14 @@ public func CBHashIndex(seed: Int32, salt: Int32, modulo: Int32) -> Int32 {
   if modulo <= 0 {
     return 0;
   }
-  let h = seed * 73 + salt * 19 + 7;
+  // Take the remainder first, then lift it into range. Negating before the modulo leaves
+  // the most negative Int32 negative (it has no positive counterpart), which would hand
+  // back a negative index and read off the front of the pool array.
+  let h = (seed * 73 + salt * 19 + 7) % modulo;
   if h < 0 {
-    h = -h;
+    h += modulo;
   }
-  return h % modulo;
+  return h;
 }
 
 public func CBEpithetsForSource(content: ref<CyberbaneContent>, source: Int32) -> array<String> {
@@ -35,6 +38,9 @@ public func CBEpithetsForSource(content: ref<CyberbaneContent>, source: Int32) -
 }
 
 public func CBRivalGenerateName(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Void {
+  if !IsDefined(rival) {
+    return;
+  }
   rival.firstName = -1;
   rival.lastName = -1;
   rival.epithet = -1;
@@ -57,6 +63,9 @@ public func CBRivalGenerateName(content: ref<CyberbaneContent>, rival: ref<CBRiv
 }
 
 public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> String {
+  if !IsDefined(rival) {
+    return "";
+  }
   let eps = CBEpithetsForSource(content, rival.source);
   if rival.epithet >= 0 && rival.epithet < ArraySize(eps) {
     return eps[rival.epithet];
@@ -66,6 +75,9 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
 
 // Full on-screen name, e.g. Kenji "Who Ran" Morita.
 public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> String {
+  if !IsDefined(rival) {
+    return "Unknown";
+  }
   let first = "Unknown";
   let last = "";
   if IsDefined(content) {
@@ -91,6 +103,9 @@ public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRiva
 }
 
 public func CBRivalAddEvent(rival: ref<CBRival>, kind: ECBRivalEventKind, at: Float, district: CName, detail: Int32) -> Void {
+  if !IsDefined(rival) {
+    return;
+  }
   let e = new CBRivalEvent();
   e.kind = EnumInt(kind);
   e.at = at;
@@ -102,20 +117,56 @@ public func CBRivalAddEvent(rival: ref<CBRival>, kind: ECBRivalEventKind, at: Fl
   }
 }
 
+// Does this Rival carry the named trait? Traits live in a bit set on the Rival rather
+// than a stored list (see CBRival.traitMask), so this is a plain integer test.
+public func CBRivalHasTrait(rival: ref<CBRival>, id: CName) -> Bool {
+  if !IsDefined(rival) {
+    return false;
+  }
+  return CBMaskHas(rival.traitMask, CBTraitBit(id));
+}
+
+public func CBRivalGiveTrait(rival: ref<CBRival>, id: CName) -> Void {
+  if !IsDefined(rival) {
+    return;
+  }
+  let bit = CBTraitBit(id);
+  if bit >= 0 {
+    rival.traitMask = CBMaskSet(rival.traitMask, bit);
+  }
+}
+
+public func CBRivalTakeTrait(rival: ref<CBRival>, id: CName) -> Void {
+  if !IsDefined(rival) {
+    return;
+  }
+  let bit = CBTraitBit(id);
+  if bit >= 0 {
+    rival.traitMask = CBMaskClear(rival.traitMask, bit);
+  }
+}
+
+public func CBRivalTraitCount(rival: ref<CBRival>) -> Int32 {
+  if !IsDefined(rival) {
+    return 0;
+  }
+  return CBMaskCount(rival.traitMask, CBTraitCount());
+}
+
 // Add one random non-weakness trait not already present (deterministic by id).
 public func CBRivalAddTrait(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Void {
-  if !IsDefined(content) {
+  if !IsDefined(content) || !IsDefined(rival) {
     return;
   }
   let pool: array<CName>;
   for t in content.GetTraits() {
-    if !t.isWeakness && !ArrayContains(rival.traits, t.id) {
+    if IsDefined(t) && !t.isWeakness && !CBRivalHasTrait(rival, t.id) && CBTraitBit(t.id) >= 0 {
       ArrayPush(pool, t.id);
     }
   }
   if ArraySize(pool) > 0 {
-    let idx = CBHashIndex(rival.id, 11 + ArraySize(rival.traits), ArraySize(pool));
-    ArrayPush(rival.traits, pool[idx]);
+    let idx = CBHashIndex(rival.id, 11 + CBRivalTraitCount(rival), ArraySize(pool));
+    CBRivalGiveTrait(rival, pool[idx]);
   }
 }
 
@@ -156,7 +207,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   CBRivalGenerateName(content, r);
   CBRivalAddTrait(content, r);
   if Equals(source, ECBRivalSource.Spared) {
-    ArrayPush(r.traits, n"Humiliated");
+    CBRivalGiveTrait(r, n"Humiliated");
   }
 
   sys.AddRival(r);
@@ -171,7 +222,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 }
 
 public func CBPromoteRival(rival: ref<CBRival>, content: ref<CyberbaneContent>, at: Float) -> Void {
-  if rival.rank >= 4 {
+  if !IsDefined(rival) || rival.rank >= 4 {
     return;
   }
   rival.rank += 1;
@@ -182,27 +233,34 @@ public func CBPromoteRival(rival: ref<CBRival>, content: ref<CyberbaneContent>, 
 // --- State transitions (spec §10.6) ------------------------------------
 
 public func CBRivalEscaped(rival: ref<CBRival>, content: ref<CyberbaneContent>, at: Float, district: CName, lowHp: Bool) -> Void {
+  if !IsDefined(rival) {
+    return;
+  }
   rival.escapes += 1;
   rival.lastSeenAt = at;
   CBRivalAddEvent(rival, ECBRivalEventKind.Escaped, at, district, 0);
   CBPromoteRival(rival, content, at);
-  if lowHp && !ArrayContains(rival.traits, n"Scarred") {
-    ArrayPush(rival.traits, n"Scarred");
+  if lowHp {
+    CBRivalGiveTrait(rival, n"Scarred");
   }
 }
 
 public func CBRivalKilledV(rival: ref<CBRival>, content: ref<CyberbaneContent>, at: Float, district: CName) -> Void {
-  rival.killedV += 1;
-  ArrayRemove(rival.traits, n"Shaken");
-  if !ArrayContains(rival.traits, n"Confident") {
-    ArrayPush(rival.traits, n"Confident");
+  if !IsDefined(rival) {
+    return;
   }
+  rival.killedV += 1;
+  CBRivalTakeTrait(rival, n"Shaken");
+  CBRivalGiveTrait(rival, n"Confident");
   CBRivalAddEvent(rival, ECBRivalEventKind.KilledV, at, district, 0);
   CBPromoteRival(rival, content, at);
 }
 
 // Returns true if the Rival became a Debtor (retires via a redemption tip).
 public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>, at: Float, district: CName) -> Bool {
+  if !IsDefined(rival) {
+    return false;
+  }
   rival.sparedByV += 1;
   CBRivalAddEvent(rival, ECBRivalEventKind.SparedByV, at, district, 0);
   if rival.sparedByV >= 2 && RandF() < 0.5 {
@@ -278,7 +336,8 @@ public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance
   let content = CBContent(game);
   let neglect = CBConfig.SecondsPerDay();   // left alone for a day and they get stronger
   for r in sys.GetRivals() {
-    let active = r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
+    let active = IsDefined(r)
+      && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting));
     if active && r.rank < 4 && (now - r.lastSeenAt) > neglect {
       if RandF() < 0.6 {
         CBPromoteRival(r, content, now);

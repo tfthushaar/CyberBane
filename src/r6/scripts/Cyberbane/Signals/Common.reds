@@ -26,11 +26,24 @@ public func CBPlayerStreetCred(game: GameInstance) -> Float {
   return stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.StreetCred);
 }
 
+// Fetch a scriptable system by name, or null when the container is not there.
+//
+// The systems container is null during world transitions (loads, fast travel, Skip Time,
+// braindance entry). Calling Get on a null container reads a null context and crashes, so
+// every system lookup in the mod goes through this (crash safety).
+public func CBGetSystem(game: GameInstance, name: CName) -> ref<ScriptableSystem> {
+  let container = GameInstance.GetScriptableSystemsContainer(game);
+  if !IsDefined(container) {
+    return null;
+  }
+  return container.Get(name);
+}
+
 // Current Cyberbane district id (spec Appendix C), via PreventionSystem (S-06).
 // The game may report a sub-district (e.g. Kabuki); CBMapGameDistrict folds those
 // into the eight Cyberbane districts. Unknown names map to n"" (effects skipped).
 public func CBCurrentDistrict(game: GameInstance) -> CName {
-  let prev = GameInstance.GetScriptableSystemsContainer(game).Get(n"PreventionSystem") as PreventionSystem;
+  let prev = CBGetSystem(game, n"PreventionSystem") as PreventionSystem;
   if !IsDefined(prev) {
     return n"";
   }
@@ -43,6 +56,23 @@ public func CBCurrentDistrict(game: GameInstance) -> CName {
     return n"";
   }
   return CBMapGameDistrict(rec.EnumName());
+}
+
+// District to attribute an event to, for code that runs outside the fast tick - a kill, a
+// player death, the Hub. Prefers the district the tick already sampled, and only queries
+// the Prevention system live when that cache is still empty and the world is settled, so
+// these paths never drive a native world query mid-transition (crash safety).
+public func CBEventDistrict(sys: ref<CyberbaneSystem>, game: GameInstance) -> CName {
+  if IsDefined(sys) {
+    let cached = sys.GetCurrentDistrict();
+    if NotEquals(cached, n"") {
+      return cached;
+    }
+  }
+  if !CBWorldStable(game) {
+    return n"";
+  }
+  return CBCurrentDistrict(game);
 }
 
 // Maps a game district/sub-district enum name to a Cyberbane district id.

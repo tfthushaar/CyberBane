@@ -91,6 +91,53 @@ enum ECBPosture {
   Vendetta = 4,
 }
 
+// ---- Small bit-set helpers -------------------------------------------------
+//
+// Persisted classes store their small fixed sets (districts a rumor reached, the traits a
+// Rival carries) as a bit per entry in an Int32 rather than as a nested array. A scalar
+// always comes back from a save intact; a nested dynamic array is not a documented-
+// supported shape and a malformed one takes the game down (see CBRumor.reachedMask).
+//
+// redscript has &, | and ~ but no shift operator, so the bit value is built by doubling.
+// Bit indices are part of the persistent schema: never renumber an existing one.
+public func CBBitValue(bit: Int32) -> Int32 {
+  if bit < 0 || bit > 30 {
+    return 0;
+  }
+  let v = 1;
+  let i = 0;
+  while i < bit {
+    v *= 2;
+    i += 1;
+  }
+  return v;
+}
+
+public func CBMaskHas(mask: Int32, bit: Int32) -> Bool {
+  let v = CBBitValue(bit);
+  return v != 0 && (mask & v) != 0;
+}
+
+public func CBMaskSet(mask: Int32, bit: Int32) -> Int32 {
+  return mask | CBBitValue(bit);
+}
+
+public func CBMaskClear(mask: Int32, bit: Int32) -> Int32 {
+  return mask & ~CBBitValue(bit);
+}
+
+public func CBMaskCount(mask: Int32, slots: Int32) -> Int32 {
+  let n = 0;
+  let i = 0;
+  while i < slots {
+    if CBMaskHas(mask, i) {
+      n += 1;
+    }
+    i += 1;
+  }
+  return n;
+}
+
 // Archetype accumulator count - keep in sync with ECBArchetype.
 public func CBArchetypeCount() -> Int32 = 6
 public func CBVictimClassCount() -> Int32 = 10

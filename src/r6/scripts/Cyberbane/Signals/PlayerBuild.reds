@@ -23,7 +23,7 @@ public func CBComputePlayerMenace(game: GameInstance) -> Float {
   if !IsDefined(player) {
     return 0.0;
   }
-  let pds = GameInstance.GetScriptableSystemsContainer(game).Get(n"PlayerDevelopmentSystem") as PlayerDevelopmentSystem;
+  let pds = CBGetSystem(game, n"PlayerDevelopmentSystem") as PlayerDevelopmentSystem;
   if !IsDefined(pds) {
     return 0.0;
   }

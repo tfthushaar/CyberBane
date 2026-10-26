@@ -260,7 +260,7 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let code = RoundF(sys.GetCode());
   let cred = RoundF(CBPlayerStreetCred(game));
   let style = CBArchetypeName(sys.GetPrimaryArchetypeIndex());
-  let district = NameToString(CBCurrentDistrict(game));
+  let district = NameToString(CBEventDistrict(sys, game));
   let codeLabel = CBCodeLabel(sys.GetCode());
 
   let out = s"RENOWN        \(renown)        ( \(tier) )\n";

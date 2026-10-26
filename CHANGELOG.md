@@ -3,6 +3,54 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.9] - 2026-10-26
+
+This release fixes the crash the last three releases kept chasing. The earlier fixes all
+treated it as a problem with how Cyberbane looked up its own data, because that is where the
+crash reports pointed. It was not: the fault was in how rumors were stored, and each fix moved
+it one step further down the same code path instead of removing it.
+
+### Fixed
+- **Fixed the recurring crash in the background tick, at the root this time.** Cyberbane spreads
+  word of what you have done from one district to the next, and each rumor carried the list of
+  districts it had already reached. That list was stored inside your save in a shape the game
+  does not reliably bring back, and a list that came back malformed asked the game for an
+  impossible amount of memory the moment the rumor spread, which crashed it. Rumors now track
+  where they have been as a single number instead of a list, so there is nothing left to come
+  back wrong. The same change was made to the traits your Rivals carry, which were stored the
+  same way. Thanks to everyone who kept sending crash reports through 0.1.6, 0.1.7 and 0.1.8 -
+  the stack traces are what made the real cause findable.
+- **Crashes after finishing an NCPD crime.** Clearing a crime scene is the most common way to
+  set a rumor going, so NCPD jobs were the likeliest thing to trigger the crash above. Finishing
+  one also makes the whole encounter despawn at once, which is exactly when the background tick
+  resumes after standing down - so the crash tended to land just after the job, rather than
+  during it.
+- **Cyberbane now checks its save data when you load.** Anything stored that does not make sense
+  is repaired or dropped on load instead of being handed to the game later. This was documented
+  behaviour that had never actually been written.
+- **Closed off the rest of the same class of crash.** Six more places read a game system without
+  first checking it was there, which is the same mistake behind the 0.1.6 crash - sleeping, fast
+  travelling, loading or a cutscene could still catch any of them. They are all guarded now, and
+  anything that looks up a game system goes through one checked path.
+- Cyberbane no longer removes a spawned Rival from inside that Rival's own death, which could
+  pull it out from under the game mid-death. The cleanup now happens a moment later, once things
+  have settled.
+- Reading the district you are in no longer queries the police system on every kill; kills use
+  the value the background tick already sampled.
+- A kill-streak that never ends, a long session spent turning gangs hostile, and a playthrough
+  with many finished Rivals no longer grow their internal lists without limit.
+
+### Changed
+- Job payout bonuses are no longer paid twice on a single reward. An NCPD job that pushed your
+  Street Cred over a level handed out two rewards at once, and Cyberbane was topping up the
+  second one and then counting it again in the first.
+
+### Note on saves
+Your reputation, Rivals, titles, factions, districts and log all carry over. Rumors in flight
+are cleared once on first load (they expire after three in-game days anyway, and the district
+renown they had already earned you is kept), and Rivals start the new storage with a clean set
+of traits, which fills back in as they climb. Nothing else is affected.
+
 ## [0.1.8] - 2026-10-26
 
 ### Fixed

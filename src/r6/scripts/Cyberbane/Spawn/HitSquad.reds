@@ -45,7 +45,7 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     if NotEquals(escaped, n"") && RandF() < CBConfig.RivalChanceHunter() {
       let efs = sys.FindFaction(escaped);
       if IsDefined(efs) && TDBID.IsValid(efs.sampleRecord) {
-        CBCreateRival(sys, game, escaped, efs.sampleRecord, n"", ECBRivalSource.Hunter, CBCurrentDistrict(game), now);
+        CBCreateRival(sys, game, escaped, efs.sampleRecord, n"", ECBRivalSource.Hunter, CBEventDistrict(sys, game), now);
       }
     }
     sys.SetActiveSquadFaction(n"");

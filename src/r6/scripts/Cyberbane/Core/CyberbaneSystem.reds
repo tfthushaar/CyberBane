@@ -56,6 +56,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_attachCount: Int32;           // entities attached since the last tick (streaming-flood detector)
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
+  private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -260,6 +261,16 @@ public class CyberbaneSystem extends ScriptableSystem {
     // instead of re-locking a possibly-dead container (crash safety).
     this.GetContent();
 
+    // Carry out any entity cleanup that was deferred out of a lifecycle callback. This tick
+    // is settled, so the engine is no longer mid-teardown on the entity being removed.
+    if this.m_pendingRivalSweep {
+      this.m_pendingRivalSweep = false;
+      let des = GameInstance.GetDynamicEntitySystem();
+      if IsDefined(des) {
+        des.DeleteTagged(n"CB_Rival");
+      }
+    }
+
     this.m_tickCount += 1;
     // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district)
     // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
@@ -431,22 +442,65 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func AddRival(rival: ref<CBRival>) -> Void {
     if IsDefined(rival) {
       ArrayPush(this.m_rivals, rival);
+      this.TrimArchivedRivals();
     }
+  }
+
+  // Rivals V has finished with (slain, retired) stay on as history, but only up to the
+  // archive cap - the live cap in CBCreateRival counts Active/Hunting ones only, so
+  // without this the store would grow for the whole playthrough and go into every save.
+  public func TrimArchivedRivals() -> Void {
+    let cap = CBConfig.CapArchivedRivals();
+    let archived = 0;
+    for r in this.m_rivals {
+      if IsDefined(r) && this.IsArchivedRival(r) {
+        archived += 1;
+      }
+    }
+    while archived > cap {
+      let i = 0;
+      let removed = false;
+      while i < ArraySize(this.m_rivals) && !removed {
+        let r = this.m_rivals[i];
+        if !IsDefined(r) || this.IsArchivedRival(r) {
+          ArrayErase(this.m_rivals, i);   // oldest archived entry first
+          removed = true;
+        } else {
+          i += 1;
+        }
+      }
+      if !removed {
+        return;   // nothing left to drop
+      }
+      archived -= 1;
+    }
+  }
+
+  private func IsArchivedRival(r: ref<CBRival>) -> Bool {
+    return r.state == EnumInt(ECBRivalState.Slain)
+        || r.state == EnumInt(ECBRivalState.Retired);
   }
 
   public func FindRivalById(id: Int32) -> ref<CBRival> {
     for r in this.m_rivals {
-      if r.id == id {
+      if IsDefined(r) && r.id == id {
         return r;
       }
     }
     return null;
   }
 
+  // Ask for the spawned Rival to be swept away on the next settled tick. Used by code
+  // running inside an entity's own lifecycle callback, where deleting it on the spot
+  // would free it underneath the engine (crash safety).
+  public func RequestRivalSweep() -> Void {
+    this.m_pendingRivalSweep = true;
+  }
+
   public func CountActiveRivals() -> Int32 {
     let n = 0;
     for r in this.m_rivals {
-      if r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting) {
+      if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
         n += 1;
       }
     }
@@ -456,7 +510,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func CountActiveFactionRivals(faction: CName) -> Int32 {
     let n = 0;
     for r in this.m_rivals {
-      if Equals(r.faction, faction) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+      if IsDefined(r) && Equals(r.faction, faction) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
         n += 1;
       }
     }
@@ -469,8 +523,22 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_nextRumorId += 1;
     return id;
   }
+  // GetRumors returns the array *by value*, so callers must bind it to a local before
+  // reading it. Anything that walks the store while it can also change (the slow tick's
+  // expire/spread pass) must use GetRumorCount/GetRumorAt instead, which index the live
+  // array - indexing the temporary that GetRumors returns hands back a handle into a copy
+  // that is destroyed at the end of the statement (crash safety).
   public func GetRumors() -> array<ref<CBRumor>> {
     return this.m_rumors;
+  }
+  public func GetRumorCount() -> Int32 {
+    return ArraySize(this.m_rumors);
+  }
+  public func GetRumorAt(index: Int32) -> ref<CBRumor> {
+    if index >= 0 && index < ArraySize(this.m_rumors) {
+      return this.m_rumors[index];
+    }
+    return null;
   }
   public func AddRumor(rumor: ref<CBRumor>) -> Void {
     if IsDefined(rumor) {
@@ -575,13 +643,186 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
-  // Load-time validation (spec §19.1). Full clamping/rebuild happens as the
-  // model layer lands; this keeps the stored numbers inside their ranges.
+  // Load-time validation (spec §19.1). Runs on every attach and restore, and is
+  // idempotent. Two jobs: keep the stored numbers inside their ranges, and make sure
+  // every stored collection holds only entries the rest of the mod can safely walk.
+  //
+  // The second job is the important one. Everything below this line reads these arrays
+  // without re-checking them, so a hole left by a save that did not come back intact
+  // would be dereferenced somewhere deep in a tick. Dropping bad entries once, here, is
+  // what keeps that from ever reaching the engine.
   private func Validate() -> Void {
     this.m_renownPoints = MaxF(this.m_renownPoints, 0.0);
     this.m_killDreadPoints = MaxF(this.m_killDreadPoints, 0.0);
     this.m_deedDreadPoints = MaxF(this.m_deedDreadPoints, 0.0);
     this.m_heatPoints = MaxF(this.m_heatPoints, 0.0);
+    this.m_code = ClampF(this.m_code, -100.0, 100.0);
+
+    let i = 0;
+    while i < ArraySize(this.m_archetype) {
+      this.m_archetype[i] = MaxF(this.m_archetype[i], 0.0);
+      i += 1;
+    }
+    if this.m_primaryArchetype < -1 || this.m_primaryArchetype >= CBArchetypeCount() {
+      this.m_primaryArchetype = -1;
+    }
+
+    this.ValidateFactions();
+    this.ValidateDistricts();
+    this.ValidateRumors();
+    this.ValidateRivals();
+    this.ValidateLog();
+  }
+
+  private func ValidateFactions() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_factions) {
+      let f = this.m_factions[i];
+      if !IsDefined(f) || Equals(f.id, n"") {
+        ArrayErase(this.m_factions, i);
+      } else {
+        f.standing = ClampF(f.standing, -100.0, 100.0);
+        f.renown = ClampF(f.renown, 0.0, 100.0);
+        f.renownPeak = ClampF(MaxF(f.renownPeak, f.renown), 0.0, 100.0);
+        f.kills = Max(f.kills, 0);
+        f.brutalKills = Max(f.brutalKills, 0);
+        f.officersKilled = Max(f.officersKilled, 0);
+        f.bossesKilled = Max(f.bossesKilled, 0);
+        f.spared = Max(f.spared, 0);
+        f.tributes = Max(f.tributes, 0);
+        i += 1;
+      }
+    }
+  }
+
+  private func ValidateDistricts() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_districts) {
+      let d = this.m_districts[i];
+      if !IsDefined(d) || Equals(d.id, n"") {
+        ArrayErase(this.m_districts, i);
+      } else {
+        d.renown = ClampF(d.renown, 0.0, 100.0);
+        d.renownPeak = ClampF(MaxF(d.renownPeak, d.renown), 0.0, 100.0);
+        d.kills = Max(d.kills, 0);
+        d.lethalOrBrutal = Max(d.lethalOrBrutal, 0);
+        d.quietTakedowns = Max(d.quietTakedowns, 0);
+        i += 1;
+      }
+    }
+  }
+
+  // Rumors carry a nested array<CName> (the districts the rumor has reached), which is
+  // what the slow tick walks. A rumor can never have reached more districts than exist,
+  // so anything longer than that is rebuilt from its origin rather than trusted.
+  private func ValidateRumors() -> Void {
+    let maxReached = CBDistrictCount();
+    let i = 0;
+    while i < ArraySize(this.m_rumors) {
+      let r = this.m_rumors[i];
+      if !IsDefined(r) {
+        ArrayErase(this.m_rumors, i);
+      } else {
+        r.magnitude = ClampF(r.magnitude, 0.0, 1000.0);
+        r.hops = Clamp(r.hops, 0, CBConfig.RumorMaxHops());
+        r.createdAt = MaxF(r.createdAt, 0.0);
+        r.lastSpreadAt = MaxF(r.lastSpreadAt, 0.0);
+        // Keep only the bits that name a real district.
+        let clean = 0;
+        let b = 0;
+        while b < maxReached {
+          if CBMaskHas(r.reachedMask, b) {
+            clean = CBMaskSet(clean, b);
+          }
+          b += 1;
+        }
+        r.reachedMask = clean;
+        i += 1;
+      }
+    }
+    while ArraySize(this.m_rumors) > CBConfig.CapRumors() {
+      ArrayErase(this.m_rumors, 0);
+    }
+  }
+
+  private func ValidateRivals() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_rivals) {
+      let r = this.m_rivals[i];
+      if !IsDefined(r) {
+        ArrayErase(this.m_rivals, i);
+      } else {
+        r.rank = Clamp(r.rank, 1, 4);
+        if r.source < 0 || r.source > EnumInt(ECBRivalSource.Hunter) {
+          r.source = EnumInt(ECBRivalSource.Survivor);
+        }
+        if r.state < 0 || r.state > EnumInt(ECBRivalState.Debtor) {
+          r.state = EnumInt(ECBRivalState.Dormant);
+        }
+        r.encounters = Max(r.encounters, 0);
+        r.escapes = Max(r.escapes, 0);
+        r.killedV = Max(r.killedV, 0);
+        r.sparedByV = Max(r.sparedByV, 0);
+        // Name/epithet fields are indices into content pools; the readers bounds-check
+        // them, but a negative sentinel is the only value they should ever hold.
+        if r.firstName < 0 { r.firstName = -1; }
+        if r.lastName < 0 { r.lastName = -1; }
+        if r.epithet < 0 { r.epithet = -1; }
+        // Keep only the bits that name a real trait.
+        let cleanT = 0;
+        let cleanW = 0;
+        let b = 0;
+        while b < CBTraitCount() {
+          if CBMaskHas(r.traitMask, b) {
+            cleanT = CBMaskSet(cleanT, b);
+          }
+          if CBMaskHas(r.weaknessMask, b) {
+            cleanW = CBMaskSet(cleanW, b);
+          }
+          b += 1;
+        }
+        r.traitMask = cleanT;
+        r.weaknessMask = cleanW;
+        let h = 0;
+        while h < ArraySize(r.history) {
+          if !IsDefined(r.history[h]) {
+            ArrayErase(r.history, h);
+          } else {
+            h += 1;
+          }
+        }
+        while ArraySize(r.history) > CBConfig.CapRivalHistory() {
+          ArrayErase(r.history, 0);
+        }
+        i += 1;
+      }
+    }
+    this.TrimArchivedRivals();
+  }
+
+  private func ValidateLog() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_log) {
+      if !IsDefined(this.m_log[i]) {
+        ArrayErase(this.m_log, i);
+      } else {
+        i += 1;
+      }
+    }
+    while ArraySize(this.m_log) > CBConfig.CapLog() {
+      ArrayErase(this.m_log, 0);
+    }
+    let p = 0;
+    while p < ArraySize(this.m_peaceDeals) {
+      if !IsDefined(this.m_peaceDeals[p]) {
+        ArrayErase(this.m_peaceDeals, p);
+      } else {
+        p += 1;
+      }
+    }
+    while ArraySize(this.m_peaceDeals) > CBConfig.CapPeaceDeals() {
+      ArrayErase(this.m_peaceDeals, 0);
+    }
   }
 
   // Step-by-step schema upgrades (spec §19.2). Each step is idempotent.
@@ -592,7 +833,27 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_primaryArchetype = -1;  // -1 = Unknown until enough signal accrues
       CBLog.Verbose(n"Core", "Initialising fresh Cyberbane state.");
     }
-    // Future: if fromSchema < 2 { ... }  etc.
+    if fromSchema > 0 && fromSchema < 2 {
+      // Schema 2 moved the rumor "districts reached" list and the Rival trait lists off
+      // nested CName arrays and onto Int32 bit sets. The old arrays no longer exist on
+      // these classes, so there is nothing to read across - and reading a stored array
+      // that may not have survived its save/load round trip is exactly the crash this
+      // change removes.
+      //
+      // Rumors are short-lived by design (they expire after three in-game days and only
+      // feed district renown, which is already banked), so the safe upgrade is to drop
+      // the carried-over ones and let play rebuild them. Rivals keep everything that
+      // identifies them - name, rank, faction, history - and start the new schema with a
+      // clean trait set, which fills back in the next time each one is promoted.
+      ArrayClear(this.m_rumors);
+      for r in this.m_rivals {
+        if IsDefined(r) {
+          r.traitMask = 0;
+          r.weaknessMask = 0;
+        }
+      }
+      CBLog.Info(n"Core", "Migrated Cyberbane state to schema 2 (bit-set rumor and trait storage).");
+    }
   }
 
   // ---- Basic accessors (expanded by the model layer) --------------------
@@ -674,7 +935,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       return;
     }
     ArrayPush(this.m_peaceDeals, deal);
-    while ArraySize(this.m_peaceDeals) > 16 {
+    while ArraySize(this.m_peaceDeals) > CBConfig.CapPeaceDeals() {
       ArrayErase(this.m_peaceDeals, 0);
     }
   }

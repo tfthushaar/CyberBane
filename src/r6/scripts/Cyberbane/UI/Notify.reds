@@ -6,7 +6,12 @@
 // Signatures compile-verified against 2.31.
 
 public func CBShowMessage(game: GameInstance, text: String, duration: Float) -> Void {
-  let bb = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UI_Notifications);
+  // The blackboard system is null during world transitions; dereferencing it then crashes.
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(bbs) {
+    return;
+  }
+  let bb = bbs.Get(GetAllBlackboardDefs().UI_Notifications);
   if !IsDefined(bb) {
     return;
   }

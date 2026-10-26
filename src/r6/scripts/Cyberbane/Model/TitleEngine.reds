@@ -11,7 +11,7 @@ public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     return;
   }
   for def in content.GetTitles() {
-    if !sys.HasTitle(def.id) && CBCheckTitleCondition(sys, def.id) {
+    if IsDefined(def) && !sys.HasTitle(def.id) && CBCheckTitleCondition(sys, def.id) {
       sys.UnlockTitle(def.id);
       sys.AddRenownPoints(Equals(def.id, n"T_CYBERBANE") ? 100.0 : 25.0);
       let rt = CyberbaneRuntime.Get();
@@ -24,6 +24,9 @@ public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
 }
 
 func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
+  if !IsDefined(sys) {
+    return false;
+  }
   let score = sys.GetScore();
   let stats = sys.GetStats();
   if !IsDefined(stats) {
@@ -67,7 +70,9 @@ func CBKillsByClass(stats: ref<CBStats>, idx: Int32) -> Int32 {
 func CBTotalTributes(sys: ref<CyberbaneSystem>) -> Int32 {
   let total = 0;
   for fs in sys.GetFactionStates() {
-    total += fs.tributes;
+    if IsDefined(fs) {
+      total += fs.tributes;
+    }
   }
   return total;
 }

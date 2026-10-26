@@ -21,14 +21,14 @@ public func CBWriteDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance, pl
   let entry = new CBLedgerEntry();
   entry.playthroughId = sys.GetPlaythroughId();
   entry.at = CBGameSeconds(game);
-  entry.district = CBCurrentDistrict(game);
+  entry.district = CBEventDistrict(sys, game);
   entry.killerRivalId = -1;
   entry.method = 0;
 
+  // PlayerPuppet is already a ScriptedPuppet, so the attacker field reads straight off it.
   let killer: wref<ScriptedPuppet>;
-  let sp = player as ScriptedPuppet;
-  if IsDefined(sp) {
-    killer = sp.cbLastAttacker;
+  if IsDefined(player) {
+    killer = player.cbLastAttacker;
   }
   if IsDefined(killer) {
     entry.killerRecordID = killer.GetRecordID();
@@ -56,7 +56,7 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   let content = CBContent(game);
 
   for entry in service.GetLedger() {
-    if Equals(entry.playthroughId, myId) && !sys.HasAppliedLedgerId(entry.id) {
+    if IsDefined(entry) && Equals(entry.playthroughId, myId) && !sys.HasAppliedLedgerId(entry.id) {
       if entry.killerRivalId >= 0 {
         let existing = sys.FindRivalById(entry.killerRivalId);
         if IsDefined(existing) {

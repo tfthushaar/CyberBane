@@ -39,6 +39,9 @@ public abstract class CBConfig {
   public static func NpcEvalPerTick() -> Int32 = 12
   public static func MaxSpawnedNpcs() -> Int32 = 8
   public static func PerNpcCooldownSeconds() -> Float = 30.0
+  // Upper bound on the attitude-revert list (NPCs Cyberbane turned hostile). Only live
+  // NPCs ever need reverting, so this just keeps the list from growing all session.
+  public static func MaxTrackedHostiles() -> Int32 = 64
 
   // ---- Encounter tracker (spec §7.1.3) ---------------------------------
   public static func EncounterEndTimeout() -> Float = 20.0     // real seconds
@@ -175,6 +178,9 @@ public abstract class CBConfig {
   public static func CapLedgerTotal() -> Int32 = 100
   public static func CapLedgerPerPlaythrough() -> Int32 = 30
   public static func CapPeaceDeals() -> Int32 = 16
+  // Kill timestamps kept per encounter. Only the massacre window is ever read back, so
+  // this is comfortably more than the rule needs.
+  public static func CapEncounterKillTicks() -> Int32 = 64
 
   // ---- Fault isolation (spec §16.5) ------------------------------------
   public static func ModuleErrorLimit() -> Int32 = 5

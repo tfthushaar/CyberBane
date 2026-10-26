@@ -33,9 +33,15 @@ public func CBWorldStable(game: GameInstance) -> Bool {
   if IsDefined(ts) && ts.IsPausedState() {
     return false;
   }
+  // The blackboard system itself is gone mid-transition, and dereferencing it then is the
+  // very thing this gate exists to prevent. No blackboards means "not stable".
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(bbs) {
+    return false;
+  }
   // A blocking menu or loading screen is up: the Skip Time menu, or the fast-travel load
   // screen. Both pause normal gameplay and overlap the streaming flood.
-  let ui = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().UI_System);
+  let ui = bbs.Get(GetAllBlackboardDefs().UI_System);
   if IsDefined(ui) && ui.GetBool(GetAllBlackboardDefs().UI_System.IsInMenu) {
     return false;
   }
@@ -49,7 +55,7 @@ public func CBWorldStable(game: GameInstance) -> Bool {
   // The player is in a staged / limited / cinematic scene - a holocall, a conversation, a
   // cutscene. These overlap heavy streaming and leave world state in flux, so stand down.
   // Only Default and full-gameplay (SceneTier1) are treated as safe.
-  let psm = GameInstance.GetBlackboardSystem(game).Get(GetAllBlackboardDefs().PlayerStateMachine);
+  let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
   if IsDefined(psm) {
     let tier = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.SceneTier);
     if tier != EnumInt(gamePSMHighLevel.Default) && tier != EnumInt(gamePSMHighLevel.SceneTier1) {

@@ -25,6 +25,13 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
     }
   }
 
+  // Rewards are also handed out while the world is mid-transition (a load, a fade, a
+  // scripted beat). Stand down then rather than read the player's inventory, the same way
+  // every other Cyberbane hook does (crash safety).
+  if !CBWorldStable(gameInstance) {
+    on = false;
+  }
+
   let player = GetPlayer(gameInstance);
   let ts = GameInstance.GetTransactionSystem(gameInstance);
   if !on || !IsDefined(player) || !IsDefined(ts) {
@@ -32,10 +39,25 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
     return;
   }
 
+  // Granting a reward can grant another one - an NCPD hustle payout that tips Street Cred
+  // over a level hands out the level reward from inside this very call. Only the outermost
+  // call measures and pays, so a nested payout (and its bonus) is never counted twice.
+  let outermost = true;
+  if IsDefined(rt) {
+    outermost = rt.EnterReward() == 1;
+  }
+
   let money = ItemID.FromTDBID(t"Items.money");
   let before = ts.GetItemQuantity(player, money);
   wrappedMethod(gameInstance, rewardID, entityID, quantityMultiplier);
   let delta = ts.GetItemQuantity(player, money) - before;
+
+  if IsDefined(rt) {
+    rt.ExitReward();
+  }
+  if !outermost {
+    return;   // an inner grant; the call that started this will settle the bonus
+  }
   if delta < CBConfig.GigBonusMinPayout() {
     return;   // not a job payout (loot money or no money) - leave it alone
   }

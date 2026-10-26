@@ -14,7 +14,7 @@ public func CBRefreshLiveInputs(sys: ref<CyberbaneSystem>, game: GameInstance) -
 
 // Heat (spec §7.6): each time V reaches a new heat stage n, add n^2 heat points.
 func CBUpdateHeat(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  let prev = GameInstance.GetScriptableSystemsContainer(game).Get(n"PreventionSystem") as PreventionSystem;
+  let prev = CBGetSystem(game, n"PreventionSystem") as PreventionSystem;
   if !IsDefined(prev) {
     return;
   }

@@ -90,7 +90,10 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
     let e = list[i];
     i += 1;
     if IsDefined(e) {
-      let gone = !IsDefined(e.puppet) || !e.puppet.IsAttached();   // despawned / streamed out = got away
+      // CBNpcSafe, not a bare IsAttached: during a mass despawn an entity can still report
+      // as attached while its components are being torn down, and reading its position
+      // then is exactly the kind of query that takes the game down (crash safety).
+      let gone = !CBNpcSafe(sys, e.puppet);   // despawned / streamed out = got away
       let far = !gone && IsDefined(player)
              && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance();
       if gone || far {
@@ -111,7 +114,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     return;
   }
   let content = CBContent(game);
-  let district = CBCurrentDistrict(game);
+  let district = CBEventDistrict(sys, game);
   let toasts = IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts;
 
   // The Rival that was hunting you got away again: it ranks up and comes back meaner.

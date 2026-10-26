@@ -15,7 +15,7 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   if !IsDefined(player) {
     return;
   }
-  let es = GameInstance.GetScriptableSystemsContainer(game).Get(n"EquipmentSystem") as EquipmentSystem;
+  let es = CBGetSystem(game, n"EquipmentSystem") as EquipmentSystem;
   if !IsDefined(es) {
     return;
   }
@@ -25,6 +25,9 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   }
 
   let stats = GameInstance.GetStatsSystem(game);
+  if !IsDefined(stats) {
+    return;
+  }
   let sid = Cast<StatsObjectID>(player.GetEntityID());
   let alloc = stats.GetStatValue(sid, gamedataStatType.HumanityAllocated);
   let maxv = stats.GetStatValue(sid, gamedataStatType.HumanityTotalMaxValue);

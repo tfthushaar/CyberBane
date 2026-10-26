@@ -88,10 +88,13 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     if IsDefined(desE) && sysE.GetActiveRivalId() > 0 && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival") {
       let slain = sysE.FindRivalById(sysE.GetActiveRivalId());
       if IsDefined(slain) {
-        CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBCurrentDistrict(game));
+        CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
       }
       sysE.SetActiveRivalId(0);
-      desE.DeleteTagged(n"CB_Rival");
+      // Do not delete the entity from inside its own death handler - the engine is still
+      // tearing this puppet down and destroying it here frees it underneath that work.
+      // Queue the sweep instead; the next settled fast tick clears the tag (crash safety).
+      sysE.RequestRivalSweep();
     }
   }
 
@@ -119,7 +122,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   info.witnessed = true;
   info.stealth = false;
   info.instigatorIsPlayer = true;
-  info.district = CBCurrentDistrict(game);
+  info.district = CBEventDistrict(sys, game);
   info.position = puppet.GetWorldPosition();
   info.at = CBGameSeconds(game);
   CBSetMethodFlags(info, puppet.cbLastAttackType);

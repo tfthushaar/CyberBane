@@ -153,8 +153,29 @@ public class CBReactionDirector {
     }
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
     npc.cbHostileByCyberbane = true;
-    ArrayPush(this.m_hostileNpcs, npc);
+    this.TrackHostile(npc);
     return true;
+  }
+
+  // The revert list only has to cover NPCs that still exist, so drop the ones that have
+  // despawned before adding. Without this it grows for the whole session - every gang
+  // member ever turned hostile stays in it until the kill switch clears it.
+  private func TrackHostile(npc: wref<ScriptedPuppet>) -> Void {
+    if ArraySize(this.m_hostileNpcs) >= CBConfig.MaxTrackedHostiles() {
+      let i = 0;
+      while i < ArraySize(this.m_hostileNpcs) {
+        if !IsDefined(this.m_hostileNpcs[i]) || !this.m_hostileNpcs[i].IsAttached() {
+          ArrayErase(this.m_hostileNpcs, i);
+        } else {
+          i += 1;
+        }
+      }
+      // Still full of live NPCs: drop the oldest so the list stays bounded.
+      if ArraySize(this.m_hostileNpcs) >= CBConfig.MaxTrackedHostiles() {
+        ArrayErase(this.m_hostileNpcs, 0);
+      }
+    }
+    ArrayPush(this.m_hostileNpcs, npc);
   }
 
   private func RevertAllHostile(game: GameInstance) -> Void {
