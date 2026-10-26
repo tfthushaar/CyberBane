@@ -145,6 +145,10 @@ Built on the work of the Cyberpunk 2077 modding community: RED4ext by WopsS, red
 jac3km4, Codeware by psiberx, Mod Settings by jackhumbert, and the optional Native Interactions
 Framework and Equipment-EX.
 
+Thanks to everyone who reported bugs and sent in crash reports, and especially to r3bels90, who
+pinned down the exact cause of the world-transition crash and made the 0.1.6 fix possible. This
+mod is better because of you.
+
 ## Legal
 
 Free, non-commercial fan mod. It is never sold or paywalled. It is not affiliated with or
