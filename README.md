@@ -10,13 +10,16 @@
 
 # Cyberbane
 
-Cyberbane is a reputation overhaul for Cyberpunk 2077. As you fight, finish jobs, install
-chrome and put together a look, Night City forms an opinion of V and acts on it. Pedestrians
-get out of your way, gangs decide whether to respect you or run, vendors change their prices,
-and the enemies who got away come back with names and grudges.
+Cyberbane is a reputation overhaul for Cyberpunk 2077. Night City forms an opinion of V and acts
+on it. Fight, finish jobs, install chrome and put a look together, and a reputation spreads
+district by district. Crowds clear out of your way, gangs decide whether to respect you or hunt
+you, and vendors move their prices. The enemies who got away from you, and the ones you beat and
+left breathing, come back with names and grudges. Keep hitting one crew and they stop sending
+squads and send an apex hunter, sized to how dangerous you have become.
 
 Every reaction comes from something you did. When you want to know why the city treats you a
-certain way, open the Hub and read the breakdown.
+certain way, open the Hub: it spells out what each number means, and tells you exactly what the
+city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
