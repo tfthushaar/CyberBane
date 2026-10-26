@@ -28,6 +28,36 @@ public func CBApexName(content: ref<CyberbaneContent>, faction: CName, seed: Int
   return "Their best";
 }
 
+// Make a spawned apex actually feel like one. The base record is a gang elite, which is not a
+// boss by itself, so the spawned one is lifted to boss grade: far more health, much harder to
+// chew through, and its health pool topped back up because raising the stat does not refill
+// what it already had. Applied at attach, where the puppet is real and its stats exist, and
+// only ever to our own CB_Apex spawn - nothing in the world is touched.
+public func CBApplyApexBuff(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(puppet) {
+    return;
+  }
+  let stats = GameInstance.GetStatsSystem(game);
+  if !IsDefined(stats) {
+    return;
+  }
+  let id = Cast<StatsObjectID>(puppet.GetEntityID());
+  let hp = RPGManager.CreateStatModifier(gamedataStatType.Health, gameStatModifierType.Multiplier,
+    CBConfig.ApexHealthMult());
+  if IsDefined(hp) {
+    stats.AddModifier(id, hp);
+  }
+  let armour = RPGManager.CreateStatModifier(gamedataStatType.Armor, gameStatModifierType.Multiplier,
+    CBConfig.ApexArmorMult());
+  if IsDefined(armour) {
+    stats.AddModifier(id, armour);
+  }
+  let pools = GameInstance.GetStatPoolsSystem(game);
+  if IsDefined(pools) {
+    pools.RequestSettingStatPoolValue(id, gamedataStatPoolType.Health, 100.0, null);
+  }
+}
+
 // Slow tick: has any gang lost enough people to send its apex after V?
 public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {

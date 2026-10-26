@@ -103,7 +103,7 @@ public class CBScoreEngine {
     let stats = sys.GetStats();
     let mercy = 0.0;
     if IsDefined(stats) {
-      mercy = CBMercyRatio(stats.nonLethal, stats.TotalKills());
+      mercy = CBMercyRatio(stats.nonLethal, sys.TotalKills());
     }
     this.m_dreadCiv = CBComputeDreadCiv(this.m_dread, sys.GetPrimaryArchetypeIndex(), mercy);
 

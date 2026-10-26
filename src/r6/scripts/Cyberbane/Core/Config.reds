@@ -181,6 +181,10 @@ public abstract class CBConfig {
   public static func ApexSpawnDistance() -> Float = 30.0
   // Muscle that comes in with them. Built from the gang's rank-and-file record.
   public static func ApexEscortCount() -> Int32 = 2
+  // The apex is built from a gang elite, which on its own is nowhere near a boss. These lift
+  // the spawned one to boss grade so it reads as the threat the warning promised.
+  public static func ApexHealthMult() -> Float = 6.0
+  public static func ApexArmorMult() -> Float = 3.0
 
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   // Rivals only land if they actually happen. Raised so leaving people alive or breaking a

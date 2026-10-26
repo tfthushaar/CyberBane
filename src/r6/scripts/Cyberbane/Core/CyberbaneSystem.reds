@@ -27,6 +27,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_titles: array<CName>;
   private persistent let m_activeTitle: CName;            // n"" = auto
   private persistent let m_stats: ref<CBStats>;
+  // Kill tallies by victim class. Declared here, directly on the system, rather than nested
+  // inside CBStats: a persisted collection belongs on the ScriptableSystem, not inside a
+  // persisted class (schema 3, see the note on CBStats).
+  private persistent let m_killsByClass: array<Int32>;      // index = ECBVictimClass
   private persistent let m_rumors: array<ref<CBRumor>>;           // cap 64
   private persistent let m_nextRumorId: Int32;
   private persistent let m_rivals: array<ref<CBRival>>;           // cap 15 active + 32 archived
@@ -161,6 +165,10 @@ public class CyberbaneSystem extends ScriptableSystem {
         let id = puppet.GetEntityID();
         if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex") {
           CBMakeHostileToPlayer(this.GetGameInstance(), puppet);
+        }
+        // A gang elite is not a boss on its own, so our apex gets lifted to boss grade.
+        if des.IsTagged(id, n"CB_Apex") {
+          CBApplyApexBuff(this.GetGameInstance(), puppet);
         }
       }
     }
@@ -349,6 +357,31 @@ public class CyberbaneSystem extends ScriptableSystem {
   // the Prevention system every tick keeps that query off the hot path during streaming.
   public func GetCurrentDistrict() -> CName {
     return this.m_currentDistrict;
+  }
+
+  // ---- Kill tallies (spec §8.2) -----------------------------------------
+  public func AddKillByClass(victimClass: Int32) -> Void {
+    if victimClass >= 0 && victimClass < ArraySize(this.m_killsByClass) {
+      this.m_killsByClass[victimClass] += 1;
+    }
+  }
+
+  public func GetKillsByClass(victimClass: Int32) -> Int32 {
+    if victimClass >= 0 && victimClass < ArraySize(this.m_killsByClass) {
+      return this.m_killsByClass[victimClass];
+    }
+    return 0;
+  }
+
+  // Total lethal kills across all victim classes (for the mercy ratio, spec §8.2).
+  public func TotalKills() -> Int32 {
+    let total = 0;
+    let i = 0;
+    while i < ArraySize(this.m_killsByClass) {
+      total += this.m_killsByClass[i];
+      i += 1;
+    }
+    return total;
   }
 
   // ---- Faction apex (spec §9.9) -----------------------------------------
@@ -696,11 +729,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !IsDefined(this.m_stats) {
       this.m_stats = new CBStats();
     }
-    if ArraySize(this.m_stats.killsByClass) != CBVictimClassCount() {
-      ArrayResize(this.m_stats.killsByClass, CBVictimClassCount());
-    }
-    if ArraySize(this.m_stats.killsByMethod) != CBKillMethodCount() {
-      ArrayResize(this.m_stats.killsByMethod, CBKillMethodCount());
+    if ArraySize(this.m_killsByClass) != CBVictimClassCount() {
+      ArrayResize(this.m_killsByClass, CBVictimClassCount());
     }
     if !IsDefined(this.m_cooldowns) {
       this.m_cooldowns = new CBCooldowns();
@@ -858,17 +888,6 @@ public class CyberbaneSystem extends ScriptableSystem {
         }
         r.traitMask = cleanT;
         r.weaknessMask = cleanW;
-        let h = 0;
-        while h < ArraySize(r.history) {
-          if !IsDefined(r.history[h]) {
-            ArrayErase(r.history, h);
-          } else {
-            h += 1;
-          }
-        }
-        while ArraySize(r.history) > CBConfig.CapRivalHistory() {
-          ArrayErase(r.history, 0);
-        }
         i += 1;
       }
     }

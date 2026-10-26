@@ -239,7 +239,7 @@ public class CBReactionDirector {
       mood = n"hate";
     } else {
       let stats = sys.GetStats();
-      if Equals(faction, n"NCPD") && IsDefined(stats) && CBKillsByClass(stats, EnumInt(ECBVictimClass.MaxTac)) > 0 {
+      if Equals(faction, n"NCPD") && IsDefined(stats) && CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)) > 0 {
         topic = n"maxtac";
         mood = n"fear";
       }

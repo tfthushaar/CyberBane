@@ -40,10 +40,10 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   if Equals(id, n"T_PSYCHO_HUNTER") { return stats.psychosKilled >= 10; }
   if Equals(id, n"T_UNTOUCHABLE") { return stats.flawless >= 10; }
   if Equals(id, n"T_RED_TIDE") { return stats.massacres >= 5; }
-  if Equals(id, n"T_MAXTAC_PROBLEM") { return CBKillsByClass(stats, EnumInt(ECBVictimClass.MaxTac)) >= 10; }
+  if Equals(id, n"T_MAXTAC_PROBLEM") { return CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)) >= 10; }
   if Equals(id, n"T_RIVAL_BREAKER") { return stats.rivalsSlain >= 5; }
   if Equals(id, n"T_MERCIFUL") {
-    return stats.nonLethal >= 100 && CBKillsByClass(stats, EnumInt(ECBVictimClass.Civilian)) == 0;
+    return stats.nonLethal >= 100 && CBKillsByClass(sys, EnumInt(ECBVictimClass.Civilian)) == 0;
   }
   if Equals(id, n"T_LANDLORD") { return CBTotalTributes(sys) >= 5; }
   if Equals(id, n"T_FACTION_FRIEND") { return CBAnyFactionStandingAtLeast(sys, 75.0); }
@@ -60,11 +60,11 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   return false;   // deed-gated titles unlock through the deed system
 }
 
-func CBKillsByClass(stats: ref<CBStats>, idx: Int32) -> Int32 {
-  if idx >= 0 && idx < ArraySize(stats.killsByClass) {
-    return stats.killsByClass[idx];
+func CBKillsByClass(sys: ref<CyberbaneSystem>, idx: Int32) -> Int32 {
+  if !IsDefined(sys) {
+    return 0;
   }
-  return 0;
+  return sys.GetKillsByClass(idx);
 }
 
 func CBTotalTributes(sys: ref<CyberbaneSystem>) -> Int32 {

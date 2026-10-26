@@ -20,7 +20,7 @@ certain way, open the Hub and read the breakdown.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: early release (0.1.12).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: early release (0.1.13).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -43,7 +43,8 @@ page describes what the mod does and how it installs.
   make you harder to place, and wearing a gang's colours makes that gang slower to recognize you.
 - **Enemies that break, run, and remember.** Wound an enemy badly and it can lose its nerve and
   try to escape. Catch it and that is the end of it; let it get away and it comes back as a named
-  Rival with a grudge. Rivals are a full nemesis system: they hunt you down and chase you, they
+  Rival with a grudge. Beat one down and walk away without finishing them and they can come back
+  too, taking the mercy personally. Rivals are a full nemesis system: they hunt you down and chase you, they
   climb the ranks on their own while you are busy elsewhere, and every time one escapes it returns
   a rank higher and scarred. Put down the one hunting you and it is finally finished. Anyone who
   kills you can also come back, and dropping a crew's member can bring a gang-mate gunning for you.
@@ -52,11 +53,18 @@ page describes what the mod does and how it installs.
   come back as a named Rival who hunts you. Vendors give fear or respect discounts, and fixers pay
   the famous a bonus on job payouts. You can also buy your way out of a vendetta by brokering peace
   with a gang from the Hub.
+- **Gangs send their best.** Keep putting one crew in the ground and they stop sending squads and
+  send someone who matters. You get a warning first, then a named heavy walks in with a couple of
+  their people, built from the toughest member of that gang you have actually fought and lifted to
+  boss grade so it is a real fight. No story character is ever involved, so nothing gets spoiled,
+  and it works for every gang. The Hub keeps count of the ones you put down.
 - **Titles and a history log.** Earn titles such as Butcher of Watson, Chrome Saint, or the top
   title Cyberbane, and review everything you have done in a timeline.
 - **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable). Each
   press steps through tabs for your reputation, the factions, the districts, your rivals, your
-  titles, and the log; the press after the last tab closes it.
+  titles, and the log; the press after the last tab closes it. Every screen explains what its
+  numbers mean rather than throwing abbreviations at you, and the first one tells you exactly what
+  the city is doing about you right now and what it would take to change that.
 
 Cyberbane works anywhere in the open world. It adds no hand-placed scenes, and it is built to
 leave quests, companions, romances and your saves alone.

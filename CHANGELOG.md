@@ -3,6 +3,21 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.13] - 2026-10-27
+
+### Changed
+- The heavy a gang sends after you is a real fight now. It is still built from that gang's own
+  toughest member rather than any story character, but it is lifted to boss grade, so it no
+  longer goes down like the elite it was based on.
+
+### Fixed
+- Removed the last two places where Cyberbane kept a list inside a saved record. One of them was
+  the same shape that caused the crashes people were reporting, and it turned out to be written
+  but never read, so it is simply gone. Every list Cyberbane saves now sits where the game
+  expects one. Your kill tallies by enemy type restart from zero as part of this, so one or two
+  titles that count those may need earning again. Rivals, gangs, districts, reputation and the
+  titles you already hold are untouched.
+
 ## [0.1.12] - 2026-10-27
 
 ### Added

@@ -102,21 +102,6 @@ public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRiva
   return name;
 }
 
-public func CBRivalAddEvent(rival: ref<CBRival>, kind: ECBRivalEventKind, at: Float, district: CName, detail: Int32) -> Void {
-  if !IsDefined(rival) {
-    return;
-  }
-  let e = new CBRivalEvent();
-  e.kind = EnumInt(kind);
-  e.at = at;
-  e.district = district;
-  e.detail = detail;
-  ArrayPush(rival.history, e);
-  while ArraySize(rival.history) > CBConfig.CapRivalHistory() {
-    ArrayErase(rival.history, 0);
-  }
-}
-
 // Does this Rival carry the named trait? Traits live in a bit set on the Rival rather
 // than a stored list (see CBRival.traitMask), so this is a plain integer test.
 public func CBRivalHasTrait(rival: ref<CBRival>, id: CName) -> Bool {
@@ -211,7 +196,6 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   }
 
   sys.AddRival(r);
-  CBRivalAddEvent(r, ECBRivalEventKind.Created, at, origin, 0);
 
   CBLogRival(sys, n"RivalCreated", at, origin, faction, Cast<Float>(r.id), r.id);
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
@@ -227,7 +211,6 @@ public func CBPromoteRival(rival: ref<CBRival>, content: ref<CyberbaneContent>, 
   }
   rival.rank += 1;
   CBRivalAddTrait(content, rival);
-  CBRivalAddEvent(rival, ECBRivalEventKind.Promoted, at, rival.origin, rival.rank);
 }
 
 // --- State transitions (spec §10.6) ------------------------------------
@@ -238,7 +221,6 @@ public func CBRivalEscaped(rival: ref<CBRival>, content: ref<CyberbaneContent>, 
   }
   rival.escapes += 1;
   rival.lastSeenAt = at;
-  CBRivalAddEvent(rival, ECBRivalEventKind.Escaped, at, district, 0);
   CBPromoteRival(rival, content, at);
   if lowHp {
     CBRivalGiveTrait(rival, n"Scarred");
@@ -252,7 +234,6 @@ public func CBRivalKilledV(rival: ref<CBRival>, content: ref<CyberbaneContent>, 
   rival.killedV += 1;
   CBRivalTakeTrait(rival, n"Shaken");
   CBRivalGiveTrait(rival, n"Confident");
-  CBRivalAddEvent(rival, ECBRivalEventKind.KilledV, at, district, 0);
   CBPromoteRival(rival, content, at);
 }
 
@@ -262,7 +243,6 @@ public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>
     return false;
   }
   rival.sparedByV += 1;
-  CBRivalAddEvent(rival, ECBRivalEventKind.SparedByV, at, district, 0);
   if rival.sparedByV >= 2 && RandF() < 0.5 {
     rival.state = EnumInt(ECBRivalState.Debtor);
     return true;
@@ -278,7 +258,6 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   }
   rival.state = EnumInt(ECBRivalState.Slain);
   rival.lastSeenAt = at;
-  CBRivalAddEvent(rival, ECBRivalEventKind.Slain, at, district, 0);
 
   let stats = sys.GetStats();
   if IsDefined(stats) {
@@ -306,7 +285,6 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   if RandF() < CBConfig.RivalChanceAvenger() * freq {
     let avenger = CBCreateRival(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger, district, at);
     if IsDefined(avenger) {
-      CBRivalAddEvent(avenger, ECBRivalEventKind.Created, at, district, rival.id);
       if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
         CBShowMessage(game, "Cyberbane: " + CBRivalDisplayName(content, avenger) + " is gunning for you over a dead crewmate.", 5.0);
       }

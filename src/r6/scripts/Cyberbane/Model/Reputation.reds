@@ -111,8 +111,8 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   // Lifetime stats.
   let stats = sys.GetStats();
   if IsDefined(stats) {
-    if info.lethal && info.victimClass >= 0 && info.victimClass < ArraySize(stats.killsByClass) {
-      stats.killsByClass[info.victimClass] += 1;
+    if info.lethal {
+      sys.AddKillByClass(info.victimClass);   // tallies live on the system now (schema 3)
     }
     if !info.lethal {
       stats.nonLethal += 1;

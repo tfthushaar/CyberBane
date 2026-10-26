@@ -43,9 +43,12 @@ public class CBDistrictState {
   public persistent let lastIncidentAt: Float;
 }
 
+// Scalars only. The kill tallies used to live here as `killsByClass` / `killsByMethod`
+// (array<Int32> nested inside this persisted class) and were ArrayResize'd on every load,
+// which is an allocation against a header that just came off disk - the same shape and the
+// same risky operation behind the 0.1.8 crash. They now live as a flat array directly on
+// CyberbaneSystem, which is the supported place for persisted collections (schema 3).
 public class CBStats {
-  public persistent let killsByClass: array<Int32>;    // index = ECBVictimClass
-  public persistent let killsByMethod: array<Int32>;   // index = ECBKillMethod
   public persistent let nonLethal: Int32;
   public persistent let psychosKilled: Int32;
   public persistent let psychosPacified: Int32;
@@ -61,17 +64,6 @@ public class CBStats {
   public persistent let maxHeat: Int32;
   public persistent let estimatedPriorKills: Int32;   // bootstrap estimate, display only
   public persistent let quickhackKills: Int32;
-
-  // Total lethal kills across all victim classes (for the mercy ratio, spec §8.2).
-  public func TotalKills() -> Int32 {
-    let total = 0;
-    let i = 0;
-    while i < ArraySize(this.killsByClass) {
-      total += this.killsByClass[i];
-      i += 1;
-    }
-    return total;
-  }
 }
 
 public class CBRumor {
@@ -90,13 +82,6 @@ public class CBRumor {
   // the engine a buffer header with a nonsense capacity, which is what crashed the slow
   // tick. A plain Int32 cannot come back malformed (schema 2).
   public persistent let reachedMask: Int32;
-}
-
-public class CBRivalEvent {
-  public persistent let kind: Int32;               // ECBRivalEventKind
-  public persistent let at: Float;
-  public persistent let district: CName;
-  public persistent let detail: Int32;             // e.g. allies killed
 }
 
 public class CBRival {
@@ -122,7 +107,11 @@ public class CBRival {
   public persistent let createdAt: Float;
   public persistent let lastSeenAt: Float;
   public persistent let nextEligibleAt: Float;
-  public persistent let history: array<ref<CBRivalEvent>>;   // cap 10
+  // No `history` array here any more. It was an array<ref<CBRivalEvent>> nested inside this
+  // class, and this class lives inside the persisted m_rivals array - the exact shape that
+  // crashed the game via CBRumor.reached. It was also write-only: nothing ever read it back,
+  // so it is simply gone rather than relocated (schema 3). If Rival cards ever need an event
+  // log, put it in a flat array on CyberbaneSystem keyed by rival id.
 }
 
 public class CBLogEntry {
