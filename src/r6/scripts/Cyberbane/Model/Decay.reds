@@ -24,7 +24,7 @@ public func CBApplyDecay(sys: ref<CyberbaneSystem>, elapsedDays: Float) -> Void 
   sys.DecayArchetypes(PowF(0.995, f));
   sys.RefreshPrimaryArchetype();
 
-  let content = CyberbaneContent.Get();
+  let content = sys.GetContent();
 
   // Faction renown decays toward a floor; standing drifts toward its baseline.
   for fs in sys.GetFactionStates() {

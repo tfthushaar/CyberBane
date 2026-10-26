@@ -226,7 +226,7 @@ func CBHudActiveTitle(sys: ref<CyberbaneSystem>) -> String {
   if Equals(id, n"") {
     return "Unknown";
   }
-  let content = CyberbaneContent.Get();
+  let content = sys.GetContent();
   if IsDefined(content) {
     let def = content.GetTitle(id);
     if IsDefined(def) {
@@ -351,7 +351,7 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
 
 func CBHudRivals(sys: ref<CyberbaneSystem>) -> String {
   let rivals = sys.GetRivals();
-  let content = CyberbaneContent.Get();
+  let content = sys.GetContent();
   let out = "";
   let shown = 0;
   let i = 0;
@@ -372,7 +372,7 @@ func CBHudRivals(sys: ref<CyberbaneSystem>) -> String {
 
 func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
   let unlocked = sys.GetUnlockedTitles();
-  let content = CyberbaneContent.Get();
+  let content = sys.GetContent();
   if ArraySize(unlocked) == 0 {
     return "No titles earned yet.";
   }

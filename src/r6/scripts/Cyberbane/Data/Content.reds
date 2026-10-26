@@ -5,6 +5,19 @@
 // add-on mods through CyberbaneAPI. These classes are never persisted, so String
 // display keys are allowed here (unlike the save-state classes in State.reds).
 
+// Cached content accessor used everywhere outside the one warm-up lookup. It returns the content
+// service reference cached on the per-save system, which was fetched once from a confirmed-stable
+// fast tick. Nothing here re-locks the global service container, which during a load or streaming
+// can hand back a dead-but-non-null reference that passes IsDefined and then crashes on the native
+// context lock. Returns null until the cache is warm; callers already null-check content.
+public func CBContent(game: GameInstance) -> ref<CyberbaneContent> {
+  let sys = CyberbaneSystem.Get(game);
+  if !IsDefined(sys) {
+    return null;
+  }
+  return sys.GetContent();
+}
+
 // ---- Record classes -------------------------------------------------------
 
 public class CBFactionProfile {

@@ -20,7 +20,7 @@ certain way, open the Hub and read the breakdown.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: early release (0.1.7).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: early release (0.1.8).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does

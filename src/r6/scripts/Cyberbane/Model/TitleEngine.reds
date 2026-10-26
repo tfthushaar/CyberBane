@@ -6,7 +6,7 @@
 // deed system lands; chrome-gated ones once the chrome signal lands.
 
 public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   if !IsDefined(content) {
     return;
   }

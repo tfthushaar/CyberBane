@@ -73,7 +73,7 @@ public func CBRumorTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     return;
   }
   let now = CBGameSeconds(game);
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   let spreadInterval = CBConfig.RumorSpreadHours() * CBConfig.SecondsPerHour();
   let lifetime = CBConfig.RumorLifetimeDays() * CBConfig.SecondsPerDay();
 

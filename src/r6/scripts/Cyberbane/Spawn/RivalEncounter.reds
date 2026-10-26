@@ -82,7 +82,7 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   }
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    let content = CyberbaneContent.Get();
+    let content = CBContent(game);
     let name = IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival";
     CBShowMessage(game, s"Cyberbane: \(name) has caught up with you.", 4.0);
   }

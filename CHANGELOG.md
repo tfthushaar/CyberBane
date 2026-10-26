@@ -3,6 +3,17 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.8] - 2026-10-26
+
+### Fixed
+- Fixed the remaining crash in the background tick, which could hit after a load as well as after
+  a transition. Cyberbane looks up its content service through the game, and during a load or
+  while the world is streaming that lookup could come back pointing at freed memory that still
+  looked valid, so the game crashed when the slow tick used it. Cyberbane now looks that service
+  up once, at a safe moment, reuses it from then on, and holds the slow tick until it is ready, so
+  the tick never touches the unstable lookup again. Thanks to r3bels90 for pinpointing the exact
+  call and cause.
+
 ## [0.1.7] - 2026-10-26
 
 ### Fixed

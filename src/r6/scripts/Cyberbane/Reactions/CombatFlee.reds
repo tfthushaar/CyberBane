@@ -110,7 +110,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().rivals {
     return;
   }
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   let district = CBCurrentDistrict(game);
   let toasts = IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts;
 

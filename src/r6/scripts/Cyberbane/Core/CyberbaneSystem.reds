@@ -55,6 +55,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_streamSettleTicks: Int32;     // ticks to sit out after a transition / time jump (crash safety)
   private let m_attachCount: Int32;           // entities attached since the last tick (streaming-flood detector)
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
+  private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
 
   // ---- Access -----------------------------------------------------------
   public static func Get(game: GameInstance) -> ref<CyberbaneSystem> {
@@ -254,6 +255,11 @@ public class CyberbaneSystem extends ScriptableSystem {
       return;
     }
 
+    // Warm the content cache from this confirmed-stable tick: the one real service-container
+    // lookup happens here, in a safe context, so the slow tick can reuse the cached reference
+    // instead of re-locking a possibly-dead container (crash safety).
+    this.GetContent();
+
     this.m_tickCount += 1;
     // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district)
     // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
@@ -286,6 +292,22 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_currentDistrict;
   }
 
+  // Content service, fetched once (lazily) and cached. Everything goes through CBContent/this so
+  // the tick never re-locks the global service container, which during a load or streaming can
+  // return a dead-but-non-null reference that passes IsDefined and then crashes on the context
+  // lock. The warm-up call lives on a confirmed-stable fast tick, so the one real lookup happens
+  // in a safe context; the slow tick is held off until this is populated.
+  public func GetContent() -> ref<CyberbaneContent> {
+    if !IsDefined(this.m_content) {
+      this.m_content = CyberbaneContent.Get();
+    }
+    return this.m_content;
+  }
+
+  public func HasContent() -> Bool {
+    return IsDefined(this.m_content);
+  }
+
   public func GetEncounter() -> ref<CBEncounter> {
     return this.m_encounter;
   }
@@ -315,6 +337,13 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Slow tick (spec §5.5): decay now; rumor spread, tribute, title evaluation and
   // scheduling checks are added as those systems land.
   public func OnSlowTick(elapsedDays: Float) -> Void {
+    // Hold the slow tick until the content cache is warm (populated by a stable fast tick). This
+    // is what crashed before: the first slow tick after a load hit the global service container
+    // while it was a dead-but-non-null reference. Now the slow tick only runs once the cached
+    // content is in hand, and everything below reads that cache via CBContent, never the container.
+    if !this.HasContent() {
+      return;
+    }
     let game = this.GetGameInstance();
     CBApplyDecay(this, elapsedDays);
     CBTributeTick(this, game);
@@ -354,7 +383,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if NotEquals(this.m_activeTitle, n"") {
       return this.m_activeTitle;
     }
-    let content = CyberbaneContent.Get();
+    let content = this.GetContent();
     let best = n"";
     let bestPriority = -1;
     for id in this.m_titles {
@@ -726,7 +755,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     let st = new CBFactionState();
     st.id = id;
-    let content = CyberbaneContent.Get();
+    let content = this.GetContent();
     if IsDefined(content) {
       let prof = content.GetFaction(id);
       if IsDefined(prof) {

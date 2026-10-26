@@ -74,6 +74,15 @@ public class CBScoreEngine {
   public func GetDisguise() -> Float { return this.m_disguise; }
   public func GetHeatStage() -> Int32 { return this.m_heatStage; }
 
+  // Content via the system's cached accessor (never re-locks the global container; crash safety).
+  private func Content() -> ref<CyberbaneContent> {
+    let sys = this.m_system;
+    if !IsDefined(sys) {
+      return null;
+    }
+    return sys.GetContent();
+  }
+
   // ---- Derivation -------------------------------------------------------
   private func Recompute() -> Void {
     if !this.m_dirty {
@@ -147,7 +156,7 @@ public class CBScoreEngine {
         return st.standing;
       }
     }
-    let content = CyberbaneContent.Get();
+    let content = this.Content();
     if IsDefined(content) {
       let prof = content.GetFaction(factionId);
       if IsDefined(prof) {
@@ -174,7 +183,7 @@ public class CBScoreEngine {
 
   public func GetFactionFear(factionId: CName) -> Float {
     this.Recompute();
-    let content = CyberbaneContent.Get();
+    let content = this.Content();
     let dreadSens = 1.0;
     let chromeAttitude = 0.0;
     if IsDefined(content) {
@@ -190,7 +199,7 @@ public class CBScoreEngine {
   public func GetFactionRespect(factionId: CName) -> Float {
     this.Recompute();
     let sys = this.m_system;
-    let content = CyberbaneContent.Get();
+    let content = this.Content();
     let chromeAttitude = 0.0;
     let respectBlend = 0.0;
     if IsDefined(content) {

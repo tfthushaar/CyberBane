@@ -14,7 +14,7 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     return;
   }
   let score = sys.GetScore();
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   let player = GetPlayer(game);
   if !IsDefined(score) || !IsDefined(content) || !IsDefined(player) {
     return;

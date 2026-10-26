@@ -182,7 +182,7 @@ func CBClassifyFaction(puppet: ref<ScriptedPuppet>) -> CName {
   if !IsDefined(aff) {
     return n"";
   }
-  let content = CyberbaneContent.Get();
+  let content = CBContent(puppet.GetGame());
   if !IsDefined(content) {
     return n"";
   }

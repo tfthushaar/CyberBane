@@ -6,7 +6,7 @@
 // with `silent = true` (no messages). Generic gigs/hustles use their own helpers.
 
 public func CBApplyDeedById(sys: ref<CyberbaneSystem>, game: GameInstance, deedId: CName, silent: Bool) -> Void {
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   if !IsDefined(content) {
     return;
   }
@@ -46,7 +46,7 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
     }
   }
 
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   for tid in def.titles {
     if !sys.HasTitle(tid) {
       sys.UnlockTitle(tid);

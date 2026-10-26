@@ -35,7 +35,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   if !IsDefined(sys) || Equals(factionId, n"") {
     return false;
   }
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   if !IsDefined(content) {
     return false;
   }
@@ -93,7 +93,7 @@ public func CBBrokerPeaceBest(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   if !IsDefined(sys) {
     return false;
   }
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   let score = sys.GetScore();
   if !IsDefined(content) || !IsDefined(score) {
     return false;

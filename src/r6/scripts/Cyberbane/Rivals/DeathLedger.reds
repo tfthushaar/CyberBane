@@ -53,7 +53,7 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     return;
   }
   let myId = sys.GetPlaythroughId();
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
 
   for entry in service.GetLedger() {
     if Equals(entry.playthroughId, myId) && !sys.HasAppliedLedgerId(entry.id) {

@@ -152,7 +152,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   r.createdAt = at;
   r.lastSeenAt = at;
 
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   CBRivalGenerateName(content, r);
   CBRivalAddTrait(content, r);
   if Equals(source, ECBRivalSource.Spared) {
@@ -234,7 +234,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   sys.AddRenownPoints((25.0 + 10.0 * Cast<Float>(rival.rank)) * renownMult);
 
   CBLogRival(sys, n"RivalSlain", at, district, rival.faction, Cast<Float>(rival.rank), rival.id);
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
     CBShowMessage(game, "Cyberbane: Rival slain - " + CBRivalDisplayName(content, rival), 5.0);
   }
@@ -275,7 +275,7 @@ public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance
   if IsDefined(cd) && (now - cd.lastPromotionAt) < CBConfig.SecondsPerDay() * 0.33 {
     return;
   }
-  let content = CyberbaneContent.Get();
+  let content = CBContent(game);
   let neglect = CBConfig.SecondsPerDay();   // left alone for a day and they get stronger
   for r in sys.GetRivals() {
     let active = r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
