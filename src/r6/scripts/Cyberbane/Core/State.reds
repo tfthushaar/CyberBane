@@ -24,6 +24,13 @@ public class CBFactionState {
   // A real character record of a member V has fought, captured so hit squads spawn
   // faction-appropriate NPCs without hardcoding TweakDB ids (spec §9.9, S-08).
   public persistent let sampleRecord: TweakDBID;
+  // The toughest member of this gang V has actually put down (elite, officer or boss). The
+  // faction apex is built from this, so the heavy they send is their own kind and no story
+  // character is ever involved. Falls back to sampleRecord if V has only fought rank and file.
+  // Scalars, never arrays: nothing nested inside a persisted class (see CBRumor).
+  public persistent let eliteRecord: TweakDBID;
+  // Value of `kills` when this gang last sent its apex, so the next one needs fresh bodies.
+  public persistent let apexAtKills: Int32;
 }
 
 public class CBDistrictState {

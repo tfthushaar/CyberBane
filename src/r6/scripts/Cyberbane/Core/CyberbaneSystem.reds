@@ -58,6 +58,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
   private let m_callbacksRegistered: Bool;    // Codeware entity + input callbacks registered; retried until it sticks
   private let m_hubKeyDown: Bool;             // Hub key debounce: some setups deliver only Press, some only Release
+  private let m_pendingApexFaction: CName;    // gang whose apex has been announced and is walking in
+  private let m_pendingApexTicks: Int32;      // fast ticks left on that warning (session-only)
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
 
@@ -157,7 +159,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       let des = GameInstance.GetDynamicEntitySystem();
       if IsDefined(des) {
         let id = puppet.GetEntityID();
-        if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival") {
+        if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex") {
           CBMakeHostileToPlayer(this.GetGameInstance(), puppet);
         }
       }
@@ -330,6 +332,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     CBEncounterTick(this, game);
     CBProcessEscapees(this, game);
+    CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) {
@@ -346,6 +349,26 @@ public class CyberbaneSystem extends ScriptableSystem {
   // the Prevention system every tick keeps that query off the hot path during streaming.
   public func GetCurrentDistrict() -> CName {
     return this.m_currentDistrict;
+  }
+
+  // ---- Faction apex (spec §9.9) -----------------------------------------
+  // Session-only: an announced apex that has not walked in yet. Nothing here is persisted, so
+  // a save taken mid-warning simply forgets it rather than restoring a half-state.
+  public func SetPendingApex(faction: CName, ticks: Int32) -> Void {
+    this.m_pendingApexFaction = faction;
+    this.m_pendingApexTicks = ticks;
+  }
+
+  public func GetPendingApexFaction() -> CName {
+    return this.m_pendingApexFaction;
+  }
+
+  // Counts the warning window down by one tick and reports what is left.
+  public func TickDownPendingApex() -> Int32 {
+    if this.m_pendingApexTicks > 0 {
+      this.m_pendingApexTicks -= 1;
+    }
+    return this.m_pendingApexTicks;
   }
 
   // Player is somewhere the game treats as a safe area. The reaction systems (crowds,
@@ -410,6 +433,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBApplyDecay(this, elapsedDays);
     CBTributeTick(this, game);
     CBHitSquadTick(this, game);
+    CBApexTick(this, game);
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);
     CBRivalProgressionTick(this, game);

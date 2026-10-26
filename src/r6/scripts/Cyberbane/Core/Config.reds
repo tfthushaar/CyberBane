@@ -171,6 +171,17 @@ public abstract class CBConfig {
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
   public static func RivalSpawnDistance() -> Float = 35.0
 
+  // ---- Faction apex enforcer (spec §9.9) -------------------------------
+  // Bodies from one gang before they stop sending squads and send someone who matters. Kept
+  // deliberately reachable: a couple of serious run-ins with the same crew gets you there.
+  public static func ApexKillThreshold() -> Int32 = 20
+  // Fast ticks between the warning and the apex actually walking in (~seconds), so the line
+  // lands before they do instead of alongside them.
+  public static func ApexWarningTicks() -> Int32 = 5
+  public static func ApexSpawnDistance() -> Float = 30.0
+  // Muscle that comes in with them. Built from the gang's rank-and-file record.
+  public static func ApexEscortCount() -> Int32 = 2
+
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   // Rivals only land if they actually happen. Raised so leaving people alive or breaking a
   // crew produces a nemesis often enough to notice, still bounded by the caps below.

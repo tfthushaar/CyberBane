@@ -89,6 +89,13 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     // Remember a real combatant record so a later hit squad spawns their kind (S-08).
     if info.victimClass != EnumInt(ECBVictimClass.Civilian) && TDBID.IsValid(info.recordID) {
       fs.sampleRecord = info.recordID;
+      // An elite, officer or boss makes a far better template for the gang's apex enforcer
+      // than a rank-and-file ganger (spec §9.9).
+      if info.victimClass == EnumInt(ECBVictimClass.Elite)
+         || info.victimClass == EnumInt(ECBVictimClass.Officer)
+         || info.victimClass == EnumInt(ECBVictimClass.Boss) {
+        fs.eliteRecord = info.recordID;
+      }
     }
   }
 

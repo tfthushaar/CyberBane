@@ -3,6 +3,16 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.12] - 2026-10-27
+
+### Added
+- Keep hitting the same gang and they stop sending squads and send someone who matters. Put
+  enough of one crew down and their apex comes looking for you: a named heavy built from the
+  toughest member of theirs you have actually fought, with a couple of their people alongside.
+  You get a warning line first, then they arrive. No story character is ever involved, so this
+  cannot spoil anything or interfere with a quest, and it works for every gang rather than only
+  the ones with a famous name. It uses the same setting as hit squads.
+
 ## [0.1.11] - 2026-10-27
 
 ### Added
