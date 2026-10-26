@@ -56,6 +56,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_attachCount: Int32;           // entities attached since the last tick (streaming-flood detector)
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
+  private let m_callbacksRegistered: Bool;    // Codeware entity + input callbacks registered; retried until it sticks
+  private let m_hubKeyDown: Bool;             // Hub key debounce: some setups deliver only Press, some only Release
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
 
@@ -75,6 +77,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.EnsureSettings();
     this.Initialize();
     this.RegisterPlayerAttach();
+    this.EnsureCallbacks();   // so the Hub key works even if the player-attached callback is missed
   }
 
   // The player-puppet-attached callback is the reliable "session is ready" signal
@@ -90,6 +93,23 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.StartSession();
   }
 
+  // Register the Codeware callbacks: NPC tracking and the Hub key. Guarded and idempotent, and
+  // called from OnAttach, from session start and from the tick. If the callback system is not up
+  // yet at one of those points a later call still gets it, so the Hub key can never end up
+  // silently unregistered (which is one way F7 appears to "do nothing").
+  private func EnsureCallbacks() -> Void {
+    if this.m_callbacksRegistered {
+      return;
+    }
+    let cbs = GameInstance.GetCallbackSystem();
+    if !IsDefined(cbs) {
+      return;   // not available yet - a later call will register
+    }
+    cbs.RegisterCallback(n"Entity/Attached", this, n"OnCBEntityAttached");
+    cbs.RegisterCallback(n"Input/Key", this, n"OnCBKeyInput");
+    this.m_callbacksRegistered = true;
+  }
+
   // Session start (spec §5.3): build runtime objects, register the entity callback
   // once, clean up stray Cyberbane spawns, and (re)start the fast tick.
   private func StartSession() -> Void {
@@ -99,10 +119,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !IsDefined(this.m_director) {
       this.m_director = new CBReactionDirector();
     }
+    this.EnsureCallbacks();
     if !this.m_sessionStarted {
       this.m_sessionStarted = true;
-      GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/Attached", this, n"OnCBEntityAttached");
-      GameInstance.GetCallbackSystem().RegisterCallback(n"Input/Key", this, n"OnCBKeyInput");
       let des = GameInstance.GetDynamicEntitySystem();
       if IsDefined(des) {
         des.DeleteTagged(n"Cyberbane");
@@ -147,11 +166,27 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // Hub toggle (spec §12.1). Fires on key release so a tap advances exactly one tab.
   private cb func OnCBKeyInput(event: ref<KeyInputEvent>) -> Void {
-    if !Equals(event.GetAction(), EInputAction.IACT_Release) {
-      return;
-    }
     if !Equals(event.GetKey(), this.GetHubKey()) {
       return;
+    }
+    // Act on the press, and fall back to the release for setups that never deliver a press for
+    // this key - one reported way the Hub key appears to do nothing. The down-flag keeps a normal
+    // press+release pair from advancing two tabs, and stops a held key from repeating.
+    let action = event.GetAction();
+    if Equals(action, EInputAction.IACT_Press) {
+      if this.m_hubKeyDown {
+        return;
+      }
+      this.m_hubKeyDown = true;
+    } else {
+      if !Equals(action, EInputAction.IACT_Release) {
+        return;   // repeats and anything else
+      }
+      let pressWasSeen = this.m_hubKeyDown;
+      this.m_hubKeyDown = false;
+      if pressWasSeen {
+        return;   // already handled on the press
+      }
     }
     if !IsDefined(this.m_hud) {
       this.m_hud = new CBHud();
@@ -183,7 +218,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   private func GetHubKey() -> EInputKey {
     let rt = CyberbaneRuntime.Get();
     if IsDefined(rt) && rt.HasSettings() {
-      return rt.GetSettings().hubKey;
+      let k = rt.GetSettings().hubKey;
+      // A settings store that has not filled in yet reads as IK_None, which would leave the Hub
+      // with no key at all and look exactly like "F7 does nothing". Fall back to F7 instead.
+      if NotEquals(k, EInputKey.IK_None) {
+        return k;
+      }
     }
     return EInputKey.IK_F7;
   }
@@ -261,6 +301,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // lookup happens here, in a safe context, so the slow tick can reuse the cached reference
     // instead of re-locking a possibly-dead container (crash safety).
     this.GetContent();
+    this.EnsureCallbacks();   // last-resort retry if the callback system was not up earlier
 
     // Carry out any entity cleanup that was deferred out of a lifecycle callback. This tick
     // is settled, so the engine is no longer mid-teardown on the entity being removed.
@@ -927,11 +968,14 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func RemoveEscapee(e: ref<CBEscapee>) -> Void {
     ArrayRemove(this.m_escapees, e);
   }
-  // Drop a pending escapee when V catches and kills it (by entity id).
+  // Drop a pending escapee when V catches and kills it (by entity id). This is what stops
+  // someone you knocked out and then finished from still coming back as a Spared Rival.
+  // Bind the element and check it before reading a field off it (crash safety).
   public func DropEscapeeByEntity(id: EntityID) -> Void {
     let i = 0;
     while i < ArraySize(this.m_escapees) {
-      if Equals(this.m_escapees[i].entityId, id) {
+      let e = this.m_escapees[i];
+      if !IsDefined(e) || Equals(e.entityId, id) {
         ArrayErase(this.m_escapees, i);
       } else {
         i += 1;

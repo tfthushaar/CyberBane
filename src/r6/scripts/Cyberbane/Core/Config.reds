@@ -35,8 +35,10 @@ public abstract class CBConfig {
   public static func FloodAttachThreshold() -> Int32 = 25
 
   // ---- Reaction director (spec §9.1, §18) ------------------------------
-  public static func NpcEvalRadius() -> Float = 30.0           // metres
-  public static func NpcEvalPerTick() -> Int32 = 12
+  // Wide enough to contain the chrome-widened flee range below, and enough NPCs per tick that
+  // a busy street actually reacts instead of one or two people noticing you.
+  public static func NpcEvalRadius() -> Float = 35.0           // metres
+  public static func NpcEvalPerTick() -> Int32 = 16
   public static func MaxSpawnedNpcs() -> Int32 = 8
   public static func PerNpcCooldownSeconds() -> Float = 30.0
   // Upper bound on the attitude-revert list (NPCs Cyberbane turned hostile). Only live
@@ -106,19 +108,29 @@ public abstract class CBConfig {
   public static func RecognitionCacheMax() -> Int32 = 256
 
   // ---- Civilians (spec §9.2) -------------------------------------------
-  public static func CivTierNotice() -> Float = 20.0
-  public static func CivTierUneasy() -> Float = 40.0
-  public static func CivTierAfraid() -> Float = 60.0
-  public static func CivTierTerror() -> Float = 80.0
-  public static func CivCowerRadius() -> Float = 6.0    // Afraid tier (spec §9.2)
-  public static func CivFleeRadius() -> Float = 15.0    // Terror tier (spec §9.2)
+  // Reaction tiers. These sat at 60/80, which a mid-game V almost never reached, so the city
+  // stayed silent and the mod read as "not working". Pitched so a V with obvious chrome gets
+  // noticed, and a feared, heavily-built one clears a path. Still scaled by the intensity
+  // slider, capped per tick, and switched off entirely inside safe areas.
+  public static func CivTierNotice() -> Float = 18.0
+  public static func CivTierUneasy() -> Float = 32.0
+  public static func CivTierAfraid() -> Float = 42.0
+  public static func CivTierTerror() -> Float = 68.0
+  public static func CivCowerRadius() -> Float = 8.0    // Afraid tier (spec §9.2)
+  public static func CivFleeRadius() -> Float = 18.0    // Terror tier (spec §9.2)
   // How much V's build (level, street cred, skills) adds to how intimidating they look.
-  public static func MenaceFearWeight() -> Float = 0.5
+  public static func MenaceFearWeight() -> Float = 0.6
+  // How much further obvious chrome gets noticed. At full visible chrome both reaction ranges
+  // widen by this fraction, so blades-for-arms reads from across the street. Kept low enough
+  // that the widened flee range stays inside NpcEvalRadius.
+  public static func ChromeNoticeRangeBonus() -> Float = 0.5
 
   // ---- Whispers (spec §9.10) -------------------------------------------
-  public static func WhisperCooldownSeconds() -> Float = 25.0
-  public static func WhisperRadius() -> Float = 10.0
-  public static func WhisperChance() -> Float = 0.35
+  // Overheard lines are the clearest sign the city has an opinion of you, so they come a little
+  // more often and from a little further out.
+  public static func WhisperCooldownSeconds() -> Float = 18.0
+  public static func WhisperRadius() -> Float = 13.0
+  public static func WhisperChance() -> Float = 0.45
   public static func WhisperDurationSeconds() -> Float = 4.0
 
   // ---- Morale (spec §9.4) ----------------------------------------------
@@ -160,12 +172,17 @@ public abstract class CBConfig {
   public static func RivalSpawnDistance() -> Float = 35.0
 
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
-  public static func RivalChanceSurvivor() -> Float = 0.15
-  public static func RivalChanceSpared() -> Float = 0.20
-  public static func RivalChanceAvenger() -> Float = 0.15
+  // Rivals only land if they actually happen. Raised so leaving people alive or breaking a
+  // crew produces a nemesis often enough to notice, still bounded by the caps below.
+  public static func RivalChanceSurvivor() -> Float = 0.25
+  public static func RivalChanceSpared() -> Float = 0.30
+  public static func RivalChanceAvenger() -> Float = 0.20
   public static func RivalChanceHunter() -> Float = 0.50
-  public static func RivalEncounterBaseChance() -> Float = 0.10
-  public static func RivalEncounterChancePerRank() -> Float = 0.05
+  public static func RivalEncounterBaseChance() -> Float = 0.25
+  public static func RivalEncounterChancePerRank() -> Float = 0.07
+  // Minimum in-game hours between Rival encounters, so one can actually catch up with you
+  // during a session without turning into an ambush every few minutes.
+  public static func RivalEncounterCooldownHours() -> Float = 0.6
   public static func RivalMaxActiveHardCap() -> Int32 = 15
   public static func RivalMaxPerFaction() -> Int32 = 3
 

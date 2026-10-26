@@ -38,9 +38,9 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
   if des.IsPopulated(n"CB_Rival") {
     return;   // one Rival encounter at a time
   }
-  // One encounter per in-game hour at most.
+  // Leave a gap between encounters so a Rival catching up stays an event, not an ambush loop.
   if IsDefined(cd) && cd.lastRivalEncounterAt > 0.0
-     && (now - cd.lastRivalEncounterAt) < CBConfig.SecondsPerDay() / 24.0 {
+     && (now - cd.lastRivalEncounterAt) < CBConfig.SecondsPerHour() * CBConfig.RivalEncounterCooldownHours() {
     return;
   }
   let player = GetPlayer(game);
@@ -61,7 +61,11 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
       if seeking
          && TDBID.IsValid(r.recordID)
          && (r.nextEligibleAt <= 0.0 || now >= r.nextEligibleAt) {
-        if RandF() < 0.35 {
+        // A Rival that has climbed the ranks presses harder than a fresh one, so it turns up
+        // more often. Capped so even a veteran nemesis is not waiting around every corner.
+        let chance = ClampF(CBConfig.RivalEncounterBaseChance()
+          + Cast<Float>(r.rank) * CBConfig.RivalEncounterChancePerRank(), 0.0, 0.75);
+        if RandF() < chance {
           CBSpawnRival(sys, game, r, now);
           return;
         }

@@ -68,6 +68,8 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
     let sys = CyberbaneSystem.Get(game);
     if IsDefined(sys) {
       CBCombatFleeCheck(sys, game, puppet);
+      // Put them down without killing them? That gets remembered too (spec §10.2).
+      CBSparedCheck(sys, game, puppet);
     }
   }
   // Record the attacker on the target so V's killer is known at death time.

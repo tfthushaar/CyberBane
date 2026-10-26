@@ -3,6 +3,35 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.11] - 2026-10-27
+
+### Added
+- Beat someone down and walk away and they can come back as a Rival who remembers it. Sparing
+  an enemy was always meant to make a nemesis and never actually did. Finishing them off
+  afterwards cancels it, as you would expect.
+- The Hub explains itself now. Every screen says what its numbers mean instead of showing bare
+  abbreviations, gangs list standing, fear and respect in words, and each Rival tells you how
+  they came to hate you. The first screen ends with a line stating exactly what the city is
+  doing about you right now, and what it would take to change that.
+
+### Changed
+- Night City reacts far more. The thresholds for people noticing you and backing off were set so
+  high that most characters never crossed them, which made the mod look like it was doing
+  nothing. They are much lower now, the reaction ranges are wider, and more people are checked
+  at a time. Intensity and the per-moment cap are still yours to set.
+- Visible cyberware counts for more and reads from further off. Chromed legs now count alongside
+  arms, eyes and skin, and the more obvious your chrome the further away people clock it.
+- Rivals turn up more often, and one that has climbed the ranks comes for you harder than a
+  fresh one does.
+- Overheard lines come a little more often and from a little further away.
+
+### Fixed
+- The Hub key could do nothing at all on some setups. It now works whether your setup reports the
+  key press or the release, falls back to F7 when the key setting has not filled in yet, and
+  registers itself at several points during startup instead of relying on a single moment.
+- Hardened one more place that read an entry without checking it first, the same class of fault
+  behind the earlier crashes.
+
 ## [0.1.10] - 2026-10-26
 
 ### Fixed

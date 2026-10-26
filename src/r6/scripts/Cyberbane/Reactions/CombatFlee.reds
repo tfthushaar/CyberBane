@@ -10,6 +10,54 @@
 @addField(ScriptedPuppet)
 public let cbLowHealthFled: Bool;
 
+@addField(ScriptedPuppet)
+public let cbSparedLogged: Bool;
+
+// Called from OnHit when V has just damaged this puppet. If that blow put them down without
+// killing them - a knockout, a non-lethal takedown, a defeat - log it. If V then walks away and
+// leaves them breathing, CBProcessEscapees turns them into a Spared Rival who remembers being
+// beaten and left there. Killing them afterwards drops the entry (the death handler clears it),
+// so this only ever fires for someone you genuinely spared.
+public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(sys) || !IsDefined(puppet) || puppet.cbSparedLogged {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) {
+    if !rt.IsEnabled() {
+      return;
+    }
+    if rt.HasSettings() && !rt.GetSettings().rivals {
+      return;
+    }
+  }
+  if sys.IsInSafeZone() {
+    return;   // not in a safe area (spec §16)
+  }
+  // CanAffect already rules out dead, quest, companion, vendor and in-scene puppets.
+  if !CBSafetyGate.CanAffect(puppet) {
+    return;
+  }
+  // Down, but still breathing - that is what makes it mercy rather than a kill.
+  if !ScriptedPuppet.IsDefeated(puppet) && !puppet.IsIncapacitated() {
+    return;
+  }
+  let faction = CBClassifyFaction(puppet);
+  if Equals(faction, n"") || Equals(faction, n"MaxTac") {
+    return;   // unaffiliated nobodies and MaxTac do not become Rivals
+  }
+
+  puppet.cbSparedLogged = true;
+  let e = new CBEscapee();
+  e.puppet = puppet;
+  e.entityId = puppet.GetEntityID();
+  e.faction = faction;
+  e.record = puppet.GetRecordID();
+  e.at = CBGameSeconds(game);
+  e.spared = true;
+  sys.AddEscapee(e);
+}
+
 // Called from OnHit when V has just damaged this puppet.
 public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(sys) || !IsDefined(puppet) || puppet.cbLowHealthFled {
@@ -97,16 +145,49 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
       // as attached while its components are being torn down, and reading its position
       // then is exactly the kind of query that takes the game down (crash safety).
       let gone = !CBNpcSafe(sys, e.puppet);   // despawned / streamed out = got away
-      let far = !gone && IsDefined(player)
-             && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance();
-      if gone || far {
-        CBHandleEscape(sys, game, e, now);
-        sys.RemoveEscapee(e);
-      } else {
-        if (now - e.at) > CBConfig.EscapeTimeoutSeconds() {
+      if e.spared {
+        // Someone V put down and did not finish. They do not run, so "left alive" means either
+        // they streamed away still breathing, or enough time passed that V clearly walked off.
+        if gone || (now - e.at) > CBConfig.EscapeTimeoutSeconds() {
+          CBHandleSpared(sys, game, e, now);
           sys.RemoveEscapee(e);
         }
+      } else {
+        let far = !gone && IsDefined(player)
+               && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance();
+        if gone || far {
+          CBHandleEscape(sys, game, e, now);
+          sys.RemoveEscapee(e);
+        } else {
+          if (now - e.at) > CBConfig.EscapeTimeoutSeconds() {
+            sys.RemoveEscapee(e);
+          }
+        }
       }
+    }
+  }
+}
+
+// V beat someone down and left them breathing. Some of them take that worse than dying: they
+// come back as a Spared Rival carrying the Humiliated trait (spec §10.2).
+func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEscapee>, now: Float) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().rivals {
+    return;
+  }
+  if Equals(e.faction, n"") || !TDBID.IsValid(e.record) {
+    return;
+  }
+  if RandF() > CBConfig.RivalChanceSpared() {
+    return;   // not everyone you spare makes it personal
+  }
+  let content = CBContent(game);
+  let district = CBEventDistrict(sys, game);
+  let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now);
+  if IsDefined(nr) {
+    nr.state = EnumInt(ECBRivalState.Hunting);
+    if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+      CBShowMessage(game, s"Cyberbane: You left \(CBRivalDisplayName(content, nr)) alive. They will not forget it.", 4.0);
     }
   }
 }

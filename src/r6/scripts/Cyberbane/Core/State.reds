@@ -151,4 +151,7 @@ public class CBEscapee {
   public let record: TweakDBID;
   public let at: Float;
   public let wasRival: Bool;
+  // Logged because V put them down without killing them (a knockout / non-lethal takedown)
+  // rather than because they ran. Resolved into a Spared Rival if V leaves them breathing.
+  public let spared: Bool;
 }

@@ -28,13 +28,21 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
 
   // How intimidating V is: the scarier of reputation Dread or raw visible chrome, plus a
   // bump for a dangerous build (level, street cred and skills). See CBUpdateMenace.
-  let eff = (MaxF(score.GetDreadCiv(), score.GetChromeVisible()) + score.GetMenace() * CBConfig.MenaceFearWeight()) * intensity;
+  let chromeVisible = score.GetChromeVisible();
+  let eff = (MaxF(score.GetDreadCiv(), chromeVisible) + score.GetMenace() * CBConfig.MenaceFearWeight()) * intensity;
+
+  // Obvious chrome gets read from further out. Someone walking around with blades for arms is
+  // clocked halfway down the block, where a clean-looking merc has to be close before anyone
+  // reacts. Both ranges stay inside the Director's evaluation radius.
+  let reach = 1.0 + (chromeVisible / 100.0) * CBConfig.ChromeNoticeRangeBonus();
+  let fleeR = CBConfig.CivFleeRadius() * reach;
+  let cowerR = CBConfig.CivCowerRadius() * reach;
 
   let fire = false;
-  if eff >= CBConfig.CivTierTerror() && dist <= CBConfig.CivFleeRadius() {
+  if eff >= CBConfig.CivTierTerror() && dist <= fleeR {
     fire = true;   // Terror: flees on sight, fear spreads
   } else {
-    if eff >= CBConfig.CivTierAfraid() && dist <= CBConfig.CivCowerRadius() {
+    if eff >= CBConfig.CivTierAfraid() && dist <= cowerR {
       fire = true;   // Afraid: cowers or flees when V is close
     }
   }

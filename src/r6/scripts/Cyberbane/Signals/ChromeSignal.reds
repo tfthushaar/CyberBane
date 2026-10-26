@@ -7,6 +7,27 @@
 // first pass derives C from Humanity usage plus the number of implants, and
 // C_visible from visibly-chromed areas (arms, eyes, skin).
 
+// How obvious a piece of chrome is to someone looking at V. Arms carry the most - mantis blades,
+// gorilla arms and a monowire read as a threat from across the street. Eyes and chromed skin get
+// clocked closer in, and chromed legs show the moment you move. Everything internal scores 0,
+// because nobody on the street can tell what your cardiovascular system is running.
+// Max visible sum is 24, which becomes 60 after the x2.5 in CBComputeChromeVisible.
+func CBVisibleChromeWeight(area: gamedataEquipmentArea) -> Float {
+  if Equals(area, gamedataEquipmentArea.ArmsCW) {
+    return 12.0;
+  }
+  if Equals(area, gamedataEquipmentArea.EyesCW) {
+    return 4.0;
+  }
+  if Equals(area, gamedataEquipmentArea.IntegumentarySystemCW) {
+    return 4.0;
+  }
+  if Equals(area, gamedataEquipmentArea.LegsCW) {
+    return 4.0;
+  }
+  return 0.0;
+}
+
 public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -48,17 +69,7 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     let item = data.GetActiveItem(area);
     if ItemID.IsValid(item) {
       implantSum += 3.0;
-      if Equals(area, gamedataEquipmentArea.ArmsCW) {
-        visibleSum += 12.0;
-      } else {
-        if Equals(area, gamedataEquipmentArea.EyesCW) {
-          visibleSum += 3.0;
-        } else {
-          if Equals(area, gamedataEquipmentArea.IntegumentarySystemCW) {
-            visibleSum += 3.0;
-          }
-        }
-      }
+      visibleSum += CBVisibleChromeWeight(area);
     }
   }
 

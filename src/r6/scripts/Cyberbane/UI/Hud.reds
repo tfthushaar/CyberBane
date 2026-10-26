@@ -263,14 +263,44 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let district = NameToString(CBEventDistrict(sys, game));
   let codeLabel = CBCodeLabel(sys.GetCode());
 
-  let out = s"RENOWN        \(renown)        ( \(tier) )\n";
-  out += s"DREAD         \(dread)        FEAR, CIVILIAN   \(dreadCiv)\n";
-  out += s"CODE          \(code)        ( \(codeLabel) )\n";
-  out += s"STREET CRED   \(cred)\n";
-  out += s"STYLE         \(style)\n";
-  out += s"DISTRICT      \(district)\n\n";
-  out += CBHudDreadReason(sys);
+  let chrome = RoundF(score.GetChromeVisible());
+
+  let out = s"RENOWN            \(renown)    ( \(tier) )\n";
+  out += "    How widely Night City knows your name. Jobs, fights and notable\n";
+  out += "    deeds spread it outward from where they happened.\n\n";
+  out += s"DREAD             \(dread)    ( the street reads it as \(dreadCiv) )\n";
+  out += "    How frightening you are. This is what actually makes people back off.\n\n";
+  out += s"VISIBLE CHROME    \(chrome)\n";
+  out += "    How much of your cyberware a stranger can see from across the street.\n";
+  out += "    Arms read loudest, then eyes, skin and legs.\n\n";
+  out += s"CODE              \(code)    ( \(codeLabel) )\n";
+  out += "    How you do the work. Clean and controlled, or a mad dog.\n\n";
+  out += s"STREET CRED  \(cred)        STYLE  \(style)        HERE  \(district)\n\n";
+  out += CBHudDreadReason(sys) + "\n";
+  out += CBHudReactionState(sys);
   return out;
+}
+
+// A live readout of what the city is actually doing about you right now, and what it would
+// take to move the needle. This is the line that answers "is any of this working?".
+func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
+  let score = sys.GetScore();
+  if !IsDefined(score) {
+    return "";
+  }
+  let chromeVisible = score.GetChromeVisible();
+  let eff = MaxF(score.GetDreadCiv(), chromeVisible) + score.GetMenace() * CBConfig.MenaceFearWeight();
+  let reach = 1.0 + (chromeVisible / 100.0) * CBConfig.ChromeNoticeRangeBonus();
+  if eff >= CBConfig.CivTierTerror() {
+    let r = RoundF(CBConfig.CivFleeRadius() * reach);
+    return s"Right now: people break and run when you come within \(r) metres.";
+  }
+  if eff >= CBConfig.CivTierAfraid() {
+    let r = RoundF(CBConfig.CivCowerRadius() * reach);
+    return s"Right now: people flinch and give way within \(r) metres. Push it further and they run.";
+  }
+  let need = RoundF(CBConfig.CivTierAfraid() - eff);
+  return s"Right now: nobody is backing off yet. You are about \(need) short - more visible chrome, a harder reputation, or a bigger build.";
 }
 
 // Plain-language line: what is driving V's Dread the most (spec §12.1).
@@ -300,9 +330,10 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
   let score = sys.GetScore();
   let states = sys.GetFactionStates();
   if ArraySize(states) == 0 {
-    return "No faction has formed an opinion of you yet.";
+    return "No gang has formed an opinion of you yet. Work in their territory and that changes.";
   }
-  let out = "";
+  let out = "How each gang reads you. Standing is whether they like you, fear is how badly\n";
+  out += "they want to avoid you, respect is whether they rate you as a professional.\n\n";
   let shown = 0;
   let i = 0;
   while i < ArraySize(states) && shown < 13 {
@@ -314,8 +345,8 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
       let st = RoundF(fs.standing);
       let fear = RoundF(score.GetFactionFear(fs.id));
       let resp = RoundF(score.GetFactionRespect(fs.id));
-      out += CBHudPad(NameToString(fs.id), 16) + CBHudPad(posture, 11)
-        + s"S \(st)   F \(fear)   R \(resp)   kills \(fs.kills)";
+      out += CBHudPad(NameToString(fs.id), 15) + CBHudPad(posture, 11)
+        + s"standing \(st)   fear \(fear)   respect \(resp)   kills \(fs.kills)";
       // While a gang has a vendetta with you they put a price on your head (spec §9.9).
       if Equals(postureEnum, ECBPosture.Vendetta) {
         let bounty = 2000 + 200 * fs.kills;
@@ -325,7 +356,9 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
       shown += 1;
     }
   }
-  out += "\n[ Shift + Hub key ]  buy off the worst gang you can.";
+  out += "\nWary means they keep an eye on you. Hostile means they draw on sight.\n";
+  out += "Vendetta means they hunt you and put a price on your head.\n";
+  out += "[ Shift + Hub key ]  buy off the worst gang you can afford.";
   return out;
 }
 
@@ -334,7 +367,8 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
   if ArraySize(states) == 0 {
     return "Your name has not travelled to any district yet.";
   }
-  let out = "";
+  let out = "Where your name has travelled. Word spreads outward from where things happened,\n";
+  out += "so you can be a legend in one district and a nobody in the next.\n\n";
   let shown = 0;
   let i = 0;
   while i < ArraySize(states) && shown < 14 {
@@ -349,24 +383,49 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
   return out;
 }
 
+// Why this Rival has it in for you, in plain words.
+func CBRivalSourceLine(source: Int32) -> String {
+  if source == EnumInt(ECBRivalSource.Survivor) {
+    return "got away from you bleeding";
+  }
+  if source == EnumInt(ECBRivalSource.Spared) {
+    return "you beat them down and left them alive";
+  }
+  if source == EnumInt(ECBRivalSource.Killer) {
+    return "put you down once";
+  }
+  if source == EnumInt(ECBRivalSource.Avenger) {
+    return "avenging someone you killed";
+  }
+  if source == EnumInt(ECBRivalSource.Hunter) {
+    return "lost you after coming for your head";
+  }
+  return "remembers you";
+}
+
 func CBHudRivals(sys: ref<CyberbaneSystem>) -> String {
   let rivals = sys.GetRivals();
   let content = sys.GetContent();
-  let out = "";
+  let out = "People who got away, or got back up. They climb the ranks while you are busy\n";
+  out += "elsewhere, and sooner or later they come looking for you.\n\n";
   let shown = 0;
   let i = 0;
-  while i < ArraySize(rivals) && shown < 12 {
+  while i < ArraySize(rivals) && shown < 10 {
     let r = rivals[i];
     i += 1;
     if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
       let name = IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival";
-      out += name + "  -  " + NameToString(r.faction) + s"  -  rank \(r.rank)  -  " + CBRivalStateName(r.state) + "\n";
+      out += name + "\n";
+      out += "    " + CBHudPad(NameToString(r.faction), 14) + s"rank \(r.rank)   "
+           + CBHudPad(CBRivalStateName(r.state), 10) + CBRivalSourceLine(r.source) + "\n";
       shown += 1;
     }
   }
   if shown == 0 {
-    return "No active rivals. Leave survivors and that will change.";
+    return "No active rivals yet.\n\nLeave someone alive after you put them down, or let a wounded\nenemy get away, and one of them will come back with your name.";
   }
+  out += "\nHunting means they are actively looking for you. Every time one escapes\n";
+  out += "you it comes back a rank higher and harder to put down.";
   return out;
 }
 
@@ -403,9 +462,9 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   let log = sys.GetLog();
   let n = ArraySize(log);
   if n == 0 {
-    return "Nothing logged yet.";
+    return "Nothing logged yet. Go and do something worth talking about.";
   }
-  let out = "";
+  let out = "What the city remembers you for, most recent first.\n\n";
   let shown = 0;
   let i = n - 1;
   while i >= 0 && shown < 14 {
