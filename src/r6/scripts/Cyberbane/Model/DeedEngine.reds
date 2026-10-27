@@ -52,14 +52,8 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
       sys.UnlockTitle(tid);
       sys.AddRenownPoints(25.0 * renownMult);
       if toasts {
-        let tdisp = NameToString(tid);
-        if IsDefined(content) {
-          let tdef = content.GetTitle(tid);
-          if IsDefined(tdef) {
-            tdisp = tdef.display;
-          }
-        }
-        CBShowMessage(game, "Cyberbane: Title unlocked - " + tdisp, 5.0);
+        CBShowMessage(game, "Cyberbane: Title unlocked - "
+          + CBTitleDisplayById(sys, content, tid), 5.0);
       }
     }
   }

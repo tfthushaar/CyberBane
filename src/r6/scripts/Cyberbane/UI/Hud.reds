@@ -226,14 +226,8 @@ func CBHudActiveTitle(sys: ref<CyberbaneSystem>) -> String {
   if Equals(id, n"") {
     return "Unknown";
   }
-  let content = sys.GetContent();
-  if IsDefined(content) {
-    let def = content.GetTitle(id);
-    if IsDefined(def) {
-      return def.display;
-    }
-  }
-  return NameToString(id);
+  // Names the district or gang the title is actually about (Model/TitleNaming.reds).
+  return CBTitleDisplayById(sys, sys.GetContent(), id);
 }
 
 func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> String {
@@ -453,13 +447,8 @@ func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
   let i = 0;
   while i < ArraySize(unlocked) && i < 16 {
     let id = unlocked[i];
-    let name = NameToString(id);
-    if IsDefined(content) {
-      let def = content.GetTitle(id);
-      if IsDefined(def) {
-        name = def.display;
-      }
-    }
+    // Names the district or gang the title is actually about (Model/TitleNaming.reds).
+    let name = CBTitleDisplayById(sys, content, id);
     let mark = Equals(id, active) ? "  <- active" : "";
     out += "  " + name + mark + "\n";
     i += 1;

@@ -171,6 +171,11 @@ public abstract class CBConfig {
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
   public static func RivalSpawnDistance() -> Float = 35.0
 
+  // How many downed enemies the mercy sweep looks at per fast tick. The sweep exists because
+  // the hit hook alone misses anyone who drops to damage that does not raise a hit event we
+  // see (a burn, a quickhack tick, an explosion, another mod's damage).
+  public static func SparedSweepPerTick() -> Int32 = 10
+
   // ---- Witnesses (spec §8.5) -------------------------------------------
   // How far a kill carries to someone who could report it. Wider than NpcEvalRadius: a
   // sightline across a street carries further than a crowd reaction does.

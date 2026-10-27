@@ -20,19 +20,6 @@
 // Crash safety: no new engine API at all. CBShowMessage already guards the blackboard, and
 // this runs from the rumor slow tick, which is behind the world-state gate.
 
-// Readable district names. The ids are compact CNames and read badly in a sentence.
-public func CBDistrictLabel(id: CName) -> String {
-  if Equals(id, n"Watson") { return "Watson"; }
-  if Equals(id, n"Westbrook") { return "Westbrook"; }
-  if Equals(id, n"CityCenter") { return "City Center"; }
-  if Equals(id, n"Heywood") { return "Heywood"; }
-  if Equals(id, n"SantoDomingo") { return "Santo Domingo"; }
-  if Equals(id, n"Pacifica") { return "Pacifica"; }
-  if Equals(id, n"Dogtown") { return "Dogtown"; }
-  if Equals(id, n"Badlands") { return "the Badlands"; }
-  return "out there";
-}
-
 // Who is passing it on. Roles, never a named quest-giver: the player must never read one of
 // these as a real fixer offering real work.
 func CBGrapevineSender(seed: Int32) -> String {
@@ -96,7 +83,11 @@ public func CBGrapevineOnReach(sys: ref<CyberbaneSystem>, game: GameInstance, r:
   if RandF() >= CBConfig.GrapevineChance() {
     return;
   }
+  // CBDistrictLabel lives in Model/TitleNaming.reds and returns "" for an unknown id.
   let where = CBDistrictLabel(districtId);
+  if Equals(where, "") {
+    where = "out there";
+  }
   let seed = Cast<Int32>(RandF() * 4.0);
   if seed > 3 {
     seed = 3;   // RandF() can return 1.0 on some runtimes; never index past the pool

@@ -16,7 +16,7 @@ public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
       sys.AddRenownPoints(Equals(def.id, n"T_CYBERBANE") ? 100.0 : 25.0);
       let rt = CyberbaneRuntime.Get();
       if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-        CBShowMessage(game, "Cyberbane: Title unlocked - " + def.display, 5.0);
+        CBShowMessage(game, "Cyberbane: Title unlocked - " + CBTitleDisplay(sys, def), 5.0);
       }
       CBLog.Info(n"Model", s"Title unlocked: \(NameToString(def.id)).");
     }

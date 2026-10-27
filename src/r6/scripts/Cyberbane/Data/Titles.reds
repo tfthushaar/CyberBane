@@ -2,9 +2,11 @@
 //
 // id, display name, priority (higher wins the auto active title: Cyberbane >
 // Living Legend > faction/district > others), hidden (shown as ??? until earned).
-// Conditions are evaluated in code (Model/TitleEngine.reds). District- and
-// faction-parameterised titles ({DISTRICT}/{FACTION}) use the generic name here;
-// token substitution for the specific place/gang arrives with the Hub.
+// Conditions are evaluated in code (Model/TitleEngine.reds). The six district- and
+// faction-parameterised titles keep their generic wording here and are rewritten at display
+// time by Model/TitleNaming.reds, which fills in the actual place or gang ("Butcher of
+// Watson"). The generic strings below are the fallback for when nothing qualifies yet, so
+// they must stay readable on their own.
 
 public func CBSeedTitles(c: ref<CyberbaneContent>) -> Void {
   c.AddTitle(CBMakeTitle(n"T_CYBERBANE",         "Cyberbane",                100, true));

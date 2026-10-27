@@ -3,6 +3,25 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.17] - 2026-10-27
+
+### Fixed
+- **Titles name the place or the gang now.** "Butcher of the District" was never meant to be
+  the title you earned, and the readme has been advertising "Butcher of Watson" the whole
+  time. Six titles were shipping placeholder wording because the part that fills in the name
+  was never written. They now read Butcher of Watson, Ghost of Pacifica, Heywood's Problem,
+  The Merc from Watson, the Animals' Nightmare and Friend of the Mox. This also fixes titles
+  you have already earned, so you do not need a new save to see it.
+- **Mercy counts however they went down.** Sparing someone only registered when they dropped
+  to a hit Cyberbane could see. Anyone who went down to a burn, a quickhack tick, an
+  explosion or another mod's damage could end up beaten and breathing with Cyberbane none the
+  wiser, so walking away earned you nothing. It now checks downed enemies directly, whatever
+  put them there. If you use a dismemberment or gore mod, this is the one that was biting you.
+- **Someone who dies after you spare them no longer comes back as a Rival.** If you left
+  somebody alive and they bled out afterwards, they could still return with a grudge. They
+  are dead, so now they stay dead. Leaving them alive and walking off still works exactly as
+  before.
+
 ## [0.1.16] - 2026-10-27
 
 ### Added

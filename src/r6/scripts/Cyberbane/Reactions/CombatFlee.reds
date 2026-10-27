@@ -122,6 +122,48 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
 
 // Resolve pending escapees on the fast tick. Deaths already dropped the ones V caught, so
 // anything left that despawned alive or outran V counts as having gotten away.
+// Catch a mercy the hit hook missed.
+//
+// CBSparedCheck runs from OnHit, so it only ever sees an enemy that goes down on a blow V
+// landed that raised a hit event we are hooked to. Anyone who drops to a burn, a quickhack
+// tick, an explosion, or another mod's damage can end up defeated and breathing with nothing
+// logged, and a player who walked away believing they showed mercy gets no Rival out of it.
+// This sweeps the live NPC registry so the mercy is noticed however they went down.
+//
+// Crash safety: no new engine API. Same registry and same CBNpcSafe gate the Director uses,
+// bounded per tick, and CBSparedCheck re-runs every one of its own guards (enabled, the rivals
+// setting, safe zones, CanAffect, defeated-and-alive, faction), so this is only another way in.
+public func CBSparedSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) {
+    if !rt.IsEnabled() {
+      return;
+    }
+    if rt.HasSettings() && !rt.GetSettings().rivals {
+      return;
+    }
+  }
+  let reg = sys.GetRegistry();
+  if !IsDefined(reg) {
+    return;
+  }
+  let npcs = reg.GetAll();
+  let looked = 0;
+  let i = 0;
+  while i < ArraySize(npcs) && looked < CBConfig.SparedSweepPerTick() {
+    let npc = npcs[i];
+    i += 1;
+    // cbSparedLogged keeps this to one look per enemy; CBSparedCheck sets it when it logs.
+    if CBNpcSafe(sys, npc) && npc.cbDamagedByPlayer && !npc.cbSparedLogged {
+      looked += 1;
+      CBSparedCheck(sys, game, npc);
+    }
+  }
+}
+
 public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -176,6 +218,13 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     return;
   }
   if Equals(e.faction, n"") || !TDBID.IsValid(e.record) {
+    return;
+  }
+  // They were down and breathing when this was logged. If they are still here and dead now,
+  // something finished them afterwards - a bleed-out, a stray round, another mod's damage -
+  // and a corpse does not come back as a Rival. A puppet that simply streamed out is gone
+  // rather than dead, and still counts as left alive.
+  if IsDefined(e.puppet) && e.puppet.IsDead() {
     return;
   }
   if RandF() > CBConfig.RivalChanceSpared() {

@@ -339,6 +339,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_currentDistrict = CBCurrentDistrict(game);
     }
     CBEncounterTick(this, game);
+    CBSparedSweep(this, game);          // mercy the hit hook did not see (spec §10.2)
     CBProcessEscapees(this, game);
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
     CBPanicDrivingTick(this, game, this.m_tickCount);
