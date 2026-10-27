@@ -64,6 +64,9 @@ public class CBStats {
   public persistent let maxHeat: Int32;
   public persistent let estimatedPriorKills: Int32;   // bootstrap estimate, display only
   public persistent let quickhackKills: Int32;
+  // Lethal work nobody was alive and close enough to see (spec §8.5). A new scalar on an
+  // existing persisted class, so old saves read it as 0 and no schema bump is needed.
+  public persistent let unattributed: Int32;
 }
 
 public class CBRumor {
@@ -131,6 +134,9 @@ public class CBCooldowns {
   public persistent let lastDecayAt: Float;
   public persistent let lastRumorTickAt: Float;
   public persistent let lastPromotionAt: Float;
+  // Last time the street got word back to you (spec §8.5). New scalar on an existing
+  // persisted class, so old saves read 0 and no schema bump is needed.
+  public persistent let lastGrapevineAt: Float;
 }
 
 public class CBPeaceDeal {

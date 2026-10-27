@@ -41,7 +41,7 @@ public func CBCreateRumor(sys: ref<CyberbaneSystem>, game: GameInstance, kind: C
   r.witnessed = witnessed;
   r.reachedMask = CBMaskSet(0, CBDistrictIndex(origin));   // unknown origin sets no bit
 
-  CBApplyDistrictRenown(sys, origin, r.magnitude * (witnessed ? 1.0 : 0.3));
+  CBApplyDistrictRenown(sys, origin, r.magnitude * (witnessed ? 1.0 : CBConfig.UnwitnessedSpreadMult()));
   sys.AddRumor(r);
   CBTrimRumors(sys, now);
 }
@@ -103,7 +103,7 @@ public func CBRumorTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       // array shifted: do not advance i
     } else {
       if r.hops < CBConfig.RumorMaxHops() && (now - r.lastSpreadAt) >= spreadInterval {
-        CBSpreadRumor(sys, content, r, now);
+        CBSpreadRumor(sys, game, content, r, now);
       }
       i += 1;
     }
@@ -116,11 +116,16 @@ public func CBRumorTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
 // The "already reached" set is a bit per district on the rumor itself, and the walk is a
 // counted loop over the fixed district list - there is no stored list to index into and
 // nothing here can run past the end of anything, whatever a save hands back.
-func CBSpreadRumor(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, r: ref<CBRumor>, now: Float) -> Void {
+func CBSpreadRumor(sys: ref<CyberbaneSystem>, game: GameInstance, content: ref<CyberbaneContent>, r: ref<CBRumor>, now: Float) -> Void {
   if !IsDefined(sys) || !IsDefined(content) || !IsDefined(r) {
     return;
   }
+  // Word nobody could attribute carries badly: it reaches the next district as a mutter
+  // rather than a name, which is what keeps no-witness play local (spec §8.5).
   let spreadMag = r.magnitude * CBConfig.RumorSpreadMagnitudeMult();
+  if !r.witnessed {
+    spreadMag *= CBConfig.UnwitnessedSpreadMult();
+  }
   let reached = r.reachedMask;
   let addedMask = 0;
   let count = CBDistrictCount();
@@ -141,13 +146,23 @@ func CBSpreadRumor(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, r:
     i += 1;
   }
 
+  let firstNew = n"";
   let j = 0;
   while j < count {
     if CBMaskHas(addedMask, j) {
       r.reachedMask = CBMaskSet(r.reachedMask, j);
       CBApplyDistrictRenown(sys, CBDistrictAt(j), spreadMag);
+      if Equals(firstNew, n"") {
+        firstNew = CBDistrictAt(j);
+      }
     }
     j += 1;
+  }
+
+  // Word reaching somewhere new is the moment it is worth hearing about (spec §8.5).
+  // Fired once per hop, not once per district, and rate-limited inside.
+  if NotEquals(firstNew, n"") {
+    CBGrapevineOnReach(sys, game, r, firstNew, now);
   }
 
   r.hops += 1;

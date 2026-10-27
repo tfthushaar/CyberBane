@@ -20,7 +20,7 @@ public func CBHudTabName(tab: Int32) -> String {
     case 3: return "DISTRICTS";
     case 4: return "RIVALS";
     case 5: return "TITLES";
-    case 6: return "LEGEND LOG";
+    case 6: return "THE FILE";
     default: return "";
   }
 }
@@ -284,6 +284,10 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
     out += s"APEX HUNTERS PUT DOWN   \(stats.apexKills)        RIVALS PUT DOWN   \(stats.rivalsSlain)\n";
     out += "    Keep hitting one gang and they send an apex hunter after you. They are\n";
     out += s"    sized to your build: right now roughly \(apexMult)x what their rank and file take.\n\n";
+    out += s"WORK NOBODY SAW   \(stats.unattributed)\n";
+    out += "    Kills with no living witness close by. They build almost no reputation you\n";
+    out += "    can claim, because nobody can say it was you - but the bodies still frighten\n";
+    out += "    the district. Leave people alive and your name travels instead.\n\n";
   }
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
@@ -471,9 +475,11 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   let log = sys.GetLog();
   let n = ArraySize(log);
   if n == 0 {
-    return "Nothing logged yet. Go and do something worth talking about.";
+    return "STREET FILE // SUBJECT: V\n\nNothing on file. Nobody has anything on you yet.";
   }
-  let out = "What the city remembers you for, most recent first.\n\n";
+  let out = "STREET FILE // SUBJECT: V\n";
+  out += "Put together from what people saw and passed on. Most recent first.\n";
+  out += "Work nobody witnessed never reaches this page.\n\n";
   let shown = 0;
   let i = n - 1;
   while i >= 0 && shown < 14 {

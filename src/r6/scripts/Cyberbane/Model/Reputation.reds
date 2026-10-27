@@ -129,6 +129,12 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     if info.mQuickhack && info.lethal {
       stats.quickhackKills += 1;
     }
+    // Nobody saw it. The body still turns up, so the district gets a reputation for
+    // something it cannot put a name to - dread without renown (spec §8.5).
+    if info.lethal && !info.witnessed {
+      stats.unattributed += 1;
+      sys.AddDeedDreadPoints(CBConfig.UnattributedDeedDread() * dreadMult);
+    }
   }
 
   // Code axis (spec §8.11): clean, non-lethal work reads as professional; killing

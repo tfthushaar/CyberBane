@@ -129,12 +129,15 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   info.faction = CBClassifyFaction(puppet);
   info.victimClass = CBClassifyVictim(puppet, info.faction);
   info.lethal = true;
-  info.witnessed = true;
-  info.stealth = false;
   info.instigatorIsPlayer = true;
   info.victimIsUnique = puppet.IsQuest();   // never keep a story character as a spawn template
   info.district = CBEventDistrict(sys, game);
   info.position = puppet.GetWorldPosition();
+  // Who was alive and close enough to carry the story (spec §8.5). Both of these were
+  // hardcoded before 0.1.16, which meant every kill scored as if a crowd had watched it.
+  let witnesses = CBCountWitnesses(sys, info.position, info.victimEntityId);
+  info.witnessed = witnesses > 0;
+  info.stealth = witnesses == 0;
   info.at = CBGameSeconds(game);
   CBSetMethodFlags(info, puppet.cbLastAttackType);
 

@@ -276,17 +276,26 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
     CBShowMessage(game, "Cyberbane: Rival slain - " + CBRivalDisplayName(content, rival), 5.0);
   }
 
-  // Blood-brother vengeance (Nemesis-inspired): a faction member may rise to
-  // avenge the slain Rival, remembering them specifically (detail = slain id).
+  // Succession (Nemesis-inspired): a crew does not simply lose its best and move on.
+  // Someone steps into the dead Rival's place carrying the same grudge, and the higher the
+  // one you put down, the likelier that is - so a faction cannot be decapitated in one
+  // fight. The successor inherits the slain one's standing, one rung down, rather than
+  // restarting at the bottom (spec §10.1).
   let freq = 1.0;
   if IsDefined(rt) && rt.HasSettings() {
     freq = rt.GetSettings().rivalFrequencyMult;
   }
-  if RandF() < CBConfig.RivalChanceAvenger() * freq {
+  let succeedChance = CBConfig.RivalChanceAvenger()
+    + Cast<Float>(rival.rank) * CBConfig.SuccessionChancePerRank();
+  if RandF() < ClampF(succeedChance * freq, 0.0, 0.9) {
     let avenger = CBCreateRival(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger, district, at);
     if IsDefined(avenger) {
+      // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1,
+      // which is what made every nemesis you killed a clean reset.
+      avenger.rank = Max(1, rival.rank - 1);
       if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-        CBShowMessage(game, "Cyberbane: " + CBRivalDisplayName(content, avenger) + " is gunning for you over a dead crewmate.", 5.0);
+        CBShowMessage(game, "Cyberbane: " + CBRivalDisplayName(content, avenger)
+          + " has taken over where " + CBRivalDisplayName(content, rival) + " left off.", 5.0);
       }
     }
   }

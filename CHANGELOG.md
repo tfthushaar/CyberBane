@@ -3,6 +3,34 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.16] - 2026-10-27
+
+### Added
+- **Word spreads because somebody saw it.** Every kill used to count as though a crowd had
+  watched it. Cyberbane now checks who was actually alive and close enough to see, and that
+  decides how far the story travels. Leave people alive and your name moves fast and far.
+  Leave nobody and the street never learns who did it: you build almost no reputation you can
+  claim, word barely leaves the district, and the place gets a name for something it cannot
+  identify instead. Two ways to play fall out of one rule, and it is now a decision in every
+  fight rather than a number on a timer.
+- **The street gets word back to you.** When a rumour about you reaches a district it had not
+  touched before, someone who trades in information may get in touch about what they heard.
+  If people saw you do it, your name is in the message. If nobody did, it arrives as a
+  question about who is doing this. These are Cyberbane messages rather than calls from real
+  fixers, and they switch off with the rest of the mod's messages.
+- **A gang does not lose its best and move on.** Put a Rival down and someone can step into
+  their place carrying the same grudge, inheriting the standing of the one they replaced
+  instead of starting from nothing. The higher the one you killed, the likelier it is. You
+  can no longer decapitate a crew in a single fight.
+
+### Changed
+- The Hub counts the work nobody saw, and explains what it is worth.
+- The Log is now the file the street keeps on you, put together from what people actually
+  witnessed. Work nobody saw never reaches that page.
+- Because of the witness change, killing in an empty place now builds far less reputation
+  than it did. That is the point of the feature, but it will feel different if you have been
+  working quietly. Nothing was taken away from what you have already earned.
+
 ## [0.1.15] - 2026-10-27
 
 ### Fixed

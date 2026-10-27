@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: early release (0.1.15).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: early release (0.1.16).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -36,6 +36,14 @@ page describes what the mod does and how it installs.
   civilians and lean on brutal finishers and the Street starts talking about you the way it
   talks about cyberpsychos, one bad night from going over. It changes how people talk to you
   and how they deal with you.
+- **Word spreads because somebody saw it.** Reputation travels on witnesses. Leave people
+  alive and your name moves fast and far; leave nobody and the street never learns who did
+  it, so you build almost no reputation you can claim and the story barely leaves the
+  district. What you do get instead is a district with a name for something it cannot
+  identify. It turns the signature mechanic into a decision you make in every fight.
+- **The street gets word back to you.** When a rumour about you reaches somewhere new, a
+  contact may get in touch about what they heard. If people saw you, your name is in it. If
+  nobody did, it arrives as a question about who is doing this.
 - **A city that reads how dangerous you look.** The more frightening you are, the more people
   back off. Civilians, gang members and even cops can notice you, cower, or flee, and panicked
   drivers pull away in the street. It is not only your reputation: visible chrome, and how
@@ -64,8 +72,12 @@ page describes what the mod does and how it installs.
   get stronger. No story character is ever used, so nothing gets spoiled and you never meet a
   duplicate of someone you already killed. It works for every gang. The Hub keeps count of the
   ones you put down.
-- **Titles and a history log.** Earn titles such as Butcher of Watson, Chrome Saint, or the top
-  title Cyberbane, and review everything you have done in a timeline.
+- **Gangs you cannot decapitate.** Put a Rival down and someone can step into their place
+  carrying the same grudge, inheriting the standing of the one they replaced rather than
+  starting from the bottom. The higher the one you killed, the likelier it happens.
+- **Titles and the file they keep on you.** Earn titles such as Butcher of Watson, Chrome
+  Saint, or the top title Cyberbane. The Log tab is the street's file on you, put together
+  from what people actually witnessed, so work nobody saw never reaches the page.
 - **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable). Each
   press steps through tabs for your reputation, the factions, the districts, your rivals, your
   titles, and the log; the press after the last tab closes it. Every screen explains what its

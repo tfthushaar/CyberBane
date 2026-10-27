@@ -171,6 +171,37 @@ public abstract class CBConfig {
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
   public static func RivalSpawnDistance() -> Float = 35.0
 
+  // ---- Witnesses (spec §8.5) -------------------------------------------
+  // How far a kill carries to someone who could report it. Wider than NpcEvalRadius: a
+  // sightline across a street carries further than a crowd reaction does.
+  public static func WitnessRadius() -> Float = 45.0
+  // Bound the per-kill scan of the NPC registry. The registry holds up to 200.
+  public static func WitnessScanCap() -> Int32 = 40
+  // Stop counting once we have this many: callers need "any" and "a crowd", not a tally.
+  public static func WitnessCountCap() -> Int32 = 5
+  // Dread from a body nobody can put a name to. The city fears what it cannot identify,
+  // so no-witness work still builds something - just not a reputation that is yours.
+  public static func UnattributedDeedDread() -> Float = 0.6
+
+  // How far word carries when nobody was alive to carry it. Applied both where the rumor
+  // starts and at every hop, so no-witness work stays local instead of becoming a legend.
+  public static func UnwitnessedSpreadMult() -> Float = 0.3
+
+  // ---- The grapevine (spec §8.5) ----------------------------------------
+  // Chance that word reaching a district it had not touched gets back to you as a message.
+  public static func GrapevineChance() -> Float = 0.5
+  // In-game hours between messages, so hearing from the street stays an event.
+  public static func GrapevineCooldownHours() -> Float = 8.0
+  // Word has to be worth repeating before anyone passes it on.
+  public static func GrapevineMinMagnitude() -> Float = 4.0
+  public static func GrapevineDurationSeconds() -> Float = 6.0
+
+  // ---- Succession (spec §10.1) ------------------------------------------
+  // Added to the avenger roll per rank of the Rival you just put down, so the higher the
+  // one you killed, the likelier someone steps into the slot. A crew cannot be decapitated
+  // in a single fight.
+  public static func SuccessionChancePerRank() -> Float = 0.12
+
   // ---- Spawn ground probe (mid-air spawn fix) --------------------------
   // The spawn point is a flat offset behind V, so the floor under it is often not at V's own
   // height. These drive the downward trace that finds the real floor (see CBGroundAt).
