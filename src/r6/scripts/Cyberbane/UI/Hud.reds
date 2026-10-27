@@ -13,6 +13,10 @@
 
 public func CBHudTabCount() -> Int32 = 6
 
+// Lines the body box can show at its size and font before text would spill past the footer.
+// Body is 640 px tall at font size 20, so about 26 lines fit; 25 leaves a line of slack.
+public func CBHudMaxLines() -> Int32 = 25
+
 public func CBHudTabName(tab: Int32) -> String {
   switch tab {
     case 1: return "LEGEND";
@@ -99,7 +103,7 @@ public class CBHud {
     let panel = new inkCanvas();
     panel.SetAnchor(inkEAnchor.Centered);
     panel.SetAnchorPoint(new Vector2(0.5, 0.5));
-    panel.SetSize(new Vector2(1100.0, 760.0));
+    panel.SetSize(new Vector2(1100.0, 900.0));
     panel.Reparent(root);
 
     let panelBg = new inkRectangle();
@@ -115,7 +119,7 @@ public class CBHud {
 
     let stripe = new inkRectangle();
     stripe.SetAnchor(inkEAnchor.TopLeft);
-    stripe.SetSize(new Vector2(5.0, 760.0));
+    stripe.SetSize(new Vector2(5.0, 900.0));
     stripe.SetTintColor(new HDRColor(0.10, 2.20, 2.60, 1.0));
     stripe.Reparent(panel);
 
@@ -161,12 +165,12 @@ public class CBHud {
     let body = new inkText();
     body.SetFontFamily(font);
     body.SetFontStyle(n"Medium");
-    body.SetFontSize(24);
+    body.SetFontSize(20);
     body.SetTintColor(new HDRColor(0.82, 0.88, 0.93, 1.0));
     body.SetAnchor(inkEAnchor.TopLeft);
     body.SetMargin(new inkMargin(50.0, 206.0, 0.0, 0.0));
     body.SetWrapping(true, 1004.0);
-    body.SetSize(new Vector2(1004.0, 494.0));
+    body.SetSize(new Vector2(1004.0, 640.0));
     body.Reparent(panel);
     this.m_body = body;
 
@@ -176,7 +180,7 @@ public class CBHud {
     footer.SetFontSize(18);
     footer.SetTintColor(new HDRColor(0.60, 0.65, 0.70, 0.75));
     footer.SetAnchor(inkEAnchor.TopLeft);
-    footer.SetMargin(new inkMargin(50.0, 714.0, 0.0, 0.0));
+    footer.SetMargin(new inkMargin(50.0, 854.0, 0.0, 0.0));
     footer.SetText("Press the Hub key to cycle tabs, again on the last to close.  Settings: Pause > Mods > Cyberbane.");
     footer.Reparent(panel);
 
@@ -208,7 +212,7 @@ public class CBHud {
     let tier = IsDefined(score) ? CBTierName(EnumInt(score.GetTier())) : "Nobody";
     this.m_subhead.SetText(titleName + "   |   " + tier);
     this.m_tabline.SetText(CBHudTabName(this.m_tab) + "        [ Hub key: next ]");
-    this.m_body.SetText(CBHudBody(sys, game, this.m_tab));
+    this.m_body.SetText(CBHudClamp(CBHudBody(sys, game, this.m_tab), CBHudMaxLines()));
     this.m_root.SetVisible(true);
   }
 }
@@ -228,6 +232,25 @@ func CBHudActiveTitle(sys: ref<CyberbaneSystem>) -> String {
   }
   // Names the district or gang the title is actually about (Model/TitleNaming.reds).
   return CBTitleDisplayById(sys, sys.GetContent(), id);
+}
+
+// inkText does not clip to its box: hand it more lines than fit and they render straight
+// over the footer and off the bottom of the panel, which is exactly what a longer Legend tab
+// did. Every tab body goes through here so that can never happen again, whatever is added to
+// a tab later. Truncation is the failure mode, not overlap.
+func CBHudClamp(text: String, maxLines: Int32) -> String {
+  let lines = StrSplit(text, "\n");
+  if ArraySize(lines) <= maxLines {
+    return text;
+  }
+  let out = "";
+  let i = 0;
+  while i < maxLines - 1 {
+    out += lines[i] + "\n";
+    i += 1;
+  }
+  out += "    ...";
+  return out;
 }
 
 func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> String {
@@ -254,34 +277,35 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let code = RoundF(sys.GetCode());
   let cred = RoundF(CBPlayerStreetCred(game));
   let style = CBArchetypeName(sys.GetPrimaryArchetypeIndex());
-  let district = NameToString(CBEventDistrict(sys, game));
+  // Readable name, not the raw id: "Santo Domingo", not "SantoDomingo".
+  let districtId = CBEventDistrict(sys, game);
+  let district = CBDistrictLabel(districtId);
+  if Equals(district, "") {
+    district = NameToString(districtId);
+  }
   let codeLabel = CBCodeLabel(sys.GetCode());
 
   let chrome = RoundF(score.GetChromeVisible());
 
   let out = s"RENOWN            \(renown)    ( \(tier) )\n";
-  out += "    How widely Night City knows your name. Jobs, fights and notable\n";
-  out += "    deeds spread it outward from where they happened.\n\n";
+  out += "    How widely Night City knows your name, spread out from where you earned it.\n\n";
   out += s"DREAD             \(dread)    ( the street reads it as \(dreadCiv) )\n";
-  out += "    How frightening you are. This is what actually makes people back off.\n\n";
+  out += "    How frightening you are. This is what makes people back off.\n\n";
   out += s"VISIBLE CHROME    \(chrome)\n";
-  out += "    How much of your cyberware a stranger can see from across the street.\n";
-  out += "    Arms read loudest, then eyes, skin and legs.\n\n";
+  out += "    What a stranger clocks from across the street. Arms read loudest.\n\n";
   out += s"CODE              \(code)    ( \(codeLabel) )\n";
-  out += "    How you do the work. Clean and controlled, or one bad night from\n";
-  out += "    going cyberpsycho.\n\n";
+  out += "    How you work. Clean and controlled, or one bad night from going over.\n\n";
   out += s"STREET CRED  \(cred)        STYLE  \(style)        HERE  \(district)\n\n";
   let stats = sys.GetStats();
   if IsDefined(stats) {
     let apexMult = RoundF(CBConfig.ApexHealthMultBase()
       + ClampF(score.GetMenace() / 100.0, 0.0, 1.0) * CBConfig.ApexHealthMultRange());
     out += s"APEX HUNTERS PUT DOWN   \(stats.apexKills)        RIVALS PUT DOWN   \(stats.rivalsSlain)\n";
-    out += "    Keep hitting one gang and they send an apex hunter after you. They are\n";
-    out += s"    sized to your build: right now roughly \(apexMult)x what their rank and file take.\n\n";
+    out += s"    Keep hitting one gang and they send an apex hunter, sized to your build:\n";
+    out += s"    right now roughly \(apexMult)x what their rank and file take.\n\n";
     out += s"WORK NOBODY SAW   \(stats.unattributed)\n";
-    out += "    Kills with no living witness close by. They build almost no reputation you\n";
-    out += "    can claim, because nobody can say it was you - but the bodies still frighten\n";
-    out += "    the district. Leave people alive and your name travels instead.\n\n";
+    out += "    Kills no living witness saw. Almost no reputation you can claim, because\n";
+    out += "    nobody can say it was you, but the bodies still frighten the district.\n\n";
   }
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
@@ -304,10 +328,10 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   }
   if eff >= CBConfig.CivTierAfraid() {
     let r = RoundF(CBConfig.CivCowerRadius() * reach);
-    return s"Right now: people flinch and give way within \(r) metres. Push it further and they run.";
+    return s"Right now: people flinch and give way within \(r) metres. Push it and they run.";
   }
   let need = RoundF(CBConfig.CivTierAfraid() - eff);
-  return s"Right now: nobody is backing off yet. You are about \(need) short - more visible chrome, a harder reputation, or a bigger build.";
+  return s"Right now: nobody backs off yet. About \(need) short - more chrome, fear or build.";
 }
 
 // Plain-language line: what is driving V's Dread the most (spec §12.1).

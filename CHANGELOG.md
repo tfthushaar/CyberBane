@@ -3,6 +3,18 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.18] - 2026-10-27
+
+### Fixed
+- **The Hub's first screen was writing over itself.** The Legend tab had grown past the space
+  it was given, so the bottom of it ran straight through the footer line and off the end of
+  the panel. The panel is taller now, the text sits at a size that fits, and the wording is
+  tighter. Nothing was dropped.
+- The Hub can no longer overflow like that again, whatever gets added to a screen later. If a
+  screen ever runs long it now ends in a visible "..." instead of printing over the panel.
+- Your current district reads properly in the Hub. It said "SantoDomingo" where it should say
+  "Santo Domingo".
+
 ## [0.1.17] - 2026-10-27
 
 ### Fixed
