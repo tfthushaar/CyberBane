@@ -171,6 +171,20 @@ public abstract class CBConfig {
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
   public static func RivalSpawnDistance() -> Float = 35.0
 
+  // ---- Spawn ground probe (mid-air spawn fix) --------------------------
+  // The spawn point is a flat offset behind V, so the floor under it is often not at V's own
+  // height. These drive the downward trace that finds the real floor (see CBGroundAt).
+  public static func GroundProbeUp() -> Float = 3.0      // start the ray this far above the guess
+  public static func GroundProbeDown() -> Float = 25.0   // and look this far below it
+  // Minimum upward tilt of the hit surface for it to count as a floor rather than a wall or
+  // a railing (the Z of a unit normal: 1.0 is flat ground, 0.0 is a vertical face).
+  public static func GroundMinNormalZ() -> Float = 0.65
+  // A floor further than this from V's own height is another level - a roof, the bottom of a
+  // shaft - so the point is moved in toward V instead of used.
+  public static func GroundMaxDrop() -> Float = 15.0
+  // Set them down a hair above the floor so they never start clipped into it.
+  public static func GroundSpawnLift() -> Float = 0.1
+
   // ---- Faction apex enforcer (spec §9.9) -------------------------------
   // Bodies from one gang before they stop sending squads and send someone who matters. Kept
   // deliberately reachable: a couple of serious run-ins with the same crew gets you there.

@@ -3,6 +3,18 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.15] - 2026-10-27
+
+### Fixed
+- Rivals, hit squads and apex hunters no longer arrive hanging in mid-air. They were being put
+  down at your own height, which is right on flat ground and wrong everywhere else: on a motel
+  walkway, a stairwell, a raised lot or the lip of an overpass, the spot behind you sits over a
+  drop, and whoever came for you stood in the air above it until something knocked them loose.
+  Cyberbane now finds the floor that is actually under that spot and puts them on it. Where
+  there is no floor there at all, they come in closer to you instead of being placed blind.
+  Thanks to the player who reported this from the Sunset Motel during Ghost Town, with the
+  version and patch attached.
+
 ## [0.1.14] - 2026-10-27
 
 ### Changed
