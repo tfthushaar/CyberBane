@@ -104,9 +104,14 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     return;
   }
 
-  let b = puppet.GetStimBroadcasterComponent();
-  if IsDefined(b) {
-    b.TriggerSingleBroadcast(puppet, gamedataStimType.Terror);
+  // When a mod like Much Better AI owns morale, it decides who breaks and runs. Cyberbane
+  // still records that this one is running, so Rivals keep coming from people who got away,
+  // but it does not broadcast its own terror on top of theirs (Core/Compat.reds).
+  if !CBExternalMoraleOwner() {
+    let b = puppet.GetStimBroadcasterComponent();
+    if IsDefined(b) {
+      b.TriggerSingleBroadcast(puppet, gamedataStimType.Terror);
+    }
   }
 
   let e = new CBEscapee();
@@ -190,7 +195,7 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
       if e.spared {
         // Someone V put down and did not finish. They do not run, so "left alive" means either
         // they streamed away still breathing, or enough time passed that V clearly walked off.
-        if gone || (now - e.at) > CBConfig.EscapeTimeoutSeconds() {
+        if gone || (now - e.at) > CBConfig.SparedResolveSeconds() {
           CBHandleSpared(sys, game, e, now);
           sys.RemoveEscapee(e);
         }

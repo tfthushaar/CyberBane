@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: early release (0.1.18).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: early release (0.1.19).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -161,6 +161,10 @@ and rebind the Hub key.
   systems that overlap (hostility on sight, hit squads, faction-colour disguises), keeping the
   rest. Night City Remembers is treated the same way, since it replaces They Will Remember. You
   can force the compatibility mode on or off yourself in Mod Settings.
+- Much Better AI: supported, detected automatically, no setup. Its Nerve system owns morale,
+  so Cyberbane stands down its own morale break and terror push rather than panicking the same
+  enemy twice. It keeps tracking who got away, so Rivals still come from enemies Much Better AI
+  sent running.
 - Responsive NPCs: works alongside. If crowd reactions feel doubled, lower civilian intensity or
   disable one side's crowd reactions.
 - Night City Alive and other crowd or patrol mods: supported.
@@ -174,6 +178,10 @@ and rebind the Hub key.
 Built on the work of the Cyberpunk 2077 modding community: RED4ext by WopsS, redscript by
 jac3km4, Codeware by psiberx, Mod Settings by jackhumbert, and the optional Native Interactions
 Framework and Equipment-EX.
+
+Thanks to cshiai, whose Much Better AI showed where the game signals a completed takedown and
+how to detect another mod at compile time. Reading it is what fixed Cyberbane's takedowns. No
+code from that mod is used here.
 
 Thanks to everyone who reported bugs and sent in crash reports, and especially to r3bels90, who
 pinned down the exact cause of the world-transition crash and made the 0.1.6 fix possible. This

@@ -21,6 +21,12 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
   if !IsDefined(sys) || !IsDefined(info) {
     return;
   }
+  // When a mod like Much Better AI owns morale, a squad watching one of its own go down is
+  // its call to make, not ours. Stand down rather than break the same crew twice over
+  // (Core/Compat.reds).
+  if CBExternalMoraleOwner() {
+    return;
+  }
   let rt = CyberbaneRuntime.Get();
   let intensity = 1.0;
   let maxBreak = CBConfig.MoraleMaxBreakFraction();

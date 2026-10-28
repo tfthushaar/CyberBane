@@ -3,6 +3,31 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.19] - 2026-10-28
+
+### Fixed
+- **Stealth takedowns were invisible to the mod.** Cyberbane worked out who was responsible
+  for a body from damage events, and a takedown does not produce one. So knocking someone out
+  never made them a Rival no matter how many you spared, and a lethal takedown earned no
+  reputation at all. Takedowns are now recognised, lethal and non-lethal both. If sparing
+  people has done nothing for you, this is why.
+- Sparing someone used to take two minutes of standing around before anything came of it.
+  It now settles in about twenty-five seconds.
+- **Witnesses have to be able to see you.** Anyone inside the radius counted before, even
+  through a wall or on another floor, which made quiet work far harder than it looked. Line
+  of sight is checked now, so cover and walls do what you would expect.
+
+### Changed
+- Rivals come from sparing and from enemies who get away far more often: sparing is roughly
+  double what it was, and survivors and avengers are up as well. They were rare enough that
+  players could spare a dozen people and never see one.
+
+### Compatibility
+- **Much Better AI** is detected automatically and needs no setup. Its Nerve system owns
+  morale, so Cyberbane stops pushing the same enemy to panic and stops breaking the same squad
+  on top of it. Everything else Cyberbane does carries on, including tracking who got away, so
+  Rivals still come from enemies that Much Better AI sent running.
+
 ## [0.1.18] - 2026-10-27
 
 ### Fixed

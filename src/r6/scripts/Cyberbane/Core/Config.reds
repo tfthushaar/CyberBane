@@ -143,6 +143,10 @@ public abstract class CBConfig {
   public static func FleeChance() -> Float = 0.5             // else they fight to the death
   public static func EscapeDistance() -> Float = 60.0        // ran this far from V = got away
   public static func EscapeTimeoutSeconds() -> Float = 120.0 // give up tracking an escapee after this
+  // Someone you put down and left does not run anywhere, so there is nothing to wait for.
+  // Two minutes of standing around before the Rival existed is why sparing felt like it did
+  // nothing at all.
+  public static func SparedResolveSeconds() -> Float = 25.0
   public static func EscapeeCap() -> Int32 = 24
 
   // ---- Vendors (spec §9.6) ---------------------------------------------
@@ -184,6 +188,9 @@ public abstract class CBConfig {
   public static func WitnessScanCap() -> Int32 = 40
   // Stop counting once we have this many: callers need "any" and "a crowd", not a tally.
   public static func WitnessCountCap() -> Int32 = 5
+  // A witness has to actually be able to see V, not merely be within the radius. Without this
+  // a ganger through a warehouse wall counted, which made quiet work far harder than it looked.
+  public static func WitnessRequiresLineOfSight() -> Bool = true
   // Dread from a body nobody can put a name to. The city fears what it cannot identify,
   // so no-witness work still builds something - just not a reputation that is yours.
   public static func UnattributedDeedDread() -> Float = 0.6
@@ -244,9 +251,9 @@ public abstract class CBConfig {
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   // Rivals only land if they actually happen. Raised so leaving people alive or breaking a
   // crew produces a nemesis often enough to notice, still bounded by the caps below.
-  public static func RivalChanceSurvivor() -> Float = 0.25
-  public static func RivalChanceSpared() -> Float = 0.30
-  public static func RivalChanceAvenger() -> Float = 0.20
+  public static func RivalChanceSurvivor() -> Float = 0.40
+  public static func RivalChanceSpared() -> Float = 0.60
+  public static func RivalChanceAvenger() -> Float = 0.25
   public static func RivalChanceHunter() -> Float = 0.50
   public static func RivalEncounterBaseChance() -> Float = 0.25
   public static func RivalEncounterChancePerRank() -> Float = 0.07

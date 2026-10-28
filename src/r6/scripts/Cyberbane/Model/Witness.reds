@@ -16,6 +16,19 @@
 // WitnessScanCap and runs once per kill, never per tick. It adds no new engine API: the
 // registry, CBNpcSafe, GetWorldPosition and IsDead are all already on the reaction hot path.
 
+// Can this NPC actually see V, or is there a wall in the way? Falls back to "yes" when the
+// reaction component is missing, so a missing component never silently hands out free stealth.
+func CBWitnessCanSee(npc: wref<ScriptedPuppet>, player: wref<GameObject>) -> Bool {
+  if !CBConfig.WitnessRequiresLineOfSight() || !IsDefined(player) {
+    return true;
+  }
+  let reaction = npc.GetStimReactionComponent();
+  if !IsDefined(reaction) {
+    return true;
+  }
+  return reaction.IsTargetVisible(player);
+}
+
 // How many nearby NPCs could have seen this. Capped: the callers only need "any" and a rough
 // sense of "a crowd", not an exact tally.
 public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: EntityID) -> Int32 {
@@ -27,6 +40,7 @@ public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: Ent
     return 1;   // same - degrade toward "witnessed", never toward silently free stealth
   }
   let npcs = reg.GetAll();
+  let player = GetPlayer(sys.GetGameInstance());
   let radius = CBConfig.WitnessRadius();
   let seen = 0;
   let scanned = 0;
@@ -40,7 +54,8 @@ public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: Ent
       if NotEquals(npc.GetEntityID(), victim)
          && !npc.IsDead()
          && !ScriptedPuppet.IsPlayerCompanion(npc)
-         && Vector4.Distance(at, npc.GetWorldPosition()) <= radius {
+         && Vector4.Distance(at, npc.GetWorldPosition()) <= radius
+         && CBWitnessCanSee(npc, player) {
         seen += 1;
       }
     }
