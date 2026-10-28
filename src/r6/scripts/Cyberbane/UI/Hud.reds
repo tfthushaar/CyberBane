@@ -319,29 +319,52 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   if !IsDefined(score) {
     return "";
   }
+  // Say why nothing is happening, rather than reporting a threshold the player is already
+  // past while the whole system is standing down for a reason they cannot see. Every one of
+  // these gates silently disables crowd reactions, and all of them looked identical from the
+  // outside: a city that ignores you.
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && !rt.IsEnabled() {
+    return "Right now: Cyberbane is switched off in Mod Settings, so nothing reacts.";
+  }
+  if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().civReactions {
+    return "Right now: crowd reactions are switched off in Mod Settings.";
+  }
+  if sys.IsInSafeZone() {
+    return "Right now: the game calls this a safe area, so nobody here reacts. Step outside.";
+  }
+  let reg = sys.GetRegistry();
+  if !IsDefined(reg) || reg.Count() == 0 {
+    return "Right now: Cyberbane is not tracking anybody nearby, so nobody can react yet.";
+  }
   let chromeVisible = score.GetChromeVisible();
   let eff = MaxF(score.GetDreadCiv(), chromeVisible) + score.GetMenace() * CBConfig.MenaceFearWeight();
   let reach = 1.0 + (chromeVisible / 100.0) * CBConfig.ChromeNoticeRangeBonus();
   if eff >= CBConfig.CivTierTerror() {
     let r = RoundF(CBConfig.CivFleeRadius() * reach);
-    return s"Right now: people break and run when you come within \(r) metres.";
+    return s"Right now: people break and run when you come within \(r) metres. (\(reg.Count()) tracked)";
   }
   if eff >= CBConfig.CivTierAfraid() {
     let r = RoundF(CBConfig.CivCowerRadius() * reach);
-    return s"Right now: people flinch and give way within \(r) metres. Push it and they run.";
+    return s"Right now: people flinch and give way within \(r) metres. (\(reg.Count()) tracked)";
   }
   let need = RoundF(CBConfig.CivTierAfraid() - eff);
-  return s"Right now: nobody backs off yet. About \(need) short - more chrome, fear or build.";
+  return s"Right now: nobody backs off yet, about \(need) short. (\(reg.Count()) tracked)";
 }
 
 // Plain-language line: what is driving V's Dread the most (spec §12.1).
 func CBHudDreadReason(sys: ref<CyberbaneSystem>) -> String {
   let score = sys.GetScore();
-  let k = CBKillDreadComponent(sys.GetKillDreadPoints());
-  let x = CBDeedDreadComponent(sys.GetDeedDreadPoints());
-  let h = CBHeatDreadComponent(sys.GetHeatPoints());
-  let c = score.GetChrome();
-  let l = score.GetLook();
+  // Weighted by what each one actually contributes to Dread, not the raw score. Comparing
+  // the raw numbers meant chrome (capped at 100, weighted 0.20) beat a body count (weighted
+  // 0.35) whenever its number was bigger, so the Hub kept telling players they were feared
+  // for their chrome after hundreds of kills. Dread is
+  // 0.35K + 0.20C + 0.15L + 0.20X + 0.10H, so the comparison has to use the same weights.
+  let k = CBKillDreadComponent(sys.GetKillDreadPoints()) * CBConfig.DreadWeightK();
+  let x = CBDeedDreadComponent(sys.GetDeedDreadPoints()) * CBConfig.DreadWeightX();
+  let h = CBHeatDreadComponent(sys.GetHeatPoints()) * CBConfig.DreadWeightH();
+  let c = score.GetChrome() * CBConfig.DreadWeightC();
+  let l = score.GetLook() * CBConfig.DreadWeightL();
 
   let bestLabel = "nothing in particular yet";
   let best = 0.0;

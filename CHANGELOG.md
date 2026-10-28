@@ -21,6 +21,23 @@ First full release. Everything below is what changed since 0.1.19.
   search quietly switched off Rivals, hit squads and apex hunters together. It now falls back
   to putting them in close rather than not at all.
 
+### Fixed (fear and chrome)
+- **Your chrome could never read higher than 60.** The visible areas it counts add up to a
+  ceiling the scale could not get past, so filling every slot still left you at 60 out of 100
+  and unable to look any more frightening than that. A fully chromed V now reads in the
+  nineties, and arms alone are enough to be clocked across the street.
+- **The Hub kept saying people feared you for your chrome** no matter how many bodies you had
+  left behind. It was comparing the raw numbers instead of how much each one actually feeds
+  your Dread, and chrome has a much higher number but counts for a lot less. It names the real
+  reason now, which for most players is the body count.
+- **The Hub tells you why the city is ignoring you.** If nothing is reacting, the first screen
+  now says which of the reasons it is: the mod switched off, crowd reactions switched off, the
+  game treating where you stand as a safe area, or nobody nearby being tracked. It also shows
+  how many people it is watching.
+- Cyberbane no longer stands everything down when it cannot read whether you are in a safe
+  area. It used to assume you were, which quietly switched off crowds, gangs, morale and apex
+  hunters at once and looked exactly like the mod doing nothing.
+
 ### Added
 - **Enemies have nerve.** Who breaks and runs now depends on what they are. Rank and file
   crack, officers mostly hold, elites rarely run and bosses never do, instead of everyone

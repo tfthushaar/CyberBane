@@ -180,10 +180,15 @@ public func CBComputeChrome(usage: Float, implantSum: Float, overallocated: Bool
   return ClampF(c, 0.0, 100.0);
 }
 
-// C_visible = clamp(visibleImplantScore*2.5 + faceChromeScore, 0, 100). The caller
+// C_visible = clamp(visibleImplantScore*4.0 + faceChromeScore, 0, 100). The caller
 // passes Σ(visibleScore × tierMult) as visibleImplantScore.
+//
+// The visible areas sum to at most 24 (arms 12, eyes 4, skin 4, legs 4), so the old 2.5 scale
+// put the ceiling at exactly 60: someone with every slot filled still read as 60 out of 100
+// and could never look more frightening than that. At 4.0 a fully chromed V reads 96, and
+// arms alone read 48, which is the "blades for arms get clocked across the street" case.
 public func CBComputeChromeVisible(visibleImplantScore: Float, faceChromeScore: Float) -> Float {
-  return ClampF(visibleImplantScore * 2.5 + faceChromeScore, 0.0, 100.0);
+  return ClampF(visibleImplantScore * 4.0 + faceChromeScore, 0.0, 100.0);
 }
 
 // L = clamp(min(Σ clothingScore, 60) + min(Σ customizationScore, 40), 0, 100).

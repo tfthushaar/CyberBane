@@ -73,13 +73,17 @@ public func CBWorldStable(game: GameInstance) -> Bool {
 // Reading the game's own zone means this covers every such place without Cyberbane having
 // to carry a list of locations (spec §16, S-13).
 public func CBPlayerInSafeZone(game: GameInstance) -> Bool {
+  // Fail open, not closed. This one flag stands down crowds, gangs, morale, apex hunters and
+  // the mercy check all at once, so a read that quietly returns "safe" makes the entire mod
+  // look dead and gives the player nothing to go on. Someone flinching in a bar is a cosmetic
+  // mistake; the whole mod doing nothing is not.
   let bbs = GameInstance.GetBlackboardSystem(game);
   if !IsDefined(bbs) {
-    return true;   // cannot tell: assume safe and do nothing
+    return false;
   }
   let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
   if !IsDefined(psm) {
-    return true;
+    return false;
   }
   let zone = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.Zones);
   return zone == EnumInt(gamePSMZones.Safe);
