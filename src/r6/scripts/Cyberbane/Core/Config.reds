@@ -258,9 +258,12 @@ public abstract class CBConfig {
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   // Rivals only land if they actually happen. Raised so leaving people alive or breaking a
   // crew produces a nemesis often enough to notice, still bounded by the caps below.
-  public static func RivalChanceSurvivor() -> Float = 0.55
+  public static func RivalChanceSurvivor() -> Float = 0.65
   public static func RivalChanceSpared() -> Float = 0.75
-  public static func RivalChanceAvenger() -> Float = 0.35
+  // Used both when you put a Rival down (someone steps into their place) and when you kill
+  // an Officer or Boss, which is rare enough that a high chance reads as "that one mattered"
+  // rather than a flood.
+  public static func RivalChanceAvenger() -> Float = 0.60
   public static func RivalChanceHunter() -> Float = 0.50
   // How long a Rival takes to track you down, in fast ticks (roughly seconds). A higher
   // rank has better information and finds you sooner. This replaced a per-slow-tick dice
@@ -272,6 +275,10 @@ public abstract class CBConfig {
   // When the clock runs out but V is mid-fight or another Rival is already out, wait this
   // many ticks and try again rather than dropping the appointment.
   public static func RivalHuntRetryTicks() -> Int32 = 20
+  // Once you are carrying as many Rivals as the cap allows, no new ones can be made, so the
+  // only way out is to put the existing ones down. They close in at this fraction of the
+  // normal wait until you have cleared some room.
+  public static func RivalCapHurryMult() -> Float = 0.45
   public static func RivalEncounterBaseChance() -> Float = 0.25
   public static func RivalEncounterChancePerRank() -> Float = 0.07
   // Minimum in-game hours between Rival encounters, so one can actually catch up with you

@@ -807,10 +807,15 @@ func CBHudRivals(sys: ref<CyberbaneSystem>) -> String {
   if !any {
     return "No active rivals yet.\n\nLeave someone alive after you put them down, or let a wounded\nenemy get away, and one of them will come back with your name.";
   }
-  let out = "People who got away, or got back up. The clock is how long until they catch\n";
-  out += "up with you, and they arrive when it runs out, wherever you are.\n\n";
-  out += "Every time one escapes you it comes back a rank higher, harder to put down,\n";
-  out += "and quicker to find you next time.\n\n";
+  let count = sys.CountActiveRivals();
+  let cap = CBRivalCap();
+  let out = s"CARRYING \(count) OF \(cap)\n\n";
+  out += "The clock is how long until they catch up with you. They arrive when it runs\n";
+  out += "out, wherever you are, and come back a rank higher every time one escapes.\n\n";
+  if count >= cap {
+    out += "Nobody new can take against you until you clear some, so the ones you\n";
+    out += "already have come at you faster until you do.\n\n";
+  }
   out += "[ Shift + Hub key ]  forget every rival (use after updating the mod).";
   return out;
 }

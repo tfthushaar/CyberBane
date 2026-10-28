@@ -30,7 +30,12 @@ This project follows [Semantic Versioning](https://semver.org/).
 ### Changed
 - Rivals and apex hunters arrive much closer to you. They used to turn up far enough away that
   you could drive off before meeting them.
-- Rivals come from sparing and from enemies who get away more often again.
+- More people take against you. An enemy who gets away from you bleeding comes back as a Rival
+  far more often, and killing a Rival, an officer or a boss now usually means someone rises to
+  avenge them.
+- **The Hub says how many Rivals you are carrying and what the limit is.** Once you are at the
+  limit nobody new can take against you, so the ones you already have close in faster, giving
+  you the chance to clear some out the only way that counts.
 
 ### Compatibility
 - **Street Sense** is detected automatically. It owns crowds noticing and calling out to you,

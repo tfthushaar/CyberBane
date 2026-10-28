@@ -50,10 +50,34 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
 
 }
 
+// How many Rivals you are allowed to be carrying at once.
+public func CBRivalCap() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    return rt.GetSettings().maxRivals;
+  }
+  return CBConfig.RivalMaxActiveHardCap();
+}
+
+public func CBRivalsAtCap(sys: ref<CyberbaneSystem>) -> Bool {
+  if !IsDefined(sys) {
+    return false;
+  }
+  return sys.CountActiveRivals() >= CBRivalCap();
+}
+
 // How long this Rival takes to find you, in fast ticks. Higher rank, better information.
-public func CBRivalHuntTicksFor(rank: Int32) -> Int32 {
-  return Max(CBConfig.RivalHuntTicksMin(),
-             CBConfig.RivalHuntTicksBase() - rank * CBConfig.RivalHuntTicksPerRank());
+//
+// At the cap no new Rival can be created, so the queue would otherwise just sit there: the
+// only way to make room is to put the existing ones down, and they have to turn up for that
+// to be possible. So they come at you faster until you have cleared some.
+public func CBRivalHuntTicksFor(rank: Int32, atCap: Bool) -> Int32 {
+  let t = Max(CBConfig.RivalHuntTicksMin(),
+              CBConfig.RivalHuntTicksBase() - rank * CBConfig.RivalHuntTicksPerRank());
+  if atCap {
+    t = Max(CBConfig.RivalHuntTicksMin() / 2, RoundF(Cast<Float>(t) * CBConfig.RivalCapHurryMult()));
+  }
+  return t;
 }
 
 // Ticks until this Rival turns up, or 0 when it is not counting down.
@@ -96,6 +120,7 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   let inCombat = !IsDefined(player) || player.IsInCombat();
 
   let now = CBGameSeconds(game);
+  let atCap = CBRivalsAtCap(sys);
   let rivals = sys.GetRivals();
   let i = 0;
   while i < ArraySize(rivals) {
@@ -104,7 +129,7 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     if IsDefined(r) && TDBID.IsValid(r.recordID)
        && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
       if r.huntTicks <= 0 {
-        r.huntTicks = CBRivalHuntTicksFor(r.rank);   // start the clock
+        r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);   // start the clock
       } else {
         r.huntTicks -= 1;
         if r.huntTicks <= 0 {
@@ -113,7 +138,7 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
             r.huntTicks = CBConfig.RivalHuntRetryTicks();
           } else {
             CBSpawnRival(sys, game, r, now);
-            r.huntTicks = CBRivalHuntTicksFor(r.rank);
+            r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);
             return;   // one arrival per tick
           }
         }
