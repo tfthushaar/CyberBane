@@ -51,7 +51,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Decay", "Decay rate");
     this.Text("Cyberbane-Settings-RumorSpread", "Rumor spread");
     this.Text("Cyberbane-Settings-StreetCredFloor", "Street Cred reputation floor");
-    this.Text("Cyberbane-Settings-Bootstrap", "Seed reputation from past deeds");
 
     // ---- Settings: civilians --------------------------------------------
     this.Text("Cyberbane-Settings-CivReactions", "Civilian reactions");

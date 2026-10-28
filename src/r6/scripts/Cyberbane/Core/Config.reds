@@ -156,6 +156,9 @@ public abstract class CBConfig {
   // ---- Gig payout bonus (spec §9.7) ------------------------------------
   // Only payouts at or above this many eddies are treated as job money (not loot).
   public static func GigBonusMinPayout() -> Int32 = 400
+  // A payout at least this large reads as a gig or a job; smaller ones read as NCPD hustle
+  // work. Anything under GigBonusMinPayout is not treated as job money at all.
+  public static func JobPayoutThreshold() -> Int32 = 1500
   // Max fraction added on top of a job payout at the Legend tier.
   public static func GigBonusMaxFraction() -> Float = 0.20
 

@@ -38,6 +38,10 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
     return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Netrunner) && stats.quickhackKills >= 50;
   }
   if Equals(id, n"T_PSYCHO_HUNTER") { return stats.psychosKilled >= 10; }
+  if Equals(id, n"T_PSYCHO_WHISPERER") { return stats.psychosPacified >= 5; }
+  if Equals(id, n"T_FIST") {
+    return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Brawler) && sys.TotalKills() >= 100;
+  }
   if Equals(id, n"T_UNTOUCHABLE") { return stats.flawless >= 10; }
   if Equals(id, n"T_RED_TIDE") { return stats.massacres >= 5; }
   if Equals(id, n"T_MAXTAC_PROBLEM") { return CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)) >= 10; }

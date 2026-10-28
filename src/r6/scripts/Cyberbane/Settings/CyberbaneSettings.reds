@@ -87,10 +87,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetCredFloor")
   public let streetCredFloor: Bool = true;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Bootstrap")
-  public let bootstrapFromHistory: Bool = true;
+  // bootstrapFromHistory was removed in 1.0 along with its settings entry. Nothing ever read
+  // it, and the thing it promised - your existing Street Cred counting as reputation you had
+  // already earned - is what the Street Cred floor setting above actually does.
 
   // ---- Civilians --------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")

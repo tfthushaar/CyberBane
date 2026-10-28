@@ -48,6 +48,13 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   }
 
   puppet.cbSparedLogged = true;
+  // Talking one down rather than putting them in the ground is its own kind of reputation.
+  if CBIsCyberpsycho(puppet) {
+    let st = sys.GetStats();
+    if IsDefined(st) {
+      st.psychosPacified += 1;
+    }
+  }
   let e = new CBEscapee();
   e.puppet = puppet;
   e.entityId = puppet.GetEntityID();
@@ -66,23 +73,34 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
 // The idea of giving each NPC a temperament instead of one global flee chance comes from
 // Much Better AI (Nexus 31402) by cshiai. The implementation here is our own.
 public func CBNerve(puppet: ref<ScriptedPuppet>) -> Float {
+  let base = 1.0 - CBConfig.FleeChance();   // rank and file
   let rec = puppet.GetRecord();
   if IsDefined(rec) {
     let rarity = rec.Rarity();
     if IsDefined(rarity) {
       let t = rarity.Type();
       if Equals(t, gamedataNPCRarity.Boss) {
-        return 1.0;    // never runs
+        return 1.0;    // never runs, whoever they are with
       }
       if Equals(t, gamedataNPCRarity.Elite) {
-        return 0.75;
+        base = 0.75;
       }
       if Equals(t, gamedataNPCRarity.Officer) {
-        return 0.60;
+        base = 0.60;
       }
     }
   }
-  return 1.0 - CBConfig.FleeChance();   // rank and file
+  // Crews differ. courageMod has been sitting in the faction table since the beginning
+  // without anything ever reading it; this is where it belongs - the Animals hold, the
+  // Scavs do not.
+  let content = CBContent(puppet.GetGame());
+  if IsDefined(content) {
+    let prof = content.GetFaction(CBClassifyFaction(puppet));
+    if IsDefined(prof) {
+      base += prof.courageMod;
+    }
+  }
+  return ClampF(base, 0.0, 1.0);
 }
 
 public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {

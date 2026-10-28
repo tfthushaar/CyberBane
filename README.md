@@ -75,6 +75,8 @@ page describes what the mod does and how it installs.
 - **Gangs you cannot decapitate.** Put a Rival down and someone can step into their place
   carrying the same grudge, inheriting the standing of the one they replaced rather than
   starting from the bottom. The higher the one you killed, the likelier it happens.
+- **Jobs count.** Finishing gigs, jobs and NCPD work builds your reputation, with bigger
+  contracts worth more than street hustles.
 - **Titles and the file they keep on you.** Earn titles such as Butcher of Watson, Chrome
   Saint, or the top title Cyberbane. The Log tab is the street's file on you, put together
   from what people actually witnessed, so work nobody saw never reaches the page.
@@ -96,10 +98,8 @@ Install these first, each from its own page and following that mod's instruction
 - Codeware
 - Mod Settings
 
-Optional:
-
-- Native Interactions Framework, which adds the Intimidate interaction.
-- Equipment-EX, which lets your outfit count toward your look.
+There are no optional requirements. Cyberbane reads your clothing through the game's own
+equipment slots, so outfit mods are picked up without any integration.
 
 Cyberbane is built for Cyberpunk 2077 v2.5. Install the 2.5 versions of the required frameworks
 above. Each game patch is treated as unsupported until it has been checked, and a compatibility
@@ -176,8 +176,7 @@ and rebind the Hub key.
 ## Credits
 
 Built on the work of the Cyberpunk 2077 modding community: RED4ext by WopsS, redscript by
-jac3km4, Codeware by psiberx, Mod Settings by jackhumbert, and the optional Native Interactions
-Framework and Equipment-EX.
+jac3km4, Codeware by psiberx, and Mod Settings by jackhumbert.
 
 Thanks to cshiai, whose Much Better AI showed where the game signals a completed takedown and
 how to detect another mod at compile time. Reading it is what fixed Cyberbane's takedowns. No

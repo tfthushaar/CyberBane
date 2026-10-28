@@ -10,16 +10,20 @@
 @wrapMethod(RPGManager)
 public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakDBID, opt entityID: StatsObjectID, opt quantityMultiplier: Float) -> Void {
   let rt = CyberbaneRuntime.Get();
-  let on = true;
+  // `modOn` decides whether we measure the payout at all, which is what tells Cyberbane a job
+  // was finished. `bonusOn` only decides whether to top the payout up. They used to be one
+  // flag, so turning the eddie bonus off would also have stopped jobs counting.
+  let modOn = true;
+  let bonusOn = true;
   let mult = 1.0;
   if IsDefined(rt) {
     if !rt.IsEnabled() {
-      on = false;
+      modOn = false;
     }
     if rt.HasSettings() {
       let s = rt.GetSettings();
       if !s.gigBonus {
-        on = false;
+        bonusOn = false;
       }
       mult = s.gigBonusMult;
     }
@@ -29,12 +33,12 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
   // scripted beat). Stand down then rather than read the player's inventory, the same way
   // every other Cyberbane hook does (crash safety).
   if !CBWorldStable(gameInstance) {
-    on = false;
+    modOn = false;
   }
 
   let player = GetPlayer(gameInstance);
   let ts = GameInstance.GetTransactionSystem(gameInstance);
-  if !on || !IsDefined(player) || !IsDefined(ts) {
+  if !modOn || !IsDefined(player) || !IsDefined(ts) {
     wrappedMethod(gameInstance, rewardID, entityID, quantityMultiplier);
     return;
   }
@@ -64,6 +68,30 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
 
   let sys = CyberbaneSystem.Get(gameInstance);
   if !IsDefined(sys) {
+    return;
+  }
+
+  // A measured job payout is Cyberbane's signal that V finished a job (spec §7.2.3).
+  //
+  // Nothing ever called the deed system: it had entry points and no detection layer, so
+  // quests, gigs and hustles contributed nothing to your reputation even though the readme
+  // led with "finish jobs". This is the detection layer, and it reuses the measurement this
+  // hook already does rather than adding any new engine call: `delta` is real eddies the
+  // game just handed over, `outermost` has already excluded nested rewards, and
+  // CBWorldStable has already excluded payouts handed out mid-transition.
+  //
+  // Payout size separates the two kinds of work. NCPD hustles pay small; gigs and jobs pay
+  // considerably more. This deliberately does not try to name the specific quest - that
+  // needs journal tracking this mod does not do - so every job of a given size scores the
+  // same.
+  if delta >= CBConfig.JobPayoutThreshold() {
+    CBApplyGig(sys, gameInstance);
+  } else {
+    CBApplyHustle(sys, gameInstance);
+  }
+  CBEvaluateTitles(sys, gameInstance);
+
+  if !bonusOn {
     return;
   }
   let frac = CBGigBonusFraction(sys) * mult;

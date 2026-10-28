@@ -16,6 +16,23 @@ public class CBEncounter {
   public let bossDown: Bool;
   public let outOfCombatTicks: Int32;
   public let killTicks: array<Int32>;
+  // Lowest health V dropped to during this fight, as a stat-pool percentage. -1.0 means
+  // nothing has been sampled yet.
+  public let playerHpMin: Float;
+}
+
+// How much health V may lose and still call a fight flawless.
+func CBFlawlessFloor() -> Float = 95.0
+
+// Sample V's health. Reads the same stat pool CBCombatFleeCheck already reads for enemies,
+// so this adds no engine surface that is not already on the tick path, and it is only ever
+// called while an encounter is live.
+func CBSamplePlayerHp(game: GameInstance, player: ref<PlayerPuppet>) -> Float {
+  let sps = GameInstance.GetStatPoolsSystem(game);
+  if !IsDefined(sps) || !IsDefined(player) {
+    return -1.0;
+  }
+  return sps.GetStatPoolValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatPoolType.Health, false);
 }
 
 public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Void {
@@ -29,6 +46,7 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     enc.kills = 0;
     enc.civilianKills = 0;
     enc.bossDown = false;
+    enc.playerHpMin = -1.0;
     ArrayClear(enc.killTicks);
   }
   enc.kills += 1;
@@ -54,6 +72,15 @@ public func CBEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     return;
   }
   let player = GetPlayer(game);
+  // Flawless needs to know whether V was ever hurt. Sampling the health pool on the tick
+  // gives that without hooking the player's damage path, which is the hottest path in the
+  // game and the last place this mod should be adding a wrapper.
+  let hp = CBSamplePlayerHp(game, player);
+  if hp >= 0.0 {
+    if enc.playerHpMin < 0.0 || hp < enc.playerHpMin {
+      enc.playerHpMin = hp;
+    }
+  }
   if IsDefined(player) && player.IsInCombat() {
     enc.outOfCombatTicks = 0;
   } else {
@@ -79,6 +106,12 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     renownMult = rt.GetSettings().renownGainMult;
     dreadMult = rt.GetSettings().dreadGainMult;
     toasts = rt.GetSettings().toasts;
+  }
+
+  // Came through a real fight without being hurt (spec §8.1). Needs at least a couple of
+  // bodies so that one stray kill does not count as a flawless encounter.
+  if IsDefined(stats) && enc.kills >= 2 && enc.playerHpMin >= CBFlawlessFloor() {
+    stats.flawless += 1;
   }
 
   let massacre = enc.kills >= CBConfig.MassacreTotalKills()

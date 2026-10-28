@@ -105,6 +105,12 @@ public class CBReactionDirector {
               p *= (1.0 - sys.GetDisguiseStrength());
             }
             npc.cbRecoState = RandF() <= p ? 1 : 2;
+            if npc.cbRecoState == 1 {
+              let st = sys.GetStats();
+              if IsDefined(st) {
+                st.timesRecognized += 1;
+              }
+            }
           }
           let recognized = npc.cbRecoState == 1;
 

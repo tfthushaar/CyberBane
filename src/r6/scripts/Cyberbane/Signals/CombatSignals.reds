@@ -206,11 +206,32 @@ func CBClassifyFaction(puppet: ref<ScriptedPuppet>) -> CName {
   return content.FactionForAffiliation(aff.EnumName());
 }
 
-// Classify the victim (spec §7.1.2). Cyberpsycho/Rival are handled by their own
-// paths; this covers MaxTac, Cop, Civilian, Corpo and the rarity tiers.
+// Is this one of Night City's cyberpsychos?
+//
+// There is no typed way to ask on 2.5. Probed and absent: IsCyberpsycho on ScriptedPuppet,
+// on Character_Record and as a static; gamedataAffiliation has no Cyberpsycho or Psycho
+// member. The record id is the only handle left, and the game's cyberpsycho characters are
+// named for it.
+//
+// This is a best-effort heuristic, not a guarantee. If the id string is unavailable the
+// check simply never matches, which is exactly how the mod behaved before it existed - a
+// cyberpsycho then scores as an ordinary ganger. It has no other failure mode.
+func CBIsCyberpsycho(puppet: ref<ScriptedPuppet>) -> Bool {
+  let id = TDBID.ToStringDEBUG(puppet.GetRecordID());
+  if Equals(id, "") {
+    return false;
+  }
+  return StrContains(id, "cyberpsycho") || StrContains(id, "Cyberpsycho");
+}
+
+// Classify the victim (spec §7.1.2). Rival is handled by its own path; this covers
+// Cyberpsycho, MaxTac, Cop, Civilian, Corpo and the rarity tiers.
 func CBClassifyVictim(puppet: ref<ScriptedPuppet>, faction: CName) -> Int32 {
   if Equals(faction, n"MaxTac") {
     return EnumInt(ECBVictimClass.MaxTac);
+  }
+  if CBIsCyberpsycho(puppet) {
+    return EnumInt(ECBVictimClass.Cyberpsycho);
   }
   if Equals(faction, n"NCPD") {
     return EnumInt(ECBVictimClass.Cop);

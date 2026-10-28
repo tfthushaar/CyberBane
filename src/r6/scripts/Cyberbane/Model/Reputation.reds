@@ -129,6 +129,9 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     if info.mQuickhack && info.lethal {
       stats.quickhackKills += 1;
     }
+    if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Cyberpsycho) {
+      stats.psychosKilled += 1;
+    }
     // Nobody saw it. The body still turns up, so the district gets a reputation for
     // something it cannot put a name to - dread without renown (spec §8.5).
     if info.lethal && !info.witnessed {

@@ -40,6 +40,28 @@ First full release. Everything below is what changed since 0.1.19.
   mercy check all at once, which looks exactly like the mod doing nothing at all. And if it
   cannot get an answer now, it carries on rather than assuming the worst.
 
+### Fixed (things that were advertised but never worked)
+- **Finishing jobs builds your reputation.** The readme has always led with "finish jobs",
+  and jobs did nothing at all: the part of Cyberbane that scores them existed but was never
+  connected to anything. Gigs, jobs and NCPD work now count, with bigger contracts worth more
+  than street hustles. This also means the jobs you pull feed into how frightening people
+  find you, which they never did before.
+- **Cyberpsychos are recognised as cyberpsychos** rather than scored as ordinary gangers, so
+  hunting them down, or putting them down without killing them, means something.
+- **Five titles could never be earned.** Fist of Night City, Psycho Whisperer, Psycho Hunter
+  and Untouchable had no way to unlock. They do now. Konpeki Ghost has been retired: it was
+  tied to one specific quest played one specific way, which Cyberbane cannot detect, and
+  offering a title nobody can earn is worse than not offering it.
+- Coming through a real fight without taking a scratch now counts, which is what Untouchable
+  was always supposed to be about.
+- Gangs differ in how easily they break. The faction table has always carried a courage value
+  and nothing read it, so every crew held its nerve the same way.
+- Removed a settings toggle that did nothing. What it promised, your existing Street Cred
+  counting as reputation you had already earned, is what the Street Cred floor setting does.
+- Cyberbane no longer claims to integrate with Native Interactions Framework or Equipment-EX.
+  Neither integration was ever built. Outfits are read through the game's own equipment slots,
+  so outfit mods work without one.
+
 ### Added
 - **Enemies have nerve.** Who breaks and runs now depends on what they are. Rank and file
   crack, officers mostly hold, elites rarely run and bosses never do, instead of everyone
