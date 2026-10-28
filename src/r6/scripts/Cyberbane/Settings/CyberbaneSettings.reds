@@ -254,6 +254,23 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DeathsRemembered")
   public let deathsRemembered: Bool = true;
 
+  // ---- Safe areas -------------------------------------------------------
+  // Off by default, and they should stay that way for most players. A Rival arriving inside
+  // an apartment is a fight you cannot have: the game forces your hands empty in there, so
+  // you get attacked and cannot draw. These two exist for people who have decided they want
+  // that fight anyway, and they are only sensible together.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SafeZoneSpawns")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SafeZoneSpawns-Desc")
+  public let allowSafeZoneSpawns: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SafeZoneCombat")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SafeZoneCombat-Desc")
+  public let allowSafeZoneCombat: Bool = false;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalFreq")

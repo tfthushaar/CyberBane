@@ -31,8 +31,13 @@ public abstract class CBSafetyGate {
     if IsDefined(ws) && ws.IsActorInWorkspot(puppet) {
       return false;
     }
-    // Safe areas are handled one level up, by the reaction systems themselves, via
-    // CBPlayerInSafeZone - it is a property of where V is standing, not of this NPC.
+    // Somewhere the game protects, and indoors with it. This is the game's own test, and
+    // it is per NPC rather than per player: people inside a bar are left alone while the
+    // crowd on the pavement outside still reacts. An outdoor safe area, a memorial say,
+    // does not silence the people standing in it (spec §16).
+    if CBNpcInSafeInterior(puppet) {
+      return false;
+    }
     // TODO S-13: unique exclusion list, AMM-spawned, braindance, active-quest-area
     // exclusions.
     return true;

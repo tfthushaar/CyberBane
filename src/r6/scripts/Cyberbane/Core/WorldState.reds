@@ -86,6 +86,12 @@ public func CBPlayerInSafeZone(game: GameInstance) -> Bool {
   // Crash safety: `SafeAreaManager` is checked before use, the query takes a position rather
   // than an entity so nothing is dereferenced, and this runs once per fast tick on the
   // player's own position - the same frequency as the blackboard read it replaces.
+  // Scenes and story beats put a lid on combat without V being in a safe area at all. The
+  // game's reaction component checks this before anything else and Cyberbane was missing it,
+  // so reactions could fire in moments the game had explicitly quieted.
+  if CBPlayerNoCombatTag(game) {
+    return true;
+  }
   let sam = GameInstance.GetSafeAreaManager(game);
   let player = GetPlayer(game);
   if IsDefined(sam) && IsDefined(player) {

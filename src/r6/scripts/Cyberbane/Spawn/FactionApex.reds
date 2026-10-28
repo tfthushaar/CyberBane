@@ -93,7 +93,9 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if NotEquals(sys.GetPendingApexFaction(), n"") {
     return;   // one is already on the way
   }
-  if sys.IsInSafeZone() {
+  // Unless the player has opted into being hunted indoors, the warning does not even fire
+  // in a safe area: announcing someone who then cannot be placed is worse than silence.
+  if sys.IsInSafeZone() && !CBAllowSafeZoneSpawns() {
     return;   // not in a bar or a clinic (spec §16)
   }
   let player = GetPlayer(game);

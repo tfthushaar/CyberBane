@@ -3,6 +3,29 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-10-29
+
+### Fixed
+- **Nobody comes after you inside an apartment any more.** A Rival could turn up in a safe
+  area, and the game forces your hands empty in those places, so you were attacked somewhere
+  you could not draw a weapon. Rivals, hit squads and apex hunters now stay out of apartments,
+  bars, clinics and the like, and a Rival who was due to arrive waits for you to step outside
+  rather than losing their turn.
+- **Crowd reactions understand safe areas properly now.** Cyberbane used to decide with a
+  single yes or no based on where you were standing, so stepping into a doorway switched off
+  every reaction in the district. It now works person by person, the same way the game itself
+  does: people inside a bar are left alone while the crowd on the pavement outside carries on
+  reacting normally. An outdoor safe area, a memorial for instance, no longer silences the
+  people standing in it.
+- Cyberbane also stays quiet during scripted moments where the game has put a lid on combat,
+  which it used to miss entirely.
+
+### Added
+- **Two settings for people who want that fight anyway**, both off by default and found under
+  Safe areas in Mod Settings. One lets rivals, hit squads and apex hunters turn up inside safe
+  areas. The other stops the game forcing your hands empty when you enter one, so you can
+  fight back. They are only sensible together.
+
 ## [1.1.0] - 2026-10-29
 
 ### Fixed

@@ -137,9 +137,13 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
             // Hold at the door rather than losing the appointment entirely.
             r.huntTicks = CBConfig.RivalHuntRetryTicks();
           } else {
-            CBSpawnRival(sys, game, r, now);
-            r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);
-            return;   // one arrival per tick
+            if CBSpawnRival(sys, game, r, now) {
+              r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);
+              return;   // one arrival per tick
+            }
+            // Refused, most likely because V is somewhere they cannot be fought. Keep the
+            // appointment and try again shortly rather than making them wait all over again.
+            r.huntTicks = CBConfig.RivalHuntRetryTicks();
           }
         }
       }
@@ -147,11 +151,11 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   }
 }
 
-func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Void {
+func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Bool {
   // Spawn close and behind so the Rival perceives V right away and gives chase.
   let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance());
   if spawned <= 0 {
-    return;
+    return false;   // refused: unsettled world, or nowhere outside a safe area to stand
   }
   r.state = EnumInt(ECBRivalState.Hunting);   // it is actively hunting you now
   r.lastSeenAt = now;
@@ -167,4 +171,5 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
     CBShowMessage(game, s"Cyberbane: \(name) has caught up with you.", 4.0);
   }
   CBLog.Info(n"Spawn", s"Rival encounter spawned (id \(r.id)).");
+  return true;
 }

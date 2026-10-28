@@ -35,6 +35,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-Police", "Police");
     this.Text("Cyberbane-Settings-Category-Economy", "Economy");
     this.Text("Cyberbane-Settings-Category-Rivals", "Rivals");
+    this.Text("Cyberbane-Settings-Category-SafeAreas", "Safe areas");
+    this.Text("Cyberbane-Settings-SafeZoneSpawns", "Allow spawns in safe areas");
+    this.Text("Cyberbane-Settings-SafeZoneSpawns-Desc", "Let rivals, hit squads and apex hunters turn up inside apartments, bars and clinics. Off by default, because the game disarms you in those places.");
+    this.Text("Cyberbane-Settings-SafeZoneCombat", "Let me fight in safe areas");
+    this.Text("Cyberbane-Settings-SafeZoneCombat-Desc", "Stops the game forcing your hands empty when you enter a safe area, so you can fight back. Turn this on with the setting above.");
     this.Text("Cyberbane-Settings-Category-UI", "Interface");
     this.Text("Cyberbane-Settings-Category-Compat", "Compatibility");
     this.Text("Cyberbane-Settings-Category-Debug", "Debug");

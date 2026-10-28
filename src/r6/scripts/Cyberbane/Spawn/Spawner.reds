@@ -109,15 +109,20 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let px = ppos.X - fwd.X * d + rx * lane * 2.5;
       let py = ppos.Y - fwd.Y * d + ry * lane * 2.5;
       let gz: Float;
-      // A floor far above or below V is another level entirely - a roof, the bottom of a
-      // shaft - so it is refused and the point moves in rather than dropping someone there.
-      if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop() {
-        if CBCreateSpawn(des, record, appearance,
-                         new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0), orient, squadTag) {
-          spawned += 1;
+      // An apartment, a bar, a clinic. The game forces V's hands empty in there, so an
+      // arrival is a fight the player cannot have (spec §16). Off unless they ask for it.
+      // Nested rather than skipped with a continue, which redscript does not have.
+      if !CBSafeAreaBlocksSpawn(game, new Vector4(px, py, ppos.Z, 1.0)) {
+        // A floor far above or below V is another level entirely - a roof, the bottom of a
+        // shaft - so it is refused and the point moves in rather than dropping someone there.
+        if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop() {
+          if CBCreateSpawn(des, record, appearance,
+                           new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0), orient, squadTag) {
+            spawned += 1;
+          }
+          placed = true;
+          break;   // this lane is placed, or the engine refused it; either way stop retrying
         }
-        placed = true;
-        break;   // this lane is placed, or the engine refused it; either way stop retrying
       }
       attempt += 1;
     }
@@ -128,8 +133,10 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     if !placed {
       let fx = ppos.X - fwd.X * dist * 0.4 + rx * lane * 2.5;
       let fy = ppos.Y - fwd.Y * dist * 0.4 + ry * lane * 2.5;
-      if CBCreateSpawn(des, record, appearance,
-                       new Vector4(fx, fy, ppos.Z, 1.0), orient, squadTag) {
+      let fallback = new Vector4(fx, fy, ppos.Z, 1.0);
+      // The fallback is close in, so it is the likeliest of the lot to land indoors.
+      if !CBSafeAreaBlocksSpawn(game, fallback)
+         && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag) {
         spawned += 1;
       }
     }

@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.1.0).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.1.1).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -174,7 +174,10 @@ and rebind the Hub key.
 - Night City Alive and other crowd or patrol mods: supported.
 - AMM, romance and companion mods, quest NPCs and unique characters: always left untouched.
 - Safe areas: in places the game itself treats as safe, such as apartments, clinics, bars and
-  memorials, Cyberbane's reactions stand down and nobody there responds to you.
+  memorials, Cyberbane's reactions stand down and nobody there responds to you. Nobody is sent
+  after you in one either, because the game forces your hands empty in those places and that
+  would be a fight you could not have. If you want it anyway, two settings under Safe areas
+  turn it on and lift the weapon lock, both off by default.
 - New Game+: starts a fresh reputation for the new playthrough.
 
 ## Credits
