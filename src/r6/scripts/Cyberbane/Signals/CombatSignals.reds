@@ -87,8 +87,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if IsDefined(sysE) {
     sysE.DropEscapeeByEntity(puppet.GetEntityID());
     let desE = GameInstance.GetDynamicEntitySystem();
-    if IsDefined(desE) && sysE.GetActiveRivalId() > 0 && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival") {
-      let slain = sysE.FindRivalById(sysE.GetActiveRivalId());
+    if IsDefined(desE) && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival") {
+      let slain = CBResolveSlainRival(sysE, puppet);
       if IsDefined(slain) {
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
       }

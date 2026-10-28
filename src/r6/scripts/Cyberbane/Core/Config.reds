@@ -176,7 +176,9 @@ public abstract class CBConfig {
   public static func HitSquadDespawnMinutes() -> Float = 5.0
   public static func HitSquadDespawnDistance() -> Float = 300.0
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
-  public static func RivalSpawnDistance() -> Float = 35.0
+  // Close enough that V meets them before driving off. At 35 m a Rival could spawn behind
+  // you, lose you to a vehicle, and be despawned before either of you noticed.
+  public static func RivalSpawnDistance() -> Float = 20.0
 
   // How many downed enemies the mercy sweep looks at per fast tick. The sweep exists because
   // the hit hook alone misses anyone who drops to damage that does not raise a hit event we
@@ -237,8 +239,10 @@ public abstract class CBConfig {
   public static func ApexKillThreshold() -> Int32 = 20
   // Fast ticks between the warning and the apex actually walking in (~seconds), so the line
   // lands before they do instead of alongside them.
-  public static func ApexWarningTicks() -> Int32 = 5
-  public static func ApexSpawnDistance() -> Float = 30.0
+  // Fast ticks between the warning and the apex arriving. Long enough to read as a countdown
+  // in the Hub and to brace for, short enough that you have not driven to another district.
+  public static func ApexWarningTicks() -> Int32 = 45
+  public static func ApexSpawnDistance() -> Float = 18.0
   // Muscle that comes in with them. Built from the gang's rank-and-file record.
   public static func ApexEscortCount() -> Int32 = 2
   // The apex is built from a gang archetype, which on its own is nowhere near a boss, so the
@@ -254,10 +258,20 @@ public abstract class CBConfig {
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   // Rivals only land if they actually happen. Raised so leaving people alive or breaking a
   // crew produces a nemesis often enough to notice, still bounded by the caps below.
-  public static func RivalChanceSurvivor() -> Float = 0.40
-  public static func RivalChanceSpared() -> Float = 0.60
-  public static func RivalChanceAvenger() -> Float = 0.25
+  public static func RivalChanceSurvivor() -> Float = 0.55
+  public static func RivalChanceSpared() -> Float = 0.75
+  public static func RivalChanceAvenger() -> Float = 0.35
   public static func RivalChanceHunter() -> Float = 0.50
+  // How long a Rival takes to track you down, in fast ticks (roughly seconds). A higher
+  // rank has better information and finds you sooner. This replaced a per-slow-tick dice
+  // roll, which meant a Rival might show up in ten seconds or never, and nothing could be
+  // shown to the player because nothing was actually scheduled.
+  public static func RivalHuntTicksBase() -> Int32 = 240
+  public static func RivalHuntTicksPerRank() -> Int32 = 35
+  public static func RivalHuntTicksMin() -> Int32 = 75
+  // When the clock runs out but V is mid-fight or another Rival is already out, wait this
+  // many ticks and try again rather than dropping the appointment.
+  public static func RivalHuntRetryTicks() -> Int32 = 20
   public static func RivalEncounterBaseChance() -> Float = 0.25
   public static func RivalEncounterChancePerRank() -> Float = 0.07
   // Minimum in-game hours between Rival encounters, so one can actually catch up with you

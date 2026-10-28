@@ -17,6 +17,52 @@ public func CBHudTabCount() -> Int32 = 6
 // Body is 640 px tall at font size 20, so about 26 lines fit; 25 leaves a line of slack.
 public func CBHudMaxLines() -> Int32 = 25
 
+// Lines that fit below each screen's own content, before the footer at y=854. The meters
+// end at 566 and the lists at 608, so those screens have far less room for prose than the
+// plain ones that start at 212. Text is clamped to this, so nothing can run into the footer.
+public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
+  if tab == 1 {
+    return 11;
+  }
+  if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() {
+    return 9;
+  }
+  return CBHudMaxLines();
+}
+
+// Which tab the Rivals screen is, so the key handler does not hardcode a number.
+public func CBHudRivalsTab() -> Int32 = 4
+public func CBHudFactionsTab() -> Int32 = 2
+
+// Layout. The panel is 1100 wide, and the content column starts at x=50.
+public func CBHudChipWidth() -> Float = 166.0
+public func CBHudBarCount() -> Int32 = 4
+public func CBHudBarWidth() -> Float = 980.0
+public func CBHudRowCount() -> Int32 = 10
+
+// Colours, kept together so the screens read as one palette.
+public func CBHudCyan() -> HDRColor = new HDRColor(0.10, 1.80, 2.10, 1.0)
+public func CBHudAmber() -> HDRColor = new HDRColor(2.00, 1.30, 0.20, 1.0)
+public func CBHudRed() -> HDRColor = new HDRColor(2.10, 0.35, 0.40, 1.0)
+public func CBHudGreen() -> HDRColor = new HDRColor(0.40, 1.80, 0.90, 1.0)
+public func CBHudGrey() -> HDRColor = new HDRColor(0.55, 0.62, 0.70, 1.0)
+
+// Fast ticks are about a second, so this reads as real time to the player.
+public func CBHudCountdown(ticks: Int32) -> String {
+  if ticks <= 0 {
+    return "any moment";
+  }
+  let mins = ticks / 60;
+  let secs = ticks % 60;
+  if mins <= 0 {
+    return s"\(secs)s";
+  }
+  if secs < 10 {
+    return s"\(mins)m 0\(secs)s";
+  }
+  return s"\(mins)m \(secs)s";
+}
+
 public func CBHudTabName(tab: Int32) -> String {
   switch tab {
     case 1: return "LEGEND";
@@ -36,9 +82,28 @@ public class CBHud {
   private let m_subhead: ref<inkText>;
   private let m_tabline: ref<inkText>;
   private let m_body: ref<inkText>;
+  // Tab chips: one background and one label per tab, so the open tab is something you can
+  // see rather than a word in a sentence.
+  private let m_chipBg: array<ref<inkRectangle>>;
+  private let m_chipText: array<ref<inkText>>;
+  // Meters: label, value, track, fill and caption per score on the Legend screen.
+  private let m_barLabel: array<ref<inkText>>;
+  private let m_barValue: array<ref<inkText>>;
+  private let m_barTrack: array<ref<inkRectangle>>;
+  private let m_barFill: array<ref<inkRectangle>>;
+  private let m_barCap: array<ref<inkText>>;
+  // List rows: a colour pip and three columns, reused by the gang and rival screens.
+  private let m_rowPip: array<ref<inkRectangle>>;
+  private let m_rowA: array<ref<inkText>>;
+  private let m_rowB: array<ref<inkText>>;
+  private let m_rowC: array<ref<inkText>>;
 
   public func IsOpen() -> Bool {
     return this.m_tab != 0;
+  }
+
+  public func GetTab() -> Int32 {
+    return this.m_tab;
   }
 
   // Hub key pressed: advance to the next tab, closing once we step past the last.
@@ -152,6 +217,7 @@ public class CBHud {
     tabline.SetTintColor(new HDRColor(0.10, 1.80, 2.10, 1.0));
     tabline.SetAnchor(inkEAnchor.TopLeft);
     tabline.SetMargin(new inkMargin(50.0, 146.0, 0.0, 0.0));
+    tabline.SetVisible(false);   // replaced by the tab chips below
     tabline.Reparent(panel);
     this.m_tabline = tabline;
 
@@ -184,9 +250,304 @@ public class CBHud {
     footer.SetText("Press the Hub key to cycle tabs, again on the last to close.  Settings: Pause > Mods > Cyberbane.");
     footer.Reparent(panel);
 
+    // ---- Tab chips ------------------------------------------------------
+    let t = 0;
+    while t < CBHudTabCount() {
+      let chip = new inkRectangle();
+      chip.SetAnchor(inkEAnchor.TopLeft);
+      chip.SetSize(new Vector2(CBHudChipWidth() - 8.0, 34.0));
+      chip.SetMargin(new inkMargin(48.0 + Cast<Float>(t) * CBHudChipWidth(), 140.0, 0.0, 0.0));
+      chip.Reparent(panel);
+      ArrayPush(this.m_chipBg, chip);
+
+      let label = new inkText();
+      label.SetFontFamily(font);
+      label.SetFontStyle(n"Medium");
+      label.SetFontSize(19);
+      label.SetLetterCase(textLetterCase.UpperCase);
+      label.SetAnchor(inkEAnchor.TopLeft);
+      label.SetMargin(new inkMargin(58.0 + Cast<Float>(t) * CBHudChipWidth(), 146.0, 0.0, 0.0));
+      label.Reparent(panel);
+      ArrayPush(this.m_chipText, label);
+      t += 1;
+    }
+
+    // ---- Score meters ---------------------------------------------------
+    let b = 0;
+    while b < CBHudBarCount() {
+      let top = 212.0 + Cast<Float>(b) * 86.0;
+
+      let bl = new inkText();
+      bl.SetFontFamily(font);
+      bl.SetFontStyle(n"Semibold");
+      bl.SetFontSize(24);
+      bl.SetLetterCase(textLetterCase.UpperCase);
+      bl.SetTintColor(new HDRColor(0.70, 0.80, 0.88, 1.0));
+      bl.SetAnchor(inkEAnchor.TopLeft);
+      bl.SetMargin(new inkMargin(50.0, top, 0.0, 0.0));
+      bl.Reparent(panel);
+      ArrayPush(this.m_barLabel, bl);
+
+      let bv = new inkText();
+      bv.SetFontFamily(font);
+      bv.SetFontStyle(n"Semibold");
+      bv.SetFontSize(24);
+      bv.SetAnchor(inkEAnchor.TopLeft);
+      bv.SetMargin(new inkMargin(760.0, top, 0.0, 0.0));
+      bv.Reparent(panel);
+      ArrayPush(this.m_barValue, bv);
+
+      let track = new inkRectangle();
+      track.SetAnchor(inkEAnchor.TopLeft);
+      track.SetSize(new Vector2(CBHudBarWidth(), 14.0));
+      track.SetTintColor(new HDRColor(0.10, 0.14, 0.18, 1.0));
+      track.SetMargin(new inkMargin(50.0, top + 32.0, 0.0, 0.0));
+      track.Reparent(panel);
+      ArrayPush(this.m_barTrack, track);
+
+      let fill = new inkRectangle();
+      fill.SetAnchor(inkEAnchor.TopLeft);
+      fill.SetSize(new Vector2(1.0, 14.0));
+      fill.SetMargin(new inkMargin(50.0, top + 32.0, 0.0, 0.0));
+      fill.Reparent(panel);
+      ArrayPush(this.m_barFill, fill);
+
+      let cap = new inkText();
+      cap.SetFontFamily(font);
+      cap.SetFontStyle(n"Medium");
+      cap.SetFontSize(19);
+      cap.SetTintColor(new HDRColor(0.55, 0.62, 0.70, 1.0));
+      cap.SetAnchor(inkEAnchor.TopLeft);
+      cap.SetMargin(new inkMargin(50.0, top + 52.0, 0.0, 0.0));
+      cap.SetWrapping(true, 980.0);
+      cap.Reparent(panel);
+      ArrayPush(this.m_barCap, cap);
+      b += 1;
+    }
+
+    // ---- List rows ------------------------------------------------------
+    let r = 0;
+    while r < CBHudRowCount() {
+      let rtop = 212.0 + Cast<Float>(r) * 38.0;
+
+      let pip = new inkRectangle();
+      pip.SetAnchor(inkEAnchor.TopLeft);
+      pip.SetSize(new Vector2(6.0, 24.0));
+      pip.SetMargin(new inkMargin(50.0, rtop, 0.0, 0.0));
+      pip.Reparent(panel);
+      ArrayPush(this.m_rowPip, pip);
+
+      let ra = new inkText();
+      ra.SetFontFamily(font);
+      ra.SetFontStyle(n"Semibold");
+      ra.SetFontSize(23);
+      ra.SetAnchor(inkEAnchor.TopLeft);
+      ra.SetMargin(new inkMargin(70.0, rtop, 0.0, 0.0));
+      ra.Reparent(panel);
+      ArrayPush(this.m_rowA, ra);
+
+      let rb = new inkText();
+      rb.SetFontFamily(font);
+      rb.SetFontStyle(n"Medium");
+      rb.SetFontSize(22);
+      rb.SetTintColor(new HDRColor(0.72, 0.80, 0.88, 1.0));
+      rb.SetAnchor(inkEAnchor.TopLeft);
+      rb.SetMargin(new inkMargin(330.0, rtop + 1.0, 0.0, 0.0));
+      rb.Reparent(panel);
+      ArrayPush(this.m_rowB, rb);
+
+      let rc = new inkText();
+      rc.SetFontFamily(font);
+      rc.SetFontStyle(n"Medium");
+      rc.SetFontSize(21);
+      rc.SetTintColor(new HDRColor(0.55, 0.62, 0.70, 1.0));
+      rc.SetAnchor(inkEAnchor.TopLeft);
+      rc.SetMargin(new inkMargin(640.0, rtop + 2.0, 0.0, 0.0));
+      rc.Reparent(panel);
+      ArrayPush(this.m_rowC, rc);
+      r += 1;
+    }
+
     root.Reparent(win);
     this.m_root = root;
     this.m_built = true;
+  }
+
+  // ---- Widget helpers. Every one checks the handle first, so a widget that failed to
+  // build can never take the Hub (or the game) down with it. ----------------------
+
+  private func HideBars() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_barLabel) {
+      if IsDefined(this.m_barLabel[i]) { this.m_barLabel[i].SetVisible(false); }
+      if IsDefined(this.m_barValue[i]) { this.m_barValue[i].SetVisible(false); }
+      if IsDefined(this.m_barTrack[i]) { this.m_barTrack[i].SetVisible(false); }
+      if IsDefined(this.m_barFill[i]) { this.m_barFill[i].SetVisible(false); }
+      if IsDefined(this.m_barCap[i]) { this.m_barCap[i].SetVisible(false); }
+      i += 1;
+    }
+  }
+
+  private func HideRows() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_rowA) {
+      if IsDefined(this.m_rowPip[i]) { this.m_rowPip[i].SetVisible(false); }
+      if IsDefined(this.m_rowA[i]) { this.m_rowA[i].SetVisible(false); }
+      if IsDefined(this.m_rowB[i]) { this.m_rowB[i].SetVisible(false); }
+      if IsDefined(this.m_rowC[i]) { this.m_rowC[i].SetVisible(false); }
+      i += 1;
+    }
+  }
+
+  private func SetBar(idx: Int32, label: String, value: String, frac: Float, col: HDRColor, caption: String) -> Void {
+    if idx < 0 || idx >= ArraySize(this.m_barLabel) {
+      return;
+    }
+    if IsDefined(this.m_barLabel[idx]) {
+      this.m_barLabel[idx].SetText(label);
+      this.m_barLabel[idx].SetVisible(true);
+    }
+    if IsDefined(this.m_barValue[idx]) {
+      this.m_barValue[idx].SetText(value);
+      this.m_barValue[idx].SetTintColor(col);
+      this.m_barValue[idx].SetVisible(true);
+    }
+    if IsDefined(this.m_barTrack[idx]) {
+      this.m_barTrack[idx].SetVisible(true);
+    }
+    if IsDefined(this.m_barFill[idx]) {
+      let w = ClampF(frac, 0.0, 1.0) * CBHudBarWidth();
+      if w < 2.0 {
+        w = 2.0;      // always show a sliver, so an empty meter still reads as a meter
+      }
+      this.m_barFill[idx].SetSize(new Vector2(w, 14.0));
+      this.m_barFill[idx].SetTintColor(col);
+      this.m_barFill[idx].SetVisible(true);
+    }
+    if IsDefined(this.m_barCap[idx]) {
+      this.m_barCap[idx].SetText(caption);
+      this.m_barCap[idx].SetVisible(true);
+    }
+  }
+
+  private func SetRow(idx: Int32, pip: HDRColor, a: String, b: String, c: String) -> Void {
+    if idx < 0 || idx >= ArraySize(this.m_rowA) {
+      return;
+    }
+    if IsDefined(this.m_rowPip[idx]) {
+      this.m_rowPip[idx].SetTintColor(pip);
+      this.m_rowPip[idx].SetVisible(true);
+    }
+    if IsDefined(this.m_rowA[idx]) {
+      this.m_rowA[idx].SetText(a);
+      this.m_rowA[idx].SetVisible(true);
+    }
+    if IsDefined(this.m_rowB[idx]) {
+      this.m_rowB[idx].SetText(b);
+      this.m_rowB[idx].SetVisible(true);
+    }
+    if IsDefined(this.m_rowC[idx]) {
+      this.m_rowC[idx].SetText(c);
+      this.m_rowC[idx].SetVisible(true);
+    }
+  }
+
+  // The four scores, as meters you can read at a glance instead of numbers in a sentence.
+  private func RenderScores(sys: ref<CyberbaneSystem>) -> Void {
+    let score = sys.GetScore();
+    if !IsDefined(score) {
+      return;
+    }
+    let renown = score.GetRenown();
+    let dread = score.GetDread();
+    let chrome = score.GetChromeVisible();
+    let code = sys.GetCode();
+
+    this.SetBar(0, "Renown", s"\(RoundF(renown))   \(CBTierName(EnumInt(score.GetTier())))",
+      renown / 1000.0, CBHudCyan(),
+      "How widely Night City knows your name.");
+
+    this.SetBar(1, "Dread", s"\(RoundF(dread))   the street reads \(RoundF(score.GetDreadCiv()))",
+      dread / 100.0, CBHudRed(),
+      "How frightening you are. This is what makes people back off.");
+
+    this.SetBar(2, "Visible chrome", s"\(RoundF(chrome))",
+      chrome / 100.0, CBHudAmber(),
+      "What a stranger clocks from across the street. Arms read loudest.");
+
+    // Code runs -100..100, so the meter shows how far along that line you sit.
+    this.SetBar(3, "Conduct", s"\(RoundF(code))   \(CBCodeLabel(code))",
+      (code + 100.0) / 200.0, code < 0.0 ? CBHudRed() : CBHudGreen(),
+      "Clean and controlled, or one bad night from going over.");
+  }
+
+  private func RenderFactions(sys: ref<CyberbaneSystem>) -> Void {
+    let score = sys.GetScore();
+    if !IsDefined(score) {
+      return;
+    }
+    let states = sys.GetFactionStates();
+    let shown = 0;
+    let i = 0;
+    while i < ArraySize(states) && shown < CBHudRowCount() {
+      let fs = states[i];
+      i += 1;
+      if IsDefined(fs) {
+        let posture = score.GetPosture(fs.id);
+        let pip = CBHudGrey();
+        if Equals(posture, ECBPosture.Vendetta) { pip = CBHudRed(); }
+        if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
+        if Equals(posture, ECBPosture.Friendly) { pip = CBHudGreen(); }
+
+        let right = "";
+        if Equals(sys.GetPendingApexFaction(), fs.id) {
+          right = "APEX INBOUND " + CBHudCountdown(sys.GetPendingApexTicks());
+        } else {
+          let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
+          right = toApex <= 0 ? "apex due" : s"apex in \(toApex) kills";
+        }
+        this.SetRow(shown, pip, CBFactionLabel(fs.id),
+          CBPostureName(posture) + s"   fear \(RoundF(score.GetFactionFear(fs.id)))",
+          s"\(fs.kills) down   " + right);
+        shown += 1;
+      }
+    }
+  }
+
+  private func RenderRivals(sys: ref<CyberbaneSystem>) -> Void {
+    let content = sys.GetContent();
+    let rivals = sys.GetRivals();
+    let shown = 0;
+    let i = 0;
+    while i < ArraySize(rivals) && shown < CBHudRowCount() {
+      let r = rivals[i];
+      i += 1;
+      if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+        let hunting = r.state == EnumInt(ECBRivalState.Hunting);
+        this.SetRow(shown, hunting ? CBHudRed() : CBHudAmber(),
+          IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
+          CBFactionLabel(r.faction) + s"   rank \(r.rank)",
+          "arrives in " + CBHudCountdown(CBRivalHuntRemaining(r)));
+        shown += 1;
+      }
+    }
+  }
+
+  private func RenderChips() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_chipBg) {
+      let on = (i + 1) == this.m_tab;
+      if IsDefined(this.m_chipBg[i]) {
+        this.m_chipBg[i].SetTintColor(on ? new HDRColor(0.10, 1.60, 1.90, 0.85)
+                                         : new HDRColor(0.10, 0.14, 0.18, 0.85));
+      }
+      if IsDefined(this.m_chipText[i]) {
+        this.m_chipText[i].SetText(CBHudTabName(i + 1));
+        this.m_chipText[i].SetTintColor(on ? new HDRColor(0.02, 0.05, 0.07, 1.0)
+                                           : new HDRColor(0.60, 0.70, 0.78, 1.0));
+      }
+      i += 1;
+    }
   }
 
   private func Render(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
@@ -211,8 +572,32 @@ public class CBHud {
     let titleName = CBHudActiveTitle(sys);
     let tier = IsDefined(score) ? CBTierName(EnumInt(score.GetTier())) : "Nobody";
     this.m_subhead.SetText(titleName + "   |   " + tier);
-    this.m_tabline.SetText(CBHudTabName(this.m_tab) + "        [ Hub key: next ]");
-    this.m_body.SetText(CBHudClamp(CBHudBody(sys, game, this.m_tab), CBHudMaxLines()));
+
+    this.RenderChips();
+    this.HideBars();
+    this.HideRows();
+
+    // Each screen decides what it is: meters, a list, or prose. The body text sits under
+    // whatever the screen drew, rather than being the whole screen.
+    let bodyTop = 212.0;
+    if this.m_tab == 1 {
+      this.RenderScores(sys);
+      bodyTop = 566.0;
+    } else {
+      if this.m_tab == CBHudFactionsTab() {
+        this.RenderFactions(sys);
+        bodyTop = 608.0;
+      } else {
+        if this.m_tab == CBHudRivalsTab() {
+          this.RenderRivals(sys);
+          bodyTop = 608.0;
+        }
+      }
+    }
+    if IsDefined(this.m_body) {
+      this.m_body.SetMargin(new inkMargin(50.0, bodyTop, 0.0, 0.0));
+      this.m_body.SetText(CBHudClamp(CBHudBody(sys, game, this.m_tab), CBHudMaxLinesFor(this.m_tab)));
+    }
     this.m_root.SetVisible(true);
   }
 }
@@ -266,52 +651,27 @@ func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Str
 }
 
 func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
-  let score = sys.GetScore();
-  if !IsDefined(score) {
-    return "No data yet.";
-  }
-  let renown = RoundF(score.GetRenown());
-  let tier = CBTierName(EnumInt(score.GetTier()));
-  let dread = RoundF(score.GetDread());
-  let dreadCiv = RoundF(score.GetDreadCiv());
-  let code = RoundF(sys.GetCode());
-  let cred = RoundF(CBPlayerStreetCred(game));
+  // The four scores are meters now, so this screen's text only carries what a meter cannot:
+  // where you are, what the city has already sent, and what it is doing about you right now.
   let style = CBArchetypeName(sys.GetPrimaryArchetypeIndex());
-  // Readable name, not the raw id: "Santo Domingo", not "SantoDomingo".
   let districtId = CBEventDistrict(sys, game);
   let district = CBDistrictLabel(districtId);
   if Equals(district, "") {
     district = NameToString(districtId);
   }
-  let codeLabel = CBCodeLabel(sys.GetCode());
+  let cred = RoundF(CBPlayerStreetCred(game));
 
-  let chrome = RoundF(score.GetChromeVisible());
-
-  let out = s"RENOWN            \(renown)    ( \(tier) )\n";
-  out += "    How widely Night City knows your name, spread out from where you earned it.\n\n";
-  out += s"DREAD             \(dread)    ( the street reads it as \(dreadCiv) )\n";
-  out += "    How frightening you are. This is what makes people back off.\n\n";
-  out += s"VISIBLE CHROME    \(chrome)\n";
-  out += "    What a stranger clocks from across the street. Arms read loudest.\n\n";
-  out += s"CODE              \(code)    ( \(codeLabel) )\n";
-  out += "    How you work. Clean and controlled, or one bad night from going over.\n\n";
-  out += s"STREET CRED  \(cred)        STYLE  \(style)        HERE  \(district)\n\n";
+  let out = s"STREET CRED \(cred)      STYLE \(style)      HERE \(district)\n\n";
   let stats = sys.GetStats();
   if IsDefined(stats) {
-    let apexMult = RoundF(CBConfig.ApexHealthMultBase()
-      + ClampF(score.GetMenace() / 100.0, 0.0, 1.0) * CBConfig.ApexHealthMultRange());
-    out += s"APEX HUNTERS PUT DOWN   \(stats.apexKills)        RIVALS PUT DOWN   \(stats.rivalsSlain)\n";
-    out += s"    Keep hitting one gang and they send an apex hunter, sized to your build:\n";
-    out += s"    right now roughly \(apexMult)x what their rank and file take.\n\n";
-    out += s"WORK NOBODY SAW   \(stats.unattributed)\n";
-    out += "    Kills no living witness saw. Almost no reputation you can claim, because\n";
-    out += "    nobody can say it was you, but the bodies still frighten the district.\n\n";
+    out += s"APEX PUT DOWN \(stats.apexKills)      RIVALS PUT DOWN \(stats.rivalsSlain)      UNSEEN \(stats.unattributed)\n";
+    out += "    Keep hitting one gang and they send an apex hunter, sized to your build.\n";
+    out += "    Work nobody saw builds almost no reputation you can claim.\n\n";
   }
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
   return out;
 }
-
 // A live readout of what the city is actually doing about you right now, and what it would
 // take to move the needle. This is the line that answers "is any of this working?".
 func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
@@ -381,49 +741,17 @@ func CBHudDreadReason(sys: ref<CyberbaneSystem>) -> String {
 }
 
 func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
-  let score = sys.GetScore();
   let states = sys.GetFactionStates();
   if ArraySize(states) == 0 {
-    return "No gang has formed an opinion of you yet. Work in their territory and that changes.";
+    return "No gang has formed an opinion of you yet.\n\nWork in their territory and that changes quickly.";
   }
-  let out = "How each gang reads you. Standing is whether they like you, fear is how badly\n";
-  out += "they want to avoid you, respect is whether they rate you as a professional.\n\n";
-  let shown = 0;
-  let i = 0;
-  while i < ArraySize(states) && shown < 13 {
-    let fs = states[i];
-    i += 1;
-    if IsDefined(fs) {
-      let postureEnum = score.GetPosture(fs.id);
-      let posture = CBPostureName(postureEnum);
-      let st = RoundF(fs.standing);
-      let fear = RoundF(score.GetFactionFear(fs.id));
-      let resp = RoundF(score.GetFactionRespect(fs.id));
-      out += CBHudPad(NameToString(fs.id), 15) + CBHudPad(posture, 11)
-        + s"standing \(st)   fear \(fear)   respect \(resp)   kills \(fs.kills)";
-      // How close this gang is to sending its apex after you, so the counter is visible
-      // rather than something you have to take on faith.
-      let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
-      if toApex <= 0 {
-        out += "   APEX DUE";
-      } else {
-        out += s"   apex in \(toApex)";
-      }
-      // While a gang has a vendetta with you they put a price on your head (spec §9.9).
-      if Equals(postureEnum, ECBPosture.Vendetta) {
-        let bounty = 2000 + 200 * fs.kills;
-        out += s"   bounty \(bounty)eb";
-      }
-      out += "\n";
-      shown += 1;
-    }
-  }
-  out += "\nWary means they keep an eye on you. Hostile means they draw on sight.\n";
-  out += "Vendetta means they hunt you and put a price on your head.\n";
+  let out = "Standing is whether they like you. Fear is how badly they want to avoid you.\n";
+  out += "The last column counts their dead and how close they are to sending an apex.\n\n";
+  out += "Wary means they keep an eye on you. Hostile means they draw on sight.\n";
+  out += "Vendetta means they hunt you and put a price on your head.\n\n";
   out += "[ Shift + Hub key ]  buy off the worst gang you can afford.";
   return out;
 }
-
 func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
   let states = sys.GetDistrictStates();
   if ArraySize(states) == 0 {
@@ -467,30 +795,25 @@ func CBRivalSourceLine(source: Int32) -> String {
 
 func CBHudRivals(sys: ref<CyberbaneSystem>) -> String {
   let rivals = sys.GetRivals();
-  let content = sys.GetContent();
-  let out = "People who got away, or got back up. They climb the ranks while you are busy\n";
-  out += "elsewhere, and sooner or later they come looking for you.\n\n";
-  let shown = 0;
+  let any = false;
   let i = 0;
-  while i < ArraySize(rivals) && shown < 10 {
+  while i < ArraySize(rivals) {
     let r = rivals[i];
     i += 1;
     if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-      let name = IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival";
-      out += name + "\n";
-      out += "    " + CBHudPad(NameToString(r.faction), 14) + s"rank \(r.rank)   "
-           + CBHudPad(CBRivalStateName(r.state), 10) + CBRivalSourceLine(r.source) + "\n";
-      shown += 1;
+      any = true;
     }
   }
-  if shown == 0 {
+  if !any {
     return "No active rivals yet.\n\nLeave someone alive after you put them down, or let a wounded\nenemy get away, and one of them will come back with your name.";
   }
-  out += "\nHunting means they are actively looking for you. Every time one escapes\n";
-  out += "you it comes back a rank higher and harder to put down.";
+  let out = "People who got away, or got back up. The clock is how long until they catch\n";
+  out += "up with you, and they arrive when it runs out, wherever you are.\n\n";
+  out += "Every time one escapes you it comes back a rank higher, harder to put down,\n";
+  out += "and quicker to find you next time.\n\n";
+  out += "[ Shift + Hub key ]  forget every rival (use after updating the mod).";
   return out;
 }
-
 func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
   let unlocked = sys.GetUnlockedTitles();
   let content = sys.GetContent();

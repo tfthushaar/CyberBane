@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.0.0).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.1.0).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -80,7 +80,9 @@ page describes what the mod does and how it installs.
 - **Titles and the file they keep on you.** Earn titles such as Butcher of Watson, Chrome
   Saint, or the top title Cyberbane. The Log tab is the street's file on you, put together
   from what people actually witnessed, so work nobody saw never reaches the page.
-- **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable). Each
+- **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable).
+  Your scores are meters, gangs and rivals are colour-coded rows, and every rival shows a
+  countdown to when they will catch up with you. Each
   press steps through tabs for your reputation, the factions, the districts, your rivals, your
   titles, and the log; the press after the last tab closes it. Every screen explains what its
   numbers mean rather than throwing abbreviations at you, and the first one tells you exactly what
@@ -161,6 +163,8 @@ and rebind the Hub key.
   systems that overlap (hostility on sight, hit squads, faction-colour disguises), keeping the
   rest. Night City Remembers is treated the same way, since it replaces They Will Remember. You
   can force the compatibility mode on or off yourself in Mod Settings.
+- Street Sense: supported, detected automatically, no setup. It owns crowds noticing and
+  greeting you, so Cyberbane stands its own overheard lines down and keeps everything else.
 - Much Better AI: supported, detected automatically, no setup. Its Nerve system owns morale,
   so Cyberbane stands down its own morale break and terror push rather than panicking the same
   enemy twice. It keeps tracking who got away, so Rivals still come from enemies Much Better AI

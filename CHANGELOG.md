@@ -3,6 +3,40 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-10-29
+
+### Fixed
+- **The crowd really does react now.** Cyberbane only ever noticed an NPC if that NPC happened
+  to arrive at a quiet moment. Anyone who turned up while the game was busy, which is most of
+  a crowd while you are walking, was skipped and never looked at again. They were invisible to
+  the mod for good, which is why nobody flinched even at point blank.
+- **Rivals have names.** Anyone from the police or a corp came out as "Unknown", because those
+  factions had no names to draw on. They do now, and nobody falls back to being called Unknown
+  any more.
+- **Killing a Rival counts.** If one had been hanging around long enough for Cyberbane to stop
+  tracking it, killing it registered as nothing at all.
+- The Rivals screen ran its columns into each other.
+
+### Added
+- **You can see them coming.** Rivals used to arrive on a dice roll, so one might show up in
+  ten seconds or never. Each one now has a clock, the Hub shows it, and they arrive the moment
+  it runs out, wherever you are. Higher ranks find you faster. The gang screen shows the same
+  countdown for an apex hunter on its way.
+- **A rebuilt Hub.** Tabs are tabs you can see, your scores are meters rather than numbers in a
+  sentence, and gangs and rivals are colour-coded rows. Red means they are coming for you.
+- **Shift + Hub key on the Rivals screen forgets every rival.** Updating the mod mid-playthrough
+  could leave rivals built from records that no longer made sense, with no way to clear them.
+
+### Changed
+- Rivals and apex hunters arrive much closer to you. They used to turn up far enough away that
+  you could drive off before meeting them.
+- Rivals come from sparing and from enemies who get away more often again.
+
+### Compatibility
+- **Street Sense** is detected automatically. It owns crowds noticing and calling out to you,
+  so Cyberbane stands its own overheard lines down and sticks to being feared. Everything else
+  carries on. Thanks to DigitalVixen for the mod.
+
 ## [1.0.0] - 2026-10-28
 
 First full release. Everything below is what changed since 0.1.19.

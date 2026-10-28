@@ -74,11 +74,28 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
 }
 
 // Full on-screen name, e.g. Kenji "Who Ran" Morita.
+// A last-resort handle so nobody is ever called "Unknown". Keyed off the Rival id, so the
+// same Rival always reads the same way.
+func CBFallbackHandle(id: Int32) -> String {
+  switch CBHashIndex(id, 7, 8) {
+    case 0: return "Nomad";
+    case 1: return "Stray";
+    case 2: return "Shade";
+    case 3: return "Quill";
+    case 4: return "Bishop";
+    case 5: return "Crow";
+    case 6: return "Vance";
+    default: return "Dex";
+  }
+}
+
 public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> String {
   if !IsDefined(rival) {
-    return "Unknown";
+    return "A rival";
   }
-  let first = "Unknown";
+  // Falls back to a generic street handle rather than the literal word "Unknown", which is
+  // what every Rival from an unpooled faction used to be called.
+  let first = CBFallbackHandle(rival.id);
   let last = "";
   if IsDefined(content) {
     let pool = content.GetFactionNames(rival.faction);
@@ -252,6 +269,58 @@ public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>
 }
 
 // Slay a Rival (spec §10.7): archive it, award renown, bump stats, log.
+// Work out which Rival a dead CB_Rival puppet was.
+//
+// This used to rely solely on CyberbaneSystem's "active rival id". That id is cleared
+// whenever an encounter is retired, so a Rival who was spawned, left alone long enough to be
+// retired, and then killed anyway counted for nothing - which is what players hit when they
+// killed one and the Hub never registered it. Falling back to a hunting Rival of the same
+// faction catches those, and returns null rather than guessing when there is no match.
+public func CBResolveSlainRival(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> ref<CBRival> {
+  if !IsDefined(sys) || !IsDefined(puppet) {
+    return null;
+  }
+  let activeId = sys.GetActiveRivalId();
+  if activeId > 0 {
+    let byId = sys.FindRivalById(activeId);
+    if IsDefined(byId) {
+      return byId;
+    }
+  }
+  let faction = CBClassifyFaction(puppet);
+  if Equals(faction, n"") {
+    return null;
+  }
+  let rivals = sys.GetRivals();
+  let i = 0;
+  while i < ArraySize(rivals) {
+    let r = rivals[i];
+    i += 1;
+    if IsDefined(r) && Equals(r.faction, faction)
+       && (r.state == EnumInt(ECBRivalState.Hunting) || r.state == EnumInt(ECBRivalState.Active)) {
+      return r;
+    }
+  }
+  return null;
+}
+
+// Forget every Rival on this save. Offered because a mod update mid-playthrough can leave
+// Rivals that no longer line up with the records they were built from, and there was no way
+// to clear them short of starting over.
+public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int32 {
+  if !IsDefined(sys) {
+    return 0;
+  }
+  let removed = sys.ClearRivals();
+  sys.SetActiveRivalId(0);
+  let des = GameInstance.GetDynamicEntitySystem();
+  if IsDefined(des) {
+    des.DeleteTagged(n"CB_Rival");
+  }
+  CBLog.Info(n"Rivals", s"Purged \(removed) rivals at the player's request.");
+  return removed;
+}
+
 public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: ref<CBRival>, at: Float, district: CName) -> Void {
   if !IsDefined(sys) || !IsDefined(rival) {
     return;

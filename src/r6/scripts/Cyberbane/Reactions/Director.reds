@@ -27,6 +27,9 @@ func CBWarningsOn() -> Bool {
 
 public class CBReactionDirector {
   private let m_whisperCooldownTicks: Int32;
+  // Street Sense detection, resolved once and kept: 0 unknown, 1 present, 2 absent. The
+  // scan allocates, and whispers are decided every tick, so it must not run every tick.
+  private let m_streetSense: Int32;
   // NPCs whose attitude Cyberbane overrode, tracked so the kill switch can revert them.
   private let m_hostileNpcs: array<wref<ScriptedPuppet>>;
 
@@ -69,6 +72,17 @@ public class CBReactionDirector {
     if IsDefined(rt) && rt.HasSettings() {
       let s = rt.GetSettings();
       whispersOn = s.whispers;
+      // Street Sense gives crowds their own spoken reactions to V. Ours would talk over
+      // them, so it owns being noticed and Cyberbane sticks to being feared.
+      if this.m_streetSense == 0 {
+        this.m_streetSense = CBDetectStreetSense() ? 1 : 2;
+        if this.m_streetSense == 1 {
+          CBLog.Info(n"Core", "Street Sense detected; standing Cyberbane's whispers down so the street does not talk over itself.");
+        }
+      }
+      if this.m_streetSense == 1 {
+        whispersOn = false;
+      }
       gangOn = s.gangReactions;
       hostileOnSight = s.hostileOnSight;
       civOn = s.civReactions;

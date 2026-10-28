@@ -31,3 +31,28 @@ public func CBMbaiActive() -> Bool {
 public func CBExternalMoraleOwner() -> Bool {
   return CBMbaiActive();
 }
+
+// Street Sense (Nexus 28989) by DigitalVixen gives crowds their own reactions to V: NPCs
+// clock what you are carrying and what you are wearing, double-take, and call out as you
+// pass. That is the same ground as Cyberbane's whispers - overheard lines from people
+// reacting to you - so with both installed the street talks over itself.
+//
+// Cyberbane stands its whispers down and keeps everything else. The two are not really
+// rivals: Street Sense owns being noticed, Cyberbane owns being feared, and a crowd that
+// greets you and then scatters from you is the point.
+//
+// Detected through Mod Settings rather than ModuleExists, because the name players see in
+// the settings menu is steadier than a module path we cannot verify without the mod in hand.
+// Returns false while Mod Settings is still registering, and that answer is not cached.
+public func CBDetectStreetSense() -> Bool {
+  let mods = ModSettings.GetMods();
+  if ArraySize(mods) == 0 {
+    return false;
+  }
+  for mod in mods {
+    if StrContains(NameToString(mod), "Street Sense") || StrContains(NameToString(mod), "StreetSense") {
+      return true;
+    }
+  }
+  return false;
+}

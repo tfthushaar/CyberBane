@@ -48,26 +48,74 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     return;
   }
 
-  // Find a Rival ready to come after V. Active or already Hunting both count, so your
-  // rivals actually turn up instead of only ever living on the Hub.
+}
+
+// How long this Rival takes to find you, in fast ticks. Higher rank, better information.
+public func CBRivalHuntTicksFor(rank: Int32) -> Int32 {
+  return Max(CBConfig.RivalHuntTicksMin(),
+             CBConfig.RivalHuntTicksBase() - rank * CBConfig.RivalHuntTicksPerRank());
+}
+
+// Ticks until this Rival turns up, or 0 when it is not counting down.
+public func CBRivalHuntRemaining(r: ref<CBRival>) -> Int32 {
+  if !IsDefined(r) {
+    return 0;
+  }
+  return r.huntTicks;
+}
+
+// Drive the hunt countdown, once per fast tick.
+//
+// Rivals used to arrive on a dice roll taken every slow tick, which meant one might appear in
+// seconds or never, and there was nothing to show the player because nothing was actually
+// scheduled. Each hunting Rival now has a real countdown, the Hub shows it, and the spawn
+// lands the moment it reaches zero.
+//
+// Crash safety: this only reads and writes our own persisted state and calls CBSpawnGroup,
+// which already refuses while the world is unsettled. It is bounded by the Rival cap (15).
+public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) {
+    if !rt.IsEnabled() {
+      return;
+    }
+    if rt.HasSettings() && !rt.GetSettings().rivals {
+      return;
+    }
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return;
+  }
+  // One Rival in the world at a time, and never on top of a fight already in progress.
+  let busy = des.IsPopulated(n"CB_Rival");
+  let player = GetPlayer(game);
+  let inCombat = !IsDefined(player) || player.IsInCombat();
+
+  let now = CBGameSeconds(game);
   let rivals = sys.GetRivals();
   let i = 0;
   while i < ArraySize(rivals) {
     let r = rivals[i];
     i += 1;
-    // Check the handle before reading anything off it.
-    if IsDefined(r) {
-      let seeking = r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
-      if seeking
-         && TDBID.IsValid(r.recordID)
-         && (r.nextEligibleAt <= 0.0 || now >= r.nextEligibleAt) {
-        // A Rival that has climbed the ranks presses harder than a fresh one, so it turns up
-        // more often. Capped so even a veteran nemesis is not waiting around every corner.
-        let chance = ClampF(CBConfig.RivalEncounterBaseChance()
-          + Cast<Float>(r.rank) * CBConfig.RivalEncounterChancePerRank(), 0.0, 0.75);
-        if RandF() < chance {
-          CBSpawnRival(sys, game, r, now);
-          return;
+    if IsDefined(r) && TDBID.IsValid(r.recordID)
+       && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+      if r.huntTicks <= 0 {
+        r.huntTicks = CBRivalHuntTicksFor(r.rank);   // start the clock
+      } else {
+        r.huntTicks -= 1;
+        if r.huntTicks <= 0 {
+          if busy || inCombat {
+            // Hold at the door rather than losing the appointment entirely.
+            r.huntTicks = CBConfig.RivalHuntRetryTicks();
+          } else {
+            CBSpawnRival(sys, game, r, now);
+            r.huntTicks = CBRivalHuntTicksFor(r.rank);
+            return;   // one arrival per tick
+          }
         }
       }
     }

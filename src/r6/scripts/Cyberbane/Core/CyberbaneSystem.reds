@@ -150,15 +150,25 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !IsDefined(this.m_registry) {
       return;
     }
-    // Don't touch entities while the world is loading / fast travelling / mid-scene: during a
-    // stream flood they attach by the hundreds and the world is still being rebuilt (crash safety).
-    if !CBWorldStable(this.GetGameInstance()) {
-      return;
-    }
     let puppet = event.GetEntity() as ScriptedPuppet;
     if IsDefined(puppet) {
+      // Registering is always safe and must always happen. Add() stores a weak reference and
+      // checks IsPlayer; cbSeenTick is a plain field write. Neither reads a native component,
+      // and CBNpcSafe holds every reader off for NpcReadyTicks afterwards anyway.
+      //
+      // This used to sit behind CBWorldStable, which meant any NPC that attached while the
+      // world was busy was dropped and never looked at again - there is no second chance,
+      // nothing re-scans. Crowds stream in constantly while you walk, so a large share of
+      // them were invisible to Cyberbane for their whole life, and the city appeared to
+      // ignore V no matter how frightening V was.
       this.m_registry.Add(puppet);
       puppet.cbSeenTick = this.m_tickCount;   // leave it alone until its components are ready
+
+      // Everything below queries the dynamic entity system and writes attitude and stats on a
+      // freshly attached puppet, which is the part that is genuinely unsafe mid-stream.
+      if !CBWorldStable(this.GetGameInstance()) {
+        return;
+      }
       // Our own spawned hostiles (hit squads, Rival encounters) start aggressive toward V.
       let des = GameInstance.GetDynamicEntitySystem();
       if IsDefined(des) {
@@ -205,7 +215,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Shift + Hub key while the Hub is open brokers peace with the worst gang you can
     // buy off, without changing tab (spec §11.3 Hub action).
     if event.IsShiftDown() && this.m_hud.IsOpen() {
-      CBBrokerPeaceBest(this, game);
+      // On the Rivals screen the same shortcut wipes your Rivals instead of brokering peace.
+      // Updating the mod mid-playthrough can leave Rivals built from records that no longer
+      // make sense, and there was no way to clear them without starting a new save.
+      if this.m_hud.GetTab() == CBHudRivalsTab() {
+        let removed = CBPurgeRivals(this, game);
+        CBShowMessage(game, s"Cyberbane: cleared \(removed) rivals.", 4.0);
+      } else {
+        CBBrokerPeaceBest(this, game);
+      }
       this.m_hud.Refresh(this, game);
       return;
     }
@@ -342,6 +360,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBSparedSweep(this, game);          // mercy the hit hook did not see (spec §10.2)
     CBProcessEscapees(this, game);
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
+    CBRivalHuntTick(this, game);        // rivals close in on a visible countdown
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) {
@@ -398,6 +417,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Counts the warning window down by one tick and reports what is left.
+  // Fast ticks left before the announced apex walks in. Shown in the Hub.
+  public func GetPendingApexTicks() -> Int32 {
+    return this.m_pendingApexTicks;
+  }
+
   public func TickDownPendingApex() -> Int32 {
     if this.m_pendingApexTicks > 0 {
       this.m_pendingApexTicks -= 1;
@@ -588,6 +612,14 @@ public class CyberbaneSystem extends ScriptableSystem {
   private func IsArchivedRival(r: ref<CBRival>) -> Bool {
     return r.state == EnumInt(ECBRivalState.Slain)
         || r.state == EnumInt(ECBRivalState.Retired);
+  }
+
+  // Forget every Rival. Returns how many went. Used by the Hub's clear shortcut, because an
+  // update mid-playthrough can leave Rivals built from records that no longer make sense.
+  public func ClearRivals() -> Int32 {
+    let n = ArraySize(this.m_rivals);
+    ArrayClear(this.m_rivals);
+    return n;
   }
 
   public func FindRivalById(id: Int32) -> ref<CBRival> {

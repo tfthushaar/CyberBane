@@ -110,6 +110,10 @@ public class CBRival {
   public persistent let createdAt: Float;
   public persistent let lastSeenAt: Float;
   public persistent let nextEligibleAt: Float;
+  // Fast ticks (about one a second) until this Rival turns up. Deliberately NOT persistent:
+  // it is a live countdown for this session, it is shown in the Hub, and a save reloads it
+  // fresh rather than resuming a stale clock. 0 means "not counting yet".
+  public let huntTicks: Int32;
   // No `history` array here any more. It was an array<ref<CBRivalEvent>> nested inside this
   // class, and this class lives inside the persisted m_rivals array - the exact shape that
   // crashed the game via CBRumor.reached. It was also write-only: nothing ever read it back,

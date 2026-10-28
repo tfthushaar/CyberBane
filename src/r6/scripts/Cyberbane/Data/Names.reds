@@ -5,6 +5,27 @@
 // strings survive any encoding round-trip.
 
 public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
+  // Cops and corps had no pool at all, so every Rival from them came out as "Unknown".
+  // They use real names rather than street handles.
+  c.AddFactionNames(CBMakeFactionNames(n"NCPD",
+    ["Marcus", "Dana", "Elliot", "Rosa", "Tyler"],
+    ["Reyes", "Okafor", "Vasquez", "Delgado", "Brennan"]));
+  c.AddFactionNames(CBMakeFactionNames(n"Police",
+    ["Marcus", "Dana", "Elliot", "Rosa", "Tyler"],
+    ["Reyes", "Okafor", "Vasquez", "Delgado", "Brennan"]));
+  c.AddFactionNames(CBMakeFactionNames(n"Arasaka",
+    ["Hiroshi", "Yuki", "Kenzo", "Mariko", "Takeda"],
+    ["Oshima", "Nakai", "Fujimoto", "Arakawa"]));
+  c.AddFactionNames(CBMakeFactionNames(n"Militech",
+    ["Grant", "Dallas", "Vera", "Cole", "Shane"],
+    ["Hollister", "Pryce", "Kowalski", "Ramsey"]));
+  c.AddFactionNames(CBMakeFactionNames(n"KangTao",
+    ["Wei", "Lian", "Jun", "Mei", "Bohai"],
+    ["Zhao", "Ling", "Xu", "Chen"]));
+  c.AddFactionNames(CBMakeFactionNames(n"Aldecaldos",
+    ["Santiago", "Paloma", "Esteban", "Luz", "Mateo"],
+    ["Ibarra", "Cortes", "Mendoza", "Rivas"]));
+
   c.AddFactionNames(CBMakeFactionNames(n"TygerClaws",
     ["Kenji", "Haru", "Daisuke", "Aiko", "Ren"],
     ["Morita", "Sato", "Kuroda", "Ishikawa"]));
