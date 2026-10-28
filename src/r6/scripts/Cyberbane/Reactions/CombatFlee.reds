@@ -59,6 +59,32 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
 }
 
 // Called from OnHit when V has just damaged this puppet.
+// How steady this one is under fire: the chance it holds its ground rather than breaking.
+// A flat coin flip made every enemy behave the same, which read as random rather than as
+// character. Rank decides it, so bosses never run and rank and file break often.
+//
+// The idea of giving each NPC a temperament instead of one global flee chance comes from
+// Much Better AI (Nexus 31402) by cshiai. The implementation here is our own.
+public func CBNerve(puppet: ref<ScriptedPuppet>) -> Float {
+  let rec = puppet.GetRecord();
+  if IsDefined(rec) {
+    let rarity = rec.Rarity();
+    if IsDefined(rarity) {
+      let t = rarity.Type();
+      if Equals(t, gamedataNPCRarity.Boss) {
+        return 1.0;    // never runs
+      }
+      if Equals(t, gamedataNPCRarity.Elite) {
+        return 0.75;
+      }
+      if Equals(t, gamedataNPCRarity.Officer) {
+        return 0.60;
+      }
+    }
+  }
+  return 1.0 - CBConfig.FleeChance();   // rank and file
+}
+
 public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(sys) || !IsDefined(puppet) || puppet.cbLowHealthFled {
     return;
@@ -98,9 +124,25 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     return;
   }
 
-  // Decided once, at low health: some break and run, some fight to the death.
+  // Decided once, at low health.
   puppet.cbLowHealthFled = true;
-  if intensity <= 0.0 || RandF() > CBConfig.FleeChance() {
+
+  // Track them whether or not they run. Leaving a wounded enemy standing is the player
+  // sparing them just as much as letting one escape is, and tying this record to the flee
+  // roll meant half of everyone you wounded and walked away from was never even considered
+  // for a Rival. Tracking costs nothing: the escapee list is session-only and self-pruning.
+  let e = new CBEscapee();
+  e.puppet = puppet;
+  e.entityId = puppet.GetEntityID();
+  e.faction = faction;
+  e.record = puppet.GetRecordID();
+  e.at = CBGameSeconds(game);
+  let des = GameInstance.GetDynamicEntitySystem();
+  e.wasRival = IsDefined(des) && des.IsTagged(e.entityId, n"CB_Rival");
+  sys.AddEscapee(e);
+
+  // Whether they actually break and run. Steadier ranks hold their ground (CBNerve).
+  if intensity <= 0.0 || RandF() < CBNerve(puppet) {
     return;
   }
 
@@ -113,16 +155,6 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
       b.TriggerSingleBroadcast(puppet, gamedataStimType.Terror);
     }
   }
-
-  let e = new CBEscapee();
-  e.puppet = puppet;
-  e.entityId = puppet.GetEntityID();
-  e.faction = faction;
-  e.record = puppet.GetRecordID();
-  e.at = CBGameSeconds(game);
-  let des = GameInstance.GetDynamicEntitySystem();
-  e.wasRival = IsDefined(des) && des.IsTagged(e.entityId, n"CB_Rival");
-  sys.AddEscapee(e);
 }
 
 // Resolve pending escapees on the fast tick. Deaths already dropped the ones V caught, so

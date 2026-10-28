@@ -378,6 +378,14 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
       let resp = RoundF(score.GetFactionRespect(fs.id));
       out += CBHudPad(NameToString(fs.id), 15) + CBHudPad(posture, 11)
         + s"standing \(st)   fear \(fear)   respect \(resp)   kills \(fs.kills)";
+      // How close this gang is to sending its apex after you, so the counter is visible
+      // rather than something you have to take on faith.
+      let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
+      if toApex <= 0 {
+        out += "   APEX DUE";
+      } else {
+        out += s"   apex in \(toApex)";
+      }
       // While a gang has a vendetta with you they put a price on your head (spec §9.9).
       if Equals(postureEnum, ECBPosture.Vendetta) {
         let bounty = 2000 + 200 * fs.kills;

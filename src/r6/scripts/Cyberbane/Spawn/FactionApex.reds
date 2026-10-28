@@ -110,7 +110,9 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       // Their toughest if V has met one, otherwise whoever V has been fighting.
       let record = TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
       if TDBID.IsValid(record) && (fs.kills - fs.apexAtKills) >= CBConfig.ApexKillThreshold() {
-        fs.apexAtKills = fs.kills;   // the next one needs fresh bodies
+        // The kills are spent in CBProcessPendingApex, and only once someone has actually
+        // arrived. Spending them here meant a spawn that failed for any reason quietly cost
+        // the player twenty bodies and they simply never saw an apex.
         sys.SetPendingApex(fs.id, CBConfig.ApexWarningTicks());
 
         let name = CBApexName(CBContent(game), fs.id, fs.kills);
@@ -148,7 +150,14 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   // CBSpawnGroup will refuse while the world is still streaming in, so this can only land on
   // a settled frame. CB_Apex is also tagged n"Cyberbane", so the session sweep clears it.
-  CBSpawnGroup(game, record, n"", 1, n"CB_Apex", CBConfig.ApexSpawnDistance());
+  let arrived = CBSpawnGroup(game, record, n"", 1, n"CB_Apex", CBConfig.ApexSpawnDistance());
+  if arrived <= 0 {
+    // The world was not settled enough to place anyone. Keep the kills on the books so the
+    // next slow tick tries again, rather than charging the player for a no-show.
+    CBLog.Info(n"Spawn", s"Apex spawn for \(NameToString(faction)) did not land; it will try again.");
+    return;
+  }
+  fs.apexAtKills = fs.kills;   // paid for: the next one needs fresh bodies
   if CBConfig.ApexEscortCount() > 0 && TDBID.IsValid(fs.sampleRecord) {
     CBSpawnGroup(game, fs.sampleRecord, n"", CBConfig.ApexEscortCount(), n"CB_Squad",
       CBConfig.ApexSpawnDistance() + 4.0);

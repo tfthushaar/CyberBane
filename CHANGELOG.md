@@ -3,6 +3,32 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-10-28
+
+First full release. Everything below is what changed since 0.1.19.
+
+### Fixed
+- **Wounding someone and walking away now makes a Rival.** Cyberbane only remembered an enemy
+  if it first decided they should run, so half of everyone you shot to the brink and left
+  behind was never even considered. It remembers them either way now. This is the one that
+  was stopping "leave them alive" from working.
+- **A gang that never managed to send its apex no longer loses the bodies anyway.** The kill
+  count was spent the moment the warning went out, so if the hunter failed to turn up for any
+  reason you were charged twenty kills for someone who never arrived, and it looked like the
+  feature did not exist. The count is only spent once they are actually there.
+- **Nobody arriving at all is no longer possible.** Cyberbane looks for solid ground before it
+  puts anyone down, and if that search came up empty it simply did not place them. One bad
+  search quietly switched off Rivals, hit squads and apex hunters together. It now falls back
+  to putting them in close rather than not at all.
+
+### Added
+- **Enemies have nerve.** Who breaks and runs now depends on what they are. Rank and file
+  crack, officers mostly hold, elites rarely run and bosses never do, instead of everyone
+  rolling the same dice. Thanks to cshiai's Much Better AI for the idea of giving each enemy a
+  temperament rather than one global chance.
+- The Hub's gang screen counts down to each gang's apex hunter, so you can see how close they
+  are instead of guessing.
+
 ## [0.1.19] - 2026-10-28
 
 ### Fixed

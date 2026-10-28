@@ -102,6 +102,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let i = 0;
   while i < count {
     let lane = Cast<Float>(i) - Cast<Float>(count - 1) * 0.5;   // centre the row on the base point
+    let placed = false;
     let attempt = 0;
     while attempt < 3 {
       let d = dist * CBSpawnDistanceScale(attempt);
@@ -115,9 +116,22 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
                          new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0), orient, squadTag) {
           spawned += 1;
         }
+        placed = true;
         break;   // this lane is placed, or the engine refused it; either way stop retrying
       }
       attempt += 1;
+    }
+    // Last resort: put them in close, at V's own height. This is the pre-0.1.15 behaviour and
+    // it can look wrong on a ledge, but a trace that finds nothing must not mean nobody ever
+    // arrives - that silently disables Rivals, hit squads and apex hunters all at once, which
+    // is a far worse bug than an awkward entrance.
+    if !placed {
+      let fx = ppos.X - fwd.X * dist * 0.4 + rx * lane * 2.5;
+      let fy = ppos.Y - fwd.Y * dist * 0.4 + ry * lane * 2.5;
+      if CBCreateSpawn(des, record, appearance,
+                       new Vector4(fx, fy, ppos.Z, 1.0), orient, squadTag) {
+        spawned += 1;
+      }
     }
     i += 1;
   }
