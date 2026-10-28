@@ -73,10 +73,28 @@ public func CBWorldStable(game: GameInstance) -> Bool {
 // Reading the game's own zone means this covers every such place without Cyberbane having
 // to carry a list of locations (spec §16, S-13).
 public func CBPlayerInSafeZone(game: GameInstance) -> Bool {
-  // Fail open, not closed. This one flag stands down crowds, gangs, morale, apex hunters and
-  // the mercy check all at once, so a read that quietly returns "safe" makes the entire mod
-  // look dead and gives the player nothing to go on. Someone flinching in a bar is a cosmetic
-  // mistake; the whole mod doing nothing is not.
+  // Ask the system that owns safe areas whether the point V is standing on is one.
+  //
+  // This replaces comparing the player-state blackboard's zone integer against
+  // `gamePSMZones.Safe`. That comparison was the mod's weakest link: the enum's numeric value
+  // cannot be confirmed from a compile, and if it happened to be 0 then an unset or
+  // default-initialized blackboard read as "safe" everywhere - which silently stands down
+  // crowds, gangs, morale, apex hunters and the mercy check all at once and presents as the
+  // city simply ignoring V. A boolean query about a position carries no such ambiguity, and
+  // being a live spatial query it cannot go stale the way cached player state can.
+  //
+  // Crash safety: `SafeAreaManager` is checked before use, the query takes a position rather
+  // than an entity so nothing is dereferenced, and this runs once per fast tick on the
+  // player's own position - the same frequency as the blackboard read it replaces.
+  let sam = GameInstance.GetSafeAreaManager(game);
+  let player = GetPlayer(game);
+  if IsDefined(sam) && IsDefined(player) {
+    return sam.IsPointInSafeArea(player.GetWorldPosition());
+  }
+
+  // The manager is not up yet (a load, or early streaming). Fall back to the old zone read,
+  // and fail open rather than closed: someone flinching in a bar is a cosmetic mistake, the
+  // whole mod doing nothing is not.
   let bbs = GameInstance.GetBlackboardSystem(game);
   if !IsDefined(bbs) {
     return false;

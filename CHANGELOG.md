@@ -34,9 +34,11 @@ First full release. Everything below is what changed since 0.1.19.
   now says which of the reasons it is: the mod switched off, crowd reactions switched off, the
   game treating where you stand as a safe area, or nobody nearby being tracked. It also shows
   how many people it is watching.
-- Cyberbane no longer stands everything down when it cannot read whether you are in a safe
-  area. It used to assume you were, which quietly switched off crowds, gangs, morale and apex
-  hunters at once and looked exactly like the mod doing nothing.
+- **Cyberbane now asks the game directly whether you are standing somewhere safe**, instead of
+  reading a player state value it had to interpret. That interpretation was the mod's weakest
+  point: if it got the answer wrong it stood down crowds, gangs, morale, apex hunters and the
+  mercy check all at once, which looks exactly like the mod doing nothing at all. And if it
+  cannot get an answer now, it carries on rather than assuming the worst.
 
 ### Added
 - **Enemies have nerve.** Who breaks and runs now depends on what they are. Rank and file
