@@ -3,6 +3,22 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.8] - 2026-10-30
+
+### Fixed
+- **You can lose them now.** Hunters were being handed your position every few seconds no
+  matter how far you got, which is a leash rather than a chase. Get about a hundred and twenty
+  metres clear of all of them and stay clear for twenty seconds or so, and they give up, the
+  same way the police in this game do. A rival you shake still takes it personally and comes
+  back promoted, so escaping remains a real outcome rather than a free pass.
+- **The first screen no longer runs into the line at the bottom.** Two explanations came off
+  that page when the incoming block was added, with a line of headroom kept in reserve.
+
+### Changed
+- Vehicle arrivals now record what the car actually did - that it set off, that it gave chase,
+  and when its crew got out - so a car that is dispatched and never seen can be told apart from
+  one that was never dispatched.
+
 ## [1.2.7] - 2026-10-30
 
 ### Fixed

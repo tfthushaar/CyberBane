@@ -427,6 +427,10 @@ public abstract class CBConfig {
   public static func ChaseRefreshMaxDistance() -> Float = 160.0
   // Cap per pass, so a twenty-strong crew never turns one tick into twenty AI commands.
   public static func ChaseRefreshPerPass() -> Int32 = 5
+  // Get this far from every one of them, and stay there this long, and they lose you. Roughly
+  // what the police in this game give you, and the reason a chase is a chase and not a leash.
+  public static func ChaseLoseDistance() -> Float = 120.0
+  public static func ChaseLoseTicks() -> Int32 = 22
   // How long an ordinary hostile gang takes to put a crew together, at its slowest and its
   // fastest. Scaled between the two by how much they hate you and how well they know you.
   // The warning window once a lane picks somebody. Short on purpose: the long wait between

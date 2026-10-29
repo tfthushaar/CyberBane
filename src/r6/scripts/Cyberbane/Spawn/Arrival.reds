@@ -329,6 +329,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
       GameInstance.GetDelaySystem(game).DelayCallback(next, CBConfig.ArrivalDismountPoll(), false);
       return;
     }
+    CBLog.Info(n"Spawn", s"Car arrived (or was given up on) after \(this.tries) checks; crew getting out.");
     CBDismountArrivalCrew(game);
   }
 }
@@ -404,11 +405,13 @@ public func CBDriveAtPlayer(game: GameInstance, car: ref<VehicleObject>, player:
     chase.ignoreChaseVehiclesLimit = true;
     chase.boostDrivingStats = true;
     evt.command = chase;
+    CBLog.Info(n"Spawn", "Car is giving chase.");
     car.SetPoliceStrategyDestination(player.GetWorldPosition());
     car.QueueEvent(evt);
     ai.SetInitCmd(chase);
     return;
   }
+  CBLog.Info(n"Spawn", "Car has its crew and is driving to you.");
   let drive = new AIVehicleDriveToPointAutonomousCommand();
   drive.maxSpeed = CBConfig.ArrivalDriveMaxSpeed();
   drive.minSpeed = CBConfig.ArrivalDriveMinSpeed();

@@ -22,7 +22,11 @@ public func CBHudMaxLines() -> Int32 = 25
 // plain ones that start at 212. Text is clamped to this, so nothing can run into the footer.
 public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == 1 {
-    return 11;
+    // Ten, not eleven. The body sits above a fixed footer line, and at eleven the last line of
+    // a full first page ran into it. Three lines of explanation came out of that screen when
+    // the INCOMING block went in; this is the margin that keeps it from happening again if
+    // anything is ever added back.
+    return 10;
   }
   if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() {
     return 9;
@@ -800,9 +804,11 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let out = s"STREET CRED \(cred)      STYLE \(style)      HERE \(district)\n\n";
   let stats = sys.GetStats();
   if IsDefined(stats) {
-    out += s"APEX SQUAD KILLS \(stats.apexKills)      RIVALS PUT DOWN \(stats.rivalsSlain)      UNSEEN \(stats.unattributed)\n";
-    out += "    Keep hitting one gang and they send an apex squad of four, sized to your build.\n";
-    out += "    Work nobody saw builds almost no reputation you can claim.\n\n";
+    // Two explanatory lines came out of here when the INCOMING block went in. The screen
+    // clamps at eleven lines and the block is five of them, so something had to give, and a
+    // live readout of what is actually on its way is worth more than a reminder of how apex
+    // squads are earned - which the Factions screen already counts down for you anyway.
+    out += s"APEX SQUAD KILLS \(stats.apexKills)      RIVALS PUT DOWN \(stats.rivalsSlain)      UNSEEN \(stats.unattributed)\n\n";
   }
   out += CBHudIncoming(sys, game) + "\n";
   out += CBHudDreadReason(sys) + "\n";

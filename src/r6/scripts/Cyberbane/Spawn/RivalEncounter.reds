@@ -49,18 +49,7 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     // the nemesis system quietly reduced to a respawning nuisance.
     //
     // Losing them now promotes them and buys real time before they find you again.
-    let got = sys.FindRivalById(sys.GetActiveRivalId());
-    if IsDefined(got) {
-      got.encounters += 1;
-      CBPromoteRival(got, CBContent(game), now);
-      got.huntTicks = CBConfig.RivalAfterEscapeTicks();
-      let rtEsc = CyberbaneRuntime.Get();
-      if IsDefined(rtEsc) && rtEsc.HasSettings() && rtEsc.GetSettings().toasts {
-        let whoName = CBRivalDisplayName(CBContent(game), got);
-        CBShowMessage(game, s"Cyberbane: you lost \(whoName). They will be better prepared next time.", 4.0);
-      }
-      CBLog.Info(n"Rivals", s"Player escaped rival id=\(got.id); promoted to rank \(got.rank).");
-    }
+    CBRivalEscapedByPlayer(sys, game);
     des.DeleteTagged(n"CB_Rival");
     sys.SetActiveRivalId(0);
   }
@@ -144,6 +133,34 @@ public func CBTickClocksOnly(sys: ref<CyberbaneSystem>) -> Void {
       }
     }
   }
+}
+
+// You got away from the Rival who was after you, and that has to count.
+//
+// Retiring used to delete them and say nothing, so running was worth exactly nothing: they
+// vanished, their clock restarted, and the same person turned up again shortly after. With no
+// way to escape, the only way to resolve a Rival was to kill them - the one outcome that stops
+// them ever being promoted, which hollowed the whole nemesis idea out.
+//
+// Called from two places now: the retire sweep, and the moment the hunters give up because you
+// outran them. Both mean the same thing to the person doing the hunting.
+public func CBRivalEscapedByPlayer(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let got = sys.FindRivalById(sys.GetActiveRivalId());
+  if !IsDefined(got) {
+    return;
+  }
+  let content = CBContent(game);
+  got.encounters += 1;
+  CBPromoteRival(got, content, CBGameSeconds(game));
+  got.huntTicks = CBConfig.RivalAfterEscapeTicks();
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+    CBShowMessage(game, s"Cyberbane: you lost \(CBRivalDisplayName(content, got)). They will be better prepared next time.", 4.0);
+  }
+  CBLog.Info(n"Rivals", s"Player escaped rival id=\(got.id); promoted to rank \(got.rank).");
 }
 
 // Is any Rival actually alive and in the world right now?

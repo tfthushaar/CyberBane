@@ -85,6 +85,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Last tick each lane was still busy. Subtracting it from now gives how long since that
   // lane's encounter actually ended, which is what the gap between encounters is measured
   // from - the end of the last fight, not the moment the last one was sent.
+  private let m_chaseAwayTicks: Int32;   // consecutive ticks V has been clear of every hunter
   private let m_laneRivalFreed: Int32;
   private let m_laneSquadFreed: Int32;
   private let m_laneApexFreed: Int32;
@@ -761,6 +762,19 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetLaneRivalId(lane: Int32) -> Int32 {
     return lane == CBLaneRival() ? this.m_laneRivalId : 0;
+  }
+
+  public func BumpChaseAwayTicks() -> Int32 {
+    this.m_chaseAwayTicks += 1;
+    return this.m_chaseAwayTicks;
+  }
+
+  public func SetChaseAwayTicks(v: Int32) -> Void {
+    this.m_chaseAwayTicks = v;
+  }
+
+  public func GetChaseAwayTicks() -> Int32 {
+    return this.m_chaseAwayTicks;
   }
 
   public func GetLaneFreed(lane: Int32) -> Int32 {

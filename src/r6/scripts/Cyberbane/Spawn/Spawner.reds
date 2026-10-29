@@ -483,10 +483,79 @@ public func CBChaseRefreshTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     return;
   }
   let ppos = player.GetWorldPosition();
+
+  // Can they still see a reason to keep coming?
+  //
+  // Re-issuing the order every few seconds made them impossible to shake: however far you got,
+  // they were handed your position again. That is not a chase, it is a tether. The police in
+  // this game give up once you have been far enough away for long enough, and these should
+  // work the same way - you should be able to drive off and lose them.
+  let nearest = CBNearestHunterDistance(sys, game, des, ppos);
+  if nearest < 0.0 {
+    sys.SetChaseAwayTicks(0);   // nobody is after you
+    return;
+  }
+  if nearest >= CBConfig.ChaseLoseDistance() {
+    if sys.BumpChaseAwayTicks() >= CBConfig.ChaseLoseTicks() {
+      CBChaseGiveUp(sys, game, des);
+      return;
+    }
+    // Far enough that they are losing you: stop handing them your position.
+    return;
+  }
+  sys.SetChaseAwayTicks(0);
+
   let done = 0;
   CBChaseRefreshTag(sys, game, des, ppos, n"CB_Rival", done);
   CBChaseRefreshTag(sys, game, des, ppos, n"CB_Apex", done);
   CBChaseRefreshTag(sys, game, des, ppos, n"CB_Squad", done);
+}
+
+// How far away the closest living hunter is, or -1 when there is nobody.
+func CBNearestHunterDistance(sys: ref<CyberbaneSystem>, game: GameInstance,
+                             des: ref<DynamicEntitySystem>, ppos: Vector4) -> Float {
+  let best = -1.0;
+  best = CBNearestForTag(sys, game, des, ppos, n"CB_Rival", best);
+  best = CBNearestForTag(sys, game, des, ppos, n"CB_Apex", best);
+  best = CBNearestForTag(sys, game, des, ppos, n"CB_Squad", best);
+  return best;
+}
+
+func CBNearestForTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                     ppos: Vector4, tag: CName, best: Float) -> Float {
+  let out = best;
+  let ids = des.GetTaggedIDs(tag);
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if IsDefined(p) && !p.IsDead() {
+      let d = Vector4.Distance(p.GetWorldPosition(), ppos);
+      if out < 0.0 || d < out {
+        out = d;
+      }
+    }
+  }
+  return out;
+}
+
+// You lost them. Clear the encounter out and let it count.
+func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>) -> Void {
+  sys.SetChaseAwayTicks(0);
+  // A Rival you shook takes it personally and comes back harder; the rest simply lose you.
+  if CBLiveRivalPresent(sys, game) {
+    CBRivalEscapedByPlayer(sys, game);
+  }
+  des.DeleteTagged(n"CB_Rival");
+  des.DeleteTagged(n"CB_Squad");
+  des.DeleteTagged(n"CB_Apex");
+  sys.SetActiveRivalId(0);
+  sys.SetActiveSquadFaction(n"");
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+    CBShowMessage(game, "Cyberbane: you lost them.", 4.0);
+  }
+  CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");
 }
 
 func CBChaseRefreshTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
@@ -501,7 +570,7 @@ func CBChaseRefreshTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<D
       // Anyone still riding is the car's problem, not theirs.
       if !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
         let away = Vector4.Distance(puppet.GetWorldPosition(), ppos);
-        if away >= CBConfig.ChaseRefreshMinDistance() && away <= CBConfig.ChaseRefreshMaxDistance() {
+        if away >= CBConfig.ChaseRefreshMinDistance() && away <= CBConfig.ChaseLoseDistance() {
           CBOrderHunt(game, puppet);
           done += 1;
         }
