@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.2.8).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.3.1).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -56,14 +56,14 @@ page describes what the mod does and how it installs.
 - **Enemies that break, run, and remember.** Wound an enemy badly and it can lose its nerve and
   try to escape. Catch it and that is the end of it; let it get away and it comes back as a named
   Rival with a grudge. Beat one down and walk away without finishing them and they can come back
-  too, taking the mercy personally. Rivals are a full nemesis system: they hunt you down and chase you, they
-  climb the ranks on their own while you are busy elsewhere, and every time one escapes it returns
-  a rank higher and scarred. Each one is built to the same grade as a member of an apex squad,
-  and they keep getting stronger: every escape, every mercy and every time they put you down
-  makes the one who comes back harder than the one who left. Every one of them arrives with a
-  bar at the top of the screen carrying their name. Put down the one hunting you and it is
-  finally finished. Anyone who
-  kills you can also come back, and dropping a crew's member can bring a gang-mate gunning for you.
+  too, taking the mercy personally. Rivals are a full nemesis system: they hunt you down and
+  chase you, they climb the ranks on their own while you are busy elsewhere, and every time one
+  escapes it returns a rank higher and scarred. Each one is built to the same grade as a member
+  of an apex squad, and they keep getting stronger: every escape, every mercy and every time
+  they put you down makes the one who comes back harder than the one who left. Each arrives
+  with a bar at the top of the screen carrying their name. Put down the one hunting you and it
+  is finally finished. Anyone who kills you can also come back, and dropping a crew's member
+  can bring a gang-mate gunning for you.
 - **They drive over.** A hit squad or a gang's apex comes by car, dispatched and driven by the
   same thing that sends police after you, so it uses real roads and keeps coming across
   junctions. The crew gets out and comes for you, and if you are behind the wheel it gives chase.
@@ -73,6 +73,15 @@ page describes what the mod does and how it installs.
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
   of a problem they think you are, and they bring the gang's apex squad with them. Pay them off
   while they are on the way and they turn around.
+- **Three kinds of trouble, three clocks.** A Rival, a hit squad and an apex squad each wait
+  their own turn, so different kinds can turn up together while you are never jumped by two
+  Rivals or two apex squads at once. Each kind also rests after its last fight ends before it
+  starts arranging the next one, measured from the end of the fight so a long one does not eat
+  into your breathing room. That wait is a setting, from two minutes up to thirty.
+- **You can lose them.** Being hunted is a chase you can win. Get far enough from all of them
+  and stay clear long enough and they give up, the same way the police in this game do. A Rival
+  you shake takes it personally and comes back promoted, so getting away still costs you
+  something.
 - **A city that pays attention.** Frighten a gang enough and they may send tribute to stay on
   your good side, or a hit squad to deal with you. Give a hit squad the slip and a survivor can
   come back as a named Rival who hunts you. Vendors give fear or respect discounts, and fixers pay
@@ -86,10 +95,10 @@ page describes what the mod does and how it installs.
   out of cover, a blade who closes on a Sandevistan, and a netrunner who hangs back and takes
   your weapon off you. Each chair is filled with a real member of that gang you have actually
   fought, so they carry the right weapons and fight the way that kind of enemy fights, and they
-  work as a squad rather than four individuals. Each of them gets a bar at the top of the
-  screen showing their role, so a squad reads as a heavy, a blade, a netrunner and a shooter
-  rather than four of the same. You
-  get a warning first, and a countdown. How dangerous they are is a slider, from a hard fight
+  work as a squad rather than four individuals. Each of them gets a bar at the top of the screen
+  showing their role and their gang, so a squad reads as a heavy, a blade, a netrunner and a
+  shooter rather than four of the same, and you can always tell whose people you are fighting.
+  You get a warning first, and a countdown. How dangerous they are is a slider, from a hard fight
   up to the game's own set-piece enforcers, and your own build scales it on top. Each one
   carries two traits of its own, so no two fight the same way. No story character is ever used,
   so nothing gets spoiled and you never meet a duplicate of someone you already killed. It
@@ -107,9 +116,9 @@ page describes what the mod does and how it installs.
   Saint, or the top title Cyberbane. The Log tab is the street's file on you, put together
   from what people actually witnessed, so work nobody saw never reaches the page.
 - **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable).
-  Your scores are meters, gangs and rivals are colour-coded rows, and every rival, apex squad
-  and vendetta crew shows a live countdown to when it will reach you. If something cannot
-  arrive, it says why rather than showing a number that is not moving. Each
+  Your scores are meters, gangs and rivals are colour-coded rows, and the first screen shows
+  what each of the three lanes has on its way, with a live countdown to when it will reach you.
+  If something cannot arrive, it says why rather than showing a number that is not moving. Each
   press steps through tabs for your reputation, the factions, the districts, your rivals, your
   titles, and the log; the press after the last tab closes it. Every screen explains what its
   numbers mean rather than throwing abbreviations at you, and the first one tells you exactly what
