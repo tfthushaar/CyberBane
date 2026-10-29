@@ -448,6 +448,57 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   CBLog.Info(n"Spawn", "One of ours is up and coming for you.");
 }
 
+// Keep the people who were sent after you actually coming after you.
+//
+// The order issued at spawn finishes once they reach V, by design - it has to, or it would
+// fight the game's own combat AI for the whole encounter. But that means the moment you break
+// away they are back on ordinary behaviour and will happily lose track of you, which reads as
+// them giving up rather than you escaping.
+//
+// So anybody of ours who is still alive and has fallen behind gets told again. The distance
+// floor is what keeps this from interfering during the fight itself: somebody standing next to
+// you is already doing the right thing and must not be interrupted.
+//
+// Escaping is still entirely possible, and is meant to be: they run, you can drive, and the
+// retire timer ends the encounter if you stay away. This stops them wandering off; it does not
+// glue them to you, and nothing here moves anybody.
+public func CBChaseRefreshTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) || !CBWorldStable(game) {
+    return;
+  }
+  let player = GetPlayer(game);
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(player) || !IsDefined(des) {
+    return;
+  }
+  let ppos = player.GetWorldPosition();
+  let done = 0;
+  CBChaseRefreshTag(sys, game, des, ppos, n"CB_Rival", done);
+  CBChaseRefreshTag(sys, game, des, ppos, n"CB_Apex", done);
+  CBChaseRefreshTag(sys, game, des, ppos, n"CB_Squad", done);
+}
+
+func CBChaseRefreshTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                       ppos: Vector4, tag: CName, out done: Int32) -> Void {
+  let ids = des.GetTaggedIDs(tag);
+  let i = 0;
+  while i < ArraySize(ids) && done < CBConfig.ChaseRefreshPerPass() {
+    let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    // CBNpcSafe covers attachment and the settling window, so nothing half-built is touched.
+    if IsDefined(puppet) && !puppet.IsDead() && CBNpcSafe(sys, puppet) {
+      // Anyone still riding is the car's problem, not theirs.
+      if !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
+        let away = Vector4.Distance(puppet.GetWorldPosition(), ppos);
+        if away >= CBConfig.ChaseRefreshMinDistance() && away <= CBConfig.ChaseRefreshMaxDistance() {
+          CBOrderHunt(game, puppet);
+          done += 1;
+        }
+      }
+    }
+  }
+}
+
 // Make a spawned NPC hostile toward V. Called when a CB_Squad / CB_Rival puppet attaches.
 public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   let player = GetPlayer(game);

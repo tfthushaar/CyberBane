@@ -322,10 +322,19 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       // Their toughest if V has met one, otherwise whoever V has been fighting.
       let record = TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
       if TDBID.IsValid(record) && (fs.kills - fs.apexAtKills) >= CBConfig.ApexKillThreshold() {
+        // Announce only. Deciding when they actually set off belongs to Spawn/Queue.reds now,
+        // which holds the one clock for the whole mod; arming a second countdown here would
+        // put two encounters on their way at once and leave the Hub showing a timer for a
+        // thing that was not really next.
+        //
         // The kills are spent in CBProcessPendingApex, and only once someone has actually
         // arrived. Spending them here meant a spawn that failed for any reason quietly cost
         // the player twenty bodies and they simply never saw an apex.
-        sys.SetPendingApex(fs.id, CBConfig.ApexWarningTicks());
+        if NotEquals(sys.GetApexAnnounced(), fs.id) {
+          sys.SetApexAnnounced(fs.id);
+        } else {
+          return;   // already told them about this one
+        }
 
         let name = CBApexName(CBContent(game), fs.id, fs.kills);
         if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {

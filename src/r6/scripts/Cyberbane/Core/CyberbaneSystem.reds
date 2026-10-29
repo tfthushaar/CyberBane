@@ -64,6 +64,28 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pendingSquadFaction: CName;   // gang whose vendetta squad is on its way
   private let m_pendingSquadTicks: Int32;     // fast ticks until it arrives (shown in the Hub)
   private let m_pendingSquadStuck: Int32;    // ticks spent expired but unable to arrive
+  // Whose turn it is next (Spawn/Queue.reds). Session-only: a queued encounter describes the
+  // next few minutes, not the playthrough, and one restored from a save would fire into a
+  // world that has moved on.
+  // Three lanes: one Rival, one crew, one apex squad, each with its own clock. Flat scalars
+  // per lane rather than an array, to match how the rest of this system stores small fixed
+  // sets, and because arrays on a persisted system are the one thing that has bitten here.
+  private let m_laneRivalId: Int32;
+  private let m_laneRivalTicks: Int32;
+  private let m_laneLastRival: Int32;
+  private let m_laneSquadFaction: CName;
+  private let m_laneSquadTicks: Int32;
+  private let m_laneLastSquadFaction: CName;
+  private let m_laneApexFaction: CName;
+  private let m_laneApexTicks: Int32;
+  private let m_laneLastApexFaction: CName;
+  // Tick each lane last sent somebody. A spawn is queued, not instant: for a second or two
+  // afterwards nothing is attached yet, so "is anyone of this kind alive" answers no and the
+  // lane would cheerfully send a second one on top of the first.
+  private let m_laneRivalFired: Int32;
+  private let m_laneSquadFired: Int32;
+  private let m_laneApexFired: Int32;
+  private let m_apexAnnounced: CName;   // gang already told about, so it is said once
   private let m_pendingApexStuck: Int32;     // same, for the apex appointment
   private let m_arrivalRecord: TweakDBID;     // which ganger to put in the seats
   private let m_arrivalCrew: Int32;           // how many were asked for
@@ -637,7 +659,11 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.GetThreatBar().Update(this, game);
     }
     this.RefreshStealthHold(game);      // before anything that might send someone in
-    CBRivalHuntTick(this, game);        // rivals close in on a visible countdown
+    CBEncounterQueueTick(this, game);   // three lanes, three clocks: who is next
+    if this.m_tickCount % CBConfig.ChaseRefreshEveryTicks() == 0 {
+      CBChaseRefreshTick(this, game);   // keep whoever was sent actually coming after you
+    }
+    CBRivalHuntTick(this, game);        // confirms a queued rival actually arrived
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) && !heavyStreaming {
@@ -703,6 +729,125 @@ public class CyberbaneSystem extends ScriptableSystem {
       i += 1;
     }
     return total;
+  }
+
+  public func GetApexAnnounced() -> CName {
+    return this.m_apexAnnounced;
+  }
+
+  public func SetApexAnnounced(faction: CName) -> Void {
+    this.m_apexAnnounced = faction;
+  }
+
+  // ---- Who is next, per lane (spec §9.9) ---------------------------------
+  public func GetLaneTicks(lane: Int32) -> Int32 {
+    if lane == CBLaneRival() { return this.m_laneRivalTicks; }
+    if lane == CBLaneApex() { return this.m_laneApexTicks; }
+    return this.m_laneSquadTicks;
+  }
+
+  // The gang this lane is bringing. Empty for a Rival lane, which carries an id instead.
+  public func GetLaneTarget(lane: Int32) -> CName {
+    if lane == CBLaneRival() { return n""; }
+    if lane == CBLaneApex() { return this.m_laneApexFaction; }
+    return this.m_laneSquadFaction;
+  }
+
+  public func GetLaneRivalId(lane: Int32) -> Int32 {
+    return lane == CBLaneRival() ? this.m_laneRivalId : 0;
+  }
+
+  public func GetLaneFired(lane: Int32) -> Int32 {
+    if lane == CBLaneRival() { return this.m_laneRivalFired; }
+    if lane == CBLaneApex() { return this.m_laneApexFired; }
+    return this.m_laneSquadFired;
+  }
+
+  public func SetLaneFired(lane: Int32) -> Void {
+    if lane == CBLaneRival() {
+      this.m_laneRivalFired = this.m_tickCount;
+    } else {
+      if lane == CBLaneApex() {
+        this.m_laneApexFired = this.m_tickCount;
+      } else {
+        this.m_laneSquadFired = this.m_tickCount;
+      }
+    }
+  }
+
+  public func GetLaneLastRival() -> Int32 {
+    return this.m_laneLastRival;
+  }
+
+  public func SetLaneLastRival(id: Int32) -> Void {
+    this.m_laneLastRival = id;
+  }
+
+  public func GetLaneLastFaction(lane: Int32) -> CName {
+    return lane == CBLaneApex() ? this.m_laneLastApexFaction : this.m_laneLastSquadFaction;
+  }
+
+  public func SetLaneLastFaction(lane: Int32, faction: CName) -> Void {
+    if lane == CBLaneApex() {
+      this.m_laneLastApexFaction = faction;
+    } else {
+      this.m_laneLastSquadFaction = faction;
+    }
+  }
+
+  public func SetLaneQueued(lane: Int32, faction: CName, rivalId: Int32, ticks: Int32) -> Void {
+    if lane == CBLaneRival() {
+      this.m_laneRivalId = rivalId;
+      this.m_laneRivalTicks = ticks;
+    } else {
+      if lane == CBLaneApex() {
+        this.m_laneApexFaction = faction;
+        this.m_laneApexTicks = ticks;
+      } else {
+        this.m_laneSquadFaction = faction;
+        this.m_laneSquadTicks = ticks;
+      }
+    }
+  }
+
+  public func SetLaneTicks(lane: Int32, ticks: Int32) -> Void {
+    if lane == CBLaneRival() {
+      this.m_laneRivalTicks = ticks;
+    } else {
+      if lane == CBLaneApex() {
+        this.m_laneApexTicks = ticks;
+      } else {
+        this.m_laneSquadTicks = ticks;
+      }
+    }
+  }
+
+  public func TickDownLane(lane: Int32) -> Int32 {
+    if lane == CBLaneRival() {
+      if this.m_laneRivalTicks > 0 { this.m_laneRivalTicks -= 1; }
+      return this.m_laneRivalTicks;
+    }
+    if lane == CBLaneApex() {
+      if this.m_laneApexTicks > 0 { this.m_laneApexTicks -= 1; }
+      return this.m_laneApexTicks;
+    }
+    if this.m_laneSquadTicks > 0 { this.m_laneSquadTicks -= 1; }
+    return this.m_laneSquadTicks;
+  }
+
+  public func ClearLane(lane: Int32) -> Void {
+    if lane == CBLaneRival() {
+      this.m_laneRivalId = 0;
+      this.m_laneRivalTicks = 0;
+    } else {
+      if lane == CBLaneApex() {
+        this.m_laneApexFaction = n"";
+        this.m_laneApexTicks = 0;
+      } else {
+        this.m_laneSquadFaction = n"";
+        this.m_laneSquadTicks = 0;
+      }
+    }
   }
 
   // ---- Vendetta hit squads (spec §9.9) -----------------------------------

@@ -136,11 +136,10 @@ public func CBTickClocksOnly(sys: ref<CyberbaneSystem>) -> Void {
     i += 1;
     if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active)
                         || r.state == EnumInt(ECBRivalState.Hunting)) {
-      if r.huntTicks <= 0 {
-        // Start it here too, or a Rival created during a busy stretch would sit at zero and
-        // the Hub would read "any moment" for the rest of the session.
-        r.huntTicks = CBRivalHuntTicksFor(r.rank, false);
-      } else {
+      // Only ever counted down. huntTicks is a cooldown now, not a countdown to arrival, so
+      // zero means "eligible" and setting it here would quietly make an escaped Rival wait
+      // all over again every time the world streamed.
+      if r.huntTicks > 0 {
         r.huntTicks -= 1;
       }
     }
@@ -182,13 +181,6 @@ public func CBRivalBodyPresent(game: GameInstance, r: ref<CBRival>) -> Bool {
   return IsDefined(GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet);
 }
 
-// Ticks until this Rival turns up, or 0 when it is not counting down.
-public func CBRivalHuntRemaining(r: ref<CBRival>) -> Int32 {
-  if !IsDefined(r) {
-    return 0;
-  }
-  return r.huntTicks;
-}
 
 // Drive the hunt countdown, once per fast tick.
 //
@@ -234,6 +226,12 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   let now = CBGameSeconds(game);
   let atCap = CBRivalsAtCap(sys);
   let rivals = sys.GetRivals();
+  // NOTE: the scheduling that used to live here now belongs to Spawn/Queue.reds. Every Rival
+  // running its own countdown meant several clocks for encounters that could never all happen,
+  // and no way to say which one was actually next. What remains here is confirming that a
+  // Rival the queue sent was really placed, which is about one specific spawn rather than
+  // about whose turn it is.
+  //
   // Why nobody can arrive right now, if that is the case. Recorded so the Hub can say so
   // instead of showing a countdown that is not counting.
   //
@@ -290,25 +288,6 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
             }
             r.huntTicks = CBConfig.RivalHuntRetryTicks();
             failedToPlace = true;
-          }
-        }
-      } else {
-        if r.huntTicks <= 0 {
-          r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);   // start the clock
-        } else {
-          r.huntTicks -= 1;
-          if r.huntTicks <= 0 {
-            if CBSpawnRival(sys, game, r, now) {
-              r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);
-              sys.SetHuntHoldReason(CBHoldNone());
-              return;   // one arrival per tick
-            }
-            // The timer ran out and they still could not be put down: V is somewhere with no
-            // room for them, no navmesh, or the world is still streaming. The appointment is
-            // kept and retried shortly, but the Hub is told, because a fresh twenty second
-            // countdown here would be a lie - nothing is counting down, it is retrying.
-            failedToPlace = true;
-            r.huntTicks = CBConfig.RivalHuntRetryTicks();
           }
         }
       }

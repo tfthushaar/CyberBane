@@ -541,20 +541,14 @@ public class CBHud {
         if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
         if Equals(posture, ECBPosture.Friendly) { pip = CBHudGreen(); }
 
-        // Most urgent thing this gang is doing, in order: their heavy is already walking in,
-        // a vendetta crew is on its way, or they are still counting bodies.
+        // Most urgent thing this gang is doing. Anything actually on its way wins over a
+        // count of how far off the next thing is.
         let right = "";
         if Equals(sys.GetPendingApexFaction(), fs.id) {
-          // Two different things, and saying so is the difference between a countdown the
-          // player can act on and a number they cannot interpret.
           right = (sys.IsPendingApexDriving() ? "APEX SQUAD DRIVING " : "APEX SQUAD IN ")
                 + CBHudCountdown(sys.GetPendingApexTicks());
         } else {
           if Equals(sys.GetPendingSquadFaction(), fs.id) {
-            // Overdue rather than counting: their timer has run out and something is stopping
-            // them arriving. Saying which thing is the whole point - a crew stuck on "any
-            // moment" forever is indistinguishable from a broken mod, and that is exactly how
-            // this looked from the outside for several releases.
             if sys.GetPendingSquadTicks() <= 0 {
               let why = CBBlockLabel(CBLastSpawnBlock());
               right = StrLen(why) > 0 ? "HELD: " + why : "CREW HELD UP";
@@ -562,8 +556,17 @@ public class CBHud {
               right = "CREW INBOUND " + CBHudCountdown(sys.GetPendingSquadTicks());
             }
           } else {
-            let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
-            right = toApex <= 0 ? "apex squad due" : s"apex squad in \(toApex) kills";
+            if Equals(sys.GetLaneTarget(CBLaneApex()), fs.id) {
+              right = "APEX SQUAD IN " + CBHudCountdown(sys.GetLaneTicks(CBLaneApex()));
+            } else {
+              if Equals(sys.GetLaneTarget(CBLaneSquad()), fs.id) {
+                right = "CREW IN " + CBHudCountdown(sys.GetLaneTicks(CBLaneSquad()));
+              } else {
+                let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
+                right = toApex <= 0 ? "ready to send their best"
+                                    : s"apex squad in \(toApex) kills";
+              }
+            }
           }
         }
         this.SetRow(shown, pip, CBFactionLabel(fs.id),
@@ -591,12 +594,27 @@ public class CBHud {
         } else {
           gang += s"  rank \(r.rank)";
         }
+        // Only one Rival is ever on the clock, so only that one shows a countdown. The rest
+        // say plainly that they are waiting rather than each showing a timer for a turn they
+        // are not having, which is what made several clocks appear to run at once.
+        let queued = r.id == sys.GetLaneRivalId(CBLaneRival()) && sys.GetLaneTicks(CBLaneRival()) > 0;
+        let rightCol = "waiting their turn";
+        if hunting {
+          rightCol = "here now";
+        } else {
+          if queued {
+            rightCol = "arrives in " + CBHudCountdown(sys.GetLaneTicks(CBLaneRival()));
+          } else {
+            if StrLen(this.m_holdLabel) > 0 {
+              rightCol = this.m_holdLabel;
+            }
+          }
+        }
         this.SetRow(shown, hunting ? CBHudRed() : CBHudAmber(),
           IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
           gang,
           CBScarLabel(r.scarMask),
-          StrLen(this.m_holdLabel) > 0 ? this.m_holdLabel
-                                       : "arrives in " + CBHudCountdown(CBRivalHuntRemaining(r)));
+          rightCol);
         shown += 1;
       }
     }
@@ -726,6 +744,48 @@ func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Str
   }
 }
 
+// What is on its way, in one place.
+//
+// Three lanes, three clocks, always shown together even when a lane is empty. Showing an idle
+// lane as "nobody" is the point: silence used to be ambiguous - it could mean nothing was
+// coming, or that something was coming and the clock had stalled, and those two looked
+// identical. A line that says nobody is after you right now is information. A line that says
+// held, and why, is information. A blank screen is not.
+func CBHudIncoming(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
+  let out = "INCOMING\n";
+  out += "  " + CBHudLaneLine(sys, game, CBLaneRival(), "Rival") + "\n";
+  out += "  " + CBHudLaneLine(sys, game, CBLaneSquad(), "Crew ") + "\n";
+  out += "  " + CBHudLaneLine(sys, game, CBLaneApex(), "Apex ") + "\n";
+  return out;
+}
+
+func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, label: String) -> String {
+  let who = "";
+  if lane == CBLaneRival() {
+    let r = sys.FindRivalById(sys.GetLaneRivalId(lane));
+    who = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "";
+  } else {
+    let f = sys.GetLaneTarget(lane);
+    who = NotEquals(f, n"") ? CBFactionLabel(f) : "";
+  }
+
+  // Already here. Their lane is held until that encounter is over, which is the honest thing
+  // to say rather than counting down to a turn that cannot start.
+  if CBLaneBusy(sys, game, lane) {
+    return label + "   here now";
+  }
+  if StrLen(who) == 0 {
+    return label + "   nobody";
+  }
+  let ticks = sys.GetLaneTicks(lane);
+  if ticks <= 0 {
+    let why = CBBlockLabel(CBLastSpawnBlock());
+    return StrLen(why) > 0 ? label + "   " + who + "  held: " + why
+                           : label + "   " + who + "  any moment";
+  }
+  return label + "   " + who + "  " + CBHudCountdown(ticks);
+}
+
 func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   // The four scores are meters now, so this screen's text only carries what a meter cannot:
   // where you are, what the city has already sent, and what it is doing about you right now.
@@ -744,6 +804,7 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
     out += "    Keep hitting one gang and they send an apex squad of four, sized to your build.\n";
     out += "    Work nobody saw builds almost no reputation you can claim.\n\n";
   }
+  out += CBHudIncoming(sys, game) + "\n";
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
   return out;

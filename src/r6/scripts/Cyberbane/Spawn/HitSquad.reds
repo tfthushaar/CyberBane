@@ -68,69 +68,10 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     return;
   }
 
-  let score = sys.GetScore();
-  if !IsDefined(score) {
-    return;
-  }
-  let infamous = EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.Infamous);
-  let factionCooldown = CBConfig.HitSquadFactionCooldownDays() * CBConfig.SecondsPerDay();
-
-  // A vendetta is not a mood, it is a decision that has already been taken. Put one on the
-  // clock rather than rolling for it every tick: the gang is coming, the Hub says when, and
-  // the player can decide what to do about it. This is the whole of the Barghest report -
-  // a gang could sit at vendetta indefinitely and never send anybody, because a vendetta
-  // still had to clear the same renown gate and win the same three percent roll as a gang
-  // that merely disliked you.
-  if NotEquals(sys.GetPendingSquadFaction(), n"") {
-    return;   // one already on its way
-  }
-  for fs in sys.GetFactionStates() {
-    if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
-      let posture = score.GetPosture(fs.id);
-      let offCooldown = fs.lastHitSquadAt <= 0.0 || (now - fs.lastHitSquadAt) >= factionCooldown;
-      if Equals(posture, ECBPosture.Vendetta) && offCooldown && CBVendettaSquadsOn() {
-        CBAnnounceVendettaSquad(sys, game, fs, freqMult);
-        return;
-      }
-    }
-  }
-  // A gang that is hostile and knows who you are is also on a clock, just a longer one.
-  //
-  // This used to be a roughly four percent roll taken once per in-game hour, which is about
-  // two real minutes - so at maximum hostility a squad arrived about once an hour of play, and
-  // with the forty-five minute global cooldown on top it read as never happening at all. Worse,
-  // there was nothing to show: a dice roll cannot be counted down, so the Hub had nothing to
-  // say and a player had no idea anything was coming.
-  //
-  // A clock fixes both. How long it takes scales with how much they hate you and how well they
-  // know you, so a gang you have barely annoyed takes a long time and one you have gutted comes
-  // quickly, and the Hub counts either of them down.
-  for fs in sys.GetFactionStates() {
-    if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
-      let posture = score.GetPosture(fs.id);
-      let offCooldown = fs.lastHitSquadAt <= 0.0 || (now - fs.lastHitSquadAt) >= factionCooldown;
-      if Equals(posture, ECBPosture.Hostile) && fs.renown >= CBConfig.HitSquadMinRenown() && offCooldown {
-        CBAnnounceHostileSquad(sys, game, fs, freqMult);
-        return;
-      }
-    }
-  }
-}
-
-// Put a hostile gang's crew on the clock.
-func CBAnnounceHostileSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, freqMult: Float) -> Void {
-  // Worst case at the bottom of the scale, fastest at the top of it.
-  let heat = ClampF((-fs.standing / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
-  let span = Cast<Float>(CBConfig.HostileSquadTicksMax() - CBConfig.HostileSquadTicksMin());
-  let ticks = CBConfig.HostileSquadTicksMax() - FloorF(span * heat);
-  if freqMult > 0.01 {
-    ticks = FloorF(Cast<Float>(ticks) / freqMult);
-  }
-  if ticks < CBConfig.VendettaSquadMinTicks() {
-    ticks = CBConfig.VendettaSquadMinTicks();
-  }
-  sys.SetPendingSquad(fs.id, ticks);
-  CBLog.Info(n"Spawn", s"Hit squad from \(NameToString(fs.id)) in \(ticks) ticks.");
+  // Choosing who comes next, and when, lives in Spawn/Queue.reds now: three lanes, each with
+  // one clock, so there is exactly one answer to "who is coming" per kind of trouble. What
+  // stays here is everything about bringing a crew in once a lane has decided it is their
+  // turn - the despawn sweep and cooldowns above, and CBSpawnHitSquad below.
 }
 
 // How many a gang at full vendetta sends when V is at full menace.
@@ -148,22 +89,6 @@ public func CBVendettaSquadsOn() -> Bool {
   return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().vendettaSquads;
 }
 
-// Start the clock, and tell the player it is running.
-func CBAnnounceVendettaSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, freqMult: Float) -> Void {
-  let ticks = CBConfig.VendettaSquadTicks();
-  if freqMult > 0.01 {
-    ticks = FloorF(Cast<Float>(ticks) / freqMult);
-  }
-  if ticks < CBConfig.VendettaSquadMinTicks() {
-    ticks = CBConfig.VendettaSquadMinTicks();
-  }
-  sys.SetPendingSquad(fs.id, ticks);
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(game, s"Cyberbane: \(NameToString(fs.id)) have put a crew together.", 4.0);
-  }
-  CBLog.Info(n"Spawn", s"Vendetta squad from \(NameToString(fs.id)) in \(ticks) ticks.");
-}
 
 // Run the clock down, and send them when it reaches zero.
 //

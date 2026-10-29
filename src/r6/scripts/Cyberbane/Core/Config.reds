@@ -394,6 +394,34 @@ public abstract class CBConfig {
   // Smallest share of the full crew that turns out, before menace scales it up.
   public static func VendettaSquadFloorFraction() -> Float = 0.6
   public static func VendettaSquadSizeDefault() -> Int32 = 20
+
+  // ---- Who comes next (spec 9.9) ----
+  // How much each kind of contender wants the next turn. A vendetta outranks an ordinary
+  // grudge, a gang ready to send its best outranks an ordinary crew, and a Rival with history
+  // outranks a new one once their rank and escapes are added on.
+  public static func QueueScoreVendetta() -> Float = 100.0
+  public static func QueueScoreApex() -> Float = 85.0
+  public static func QueueScoreRival() -> Float = 55.0
+  public static func QueueScoreHostile() -> Float = 40.0
+  // Taken off a contender of the same kind as the last one, so one gang cannot monopolise you
+  // while a Rival waits forever.
+  public static func QueueRepeatPenalty() -> Float = 25.0
+  // Nothing arrives sooner than this after being queued, whatever the frequency setting.
+  public static func QueueMinTicks() -> Int32 = 45
+  // How long a gang takes to put its apex squad together once they are owed one.
+  public static func ApexQueueTicks() -> Int32 = 300
+  // How long a lane stays busy after sending somebody, to cover the gap between asking for a
+  // spawn and it existing. Short, and a hard count rather than a wait on an attach.
+  public static func LaneSettleTicks() -> Int32 = 8
+
+  // ---- Keeping a chase alive ----
+  // How often to remind anybody of ours who has fallen behind, how far behind they have to be
+  // before it is worth doing, and how far is far enough that they have genuinely lost you.
+  public static func ChaseRefreshEveryTicks() -> Int32 = 6
+  public static func ChaseRefreshMinDistance() -> Float = 18.0
+  public static func ChaseRefreshMaxDistance() -> Float = 160.0
+  // Cap per pass, so a twenty-strong crew never turns one tick into twenty AI commands.
+  public static func ChaseRefreshPerPass() -> Int32 = 5
   // How long an ordinary hostile gang takes to put a crew together, at its slowest and its
   // fastest. Scaled between the two by how much they hate you and how well they know you.
   public static func HostileSquadTicksMin() -> Int32 = 240

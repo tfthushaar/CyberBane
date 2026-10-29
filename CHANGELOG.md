@@ -3,6 +3,36 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.5] - 2026-10-30
+
+### Changed
+- **Three lanes, three clocks: one rival, one crew, one apex squad.** Every rival used to run
+  its own countdown, hit squads ran theirs and the apex ran a third, so the Hub showed several
+  timers for things that could not all happen and anything without a clock just said "due".
+  Now exactly one contender per lane is on the clock. A rival can catch you while a gang's crew
+  is already on its way, but two rivals can never jump you at once, and nor can two apex squads.
+- **The Hub has an INCOMING block** on the first screen showing all three lanes at once, each
+  one either counting down, saying who is here now, saying why it is held, or saying plainly
+  that nobody is coming. An empty lane says "nobody", because silence used to mean either
+  nothing is coming or something is stuck and those looked identical.
+- **Who comes next is ranked, not random.** A gang that has sworn a vendetta outranks one that
+  merely dislikes you; a rival who has got away from you repeatedly outranks a new one. The same
+  gang or rival will not take two turns in a row while somebody else is owed one.
+- **They arrive the moment the clock ends**, instead of a second or two later.
+
+### Fixed
+- **Clearing a crew or an apex squad frees their lane immediately.** It was being judged by a
+  tag, and the tag stays on the body after death, so wiping a crew left that lane blocked for
+  minutes. Rivals were fixed in 1.2.4; crews and apex squads had the same bug.
+- **A chase stays a chase.** The order to come after you finished once they reached you, so the
+  moment you broke away they reverted to ordinary behaviour and drifted off, which read as them
+  giving up rather than you escaping. Anybody still alive who has fallen behind is told again.
+  Nobody is ever moved, and you can still outrun or outdrive them.
+- Escaping a rival puts them on a cooldown again. The refactor had quietly orphaned that, which
+  would have let somebody you just shook be picked as the very next encounter.
+- A lane can no longer send a second encounter during the moment between asking for a spawn and
+  it existing.
+
 ## [1.2.4] - 2026-10-29
 
 Found by watching a live session.
