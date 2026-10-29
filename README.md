@@ -194,6 +194,12 @@ Thanks to cshiai, whose Much Better AI showed where the game signals a completed
 how to detect another mod at compile time. Reading it is what fixed Cyberbane's takedowns. No
 code from that mod is used here.
 
+Thanks to Nolo for Grudge. Two of its designs are in Cyberbane now: Rivals carrying the scars
+of how you hurt them, and gangs having a leader and lieutenants so a crew cannot be beheaded.
+Different mod, good ideas. No code from that mod is used here.
+
+Thanks to DigitalVixen for Street Sense, which Cyberbane detects and makes room for.
+
 Thanks to everyone who reported bugs and sent in crash reports, and especially to r3bels90, who
 pinned down the exact cause of the world-transition crash and made the 0.1.6 fix possible. This
 mod is better because of you.
