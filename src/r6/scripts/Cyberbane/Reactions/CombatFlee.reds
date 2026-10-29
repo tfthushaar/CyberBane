@@ -284,11 +284,36 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   if IsDefined(e.puppet) && e.puppet.IsDead() {
     return;
   }
+  let content = CBContent(game);
+  let district = CBEventDistrict(sys, game);
+
+  // Was this somebody who is already a Rival?
+  //
+  // This path did not exist: every mercy created a brand new Rival, so sparing the same person
+  // twice was never recorded. CBRivalSparedByV - the function that counts it, can turn them
+  // into a Debtor and promotes them - was never called from anywhere in the mod. That also
+  // left the mercy term of the nemesis ladder permanently zero, so a Rival only ever got
+  // harder from escaping, never from being let go.
+  if IsDefined(e.puppet) {
+    let already = CBFindRivalByBody(sys, e.puppet.GetEntityID());
+    if IsDefined(already) {
+      let indebted = CBRivalSparedByV(already, content, now, district);
+      already.scarMask = already.scarMask | e.scarMask;
+      if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+        let name = CBRivalDisplayName(content, already);
+        if indebted {
+          CBShowMessage(game, s"Cyberbane: \(name) owes you one. They will remember that too.", 4.0);
+        } else {
+          CBShowMessage(game, s"Cyberbane: You let \(name) walk again. They came back worse.", 4.0);
+        }
+      }
+      return;
+    }
+  }
+
   if RandF() > CBConfig.RivalChanceSpared() {
     return;   // not everyone you spare makes it personal
   }
-  let content = CBContent(game);
-  let district = CBEventDistrict(sys, game);
   let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now);
   if IsDefined(nr) {
     nr.scarMask = e.scarMask;   // they remember how it went

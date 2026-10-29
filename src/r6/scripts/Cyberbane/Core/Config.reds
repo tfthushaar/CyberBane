@@ -125,6 +125,10 @@ public abstract class CBConfig {
   public static func CivFleeRadius() -> Float = 18.0    // Terror tier (spec §9.2)
   // How much V's build (level, street cred, skills) adds to how intimidating they look.
   public static func MenaceFearWeight() -> Float = 0.6
+  // Ticks (about a second each) before the same civilian can be frightened again. Long enough
+  // that one person does not flinch continuously, short enough that walking back down a street
+  // still gets a reaction.
+  public static func CivReactionCooldownTicks() -> Int32 = 45
   // How much further obvious chrome gets noticed. At full visible chrome both reaction ranges
   // widen by this fraction, so blades-for-arms reads from across the street. Kept low enough
   // that the widened flee range stays inside NpcEvalRadius.

@@ -3,6 +3,24 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.9] - 2026-10-29
+
+Found by going through every feature in the mod and checking it against what it claims to do.
+
+### Fixed
+- **A civilian could only ever be frightened once.** The flag marking "this person has reacted
+  to you" was set the first time and never cleared, so once somebody had flinched at you they
+  were inert for the rest of their life. Crowd NPCs hang around a district, so after one walk
+  down a street nobody there would react again no matter how much more frightening you became
+  or how many times you came back. Along with the pause bug in 1.1.8, that is most of why the
+  city never seemed to fear you. People can be frightened again now, after a short cooldown.
+- **Sparing someone who is already a Rival did nothing.** Every mercy created a brand new
+  Rival, so letting the same person live twice was never recorded. The code that counts it,
+  turns them into a Debtor who owes you one, and promotes them was never called from anywhere
+  in the mod. That also meant the nemesis ladder only ever climbed from escapes, never from
+  mercy, despite mercy being half the point. Letting a known Rival walk now counts, and they
+  carry the new scars on top of the old ones.
+
 ## [1.1.8] - 2026-10-29
 
 ### Fixed

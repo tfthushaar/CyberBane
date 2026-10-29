@@ -12,10 +12,28 @@
 @addField(ScriptedPuppet)
 public let cbCrowdReacted: Bool;
 
+// Tick at which this NPC last reacted to V.
+//
+// The bool above is a one-way latch: it was set the first time an NPC reacted and never reset
+// anywhere, so that NPC could never be frightened again for as long as it existed. Crowd NPCs
+// linger in a district, so after one pass through a street nobody there would ever react again
+// no matter how much more frightening V became, or how many times V walked back past them.
+// Together with the tick starvation fixed in 1.1.8 that is most of "the crowd does not fear
+// me": the few that were evaluated fired once and went inert.
+//
+// A stamp instead, so fear can be felt again after a cooldown rather than exactly once.
+@addField(ScriptedPuppet)
+public let cbCrowdReactedTick: Int32;
+
 // Returns true when a reaction actually fired, so the Director can count it against the
 // per-tick cap. `dist` is V's distance to the NPC, already measured by the Director loop.
-public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dist: Float, intensity: Float, faction: CName) -> Bool {
-  if !IsDefined(npc) || npc.cbCrowdReacted || intensity <= 0.0 {
+public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dist: Float, intensity: Float, faction: CName, tick: Int32) -> Bool {
+  if !IsDefined(npc) || intensity <= 0.0 {
+    return false;
+  }
+  // Reacted recently. The zero check matters: an NPC that has never reacted has a stamp of 0,
+  // and without it every NPC would look like it had just reacted for the first minute of play.
+  if npc.cbCrowdReactedTick > 0 && (tick - npc.cbCrowdReactedTick) < CBConfig.CivReactionCooldownTicks() {
     return false;
   }
   if !IsDefined(score) {
@@ -55,5 +73,6 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
     b.TriggerSingleBroadcast(npc, gamedataStimType.Terror);
   }
   npc.cbCrowdReacted = true;
+  npc.cbCrowdReactedTick = tick;
   return true;
 }
