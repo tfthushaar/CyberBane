@@ -102,8 +102,9 @@ page describes what the mod does and how it installs.
   Saint, or the top title Cyberbane. The Log tab is the street's file on you, put together
   from what people actually witnessed, so work nobody saw never reaches the page.
 - **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable).
-  Your scores are meters, gangs and rivals are colour-coded rows, and every rival, apex and
-  vendetta crew shows a countdown to when it will reach you. Each
+  Your scores are meters, gangs and rivals are colour-coded rows, and every rival, apex squad
+  and vendetta crew shows a live countdown to when it will reach you. If something cannot
+  arrive, it says why rather than showing a number that is not moving. Each
   press steps through tabs for your reputation, the factions, the districts, your rivals, your
   titles, and the log; the press after the last tab closes it. Every screen explains what its
   numbers mean rather than throwing abbreviations at you, and the first one tells you exactly what

@@ -303,6 +303,9 @@ public abstract class CBConfig {
   // How many enforcers turn up when a gang sends its apex by car. A full car of them is the
   // set piece; the strength slider is what tunes how hard each one hits.
   public static func ApexStrikeTeamSize() -> Int32 = 4
+  // How long the Hub keeps counting while an apex squad is driving to you. Longer than a drive
+  // usually takes, because it is cleared the moment they actually arrive.
+  public static func ApexDriveTicks() -> Int32 = 90
 
   // ---- Rival ladder ----
   // Escapes, mercies and ranks it takes for a Rival to reach full apex grade.
@@ -388,6 +391,8 @@ public abstract class CBConfig {
   // When the clock runs out but V is mid-fight or another Rival is already out, wait this
   // many ticks and try again rather than dropping the appointment.
   public static func RivalHuntRetryTicks() -> Int32 = 20
+  // Spread added to each Rival's countdown so two of the same rank do not arrive together.
+  public static func RivalHuntJitterTicks() -> Int32 = 120
   // How long a Rival may stand around before Cyberbane gives up on the encounter, in in-game
   // seconds. In-game time runs far faster than real time, so this is a couple of real minutes.
   public static func RivalRetireGameSeconds() -> Float = 7200.0

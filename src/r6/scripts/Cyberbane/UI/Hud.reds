@@ -122,7 +122,7 @@ public class CBHud {
   private let m_rowD: array<ref<inkText>>;
   // Whether arrivals are currently being held back because V is in the middle of a quiet job.
   // Resolved once per render, not once per row.
-  private let m_huntHeld: Bool;
+  private let m_holdLabel: String;   // why no Rival can arrive right now, or "" 
 
   public func IsOpen() -> Bool {
     return this.m_tab != 0;
@@ -545,7 +545,10 @@ public class CBHud {
         // a vendetta crew is on its way, or they are still counting bodies.
         let right = "";
         if Equals(sys.GetPendingApexFaction(), fs.id) {
-          right = "APEX SQUAD IN " + CBHudCountdown(sys.GetPendingApexTicks());
+          // Two different things, and saying so is the difference between a countdown the
+          // player can act on and a number they cannot interpret.
+          right = (sys.IsPendingApexDriving() ? "APEX SQUAD DRIVING " : "APEX SQUAD IN ")
+                + CBHudCountdown(sys.GetPendingApexTicks());
         } else {
           if Equals(sys.GetPendingSquadFaction(), fs.id) {
             right = "CREW INBOUND " + CBHudCountdown(sys.GetPendingSquadTicks());
@@ -583,7 +586,8 @@ public class CBHud {
           IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
           gang,
           CBScarLabel(r.scarMask),
-          this.m_huntHeld ? "waiting for you to finish" : "arrives in " + CBHudCountdown(CBRivalHuntRemaining(r)));
+          StrLen(this.m_holdLabel) > 0 ? this.m_holdLabel
+                                       : "arrives in " + CBHudCountdown(CBRivalHuntRemaining(r)));
         shown += 1;
       }
     }
@@ -645,7 +649,7 @@ public class CBHud {
         bodyTop = 608.0;
       } else {
         if this.m_tab == CBHudRivalsTab() {
-          this.m_huntHeld = CBStealthEncounterNearby(sys, game);
+          this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
           this.RenderRivals(sys);
           bodyTop = 608.0;
         }

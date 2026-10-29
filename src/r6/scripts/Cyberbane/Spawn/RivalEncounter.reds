@@ -85,6 +85,14 @@ public func CBRivalHuntTicksFor(rank: Int32, atCap: Bool) -> Int32 {
   if atCap {
     t = Max(CBConfig.RivalHuntTicksMin() / 2, RoundF(Cast<Float>(t) * CBConfig.RivalCapHurryMult()));
   }
+  // Spread them out. This was purely a function of rank, so every Rival of the same rank got
+  // the same countdown to the second and they all queued up to arrive together, which reads
+  // as a scripted wave rather than as separate people with separate grudges. The jitter is
+  // generous on purpose: being hunted should feel irregular.
+  let jitter = CBConfig.RivalHuntJitterTicks();
+  if jitter > 0 {
+    t += RandRange(0, jitter);
+  }
   return t;
 }
 
@@ -133,6 +141,31 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   let now = CBGameSeconds(game);
   let atCap = CBRivalsAtCap(sys);
   let rivals = sys.GetRivals();
+  // Why nobody can arrive right now, if that is the case. Recorded so the Hub can say so
+  // instead of showing a countdown that is not counting.
+  //
+  // This is the fix for the frozen timer. The clock used to keep running while an arrival was
+  // impossible, hit zero, get reset to the retry interval, run down again and reset again -
+  // for every Rival at once, because all three blockers are global. The Hub, sampling that at
+  // render time, showed every Rival pinned at the same small number forever. A held clock has
+  // to actually stop.
+  let hold = CBHoldNone();
+  if quietWork {
+    hold = CBHoldQuietWork();
+  } else {
+    if busy {
+      hold = CBHoldOneAlreadyOut();
+    } else {
+      if inCombat {
+        hold = CBHoldInCombat();
+      }
+    }
+  }
+  sys.SetHuntHoldReason(hold);
+  if hold != CBHoldNone() {
+    return;   // everybody waits, and every clock stays where it is
+  }
+
   let i = 0;
   while i < ArraySize(rivals) {
     let r = rivals[i];
@@ -144,18 +177,16 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       } else {
         r.huntTicks -= 1;
         if r.huntTicks <= 0 {
-          if busy || inCombat || quietWork {
-            // Hold at the door rather than losing the appointment entirely.
-            r.huntTicks = CBConfig.RivalHuntRetryTicks();
-          } else {
-            if CBSpawnRival(sys, game, r, now) {
-              r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);
-              return;   // one arrival per tick
-            }
-            // Refused, most likely because V is somewhere they cannot be fought. Keep the
-            // appointment and try again shortly rather than making them wait all over again.
-            r.huntTicks = CBConfig.RivalHuntRetryTicks();
+          if CBSpawnRival(sys, game, r, now) {
+            r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);
+            return;   // one arrival per tick
           }
+          // The timer ran out and they still could not be put down: V is somewhere with no
+          // room for them, no navmesh, or the world is still streaming. The appointment is
+          // kept and retried shortly, but the Hub is told, because a fresh twenty second
+          // countdown here would be a lie - nothing is counting down, it is retrying.
+          sys.SetHuntHoldReason(CBHoldNoRoom());
+          r.huntTicks = CBConfig.RivalHuntRetryTicks();
         }
       }
     }

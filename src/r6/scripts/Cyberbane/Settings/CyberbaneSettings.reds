@@ -204,6 +204,12 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexArrivalSound")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexArrivalSound-Desc")
+  public let apexArrivalSound: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaApexSquad")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaApexSquad-Desc")
   public let vendettaApexSquad: Bool = true;

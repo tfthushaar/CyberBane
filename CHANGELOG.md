@@ -17,6 +17,8 @@ This project follows [Semantic Versioning](https://semver.org/).
   duels standing next to each other.
 - **An apex squad gets the boss health bar.** The game's own one, across the top of the screen,
   the same bar a story boss or MaxTac gets.
+- **The MaxTac descent horn plays when an apex squad is sent.** The game's own one. If you have
+  ever drawn a five star heat level you know what it means, and it means the same thing here.
 - **Rivals are built to apex grade, and they climb.** A Rival is now one apex-grade enemy
   where an apex squad is four of them, and they get stronger every single time they get away
   from you, every time you spare them, and every time they put you down. Mercy and failure both
@@ -57,6 +59,23 @@ This project follows [Semantic Versioning](https://semver.org/).
   never less than five seconds, and there is a slider if you want longer still.
 
 ### Fixed
+- **Rival countdowns were frozen on a small number.** The clock kept running while an arrival
+  was impossible, hit zero, got reset to the retry interval, ran down and reset again, forever,
+  and because all three things that block an arrival are global this happened to every Rival at
+  once. So the Hub showed all of them pinned at the same number. A held clock now actually
+  stops, and the Hub says what it is waiting for instead: you are in a fight, one is already
+  out, you are on a quiet job, or there is nowhere here to put anybody.
+- **The Hub is live.** It drew itself once when you opened it and then sat there, so every
+  countdown on it was a snapshot from the moment you pressed the key. It now updates every
+  second while it is open.
+- **The apex squad has a visible countdown.** The warning clock was being thrown away the
+  moment the squad was dispatched, so they arrived with nothing on screen. The Hub now counts
+  the warning down and then keeps counting while they drive, and says which of the two it is.
+- **Rivals no longer arrive in a bunch.** The countdown was a function of rank and nothing
+  else, so every Rival of the same rank had an identical timer to the second and they all
+  queued up to arrive together. They are spread out now.
+- **An overdue arrival says so.** If the timer runs out and there is genuinely nowhere to put
+  them, the Hub tells you, instead of quietly showing a fresh countdown that is really a retry.
 - **Paying a gang off now costs what they actually think of you.** It worked, but the price was
   the body count and nothing else, so a gang at vendetta charged exactly the same as one that
   merely disliked you. The price now also rises with how far their standing has fallen, and a

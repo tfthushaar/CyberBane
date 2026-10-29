@@ -252,6 +252,25 @@ public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
   CBApplyApexGradeBuff(sys, game, puppet, CBRivalGrade(r));
 }
 
+// The sound of something you do not want arriving.
+//
+// `av_maxtac_descent_horn` is the game's own MaxTac AV descent horn, which is exactly the
+// association wanted here: every player who has drawn a five star heat level knows what that
+// noise means before they have looked up. Played globally rather than from the car, because it
+// is doing the job of a warning - the squad is seventy metres away and out of sight when it
+// fires, and positional audio at that range would be missed.
+public func CBApexArrivalSound(game: GameInstance) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().apexArrivalSound {
+    return;
+  }
+  let audio = GameInstance.GetAudioSystem(game);
+  if !IsDefined(audio) {
+    return;
+  }
+  audio.Play(n"av_maxtac_descent_horn");
+}
+
 // Slow tick: has any gang lost enough people to send its apex after V?
 public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
@@ -334,16 +353,24 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     return;
   }
   if sys.TickDownPendingApex() > 0 {
-    return;   // still counting the warning down
+    return;   // still counting down
   }
-  sys.SetPendingApex(n"", 0);
+  // The clock was a drive, not a warning: this squad has already been sent. Whether they
+  // arrived or the car never made it, there is nothing further to dispatch - putting a second
+  // squad on the road here is how this turns into an endless stream of them.
+  if sys.IsPendingApexDriving() {
+    sys.SetPendingApex(n"", 0);
+    return;
+  }
 
   let fs = sys.FindFaction(faction);
   if !IsDefined(fs) {
+    sys.SetPendingApex(n"", 0);   // nothing to send; do not sit on a dead appointment
     return;
   }
   let record = TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
   if !TDBID.IsValid(record) {
+    sys.SetPendingApex(n"", 0);
     return;
   }
   // An apex turning up on foot out of nowhere was the other half of the arrival complaint.
@@ -356,10 +383,17 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
                            record, n"CB_Apex") {
     sys.MarkArrivalRoleSquad(fs.id);
     sys.ClearSquadAnchor();
+    // The warning is spent, but they are not here yet: they are driving. Keep the clock
+    // running for the length of the drive so the Hub has something true to show, instead of
+    // the countdown vanishing the moment the car is dispatched and the squad turning up with
+    // no warning at all. This is why there appeared to be no apex countdown.
+    sys.SetPendingApexDriving(fs.id, CBConfig.ApexDriveTicks());
+    CBApexArrivalSound(game);
     fs.apexAtKills = fs.kills;
-    CBLog.Info(n"Spawn", s"Apex from \(NameToString(fs.id)) arriving by car.");
+    CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) arriving by car.");
     return;
   }
+  sys.SetPendingApex(n"", 0);
   // CBSpawnGroup will refuse while the world is still streaming in, so this can only land on
   // a settled frame. CB_Apex is also tagged n"Cyberbane", so the session sweep clears it.
   let apexEntity: EntityID;
@@ -371,6 +405,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     return;
   }
   fs.apexAtKills = fs.kills;   // paid for: the next one needs fresh bodies
+  CBApexArrivalSound(game);    // only once somebody is actually standing there
   if CBConfig.ApexEscortCount() > 0 && TDBID.IsValid(fs.sampleRecord) {
     let escortEntity: EntityID;
     CBSpawnGroup(game, fs.sampleRecord, n"", CBConfig.ApexEscortCount(), n"CB_Squad",

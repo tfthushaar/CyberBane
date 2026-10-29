@@ -50,3 +50,30 @@ public func CBStealthHoldReason(sys: ref<CyberbaneSystem>, game: GameInstance) -
   }
   return "";
 }
+
+// ---- Why no Rival can arrive right now --------------------------------------
+//
+// Plain Int32 constants rather than an enum, to match how the other masks and role ids in
+// this codebase are done and so the value can sit on the system without a schema change.
+public func CBHoldNone() -> Int32 = 0
+public func CBHoldQuietWork() -> Int32 = 1
+public func CBHoldOneAlreadyOut() -> Int32 = 2
+public func CBHoldInCombat() -> Int32 = 3
+public func CBHoldNoRoom() -> Int32 = 4
+
+// What the Hub says while the clocks are stopped.
+public func CBHoldLabel(reason: Int32) -> String {
+  if reason == CBHoldQuietWork() {
+    return "holding off, quiet job";
+  }
+  if reason == CBHoldOneAlreadyOut() {
+    return "waiting their turn";
+  }
+  if reason == CBHoldInCombat() {
+    return "holding off, you are busy";
+  }
+  if reason == CBHoldNoRoom() {
+    return "cannot reach you here";
+  }
+  return "";
+}

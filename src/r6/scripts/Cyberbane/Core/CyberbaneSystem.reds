@@ -74,6 +74,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_arrivalFaction: CName;        // whose car this is, for picking role records
   private let m_arrivalRoleSquad: Bool;       // fill the seats by role rather than four alike
   private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
+  private let m_huntHoldReason: Int32;        // why no Rival can arrive right now (CBHold*)
+  private let m_pendingApexDriving: Bool;     // the apex clock is a drive, not a warning
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
   private let m_callbacksRegistered: Bool;    // Codeware entity + input callbacks registered; retried until it sticks
@@ -345,6 +347,16 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_arrivalSeats > 0 && this.m_arrivalFilled >= this.m_arrivalSeats;
   }
 
+  // Why every Rival clock is stopped, if it is. Read by the Hub so it can say what it is
+  // waiting for rather than show a number that is not moving.
+  public func GetHuntHoldReason() -> Int32 {
+    return this.m_huntHoldReason;
+  }
+
+  public func SetHuntHoldReason(reason: Int32) -> Void {
+    this.m_huntHoldReason = reason;
+  }
+
   // ---- Apex squad ----
   public func GetSquadAnchor() -> wref<ScriptedPuppet> {
     return this.m_squadAnchor;
@@ -458,6 +470,19 @@ public class CyberbaneSystem extends ScriptableSystem {
     return EInputKey.IK_F7;
   }
 
+  // Re-render the Hub once a tick while it is open.
+  //
+  // The Hub drew itself once when opened and then sat there, so every countdown on it was a
+  // snapshot from the moment it was opened. That is the whole of the "static time" report: the
+  // numbers were right when they were drawn and then never moved. Refresh is the same call the
+  // Hub already uses after an action, so this adds no new drawing path.
+  private func TickHub(game: GameInstance) -> Void {
+    if !IsDefined(this.m_hud) || !this.m_hud.IsOpen() {
+      return;
+    }
+    this.m_hud.Refresh(this, game);
+  }
+
   private func ScheduleFastTick() -> Void {
     let ds = GameInstance.GetDelaySystem(this.GetGameInstance());
     if !IsDefined(ds) {
@@ -564,6 +589,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
     CBProcessPendingSquad(this, game);  // and a vendetta squad arrives when its timer runs out
     this.AgePendingArrival();           // forget a car that was sent and never arrived
+    this.TickHub(game);                 // live countdowns while the Hub is open
     this.RefreshStealthHold(game);      // before anything that might send someone in
     CBRivalHuntTick(this, game);        // rivals close in on a visible countdown
     CBPanicDrivingTick(this, game, this.m_tickCount);
@@ -644,6 +670,22 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func SetPendingApex(faction: CName, ticks: Int32) -> Void {
     this.m_pendingApexFaction = faction;
     this.m_pendingApexTicks = ticks;
+    this.m_pendingApexDriving = false;
+  }
+
+  // The same clock, but for a squad that has already been dispatched and is on the road.
+  //
+  // The distinction matters more than it looks. Without it the clock running out is the signal
+  // to send a squad, so re-arming it to show the drive would dispatch a second squad when it
+  // expired, then a third, forever.
+  public func SetPendingApexDriving(faction: CName, ticks: Int32) -> Void {
+    this.m_pendingApexFaction = faction;
+    this.m_pendingApexTicks = ticks;
+    this.m_pendingApexDriving = true;
+  }
+
+  public func IsPendingApexDriving() -> Bool {
+    return this.m_pendingApexDriving;
   }
 
   public func GetPendingApexFaction() -> CName {
