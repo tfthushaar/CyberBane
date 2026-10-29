@@ -104,7 +104,22 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   // Their kind is already happening. The clock does not run down during the fight they are
   // waiting on - nobody should be queuing up behind an encounter you are still in.
   if CBLaneBusy(sys, game, lane) {
+    sys.MarkLaneBusy(lane);
     return;
+  }
+  // And a breather afterwards.
+  //
+  // Measured from the end of the last encounter in this lane rather than from when it was
+  // sent, so a long fight does not eat the gap. Without it a lane re-armed the instant the
+  // last body dropped and the next one was on its way before you had holstered, which reads
+  // as harassment instead of a city reacting to you.
+  //
+  // Only applies to picking somebody new. A lane that already has somebody on the clock keeps
+  // counting.
+  if sys.GetLaneTicks(lane) <= 0 && Equals(sys.GetLaneTarget(lane), n"") && sys.GetLaneRivalId(lane) <= 0 {
+    if (sys.GetTickCount() - sys.GetLaneFreed(lane)) < CBEncounterGapTicks() {
+      return;
+    }
   }
   if sys.GetLaneTicks(lane) > 0 || NotEquals(sys.GetLaneTarget(lane), n"") || sys.GetLaneRivalId(lane) > 0 {
     if sys.TickDownLane(lane) > 0 {
@@ -278,6 +293,16 @@ public func CBHitSquadsOn() -> Bool {
     return false;
   }
   return !CBTwrActive();
+}
+
+// How long a lane rests after its encounter ends, in ticks of about a second.
+public func CBEncounterGapTicks() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  let mins = CBConfig.EncounterGapMinutesDefault();
+  if IsDefined(rt) && rt.HasSettings() {
+    mins = rt.GetSettings().encounterGapMinutes;
+  }
+  return mins * 60;
 }
 
 public func CBRivalsOn() -> Bool {

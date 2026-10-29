@@ -82,6 +82,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Tick each lane last sent somebody. A spawn is queued, not instant: for a second or two
   // afterwards nothing is attached yet, so "is anyone of this kind alive" answers no and the
   // lane would cheerfully send a second one on top of the first.
+  // Last tick each lane was still busy. Subtracting it from now gives how long since that
+  // lane's encounter actually ended, which is what the gap between encounters is measured
+  // from - the end of the last fight, not the moment the last one was sent.
+  private let m_laneRivalFreed: Int32;
+  private let m_laneSquadFreed: Int32;
+  private let m_laneApexFreed: Int32;
   private let m_laneRivalFired: Int32;
   private let m_laneSquadFired: Int32;
   private let m_laneApexFired: Int32;
@@ -755,6 +761,25 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetLaneRivalId(lane: Int32) -> Int32 {
     return lane == CBLaneRival() ? this.m_laneRivalId : 0;
+  }
+
+  public func GetLaneFreed(lane: Int32) -> Int32 {
+    if lane == CBLaneRival() { return this.m_laneRivalFreed; }
+    if lane == CBLaneApex() { return this.m_laneApexFreed; }
+    return this.m_laneSquadFreed;
+  }
+
+  // Called every tick a lane is busy, so the stamp ends up being the last busy tick.
+  public func MarkLaneBusy(lane: Int32) -> Void {
+    if lane == CBLaneRival() {
+      this.m_laneRivalFreed = this.m_tickCount;
+    } else {
+      if lane == CBLaneApex() {
+        this.m_laneApexFreed = this.m_tickCount;
+      } else {
+        this.m_laneSquadFreed = this.m_tickCount;
+      }
+    }
   }
 
   public func GetLaneFired(lane: Int32) -> Int32 {

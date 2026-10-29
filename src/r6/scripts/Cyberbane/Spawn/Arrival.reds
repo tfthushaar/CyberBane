@@ -344,10 +344,19 @@ public func CBDismountArrivalCrew(game: GameInstance) -> Void {
   while i < ArraySize(ids) {
     let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
-    if IsDefined(puppet) {
-      let ai = puppet.GetAIControllerComponent();
-      if IsDefined(ai) {
-        ai.SendCommand(new AIUnmountCommand());
+    if IsDefined(puppet) && !puppet.IsDead() {
+      // Only somebody actually sitting in a car gets told to get out of one.
+      //
+      // This used to go to everyone wearing the crew tag, and that tag is never taken off, so
+      // it also reached people who had already got out and people whose mount never took in
+      // the first place. Handing an unmount order to somebody standing on the pavement leaves
+      // them in a broken state: face down on the ground, no AI, not fighting - which is
+      // exactly what was reported. The poll repeats, so it was reaching them more than once.
+      if VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
+        let ai = puppet.GetAIControllerComponent();
+        if IsDefined(ai) {
+          ai.SendCommand(new AIUnmountCommand());
+        }
       }
       // Out of the car and straight at V.
       CBOrderHunt(game, puppet);

@@ -215,6 +215,15 @@ public class CyberbaneSettings {
   public let vendettaApexSquad: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EncounterGap")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EncounterGap-Desc")
+  @runtimeProperty("ModSettings.min", "2")
+  @runtimeProperty("ModSettings.max", "30")
+  @runtimeProperty("ModSettings.step", "1")
+  public let encounterGapMinutes: Int32 = 10;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageHold")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageHold-Desc")

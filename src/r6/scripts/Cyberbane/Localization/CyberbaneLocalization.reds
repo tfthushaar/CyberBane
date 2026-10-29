@@ -69,6 +69,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines, so the street does not repeat itself.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane shows its messages on screen at all.");
     this.Text("Cyberbane-Settings-MessageHold-Desc", "How long Cyberbane's on-screen messages stay up, as a percentage of their normal length. The default of 175 is most of a full second longer than the game's own notifications, which is about what a sentence needs. Nothing is ever shown for less than five seconds.");
+    this.Text("Cyberbane-Settings-EncounterGap-Desc", "How long the city leaves you alone after an encounter ends before it starts arranging the next one of that kind. Rivals, hit squads and apex squads each rest separately, so one of each can still be building up at the same time. Measured from the end of the fight, so a long one does not eat into your breathing room.");
     this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "A gang at vendetta sends its apex squad along with the crew: four boss-grade enforcers in a car, with the rest of the crew on foot behind them. This is the hardest fight Cyberbane will put in front of you. Turn it off and a vendetta sends the crew alone.");
     this.Text("Cyberbane-Settings-ApexArrivalSound-Desc", "The game's own MaxTac descent horn plays when a gang sends its apex squad after you. It is the noise you know from drawing a five star heat level, and it means the same thing here.");
     this.Text("Cyberbane-Settings-ApexBossBar-Desc", "An apex squad gets the game's own boss health bar across the top of the screen, the same one a story boss or MaxTac gets. Rivals get it too, because a Rival is built to the same grade as a member of an apex squad. Anyone who is already boss grade by their own record is left alone, because the game does it for them.");
@@ -151,6 +152,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexBossBar", "Apex squad boss bar");
     this.Text("Cyberbane-Settings-ApexArrivalSound", "Apex squad arrival horn");
     this.Text("Cyberbane-Settings-VendettaApexSquad", "Vendetta brings the apex squad");
+    this.Text("Cyberbane-Settings-EncounterGap", "Minutes between encounters");
     this.Text("Cyberbane-Settings-MessageHold", "Message hold");
     this.Text("Cyberbane-Settings-VendettaSquads", "Vendetta hit squads");
     this.Text("Cyberbane-Settings-VendettaSquadSize", "Vendetta squad size");

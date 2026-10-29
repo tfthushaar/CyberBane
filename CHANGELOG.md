@@ -3,6 +3,26 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.7] - 2026-10-30
+
+### Fixed
+- **Some spawned enemies lay face down on the ground doing nothing.** Crew arriving by car were
+  told to get out of it, and that order was going to everyone wearing the crew tag rather than
+  only the ones actually sitting in a vehicle. The tag is never removed and the check repeats,
+  so it also reached people already standing on the pavement and people whose ride never took.
+  Telling somebody to climb out of a car they are not in leaves them like that.
+- Spawns are placed a little higher off the floor. A tenth of a metre left them clipping the
+  surface they had been put on, which the game resolves by dropping them into a ragdoll.
+
+### Changed
+- **The city leaves you alone between encounters.** Each kind now rests for ten minutes after
+  its last fight ends before it starts arranging the next one, and the three kinds rest
+  separately, so a rival can still be on the way while a gang is cooling off. The wait is
+  measured from the end of the fight, so a long one does not eat into your breathing room.
+  There is a setting for it, from two minutes up to thirty.
+- Once a lane does pick somebody, the warning before they arrive is shorter, since the wait
+  between encounters now does the spacing instead of the countdown.
+
 ## [1.2.6] - 2026-10-30
 
 ### Fixed

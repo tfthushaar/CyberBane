@@ -298,7 +298,10 @@ public abstract class CBConfig {
   // fight you is on your level or they are no use to anybody.
   public static func GroundMaxDrop() -> Float = 3.5
   // Set them down a hair above the floor so they never start clipped into it.
-  public static func GroundSpawnLift() -> Float = 0.1
+  // Clearance above the floor a spawn is placed on. A tenth of a metre left somebody
+  // intersecting the surface they had just been put on, which the engine resolves by dropping
+  // them into a ragdoll.
+  public static func GroundSpawnLift() -> Float = 0.35
   // How many abreast a spawned group stands before starting another rank behind it.
   // First ESecurityAreaType ordinal that counts as ordinary open city. Below this the game
   // treats the area as safe or restricted, and Cyberbane sends nobody.
@@ -407,9 +410,11 @@ public abstract class CBConfig {
   // while a Rival waits forever.
   public static func QueueRepeatPenalty() -> Float = 25.0
   // Nothing arrives sooner than this after being queued, whatever the frequency setting.
-  public static func QueueMinTicks() -> Int32 = 45
+  public static func QueueMinTicks() -> Int32 = 60
   // How long a gang takes to put its apex squad together once they are owed one.
-  public static func ApexQueueTicks() -> Int32 = 300
+  public static func ApexQueueTicks() -> Int32 = 180
+  // Minutes a lane rests after its encounter ends, before it looks for anybody new.
+  public static func EncounterGapMinutesDefault() -> Int32 = 10
   // How long a lane stays busy after sending somebody, to cover the gap between asking for a
   // spawn and it existing. Short, and a hard count rather than a wait on an attach.
   public static func LaneSettleTicks() -> Int32 = 8
@@ -424,8 +429,10 @@ public abstract class CBConfig {
   public static func ChaseRefreshPerPass() -> Int32 = 5
   // How long an ordinary hostile gang takes to put a crew together, at its slowest and its
   // fastest. Scaled between the two by how much they hate you and how well they know you.
-  public static func HostileSquadTicksMin() -> Int32 = 240
-  public static func HostileSquadTicksMax() -> Int32 = 900
+  // The warning window once a lane picks somebody. Short on purpose: the long wait between
+  // encounters is the rest period above, and this is only how much notice you get.
+  public static func HostileSquadTicksMin() -> Int32 = 90
+  public static func HostileSquadTicksMax() -> Int32 = 240
   // How well a gang has to know you before they bother sending anyone.
   public static func HitSquadMinRenown() -> Float = 25.0
 
