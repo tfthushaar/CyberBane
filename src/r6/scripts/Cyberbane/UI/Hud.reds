@@ -650,6 +650,12 @@ public class CBHud {
       } else {
         if this.m_tab == CBHudRivalsTab() {
           this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
+          // If an arrival was actually attempted and refused, that is more specific than the
+          // hold reason and more useful to say.
+          let blocked = CBBlockLabel(CBLastSpawnBlock());
+          if StrLen(blocked) > 0 && sys.GetHuntHoldReason() == CBHoldNoRoom() {
+            this.m_holdLabel = blocked;
+          }
           this.RenderRivals(sys);
           bodyTop = 608.0;
         }

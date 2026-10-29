@@ -32,7 +32,12 @@ public abstract class CBConfig {
   // If at least this many entities attached in a single tick interval, the world is streaming
   // heavily (a flood) even without a transition - stand down until it settles. This catches
   // ambient floods (dense districts, scene loads) that no menu/time-jump signal would flag.
-  public static func FloodAttachThreshold() -> Int32 = 25
+  // Puppets attached in one second that counts as the world being rebuilt around you. A busy
+  // street streams people in constantly, so this has to sit well above a crowd and below a
+  // load: at 25, counting every entity type, it was tripped more or less permanently.
+  public static func FloodAttachThreshold() -> Int32 = 60
+  // Recovery for an attach spike. Shorter than FloodSettleTicks, which is for loads.
+  public static func AttachSettleTicks() -> Int32 = 6
 
   // ---- Reaction director (spec §9.1, §18) ------------------------------
   // Wide enough to contain the chrome-widened flee range below, and enough NPCs per tick that
@@ -263,9 +268,10 @@ public abstract class CBConfig {
   // First ESecurityAreaType ordinal that counts as ordinary open city. Below this the game
   // treats the area as safe or restricted, and Cyberbane sends nobody.
   public static func OpenZoneFrom() -> Int32 = 2
-  // How far off V's own facing a spawn point has to be, in degrees, before it is accepted.
-  // Mirrors the margin They Will Remember uses for the same reason.
-  public static func SpawnMinViewAngle() -> Float = 70.0
+  // Largest cosine of the angle between V's facing and the spawn point that is still
+  // accepted. 0.342 is cos(70 degrees), the same margin They Will Remember uses, expressed in
+  // a form with no unit to get wrong.
+  public static func SpawnMaxFacingCosine() -> Float = 0.342
   // And the shortest distance worth queuing an out-of-view spawn at.
   public static func SpawnMinDistance() -> Float = 25.0
   public static func SpawnPerRank() -> Int32 = 4

@@ -82,6 +82,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising when you are reporting a bug.");
     this.Text("Cyberbane-Settings-FreezeReputation-Desc", "Stops your reputation changing at all, while everything already earned keeps working.");
     this.Text("Cyberbane-Settings-SafeZoneSpawns", "Allow spawns in safe areas");
+    this.Text("Cyberbane-Settings-QuestAreas", "Stay out of quest areas");
+    this.Text("Cyberbane-Settings-QuestAreas-Desc", "Nobody is sent after you while you are inside a quest or gig area, so an arrival cannot walk into the middle of someone else's story. Turn this off if rivals and squads never seem to arrive: quest areas can cover a lot of ground, and the Hub will tell you when this is what is holding them back.");
     this.Text("Cyberbane-Settings-SafeZoneSpawns-Desc", "Let rivals, hit squads and apex squads turn up inside apartments, bars and clinics. Off by default, because the game disarms you in those places.");
     this.Text("Cyberbane-Settings-SafeZoneCombat", "Let me fight in safe areas");
     this.Text("Cyberbane-Settings-SafeZoneCombat-Desc", "Stops the game forcing your hands empty when you enter a safe area, so you can fight back. Turn this on with the setting above.");

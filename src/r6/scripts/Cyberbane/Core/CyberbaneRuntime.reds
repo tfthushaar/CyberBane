@@ -18,6 +18,13 @@ public class CyberbaneRuntime extends ScriptableService {
   // The HUD's boss health bar, caught as it is built. Weak: the HUD rebuilds it on load, on
   // fast travel and on every teardown, so this is re-checked on every use.
   private let m_bossBar: wref<BossHealthBarGameController>;
+  // Why the last arrival was refused (CBBlock*). Diagnostic only, session-only.
+  //
+  // This exists because three releases in a row shipped with a different gate silently
+  // refusing every spawn, and each one was found by reading code rather than by the mod
+  // saying anything. A refusal that names itself turns a week of guessing into one sentence
+  // from whoever is playing.
+  private let m_lastSpawnBlock: Int32;
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -102,6 +109,14 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetBossBar(bar: wref<BossHealthBarGameController>) -> Void {
     this.m_bossBar = bar;
+  }
+
+  public func GetLastSpawnBlock() -> Int32 {
+    return this.m_lastSpawnBlock;
+  }
+
+  public func SetLastSpawnBlock(reason: Int32) -> Void {
+    this.m_lastSpawnBlock = reason;
   }
 
   public func GetLogLevel() -> Int32 {

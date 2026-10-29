@@ -15,6 +15,57 @@
 //              not silence the people standing in it.
 //   per V    - a NoCombat status tag, or the Safe zone state, or standing in a safe area.
 
+// ---- Why an arrival was refused ----------------------------------------------
+//
+// Recorded on the runtime every time a spawn is declined, so the Hub and the log can name the
+// gate instead of leaving it to be found by reading source. Plain Int32 constants to match the
+// other ids in this codebase.
+public func CBBlockNone() -> Int32 = 0
+public func CBBlockWorldBusy() -> Int32 = 1
+public func CBBlockCannotFight() -> Int32 = 2
+public func CBBlockQuestArea() -> Int32 = 3
+public func CBBlockProtectedZone() -> Int32 = 4
+public func CBBlockSafeArea() -> Int32 = 5
+public func CBBlockNoGround() -> Int32 = 6
+public func CBBlockEngineRefused() -> Int32 = 7
+public func CBBlockNoRecord() -> Int32 = 8
+
+public func CBNoteSpawnBlock(reason: Int32) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) {
+    rt.SetLastSpawnBlock(reason);
+  }
+}
+
+// Short, plain description for the Hub.
+public func CBBlockLabel(reason: Int32) -> String {
+  if reason == CBBlockWorldBusy() {
+    return "world still loading";
+  }
+  if reason == CBBlockCannotFight() {
+    return "you cannot draw here";
+  }
+  if reason == CBBlockQuestArea() {
+    return "you are on a job";
+  }
+  if reason == CBBlockProtectedZone() {
+    return "protected area";
+  }
+  if reason == CBBlockSafeArea() {
+    return "safe area";
+  }
+  if reason == CBBlockNoGround() {
+    return "no ground to stand on";
+  }
+  if reason == CBBlockEngineRefused() {
+    return "the game refused the spawn";
+  }
+  if reason == CBBlockNoRecord() {
+    return "no gang member on file";
+  }
+  return "";
+}
+
 // Has the player opted into being hunted inside safe areas?
 public func CBAllowSafeZoneSpawns() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -44,7 +95,19 @@ public func CBPlayerCannotFight(game: GameInstance) -> Bool {
     return false;
   }
   let upper = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.UpperBody);
-  return upper == EnumInt(gamePSMUpperBodyStates.ForceEmptyHands);
+  // Bounded against the same mistake that broke the zone check in 1.1.5.
+  //
+  // An unread or freshly reset blackboard int is 0. If `ForceEmptyHands` happened to be the
+  // zero member of its enum, this would read true before the game had said anything at all,
+  // and every arrival in the mod would be refused everywhere - exactly the failure the zone
+  // ordinal produced. Requiring the state to differ from Default makes that impossible to
+  // happen silently: if the two ever coincided, the test simply never fires, which costs one
+  // apartment check rather than the whole mod.
+  let emptyHands = EnumInt(gamePSMUpperBodyStates.ForceEmptyHands);
+  if emptyHands == EnumInt(gamePSMUpperBodyStates.Default) {
+    return false;
+  }
+  return upper == emptyHands;
 }
 
 // Is V inside? Used to keep an arrival out of a corridor or a one room flat, where there is
@@ -65,6 +128,15 @@ public func CBPlayerIndoors(game: GameInstance) -> Bool {
 // the middle of someone else's story is the single most intrusive thing this mod can do, so
 // the whole arrival system stands down inside one.
 public func CBPlayerInQuestArea(game: GameInstance) -> Bool {
+  // Switchable, because this is the one gate here that can cover a large area and there is no
+  // way to measure how large from script. It is the last unbounded blanket condition on the
+  // arrival path, and after three releases lost to gates that silently refused everything, a
+  // player who suspects it should be able to rule it out in one toggle rather than wait for a
+  // patch. The diagnostic names it too, so the Hub will say "you are on a job".
+  let rtQ = CyberbaneRuntime.Get();
+  if IsDefined(rtQ) && rtQ.HasSettings() && !rtQ.GetSettings().respectQuestAreas {
+    return false;
+  }
   let container = GameInstance.GetScriptableSystemsContainer(game);
   if !IsDefined(container) {
     return false;
@@ -123,10 +195,12 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   }
   // The restriction layer, which is what actually stops V drawing a weapon in an apartment.
   if CBPlayerCannotFight(game) {
+    CBNoteSpawnBlock(CBBlockCannotFight());
     return true;
   }
   // Somebody else's story is already happening here.
   if CBPlayerInQuestArea(game) {
+    CBNoteSpawnBlock(CBBlockQuestArea());
     return true;
   }
   // The game's own zone, but only indoors.
@@ -142,13 +216,18 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   // Paired with being indoors it is safe whichever way the ordinals fall: the worst a wrong
   // guess can now do is decline a spawn inside a building, which is already the policy.
   if CBInProtectedZone() && CBPlayerIndoors(game) {
+    CBNoteSpawnBlock(CBBlockProtectedZone());
     return true;
   }
   let sam = GameInstance.GetSafeAreaManager(game);
   if !IsDefined(sam) {
     return false;   // cannot tell: do not silently stop every spawn in the game
   }
-  return sam.IsPointInSafeArea(at);
+  if sam.IsPointInSafeArea(at) {
+    CBNoteSpawnBlock(CBBlockSafeArea());
+    return true;
+  }
+  return false;
 }
 
 // Is this NPC somewhere it should be left alone, whatever V has done?

@@ -168,7 +168,21 @@ public class CyberbaneSystem extends ScriptableSystem {
   private cb func OnCBEntityAttached(event: ref<EntityLifecycleEvent>) -> Void {
     // Count every attach (before any guard) so the fast tick can tell when the world is
     // streaming heavily - a flood - and stand down even with no menu / time-jump signal.
-    this.m_attachCount += 1;
+    // Count people, not everything.
+    //
+    // This counter feeds the flood detector, whose job is to notice the engine rebuilding the
+    // world and stand our native queries down until it is done. It was counting every entity
+    // that streamed in: pedestrians, cars, parked bikes, props, vending machines, doors. The
+    // threshold was chosen thinking about NPCs, so on any populated street it was tripped
+    // continuously, and the stand-down it arms skips the whole tick body - the Rival clocks,
+    // the Hub refresh, and the slow tick that drives hit squads and apex squads. The result
+    // was a mod that did nothing at all while you walked anywhere interesting.
+    //
+    // Only puppets matter here, because they are what the gated queries actually touch.
+    let attachedEntity = event.GetEntity();
+    if IsDefined(attachedEntity as ScriptedPuppet) {
+      this.m_attachCount += 1;
+    }
     if !IsDefined(this.m_registry) {
       return;
     }
@@ -533,7 +547,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     let attached = this.m_attachCount;
     this.m_attachCount = 0;
     if attached >= CBConfig.FloodAttachThreshold() {
-      this.m_streamSettleTicks = CBConfig.FloodSettleTicks();
+      // A spike in people appearing is not the same event as a load or a fast travel, and it
+      // does not need the same recovery. The long window stays for those, which announce
+      // themselves through the player handle and the game clock.
+      if this.m_streamSettleTicks < CBConfig.AttachSettleTicks() {
+        this.m_streamSettleTicks = CBConfig.AttachSettleTicks();
+      }
       this.ScheduleFastTick();
       return;
     }
@@ -548,6 +567,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_lastTickGameTime = nowGT;
     if this.m_streamSettleTicks > 0 {
       this.m_streamSettleTicks -= 1;
+      // Keep our own bookkeeping moving while the world settles.
+      //
+      // Standing every system down was over-broad. Counting a timer towards zero is arithmetic
+      // on fields we own: it reads no native object and cannot be the thing that crashes. Only
+      // the arrival itself needs a settled world, and that is gated separately inside
+      // CBSpawnGroup. Freezing the clocks as well is what made a settle window indistinguishable
+      // from the mod being broken, because an appointment that never approaches never arrives.
+      CBTickClocksOnly(this);
+      this.SetHuntHoldReason(CBHoldWorldBusy());
       this.ScheduleFastTick();
       return;
     }

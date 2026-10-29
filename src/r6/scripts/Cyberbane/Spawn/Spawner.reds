@@ -78,11 +78,23 @@ func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
         // spawnInView = false: a point in view is not refused loudly, it is quietly never
         // placed, and the caller is told an entity was created. So the view test has to
         // happen here, before anything is queued.
+        //
+        // Compared as a dot product rather than through GetAngleBetween, because that returns
+        // either degrees or radians and I have not verified which. A threshold of 70 against
+        // the wrong unit is never satisfied, which would silently disable this whole test and
+        // drop every spawn back to the raycast fallback - the failure would look like nothing
+        // at all. The cosine has no units to get wrong: cos(70 degrees) is about 0.342, and a
+        // point off to the side or behind V gives a value at or below it.
         let toPoint = new Vector4(found.X - ppos.X, found.Y - ppos.Y, 0.0, 0.0);
-        let flatFwd = new Vector4(fwd.X, fwd.Y, 0.0, 0.0);
-        let angle = Vector4.GetAngleBetween(flatFwd, toPoint);
         let away = Vector4.Length(toPoint);
-        if angle >= CBConfig.SpawnMinViewAngle() && away >= CBConfig.SpawnMinDistance() {
+        let facing = 1.0;
+        if away > 0.01 {
+          let flatLen = SqrtF(fwd.X * fwd.X + fwd.Y * fwd.Y);
+          if flatLen > 0.01 {
+            facing = (fwd.X * toPoint.X + fwd.Y * toPoint.Y) / (flatLen * away);
+          }
+        }
+        if facing <= CBConfig.SpawnMaxFacingCosine() && away >= CBConfig.SpawnMinDistance() {
           // A point they cannot walk from is a point they will stand on forever.
           let path = nav.CalculatePathOnlyHumanNavmesh(found, ppos, NavGenAgentSize.Human, 5.0);
           if IsDefined(path) && path.CalculateLength() > 0.0 {
@@ -160,6 +172,7 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
 // the tag still being there.
 public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float, out lastSpawned: EntityID) -> Int32 {
   if !TDBID.IsValid(record) || count <= 0 {
+    CBNoteSpawnBlock(CBBlockNoRecord());
     return 0;
   }
   let des = GameInstance.GetDynamicEntitySystem();
@@ -170,6 +183,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   // Never spawn into a world that is still streaming in (right after fast travel / a load, or
   // during a scene): the spawn point may not be ready and queuing one mid-stream can crash.
   if !CBWorldStable(game) {
+    CBNoteSpawnBlock(CBBlockWorldBusy());
     return 0;
   }
   let ppos = player.GetWorldPosition();
@@ -190,6 +204,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let orient = Quaternion.BuildFromDirectionVector(new Vector4(fwd.X, fwd.Y, 0.0, 0.0));
 
   let spawned = 0;
+  // Assume the worst and clear it on success, so a silent refusal cannot look like a success.
+  CBNoteSpawnBlock(CBBlockNoGround());
   let i = 0;
   while i < count {
     // Lay them out in ranks rather than one long line. At 2.5 m apart a squad of twenty would
@@ -231,6 +247,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
           if CBCreateSpawn(des, record, appearance,
                            new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0), orient, squadTag, lastSpawned) {
             spawned += 1;
+          } else {
+            CBNoteSpawnBlock(CBBlockEngineRefused());
           }
           placed = true;
           break;   // this lane is placed, or the engine refused it; either way stop retrying
@@ -254,7 +272,21 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     }
     i += 1;
   }
+  if spawned > 0 {
+    CBNoteSpawnBlock(CBBlockNone());
+  } else {
+    CBLog.Info(n"Spawn", s"Nothing could be placed: \(CBBlockLabel(CBLastSpawnBlock())).");
+  }
   return spawned;
+}
+
+// The gate that last refused an arrival, for the Hub and the log.
+public func CBLastSpawnBlock() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) {
+    return CBBlockNone();
+  }
+  return rt.GetLastSpawnBlock();
 }
 
 // Tell a freshly arrived hostile to come and find V.

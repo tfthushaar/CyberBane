@@ -96,6 +96,36 @@ public func CBRivalHuntTicksFor(rank: Int32, atCap: Bool) -> Int32 {
   return t;
 }
 
+// Advance the countdowns without touching the world.
+//
+// Called from the settle window, when the engine is busy and no native query is safe. Every
+// line here reads or writes Cyberbane's own fields and nothing else - no entity handles, no
+// systems, no spawn. A clock that reaches zero in here simply waits at zero, and the first
+// settled tick does the arriving.
+public func CBTickClocksOnly(sys: ref<CyberbaneSystem>) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  sys.TickDownPendingApex();
+  sys.TickDownPendingSquad();
+  let rivals = sys.GetRivals();
+  let i = 0;
+  while i < ArraySize(rivals) {
+    let r = rivals[i];
+    i += 1;
+    if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active)
+                        || r.state == EnumInt(ECBRivalState.Hunting)) {
+      if r.huntTicks <= 0 {
+        // Start it here too, or a Rival created during a busy stretch would sit at zero and
+        // the Hub would read "any moment" for the rest of the session.
+        r.huntTicks = CBRivalHuntTicksFor(r.rank, false);
+      } else {
+        r.huntTicks -= 1;
+      }
+    }
+  }
+}
+
 // Is the body we queued for this Rival actually in the world?
 //
 // Deliberately asks the world rather than trusting the spawn call's return value, which only

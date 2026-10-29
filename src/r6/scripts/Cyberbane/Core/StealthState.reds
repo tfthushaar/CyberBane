@@ -60,6 +60,7 @@ public func CBHoldQuietWork() -> Int32 = 1
 public func CBHoldOneAlreadyOut() -> Int32 = 2
 public func CBHoldInCombat() -> Int32 = 3
 public func CBHoldNoRoom() -> Int32 = 4
+public func CBHoldWorldBusy() -> Int32 = 5
 
 // What the Hub says while the clocks are stopped.
 public func CBHoldLabel(reason: Int32) -> String {
@@ -74,6 +75,9 @@ public func CBHoldLabel(reason: Int32) -> String {
   }
   if reason == CBHoldNoRoom() {
     return "cannot reach you here";
+  }
+  if reason == CBHoldWorldBusy() {
+    return "holding, world is loading";
   }
   return "";
 }

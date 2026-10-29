@@ -3,6 +3,37 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.8] - 2026-10-29
+
+### Fixed
+- **The mod was standing itself down almost all the time, and that is why nothing happened.**
+  Cyberbane watches for the game rebuilding the world around you and pauses its own work while
+  that happens, because running then can crash. The counter feeding that check was counting
+  every single thing that streamed in: every pedestrian, car, parked bike, prop, door and
+  vending machine. The limit was set thinking about people, so on any populated street it was
+  tripped more or less permanently, and each trip paused the mod for thirty seconds. It now
+  counts people only, the limit is higher, and an ordinary crowd settles in six seconds
+  instead of thirty.
+- **This was starving almost everything, not just arrivals.** Rival timers, apex squads, hit
+  squads, tribute, rumours spreading, titles being earned, crowd fear, and even your own score
+  updates all live behind that pause. If the city has felt like it was ignoring you, or your
+  scores looked stuck, this was why.
+- **Timers keep running while the world loads.** Counting down is arithmetic on Cyberbane's own
+  numbers and cannot be the thing that crashes, so only the arrival itself waits now. A timer
+  that reaches zero during a load simply waits at zero instead of freezing partway.
+- **The Hub says why nothing is coming.** Every refusal now names itself: the world is still
+  loading, you cannot draw a weapon here, you are on a job, a protected area, a safe area, no
+  ground to stand on, or the game refused the spawn. No more staring at a number that is not
+  moving and guessing.
+- **A new setting: "stay out of quest areas"**, on by default. Quest areas can cover a lot of
+  ground, and this was the last thing that could quietly hold every arrival back. If arrivals
+  never come, the Hub will tell you this is why, and you can switch it off.
+- The check for whether you can draw a weapon where you stand is now written so that it can
+  never read true before the game has said anything, which is the mistake that broke arrivals
+  in 1.1.5.
+- The out-of-view test for spawn points no longer depends on an assumption about whether an
+  angle is measured in degrees or radians, which would have silently disabled it.
+
 ## [1.1.7] - 2026-10-29
 
 ### Fixed

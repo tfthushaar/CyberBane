@@ -338,6 +338,12 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-QuestAreas")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-QuestAreas-Desc")
+  public let respectQuestAreas: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SafeZoneCombat")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SafeZoneCombat-Desc")
   public let allowSafeZoneCombat: Bool = false;
