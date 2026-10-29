@@ -53,7 +53,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-FactionDisguises-Desc", "Whether wearing a gang's colours makes that gang slower to place you.");
     this.Text("Cyberbane-Settings-Tribute-Desc", "Whether a gang that fears you may quietly send eddies to stay on your good side.");
     this.Text("Cyberbane-Settings-TributeMult-Desc", "Multiplies how much that tribute pays.");
-    this.Text("Cyberbane-Settings-HitSquads-Desc", "Whether gangs send people after you. This also controls apex hunters.");
+    this.Text("Cyberbane-Settings-HitSquads-Desc", "Whether gangs send people after you. This also controls apex squads.");
     this.Text("Cyberbane-Settings-HitSquadFreq-Desc", "How often gangs send people after you.");
     this.Text("Cyberbane-Settings-Morale-Desc", "Whether wounded enemies lose their nerve and run, and whether a squad breaks when one of their own drops.");
     this.Text("Cyberbane-Settings-MoraleIntensity-Desc", "How easily enemies break. Zero means nobody ever runs.");
@@ -69,16 +69,18 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines, so the street does not repeat itself.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane shows its messages on screen at all.");
+    this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "A gang at vendetta sends its apex squad along with the crew: four boss-grade enforcers in a car, with the rest of the crew on foot behind them. This is the hardest fight Cyberbane will put in front of you. Turn it off and a vendetta sends the crew alone.");
+    this.Text("Cyberbane-Settings-ApexBossBar-Desc", "An apex squad gets the game's own boss health bar across the top of the screen, the same one a story boss or MaxTac gets. Anyone who is already boss grade by their own record is left alone, because the game does it for them.");
     this.Text("Cyberbane-Settings-VendettaSquads-Desc", "A gang at vendetta stops rolling dice over whether to come after you and simply comes. The Hub shows how long until they arrive. They will wait rather than walk in on a gig, a quiet job or a safe area, so the timer holds instead of cancelling.");
     this.Text("Cyberbane-Settings-VendettaSquadSize-Desc", "How many a gang at vendetta sends when you are at full menace. Fewer turn out if you are less of a problem to them. Large numbers are the point of a vendetta, but every one of them is a real NPC, so lower this if you see the frame rate dip when a crew arrives.");
-    this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Hit squads and apex enforcers drive to you instead of appearing on foot. The car is spawned out of sight, loads its crew and comes to find you; if you are driving, it gives chase. Turned off, or indoors where a car cannot reach, they arrive on foot as before.");
+    this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Hit squads and apex squads drive to you instead of appearing on foot. The car is spawned out of sight, loads its crew and comes to find you; if you are driving, it gives chase. Turned off, or indoors where a car cannot reach, they arrive on foot as before.");
     this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous an apex enforcer is, as a percentage of a full boss build. At 100 it is in the same class as the game's own set piece enforcers and is meant to be a serious fight. The default 70 is hard but fair. This scales health, armour, damage and crit together, and it is also scaled by your own menace, so an apex is always measured against where you are.");
     this.Text("Cyberbane-Settings-ApexTraits-Desc", "Each apex gets two traits of its own, so no two fight the same way: heavier plate, a harder hit, a better eye for the gap in your armour, a deeper health pool, or simply fighting above its level. Turns itself off automatically when New Game Plus is installed, because that mod already hands out its own.");
     this.Text("Cyberbane-Settings-TwrCompat-Desc", "Compatibility with They Will Remember and Night City Remembers. On Auto, Cyberbane spots them and stands down the systems that would otherwise run twice.");
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising when you are reporting a bug.");
     this.Text("Cyberbane-Settings-FreezeReputation-Desc", "Stops your reputation changing at all, while everything already earned keeps working.");
     this.Text("Cyberbane-Settings-SafeZoneSpawns", "Allow spawns in safe areas");
-    this.Text("Cyberbane-Settings-SafeZoneSpawns-Desc", "Let rivals, hit squads and apex hunters turn up inside apartments, bars and clinics. Off by default, because the game disarms you in those places.");
+    this.Text("Cyberbane-Settings-SafeZoneSpawns-Desc", "Let rivals, hit squads and apex squads turn up inside apartments, bars and clinics. Off by default, because the game disarms you in those places.");
     this.Text("Cyberbane-Settings-SafeZoneCombat", "Let me fight in safe areas");
     this.Text("Cyberbane-Settings-SafeZoneCombat-Desc", "Stops the game forcing your hands empty when you enter a safe area, so you can fight back. Turn this on with the setting above.");
     this.Text("Cyberbane-Settings-Category-UI", "Interface");
@@ -143,6 +145,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-VehicleArrivals", "Arrive by car");
     this.Text("Cyberbane-Settings-ApexStrength", "Apex strength");
     this.Text("Cyberbane-Settings-ApexTraits", "Apex traits");
+    this.Text("Cyberbane-Settings-ApexBossBar", "Apex squad boss bar");
+    this.Text("Cyberbane-Settings-VendettaApexSquad", "Vendetta brings the apex squad");
     this.Text("Cyberbane-Settings-VendettaSquads", "Vendetta hit squads");
     this.Text("Cyberbane-Settings-VendettaSquadSize", "Vendetta squad size");
 

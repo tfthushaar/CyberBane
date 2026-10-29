@@ -26,6 +26,17 @@ public func CBMbaiActive() -> Bool {
   return false;
 }
 
+// True when another mod already equips NPCs with gameplay abilities, so Cyberbane should not
+// also do it. Ability packages stack rather than merge, so two mods both handing out a
+// Sandevistan produce an enemy with two of them.
+//
+// Much Better AI does this properly and at scale, and New Game Plus rebuilds every NPC in the
+// game with its own ability groups. Either one present means Cyberbane leaves the kit alone
+// and keeps the parts that are its own: who gets sent, when, in what, and the boss bar.
+public func CBAiKitOwner() -> Bool {
+  return CBMbaiActive() || CBNgpActive();
+}
+
 // True when some other mod owns making enemies break and run, so Cyberbane should not also
 // push them. Kept as its own function so more mods can be added without touching call sites.
 public func CBExternalMoraleOwner() -> Bool {

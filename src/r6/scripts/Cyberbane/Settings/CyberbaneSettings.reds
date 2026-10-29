@@ -198,6 +198,18 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexBossBar")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexBossBar-Desc")
+  public let apexBossBar: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaApexSquad")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaApexSquad-Desc")
+  public let vendettaApexSquad: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquads")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquads-Desc")
   public let vendettaSquads: Bool = true;

@@ -98,6 +98,8 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     if info.victimClass != EnumInt(ECBVictimClass.Civilian) && TDBID.IsValid(info.recordID)
        && !info.victimIsUnique {
       fs.sampleRecord = info.recordID;
+      // And file it under its combat role, for the apex squad (spec §9.9).
+      CBCaptureRoleRecord(fs, info.recordID);
       // An elite, officer or boss makes a far better template for the gang's apex enforcer
       // than a rank-and-file ganger (spec §9.9).
       if info.victimClass == EnumInt(ECBVictimClass.Elite)

@@ -217,8 +217,15 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
   while i < seats {
     // Seat zero is whoever this arrival is actually about, when it is about somebody.
     let isLead = i == 0 && TDBID.IsValid(leadRecord);
+    let seatRecord = isLead ? leadRecord : record;
+    // An apex squad fills its seats by role instead: a heavy, a shooter, a blade and a
+    // netrunner, each from a real record of that kind belonging to this gang.
+    if sys.IsArrivalRoleSquad() {
+      let fsRole = sys.FindFaction(sys.GetPendingArrivalFaction());
+      seatRecord = CBApexRoleRecord(fsRole, i, seatRecord);
+    }
     let spec = new DynamicEntitySpec();
-    spec.recordID = isLead ? leadRecord : record;
+    spec.recordID = seatRecord;
     spec.position = at;
     spec.orientation = ori;
     spec.persistState = false;

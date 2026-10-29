@@ -71,6 +71,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_arrivalAge: Int32;            // ticks since the car was queued (stale guard)
   private let m_arrivalLeadRecord: TweakDBID; // the one who matters, if this convoy has one
   private let m_arrivalLeadTag: CName;        // and the tag that makes them matter
+  private let m_arrivalFaction: CName;        // whose car this is, for picking role records
+  private let m_arrivalRoleSquad: Bool;       // fill the seats by role rather than four alike
+  private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
   private let m_callbacksRegistered: Bool;    // Codeware entity + input callbacks registered; retried until it sticks
@@ -217,6 +220,26 @@ public class CyberbaneSystem extends ScriptableSystem {
         // A gang elite is not a boss on its own, so our apex gets lifted to boss grade.
         if des.IsTagged(id, n"CB_Apex") {
           CBApplyApexBuff(this, this.GetGameInstance(), puppet);
+          // The kit its role should be fighting with, the bar that says this one matters,
+          // and a seat in the squad so the four of them fight as a team.
+          CBKitApexMember(puppet);
+          CBShowBossBar(puppet);
+        }
+        // The rank and file get the light kit: enough to use cover properly, not enough to
+        // turn twenty gangers into twenty bosses.
+        if des.IsTagged(id, n"CB_Squad") {
+          CBKitSquadMember(puppet);
+        }
+        // Squad cohesion for anything Cyberbane sends as a group. Without this they are
+        // individuals standing together: each picks its own target and nobody covers anybody.
+        if des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Squad") {
+          CBJoinSquadWith(this, puppet);
+        }
+        // A Rival is somebody with a name, so they fight like it. Same role kit as the apex
+        // squad gets: the game already knows how to use a Sandevistan, cover and grenades,
+        // and a named enemy that uses none of them is just a ganger with a nameplate.
+        if des.IsTagged(id, n"CB_Rival") {
+          CBKitApexMember(puppet);
         }
         // Somebody who runs a crew should take more killing than the rank and file do.
         if des.IsTagged(id, n"CB_Rival") && this.GetActiveRivalId() > 0 {
@@ -250,6 +273,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_arrivalSeats = 0;
     this.m_arrivalFilled = 0;
     this.m_arrivalAge = 0;
+    this.m_arrivalFaction = n"";
+    this.m_arrivalRoleSquad = false;
   }
 
   public func GetPendingArrivalLeadRecord() -> TweakDBID {
@@ -310,6 +335,34 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func IsArrivalFull() -> Bool {
     return this.m_arrivalSeats > 0 && this.m_arrivalFilled >= this.m_arrivalSeats;
+  }
+
+  // ---- Apex squad ----
+  public func GetSquadAnchor() -> wref<ScriptedPuppet> {
+    return this.m_squadAnchor;
+  }
+
+  public func SetSquadAnchor(puppet: wref<ScriptedPuppet>) -> Void {
+    this.m_squadAnchor = puppet;
+  }
+
+  // Called when a new group is dispatched. Without it, a crew arriving later would be joined
+  // into whatever squad the last survivor of the previous one is still anchoring.
+  public func ClearSquadAnchor() -> Void {
+    this.m_squadAnchor = null;
+  }
+
+  public func GetPendingArrivalFaction() -> CName {
+    return this.m_arrivalFaction;
+  }
+
+  public func IsArrivalRoleSquad() -> Bool {
+    return this.m_arrivalRoleSquad;
+  }
+
+  public func MarkArrivalRoleSquad(faction: CName) -> Void {
+    this.m_arrivalFaction = faction;
+    this.m_arrivalRoleSquad = true;
   }
 
   public func ClearPendingArrival() -> Void {

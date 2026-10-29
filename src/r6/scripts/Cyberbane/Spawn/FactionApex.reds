@@ -259,7 +259,7 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
 
         let name = CBApexName(CBContent(game), fs.id, fs.kills);
         if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-          CBShowMessage(game, s"Cyberbane: \(name) of the \(NameToString(fs.id)) is hunting you down. Watch yourself.", 5.0);
+          CBShowMessage(game, s"Cyberbane: \(name) is bringing an apex squad of the \(NameToString(fs.id)) after you. Watch yourself.", 5.0);
         }
         CBLog.Info(n"Spawn", s"Faction apex inbound for \(NameToString(fs.id)).");
         return;   // only ever one gang at a time
@@ -303,6 +303,8 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   // the strength slider is how a player dials that back if four at once is too much.
   if CBSpawnVehicleArrival(sys, game, fs.id, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex",
                            record, n"CB_Apex") {
+    sys.MarkArrivalRoleSquad(fs.id);
+    sys.ClearSquadAnchor();
     fs.apexAtKills = fs.kills;
     CBLog.Info(n"Spawn", s"Apex from \(NameToString(fs.id)) arriving by car.");
     return;

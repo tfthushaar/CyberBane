@@ -65,20 +65,25 @@ page describes what the mod does and how it installs.
   it gives chase instead. Indoors, or anywhere there is no room for a car, they come on foot.
 - **A vendetta is a decision, not a dice roll.** A gang that has sworn one is already putting a
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
-  of a problem they think you are. Pay them off while they are on the way and they turn around.
+  of a problem they think you are, and they bring the gang's apex squad with them. Pay them off
+  while they are on the way and they turn around.
 - **A city that pays attention.** Frighten a gang enough and they may send tribute to stay on
   your good side, or a hit squad to deal with you. Give a hit squad the slip and a survivor can
   come back as a named Rival who hunts you. Vendors give fear or respect discounts, and fixers pay
   the famous a bonus on job payouts. You can also buy your way out of a vendetta by brokering peace
   with a gang from the Hub.
-- **Gangs send an apex strike team.** Keep putting one crew in the ground and they stop sending
-  squads and send the people who matter: a carload of four named enforcers, built from the
-  toughest members of that gang you have actually fought and lifted to boss grade. You get a
-  warning first, and a countdown. How dangerous they are is a slider, from a hard fight to the
-  game's own set-piece enforcers, and your own build scales it on top, so they stay a real fight
-  as you get stronger. Each one carries two traits of its own, so no two fight the same way. No
-  story character is ever used, so nothing gets spoiled and you never meet a duplicate of someone
-  you already killed. It works for every gang. The Hub keeps count of the ones you put down.
+- **Gangs send an apex squad.** Keep putting one crew in the ground and they stop sending
+  squads and send the people who matter: a carload of four named enforcers who fight like
+  MaxTac. There is a heavy who walks at you and breaks your guard, a shooter who flushes you
+  out of cover, a blade who closes on a Sandevistan, and a netrunner who hangs back and takes
+  your weapon off you. Each chair is filled with a real member of that gang you have actually
+  fought, so they carry the right weapons and fight the way that kind of enemy fights, and they
+  work as a squad rather than four individuals. They get the game's own boss health bar. You
+  get a warning first, and a countdown. How dangerous they are is a slider, from a hard fight
+  up to the game's own set-piece enforcers, and your own build scales it on top. Each one
+  carries two traits of its own, so no two fight the same way. No story character is ever used,
+  so nothing gets spoiled and you never meet a duplicate of someone you already killed. It
+  works for every gang. The Hub keeps count of the ones you put down.
 - **Gangs you cannot decapitate.** Every gang has a leader and up to three lieutenants, and
   your Rivals fill those chairs. Put the leader down and the strongest of the rest takes the
   crew, so there is always somebody next in line. A leader takes real killing; a lieutenant
@@ -179,8 +184,10 @@ Every option explains what it does.
   greeting you, so Cyberbane stands its own overheard lines down and keeps everything else.
 - Much Better AI: supported, detected automatically, no setup. Its Nerve system owns morale,
   so Cyberbane stands down its own morale break and terror push rather than panicking the same
-  enemy twice. It keeps tracking who got away, so Rivals still come from enemies Much Better AI
-  sent running.
+  enemy twice, and it also owns equipping enemies, so Cyberbane leaves its own ability kits off
+  rather than handing the same enemy a second Sandevistan. It keeps tracking who got away, so
+  Rivals still come from enemies Much Better AI sent running, and everything that is Cyberbane's
+  own still runs: who gets sent after you, when, in what, and the boss bar.
 - Responsive NPCs: works alongside. If crowd reactions feel doubled, lower civilian intensity or
   disable one side's crowd reactions.
 - Night City Alive and other crowd or patrol mods: supported.

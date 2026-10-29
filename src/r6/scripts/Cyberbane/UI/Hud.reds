@@ -545,13 +545,13 @@ public class CBHud {
         // a vendetta crew is on its way, or they are still counting bodies.
         let right = "";
         if Equals(sys.GetPendingApexFaction(), fs.id) {
-          right = "APEX INBOUND " + CBHudCountdown(sys.GetPendingApexTicks());
+          right = "APEX SQUAD IN " + CBHudCountdown(sys.GetPendingApexTicks());
         } else {
           if Equals(sys.GetPendingSquadFaction(), fs.id) {
             right = "CREW INBOUND " + CBHudCountdown(sys.GetPendingSquadTicks());
           } else {
             let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
-            right = toApex <= 0 ? "apex due" : s"apex in \(toApex) kills";
+            right = toApex <= 0 ? "apex squad due" : s"apex squad in \(toApex) kills";
           }
         }
         this.SetRow(shown, pip, CBFactionLabel(fs.id),
@@ -721,8 +721,8 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let out = s"STREET CRED \(cred)      STYLE \(style)      HERE \(district)\n\n";
   let stats = sys.GetStats();
   if IsDefined(stats) {
-    out += s"APEX PUT DOWN \(stats.apexKills)      RIVALS PUT DOWN \(stats.rivalsSlain)      UNSEEN \(stats.unattributed)\n";
-    out += "    Keep hitting one gang and they send an apex hunter, sized to your build.\n";
+    out += s"APEX SQUAD KILLS \(stats.apexKills)      RIVALS PUT DOWN \(stats.rivalsSlain)      UNSEEN \(stats.unattributed)\n";
+    out += "    Keep hitting one gang and they send an apex squad of four, sized to your build.\n";
     out += "    Work nobody saw builds almost no reputation you can claim.\n\n";
   }
   out += CBHudDreadReason(sys) + "\n";
@@ -803,7 +803,7 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
     return "No gang has formed an opinion of you yet.\n\nWork in their territory and that changes quickly.";
   }
   let out = "Standing is whether they like you. Fear is how badly they want to avoid you.\n";
-  out += "The last column counts their dead and how close they are to sending an apex.\n\n";
+  out += "The last column counts their dead and how close they are to sending an apex squad.\n\n";
   out += "Wary means they keep an eye on you. Hostile means they draw on sight.\n";
   out += "Vendetta means they hunt you and put a price on your head.\n\n";
   out += "[ Shift + Hub key ]  buy off the worst gang you can afford.";

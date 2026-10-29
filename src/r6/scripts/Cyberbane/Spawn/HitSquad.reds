@@ -189,6 +189,12 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
   sys.ClearPendingSquad();
 }
 
+// Does a vendetta crew bring the gang's apex squad with it?
+public func CBVendettaApexOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().vendettaApexSquad;
+}
+
 func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, infamous: Bool, now: Float) -> Void {
   // size = 3 + floor(-S_f / 35), capped at 6, +1 at Infamous or above (spec §9.9).
   let size = 3 + FloorF(-fs.standing / 35.0);
@@ -214,6 +220,35 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   }
 
   let squadEntity: EntityID;
+  sys.ClearSquadAnchor();   // this crew is its own squad, not a late joiner to the last one
+
+  // A vendetta does not send muscle, it sends everybody. The crew comes with the gang's apex
+  // squad in it: four boss-grade enforcers in a car, with the rest of the crew behind them on
+  // foot. This is the fight a vendetta is supposed to be.
+  let withApex = Equals(posture, ECBPosture.Vendetta) && CBVendettaSquadsOn()
+                 && CBVendettaApexOn() && TDBID.IsValid(fs.eliteRecord);
+  if withApex {
+    if CBSpawnVehicleArrival(sys, game, fs.id, fs.eliteRecord, CBConfig.ApexStrikeTeamSize(),
+                             n"CB_Apex", fs.eliteRecord, n"CB_Apex") {
+      sys.MarkArrivalRoleSquad(fs.id);
+      CBLog.Info(n"Spawn", s"Vendetta crew from \(NameToString(fs.id)) brings an apex squad.");
+      // The crew on foot is the whole squad; the car is extra.
+      let footAll = CBSpawnGroup(game, fs.sampleRecord, n"", size, n"CB_Squad",
+                                 CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
+      fs.lastHitSquadAt = now;
+      sys.SetActiveSquadFaction(fs.id);
+      let cdApex = sys.GetCooldowns();
+      if IsDefined(cdApex) {
+        cdApex.lastHitSquadAt = now;
+      }
+      let rtApex = CyberbaneRuntime.Get();
+      if IsDefined(rtApex) && rtApex.HasSettings() && rtApex.GetSettings().toasts {
+        CBShowMessage(game, s"Cyberbane: the \(NameToString(fs.id)) are coming for you in force.", 5.0);
+      }
+      CBLog.Info(n"Spawn", s"Vendetta crew from \(NameToString(fs.id)): \(footAll) on foot plus an apex squad.");
+      return;
+    }
+  }
   // If they can drive to you, they drive. A car seats four, so a crew bigger than that sends
   // a car and the rest come on foot behind it - which is what a gang turning out in numbers
   // actually looks like, rather than a bus.

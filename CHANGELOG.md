@@ -6,6 +6,22 @@ This project follows [Semantic Versioning](https://semver.org/).
 ## [1.1.5] - 2026-10-29
 
 ### Added
+- **The apex squad fights like MaxTac.** Four roles, not four copies of the same ganger: a
+  heavy who walks at you and breaks your guard, a shooter who flushes you out of cover with
+  grenades, a blade who closes the distance on a Sandevistan, and a netrunner who hangs back
+  and takes your weapon off you. Each chair is filled with a real record of that kind belonging
+  to that gang, so the game's own AI gives them the right weapon and the right behaviour, and
+  each one is handed a kit of real gameplay abilities on top.
+- **They fight as a squad.** Everyone Cyberbane sends as a group now joins one squad, so they
+  coordinate instead of picking their own targets. Before this an arrival was four separate
+  duels standing next to each other.
+- **An apex squad gets the boss health bar.** The game's own one, across the top of the screen,
+  the same bar a story boss or MaxTac gets.
+- **Rivals fight like somebody with a name**, with the same role kit. A named enemy that never
+  used cover or chrome was a ganger with a nameplate.
+- **A gang at vendetta sends the apex squad with the crew.** Four boss-grade enforcers in a
+  car, the rest of the crew on foot behind them. This is the hardest fight Cyberbane will put
+  in front of you, and there is a setting to turn it off.
 - **They drive over.** A hit squad or a gang's apex now arrives by car. One is spawned out of
   sight, loads its crew, drives to you and the crew gets out and comes for you; if you are
   behind the wheel, it gives chase instead. A car cannot reach you indoors or where there is
@@ -23,6 +39,14 @@ This project follows [Semantic Versioning](https://semver.org/).
 - **New Game Plus is detected**, and Cyberbane halves its own apex buffs and stops rolling its
   traits when it is installed, because that mod already rebuilds every NPC in the game and the
   two sets of buffs multiply rather than replace.
+- **Ability kits stand down for Much Better AI and New Game Plus.** Both already equip NPCs,
+  and ability packages stack rather than merge, so two mods each handing out a Sandevistan
+  produce an enemy with two of them. Either one installed and Cyberbane leaves the kit to them
+  and keeps what is its own: who gets sent, when, in what, and the boss bar.
+
+### Changed
+- **"Apex" is "apex squad" everywhere**, in the Hub and in every message, because it is four
+  people now rather than one.
 
 ### Fixed
 - **A gang at vendetta now actually comes after you.** This is the Barghest report. A vendetta

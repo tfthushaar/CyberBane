@@ -24,6 +24,13 @@ public class CBFactionState {
   // A real character record of a member V has fought, captured so hit squads spawn
   // faction-appropriate NPCs without hardcoding TweakDB ids (spec §9.9, S-08).
   public persistent let sampleRecord: TweakDBID;
+  // One record per chair on the apex squad, so the team that comes for you is assembled out
+  // of the kinds of member of this gang V has actually fought. Four flat scalars rather than
+  // an array, for the schema-3 reason: nothing nested inside a persisted class.
+  public persistent let roleTankRecord: TweakDBID;
+  public persistent let roleAssaultRecord: TweakDBID;
+  public persistent let roleBladeRecord: TweakDBID;
+  public persistent let roleNetrunnerRecord: TweakDBID;
   // The toughest member of this gang V has actually put down (elite, officer or boss). The
   // faction apex is built from this, so the heavy they send is their own kind and no story
   // character is ever involved. Falls back to sampleRecord if V has only fought rank and file.
