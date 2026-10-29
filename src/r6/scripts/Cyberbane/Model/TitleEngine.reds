@@ -16,7 +16,9 @@ public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
       sys.AddRenownPoints(Equals(def.id, n"T_CYBERBANE") ? 100.0 : 25.0);
       let rt = CyberbaneRuntime.Get();
       if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-        CBShowMessage(game, "Cyberbane: Title unlocked - " + CBTitleDisplay(sys, def), 5.0);
+        // From somebody on the street rather than from the mod. A title is a thing other
+        // people decided to call you, so hearing it from them is the right way round.
+        CBContactMessage(game, "people are calling you " + CBTitleDisplay(sys, def) + " now.");
       }
       CBLog.Info(n"Model", s"Title unlocked: \(NameToString(def.id)).");
     }
@@ -72,6 +74,92 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   if Equals(id, n"T_MERC_FROM") { return EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.LocalName); }
   if Equals(id, n"T_CYBERBANE") { return CBCyberbaneCondition(sys, score); }
   return false;   // deed-gated titles unlock through the deed system
+}
+
+// What this title takes, in plain words, with progress where there is a number to show.
+//
+// Written because a player reported the obvious: the mod hands out titles and never explains
+// what any of them mean or how they are earned, so the whole system reads as something that
+// happens to you rather than something you can go after. Every line here mirrors the condition
+// directly above it, so the two cannot drift apart without somebody noticing.
+public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
+  if !IsDefined(sys) {
+    return "";
+  }
+  let score = sys.GetScore();
+  let stats = sys.GetStats();
+  if !IsDefined(score) || !IsDefined(stats) {
+    return "";
+  }
+  if Equals(id, n"T_LIVING_LEGEND") {
+    return CBReqNum("be known across Night City", RoundF(score.GetRenown()), RoundF(CBConfig.TierLegend()));
+  }
+  if Equals(id, n"T_CHROME_SAINT") {
+    return CBReqNum("carry more chrome than flesh", RoundF(score.GetChrome()), 85);
+  }
+  if Equals(id, n"T_GLITCH") {
+    return "fight as a netrunner, then " + CBReqNum("kill with quickhacks", stats.quickhackKills, 50);
+  }
+  if Equals(id, n"T_PSYCHO_HUNTER") {
+    return CBReqNum("put down cyberpsychos", stats.psychosKilled, 10);
+  }
+  if Equals(id, n"T_PSYCHO_WHISPERER") {
+    return CBReqNum("talk cyberpsychos down instead", stats.psychosPacified, 5);
+  }
+  if Equals(id, n"T_FIST") {
+    return "fight as a brawler, then " + CBReqNum("put down anyone at all", sys.TotalKills(), 100);
+  }
+  if Equals(id, n"T_UNTOUCHABLE") {
+    return CBReqNum("finish fights without being hit", stats.flawless, 10);
+  }
+  if Equals(id, n"T_RED_TIDE") {
+    return CBReqNum("leave a massacre behind you", stats.massacres, 5);
+  }
+  if Equals(id, n"T_MAXTAC_PROBLEM") {
+    return CBReqNum("put down MaxTac officers", CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)), 10);
+  }
+  if Equals(id, n"T_RIVAL_BREAKER") {
+    return CBReqNum("finish rivals for good", stats.rivalsSlain, 5);
+  }
+  if Equals(id, n"T_MERCIFUL") {
+    return CBReqNum("leave people alive", stats.nonLethal, 100)
+         + ", and never kill a civilian";
+  }
+  if Equals(id, n"T_LANDLORD") {
+    return CBReqNum("take tribute from gangs", CBTotalTributes(sys), 5);
+  }
+  if Equals(id, n"T_FACTION_FRIEND") {
+    return "get one gang to genuinely trust you";
+  }
+  if Equals(id, n"T_FACTION_NIGHTMARE") {
+    return "become the thing one gang is most afraid of";
+  }
+  if Equals(id, n"T_BUTCHER_OF") {
+    return "fight as a butcher, then do enough lethal work in one district";
+  }
+  if Equals(id, n"T_GHOST_OF") {
+    return "fight as a ghost, then take enough people down quietly in one district";
+  }
+  if Equals(id, n"T_DISTRICT_PROBLEM") {
+    return "make one district afraid of you";
+  }
+  if Equals(id, n"T_MERC_FROM") {
+    return "be known well enough that people use your name";
+  }
+  if Equals(id, n"T_KONPEKI_GHOST") {
+    return "fight as a ghost, then " + CBReqNum("do work nobody could pin on you",
+                                                stats.unattributed, CBConfig.KonpekiUnattributed());
+  }
+  if Equals(id, n"T_CYBERBANE") {
+    return "the top of the list: be a legend, be feared, finish three rivals, and have three gangs terrified of you";
+  }
+  return "";
+}
+
+// "put down cyberpsychos (4/10)"
+func CBReqNum(what: String, have: Int32, need: Int32) -> String {
+  let shown = have > need ? need : have;
+  return what + s" (\(shown)/\(need))";
 }
 
 func CBKillsByClass(sys: ref<CyberbaneSystem>, idx: Int32) -> Int32 {

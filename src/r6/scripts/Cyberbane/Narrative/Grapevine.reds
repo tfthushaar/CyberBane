@@ -22,6 +22,20 @@
 
 // Who is passing it on. Roles, never a named quest-giver: the player must never read one of
 // these as a real fixer offering real work.
+// Somebody gets in touch about a thing you did.
+//
+// A player asked for the phone to tell them when their standing changes. Real phone messages
+// are not available to a script mod: JournalPhoneMessage is abstract and cannot be built, and
+// the journal entry lookup that would let an existing thread be triggered does not exist on
+// this patch either (both verified by probe, along with every other route suggested). What is
+// available is this - a message that reads as coming from somebody rather than from a mod -
+// and it is already how word of your reputation reaches you, so milestones now arrive the
+// same way instead of as a system notice.
+public func CBContactMessage(game: GameInstance, body: String) -> Void {
+  let seed = RandRange(0, 4);
+  CBShowMessage(game, CBGrapevineSender(seed) + ": " + body, CBConfig.GrapevineDurationSeconds());
+}
+
 func CBGrapevineSender(seed: Int32) -> String {
   switch seed {
     case 0: return "Unknown number";

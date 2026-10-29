@@ -111,6 +111,13 @@ public abstract class CBConfig {
   public static func RumorMagnitudeCivilian() -> Float = 6.0
   // Unseen kills needed, as a Ghost, for the Konpeki Ghost title.
   public static func KonpekiUnattributed() -> Int32 = 25
+  // How many titles the Hub lists on the Titles screen, earned and still to earn. The screen
+  // clamps its own line count, so these keep the "not yet" list from pushing the earned list
+  // off the top of it.
+  public static func HudTitlesEarnedShown() -> Int32 = 8
+  public static func HudTitlesLockedShown() -> Int32 = 7
+  // Width of the threat bar across the top of the screen.
+  public static func ThreatBarWidth() -> Float = 760.0
   public static func RumorLifetimeDays() -> Float = 3.0
   public static func RumorSpreadMagnitudeMult() -> Float = 0.5
   public static func RdDecayPerDay() -> Float = 1.0

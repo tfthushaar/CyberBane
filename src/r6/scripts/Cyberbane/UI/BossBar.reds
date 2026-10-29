@@ -40,28 +40,56 @@ protected cb func OnUninitialize() -> Bool {
 
 // Put this one on the bar.
 //
-// Declining is normal and quiet: the setting is off, the HUD has not built the bar yet, or the
-// puppet is already boss grade and the game is going to do this by itself.
+// Tries the game's own boss bar first, because when it is available it is the real thing, and
+// falls back to Cyberbane's own (UI/ThreatBar.reds) when it is not - which, on this patch, is
+// essentially always. See the note at the top of ThreatBar.reds for everything that was tried.
 public func CBShowBossBar(npc: ref<ScriptedPuppet>) -> Void {
   let asNpc = npc as NPCPuppet;
-  if !IsDefined(asNpc) {
+  if !IsDefined(asNpc) || !CBThreatBarOn() {
     return;
   }
-  let rt = CyberbaneRuntime.Get();
-  if !IsDefined(rt) || !rt.IsEnabled() || !rt.HasSettings() {
-    return;
-  }
-  if !rt.GetSettings().apexBossBar {
-    return;
-  }
-  // Already a boss or MaxTac by record: the game handles its own.
+  // Already a boss or MaxTac by record: the game draws its own and ours would double up.
   let rarity = npc.GetNPCRarity();
   if Equals(rarity, gamedataNPCRarity.Boss) || Equals(rarity, gamedataNPCRarity.MaxTac) {
     return;
   }
-  let bar = rt.GetBossBar();
-  if !IsDefined(bar) {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) {
+    let bar = rt.GetBossBar();
+    if IsDefined(bar) {
+      bar.AddBoss(asNpc);
+      return;
+    }
+  }
+  CBShowThreatBar(npc);
+}
+
+// Our own bar, pointed at this one.
+public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
+  let game = GetGameInstance();
+  let sys = CyberbaneSystem.Get(game);
+  if !IsDefined(sys) || !IsDefined(npc) {
     return;
   }
-  bar.AddBoss(asNpc);
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return;
+  }
+  let id = npc.GetEntityID();
+  let label = "HUNTING YOU";
+  let name = "";
+  if des.IsTagged(id, n"CB_Apex") {
+    label = "APEX SQUAD";
+  }
+  if des.IsTagged(id, n"CB_Rival") {
+    label = "RIVAL";
+    let who = sys.FindRivalById(sys.GetActiveRivalId());
+    if IsDefined(who) {
+      name = CBRivalDisplayName(sys.GetContent(), who);
+    }
+  }
+  if StrLen(name) == 0 {
+    name = npc.GetDisplayName();
+  }
+  sys.GetThreatBar().Track(npc, label, name);
 }

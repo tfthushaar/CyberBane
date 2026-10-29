@@ -50,6 +50,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_tickCount: Int32;             // monotonic ~1/second, for encounter timing
   private let m_encounter: ref<CBEncounter>;  // active combat episode
   private let m_hud: ref<CBHud>;              // the F7 reputation Hub (spec §12.1)
+  private let m_threatBar: ref<CBThreatBar>;  // boss bar for whoever is hunting you
   private let m_disguiseFaction: CName;       // gang whose colours V is wearing (spec §9.3)
   private let m_disguiseStrength: Float;      // 0..1, how well the disguise reads
   private let m_activeSquadFaction: CName;    // faction of the hit squad currently out (for Hunter on escape)
@@ -630,6 +631,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBProcessPendingSquad(this, game);  // and a vendetta squad arrives when its timer runs out
     this.AgePendingArrival();           // forget a car that was sent and never arrived
     this.TickHub(game);                 // live countdowns while the Hub is open
+    // The bar for whoever is hunting you. Cheap: it reads one stat pool and resizes one
+    // rectangle, and hides itself the moment its target is gone.
+    if CBThreatBarOn() {
+      this.GetThreatBar().Update(this, game);
+    }
     this.RefreshStealthHold(game);      // before anything that might send someone in
     CBRivalHuntTick(this, game);        // rivals close in on a visible countdown
     CBPanicDrivingTick(this, game, this.m_tickCount);
@@ -642,6 +648,13 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetTickCount() -> Int32 {
     return this.m_tickCount;
+  }
+
+  public func GetThreatBar() -> ref<CBThreatBar> {
+    if !IsDefined(this.m_threatBar) {
+      this.m_threatBar = new CBThreatBar();
+    }
+    return this.m_threatBar;
   }
 
   // Called from CBApplyKill. The window is checked on read rather than cleared on a timer, so

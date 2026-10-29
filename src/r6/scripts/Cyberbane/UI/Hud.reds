@@ -895,24 +895,51 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
 func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
   let unlocked = sys.GetUnlockedTitles();
   let content = sys.GetContent();
-  if ArraySize(unlocked) == 0 {
-    return "No titles earned yet.";
-  }
   let active = sys.GetActiveTitle();
-  let out = "EARNED:\n";
-  let i = 0;
-  while i < ArraySize(unlocked) && i < 16 {
-    let id = unlocked[i];
-    // Names the district or gang the title is actually about (Model/TitleNaming.reds).
-    let name = CBTitleDisplayById(sys, content, id);
-    let mark = Equals(id, active) ? "  <- active" : "";
-    out += "  " + name + mark + "\n";
-    i += 1;
+  let out = "";
+
+  if ArraySize(unlocked) == 0 {
+    out += "EARNED: nothing yet.\n";
+  } else {
+    out += "EARNED:\n";
+    let i = 0;
+    while i < ArraySize(unlocked) && i < CBConfig.HudTitlesEarnedShown() {
+      let id = unlocked[i];
+      // Names the district or gang the title is actually about (Model/TitleNaming.reds).
+      let name = CBTitleDisplayById(sys, content, id);
+      let mark = Equals(id, active) ? "   <- you are going by this" : "";
+      out += "  " + name + mark + "\n";
+      i += 1;
+    }
   }
+
+  // And the ones you have not got, with what each of them takes.
+  //
+  // A player reported that the titles were the least understandable part of the mod: they
+  // arrive unannounced, and nothing anywhere says what they mean or how to go after one. A
+  // list of names you already have cannot fix that. A list of the ones you do not, each with
+  // the thing you would have to do, turns the whole system into something you can aim at.
+  if IsDefined(content) {
+    let shown = 0;
+    out += "\nNOT YET:\n";
+    for def in content.GetTitles() {
+      if IsDefined(def) && !sys.HasTitle(def.id) && shown < CBConfig.HudTitlesLockedShown() {
+        let need = CBTitleRequirement(sys, def.id);
+        if StrLen(need) > 0 {
+          out += "  " + CBTitleDisplayById(sys, content, def.id) + "\n      " + need + "\n";
+          shown += 1;
+        }
+      }
+    }
+    if shown == 0 {
+      out += "  Nothing left. You have all of them.\n";
+    }
+  }
+
   if Equals(active, n"") {
-    out += "\nActive title: Auto (highest earned).";
+    out += "\nGoing by: whichever is the best one you have earned.";
   }
-  out += "\n[ Ctrl + Hub key ]  cycle the active title / Auto.";
+  out += "\n[ Ctrl + Hub key ]  change which title you go by.";
   return out;
 }
 

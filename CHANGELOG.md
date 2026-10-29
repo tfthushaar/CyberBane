@@ -3,6 +3,27 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.2] - 2026-10-29
+
+From player feedback asking what the titles actually mean and for a less hidden way to read
+your standing.
+
+### Added
+- **The Titles screen now shows what you have not earned yet, and what each one takes.** Every
+  locked title lists the thing you would have to do, with a count where there is one to show,
+  so the system is something you can go after rather than something that happens to you.
+- **A bar across the top of the screen for whoever is hunting you**, with their name and their
+  health, for an apex squad enforcer or a rival far enough up the ladder. This is Cyberbane's
+  own, drawn in the game's style, because the game's boss bar cannot be driven by a script mod
+  on this version. Uses the apex squad boss bar setting.
+- **Titles arrive as a message from somebody on the street** rather than a system notice. A
+  title is what other people decided to call you, so hearing it from them is the right way
+  round.
+
+### Changed
+- The Titles screen says "you are going by this" and "change which title you go by" instead of
+  naming a key combination and leaving you to work out what Auto meant.
+
 ## [1.2.1] - 2026-10-29
 
 Found from a live session: enemies were spawning correctly and then doing nothing.
