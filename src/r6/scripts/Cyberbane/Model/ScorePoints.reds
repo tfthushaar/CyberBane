@@ -22,9 +22,16 @@ public func CBPrimaryArchetype(archetype: array<Float>, currentPrimary: Int32) -
   if total < CBConfig.ArchetypeMinTotal() {
     return -1;
   }
+  // Start from whatever V already reads as, so an exact tie keeps the existing label rather
+  // than snapping to whichever archetype happens to sit at index 0 (Butcher). Without this,
+  // a player whose Ghost and Butcher scores are level is told they are a Butcher.
   let best = 0;
   let bestVal = archetype[0];
-  i = 1;
+  if currentPrimary >= 0 && currentPrimary < count {
+    best = currentPrimary;
+    bestVal = archetype[currentPrimary];
+  }
+  i = 0;
   while i < count {
     if archetype[i] > bestVal {
       bestVal = archetype[i];

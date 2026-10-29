@@ -42,17 +42,20 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Preset")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Preset-Desc")
   public let preset: ECBPreset = ECBPreset.Default;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubKey")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubKey-Desc")
   public let hubKey: EInputKey = EInputKey.IK_F7;
 
   // ---- Reputation -------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RenownGain")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RenownGain-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -61,6 +64,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DreadGain")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DreadGain-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -69,6 +73,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Decay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Decay-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -77,6 +82,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RumorSpread")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RumorSpread-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -85,6 +91,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetCredFloor")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetCredFloor-Desc")
   public let streetCredFloor: Bool = true;
 
   // bootstrapFromHistory was removed in 1.0 along with its settings entry. Nothing ever read
@@ -95,11 +102,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CivReactions")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CivReactions-Desc")
   public let civReactions: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CivIntensity")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CivIntensity-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "2.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -108,6 +117,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxReactingCiv")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxReactingCiv-Desc")
   @runtimeProperty("ModSettings.min", "0")
   @runtimeProperty("ModSettings.max", "15")
   @runtimeProperty("ModSettings.step", "1")
@@ -116,37 +126,44 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PanicDriving")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PanicDriving-Desc")
   public let panicDriving: Bool = true;
 
   // ---- Gangs ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangReactions")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangReactions-Desc")
   public let gangReactions: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HostileOnSight")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HostileOnSight-Desc")
   public let hostileOnSight: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Warnings")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Warnings-Desc")
   public let warnings: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionDisguises")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionDisguises-Desc")
   public let factionDisguises: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Tribute")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Tribute-Desc")
   public let tribute: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TributeMult")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TributeMult-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -155,11 +172,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquads")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquads-Desc")
   public let hitSquads: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquadFreq")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquadFreq-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -169,11 +188,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Morale")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Morale")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Morale-Desc")
   public let morale: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Morale")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MoraleIntensity")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MoraleIntensity-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "2.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -182,6 +203,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Morale")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxBreakFraction")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxBreakFraction-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "1.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -191,32 +213,38 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Police")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PoliceRecognition")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PoliceRecognition-Desc")
   public let policeRecognition: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Police")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-KnownOffender")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-KnownOffender-Desc")
   public let knownOffender: Bool = false;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Police")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FriendOfForce")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FriendOfForce-Desc")
   public let friendOfTheForce: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Police")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CopMorale")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CopMorale-Desc")
   public let copMorale: Bool = true;
 
   // ---- Economy ----------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendorPricing")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendorPricing-Desc")
   public let vendorPricing: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxDiscount")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxDiscount-Desc")
   @runtimeProperty("ModSettings.min", "0")
   @runtimeProperty("ModSettings.max", "30")
   @runtimeProperty("ModSettings.step", "1")
@@ -225,11 +253,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GigBonus")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GigBonus-Desc")
   public let gigBonus: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GigBonusMult")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GigBonusMult-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -239,11 +269,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Rivals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Rivals-Desc")
   public let rivals: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxRivals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxRivals-Desc")
   @runtimeProperty("ModSettings.min", "0")
   @runtimeProperty("ModSettings.max", "15")
   @runtimeProperty("ModSettings.step", "1")
@@ -252,6 +284,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DeathsRemembered")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DeathsRemembered-Desc")
   public let deathsRemembered: Bool = true;
 
   // ---- Safe areas -------------------------------------------------------
@@ -274,6 +307,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalFreq")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFreq-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
@@ -282,17 +316,20 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalNameplates")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalNameplates-Desc")
   public let rivalNameplates: Bool = true;
 
   // ---- UI ---------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Whispers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Whispers-Desc")
   public let whispers: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WhisperCooldown")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WhisperCooldown-Desc")
   @runtimeProperty("ModSettings.min", "5")
   @runtimeProperty("ModSettings.max", "120")
   @runtimeProperty("ModSettings.step", "1")
@@ -301,48 +338,57 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Pronouns")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Pronouns-Desc")
   public let pronouns: ECBPronouns = ECBPronouns.Auto;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Toasts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Toasts-Desc")
   public let toasts: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalCard")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalCard-Desc")
   public let rivalCard: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LowProfileIcon")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LowProfileIcon-Desc")
   public let lowProfileIcon: Bool = true;
 
   // ---- Compatibility ----------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Compat")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TwrCompat")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TwrCompat-Desc")
   public let twrCompat: ECBTwrCompat = ECBTwrCompat.Auto;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Compat")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DogtownEnabled")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DogtownEnabled-Desc")
   public let dogtownEnabled: Bool = true;
 
   // ---- Debug ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LogLevel")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LogLevel-Desc")
   public let logLevel: ECBLogLevel = ECBLogLevel.Info;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DebugOverlay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DebugOverlay-Desc")
   public let debugOverlay: Bool = false;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FreezeReputation")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FreezeReputation-Desc")
   public let freezeReputation: Bool = false;
 
   // Tracks the last preset we expanded, so picking a preset rewrites the intensity /

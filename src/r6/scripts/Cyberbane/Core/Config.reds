@@ -185,6 +185,21 @@ public abstract class CBConfig {
   // see (a burn, a quickhack tick, an explosion, another mod's damage).
   public static func SparedSweepPerTick() -> Int32 = 10
 
+  // ---- Quiet work (spec §16) ---------------------------------------------
+  // How long the "do not walk in on a stealth job" hold outlives the game's own Stealth
+  // state. The game only reports it while V is crouched, so this covers standing up to
+  // cross a room without handing anyone a window to arrive in.
+  public static func StealthHoldGraceTicks() -> Int32 = 25
+
+  // ---- Archetypes (spec §8.3) -------------------------------------------
+  // How much a plain lethal kill says about you. Small on purpose: killing an armed ganger
+  // in a firefight is the job, not butchery. A long enough body count still gets there.
+  public static func ButcherPerLethalKill() -> Float = 0.2
+  // Finishers, dismemberment, blades and fists. This is what Butcher is actually measuring.
+  public static func ButcherPerBrutalKill() -> Float = 1.5
+  // Lethal with nobody left to report it.
+  public static func GhostPerUnseenKill() -> Float = 1.5
+
   // ---- Witnesses (spec §8.5) -------------------------------------------
   // How far a kill carries to someone who could report it. Wider than NpcEvalRadius: a
   // sightline across a street carries further than a crowd reaction does.

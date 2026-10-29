@@ -9,6 +9,10 @@
 // Needs in-game tuning (S-08): navmesh validity of the spawn point and squad pathing.
 
 public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  // Not into the middle of a quiet job (spec §16).
+  if CBStealthEncounterNearby(sys, game) {
+    return;
+  }
   if !IsDefined(sys) {
     return;
   }

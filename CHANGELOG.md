@@ -3,6 +3,30 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 2026-10-29
+
+### Fixed
+- **Killing cleanly is no longer treated as butchery.** Every lethal kill added a full point
+  toward Butcher no matter how it was done, so a player who took a whole hideout apart quietly
+  from range still ended up labelled a Butcher. Worse, a clean stealth run scored Butcher and
+  Ghost dead level, and a tie silently went to Butcher. How you kill is what counts now:
+  finishers, dismemberment, blades and fists are butchery, a clean kill barely registers, and
+  killing without being seen reads as the ghost work it is.
+- **Nobody walks in on a stealth job.** Cyberbane only asked whether you were in combat before
+  sending someone after you, and a player sneaking through a place is not in combat, so rivals
+  and hit squads turned up at the worst possible moment and their arrival alerted the guards
+  you were avoiding. Arrivals now wait while you are working quietly and come once you are
+  clear, so you never lose the encounter, you just do not get ambushed mid-infiltration.
+- **The Hub no longer promises someone who never comes.** A held arrival kept resetting its
+  clock to a few seconds, so the Hub said one was seconds away over and over. It now says it is
+  holding off and why.
+- Non-lethal takedowns are no longer the only way to stay out of trouble. Clean lethal work
+  counts as professional too, which was the point all along.
+
+### Added
+- **Every setting now explains what it does.** All forty nine of them have a description in
+  Mod Settings, instead of a bare name you had to guess at.
+
 ## [1.1.1] - 2026-10-29
 
 ### Fixed

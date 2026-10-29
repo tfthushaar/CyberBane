@@ -97,6 +97,9 @@ public class CBHud {
   private let m_rowA: array<ref<inkText>>;
   private let m_rowB: array<ref<inkText>>;
   private let m_rowC: array<ref<inkText>>;
+  // Whether arrivals are currently being held back because V is in the middle of a quiet job.
+  // Resolved once per render, not once per row.
+  private let m_huntHeld: Bool;
 
   public func IsOpen() -> Bool {
     return this.m_tab != 0;
@@ -527,7 +530,7 @@ public class CBHud {
         this.SetRow(shown, hunting ? CBHudRed() : CBHudAmber(),
           IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
           CBFactionLabel(r.faction) + s"   rank \(r.rank)",
-          "arrives in " + CBHudCountdown(CBRivalHuntRemaining(r)));
+          this.m_huntHeld ? "waiting for you to finish" : "arrives in " + CBHudCountdown(CBRivalHuntRemaining(r)));
         shown += 1;
       }
     }
@@ -589,6 +592,7 @@ public class CBHud {
         bodyTop = 608.0;
       } else {
         if this.m_tab == CBHudRivalsTab() {
+          this.m_huntHeld = CBStealthEncounterNearby(sys, game);
           this.RenderRivals(sys);
           bodyTop = 608.0;
         }
@@ -643,7 +647,7 @@ func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Str
     case 1: return CBHudLegend(sys, game);
     case 2: return CBHudFactions(sys);
     case 3: return CBHudDistricts(sys);
-    case 4: return CBHudRivals(sys);
+    case 4: return CBHudRivals(sys, game);
     case 5: return CBHudTitles(sys);
     case 6: return CBHudLog(sys);
     default: return "";
@@ -793,7 +797,7 @@ func CBRivalSourceLine(source: Int32) -> String {
   return "remembers you";
 }
 
-func CBHudRivals(sys: ref<CyberbaneSystem>) -> String {
+func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let rivals = sys.GetRivals();
   let any = false;
   let i = 0;
@@ -810,6 +814,12 @@ func CBHudRivals(sys: ref<CyberbaneSystem>) -> String {
   let count = sys.CountActiveRivals();
   let cap = CBRivalCap();
   let out = s"CARRYING \(count) OF \(cap)\n\n";
+  // A held arrival used to keep resetting its clock to a few seconds and never come, which
+  // read as the Hub promising someone was seconds away over and over. Say what is happening.
+  let held = CBStealthHoldReason(sys, game);
+  if NotEquals(held, "") {
+    out += held + "\n\n";
+  }
   out += "The clock is how long until they catch up with you. They arrive when it runs\n";
   out += "out, wherever you are, and come back a rank higher every time one escapes.\n\n";
   if count >= cap {

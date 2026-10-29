@@ -165,9 +165,15 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
 // Archetype accumulators for one kill/defeat (spec §8.3).
 func CBAccrueArchetypeForKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, brutal: Bool) -> Void {
   if info.lethal {
-    sys.AddArchetype(EnumInt(ECBArchetype.Butcher), 1.0);
+    // Butcher is about *how* you kill, not that you killed. Every lethal kill used to add a
+    // full Butcher point, so a sniper who never missed and was never seen still ended up
+    // labelled a Butcher: fifty quiet kills scored Butcher 50 against Ghost 50, and a tie
+    // went to Butcher. Killing cleanly now barely registers as butchery at all, and only
+    // a sustained body count drags it up.
+    sys.AddArchetype(EnumInt(ECBArchetype.Butcher), CBConfig.ButcherPerLethalKill());
     if brutal {
-      sys.AddArchetype(EnumInt(ECBArchetype.Butcher), 1.0);
+      // Finishers, dismemberment, blades and fists. This is the butchery.
+      sys.AddArchetype(EnumInt(ECBArchetype.Butcher), CBConfig.ButcherPerBrutalKill());
       if info.mFists || info.mBlunt {
         sys.AddArchetype(EnumInt(ECBArchetype.Brawler), 0.5);
       }
@@ -177,7 +183,14 @@ func CBAccrueArchetypeForKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, 
       sys.AddArchetype(EnumInt(ECBArchetype.Professional), -3.0);
     }
     if info.stealth {
-      sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 1.0);
+      // Lethal, and nobody alive saw it. That is the definition of ghosting a place, so it
+      // outweighs the quiet body count it also produced.
+      sys.AddArchetype(EnumInt(ECBArchetype.Ghost), CBConfig.GhostPerUnseenKill());
+      sys.AddArchetype(EnumInt(ECBArchetype.Professional), 0.5);
+      if info.mFirearm && !brutal {
+        // Taken from distance without being seen: a marksman, not a maniac.
+        sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 0.5);
+      }
     }
     if info.mQuickhack {
       sys.AddArchetype(EnumInt(ECBArchetype.Netrunner), 1.0);

@@ -118,6 +118,9 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   let busy = des.IsPopulated(n"CB_Rival");
   let player = GetPlayer(game);
   let inCombat = !IsDefined(player) || player.IsInCombat();
+  // Never walk into a stealth job. Arriving mid-infiltration starts a fight the player was
+  // deliberately avoiding, and the arrival alerts the guards being slipped past.
+  let quietWork = CBStealthEncounterNearby(sys, game);
 
   let now = CBGameSeconds(game);
   let atCap = CBRivalsAtCap(sys);
@@ -133,7 +136,7 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       } else {
         r.huntTicks -= 1;
         if r.huntTicks <= 0 {
-          if busy || inCombat {
+          if busy || inCombat || quietWork {
             // Hold at the door rather than losing the appointment entirely.
             r.huntTicks = CBConfig.RivalHuntRetryTicks();
           } else {

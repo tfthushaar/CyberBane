@@ -102,6 +102,9 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(player) || player.IsInCombat() {
     return;   // let the fight V is already in finish first
   }
+  if CBStealthEncounterNearby(sys, game) {
+    return;   // and do not announce one into a quiet job either
+  }
 
   let states = sys.GetFactionStates();
   let i = 0;
@@ -135,6 +138,11 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   let faction = sys.GetPendingApexFaction();
   if Equals(faction, n"") {
+    return;
+  }
+  // Hold the clock rather than spending it: if the apex is due while V is picking a place
+  // apart quietly, it waits at the door instead of arriving and blowing the job.
+  if CBStealthEncounterNearby(sys, game) {
     return;
   }
   if sys.TickDownPendingApex() > 0 {

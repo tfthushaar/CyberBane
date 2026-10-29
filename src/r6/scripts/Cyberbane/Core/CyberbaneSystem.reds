@@ -64,6 +64,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_hubKeyDown: Bool;             // Hub key debounce: some setups deliver only Press, some only Release
   private let m_pendingApexFaction: CName;    // gang whose apex has been announced and is walking in
   private let m_pendingApexTicks: Int32;      // fast ticks left on that warning (session-only)
+  // Fast ticks left on the "V is working quietly" hold. The game only reports the Stealth
+  // combat state while V is actually crouched, so standing up to cross a room would otherwise
+  // open a window for someone to walk in. Session-only.
+  private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
 
@@ -360,6 +364,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBSparedSweep(this, game);          // mercy the hit hook did not see (spec §10.2)
     CBProcessEscapees(this, game);
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
+    this.RefreshStealthHold(game);      // before anything that might send someone in
     CBRivalHuntTick(this, game);        // rivals close in on a visible countdown
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
@@ -418,6 +423,23 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // Counts the warning window down by one tick and reports what is left.
   // Fast ticks left before the announced apex walks in. Shown in the Hub.
+  // True while V is in a stealth job, or was within the last few seconds.
+  public func IsStealthHeld() -> Bool {
+    return this.m_stealthHoldTicks > 0;
+  }
+
+  // Refreshed every fast tick. Seeing the Stealth state tops the window back up; losing it
+  // just lets the window run down, which covers standing up to move between cover.
+  public func RefreshStealthHold(game: GameInstance) -> Void {
+    if CBPlayerInStealthState(game) {
+      this.m_stealthHoldTicks = CBConfig.StealthHoldGraceTicks();
+    } else {
+      if this.m_stealthHoldTicks > 0 {
+        this.m_stealthHoldTicks -= 1;
+      }
+    }
+  }
+
   public func GetPendingApexTicks() -> Int32 {
     return this.m_pendingApexTicks;
   }
