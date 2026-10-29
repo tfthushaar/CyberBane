@@ -245,7 +245,15 @@ public class CyberbaneSystem extends ScriptableSystem {
         if des.IsTagged(id, n"CB_Rival") && this.GetActiveRivalId() > 0 {
           let who = this.FindRivalById(this.GetActiveRivalId());
           if IsDefined(who) {
+            // Built to apex grade, scaled by how far up the ladder they have climbed: every
+            // escape and every mercy makes the one who comes back harder than the one who
+            // left. The chair-of-the-crew buff goes on top of that.
+            CBApplyRivalApexBuff(this, this.GetGameInstance(), puppet, who);
             CBApplyRivalRoleBuff(this, this.GetGameInstance(), puppet, CBRivalRole(this, who));
+            // Every Rival gets the bar, because every Rival is built to apex grade.
+            if CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() {
+              CBShowBossBar(puppet);
+            }
           }
         }
       }

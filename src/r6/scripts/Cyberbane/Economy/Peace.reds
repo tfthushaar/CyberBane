@@ -101,6 +101,40 @@ func CBTwrModulePresent() -> Bool {
   return false;
 }
 
+// What will this gang take to call it off?
+//
+// The old price was the body count and nothing else: `1000 + 50 * kills`. That meant a gang at
+// vendetta charged exactly the same as a gang that merely disliked you, which is wrong in the
+// way that matters - the whole point of a vendetta is that it is harder to get out of. It also
+// meant the number said nothing about the thing the player is actually buying their way out of.
+//
+// Three things set the price now:
+//   - the bodies, as before, because that is the grievance;
+//   - how far into the hostile band their standing has fallen, because that is how much they
+//     hate you rather than how much you have cost them;
+//   - and a straight multiplier for a vendetta, because a vendetta is a decision they have
+//     already taken and taking it back is expensive.
+//
+// Still capped, so a long campaign against one gang does not price peace out of reach forever.
+public func CBPeacePrice(fs: ref<CBFactionState>, posture: ECBPosture) -> Int32 {
+  if !IsDefined(fs) {
+    return CBConfig.PeaceBaseCost();
+  }
+  let cost = Cast<Float>(CBConfig.PeaceBaseCost())
+           + Cast<Float>(CBConfig.PeacePerKill()) * Cast<Float>(fs.kills);
+  // Standing runs to -100 at its worst. Only the hostile part of it is charged for.
+  let hate = ClampF(-fs.standing / 100.0, 0.0, 1.0);
+  cost += Cast<Float>(CBConfig.PeacePerHate()) * hate;
+  if Equals(posture, ECBPosture.Vendetta) {
+    cost *= CBConfig.PeaceVendettaMult();
+  }
+  let capped = FloorF(cost);
+  if capped > CBConfig.PeaceMaxCost() {
+    capped = CBConfig.PeaceMaxCost();
+  }
+  return capped;
+}
+
 // Pay off a single faction. Returns true only if peace was actually brokered.
 public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, factionId: CName) -> Bool {
   if !IsDefined(sys) || Equals(factionId, n"") {
@@ -124,10 +158,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     return false;   // nothing to buy off
   }
 
-  let cost = 1000 + 50 * fs.kills;
-  if cost > 15000 {
-    cost = 15000;
-  }
+  let cost = CBPeacePrice(fs, posture);
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
   if !IsDefined(player) || !IsDefined(ts) {
@@ -146,6 +177,15 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   fs.vendettaSince = 0.0;
   fs.lastPeaceAt = CBGameSeconds(game);
 
+  // Whatever they already had on its way is called off. Without this the Hub went on
+  // counting down a crew from a gang the player had just paid, and the apex warning stood.
+  if Equals(sys.GetPendingSquadFaction(), factionId) {
+    sys.ClearPendingSquad();
+  }
+  if Equals(sys.GetPendingApexFaction(), factionId) {
+    sys.SetPendingApex(n"", 0);
+  }
+
   let deal = new CBPeaceDeal();
   deal.faction = factionId;
   deal.at = fs.lastPeaceAt;
@@ -153,7 +193,8 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   sys.AddPeaceDeal(deal);
 
   if CBToastsOn() {
-    CBShowMessage(game, s"Cyberbane: peace brokered with \(NameToString(factionId)) for \(cost)eb.", 4.0);
+    let what = Equals(posture, ECBPosture.Vendetta) ? "vendetta" : "hostility";
+    CBShowMessage(game, s"Cyberbane: \(NameToString(factionId)) \(what) bought off for \(cost)eb.", 4.0);
   }
   CBLog.Info(n"Economy", s"Peace brokered with \(NameToString(factionId)) for \(cost).");
   return true;

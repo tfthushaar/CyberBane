@@ -209,6 +209,15 @@ public class CyberbaneSettings {
   public let vendettaApexSquad: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageHold")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageHold-Desc")
+  @runtimeProperty("ModSettings.min", "100")
+  @runtimeProperty("ModSettings.max", "400")
+  @runtimeProperty("ModSettings.step", "25")
+  public let messageHold: Int32 = 175;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquads")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquads-Desc")

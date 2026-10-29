@@ -58,7 +58,10 @@ page describes what the mod does and how it installs.
   Rival with a grudge. Beat one down and walk away without finishing them and they can come back
   too, taking the mercy personally. Rivals are a full nemesis system: they hunt you down and chase you, they
   climb the ranks on their own while you are busy elsewhere, and every time one escapes it returns
-  a rank higher and scarred. Put down the one hunting you and it is finally finished. Anyone who
+  a rank higher and scarred. Each one is built to the same grade as a member of an apex squad,
+  and they keep getting stronger: every escape, every mercy and every time they put you down
+  makes the one who comes back harder than the one who left. Every one of them arrives with the
+  game's own boss health bar. Put down the one hunting you and it is finally finished. Anyone who
   kills you can also come back, and dropping a crew's member can bring a gang-mate gunning for you.
 - **They drive over.** A hit squad or a gang's apex arrives by car: it is put together out of
   sight, drives to you, and the crew gets out and comes for you. If you are behind the wheel,
@@ -71,7 +74,9 @@ page describes what the mod does and how it installs.
   your good side, or a hit squad to deal with you. Give a hit squad the slip and a survivor can
   come back as a named Rival who hunts you. Vendors give fear or respect discounts, and fixers pay
   the famous a bonus on job payouts. You can also buy your way out of a vendetta by brokering peace
-  with a gang from the Hub.
+  with a gang from the Hub, and the price reflects what they actually think of you: the bodies,
+  how badly their standing has fallen, and double again if they have sworn a vendetta. Paying
+  them off calls off anything they already had on its way.
 - **Gangs send an apex squad.** Keep putting one crew in the ground and they stop sending
   squads and send the people who matter: a carload of four named enforcers who fight like
   MaxTac. There is a heavy who walks at you and breaks your guard, a shooter who flushes you

@@ -304,6 +304,31 @@ public abstract class CBConfig {
   // set piece; the strength slider is what tunes how hard each one hits.
   public static func ApexStrikeTeamSize() -> Int32 = 4
 
+  // ---- Rival ladder ----
+  // Escapes, mercies and ranks it takes for a Rival to reach full apex grade.
+  public static func RivalLadderSteps() -> Int32 = 6
+  // What a Rival is worth the first time you meet them, as a fraction of an apex.
+  public static func RivalGradeFloor() -> Float = 0.45
+  // How far up the ladder a Rival has to be before they get the boss bar. Zero means every
+  // Rival gets it, which is the intent: a Rival is built to apex grade from the first meeting,
+  // so the bar is not flattery, it is telling the truth about what is in front of you.
+  public static func RivalBossBarGrade() -> Float = 0.0
+
+  // ---- Brokering peace (spec 11.3) ----
+  public static func PeaceBaseCost() -> Int32 = 1000
+  public static func PeacePerKill() -> Int32 = 50
+  // Added at the bottom of the standing scale, where they hate you most.
+  public static func PeacePerHate() -> Int32 = 6000
+  // A vendetta is a decision already taken, so taking it back costs more.
+  public static func PeaceVendettaMult() -> Float = 2.0
+  public static func PeaceMaxCost() -> Int32 = 40000
+
+  // ---- On-screen messages ----
+  // Percent of the requested duration, used before settings have loaded.
+  public static func MessageHoldDefault() -> Int32 = 175
+  // Nothing is shown for less than this, however short the caller asked for.
+  public static func MessageMinSeconds() -> Float = 5.0
+
   // ---- Vendetta hit squads ----
   // Fast ticks between a gang deciding and the crew turning up. Long enough to read the Hub
   // and get somewhere defensible, short enough that a vendetta is felt.

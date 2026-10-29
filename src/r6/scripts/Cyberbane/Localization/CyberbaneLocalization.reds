@@ -69,8 +69,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines, so the street does not repeat itself.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane shows its messages on screen at all.");
+    this.Text("Cyberbane-Settings-MessageHold-Desc", "How long Cyberbane's on-screen messages stay up, as a percentage of their normal length. The default of 175 is most of a full second longer than the game's own notifications, which is about what a sentence needs. Nothing is ever shown for less than five seconds.");
     this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "A gang at vendetta sends its apex squad along with the crew: four boss-grade enforcers in a car, with the rest of the crew on foot behind them. This is the hardest fight Cyberbane will put in front of you. Turn it off and a vendetta sends the crew alone.");
-    this.Text("Cyberbane-Settings-ApexBossBar-Desc", "An apex squad gets the game's own boss health bar across the top of the screen, the same one a story boss or MaxTac gets. Anyone who is already boss grade by their own record is left alone, because the game does it for them.");
+    this.Text("Cyberbane-Settings-ApexBossBar-Desc", "An apex squad gets the game's own boss health bar across the top of the screen, the same one a story boss or MaxTac gets. Rivals get it too, because a Rival is built to the same grade as a member of an apex squad. Anyone who is already boss grade by their own record is left alone, because the game does it for them.");
     this.Text("Cyberbane-Settings-VendettaSquads-Desc", "A gang at vendetta stops rolling dice over whether to come after you and simply comes. The Hub shows how long until they arrive. They will wait rather than walk in on a gig, a quiet job or a safe area, so the timer holds instead of cancelling.");
     this.Text("Cyberbane-Settings-VendettaSquadSize-Desc", "How many a gang at vendetta sends when you are at full menace. Fewer turn out if you are less of a problem to them. Large numbers are the point of a vendetta, but every one of them is a real NPC, so lower this if you see the frame rate dip when a crew arrives.");
     this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Hit squads and apex squads drive to you instead of appearing on foot. The car is spawned out of sight, loads its crew and comes to find you; if you are driving, it gives chase. Turned off, or indoors where a car cannot reach, they arrive on foot as before.");
@@ -147,6 +148,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexTraits", "Apex traits");
     this.Text("Cyberbane-Settings-ApexBossBar", "Apex squad boss bar");
     this.Text("Cyberbane-Settings-VendettaApexSquad", "Vendetta brings the apex squad");
+    this.Text("Cyberbane-Settings-MessageHold", "Message hold");
     this.Text("Cyberbane-Settings-VendettaSquads", "Vendetta hit squads");
     this.Text("Cyberbane-Settings-VendettaSquadSize", "Vendetta squad size");
 

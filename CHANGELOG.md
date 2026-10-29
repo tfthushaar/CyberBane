@@ -17,6 +17,11 @@ This project follows [Semantic Versioning](https://semver.org/).
   duels standing next to each other.
 - **An apex squad gets the boss health bar.** The game's own one, across the top of the screen,
   the same bar a story boss or MaxTac gets.
+- **Rivals are built to apex grade, and they climb.** A Rival is now one apex-grade enemy
+  where an apex squad is four of them, and they get stronger every single time they get away
+  from you, every time you spare them, and every time they put you down. Mercy and failure both
+  have a price now, and the price is the person you meet next time. Every Rival arrives with
+  the game's own boss health bar, because every Rival is built to that grade.
 - **Rivals fight like somebody with a name**, with the same role kit. A named enemy that never
   used cover or chrome was a ganger with a nameplate.
 - **A gang at vendetta sends the apex squad with the crew.** Four boss-grade enforcers in a
@@ -47,8 +52,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 ### Changed
 - **"Apex" is "apex squad" everywhere**, in the Hub and in every message, because it is four
   people now rather than one.
+- **On-screen messages stay up long enough to read them.** They were going away too fast. Every
+  Cyberbane message is now held for most of a second longer than the game's own notifications,
+  never less than five seconds, and there is a slider if you want longer still.
 
 ### Fixed
+- **Paying a gang off now costs what they actually think of you.** It worked, but the price was
+  the body count and nothing else, so a gang at vendetta charged exactly the same as one that
+  merely disliked you. The price now also rises with how far their standing has fallen, and a
+  vendetta costs double, because a vendetta is a decision they have already taken and taking it
+  back should be expensive. The cap is higher to match.
+- **Paying a gang off calls off what they already had coming.** The Hub went on counting down a
+  crew from a gang you had just paid, and a pending apex warning still stood.
 - **A gang at vendetta now actually comes after you.** This is the Barghest report. A vendetta
   was rolling the same dice as a gang that merely disliked you: it still had to clear a renown
   gate and then win a roll of a few percent per check, so a gang could sit at vendetta

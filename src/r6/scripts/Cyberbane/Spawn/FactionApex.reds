@@ -145,6 +145,32 @@ func CBApexTrait(stats: ref<StatsSystem>, id: StatsObjectID, which: Int32,
 }
 
 public func CBApplyApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  CBApplyApexGradeBuff(sys, game, puppet, 1.0);
+}
+
+// How much of V's own menace this enemy is measured against.
+//
+// Menace already folds in level, Street Cred and skills - the same number the Hub reports - so
+// a maxed-out merc meets something that can take it, and an early character meets something
+// beatable rather than a wall.
+public func CBMenaceScale(sys: ref<CyberbaneSystem>) -> Float {
+  if !IsDefined(sys) {
+    return 0.0;
+  }
+  let score = sys.GetScore();
+  if !IsDefined(score) {
+    return 0.0;
+  }
+  return ClampF(score.GetMenace() / 100.0, 0.0, 1.0);
+}
+
+// Build one enemy to apex grade, or to a fraction of it.
+//
+// `grade` is how much of a full apex this one should be: 1.0 for a member of an apex squad,
+// less for a Rival working their way up. Split out of CBApplyApexBuff so a Rival and an apex
+// are built by the same arithmetic rather than by two sets of numbers that drift apart.
+public func CBApplyApexGradeBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
+                                 puppet: ref<ScriptedPuppet>, grade: Float) -> Void {
   if !IsDefined(puppet) {
     return;
   }
@@ -152,18 +178,9 @@ public func CBApplyApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance, puppe
   if !IsDefined(stats) {
     return;
   }
-  // Scale to V. Menace already folds in level, Street Cred and skills - the same number the
-  // Hub reports - so a maxed-out merc meets something that can take it, and a early character
-  // meets something beatable rather than a wall.
-  let scale = 0.0;
-  if IsDefined(sys) {
-    let score = sys.GetScore();
-    if IsDefined(score) {
-      scale = ClampF(score.GetMenace() / 100.0, 0.0, 1.0);
-    }
-  }
+  let scale = CBMenaceScale(sys);
   // How hard the player asked for this to be, as a fraction of a boss-grade build.
-  let strength = CBApexStrengthFraction();
+  let strength = CBApexStrengthFraction() * ClampF(grade, 0.0, 1.0);
   let hpMult = CBApexLerp(CBConfig.ApexHealthMultBase() + scale * CBConfig.ApexHealthMultRange(), strength);
   let armourMult = CBApexLerp(CBConfig.ApexArmorMultBase() + scale * CBConfig.ApexArmorMultRange(), strength);
 
@@ -199,6 +216,40 @@ public func CBApplyApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance, puppe
   if IsDefined(pools) {
     pools.RequestSettingStatPoolValue(id, gamedataStatPoolType.Health, 100.0, null);
   }
+}
+
+// Where on the ladder is this Rival?
+//
+// The nemesis part of the nemesis system. A Rival starts dangerous and gets worse every time
+// they get away from you or you let them live, which is the deal the mechanic offers: mercy
+// and failure both have a price, and the price is the person you will meet next time.
+//
+// Rank, escapes and mercies all count, because they are three different ways of saying the
+// same thing - this one has survived you before. Returns 0..1, where 1 is a full member of an
+// apex squad: by the top of the ladder a Rival is the equal of one of the four, and an apex
+// squad is four of those at once.
+public func CBRivalGrade(r: ref<CBRival>) -> Float {
+  if !IsDefined(r) {
+    return 0.0;
+  }
+  let steps = (r.rank - 1) + r.escapes + r.sparedByV + r.killedV;
+  let span = CBConfig.RivalLadderSteps();
+  if span <= 0 {
+    return 1.0;
+  }
+  let climbed = ClampF(Cast<Float>(steps) / Cast<Float>(span), 0.0, 1.0);
+  // Even a brand new Rival is somebody, not a ganger with a name.
+  let floorGrade = CBConfig.RivalGradeFloor();
+  return floorGrade + (1.0 - floorGrade) * climbed;
+}
+
+// Build a Rival to their place on the ladder.
+public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
+                                 puppet: ref<ScriptedPuppet>, r: ref<CBRival>) -> Void {
+  if !IsDefined(r) {
+    return;
+  }
+  CBApplyApexGradeBuff(sys, game, puppet, CBRivalGrade(r));
 }
 
 // Slow tick: has any gang lost enough people to send its apex after V?
