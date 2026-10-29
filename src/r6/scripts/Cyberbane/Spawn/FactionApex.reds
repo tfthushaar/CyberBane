@@ -350,6 +350,10 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   // Hold the clock rather than spending it: if the apex is due while V is picking a place
   // apart quietly, it waits at the door instead of arriving and blowing the job.
   if CBStealthEncounterNearby(sys, game) {
+    // Holding, but an apex that can never find a quiet moment must not block the next one.
+    if sys.GetPendingApexTicks() <= 0 {
+      sys.AgePendingApexHold();
+    }
     return;
   }
   if sys.TickDownPendingApex() > 0 {

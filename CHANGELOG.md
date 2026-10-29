@@ -3,6 +3,42 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-10-29
+
+Found from a live session: enemies were spawning correctly and then doing nothing.
+
+### Fixed
+- **Spawned enemies stood around until you walked into them.** This is why an arrival could
+  feel like nothing had happened even when it had. At the exact moment the game creates an NPC
+  its insides do not exist yet, and Cyberbane was turning it hostile and ordering it to come
+  find you in that same instant. Both orders were being quietly discarded, so the NPC carried
+  on as whatever it had been spawned as, which for an NCPD rival means a neutral cop standing
+  in the street that only fights back when you get in its face. Cyberbane now waits until the
+  game has finished building them before giving any orders, and retries until it has.
+- **No health bar on a rival**, for the same reason and fixed by the same change.
+- **One badly timed squad could stop every later one, for the rest of the session.** A crew
+  whose timer ran out at a bad moment - mid-fight, on a quiet job, in a safe area or a quest
+  area - correctly waited instead of barging in, but it waited forever, and nothing new could
+  be scheduled while one was waiting. So a single unlucky expiry in somewhere like City Center
+  silently ended hit squads for that playthrough. An appointment that cannot find a workable
+  moment now gives up after a couple of minutes and gets rescheduled.
+- The same hold could stall a pending apex squad indefinitely. Fixed the same way.
+- **The mod was standing itself down while you walked around.** Cyberbane counted people
+  appearing nearby as a sign the game was rebuilding the world, and paused itself when there
+  were a lot. Walking through a busy district trips that constantly, which is why arrivals
+  landed when you stood still and not when you were out in the city, and why hit squads and
+  apex squads never came at all: the part that decides to send them was paused too. That count
+  now only skips the heaviest piece of work. Everything else keeps running, and an arrival that
+  genuinely cannot land still refuses and reschedules on its own.
+- **Enemies no longer turn up standing in mid-air.** A spawn point was allowed to be fifteen
+  metres above or below you, which is three storeys, so a billboard or a first-floor walkway
+  counted as solid ground. Somebody coming to fight you now arrives on your level.
+- **You can escape a rival, and it counts.** Losing one did nothing at all: they vanished, their
+  timer restarted, and the same person reappeared behind you a short while later. With no way to
+  get away, the only way to resolve a rival was to kill them, which is the one outcome that
+  stops them ever being promoted. Shaking a rival now promotes them, tells you that you lost
+  them, and buys real time before they find you again.
+
 ## [1.2.0] - 2026-10-29
 
 Everything the feature audit found dead or missing is now implemented.

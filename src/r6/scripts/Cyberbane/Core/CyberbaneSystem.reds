@@ -62,6 +62,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   // is not something that should survive a save, and the hunt timer will send another.
   private let m_pendingSquadFaction: CName;   // gang whose vendetta squad is on its way
   private let m_pendingSquadTicks: Int32;     // fast ticks until it arrives (shown in the Hub)
+  private let m_pendingSquadStuck: Int32;    // ticks spent expired but unable to arrive
+  private let m_pendingApexStuck: Int32;     // same, for the apex appointment
   private let m_arrivalRecord: TweakDBID;     // which ganger to put in the seats
   private let m_arrivalCrew: Int32;           // how many were asked for
   private let m_arrivalTag: CName;            // squad tag the crew inherits
@@ -229,39 +231,22 @@ public class CyberbaneSystem extends ScriptableSystem {
         if riding {
           CBOnArrivalCrewAttached(this, this.GetGameInstance(), puppet);
         }
+        // Everything else about one of ours - turning it hostile, telling it to come, its
+        // buffs, its kit, its squad and its health bar - is deferred rather than done here.
+        //
+        // This is why spawned enemies stood around doing nothing until V walked into them.
+        // At the instant an entity attaches its native components do not exist yet: the
+        // attitude agent and the AI controller both come back null for the first few frames.
+        // Every one of those calls checks IsDefined and returns quietly when it is missing, so
+        // the hostility and the order to hunt were being dropped on the floor in silence and
+        // the NPC carried on as whatever it was spawned as - a neutral NCPD officer standing
+        // in the street. The mod already had the rule for this and was not following it:
+        // CBNpcSafe holds every other reader off for NpcReadyTicks after attach, and this path
+        // ignored it.
         if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex") {
-          CBMakeHostileToPlayer(this.GetGameInstance(), puppet);
-          // Hostile is not the same as coming for you. Without an order they stand where they
-          // were put, which is why arrivals could feel like nothing had happened at all.
-          // Anybody in a car is excepted: the car is doing the travelling.
-          if !riding {
-            CBOrderHunt(this.GetGameInstance(), puppet);
-          }
+          CBScheduleSpawnSetup(this.GetGameInstance(), id, riding);
         }
-        // A gang elite is not a boss on its own, so our apex gets lifted to boss grade.
-        if des.IsTagged(id, n"CB_Apex") {
-          CBApplyApexBuff(this, this.GetGameInstance(), puppet);
-          // The kit its role should be fighting with, the bar that says this one matters,
-          // and a seat in the squad so the four of them fight as a team.
-          CBKitApexMember(puppet);
-          CBShowBossBar(puppet);
-        }
-        // The rank and file get the light kit: enough to use cover properly, not enough to
-        // turn twenty gangers into twenty bosses.
-        if des.IsTagged(id, n"CB_Squad") {
-          CBKitSquadMember(puppet);
-        }
-        // Squad cohesion for anything Cyberbane sends as a group. Without this they are
-        // individuals standing together: each picks its own target and nobody covers anybody.
-        if des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Squad") {
-          CBJoinSquadWith(this, puppet);
-        }
-        // A Rival is somebody with a name, so they fight like it. Same role kit as the apex
-        // squad gets: the game already knows how to use a Sandevistan, cover and grenades,
-        // and a named enemy that uses none of them is just a ganger with a nameplate.
-        if des.IsTagged(id, n"CB_Rival") {
-          CBKitApexMember(puppet);
-        }
+
         // Somebody who runs a crew should take more killing than the rank and file do.
         if des.IsTagged(id, n"CB_Rival") && this.GetActiveRivalId() > 0 {
           let who = this.FindRivalById(this.GetActiveRivalId());
@@ -564,18 +549,25 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Heavy entity streaming since the last tick (a flood) even with no menu / time-jump signal
     // - e.g. walking a dense district or a scene loading around you. Stand down until it drains.
     // The counter is read and reset every tick.
+    // Heavy streaming no longer stops the whole tick.
+    //
+    // This heuristic has now caused three separate rounds of "nothing in the mod happens", and
+    // the last one is the clearest: arrivals landed while the player stood still talking about
+    // the bug, and not while they walked around the city. That is this check, exactly.
+    //
+    // The reason it was wrong is that it was never the real safety gate. Loads, fast travels,
+    // menus, scenes and time jumps all announce themselves properly through the player handle,
+    // CBWorldStable and the game clock, and those still hard-stop the tick above. Counting
+    // attaches was a guess at "something might be streaming", and it was being used to stand
+    // down scheduling and timekeeping that touch no engine object at all.
+    //
+    // So it now does the one job it can justify: skipping the Director's walk over every
+    // registered NPC, which is the genuinely heavy native work. Everything else runs. The
+    // spawn path keeps its own CBWorldStable check, so an arrival still refuses to land in a
+    // world that is not ready - it simply reschedules instead of the whole mod going quiet.
     let attached = this.m_attachCount;
     this.m_attachCount = 0;
-    if attached >= CBConfig.FloodAttachThreshold() {
-      // A spike in people appearing is not the same event as a load or a fast travel, and it
-      // does not need the same recovery. The long window stays for those, which announce
-      // themselves through the player handle and the game clock.
-      if this.m_streamSettleTicks < CBConfig.AttachSettleTicks() {
-        this.m_streamSettleTicks = CBConfig.AttachSettleTicks();
-      }
-      this.ScheduleFastTick();
-      return;
-    }
+    let heavyStreaming = attached >= CBConfig.FloodAttachThreshold();
 
     // A large jump in the in-game clock since the last processed tick means a time skip just
     // happened (Skip Time, fast travel, a ripperdoc install) - each kicks off a streaming flood
@@ -624,7 +616,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
     // Prevention-system district/heat queries never fire mid-stream. The director reads the
     // cached district rather than querying every tick.
-    if this.m_tickCount % 10 == 0 {
+    if this.m_tickCount % 10 == 0 && !heavyStreaming {
       CBRefreshLiveInputs(this, game);
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
@@ -642,7 +634,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalHuntTick(this, game);        // rivals close in on a visible countdown
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
-    if IsDefined(this.m_director) {
+    if IsDefined(this.m_director) && !heavyStreaming {
       this.m_director.Tick(game);
     }
     this.ScheduleFastTick();
@@ -707,6 +699,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func SetPendingSquad(faction: CName, ticks: Int32) -> Void {
     this.m_pendingSquadFaction = faction;
     this.m_pendingSquadTicks = ticks;
+    this.m_pendingSquadStuck = 0;
   }
 
   public func GetPendingSquadFaction() -> CName {
@@ -727,6 +720,38 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func ClearPendingSquad() -> Void {
     this.m_pendingSquadFaction = n"";
     this.m_pendingSquadTicks = 0;
+    this.m_pendingSquadStuck = 0;
+  }
+
+  // An expired appointment that cannot be kept has to be able to give up.
+  //
+  // This is the deadlock that made hit squads stop happening for a whole session. The scheduler
+  // refuses to arrange anything while one crew is pending, and the arrival holds - correctly -
+  // if the moment is wrong: mid-fight, a quiet job, a safe area, a gig, or a squad still in the
+  // world. But holding meant sitting at zero ticks forever, so one badly timed expiry
+  // permanently blocked every future squad. Walking around City Center is exactly where that
+  // bites, because a quest area there is easy to be standing in.
+  //
+  // Returns true when the caller should give up and let the scheduler start again.
+  public func AgePendingSquadHold() -> Bool {
+    this.m_pendingSquadStuck += 1;
+    if this.m_pendingSquadStuck > CBConfig.PendingHoldGiveUpTicks() {
+      CBLog.Info(n"Spawn", s"Crew from \(NameToString(this.m_pendingSquadFaction)) waited too long to find a moment; rescheduling.");
+      this.ClearPendingSquad();
+      return true;
+    }
+    return false;
+  }
+
+  public func AgePendingApexHold() -> Bool {
+    this.m_pendingApexStuck += 1;
+    if this.m_pendingApexStuck > CBConfig.PendingHoldGiveUpTicks() {
+      CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(this.m_pendingApexFaction)) waited too long; rescheduling.");
+      this.SetPendingApex(n"", 0);
+      this.m_pendingApexStuck = 0;
+      return true;
+    }
+    return false;
   }
 
   // ---- Faction apex (spec §9.9) -----------------------------------------
@@ -736,6 +761,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_pendingApexFaction = faction;
     this.m_pendingApexTicks = ticks;
     this.m_pendingApexDriving = false;
+    this.m_pendingApexStuck = 0;
   }
 
   // The same clock, but for a squad that has already been dispatched and is on the road.

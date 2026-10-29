@@ -29,6 +29,11 @@ public abstract class CBConfig {
   // components are ready before we read its position / attitude (avoids access violations during
   // ambient streaming in dense districts and scenes).
   public static func NpcReadyTicks() -> Int32 = 3
+  // How long after a spawn to wait before giving it its orders, and how many attempts. A
+  // freshly attached puppet has no attitude agent and no AI controller for the first few
+  // frames, and orders issued then are silently discarded.
+  public static func SpawnSetupRetrySeconds() -> Float = 0.4
+  public static func SpawnSetupMaxTries() -> Int32 = 12
   // If at least this many entities attached in a single tick interval, the world is streaming
   // heavily (a flood) even without a transition - stand down until it settles. This catches
   // ambient floods (dense districts, scene loads) that no menu/time-jump signal would flag.
@@ -278,7 +283,13 @@ public abstract class CBConfig {
   public static func GroundMinNormalZ() -> Float = 0.65
   // A floor further than this from V's own height is another level - a roof, the bottom of a
   // shaft - so the point is moved in toward V instead of used.
-  public static func GroundMaxDrop() -> Float = 15.0
+  // How far above or below V a spawn point's floor may be.
+  //
+  // This was fifteen metres, which is three storeys: a billboard, an awning or a first floor
+  // walkway all passed as "the same level", and the raycast is perfectly happy to find the top
+  // of a sign. That is the enemy standing in mid-air next to a hoarding. Somebody arriving to
+  // fight you is on your level or they are no use to anybody.
+  public static func GroundMaxDrop() -> Float = 3.5
   // Set them down a hair above the floor so they never start clipped into it.
   public static func GroundSpawnLift() -> Float = 0.1
   // How many abreast a spawned group stands before starting another rank behind it.
@@ -323,6 +334,10 @@ public abstract class CBConfig {
   public static func ArrivalDismountMaxTries() -> Int32 = 30
   // Ticks (about a second each) before a car that never attached is written off.
   public static func ArrivalStaleTicks() -> Int32 = 30
+  // How long an expired appointment may wait for a workable moment before it gives up and lets
+  // the scheduler arrange a fresh one. Without this, one badly timed expiry blocks every future
+  // squad and apex for the rest of the session.
+  public static func PendingHoldGiveUpTicks() -> Int32 = 120
 
   // ---- Apex strength ----
   // Percentage of a boss-grade build, used when settings have not loaded yet.
@@ -446,6 +461,9 @@ public abstract class CBConfig {
   // Minimum in-game hours between Rival encounters, so one can actually catch up with you
   // during a session without turning into an ambush every few minutes.
   public static func RivalEncounterCooldownHours() -> Float = 0.6
+  // How long a Rival you escaped takes to find you again. Long enough that getting away is a
+  // real outcome rather than a pause, which is what makes sparing and escaping worth anything.
+  public static func RivalAfterEscapeTicks() -> Int32 = 900
   public static func RivalMaxActiveHardCap() -> Int32 = 15
   public static func RivalMaxPerFaction() -> Int32 = 3
 

@@ -40,6 +40,27 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
   let fighting = IsDefined(player) && player.IsInCombat();
   if IsDefined(cd) && !fighting && des.IsPopulated(n"CB_Rival")
      && (now - cd.lastRivalEncounterAt) > CBConfig.RivalRetireGameSeconds() {
+    // You got away from them, and that has to count.
+    //
+    // Retiring simply deleted the Rival and said nothing, so running from one was worth
+    // exactly nothing: they vanished, their hunt clock restarted, and a short while later the
+    // same person reappeared behind you. With no way to escape, the only way to resolve a
+    // Rival was to kill them, which is the one outcome that stops them ever being promoted -
+    // the nemesis system quietly reduced to a respawning nuisance.
+    //
+    // Losing them now promotes them and buys real time before they find you again.
+    let got = sys.FindRivalById(sys.GetActiveRivalId());
+    if IsDefined(got) {
+      got.encounters += 1;
+      CBPromoteRival(got, CBContent(game), now);
+      got.huntTicks = CBConfig.RivalAfterEscapeTicks();
+      let rtEsc = CyberbaneRuntime.Get();
+      if IsDefined(rtEsc) && rtEsc.HasSettings() && rtEsc.GetSettings().toasts {
+        let whoName = CBRivalDisplayName(CBContent(game), got);
+        CBShowMessage(game, s"Cyberbane: you lost \(whoName). They will be better prepared next time.", 4.0);
+      }
+      CBLog.Info(n"Rivals", s"Player escaped rival id=\(got.id); promoted to rank \(got.rank).");
+    }
     des.DeleteTagged(n"CB_Rival");
     sys.SetActiveRivalId(0);
   }

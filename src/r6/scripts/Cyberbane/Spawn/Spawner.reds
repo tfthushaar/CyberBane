@@ -94,7 +94,8 @@ func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
             facing = (fwd.X * toPoint.X + fwd.Y * toPoint.Y) / (flatLen * away);
           }
         }
-        if facing <= CBConfig.SpawnMaxFacingCosine() && away >= CBConfig.SpawnMinDistance() {
+        if facing <= CBConfig.SpawnMaxFacingCosine() && away >= CBConfig.SpawnMinDistance()
+           && AbsF(found.Z - ppos.Z) <= CBConfig.GroundMaxDrop() {
           // A point they cannot walk from is a point they will stand on forever.
           let path = nav.CalculatePathOnlyHumanNavmesh(found, ppos, NavGenAgentSize.Human, 5.0);
           if IsDefined(path) && path.CalculateLength() > 0.0 {
@@ -126,6 +127,12 @@ func CBNavSnap(game: GameInstance, x: Float, y: Float, zHint: Float, out pos: Ve
     return false;
   }
   if Vector4.Distance(snapped, cand) > CBConfig.NavSnapTolerance() {
+    return false;
+  }
+  // And on the same level. The distance test above is a sphere, so a walkway one storey up sits
+  // comfortably inside it; without a separate vertical limit the navmesh will happily hand back
+  // a balcony over the street.
+  if AbsF(snapped.Z - zHint) > CBConfig.GroundMaxDrop() {
     return false;
   }
   pos = snapped;
@@ -328,6 +335,117 @@ public func CBOrderHunt(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void
   evt.command = cmd;
   puppet.QueueEvent(evt);
   ai.SendCommand(cmd);
+}
+
+// Finish setting up one of our own, once the engine has actually built it.
+//
+// Scheduled from the attach callback instead of running there. See the note at the call site:
+// at attach time the puppet has no attitude agent and no AI controller, so every call below
+// would fail silently and leave a spawned enemy standing around as whatever record it came
+// from. Retries a few times, because how long the components take is not fixed.
+public class CBSpawnSetupCallback extends DelayCallback {
+  public let entityId: EntityID;
+  public let riding: Bool;
+  public let tries: Int32;
+
+  public func Call() -> Void {
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) {
+      return;
+    }
+    let puppet = GameInstance.FindEntityByID(game, this.entityId) as ScriptedPuppet;
+    // Gone already: shot on the way in, or streamed out. Nothing to do and nothing to retry.
+    if !IsDefined(puppet) || !puppet.IsAttached() {
+      if this.tries < CBConfig.SpawnSetupMaxTries() {
+        CBRetrySpawnSetup(game, this);
+      }
+      return;
+    }
+    // The components we need, specifically. Checking these rather than a timer is the honest
+    // test: when they exist, the orders below will land.
+    if !IsDefined(puppet.GetAttitudeAgent()) || !IsDefined(puppet.GetAIControllerComponent()) {
+      if this.tries < CBConfig.SpawnSetupMaxTries() {
+        CBRetrySpawnSetup(game, this);
+      } else {
+        CBLog.Info(n"Spawn", "A spawned enemy never finished initialising; it will behave as its own kind.");
+      }
+      return;
+    }
+    CBApplySpawnSetup(sys, game, puppet, this.riding);
+  }
+}
+
+func CBRetrySpawnSetup(game: GameInstance, from: ref<CBSpawnSetupCallback>) -> Void {
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(ds) {
+    return;
+  }
+  let next = new CBSpawnSetupCallback();
+  next.entityId = from.entityId;
+  next.riding = from.riding;
+  next.tries = from.tries + 1;
+  ds.DelayCallback(next, CBConfig.SpawnSetupRetrySeconds(), false);
+}
+
+public func CBScheduleSpawnSetup(game: GameInstance, id: EntityID, riding: Bool) -> Void {
+  if !EntityID.IsDefined(id) {
+    return;
+  }
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(ds) {
+    return;
+  }
+  let cb = new CBSpawnSetupCallback();
+  cb.entityId = id;
+  cb.riding = riding;
+  cb.tries = 0;
+  ds.DelayCallback(cb, CBConfig.SpawnSetupRetrySeconds(), false);
+}
+
+// Everything that makes one of ours behave like one of ours.
+public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
+                              puppet: ref<ScriptedPuppet>, riding: Bool) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || !IsDefined(puppet) {
+    return;
+  }
+  let id = puppet.GetEntityID();
+  let isSquad = des.IsTagged(id, n"CB_Squad");
+  let isRival = des.IsTagged(id, n"CB_Rival");
+  let isApex = des.IsTagged(id, n"CB_Apex");
+  if !isSquad && !isRival && !isApex {
+    return;
+  }
+  CBMakeHostileToPlayer(game, puppet);
+  // Hostile is not the same as coming for you. Anybody in a car is excepted: the car travels.
+  if !riding {
+    CBOrderHunt(game, puppet);
+  }
+  if isApex {
+    CBApplyApexBuff(sys, game, puppet);
+    CBKitApexMember(puppet);
+    CBShowBossBar(puppet);
+  }
+  if isSquad {
+    CBKitSquadMember(puppet);
+  }
+  if isApex || isSquad {
+    CBJoinSquadWith(sys, puppet);
+  }
+  if isRival {
+    // A named enemy that never uses cover or chrome is a ganger with a nameplate.
+    CBKitApexMember(puppet);
+    let who = sys.FindRivalById(sys.GetActiveRivalId());
+    if IsDefined(who) {
+      CBApplyRivalApexBuff(sys, game, puppet, who);
+      CBApplyRivalRoleBuff(sys, game, puppet, CBRivalRole(sys, who));
+      if CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() {
+        CBShowBossBar(puppet);
+      }
+    }
+  }
+  CBLog.Info(n"Spawn", "One of ours is up and coming for you.");
 }
 
 // Make a spawned NPC hostile toward V. Called when a CB_Squad / CB_Rival puppet attaches.

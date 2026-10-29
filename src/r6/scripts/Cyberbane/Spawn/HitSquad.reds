@@ -184,14 +184,17 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
   }
   let player = GetPlayer(game);
   if !IsDefined(player) || player.IsInCombat() {
+    sys.AgePendingSquadHold();
     return;
   }
-  // Time is up. Hold, do not cancel, if this is a bad moment.
+  // Time is up. Hold, do not cancel, if this is a bad moment - but not forever.
   if CBStealthEncounterNearby(sys, game) || CBSafeAreaBlocksSpawn(game, player.GetWorldPosition()) {
+    sys.AgePendingSquadHold();
     return;
   }
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || des.IsPopulated(n"CB_Squad") {
+    sys.AgePendingSquadHold();
     return;
   }
   let fs = sys.FindFaction(faction);
