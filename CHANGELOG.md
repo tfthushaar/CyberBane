@@ -3,6 +3,21 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.4] - 2026-10-29
+
+Found by watching a live session.
+
+### Fixed
+- **A gang arriving in numbers shouted its warning once per member.** Thirteen Barghest turning
+  up meant thirteen copies of the same line stacked on top of each other in the middle of the
+  fight. They still each decide to draw on you; only the line is rationed now, using the same
+  cooldown the street's other overheard lines already share.
+- **Killing a rival blocked every other rival.** "Is one of them out there" was answered by
+  looking for the tag Cyberbane puts on them, and that tag stays on the body after they die
+  until a sweep clears it a couple of minutes later, which never happens during a fight. So
+  putting one down left the whole list stuck on "waiting their turn" with nobody actually out
+  there. A corpse no longer counts as somebody hunting you.
+
 ## [1.2.3] - 2026-10-29
 
 ### Fixed

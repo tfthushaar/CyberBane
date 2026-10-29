@@ -170,7 +170,20 @@ public class CBReactionDirector {
     // to hostile lands on the next evaluation, which reads as a beat of hesitation.
     if CBWarningsOn() && !npc.cbGangWarned {
       npc.cbGangWarned = true;
-      CBShowWhisper(player.GetGame(), faction, n"hate", n"warning");
+      // One warning, not one per head.
+      //
+      // The flag above is per NPC, which is right for deciding who has had their warning, and
+      // wrong for deciding whether to put a line on screen. A gang arriving in numbers meant
+      // every single one of them announced itself: a thirteen-strong vendetta crew produced
+      // thirteen popups on top of each other in the middle of the fight. The ambient whisper
+      // path right below already shares one cooldown across the whole street for exactly this
+      // reason; the warning was simply not using it.
+      //
+      // They still flip hostile either way. Only the line is rationed.
+      if this.m_whisperCooldownTicks <= 0 {
+        this.m_whisperCooldownTicks = this.WhisperCooldownTicks();
+        CBShowWhisper(player.GetGame(), faction, n"hate", n"warning");
+      }
       return true;
     }
     let agent = npc.GetAttitudeAgent();

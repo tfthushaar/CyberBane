@@ -147,6 +147,30 @@ public func CBTickClocksOnly(sys: ref<CyberbaneSystem>) -> Void {
   }
 }
 
+// Is any Rival actually alive and in the world right now?
+//
+// Walks only our own recorded bodies, so it cannot be fooled by a tag left on a corpse or by
+// anything else in the world carrying the same tag.
+public func CBLiveRivalPresent(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  if !IsDefined(sys) {
+    return false;
+  }
+  let rivals = sys.GetRivals();
+  let i = 0;
+  while i < ArraySize(rivals) {
+    let r = rivals[i];
+    i += 1;
+    if IsDefined(r) && r.state == EnumInt(ECBRivalState.Hunting)
+       && EntityID.IsDefined(r.spawnedEntityId) {
+      let body = GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet;
+      if IsDefined(body) && !body.IsDead() {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Is the body we queued for this Rival actually in the world?
 //
 // Deliberately asks the world rather than trusting the spawn call's return value, which only
@@ -193,7 +217,14 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     return;
   }
   // One Rival in the world at a time, and never on top of a fight already in progress.
-  let busy = des.IsPopulated(n"CB_Rival");
+  // "Is a Rival out?" means a living one.
+  //
+  // This was `des.IsPopulated(n"CB_Rival")`, which counts tagged entities - and the tag stays
+  // on the body after death until the retire sweep clears it, which is a couple of minutes
+  // away and never runs during combat. So putting a Rival down blocked every other Rival
+  // behind it, and the Hub showed the whole list stuck on "waiting their turn" with nothing
+  // actually out there. A corpse is not somebody hunting you.
+  let busy = des.IsPopulated(n"CB_Rival") && CBLiveRivalPresent(sys, game);
   let player = GetPlayer(game);
   let inCombat = !IsDefined(player) || player.IsInCombat();
   // Never walk into a stealth job. Arriving mid-infiltration starts a fight the player was

@@ -111,8 +111,12 @@ public class CBThreatBar {
   public func Track(puppet: wref<ScriptedPuppet>, kindLabel: String, displayName: String) -> Void {
     this.m_target = puppet;
     if !this.EnsureBuilt() {
+      // Logged because a bar that silently fails to build is indistinguishable from one that
+      // was never asked for, and telling those two apart from the outside is impossible.
+      CBLog.Info(n"UI", "Threat bar could not be built (no ink layer yet).");
       return;
     }
+    CBLog.Info(n"UI", s"Threat bar tracking \(kindLabel): \(displayName).");
     if IsDefined(this.m_kind) {
       this.m_kind.SetText(kindLabel);
     }
