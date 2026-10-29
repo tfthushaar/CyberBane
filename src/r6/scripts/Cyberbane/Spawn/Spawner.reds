@@ -73,11 +73,22 @@ func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
       let found: Vector4;
       if nav.FindNavmeshPointAwayFromReferencePoint(seed, ppos, dist, NavGenAgentSize.Human,
                                                     found, 10.0, 60.0) {
-        // A point they cannot walk from is a point they will stand on forever.
-        let path = nav.CalculatePathOnlyHumanNavmesh(found, ppos, NavGenAgentSize.Human, 5.0);
-        if IsDefined(path) && path.CalculateLength() > 0.0 {
-          anchor = found;
-          return true;
+        // The navmesh call honours the distance but not the direction, so the point can come
+        // back in front of V. That matters because the spawn itself is queued with
+        // spawnInView = false: a point in view is not refused loudly, it is quietly never
+        // placed, and the caller is told an entity was created. So the view test has to
+        // happen here, before anything is queued.
+        let toPoint = new Vector4(found.X - ppos.X, found.Y - ppos.Y, 0.0, 0.0);
+        let flatFwd = new Vector4(fwd.X, fwd.Y, 0.0, 0.0);
+        let angle = Vector4.GetAngleBetween(flatFwd, toPoint);
+        let away = Vector4.Length(toPoint);
+        if angle >= CBConfig.SpawnMinViewAngle() && away >= CBConfig.SpawnMinDistance() {
+          // A point they cannot walk from is a point they will stand on forever.
+          let path = nav.CalculatePathOnlyHumanNavmesh(found, ppos, NavGenAgentSize.Human, 5.0);
+          if IsDefined(path) && path.CalculateLength() > 0.0 {
+            anchor = found;
+            return true;
+          }
         }
       }
     }

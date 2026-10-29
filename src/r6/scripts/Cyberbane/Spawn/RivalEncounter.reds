@@ -96,6 +96,17 @@ public func CBRivalHuntTicksFor(rank: Int32, atCap: Bool) -> Int32 {
   return t;
 }
 
+// Is the body we queued for this Rival actually in the world?
+//
+// Deliberately asks the world rather than trusting the spawn call's return value, which only
+// ever meant "the request was accepted".
+public func CBRivalBodyPresent(game: GameInstance, r: ref<CBRival>) -> Bool {
+  if !IsDefined(r) || !EntityID.IsDefined(r.spawnedEntityId) {
+    return false;
+  }
+  return IsDefined(GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet);
+}
+
 // Ticks until this Rival turns up, or 0 when it is not counting down.
 public func CBRivalHuntRemaining(r: ref<CBRival>) -> Int32 {
   if !IsDefined(r) {
@@ -161,36 +172,67 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       }
     }
   }
-  sys.SetHuntHoldReason(hold);
   if hold != CBHoldNone() {
+    sys.SetHuntHoldReason(hold);
     return;   // everybody waits, and every clock stays where it is
   }
 
+  // Written once, at the end, rather than up here. Setting it before the loop overwrote any
+  // "nowhere to put them" recorded by the previous tick's spawn attempt, so that reason never
+  // survived long enough for the Hub to draw it and an unplaceable arrival looked like an
+  // ordinary countdown.
+  let failedToPlace = false;
   let i = 0;
   while i < ArraySize(rivals) {
     let r = rivals[i];
     i += 1;
     if IsDefined(r) && TDBID.IsValid(r.recordID)
        && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-      if r.huntTicks <= 0 {
-        r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);   // start the clock
-      } else {
-        r.huntTicks -= 1;
-        if r.huntTicks <= 0 {
-          if CBSpawnRival(sys, game, r, now) {
-            r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);
-            return;   // one arrival per tick
+      // Waiting to see whether the one we queued actually turned up.
+      //
+      // This is the gap the reference mods both close and Cyberbane did not: CreateEntity
+      // hands back a valid EntityID even when the engine goes on to decline the spawn, so
+      // "queued" was being treated as "arrived". A Rival that never materialised stayed
+      // marked as Hunting, held the active slot, and blocked every other Rival behind the
+      // one-at-a-time rule - which is exactly a Hub full of people who are due and never come.
+      if r.arrivalCheckTicks > 0 {
+        r.arrivalCheckTicks -= 1;
+        if r.arrivalCheckTicks <= 0 {
+          if CBRivalBodyPresent(game, r) {
+            r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);   // they are really here
+          } else {
+            CBLog.Info(n"Spawn", s"Rival \(r.id) was queued but never arrived; trying again.");
+            r.state = EnumInt(ECBRivalState.Active);
+            if sys.GetActiveRivalId() == r.id {
+              sys.SetActiveRivalId(0);
+            }
+            r.huntTicks = CBConfig.RivalHuntRetryTicks();
+            failedToPlace = true;
           }
-          // The timer ran out and they still could not be put down: V is somewhere with no
-          // room for them, no navmesh, or the world is still streaming. The appointment is
-          // kept and retried shortly, but the Hub is told, because a fresh twenty second
-          // countdown here would be a lie - nothing is counting down, it is retrying.
-          sys.SetHuntHoldReason(CBHoldNoRoom());
-          r.huntTicks = CBConfig.RivalHuntRetryTicks();
+        }
+      } else {
+        if r.huntTicks <= 0 {
+          r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);   // start the clock
+        } else {
+          r.huntTicks -= 1;
+          if r.huntTicks <= 0 {
+            if CBSpawnRival(sys, game, r, now) {
+              r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);
+              sys.SetHuntHoldReason(CBHoldNone());
+              return;   // one arrival per tick
+            }
+            // The timer ran out and they still could not be put down: V is somewhere with no
+            // room for them, no navmesh, or the world is still streaming. The appointment is
+            // kept and retried shortly, but the Hub is told, because a fresh twenty second
+            // countdown here would be a lie - nothing is counting down, it is retrying.
+            failedToPlace = true;
+            r.huntTicks = CBConfig.RivalHuntRetryTicks();
+          }
         }
       }
     }
   }
+  sys.SetHuntHoldReason(failedToPlace ? CBHoldNoRoom() : CBHoldNone());
 }
 
 func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Bool {
@@ -204,6 +246,7 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   // retire sweep, and when that happened the kill stopped counting: the Rival was never marked
   // slain, never replaced, and came back again and again.
   r.spawnedEntityId = body;
+  r.arrivalCheckTicks = CBConfig.RivalArrivalCheckTicks();   // confirm they really showed up
   r.state = EnumInt(ECBRivalState.Hunting);   // it is actively hunting you now
   r.lastSeenAt = now;
   sys.SetActiveRivalId(r.id);                 // track it for escape / slain handling

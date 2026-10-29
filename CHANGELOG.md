@@ -3,6 +3,30 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.7] - 2026-10-29
+
+### Fixed
+- **Nobody was arriving anywhere, and the Hub said they all would "any moment".** A check added
+  in 1.1.5 was reading the game's own security zone and treating the low values as protected.
+  The open street reports a low value too, so that quietly blocked every rival and apex spawn in
+  the entire city. Their timers ran out against a gate that never opened, which is why they sat
+  on "any moment" and nothing ever came. The zone is now only a blocker when you are also
+  indoors, which is how the mod this was learned from uses it.
+- **A queued arrival is confirmed before it counts as arrived.** The game hands back a valid
+  entity when a spawn is requested even if it then declines to place it, so "queued" was being
+  treated as "arrived". A rival that never materialised stayed marked as hunting, held the
+  one-at-a-time slot, and blocked everybody behind it. Cyberbane now checks a few seconds later
+  whether they actually turned up, and tries again if they did not.
+- **Arrivals are placed properly out of view.** They were being put 20 m behind you, which one
+  camera turn is enough to bring into view, and an out-of-view spawn that comes into view is
+  not refused loudly, it is silently never placed. Points are now rejected unless they are well
+  off your facing and far enough back for that to hold, and arrivals come at a run so the extra
+  distance costs nothing.
+- Chrome that drives visual effects (Sandevistan, optical camo, berserk) is no longer granted to
+  gang enforcers. A crash report came in from inside the game's effect system while an NPC was
+  being processed, and although nothing named Cyberbane, this was the only new thing it was
+  doing that touches that system. The abilities that change how they fight are all still there.
+
 ## [1.1.6] - 2026-10-29
 
 ### Fixed

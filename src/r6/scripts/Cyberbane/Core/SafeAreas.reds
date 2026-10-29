@@ -129,8 +129,19 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   if CBPlayerInQuestArea(game) {
     return true;
   }
-  // The game's own zone, which covers the safe and restricted tiers the point query misses.
-  if CBInProtectedZone() {
+  // The game's own zone, but only indoors.
+  //
+  // This is deliberately the same shape as the check They Will Remember makes, and the reason
+  // matters. ESecurityAreaType does not expose its members to redscript by name, so the
+  // ordinals cannot be read - only compared. On its own, `zone < OpenZoneFrom` was therefore a
+  // guess about what the low values mean, and it was the wrong guess: the open street reports
+  // a low ordinal too, so this blocked every spawn in the city and no Rival or apex could
+  // arrive anywhere. The Hub showed them all stuck on "any moment" because their clocks were
+  // running out against a gate that never opened.
+  //
+  // Paired with being indoors it is safe whichever way the ordinals fall: the worst a wrong
+  // guess can now do is decline a spawn inside a building, which is already the policy.
+  if CBInProtectedZone() && CBPlayerIndoors(game) {
     return true;
   }
   let sam = GameInstance.GetSafeAreaManager(game);

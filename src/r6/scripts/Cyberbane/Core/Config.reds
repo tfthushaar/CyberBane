@@ -178,7 +178,11 @@ public abstract class CBConfig {
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
   // Close enough that V meets them before driving off. At 35 m a Rival could spawn behind
   // you, lose you to a vehicle, and be despawned before either of you noticed.
-  public static func RivalSpawnDistance() -> Float = 20.0
+  // Far enough back that spawnInView = false has somewhere to work. At twenty metres a single
+  // camera turn put the point in view, and the engine then declines the spawn without saying
+  // so - which read as a Rival that was due and never came. They are told to run at V on
+  // arrival (CBOrderHunt), so the extra distance costs nothing.
+  public static func RivalSpawnDistance() -> Float = 42.0
 
   // How many downed enemies the mercy sweep looks at per fast tick. The sweep exists because
   // the hit hook alone misses anyone who drops to damage that does not raise a hit event we
@@ -259,6 +263,11 @@ public abstract class CBConfig {
   // First ESecurityAreaType ordinal that counts as ordinary open city. Below this the game
   // treats the area as safe or restricted, and Cyberbane sends nobody.
   public static func OpenZoneFrom() -> Int32 = 2
+  // How far off V's own facing a spawn point has to be, in degrees, before it is accepted.
+  // Mirrors the margin They Will Remember uses for the same reason.
+  public static func SpawnMinViewAngle() -> Float = 70.0
+  // And the shortest distance worth queuing an out-of-view spawn at.
+  public static func SpawnMinDistance() -> Float = 25.0
   public static func SpawnPerRank() -> Int32 = 4
   public static func SpawnRankSpacing() -> Float = 3.0
   // How far a navmesh snap may move a body from where its rank asked for it before the point
@@ -350,7 +359,7 @@ public abstract class CBConfig {
   // Fast ticks between the warning and the apex arriving. Long enough to read as a countdown
   // in the Hub and to brace for, short enough that you have not driven to another district.
   public static func ApexWarningTicks() -> Int32 = 45
-  public static func ApexSpawnDistance() -> Float = 18.0
+  public static func ApexSpawnDistance() -> Float = 45.0
   // Muscle that comes in with them. Built from the gang's rank-and-file record.
   public static func ApexEscortCount() -> Int32 = 2
   // The apex is built from a gang archetype, which on its own is nowhere near a boss, so the
@@ -391,6 +400,9 @@ public abstract class CBConfig {
   // When the clock runs out but V is mid-fight or another Rival is already out, wait this
   // many ticks and try again rather than dropping the appointment.
   public static func RivalHuntRetryTicks() -> Int32 = 20
+  // How long to wait before checking that a queued Rival actually appeared. Long enough for
+  // an out-of-view spawn to be honoured once V has moved or turned.
+  public static func RivalArrivalCheckTicks() -> Int32 = 10
   // Spread added to each Rival's countdown so two of the same rank do not arrive together.
   public static func RivalHuntJitterTicks() -> Int32 = 120
   // How long a Rival may stand around before Cyberbane gives up on the encounter, in in-game

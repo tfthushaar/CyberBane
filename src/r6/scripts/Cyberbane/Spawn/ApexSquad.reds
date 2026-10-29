@@ -176,20 +176,17 @@ public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
       // Walks at you, breaks your guard, and takes a magazine to put down.
       CBGrantAbility(npc, t"Ability.HasSubdermalArmorHigh");
       CBGrantAbility(npc, t"Ability.CanGuardBreak");
-      CBGrantAbility(npc, t"Ability.HasBerserk");
       break;
     case ECBApexRole.Blade:
       // Closes the distance faster than you can back away from it.
-      CBGrantAbility(npc, t"Ability.HasSandevistanTier3");
       CBGrantAbility(npc, t"Ability.HasKerenzikov");
       CBGrantAbility(npc, t"Ability.HasChargeJump");
       break;
     case ECBApexRole.Netrunner:
-      // Stays back and takes your weapon and your eyes off you.
+      // Stays back and takes your weapon off you.
       CBGrantAbility(npc, t"Ability.CanQuickhack");
       CBGrantAbility(npc, t"Ability.CanOverheatQuickHack");
       CBGrantAbility(npc, t"Ability.CanWeaponMalfunctionQuickHack");
-      CBGrantAbility(npc, t"Ability.CanUseOpticalCamo");
       break;
     default:
       // Flushes you out of cover so the others can reach you.
@@ -198,6 +195,16 @@ public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
       CBGrantAbility(npc, t"Ability.HasKerenzikov");
       break;
   };
+  // Deliberately NOT granted: Sandevistan, optical camo and berserk.
+  //
+  // All three drive shader effectors, and a crash report came in from an engine assert inside
+  // gameEffectSystem/ApplyShaderEffector while an NPC was being processed. That is not proof -
+  // the report named no mod and the assert is asynchronous, so the script that queued the
+  // effect would not appear on the stack either way - but these three are the only things
+  // Cyberbane had just started doing that touch that system, and granting a visual chrome
+  // effect to an arbitrary gang record that was never authored for one is exactly the shape of
+  // thing that trips an assert like that. The behavioural abilities above carry no shader work
+  // and keep almost all of the value, so this is a cheap thing to give up until it is known.
 }
 
 // Apply one gameplay ability, through its package, the way the game does it itself.

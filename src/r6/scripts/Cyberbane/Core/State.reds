@@ -120,6 +120,10 @@ public class CBRival {
   // the one you set on fire is the one who turns up burned. A new scalar on an existing
   // persisted class, so old saves read 0 and nothing needs migrating.
   public persistent let scarMask: Int32;
+  // Ticks left to confirm a queued arrival actually materialised. CBSpawnGroup can only report
+  // that an entity was queued, not that it appeared, so this is how a no-show is noticed. A new
+  // scalar on an existing persisted class, so old saves read 0 and nothing needs migrating.
+  public persistent let arrivalCheckTicks: Int32;
   public persistent let encounters: Int32;
   public persistent let escapes: Int32;
   public persistent let killedV: Int32;
