@@ -21,6 +21,16 @@
 @addField(ScriptedPuppet)
 public let cbKitted: Bool;
 
+// Has this one already had its stat buffs applied?
+//
+// Without this, an enemy that attaches twice - which streaming can do - gets every multiplier
+// applied twice over. At full strength that is roughly sixteen times armour becoming two
+// hundred and fifty six times, and health twenty five times becoming six hundred. The result
+// is not a hard fight, it is an enemy that takes literally no damage, which is exactly what
+// was reported. The kit had this guard from the start; the buffs did not.
+@addField(ScriptedPuppet)
+public let cbBuffed: Bool;
+
 public enum ECBApexRole {
   Tank = 0,
   Assault = 1,

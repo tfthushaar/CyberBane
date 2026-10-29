@@ -183,6 +183,11 @@ public func CBApplyRivalRoleBuff(sys: ref<CyberbaneSystem>, game: GameInstance, 
   if !IsDefined(puppet) || role == CBRoleNone() {
     return;
   }
+  // Sits on top of the apex-grade buff on purpose, and like it must never be applied twice.
+  if puppet.cbRoleBuffed {
+    return;
+  }
+  puppet.cbRoleBuffed = true;
   let stats = GameInstance.GetStatsSystem(game);
   if !IsDefined(stats) {
     return;
@@ -194,6 +199,9 @@ public func CBApplyRivalRoleBuff(sys: ref<CyberbaneSystem>, game: GameInstance, 
     stats.AddModifier(id, hp);
   }
 }
+
+@addField(ScriptedPuppet)
+public let cbRoleBuffed: Bool;
 
 // ---- Scars -----------------------------------------------------------------
 

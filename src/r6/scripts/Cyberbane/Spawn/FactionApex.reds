@@ -174,6 +174,12 @@ public func CBApplyApexGradeBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !IsDefined(puppet) {
     return;
   }
+  // Once only. Stat modifiers add on top of each other, so a second pass squares every
+  // multiplier and produces something nothing can hurt.
+  if puppet.cbBuffed {
+    return;
+  }
+  puppet.cbBuffed = true;
   let stats = GameInstance.GetStatsSystem(game);
   if !IsDefined(stats) {
     return;

@@ -3,6 +3,21 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.6] - 2026-10-30
+
+### Fixed
+- **Some enemies took no damage at all.** If one of them attached to the world twice, which
+  streaming can cause, every stat boost was applied a second time on top of the first. At full
+  strength that turns sixteen times armour into two hundred and fifty six times, which is not a
+  hard fight, it is an enemy nothing can hurt. Boosts are applied once now.
+- **Enemies spawning in mid-air.** The last attempt at placing somebody used your own height
+  with no check for a floor underneath. On flat ground that is fine; standing on a walkway, a
+  bridge or a ramp, it drops an enemy into the air over the gap. It now refuses that spot, and
+  because a refused arrival keeps its turn and tries again shortly, nothing is lost by refusing.
+- **Arrival messages say what has turned up.** They now name it as a rival, a hit squad, or a
+  vendetta crew with an apex squad, instead of leaving you to work out which one you are
+  looking at.
+
 ## [1.2.5] - 2026-10-30
 
 ### Added

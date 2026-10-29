@@ -263,18 +263,29 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       }
       attempt += 1;
     }
-    // Last resort: put them in close, at V's own height. This is the pre-0.1.15 behaviour and
-    // it can look wrong on a ledge, but a trace that finds nothing must not mean nobody ever
-    // arrives - that silently disables Rivals, hit squads and apex hunters all at once, which
-    // is a far worse bug than an awkward entrance.
+    // Last resort: close in, and still on a floor.
+    //
+    // This used to take V's own height and place somebody there with no check at all. On flat
+    // ground that is fine; standing on a walkway, a bridge, a ramp or anywhere with a drop
+    // behind you, it puts an enemy in the air over the gap - which is the mid-air spawn that
+    // kept being reported after the other causes were fixed.
+    //
+    // It refuses now instead of guessing. The reason it was allowed to guess was that a
+    // refusal used to mean the encounter was silently lost; it no longer does - the lane keeps
+    // its turn and tries again shortly - so there is nothing left to buy by placing blind.
     if !placed {
       let fx = ppos.X - fwd.X * (dist * 0.4 + rankBack) + rx * lane * 2.5;
       let fy = ppos.Y - fwd.Y * (dist * 0.4 + rankBack) + ry * lane * 2.5;
-      let fallback = new Vector4(fx, fy, ppos.Z, 1.0);
-      // The fallback is close in, so it is the likeliest of the lot to land indoors.
-      if !CBSafeAreaBlocksSpawn(game, fallback)
-         && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned) {
-        spawned += 1;
+      let fz: Float;
+      if CBGroundAt(game, fx, fy, ppos.Z, fz) && AbsF(fz - ppos.Z) <= CBConfig.GroundMaxDrop() {
+        let fallback = new Vector4(fx, fy, fz + CBConfig.GroundSpawnLift(), 1.0);
+        // The fallback is close in, so it is the likeliest of the lot to land indoors.
+        if !CBSafeAreaBlocksSpawn(game, fallback)
+           && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned) {
+          spawned += 1;
+        }
+      } else {
+        CBNoteSpawnBlock(CBBlockNoGround());
       }
     }
     i += 1;

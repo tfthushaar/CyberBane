@@ -201,7 +201,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
       }
       let rtApex = CyberbaneRuntime.Get();
       if IsDefined(rtApex) && rtApex.HasSettings() && rtApex.GetSettings().toasts {
-        CBShowMessage(game, s"Cyberbane: the \(NameToString(fs.id)) are coming for you in force.", 5.0);
+        CBShowMessage(game, s"Cyberbane: vendetta crew and apex squad - the \(NameToString(fs.id)) are coming for you in force.", 5.0);
       }
       CBLog.Info(n"Spawn", s"Vendetta crew from \(NameToString(fs.id)): \(footAll) on foot plus an apex squad.");
       return;
@@ -237,7 +237,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
 
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(game, s"Cyberbane: \(NameToString(fs.id)) sent people after you.", 4.0);
+    CBShowMessage(game, s"Cyberbane: hit squad - \(NameToString(fs.id)) sent people after you.", 4.0);
   }
   CBLog.Info(n"Spawn", s"Hit squad from \(NameToString(fs.id)): \(spawned).");
 }
