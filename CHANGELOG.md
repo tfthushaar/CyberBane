@@ -3,6 +3,14 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.6] - 2026-10-30
+
+### Added
+- **The Rivals screen now says why the next one is after you.** "You beat them down and left
+  them alive." "Got away from you bleeding." "Put you down once." The mod has always known this
+  and has never once told you, so the rows carried a name, a gang and a clock while the single
+  most interesting fact about a nemesis went unsaid.
+
 ## [1.2.5] - 2026-10-30
 
 ### Changed

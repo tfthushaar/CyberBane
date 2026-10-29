@@ -947,6 +947,24 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let count = sys.CountActiveRivals();
   let cap = CBRivalCap();
   let out = s"CARRYING \(count) OF \(cap)\n\n";
+  // Why the one who is next is after you.
+  //
+  // The rows carry name, gang, rank, scars and a clock, and never once say what any of this is
+  // about. CBRivalSourceLine has existed as long as rivals have and was never called, so the
+  // single most interesting fact about a nemesis - that you spared them, or that they put you
+  // down once - was being kept from the player. Shown for whoever is next rather than on every
+  // row, because it is a sentence and the rows are columns.
+  let nextId = sys.GetLaneRivalId(CBLaneRival());
+  if nextId > 0 {
+    let nxt = sys.FindRivalById(nextId);
+    if IsDefined(nxt) {
+      let why = CBRivalSourceLine(nxt.source);
+      if StrLen(why) > 0 {
+        out += "NEXT  " + CBRivalDisplayName(sys.GetContent(), nxt) + " - " + why
+             + ", " + CBRivalStateName(nxt.state) + ".\n\n";
+      }
+    }
+  }
   // A held arrival used to keep resetting its clock to a few seconds and never come, which
   // read as the Hub promising someone was seconds away over and over. Say what is happening.
   let held = CBStealthHoldReason(sys, game);
