@@ -721,4 +721,4 @@ First public release, available on [Nexus Mods](https://www.nexusmods.com/cyberp
 - The systems that touch NPCs now leave companions, vendors, and anyone in a scripted
   scene or workspot alone, on top of the existing hands-off rule for quest characters.
 
-_Built for Cyberpunk 2077 v2.31. Cyberbane is in active development, so expect frequent updates._
+_Built for Cyberpunk 2077 v2.5. Cyberbane is in active development, so expect frequent updates._

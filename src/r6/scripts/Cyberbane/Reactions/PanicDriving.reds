@@ -1,7 +1,7 @@
 // Cyberbane - Panic driving (spec §9.2)
 //
 // When V is terrifying and fighting out on the street, nearby drivers should panic and
-// peel away. There is no direct "make this car flee" call in 2.31, so this reuses the
+// peel away. No direct "make this car flee" call is exposed to redscript, so this reuses the
 // game's own fear path: a Gunshot stim broadcast from V, which the traffic AI and crowds
 // react to. It only fires when V is both frightening (civilian Dread at the Terror tier)
 // and in combat, and only once every few ticks, so it never spams. Reversible (a stock

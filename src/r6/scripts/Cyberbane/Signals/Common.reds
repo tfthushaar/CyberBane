@@ -1,7 +1,7 @@
 // Cyberbane - Signal helpers (spec §7.5, §7.8)
 //
 // Small shared helpers for the signal hooks. All signatures compile-verified
-// against Cyberpunk 2077 2.31.
+// against Cyberpunk 2077 2.5.
 
 // In-game time as Float game-seconds (spec §6.1). TimeSystem.GetGameTimeStamp()
 // returns the in-game clock as a Float, which is exactly the unit Cyberbane stores.
