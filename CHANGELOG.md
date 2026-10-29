@@ -28,6 +28,10 @@ Everything the feature audit found dead or missing is now implemented.
   Hub had nothing to show because a dice roll cannot be counted down. Now a gang that is
   hostile and knows who you are puts a crew together on a timer between about four and fifteen
   minutes depending on how much they hate you, and the Hub counts it down like everything else.
+- **Switching your title tells you it worked.** Cycling the active title with Ctrl and the Hub
+  key always did work and stuck, but it was completely silent: unless you happened to be on the
+  Titles tab you could not tell anything had happened, which makes a working feature look like
+  a broken one. It now says who you are going by.
 - **The Konpeki Ghost title can be earned.** It was the only title in the mod with no condition
   at all, hanging off quest detection that cannot work. It now means what its name means: a
   great deal of work, as a Ghost, that nobody could put a name to.
@@ -38,6 +42,7 @@ Everything the feature audit found dead or missing is now implemented.
   and above gain. This is the weighting working rather than a loss.
 - Crowds react more during a fight, because being mid-fight now counts toward how dangerous you
   look. The same person still will not flinch twice in quick succession.
+- Removed a leftover settings category label from the ten settings deleted in 1.1.4.
 
 ## [1.1.9] - 2026-10-29
 

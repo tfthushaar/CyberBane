@@ -464,6 +464,21 @@ public class CyberbaneSystem extends ScriptableSystem {
     if event.IsControlDown() && this.m_hud.IsOpen() {
       CBCycleActiveTitle(this);
       this.m_hud.Refresh(this, game);
+      // Say what just happened.
+      //
+      // The cycling itself always worked and persisted, but it was completely silent: unless
+      // you happened to be looking at the Titles tab or the header, pressing the shortcut
+      // looked exactly like pressing nothing, which makes a working feature indistinguishable
+      // from a broken one.
+      if CBToastsOn() {
+        let picked = this.GetActiveTitle();
+        if Equals(picked, n"") {
+          CBShowMessage(game, "Cyberbane: title set to automatic, the best one you have earned.", 4.0);
+        } else {
+          let named = CBTitleDisplayById(this, this.GetContent(), picked);
+          CBShowMessage(game, "Cyberbane: you are going by " + named + " now.", 4.0);
+        }
+      }
       return;
     }
     // Don't pop the Hub open mid-fight, but always allow closing it.

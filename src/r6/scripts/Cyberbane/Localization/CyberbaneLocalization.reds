@@ -32,7 +32,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-Civilians", "Civilians");
     this.Text("Cyberbane-Settings-Category-Gangs", "Gangs");
     this.Text("Cyberbane-Settings-Category-Morale", "Morale");
-    this.Text("Cyberbane-Settings-Category-Police", "Police");
     this.Text("Cyberbane-Settings-Category-Economy", "Economy");
     this.Text("Cyberbane-Settings-Category-Rivals", "Rivals");
     this.Text("Cyberbane-Settings-Category-SafeAreas", "Safe areas");
