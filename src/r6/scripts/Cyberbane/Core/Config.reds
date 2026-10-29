@@ -255,6 +255,63 @@ public abstract class CBConfig {
   public static func GroundMaxDrop() -> Float = 15.0
   // Set them down a hair above the floor so they never start clipped into it.
   public static func GroundSpawnLift() -> Float = 0.1
+  // How many abreast a spawned group stands before starting another rank behind it.
+  // First ESecurityAreaType ordinal that counts as ordinary open city. Below this the game
+  // treats the area as safe or restricted, and Cyberbane sends nobody.
+  public static func OpenZoneFrom() -> Int32 = 2
+  public static func SpawnPerRank() -> Int32 = 4
+  public static func SpawnRankSpacing() -> Float = 3.0
+  // How far a navmesh snap may move a body from where its rank asked for it before the point
+  // is refused as belonging to somewhere else entirely.
+  public static func NavSnapTolerance() -> Float = 10.0
+  // Where a hunter stops once it reaches V, and how much that varies across a squad.
+  public static func HuntStopDistance() -> Float = 3.0
+  public static func HuntStopSpread() -> Float = 8.0
+
+  // ---- Arriving by car (spec 9.9) ----
+  // Far enough out that the car is not seen appearing and has room to build up speed.
+  public static func VehicleArrivalDistance() -> Float = 70.0
+  // The box a car needs to be clear before one is put there, in metres.
+  public static func CarFitWidth() -> Float = 2.5
+  public static func CarFitLength() -> Float = 4.5
+  public static func CarFitHeight() -> Float = 1.0
+  public static func CarMaxSeats() -> Int32 = 4
+  // One beat for the mounts to settle before the driver is given orders.
+  public static func CarStartDelay() -> Float = 0.3
+  public static func ChaseDistanceMin() -> Float = 3.0
+  public static func ChaseDistanceMax() -> Float = 12.0
+  public static func ChaseStartSpeed() -> Float = 10.0
+  public static func ArrivalDriveMaxSpeed() -> Float = 80.0
+  public static func ArrivalDriveMinSpeed() -> Float = 10.0
+  public static func ArrivalStopDistance() -> Float = 12.0
+  // How close the car has to get before the crew is let out, how often that is checked, and
+  // how many checks before they are unloaded regardless.
+  public static func ArrivalDismountDistance() -> Float = 35.0
+  public static func ArrivalDismountPoll() -> Float = 2.0
+  public static func ArrivalDismountMaxTries() -> Int32 = 30
+  // Ticks (about a second each) before a car that never attached is written off.
+  public static func ArrivalStaleTicks() -> Int32 = 30
+
+  // ---- Apex strength ----
+  // Percentage of a boss-grade build, used when settings have not loaded yet.
+  public static func ApexStrengthDefault() -> Int32 = 70
+  // How much of its own contribution Cyberbane keeps when New Game Plus is also buffing NPCs.
+  public static func ApexNgpStepDown() -> Float = 0.5
+  // Size of one random trait, as a fraction added on top of the stat it touches.
+  public static func ApexTraitStrength() -> Float = 0.6
+  public static func ApexPowerLevelBonus() -> Float = 10.0
+  // How many enforcers turn up when a gang sends its apex by car. A full car of them is the
+  // set piece; the strength slider is what tunes how hard each one hits.
+  public static func ApexStrikeTeamSize() -> Int32 = 4
+
+  // ---- Vendetta hit squads ----
+  // Fast ticks between a gang deciding and the crew turning up. Long enough to read the Hub
+  // and get somewhere defensible, short enough that a vendetta is felt.
+  public static func VendettaSquadTicks() -> Int32 = 150
+  public static func VendettaSquadMinTicks() -> Int32 = 45
+  // Smallest share of the full crew that turns out, before menace scales it up.
+  public static func VendettaSquadFloorFraction() -> Float = 0.6
+  public static func VendettaSquadSizeDefault() -> Int32 = 20
 
   // ---- Faction apex enforcer (spec §9.9) -------------------------------
   // Bodies from one gang before they stop sending squads and send someone who matters. Kept
@@ -273,10 +330,18 @@ public abstract class CBConfig {
   // (menace: level, Street Cred and skills), so a maxed-out merc gets a real fight instead of
   // a sponge that dies in a burst, and someone just starting out is not simply deleted.
   // Base applies at no build at all, base + range at full menace.
-  public static func ApexHealthMultBase() -> Float = 4.0
-  public static func ApexHealthMultRange() -> Float = 6.0    // 4x .. 10x
-  public static func ApexArmorMultBase() -> Float = 2.0
-  public static func ApexArmorMultRange() -> Float = 3.0     // 2x .. 5x
+  // An apex is meant to read as the worst thing that gang has. These are deliberately big:
+  // at full menace it is in the same conversation as the game's own set piece bosses, and it
+  // hits as hard as it takes, because a pure health sponge is tedious rather than frightening.
+  public static func ApexHealthMultBase() -> Float = 10.0
+  public static func ApexHealthMultRange() -> Float = 15.0   // 10x .. 25x
+  public static func ApexArmorMultBase() -> Float = 4.0
+  public static func ApexArmorMultRange() -> Float = 6.0
+  // What they hit back with.
+  public static func ApexDamageMultBase() -> Float = 1.6
+  public static func ApexDamageMultRange() -> Float = 1.6    // 1.6x .. 3.2x
+  public static func ApexCritChanceBonus() -> Float = 25.0
+  public static func ApexCritDamageBonus() -> Float = 60.0     // 2x .. 5x
 
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   // Rivals only land if they actually happen. Raised so leaving people alive or breaking a

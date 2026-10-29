@@ -541,12 +541,18 @@ public class CBHud {
         if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
         if Equals(posture, ECBPosture.Friendly) { pip = CBHudGreen(); }
 
+        // Most urgent thing this gang is doing, in order: their heavy is already walking in,
+        // a vendetta crew is on its way, or they are still counting bodies.
         let right = "";
         if Equals(sys.GetPendingApexFaction(), fs.id) {
           right = "APEX INBOUND " + CBHudCountdown(sys.GetPendingApexTicks());
         } else {
-          let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
-          right = toApex <= 0 ? "apex due" : s"apex in \(toApex) kills";
+          if Equals(sys.GetPendingSquadFaction(), fs.id) {
+            right = "CREW INBOUND " + CBHudCountdown(sys.GetPendingSquadTicks());
+          } else {
+            let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
+            right = toApex <= 0 ? "apex due" : s"apex in \(toApex) kills";
+          }
         }
         this.SetRow(shown, pip, CBFactionLabel(fs.id),
           CBPostureName(posture) + s"   fear \(RoundF(score.GetFactionFear(fs.id)))",

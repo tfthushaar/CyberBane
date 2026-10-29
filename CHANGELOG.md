@@ -3,6 +3,60 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.5] - 2026-10-29
+
+### Added
+- **They drive over.** A hit squad or a gang's apex now arrives by car. One is spawned out of
+  sight, loads its crew, drives to you and the crew gets out and comes for you; if you are
+  behind the wheel, it gives chase instead. A car cannot reach you indoors or where there is
+  no room to put one, and then they arrive on foot as before. There is a setting for it.
+- **A gang at vendetta sends a strike team of four.** Not one heavy with an escort: a carload
+  of boss-grade enforcers, a gang's own answer to MaxTac.
+- **Apex strength is yours to set.** A slider from 20 to 100 percent of a full boss build,
+  default 70. It scales health, armour, damage and crit together, and your own menace still
+  scales it on top, so an apex is always measured against where you actually are.
+- **Every apex has two traits of its own**, so no two fight the same way: heavier plate, a
+  harder hit, a better eye for the gap in your armour, a deeper health pool, or simply
+  fighting above its level.
+- **The Hub shows when a vendetta crew arrives**, counting down on the gang's own line next to
+  the apex readout.
+- **New Game Plus is detected**, and Cyberbane halves its own apex buffs and stops rolling its
+  traits when it is installed, because that mod already rebuilds every NPC in the game and the
+  two sets of buffs multiply rather than replace.
+
+### Fixed
+- **A gang at vendetta now actually comes after you.** This is the Barghest report. A vendetta
+  was rolling the same dice as a gang that merely disliked you: it still had to clear a renown
+  gate and then win a roll of a few percent per check, so a gang could sit at vendetta
+  indefinitely and never send anybody. A vendetta is a decision that has already been taken,
+  so it is now a certainty on a clock that the Hub shows you. Broker peace while they are on
+  the way and they are called off.
+- **Nobody is sent into V's apartment any more.** This is the H10 report. Cyberbane had been
+  asking the game's safe-area system, but an apartment's weapon lock comes from a separate
+  restriction layer, so the apartment passed the check it was being given. Cyberbane now asks
+  the question that matters - can V draw a weapon here - and also stands down inside any quest
+  or gig area and in the game's own safe and restricted security zones.
+- **Arrivals are placed on the navmesh and checked for a walkable route to you.** The old
+  check only asked whether there was a floor under the spot, which is not the same question as
+  whether a person could stand there and reach you: a spawn across a wall, on a balcony
+  opposite, or in a sealed lot all passed it. That is also the end of the mid-air arrivals.
+- **Arrivals come at you.** They were hostile but had no reason to move, so an encounter could
+  spawn forty metres back behind a wall and wait there until you happened to walk into its
+  line of sight. This is the single biggest reason the mod could feel like nothing was
+  happening. They are now told to come and find you.
+- **A large crew forms up in ranks instead of a single line.** Twenty people at two and a half
+  metres apart was a fifty metre row, most of which failed the ground check.
+- **An apex no longer walks into a one-room flat**, where there is nowhere for anyone to come
+  from and they can only appear in front of you.
+- **They Will Remember is now detected exactly**, by asking the compiler whether its scripts
+  are in the build rather than by matching the name of a settings page. The name match stays as
+  a fallback, because Night City Remembers is a separate rewrite.
+
+### Changed
+- An apex hits as hard as it takes. It was close to a pure health sponge, which is tedious
+  rather than frightening; it now carries damage and crit scaling too.
+- Vendetta crew size scales with your menace, up to a number you set (default 20).
+
 ## [1.1.4] - 2026-10-29
 
 ### Fixed

@@ -42,6 +42,73 @@ func CBGroundAt(game: GameInstance, x: Float, y: Float, zHint: Float, out ground
   return true;
 }
 
+// Find a place behind V that somebody could actually have walked from.
+//
+// The raycast above answers "is there a floor here". That is not the same question as "can a
+// person stand here and then reach V", and the gap between the two is where the bad arrivals
+// came from: a spawn on the far side of a wall, on a balcony across the street, inside a
+// sealed lot. The navmesh answers the real question, because it is the same data the NPC's own
+// pathfinder uses - if a point is on it, somebody can stand there and walk off it.
+//
+// Three tests, in order: find a point on the navmesh the requested distance away from V,
+// confirm a walkable path from it back to V, and prefer it behind V so the arrival is not
+// conjured in full view. Returns false if the area has no navmesh at all, which happens
+// indoors and in some interiors, and the caller falls back to the raycast.
+func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  let player = GetPlayer(game);
+  if !IsDefined(nav) || !IsDefined(player) {
+    return false;
+  }
+  let ppos = player.GetWorldPosition();
+  let fwd = player.GetWorldForward();
+  let attempt = 0;
+  while attempt < 2 {
+    // Behind V first; if that corner has no navmesh, try the other side rather than give up.
+    let sign = attempt == 0 ? -1.0 : 1.0;
+    let seedGuess = new Vector4(ppos.X + sign * fwd.X * 2.0, ppos.Y + sign * fwd.Y * 2.0,
+                                ppos.Z + 1.0, 1.0);
+    let seed = nav.GetNearestNavmeshPointBelowOnlyHumanNavmesh(seedGuess, 0.5, 6);
+    if Vector4.Length(seed) >= 1.0 {
+      let found: Vector4;
+      if nav.FindNavmeshPointAwayFromReferencePoint(seed, ppos, dist, NavGenAgentSize.Human,
+                                                    found, 10.0, 60.0) {
+        // A point they cannot walk from is a point they will stand on forever.
+        let path = nav.CalculatePathOnlyHumanNavmesh(found, ppos, NavGenAgentSize.Human, 5.0);
+        if IsDefined(path) && path.CalculateLength() > 0.0 {
+          anchor = found;
+          return true;
+        }
+      }
+    }
+    attempt += 1;
+  }
+  return false;
+}
+
+// Put one body on the navmesh near a candidate point.
+//
+// Used for the individual ranks once the group's anchor is settled, so a squad stays together
+// instead of each member going looking for its own corner of the district. A snap that lands
+// far from where it was asked for is refused: that means the nearest navmesh is somewhere else
+// entirely, and taking it would scatter the squad.
+func CBNavSnap(game: GameInstance, x: Float, y: Float, zHint: Float, out pos: Vector4) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  if !IsDefined(nav) {
+    return false;
+  }
+  let cand = new Vector4(x, y, zHint + 1.0, 1.0);
+  let snapped = nav.GetNearestNavmeshPointBelowOnlyHumanNavmesh(cand, 0.5, 6);
+  if Vector4.Length(snapped) < 1.0 {
+    return false;
+  }
+  if Vector4.Distance(snapped, cand) > CBConfig.NavSnapTolerance() {
+    return false;
+  }
+  pos = snapped;
+  return true;
+}
+
 // How far out to try, as a fraction of the requested distance. A spot with no floor under it
 // (a drop behind V, the far side of a wall) walks the point back toward V, where the ground is
 // the ground V is standing on, instead of silently cancelling the encounter.
@@ -97,6 +164,15 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let ppos = player.GetWorldPosition();
   let fwd = player.GetWorldForward();
 
+  // Where the group forms up. The navmesh anchor is the good answer; the flat offset behind V
+  // is the old one, kept because interiors and some streamed-in areas have no navmesh and a
+  // missing anchor must not mean nobody ever arrives.
+  let anchor: Vector4;
+  let haveAnchor = CBNavAnchor(game, dist, anchor);
+  let baseX = haveAnchor ? anchor.X : ppos.X;
+  let baseY = haveAnchor ? anchor.Y : ppos.Y;
+  let baseZ = haveAnchor ? anchor.Z : ppos.Z;
+
   // Flat right vector, to spread the row sideways.
   let rx = -fwd.Y;
   let ry = fwd.X;
@@ -105,11 +181,32 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let spawned = 0;
   let i = 0;
   while i < count {
-    let lane = Cast<Float>(i) - Cast<Float>(count - 1) * 0.5;   // centre the row on the base point
+    // Lay them out in ranks rather than one long line. At 2.5 m apart a squad of twenty would
+    // otherwise stretch fifty metres across, with most of the lanes failing the ground and
+    // safe area checks and the survivors looking like a parade.
+    let perRank = CBConfig.SpawnPerRank();
+    let rank = i / perRank;
+    let inRank = i % perRank;
+    let wide = count < perRank ? count : perRank;
+    let lane = Cast<Float>(inRank) - Cast<Float>(wide - 1) * 0.5;
+    let rankBack = Cast<Float>(rank) * CBConfig.SpawnRankSpacing();
     let placed = false;
+    // With an anchor the group forms up around it, so the ranks only spread sideways and back
+    // from there; without one each body is measured from V as before.
+    if haveAnchor {
+      let ax = baseX - fwd.X * rankBack + rx * lane * 2.5;
+      let ay = baseY - fwd.Y * rankBack + ry * lane * 2.5;
+      let snapped: Vector4;
+      if CBNavSnap(game, ax, ay, baseZ, snapped) && !CBSafeAreaBlocksSpawn(game, snapped) {
+        if CBCreateSpawn(des, record, appearance, snapped, orient, squadTag, lastSpawned) {
+          spawned += 1;
+        }
+        placed = true;
+      }
+    }
     let attempt = 0;
-    while attempt < 3 {
-      let d = dist * CBSpawnDistanceScale(attempt);
+    while attempt < 3 && !placed {
+      let d = dist * CBSpawnDistanceScale(attempt) + rankBack;
       let px = ppos.X - fwd.X * d + rx * lane * 2.5;
       let py = ppos.Y - fwd.Y * d + ry * lane * 2.5;
       let gz: Float;
@@ -135,8 +232,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     // arrives - that silently disables Rivals, hit squads and apex hunters all at once, which
     // is a far worse bug than an awkward entrance.
     if !placed {
-      let fx = ppos.X - fwd.X * dist * 0.4 + rx * lane * 2.5;
-      let fy = ppos.Y - fwd.Y * dist * 0.4 + ry * lane * 2.5;
+      let fx = ppos.X - fwd.X * (dist * 0.4 + rankBack) + rx * lane * 2.5;
+      let fy = ppos.Y - fwd.Y * (dist * 0.4 + rankBack) + ry * lane * 2.5;
       let fallback = new Vector4(fx, fy, ppos.Z, 1.0);
       // The fallback is close in, so it is the likeliest of the lot to land indoors.
       if !CBSafeAreaBlocksSpawn(game, fallback)
@@ -147,6 +244,47 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     i += 1;
   }
   return spawned;
+}
+
+// Tell a freshly arrived hostile to come and find V.
+//
+// Without this they are hostile but idle: the game only hands a spawned NPC a reason to move
+// if something gives it one, so Cyberbane's arrivals would stand where they were put until V
+// happened to walk into their line of sight. That is the single biggest reason the mod could
+// feel like nothing was happening - the encounter had spawned, forty metres back, behind a
+// wall, waiting. A sprint order at V turns an arrival into an encounter.
+//
+// `ignoreInCombat` and `finishWhenDestinationReached` are what keep this from fighting the
+// game's own combat AI: the command runs until they reach V and then releases, and normal
+// combat behaviour takes over from there.
+public func CBOrderHunt(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  let player = GetPlayer(game);
+  if !IsDefined(player) || !IsDefined(puppet) {
+    return;
+  }
+  let ai = puppet.GetAIControllerComponent();
+  if !IsDefined(ai) {
+    return;
+  }
+  let cmd = new AIMoveToCommand();
+  let dest: AIPositionSpec;
+  let wp: WorldPosition;
+  WorldPosition.SetVector4(wp, player.GetWorldPosition());
+  AIPositionSpec.SetWorldPosition(dest, wp);
+  // Following the entity rather than the position means they keep coming if V moves off.
+  AIPositionSpec.SetEntity(dest, player);
+  cmd.movementTarget = dest;
+  cmd.movementType = moveMovementType.Sprint;
+  cmd.ignoreInCombat = true;
+  cmd.alwaysUseStealth = false;
+  cmd.ignoreNavigation = false;
+  cmd.finishWhenDestinationReached = true;
+  // Spread where they stop so a squad surrounds V instead of stacking on one spot.
+  cmd.desiredDistanceFromTarget = CBConfig.HuntStopDistance() + RandF() * CBConfig.HuntStopSpread();
+  let evt = new AICommandEvent();
+  evt.command = cmd;
+  puppet.QueueEvent(evt);
+  ai.SendCommand(cmd);
 }
 
 // Make a spawned NPC hostile toward V. Called when a CB_Squad / CB_Rival puppet attaches.

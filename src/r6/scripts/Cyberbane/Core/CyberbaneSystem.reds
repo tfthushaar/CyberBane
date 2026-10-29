@@ -58,6 +58,19 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_lastTickGameTime: Float;      // in-game seconds at the last processed tick (time-jump detector)
   private let m_streamSettleTicks: Int32;     // ticks to sit out after a transition / time jump (crash safety)
   private let m_attachCount: Int32;           // entities attached since the last tick (streaming-flood detector)
+  // The car arrival in progress (spec §9.9). Session-only: a convoy half way through boarding
+  // is not something that should survive a save, and the hunt timer will send another.
+  private let m_pendingSquadFaction: CName;   // gang whose vendetta squad is on its way
+  private let m_pendingSquadTicks: Int32;     // fast ticks until it arrives (shown in the Hub)
+  private let m_arrivalRecord: TweakDBID;     // which ganger to put in the seats
+  private let m_arrivalCrew: Int32;           // how many were asked for
+  private let m_arrivalTag: CName;            // squad tag the crew inherits
+  private let m_arrivalCarId: EntityID;       // the car, once it exists
+  private let m_arrivalSeats: Int32;          // seats being filled
+  private let m_arrivalFilled: Int32;         // seats filled so far
+  private let m_arrivalAge: Int32;            // ticks since the car was queued (stale guard)
+  private let m_arrivalLeadRecord: TweakDBID; // the one who matters, if this convoy has one
+  private let m_arrivalLeadTag: CName;        // and the tag that makes them matter
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
   private let m_callbacksRegistered: Bool;    // Codeware entity + input callbacks registered; retried until it sticks
@@ -154,6 +167,16 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !IsDefined(this.m_registry) {
       return;
     }
+    // A car we sent. Its seat count is only readable now it exists, so this is where the crew
+    // is queued (see Arrival.reds).
+    let car = event.GetEntity() as VehicleObject;
+    if IsDefined(car) {
+      let desCar = GameInstance.GetDynamicEntitySystem();
+      if IsDefined(desCar) && desCar.IsTagged(car.GetEntityID(), n"CB_Car")
+         && CBWorldStable(this.GetGameInstance()) {
+        CBOnArrivalCarAttached(this, this.GetGameInstance(), car);
+      }
+    }
     let puppet = event.GetEntity() as ScriptedPuppet;
     if IsDefined(puppet) {
       // Registering is always safe and must always happen. Add() stores a weak reference and
@@ -177,8 +200,19 @@ public class CyberbaneSystem extends ScriptableSystem {
       let des = GameInstance.GetDynamicEntitySystem();
       if IsDefined(des) {
         let id = puppet.GetEntityID();
+        // Crew first: they belong in a seat, not running at V on foot from where the car is.
+        let riding = des.IsTagged(id, n"CB_Crew");
+        if riding {
+          CBOnArrivalCrewAttached(this, this.GetGameInstance(), puppet);
+        }
         if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex") {
           CBMakeHostileToPlayer(this.GetGameInstance(), puppet);
+          // Hostile is not the same as coming for you. Without an order they stand where they
+          // were put, which is why arrivals could feel like nothing had happened at all.
+          // Anybody in a car is excepted: the car is doing the travelling.
+          if !riding {
+            CBOrderHunt(this.GetGameInstance(), puppet);
+          }
         }
         // A gang elite is not a boss on its own, so our apex gets lifted to boss grade.
         if des.IsTagged(id, n"CB_Apex") {
@@ -193,6 +227,102 @@ public class CyberbaneSystem extends ScriptableSystem {
         }
       }
     }
+  }
+
+  // ---- Car arrivals (spec §9.9) ----
+  //
+  // Deliberately small and blunt: a single convoy, a seat counter, and a hard clear. A missed
+  // step leaves the fields set, so SetPendingArrival refuses to start a second convoy and the
+  // next CBArrivalSweep tick clears a stale one rather than letting it block arrivals forever.
+  public func HasPendingArrival() -> Bool {
+    return TDBID.IsValid(this.m_arrivalRecord);
+  }
+
+  public func SetPendingArrival(record: TweakDBID, crew: Int32, squadTag: CName,
+                               leadRecord: TweakDBID, leadTag: CName) -> Void {
+    this.m_arrivalRecord = record;
+    this.m_arrivalCrew = crew;
+    this.m_arrivalTag = squadTag;
+    this.m_arrivalLeadRecord = leadRecord;
+    this.m_arrivalLeadTag = leadTag;
+    let noCar: EntityID;   // a default EntityID is the undefined one; there is no None()
+    this.m_arrivalCarId = noCar;
+    this.m_arrivalSeats = 0;
+    this.m_arrivalFilled = 0;
+    this.m_arrivalAge = 0;
+  }
+
+  public func GetPendingArrivalLeadRecord() -> TweakDBID {
+    return this.m_arrivalLeadRecord;
+  }
+
+  public func GetPendingArrivalLeadTag() -> CName {
+    return this.m_arrivalLeadTag;
+  }
+
+  // A car asked for out of sight is not guaranteed to appear: if the point turns out to be in
+  // view, or the world moves on, the engine simply never attaches it. Without this the pending
+  // convoy would sit there forever and every later arrival would be refused as a double
+  // booking - the one failure in this whole path that would be permanent rather than a missed
+  // cycle. Age it out and let the next encounter try again.
+  public func AgePendingArrival() -> Void {
+    if !this.HasPendingArrival() {
+      return;
+    }
+    this.m_arrivalAge += 1;
+    if this.m_arrivalAge > CBConfig.ArrivalStaleTicks() {
+      CBLog.Info(n"Spawn", "A car that was sent never turned up; clearing it.");
+      this.ClearPendingArrival();
+    }
+  }
+
+  public func GetPendingArrivalRecord() -> TweakDBID {
+    return this.m_arrivalRecord;
+  }
+
+  public func GetPendingArrivalCrew() -> Int32 {
+    return this.m_arrivalCrew;
+  }
+
+  public func GetPendingArrivalTag() -> CName {
+    return this.m_arrivalTag;
+  }
+
+  public func BeginArrivalBoarding(carId: EntityID, seats: Int32) -> Void {
+    this.m_arrivalCarId = carId;
+    this.m_arrivalSeats = seats;
+    this.m_arrivalFilled = 0;
+  }
+
+  public func GetArrivalCarId() -> EntityID {
+    return this.m_arrivalCarId;
+  }
+
+  // Hand out the next seat, or -1 when the car is full.
+  public func TakeArrivalSeat() -> Int32 {
+    if this.m_arrivalFilled >= this.m_arrivalSeats {
+      return -1;
+    }
+    let slot = this.m_arrivalFilled;
+    this.m_arrivalFilled += 1;
+    return slot;
+  }
+
+  public func IsArrivalFull() -> Bool {
+    return this.m_arrivalSeats > 0 && this.m_arrivalFilled >= this.m_arrivalSeats;
+  }
+
+  public func ClearPendingArrival() -> Void {
+    this.m_arrivalRecord = TDBID.None();
+    this.m_arrivalLeadRecord = TDBID.None();
+    this.m_arrivalLeadTag = n"";
+    this.m_arrivalCrew = 0;
+    this.m_arrivalTag = n"";
+    this.m_arrivalAge = 0;
+    let noCar: EntityID;   // a default EntityID is the undefined one; there is no None()
+    this.m_arrivalCarId = noCar;
+    this.m_arrivalSeats = 0;
+    this.m_arrivalFilled = 0;
   }
 
   // Hub toggle (spec §12.1). Fires on key release so a tap advances exactly one tab.
@@ -371,6 +501,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBSparedSweep(this, game);          // mercy the hit hook did not see (spec §10.2)
     CBProcessEscapees(this, game);
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
+    CBProcessPendingSquad(this, game);  // and a vendetta squad arrives when its timer runs out
+    this.AgePendingArrival();           // forget a car that was sent and never arrived
     this.RefreshStealthHold(game);      // before anything that might send someone in
     CBRivalHuntTick(this, game);        // rivals close in on a visible countdown
     CBPanicDrivingTick(this, game, this.m_tickCount);
@@ -414,6 +546,35 @@ public class CyberbaneSystem extends ScriptableSystem {
       i += 1;
     }
     return total;
+  }
+
+  // ---- Vendetta hit squads (spec §9.9) -----------------------------------
+  // A gang at vendetta does not roll dice over whether to come for you; it is already coming,
+  // and this is how long it takes them to get there. Session-only for the same reason as the
+  // apex warning: a countdown restored from a save would fire into a world that has moved on.
+  public func SetPendingSquad(faction: CName, ticks: Int32) -> Void {
+    this.m_pendingSquadFaction = faction;
+    this.m_pendingSquadTicks = ticks;
+  }
+
+  public func GetPendingSquadFaction() -> CName {
+    return this.m_pendingSquadFaction;
+  }
+
+  public func GetPendingSquadTicks() -> Int32 {
+    return this.m_pendingSquadTicks;
+  }
+
+  public func TickDownPendingSquad() -> Int32 {
+    if this.m_pendingSquadTicks > 0 {
+      this.m_pendingSquadTicks -= 1;
+    }
+    return this.m_pendingSquadTicks;
+  }
+
+  public func ClearPendingSquad() -> Void {
+    this.m_pendingSquadFaction = n"";
+    this.m_pendingSquadTicks = 0;
   }
 
   // ---- Faction apex (spec §9.9) -----------------------------------------

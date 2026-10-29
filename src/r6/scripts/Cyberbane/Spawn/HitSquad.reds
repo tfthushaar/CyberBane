@@ -75,12 +75,31 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let infamous = EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.Infamous);
   let factionCooldown = CBConfig.HitSquadFactionCooldownDays() * CBConfig.SecondsPerDay();
 
+  // A vendetta is not a mood, it is a decision that has already been taken. Put one on the
+  // clock rather than rolling for it every tick: the gang is coming, the Hub says when, and
+  // the player can decide what to do about it. This is the whole of the Barghest report -
+  // a gang could sit at vendetta indefinitely and never send anybody, because a vendetta
+  // still had to clear the same renown gate and win the same three percent roll as a gang
+  // that merely disliked you.
+  if NotEquals(sys.GetPendingSquadFaction(), n"") {
+    return;   // one already on its way
+  }
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
       let posture = score.GetPosture(fs.id);
-      let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
       let offCooldown = fs.lastHitSquadAt <= 0.0 || (now - fs.lastHitSquadAt) >= factionCooldown;
-      if hostile && fs.renown >= 30.0 && offCooldown {
+      if Equals(posture, ECBPosture.Vendetta) && offCooldown && CBVendettaSquadsOn() {
+        CBAnnounceVendettaSquad(sys, game, fs, freqMult);
+        return;
+      }
+    }
+  }
+  // Everyone else still rolls for it.
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
+      let posture = score.GetPosture(fs.id);
+      let offCooldown = fs.lastHitSquadAt <= 0.0 || (now - fs.lastHitSquadAt) >= factionCooldown;
+      if Equals(posture, ECBPosture.Hostile) && fs.renown >= 30.0 && offCooldown {
         let chance = CBConfig.HitSquadBaseChance() * (-fs.standing / 70.0) * (fs.renown / 100.0) * freqMult;
         if RandF() < chance {
           CBSpawnHitSquad(sys, game, fs, infamous, now);
@@ -89,6 +108,85 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
       }
     }
   }
+}
+
+// How many a gang at full vendetta sends when V is at full menace.
+public func CBVendettaSquadSize() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return CBConfig.VendettaSquadSizeDefault();
+  }
+  return rt.GetSettings().vendettaSquadSize;
+}
+
+// Is the player happy to be hunted this hard?
+public func CBVendettaSquadsOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().vendettaSquads;
+}
+
+// Start the clock, and tell the player it is running.
+func CBAnnounceVendettaSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, freqMult: Float) -> Void {
+  let ticks = CBConfig.VendettaSquadTicks();
+  if freqMult > 0.01 {
+    ticks = FloorF(Cast<Float>(ticks) / freqMult);
+  }
+  if ticks < CBConfig.VendettaSquadMinTicks() {
+    ticks = CBConfig.VendettaSquadMinTicks();
+  }
+  sys.SetPendingSquad(fs.id, ticks);
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+    CBShowMessage(game, s"Cyberbane: \(NameToString(fs.id)) have put a crew together.", 4.0);
+  }
+  CBLog.Info(n"Spawn", s"Vendetta squad from \(NameToString(fs.id)) in \(ticks) ticks.");
+}
+
+// Run the clock down, and send them when it reaches zero.
+//
+// Everything that would make an arrival wrong right now - a safe area, a gig, a quiet job -
+// holds the timer where it is instead of cancelling it. The gang has not changed its mind
+// because you walked into a bar; they are waiting outside.
+public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let faction = sys.GetPendingSquadFaction();
+  if Equals(faction, n"") {
+    return;
+  }
+  if sys.GetPendingSquadTicks() > 0 {
+    sys.TickDownPendingSquad();
+    return;
+  }
+  let player = GetPlayer(game);
+  if !IsDefined(player) || player.IsInCombat() {
+    return;
+  }
+  // Time is up. Hold, do not cancel, if this is a bad moment.
+  if CBStealthEncounterNearby(sys, game) || CBSafeAreaBlocksSpawn(game, player.GetWorldPosition()) {
+    return;
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || des.IsPopulated(n"CB_Squad") {
+    return;
+  }
+  let fs = sys.FindFaction(faction);
+  if !IsDefined(fs) || !TDBID.IsValid(fs.sampleRecord) {
+    sys.ClearPendingSquad();
+    return;
+  }
+  let score = sys.GetScore();
+  // They may have been paid off while the crew was on its way. A vendetta that no longer
+  // exists does not get to arrive.
+  if IsDefined(score) && NotEquals(score.GetPosture(fs.id), ECBPosture.Vendetta) {
+    sys.ClearPendingSquad();
+    CBLog.Info(n"Spawn", s"Vendetta squad from \(NameToString(fs.id)) called off.");
+    return;
+  }
+  let infamous = IsDefined(score) && EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.Infamous);
+  CBSpawnHitSquad(sys, game, fs, infamous, CBGameSeconds(game));
+  sys.ClearPendingSquad();
 }
 
 func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, infamous: Bool, now: Float) -> Void {
@@ -100,9 +198,39 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   if infamous {
     size += 1;
   }
+  // A vendetta sends a crew, not a patrol, and how big a crew depends on what they think
+  // they are dealing with. Menace is the same number the Hub reports, so a maxed out merc
+  // gets the full party and an early character gets something they can survive.
+  let score = sys.GetScore();
+  let posture = IsDefined(score) ? score.GetPosture(fs.id) : ECBPosture.Neutral;
+  if Equals(posture, ECBPosture.Vendetta) && CBVendettaSquadsOn() {
+    let menace = IsDefined(score) ? ClampF(score.GetMenace() / 100.0, 0.0, 1.0) : 0.0;
+    let target = CBVendettaSquadSize();
+    let floorSize = FloorF(Cast<Float>(target) * CBConfig.VendettaSquadFloorFraction());
+    let scaled = floorSize + FloorF(Cast<Float>(target - floorSize) * menace);
+    if scaled > size {
+      size = scaled;
+    }
+  }
 
   let squadEntity: EntityID;
-  let spawned = CBSpawnGroup(game, fs.sampleRecord, n"", size, n"CB_Squad", CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
+  // If they can drive to you, they drive. A car seats four, so a crew bigger than that sends
+  // a car and the rest come on foot behind it - which is what a gang turning out in numbers
+  // actually looks like, rather than a bus.
+  let byCar = 0;
+  if CBSpawnVehicleArrival(sys, game, fs.id, fs.sampleRecord, CBConfig.CarMaxSeats(), n"CB_Squad",
+                           TDBID.None(), n"") {
+    byCar = CBConfig.CarMaxSeats();
+    if byCar > size {
+      byCar = size;
+    }
+  }
+  let onFoot = size - byCar;
+  let spawned = byCar;
+  if onFoot > 0 {
+    spawned += CBSpawnGroup(game, fs.sampleRecord, n"", onFoot, n"CB_Squad",
+                            CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
+  }
   if spawned <= 0 {
     return;   // nothing queued (e.g. no valid record) - don't start the cooldown
   }

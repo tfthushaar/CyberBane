@@ -13,6 +13,8 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_settings: ref<CyberbaneSettings>;
   private let m_rewardDepth: Int32;    // nesting depth of the reward hook (see GigBonus)
   private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
+  private let m_ngpDetected: Int32;    // same three states, for New Game Plus
+  private let m_securityZone: Int32 = 9;   // last zone the game reported; 9 = not heard yet
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -69,6 +71,26 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetTwrDetected(present: Bool) -> Void {
     this.m_twrDetected = present ? 1 : 2;
+  }
+
+  // New Game Plus rebuilds every NPC in the game to be harder. Stacking Cyberbane's own apex
+  // multipliers on top of that produces something that cannot be killed, so the apex scales
+  // itself back when New Game Plus is running.
+  public func GetNgpDetected() -> Int32 {
+    return this.m_ngpDetected;
+  }
+
+  public func SetNgpDetected(present: Bool) -> Void {
+    this.m_ngpDetected = present ? 1 : 2;
+  }
+
+  // Last security area the game reported, as an ESecurityAreaType ordinal.
+  public func GetSecurityZone() -> Int32 {
+    return this.m_securityZone;
+  }
+
+  public func SetSecurityZone(value: Int32) -> Void {
+    this.m_securityZone = value;
   }
 
   public func GetLogLevel() -> Int32 {

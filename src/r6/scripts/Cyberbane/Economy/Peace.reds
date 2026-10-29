@@ -43,14 +43,20 @@ func CBDetectTwr() -> Bool {
       return cached == 1;
     }
   }
-  let mods = ModSettings.GetMods();
-  if ArraySize(mods) == 0 {
-    return false;   // not ready yet; ask again next time rather than caching a guess
-  }
-  let found = false;
-  for mod in mods {
-    if StrContains(NameToString(mod), "Remember") {
-      found = true;
+  // The compiler already knows, and that answer is exact: ModuleExists asks whether They
+  // Will Remember's own scripts are in this build. The settings-page scan below stays as the
+  // fallback, because Night City Remembers is a separate rewrite with its own module name
+  // and the name match is what catches it.
+  let found = CBTwrModulePresent();
+  if !found {
+    let mods = ModSettings.GetMods();
+    if ArraySize(mods) == 0 {
+      return false;   // not ready yet; ask again next time rather than caching a guess
+    }
+    for mod in mods {
+      if StrContains(NameToString(mod), "Remember") {
+        found = true;
+      }
     }
   }
   if IsDefined(rt) {
@@ -62,6 +68,37 @@ func CBDetectTwr() -> Bool {
     CBLog.Info(n"Core", "They Will Remember not detected; Cyberbane is running its own hostility, hit squad and disguise systems.");
   }
   return found;
+}
+
+// Is New Game Plus running?
+//
+// Checked at compile time rather than by name, which is the exact signal: ModuleExists asks
+// the compiler whether that mod's scripts are in the build, so there is no list to scan, no
+// cache to invalidate and no way for a renamed settings page to fool it.
+//
+// It matters because New Game Plus rebuilds every NPC in the game to be harder. Its buffs and
+// Cyberbane's are both stat multipliers on the same puppet, so they multiply rather than
+// replace, and an apex under both would simply not die. Cyberbane halves its own contribution
+// and stops rolling its own traits when this is true (see CBApexStrengthFraction).
+@if(ModuleExists("NGPlus"))
+public func CBNgpActive() -> Bool {
+  return true;
+}
+
+@if(!ModuleExists("NGPlus"))
+public func CBNgpActive() -> Bool {
+  return false;
+}
+
+// Is They Will Remember compiled into this build?
+@if(ModuleExists("TheyWillRemember"))
+func CBTwrModulePresent() -> Bool {
+  return true;
+}
+
+@if(!ModuleExists("TheyWillRemember"))
+func CBTwrModulePresent() -> Bool {
+  return false;
 }
 
 // Pay off a single faction. Returns true only if peace was actually brokered.

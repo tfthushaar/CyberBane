@@ -177,6 +177,42 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VehicleArrivals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VehicleArrivals-Desc")
+  public let vehicleArrivals: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexStrength")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexStrength-Desc")
+  @runtimeProperty("ModSettings.min", "20")
+  @runtimeProperty("ModSettings.max", "100")
+  @runtimeProperty("ModSettings.step", "5")
+  public let apexStrength: Int32 = 70;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexTraits")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexTraits-Desc")
+  public let apexTraits: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquads")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquads-Desc")
+  public let vendettaSquads: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquadSize")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquadSize-Desc")
+  @runtimeProperty("ModSettings.min", "6")
+  @runtimeProperty("ModSettings.max", "24")
+  @runtimeProperty("ModSettings.step", "1")
+  public let vendettaSquadSize: Int32 = 20;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquadFreq")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquadFreq-Desc")
   @runtimeProperty("ModSettings.min", "0.0")

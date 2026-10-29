@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.1.4).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.1.5).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -60,18 +60,25 @@ page describes what the mod does and how it installs.
   climb the ranks on their own while you are busy elsewhere, and every time one escapes it returns
   a rank higher and scarred. Put down the one hunting you and it is finally finished. Anyone who
   kills you can also come back, and dropping a crew's member can bring a gang-mate gunning for you.
+- **They drive over.** A hit squad or a gang's apex arrives by car: it is put together out of
+  sight, drives to you, and the crew gets out and comes for you. If you are behind the wheel,
+  it gives chase instead. Indoors, or anywhere there is no room for a car, they come on foot.
+- **A vendetta is a decision, not a dice roll.** A gang that has sworn one is already putting a
+  crew together, and the Hub tells you how long you have. How many turn out depends on how much
+  of a problem they think you are. Pay them off while they are on the way and they turn around.
 - **A city that pays attention.** Frighten a gang enough and they may send tribute to stay on
   your good side, or a hit squad to deal with you. Give a hit squad the slip and a survivor can
   come back as a named Rival who hunts you. Vendors give fear or respect discounts, and fixers pay
   the famous a bonus on job payouts. You can also buy your way out of a vendetta by brokering peace
   with a gang from the Hub.
-- **Gangs send an apex hunter.** Keep putting one crew in the ground and they stop sending squads
-  and send someone who matters. You get a warning first, then a named hunter walks in with a couple of
-  their people, built from the toughest member of that gang you have actually fought and lifted to
-  boss grade so it is a real fight. They are sized to your build, so they stay a real fight as you
-  get stronger. No story character is ever used, so nothing gets spoiled and you never meet a
-  duplicate of someone you already killed. It works for every gang. The Hub keeps count of the
-  ones you put down.
+- **Gangs send an apex strike team.** Keep putting one crew in the ground and they stop sending
+  squads and send the people who matter: a carload of four named enforcers, built from the
+  toughest members of that gang you have actually fought and lifted to boss grade. You get a
+  warning first, and a countdown. How dangerous they are is a slider, from a hard fight to the
+  game's own set-piece enforcers, and your own build scales it on top, so they stay a real fight
+  as you get stronger. Each one carries two traits of its own, so no two fight the same way. No
+  story character is ever used, so nothing gets spoiled and you never meet a duplicate of someone
+  you already killed. It works for every gang. The Hub keeps count of the ones you put down.
 - **Gangs you cannot decapitate.** Every gang has a leader and up to three lieutenants, and
   your Rivals fill those chairs. Put the leader down and the strongest of the rest takes the
   crew, so there is always somebody next in line. A leader takes real killing; a lieutenant
@@ -85,8 +92,8 @@ page describes what the mod does and how it installs.
   Saint, or the top title Cyberbane. The Log tab is the street's file on you, put together
   from what people actually witnessed, so work nobody saw never reaches the page.
 - **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable).
-  Your scores are meters, gangs and rivals are colour-coded rows, and every rival shows a
-  countdown to when they will catch up with you. Each
+  Your scores are meters, gangs and rivals are colour-coded rows, and every rival, apex and
+  vendetta crew shows a countdown to when it will reach you. Each
   press steps through tabs for your reputation, the factions, the districts, your rivals, your
   titles, and the log; the press after the last tab closes it. Every screen explains what its
   numbers mean rather than throwing abbreviations at you, and the first one tells you exactly what
@@ -164,7 +171,7 @@ Every option explains what it does.
 
 ## Compatibility
 
-- They Will Remember: supported. Cyberbane spots it through Mod Settings and backs off the
+- They Will Remember: supported, detected exactly and automatically. Cyberbane backs off the
   systems that overlap (hostility on sight, hit squads, faction-colour disguises), keeping the
   rest. Night City Remembers is treated the same way, since it replaces They Will Remember. You
   can force the compatibility mode on or off yourself in Mod Settings.
@@ -183,7 +190,10 @@ Every option explains what it does.
   after you in one either, because the game forces your hands empty in those places and that
   would be a fight you could not have. If you want it anyway, two settings under Safe areas
   turn it on and lift the weapon lock, both off by default.
-- New Game+: starts a fresh reputation for the new playthrough.
+- New Game Plus: supported, detected automatically, no setup. It rebuilds every NPC in the game
+  to be harder, and its buffs and Cyberbane's would multiply rather than replace each other, so
+  Cyberbane halves its own apex buffs and leaves the random traits to New Game Plus, which
+  already hands them out. Starting one also starts a fresh reputation for the new playthrough.
 
 ## Credits
 
