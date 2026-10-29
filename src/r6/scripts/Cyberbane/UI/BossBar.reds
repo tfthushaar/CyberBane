@@ -52,7 +52,12 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
   // matters is which one - the same way a MaxTac drop is legible as a heavy, a blade, a
   // netrunner and a shooter rather than four interchangeable enemies.
   let label = "HUNTING YOU";
-  let name = npc.GetDisplayName();
+  // The gang, always. Three lanes can fire for three different gangs, so without this a Scav
+  // apex squad arriving while a Valentinos crew is still on you reads as one mixed squad.
+  let name = CBBarFactionLabel(CBClassifyFaction(npc));
+  if StrLen(name) == 0 {
+    name = npc.GetDisplayName();
+  }
   if des.IsTagged(id, n"CB_Apex") {
     let role: ECBApexRole;
     if !CBArchetypeRole(CBRecordArchetype(npc.GetRecordID()), role) {
@@ -68,4 +73,14 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
     }
   }
   sys.GetThreatBar().Track(npc, label + "   -   " + name);
+}
+
+// The gang's name, as a bar wants it: no article, upper case. CBFactionLabel is written for
+// prose ("the Valentinos"), which does not belong on a health bar.
+func CBBarFactionLabel(id: CName) -> String {
+  let label = CBFactionLabel(id);
+  if StrLen(label) == 0 {
+    return "";
+  }
+  return StrUpper(StrReplace(label, "the ", ""));
 }

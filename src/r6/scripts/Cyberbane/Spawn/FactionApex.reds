@@ -427,7 +427,13 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   CBApexArrivalSound(game);    // only once somebody is actually standing there
   if CBConfig.ApexEscortCount() > 0 && TDBID.IsValid(fs.sampleRecord) {
     let escortEntity: EntityID;
-    CBSpawnGroup(game, fs.sampleRecord, n"", CBConfig.ApexEscortCount(), n"CB_Squad",
+    // CB_Escort, not CB_Squad. They used to wear the hit squad's own tag, which had two
+    // consequences: the squad lane saw a hit squad in the world that nobody had sent and
+    // refused to arrange one, and an escort from this gang was indistinguishable from another
+    // gang's crew that happened to be live at the same time - so the two read as one mixed
+    // squad. They are still kitted, still hostile and still chase, because every list below
+    // that matters now names this tag too.
+    CBSpawnGroup(game, fs.sampleRecord, n"", CBConfig.ApexEscortCount(), n"CB_Escort",
       CBConfig.ApexSpawnDistance() + 4.0, escortEntity);
   }
 }

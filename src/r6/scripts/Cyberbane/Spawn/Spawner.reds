@@ -422,7 +422,8 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     return;
   }
   let id = puppet.GetEntityID();
-  let isSquad = des.IsTagged(id, n"CB_Squad");
+  // An apex escort fights as rank and file, so it takes the squad's kit.
+  let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort");
   let isRival = des.IsTagged(id, n"CB_Rival");
   let isApex = des.IsTagged(id, n"CB_Apex");
   if !isSquad && !isRival && !isApex {
@@ -509,6 +510,7 @@ public func CBChaseRefreshTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   CBChaseRefreshTag(sys, game, des, ppos, n"CB_Rival", done);
   CBChaseRefreshTag(sys, game, des, ppos, n"CB_Apex", done);
   CBChaseRefreshTag(sys, game, des, ppos, n"CB_Squad", done);
+  CBChaseRefreshTag(sys, game, des, ppos, n"CB_Escort", done);
 }
 
 // How far away the closest living hunter is, or -1 when there is nobody.
@@ -518,6 +520,7 @@ func CBNearestHunterDistance(sys: ref<CyberbaneSystem>, game: GameInstance,
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Rival", best);
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Apex", best);
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Squad", best);
+  best = CBNearestForTag(sys, game, des, ppos, n"CB_Escort", best);
   return best;
 }
 
@@ -549,6 +552,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   des.DeleteTagged(n"CB_Rival");
   des.DeleteTagged(n"CB_Squad");
   des.DeleteTagged(n"CB_Apex");
+  des.DeleteTagged(n"CB_Escort");
   // Take the bars down with them, rather than leaving them up for the tick it would take the
   // stack to notice its targets had stopped existing.
   sys.GetThreatBar().Hide();

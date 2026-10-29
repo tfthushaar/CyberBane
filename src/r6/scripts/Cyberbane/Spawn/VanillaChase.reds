@@ -43,17 +43,26 @@ public func CBRequestVanillaChase(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !IsDefined(prevention) {
     return false;
   }
-  let vehicle = CBArrivalVehicle(factionId, RandRange(0, 4));
+  let vehicle = CBChaseVehicle(factionId, crewCount);
   if !TDBID.IsValid(vehicle) {
     return false;
   }
+  // Never ask for more people than the record will seat. Vanilla sizes the crew from the
+  // record and not from the caller, so the surplus is simply dropped, and a record with no
+  // capacity at all drops everybody.
+  let seats = CBChaseVehicleSeats(vehicle);
+  if seats <= 0 {
+    CBLog.Info(n"Spawn", "Chase car record seats nobody; falling back to our own convoy.");
+    return false;
+  }
+  let seated = crewCount < seats ? crewCount : seats;
   // Fill the seats by role where the gang has them, so handing the chase to the city does not
   // cost the apex squad its shape - a heavy, a shooter, a blade and a netrunner rather than
   // four copies of one record.
   let fs = sys.FindFaction(factionId);
   let crew: array<TweakDBID>;
   let i = 0;
-  while i < crewCount {
+  while i < seated {
     let seat = Equals(squadTag, n"CB_Apex") ? CBApexRoleRecord(fs, i, crewRecord) : crewRecord;
     ArrayPush(crew, seat);
     i += 1;
@@ -63,9 +72,9 @@ public func CBRequestVanillaChase(sys: ref<CyberbaneSystem>, game: GameInstance,
   // changing how a later fallback convoy fills itself.
   sys.ClearPendingArrival();
   // Open the adoption window before asking, because the spawn can attach immediately.
-  sys.OpenAdoption(factionId, crewRecord, vehicle, squadTag, crewCount);
+  sys.OpenAdoption(factionId, crewRecord, vehicle, squadTag, seated);
   prevention.RequestChaseVehicle(vehicle, crew, new GetToPlayerFromAnywhereStrategyRequest());
-  CBLog.Info(n"Spawn", s"Asked the city to send a car from \(NameToString(factionId)).");
+  CBLog.Info(n"Spawn", s"Asked the city to send a car from \(NameToString(factionId)) with \(seated) aboard.");
   return true;
 }
 

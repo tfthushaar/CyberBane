@@ -27,6 +27,48 @@
 // the world the way Cyberbane samples NPC records, so this is a fixed list, kept to records
 // that are known to spawn correctly on this patch. A faction always draws from the same pair,
 // so the same gang keeps turning up in the same kind of car.
+// The car to ask the city's own chase for.
+//
+// This cannot be one of the `cs_savable_*` records below. Those are ordinary traffic and carry
+// no `minVehiclePassengersCount` or `maxVehiclePassengersCount`, and the game's chase seats its
+// crew by exactly those two fields - vanilla reads them right before the call:
+//
+//     passengersCount = RandRange( vehicleRecord.MinVehiclePassengersCount(),
+//                                  vehicleRecord.MaxVehiclePassengersCount() + 1 );
+//     TryGetUnitDataFromVehicleRecord( vehicleRecord, passengersCount, passengerIDs );
+//
+// A record with no capacity seats nobody, which is the likeliest reason a car was dispatched
+// every time and never once seen. So the record has to be one the prevention system is built
+// around. These are the ones in the base game that are not liveried as police: plain nomad
+// bodies for a couple of people, and the Militech Emperor when a full squad has to fit.
+func CBChaseVehicle(factionId: CName, seats: Int32) -> TweakDBID {
+  let pool: array<TweakDBID>;
+  if seats > 2 {
+    ArrayPush(pool, t"Vehicle.wasteland_chevalier_emperor_militech_heat_2");
+    ArrayPush(pool, t"Vehicle.wasteland_chevalier_emperor_militech_heat_3");
+  } else {
+    ArrayPush(pool, t"Vehicle.aldecado_thorton_galena_heat_2");
+    ArrayPush(pool, t"Vehicle.aldecado_archer_quartz_heat_3");
+    ArrayPush(pool, t"Vehicle.aldecado_thorton_colby_heat_3");
+  }
+  // Deterministic per faction, so a gang has a look.
+  let idx = (StrLen(NameToString(factionId)) * 3) % ArraySize(pool);
+  if idx < 0 {
+    idx = 0;
+  }
+  return pool[idx];
+}
+
+// How many the game will actually seat in this one. Zero means it will seat nobody, which is
+// the caller's cue to stop and use the convoy it builds itself.
+func CBChaseVehicleSeats(record: TweakDBID) -> Int32 {
+  let rec = TweakDBInterface.GetVehicleRecord(record);
+  if !IsDefined(rec) {
+    return 0;
+  }
+  return rec.MaxVehiclePassengersCount();
+}
+
 func CBArrivalVehicle(factionId: CName, roll: Int32) -> TweakDBID {
   let pool: array<TweakDBID>;
   ArrayPush(pool, t"Vehicle.cs_savable_thorton_galena");

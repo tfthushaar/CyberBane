@@ -3,6 +3,25 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-10-30
+
+### Fixed
+- **The car that was always sent and never seen.** The game seats a chase crew by two numbers
+  on the car's own record, and the cars Cyberbane was asking for are ordinary traffic that do
+  not carry those numbers at all. A car with no stated capacity seats nobody. It now asks for
+  the cars the game's own pursuits use, picking one that holds the whole crew, and it never
+  asks for more people than the car will take.
+- **An apex squad's escort was being counted as a hit squad.** They wore the same tag, which
+  meant two things went wrong: a gang that had sent nobody looked like it had a crew on you, so
+  no hit squad from that gang was ever arranged while an apex squad was out, and an escort was
+  indistinguishable from another gang's crew that happened to be there at the same time, so the
+  two read as one squad with members of two gangs in it. They fight exactly as before.
+
+### Changed
+- **The bars name the gang.** A Rival still shows their name. Everyone else shows their role and
+  who they are with, so a Scav apex squad turning up while a Valentinos crew is still on you
+  reads as two separate problems instead of one confusing one.
+
 ## [1.3.0] - 2026-10-30
 
 ### Fixed

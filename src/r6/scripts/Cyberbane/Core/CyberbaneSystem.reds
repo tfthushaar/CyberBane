@@ -287,7 +287,8 @@ public class CyberbaneSystem extends ScriptableSystem {
         // in the street. The mod already had the rule for this and was not following it:
         // CBNpcSafe holds every other reader off for NpcReadyTicks after attach, and this path
         // ignored it.
-        if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex") {
+        if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival")
+           || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort") {
           CBScheduleSpawnSetup(this.GetGameInstance(), id, riding);
         }
 
