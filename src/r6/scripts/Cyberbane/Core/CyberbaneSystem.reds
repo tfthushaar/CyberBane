@@ -75,6 +75,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_arrivalRoleSquad: Bool;       // fill the seats by role rather than four alike
   private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
   private let m_huntHoldReason: Int32;        // why no Rival can arrive right now (CBHold*)
+  // Kills V has made recently, for Aura. Session-only: it describes the last minute, not the
+  // playthrough. Counting V's own kills rather than scanning for nearby corpses is deliberate -
+  // a kill V made was by definition next to V when it happened, and it needs no spatial query.
+  private let m_recentKills: Int32;
+  private let m_recentKillTick: Int32;
   private let m_pendingApexDriving: Bool;     // the apex clock is a drive, not a warning
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
@@ -630,6 +635,23 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetTickCount() -> Int32 {
     return this.m_tickCount;
+  }
+
+  // Called from CBApplyKill. The window is checked on read rather than cleared on a timer, so
+  // this cannot leave a stale count behind if the tick is interrupted.
+  public func NoteRecentKill() -> Void {
+    if (this.m_tickCount - this.m_recentKillTick) > CBConfig.AuraKillWindowTicks() {
+      this.m_recentKills = 0;
+    }
+    this.m_recentKills += 1;
+    this.m_recentKillTick = this.m_tickCount;
+  }
+
+  public func GetRecentKills() -> Int32 {
+    if (this.m_tickCount - this.m_recentKillTick) > CBConfig.AuraKillWindowTicks() {
+      return 0;
+    }
+    return this.m_recentKills;
   }
 
   // Cached current district (refreshed on the slow sample). Reading this instead of querying

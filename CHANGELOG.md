@@ -3,6 +3,42 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-29
+
+Everything the feature audit found dead or missing is now implemented.
+
+### Added
+- **How you look right now matters, not just what you are known for.** Walking around with a
+  weapon out, with chrome running, mid-fight, standing over fresh bodies, or with the police
+  already after you all make you read as dangerous on the spot. This was written into the
+  design from the start and never connected to anything, which is why walking around armed and
+  bloody got the same reaction as walking around clean.
+- **Different people have different nerve.** Every gang has had a courage value since the first
+  release and nothing ever read it, so a Valentino and a passer-by reacted identically. Tyger
+  Claws hold their ground a little better than a civilian; Maelstrom better again.
+- **Cyberware quality counts.** A rack of legendary chrome now reads as more frightening than
+  the common version of the same slots. The weighting was written and never applied.
+- **Ordinary work gets talked about.** Word only spread from massacres and boss kills, so the
+  whole premise of reputation travelling because somebody saw it almost never happened in
+  normal play. Any witnessed kill can now become word on the street: somebody who mattered
+  always travels, the rank and file sometimes, and a bystander going down travels fast. Clear a
+  room with nobody left alive and still nothing spreads, which is the point.
+- **Hit squads arrive on a visible clock.** They were a roughly four percent dice roll taken
+  once per in-game hour, so at full hostility one turned up about once an hour of play and the
+  Hub had nothing to show because a dice roll cannot be counted down. Now a gang that is
+  hostile and knows who you are puts a crew together on a timer between about four and fifteen
+  minutes depending on how much they hate you, and the Hub counts it down like everything else.
+- **The Konpeki Ghost title can be earned.** It was the only title in the mod with no condition
+  at all, hanging off quest detection that cannot work. It now means what its name means: a
+  great deal of work, as a Ghost, that nobody could put a name to.
+
+### Changed
+- Common-tier cyberware scores lower than it used to now that quality is weighted, so your
+  chrome score may drop a little on an existing save if your implants are mostly common. Rare
+  and above gain. This is the weighting working rather than a loss.
+- Crowds react more during a fight, because being mid-fight now counts toward how dangerous you
+  look. The same person still will not flinch twice in quick succession.
+
 ## [1.1.9] - 2026-10-29
 
 Found by going through every feature in the mod and checking it against what it claims to do.

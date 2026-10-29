@@ -97,6 +97,15 @@ public abstract class CBConfig {
 
   // ---- Districts & rumors (spec §8.5) ----------------------------------
   public static func RumorMaxHops() -> Int32 = 2
+  // How often an ordinary witnessed kill becomes a story, and how loudly each kind travels.
+  // Deliberately well under 1: every kill making the rounds would fill the board with noise
+  // and make the whole mechanic meaningless.
+  public static func RumorChanceOrdinary() -> Float = 0.15
+  public static func RumorMagnitudeOrdinary() -> Float = 3.0
+  public static func RumorMagnitudeNotable() -> Float = 8.0
+  public static func RumorMagnitudeCivilian() -> Float = 6.0
+  // Unseen kills needed, as a Ghost, for the Konpeki Ghost title.
+  public static func KonpekiUnattributed() -> Int32 = 25
   public static func RumorLifetimeDays() -> Float = 3.0
   public static func RumorSpreadMagnitudeMult() -> Float = 0.5
   public static func RdDecayPerDay() -> Float = 1.0
@@ -106,6 +115,10 @@ public abstract class CBConfig {
 
   // ---- Aura (spec §8.6) ------------------------------------------------
   public static func AuraCap() -> Float = 40.0
+  // Ticks (about a second each) a kill still counts as fresh for Aura.
+  public static func AuraKillWindowTicks() -> Int32 = 60
+  // Visible chrome at which V reads as carrying something obvious, for the Aura weapon term.
+  public static func AuraObviousChrome() -> Float = 45.0
 
   // ---- Recognition (spec §8.7) -----------------------------------------
   public static func RecognitionCap() -> Float = 0.95
@@ -359,6 +372,12 @@ public abstract class CBConfig {
   // Smallest share of the full crew that turns out, before menace scales it up.
   public static func VendettaSquadFloorFraction() -> Float = 0.6
   public static func VendettaSquadSizeDefault() -> Int32 = 20
+  // How long an ordinary hostile gang takes to put a crew together, at its slowest and its
+  // fastest. Scaled between the two by how much they hate you and how well they know you.
+  public static func HostileSquadTicksMin() -> Int32 = 240
+  public static func HostileSquadTicksMax() -> Int32 = 900
+  // How well a gang has to know you before they bother sending anyone.
+  public static func HitSquadMinRenown() -> Float = 25.0
 
   // ---- Faction apex enforcer (spec §9.9) -------------------------------
   // Bodies from one gang before they stop sending squads and send someone who matters. Kept

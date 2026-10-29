@@ -37,6 +37,29 @@ public class CBKillInfo {
 }
 
 // Applies one classified kill or defeat to the per-save reputation state.
+// One incident, maybe one story.
+func CBRumorFromKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: ref<CBKillInfo>) -> Void {
+  if !IsDefined(sys) || !IsDefined(info) {
+    return;
+  }
+  // No witness, no story. This is the whole point of the witness system: clear a room properly
+  // and the street never learns who did it.
+  if !info.witnessed {
+    return;
+  }
+  let notable = info.victimClass == EnumInt(ECBVictimClass.Elite)
+             || info.victimClass == EnumInt(ECBVictimClass.Officer)
+             || info.victimClass == EnumInt(ECBVictimClass.Boss);
+  if !notable && RandF() > CBConfig.RumorChanceOrdinary() {
+    return;
+  }
+  let magnitude = notable ? CBConfig.RumorMagnitudeNotable() : CBConfig.RumorMagnitudeOrdinary();
+  if info.victimClass == EnumInt(ECBVictimClass.Civilian) {
+    magnitude = CBConfig.RumorMagnitudeCivilian();   // a bystander going down travels fast
+  }
+  CBCreateRumor(sys, game, n"Kill", magnitude, info.district, info.faction, true);
+}
+
 public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Void {
   if !IsDefined(sys) || !IsDefined(info) {
     return;
@@ -86,6 +109,9 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     fs.renownPeak = MaxF(fs.renownPeak, fs.renown);
     fs.kills += 1;
     if brutal { fs.brutalKills += 1; }
+    // Aura counts a body as a body. Sitting inside the record-capture branch below would have
+    // meant civilian kills never made V look dangerous, which is backwards.
+    sys.NoteRecentKill();
     if info.victimClass == EnumInt(ECBVictimClass.Officer) { fs.officersKilled += 1; }
     if info.victimClass == EnumInt(ECBVictimClass.Boss) { fs.bossesKilled += 1; }
     if !info.lethal { fs.spared += 1; }
@@ -109,6 +135,19 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
       }
     }
   }
+
+  // Word gets out.
+  //
+  // The rumour engine was built, correct, and starved: CBCreateRumor had exactly two live
+  // callers, a massacre and a boss kill. So the whole premise the mod advertises - word
+  // spreading district to district because somebody saw it, and a contact getting in touch
+  // about what they heard - almost never fired during ordinary play. The witness system was
+  // already doing its half correctly, scaling reputation by whether anyone lived to tell it;
+  // nothing was turning an ordinary witnessed incident into a story.
+  //
+  // Not every kill, or the board fills with noise and every rumour is worth nothing. Somebody
+  // who mattered always travels; the rank and file travel sometimes.
+  CBRumorFromKill(sys, GetGameInstance(), info);
 
   // District effects.
   if NotEquals(info.district, n"") {

@@ -56,6 +56,10 @@ public class CBScoreEngine {
     this.m_dirty = true;
   }
 
+  public func SetAura(aura: Float) -> Void {
+    this.m_aura = aura;
+  }
+
   public func SetMenace(menace: Float) -> Void {
     this.m_menace = menace;
   }
@@ -69,10 +73,15 @@ public class CBScoreEngine {
 
   // ---- Live input getters -----------------------------------------------
   public func GetChrome() -> Float { return this.m_chrome; }
+  private let m_aura: Float;
   public func GetChromeVisible() -> Float { return this.m_chromeVisible; }
   public func GetLook() -> Float { return this.m_look; }
   public func GetDisguise() -> Float { return this.m_disguise; }
   public func GetHeatStage() -> Int32 { return this.m_heatStage; }
+  // Momentary menace (spec 8.6): what V looks like doing right now, as opposed to what V is
+  // known for. Drawn weapon, running combat chrome, mid-fight, fresh bodies nearby, police
+  // attention. Recomputed on the sampling tick; never persisted, because it describes a moment.
+  public func GetAura() -> Float { return this.m_aura; }
 
   // Content via the system's cached accessor (never re-locks the global container; crash safety).
   private func Content() -> ref<CyberbaneContent> {

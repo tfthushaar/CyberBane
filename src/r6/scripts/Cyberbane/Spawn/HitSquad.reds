@@ -94,20 +94,43 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
       }
     }
   }
-  // Everyone else still rolls for it.
+  // A gang that is hostile and knows who you are is also on a clock, just a longer one.
+  //
+  // This used to be a roughly four percent roll taken once per in-game hour, which is about
+  // two real minutes - so at maximum hostility a squad arrived about once an hour of play, and
+  // with the forty-five minute global cooldown on top it read as never happening at all. Worse,
+  // there was nothing to show: a dice roll cannot be counted down, so the Hub had nothing to
+  // say and a player had no idea anything was coming.
+  //
+  // A clock fixes both. How long it takes scales with how much they hate you and how well they
+  // know you, so a gang you have barely annoyed takes a long time and one you have gutted comes
+  // quickly, and the Hub counts either of them down.
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
       let posture = score.GetPosture(fs.id);
       let offCooldown = fs.lastHitSquadAt <= 0.0 || (now - fs.lastHitSquadAt) >= factionCooldown;
-      if Equals(posture, ECBPosture.Hostile) && fs.renown >= 30.0 && offCooldown {
-        let chance = CBConfig.HitSquadBaseChance() * (-fs.standing / 70.0) * (fs.renown / 100.0) * freqMult;
-        if RandF() < chance {
-          CBSpawnHitSquad(sys, game, fs, infamous, now);
-          return;   // at most one squad per check
-        }
+      if Equals(posture, ECBPosture.Hostile) && fs.renown >= CBConfig.HitSquadMinRenown() && offCooldown {
+        CBAnnounceHostileSquad(sys, game, fs, freqMult);
+        return;
       }
     }
   }
+}
+
+// Put a hostile gang's crew on the clock.
+func CBAnnounceHostileSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, freqMult: Float) -> Void {
+  // Worst case at the bottom of the scale, fastest at the top of it.
+  let heat = ClampF((-fs.standing / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
+  let span = Cast<Float>(CBConfig.HostileSquadTicksMax() - CBConfig.HostileSquadTicksMin());
+  let ticks = CBConfig.HostileSquadTicksMax() - FloorF(span * heat);
+  if freqMult > 0.01 {
+    ticks = FloorF(Cast<Float>(ticks) / freqMult);
+  }
+  if ticks < CBConfig.VendettaSquadMinTicks() {
+    ticks = CBConfig.VendettaSquadMinTicks();
+  }
+  sys.SetPendingSquad(fs.id, ticks);
+  CBLog.Info(n"Spawn", s"Hit squad from \(NameToString(fs.id)) in \(ticks) ticks.");
 }
 
 // How many a gang at full vendetta sends when V is at full menace.
@@ -177,12 +200,19 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
     return;
   }
   let score = sys.GetScore();
-  // They may have been paid off while the crew was on its way. A vendetta that no longer
-  // exists does not get to arrive.
-  if IsDefined(score) && NotEquals(score.GetPosture(fs.id), ECBPosture.Vendetta) {
-    sys.ClearPendingSquad();
-    CBLog.Info(n"Spawn", s"Vendetta squad from \(NameToString(fs.id)) called off.");
-    return;
+  // They may have been paid off, or simply calmed down, while the crew was on its way.
+  //
+  // This used to insist on Vendetta specifically, which was correct while only a vendetta could
+  // schedule a crew. Now that an ordinary hostile gang schedules one too, that test would have
+  // cancelled every hostile squad the moment its timer ran out - the new feature quietly
+  // cancelling itself. It checks for "still wants you dead" instead.
+  if IsDefined(score) {
+    let nowPosture = score.GetPosture(fs.id);
+    if NotEquals(nowPosture, ECBPosture.Vendetta) && NotEquals(nowPosture, ECBPosture.Hostile) {
+      sys.ClearPendingSquad();
+      CBLog.Info(n"Spawn", s"Squad from \(NameToString(fs.id)) called off.");
+      return;
+    }
   }
   let infamous = IsDefined(score) && EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.Infamous);
   CBSpawnHitSquad(sys, game, fs, infamous, CBGameSeconds(game));

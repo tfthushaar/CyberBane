@@ -28,6 +28,19 @@ func CBVisibleChromeWeight(area: gamedataEquipmentArea) -> Float {
   return 0.0;
 }
 
+// Quality to the tier number CBTierMult expects.
+//
+// Compared by name rather than cast from the enum's ordinal. The ordinals are not visible from
+// a compile, and assuming them is the single mistake that has cost this project the most.
+public func CBQualityTier(q: gamedataQuality) -> Int32 {
+  if Equals(q, gamedataQuality.Iconic) { return 6; }
+  if Equals(q, gamedataQuality.Legendary) { return 5; }
+  if Equals(q, gamedataQuality.Epic) { return 4; }
+  if Equals(q, gamedataQuality.Rare) { return 3; }
+  if Equals(q, gamedataQuality.Uncommon) { return 2; }
+  return 1;   // Common, and anything the game adds later
+}
+
 public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -63,13 +76,25 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     gamedataEquipmentArea.SystemReplacementCW, gamedataEquipmentArea.LegsCW
   ];
 
+  // Weighted by tier, which CBTierMult has always been written to do and nothing ever called.
+  // Its own comment says the caller should pass the sum of visibleScore x tierMult; no caller
+  // did, so a rack of legendary chrome scored exactly the same as the common version of the
+  // same slots. Quality is read through the item's data rather than guessed from the id.
+  let ts = GameInstance.GetTransactionSystem(game);
   let implantSum = 0.0;
   let visibleSum = 0.0;
   for area in areas {
     let item = data.GetActiveItem(area);
     if ItemID.IsValid(item) {
-      implantSum += 3.0;
-      visibleSum += CBVisibleChromeWeight(area);
+      let mult = 1.0;
+      if IsDefined(ts) {
+        let idata = ts.GetItemData(player, item);
+        if IsDefined(idata) {
+          mult = CBTierMult(CBQualityTier(RPGManager.GetItemDataQuality(idata)));
+        }
+      }
+      implantSum += 3.0 * mult;
+      visibleSum += CBVisibleChromeWeight(area) * mult;
     }
   }
 

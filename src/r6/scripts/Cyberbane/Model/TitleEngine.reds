@@ -59,6 +59,16 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
     return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Ghost) && CBAnyDistrictQuietAtLeast(sys, 30);
   }
   if Equals(id, n"T_DISTRICT_PROBLEM") { return CBAnyDistrictProblem(sys, score); }
+  // Earned by working unseen rather than by finishing one specific job.
+  //
+  // This was the only title in the mod with no condition at all: it hung off a deed, and deed
+  // detection goes by payout size rather than quest identity, so it could never fire. Rather
+  // than leave a title nobody can ever get, it now means what its name means - a great deal of
+  // work that nobody could put a name to.
+  if Equals(id, n"T_KONPEKI_GHOST") {
+    return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Ghost)
+        && stats.unattributed >= CBConfig.KonpekiUnattributed();
+  }
   if Equals(id, n"T_MERC_FROM") { return EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.LocalName); }
   if Equals(id, n"T_CYBERBANE") { return CBCyberbaneCondition(sys, score); }
   return false;   // deed-gated titles unlock through the deed system

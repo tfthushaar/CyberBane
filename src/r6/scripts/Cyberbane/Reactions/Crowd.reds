@@ -27,7 +27,7 @@ public let cbCrowdReactedTick: Int32;
 
 // Returns true when a reaction actually fired, so the Director can count it against the
 // per-tick cap. `dist` is V's distance to the NPC, already measured by the Director loop.
-public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dist: Float, intensity: Float, faction: CName, tick: Int32) -> Bool {
+public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dist: Float, intensity: Float, faction: CName, tick: Int32, content: ref<CyberbaneContent>) -> Bool {
   if !IsDefined(npc) || intensity <= 0.0 {
     return false;
   }
@@ -47,7 +47,11 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
   // How intimidating V is: the scarier of reputation Dread or raw visible chrome, plus a
   // bump for a dangerous build (level, street cred and skills). See CBUpdateMenace.
   let chromeVisible = score.GetChromeVisible();
-  let eff = (MaxF(score.GetDreadCiv(), chromeVisible) + score.GetMenace() * CBConfig.MenaceFearWeight()) * intensity;
+  // Aura is what V is doing right now; the rest is what V is known for. Added rather than
+  // maxed, because a frightening reputation and a drawn weapon compound.
+  let eff = (MaxF(score.GetDreadCiv(), chromeVisible)
+             + score.GetAura()
+             + score.GetMenace() * CBConfig.MenaceFearWeight()) * intensity;
 
   // Obvious chrome gets read from further out. Someone walking around with blades for arms is
   // clocked halfway down the block, where a clean-looking merc has to be close before anyone
@@ -56,11 +60,25 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
   let fleeR = CBConfig.CivFleeRadius() * reach;
   let cowerR = CBConfig.CivCowerRadius() * reach;
 
+  // What this one personally takes to rattle.
+  //
+  // courageMod has been defined per faction since the first release and read by nothing, so a
+  // Valentino and a passer-by reacted identically. Applied on the same 0..100 scale the tiers
+  // use, so a courage of 0.10 is ten points of nerve.
+  let brave = 0.0;
+  if IsDefined(content) && NotEquals(faction, n"") {
+    let prof = content.GetFaction(faction);
+    if IsDefined(prof) {
+      brave = prof.courageMod * 100.0;
+    }
+  }
+  let eff2 = eff - brave;
+
   let fire = false;
-  if eff >= CBConfig.CivTierTerror() && dist <= fleeR {
+  if eff2 >= CBConfig.CivTierTerror() && dist <= fleeR {
     fire = true;   // Terror: flees on sight, fear spreads
   } else {
-    if eff >= CBConfig.CivTierAfraid() && dist <= cowerR {
+    if eff2 >= CBConfig.CivTierAfraid() && dist <= cowerR {
       fire = true;   // Afraid: cowers or flees when V is close
     }
   }

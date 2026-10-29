@@ -136,7 +136,8 @@ public class CBReactionDirector {
             turnedHostile = this.TryGangHostile(score, player, npc, faction);
           }
           if !turnedHostile && civOn && civReacted < maxCiv {
-            if CBFearReact(game, score, npc, dist, civIntensity, faction, sys.GetTickCount()) {
+            if CBFearReact(game, score, npc, dist, civIntensity, faction, sys.GetTickCount(),
+                           sys.GetContent()) {
               civReacted += 1;
             }
           }
