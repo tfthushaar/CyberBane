@@ -93,8 +93,15 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if IsDefined(sysE) {
     sysE.DropEscapeeByEntity(puppet.GetEntityID());
     let desE = GameInstance.GetDynamicEntitySystem();
-    if IsDefined(desE) && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival") {
-      let slain = CBResolveSlainRival(sysE, puppet);
+    // Tagged is the normal case and can use the whole resolution chain. Untagged, only an
+    // exact body match counts: the retire sweep can clear the tag off a Rival who is still
+    // standing there, and before this a kill in that state was simply lost. The faction
+    // fallback is deliberately NOT used here, or any dead ganger of that gang would be
+    // mistaken for the Rival.
+    let tagged = IsDefined(desE) && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival");
+    let slain = tagged ? CBResolveSlainRival(sysE, puppet)
+                       : CBFindRivalByBody(sysE, puppet.GetEntityID());
+    if IsDefined(slain) || tagged {
       if IsDefined(slain) {
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
       }

@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.1.3).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.1.4).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -158,9 +158,9 @@ reputation, or make a backup save before you remove it.
 
 Everything is configurable from the in-game Mod Settings menu, and every option explains what
 it does. You can turn individual systems on
-or off (crowds, gangs, morale, police, vendors, rivals, hit squads, whispers), tune how intense
-and how frequent reactions are, choose pronouns, pick a preset (Subtle, Default, or Dramatic),
-and rebind the Hub key.
+or off (crowds, gangs, morale, vendors, rivals, hit squads, whispers), tune how intense and how
+frequent reactions are, pick a preset (Subtle, Default, or Dramatic), and rebind the Hub key.
+Every option explains what it does.
 
 ## Compatibility
 

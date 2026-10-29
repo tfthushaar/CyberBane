@@ -278,9 +278,34 @@ public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>
 // retired, and then killed anyway counted for nothing - which is what players hit when they
 // killed one and the Hub never registered it. Falling back to a hunting Rival of the same
 // faction catches those, and returns null rather than guessing when there is no match.
+// Which Rival, if any, Cyberbane spawned as this exact body.
+//
+// The surest match there is: the entity was recorded at spawn, and unlike the CB_Rival tag
+// nothing can clear it out from under us. Safe to use even on an untagged corpse, because it
+// only ever matches a body we created ourselves.
+public func CBFindRivalByBody(sys: ref<CyberbaneSystem>, body: EntityID) -> ref<CBRival> {
+  if !IsDefined(sys) || !EntityID.IsDefined(body) {
+    return null;
+  }
+  let rivals = sys.GetRivals();
+  let i = 0;
+  while i < ArraySize(rivals) {
+    let r = rivals[i];
+    i += 1;
+    if IsDefined(r) && EntityID.IsDefined(r.spawnedEntityId) && Equals(r.spawnedEntityId, body) {
+      return r;
+    }
+  }
+  return null;
+}
+
 public func CBResolveSlainRival(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> ref<CBRival> {
   if !IsDefined(sys) || !IsDefined(puppet) {
     return null;
+  }
+  let byBody = CBFindRivalByBody(sys, puppet.GetEntityID());
+  if IsDefined(byBody) {
+    return byBody;
   }
   let activeId = sys.GetActiveRivalId();
   if activeId > 0 {

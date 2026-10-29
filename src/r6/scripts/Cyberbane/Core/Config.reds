@@ -298,6 +298,9 @@ public abstract class CBConfig {
   // When the clock runs out but V is mid-fight or another Rival is already out, wait this
   // many ticks and try again rather than dropping the appointment.
   public static func RivalHuntRetryTicks() -> Int32 = 20
+  // How long a Rival may stand around before Cyberbane gives up on the encounter, in in-game
+  // seconds. In-game time runs far faster than real time, so this is a couple of real minutes.
+  public static func RivalRetireGameSeconds() -> Float = 7200.0
   // Once you are carrying as many Rivals as the cap allows, no new ones can be made, so the
   // only way out is to put the existing ones down. They close in at this fraction of the
   // normal wait until you have cleared some room.

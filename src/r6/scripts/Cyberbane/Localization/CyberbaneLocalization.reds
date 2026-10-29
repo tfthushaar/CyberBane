@@ -58,10 +58,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Morale-Desc", "Whether wounded enemies lose their nerve and run, and whether a squad breaks when one of their own drops.");
     this.Text("Cyberbane-Settings-MoraleIntensity-Desc", "How easily enemies break. Zero means nobody ever runs.");
     this.Text("Cyberbane-Settings-MaxBreakFraction-Desc", "The most of one group that may break at once, so a whole room never routs together.");
-    this.Text("Cyberbane-Settings-PoliceRecognition-Desc", "Whether the NCPD read your reputation and treat you accordingly.");
-    this.Text("Cyberbane-Settings-KnownOffender-Desc", "Whether police treat you as a known offender once your record is bad enough.");
-    this.Text("Cyberbane-Settings-FriendOfForce-Desc", "Whether police go easier on you when your standing with them is good.");
-    this.Text("Cyberbane-Settings-CopMorale-Desc", "Whether police can lose their nerve like anyone else.");
     this.Text("Cyberbane-Settings-VendorPricing-Desc", "Whether your reputation changes what vendors charge you.");
     this.Text("Cyberbane-Settings-MaxDiscount-Desc", "The largest discount your reputation can earn you, as a percentage.");
     this.Text("Cyberbane-Settings-GigBonus-Desc", "Whether fixers pay the famous more on job payouts.");
@@ -70,17 +66,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MaxRivals-Desc", "How many Rivals you can be carrying at once. At the limit nobody new takes against you, and the ones you have close in faster so you can clear them.");
     this.Text("Cyberbane-Settings-DeathsRemembered-Desc", "Whether whoever kills you can come back as a Rival.");
     this.Text("Cyberbane-Settings-RivalFreq-Desc", "How often Rivals turn up, and how quickly they track you down.");
-    this.Text("Cyberbane-Settings-RivalNameplates-Desc", "Whether a Rival's name is shown above them when they arrive.");
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines, so the street does not repeat itself.");
-    this.Text("Cyberbane-Settings-Pronouns-Desc", "Which pronouns Cyberbane uses for you in its own messages.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane shows its messages on screen at all.");
-    this.Text("Cyberbane-Settings-RivalCard-Desc", "Whether an arriving Rival gets an introduction card.");
-    this.Text("Cyberbane-Settings-LowProfileIcon-Desc", "Whether a small icon appears while you are hard to recognise.");
     this.Text("Cyberbane-Settings-TwrCompat-Desc", "Compatibility with They Will Remember and Night City Remembers. On Auto, Cyberbane spots them and stands down the systems that would otherwise run twice.");
-    this.Text("Cyberbane-Settings-DogtownEnabled-Desc", "Whether Cyberbane runs in Dogtown.");
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising when you are reporting a bug.");
-    this.Text("Cyberbane-Settings-DebugOverlay-Desc", "Shows raw numbers on screen. For bug reports, not for playing.");
     this.Text("Cyberbane-Settings-FreezeReputation-Desc", "Stops your reputation changing at all, while everything already earned keeps working.");
     this.Text("Cyberbane-Settings-SafeZoneSpawns", "Allow spawns in safe areas");
     this.Text("Cyberbane-Settings-SafeZoneSpawns-Desc", "Let rivals, hit squads and apex hunters turn up inside apartments, bars and clinics. Off by default, because the game disarms you in those places.");
@@ -125,10 +115,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MaxBreakFraction", "Max fraction that can break");
 
     // ---- Settings: police -----------------------------------------------
-    this.Text("Cyberbane-Settings-PoliceRecognition", "Police recognition");
-    this.Text("Cyberbane-Settings-KnownOffender", "Known Offender");
-    this.Text("Cyberbane-Settings-FriendOfForce", "Friend of the Force");
-    this.Text("Cyberbane-Settings-CopMorale", "Cop morale");
 
     // ---- Settings: economy ----------------------------------------------
     this.Text("Cyberbane-Settings-VendorPricing", "Vendor pricing");
@@ -141,23 +127,17 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MaxRivals", "Max active Rivals");
     this.Text("Cyberbane-Settings-DeathsRemembered", "Night City remembers your deaths");
     this.Text("Cyberbane-Settings-RivalFreq", "Rival frequency");
-    this.Text("Cyberbane-Settings-RivalNameplates", "Rival nameplates");
 
     // ---- Settings: interface --------------------------------------------
     this.Text("Cyberbane-Settings-Whispers", "Whispers");
     this.Text("Cyberbane-Settings-WhisperCooldown", "Whisper cooldown (s)");
-    this.Text("Cyberbane-Settings-Pronouns", "Pronouns");
     this.Text("Cyberbane-Settings-Toasts", "Toasts");
-    this.Text("Cyberbane-Settings-RivalCard", "Rival card");
-    this.Text("Cyberbane-Settings-LowProfileIcon", "Low Profile icon");
 
     // ---- Settings: compatibility ----------------------------------------
     this.Text("Cyberbane-Settings-TwrCompat", "They Will Remember compatibility");
-    this.Text("Cyberbane-Settings-DogtownEnabled", "Dogtown enabled");
 
     // ---- Settings: debug ------------------------------------------------
     this.Text("Cyberbane-Settings-LogLevel", "Log level");
-    this.Text("Cyberbane-Settings-DebugOverlay", "Debug overlay");
     this.Text("Cyberbane-Settings-FreezeReputation", "Freeze reputation");
 
     // ---- Core ------------------------------------------------------------

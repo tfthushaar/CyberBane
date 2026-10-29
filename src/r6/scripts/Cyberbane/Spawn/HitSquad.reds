@@ -101,7 +101,8 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     size += 1;
   }
 
-  let spawned = CBSpawnGroup(game, fs.sampleRecord, n"", size, n"CB_Squad", CBConfig.HitSquadMinSpawnDistance() + 12.0);
+  let squadEntity: EntityID;
+  let spawned = CBSpawnGroup(game, fs.sampleRecord, n"", size, n"CB_Squad", CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
   if spawned <= 0 {
     return;   // nothing queued (e.g. no valid record) - don't start the cooldown
   }

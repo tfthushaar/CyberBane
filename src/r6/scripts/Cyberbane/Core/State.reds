@@ -121,6 +121,9 @@ public class CBRival {
   public persistent let createdAt: Float;
   public persistent let lastSeenAt: Float;
   public persistent let nextEligibleAt: Float;
+  // The entity Cyberbane spawned for this Rival, so a kill can be attributed to them even if
+  // the CB_Rival tag has gone. Session-only: entity ids mean nothing across a save.
+  public let spawnedEntityId: EntityID;
   // Fast ticks (about one a second) until this Rival turns up. Deliberately NOT persistent:
   // it is a live countdown for this session, it is shown in the Hub, and a save reloads it
   // fresh rather than resuming a stale clock. 0 means "not counting yet".

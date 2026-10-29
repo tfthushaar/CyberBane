@@ -57,7 +57,7 @@ func CBSpawnDistanceScale(attempt: Int32) -> Float {
 
 // Queue one NPC. Split out so the placement loop stays readable.
 func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance: CName,
-                   pos: Vector4, orient: Quaternion, squadTag: CName) -> Bool {
+                   pos: Vector4, orient: Quaternion, squadTag: CName, out created: EntityID) -> Bool {
   let spec = new DynamicEntitySpec();
   spec.recordID = record;
   spec.appearanceName = appearance;
@@ -72,11 +72,15 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
   ArrayPush(tags, n"Cyberbane");
   ArrayPush(tags, squadTag);
   spec.tags = tags;
-  return EntityID.IsDefined(des.CreateEntity(spec));
+  created = des.CreateEntity(spec);
+  return EntityID.IsDefined(created);
 }
 
 // Spawn `count` copies of `record` in a short row behind V. Returns how many were queued.
-public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float) -> Int32 {
+// `lastSpawned` comes back as the entity of the last one placed, so a caller that cares about
+// a single arrival (a Rival) can hold onto it and attribute the kill later without relying on
+// the tag still being there.
+public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float, out lastSpawned: EntityID) -> Int32 {
   if !TDBID.IsValid(record) || count <= 0 {
     return 0;
   }
@@ -117,7 +121,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         // shaft - so it is refused and the point moves in rather than dropping someone there.
         if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop() {
           if CBCreateSpawn(des, record, appearance,
-                           new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0), orient, squadTag) {
+                           new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0), orient, squadTag, lastSpawned) {
             spawned += 1;
           }
           placed = true;
@@ -136,7 +140,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let fallback = new Vector4(fx, fy, ppos.Z, 1.0);
       // The fallback is close in, so it is the likeliest of the lot to land indoors.
       if !CBSafeAreaBlocksSpawn(game, fallback)
-         && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag) {
+         && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned) {
         spawned += 1;
       }
     }

@@ -209,31 +209,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "0.05")
   public let maxBreakFraction: Float = 0.6;
 
-  // ---- Police -----------------------------------------------------------
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Police")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PoliceRecognition")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PoliceRecognition-Desc")
-  public let policeRecognition: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Police")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-KnownOffender")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-KnownOffender-Desc")
-  public let knownOffender: Bool = false;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Police")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FriendOfForce")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FriendOfForce-Desc")
-  public let friendOfTheForce: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Police")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CopMorale")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CopMorale-Desc")
-  public let copMorale: Bool = true;
-
   // ---- Economy ----------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
@@ -313,12 +288,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "0.05")
   public let rivalFrequencyMult: Float = 1.0;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalNameplates")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalNameplates-Desc")
-  public let rivalNameplates: Bool = true;
-
   // ---- UI ---------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
@@ -337,27 +306,9 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Pronouns")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Pronouns-Desc")
-  public let pronouns: ECBPronouns = ECBPronouns.Auto;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Toasts")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Toasts-Desc")
   public let toasts: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalCard")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalCard-Desc")
-  public let rivalCard: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LowProfileIcon")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LowProfileIcon-Desc")
-  public let lowProfileIcon: Bool = true;
 
   // ---- Compatibility ----------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -366,24 +317,12 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TwrCompat-Desc")
   public let twrCompat: ECBTwrCompat = ECBTwrCompat.Auto;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Compat")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DogtownEnabled")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DogtownEnabled-Desc")
-  public let dogtownEnabled: Bool = true;
-
   // ---- Debug ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LogLevel")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LogLevel-Desc")
   public let logLevel: ECBLogLevel = ECBLogLevel.Info;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DebugOverlay")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DebugOverlay-Desc")
-  public let debugOverlay: Bool = false;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")

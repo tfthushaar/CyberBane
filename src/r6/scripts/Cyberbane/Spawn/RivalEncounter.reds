@@ -27,10 +27,19 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   let now = CBGameSeconds(game);
   let cd = sys.GetCooldowns();
+  let player = GetPlayer(game);
 
-  // Retire a Rival who has been left standing around too long (twice a squad's patience).
-  if IsDefined(cd) && des.IsPopulated(n"CB_Rival")
-     && (now - cd.lastRivalEncounterAt) > CBConfig.HitSquadDespawnMinutes() * 120.0 {
+  // Retire a Rival who has been left standing around too long.
+  //
+  // This used to run at HitSquadDespawnMinutes * 120 in-game seconds, which is about ten real
+  // seconds: a Rival was being untagged almost as soon as they arrived. If the engine then
+  // could not destroy the puppet because V was fighting it, the body stayed in the world with
+  // no tag, the kill was never attributed, and the same Rival returned forever.
+  //
+  // Now it is a sensible stretch, and it never fires while V is in a fight.
+  let fighting = IsDefined(player) && player.IsInCombat();
+  if IsDefined(cd) && !fighting && des.IsPopulated(n"CB_Rival")
+     && (now - cd.lastRivalEncounterAt) > CBConfig.RivalRetireGameSeconds() {
     des.DeleteTagged(n"CB_Rival");
     sys.SetActiveRivalId(0);
   }
@@ -43,7 +52,6 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
      && (now - cd.lastRivalEncounterAt) < CBConfig.SecondsPerHour() * CBConfig.RivalEncounterCooldownHours() {
     return;
   }
-  let player = GetPlayer(game);
   if !IsDefined(player) || player.IsInCombat() {
     return;
   }
@@ -156,10 +164,15 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 
 func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Bool {
   // Spawn close and behind so the Rival perceives V right away and gives chase.
-  let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance());
+  let body: EntityID;
+  let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance(), body);
   if spawned <= 0 {
     return false;   // refused: unsettled world, or nowhere outside a safe area to stand
   }
+  // Remember which body is theirs. The CB_Rival tag can be cleared out from under us by the
+  // retire sweep, and when that happened the kill stopped counting: the Rival was never marked
+  // slain, never replaced, and came back again and again.
+  r.spawnedEntityId = body;
   r.state = EnumInt(ECBRivalState.Hunting);   // it is actively hunting you now
   r.lastSeenAt = now;
   sys.SetActiveRivalId(r.id);                 // track it for escape / slain handling

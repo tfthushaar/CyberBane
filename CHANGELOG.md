@@ -3,6 +3,28 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.4] - 2026-10-29
+
+### Fixed
+- **Killing a Rival counts now, every time.** Cyberbane recognised a Rival by a marker on the
+  body, and it was wiping that marker about ten seconds after they turned up. If the game could
+  not remove them while you were fighting, they stayed in the world unmarked, so killing them
+  did nothing: no message, no change in your standing with them, nobody promoted in their
+  place, and the same Rival back again later. Cyberbane now remembers exactly which body is
+  theirs, so the kill lands whatever has happened to the marker.
+- **Rivals are no longer retired almost as soon as they arrive**, and never while you are
+  fighting them.
+- A Maelstrom street handle read as a crash. "Null" is now "Nullwire". It was a real name from
+  the gang's name pool all along, sitting next to Static and Rustbite, but seeing a rival
+  called Null is not reassuring and the report was fair.
+
+### Changed
+- **Removed ten settings that did nothing.** Police recognition, known offender, friend of the
+  force, cop morale, rival nameplates, rival cards, the low profile icon, pronouns, the Dogtown
+  toggle and the debug overlay were all listed in the menu and wired to nothing at all. A
+  setting that does nothing is worse than no setting. The thirty nine that remain all work and
+  all explain themselves.
+
 ## [1.1.3] - 2026-10-29
 
 ### Added

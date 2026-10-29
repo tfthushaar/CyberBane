@@ -51,7 +51,7 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
     ["Kessler", "Brandt", "Novak"]));
 
   // Handle-only factions.
-  c.AddFactionNames(CBMakeHandleNames(n"Maelstrom", ["Static", "Rustbite", "Null", "Shardjaw"]));
+  c.AddFactionNames(CBMakeHandleNames(n"Maelstrom", ["Static", "Rustbite", "Nullwire", "Shardjaw"]));
   c.AddFactionNames(CBMakeHandleNames(n"Animals", ["Bullneck", "Tusk", "Brickhouse"]));
   c.AddFactionNames(CBMakeHandleNames(n"Scavengers", ["Gutter", "Scalpel", "Tin"]));
   c.AddFactionNames(CBMakeHandleNames(n"Wraiths", ["Dustdevil", "Rattler", "Bonefire"]));

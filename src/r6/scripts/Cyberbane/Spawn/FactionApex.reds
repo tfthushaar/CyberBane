@@ -160,7 +160,8 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   // CBSpawnGroup will refuse while the world is still streaming in, so this can only land on
   // a settled frame. CB_Apex is also tagged n"Cyberbane", so the session sweep clears it.
-  let arrived = CBSpawnGroup(game, record, n"", 1, n"CB_Apex", CBConfig.ApexSpawnDistance());
+  let apexEntity: EntityID;
+  let arrived = CBSpawnGroup(game, record, n"", 1, n"CB_Apex", CBConfig.ApexSpawnDistance(), apexEntity);
   if arrived <= 0 {
     // The world was not settled enough to place anyone. Keep the kills on the books so the
     // next slow tick tries again, rather than charging the player for a no-show.
@@ -169,7 +170,8 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   fs.apexAtKills = fs.kills;   // paid for: the next one needs fresh bodies
   if CBConfig.ApexEscortCount() > 0 && TDBID.IsValid(fs.sampleRecord) {
+    let escortEntity: EntityID;
     CBSpawnGroup(game, fs.sampleRecord, n"", CBConfig.ApexEscortCount(), n"CB_Squad",
-      CBConfig.ApexSpawnDistance() + 4.0);
+      CBConfig.ApexSpawnDistance() + 4.0, escortEntity);
   }
 }
