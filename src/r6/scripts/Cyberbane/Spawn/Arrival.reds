@@ -134,6 +134,11 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   if sys.HasPendingArrival() {
     return false;
   }
+  // Ask the city first. Its own chase puts the car on the road network, fills it and drives it
+  // at you properly, which is the thing this mod kept failing to do by hand.
+  if CBRequestVanillaChase(sys, game, factionId, crewRecord, crew, squadTag) {
+    return true;
+  }
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
     return false;

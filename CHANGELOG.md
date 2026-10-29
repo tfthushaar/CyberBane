@@ -3,6 +3,22 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.9] - 2026-10-30
+
+### Changed
+- **The city sends the car now.** A vehicle arrival used to be assembled by hand: find a spot,
+  put a car on it, sit the crew inside, point it at you. The game already has a vehicle chase
+  that works, because it is the one the NCPD run on you, so Cyberbane asks for that one instead.
+  The car is placed properly on the road network and driven at you with real pathing, and it
+  keeps coming across junctions and districts.
+- **The crew that turns up is still a Cyberbane crew.** They are adopted the moment they
+  arrive, so they get their buffs and their role kits, the Hub counts them as the encounter they
+  are, an apex squad still brings the boss health bar, and you can still shake them off and lose
+  them. An apex squad also keeps its shape in the car: a heavy, a shooter, a blade and a
+  netrunner in the four seats, instead of four of the same.
+- If the city cannot take the request, the hand-built convoy still runs as a fallback, and
+  indoors or anywhere there is no room for a car they come on foot, the same as before.
+
 ## [1.2.8] - 2026-10-30
 
 ### Fixed

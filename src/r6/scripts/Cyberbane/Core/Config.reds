@@ -431,6 +431,9 @@ public abstract class CBConfig {
   // what the police in this game give you, and the reason a chase is a chase and not a leash.
   public static func ChaseLoseDistance() -> Float = 120.0
   public static func ChaseLoseTicks() -> Int32 = 22
+  // How long after asking the city for a chase car we keep claiming matching arrivals. Short,
+  // so an unrelated member of the same gang streaming in is not mistaken for one of ours.
+  public static func AdoptionWindowTicks() -> Int32 = 20
   // How long an ordinary hostile gang takes to put a crew together, at its slowest and its
   // fastest. Scaled between the two by how much they hate you and how well they know you.
   // The warning window once a lane picks somebody. Short on purpose: the long wait between

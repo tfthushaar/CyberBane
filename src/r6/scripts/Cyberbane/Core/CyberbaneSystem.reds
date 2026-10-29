@@ -85,6 +85,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Last tick each lane was still busy. Subtracting it from now gives how long since that
   // lane's encounter actually ended, which is what the gap between encounters is measured
   // from - the end of the last fight, not the moment the last one was sent.
+  // A short window after asking the city to send a chase car, during which entities matching
+  // what was asked for are claimed as ours (Spawn/VanillaChase.reds). The prevention system
+  // returns a ticket and no way to ask what it spawned, so this is how they are found.
+  private let m_adoptFaction: CName;
+  private let m_adoptRecord: TweakDBID;
+  private let m_adoptVehicle: TweakDBID;
+  private let m_adoptTag: CName;
+  private let m_adoptLeft: Int32;
+  private let m_adoptUntilTick: Int32;
   private let m_chaseAwayTicks: Int32;   // consecutive ticks V has been clear of every hunter
   private let m_laneRivalFreed: Int32;
   private let m_laneSquadFreed: Int32;
@@ -219,6 +228,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     let attachedEntity = event.GetEntity();
     if IsDefined(attachedEntity as ScriptedPuppet) {
       this.m_attachCount += 1;
+    }
+    // Something the city sent on our behalf. Claiming it here is what makes it ours for every
+    // other purpose, and it has to happen before anything below reads its tags.
+    if CBTryAdoptChaseEntity(this, this.GetGameInstance(), attachedEntity) {
+      return;
     }
     if !IsDefined(this.m_registry) {
       return;
@@ -762,6 +776,45 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetLaneRivalId(lane: Int32) -> Int32 {
     return lane == CBLaneRival() ? this.m_laneRivalId : 0;
+  }
+
+  // ---- Adopting what the city spawns for us ----
+  public func OpenAdoption(faction: CName, crewRecord: TweakDBID, vehicle: TweakDBID, tag: CName, count: Int32) -> Void {
+    this.m_adoptFaction = faction;
+    this.m_adoptRecord = crewRecord;
+    this.m_adoptVehicle = vehicle;
+    this.m_adoptTag = tag;
+    this.m_adoptLeft = count;
+    this.m_adoptUntilTick = this.m_tickCount + CBConfig.AdoptionWindowTicks();
+  }
+
+  public func IsAdoptionOpen() -> Bool {
+    return this.m_adoptLeft > 0 && this.m_tickCount <= this.m_adoptUntilTick;
+  }
+
+  public func GetAdoptFaction() -> CName {
+    return this.m_adoptFaction;
+  }
+
+  public func GetAdoptRecord() -> TweakDBID {
+    return this.m_adoptRecord;
+  }
+
+  public func GetAdoptVehicle() -> TweakDBID {
+    return this.m_adoptVehicle;
+  }
+
+  public func GetAdoptTag() -> CName {
+    return this.m_adoptTag;
+  }
+
+  // Claim one seat, or -1 when there are none left.
+  public func TakeAdoptionSlot() -> Int32 {
+    if this.m_adoptLeft <= 0 {
+      return -1;
+    }
+    this.m_adoptLeft -= 1;
+    return this.m_adoptLeft;
   }
 
   public func BumpChaseAwayTicks() -> Int32 {

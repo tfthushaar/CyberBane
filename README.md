@@ -63,9 +63,11 @@ page describes what the mod does and how it installs.
   makes the one who comes back harder than the one who left. Every one of them arrives with the
   game's own boss health bar. Put down the one hunting you and it is finally finished. Anyone who
   kills you can also come back, and dropping a crew's member can bring a gang-mate gunning for you.
-- **They drive over.** A hit squad or a gang's apex arrives by car: it is put together out of
-  sight, drives to you, and the crew gets out and comes for you. If you are behind the wheel,
-  it gives chase instead. Indoors, or anywhere there is no room for a car, they come on foot.
+- **They drive over.** A hit squad or a gang's apex comes by car, dispatched and driven by the
+  same thing that sends police after you, so it uses real roads and keeps coming across
+  junctions. The crew gets out and comes for you, and if you are behind the wheel it gives chase.
+  An apex squad keeps its shape in the car: a heavy, a shooter, a blade and a netrunner. Indoors,
+  or anywhere there is no room for a car, they come on foot.
 - **A vendetta is a decision, not a dice roll.** A gang that has sworn one is already putting a
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
   of a problem they think you are, and they bring the gang's apex squad with them. Pay them off
