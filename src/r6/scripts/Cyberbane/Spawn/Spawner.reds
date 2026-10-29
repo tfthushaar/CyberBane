@@ -549,6 +549,9 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   des.DeleteTagged(n"CB_Rival");
   des.DeleteTagged(n"CB_Squad");
   des.DeleteTagged(n"CB_Apex");
+  // Take the bars down with them, rather than leaving them up for the tick it would take the
+  // stack to notice its targets had stopped existing.
+  sys.GetThreatBar().Hide();
   sys.SetActiveRivalId(0);
   sys.SetActiveSquadFaction(n"");
   let rt = CyberbaneRuntime.Get();

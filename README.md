@@ -60,8 +60,9 @@ page describes what the mod does and how it installs.
   climb the ranks on their own while you are busy elsewhere, and every time one escapes it returns
   a rank higher and scarred. Each one is built to the same grade as a member of an apex squad,
   and they keep getting stronger: every escape, every mercy and every time they put you down
-  makes the one who comes back harder than the one who left. Every one of them arrives with the
-  game's own boss health bar. Put down the one hunting you and it is finally finished. Anyone who
+  makes the one who comes back harder than the one who left. Every one of them arrives with a
+  bar at the top of the screen carrying their name. Put down the one hunting you and it is
+  finally finished. Anyone who
   kills you can also come back, and dropping a crew's member can bring a gang-mate gunning for you.
 - **They drive over.** A hit squad or a gang's apex comes by car, dispatched and driven by the
   same thing that sends police after you, so it uses real roads and keeps coming across
@@ -85,7 +86,9 @@ page describes what the mod does and how it installs.
   out of cover, a blade who closes on a Sandevistan, and a netrunner who hangs back and takes
   your weapon off you. Each chair is filled with a real member of that gang you have actually
   fought, so they carry the right weapons and fight the way that kind of enemy fights, and they
-  work as a squad rather than four individuals. They get the game's own boss health bar. You
+  work as a squad rather than four individuals. Each of them gets a bar at the top of the
+  screen showing their role, so a squad reads as a heavy, a blade, a netrunner and a shooter
+  rather than four of the same. You
   get a warning first, and a countdown. How dangerous they are is a slider, from a hard fight
   up to the game's own set-piece enforcers, and your own build scales it on top. Each one
   carries two traits of its own, so no two fight the same way. No story character is ever used,

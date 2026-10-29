@@ -15,9 +15,6 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
   private let m_ngpDetected: Int32;    // same three states, for New Game Plus
   private let m_securityZone: Int32 = 9;   // last zone the game reported; 9 = not heard yet
-  // The HUD's boss health bar, caught as it is built. Weak: the HUD rebuilds it on load, on
-  // fast travel and on every teardown, so this is re-checked on every use.
-  private let m_bossBar: wref<BossHealthBarGameController>;
   // Why the last arrival was refused (CBBlock*). Diagnostic only, session-only.
   //
   // This exists because three releases in a row shipped with a different gate silently
@@ -101,14 +98,6 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetSecurityZone(value: Int32) -> Void {
     this.m_securityZone = value;
-  }
-
-  public func GetBossBar() -> wref<BossHealthBarGameController> {
-    return this.m_bossBar;
-  }
-
-  public func SetBossBar(bar: wref<BossHealthBarGameController>) -> Void {
-    this.m_bossBar = bar;
   }
 
   public func GetLastSpawnBlock() -> Int32 {

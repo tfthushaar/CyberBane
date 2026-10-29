@@ -117,7 +117,13 @@ public abstract class CBConfig {
   public static func HudTitlesEarnedShown() -> Int32 = 8
   public static func HudTitlesLockedShown() -> Int32 = 7
   // Width of the threat bar across the top of the screen.
-  public static func ThreatBarWidth() -> Float = 760.0
+  // Narrower than it was, because there is a stack of these now rather than one.
+  public static func ThreatBarWidth() -> Float = 520.0
+  // An apex squad of four plus a Rival is the most that can be on you at once, since the three
+  // lanes can overlap but never double up on their own kind.
+  public static func ThreatBarRows() -> Int32 = 5
+  public static func ThreatBarRowStride() -> Float = 34.0
+  public static func ThreatBarTopMargin() -> Float = 80.0
   public static func RumorLifetimeDays() -> Float = 3.0
   public static func RumorSpreadMagnitudeMult() -> Float = 0.5
   public static func RdDecayPerDay() -> Float = 1.0

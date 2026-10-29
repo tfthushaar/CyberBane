@@ -1,42 +1,52 @@
-// Cyberbane - The threat bar (spec §12)
+// Cyberbane - The threat bars (spec §12)
 //
-// A boss bar across the top of the screen for whoever is currently hunting you: an apex squad
-// enforcer, or a Rival far enough up the ladder to deserve it.
+// A stack of bars across the top of the screen, one per enemy that is actually somebody: a
+// Rival shows their name, and each member of an apex squad shows their role. The point is that
+// you can tell at a glance which of the people shooting at you is a Rival, which four are the
+// apex squad, and which are ordinary crew with no bar at all.
 //
-// This is drawn by Cyberbane rather than handed to the game's own boss bar, and that is a
-// deliberate retreat after proving the engine route does not exist on this patch. For the
-// record, so nobody spends another evening on it:
+// This is drawn by Cyberbane rather than handed to the game's own boss bar, and the reason is
+// no longer a guess. The game's own controller is at
+// `cyberpunk/UI/widgets/healthbar/bossHealthBar.script`, and `AddBoss` opens with:
 //
-//   - `BossHealthBarGameController.AddBoss(ref<NPCPuppet>)` is real and callable, but the
-//     controller is only reachable by wrapping its `OnInitialize`, and whether that ever runs
-//     depends on the HUD constructing it, which it does not appear to do for an ordinary fight.
-//   - NPC rarity is what the game keys the bar off, and there is no setter.
-//   - `canHaveBossHealthbar` turns out to be a TweakDB flat on the character record. Readable,
-//     and not writable: `TweakDBManager` is a RED4ext API with no redscript binding. A TweakXL
-//     file cannot help either, because the records Cyberbane spawns are sampled from whoever V
-//     has actually fought and are not known when the mod is built.
-//   - `UI_Targeting.BossTarget`, `HighlightInstance.isBoss`, `gamedataNPCType.Boss`,
-//     `Character_Record.NPCType()` and `TargetTrackerComponent.SetThreat` were all suggested as
-//     routes and **none of them exist on 2.5**. Every one was probed.
+//     if( !boss || ( !boss.IsBoss() && boss.GetNPCRarity() != gamedataNPCRarity.MaxTac ) )
+//         return;
 //
-// So: our own widget, built the same way the Hub is, which is a thing that already works.
+// Everything Cyberbane spawns fails that test, because boss-ness lives on the character record
+// and there is no setter for it. So every `AddBoss` call Cyberbane ever made returned without
+// drawing anything, which is why no bar was ever seen. That controller also only draws one bar
+// at a time (`m_boss`, with the rest queued in `m_bossPuppets`), so it could not show a squad
+// even if it accepted them.
 //
-// Crash safety: everything is created once on an inkHUDLayer virtual window and only ever has
-// its size and text set afterwards. The tracked puppet is held weakly and re-checked through
-// CBNpcSafe on every update, so a dead or streamed-out target hides the bar rather than being
-// read.
+// For the record, so nobody spends another evening on it: NPC rarity has no setter;
+// `canHaveBossHealthbar` is a TweakDB flat and `TweakDBManager` is a RED4ext API with no
+// redscript binding; and `UI_Targeting.BossTarget`, `HighlightInstance.isBoss`,
+// `gamedataNPCType.Boss`, `Character_Record.NPCType()` and `TargetTrackerComponent.SetThreat`
+// do not exist on 2.5. Every one was probed.
+//
+// Crash safety: the rows are created once on an inkHUDLayer virtual window and only ever have
+// their size, text and visibility set afterwards. Targets are held weakly and re-checked
+// through CBNpcSafe on every update, so a dead or streamed-out one drops off the stack rather
+// than being read.
+
+// One bar: a line of text with a health track under it.
+public class CBThreatRow {
+  public let root: ref<inkCanvas>;
+  public let fill: ref<inkRectangle>;
+  public let text: ref<inkText>;
+}
 
 public class CBThreatBar {
-  private let m_root: ref<inkCanvas>;
-  private let m_fill: ref<inkRectangle>;
-  private let m_name: ref<inkText>;
-  private let m_kind: ref<inkText>;
+  private let m_rows: array<ref<CBThreatRow>>;
   private let m_built: Bool;
-  private let m_target: wref<ScriptedPuppet>;
-  private let m_shown: Bool;
+  // Parallel arrays rather than one struct per entry, for the same reason the rest of the mod
+  // does it: nothing here is ever nested inside a persistent class.
+  private let m_targets: array<wref<ScriptedPuppet>>;
+  private let m_ids: array<EntityID>;
+  private let m_labels: array<String>;
 
   private func EnsureBuilt() -> Bool {
-    if this.m_built && IsDefined(this.m_root) {
+    if this.m_built && ArraySize(this.m_rows) > 0 {
       return true;
     }
     let ink = GameInstance.GetInkSystem();
@@ -57,111 +67,148 @@ public class CBThreatBar {
 
   private func Build(win: wref<inkCompoundWidget>) -> Void {
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
+    let width = CBConfig.ThreatBarWidth();
+    let stride = CBConfig.ThreatBarRowStride();
 
-    let root = new inkCanvas();
-    root.SetName(n"cyberbaneThreatBar");
-    root.SetAnchor(inkEAnchor.TopCenter);
-    root.SetAnchorPoint(new Vector2(0.5, 0.0));
-    root.SetMargin(new inkMargin(0.0, 90.0, 0.0, 0.0));
-    root.SetSize(new Vector2(CBConfig.ThreatBarWidth(), 64.0));
-    root.SetVisible(false);
+    let i = 0;
+    while i < CBConfig.ThreatBarRows() {
+      let root = new inkCanvas();
+      root.SetName(n"cyberbaneThreatRow");
+      root.SetAnchor(inkEAnchor.TopCenter);
+      root.SetAnchorPoint(new Vector2(0.5, 0.0));
+      root.SetMargin(new inkMargin(0.0, CBConfig.ThreatBarTopMargin() + Cast<Float>(i) * stride,
+                                   0.0, 0.0));
+      root.SetSize(new Vector2(width, stride));
+      root.SetVisible(false);
 
-    let kind = new inkText();
-    kind.SetFontFamily(font);
-    kind.SetFontSize(18);
-    kind.SetAnchor(inkEAnchor.TopLeft);
-    kind.SetTintColor(new HDRColor(2.60, 0.30, 0.35, 1.0));
-    kind.SetText("");
-    kind.Reparent(root);
+      let text = new inkText();
+      text.SetFontFamily(font);
+      text.SetFontSize(18);
+      text.SetAnchor(inkEAnchor.TopLeft);
+      text.SetTintColor(new HDRColor(2.40, 2.40, 2.60, 1.0));
+      text.SetText("");
+      text.Reparent(root);
 
-    let name = new inkText();
-    name.SetFontFamily(font);
-    name.SetFontSize(26);
-    name.SetAnchor(inkEAnchor.TopLeft);
-    name.SetMargin(new inkMargin(0.0, 20.0, 0.0, 0.0));
-    name.SetTintColor(new HDRColor(2.40, 2.40, 2.60, 1.0));
-    name.SetText("");
-    name.Reparent(root);
+      // The track, then the fill on top of it.
+      let track = new inkRectangle();
+      track.SetAnchor(inkEAnchor.TopLeft);
+      track.SetMargin(new inkMargin(0.0, 24.0, 0.0, 0.0));
+      track.SetSize(new Vector2(width, 6.0));
+      track.SetTintColor(new HDRColor(0.10, 0.03, 0.04, 0.85));
+      track.Reparent(root);
 
-    // The track, then the fill on top of it.
-    let track = new inkRectangle();
-    track.SetAnchor(inkEAnchor.TopLeft);
-    track.SetMargin(new inkMargin(0.0, 52.0, 0.0, 0.0));
-    track.SetSize(new Vector2(CBConfig.ThreatBarWidth(), 8.0));
-    track.SetTintColor(new HDRColor(0.10, 0.03, 0.04, 0.85));
-    track.Reparent(root);
+      let fill = new inkRectangle();
+      fill.SetAnchor(inkEAnchor.TopLeft);
+      fill.SetMargin(new inkMargin(0.0, 24.0, 0.0, 0.0));
+      fill.SetSize(new Vector2(width, 6.0));
+      fill.SetTintColor(new HDRColor(2.60, 0.25, 0.30, 1.0));
+      fill.Reparent(root);
 
-    let fill = new inkRectangle();
-    fill.SetAnchor(inkEAnchor.TopLeft);
-    fill.SetMargin(new inkMargin(0.0, 52.0, 0.0, 0.0));
-    fill.SetSize(new Vector2(CBConfig.ThreatBarWidth(), 8.0));
-    fill.SetTintColor(new HDRColor(2.60, 0.25, 0.30, 1.0));
-    fill.Reparent(root);
+      root.Reparent(win);
 
-    root.Reparent(win);
-
-    this.m_root = root;
-    this.m_fill = fill;
-    this.m_name = name;
-    this.m_kind = kind;
+      let row = new CBThreatRow();
+      row.root = root;
+      row.fill = fill;
+      row.text = text;
+      ArrayPush(this.m_rows, row);
+      i += 1;
+    }
     this.m_built = true;
   }
 
-  // Point the bar at somebody. Passing null clears it.
-  public func Track(puppet: wref<ScriptedPuppet>, kindLabel: String, displayName: String) -> Void {
-    this.m_target = puppet;
+  // Put somebody on the stack, or update the line they already have.
+  public func Track(puppet: wref<ScriptedPuppet>, label: String) -> Void {
+    if !IsDefined(puppet) {
+      return;
+    }
+    let id = puppet.GetEntityID();
+    if !EntityID.IsDefined(id) {
+      return;
+    }
+    let i = 0;
+    while i < ArraySize(this.m_ids) {
+      if Equals(this.m_ids[i], id) {
+        this.m_labels[i] = label;
+        return;
+      }
+      i += 1;
+    }
+    // Full. The stack is sized for an apex squad plus a Rival, which is the most that can be on
+    // you at once, so this only happens if something upstream has gone wrong.
+    if ArraySize(this.m_ids) >= CBConfig.ThreatBarRows() {
+      return;
+    }
     if !this.EnsureBuilt() {
       // Logged because a bar that silently fails to build is indistinguishable from one that
       // was never asked for, and telling those two apart from the outside is impossible.
       CBLog.Info(n"UI", "Threat bar could not be built (no ink layer yet).");
       return;
     }
-    CBLog.Info(n"UI", s"Threat bar tracking \(kindLabel): \(displayName).");
-    if IsDefined(this.m_kind) {
-      this.m_kind.SetText(kindLabel);
-    }
-    if IsDefined(this.m_name) {
-      this.m_name.SetText(displayName);
-    }
+    ArrayPush(this.m_targets, puppet);
+    ArrayPush(this.m_ids, id);
+    ArrayPush(this.m_labels, label);
+    CBLog.Info(n"UI", s"Threat bar tracking \(label).");
   }
 
   public func Hide() -> Void {
-    this.m_target = null;
-    if this.m_shown && IsDefined(this.m_root) {
-      this.m_root.SetVisible(false);
-      this.m_shown = false;
+    ArrayClear(this.m_targets);
+    ArrayClear(this.m_ids);
+    ArrayClear(this.m_labels);
+    let i = 0;
+    while i < ArraySize(this.m_rows) {
+      if IsDefined(this.m_rows[i].root) {
+        this.m_rows[i].root.SetVisible(false);
+      }
+      i += 1;
     }
   }
 
-  // Once per fast tick. Reads the target's health and resizes the fill.
+  // Once per fast tick. Drops anyone who is gone, then redraws the rows that are left.
   public func Update(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-    if !IsDefined(this.m_target) {
-      this.Hide();
-      return;
-    }
-    // CBNpcSafe covers attachment and the post-spawn settling window, so a target that is
-    // being torn down is never read.
-    if !CBNpcSafe(sys, this.m_target) || this.m_target.IsDead() {
-      this.Hide();
+    if ArraySize(this.m_targets) == 0 {
       return;
     }
     let pools = GameInstance.GetStatPoolsSystem(game);
-    if !IsDefined(pools) {
-      this.Hide();
+    if !IsDefined(pools) || !this.EnsureBuilt() {
       return;
     }
-    if !this.EnsureBuilt() {
-      return;
+    // Backwards, so erasing an entry does not skip the next one.
+    let i = ArraySize(this.m_targets) - 1;
+    while i >= 0 {
+      // CBNpcSafe covers attachment and the post-spawn settling window, so a target that is
+      // being torn down is never read.
+      if !CBNpcSafe(sys, this.m_targets[i]) || this.m_targets[i].IsDead() {
+        ArrayErase(this.m_targets, i);
+        ArrayErase(this.m_ids, i);
+        ArrayErase(this.m_labels, i);
+      }
+      i -= 1;
     }
-    let pct = pools.GetStatPoolValue(Cast<StatsObjectID>(this.m_target.GetEntityID()),
-                                     gamedataStatPoolType.Health, false);
-    let frac = ClampF(pct / 100.0, 0.0, 1.0);
-    if IsDefined(this.m_fill) {
-      this.m_fill.SetSize(new Vector2(CBConfig.ThreatBarWidth() * frac, 8.0));
-    }
-    if !this.m_shown && IsDefined(this.m_root) {
-      this.m_root.SetVisible(true);
-      this.m_shown = true;
+
+    let width = CBConfig.ThreatBarWidth();
+    let shown = ArraySize(this.m_targets);
+    let r = 0;
+    while r < ArraySize(this.m_rows) {
+      let row = this.m_rows[r];
+      if r < shown {
+        let pct = pools.GetStatPoolValue(Cast<StatsObjectID>(this.m_ids[r]),
+                                         gamedataStatPoolType.Health, false);
+        let frac = ClampF(pct / 100.0, 0.0, 1.0);
+        if IsDefined(row.text) {
+          row.text.SetText(this.m_labels[r]);
+        }
+        if IsDefined(row.fill) {
+          row.fill.SetSize(new Vector2(width * frac, 6.0));
+        }
+        if IsDefined(row.root) {
+          row.root.SetVisible(true);
+        }
+      } else {
+        if IsDefined(row.root) {
+          row.root.SetVisible(false);
+        }
+      }
+      r += 1;
     }
   }
 }

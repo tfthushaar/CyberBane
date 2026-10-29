@@ -17,49 +17,21 @@
 // rebuilt on load, fast travel and every HUD teardown. A missing controller means no bar, and
 // no bar means the fight is slightly less dramatic, which is the correct way for this to fail.
 
-// Catch the controller as the HUD builds it.
-@wrapMethod(BossHealthBarGameController)
-protected cb func OnInitialize() -> Bool {
-  let result = wrappedMethod();
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) {
-    rt.SetBossBar(this);
-  }
-  return result;
-}
-
-// And let go of it when the HUD tears it down, so nothing holds a stale controller.
-@wrapMethod(BossHealthBarGameController)
-protected cb func OnUninitialize() -> Bool {
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) {
-    rt.SetBossBar(null);
-  }
-  return wrappedMethod();
-}
-
 // Put this one on the bar.
 //
-// Tries the game's own boss bar first, because when it is available it is the real thing, and
-// falls back to Cyberbane's own (UI/ThreatBar.reds) when it is not - which, on this patch, is
-// essentially always. See the note at the top of ThreatBar.reds for everything that was tried.
+// This used to hand the puppet to the game's own `BossHealthBarGameController.AddBoss` whenever
+// that controller was reachable, and only fall back to Cyberbane's own bar when it was not.
+// The controller is reachable essentially always, and `AddBoss` opens by rejecting anybody who
+// is not a boss by record, so the call did nothing and the fallback never ran. That is the
+// whole reason no bar was ever seen. The plumbing that held the controller is gone with it.
 public func CBShowBossBar(npc: ref<ScriptedPuppet>) -> Void {
-  let asNpc = npc as NPCPuppet;
-  if !IsDefined(asNpc) || !CBThreatBarOn() {
+  if !IsDefined(npc as NPCPuppet) || !CBThreatBarOn() {
     return;
   }
   // Already a boss or MaxTac by record: the game draws its own and ours would double up.
   let rarity = npc.GetNPCRarity();
   if Equals(rarity, gamedataNPCRarity.Boss) || Equals(rarity, gamedataNPCRarity.MaxTac) {
     return;
-  }
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) {
-    let bar = rt.GetBossBar();
-    if IsDefined(bar) {
-      bar.AddBoss(asNpc);
-      return;
-    }
   }
   CBShowThreatBar(npc);
 }
@@ -76,10 +48,17 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
     return;
   }
   let id = npc.GetEntityID();
+  // A Rival is a person, so they get their name. An apex squad member is one of four, so what
+  // matters is which one - the same way a MaxTac drop is legible as a heavy, a blade, a
+  // netrunner and a shooter rather than four interchangeable enemies.
   let label = "HUNTING YOU";
-  let name = "";
+  let name = npc.GetDisplayName();
   if des.IsTagged(id, n"CB_Apex") {
-    label = "APEX SQUAD";
+    let role: ECBApexRole;
+    if !CBArchetypeRole(CBRecordArchetype(npc.GetRecordID()), role) {
+      role = ECBApexRole.Assault;
+    }
+    label = StrUpper(CBRoleName(role));
   }
   if des.IsTagged(id, n"CB_Rival") {
     label = "RIVAL";
@@ -88,8 +67,5 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
       name = CBRivalDisplayName(sys.GetContent(), who);
     }
   }
-  if StrLen(name) == 0 {
-    name = npc.GetDisplayName();
-  }
-  sys.GetThreatBar().Track(npc, label, name);
+  sys.GetThreatBar().Track(npc, label + "   -   " + name);
 }

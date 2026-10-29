@@ -3,6 +3,24 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-30
+
+### Fixed
+- **The boss bar never appeared, for anybody.** Rivals and apex squad members were being handed
+  to the game's own boss health bar, which turns out to reject anybody who is not a boss in the
+  game's own files before it draws anything. Nothing Cyberbane sends can pass that test, so the
+  call did nothing every time, and the bar Cyberbane draws itself was never reached because the
+  code treated the rejected call as a success. It is drawn by Cyberbane now, always.
+
+### Changed
+- **A bar each, and they tell you who you are fighting.** There is a stack of them now rather
+  than one, so you can see at a glance which of the people shooting at you matters: a Rival
+  shows their name, and each member of an apex squad shows their role, the way a MaxTac drop
+  reads as a heavy, a blade, a netrunner and a shooter instead of four interchangeable enemies.
+  Ordinary crew still get nothing, which is the point. The stack holds an apex squad of four
+  plus a Rival, which is the most that can be on you at once, and bars drop off as they die.
+- Bars come down the moment you outrun an encounter, rather than a beat later.
+
 ## [1.2.9] - 2026-10-30
 
 ### Changed
