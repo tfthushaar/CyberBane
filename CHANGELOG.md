@@ -3,6 +3,15 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.3] - 2026-10-29
+
+### Fixed
+- **The Hub now tells you why a gang's crew has not turned up.** It could already explain a
+  held rival, but only on the Rivals screen and only after a rival had actually been turned
+  away. A hit squad or apex squad whose timer had run out and was waiting for a workable moment
+  showed nothing at all, which is indistinguishable from the mod being broken. The gang's line
+  now reads "HELD:" and the reason, instead of a countdown sitting on zero.
+
 ## [1.2.2] - 2026-10-29
 
 From player feedback asking what the titles actually mean and for a less hidden way to read

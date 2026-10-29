@@ -551,7 +551,16 @@ public class CBHud {
                 + CBHudCountdown(sys.GetPendingApexTicks());
         } else {
           if Equals(sys.GetPendingSquadFaction(), fs.id) {
-            right = "CREW INBOUND " + CBHudCountdown(sys.GetPendingSquadTicks());
+            // Overdue rather than counting: their timer has run out and something is stopping
+            // them arriving. Saying which thing is the whole point - a crew stuck on "any
+            // moment" forever is indistinguishable from a broken mod, and that is exactly how
+            // this looked from the outside for several releases.
+            if sys.GetPendingSquadTicks() <= 0 {
+              let why = CBBlockLabel(CBLastSpawnBlock());
+              right = StrLen(why) > 0 ? "HELD: " + why : "CREW HELD UP";
+            } else {
+              right = "CREW INBOUND " + CBHudCountdown(sys.GetPendingSquadTicks());
+            }
           } else {
             let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
             right = toApex <= 0 ? "apex squad due" : s"apex squad in \(toApex) kills";
