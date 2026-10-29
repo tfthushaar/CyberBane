@@ -31,6 +31,13 @@ public class CBFactionState {
   public persistent let eliteRecord: TweakDBID;
   // Value of `kills` when this gang last sent its apex, so the next one needs fresh bodies.
   public persistent let apexAtKills: Int32;
+  // Who runs this crew. Rival ids, 0 meaning the slot is empty. Flat scalars rather than an
+  // array, because an array inside a persisted class is the shape that used to crash the game
+  // (see the note on CBRival). Three lieutenants under one leader.
+  public persistent let leaderRivalId: Int32;
+  public persistent let lt1RivalId: Int32;
+  public persistent let lt2RivalId: Int32;
+  public persistent let lt3RivalId: Int32;
 }
 
 public class CBDistrictState {
@@ -102,6 +109,10 @@ public class CBRival {
   // CBRumor.reachedMask for why these are no longer nested CName arrays (schema 2).
   public persistent let traitMask: Int32;
   public persistent let weaknessMask: Int32;
+  // How V hurt them, as a bit per kind (see CBScar*). They carry it when they come back, so
+  // the one you set on fire is the one who turns up burned. A new scalar on an existing
+  // persisted class, so old saves read 0 and nothing needs migrating.
+  public persistent let scarMask: Int32;
   public persistent let encounters: Int32;
   public persistent let escapes: Int32;
   public persistent let killedV: Int32;
@@ -161,4 +172,6 @@ public class CBEscapee {
   // Logged because V put them down without killing them (a knockout / non-lethal takedown)
   // rather than because they ran. Resolved into a Spared Rival if V leaves them breathing.
   public let spared: Bool;
+  // What V did to them on the way down, copied off the puppet so it survives the puppet.
+  public let scarMask: Int32;
 }

@@ -62,6 +62,7 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   e.record = puppet.GetRecordID();
   e.at = CBGameSeconds(game);
   e.spared = true;
+  e.scarMask = puppet.cbScarMask;   // what V did on the way down, before the puppet is gone
   sys.AddEscapee(e);
 }
 
@@ -155,6 +156,7 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   e.faction = faction;
   e.record = puppet.GetRecordID();
   e.at = CBGameSeconds(game);
+  e.scarMask = puppet.cbScarMask;
   let des = GameInstance.GetDynamicEntitySystem();
   e.wasRival = IsDefined(des) && des.IsTagged(e.entityId, n"CB_Rival");
   sys.AddEscapee(e);
@@ -289,6 +291,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   let district = CBEventDistrict(sys, game);
   let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now);
   if IsDefined(nr) {
+    nr.scarMask = e.scarMask;   // they remember how it went
     nr.state = EnumInt(ECBRivalState.Hunting);
     if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
       CBShowMessage(game, s"Cyberbane: You left \(CBRivalDisplayName(content, nr)) alive. They will not forget it.", 4.0);
@@ -326,6 +329,9 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   // A regular enemy got away: it becomes a Survivor Rival already on your trail.
   if NotEquals(e.faction, n"") && TDBID.IsValid(e.record) {
     let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Survivor, district, now);
+    if IsDefined(nr) {
+      nr.scarMask = e.scarMask;
+    }
     if IsDefined(nr) {
       nr.state = EnumInt(ECBRivalState.Hunting);
       if toasts {

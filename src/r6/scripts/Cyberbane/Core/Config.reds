@@ -228,6 +228,14 @@ public abstract class CBConfig {
   public static func GrapevineMinMagnitude() -> Float = 4.0
   public static func GrapevineDurationSeconds() -> Float = 6.0
 
+  // ---- Gang hierarchy (spec §10.1) ---------------------------------------
+  // Running a crew, or standing near the top of one, makes you harder to put down. Modest
+  // next to an apex hunter, which is a different kind of event entirely.
+  public static func LeaderMinRank() -> Int32 = 4
+  public static func LieutenantMinRank() -> Int32 = 3
+  public static func LeaderHealthMult() -> Float = 2.0
+  public static func LieutenantHealthMult() -> Float = 1.4
+
   // ---- Succession (spec §10.1) ------------------------------------------
   // Added to the avenger roll per rank of the Rival you just put down, so the higher the
   // one you killed, the likelier someone steps into the slot. A crew cannot be decapitated

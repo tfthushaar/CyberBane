@@ -213,6 +213,8 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   }
 
   sys.AddRival(r);
+  // A new name in a crew may be the only one left standing in it (spec §10.1).
+  CBHierarchyFill(sys, faction);
 
   CBLogRival(sys, n"RivalCreated", at, origin, faction, Cast<Float>(r.id), r.id);
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
@@ -340,6 +342,8 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   sys.AddRenownPoints((25.0 + 10.0 * Cast<Float>(rival.rank)) * renownMult);
 
   CBLogRival(sys, n"RivalSlain", at, district, rival.faction, Cast<Float>(rival.rank), rival.id);
+  // Their chair does not stay empty (spec §10.1).
+  CBHierarchyOnSlain(sys, game, rival);
   let content = CBContent(game);
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
     CBShowMessage(game, "Cyberbane: Rival slain - " + CBRivalDisplayName(content, rival), 5.0);

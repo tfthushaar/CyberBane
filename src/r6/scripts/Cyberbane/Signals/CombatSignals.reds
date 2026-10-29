@@ -15,6 +15,11 @@ public let cbDamagedByPlayer: Bool;
 @addField(ScriptedPuppet)
 public let cbLastAttackType: gamedataAttackType;
 
+// Everything V has done to this one, accumulated across hits rather than just the last.
+// Someone shot and then set on fire remembers both.
+@addField(ScriptedPuppet)
+public let cbScarMask: Int32;
+
 // The last NPC to damage this puppet - read on the player to attribute V's death.
 @addField(ScriptedPuppet)
 public let cbLastAttacker: wref<ScriptedPuppet>;
@@ -63,6 +68,7 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   if IsDefined(instigator) && instigator.IsPlayer() {
     puppet.cbDamagedByPlayer = true;
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
+    puppet.cbScarMask = CBMaskSet(puppet.cbScarMask, CBScarBitFor(puppet.cbLastAttackType));
     // A wounded enemy may lose its nerve and run (spec §10.2).
     let game = puppet.GetGame();
     let sys = CyberbaneSystem.Get(game);
@@ -262,6 +268,22 @@ func CBClassifyVictim(puppet: ref<ScriptedPuppet>, faction: CName) -> Int32 {
 }
 
 // First-pass method classification from the attack type (spec §7.1.2).
+// Which scar an attack leaves. The engine only separates a few kinds of damage at this
+// level, so this is deliberately coarse: enough for a Rival to remember the shape of what
+// happened to them, not a forensic record.
+public func CBScarBitFor(attackType: gamedataAttackType) -> Int32 {
+  if Equals(attackType, gamedataAttackType.Hack) {
+    return CBScarFried();
+  }
+  if Equals(attackType, gamedataAttackType.Explosion) {
+    return CBScarBurned();
+  }
+  if Equals(attackType, gamedataAttackType.Melee) {
+    return CBScarCut();
+  }
+  return CBScarShot();
+}
+
 func CBSetMethodFlags(info: ref<CBKillInfo>, attackType: gamedataAttackType) -> Void {
   if Equals(attackType, gamedataAttackType.Hack) {
     info.mQuickhack = true;

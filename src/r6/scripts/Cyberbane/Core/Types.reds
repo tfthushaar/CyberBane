@@ -39,6 +39,13 @@ enum ECBKillMethod {
   Environmental = 10,
 }
 
+// Scar kinds, as bit indices for CBMaskSet / CBMaskHas. Coarse on purpose: the engine only
+// separates a few kinds of damage at the point we see it.
+public func CBScarShot() -> Int32 = 0
+public func CBScarCut() -> Int32 = 1
+public func CBScarBurned() -> Int32 = 2
+public func CBScarFried() -> Int32 = 3
+
 enum ECBRivalSource {
   Survivor = 0,
   Spared = 1,

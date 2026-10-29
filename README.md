@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.1.2).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.1.3).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -72,9 +72,13 @@ page describes what the mod does and how it installs.
   get stronger. No story character is ever used, so nothing gets spoiled and you never meet a
   duplicate of someone you already killed. It works for every gang. The Hub keeps count of the
   ones you put down.
-- **Gangs you cannot decapitate.** Put a Rival down and someone can step into their place
-  carrying the same grudge, inheriting the standing of the one they replaced rather than
-  starting from the bottom. The higher the one you killed, the likelier it happens.
+- **Gangs you cannot decapitate.** Every gang has a leader and up to three lieutenants, and
+  your Rivals fill those chairs. Put the leader down and the strongest of the rest takes the
+  crew, so there is always somebody next in line. A leader takes real killing; a lieutenant
+  takes more than the rank and file.
+- **Rivals carry your marks.** Set one on fire and the one who comes back is burned. Shoot
+  them, cut them, or fry them with a quickhack and they wear that instead, and the Hub shows
+  it on their line.
 - **Jobs count.** Finishing gigs, jobs and NCPD work builds your reputation, with bigger
   contracts worth more than street hustles.
 - **Titles and the file they keep on you.** Earn titles such as Butcher of Watson, Chrome

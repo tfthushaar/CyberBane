@@ -184,6 +184,13 @@ public class CyberbaneSystem extends ScriptableSystem {
         if des.IsTagged(id, n"CB_Apex") {
           CBApplyApexBuff(this, this.GetGameInstance(), puppet);
         }
+        // Somebody who runs a crew should take more killing than the rank and file do.
+        if des.IsTagged(id, n"CB_Rival") && this.GetActiveRivalId() > 0 {
+          let who = this.FindRivalById(this.GetActiveRivalId());
+          if IsDefined(who) {
+            CBApplyRivalRoleBuff(this, this.GetGameInstance(), puppet, CBRivalRole(this, who));
+          }
+        }
       }
     }
   }

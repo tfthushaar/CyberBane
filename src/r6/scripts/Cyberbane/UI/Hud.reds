@@ -48,6 +48,28 @@ public func CBHudGreen() -> HDRColor = new HDRColor(0.40, 1.80, 0.90, 1.0)
 public func CBHudGrey() -> HDRColor = new HDRColor(0.55, 0.62, 0.70, 1.0)
 
 // Fast ticks are about a second, so this reads as real time to the player.
+// Cut a column's text to what its box can actually show.
+//
+// The row columns are fixed pixel widths, and inkText does not clip, so an over-long string
+// runs straight into the next column. Rival names are the dangerous ones: a name like
+// Santiago "Last One Standing" Ibarra is 35 characters against a 28 character column.
+// Budgets are per column and enforced in SetRow, so this cannot be forgotten at a call site.
+public func CBHudTrim(text: String, maxChars: Int32) -> String {
+  if StrLen(text) <= maxChars {
+    return text;
+  }
+  if maxChars <= 1 {
+    return "";
+  }
+  return StrLeft(text, maxChars - 1) + ".";
+}
+
+// Characters each row column can show at its width and font.
+public func CBHudColA() -> Int32 = 28
+public func CBHudColB() -> Int32 = 25
+public func CBHudColC() -> Int32 = 13
+public func CBHudColD() -> Int32 = 30
+
 public func CBHudCountdown(ticks: Int32) -> String {
   if ticks <= 0 {
     return "any moment";
@@ -97,6 +119,7 @@ public class CBHud {
   private let m_rowA: array<ref<inkText>>;
   private let m_rowB: array<ref<inkText>>;
   private let m_rowC: array<ref<inkText>>;
+  private let m_rowD: array<ref<inkText>>;
   // Whether arrivals are currently being held back because V is in the middle of a quiet job.
   // Resolved once per render, not once per row.
   private let m_huntHeld: Bool;
@@ -343,7 +366,7 @@ public class CBHud {
       let ra = new inkText();
       ra.SetFontFamily(font);
       ra.SetFontStyle(n"Semibold");
-      ra.SetFontSize(23);
+      ra.SetFontSize(22);
       ra.SetAnchor(inkEAnchor.TopLeft);
       ra.SetMargin(new inkMargin(70.0, rtop, 0.0, 0.0));
       ra.Reparent(panel);
@@ -352,22 +375,33 @@ public class CBHud {
       let rb = new inkText();
       rb.SetFontFamily(font);
       rb.SetFontStyle(n"Medium");
-      rb.SetFontSize(22);
+      rb.SetFontSize(21);
       rb.SetTintColor(new HDRColor(0.72, 0.80, 0.88, 1.0));
       rb.SetAnchor(inkEAnchor.TopLeft);
-      rb.SetMargin(new inkMargin(330.0, rtop + 1.0, 0.0, 0.0));
+      rb.SetMargin(new inkMargin(350.0, rtop + 2.0, 0.0, 0.0));
       rb.Reparent(panel);
       ArrayPush(this.m_rowB, rb);
 
+      // Narrow middle column: a scar word, or a body count. Never more than 14 characters.
       let rc = new inkText();
       rc.SetFontFamily(font);
       rc.SetFontStyle(n"Medium");
       rc.SetFontSize(21);
-      rc.SetTintColor(new HDRColor(0.55, 0.62, 0.70, 1.0));
+      rc.SetTintColor(new HDRColor(0.80, 0.55, 0.45, 1.0));
       rc.SetAnchor(inkEAnchor.TopLeft);
-      rc.SetMargin(new inkMargin(640.0, rtop + 2.0, 0.0, 0.0));
+      rc.SetMargin(new inkMargin(600.0, rtop + 2.0, 0.0, 0.0));
       rc.Reparent(panel);
       ArrayPush(this.m_rowC, rc);
+
+      let rd = new inkText();
+      rd.SetFontFamily(font);
+      rd.SetFontStyle(n"Medium");
+      rd.SetFontSize(21);
+      rd.SetTintColor(new HDRColor(0.55, 0.62, 0.70, 1.0));
+      rd.SetAnchor(inkEAnchor.TopLeft);
+      rd.SetMargin(new inkMargin(740.0, rtop + 2.0, 0.0, 0.0));
+      rd.Reparent(panel);
+      ArrayPush(this.m_rowD, rd);
       r += 1;
     }
 
@@ -398,6 +432,7 @@ public class CBHud {
       if IsDefined(this.m_rowA[i]) { this.m_rowA[i].SetVisible(false); }
       if IsDefined(this.m_rowB[i]) { this.m_rowB[i].SetVisible(false); }
       if IsDefined(this.m_rowC[i]) { this.m_rowC[i].SetVisible(false); }
+      if IsDefined(this.m_rowD[i]) { this.m_rowD[i].SetVisible(false); }
       i += 1;
     }
   }
@@ -433,7 +468,7 @@ public class CBHud {
     }
   }
 
-  private func SetRow(idx: Int32, pip: HDRColor, a: String, b: String, c: String) -> Void {
+  private func SetRow(idx: Int32, pip: HDRColor, a: String, b: String, c: String, d: String) -> Void {
     if idx < 0 || idx >= ArraySize(this.m_rowA) {
       return;
     }
@@ -442,16 +477,20 @@ public class CBHud {
       this.m_rowPip[idx].SetVisible(true);
     }
     if IsDefined(this.m_rowA[idx]) {
-      this.m_rowA[idx].SetText(a);
+      this.m_rowA[idx].SetText(CBHudTrim(a, CBHudColA()));
       this.m_rowA[idx].SetVisible(true);
     }
     if IsDefined(this.m_rowB[idx]) {
-      this.m_rowB[idx].SetText(b);
+      this.m_rowB[idx].SetText(CBHudTrim(b, CBHudColB()));
       this.m_rowB[idx].SetVisible(true);
     }
     if IsDefined(this.m_rowC[idx]) {
-      this.m_rowC[idx].SetText(c);
+      this.m_rowC[idx].SetText(CBHudTrim(c, CBHudColC()));
       this.m_rowC[idx].SetVisible(true);
+    }
+    if IsDefined(this.m_rowD[idx]) {
+      this.m_rowD[idx].SetText(CBHudTrim(d, CBHudColD()));
+      this.m_rowD[idx].SetVisible(true);
     }
   }
 
@@ -511,7 +550,7 @@ public class CBHud {
         }
         this.SetRow(shown, pip, CBFactionLabel(fs.id),
           CBPostureName(posture) + s"   fear \(RoundF(score.GetFactionFear(fs.id)))",
-          s"\(fs.kills) down   " + right);
+          s"\(fs.kills) down", right);
         shown += 1;
       }
     }
@@ -527,9 +566,17 @@ public class CBHud {
       i += 1;
       if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
         let hunting = r.state == EnumInt(ECBRivalState.Hunting);
+        let role = CBRoleShort(CBRivalRole(sys, r));
+        let gang = CBFactionLabel(r.faction);
+        if NotEquals(role, "") {
+          gang += "  " + role;
+        } else {
+          gang += s"  rank \(r.rank)";
+        }
         this.SetRow(shown, hunting ? CBHudRed() : CBHudAmber(),
           IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
-          CBFactionLabel(r.faction) + s"   rank \(r.rank)",
+          gang,
+          CBScarLabel(r.scarMask),
           this.m_huntHeld ? "waiting for you to finish" : "arrives in " + CBHudCountdown(CBRivalHuntRemaining(r)));
         shown += 1;
       }

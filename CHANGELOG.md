@@ -3,6 +3,23 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.3] - 2026-10-29
+
+### Added
+- **Rivals carry what you did to them.** Set someone on fire and the one who comes back is
+  burned. Shoot them, cut them, fry them with a quickhack, and they wear that instead. It
+  shows on their line in the Hub, so you recognise them before they open their mouth.
+- **Gangs have a leader and lieutenants.** Your Rivals fill those chairs. Put the leader down
+  and the strongest of the rest steps up and takes the crew, which means you can fight a gang
+  but never behead it: there is always somebody next in line. The Hub shows who runs what.
+- Running a crew is now worth something. A leader takes real killing, a lieutenant takes more
+  than the rank and file. Rank used to be a label with nothing behind it.
+
+### Fixed
+- The Hub's rows can no longer run into each other. Each column now trims to what its box can
+  actually show, so a long rival name stops at the edge instead of printing over the next
+  column.
+
 ## [1.1.2] - 2026-10-29
 
 ### Fixed
