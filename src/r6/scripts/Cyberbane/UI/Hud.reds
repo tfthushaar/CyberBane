@@ -885,12 +885,18 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   // Nothing queued. Say whether that is because the day's allowance is spent, rather than
   // leaving "nobody" to mean both "none due" and "none left", which look identical and are
   // the sort of silence that reads as the mod being broken.
-  let left = CBLaneBudgetLeft(sys, game, lane);
   if StrLen(who) == 0 {
-    if left <= 0 && CBLaneDailyCap(lane) > 0 {
-      return label + "   done for today";
+    if CBLaneDailyCap(lane) <= 0 {
+      return label + "   off";
     }
-    return label + "   nobody" + CBHudBudgetTail(sys, game, lane);
+    // When the day's timetable next has room for this kind, in the player's own minutes. The
+    // schedule is kept in in-game hours because that is what the sectors are made of; nobody
+    // reading a Hub wants to be told "in 3 game hours", so it is converted here.
+    let hrs = CBHoursUntilNextSlot(sys, game, lane);
+    if hrs < 0.0 {
+      return label + "   done for today" + CBHudBudgetTail(sys, game, lane);
+    }
+    return label + "   next in " + CBHudRealFromGameHours(hrs) + CBHudBudgetTail(sys, game, lane);
   }
   let ticks = sys.GetLaneTicks(lane);
   if ticks <= 0 {
@@ -900,6 +906,25 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
                            : label + "   " + who + "  any moment" + tail;
   }
   return label + "   " + who + "  " + CBHudCountdown(ticks) + CBHudBudgetTail(sys, game, lane);
+}
+
+// In-game hours as the real time they will actually take, using the clock rate measured at the
+// start of the session. About 8.1 by default, so eight in-game hours is roughly an hour of
+// play; a mod that slows the world clock brings the two closer together.
+func CBHudRealFromGameHours(hrs: Float) -> String {
+  let ratio = 1.0;
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.GetClockRatio() > 0.0 {
+    ratio = rt.GetClockRatio();
+  }
+  let secs = hrs * 3600.0 / ratio;
+  if secs >= 3600.0 {
+    return s"\(RoundF(secs / 3600.0))h";
+  }
+  if secs >= 60.0 {
+    return s"\(RoundF(secs / 60.0))m";
+  }
+  return s"\(RoundF(secs))s";
 }
 
 // "  (2 of 3 today)". Shown so the pacing is something the player can see rather than guess

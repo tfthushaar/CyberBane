@@ -108,6 +108,20 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_laneApexFreed: Int32;
   // How many encounters each lane has already sent today, and the day those counts belong to.
   // Persistent, so reloading a save does not hand the player a fresh day's worth.
+  // Today's timetable. Parallel arrays directly on the system, which is the rule everywhere
+  // here: an array nested inside a persisted class does not survive a save.
+  // No negative default: redscript only takes plain constants here. Day 0 with an empty slot
+  // list is indistinguishable from "never rolled", and CBScheduleTick rolls on an empty list
+  // anyway, so this needs no sentinel.
+  private persistent let m_schedDay: Int32;
+  private persistent let m_slotLane: array<Int32>;
+  private persistent let m_slotAt: array<Float>;     // in-game hour of day it is due
+  private persistent let m_slotEnd: array<Float>;    // end of its sector; after this it is spent
+  private persistent let m_slotSpent: array<Bool>;
+  // Whether today's timetable has been built. Needed separately from the slot count: with every
+  // per-day setting at zero a correct timetable is an empty one, and testing emptiness instead
+  // would rebuild it on every tick for ever.
+  private persistent let m_schedRolled: Bool;
   private persistent let m_laneDayRival: Int32;
   private persistent let m_laneDaySquad: Int32;
   private persistent let m_laneDayApex: Int32;
@@ -905,6 +919,36 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Roll the counter over when the calendar day changes, then report what is left.
+  public func ScheduleDay() -> Int32 { return this.m_schedDay; }
+  public func ScheduleRolled() -> Bool { return this.m_schedRolled; }
+  public func SlotCount() -> Int32 { return ArraySize(this.m_slotLane); }
+  public func SlotLane(i: Int32) -> Int32 { return this.m_slotLane[i]; }
+  public func SlotAt(i: Int32) -> Float { return this.m_slotAt[i]; }
+  public func SlotEnd(i: Int32) -> Float { return this.m_slotEnd[i]; }
+  public func SlotSpent(i: Int32) -> Bool { return this.m_slotSpent[i]; }
+
+  public func SpendSlot(i: Int32) -> Void {
+    if i >= 0 && i < ArraySize(this.m_slotSpent) {
+      this.m_slotSpent[i] = true;
+    }
+  }
+
+  public func ClearSchedule(day: Int32) -> Void {
+    this.m_schedDay = day;
+    this.m_schedRolled = true;
+    ArrayClear(this.m_slotLane);
+    ArrayClear(this.m_slotAt);
+    ArrayClear(this.m_slotEnd);
+    ArrayClear(this.m_slotSpent);
+  }
+
+  public func AddSlot(lane: Int32, at: Float, end: Float) -> Void {
+    ArrayPush(this.m_slotLane, lane);
+    ArrayPush(this.m_slotAt, at);
+    ArrayPush(this.m_slotEnd, end);
+    ArrayPush(this.m_slotSpent, false);
+  }
+
   public func LaneSentToday(lane: Int32, today: Int32) -> Int32 {
     if lane == CBLaneRival() {
       if this.m_laneDayRival != today {

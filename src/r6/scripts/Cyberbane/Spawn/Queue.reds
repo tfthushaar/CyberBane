@@ -78,6 +78,7 @@ public func CBLiveTaggedPresent(game: GameInstance, tag: CName) -> Bool {
 
 // All three lanes, once per fast tick.
 public func CBEncounterQueueTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  CBScheduleTick(sys, game);   // a new in-game day gets a new timetable
   if !IsDefined(sys) {
     return;
   }
@@ -127,11 +128,22 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   // Only applies to picking somebody new. A lane that already has somebody on the clock keeps
   // counting.
   if sys.GetLaneTicks(lane) <= 0 && Equals(sys.GetLaneTarget(lane), n"") && sys.GetLaneRivalId(lane) <= 0 {
-    if (sys.GetTickCount() - sys.GetLaneFreed(lane)) < CBEncounterGapTicks() {
+    // Nothing starts unless the day's timetable says this kind is due (Spawn/Schedule.reds).
+    // That is what gives a day a shape instead of leaving it to however long the player
+    // happened to stay in one.
+    if !CBSlotDue(sys, game, lane) {
       return;
     }
-    // And the day's allowance. Spent, so nothing more of this kind until tomorrow.
+    // The timetable is built from the per-day setting, so this should never bite. It is here
+    // because the setting is the player's instruction and a scheduling bug must not be able to
+    // exceed it: whatever the plan says, the count is the ceiling.
     if CBLaneBudgetLeft(sys, game, lane) <= 0 {
+      return;
+    }
+    // The spacing floor still applies on top. At default settings the slots are about an hour
+    // of real play apart and it never binds; it only matters if the per-day sliders are pushed
+    // high enough that two windows in one sector crowd each other.
+    if (sys.GetTickCount() - sys.GetLaneFreed(lane)) < CBEncounterGapTicks() {
       return;
     }
   }
@@ -292,6 +304,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       return;
     }
     sys.SetLaneLastRival(sys.GetLaneRivalId(lane));
+    CBSpendSlot(sys, game, lane);
     sys.NoteLaneSent(lane, CBGameDay(game));
     sys.SetLaneFired(lane);
   } else {
@@ -307,6 +320,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       CBProcessPendingSquad(sys, game);
     }
     sys.SetLaneLastFaction(lane, faction);
+    CBSpendSlot(sys, game, lane);
     sys.NoteLaneSent(lane, CBGameDay(game));
     sys.SetLaneFired(lane);
   }

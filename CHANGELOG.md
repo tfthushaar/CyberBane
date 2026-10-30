@@ -26,6 +26,18 @@ This project follows [Semantic Versioning](https://semver.org/).
   turn that scoring off entirely.
 
 ### Added
+- **The day runs to a plan now.** An in-game day is split into three eight-hour stretches, and
+  each kind of encounter gets its own window inside them, staggered so a rival and an apex squad
+  sharing a stretch arrive hours apart rather than together. Three rivals means one in each
+  stretch; two crews and two apex squads take two stretches each, and which ones is decided
+  fresh every day. The exact moment inside a window is random, so it never becomes a timetable
+  you can learn. Raising the per-day sliders puts more into each stretch.
+- **Sleeping and fast travel no longer bank encounters.** Anything whose window passed while you
+  were away is simply missed, so you never arrive somewhere and get everything you were owed at
+  once. An encounter that cannot be placed keeps trying until its window closes, then gives up.
+- **The Hub says when the next one is due, in real time.** Scheduling is all in-game time, but
+  the screen converts it, so a window eight in-game hours out reads as about an hour of play.
+
 - **A slider for how frightening unseen work is.** Half of a killing nobody witnessed used to
   count toward how frightening you are, because the bodies still turn up. That is still the
   default, but you can now turn it down, or to zero if you want only what people actually saw
