@@ -42,6 +42,11 @@ page describes what the mod does and how it installs.
   it, so you build almost no reputation you can claim and the story barely leaves the
   district. What you do get instead is a district with a name for something it cannot
   identify. It turns the signature mechanic into a decision you make in every fight.
+- **Wear a mask and nobody can say it was you.** People still see what happened, they just
+  cannot put your name to it, so your reputation barely grows, no story about you travels, and
+  gangs are slow to turn against you. The bodies still turn up, so the district gets frightened
+  of something it cannot identify. Anonymity costs you fame, which is the trade. Glasses and
+  visors do not count; they only hide the chrome in your eyes.
 - **You overhear the city talking about you.** Lines change with the gang, the district and the
   title you are carrying, and when a story about something you did has actually travelled to
   where you are standing, that is what people are talking about.
@@ -53,6 +58,11 @@ page describes what the mod does and how it installs.
   drivers pull away in the street. It is not only your reputation: visible chrome, and how
   built-up your level, Street Cred and skills are, all feed into how much the street fears you,
   so a heavily chromed, high-level merc clears a room. Bosses and MaxTac hold their ground.
+- **What you wear hides what you are carrying.** Chrome only frightens people who can see it.
+  A coat covers your arms and skin, trousers cover your legs, and anything across your face
+  covers your eyes, so the same build reads very differently dressed up or stripped down.
+  Covered chrome still counts for a little, because a coat moves and heavy arms change how you
+  carry yourself.
 - **Gangs with their own values.** Maelstrom cares about chrome, the Animals care about raw
   strength, the Voodoo Boys care about netrunning. The same V gets different treatment from each
   gang depending on your standing and reputation: respect, a warning, or hostility. Masks and hoods
@@ -77,11 +87,14 @@ page describes what the mod does and how it installs.
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
   of a problem they think you are, and they bring the gang's apex squad with them. Pay them off
   while they are on the way and they turn around.
-- **Three kinds of trouble, three clocks.** A Rival, a hit squad and an apex squad each wait
-  their own turn, so different kinds can turn up together while you are never jumped by two
-  Rivals or two apex squads at once. Each kind also rests after its last fight ends before it
-  starts arranging the next one, measured from the end of the fight so a long one does not eat
-  into your breathing room. That wait is a setting, from two minutes up to thirty.
+- **The day has a shape.** A day in Night City is split into three stretches of eight hours,
+  and each kind of trouble gets its own window inside them, staggered so a Rival and an apex
+  squad sharing a stretch arrive hours apart rather than together. Three Rivals means one in
+  each stretch; crews and apex squads take two stretches each, and which ones is decided fresh
+  every day, with the exact moment inside a window left to chance so it never becomes a
+  timetable you can learn. How many of each per day is up to you. Sleeping or fast travelling
+  past a window simply misses it, so you never arrive somewhere and get everything you were
+  owed at once.
 - **You can lose them.** Being hunted is a chase you can win. Get far enough from all of them
   and stay clear long enough and they give up, the same way the police in this game do. A Rival
   you shake takes it personally and comes back promoted, so getting away still costs you
@@ -197,10 +210,20 @@ reputation, or make a backup save before you remove it.
 ## Settings
 
 Everything is configurable from the in-game Mod Settings menu, and every option explains what
-it does. You can turn individual systems on
-or off (crowds, gangs, morale, vendors, rivals, hit squads, whispers), tune how intense and how
-frequent reactions are, pick a preset (Subtle, Default, or Dramatic), and rebind the Hub key.
-Every option explains what it does.
+it does. You can turn individual systems on or off (crowds, gangs, morale, vendors, rivals, hit
+squads, whispers), tune how intense and how frequent reactions are, pick a preset (Subtle,
+Default, or Dramatic), and rebind the Hub key.
+
+Three worth knowing about if a playstyle is being treated unfairly:
+
+- **How many of each kind reach you per day**, set separately for Rivals, gang crews and apex
+  squads. Turn one to zero to switch that kind off entirely.
+- **How frightening unseen work is.** By default half of a killing nobody witnessed still
+  counts toward how frightening you are, because the bodies turn up either way. Turn it down if
+  you work quietly and do not want the street reacting to you, or to zero so only what people
+  actually saw counts.
+- **Whether melee kills cost Conduct.** Killing by blade, bare hands or takedown counts against
+  you only when somebody sees it. Turn it off if how you kill should be your own business.
 
 ## Compatibility
 
