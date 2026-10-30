@@ -265,6 +265,22 @@ public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
 // noise means before they have looked up. Played globally rather than from the car, because it
 // is doing the job of a warning - the squad is seventy metres away and out of sight when it
 // fires, and positional audio at that range would be missed.
+// The street reacts to an apex squad the way it reacts to MaxTac.
+//
+// `psychoSquadAVSystem.script:111` broadcasts Terror from the player at 100 m the moment a
+// MaxTac AV arrives, which is why the crowd scatters before you have seen anything. An apex
+// squad is built to be the gang's answer to MaxTac, so it gets the same treatment: one stim,
+// from V, once, at the moment they are actually standing there.
+public func CBApexTerrorWave(game: GameInstance) -> Void {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return;
+  }
+  StimBroadcasterComponent.BroadcastStim(player, gamedataStimType.Terror,
+                                         CBConfig.ApexTerrorRadius());
+  CBLog.Info(n"Spawn", "Apex squad arrival: terror wave sent.");
+}
+
 public func CBApexArrivalSound(game: GameInstance) -> Void {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().apexArrivalSound {
@@ -425,6 +441,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   fs.apexAtKills = fs.kills;   // paid for: the next one needs fresh bodies
   CBApexArrivalSound(game);    // only once somebody is actually standing there
+  CBApexTerrorWave(game);      // and everybody nearby gets out of the way
   if CBConfig.ApexEscortCount() > 0 && TDBID.IsValid(fs.sampleRecord) {
     let escortEntity: EntityID;
     // CB_Escort, not CB_Squad. They used to wear the hit squad's own tag, which had two

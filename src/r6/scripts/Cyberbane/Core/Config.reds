@@ -163,6 +163,13 @@ public abstract class CBConfig {
   // How much further obvious chrome gets noticed. At full visible chrome both reaction ranges
   // widen by this fraction, so blades-for-arms reads from across the street. Kept low enough
   // that the widened flee range stays inside NpcEvalRadius.
+  // Radius of the fear stims a frightened bystander gives off. Matched to the game's own:
+  // 10 m for one person's terror, 15 m for the panic passing along a crowd.
+  public static func FearStimRadius() -> Float = 10.0
+  public static func FearSpreadRadius() -> Float = 15.0
+  // What an apex squad landing on you does to everyone watching. The game uses 100 m for a
+  // MaxTac AV coming down, and an apex squad is meant to read the same way.
+  public static func ApexTerrorRadius() -> Float = 100.0
   public static func ChromeNoticeRangeBonus() -> Float = 0.5
 
   // ---- Whispers (spec §9.10) -------------------------------------------

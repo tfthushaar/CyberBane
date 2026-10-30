@@ -22,15 +22,19 @@ public class CBKillInfo {
   public let position: Vector4;
   public let at: Float;             // game seconds
 
-  // How it was done. Exactly one of these is set, from the weapon and attack type recorded on
-  // the puppet at the moment V last hit it.
+  // How it was done. One of the first six is set from the weapon and attack type recorded on
+  // the puppet when V last hit it; mFinisher rides alongside and comes from the takedown hook.
   //
   // There used to be eleven of these and only three were ever assigned. mHeadshot, mVehicle,
   // mEnvironmental, mFinisher and mDismember were never written by anything, so every formula
   // reading them was adding a permanent zero, and mBlade was set for any melee attack at all,
-  // which made a hammer score as a blade. A flag with no source is worse than a missing one: it
-  // reads as contributing and quietly does not. There is no reliable script-side signal for a
-  // finisher or for dismemberment on 2.5, so neither is claimed here.
+  // which made a hammer score as a blade. A flag with no source is worse than a missing one:
+  // it reads as contributing and quietly does not.
+  //
+  // mDismember stays gone, having no signal on 2.5 - AttackData.IsDismembermentCause covers
+  // only charged whips and explosions, which is not the question. mFinisher was dropped for
+  // the same reason and then recovered: the takedown hook already had ETakedownActionType in
+  // hand, which says outright whether V killed them by hand.
   public let mBlade: Bool;
   public let mBlunt: Bool;
   public let mFists: Bool;

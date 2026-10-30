@@ -20,10 +20,9 @@ public func CBRefreshLiveInputs(sys: ref<CyberbaneSystem>, game: GameInstance) -
 // read exactly the same to the street as walking around clean. Reputation was the only thing
 // that frightened anybody.
 //
-// Every input is read from something already verified present. The "heavy or blade" term uses
-// visible chrome as its stand-in rather than inspecting the weapon's type, which is an honest
-// approximation: somebody with mantis blades out scores high on visible chrome anyway, and it
-// avoids depending on a weapon-type lookup for the sake of four points.
+// Every input is read from something already verified present, including the weapon: the
+// "heavy or blade" term inspects what V actually has out rather than using visible chrome as
+// its stand-in, which is what it did until the kill scoring proved the lookup was free.
 public func CBUpdateAura(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -33,8 +32,17 @@ public func CBUpdateAura(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   if !IsDefined(score) || !IsDefined(player) {
     return;
   }
-  let drawn = IsDefined(GameObject.GetActiveWeapon(player));
-  let obvious = score.GetChromeVisible() >= CBConfig.AuraObviousChrome();
+  let weapon = GameObject.GetActiveWeapon(player);
+  let drawn = IsDefined(weapon);
+  // "Heavy or blade" means it now.
+  //
+  // This term used visible chrome as its stand-in and said so, on the grounds that a
+  // weapon-type lookup was not worth four points. The lookup turned out to be free: the game
+  // classifies its own weapons, and the kill scoring already uses the same two calls. So
+  // someone walking around with a katana out reads as dangerous whether or not they are
+  // chromed, which is what the term was always supposed to mean.
+  let bladed = IsDefined(weapon) && (weapon.IsBlade() || weapon.IsBlunt());
+  let obvious = score.GetChromeVisible() >= CBConfig.AuraObviousChrome() || bladed;
   let chromeRunning = StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"Sandevistan")
                    || StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"Berserk");
   score.SetAura(CBComputeAura(drawn, obvious, chromeRunning, player.IsInCombat(),

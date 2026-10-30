@@ -88,7 +88,26 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
 
   let b = npc.GetStimBroadcasterComponent();
   if IsDefined(b) {
-    b.TriggerSingleBroadcast(npc, gamedataStimType.Terror);
+    // With a radius this time.
+    //
+    // `TriggerSingleBroadcast` takes the radius as an optional argument and this call left it
+    // out, so every one of these went out at zero. Every broadcast in the game's own code
+    // passes one: an NPC's own terror is 10 m (`NPCPuppet.script:3726`) and the MaxTac AV
+    // descending is 100 m (`psychoSquadAVSystem.script:111`). The stim record itself carries
+    // no default, so nothing was supplying it.
+    b.TriggerSingleBroadcast(npc, gamedataStimType.Terror, CBConfig.FearStimRadius());
+
+    // And it carries to the people around them.
+    //
+    // The comment on the tier above has said "fear spreads" since the first release and
+    // nothing was spreading it. SpreadFear is the stim the game's own panic uses to pass
+    // along a crowd, with fearPhase saying how far along the panic is, so one person going to
+    // pieces near V now unsettles the people next to them rather than being an isolated
+    // animation.
+    let spread: stimInvestigateData;
+    spread.fearPhase = 3;
+    b.TriggerSingleBroadcast(npc, gamedataStimType.SpreadFear, CBConfig.FearSpreadRadius(),
+                             spread);
   }
   npc.cbCrowdReacted = true;
   npc.cbCrowdReactedTick = tick;

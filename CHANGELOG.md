@@ -20,6 +20,16 @@ This project follows [Semantic Versioning](https://semver.org/).
   a player can hear has come out of the rumour system at all.
 
 ### Fixed
+- **Frightened people were not frightening anyone else.** When somebody panics at the sight of
+  you, the game is told about it so everyone nearby can react. Cyberbane was sending that
+  signal without saying how far it carried, which is nobody. Crowd fear now reaches the people
+  around the person it happens to, so a street clears the way it is supposed to instead of one
+  person flinching on their own.
+- **An apex squad arriving now clears the street.** The game does this when MaxTac drops in, and
+  an apex squad is meant to land the same way, so everyone in sight gets out of the way as they
+  arrive.
+- **Walking around with a blade out makes people nervous.** How dangerous you look was reading
+  your chrome and guessing from that; it reads what you are actually holding now.
 - **Conduct could only ever go down.** Sparing someone is worth a point of Conduct, and that
   point was never awarded: every incident was recorded as a kill, including the ones where you
   left them breathing, so the whole non-lethal half of the scoring never ran. The Disciplined
