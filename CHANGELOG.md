@@ -3,6 +3,27 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] - 2026-10-30
+
+### Fixed
+- **The Hub was glowing far too much.** Every colour on it was set brighter than white, which
+  the game turns into bloom, so text and thin lines smeared light across a dark screen. It is
+  flat colour now, like the game's own menus.
+- **The Hub was bowed in the middle.** It was being drawn on the gameplay HUD, which the game
+  curves on purpose so it reads like a visor. That is wrong for a page of text, so it is drawn
+  on the menu layer instead, which is flat.
+- **The first tab was printed on top of the Cyberbane title.** The title has its own line now.
+- **The Rivals screen said several rivals were here at once.** It was reading a flag that is
+  set when a rival starts hunting you and never cleared, so anyone who had ever come for you
+  claimed to be standing in front of you. It asks the world now, so only a rival actually there
+  says so.
+- **The incoming line could name a rival who was not on the Rivals screen.** If that rival was
+  spared or retired after being queued, the queue kept counting down toward them anyway. The
+  queue re-checks who it is holding and moves on to somebody who can actually turn up.
+- **Gangs claimed to have been quiet for days.** That reading is in the game's clock rather
+  than yours, so the numbers ran far higher than they looked like they should. Anything over a
+  day is left off now, so the column only says something when it still means something.
+
 ## [1.3.3] - 2026-10-30
 
 ### Fixed

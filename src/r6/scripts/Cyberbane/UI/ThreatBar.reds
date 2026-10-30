@@ -85,7 +85,7 @@ public class CBThreatBar {
       text.SetFontFamily(font);
       text.SetFontSize(18);
       text.SetAnchor(inkEAnchor.TopLeft);
-      text.SetTintColor(new HDRColor(2.40, 2.40, 2.60, 1.0));
+      text.SetTintColor(new HDRColor(0.92, 0.93, 0.95, 1.0));
       text.SetText("");
       text.Reparent(root);
 
@@ -94,14 +94,14 @@ public class CBThreatBar {
       track.SetAnchor(inkEAnchor.TopLeft);
       track.SetMargin(new inkMargin(0.0, 24.0, 0.0, 0.0));
       track.SetSize(new Vector2(width, 6.0));
-      track.SetTintColor(new HDRColor(0.10, 0.03, 0.04, 0.85));
+      track.SetTintColor(new HDRColor(0.10, 0.03, 0.04, 0.85));   // already flat
       track.Reparent(root);
 
       let fill = new inkRectangle();
       fill.SetAnchor(inkEAnchor.TopLeft);
       fill.SetMargin(new inkMargin(0.0, 24.0, 0.0, 0.0));
       fill.SetSize(new Vector2(width, 6.0));
-      fill.SetTintColor(new HDRColor(2.60, 0.25, 0.30, 1.0));
+      fill.SetTintColor(new HDRColor(0.88, 0.26, 0.29, 1.0));
       fill.Reparent(root);
 
       root.Reparent(win);

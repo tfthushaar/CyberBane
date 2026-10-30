@@ -58,7 +58,7 @@ public func CBHudBarCount() -> Int32 = 4
 public func CBHudBarWidth() -> Float = 1540.0
 public func CBHudRowCount() -> Int32 = 10
 public func CBHudRowHeight() -> Float = 44.0
-public func CBHudContentTop() -> Float = 186.0
+public func CBHudContentTop() -> Float = 200.0
 public func CBHudFooterY() -> Float = 952.0
 
 // Colours.
@@ -67,15 +67,22 @@ public func CBHudFooterY() -> Float = 952.0
 // anything selected, and a dim red rule. The last five are Cyberbane's own and are used for
 // meters and status pips, where a reputation screen needs to say good, bad or dangerous and
 // the settings menu has nothing to borrow.
-public func CBHudLabel() -> HDRColor = new HDRColor(1.55, 0.42, 0.42, 1.0)
-public func CBHudValue() -> HDRColor = new HDRColor(1.95, 1.95, 2.00, 1.0)
-public func CBHudHead() -> HDRColor = new HDRColor(2.20, 2.20, 2.25, 1.0)
-public func CBHudRule() -> HDRColor = new HDRColor(1.20, 0.30, 0.33, 0.45)
-public func CBHudDim() -> HDRColor = new HDRColor(1.10, 0.62, 0.62, 0.85)
-public func CBHudCyan() -> HDRColor = new HDRColor(0.10, 1.80, 2.10, 1.0)
-public func CBHudAmber() -> HDRColor = new HDRColor(2.00, 1.30, 0.20, 1.0)
-public func CBHudRed() -> HDRColor = new HDRColor(2.10, 0.35, 0.40, 1.0)
-public func CBHudGreen() -> HDRColor = new HDRColor(0.40, 1.80, 0.90, 1.0)
+// Nothing here goes above 1.0, and that is the whole point.
+//
+// HDRColor is high dynamic range: a channel above 1.0 is brighter than white and the game
+// blooms it. The first version of this palette ran up to 2.25, so every label, every meter and
+// every rule was emitting light, the thin ones worst of all. On a dark background that reads as
+// a screen smeared in glow rather than a menu. The game's own settings screen is flat colour,
+// so these are flat too.
+public func CBHudLabel() -> HDRColor = new HDRColor(0.85, 0.28, 0.30, 1.0)
+public func CBHudValue() -> HDRColor = new HDRColor(0.92, 0.93, 0.95, 1.0)
+public func CBHudHead() -> HDRColor = new HDRColor(1.00, 1.00, 1.00, 1.0)
+public func CBHudRule() -> HDRColor = new HDRColor(0.62, 0.18, 0.20, 0.70)
+public func CBHudDim() -> HDRColor = new HDRColor(0.62, 0.40, 0.41, 0.95)
+public func CBHudCyan() -> HDRColor = new HDRColor(0.16, 0.78, 0.88, 1.0)
+public func CBHudAmber() -> HDRColor = new HDRColor(0.88, 0.64, 0.16, 1.0)
+public func CBHudRed() -> HDRColor = new HDRColor(0.88, 0.26, 0.29, 1.0)
+public func CBHudGreen() -> HDRColor = new HDRColor(0.26, 0.78, 0.50, 1.0)
 public func CBHudGrey() -> HDRColor = new HDRColor(0.55, 0.62, 0.70, 1.0)
 
 // Fast ticks are about a second, so this reads as real time to the player.
@@ -203,13 +210,30 @@ public class CBHud {
     if !IsDefined(ink) {
       return false;
     }
-    let layer = ink.GetLayer(n"inkHUDLayer");
-    if !IsDefined(layer) {
-      return false;
+    // The menu layer first, because the HUD layer is curved.
+    //
+    // Everything drawn on inkHUDLayer goes through the gameplay HUD's barrel distortion, which
+    // is why a full-width rule bows in the middle. It is right for a visor overlay and wrong
+    // for a page of text. inkMenuLayer is where the game's own settings screen lives and it is
+    // flat. If it cannot be reached we fall back to the HUD layer, which is exactly what the
+    // Hub did before, so the worst case is the old look rather than no Hub.
+    let layer = ink.GetLayer(n"inkMenuLayer");
+    let win: wref<inkCompoundWidget>;
+    if IsDefined(layer) {
+      win = layer.GetVirtualWindow();
     }
-    let win = layer.GetVirtualWindow();
     if !IsDefined(win) {
-      return false;
+      layer = ink.GetLayer(n"inkHUDLayer");
+      if !IsDefined(layer) {
+        return false;
+      }
+      win = layer.GetVirtualWindow();
+      if !IsDefined(win) {
+        return false;
+      }
+      CBLog.Info(n"UI", "Hub on inkHUDLayer: the menu layer was unavailable, so it will look curved.");
+    } else {
+      CBLog.Info(n"UI", "Hub built on inkMenuLayer (flat).");
     }
     this.Build(win);
     return this.m_built;
@@ -246,7 +270,9 @@ public class CBHud {
     header.SetText("CYBERBANE");
     header.SetTintColor(CBHudLabel());
     header.SetAnchor(inkEAnchor.TopLeft);
-    header.SetMargin(new inkMargin(x, 34.0, 0.0, 0.0));
+    // Its own line. The tab row is centred across the panel and the first tab started at
+    // x=180 against a title at x=160, so LEGEND was printed over CYBERBANE.
+    header.SetMargin(new inkMargin(x, 14.0, 0.0, 0.0));
     header.Reparent(panel);
 
     // ---- Tabs, centred across the top ------------------------------------
@@ -265,7 +291,7 @@ public class CBHud {
       label.SetHorizontalAlignment(textHorizontalAlignment.Center);
       label.SetFitToContent(false);
       label.SetSize(new Vector2(CBHudChipWidth(), 32.0));
-      label.SetMargin(new inkMargin(cx, 30.0, 0.0, 0.0));
+      label.SetMargin(new inkMargin(cx, 58.0, 0.0, 0.0));
       label.Reparent(panel);
       ArrayPush(this.m_chipText, label);
 
@@ -274,7 +300,7 @@ public class CBHud {
       let under = new inkRectangle();
       under.SetAnchor(inkEAnchor.TopLeft);
       under.SetSize(new Vector2(CBHudChipWidth() - 40.0, 3.0));
-      under.SetMargin(new inkMargin(cx + 20.0, 68.0, 0.0, 0.0));
+      under.SetMargin(new inkMargin(cx + 20.0, 96.0, 0.0, 0.0));
       under.Reparent(panel);
       ArrayPush(this.m_chipBg, under);
       t += 1;
@@ -290,7 +316,7 @@ public class CBHud {
     subhead.SetHorizontalAlignment(textHorizontalAlignment.Center);
     subhead.SetFitToContent(false);
     subhead.SetSize(new Vector2(CBHudPanelW(), 32.0));
-    subhead.SetMargin(new inkMargin(0.0, 96.0, 0.0, 0.0));
+    subhead.SetMargin(new inkMargin(0.0, 122.0, 0.0, 0.0));
     subhead.Reparent(panel);
     this.m_subhead = subhead;
 
@@ -305,7 +331,7 @@ public class CBHud {
     divider.SetAnchor(inkEAnchor.TopLeft);
     divider.SetSize(new Vector2(w, 2.0));
     divider.SetTintColor(CBHudRule());
-    divider.SetMargin(new inkMargin(x, 142.0, 0.0, 0.0));
+    divider.SetMargin(new inkMargin(x, 164.0, 0.0, 0.0));
     divider.Reparent(panel);
 
     let body = new inkText();
@@ -383,7 +409,7 @@ public class CBHud {
       let track = new inkRectangle();
       track.SetAnchor(inkEAnchor.TopLeft);
       track.SetSize(new Vector2(CBHudBarWidth(), 10.0));
-      track.SetTintColor(new HDRColor(0.30, 0.09, 0.11, 0.9));
+      track.SetTintColor(new HDRColor(0.26, 0.08, 0.10, 0.9));
       track.SetMargin(new inkMargin(x, top + 36.0, 0.0, 0.0));
       track.Reparent(panel);
       ArrayPush(this.m_barTrack, track);
@@ -416,8 +442,8 @@ public class CBHud {
       let bg = new inkRectangle();
       bg.SetAnchor(inkEAnchor.TopLeft);
       bg.SetSize(new Vector2(w, CBHudRowHeight() - 4.0));
-      bg.SetTintColor(r % 2 == 0 ? new HDRColor(0.16, 0.05, 0.07, 0.55)
-                                 : new HDRColor(0.10, 0.03, 0.05, 0.35));
+      bg.SetTintColor(r % 2 == 0 ? new HDRColor(0.14, 0.05, 0.06, 0.50)
+                                 : new HDRColor(0.08, 0.03, 0.04, 0.30));
       bg.SetMargin(new inkMargin(x, rtop - 4.0, 0.0, 0.0));
       bg.Reparent(panel);
       ArrayPush(this.m_rowBg, bg);
@@ -453,7 +479,7 @@ public class CBHud {
       rc.SetFontFamily(font);
       rc.SetFontStyle(n"Medium");
       rc.SetFontSize(22);
-      rc.SetTintColor(new HDRColor(1.40, 0.70, 0.45, 1.0));
+      rc.SetTintColor(new HDRColor(0.80, 0.52, 0.34, 1.0));
       rc.SetAnchor(inkEAnchor.TopLeft);
       rc.SetMargin(new inkMargin(x + 960.0, rtop + 2.0, 0.0, 0.0));
       rc.Reparent(panel);
@@ -671,7 +697,13 @@ public class CBHud {
       let r = rivals[i];
       i += 1;
       if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-        let hunting = r.state == EnumInt(ECBRivalState.Hunting);
+        // Standing in front of you, not merely carrying a grudge.
+        //
+        // This read the Hunting state, which is set when a Rival starts coming for you and is
+        // never cleared afterwards, so every Rival who had ever hunted you claimed to be here
+        // now - several at once, while the lane only ever has one out. Ask the world instead.
+        let body = GameInstance.FindEntityByID(sys.GetGameInstance(), r.spawnedEntityId) as ScriptedPuppet;
+        let hunting = EntityID.IsDefined(r.spawnedEntityId) && CBStillStanding(body);
         let role = CBRoleShort(CBRivalRole(sys, r));
         let gang = CBFactionLabel(r.faction);
         if NotEquals(role, "") {
@@ -1120,13 +1152,18 @@ func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
 
 // "3d", "5h", "20m" - how long since something happened, for the screens that track it.
 // Returns "" when it never has.
+// Returns "" when it never happened, and also when it was so long ago that the number stops
+// being information. "Quiet 3d" tells you nothing you would act on, and these timestamps are
+// in whatever unit TimeSystem.GetGameTimeStamp() counts in, which is the game's clock rather
+// than yours, so a long gap reads as a bigger number than the player expects. Anything past a
+// day is simply dropped, which leaves the column meaning "recently" and nothing else.
 public func CBHudSince(now: Float, then: Float) -> String {
   if then <= 0.0 || now <= then {
     return "";
   }
   let secs = now - then;
   if secs >= 86400.0 {
-    return s"\(RoundF(secs / 86400.0))d";
+    return "";
   }
   if secs >= 3600.0 {
     return s"\(RoundF(secs / 3600.0))h";

@@ -100,6 +100,16 @@ func CBRivalCooldownTick(sys: ref<CyberbaneSystem>) -> Void {
   }
 }
 
+// Can this Rival still be sent? The one test, used by the picker and by the lane's re-check,
+// so the two can never disagree about who is eligible.
+public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool {
+  let r = sys.FindRivalById(rivalId);
+  if !IsDefined(r) || !TDBID.IsValid(r.recordID) {
+    return false;
+  }
+  return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
+}
+
 func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Void {
   // Their kind is already happening. The clock does not run down during the fight they are
   // waiting on - nobody should be queuing up behind an encounter you are still in.
@@ -120,6 +130,17 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     if (sys.GetTickCount() - sys.GetLaneFreed(lane)) < CBEncounterGapTicks() {
       return;
     }
+  }
+  // Is the person this lane is holding still somebody who can turn up?
+  //
+  // The lane records a Rival's id when it picks them and then only counts down. If that Rival
+  // is spared, retired or promoted out of the running in the meantime, the lane kept counting
+  // toward somebody the Rivals screen no longer lists, which is why the INCOMING line could
+  // name a Rival who did not appear on the Rivals tab at all. Re-checking each tick costs one
+  // lookup and lets the lane pick somebody who can actually come.
+  if sys.GetLaneRivalId(lane) > 0 && !CBRivalQueueable(sys, sys.GetLaneRivalId(lane)) {
+    sys.ClearLane(lane);
+    return;
   }
   if sys.GetLaneTicks(lane) > 0 || NotEquals(sys.GetLaneTarget(lane), n"") || sys.GetLaneRivalId(lane) > 0 {
     if sys.TickDownLane(lane) > 0 {
