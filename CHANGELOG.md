@@ -17,6 +17,14 @@ This project follows [Semantic Versioning](https://semver.org/).
   time, so when several things happened at once each one replaced the last before it could be
   read. There is a minimum gap between them now.
 
+### Added
+- **They show up on your map and minimap.** A rival, an apex squad or a crew that has been sent
+  after you carries a marker, so you can tell which of the people on the street are the ones
+  that matter instead of guessing. It follows them as they come for you and clears when they
+  are dead. The escorts that arrive with an apex squad are deliberately left unmarked, since
+  the point is to pick the dangerous one out of a crowd. There is a switch for it under
+  Interface.
+
 ### Changed
 - **Arrival messages say something useful.** "Has caught up with you" was read as "caught up in
   level" as often as "is standing behind you", and never said which of the people nearby was

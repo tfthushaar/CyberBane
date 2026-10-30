@@ -95,6 +95,7 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
 
 func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
+  CBUntrackOnMap(game, puppet);   // no marker left hanging over a body
   let sysE = CyberbaneSystem.Get(game);
   // Any death cancels a pending escape: this enemy did not get away (spec §10.2). If it
   // was the Rival hunting V, V just slew it.

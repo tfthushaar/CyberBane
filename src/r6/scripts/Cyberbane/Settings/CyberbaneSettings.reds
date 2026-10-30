@@ -276,6 +276,12 @@ public class CyberbaneSettings {
   public let messageHold: Int32 = 175;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MapMarkers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MapMarkers-Desc")
+  public let mapMarkers: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquads")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquads-Desc")

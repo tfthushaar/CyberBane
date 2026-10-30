@@ -546,6 +546,11 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBKitApexMember(puppet);
     CBShowBossBar(puppet);
   }
+  // A marker on the ones the player is meant to find. Escorts wear CB_Escort and are left
+  // unmarked on purpose: the point is to pick the dangerous one out of a crowd.
+  if isApex || isRival || des.IsTagged(id, n"CB_Squad") {
+    CBTrackOnMap(game, puppet);
+  }
   if isSquad {
     CBKitSquadMember(puppet);
   }
@@ -656,6 +661,9 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   if CBLiveRivalPresent(sys, game) {
     CBRivalEscapedByPlayer(sys, game);
   }
+  CBUntrackTagged(game, n"CB_Rival");
+  CBUntrackTagged(game, n"CB_Squad");
+  CBUntrackTagged(game, n"CB_Apex");
   des.DeleteTagged(n"CB_Rival");
   des.DeleteTagged(n"CB_Squad");
   des.DeleteTagged(n"CB_Apex");
