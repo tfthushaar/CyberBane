@@ -140,6 +140,10 @@ public func CBHudTabName(tab: Int32) -> String {
 
 public class CBHud {
   private let m_built: Bool;
+  // The layer the panel was actually built on, and its window, so switching the setting can
+  // tear the old one down instead of leaving a second copy parented to the old layer.
+  private let m_layerName: CName;
+  private let m_parent: wref<inkCompoundWidget>;
   private let m_tab: Int32;               // 0 = closed, 1..CBHudTabCount = open on that tab
   private let m_root: ref<inkCanvas>;
   private let m_subhead: ref<inkText>;
@@ -202,27 +206,49 @@ public class CBHud {
     }
   }
 
+  // Which layer the panel is drawn on.
+  //
+  // inkHUDLayer puts it through the gameplay HUD's barrel distortion, which is what bows a
+  // full-width rule. 1.3.4 tried inkMenuLayer to get a flat panel and that was a mistake worth
+  // recording: a visible widget there makes the game treat the Hub as an open menu, so Escape
+  // started driving it. The Hub is deliberately an overlay that never takes input focus.
+  //
+  // inkGameNotificationLayer is the third option and the default. It is what the game's own
+  // passive overlays use, so it is flat and does not take input focus the way the menu layer
+  // does.
+  //
+  // This is a setting rather than a hardcoded choice because of how 1.3.4 failed. That version
+  // changed layer with no way back, so a player whose controls broke had to wait for a patch.
+  // Mod Settings is reached from the pause menu rather than from the Hub, so this switch stays
+  // reachable even if the Hub itself stops responding, which is the whole point of it.
+  private func WantedLayer() -> CName {
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().flatHubPanel {
+      return n"inkGameNotificationLayer";
+    }
+    return n"inkHUDLayer";
+  }
+
   private func EnsureBuilt() -> Bool {
+    let wanted = this.WantedLayer();
     if this.m_built && IsDefined(this.m_root) {
-      return true;
+      if Equals(this.m_layerName, wanted) {
+        return true;
+      }
+      this.Teardown();   // the setting changed under us
     }
     let ink = GameInstance.GetInkSystem();
     if !IsDefined(ink) {
       return false;
     }
-    // The menu layer first, because the HUD layer is curved.
-    //
-    // Everything drawn on inkHUDLayer goes through the gameplay HUD's barrel distortion, which
-    // is why a full-width rule bows in the middle. It is right for a visor overlay and wrong
-    // for a page of text. inkMenuLayer is where the game's own settings screen lives and it is
-    // flat. If it cannot be reached we fall back to the HUD layer, which is exactly what the
-    // Hub did before, so the worst case is the old look rather than no Hub.
-    let layer = ink.GetLayer(n"inkMenuLayer");
+    let layer = ink.GetLayer(wanted);
     let win: wref<inkCompoundWidget>;
     if IsDefined(layer) {
       win = layer.GetVirtualWindow();
     }
     if !IsDefined(win) {
+      // Whatever was asked for is unavailable. The HUD layer is the one that has always worked,
+      // so fall back to it rather than leaving the player with no Hub at all.
       layer = ink.GetLayer(n"inkHUDLayer");
       if !IsDefined(layer) {
         return false;
@@ -231,12 +257,40 @@ public class CBHud {
       if !IsDefined(win) {
         return false;
       }
-      CBLog.Info(n"UI", "Hub on inkHUDLayer: the menu layer was unavailable, so it will look curved.");
-    } else {
-      CBLog.Info(n"UI", "Hub built on inkMenuLayer (flat).");
+      wanted = n"inkHUDLayer";
     }
+    this.m_layerName = wanted;
+    this.m_parent = win;
     this.Build(win);
+    CBLog.Info(n"UI", s"Hub built on \(NameToString(wanted)).");
     return this.m_built;
+  }
+
+  // Drop the panel so it can be rebuilt somewhere else. Everything the Hub owns hangs off the
+  // one root, so removing that from its parent takes the whole tree with it; the handle arrays
+  // are cleared so nothing points into the removed widgets.
+  private func Teardown() -> Void {
+    if IsDefined(this.m_parent) && IsDefined(this.m_root) {
+      this.m_parent.RemoveChild(this.m_root);
+    }
+    this.m_root = null;
+    this.m_subhead = null;
+    this.m_tabline = null;
+    this.m_body = null;
+    ArrayClear(this.m_chipBg);
+    ArrayClear(this.m_chipText);
+    ArrayClear(this.m_barLabel);
+    ArrayClear(this.m_barValue);
+    ArrayClear(this.m_barTrack);
+    ArrayClear(this.m_barFill);
+    ArrayClear(this.m_barCap);
+    ArrayClear(this.m_rowBg);
+    ArrayClear(this.m_rowPip);
+    ArrayClear(this.m_rowA);
+    ArrayClear(this.m_rowB);
+    ArrayClear(this.m_rowC);
+    ArrayClear(this.m_rowD);
+    this.m_built = false;
   }
 
   private func Build(win: wref<inkCompoundWidget>) -> Void {

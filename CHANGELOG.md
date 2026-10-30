@@ -3,6 +3,21 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.5] - 2026-10-30
+
+### Fixed
+- **The Escape key had taken over the Hub.** 1.3.4 moved the Hub onto the layer the game uses
+  for its own menus, to get rid of the curve. That made the game treat the Hub as an open menu,
+  so Escape started driving it. The Hub key is F7 again and nothing but your Hub key controls
+  it. Escape is now refused outright as a Hub key, whatever it is set to.
+
+### Changed
+- **The Hub is still flat, by a different route.** It is drawn on the layer the game uses for
+  its own passive overlays, which is straight rather than curved and does not take control away
+  from you. There is a switch for it in Mod Settings under Interface, on by default: if the Hub
+  ever stops opening or Escape starts controlling it again, turn that off and it goes straight
+  back to the old behaviour without waiting for an update.
+
 ## [1.3.4] - 2026-10-30
 
 ### Fixed

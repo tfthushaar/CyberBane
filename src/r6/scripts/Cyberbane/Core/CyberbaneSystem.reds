@@ -543,7 +543,11 @@ public class CyberbaneSystem extends ScriptableSystem {
       let k = rt.GetSettings().hubKey;
       // A settings store that has not filled in yet reads as IK_None, which would leave the Hub
       // with no key at all and look exactly like "F7 does nothing". Fall back to F7 instead.
-      if NotEquals(k, EInputKey.IK_None) {
+      //
+      // Escape is refused outright. The game owns it, and a Hub that answers to it fights the
+      // pause menu over every press. It should not be reachable through the dropdown, but a
+      // stored value is a stored value and this costs one comparison.
+      if NotEquals(k, EInputKey.IK_None) && NotEquals(k, EInputKey.IK_Escape) {
         return k;
       }
     }
