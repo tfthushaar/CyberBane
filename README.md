@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.3.1).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.3.2).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -31,16 +31,20 @@ page describes what the mod does and how it installs.
 - **Reputation you earn.** Two main scores grow from your actions: Renown (how widely you are
   known) and Dread (how frightening you are). Word spreads outward from where things happened,
   so you can be a legend in Watson while Pacifica has never heard of you.
-- **A reputation for how you work.** Night City also reads your conduct. Do clean, controlled
-  work and spare people when you can, and you get treated like a professional. Gun down
-  civilians and lean on brutal finishers and the Street starts talking about you the way it
-  talks about cyberpsychos, one bad night from going over. It changes how people talk to you
-  and how they deal with you.
+- **A reputation for how you work.** Night City also reads your conduct. Leave people breathing
+  when you could have finished them and you get treated as disciplined: vendors give you a
+  little goodwill, and the street talks about you with respect rather than fear. Gun down
+  civilians, or kill by hand with a blade, and the Street starts talking about you the way it
+  talks about cyberpsychos, one bad night from going over. How you kill counts separately from
+  how much: a blade and bare hands read as brutal, a gun does not, and a club is its own thing.
 - **Word spreads because somebody saw it.** Reputation travels on witnesses. Leave people
   alive and your name moves fast and far; leave nobody and the street never learns who did
   it, so you build almost no reputation you can claim and the story barely leaves the
   district. What you do get instead is a district with a name for something it cannot
   identify. It turns the signature mechanic into a decision you make in every fight.
+- **You overhear the city talking about you.** Lines change with the gang, the district and the
+  title you are carrying, and when a story about something you did has actually travelled to
+  where you are standing, that is what people are talking about.
 - **The street gets word back to you.** When a rumour about you reaches somewhere new, a
   contact may get in touch about what they heard. If people saw you, your name is in it. If
   nobody did, it arrives as a question about who is doing this.
@@ -115,14 +119,18 @@ page describes what the mod does and how it installs.
 - **Titles and the file they keep on you.** Earn titles such as Butcher of Watson, Chrome
   Saint, or the top title Cyberbane. The Log tab is the street's file on you, put together
   from what people actually witnessed, so work nobody saw never reaches the page.
-- **The Hub.** One screen in the game's own style, opened with F7 by default (rebindable).
+- **The Hub.** One full-screen page built to look like the game's own menus, same font and
+  colours, opened with F7 by default (rebindable).
   Your scores are meters, gangs and rivals are colour-coded rows, and the first screen shows
   what each of the three lanes has on its way, with a live countdown to when it will reach you.
   If something cannot arrive, it says why rather than showing a number that is not moving. Each
   press steps through tabs for your reputation, the factions, the districts, your rivals, your
-  titles, and the log; the press after the last tab closes it. Every screen explains what its
-  numbers mean rather than throwing abbreviations at you, and the first one tells you exactly what
-  the city is doing about you right now and what it would take to change that.
+  titles, and the log; the press after the last tab closes it. Gangs show how long they have
+  been quiet or how long a vendetta has been running, districts show how long since you were
+  last busy there, and the log keeps a running tally of what the city has on you. Every screen
+  explains what its numbers mean rather than throwing abbreviations at you, and the first one
+  tells you exactly what the city is doing about you right now and what it would take to
+  change that.
 
 Cyberbane works anywhere in the open world. It adds no hand-placed scenes, and it is built to
 leave quests, companions, romances and your saves alone.
