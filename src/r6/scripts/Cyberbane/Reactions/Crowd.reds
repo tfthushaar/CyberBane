@@ -95,7 +95,11 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
     // passes one: an NPC's own terror is 10 m (`NPCPuppet.script:3726`) and the MaxTac AV
     // descending is 100 m (`psychoSquadAVSystem.script:111`). The stim record itself carries
     // no default, so nothing was supplying it.
-    b.TriggerSingleBroadcast(npc, gamedataStimType.Terror, CBConfig.FearStimRadius());
+    // Scaled by the civilian intensity slider, like everything else on this path. A fixed
+    // radius meant Subtle and Dramatic spread panic exactly as far, which is not what a
+    // setting called intensity should do.
+    b.TriggerSingleBroadcast(npc, gamedataStimType.Terror,
+                             CBConfig.FearStimRadius() * intensity);
 
     // And it carries to the people around them.
     //
@@ -106,8 +110,8 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
     // animation.
     let spread: stimInvestigateData;
     spread.fearPhase = 3;
-    b.TriggerSingleBroadcast(npc, gamedataStimType.SpreadFear, CBConfig.FearSpreadRadius(),
-                             spread);
+    b.TriggerSingleBroadcast(npc, gamedataStimType.SpreadFear,
+                             CBConfig.FearSpreadRadius() * intensity, spread);
   }
   npc.cbCrowdReacted = true;
   npc.cbCrowdReactedTick = tick;

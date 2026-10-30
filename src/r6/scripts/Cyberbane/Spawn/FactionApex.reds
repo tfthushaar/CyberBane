@@ -276,8 +276,22 @@ public func CBApexTerrorWave(game: GameInstance) -> Void {
   if !IsDefined(player) {
     return;
   }
+  // This is a civilian reaction, so it answers to the civilian settings. Without this, a
+  // player who had turned crowd reactions off still got the whole street scattering every
+  // time an apex squad landed, which is the one thing they had asked not to happen.
+  let intensity = 1.0;
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    if !rt.GetSettings().civReactions {
+      return;
+    }
+    intensity = rt.GetSettings().civIntensity;
+  }
+  if intensity <= 0.0 {
+    return;
+  }
   StimBroadcasterComponent.BroadcastStim(player, gamedataStimType.Terror,
-                                         CBConfig.ApexTerrorRadius());
+                                         CBConfig.ApexTerrorRadius() * intensity);
   CBLog.Info(n"Spawn", "Apex squad arrival: terror wave sent.");
 }
 
