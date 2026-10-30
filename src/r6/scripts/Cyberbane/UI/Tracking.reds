@@ -15,9 +15,12 @@
 // `gamedataMappinVariant` enum, which not every name in the tweak list is - `Mappins.SoloVariant`
 // appears there but has no matching enum member, so it would have been a dead pin.
 //
-// Marked: Rivals, apex squads and the crews gangs send. Not marked: the escorts that come with
-// an apex squad, because the point is to pick the dangerous one out of a crowd, and marking the
-// whole crowd defeats that.
+// Marked: Rivals and apex squad members, which is at most five at a time. Not marked: ordinary
+// crew, or the escorts that arrive with an apex squad. A vendetta crew runs to thirteen people
+// and thirteen markers showing through walls is clutter rather than help; a crew arrives
+// together and is obvious the moment it opens fire. The thing a player genuinely cannot
+// identify is one named enemy standing in a street full of gangers, and that is what this is
+// for.
 
 @addField(ScriptedPuppet)
 public let cbMappinId: NewMappinID;
@@ -66,7 +69,8 @@ public func CBUntrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> V
   puppet.cbMapped = false;
 }
 
-// Clear the markers off everyone wearing one of our tags.
+// Clear the markers off everyone wearing one of our tags. Harmless on tags that were never
+// marked, since each puppet checks its own flag.
 //
 // The pin is bound to the entity, so an NPC that streams out takes its pin with it. This is for
 // the cases where the encounter ends while they are still standing there: outrunning them, or

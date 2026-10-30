@@ -546,9 +546,13 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBKitApexMember(puppet);
     CBShowBossBar(puppet);
   }
-  // A marker on the ones the player is meant to find. Escorts wear CB_Escort and are left
-  // unmarked on purpose: the point is to pick the dangerous one out of a crowd.
-  if isApex || isRival || des.IsTagged(id, n"CB_Squad") {
+  // A marker on the ones worth picking out, and only those.
+  //
+  // Rivals and apex squad members, so at most five at once. Not ordinary crew: a vendetta crew
+  // can be thirteen strong and thirteen markers showing through walls is clutter rather than
+  // help. A crew arrives together and is obvious the moment it opens fire; the thing a player
+  // genuinely cannot identify is the one named enemy standing in a street full of gangers.
+  if isApex || isRival {
     CBTrackOnMap(game, puppet);
   }
   if isSquad {
