@@ -573,7 +573,9 @@ func CBChaseRefreshTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<D
     let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
     // CBNpcSafe covers attachment and the settling window, so nothing half-built is touched.
-    if CBStillStanding(puppet) && CBNpcSafe(sys, puppet) {
+    // Somebody we broke and sent running is skipped. Re-issuing a hunt order to them cancels
+    // the panic we just caused, so the two systems were quietly undoing each other.
+    if CBStillStanding(puppet) && CBNpcSafe(sys, puppet) && !puppet.cbMoraleBroken {
       // Anyone still riding is the car's problem, not theirs.
       if !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
         let away = Vector4.Distance(puppet.GetWorldPosition(), ppos);
@@ -597,4 +599,14 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
   if IsDefined(agent) && IsDefined(pagent) {
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
   }
+  // And hand them V as something to track.
+  //
+  // Attitude only decides how they feel about V; it does not put V on their target tracker, so
+  // until their own perception happened to pick V up they had nobody to fight. This is the
+  // second half of what the game does in AIActionHelper.TryStartCombatWithTarget, and it was
+  // missing. The first half of that helper is no use to us directly: it changes nothing and
+  // returns false unless the NPC is already aggressive, which a freshly spawned ganger is not,
+  // and it only injects the threat when that succeeded. Setting the attitude ourselves and
+  // injecting the threat ourselves gets both halves regardless.
+  TargetTrackingExtension.InjectThreat(puppet, player);
 }

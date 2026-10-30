@@ -1221,7 +1221,13 @@ func CBArchetypeName(idx: Int32) -> String {
   switch idx {
     case 0: return "Butcher";
     case 1: return "Ghost";
-    case 2: return "Professional";
+    // "Operator", not "Professional".
+    //
+    // Conduct's top band was renamed Disciplined in 1.3.2 to break this collision, which only
+    // half worked: the mod still told players that sparing people gets them treated like a
+    // professional while a readout on the same screen said STYLE Professional and moved on
+    // finished gigs instead. Renaming both halves is what actually fixes it.
+    case 2: return "Operator";
     case 3: return "Chromed";
     case 4: return "Netrunner";
     case 5: return "Brawler";

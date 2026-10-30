@@ -50,7 +50,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_tickCount: Int32;             // monotonic ~1/second, for encounter timing
   private let m_encounter: ref<CBEncounter>;  // active combat episode
   private let m_hud: ref<CBHud>;              // the F7 reputation Hub (spec §12.1)
-  private let m_threatBar: ref<CBThreatBar>;  // boss bar for whoever is hunting you
+  private let m_threatBar: ref<CBThreatBar>;
+  // One-shot clock measurement, session only. Every cooldown in the mod is in units of
+  // TimeSystem.GetGameTimeStamp(), which is a native import, so no amount of reading the game's
+  // scripts says whether it ticks in real seconds or in the compressed in-game clock. If it is
+  // the latter, the ten minutes between encounters is nothing like ten minutes of play. This
+  // measures it against the sim clock over sixty ticks and writes the ratio to the log once.
+  private let m_clockGame0: Float;
+  private let m_clockSim0: Float;
+  private let m_clockTicks: Int32;  // boss bar for whoever is hunting you
   private let m_disguiseFaction: CName;       // gang whose colours V is wearing (spec §9.3)
   private let m_disguiseStrength: Float;      // 0..1, how well the disguise reads
   private let m_activeSquadFaction: CName;    // faction of the hit squad currently out (for Hunter on escape)
@@ -691,7 +699,36 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(this.m_director) && !heavyStreaming {
       this.m_director.Tick(game);
     }
+    this.MeasureClocks(game);
     this.ScheduleFastTick();
+  }
+
+  // Runs for the first sixty ticks of a session and then never again.
+  private func MeasureClocks(game: GameInstance) -> Void {
+    if this.m_clockTicks < 0 {
+      return;
+    }
+    let ts = GameInstance.GetTimeSystem(game);
+    if !IsDefined(ts) {
+      return;
+    }
+    let g = ts.GetGameTimeStamp();
+    let s = EngineTime.ToFloat(ts.GetSimTime());
+    if this.m_clockTicks == 0 {
+      this.m_clockGame0 = g;
+      this.m_clockSim0 = s;
+      this.m_clockTicks = 1;
+      return;
+    }
+    this.m_clockTicks += 1;
+    if this.m_clockTicks < 60 {
+      return;
+    }
+    this.m_clockTicks = -1;   // done for this session
+    let dg = g - this.m_clockGame0;
+    let ds = s - this.m_clockSim0;
+    let ratio = ds > 0.0 ? dg / ds : 0.0;
+    CBLog.Info(n"Core", s"Clock check: game \(dg)s vs sim \(ds)s over 60 ticks (ratio \(ratio)). 1.0 means cooldowns are in real seconds.");
   }
 
   public func GetTickCount() -> Int32 {

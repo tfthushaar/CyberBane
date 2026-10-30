@@ -130,7 +130,9 @@ func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<Scri
   npc.cbMoraleBroken = true;
   let b = npc.GetStimBroadcasterComponent();
   if IsDefined(b) {
-    b.TriggerSingleBroadcast(npc, gamedataStimType.Terror);
+    // With a radius, for the same reason the crowd stims needed one: the argument is optional
+    // and leaving it out broadcasts to nobody. This one was missed when the others were fixed.
+    b.TriggerSingleBroadcast(npc, gamedataStimType.Terror, CBConfig.FearStimRadius());
   }
   CBLog.Info(n"Reactions", "An enemy broke and ran.");
   if NotEquals(faction, n"") && RandF() < CBConfig.RivalChanceSurvivor() {

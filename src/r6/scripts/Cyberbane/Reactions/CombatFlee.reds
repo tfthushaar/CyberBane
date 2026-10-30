@@ -23,13 +23,17 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
     return;
   }
   let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) {
-    if !rt.IsEnabled() {
-      return;
-    }
-    if rt.HasSettings() && !rt.GetSettings().rivals {
-      return;
-    }
+  if IsDefined(rt) && !rt.IsEnabled() {
+    return;
+  }
+  // The Rivals setting used to bail out right here, which quietly took Conduct with it.
+  // Putting somebody down alive is how Conduct is earned, and it is also how a Spared Rival
+  // is created, but only the second of those is what that setting is about. A player who
+  // turned Rivals off lost every point of Conduct they earned and had no way to know. The
+  // check now sits on the Rival itself, at the bottom, and nothing else answers to it.
+  let rivalsOn = true;
+  if IsDefined(rt) && rt.HasSettings() {
+    rivalsOn = rt.GetSettings().rivals;
   }
   if sys.IsInSafeZone() {
     return;   // not in a safe area (spec §16)
@@ -44,7 +48,7 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   }
   let faction = CBClassifyFaction(puppet);
   if Equals(faction, n"") || Equals(faction, n"MaxTac") {
-    return;   // unaffiliated nobodies and MaxTac do not become Rivals
+    return;   // unaffiliated nobodies and MaxTac are neither scored nor remembered
   }
 
   puppet.cbSparedLogged = true;
@@ -66,6 +70,9 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
     if IsDefined(st) {
       st.psychosPacified += 1;
     }
+  }
+  if !rivalsOn {
+    return;   // scored above; only the Rival that would come of it is switched off
   }
   let e = new CBEscapee();
   e.puppet = puppet;

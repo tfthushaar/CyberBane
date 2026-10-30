@@ -3,6 +3,31 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.3] - 2026-10-30
+
+### Fixed
+- **Turning Rivals off was silently turning Conduct off.** The credit for putting someone down
+  alive was awarded inside the same check that decides whether they come back as a Rival, so
+  switching Rivals off took the whole non-lethal half of Conduct with it and nothing said so.
+  Conduct is earned the same way whatever your settings are; the Rivals switch now only
+  controls the Rival.
+- **Enemies sent after you now actually have you as a target.** They were made hostile, which
+  decides how they feel about you, but were never handed you as something to track, so until
+  one of them happened to spot you on their own they had nobody to fight. This is the missing
+  half of how the game itself starts a fight.
+- **Your own systems had been cancelling each other.** An enemy whose nerve broke and ran was
+  immediately handed a fresh order to come at you, which cancelled the panic. They are left to
+  run now.
+- **Enemies breaking and running frightened nobody.** The same missing detail as the crowd fear
+  fixed in 1.3.2, in one more place.
+
+### Changed
+- **The STYLE readout is called Operator rather than Professional.** Conduct's top band was
+  renamed Disciplined last version to stop the two reading as the same thing, which only half
+  worked while the other one was still called Professional. Both halves are distinct now.
+  Operator goes up for finished gigs and hustles; Conduct moves on how you treat people in a
+  fight. They are unrelated and now look it.
+
 ## [1.3.2] - 2026-10-30
 
 ### Changed
