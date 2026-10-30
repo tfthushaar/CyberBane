@@ -224,6 +224,33 @@ public class CyberbaneSettings {
   public let encounterGapMinutes: Int32 = 10;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalsPerDay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalsPerDay-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "12")
+  @runtimeProperty("ModSettings.step", "1")
+  public let rivalsPerDay: Int32 = 3;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquadsPerDay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquadsPerDay-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "12")
+  @runtimeProperty("ModSettings.step", "1")
+  public let hitSquadsPerDay: Int32 = 2;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexPerDay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexPerDay-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "12")
+  @runtimeProperty("ModSettings.step", "1")
+  public let apexSquadsPerDay: Int32 = 2;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageHold")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageHold-Desc")

@@ -20,9 +20,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 - **The incoming line could name a rival who was not on the Rivals screen.** If that rival was
   spared or retired after being queued, the queue kept counting down toward them anyway. The
   queue re-checks who it is holding and moves on to somebody who can actually turn up.
-- **Gangs claimed to have been quiet for days.** That reading is in the game's clock rather
-  than yours, so the numbers ran far higher than they looked like they should. Anything over a
-  day is left off now, so the column only says something when it still means something.
+- **A gang could be quiet for days because nothing decided how busy a day should be.** A lane
+  sent somebody whenever its gap elapsed and went on doing that for ever, so how much happened
+  depended only on how long you stayed in one in-game day.
+
+### Added
+- **A day now has a shape.** Three Rivals, two gang crews and two apex squads can reach you in
+  one in-game day. Each kind keeps its own allowance, so a busy day of Rivals does not use up
+  the crews, and once a kind has spent its allowance it is quiet until the next day. All three
+  are sliders in Mod Settings, up to twelve each, and setting one to zero turns that kind off.
+- **The Hub shows the allowance.** Each line on the incoming list says how many of that kind
+  have come today out of how many can, so the pacing is something you can see. A kind that is
+  finished for the day says so rather than just saying nobody is coming.
 
 ## [1.3.3] - 2026-10-30
 

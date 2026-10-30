@@ -130,6 +130,10 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     if (sys.GetTickCount() - sys.GetLaneFreed(lane)) < CBEncounterGapTicks() {
       return;
     }
+    // And the day's allowance. Spent, so nothing more of this kind until tomorrow.
+    if CBLaneBudgetLeft(sys, game, lane) <= 0 {
+      return;
+    }
   }
   // Is the person this lane is holding still somebody who can turn up?
   //
@@ -278,6 +282,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       return;
     }
     sys.SetLaneLastRival(sys.GetLaneRivalId(lane));
+    sys.NoteLaneSent(lane, CBGameDay(game));
     sys.SetLaneFired(lane);
   } else {
     // Zero ticks and then run the dispatch straight away, in this same tick, so they arrive
@@ -292,6 +297,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       CBProcessPendingSquad(sys, game);
     }
     sys.SetLaneLastFaction(lane, faction);
+    sys.NoteLaneSent(lane, CBGameDay(game));
     sys.SetLaneFired(lane);
   }
   sys.ClearLane(lane);
@@ -314,6 +320,32 @@ public func CBHitSquadsOn() -> Bool {
     return false;
   }
   return !CBTwrActive();
+}
+
+// How many encounters this lane is allowed to send in one in-game day.
+//
+// This is the real pacing control. Before it, a lane sent somebody every time its gap elapsed
+// and kept doing so for ever, so the only thing deciding how busy a day was was how long the
+// player stayed in one. A day now has a shape: a few Rivals, a couple of crews, a couple of
+// apex squads, and once a lane has spent its allowance it is quiet until tomorrow. The gap
+// below still applies on top, so the day's allowance cannot all arrive at once.
+public func CBLaneDailyCap(lane: Int32) -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    if lane == CBLaneRival() { return CBConfig.RivalsPerDayDefault(); }
+    if lane == CBLaneApex() { return CBConfig.ApexSquadsPerDayDefault(); }
+    return CBConfig.HitSquadsPerDayDefault();
+  }
+  let s = rt.GetSettings();
+  if lane == CBLaneRival() { return s.rivalsPerDay; }
+  if lane == CBLaneApex() { return s.apexSquadsPerDay; }
+  return s.hitSquadsPerDay;
+}
+
+// How many this lane has left today.
+public func CBLaneBudgetLeft(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Int32 {
+  let left = CBLaneDailyCap(lane) - sys.LaneSentToday(lane, CBGameDay(game));
+  return left < 0 ? 0 : left;
 }
 
 // How long a lane rests after its encounter ends, in ticks of about a second.

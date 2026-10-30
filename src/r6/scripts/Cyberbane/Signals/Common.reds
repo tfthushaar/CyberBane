@@ -5,6 +5,18 @@
 
 // In-game time as Float game-seconds (spec §6.1). TimeSystem.GetGameTimeStamp()
 // returns the in-game clock as a Float, which is exactly the unit Cyberbane stores.
+// Which day of the playthrough this is, by the game's own calendar.
+//
+// GameTime.Days is exact and needs no interpretation, unlike GetGameTimeStamp, whose unit is
+// still an open question. Anything paced "per day" uses this.
+public func CBGameDay(game: GameInstance) -> Int32 {
+  let ts = GameInstance.GetTimeSystem(game);
+  if !IsDefined(ts) {
+    return 0;
+  }
+  return GameTime.Days(ts.GetGameTime());
+}
+
 public func CBGameSeconds(game: GameInstance) -> Float {
   let ts = GameInstance.GetTimeSystem(game);
   if !IsDefined(ts) {

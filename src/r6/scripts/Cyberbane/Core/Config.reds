@@ -432,6 +432,13 @@ public abstract class CBConfig {
   public static func ApexQueueTicks() -> Int32 = 180
   // Minutes a lane rests after its encounter ends, before it looks for anybody new.
   public static func EncounterGapMinutesDefault() -> Int32 = 10
+  // What one in-game day holds, per kind. Three Rivals, two crews and two apex squads is a
+  // day with a shape to it: busy enough that the city is clearly after you, bounded enough
+  // that it ends. Each lane counts separately, so a full day of Rivals does not use up the
+  // crews.
+  public static func RivalsPerDayDefault() -> Int32 = 3
+  public static func HitSquadsPerDayDefault() -> Int32 = 2
+  public static func ApexSquadsPerDayDefault() -> Int32 = 2
   // How long a lane stays busy after sending somebody, to cover the gap between asking for a
   // spawn and it existing. Short, and a hard count rather than a wait on an attach.
   public static func LaneSettleTicks() -> Int32 = 8

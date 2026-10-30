@@ -889,8 +889,15 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   if CBLaneBusy(sys, game, lane) {
     return label + "   here now";
   }
+  // Nothing queued. Say whether that is because the day's allowance is spent, rather than
+  // leaving "nobody" to mean both "none due" and "none left", which look identical and are
+  // the sort of silence that reads as the mod being broken.
+  let left = CBLaneBudgetLeft(sys, game, lane);
   if StrLen(who) == 0 {
-    return label + "   nobody";
+    if left <= 0 && CBLaneDailyCap(lane) > 0 {
+      return label + "   done for today";
+    }
+    return label + "   nobody" + CBHudBudgetTail(sys, game, lane);
   }
   let ticks = sys.GetLaneTicks(lane);
   if ticks <= 0 {
@@ -898,7 +905,18 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     return StrLen(why) > 0 ? label + "   " + who + "  held: " + why
                            : label + "   " + who + "  any moment";
   }
-  return label + "   " + who + "  " + CBHudCountdown(ticks);
+  return label + "   " + who + "  " + CBHudCountdown(ticks) + CBHudBudgetTail(sys, game, lane);
+}
+
+// "  (2 of 3 today)". Shown so the pacing is something the player can see rather than guess
+// at: each kind has its own daily allowance and this is what is left of it.
+func CBHudBudgetTail(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> String {
+  let cap = CBLaneDailyCap(lane);
+  if cap <= 0 {
+    return "   (off)";
+  }
+  let sent = sys.LaneSentToday(lane, CBGameDay(game));
+  return s"   (\(sent) of \(cap) today)";
 }
 
 func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
@@ -1152,18 +1170,20 @@ func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
 
 // "3d", "5h", "20m" - how long since something happened, for the screens that track it.
 // Returns "" when it never has.
-// Returns "" when it never happened, and also when it was so long ago that the number stops
-// being information. "Quiet 3d" tells you nothing you would act on, and these timestamps are
-// in whatever unit TimeSystem.GetGameTimeStamp() counts in, which is the game's clock rather
-// than yours, so a long gap reads as a bigger number than the player expects. Anything past a
-// day is simply dropped, which leaves the column meaning "recently" and nothing else.
+// How long since, in the game's own clock.
+//
+// A previous version of this dropped anything past a day on the grounds that "quiet 3d" looked
+// wrong. That was hiding the reading instead of answering it. Three days is a true and useful
+// thing to know about a gang you have not touched: each kind of encounter has a daily
+// allowance now, shared out across every gang, so any one gang can easily go days without
+// being the one that gets picked. The number stays.
 public func CBHudSince(now: Float, then: Float) -> String {
   if then <= 0.0 || now <= then {
     return "";
   }
   let secs = now - then;
   if secs >= 86400.0 {
-    return "";
+    return s"\(RoundF(secs / 86400.0))d";
   }
   if secs >= 3600.0 {
     return s"\(RoundF(secs / 3600.0))h";

@@ -106,6 +106,14 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_laneRivalFreed: Int32;
   private let m_laneSquadFreed: Int32;
   private let m_laneApexFreed: Int32;
+  // How many encounters each lane has already sent today, and the day those counts belong to.
+  // Persistent, so reloading a save does not hand the player a fresh day's worth.
+  private persistent let m_laneDayRival: Int32;
+  private persistent let m_laneDaySquad: Int32;
+  private persistent let m_laneDayApex: Int32;
+  private persistent let m_laneSentRival: Int32;
+  private persistent let m_laneSentSquad: Int32;
+  private persistent let m_laneSentApex: Int32;
   private let m_laneRivalFired: Int32;
   private let m_laneSquadFired: Int32;
   private let m_laneApexFired: Int32;
@@ -883,6 +891,42 @@ public class CyberbaneSystem extends ScriptableSystem {
         this.m_laneApexFreed = this.m_tickCount;
       } else {
         this.m_laneSquadFreed = this.m_tickCount;
+      }
+    }
+  }
+
+  // Roll the counter over when the calendar day changes, then report what is left.
+  public func LaneSentToday(lane: Int32, today: Int32) -> Int32 {
+    if lane == CBLaneRival() {
+      if this.m_laneDayRival != today {
+        this.m_laneDayRival = today;
+        this.m_laneSentRival = 0;
+      }
+      return this.m_laneSentRival;
+    }
+    if lane == CBLaneApex() {
+      if this.m_laneDayApex != today {
+        this.m_laneDayApex = today;
+        this.m_laneSentApex = 0;
+      }
+      return this.m_laneSentApex;
+    }
+    if this.m_laneDaySquad != today {
+      this.m_laneDaySquad = today;
+      this.m_laneSentSquad = 0;
+    }
+    return this.m_laneSentSquad;
+  }
+
+  public func NoteLaneSent(lane: Int32, today: Int32) -> Void {
+    this.LaneSentToday(lane, today);   // rolls the day over first
+    if lane == CBLaneRival() {
+      this.m_laneSentRival += 1;
+    } else {
+      if lane == CBLaneApex() {
+        this.m_laneSentApex += 1;
+      } else {
+        this.m_laneSentSquad += 1;
       }
     }
   }

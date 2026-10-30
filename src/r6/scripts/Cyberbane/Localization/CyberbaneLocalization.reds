@@ -69,6 +69,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines, so the street does not repeat itself.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane shows its messages on screen at all.");
     this.Text("Cyberbane-Settings-MessageHold-Desc", "How long Cyberbane's on-screen messages stay up, as a percentage of their normal length. The default of 175 is most of a full second longer than the game's own notifications, which is about what a sentence needs. Nothing is ever shown for less than five seconds.");
+    this.Text("Cyberbane-Settings-RivalsPerDay-Desc", "How many Rivals can catch up with you in a single in-game day. Once they have, no more Rivals come until the next day. Hit squads and apex squads have their own separate allowances, so a busy day of Rivals does not use theirs up. Set to 0 to stop Rivals arriving at all.");
+    this.Text("Cyberbane-Settings-HitSquadsPerDay-Desc", "How many gang crews can be sent after you in a single in-game day, counted separately from Rivals and apex squads. Set to 0 to stop crews arriving at all.");
+    this.Text("Cyberbane-Settings-ApexPerDay-Desc", "How many apex squads can be sent after you in a single in-game day, counted separately from Rivals and crews. Set to 0 to stop apex squads arriving at all.");
     this.Text("Cyberbane-Settings-EncounterGap-Desc", "How long the city leaves you alone after an encounter ends before it starts arranging the next one of that kind. Rivals, hit squads and apex squads each rest separately, so one of each can still be building up at the same time. Measured from the end of the fight, so a long one does not eat into your breathing room.");
     this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "A gang at vendetta sends its apex squad along with the crew: four boss-grade enforcers in a car, with the rest of the crew on foot behind them. This is the hardest fight Cyberbane will put in front of you. Turn it off and a vendetta sends the crew alone.");
     this.Text("Cyberbane-Settings-ApexArrivalSound-Desc", "The game's own MaxTac descent horn plays when a gang sends its apex squad after you. It is the noise you know from drawing a five star heat level, and it means the same thing here.");
@@ -153,6 +156,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexArrivalSound", "Apex squad arrival horn");
     this.Text("Cyberbane-Settings-VendettaApexSquad", "Vendetta brings the apex squad");
     this.Text("Cyberbane-Settings-EncounterGap", "Minutes between encounters");
+    this.Text("Cyberbane-Settings-RivalsPerDay", "Rivals per day");
+    this.Text("Cyberbane-Settings-HitSquadsPerDay", "Hit squads per day");
+    this.Text("Cyberbane-Settings-ApexPerDay", "Apex squads per day");
     this.Text("Cyberbane-Settings-MessageHold", "Message hold");
     this.Text("Cyberbane-Settings-VendettaSquads", "Vendetta hit squads");
     this.Text("Cyberbane-Settings-VendettaSquadSize", "Vendetta squad size");
