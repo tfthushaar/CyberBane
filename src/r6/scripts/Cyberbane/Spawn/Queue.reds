@@ -101,6 +101,35 @@ func CBRivalCooldownTick(sys: ref<CyberbaneSystem>) -> Void {
   }
 }
 
+// Somebody from a gang V has actually fought, when the Rival list has nobody to offer.
+//
+// Picks the gang with the most history: the one whose people V has put down most often is the
+// one most likely to send somebody after them. The record is the one already sampled from a
+// real enemy of that gang, which is the same source a hit squad draws from, so nothing here
+// invents a character the game would not otherwise produce.
+func CBSeedRivalFromFactions(sys: ref<CyberbaneSystem>, game: GameInstance) -> ref<CBRival> {
+  if !CBRivalsOn() {
+    return null;
+  }
+  let best: ref<CBFactionState>;
+  let bestKills = 0;
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) && fs.kills > bestKills {
+      best = fs;
+      bestKills = fs.kills;
+    }
+  }
+  if !IsDefined(best) {
+    return null;   // V has not fought anybody yet; there is genuinely nobody to send
+  }
+  let r = CBCreateRival(sys, game, best.id, best.sampleRecord, n"", ECBRivalSource.Hunter,
+                        CBEventDistrict(sys, game), CBGameSeconds(game));
+  if IsDefined(r) {
+    CBLog.Info(n"Spawn", s"No Rival on the books; \(NameToString(best.id)) put somebody forward.");
+  }
+  return r;
+}
+
 // Can this Rival still be sent? The one test, used by the picker and by the lane's re-check,
 // so the two can never disagree about who is eligible.
 public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool {
@@ -244,13 +273,33 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     }
   }
 
+  // Nobody on the books. Make somebody, rather than going quiet.
+  //
+  // Rivals exist only once enemies have escaped V or been spared, so a fresh save - or one
+  // whose state was reset by a mod update - has none at all, and the Rival lane then sits
+  // silent through the whole opening of a playthrough. From the player's side that is a mod
+  // that does nothing, and it is exactly what happened here: six state resets in an afternoon
+  // left an empty roster every time and the lane had nobody to pick.
+  //
+  // So when the lane's turn comes and the roster cannot supply anyone, the gang V has actually
+  // been fighting supplies one instead. It uses the record already sampled from a real enemy
+  // of theirs, so the person who turns up is somebody that gang would plausibly send, and it
+  // needs nothing the player has not already done: hit a gang once and they can answer.
+  if bestScore <= 0.0 && lane == CBLaneRival() {
+    let seeded = CBSeedRivalFromFactions(sys, game);
+    if IsDefined(seeded) {
+      bestScore = CBConfig.QueueScoreRival();
+      bestRival = seeded.id;
+      bestFaction = seeded.faction;
+    }
+  }
   if bestScore <= 0.0 {
-    // Nobody qualifies. Said out loud once a minute at most, because a lane that is due and
-    // silent is indistinguishable from a lane that is broken, and that ambiguity has now cost
-    // several rounds of looking in the wrong place.
+    // Still nobody. Said out loud once a minute at most, because a lane that is due and silent
+    // is indistinguishable from a lane that is broken, and that ambiguity has now cost several
+    // rounds of looking in the wrong place.
     if (sys.GetTickCount() - sys.GetLaneQuietLogged(lane)) > 60 {
       sys.SetLaneQuietLogged(lane, sys.GetTickCount());
-      CBLog.Info(n"Spawn", s"\(CBLaneLabel(lane)) lane is due but nobody qualifies (rivals off cooldown / gangs over their kill threshold).");
+      CBLog.Info(n"Spawn", s"\(CBLaneLabel(lane)) lane is due but nobody qualifies (no gang has been fought yet, or everyone is on cooldown).");
     }
     return;
   }

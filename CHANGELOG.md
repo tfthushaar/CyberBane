@@ -3,6 +3,21 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.9] - 2026-10-30
+
+### Fixed
+- **Rivals can start themselves.** A rival only exists once somebody has escaped you or been
+  spared, so a new playthrough had none at all and the rival queue sat silent through the whole
+  opening. If your state was ever reset by an update, the same thing happened to you mid-save.
+  When the queue's turn comes and there is nobody on the books, the gang you have actually been
+  fighting puts somebody forward instead, built from one of their own people you have already
+  met. Hit a gang once and they can answer.
+
+### Changed
+- **This update does not reset your progress.** No saved field changed shape, so your
+  reputation, rivals and gang standing carry over. Earlier builds today did reset it, which is
+  why rivals kept vanishing.
+
 ## [1.3.8] - 2026-10-30
 
 ### Fixed
