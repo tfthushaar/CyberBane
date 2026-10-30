@@ -43,6 +43,12 @@ public func CBRivalRole(sys: ref<CyberbaneSystem>, rival: ref<CBRival>) -> Int32
   if !IsDefined(sys) || !IsDefined(rival) || rival.id <= 0 {
     return CBRoleNone();
   }
+  // A cyberpsycho is nobody's lieutenant. Keeping them out of the hierarchy keeps the leader
+  // and lieutenant health multipliers off them as well, which is the other half of giving them
+  // wits instead of padding.
+  if CBRecordIsSightingCyberpsycho(rival.recordID) {
+    return CBRoleNone();
+  }
   let fs = sys.FindFaction(rival.faction);
   if !IsDefined(fs) {
     return CBRoleNone();

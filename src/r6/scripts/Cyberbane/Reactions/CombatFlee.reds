@@ -334,7 +334,9 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     }
   }
 
-  if RandF() > CBConfig.RivalChanceSpared() {
+  // A cyberpsycho carries their own fifty-fifty inside CBCreateRival. Letting the generic roll
+  // run first as well would compound the two and turn a coin flip into three chances in eight.
+  if !CBRecordIsSightingCyberpsycho(e.record) && RandF() > CBConfig.RivalChanceSpared() {
     return;   // not everyone you spare makes it personal
   }
   let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now);

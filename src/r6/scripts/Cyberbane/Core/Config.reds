@@ -549,6 +549,9 @@ public abstract class CBConfig {
   // crew produces a nemesis often enough to notice, still bounded by the caps below.
   public static func RivalChanceSurvivor() -> Float = 0.65
   public static func RivalChanceSpared() -> Float = 0.75
+  // A spared cyberpsycho is a coin flip, and nothing else about them is left to chance: they
+  // come back with their own name, their own health and no multiplier on top of it.
+  public static func CyberpsychoRivalChance() -> Float = 0.50
   // Used both when you put a Rival down (someone steps into their place) and when you kill
   // an Officer or Boss, which is rare enough that a high chance reads as "that one mattered"
   // rather than a flood.

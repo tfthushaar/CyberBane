@@ -203,6 +203,27 @@ func CBApplyCorpKit(npc: ref<NPCPuppet>) -> Void {
   CBGrantAbility(npc, t"Ability.CanUseEMPGrenades");
 }
 
+// What a cyberpsycho learns from losing to you.
+//
+// Behaviour only, every line of it: press the attack while shooting, keep pace when you walk
+// away, do not freeze under a stun, do not be fooled by camo or your own smoke, use the cover
+// that is there. Not one point of health or armour, because they already have more of both than
+// anything else that walks, and adding to it is what made the first attempt at this a wall
+// rather than a fight. What they never had is any idea how to fight somebody who has beaten
+// them before.
+public func CBKitCyberpsycho(npc: ref<NPCPuppet>) -> Void {
+  if !IsDefined(npc) || npc.cbKitted || !CBAiKitOwner() {
+    return;
+  }
+  npc.cbKitted = true;
+  CBGrantAbility(npc, t"Ability.CanShootWhileMoving");
+  CBGrantAbility(npc, t"Ability.CanCatchUp");
+  CBGrantAbility(npc, t"Ability.CanUseAntiStun");
+  CBGrantAbility(npc, t"Ability.CanSeeThroughOpticalCamos");
+  CBGrantAbility(npc, t"Ability.CanSeeThroughSmoke");
+  CBGrantAbility(npc, t"Ability.CanUseCovers");
+}
+
 public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
   if !IsDefined(npc) {
     return;

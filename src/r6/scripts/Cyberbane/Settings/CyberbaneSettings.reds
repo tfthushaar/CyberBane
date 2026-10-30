@@ -283,6 +283,12 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CyberpsychoRivals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CyberpsychoRivals-Desc")
+  public let cyberpsychoRivals: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquads")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquads-Desc")
   public let vendettaSquads: Bool = true;

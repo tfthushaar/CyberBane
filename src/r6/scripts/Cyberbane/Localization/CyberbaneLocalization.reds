@@ -49,6 +49,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-GangReactions-Desc", "Whether gang members read your standing with them and act on it.");
     this.Text("Cyberbane-Settings-HostileOnSight-Desc", "Whether a gang with a vendetta against you draws the moment they recognise you.");
     this.Text("Cyberbane-Settings-Warnings-Desc", "Whether a hostile gang gives you one spoken warning before turning on you.");
+    this.Text("Cyberbane-Settings-CyberpsychoRivals-Desc", "A cyberpsycho you take alive has an even chance of coming back as a rival. They keep their own name and their own strength; nothing is added on top.");
     this.Text("Cyberbane-Settings-FactionDisguises-Desc", "Whether wearing a gang's colours makes that gang slower to place you.");
     this.Text("Cyberbane-Settings-Tribute-Desc", "Whether a gang that fears you may quietly send eddies to stay on your good side.");
     this.Text("Cyberbane-Settings-TributeMult-Desc", "Multiplies how much that tribute pays.");
@@ -168,6 +169,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-HitSquadsPerDay", "Hit squads per day");
     this.Text("Cyberbane-Settings-ApexPerDay", "Apex squads per day");
     this.Text("Cyberbane-Settings-MessageHold", "Message hold");
+    this.Text("Cyberbane-Settings-CyberpsychoRivals", "Spared cyberpsychos come back");
     this.Text("Cyberbane-Settings-VendettaSquads", "Vendetta hit squads");
     this.Text("Cyberbane-Settings-VendettaSquadSize", "Vendetta squad size");
 

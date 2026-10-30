@@ -93,6 +93,11 @@ public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRiva
   if !IsDefined(rival) {
     return "A rival";
   }
+  // Somebody the city already has a name for keeps it.
+  let known = CBCyberpsychoName(rival.recordID);
+  if StrLen(known) > 0 {
+    return known;
+  }
   // Falls back to a generic street handle rather than the literal word "Unknown", which is
   // what every Rival from an unpooled faction used to be called.
   let first = CBFallbackHandle(rival.id);
@@ -254,7 +259,9 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
     if IsDefined(r)
        && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)
            || r.state == EnumInt(ECBRivalState.Dormant))
-       && CBRecordIsUniqueCharacter(r.recordID) {
+       && CBRecordIsUniqueCharacter(r.recordID)
+       && !(r.source == EnumInt(ECBRivalSource.Spared)
+            && CBRecordIsSightingCyberpsycho(r.recordID)) {
       r.state = EnumInt(ECBRivalState.Retired);
       dropped += 1;
     }
@@ -264,14 +271,78 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
   }
 }
 
+// Is this one of Regina's cyberpsychos?
+//
+// Deliberately narrower than CBRecordIsUniqueCharacter, and the narrowing is the whole point.
+// The broad test refuses everybody the story owns, which is right for a gang's spawn template
+// and right for anyone the main quest needs where it left them. A cyberpsycho you chose to
+// leave breathing is the one exception worth making: the game asks you to take them alive and
+// then never follows it up, and somebody who survived you is exactly what a Rival is.
+//
+// The Cyberpsycho tag on its own is not enough, and this is worth writing down because it is a
+// trap that looks safe. `main_boss_adam_smasher` carries that tag. So do Placide and Woodman.
+// Rarity cannot separate them either: the sighting psychos are NPCRarity.Boss as well. What
+// does separate them is the quest affiliation. Every record under
+// characters/npcs/records/quest/minor_activities carries
+// `quest = "NPCQuestAffiliation.MinorActivity"`, and no story boss does.
+public func CBRecordIsSightingCyberpsycho(recordID: TweakDBID) -> Bool {
+  if !TDBID.IsValid(recordID) {
+    return false;
+  }
+  let rec = TweakDBInterface.GetCharacterRecord(recordID);
+  if !IsDefined(rec) || !rec.TagsContains(n"Cyberpsycho") {
+    return false;
+  }
+  let q = rec.Quest();
+  return IsDefined(q) && Equals(q.Type(), gamedataNPCQuestAffiliation.MinorActivity);
+}
+
+// Their own name, because everyone knows it.
+//
+// The generated handles are for gangers nobody has heard of. Calling the person from the
+// sighting anything other than what the game called them reads as a different character, which
+// throws away the only thing that makes this worth doing.
+public func CBCyberpsychoName(recordID: TweakDBID) -> String {
+  if !CBRecordIsSightingCyberpsycho(recordID) {
+    return "";
+  }
+  let rec = TweakDBInterface.GetCharacterRecord(recordID);
+  if !IsDefined(rec) {
+    return "";
+  }
+  let key = rec.DisplayName();
+  if Equals(key, n"") {
+    return "";
+  }
+  return GetLocalizedTextByKey(key);
+}
+
+// May this one come back, and does the coin say so?
+//
+// Only on a spare, because that is the choice that earns it. Killing one ends it, and nothing
+// here should quietly undo a fight the player won. Half the time, so leaving one alive is a
+// risk you take rather than a sequel you have booked. And only while the Rival list has room,
+// which the cap below already enforces for everybody.
+func CBCyberpsychoMayReturn(recordID: TweakDBID, source: ECBRivalSource) -> Bool {
+  if NotEquals(source, ECBRivalSource.Spared) || !CBRecordIsSightingCyberpsycho(recordID) {
+    return false;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().cyberpsychoRivals {
+    return false;
+  }
+  return RandF() < CBConfig.CyberpsychoRivalChance();
+}
+
 public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName,
     recordID: TweakDBID, appearance: CName, source: ECBRivalSource, origin: CName, at: Float) -> ref<CBRival> {
   if !IsDefined(sys) {
     return null;
   }
   // One gate, here, because eight different places create Rivals and several hand over a
-  // record straight off a puppet. Guarding each of them would mean missing one.
-  if CBRecordIsUniqueCharacter(recordID) {
+  // record straight off a puppet. Guarding each of them would mean missing one. The single
+  // exception is a spared cyberpsycho, on a coin flip; see CBCyberpsychoMayReturn.
+  if CBRecordIsUniqueCharacter(recordID) && !CBCyberpsychoMayReturn(recordID, source) {
     return null;
   }
   let rt = CyberbaneRuntime.Get();

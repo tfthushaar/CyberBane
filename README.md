@@ -52,6 +52,11 @@ page describes what the mod does and how it installs.
 - **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews all carry a
   marker on the map, on the minimap and above their head, so you can pick the one that matters
   out of a street full of gangers. There is a setting for turning it off.
+- **A cyberpsycho you take alive might come looking for you.** Regina asks you to leave them
+  breathing and the game never follows it up. There is an even chance one you spared turns up
+  later as a rival, under their own name, having learned how you fight. They are no tougher
+  than they were the first time; they are just better at it. Kill them instead and that is the
+  end of it.
 - **You overhear the city talking about you.** Lines change with the gang, the district and the
   title you are carrying, and when a story about something you did has actually travelled to
   where you are standing, that is what people are talking about.

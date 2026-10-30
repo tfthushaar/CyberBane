@@ -3,6 +3,28 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.2] - 2026-10-30
+
+### Added
+- **A cyberpsycho you take alive can come back for you.** Regina asks you to leave them
+  breathing and then nothing in the game ever follows it up. Now there is an even chance that
+  one you spared turns up as a rival later, under their own name. They come back with wits and
+  nothing else: they press the attack while shooting, keep pace when you walk away, do not
+  freeze under a stun and are not fooled by optical camo, and not one point of health or armour
+  is added to what they already had. Only sparing does it, killing one ends it, and the rival
+  cap still applies, so a full list means nobody new until you clear it. There is a setting.
+  Story characters are still refused: the cyberpsycho tag alone would have let Adam Smasher,
+  Placide and Woodman through, so the test is the quest affiliation the sightings carry.
+
+### Fixed
+- **An apex squad arriving on foot was one enemy.** Only the car arrival ever built a squad of
+  four with their roles. Anywhere a car could not be placed, which is most of the time, you got
+  a single apex with a couple of ordinary crew. Walking in now puts the same four on the
+  ground: the heavy, the shooter, the blade and the netrunner.
+- **The MaxTac horn never played.** It was asked for with no emitter and no entity, and the
+  game only ever plays that event on a vehicle's emitter, so it produced silence with nothing
+  anywhere to say the call had done nothing. An apex squad arriving sounds like one now.
+
 ## [1.4.1] - 2026-10-30
 
 ### Fixed

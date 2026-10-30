@@ -255,6 +255,16 @@ public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !IsDefined(r) {
     return;
   }
+  // A cyberpsycho gets none of this. They already carry a boss's own health and armour, and
+  // multiplying that was the whole of why the first one to come back could not be killed. What
+  // they get instead is the kit: see CBKitCyberpsycho. Marking them as buffed stops the attach
+  // path from applying it a moment later from the other direction.
+  if CBRecordIsSightingCyberpsycho(r.recordID) {
+    if IsDefined(puppet) {
+      puppet.cbBuffed = true;
+    }
+    return;
+  }
   CBApplyApexGradeBuff(sys, game, puppet, CBRivalGrade(r));
 }
 
@@ -300,11 +310,21 @@ public func CBApexArrivalSound(game: GameInstance) -> Void {
   if !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().apexArrivalSound {
     return;
   }
-  let audio = GameInstance.GetAudioSystem(game);
-  if !IsDefined(audio) {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
     return;
   }
-  audio.Play(n"av_maxtac_descent_horn");
+  // Played on the player, with no emitter.
+  //
+  // This was AudioSystem.Play with nothing but the event name, and the game never plays this
+  // one that way. psychoSquadAVSystem.script:112 is
+  // `GameObject.PlaySound( evt.av, 'av_maxtac_descent_horn', 'vehicle_general_emitter' )`: an
+  // event authored against a vehicle's emitter. Asking for it with no entity and no emitter is
+  // how you get silence, with nothing in any log to say the call did nothing. Playing it on the
+  // player is the pattern the game uses everywhere it wants something heard regardless of where
+  // it came from, and that is what this wants - the squad is seventy metres out and not in
+  // sight yet when the horn goes.
+  GameObject.PlaySound(player, n"av_maxtac_descent_horn");
 }
 
 // Slow tick: has any gang lost enough people to send its apex after V?
@@ -445,8 +465,25 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   sys.SetPendingApex(n"", 0);
   // CBSpawnGroup will refuse while the world is still streaming in, so this can only land on
   // a settled frame. CB_Apex is also tagged n"Cyberbane", so the session sweep clears it.
+  // Four of them, with their roles, the same as the carload.
+  //
+  // This spawned exactly one. Only the car arrival ever built a squad, so an apex that had to
+  // walk in - indoors, a tight street, anywhere a car could not be placed, which is most of the
+  // time - was one enemy with a couple of ordinary crew behind them. That is not an apex squad,
+  // and it is not what the Hub, the bars or the readme describe. A seat whose role record the
+  // gang has not filed yet falls back to the elite record, so a squad is always four.
   let apexEntity: EntityID;
-  let arrived = CBSpawnGroup(game, record, n"", 1, n"CB_Apex", CBConfig.ApexSpawnDistance(), apexEntity);
+  let arrived = 0;
+  let seat = 0;
+  while seat < CBConfig.ApexStrikeTeamSize() {
+    let one: EntityID;
+    if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
+                    CBConfig.ApexSpawnDistance(), one) > 0 {
+      arrived += 1;
+      apexEntity = one;
+    }
+    seat += 1;
+  }
   if arrived <= 0 {
     // The world was not settled enough to place anyone. Keep the kills on the books so the
     // next slow tick tries again, rather than charging the player for a no-show.

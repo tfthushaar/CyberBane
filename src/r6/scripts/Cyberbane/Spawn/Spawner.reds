@@ -591,9 +591,14 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBJoinSquadWith(sys, puppet);
   }
   if isRival {
-    // A named enemy that never uses cover or chrome is a ganger with a nameplate.
-    CBKitApexMember(puppet);
     let who = sys.FindRivalById(sys.GetActiveRivalId());
+    // A named enemy that never uses cover or chrome is a ganger with a nameplate. A cyberpsycho
+    // takes the lighter kit, which adds no armour on top of what they already have.
+    if IsDefined(who) && CBRecordIsSightingCyberpsycho(who.recordID) {
+      CBKitCyberpsycho(puppet as NPCPuppet);
+    } else {
+      CBKitApexMember(puppet);
+    }
     if IsDefined(who) {
       CBApplyRivalApexBuff(sys, game, puppet, who);
       CBApplyRivalRoleBuff(sys, game, puppet, CBRivalRole(sys, who));
