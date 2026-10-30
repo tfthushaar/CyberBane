@@ -238,6 +238,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
       // Apply any deaths recorded in the global ledger for this playthrough.
       CBApplyDeathLedger(this, this.GetGameInstance());
+      // And take any story characters off the Rival roster before they can be sent again.
+      CBPruneUniqueRivals(this);
     }
     // Seed chrome once up front so it is current before the first slow refresh.
     CBUpdateChrome(this, this.GetGameInstance());

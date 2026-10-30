@@ -383,7 +383,15 @@ public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
   info.victimClass = CBClassifyVictim(puppet, info.faction);
   info.lethal = lethal;
   info.instigatorIsPlayer = true;
-  info.victimIsUnique = puppet.IsQuest();   // never keep a story character as a spawn template
+  // Never keep a story character as a spawn template.
+  //
+  // This was IsQuest alone, which is a much narrower question than the one being asked. A
+  // cyberpsycho is not quest-flagged; neither is a boss-rarity elite. So killing one filed its
+  // record as the gang's `eliteRecord`, and every apex squad that gang sent afterwards was
+  // built from it - four copies of something with a boss's own health, with the mod's
+  // apex multiplier applied on top. That is the enemy that cannot be killed, and it is the
+  // same record test the Rival roster already uses, so the two now agree.
+  info.victimIsUnique = puppet.IsQuest() || CBRecordIsUniqueCharacter(puppet.GetRecordID());
   info.district = CBEventDistrict(sys, game);
   info.position = puppet.GetWorldPosition();
   let witnesses = CBCountWitnesses(sys, info.position, info.victimEntityId);

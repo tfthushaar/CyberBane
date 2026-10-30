@@ -44,9 +44,14 @@ page describes what the mod does and how it installs.
   identify. It turns the signature mechanic into a decision you make in every fight.
 - **Wear a mask and nobody can say it was you.** People still see what happened, they just
   cannot put your name to it, so your reputation barely grows, no story about you travels, and
-  gangs are slow to turn against you. The bodies still turn up, so the district gets frightened
-  of something it cannot identify. Anonymity costs you fame, which is the trade. Glasses and
-  visors do not count; they only hide the chrome in your eyes.
+  gangs are slow to turn against you. Nobody scatters from you in the street either: whatever
+  you are known for, a stranger has no way to attach it to the person walking past them. The
+  bodies still turn up, so the district gets frightened of something it cannot identify.
+  Anonymity costs you fame, which is the trade. Glasses and visors do not count; they only hide
+  the chrome in your eyes.
+- **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews all carry a
+  marker on the map, on the minimap and above their head, so you can pick the one that matters
+  out of a street full of gangers. There is a setting for turning it off.
 - **You overhear the city talking about you.** Lines change with the gang, the district and the
   title you are carrying, and when a story about something you did has actually travelled to
   where you are standing, that is what people are talking about.

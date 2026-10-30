@@ -42,6 +42,34 @@ func CBGroundAt(game: GameInstance, x: Float, y: Float, zHint: Float, out ground
   return true;
 }
 
+// Stand a candidate point on the floor under it, or refuse it.
+//
+// A navmesh point is meant to be standing room, and nearly always is. Nearly is not good
+// enough. FindPursuitPointsRange also returns a fallback list for when the strict pass finds
+// nothing, and in the vertical parts of the city - the walkways and decks around City Center,
+// overpasses, the lip of a ramp - a point can sit well above whatever is actually underneath
+// it. An NPC created there falls. What lands is a ragdoll that cannot be shot and carries no
+// health bar, which is exactly what was reported: spawned in mid air, no bar, seemingly
+// invulnerable.
+//
+// So every point now gets the treatment the hand-rolled placement already gave its own: trace
+// for the floor beneath it and stand them on that. No floor within reach means the point is
+// over a drop and it is refused, and the caller moves on to the next one. If every point is
+// refused the old bearing sweep still runs underneath, so this can cost a better spawn point
+// but never costs the arrival.
+func CBSettleOnGround(game: GameInstance, p: Vector4, out at: Vector4) -> Bool {
+  let ground = 0.0;
+  if !CBGroundAt(game, p.X, p.Y, p.Z, ground) {
+    return false;
+  }
+  // A floor a long way below the point is not this point's floor.
+  if AbsF(ground - p.Z) > CBConfig.SpawnGroundSettle() {
+    return false;
+  }
+  at = new Vector4(p.X, p.Y, ground + CBConfig.GroundSpawnLift(), 1.0);
+  return true;
+}
+
 // Find a place behind V that somebody could actually have walked from.
 //
 // The raycast above answers "is there a floor here". That is not the same question as "can a
@@ -273,12 +301,11 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     while n < ArraySize(navPts) && spawned < count {
       let p = navPts[n];
       n += 1;
-      if !CBSafeAreaBlocksSpawn(game, p) {
+      let at: Vector4;
+      if CBSettleOnGround(game, p, at) && !CBSafeAreaBlocksSpawn(game, at) {
         let facing = Quaternion.BuildFromDirectionVector(
-          Vector4.Normalize2D(new Vector4(ppos.X - p.X, ppos.Y - p.Y, 0.0, 0.0)));
-        if CBCreateSpawn(des, record, appearance,
-                         new Vector4(p.X, p.Y, p.Z + CBConfig.GroundSpawnLift(), 1.0),
-                         facing, squadTag, lastSpawned) {
+          Vector4.Normalize2D(new Vector4(ppos.X - at.X, ppos.Y - at.Y, 0.0, 0.0)));
+        if CBCreateSpawn(des, record, appearance, at, facing, squadTag, lastSpawned) {
           spawned += 1;
         }
       }
@@ -309,8 +336,10 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let ax = baseX - fwd.X * rankBack + rx * lane * 2.5;
       let ay = baseY - fwd.Y * rankBack + ry * lane * 2.5;
       let snapped: Vector4;
-      if CBNavSnap(game, ax, ay, baseZ, snapped) && !CBSafeAreaBlocksSpawn(game, snapped) {
-        if CBCreateSpawn(des, record, appearance, snapped, orient, squadTag, lastSpawned) {
+      let standing: Vector4;
+      if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
+         && !CBSafeAreaBlocksSpawn(game, standing) {
+        if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned) {
           spawned += 1;
         }
         placed = true;
@@ -546,15 +575,15 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBKitApexMember(puppet);
     CBShowBossBar(puppet);
   }
-  // A marker on the ones worth picking out, and only those.
+  // A marker on everyone the mod sends.
   //
-  // Rivals and apex squad members, so at most five at once. Not ordinary crew: a vendetta crew
-  // can be thirteen strong and thirteen markers showing through walls is clutter rather than
-  // help. A crew arrives together and is obvious the moment it opens fire; the thing a player
-  // genuinely cannot identify is the one named enemy standing in a street full of gangers.
-  if isApex || isRival {
-    CBTrackOnMap(game, puppet);
-  }
+  // This was Rivals and apex squad members only, on the reasoning that a crew arrives together
+  // and is obvious the moment it opens fire. It is not obvious. A player hunting for whoever
+  // the mod had just announced found nothing on the minimap, because the one standing there
+  // was crew and crew carried no marker, and there is no way to tell from outside that the
+  // marker is missing by design rather than broken. If Cyberbane sent them, the player can see
+  // where they are; the setting turns the lot off for anyone who would rather hunt.
+  CBTrackOnMap(game, puppet);
   if isSquad {
     CBKitSquadMember(puppet);
   }
@@ -668,6 +697,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   CBUntrackTagged(game, n"CB_Rival");
   CBUntrackTagged(game, n"CB_Squad");
   CBUntrackTagged(game, n"CB_Apex");
+  CBUntrackTagged(game, n"CB_Escort");   // marked too now, so swept too
   des.DeleteTagged(n"CB_Rival");
   des.DeleteTagged(n"CB_Squad");
   des.DeleteTagged(n"CB_Apex");

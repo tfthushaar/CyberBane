@@ -171,9 +171,16 @@ public abstract class CBConfig {
   // MaxTac AV coming down, and an apex squad is meant to read the same way.
   public static func ApexTerrorRadius() -> Float = 100.0
   // What a mask is worth as a disguise on its own, and how much a disguise damps what the
-  // street reads off you. 0.4 x 0.5 means a masked V with no other concealment reads about a
-  // fifth less frightening to a stranger, while the reputation itself is untouched.
-  public static func MaskDisguise() -> Float = 0.40
+  // street reads off you.
+  //
+  // This was 0.4, which through the 0.5 damp came to a fifth off what a stranger reads. A fifth
+  // is not enough to cross a tier, so a player could put a full face mask on and watch the
+  // street panic exactly as before - the feature working and looking broken, which is the
+  // failure this mod keeps having to fix. At 0.6 a masked V drops about thirty percent, which
+  // is the difference between people running and people getting out of the way. The reputation
+  // itself is still untouched: a mask changes what lands on the person in front of them, not
+  // what the city knows about you.
+  public static func MaskDisguise() -> Float = 0.60
   public static func DisguiseDreadDamp() -> Float = 0.50
   public static func ChromeNoticeRangeBonus() -> Float = 0.5
 
@@ -324,6 +331,10 @@ public abstract class CBConfig {
   // intersecting the surface they had just been put on, which the engine resolves by dropping
   // them into a ragdoll.
   public static func GroundSpawnLift() -> Float = 0.35
+  // How far a candidate point may sit above the floor underneath it and still count as that
+  // floor's. Two metres covers navmesh that rides a little proud of the collision surface and a
+  // kerb or a step; anything further means the point is over a drop, not on ground.
+  public static func SpawnGroundSettle() -> Float = 2.0
   // How many abreast a spawned group stands before starting another rank behind it.
   // First ESecurityAreaType ordinal that counts as ordinary open city. Below this the game
   // treats the area as safe or restricted, and Cyberbane sends nobody.
@@ -510,10 +521,23 @@ public abstract class CBConfig {
   // An apex is meant to read as the worst thing that gang has. These are deliberately big:
   // at full menace it is in the same conversation as the game's own set piece bosses, and it
   // hits as hard as it takes, because a pure health sponge is tedious rather than frightening.
-  public static func ApexHealthMultBase() -> Float = 10.0
-  public static func ApexHealthMultRange() -> Float = 15.0   // 10x .. 25x
-  public static func ApexArmorMultBase() -> Float = 4.0
-  public static func ApexArmorMultRange() -> Float = 6.0
+  // What an apex is worth in raw survivability.
+  //
+  // These were 10x..25x health behind 4x..10x armour. Against a maxed character that is not a
+  // hard fight, it is a wall: at the top of the menace scale a full apex came out at about
+  // seventeen times health and seven times armour, which outlasts a magazine of anything and
+  // reads to the player as an enemy that simply cannot be hurt. That is what was reported, in
+  // those words.
+  //
+  // The brief was stronger but killable, and tactical rather than spongy. The tactical half is
+  // already carried by the kit in ApexSquad.reds - cover, advancing fire, anti-stun, reinforcements,
+  // seeing through optical camo - so the numbers come down to where an apex takes several times
+  // the punishment of the enemy it was promoted from and no more. Damage is untouched: they
+  // still hit hard enough to kill you.
+  public static func ApexHealthMultBase() -> Float = 2.5
+  public static func ApexHealthMultRange() -> Float = 2.5    // 2.5x .. 5x
+  public static func ApexArmorMultBase() -> Float = 1.5
+  public static func ApexArmorMultRange() -> Float = 1.5     // 1.5x .. 3x
   // What they hit back with.
   public static func ApexDamageMultBase() -> Float = 1.6
   public static func ApexDamageMultRange() -> Float = 1.6    // 1.6x .. 3.2x

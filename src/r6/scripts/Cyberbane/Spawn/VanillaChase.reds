@@ -35,11 +35,16 @@ public func CBRequestVanillaChase(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !IsDefined(sys) || !TDBID.IsValid(crewRecord) || crewCount <= 0 {
     return false;
   }
-  let container = GameInstance.GetScriptableSystemsContainer(game);
-  if !IsDefined(container) {
-    return false;
-  }
-  let prevention = container.Get(n"PreventionSpawnSystem") as PreventionSpawnSystem;
+  // Straight off the game instance.
+  //
+  // This went through the scriptable systems container, which cannot work, and the compiler
+  // said so on every build: "this cast cannot succeed, because 'PreventionSpawnSystem' is not
+  // related to 'ScriptableSystem'". It is an IGameSystem, not a ScriptableSystem. So the cast
+  // returned null, this function returned false, and every crew that should have pulled up in
+  // a car walked in instead - which is why a car has never once been seen arriving, standing
+  // in the middle of an empty street or anywhere else. GameInstance has a typed accessor for
+  // it, which SafeAreas.reds was already using correctly two files away.
+  let prevention = GameInstance.GetPreventionSpawnSystem(game);
   if !IsDefined(prevention) {
     return false;
   }

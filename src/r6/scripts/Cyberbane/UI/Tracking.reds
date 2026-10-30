@@ -15,12 +15,12 @@
 // `gamedataMappinVariant` enum, which not every name in the tweak list is - `Mappins.SoloVariant`
 // appears there but has no matching enum member, so it would have been a dead pin.
 //
-// Marked: Rivals and apex squad members, which is at most five at a time. Not marked: ordinary
-// crew, or the escorts that arrive with an apex squad. A vendetta crew runs to thirteen people
-// and thirteen markers showing through walls is clutter rather than help; a crew arrives
-// together and is obvious the moment it opens fire. The thing a player genuinely cannot
-// identify is one named enemy standing in a street full of gangers, and that is what this is
-// for.
+// Marked: everyone Cyberbane sends - Rivals, apex squads, crews and the escorts that come with
+// an apex squad. It was Rivals and apex only, which looked tidy and failed the one job it has:
+// a player told that a gang had sent people after them searched the minimap and found nothing,
+// because the people in question were crew. A marker that is absent by design is
+// indistinguishable from one that is broken. Anyone who would rather do the finding themselves
+// has the setting.
 
 @addField(ScriptedPuppet)
 public let cbMappinId: NewMappinID;

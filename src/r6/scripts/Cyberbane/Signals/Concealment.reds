@@ -13,56 +13,73 @@
 // covers your face.
 //
 // Deliberately a partial truth rather than a guess: a sleeveless jacket will conceal arms it
-// would not really conceal. The alternative was inventing visual-tag names that may not exist,
-// which ships a feature that silently does nothing - the exact failure this mod has spent
-// several versions removing. CBLogEquippedTags below exists so the tag table can be built from
-// a real session later, and this replaced with something exact.
-
-// Is anything actually hanging on this attachment slot?
+// would not really conceal.
 //
-// The second of two ways to ask, and the reason there are two. The equipment areas are what
-// the game's own code reads, and on this save they came back empty for every clothing slot
-// while the cyberware slots in the same data object resolved perfectly: the log shows visible
-// chrome computed from implants and `arms covered: false` with nothing worn reported at all.
-// Clothing is hung on attachment slots as well, so this asks the transaction system directly
-// and either answer counts. Checking both can only ever find coverage the single check missed.
-func CBSlotWorn(game: GameInstance, slot: TweakDBID) -> Bool {
+// **How to ask what is worn, which took three goes to get right.** The equipment areas are the
+// obvious route and they are not the whole answer. When a wardrobe set is active the clothing
+// areas are empty - the items live in the set, not in the slots - so `GetActiveItem` honestly
+// reports nothing for a V who is visibly dressed head to foot. That is what the log was saying
+// all along: visible chrome computed correctly from implants, `arms covered: false`, and
+// nothing worn reported at all, on a character wearing a coat, trousers, boots and a mask.
+//
+// The game has its own answer for this and we were not using it. `GetVisualItemInSlot`
+// (equipmentSystem.script:2195) reads the active set's `visualItem` for that area when a set is
+// on, and falls through to `GetActiveItem` when one is not. It is the exact question being
+// asked here, and the game asks it of itself everywhere it needs to know what the player
+// appears to be wearing.
+
+// What is actually on this part of V, whichever way the game is dressing them.
+//
+// Three routes, tried in the order of how much they know:
+//
+//   1. `GetVisualItemInSlot` - the game's own wardrobe-aware read, and the one that was
+//      missing. This is what makes a wardrobe set visible to us at all.
+//   2. `GetActiveItem` on the equipment area, for what the first route declines to handle: it
+//      returns -1 for the Outfit area and for underwear by design.
+//   3. The attachment slot, through the transaction system, as a last resort for anything
+//      hung on the body without going through the equipment areas.
+//
+// Three routes can only ever find coverage that fewer would have missed; none of them can
+// invent any.
+func CBWornItem(game: GameInstance, data: ref<EquipmentSystemPlayerData>,
+                area: gamedataEquipmentArea, slot: TweakDBID) -> ItemID {
+  if IsDefined(data) {
+    let visual = data.GetVisualItemInSlot(area);
+    if ItemID.IsValid(visual) {
+      return visual;
+    }
+    let active = data.GetActiveItem(area);
+    if ItemID.IsValid(active) {
+      return active;
+    }
+  }
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
-  if !IsDefined(player) || !IsDefined(ts) {
-    return false;
+  if IsDefined(player) && IsDefined(ts) && TDBID.IsValid(slot) {
+    return ts.GetActiveItemInSlot(player, slot);
   }
-  return ItemID.IsValid(ts.GetActiveItemInSlot(player, slot));
+  return ItemID.None();
+}
+
+func CBWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>,
+            area: gamedataEquipmentArea, slot: TweakDBID) -> Bool {
+  return ItemID.IsValid(CBWornItem(game, data, area, slot));
 }
 
 // An outer layer over the chest, which is what hides arms and skin.
 public func CBArmsCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
-  if IsDefined(data)
-     && (ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.OuterChest))
-         || ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Outfit))) {
-    return true;
-  }
-  return CBSlotWorn(game, t"AttachmentSlots.Chest")
-      || CBSlotWorn(game, t"AttachmentSlots.Torso")
-      || CBSlotWorn(game, t"AttachmentSlots.Outfit");
+  return CBWorn(game, data, gamedataEquipmentArea.OuterChest, t"AttachmentSlots.Chest")
+      || CBWorn(game, data, gamedataEquipmentArea.Outfit, t"AttachmentSlots.Outfit");
 }
 
 public func CBLegsCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
-  if IsDefined(data)
-     && (ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Legs))
-         || ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Outfit))) {
-    return true;
-  }
-  return CBSlotWorn(game, t"AttachmentSlots.Legs")
-      || CBSlotWorn(game, t"AttachmentSlots.Outfit");
+  return CBWorn(game, data, gamedataEquipmentArea.Legs, t"AttachmentSlots.Legs")
+      || CBWorn(game, data, gamedataEquipmentArea.Outfit, t"AttachmentSlots.Outfit");
 }
 
 // Something across the face. Hides eye chrome, and hides who you are.
 public func CBFaceCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
-  if IsDefined(data) && ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Face)) {
-    return true;
-  }
-  return CBSlotWorn(game, t"AttachmentSlots.Face");
+  return CBWorn(game, data, gamedataEquipmentArea.Face, t"AttachmentSlots.Face");
 }
 
 // A mask, as opposed to sunglasses.
@@ -95,22 +112,27 @@ public func CBPlayerMasked(game: GameInstance) -> Bool {
   if !IsDefined(es) {
     return false;
   }
-  let data = es.GetPlayerData(player);
-  if !IsDefined(data) {
-    return false;
-  }
-  let item = data.GetActiveItem(gamedataEquipmentArea.Face);
-  if ItemID.IsValid(item) {
-    return CBItemIsMask(ItemID.GetTDBID(item));
-  }
-  // Same second route as the coverage checks: the equipment area can be empty while the item
-  // is hanging on the attachment slot.
-  let ts = GameInstance.GetTransactionSystem(game);
-  if !IsDefined(ts) {
-    return false;
-  }
-  let slotted = ts.GetActiveItemInSlot(player, t"AttachmentSlots.Face");
-  return ItemID.IsValid(slotted) && CBItemIsMask(ItemID.GetTDBID(slotted));
+  // Through the same three routes as the coverage checks, so a mask worn as part of a wardrobe
+  // set counts exactly as a mask equipped on its own does. It did not before, which is the
+  // whole of why putting one on changed nothing.
+  let item = CBWornItem(game, es.GetPlayerData(player), gamedataEquipmentArea.Face,
+                        t"AttachmentSlots.Face");
+  return ItemID.IsValid(item) && CBItemIsMask(ItemID.GetTDBID(item));
+}
+
+// Does the street have any reason to scatter from this person?
+//
+// A mask means nobody can say who you are, and that is absolute rather than damped: wear one
+// and people do not run. Not a smaller radius, not a lesser tier - nothing. The chrome is still
+// on show and the reputation is still yours, but the stranger walking past has no way to
+// connect the figure in front of them to any of it, and being nobody in particular is the whole
+// reason to put a mask on.
+//
+// What this cannot and should not stop is the game's own panic. Open fire in a crowd and people
+// run from the gunfire, mask or no mask, because that reaction belongs to Cyberpunk. This governs
+// what Cyberbane adds on top: being feared on sight for who you are.
+public func CBCrowdIgnoresPlayer(game: GameInstance) -> Bool {
+  return CBPlayerMasked(game);
 }
 
 // How much of an area's chrome still shows once clothes are accounted for.
@@ -183,6 +205,21 @@ public func CBLogEquippedTags(game: GameInstance) -> Void {
     i += 1;
   }
 
+  // The wardrobe-aware route, reported separately from the plain equipment areas above. When a
+  // visual set is on these two disagree, and which of them is right is the entire question.
+  let byVisual = 0;
+  let v = 0;
+  while v < ArraySize(areas) {
+    if IsDefined(data) {
+      let vis = data.GetVisualItemInSlot(areas[v]);
+      if ItemID.IsValid(vis) {
+        byVisual += 1;
+        CBLog.Info(n"Signals", s"Worn (visual): \(TDBID.ToStringDEBUG(ItemID.GetTDBID(vis)))");
+      }
+    }
+    v += 1;
+  }
+
   let slots = [
     t"AttachmentSlots.Head", t"AttachmentSlots.Face", t"AttachmentSlots.Chest",
     t"AttachmentSlots.Torso", t"AttachmentSlots.Legs", t"AttachmentSlots.Feet",
@@ -198,5 +235,5 @@ public func CBLogEquippedTags(game: GameInstance) -> Void {
     }
     j += 1;
   }
-  CBLog.Info(n"Signals", s"Clothing check: \(byArea) by equipment area, \(bySlot) by attachment slot.");
+  CBLog.Info(n"Signals", s"Clothing check: \(byArea) by equipment area, \(byVisual) by wardrobe visual, \(bySlot) by attachment slot. Masked: \(CBPlayerMasked(game)).");
 }

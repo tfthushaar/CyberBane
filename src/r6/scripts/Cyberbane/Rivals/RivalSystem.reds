@@ -208,6 +208,62 @@ public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
       || StrContains(id, "_psycho") || StrContains(id, "boss");
 }
 
+// Take anybody the game owns off the roster.
+//
+// CBCreateRival refuses unique characters now, but a roster written before that guard existed
+// still holds them, and they are the worst case it was added for: a cyberpsycho's own health is
+// enormous before a Rival's apex-grade multiplier goes on top of it, so what turns up is
+// something the player empties magazines into for nothing. That has now been reported twice, as
+// an unkillable enemy nobody could name. Refusing new ones does not clear the ones already
+// written down, so they are cleared here, once a session, by the same test.
+public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  // The spawn templates each gang has on file, for the same reason and by the same test. These
+  // are what crews and apex squads are built from, so one bad record here is not one bad enemy,
+  // it is every enemy that gang sends from now on.
+  let wiped = 0;
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) {
+      if TDBID.IsValid(fs.sampleRecord) && CBRecordIsUniqueCharacter(fs.sampleRecord) {
+        fs.sampleRecord = TDBID.None(); wiped += 1;
+      }
+      if TDBID.IsValid(fs.eliteRecord) && CBRecordIsUniqueCharacter(fs.eliteRecord) {
+        fs.eliteRecord = TDBID.None(); wiped += 1;
+      }
+      if TDBID.IsValid(fs.roleTankRecord) && CBRecordIsUniqueCharacter(fs.roleTankRecord) {
+        fs.roleTankRecord = TDBID.None(); wiped += 1;
+      }
+      if TDBID.IsValid(fs.roleAssaultRecord) && CBRecordIsUniqueCharacter(fs.roleAssaultRecord) {
+        fs.roleAssaultRecord = TDBID.None(); wiped += 1;
+      }
+      if TDBID.IsValid(fs.roleBladeRecord) && CBRecordIsUniqueCharacter(fs.roleBladeRecord) {
+        fs.roleBladeRecord = TDBID.None(); wiped += 1;
+      }
+      if TDBID.IsValid(fs.roleNetrunnerRecord) && CBRecordIsUniqueCharacter(fs.roleNetrunnerRecord) {
+        fs.roleNetrunnerRecord = TDBID.None(); wiped += 1;
+      }
+    }
+  }
+  if wiped > 0 {
+    CBLog.Info(n"Rivals", s"Dropped \(wiped) spawn template(s) built from story characters; the gangs will file new ones from their next losses.");
+  }
+  let dropped = 0;
+  for r in sys.GetRivals() {
+    if IsDefined(r)
+       && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)
+           || r.state == EnumInt(ECBRivalState.Dormant))
+       && CBRecordIsUniqueCharacter(r.recordID) {
+      r.state = EnumInt(ECBRivalState.Retired);
+      dropped += 1;
+    }
+  }
+  if dropped > 0 {
+    CBLog.Info(n"Rivals", s"Retired \(dropped) rival(s) built from story characters; they will not come back.");
+  }
+}
+
 public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName,
     recordID: TweakDBID, appearance: CName, source: ECBRivalSource, origin: CName, at: Float) -> ref<CBRival> {
   if !IsDefined(sys) {

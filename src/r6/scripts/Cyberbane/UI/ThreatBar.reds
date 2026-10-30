@@ -138,11 +138,16 @@ public class CBThreatBar {
     if ArraySize(this.m_ids) >= CBConfig.ThreatBarRows() {
       return;
     }
+    // Taken on even if the rows are not up yet.
+    //
+    // This returned here instead, and the target was dropped for good. An enemy who arrived
+    // while the HUD layer was being rebuilt - right after a load, a fast travel, closing a
+    // menu - went the whole fight without a bar, and nothing afterwards would ever give them
+    // one. From the player's side that is an unnamed enemy with no bar and no way to tell
+    // whether they were meant to have one. Update retries the build every tick, so holding on
+    // to the target costs nothing and the bar appears the moment there is somewhere to draw it.
     if !this.EnsureBuilt() {
-      // Logged because a bar that silently fails to build is indistinguishable from one that
-      // was never asked for, and telling those two apart from the outside is impossible.
-      CBLog.Info(n"UI", "Threat bar could not be built (no ink layer yet).");
-      return;
+      CBLog.Info(n"UI", "Threat bar has no ink layer yet; holding the target until it does.");
     }
     ArrayPush(this.m_targets, puppet);
     ArrayPush(this.m_ids, id);

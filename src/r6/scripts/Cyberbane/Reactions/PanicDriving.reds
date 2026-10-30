@@ -27,6 +27,11 @@ public func CBPanicDrivingTick(sys: ref<CyberbaneSystem>, game: GameInstance, ti
   if !IsDefined(score) || score.GetDreadCiv() < CBConfig.CivTierTerror() {
     return;   // only the genuinely feared clear the streets
   }
+  // And only the recognised. A driver cannot be frightened of a reputation they cannot attach
+  // to the person in the road.
+  if CBCrowdIgnoresPlayer(game) {
+    return;
+  }
   let player = GetPlayer(game);
   if !IsDefined(player) || !player.IsInCombat() {
     return;

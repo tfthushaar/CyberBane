@@ -43,6 +43,10 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
   if npc.IsBoss() || Equals(faction, n"MaxTac") {
     return false;
   }
+  // Behind a mask you are nobody, and nobody frightens anybody.
+  if CBCrowdIgnoresPlayer(game) {
+    return false;
+  }
 
   // How intimidating V is: the scarier of reputation Dread or raw visible chrome, plus a
   // bump for a dangerous build (level, street cred and skills). See CBUpdateMenace.

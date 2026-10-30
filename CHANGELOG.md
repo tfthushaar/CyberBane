@@ -3,6 +3,54 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] - 2026-10-30
+
+### Fixed
+- **Enemies that could not be killed.** An apex was built at up to seventeen times health
+  behind seven times armour against a maxed character, which is not a hard fight, it is a wall.
+  They now take several times the punishment of the enemy they were promoted from and no more.
+  Their damage is untouched and so is the tactical kit, which is what was supposed to be
+  carrying the difficulty.
+- **Gangs were building their enforcers from story characters.** A gang files the record of
+  somebody it has lost to you and sends more of that kind later. The test for "this is a
+  one-off character, do not keep it" only caught quest NPCs, so killing a cyberpsycho or a
+  boss-rarity elite filed that record, and every apex squad the gang sent afterwards was built
+  from it: four copies of something with a boss's health, with the apex multiplier on top. The
+  test is now the same one the rival roster uses, and any such record already on file is
+  dropped when you load.
+- **Enemies spawning in mid air.** Spawn points taken from the game's own navigation search
+  were used as handed over. In the vertical parts of the city a point can sit well above
+  whatever is underneath it, and what lands after the fall is a ragdoll that cannot be shot and
+  carries no bar. Every spawn point is now stood on the floor beneath it, and a point with no
+  floor within reach is refused.
+- **No crew ever arrived by car.** The call that asks the city to send one went through the
+  wrong system and could never succeed; the compiler had been saying so on every build. Fixed,
+  so crews can pull up instead of only ever walking in.
+- **Nothing was sent for the first ten minutes of every session.** Each lane rests for a while
+  after an encounter ends. Both the clock and the stamp it is measured against start at zero on
+  a load, so a lane that had never done anything read as one that had just finished something,
+  and sat out the whole rest period after every single load. The Hub reported this as "due,
+  nobody qualifies yet" while a full rival list waited, which was not true and sent people
+  looking in the wrong place. A lane that is resting now says so and counts down.
+- **Clothes were not being read at all on a lot of saves.** If you dress through the wardrobe
+  rather than by equipping items one at a time, the clothing slots are empty and the items live
+  in the wardrobe set, so a fully dressed V reported as wearing nothing: no chrome hidden, no
+  mask detected, the whole concealment system quietly doing nothing. It now asks the game the
+  same way the game asks itself.
+- **Health bars going missing.** An enemy who arrived while the HUD was being rebuilt, which
+  happens after a load or a fast travel, was dropped and never got a bar for the rest of the
+  fight. They are held now and the bar appears as soon as there is somewhere to draw it.
+
+### Changed
+- **A mask means nobody runs.** Covering your face used to take about a fifth off what the
+  street reads, which is not enough to change anything you could see. Now people do not scatter
+  from you at all while it is on: whatever you are known for, a stranger cannot attach it to the
+  person walking past them. Opening fire still frightens people, because that reaction is the
+  game's, not this mod's.
+- **Everyone the mod sends is on your map.** Markers were on rivals and apex squads only, so
+  searching for a crew that had just been announced turned up nothing and looked broken. Crews
+  and escorts carry one too.
+
 ## [1.4.0] - 2026-10-30
 
 ### Fixed

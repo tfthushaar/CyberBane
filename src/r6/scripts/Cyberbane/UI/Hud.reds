@@ -940,6 +940,14 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     // "next in 0s" was true and told the player nothing, and a zero that never counts down
     // reads as a stuck clock.
     if hrs <= 0.0 {
+      // A lane that is due can still be resting: the gap after its last encounter runs on its
+      // own clock and has nothing to do with who is on the books. Saying "nobody qualifies"
+      // then is simply untrue, and it sent a player hunting for a bug in a Rival list that was
+      // eleven names long and working perfectly.
+      let rest = CBLaneRestLeft(sys, lane);
+      if rest > 0 {
+        return label + "   breather, " + CBHudCountdown(rest) + CBHudBudgetTail(sys, game, lane);
+      }
       return label + "   due, nobody qualifies yet" + CBHudBudgetTail(sys, game, lane);
     }
     return label + "   next in " + CBHudRealFromGameHours(hrs) + CBHudBudgetTail(sys, game, lane);
@@ -1033,6 +1041,11 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   let reg = sys.GetRegistry();
   if !IsDefined(reg) || reg.Count() == 0 {
     return "Right now: Cyberbane is not tracking anybody nearby, so nobody can react yet.";
+  }
+  // Say so before anything else, because a masked player reading "nobody backs off yet" would
+  // reasonably conclude the mask had done nothing when it is doing all of it.
+  if CBCrowdIgnoresPlayer(GetGameInstance()) {
+    return s"Right now: your face is covered, so nobody can place you and nobody runs. (\(reg.Count()) tracked)";
   }
   let chromeVisible = score.GetChromeVisible();
   let eff = MaxF(score.GetDreadCiv(), chromeVisible) + score.GetMenace() * CBConfig.MenaceFearWeight();

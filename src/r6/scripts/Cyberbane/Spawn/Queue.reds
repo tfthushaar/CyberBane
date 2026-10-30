@@ -38,7 +38,10 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
   // nothing has attached, every "is one of these alive" test answers no, and the lane would
   // send a second one on top of the first. Bounded by a tick count rather than by waiting for
   // an attach that might never come, so this can delay a lane but never wedge it.
-  if (sys.GetTickCount() - sys.GetLaneFired(lane)) < CBConfig.LaneSettleTicks() {
+  // Zero means this lane has never sent anybody, not that it sent somebody at tick zero. The
+  // tick counter increments before any lane code runs, so a real stamp is always one or more.
+  if sys.GetLaneFired(lane) > 0
+     && (sys.GetTickCount() - sys.GetLaneFired(lane)) < CBConfig.LaneSettleTicks() {
     return true;
   }
   if lane == CBLaneRival() {
@@ -172,7 +175,7 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // The spacing floor still applies on top. At default settings the slots are about an hour
     // of real play apart and it never binds; it only matters if the per-day sliders are pushed
     // high enough that two windows in one sector crowd each other.
-    if (sys.GetTickCount() - sys.GetLaneFreed(lane)) < CBEncounterGapTicks() {
+    if CBLaneRestLeft(sys, lane) > 0 {
       return;
     }
   }
@@ -426,6 +429,22 @@ public func CBLaneDailyCap(lane: Int32) -> Int32 {
 public func CBLaneBudgetLeft(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Int32 {
   let left = CBLaneDailyCap(lane) - sys.LaneSentToday(lane, CBGameDay(game));
   return left < 0 ? 0 : left;
+}
+
+// How long this lane still has to rest before it may pick anybody, in ticks. Zero when it is
+// free to go.
+//
+// The stamp and the tick counter both start at zero on a fresh session, so the old arithmetic
+// read "nothing has happened for no time at all" as "this lane finished an encounter a moment
+// ago" and sat out the full gap - ten real minutes of silence after every single load, in all
+// three lanes, with the Hub reporting that the lane was due and nobody qualified while eleven
+// Rivals waited their turn. A lane that has never been busy has nothing to rest from.
+public func CBLaneRestLeft(sys: ref<CyberbaneSystem>, lane: Int32) -> Int32 {
+  if !IsDefined(sys) || sys.GetLaneFreed(lane) <= 0 {
+    return 0;
+  }
+  let left = CBEncounterGapTicks() - (sys.GetTickCount() - sys.GetLaneFreed(lane));
+  return left > 0 ? left : 0;
 }
 
 // How long a lane rests after its encounter ends, in ticks of about a second.
