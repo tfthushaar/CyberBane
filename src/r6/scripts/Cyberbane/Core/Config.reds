@@ -329,6 +329,11 @@ public abstract class CBConfig {
   public static func SpawnMaxFacingCosine() -> Float = 0.342
   // And the shortest distance worth queuing an out-of-view spawn at.
   public static func SpawnMinDistance() -> Float = 25.0
+  // Bearings tried around V before giving up, starting directly behind and widening. Every
+  // candidate point used to lie on the one line behind the player, so a wall, a building or a
+  // drop in that direction failed all of them for the same reason and the encounter was
+  // refused while perfectly good ground sat to either side.
+  public static func SpawnBearingTries() -> Int32 = 9
   public static func SpawnPerRank() -> Int32 = 4
   public static func SpawnRankSpacing() -> Float = 3.0
   // How far a navmesh snap may move a body from where its rank asked for it before the point

@@ -25,6 +25,22 @@ This project follows [Semantic Versioning](https://semver.org/).
   street cannot have an opinion about something nobody witnessed. There is also a switch to
   turn that scoring off entirely.
 
+### Fixed
+- **Enemies are placed the way the police are placed.** Every spot the mod considered was
+  directly behind you, so a wall, a building or a drop in that one direction failed all of them
+  and the encounter was refused while perfectly good ground sat to either side. It now asks the
+  game's own navigation system where a pursuer could stand, which is exactly what the NCPD use
+  to put a squad on your street. Rivals, gang crews and apex squads all go through it.
+- **Nothing spawns in the game's own no-spawn areas any more**, using the same test the police
+  use rather than a second opinion.
+- **How frightening you are now follows what people can see.** It was reading everything you
+  had installed rather than what was on show, so putting a coat on could never change it.
+- **The Rivals screen could name somebody it then did not list.** With more rivals than rows,
+  the one actually on their way could fall off the end of the list. They are pinned to the top
+  now.
+- A lane that was due but had nobody eligible read "next in 0s", a clock that never counted
+  down. It says what is actually holding it up.
+
 ### Added
 - **What you wear hides what you are carrying.** Visible chrome was counted from what you had
   installed, so a fully chromed merc in a parka read exactly as loud as the same merc in a

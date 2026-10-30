@@ -177,6 +177,57 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
 // `lastSpawned` comes back as the entity of the last one placed, so a caller that cares about
 // a single arrival (a Rival) can hold onto it and attribute the kill later without relying on
 // the tag still being there.
+// Ask the game where a pursuer could stand.
+//
+// This is what the police use. `PreventionSystem.SpawnFallbackUnits` gets its positions from
+// `FindPursuitPointsRangeAsync`, and the synchronous form of the same thing lives on the
+// NavigationSystem, so there is no callback to plumb. It walks the navmesh around the player
+// and hands back points an agent of a given size can actually stand on, plus a fallback list
+// for when the strict pass finds nothing.
+//
+// Everything this mod did before was an approximation of this: probe the ground behind V, snap
+// to navmesh, retry at a few distances, sweep some bearings. All of it was reinventing, badly,
+// a function the game already exports - which is why an encounter could be refused for minutes
+// while the NCPD put a squad on the same street without difficulty.
+public func CBPursuitPoints(game: GameInstance, ppos: Vector4, fwd: Vector4, count: Int32,
+                            minR: Float, maxR: Float, out pts: array<Vector4>) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  if !IsDefined(nav) {
+    return false;
+  }
+  let results: array<Vector4>;
+  let fallback: array<Vector4>;
+  // Behind V, which is where an arrival should come from; the search spreads out from there.
+  let dir = new Vector4(-fwd.X, -fwd.Y, 0.0, 0.0);
+  nav.FindPursuitPointsRange(ppos, ppos, dir, minR, maxR, count, true,
+                             NavGenAgentSize.Human, results, fallback);
+  pts = results;
+  // The strict pass can come back empty in tight streets and interiors. The fallback list is
+  // the game's own second answer rather than ours, so it is still a place the navmesh says a
+  // person fits.
+  if ArraySize(pts) == 0 {
+    pts = fallback;
+  }
+  return ArraySize(pts) > 0;
+}
+
+// Which way to look on this attempt, in radians from directly behind V.
+//
+// Behind, then a quarter turn each way, then wider, then in front as a last resort. Ordered so
+// the common case still puts them at V's back and the player is not spawned in front of unless
+// there is nowhere else at all.
+func CBSpawnBearing(attempt: Int32) -> Float {
+  if attempt <= 0 { return 0.0; }
+  if attempt == 1 { return 0.52; }
+  if attempt == 2 { return -0.52; }
+  if attempt == 3 { return 1.05; }
+  if attempt == 4 { return -1.05; }
+  if attempt == 5 { return 1.57; }
+  if attempt == 6 { return -1.57; }
+  if attempt == 7 { return 2.36; }
+  return -2.36;
+}
+
 public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float, out lastSpawned: EntityID) -> Int32 {
   if !TDBID.IsValid(record) || count <= 0 {
     CBNoteSpawnBlock(CBBlockNoRecord());
@@ -213,8 +264,35 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let spawned = 0;
   // Assume the worst and clear it on success, so a silent refusal cannot look like a success.
   CBNoteSpawnBlock(CBBlockNoGround());
+
+  // The game's own answer first. If the navmesh offers places to stand, use them and skip the
+  // hand-rolled probing entirely; it is only there for when this comes back with nothing.
+  let navPts: array<Vector4>;
+  if CBPursuitPoints(game, ppos, fwd, count, dist * 0.6, dist * 1.6, navPts) {
+    let n = 0;
+    while n < ArraySize(navPts) && spawned < count {
+      let p = navPts[n];
+      n += 1;
+      if !CBSafeAreaBlocksSpawn(game, p) {
+        let facing = Quaternion.BuildFromDirectionVector(
+          Vector4.Normalize2D(new Vector4(ppos.X - p.X, ppos.Y - p.Y, 0.0, 0.0)));
+        if CBCreateSpawn(des, record, appearance,
+                         new Vector4(p.X, p.Y, p.Z + CBConfig.GroundSpawnLift(), 1.0),
+                         facing, squadTag, lastSpawned) {
+          spawned += 1;
+        }
+      }
+    }
+    if spawned >= count {
+      CBNoteSpawnBlock(CBBlockNone());
+      return spawned;
+    }
+  }
+
   let i = 0;
-  while i < count {
+  // `spawned` already counts anyone the navmesh placed above, so this caps the total rather
+  // than placing a second full group on top of a partial one.
+  while i < count && spawned < count {
     // Lay them out in ranks rather than one long line. At 2.5 m apart a squad of twenty would
     // otherwise stretch fifty metres across, with most of the lanes failing the ground and
     // safe area checks and the survivors looking like a parade.
@@ -238,11 +316,25 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         placed = true;
       }
     }
+    // Sweep around V rather than staring at one spot.
+    //
+    // Behind the player first, because that is where an arrival should come from, then wider
+    // and wider to either side and finally in front. Only the direction changes; the ground,
+    // safe area and drop checks are exactly as strict as before, so this finds more places to
+    // stand without lowering the bar for what counts as one.
     let attempt = 0;
-    while attempt < 3 && !placed {
-      let d = dist * CBSpawnDistanceScale(attempt) + rankBack;
-      let px = ppos.X - fwd.X * d + rx * lane * 2.5;
-      let py = ppos.Y - fwd.Y * d + ry * lane * 2.5;
+    while attempt < CBConfig.SpawnBearingTries() && !placed {
+      let ang = CBSpawnBearing(attempt);
+      let ca = CosF(ang);
+      let sa = SinF(ang);
+      // Behind V, rotated by the bearing, with the lane offset rotated to match.
+      let bx = -fwd.X * ca - (-fwd.Y) * sa;
+      let by = -fwd.X * sa + (-fwd.Y) * ca;
+      let lx = rx * ca - ry * sa;
+      let ly = rx * sa + ry * ca;
+      let d = dist * CBSpawnDistanceScale(attempt % 3) + rankBack;
+      let px = ppos.X + bx * d + lx * lane * 2.5;
+      let py = ppos.Y + by * d + ly * lane * 2.5;
       let gz: Float;
       // An apartment, a bar, a clinic. The game forces V's hands empty in there, so an
       // arrival is a fight the player cannot have (spec §16). Off unless they ask for it.

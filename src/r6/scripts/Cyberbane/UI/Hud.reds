@@ -685,49 +685,82 @@ public class CBHud {
     let content = sys.GetContent();
     let rivals = sys.GetRivals();
     let shown = 0;
+
+    // The one who is actually coming goes first.
+    //
+    // The list is capped at CBHudRowCount rows and taken in storage order, so with more
+    // Rivals than rows the one the Legend screen names as incoming could be past the end and
+    // simply absent. From the outside that reads as the mod naming somebody who does not
+    // exist. Pinning the queued Rival to the top means the name on INCOMING is always on this
+    // screen, whatever the cap is.
+    let queuedId = sys.GetLaneRivalId(CBLaneRival());
+    let pinned = sys.FindRivalById(queuedId);
+    if IsDefined(pinned) && (pinned.state == EnumInt(ECBRivalState.Active)
+                             || pinned.state == EnumInt(ECBRivalState.Hunting)) {
+      this.RenderRivalRow(sys, content, pinned, shown);
+      shown += 1;
+    } else {
+      queuedId = 0;
+    }
+
     let i = 0;
     while i < ArraySize(rivals) && shown < CBHudRowCount() {
       let r = rivals[i];
       i += 1;
-      if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-        // Standing in front of you, not merely carrying a grudge.
-        //
-        // This read the Hunting state, which is set when a Rival starts coming for you and is
-        // never cleared afterwards, so every Rival who had ever hunted you claimed to be here
-        // now - several at once, while the lane only ever has one out. Ask the world instead.
-        let body = GameInstance.FindEntityByID(sys.GetGameInstance(), r.spawnedEntityId) as ScriptedPuppet;
-        let hunting = EntityID.IsDefined(r.spawnedEntityId) && CBStillStanding(body);
-        let role = CBRoleShort(CBRivalRole(sys, r));
-        let gang = CBFactionLabel(r.faction);
-        if NotEquals(role, "") {
-          gang += "  " + role;
-        } else {
-          gang += s"  rank \(r.rank)";
-        }
-        // Only one Rival is ever on the clock, so only that one shows a countdown. The rest
-        // say plainly that they are waiting rather than each showing a timer for a turn they
-        // are not having, which is what made several clocks appear to run at once.
-        let queued = r.id == sys.GetLaneRivalId(CBLaneRival()) && sys.GetLaneTicks(CBLaneRival()) > 0;
-        let rightCol = "waiting their turn";
-        if hunting {
-          rightCol = "here now";
-        } else {
-          if queued {
-            rightCol = "arrives in " + CBHudCountdown(sys.GetLaneTicks(CBLaneRival()));
-          } else {
-            if StrLen(this.m_holdLabel) > 0 {
-              rightCol = this.m_holdLabel;
-            }
-          }
-        }
-        this.SetRow(shown, hunting ? CBHudRed() : CBHudAmber(),
-          IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
-          gang,
-          CBScarLabel(r.scarMask),
-          rightCol);
+      // Skipping the pinned one by id rather than by `continue`, which redscript does not have.
+      if IsDefined(r) && r.id != queuedId
+         && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+        this.RenderRivalRow(sys, content, r, shown);
         shown += 1;
       }
     }
+  }
+
+  // One Rival's line. Pulled out of the loop so the Rival who is actually on their way can be
+  // drawn first without duplicating any of this.
+  private func RenderRivalRow(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>,
+                              r: ref<CBRival>, row: Int32) -> Void {
+    // Standing in front of you, not merely carrying a grudge.
+    //
+    // This read the Hunting state, which is set when a Rival starts coming for you and is
+    // never cleared afterwards, so every Rival who had ever hunted you claimed to be here
+    // now - several at once, while the lane only ever has one out. Ask the world instead.
+    let body = GameInstance.FindEntityByID(sys.GetGameInstance(), r.spawnedEntityId) as ScriptedPuppet;
+    let hunting = EntityID.IsDefined(r.spawnedEntityId) && CBStillStanding(body);
+    let role = CBRoleShort(CBRivalRole(sys, r));
+    let gang = CBFactionLabel(r.faction);
+    if NotEquals(role, "") {
+      gang += "  " + role;
+    } else {
+      gang += s"  rank \(r.rank)";
+    }
+    // Only one Rival is ever on the clock, so only that one shows a countdown. The rest say
+    // plainly that they are waiting rather than each showing a timer for a turn they are not
+    // having, which is what made several clocks appear to run at once.
+    let onClock = r.id == sys.GetLaneRivalId(CBLaneRival());
+    let rightCol = "waiting their turn";
+    if hunting {
+      rightCol = "here now";
+    } else {
+      if onClock && sys.GetLaneTicks(CBLaneRival()) > 0 {
+        rightCol = "arrives in " + CBHudCountdown(sys.GetLaneTicks(CBLaneRival()));
+      } else {
+        if onClock {
+          // Their clock has run out and they are being placed. The Legend screen says the same
+          // thing about them, and the two screens disagreeing is what this is here to stop.
+          rightCol = "any moment";
+        } else {
+          if StrLen(this.m_holdLabel) > 0 {
+            rightCol = this.m_holdLabel;
+          }
+        }
+      }
+    }
+    this.SetRow(row, hunting ? CBHudRed() : CBHudAmber(),
+      IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
+      gang,
+      CBScarLabel(r.scarMask),
+      rightCol);
   }
 
   private func RenderChips() -> Void {
@@ -895,6 +928,13 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     let hrs = CBHoursUntilNextSlot(sys, game, lane);
     if hrs < 0.0 {
       return label + "   done for today" + CBHudBudgetTail(sys, game, lane);
+    }
+    // Due now but nothing queued means the timetable has room and nobody qualifies: no gang
+    // has taken enough losses to send their best, or no Rival is off their cooldown. Saying
+    // "next in 0s" was true and told the player nothing, and a zero that never counts down
+    // reads as a stuck clock.
+    if hrs <= 0.0 {
+      return label + "   due, nobody qualifies yet" + CBHudBudgetTail(sys, game, lane);
     }
     return label + "   next in " + CBHudRealFromGameHours(hrs) + CBHudBudgetTail(sys, game, lane);
   }

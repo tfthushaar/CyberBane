@@ -102,5 +102,14 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
 
   let c = CBComputeChrome(usage, implantSum, overalloc);
   let cVisible = CBComputeChromeVisible(visibleSum, 0.0);
+
+  // Report it when it moves. Concealment is the sort of feature that can look like it does
+  // nothing when it is in fact working and being hidden by the ceiling, and there is no way to
+  // tell those apart from a screenshot of a bar sitting at 100.
+  let rounded = RoundF(cVisible);
+  if rounded != sys.GetLastLoggedChrome() {
+    sys.SetLastLoggedChrome(rounded);
+    CBLog.Info(n"Signals", s"Visible chrome \(rounded) (arms covered: \(CBArmsCovered(data)), legs: \(CBLegsCovered(data)), face: \(CBFaceCovered(data))).");
+  }
   sys.GetScore().SetChrome(c, cVisible, overalloc);
 }

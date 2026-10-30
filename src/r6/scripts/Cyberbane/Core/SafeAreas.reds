@@ -198,6 +198,15 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
     CBNoteSpawnBlock(CBBlockCannotFight());
     return true;
   }
+  // The game's own no-spawn areas, which is how the NCPD know not to materialise inside a
+  // megabuilding lobby. Reusing the police answer rather than keeping a second opinion: this
+  // is a plain point test with no side effects, and it can only ever refuse a point, never
+  // allow one the checks below would have rejected.
+  let pss = GameInstance.GetPreventionSpawnSystem(game);
+  if IsDefined(pss) && pss.IsPointInPreventionFreeArea(at) {
+    CBNoteSpawnBlock(CBBlockProtectedZone());
+    return true;
+  }
   // Somebody else's story is already happening here.
   if CBPlayerInQuestArea(game) {
     CBNoteSpawnBlock(CBBlockQuestArea());

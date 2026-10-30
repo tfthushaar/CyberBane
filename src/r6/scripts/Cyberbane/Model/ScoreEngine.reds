@@ -107,7 +107,13 @@ public class CBScoreEngine {
     let k = CBKillDreadComponent(sys.GetKillDreadPoints());
     let x = CBDeedDreadComponent(sys.GetDeedDreadPoints());
     let h = CBHeatDreadComponent(sys.GetHeatPoints());
-    this.m_dread = CBComputeDread(k, this.m_chrome, this.m_look, x, h);
+    // Visible chrome, not installed chrome.
+    //
+    // This read m_chrome, which is the humanity-weighted total of everything fitted, so dread
+    // could never respond to clothing: a player who put a coat on over gorilla arms saw the
+    // number stay exactly where it was. What frightens a stranger is what the stranger can
+    // see, which is what m_chromeVisible is for and what Concealment.reds reduces.
+    this.m_dread = CBComputeDread(k, this.m_chromeVisible, this.m_look, x, h);
 
     let stats = sys.GetStats();
     let mercy = 0.0;

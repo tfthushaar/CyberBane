@@ -56,6 +56,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   // scripts says whether it ticks in real seconds or in the compressed in-game clock. If it is
   // the latter, the ten minutes between encounters is nothing like ten minutes of play. This
   // measures it against the sim clock over sixty ticks and writes the ratio to the log once.
+  // Last visible-chrome figure written to the log, so the line only appears when it moves.
+  private let m_lastLoggedChrome: Int32;
   private let m_clockGame0: Float;
   private let m_clockSim0: Float;
   private let m_clockTicks: Int32;  // boss bar for whoever is hunting you
@@ -764,6 +766,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     // rules key off which slots are filled because sleeve length is not in TweakDB, and this
     // is the only way to find out whether the real visual tags could do better.
     CBLogEquippedTags(game);
+  }
+
+  public func GetLastLoggedChrome() -> Int32 {
+    return this.m_lastLoggedChrome;
+  }
+
+  public func SetLastLoggedChrome(v: Int32) -> Void {
+    this.m_lastLoggedChrome = v;
   }
 
   public func GetTickCount() -> Int32 {
