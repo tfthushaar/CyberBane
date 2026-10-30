@@ -78,7 +78,7 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   // Those tables are hand-written and will never cover every face item in the game, and a
   // player who covers their face and sees nothing change reasonably concludes the system does
   // not work.
-  if CBFaceCovered(data) && CBPlayerMasked(game) {
+  if CBFaceCovered(game, data) && CBPlayerMasked(game) {
     disguiseSum += CBConfig.MaskDisguise();
   }
   score.SetLook(MaxF(lookSum, 0.0), ClampF(disguiseSum, 0.0, 0.85));

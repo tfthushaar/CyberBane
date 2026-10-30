@@ -96,7 +96,7 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
       implantSum += 3.0 * mult;
       // Scaled by what V is wearing over it (Signals/Concealment.reds). Installed chrome is
       // still installed; this is only about what a stranger can see.
-      visibleSum += CBVisibleChromeWeight(area) * mult * CBChromeVisibility(area, data);
+      visibleSum += CBVisibleChromeWeight(area) * mult * CBChromeVisibility(game, area, data);
     }
   }
 
@@ -109,7 +109,7 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let rounded = RoundF(cVisible);
   if rounded != sys.GetLastLoggedChrome() {
     sys.SetLastLoggedChrome(rounded);
-    CBLog.Info(n"Signals", s"Visible chrome \(rounded) (arms covered: \(CBArmsCovered(data)), legs: \(CBLegsCovered(data)), face: \(CBFaceCovered(data))).");
+    CBLog.Info(n"Signals", s"Visible chrome \(rounded) (arms covered: \(CBArmsCovered(game, data)), legs: \(CBLegsCovered(game, data)), face: \(CBFaceCovered(game, data))).");
   }
   sys.GetScore().SetChrome(c, cVisible, overalloc);
 }

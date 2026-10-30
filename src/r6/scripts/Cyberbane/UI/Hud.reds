@@ -903,7 +903,13 @@ func CBHudIncoming(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
 func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, label: String) -> String {
   let who = "";
   if lane == CBLaneRival() {
+    // Only name a Rival the Rivals screen would also list. This read the lane's id and printed
+    // whoever it found, with no check on their state, so a Rival who had been spared or retired
+    // after being queued was announced as incoming on one screen and absent from the other.
     let r = sys.FindRivalById(sys.GetLaneRivalId(lane));
+    if IsDefined(r) && !CBRivalQueueable(sys, r.id) {
+      r = null;
+    }
     who = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "";
   } else {
     let f = sys.GetLaneTarget(lane);

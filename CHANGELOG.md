@@ -3,6 +3,37 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.8] - 2026-10-30
+
+### Fixed
+- **Enemies sent after you were never marked as aggressive, so everything else was being asked
+  of an NPC the game still thought was passive.** The game marks its own pursuers with a flag,
+  and an ordinary ganger does not have it. Without it the order to turn on you can quietly do
+  nothing. They get it now, the same way the NCPD and the gangs' own fighters do. This is the
+  piece that was missing behind several versions of enemies standing around.
+- **You were being left waiting the better part of an hour.** The daily allowance was set by
+  feel rather than against the clock. A day in Night City is about three hours of actually
+  playing, so three rivals a day meant one every fifty-nine real minutes, and the Hub was
+  honestly reporting it. Something now comes for you about every ten minutes: rivals roughly
+  every twenty, crews every thirty-five, apex squads every forty-five, so an apex squad is
+  still the rare one. All three remain sliders, now up to twenty a day.
+- **No more dead start.** The day's plan is laid out across the whole day, so loading in at the
+  wrong moment could leave the next encounter most of an hour away. The soonest one is pulled
+  to within a few minutes of you sitting down. The rest of the day keeps its shape.
+- **The plan is no longer built before the clock is running.** Right after a load the game
+  cannot say what day or hour it is, and the timetable was being built against that: the log
+  showed a plan for "Day 0" seconds before a save on day 87 loaded, then no lane doing anything
+  for five minutes. It waits for the clock now.
+- **The incoming line can no longer name a rival the Rivals screen does not list.** It printed
+  whoever the queue held without checking they were still someone who could come.
+- **Clothing is detected properly.** Coverage only asked one of the two ways the game stores
+  what you are wearing, and on a real save that one came back empty for every slot, so nothing
+  ever counted as covered. It asks both now.
+
+### Changed
+- When a queue is due but has nobody who qualifies, it says so in the log once a minute instead
+  of sitting silent, since silence and a broken queue look identical from the outside.
+
 ## [1.3.7] - 2026-10-30
 
 ### Fixed

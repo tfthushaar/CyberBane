@@ -89,7 +89,8 @@ public func CBRollSchedule(sys: ref<CyberbaneSystem>, game: GameInstance, day: I
     }
     s += 1;
   }
-  CBLog.Info(n"Spawn", s"Day \(day): timetable set, \(sys.SlotCount()) encounters planned.");
+  CBPullFirstSlotForward(sys, game);
+  CBLog.Info(n"Spawn", s"Day \(day) at \(RoundF(CBGameHourOfDay(game)))h: timetable set, \(sys.SlotCount()) encounters planned.");
 }
 
 // How many slots this kind gets in sector `s`.
@@ -120,6 +121,35 @@ func CBShuffledLanes(lanes: array<Int32>) -> array<Int32> {
     i -= 1;
   }
   return out;
+}
+
+// Do not start a session with a long silence.
+//
+// A timetable is rolled at the start of an in-game day and whenever a save is loaded, and the
+// windows it lays down are spread across the whole day. Load in at the wrong moment and the
+// next one is most of an hour of real play away, which from the player's side is a mod that
+// does nothing. This drags the soonest upcoming slot back to within a few minutes of now, so
+// there is always something coming shortly after you sit down. It moves one slot; the rest of
+// the day keeps its shape.
+func CBPullFirstSlotForward(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let now = CBGameHourOfDay(game);
+  let best = -1;
+  let bestAt = 0.0;
+  let i = 0;
+  while i < sys.SlotCount() {
+    if !sys.SlotSpent(i) && sys.SlotAt(i) > now && now < sys.SlotEnd(i) {
+      if best < 0 || sys.SlotAt(i) < bestAt {
+        best = i;
+        bestAt = sys.SlotAt(i);
+      }
+    }
+    i += 1;
+  }
+  // Already soon enough, or nothing left today. Either way leave it alone.
+  if best < 0 || bestAt - now <= CBConfig.FirstSlotMaxWaitHours() {
+    return;
+  }
+  sys.MoveSlot(best, now + RandRangeF(0.1, CBConfig.FirstSlotMaxWaitHours()));
 }
 
 // Is this lane due right now?
@@ -168,6 +198,12 @@ public func CBSpendSlot(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int
 
 // Roll a new timetable when the day turns. Safe to call every tick.
 public func CBScheduleTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  // Nothing is planned until the clock and the world are both up. A timetable built against a
+  // clock that is not running yet is a timetable for the wrong day at the wrong hour, and
+  // every lane then sits waiting for windows that already passed or have not come.
+  if !CBClockReady(game) || !CBWorldStable(game) {
+    return;
+  }
   let day = CBGameDay(game);
   if !sys.ScheduleRolled() || sys.ScheduleDay() != day {
     CBRollSchedule(sys, game, day);

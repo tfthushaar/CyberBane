@@ -446,9 +446,19 @@ public abstract class CBConfig {
   // day with a shape to it: busy enough that the city is clearly after you, bounded enough
   // that it ends. Each lane counts separately, so a full day of Rivals does not use up the
   // crews.
-  public static func RivalsPerDayDefault() -> Int32 = 3
-  public static func HitSquadsPerDayDefault() -> Int32 = 2
-  public static func ApexSquadsPerDayDefault() -> Int32 = 2
+  // Set against the clock rather than by feel. An in-game day is 24 hours and the world clock
+  // runs about 8.1x real time, so a day is roughly 178 minutes of actually playing. At the old
+  // 3/2/2 that is one Rival every 59 real minutes and something of any kind every 25, which is
+  // most of an evening spent waiting - and the Hub said so, in plain minutes.
+  //
+  // 8/5/4 puts something on you every 10 real minutes: Rivals every 22, crews every 36, apex
+  // squads every 45. Apex stays the rare one, which is what makes it land.
+  // How long you may be left waiting at the start of a session before something is pulled
+  // forward. 0.5 in-game hours is about four minutes of real play.
+  public static func FirstSlotMaxWaitHours() -> Float = 0.5
+  public static func RivalsPerDayDefault() -> Int32 = 8
+  public static func HitSquadsPerDayDefault() -> Int32 = 5
+  public static func ApexSquadsPerDayDefault() -> Int32 = 4
   // How long a lane stays busy after sending somebody, to cover the gap between asking for a
   // spawn and it existing. Short, and a hard count rather than a wait on an attach.
   public static func LaneSettleTicks() -> Int32 = 8

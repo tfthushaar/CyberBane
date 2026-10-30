@@ -18,29 +18,51 @@
 // several versions removing. CBLogEquippedTags below exists so the tag table can be built from
 // a real session later, and this replaced with something exact.
 
-// An outer layer over the chest, which is what hides arms and skin.
-public func CBArmsCovered(data: ref<EquipmentSystemPlayerData>) -> Bool {
-  if !IsDefined(data) {
+// Is anything actually hanging on this attachment slot?
+//
+// The second of two ways to ask, and the reason there are two. The equipment areas are what
+// the game's own code reads, and on this save they came back empty for every clothing slot
+// while the cyberware slots in the same data object resolved perfectly: the log shows visible
+// chrome computed from implants and `arms covered: false` with nothing worn reported at all.
+// Clothing is hung on attachment slots as well, so this asks the transaction system directly
+// and either answer counts. Checking both can only ever find coverage the single check missed.
+func CBSlotWorn(game: GameInstance, slot: TweakDBID) -> Bool {
+  let player = GetPlayer(game);
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !IsDefined(player) || !IsDefined(ts) {
     return false;
   }
-  return ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.OuterChest))
-      || ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Outfit));
+  return ItemID.IsValid(ts.GetActiveItemInSlot(player, slot));
 }
 
-public func CBLegsCovered(data: ref<EquipmentSystemPlayerData>) -> Bool {
-  if !IsDefined(data) {
-    return false;
+// An outer layer over the chest, which is what hides arms and skin.
+public func CBArmsCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
+  if IsDefined(data)
+     && (ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.OuterChest))
+         || ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Outfit))) {
+    return true;
   }
-  return ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Legs))
-      || ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Outfit));
+  return CBSlotWorn(game, t"AttachmentSlots.Chest")
+      || CBSlotWorn(game, t"AttachmentSlots.Torso")
+      || CBSlotWorn(game, t"AttachmentSlots.Outfit");
+}
+
+public func CBLegsCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
+  if IsDefined(data)
+     && (ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Legs))
+         || ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Outfit))) {
+    return true;
+  }
+  return CBSlotWorn(game, t"AttachmentSlots.Legs")
+      || CBSlotWorn(game, t"AttachmentSlots.Outfit");
 }
 
 // Something across the face. Hides eye chrome, and hides who you are.
-public func CBFaceCovered(data: ref<EquipmentSystemPlayerData>) -> Bool {
-  if !IsDefined(data) {
-    return false;
+public func CBFaceCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
+  if IsDefined(data) && ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Face)) {
+    return true;
   }
-  return ItemID.IsValid(data.GetActiveItem(gamedataEquipmentArea.Face));
+  return CBSlotWorn(game, t"AttachmentSlots.Face");
 }
 
 // A mask, as opposed to sunglasses.
@@ -78,7 +100,17 @@ public func CBPlayerMasked(game: GameInstance) -> Bool {
     return false;
   }
   let item = data.GetActiveItem(gamedataEquipmentArea.Face);
-  return ItemID.IsValid(item) && CBItemIsMask(ItemID.GetTDBID(item));
+  if ItemID.IsValid(item) {
+    return CBItemIsMask(ItemID.GetTDBID(item));
+  }
+  // Same second route as the coverage checks: the equipment area can be empty while the item
+  // is hanging on the attachment slot.
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !IsDefined(ts) {
+    return false;
+  }
+  let slotted = ts.GetActiveItemInSlot(player, t"AttachmentSlots.Face");
+  return ItemID.IsValid(slotted) && CBItemIsMask(ItemID.GetTDBID(slotted));
 }
 
 // How much of an area's chrome still shows once clothes are accounted for.
@@ -90,17 +122,18 @@ public func CBPlayerMasked(game: GameInstance) -> Bool {
 public func CBCoveredChromeMult() -> Float = 0.25
 
 // What fraction of this area's visible weight survives being dressed.
-public func CBChromeVisibility(area: gamedataEquipmentArea, data: ref<EquipmentSystemPlayerData>) -> Float {
-  if Equals(area, gamedataEquipmentArea.ArmsCW) && CBArmsCovered(data) {
+public func CBChromeVisibility(game: GameInstance, area: gamedataEquipmentArea,
+                               data: ref<EquipmentSystemPlayerData>) -> Float {
+  if Equals(area, gamedataEquipmentArea.ArmsCW) && CBArmsCovered(game, data) {
     return CBCoveredChromeMult();
   }
-  if Equals(area, gamedataEquipmentArea.IntegumentarySystemCW) && CBArmsCovered(data) {
+  if Equals(area, gamedataEquipmentArea.IntegumentarySystemCW) && CBArmsCovered(game, data) {
     return CBCoveredChromeMult();   // the skin people can see is mostly arms and chest
   }
-  if Equals(area, gamedataEquipmentArea.LegsCW) && CBLegsCovered(data) {
+  if Equals(area, gamedataEquipmentArea.LegsCW) && CBLegsCovered(game, data) {
     return CBCoveredChromeMult();
   }
-  if Equals(area, gamedataEquipmentArea.EyesCW) && CBFaceCovered(data) {
+  if Equals(area, gamedataEquipmentArea.EyesCW) && CBFaceCovered(game, data) {
     return CBCoveredChromeMult();
   }
   return 1.0;
@@ -115,30 +148,55 @@ public func CBChromeVisibility(area: gamedataEquipmentArea, data: ref<EquipmentS
 public func CBLogEquippedTags(game: GameInstance) -> Void {
   let player = GetPlayer(game);
   let es = CBGetSystem(game, n"EquipmentSystem") as EquipmentSystem;
-  if !IsDefined(player) || !IsDefined(es) {
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !IsDefined(player) || !IsDefined(es) || !IsDefined(ts) {
+    CBLog.Info(n"Signals", "Clothing check: player or equipment system unavailable.");
     return;
   }
   let data = es.GetPlayerData(player);
-  if !IsDefined(data) {
-    return;
-  }
+
+  // Both routes, reported whether or not they find anything.
+  //
+  // The first version only logged items it found, so a session where nothing was found looked
+  // exactly like a session where this never ran - which is what happened, and cost a round of
+  // guessing. Silence is not evidence; say what was asked and what came back.
   let areas = [
     gamedataEquipmentArea.Head, gamedataEquipmentArea.Face, gamedataEquipmentArea.OuterChest,
     gamedataEquipmentArea.InnerChest, gamedataEquipmentArea.Legs, gamedataEquipmentArea.Feet,
     gamedataEquipmentArea.Outfit
   ];
-  for area in areas {
-    let item = data.GetActiveItem(area);
-    if ItemID.IsValid(item) {
-      let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(item));
+  let byArea = 0;
+  let i = 0;
+  while i < ArraySize(areas) {
+    if IsDefined(data) && ItemID.IsValid(data.GetActiveItem(areas[i])) {
+      byArea += 1;
+      let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(data.GetActiveItem(areas[i])));
+      let line = "";
       if IsDefined(rec) {
-        let line = "";
         let tags = rec.VisualTags();
         for t in tags {
           line += NameToString(t) + " ";
         }
-        CBLog.Info(n"Signals", s"Worn: \(TDBID.ToStringDEBUG(ItemID.GetTDBID(item))) tags: \(line)");
       }
+      CBLog.Info(n"Signals", s"Worn (area): \(TDBID.ToStringDEBUG(ItemID.GetTDBID(data.GetActiveItem(areas[i])))) tags: \(line)");
     }
+    i += 1;
   }
+
+  let slots = [
+    t"AttachmentSlots.Head", t"AttachmentSlots.Face", t"AttachmentSlots.Chest",
+    t"AttachmentSlots.Torso", t"AttachmentSlots.Legs", t"AttachmentSlots.Feet",
+    t"AttachmentSlots.Outfit"
+  ];
+  let bySlot = 0;
+  let j = 0;
+  while j < ArraySize(slots) {
+    let id = ts.GetActiveItemInSlot(player, slots[j]);
+    if ItemID.IsValid(id) {
+      bySlot += 1;
+      CBLog.Info(n"Signals", s"Worn (slot): \(TDBID.ToStringDEBUG(slots[j])) holds \(TDBID.ToStringDEBUG(ItemID.GetTDBID(id)))");
+    }
+    j += 1;
+  }
+  CBLog.Info(n"Signals", s"Clothing check: \(byArea) by equipment area, \(bySlot) by attachment slot.");
 }

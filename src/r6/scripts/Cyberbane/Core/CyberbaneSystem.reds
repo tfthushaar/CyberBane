@@ -130,6 +130,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_laneSentRival: Int32;
   private persistent let m_laneSentSquad: Int32;
   private persistent let m_laneSentApex: Int32;
+  // Last tick each lane said out loud that it had nobody to send, so that stays rare.
+  private let m_laneQuietRival: Int32;
+  private let m_laneQuietSquad: Int32;
+  private let m_laneQuietApex: Int32;
   private let m_laneRivalFired: Int32;
   private let m_laneSquadFired: Int32;
   private let m_laneApexFired: Int32;
@@ -941,6 +945,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func SlotEnd(i: Int32) -> Float { return this.m_slotEnd[i]; }
   public func SlotSpent(i: Int32) -> Bool { return this.m_slotSpent[i]; }
 
+  public func MoveSlot(i: Int32, at: Float) -> Void {
+    if i >= 0 && i < ArraySize(this.m_slotAt) {
+      this.m_slotAt[i] = at;
+    }
+  }
+
   public func SpendSlot(i: Int32) -> Void {
     if i >= 0 && i < ArraySize(this.m_slotSpent) {
       this.m_slotSpent[i] = true;
@@ -994,6 +1004,24 @@ public class CyberbaneSystem extends ScriptableSystem {
         this.m_laneSentApex += 1;
       } else {
         this.m_laneSentSquad += 1;
+      }
+    }
+  }
+
+  public func GetLaneQuietLogged(lane: Int32) -> Int32 {
+    if lane == CBLaneRival() { return this.m_laneQuietRival; }
+    if lane == CBLaneApex() { return this.m_laneQuietApex; }
+    return this.m_laneQuietSquad;
+  }
+
+  public func SetLaneQuietLogged(lane: Int32, tick: Int32) -> Void {
+    if lane == CBLaneRival() {
+      this.m_laneQuietRival = tick;
+    } else {
+      if lane == CBLaneApex() {
+        this.m_laneQuietApex = tick;
+      } else {
+        this.m_laneQuietSquad = tick;
       }
     }
   }
@@ -1560,7 +1588,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   private func EnsurePlaythroughId() -> Void {
     if Equals(this.m_playthroughId, n"") {
       this.m_playthroughId = CBGeneratePlaythroughId();
-      CBLog.Info(n"Core", s"New playthrough id \(NameToString(this.m_playthroughId)).");
+      // Say what this actually means, because the old wording read like routine housekeeping.
+      //
+      // This only fires when the saved state came back empty, and the usual reason is not a new
+      // game: the game drops a persisted class's data whenever its field layout changes, so any
+      // build that adds or removes a persistent field wipes everybody's reputation, rivals and
+      // gang standing. Six of these in one afternoon of rebuilding is what sent me hunting a
+      // spawn bug that did not exist - the Rival lane had nothing to send because the Rival
+      // list had just been erased.
+      CBLog.Info(n"Core", s"Fresh Cyberbane state: new playthrough id \(NameToString(this.m_playthroughId)). Reputation, rivals and gang standing all start from zero. If this was not a new game, a mod update changed the saved layout and the old state is gone.");
     }
   }
 

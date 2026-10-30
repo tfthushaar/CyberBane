@@ -9,6 +9,17 @@
 //
 // GameTime.Days is exact and needs no interpretation, unlike GetGameTimeStamp, whose unit is
 // still an open question. Anything paced "per day" uses this.
+// Can the world clock be read yet?
+//
+// Right after a load the time system is not up, and every clock helper here answers 0 rather
+// than failing. That is fine for a cooldown and ruinous for a timetable: a plan built at that
+// moment is a plan for day 0 starting at midnight, and the real save was on day 87 in the
+// afternoon. The log shows exactly that - "Day 0: timetable set" seconds before a load, then
+// nothing from any lane until the day corrected itself five minutes later.
+public func CBClockReady(game: GameInstance) -> Bool {
+  return IsDefined(GameInstance.GetTimeSystem(game));
+}
+
 public func CBGameDay(game: GameInstance) -> Int32 {
   let ts = GameInstance.GetTimeSystem(game);
   if !IsDefined(ts) {

@@ -245,7 +245,14 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   }
 
   if bestScore <= 0.0 {
-    return;   // nobody in this lane has a reason to come for you
+    // Nobody qualifies. Said out loud once a minute at most, because a lane that is due and
+    // silent is indistinguishable from a lane that is broken, and that ambiguity has now cost
+    // several rounds of looking in the wrong place.
+    if (sys.GetTickCount() - sys.GetLaneQuietLogged(lane)) > 60 {
+      sys.SetLaneQuietLogged(lane, sys.GetTickCount());
+      CBLog.Info(n"Spawn", s"\(CBLaneLabel(lane)) lane is due but nobody qualifies (rivals off cooldown / gangs over their kill threshold).");
+    }
+    return;
   }
   sys.SetLaneQueued(lane, bestFaction, bestRival, CBLaneTicksFor(sys, lane, bestFaction, bestRival));
   CBLog.Info(n"Spawn", s"Next \(CBLaneLabel(lane)): \(NameToString(bestFaction)) in \(sys.GetLaneTicks(lane)) ticks.");

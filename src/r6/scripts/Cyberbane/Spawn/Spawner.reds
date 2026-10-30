@@ -521,6 +521,21 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !isSquad && !isRival && !isApex {
     return;
   }
+  // Aggressive first, because the rest of it depends on being aggressive.
+  //
+  // This is the piece that was missing, and it comes from how the game marks its own pursuers
+  // rather than from anything invented here. `prevention_unit_base` is the record every NCPD
+  // chase unit descends from, and its android variant carries `abilities += [
+  // "Ability.IsAggressive" ]`; the gang faction records (Arasaka, Scavengers, Tyger Claws,
+  // Wraiths) carry the same thing. That ability is backed by an `IsAggressive` stat flag, and
+  // `AIActionHelper.TryChangingAttitudeToHostile` checks exactly that flag before it will
+  // change anybody's attitude - it returns false and does nothing otherwise.
+  //
+  // An ordinary ganger plucked out of a crowd record does not have it, so everything downstream
+  // was being asked of an NPC the game still considered passive. Granted here through the same
+  // RPGManager path the role kits already use, rather than by copying the record, because the
+  // records we spawn from are sampled at runtime and cannot be edited.
+  CBGrantAbility(puppet as NPCPuppet, t"Ability.IsAggressive");
   CBMakeHostileToPlayer(game, puppet);
   // Hostile is not the same as coming for you. Anybody in a car is excepted: the car travels.
   if !riding {
