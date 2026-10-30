@@ -50,7 +50,9 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     ArrayClear(enc.killTicks);
   }
   enc.kills += 1;
-  if info.victimClass == EnumInt(ECBVictimClass.Civilian) {
+  // Only a body counts here. This feeds the massacre test, and a street full of unconscious
+  // civilians is not a massacre however many of them there are.
+  if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Civilian) {
     enc.civilianKills += 1;
   }
   if info.victimClass == EnumInt(ECBVictimClass.Boss) {

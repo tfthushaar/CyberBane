@@ -446,6 +446,5 @@ func CBLogRival(sys: ref<CyberbaneSystem>, kind: CName, at: Float, district: CNa
   entry.district = district;
   entry.faction = faction;
   entry.value = value;
-  entry.refId = rivalId;
   sys.AddLogEntry(entry);
 }

@@ -532,7 +532,7 @@ func CBNearestForTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
-    if IsDefined(p) && !p.IsDead() {
+    if CBStillStanding(p) {
       let d = Vector4.Distance(p.GetWorldPosition(), ppos);
       if out < 0.0 || d < out {
         out = d;
@@ -573,7 +573,7 @@ func CBChaseRefreshTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<D
     let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
     // CBNpcSafe covers attachment and the settling window, so nothing half-built is touched.
-    if IsDefined(puppet) && !puppet.IsDead() && CBNpcSafe(sys, puppet) {
+    if CBStillStanding(puppet) && CBNpcSafe(sys, puppet) {
       // Anyone still riding is the car's problem, not theirs.
       if !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
         let away = Vector4.Distance(puppet.GetWorldPosition(), ppos);

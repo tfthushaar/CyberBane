@@ -60,8 +60,11 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
      && (now - cd.lastHitSquadAt) < CBConfig.HitSquadGlobalCooldownMinutes() * 60.0 {
     return;
   }
-  if des.IsPopulated(n"CB_Squad") {
-    return;   // a squad is already out
+  // A squad is already out - meaning one that can still fight. IsPopulated counts tagged
+  // entities, and since a knocked-out squad stopped holding its lane, a tag-only test here
+  // would have let the lane re-arm and then refused every spawn it asked for.
+  if des.IsPopulated(n"CB_Squad") && CBLiveTaggedPresent(game, n"CB_Squad") {
+    return;
   }
   let player = GetPlayer(game);
   if !IsDefined(player) || player.IsInCombat() {
@@ -118,7 +121,7 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
     return;
   }
   let des = GameInstance.GetDynamicEntitySystem();
-  if !IsDefined(des) || des.IsPopulated(n"CB_Squad") {
+  if !IsDefined(des) || (des.IsPopulated(n"CB_Squad") && CBLiveTaggedPresent(game, n"CB_Squad")) {
     sys.AgePendingSquadHold();
     return;
   }

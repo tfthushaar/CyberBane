@@ -115,6 +115,19 @@ public func CBPlayerInSafeZone(game: GameInstance) -> Bool {
 
 // True only when this NPC is safe to read native state from. Guards every per-NPC query so the
 // runtime never touches a streaming-out (detaching) or freshly-streamed-in (not-yet-ready) NPC.
+// Is this one still a participant?
+//
+// `IsDead()` on its own is not the question. Put a whole squad down non-lethally and every one
+// of them answers "not dead", so the lane that sent them stayed busy for ever and no further
+// encounter of that kind could be arranged - you had cleared the fight and the mod disagreed.
+// Anyone defeated or incapacitated is out of it as surely as a corpse is.
+public func CBStillStanding(p: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(p) || p.IsDead() {
+    return false;
+  }
+  return !ScriptedPuppet.IsDefeated(p) && !p.IsIncapacitated();
+}
+
 public func CBNpcSafe(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(npc) || !npc.IsAttached() {
     return false;

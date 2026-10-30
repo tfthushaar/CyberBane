@@ -53,7 +53,12 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   // tally, fs.spared and the quiet-takedown count were all unreachable. Only V's own work
   // counts, the same rule the kill path uses.
   if puppet.cbDamagedByPlayer {
-    CBApplyKill(sys, CBBuildKillInfo(sys, game, puppet, false));
+    let info = CBBuildKillInfo(sys, game, puppet, false);
+    CBApplyKill(sys, info);
+    // And it counts toward the fight you are in. Clearing a room without killing anybody was
+    // not registering as clearing a room at all, so a non-lethal playthrough could never end
+    // an encounter, which is what the flawless and massacre tests are measured against.
+    CBEncounterRecordKill(sys, info);
   }
   // Talking one down rather than putting them in the ground is its own kind of reputation.
   if CBIsCyberpsycho(puppet) {
@@ -304,6 +309,10 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   if IsDefined(e.puppet) {
     let already = CBFindRivalByBody(sys, e.puppet.GetEntityID());
     if IsDefined(already) {
+      let st = sys.GetStats();
+      if IsDefined(st) {
+        st.rivalsSpared += 1;   // the counter existed and nothing ever incremented it
+      }
       let indebted = CBRivalSparedByV(already, content, now, district);
       already.scarMask = already.scarMask | e.scarMask;
       if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {

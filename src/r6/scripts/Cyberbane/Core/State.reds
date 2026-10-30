@@ -76,7 +76,6 @@ public class CBStats {
   public persistent let tributeEddies: Int32;
   public persistent let timesRecognized: Int32;
   public persistent let maxHeat: Int32;
-  public persistent let estimatedPriorKills: Int32;   // bootstrap estimate, display only
   public persistent let quickhackKills: Int32;
   // Lethal work nobody was alive and close enough to see (spec §8.5). A new scalar on an
   // existing persisted class, so old saves read it as 0 and no schema bump is needed.
@@ -131,7 +130,6 @@ public class CBRival {
   public persistent let origin: CName;             // district
   public persistent let createdAt: Float;
   public persistent let lastSeenAt: Float;
-  public persistent let nextEligibleAt: Float;
   // The entity Cyberbane spawned for this Rival, so a kill can be attributed to them even if
   // the CB_Rival tag has gone. Session-only: entity ids mean nothing across a save.
   public let spawnedEntityId: EntityID;
@@ -152,7 +150,6 @@ public class CBLogEntry {
   public persistent let district: CName;
   public persistent let faction: CName;
   public persistent let value: Float;
-  public persistent let refId: Int32;              // deed index / rival id / title index
 }
 
 public class CBCooldowns {
@@ -160,8 +157,6 @@ public class CBCooldowns {
   public persistent let lastHitSquadAt: Float;
   public persistent let lastRivalEncounterAt: Float;
   public persistent let lastTributeCheckAt: Float;
-  public persistent let lastDecayAt: Float;
-  public persistent let lastRumorTickAt: Float;
   public persistent let lastPromotionAt: Float;
   // Last time the street got word back to you (spec §8.5). New scalar on an existing
   // persisted class, so old saves read 0 and no schema bump is needed.

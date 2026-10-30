@@ -69,7 +69,7 @@ public func CBLiveTaggedPresent(game: GameInstance, tag: CName) -> Bool {
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
-    if IsDefined(p) && !p.IsDead() {
+    if CBStillStanding(p) {
       return true;
     }
   }

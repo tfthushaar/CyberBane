@@ -54,8 +54,10 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     sys.SetActiveRivalId(0);
   }
 
-  if des.IsPopulated(n"CB_Rival") {
-    return;   // one Rival encounter at a time
+  // One Rival encounter at a time, counting only a Rival still able to hunt. Same reasoning
+  // as the busy test further down: a body, or somebody unconscious, is not an encounter.
+  if des.IsPopulated(n"CB_Rival") && CBLiveRivalPresent(sys, game) {
+    return;
   }
   // Leave a gap between encounters so a Rival catching up stays an event, not an ambush loop.
   if IsDefined(cd) && cd.lastRivalEncounterAt > 0.0
@@ -179,7 +181,7 @@ public func CBLiveRivalPresent(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     if IsDefined(r) && r.state == EnumInt(ECBRivalState.Hunting)
        && EntityID.IsDefined(r.spawnedEntityId) {
       let body = GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet;
-      if IsDefined(body) && !body.IsDead() {
+      if CBStillStanding(body) {
         return true;
       }
     }

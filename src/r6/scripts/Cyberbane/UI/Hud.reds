@@ -644,8 +644,18 @@ public class CBHud {
             }
           }
         }
+        // How long this has been going on. Both of these were recorded and read by nothing.
+        let now = CBGameSeconds(sys.GetGameInstance());
+        let age = "";
+        if Equals(posture, ECBPosture.Vendetta) {
+          let sworn = CBHudSince(now, fs.vendettaSince);
+          age = StrLen(sworn) > 0 ? "   sworn " + sworn : "";
+        } else {
+          let quiet = CBHudSince(now, fs.lastIncidentAt);
+          age = StrLen(quiet) > 0 ? "   quiet " + quiet : "";
+        }
         this.SetRow(shown, pip, CBFactionLabel(fs.id),
-          CBPostureName(posture) + s"   fear \(RoundF(score.GetFactionFear(fs.id)))",
+          CBPostureName(posture) + s"   fear \(RoundF(score.GetFactionFear(fs.id)))" + age,
           s"\(fs.kills) down", right);
         shown += 1;
       }
@@ -978,7 +988,9 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
     i += 1;
     if IsDefined(d) {
       let rd = RoundF(d.renown);
-      out += CBHudPad(NameToString(d.id), 18) + s"renown \(rd)   kills \(d.kills)\n";
+      let quiet = CBHudSince(CBGameSeconds(sys.GetGameInstance()), d.lastIncidentAt);
+      let tail = StrLen(quiet) > 0 ? ("   quiet " + quiet) : "";
+      out += CBHudPad(NameToString(d.id), 18) + s"renown \(rd)   kills \(d.kills)" + tail + "\n";
       shown += 1;
     }
   }
@@ -1106,6 +1118,22 @@ func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
   return out;
 }
 
+// "3d", "5h", "20m" - how long since something happened, for the screens that track it.
+// Returns "" when it never has.
+public func CBHudSince(now: Float, then: Float) -> String {
+  if then <= 0.0 || now <= then {
+    return "";
+  }
+  let secs = now - then;
+  if secs >= 86400.0 {
+    return s"\(RoundF(secs / 86400.0))d";
+  }
+  if secs >= 3600.0 {
+    return s"\(RoundF(secs / 3600.0))h";
+  }
+  return s"\(RoundF(secs / 60.0))m";
+}
+
 func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   let log = sys.GetLog();
   let n = ArraySize(log);
@@ -1115,18 +1143,46 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   let out = "STREET FILE // SUBJECT: V\n";
   out += "Put together from what people saw and passed on. Most recent first.\n";
   out += "Work nobody witnessed never reaches this page.\n\n";
+
+  // The running totals. Every one of these was being counted and shown nowhere, which is the
+  // same as not counting it.
+  let stats = sys.GetStats();
+  if IsDefined(stats) {
+    out += s"TALLY   put down \(stats.deaths) times      recognised \(stats.timesRecognized) times";
+    out += s"      rivals spared \(stats.rivalsSpared)\n";
+    let spent = CBHudPeaceSpend(sys);
+    out += s"        tribute taken \(stats.tributeEddies)eb      paid out for peace \(spent)eb\n\n";
+  }
+
   let shown = 0;
   let i = n - 1;
-  while i >= 0 && shown < 14 {
+  while i >= 0 && shown < 11 {
     let e = log[i];
     i -= 1;
     if IsDefined(e) {
       let where = Equals(e.district, n"") ? "" : ("  (" + NameToString(e.district) + ")");
-      out += NameToString(e.kind) + where + "\n";
+      // What the entry was worth, where it had a number. Recorded since the first release and
+      // never once displayed.
+      let amount = e.value != 0.0 ? s"   \(RoundF(e.value))" : "";
+      out += NameToString(e.kind) + where + amount + "\n";
       shown += 1;
     }
   }
   return out;
+}
+
+// Everything V has ever paid to buy a gang off.
+func CBHudPeaceSpend(sys: ref<CyberbaneSystem>) -> Int32 {
+  let deals = sys.GetPeaceDeals();
+  let total = 0;
+  let i = 0;
+  while i < ArraySize(deals) {
+    if IsDefined(deals[i]) {
+      total += deals[i].cost;
+    }
+    i += 1;
+  }
+  return total;
 }
 
 // Cycle the active title: Auto -> each unlocked title -> Auto (spec §12.1 Titles tab).

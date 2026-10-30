@@ -20,6 +20,15 @@ This project follows [Semantic Versioning](https://semver.org/).
   a player can hear has come out of the rumour system at all.
 
 ### Fixed
+- **Clearing a room without killing anyone now counts as clearing it.** Put a whole crew down
+  non-lethally and the mod went on believing the fight was still happening: that gang could
+  never be sent after you again, and the fight never ended. Anyone unconscious is out of it now,
+  the same as anyone dead, and a takedown counts toward the fight you are in.
+- **The Hub shows what it had been quietly counting.** How many times you have been put down,
+  how often you have been recognised on the street, what you have taken in tribute and paid out
+  for peace, and how many rivals you let live. Gangs show how long they have been quiet, or how
+  long a vendetta has been running, and districts show how long since you last did anything
+  there. All of it was being recorded already and none of it was on screen.
 - **Frightened people were not frightening anyone else.** When somebody panics at the sight of
   you, the game is told about it so everyone nearby can react. Cyberbane was sending that
   signal without saying how far it carried, which is nobody. Crowd fear now reaches the people

@@ -1695,6 +1695,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Record a brokered peace (spec §11.3), newest kept within a small cap.
+  // By value, like GetRumors, and for the same reason: indexing the temporary a getter
+  // returns hands back a handle into a copy. Callers bind it to a local first.
+  public func GetPeaceDeals() -> array<ref<CBPeaceDeal>> {
+    return this.m_peaceDeals;
+  }
+
   public func AddPeaceDeal(deal: ref<CBPeaceDeal>) -> Void {
     if !IsDefined(deal) {
       return;

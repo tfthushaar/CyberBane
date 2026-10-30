@@ -177,7 +177,7 @@ public class CBThreatBar {
     while i >= 0 {
       // CBNpcSafe covers attachment and the post-spawn settling window, so a target that is
       // being torn down is never read.
-      if !CBNpcSafe(sys, this.m_targets[i]) || this.m_targets[i].IsDead() {
+      if !CBNpcSafe(sys, this.m_targets[i]) || !CBStillStanding(this.m_targets[i]) {
         ArrayErase(this.m_targets, i);
         ArrayErase(this.m_ids, i);
         ArrayErase(this.m_labels, i);
