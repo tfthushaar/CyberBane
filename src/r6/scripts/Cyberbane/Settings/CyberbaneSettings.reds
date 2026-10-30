@@ -51,11 +51,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubKey-Desc")
   public let hubKey: EInputKey = EInputKey.IK_F7;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FlatHub")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FlatHub-Desc")
-  public let flatHubPanel: Bool = true;
 
   // ---- Reputation -------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")

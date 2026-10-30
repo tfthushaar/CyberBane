@@ -236,7 +236,7 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     return;   // nobody in this lane has a reason to come for you
   }
   sys.SetLaneQueued(lane, bestFaction, bestRival, CBLaneTicksFor(sys, lane, bestFaction, bestRival));
-  CBLog.Info(n"Spawn", s"Next \\(CBLaneLabel(lane)): \\(NameToString(bestFaction)) in \\(sys.GetLaneTicks(lane)) ticks.");
+  CBLog.Info(n"Spawn", s"Next \(CBLaneLabel(lane)): \(NameToString(bestFaction)) in \(sys.GetLaneTicks(lane)) ticks.");
 }
 
 // How long this one takes to reach you.
@@ -277,8 +277,18 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   if lane == CBLaneRival() {
     let r = sys.FindRivalById(sys.GetLaneRivalId(lane));
     if !IsDefined(r) || !CBSpawnRival(sys, game, r, now) {
-      // Could not be placed. Keep their turn and try again shortly rather than losing it.
-      sys.SetLaneTicks(lane, CBConfig.RivalHuntRetryTicks());
+      // Could not be placed. Put this one on their own cooldown and let the lane go.
+      //
+      // It used to keep their turn and retry on the spot, which is fine when the refusal is
+      // momentary and a trap when it is not: a Rival the world will not accept held the lane
+      // indefinitely, the Hub said "any moment" the whole time, and every other Rival sat
+      // behind them saying they were waiting their turn. Releasing the lane lets the picker
+      // choose somebody else next tick, and it skips this one while their cooldown runs, so
+      // the queue keeps moving. If nobody else can go either, the same one comes back round.
+      if IsDefined(r) {
+        r.huntTicks = CBConfig.RivalHuntRetryTicks();
+      }
+      sys.ClearLane(lane);
       return;
     }
     sys.SetLaneLastRival(sys.GetLaneRivalId(lane));

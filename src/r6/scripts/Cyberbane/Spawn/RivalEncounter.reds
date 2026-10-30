@@ -320,7 +320,16 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   let body: EntityID;
   let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance(), body);
   if spawned <= 0 {
-    return false;   // refused: unsettled world, or nowhere outside a safe area to stand
+    // Say why. This path was silent, so a Rival that could not be placed produced a Hub
+    // reading "any moment" for as long as the player stood somewhere unsuitable and nothing
+    // anywhere said what was wrong. A refusal that names itself is the difference between a
+    // one-line answer and another evening of guessing.
+    let why = CBBlockLabel(CBLastSpawnBlock());
+    if StrLen(why) == 0 {
+      why = "no reason recorded";
+    }
+    CBLog.Info(n"Spawn", s"Rival \(r.id) could not be placed: \(why).");
+    return false;
   }
   // Remember which body is theirs. The CB_Rival tag can be cleared out from under us by the
   // retire sweep, and when that happened the kill stopped counting: the Rival was never marked

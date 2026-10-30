@@ -6,10 +6,10 @@
 //
 // Global scope (no module); every symbol is prefixed to avoid collisions.
 
-public func CyberbaneVersion() -> String = "1.3.5"
+public func CyberbaneVersion() -> String = "1.3.6"
 
 // Numeric form: major*10000 + minor*100 + patch. Used for logging and gating.
-public func CyberbaneVersionCode() -> Int32 = 10305
+public func CyberbaneVersionCode() -> Int32 = 10306
 
 // Current persistent-state schema version (see spec section 19.2). Bump and add a
 // Migrate() step whenever the shape of persistent data changes.

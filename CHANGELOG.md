@@ -3,6 +3,26 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.6] - 2026-10-30
+
+### Fixed
+- **A rival who could not be placed blocked every other one behind them.** If the mod could not
+  find anywhere to put a rival, it kept their turn and tried the same one again, forever. The
+  Hub said they were arriving any moment the whole time while everyone else sat waiting their
+  turn. Now that rival goes on a short cooldown and the queue moves on to somebody who can
+  actually turn up, coming back round to them later.
+- **It never said why.** A rival that could not be placed failed silently, so there was nothing
+  to go on. It now says so, and says what stopped it.
+- **The Hub was rebuilding itself every time you opened it.** The flat-panel option added in
+  1.3.5 asked for a layer that does not exist, so it fell back every time and then rebuilt on
+  the next open because the layer it got was not the one it asked for.
+
+### Changed
+- **The flat Hub option is gone, and the Hub is back on one layer for good.** Three layers were
+  tried across three versions: one takes your controls away, one does not exist, and the
+  original works. The curve stays. Flat colour was the larger half of that problem and it was
+  fixed in 1.3.4 without touching layers.
+
 ## [1.3.5] - 2026-10-30
 
 ### Fixed
