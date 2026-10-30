@@ -46,6 +46,21 @@ public class CBKillInfo {
   public let mFinisher: Bool;
 }
 
+// How much of a kill's dread survives nobody having seen it.
+public func CBUnwitnessedDread() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    return rt.GetSettings().unseenDreadMult;
+  }
+  return CBConfig.UnwitnessedDreadMult();
+}
+
+// Does the player want how-you-killed scored against their Conduct at all?
+public func CBBrutalConductOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().brutalConduct;
+}
+
 // Applies one classified kill or defeat to the per-save reputation state.
 // One incident, maybe one story.
 func CBRumorFromKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: ref<CBKillInfo>) -> Void {
@@ -92,7 +107,11 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
 
   let brutal = CBIsBrutalKill(info.mFinisher, info.mBlade, info.mFists);
   let renownWitness = info.witnessed ? 1.0 : CBConfig.UnwitnessedRenownMult();
-  let dreadWitness = info.witnessed ? 1.0 : CBConfig.UnwitnessedDreadMult();
+  // How frightening unseen work is. Half, by default: the bodies turn up even when nobody saw
+  // who left them, which is the whole "dread without renown" idea. It is a slider because for
+  // a player who kills quietly and almost never in front of anyone, half of every kill still
+  // adds up fast enough to empty streets around somebody nobody has ever seen do anything.
+  let dreadWitness = info.witnessed ? 1.0 : CBUnwitnessedDread();
   let standingWitness = info.witnessed ? 1.0 : 0.25;
 
   // Renown - cyberpsycho and Rival kills are scored by their own paths.
@@ -188,7 +207,10 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     // something it cannot put a name to - dread without renown (spec §8.5).
     if info.lethal && !info.witnessed {
       stats.unattributed += 1;
-      sys.AddDeedDreadPoints(CBConfig.UnattributedDeedDread() * dreadMult);
+      // Scaled the same way. This is the extra on top of the kill's own dread for work that
+      // cannot be pinned on anyone, so it answers to the same slider.
+      sys.AddDeedDreadPoints(CBConfig.UnattributedDeedDread() * dreadMult * CBUnwitnessedDread()
+                             / CBConfig.UnwitnessedDreadMult());
     }
   }
 
@@ -204,7 +226,15 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
       if info.victimClass == EnumInt(ECBVictimClass.Cop) {
         sys.AddCode(-0.5);
       } else {
-        if brutal {
+        // Only if somebody saw it, and only if the player wants this scored at all.
+        //
+        // Conduct is the street's read on you, and the street cannot have an opinion about a
+        // killing nobody witnessed. Ungated, this punished exactly the playstyle it should not
+        // have: quiet melee work, done where there was no one to see it, read the same as
+        // beating someone to death in a crowd. The civilian and police penalties stay ungated
+        // because a body turns up and gets identified either way; how it was done is the part
+        // that needs a witness.
+        if brutal && info.witnessed && CBBrutalConductOn() {
           sys.AddCode(-0.3);
         }
       }

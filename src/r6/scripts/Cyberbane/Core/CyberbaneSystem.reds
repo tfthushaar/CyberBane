@@ -740,6 +740,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     let dg = g - this.m_clockGame0;
     let ds = s - this.m_clockSim0;
     let ratio = ds > 0.0 ? dg / ds : 0.0;
+    // Kept, so anything showing a game-clock duration can state it in the player's seconds.
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) {
+      rt.SetClockRatio(ratio);
+    }
     CBLog.Info(n"Core", s"Clock check: game \(dg)s vs sim \(ds)s over 60 ticks (ratio \(ratio)). 1.0 means cooldowns are in real seconds.");
   }
 

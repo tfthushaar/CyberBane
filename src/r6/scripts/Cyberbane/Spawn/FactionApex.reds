@@ -450,7 +450,18 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   if arrived <= 0 {
     // The world was not settled enough to place anyone. Keep the kills on the books so the
     // next slow tick tries again, rather than charging the player for a no-show.
-    CBLog.Info(n"Spawn", s"Apex spawn for \(NameToString(faction)) did not land; it will try again.");
+    //
+    // Age the hold while doing so. Returning here without it left the appointment standing,
+    // and an appointment that is still standing makes the lane busy, so an apex squad that
+    // could never be placed blocked every later one indefinitely. The same trap as the Rival
+    // lane, in a second place; AgePendingApexHold gives up after a bounded wait and lets it be
+    // rescheduled.
+    let why = CBBlockLabel(CBLastSpawnBlock());
+    if StrLen(why) == 0 {
+      why = "no reason recorded";
+    }
+    CBLog.Info(n"Spawn", s"Apex squad for \(NameToString(faction)) could not be placed: \(why).");
+    sys.AgePendingApexHold();
     return;
   }
   fs.apexAtKills = fs.kills;   // paid for: the next one needs fresh bodies

@@ -25,6 +25,10 @@ public class CyberbaneRuntime extends ScriptableService {
   // Which whisper line was used last, so the next one is never the same. Session only: it is
   // about what you just heard, and nothing about it is worth carrying into a save.
   private let m_lastWhisperIdx: Int32;
+  // How many game seconds pass per real second, measured once a session. About 8.1 by default;
+  // a mod like CP Chronology that slows the world clock brings it near 1. Measured rather than
+  // assumed precisely because it is not a constant across setups.
+  private let m_clockRatio: Float = 1.0;
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -101,6 +105,16 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetSecurityZone(value: Int32) -> Void {
     this.m_securityZone = value;
+  }
+
+  public func GetClockRatio() -> Float {
+    return this.m_clockRatio;
+  }
+
+  public func SetClockRatio(v: Float) -> Void {
+    if v > 0.0 {
+      this.m_clockRatio = v;
+    }
   }
 
   public func GetLastWhisperIndex() -> Int32 {

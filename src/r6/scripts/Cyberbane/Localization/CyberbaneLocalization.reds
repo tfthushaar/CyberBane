@@ -157,6 +157,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexBossBar", "Apex squad boss bar");
     this.Text("Cyberbane-Settings-ApexArrivalSound", "Apex squad arrival horn");
     this.Text("Cyberbane-Settings-VendettaApexSquad", "Vendetta brings the apex squad");
+    this.Text("Cyberbane-Settings-UnseenDread", "How frightening unseen work is");
+    this.Text("Cyberbane-Settings-UnseenDread-Desc", "How much a killing nobody witnessed still adds to how frightening you are. The bodies turn up even when nobody saw who left them, so by default half of it counts. Turn it down if you work quietly and do not want the street reacting to you, or to zero if you want only the things people actually saw to count.");
+    this.Text("Cyberbane-Settings-BrutalConduct", "Melee kills cost Conduct");
+    this.Text("Cyberbane-Settings-BrutalConduct-Desc", "Whether killing with a blade, bare hands or a takedown counts against your Conduct. Only ever applies to killings somebody witnessed. Turn it off if you want how you kill to be your own business.");
     this.Text("Cyberbane-Settings-EncounterGap", "Minutes between encounters");
     this.Text("Cyberbane-Settings-RivalsPerDay", "Rivals per day");
     this.Text("Cyberbane-Settings-HitSquadsPerDay", "Hit squads per day");

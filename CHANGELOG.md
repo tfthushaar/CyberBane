@@ -17,7 +17,27 @@ This project follows [Semantic Versioning](https://semver.org/).
   1.3.5 asked for a layer that does not exist, so it fell back every time and then rebuilt on
   the next open because the layer it got was not the one it asked for.
 
+- **Hit squads and apex squads had the same trap as rivals.** If one could not be placed, the
+  appointment stayed on the books and that gang's whole lane stayed blocked. All three give up
+  after a bounded wait now and reschedule, and all three say why they could not be placed.
+- **Quiet killing no longer reads as brutality.** Killing with a blade, bare hands or a takedown
+  only costs Conduct if somebody actually saw it. Conduct is the street's read on you and the
+  street cannot have an opinion about something nobody witnessed. There is also a switch to
+  turn that scoring off entirely.
+
+### Added
+- **A slider for how frightening unseen work is.** Half of a killing nobody witnessed used to
+  count toward how frightening you are, because the bodies still turn up. That is still the
+  default, but you can now turn it down, or to zero if you want only what people actually saw
+  to count. Made for quiet playstyles where the street was emptying around someone nobody had
+  ever seen do anything.
+
 ### Changed
+- **The Hub's timers are in real time.** Readings like how long a gang has been quiet came off
+  the world clock, which normally runs about eight times faster than real time, so "quiet 43m"
+  meant about five minutes of play. Everything on that screen is now in your seconds. The rate
+  is measured each session rather than assumed, so it stays right with mods that change how
+  fast the day passes.
 - **The flat Hub option is gone, and the Hub is back on one layer for good.** Three layers were
   tried across three versions: one takes your controls away, one does not exist, and the
   original works. The curve stays. Flat colour was the larger half of that problem and it was

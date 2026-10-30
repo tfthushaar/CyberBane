@@ -1164,18 +1164,26 @@ func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
 
 // "3d", "5h", "20m" - how long since something happened, for the screens that track it.
 // Returns "" when it never has.
-// How long since, in the game's own clock.
+// How long since, in the player's seconds rather than the game's.
 //
-// A previous version of this dropped anything past a day on the grounds that "quiet 3d" looked
-// wrong. That was hiding the reading instead of answering it. Three days is a true and useful
-// thing to know about a gang you have not touched: each kind of encounter has a daily
-// allowance now, shared out across every gang, so any one gang can easily go days without
-// being the one that gets picked. The number stays.
+// These timestamps come off the world clock, which by default runs about eight times faster
+// than real time, so "quiet 43m" meant roughly five minutes of actually playing. Every other
+// number on this screen is a real-time countdown, and one game-clock figure sitting among them
+// is worse than useless. The ratio is measured once a session rather than assumed, because a
+// mod that changes the day length changes it: CP Chronology brings it to about 1.
+//
+// An earlier version dropped anything past a day because "quiet 3d" looked wrong. That hid the
+// reading instead of converting it, which is the actual answer.
 public func CBHudSince(now: Float, then: Float) -> String {
   if then <= 0.0 || now <= then {
     return "";
   }
-  let secs = now - then;
+  let ratio = 1.0;
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.GetClockRatio() > 0.0 {
+    ratio = rt.GetClockRatio();
+  }
+  let secs = (now - then) / ratio;
   if secs >= 86400.0 {
     return s"\(RoundF(secs / 86400.0))d";
   }

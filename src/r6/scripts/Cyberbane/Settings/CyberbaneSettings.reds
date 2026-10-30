@@ -73,6 +73,21 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-UnseenDread")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-UnseenDread-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "1.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let unseenDreadMult: Float = 0.5;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-BrutalConduct")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-BrutalConduct-Desc")
+  public let brutalConduct: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Decay")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Decay-Desc")
   @runtimeProperty("ModSettings.min", "0.0")

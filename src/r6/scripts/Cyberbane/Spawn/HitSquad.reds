@@ -228,7 +228,16 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
                             CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
   }
   if spawned <= 0 {
-    return;   // nothing queued (e.g. no valid record) - don't start the cooldown
+    // Nothing queued, so the cooldown does not start - but the appointment has to be aged or
+    // it stands for ever, and a standing appointment keeps the lane busy. That is the Rival
+    // lane's trap again, in a third place, and it was silent here too.
+    let why = CBBlockLabel(CBLastSpawnBlock());
+    if StrLen(why) == 0 {
+      why = "no reason recorded";
+    }
+    CBLog.Info(n"Spawn", s"Crew from \(NameToString(fs.id)) could not be placed: \(why).");
+    sys.AgePendingSquadHold();
+    return;
   }
 
   fs.lastHitSquadAt = now;
