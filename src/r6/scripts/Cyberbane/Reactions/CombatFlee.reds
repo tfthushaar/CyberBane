@@ -48,6 +48,13 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   }
 
   puppet.cbSparedLogged = true;
+  // Score it. This is the line that was missing: the spared path recorded an escapee and
+  // stopped, so nothing non-lethal ever reached CBApplyKill and the +1 conduct, the nonLethal
+  // tally, fs.spared and the quiet-takedown count were all unreachable. Only V's own work
+  // counts, the same rule the kill path uses.
+  if puppet.cbDamagedByPlayer {
+    CBApplyKill(sys, CBBuildKillInfo(sys, game, puppet, false));
+  }
   // Talking one down rather than putting them in the ground is its own kind of reputation.
   if CBIsCyberpsycho(puppet) {
     let st = sys.GetStats();

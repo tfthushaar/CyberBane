@@ -15,6 +15,13 @@ public let cbDamagedByPlayer: Bool;
 @addField(ScriptedPuppet)
 public let cbLastAttackType: gamedataAttackType;
 
+@addField(ScriptedPuppet)
+// How V last hit this one, as a CBMethod* bit. The weapon only exists on the hit event, and
+// scoring happens on death or defeat long after that event is gone, so the classification has
+// to be done here and carried on the puppet. Reading the attack type alone is what made every
+// melee kill score as a blade.
+public let cbLastMethodMask: Int32;
+
 // Everything V has done to this one, accumulated across hits rather than just the last.
 // Someone shot and then set on fire remembers both.
 @addField(ScriptedPuppet)
@@ -69,6 +76,7 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
     puppet.cbDamagedByPlayer = true;
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
     puppet.cbScarMask = CBMaskSet(puppet.cbScarMask, CBScarBitFor(puppet.cbLastAttackType));
+    puppet.cbLastMethodMask = CBMethodMaskFor(evt.attackData);
     // A wounded enemy may lose its nerve and run (spec §10.2).
     let game = puppet.GetGame();
     let sys = CyberbaneSystem.Get(game);
@@ -136,23 +144,15 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // Keep the Renown floor current with V's Street Cred.
   sys.GetScore().SetStreetCred(CBPlayerStreetCred(game));
 
-  let info = new CBKillInfo();
-  info.victimEntityId = puppet.GetEntityID();
-  info.recordID = puppet.GetRecordID();
-  info.faction = CBClassifyFaction(puppet);
-  info.victimClass = CBClassifyVictim(puppet, info.faction);
-  info.lethal = true;
-  info.instigatorIsPlayer = true;
-  info.victimIsUnique = puppet.IsQuest();   // never keep a story character as a spawn template
-  info.district = CBEventDistrict(sys, game);
-  info.position = puppet.GetWorldPosition();
-  // Who was alive and close enough to carry the story (spec §8.5). Both of these were
-  // hardcoded before 0.1.16, which meant every kill scored as if a crowd had watched it.
-  let witnesses = CBCountWitnesses(sys, info.position, info.victimEntityId);
-  info.witnessed = witnesses > 0;
-  info.stealth = witnesses == 0;
-  info.at = CBGameSeconds(game);
-  CBSetMethodFlags(info, puppet.cbLastAttackType);
+  // Who was alive and close enough to carry the story is worked out inside the builder
+  // (spec §8.5); it was hardcoded before 0.1.16, which scored every kill as if a crowd watched.
+  let info = CBBuildKillInfo(sys, game, puppet, true);
+
+  // They were put down alive earlier and V has now finished them. Take the mercy back, or
+  // knocking somebody out and then shooting them would pay for both.
+  if puppet.cbSparedLogged {
+    CBRevokeMercy(sys, info.faction);
+  }
 
   let tierBefore = sys.GetLastNotifiedTier();
   CBApplyKill(sys, info);
@@ -291,14 +291,100 @@ public func CBScarBitFor(attackType: gamedataAttackType) -> Int32 {
   return CBScarShot();
 }
 
-func CBSetMethodFlags(info: ref<CBKillInfo>, attackType: gamedataAttackType) -> Void {
-  if Equals(attackType, gamedataAttackType.Hack) {
-    info.mQuickhack = true;
-  } else {
-    if Equals(attackType, gamedataAttackType.Melee) {
-      info.mBlade = true;   // approximation until weapon-level detection (S-01)
-    } else {
-      info.mFirearm = true;
+// Undo the credit a non-lethal takedown was given, because V went back and killed them.
+public func CBRevokeMercy(sys: ref<CyberbaneSystem>, faction: CName) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  sys.AddCode(-1.0);
+  let stats = sys.GetStats();
+  if IsDefined(stats) && stats.nonLethal > 0 {
+    stats.nonLethal -= 1;
+  }
+  if NotEquals(faction, n"") {
+    let fs = sys.FindFaction(faction);
+    if IsDefined(fs) && fs.spared > 0 {
+      fs.spared -= 1;
     }
   }
+}
+
+public func CBMethodBlade() -> Int32 = 1
+public func CBMethodBlunt() -> Int32 = 2
+public func CBMethodFists() -> Int32 = 4
+public func CBMethodFirearm() -> Int32 = 8
+public func CBMethodQuickhack() -> Int32 = 16
+public func CBMethodExplosive() -> Int32 = 32
+
+// What this blow actually was.
+//
+// The old version read the attack type and nothing else, so `Melee` became "blade" whether V
+// was holding a katana, a baseball bat or nothing at all, and explosives scored as gunfire.
+// The weapon is on the attack data, and the game classifies it for us: WeaponObject.IsBlade
+// covers machete, katana, sword, chainsword, long blade and mantis blades, and IsBlunt covers
+// hammers, clubs, gorilla arms and bare fists - fists are checked first so they do not get
+// filed as blunt.
+func CBMethodMaskFor(ad: ref<AttackData>) -> Int32 {
+  if !IsDefined(ad) {
+    return 0;
+  }
+  let at = ad.GetAttackType();
+  if AttackData.IsHack(at) {
+    return CBMethodQuickhack();
+  }
+  if AttackData.IsExplosion(at) || AttackData.IsPressureWave(at) {
+    return CBMethodExplosive();
+  }
+  if AttackData.IsMelee(at) || AttackData.IsQuickMelee(at) || AttackData.IsStrongMelee(at) {
+    let weapon = ad.GetWeapon();
+    if !IsDefined(weapon) {
+      return CBMethodFists();   // no weapon object at all: bare hands
+    }
+    if WeaponObject.IsFists(weapon.GetItemID()) {
+      return CBMethodFists();
+    }
+    if weapon.IsBlade() {
+      return CBMethodBlade();
+    }
+    if weapon.IsBlunt() {
+      return CBMethodBlunt();
+    }
+    return CBMethodFists();
+  }
+  return CBMethodFirearm();
+}
+
+func CBSetMethodFlags(info: ref<CBKillInfo>, mask: Int32) -> Void {
+  info.mBlade = CBMaskHas(mask, CBMethodBlade());
+  info.mBlunt = CBMaskHas(mask, CBMethodBlunt());
+  info.mFists = CBMaskHas(mask, CBMethodFists());
+  info.mFirearm = CBMaskHas(mask, CBMethodFirearm());
+  info.mQuickhack = CBMaskHas(mask, CBMethodQuickhack());
+  info.mExplosive = CBMaskHas(mask, CBMethodExplosive());
+}
+
+// One classified incident, lethal or not.
+//
+// Pulled out of CBOnPuppetKilled so a non-lethal takedown can be scored through exactly the
+// same path. CBApplyKill has always had a !lethal branch on every axis it touches - the conduct
+// credit, the nonLethal tally, fs.spared, the quiet-takedown count - and nothing ever handed it
+// an info with lethal = false, so all of it was dead and Conduct could only ever fall.
+public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
+                            puppet: ref<ScriptedPuppet>, lethal: Bool) -> ref<CBKillInfo> {
+  let info = new CBKillInfo();
+  info.victimEntityId = puppet.GetEntityID();
+  info.recordID = puppet.GetRecordID();
+  info.faction = CBClassifyFaction(puppet);
+  info.victimClass = CBClassifyVictim(puppet, info.faction);
+  info.lethal = lethal;
+  info.instigatorIsPlayer = true;
+  info.victimIsUnique = puppet.IsQuest();   // never keep a story character as a spawn template
+  info.district = CBEventDistrict(sys, game);
+  info.position = puppet.GetWorldPosition();
+  let witnesses = CBCountWitnesses(sys, info.position, info.victimEntityId);
+  info.witnessed = witnesses > 0;
+  info.stealth = witnesses == 0;
+  info.at = CBGameSeconds(game);
+  CBSetMethodFlags(info, puppet.cbLastMethodMask);
+  return info;
 }

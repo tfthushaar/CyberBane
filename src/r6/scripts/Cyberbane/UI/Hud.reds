@@ -1104,9 +1104,16 @@ func CBArchetypeName(idx: Int32) -> String {
   }
 }
 
+// "Disciplined", not "Professional".
+//
+// Conduct's top band and the STYLE archetype at CBArchetypeName(2) were both called
+// Professional, and they measure different things and move on different events: the archetype
+// goes up for finishing gigs and hustles, the bar only moves on how you treat people in a
+// fight. Two meters reading "Professional" for unrelated reasons is the kind of thing a player
+// reasonably reads as a bug in one of them.
 func CBCodeLabel(code: Float) -> String {
   if code >= 40.0 {
-    return "Professional";
+    return "Disciplined";
   }
   if code <= -40.0 {
     return "Cyberpsycho";

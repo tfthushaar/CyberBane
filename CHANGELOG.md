@@ -3,6 +3,30 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] - 2026-10-30
+
+### Fixed
+- **Conduct could only ever go down.** Sparing someone is worth a point of Conduct, and that
+  point was never awarded: every incident was recorded as a kill, including the ones where you
+  left them breathing, so the whole non-lethal half of the scoring never ran. The Disciplined
+  band at +40 was unreachable, which is why nothing you did seemed to move the bar. With it
+  working, the vendor goodwill and the respect-toned street talk that sit behind that band can
+  happen at all, the "leave people alive" titles are obtainable, and mercy counts toward how
+  civilians read you. Knocking somebody out and then killing them anyway takes the credit back.
+- **Your gang and district tallies for sparing people were stuck at zero** for the same reason,
+  as was the quiet-takedown count that the Ghost of a district is named for.
+- **Every melee kill was scored as a blade kill.** The game was asked what kind of attack it
+  was and never which weapon did it, so a hammer, bare fists and a katana all came out the same
+  and all took the brutality penalty. The weapon is read properly now: blades and bare hands
+  count as brutal, clubs and hammers are their own thing, and explosives are no longer filed as
+  gunfire. Five of the eleven ways a kill could be described were never detected at all, so the
+  formulas reading them were adding nothing; those are gone rather than left in looking useful.
+
+### Changed
+- **The Conduct bar's top band is called Disciplined.** It used to be Professional, which is
+  also the name of a STYLE on the same screen, and the two measure unrelated things and move on
+  unrelated events.
+
 ## [1.3.1] - 2026-10-30
 
 ### Fixed

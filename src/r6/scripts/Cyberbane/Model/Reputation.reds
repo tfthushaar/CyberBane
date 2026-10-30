@@ -22,18 +22,21 @@ public class CBKillInfo {
   public let position: Vector4;
   public let at: Float;             // game seconds
 
-  // Method flags (several may be true).
-  public let mHeadshot: Bool;
+  // How it was done. Exactly one of these is set, from the weapon and attack type recorded on
+  // the puppet at the moment V last hit it.
+  //
+  // There used to be eleven of these and only three were ever assigned. mHeadshot, mVehicle,
+  // mEnvironmental, mFinisher and mDismember were never written by anything, so every formula
+  // reading them was adding a permanent zero, and mBlade was set for any melee attack at all,
+  // which made a hammer score as a blade. A flag with no source is worse than a missing one: it
+  // reads as contributing and quietly does not. There is no reliable script-side signal for a
+  // finisher or for dismemberment on 2.5, so neither is claimed here.
   public let mBlade: Bool;
   public let mBlunt: Bool;
   public let mFists: Bool;
   public let mFirearm: Bool;
   public let mQuickhack: Bool;
   public let mExplosive: Bool;
-  public let mVehicle: Bool;
-  public let mFinisher: Bool;
-  public let mDismember: Bool;
-  public let mEnvironmental: Bool;
 }
 
 // Applies one classified kill or defeat to the per-save reputation state.
@@ -80,7 +83,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     dreadMult = s.dreadGainMult;
   }
 
-  let brutal = CBIsBrutalKill(info.mFinisher, info.mDismember, info.mBlade, info.mFists);
+  let brutal = CBIsBrutalKill(info.mBlade, info.mFists);
   let renownWitness = info.witnessed ? 1.0 : CBConfig.UnwitnessedRenownMult();
   let dreadWitness = info.witnessed ? 1.0 : CBConfig.UnwitnessedDreadMult();
   let standingWitness = info.witnessed ? 1.0 : 0.25;
@@ -93,7 +96,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   // Kill-dread.
   let brutalMelee = info.mBlade || info.mFists || info.mBlunt;
   let killDread = (CBKillDreadBase(info.victimClass)
-                 + CBKillDreadMethodBonus(brutalMelee, info.mFinisher, info.mDismember, info.mExplosive, info.mQuickhack))
+                 + CBKillDreadMethodBonus(brutalMelee, info.mExplosive, info.mQuickhack))
                  * dreadWitness * dreadMult;
   sys.AddKillDreadPoints(killDread);
 

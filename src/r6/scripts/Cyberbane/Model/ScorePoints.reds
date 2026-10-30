@@ -74,11 +74,9 @@ public func CBKillDreadBase(victimClass: Int32) -> Float {
 }
 
 // Method bonus (spec §8.2). Several can apply. brutalMelee covers Blade/Fists/Blunt.
-public func CBKillDreadMethodBonus(brutalMelee: Bool, finisher: Bool, dismember: Bool, explosive: Bool, quickhack: Bool) -> Float {
+public func CBKillDreadMethodBonus(brutalMelee: Bool, explosive: Bool, quickhack: Bool) -> Float {
   let b = 0.0;
   if brutalMelee { b += 0.5; }
-  if finisher { b += 1.0; }
-  if dismember { b += 1.0; }
   if explosive { b += 0.5; }
   if quickhack { b += 0.3; }
   return b;
@@ -105,7 +103,12 @@ public func CBFactionRenownForKill(victimClass: Int32, brutal: Bool) -> Float {
   return base;
 }
 
-// A kill counts as brutal when it used a finisher, dismember, blade or fists (spec §7.1.2).
-public func CBIsBrutalKill(finisher: Bool, dismember: Bool, blade: Bool, fists: Bool) -> Bool {
-  return finisher || dismember || blade || fists;
+// A kill counts as brutal when it was done with a blade or with bare hands (spec §7.1.2).
+//
+// Finisher and dismemberment were in this test and neither was ever detected, so the whole
+// thing reduced to the blade flag - which was itself set for every melee attack, club included.
+// With the weapon read properly this means what it says: cutting someone up or beating them to
+// death is brutal, shooting them is not, and a hammer is its own thing.
+public func CBIsBrutalKill(blade: Bool, fists: Bool) -> Bool {
+  return blade || fists;
 }
