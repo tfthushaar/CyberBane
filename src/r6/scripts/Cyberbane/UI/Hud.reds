@@ -902,8 +902,9 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   let ticks = sys.GetLaneTicks(lane);
   if ticks <= 0 {
     let why = CBBlockLabel(CBLastSpawnBlock());
-    return StrLen(why) > 0 ? label + "   " + who + "  held: " + why
-                           : label + "   " + who + "  any moment";
+    let tail = CBHudBudgetTail(sys, game, lane);
+    return StrLen(why) > 0 ? label + "   " + who + "  held: " + why + tail
+                           : label + "   " + who + "  any moment" + tail;
   }
   return label + "   " + who + "  " + CBHudCountdown(ticks) + CBHudBudgetTail(sys, game, lane);
 }
