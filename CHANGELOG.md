@@ -3,7 +3,7 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [1.3.6] - 2026-10-30
+## [1.3.7] - 2026-10-30
 
 ### Fixed
 - **A rival who could not be placed blocked every other one behind them.** If the mod could not
