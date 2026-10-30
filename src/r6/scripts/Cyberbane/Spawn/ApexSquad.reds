@@ -171,6 +171,38 @@ public func CBApexRoleRecord(fs: ref<CBFactionState>, seat: Int32, fallback: Twe
 // how Much Better AI equips an NPC and the reason it works: the behaviour is already written,
 // it is simply switched on. Nothing here is invented, so there is nothing to go wrong beyond
 // an ability failing to apply, which is silent.
+// Arasaka, Militech and Kang Tao are not a gang with better guns.
+//
+// They already behave as full factions - they turn hostile, they breed Rivals, they send crews
+// and apex squads, because none of that was ever gated on being a gang (`isGang` only decides
+// whether a faction pays tribute, which a corp does not). What they lacked was any reason to
+// feel different from Maelstrom once the shooting started.
+//
+// So they get trained soldiering rather than more health. Every one of these changes what the
+// NPC does, not how long it survives: they advance while firing instead of trading shots from
+// one spot, they keep pace if you try to walk away, they call it in, they do not fall over to
+// a stun-lock, and they can see through optical camo so a stealth build has to work for it.
+// Making them tankier would have been one line and the wrong line - the complaint that started
+// this was an enemy nothing could hurt.
+public func CBIsCorpFaction(faction: CName) -> Bool {
+  return Equals(faction, n"Arasaka") || Equals(faction, n"Militech")
+      || Equals(faction, n"KangTao");
+}
+
+func CBApplyCorpKit(npc: ref<NPCPuppet>) -> Void {
+  if !IsDefined(npc) {
+    return;
+  }
+  CBGrantAbility(npc, t"Ability.CanShootWhileMoving");   // advance under fire
+  CBGrantAbility(npc, t"Ability.CanPreciseShoot");
+  CBGrantAbility(npc, t"Ability.CanCatchUp");            // walking away is not an escape
+  CBGrantAbility(npc, t"Ability.CanCallReinforcements");
+  CBGrantAbility(npc, t"Ability.CanUseAntiStun");        // cannot be stun-locked in place
+  CBGrantAbility(npc, t"Ability.CanSeeThroughOpticalCamos");
+  CBGrantAbility(npc, t"Ability.CanUseCoolingSystem");   // quickhacks bite slower
+  CBGrantAbility(npc, t"Ability.CanUseEMPGrenades");
+}
+
 public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
   if !IsDefined(npc) {
     return;
@@ -257,6 +289,9 @@ public func CBKitApexMember(npc: ref<ScriptedPuppet>) -> Void {
     role = ECBApexRole.Assault;   // unknown archetype: treat them as a shooter
   }
   CBApplyRoleKit(asNpc, role);
+  if CBIsCorpFaction(CBClassifyFaction(npc)) {
+    CBApplyCorpKit(asNpc);
+  }
 }
 
 // The lighter kit, for the rank and file of a hit squad.
@@ -277,6 +312,15 @@ public func CBKitSquadMember(npc: ref<ScriptedPuppet>) -> Void {
   }
   CBGrantAbility(asNpc, t"Ability.CanUseCovers");
   CBGrantAbility(asNpc, t"Ability.CanSeeThroughSmoke");
+  // Rank and file from a corp are still soldiers. A lighter version of the corp kit: they
+  // advance while firing, they keep pace, and they do not fold to a stun-lock. Not the full
+  // set, because a crew is not an apex squad and the difference between the two should still
+  // be worth something.
+  if CBIsCorpFaction(CBClassifyFaction(npc)) {
+    CBGrantAbility(asNpc, t"Ability.CanShootWhileMoving");
+    CBGrantAbility(asNpc, t"Ability.CanCatchUp");
+    CBGrantAbility(asNpc, t"Ability.CanUseAntiStun");
+  }
 }
 
 // Put the team in one squad, so they fight as a team.

@@ -18,6 +18,13 @@ This project follows [Semantic Versioning](https://semver.org/).
   read. There is a minimum gap between them now.
 
 ### Added
+- **The corps fight like soldiers now.** Arasaka, Militech and Kang Tao were always full
+  factions, so they already turned on you, bred rivals and sent crews and apex squads. They
+  just fought like a gang with better guns. They advance while firing instead of trading shots
+  from cover, they keep pace if you try to walk away, they call it in, they do not fall over to
+  a stun-lock, and they can see through optical camo, so a stealth build has to work for it.
+  None of this makes them take longer to kill. The complaint that started this was an enemy
+  nothing could hurt, and more health would have been the wrong answer.
 - **They show up on your map and minimap.** A rival, an apex squad or a crew that has been sent
   after you carries a marker, so you can tell which of the people on the street are the ones
   that matter instead of guessing. It follows them as they come for you and clears when they
