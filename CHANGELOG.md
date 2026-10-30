@@ -3,7 +3,7 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [1.3.10] - 2026-10-30
+## [1.4.0] - 2026-10-30
 
 ### Fixed
 - **Story characters and cyberpsychos could come back as rivals.** A player killed LT Mower on
