@@ -74,6 +74,13 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     }
   }
 
+  // A mask is a disguise whether or not the look tables happen to list that particular one.
+  // Those tables are hand-written and will never cover every face item in the game, and a
+  // player who covers their face and sees nothing change reasonably concludes the system does
+  // not work.
+  if CBFaceCovered(data) && CBPlayerMasked(game) {
+    disguiseSum += CBConfig.MaskDisguise();
+  }
   score.SetLook(MaxF(lookSum, 0.0), ClampF(disguiseSum, 0.0, 0.85));
 
   // Faction-colour disguise is off under the kill switch, when disabled, or in TWR compat.

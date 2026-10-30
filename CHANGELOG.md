@@ -33,6 +33,14 @@ This project follows [Semantic Versioning](https://semver.org/).
   to put a squad on your street. Rivals, gang crews and apex squads all go through it.
 - **Nothing spawns in the game's own no-spawn areas any more**, using the same test the police
   use rather than a second opinion.
+- **Covering up now visibly changes the number.** The visible chrome scale ran off the end of
+  its own ceiling, so a fully chromed V was pinned at the maximum and putting a coat on could
+  cut the real figure by a third while the bar did not move at all. Fully chromed and uncovered
+  now reads 98 instead of overflowing, and the same build under a coat reads 49.
+- **A mask lowers how frightening you are to a stranger, the moment you put it on.** Your
+  reputation is a total built up over a playthrough and a mask cannot undo that, but it does
+  stop people connecting any of it to the person in front of them, so the street reads you as
+  less dangerous straight away.
 - **How frightening you are now follows what people can see.** It was reading everything you
   had installed rather than what was on show, so putting a coat on could never change it.
 - **The Rivals screen could name somebody it then did not list.** With more rivals than rows,

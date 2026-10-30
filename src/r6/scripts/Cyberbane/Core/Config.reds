@@ -170,6 +170,11 @@ public abstract class CBConfig {
   // What an apex squad landing on you does to everyone watching. The game uses 100 m for a
   // MaxTac AV coming down, and an apex squad is meant to read the same way.
   public static func ApexTerrorRadius() -> Float = 100.0
+  // What a mask is worth as a disguise on its own, and how much a disguise damps what the
+  // street reads off you. 0.4 x 0.5 means a masked V with no other concealment reads about a
+  // fifth less frightening to a stranger, while the reputation itself is untouched.
+  public static func MaskDisguise() -> Float = 0.40
+  public static func DisguiseDreadDamp() -> Float = 0.50
   public static func ChromeNoticeRangeBonus() -> Float = 0.5
 
   // ---- Whispers (spec §9.10) -------------------------------------------

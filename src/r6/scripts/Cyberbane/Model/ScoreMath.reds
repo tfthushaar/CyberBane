@@ -53,8 +53,17 @@ public func CBComputeDread(k: Float, c: Float, l: Float, x: Float, h: Float) -> 
 }
 
 // Civilian-perceived dread (spec §8.2). mercyRatio = nonLethal / (nonLethal+lethal).
-public func CBComputeDreadCiv(dread: Float, primaryArchetype: Int32, mercyRatio: Float) -> Float {
-  let civ = dread * CBCivMult(primaryArchetype) * (1.0 - 0.3 * mercyRatio);
+// What ordinary people on the street read off you, as opposed to the reputation you have.
+//
+// Disguise damps it. Dread and renown are totals built up over a playthrough, so putting a mask
+// on cannot lower them and was never going to - but it can change how much of that lands on the
+// person standing in front of them, because they cannot connect you to any of it. That is the
+// same reasoning the recognition chance already uses, and it is what makes a mask do something
+// the player can see the moment they put it on rather than only on the next kill.
+public func CBComputeDreadCiv(dread: Float, primaryArchetype: Int32, mercyRatio: Float,
+                              disguise: Float) -> Float {
+  let civ = dread * CBCivMult(primaryArchetype) * (1.0 - 0.3 * mercyRatio)
+          * (1.0 - CBConfig.DisguiseDreadDamp() * ClampF(disguise, 0.0, 1.0));
   return ClampF(civ, 0.0, 100.0);
 }
 
@@ -188,8 +197,20 @@ public func CBComputeChrome(usage: Float, implantSum: Float, overallocated: Bool
 // and could never look more frightening than that. At 4.0 a fully chromed V reads 96, and
 // arms alone read 48, which is the "blades for arms get clocked across the street" case.
 public func CBComputeChromeVisible(visibleImplantScore: Float, faceChromeScore: Float) -> Float {
-  return ClampF(visibleImplantScore * 4.0 + faceChromeScore, 0.0, 100.0);
+  return ClampF(visibleImplantScore * CBChromeVisibleScale() + faceChromeScore, 0.0, 100.0);
 }
+
+// 3.4, chosen so the scale never saturates.
+//
+// At 4.0 the arithmetic ran off the end: the visible areas sum to 24 (arms 12, eyes 4, skin 4,
+// legs 4) and the quality multiplier reaches 1.20, so a fully chromed V produced 115 against a
+// ceiling of 100. Everything past 100 was thrown away, which meant covering your arms could cut
+// the real figure by a third and the number on screen would not move at all - the feature
+// working perfectly and looking broken, which is exactly what was reported.
+//
+// At 3.4 the worst case is 97.9, so the ceiling is never reached and every change is visible:
+// fully chromed reads 98, the same build under a coat reads 61.
+public func CBChromeVisibleScale() -> Float = 3.4
 
 // L = clamp(min(Σ clothingScore, 60) + min(Σ customizationScore, 40), 0, 100).
 public func CBComputeLook(clothingSum: Float, customizationSum: Float) -> Float {

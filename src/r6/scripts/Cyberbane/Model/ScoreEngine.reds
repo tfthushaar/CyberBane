@@ -120,7 +120,8 @@ public class CBScoreEngine {
     if IsDefined(stats) {
       mercy = CBMercyRatio(stats.nonLethal, sys.TotalKills());
     }
-    this.m_dreadCiv = CBComputeDreadCiv(this.m_dread, sys.GetPrimaryArchetypeIndex(), mercy);
+    this.m_dreadCiv = CBComputeDreadCiv(this.m_dread, sys.GetPrimaryArchetypeIndex(), mercy,
+                                        this.m_disguise);
 
     this.m_dirty = false;
   }
