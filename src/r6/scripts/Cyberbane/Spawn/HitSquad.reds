@@ -249,7 +249,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
 
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(game, s"Cyberbane: hit squad - \(NameToString(fs.id)) sent people after you.", 4.0);
+    CBShowMessage(game, s"Cyberbane: \(CBFactionLabel(fs.id)) have sent a crew after you. They are on their way now.", 4.0);
   }
   CBLog.Info(n"Spawn", s"Hit squad from \(NameToString(fs.id)): \(spawned).");
 }

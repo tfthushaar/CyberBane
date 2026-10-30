@@ -19,6 +19,23 @@ func CBMessageHold() -> Float {
 }
 
 public func CBShowMessage(game: GameInstance, text: String, duration: Float) -> Void {
+  // One at a time.
+  //
+  // This channel shows a single message, so two sent together means the first is replaced
+  // before it can be read and the player sees a flicker and half a sentence. Three or four in
+  // a row happens easily: a Rival arriving, a crew being sent and a gang turning hostile are
+  // separate events that can land in the same second. A short floor between them means each
+  // one is actually readable. Dropped rather than queued, because a queue would still be
+  // showing the first message long after the thing it describes has happened.
+  let rt = CyberbaneRuntime.Get();
+  let ts = GameInstance.GetTimeSystem(game);
+  if IsDefined(rt) && IsDefined(ts) {
+    let now = EngineTime.ToFloat(ts.GetSimTime());
+    if now - rt.GetLastMessageAt() < CBConfig.MessageMinGapSeconds() {
+      return;
+    }
+    rt.SetLastMessageAt(now);
+  }
   // The blackboard system is null during world transitions; dereferencing it then crashes.
   let bbs = GameInstance.GetBlackboardSystem(game);
   if !IsDefined(bbs) {

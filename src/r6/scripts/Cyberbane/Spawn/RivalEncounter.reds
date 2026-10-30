@@ -347,7 +347,14 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
     let content = CBContent(game);
     let name = IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival";
-    CBShowMessage(game, s"Cyberbane: rival - \(name) has caught up with you.", 4.0);
+    // "Caught up with you" was read as "caught up in level" as often as "is standing behind
+    // you", and said nothing about which of the people nearby was the one that mattered. Name
+    // the gang, and point at the bar that identifies them.
+    let gang = CBFactionLabel(r.faction);
+    if StrLen(gang) == 0 {
+      gang = "a gang";
+    }
+    CBShowMessage(game, s"Cyberbane: \(name) of \(gang) is here for you. Look for their name at the top of the screen.", 4.0);
   }
   CBLog.Info(n"Spawn", s"Rival encounter spawned (id \(r.id)).");
   return true;

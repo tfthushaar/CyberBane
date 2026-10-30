@@ -29,6 +29,8 @@ public class CyberbaneRuntime extends ScriptableService {
   // a mod like CP Chronology that slows the world clock brings it near 1. Measured rather than
   // assumed precisely because it is not a constant across setups.
   private let m_clockRatio: Float = 1.0;
+  // Sim time of the last on-screen message, so two never land on top of each other.
+  private let m_lastMessageAt: Float;
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -105,6 +107,14 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetSecurityZone(value: Int32) -> Void {
     this.m_securityZone = value;
+  }
+
+  public func GetLastMessageAt() -> Float {
+    return this.m_lastMessageAt;
+  }
+
+  public func SetLastMessageAt(v: Float) -> Void {
+    this.m_lastMessageAt = v;
   }
 
   public func GetClockRatio() -> Float {

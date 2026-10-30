@@ -3,6 +3,26 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.10] - 2026-10-30
+
+### Fixed
+- **Story characters and cyberpsychos could come back as rivals.** A player killed LT Mower on
+  a cyberpsycho gig and later found her waiting outside their apartment, effectively unkillable
+  - a cyberpsycho's own health is enormous before a rival's buffs are added on top. Rivals are
+  built by respawning a character, which is right for a nameless ganger and wrong for anybody
+  the story owns. They are now refused outright, using the marker the game itself puts on those
+  characters, so this is closed wherever a rival is created rather than in one of the eight
+  places that create them.
+- **Messages no longer talk over each other.** The game shows one centre-screen message at a
+  time, so when several things happened at once each one replaced the last before it could be
+  read. There is a minimum gap between them now.
+
+### Changed
+- **Arrival messages say something useful.** "Has caught up with you" was read as "caught up in
+  level" as often as "is standing behind you", and never said which of the people nearby was
+  the one that mattered. A rival arriving now names their gang and points at the bar carrying
+  their name, and gangs are called what they are called rather than by their internal id.
+
 ## [1.3.9] - 2026-10-30
 
 ### Fixed

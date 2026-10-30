@@ -173,9 +173,49 @@ public func CBRivalAddTrait(content: ref<CyberbaneContent>, rival: ref<CBRival>)
 }
 
 // Create and register a Rival. Returns null if caps are full (spec §10.1).
+// Is this somebody the game wrote, rather than a face in a crowd?
+//
+// A Rival is built by respawning a character record, which is fine for a generic ganger and
+// wrong for anybody the story owns: respawning them puts a named individual the player has
+// already dealt with back on the street, and does it with Rival buffs on top. A player
+// reported exactly that - LT Mower, a cyberpsycho they had just killed, waiting outside their
+// apartment and effectively unkillable, because a cyberpsycho's own health is enormous before
+// the apex-grade buff a Rival gets is applied to it.
+//
+// The game marks these in the character record itself: cyberpsycho records carry
+// `tags += [ "Cyberpsycho" ]`. That is the reliable test, and it is read here rather than
+// guessed from the record's name. Boss and MaxTac rarity are refused for the same reason, and
+// the name check stays as a backstop for anything tagged inconsistently.
+public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
+  if !TDBID.IsValid(recordID) {
+    return true;   // nothing to spawn from; refusing is the safe answer
+  }
+  let rec = TweakDBInterface.GetCharacterRecord(recordID);
+  if IsDefined(rec) {
+    if rec.TagsContains(n"Cyberpsycho") || rec.TagsContains(n"Boss") {
+      return true;
+    }
+    let rarity = rec.Rarity();
+    if IsDefined(rarity) {
+      let t = rarity.Type();
+      if Equals(t, gamedataNPCRarity.Boss) || Equals(t, gamedataNPCRarity.MaxTac) {
+        return true;
+      }
+    }
+  }
+  let id = TDBID.ToStringDEBUG(recordID);
+  return StrContains(id, "cyberpsycho") || StrContains(id, "Cyberpsycho")
+      || StrContains(id, "_psycho") || StrContains(id, "boss");
+}
+
 public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName,
     recordID: TweakDBID, appearance: CName, source: ECBRivalSource, origin: CName, at: Float) -> ref<CBRival> {
   if !IsDefined(sys) {
+    return null;
+  }
+  // One gate, here, because eight different places create Rivals and several hand over a
+  // record straight off a puppet. Guarding each of them would mean missing one.
+  if CBRecordIsUniqueCharacter(recordID) {
     return null;
   }
   let rt = CyberbaneRuntime.Get();

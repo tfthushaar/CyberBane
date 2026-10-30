@@ -414,6 +414,9 @@ public abstract class CBConfig {
   // Percent of the requested duration, used before settings have loaded.
   public static func MessageHoldDefault() -> Int32 = 175
   // Nothing is shown for less than this, however short the caller asked for.
+  // Shortest gap between two on-screen messages. The channel holds one at a time, so anything
+  // closer than this replaces a message the player was still reading.
+  public static func MessageMinGapSeconds() -> Float = 3.5
   public static func MessageMinSeconds() -> Float = 5.0
 
   // ---- Vendetta hit squads ----
