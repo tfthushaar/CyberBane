@@ -37,6 +37,9 @@ public class CBKillInfo {
   public let mFirearm: Bool;
   public let mQuickhack: Bool;
   public let mExplosive: Bool;
+  // Killed by hand, in a takedown. Set from ETakedownActionType, which is the only place the
+  // distinction exists; it is gone by the time the puppet dies.
+  public let mFinisher: Bool;
 }
 
 // Applies one classified kill or defeat to the per-save reputation state.
@@ -83,7 +86,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     dreadMult = s.dreadGainMult;
   }
 
-  let brutal = CBIsBrutalKill(info.mBlade, info.mFists);
+  let brutal = CBIsBrutalKill(info.mFinisher, info.mBlade, info.mFists);
   let renownWitness = info.witnessed ? 1.0 : CBConfig.UnwitnessedRenownMult();
   let dreadWitness = info.witnessed ? 1.0 : CBConfig.UnwitnessedDreadMult();
   let standingWitness = info.witnessed ? 1.0 : 0.25;
@@ -96,7 +99,8 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   // Kill-dread.
   let brutalMelee = info.mBlade || info.mFists || info.mBlunt;
   let killDread = (CBKillDreadBase(info.victimClass)
-                 + CBKillDreadMethodBonus(brutalMelee, info.mExplosive, info.mQuickhack))
+                 + CBKillDreadMethodBonus(brutalMelee, info.mFinisher, info.mExplosive,
+                                          info.mQuickhack))
                  * dreadWitness * dreadMult;
   sys.AddKillDreadPoints(killDread);
 

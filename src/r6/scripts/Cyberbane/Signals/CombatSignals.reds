@@ -315,6 +315,9 @@ public func CBMethodFists() -> Int32 = 4
 public func CBMethodFirearm() -> Int32 = 8
 public func CBMethodQuickhack() -> Int32 = 16
 public func CBMethodExplosive() -> Int32 = 32
+// Set by the takedown hook rather than by the weapon, because it is about how V finished
+// somebody rather than what they were holding. It rides alongside one of the five above.
+public func CBMethodFinisher() -> Int32 = 64
 
 // What this blow actually was.
 //
@@ -361,6 +364,7 @@ func CBSetMethodFlags(info: ref<CBKillInfo>, mask: Int32) -> Void {
   info.mFirearm = CBMaskHas(mask, CBMethodFirearm());
   info.mQuickhack = CBMaskHas(mask, CBMethodQuickhack());
   info.mExplosive = CBMaskHas(mask, CBMethodExplosive());
+  info.mFinisher = CBMaskHas(mask, CBMethodFinisher());
 }
 
 // One classified incident, lethal or not.

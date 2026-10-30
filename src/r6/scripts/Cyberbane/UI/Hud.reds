@@ -15,21 +15,21 @@ public func CBHudTabCount() -> Int32 = 6
 
 // Lines the body box can show at its size and font before text would spill past the footer.
 // Body is 640 px tall at font size 20, so about 26 lines fit; 25 leaves a line of slack.
-public func CBHudMaxLines() -> Int32 = 25
+public func CBHudMaxLines() -> Int32 = 22
 
 // Lines that fit below each screen's own content, before the footer at y=854. The meters
 // end at 566 and the lists at 608, so those screens have far less room for prose than the
 // plain ones that start at 212. Text is clamped to this, so nothing can run into the footer.
+// Every screen draws its own content first and the prose goes underneath, so what fits is
+// whatever is left between that content and the footer. These are measured against the
+// positions in Build and the 26 px line height of the body font; leaving a line of slack is
+// deliberate, since text running into the footer is the one failure a player actually sees.
 public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == 1 {
-    // Ten, not eleven. The body sits above a fixed footer line, and at eleven the last line of
-    // a full first page ran into it. Three lines of explanation came out of that screen when
-    // the INCOMING block went in; this is the margin that keeps it from happening again if
-    // anything is ever added back.
-    return 10;
+    return 11;   // under four meters
   }
   if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() {
-    return 9;
+    return 9;    // under ten list rows
   }
   return CBHudMaxLines();
 }
@@ -38,13 +38,40 @@ public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
 public func CBHudRivalsTab() -> Int32 = 4
 public func CBHudFactionsTab() -> Int32 = 2
 
-// Layout. The panel is 1100 wide, and the content column starts at x=50.
-public func CBHudChipWidth() -> Float = 166.0
+// Layout.
+//
+// Full screen, laid out against a fixed 1860x1020 design that is centred on whatever the
+// screen actually is. Fixed rather than stretched because every row below is positioned by
+// hand, and a design that is centred reads correctly at any resolution while one that is
+// stretched does not.
+//
+// The shape is the game's own settings menu: a centred row of tabs across the top, a line of
+// description under them, a rule, then the content, with the key hints along the bottom. That
+// screen is the one players already know how to read, so the Hub borrows its proportions as
+// well as its colours.
+public func CBHudPanelW() -> Float = 1860.0
+public func CBHudPanelH() -> Float = 1020.0
+public func CBHudMarginX() -> Float = 160.0
+public func CBHudContentW() -> Float = 1540.0
+public func CBHudChipWidth() -> Float = 250.0
 public func CBHudBarCount() -> Int32 = 4
-public func CBHudBarWidth() -> Float = 980.0
+public func CBHudBarWidth() -> Float = 1540.0
 public func CBHudRowCount() -> Int32 = 10
+public func CBHudRowHeight() -> Float = 44.0
+public func CBHudContentTop() -> Float = 186.0
+public func CBHudFooterY() -> Float = 952.0
 
-// Colours, kept together so the screens read as one palette.
+// Colours.
+//
+// The first five are the settings menu's: salmon labels, white values, a brighter white for
+// anything selected, and a dim red rule. The last five are Cyberbane's own and are used for
+// meters and status pips, where a reputation screen needs to say good, bad or dangerous and
+// the settings menu has nothing to borrow.
+public func CBHudLabel() -> HDRColor = new HDRColor(1.55, 0.42, 0.42, 1.0)
+public func CBHudValue() -> HDRColor = new HDRColor(1.95, 1.95, 2.00, 1.0)
+public func CBHudHead() -> HDRColor = new HDRColor(2.20, 2.20, 2.25, 1.0)
+public func CBHudRule() -> HDRColor = new HDRColor(1.20, 0.30, 0.33, 0.45)
+public func CBHudDim() -> HDRColor = new HDRColor(1.10, 0.62, 0.62, 0.85)
 public func CBHudCyan() -> HDRColor = new HDRColor(0.10, 1.80, 2.10, 1.0)
 public func CBHudAmber() -> HDRColor = new HDRColor(2.00, 1.30, 0.20, 1.0)
 public func CBHudRed() -> HDRColor = new HDRColor(2.10, 0.35, 0.40, 1.0)
@@ -69,10 +96,13 @@ public func CBHudTrim(text: String, maxChars: Int32) -> String {
 }
 
 // Characters each row column can show at its width and font.
-public func CBHudColA() -> Int32 = 28
-public func CBHudColB() -> Int32 = 25
-public func CBHudColC() -> Int32 = 13
-public func CBHudColD() -> Int32 = 30
+// Characters each column can show. Raised across the board when the Hub went full screen:
+// the columns are roughly half as wide again, so a Rival's full name now fits where it used
+// to be cut.
+public func CBHudColA() -> Int32 = 40
+public func CBHudColB() -> Int32 = 34
+public func CBHudColC() -> Int32 = 16
+public func CBHudColD() -> Int32 = 26
 
 public func CBHudCountdown(ticks: Int32) -> String {
   if ticks <= 0 {
@@ -119,6 +149,9 @@ public class CBHud {
   private let m_barFill: array<ref<inkRectangle>>;
   private let m_barCap: array<ref<inkText>>;
   // List rows: a colour pip and three columns, reused by the gang and rival screens.
+  // One strip behind each row. The settings menu banding is what makes a long list scannable;
+  // without it the eye has to track across 1540 px of empty space to pair a name with a value.
+  private let m_rowBg: array<ref<inkRectangle>>;
   private let m_rowPip: array<ref<inkRectangle>>;
   private let m_rowA: array<ref<inkText>>;
   private let m_rowB: array<ref<inkText>>;
@@ -184,161 +217,181 @@ public class CBHud {
 
   private func Build(win: wref<inkCompoundWidget>) -> Void {
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
+    let x = CBHudMarginX();
+    let w = CBHudContentW();
 
     let root = new inkCanvas();
     root.SetName(n"cyberbaneHub");
     root.SetAnchor(inkEAnchor.Fill);
     root.SetVisible(false);
 
+    // The settings menu dims the world almost to black with a red cast rather than greying it.
     let backdrop = new inkRectangle();
     backdrop.SetAnchor(inkEAnchor.Fill);
-    backdrop.SetTintColor(new HDRColor(0.01, 0.01, 0.02, 0.80));
+    backdrop.SetTintColor(new HDRColor(0.055, 0.012, 0.022, 0.97));
     backdrop.Reparent(root);
 
     let panel = new inkCanvas();
     panel.SetAnchor(inkEAnchor.Centered);
     panel.SetAnchorPoint(new Vector2(0.5, 0.5));
-    panel.SetSize(new Vector2(1100.0, 900.0));
+    panel.SetSize(new Vector2(CBHudPanelW(), CBHudPanelH()));
     panel.Reparent(root);
 
-    let panelBg = new inkRectangle();
-    panelBg.SetAnchor(inkEAnchor.Fill);
-    panelBg.SetTintColor(new HDRColor(0.04, 0.05, 0.07, 0.97));
-    panelBg.Reparent(panel);
-
-    let accent = new inkRectangle();
-    accent.SetAnchor(inkEAnchor.TopLeft);
-    accent.SetSize(new Vector2(1100.0, 5.0));
-    accent.SetTintColor(new HDRColor(0.10, 2.20, 2.60, 1.0));
-    accent.Reparent(panel);
-
-    let stripe = new inkRectangle();
-    stripe.SetAnchor(inkEAnchor.TopLeft);
-    stripe.SetSize(new Vector2(5.0, 900.0));
-    stripe.SetTintColor(new HDRColor(0.10, 2.20, 2.60, 1.0));
-    stripe.Reparent(panel);
-
+    // ---- Title block, top left, the way the menus mark themselves -------
     let header = new inkText();
     header.SetFontFamily(font);
     header.SetFontStyle(n"Semibold");
-    header.SetFontSize(50);
+    header.SetFontSize(28);
     header.SetLetterCase(textLetterCase.UpperCase);
     header.SetText("CYBERBANE");
-    header.SetTintColor(new HDRColor(0.20, 2.00, 2.40, 1.0));
+    header.SetTintColor(CBHudLabel());
     header.SetAnchor(inkEAnchor.TopLeft);
-    header.SetMargin(new inkMargin(48.0, 28.0, 0.0, 0.0));
+    header.SetMargin(new inkMargin(x, 34.0, 0.0, 0.0));
     header.Reparent(panel);
 
+    // ---- Tabs, centred across the top ------------------------------------
+    let tabsW = Cast<Float>(CBHudTabCount()) * CBHudChipWidth();
+    let tabsX = (CBHudPanelW() - tabsW) / 2.0;
+    let t = 0;
+    while t < CBHudTabCount() {
+      let cx = tabsX + Cast<Float>(t) * CBHudChipWidth();
+
+      let label = new inkText();
+      label.SetFontFamily(font);
+      label.SetFontStyle(n"Semibold");
+      label.SetFontSize(24);
+      label.SetLetterCase(textLetterCase.UpperCase);
+      label.SetAnchor(inkEAnchor.TopLeft);
+      label.SetHorizontalAlignment(textHorizontalAlignment.Center);
+      label.SetFitToContent(false);
+      label.SetSize(new Vector2(CBHudChipWidth(), 32.0));
+      label.SetMargin(new inkMargin(cx, 30.0, 0.0, 0.0));
+      label.Reparent(panel);
+      ArrayPush(this.m_chipText, label);
+
+      // The open tab is marked by a bar under it, which is what the game does. A filled
+      // chip was the old look and it reads as a button you are meant to click.
+      let under = new inkRectangle();
+      under.SetAnchor(inkEAnchor.TopLeft);
+      under.SetSize(new Vector2(CBHudChipWidth() - 40.0, 3.0));
+      under.SetMargin(new inkMargin(cx + 20.0, 68.0, 0.0, 0.0));
+      under.Reparent(panel);
+      ArrayPush(this.m_chipBg, under);
+      t += 1;
+    }
+
+    // ---- The line under the tabs that says what you are looking at -------
     let subhead = new inkText();
     subhead.SetFontFamily(font);
     subhead.SetFontStyle(n"Medium");
-    subhead.SetFontSize(26);
-    subhead.SetTintColor(new HDRColor(0.80, 0.85, 0.90, 1.0));
+    subhead.SetFontSize(24);
+    subhead.SetTintColor(CBHudDim());
     subhead.SetAnchor(inkEAnchor.TopLeft);
-    subhead.SetMargin(new inkMargin(50.0, 100.0, 0.0, 0.0));
+    subhead.SetHorizontalAlignment(textHorizontalAlignment.Center);
+    subhead.SetFitToContent(false);
+    subhead.SetSize(new Vector2(CBHudPanelW(), 32.0));
+    subhead.SetMargin(new inkMargin(0.0, 96.0, 0.0, 0.0));
     subhead.Reparent(panel);
     this.m_subhead = subhead;
 
+    // Kept so nothing that still references it breaks; the tabs above replaced it.
     let tabline = new inkText();
     tabline.SetFontFamily(font);
-    tabline.SetFontStyle(n"Medium");
-    tabline.SetFontSize(22);
-    tabline.SetLetterCase(textLetterCase.UpperCase);
-    tabline.SetTintColor(new HDRColor(0.10, 1.80, 2.10, 1.0));
-    tabline.SetAnchor(inkEAnchor.TopLeft);
-    tabline.SetMargin(new inkMargin(50.0, 146.0, 0.0, 0.0));
-    tabline.SetVisible(false);   // replaced by the tab chips below
+    tabline.SetVisible(false);
     tabline.Reparent(panel);
     this.m_tabline = tabline;
 
     let divider = new inkRectangle();
     divider.SetAnchor(inkEAnchor.TopLeft);
-    divider.SetSize(new Vector2(1004.0, 2.0));
-    divider.SetTintColor(new HDRColor(0.10, 1.20, 1.50, 0.45));
-    divider.SetMargin(new inkMargin(48.0, 184.0, 0.0, 0.0));
+    divider.SetSize(new Vector2(w, 2.0));
+    divider.SetTintColor(CBHudRule());
+    divider.SetMargin(new inkMargin(x, 142.0, 0.0, 0.0));
     divider.Reparent(panel);
 
     let body = new inkText();
     body.SetFontFamily(font);
     body.SetFontStyle(n"Medium");
-    body.SetFontSize(20);
-    body.SetTintColor(new HDRColor(0.82, 0.88, 0.93, 1.0));
+    body.SetFontSize(21);
+    body.SetTintColor(CBHudValue());
     body.SetAnchor(inkEAnchor.TopLeft);
-    body.SetMargin(new inkMargin(50.0, 206.0, 0.0, 0.0));
-    body.SetWrapping(true, 1004.0);
-    body.SetSize(new Vector2(1004.0, 640.0));
+    body.SetMargin(new inkMargin(x, CBHudContentTop(), 0.0, 0.0));
+    body.SetWrapping(true, w);
+    body.SetSize(new Vector2(w, 740.0));
     body.Reparent(panel);
     this.m_body = body;
+
+    let footRule = new inkRectangle();
+    footRule.SetAnchor(inkEAnchor.TopLeft);
+    footRule.SetSize(new Vector2(w, 2.0));
+    footRule.SetTintColor(CBHudRule());
+    footRule.SetMargin(new inkMargin(x, CBHudFooterY() - 18.0, 0.0, 0.0));
+    footRule.Reparent(panel);
 
     let footer = new inkText();
     footer.SetFontFamily(font);
     footer.SetFontStyle(n"Medium");
-    footer.SetFontSize(18);
-    footer.SetTintColor(new HDRColor(0.60, 0.65, 0.70, 0.75));
+    footer.SetFontSize(19);
+    footer.SetTintColor(CBHudDim());
     footer.SetAnchor(inkEAnchor.TopLeft);
-    footer.SetMargin(new inkMargin(50.0, 854.0, 0.0, 0.0));
-    footer.SetText("Press the Hub key to cycle tabs, again on the last to close.  Settings: Pause > Mods > Cyberbane.");
+    footer.SetMargin(new inkMargin(x, CBHudFooterY(), 0.0, 0.0));
+    footer.SetText("HUB KEY  next tab, and closes on the last    SHIFT+HUB  broker peace    CTRL+HUB  switch title");
     footer.Reparent(panel);
 
-    // ---- Tab chips ------------------------------------------------------
-    let t = 0;
-    while t < CBHudTabCount() {
-      let chip = new inkRectangle();
-      chip.SetAnchor(inkEAnchor.TopLeft);
-      chip.SetSize(new Vector2(CBHudChipWidth() - 8.0, 34.0));
-      chip.SetMargin(new inkMargin(48.0 + Cast<Float>(t) * CBHudChipWidth(), 140.0, 0.0, 0.0));
-      chip.Reparent(panel);
-      ArrayPush(this.m_chipBg, chip);
-
-      let label = new inkText();
-      label.SetFontFamily(font);
-      label.SetFontStyle(n"Medium");
-      label.SetFontSize(19);
-      label.SetLetterCase(textLetterCase.UpperCase);
-      label.SetAnchor(inkEAnchor.TopLeft);
-      label.SetMargin(new inkMargin(58.0 + Cast<Float>(t) * CBHudChipWidth(), 146.0, 0.0, 0.0));
-      label.Reparent(panel);
-      ArrayPush(this.m_chipText, label);
-      t += 1;
-    }
+    let footerRight = new inkText();
+    footerRight.SetFontFamily(font);
+    footerRight.SetFontStyle(n"Medium");
+    footerRight.SetFontSize(19);
+    footerRight.SetTintColor(CBHudDim());
+    footerRight.SetAnchor(inkEAnchor.TopLeft);
+    footerRight.SetHorizontalAlignment(textHorizontalAlignment.Right);
+    footerRight.SetFitToContent(false);
+    footerRight.SetSize(new Vector2(w, 26.0));
+    footerRight.SetMargin(new inkMargin(x, CBHudFooterY(), 0.0, 0.0));
+    footerRight.SetText("SETTINGS  Pause > Mods > Cyberbane");
+    footerRight.Reparent(panel);
 
     // ---- Score meters ---------------------------------------------------
     let b = 0;
     while b < CBHudBarCount() {
-      let top = 212.0 + Cast<Float>(b) * 86.0;
+      let top = CBHudContentTop() + Cast<Float>(b) * 96.0;
 
       let bl = new inkText();
       bl.SetFontFamily(font);
       bl.SetFontStyle(n"Semibold");
-      bl.SetFontSize(24);
+      bl.SetFontSize(25);
       bl.SetLetterCase(textLetterCase.UpperCase);
-      bl.SetTintColor(new HDRColor(0.70, 0.80, 0.88, 1.0));
+      bl.SetTintColor(CBHudLabel());
       bl.SetAnchor(inkEAnchor.TopLeft);
-      bl.SetMargin(new inkMargin(50.0, top, 0.0, 0.0));
+      bl.SetMargin(new inkMargin(x, top, 0.0, 0.0));
       bl.Reparent(panel);
       ArrayPush(this.m_barLabel, bl);
 
+      // Right-aligned against the same edge the meter ends on, so every value on the screen
+      // lines up in one column the way a settings page does.
       let bv = new inkText();
       bv.SetFontFamily(font);
       bv.SetFontStyle(n"Semibold");
-      bv.SetFontSize(24);
+      bv.SetFontSize(25);
       bv.SetAnchor(inkEAnchor.TopLeft);
-      bv.SetMargin(new inkMargin(760.0, top, 0.0, 0.0));
+      bv.SetHorizontalAlignment(textHorizontalAlignment.Right);
+      bv.SetFitToContent(false);
+      bv.SetSize(new Vector2(w, 30.0));
+      bv.SetMargin(new inkMargin(x, top, 0.0, 0.0));
       bv.Reparent(panel);
       ArrayPush(this.m_barValue, bv);
 
       let track = new inkRectangle();
       track.SetAnchor(inkEAnchor.TopLeft);
-      track.SetSize(new Vector2(CBHudBarWidth(), 14.0));
-      track.SetTintColor(new HDRColor(0.10, 0.14, 0.18, 1.0));
-      track.SetMargin(new inkMargin(50.0, top + 32.0, 0.0, 0.0));
+      track.SetSize(new Vector2(CBHudBarWidth(), 10.0));
+      track.SetTintColor(new HDRColor(0.30, 0.09, 0.11, 0.9));
+      track.SetMargin(new inkMargin(x, top + 36.0, 0.0, 0.0));
       track.Reparent(panel);
       ArrayPush(this.m_barTrack, track);
 
       let fill = new inkRectangle();
       fill.SetAnchor(inkEAnchor.TopLeft);
-      fill.SetSize(new Vector2(1.0, 14.0));
-      fill.SetMargin(new inkMargin(50.0, top + 32.0, 0.0, 0.0));
+      fill.SetSize(new Vector2(1.0, 10.0));
+      fill.SetMargin(new inkMargin(x, top + 36.0, 0.0, 0.0));
       fill.Reparent(panel);
       ArrayPush(this.m_barFill, fill);
 
@@ -346,10 +399,10 @@ public class CBHud {
       cap.SetFontFamily(font);
       cap.SetFontStyle(n"Medium");
       cap.SetFontSize(19);
-      cap.SetTintColor(new HDRColor(0.55, 0.62, 0.70, 1.0));
+      cap.SetTintColor(CBHudDim());
       cap.SetAnchor(inkEAnchor.TopLeft);
-      cap.SetMargin(new inkMargin(50.0, top + 52.0, 0.0, 0.0));
-      cap.SetWrapping(true, 980.0);
+      cap.SetMargin(new inkMargin(x, top + 54.0, 0.0, 0.0));
+      cap.SetWrapping(true, w);
       cap.Reparent(panel);
       ArrayPush(this.m_barCap, cap);
       b += 1;
@@ -358,52 +411,65 @@ public class CBHud {
     // ---- List rows ------------------------------------------------------
     let r = 0;
     while r < CBHudRowCount() {
-      let rtop = 212.0 + Cast<Float>(r) * 38.0;
+      let rtop = CBHudContentTop() + Cast<Float>(r) * CBHudRowHeight();
+
+      let bg = new inkRectangle();
+      bg.SetAnchor(inkEAnchor.TopLeft);
+      bg.SetSize(new Vector2(w, CBHudRowHeight() - 4.0));
+      bg.SetTintColor(r % 2 == 0 ? new HDRColor(0.16, 0.05, 0.07, 0.55)
+                                 : new HDRColor(0.10, 0.03, 0.05, 0.35));
+      bg.SetMargin(new inkMargin(x, rtop - 4.0, 0.0, 0.0));
+      bg.Reparent(panel);
+      ArrayPush(this.m_rowBg, bg);
 
       let pip = new inkRectangle();
       pip.SetAnchor(inkEAnchor.TopLeft);
-      pip.SetSize(new Vector2(6.0, 24.0));
-      pip.SetMargin(new inkMargin(50.0, rtop, 0.0, 0.0));
+      pip.SetSize(new Vector2(5.0, 26.0));
+      pip.SetMargin(new inkMargin(x, rtop, 0.0, 0.0));
       pip.Reparent(panel);
       ArrayPush(this.m_rowPip, pip);
 
       let ra = new inkText();
       ra.SetFontFamily(font);
       ra.SetFontStyle(n"Semibold");
-      ra.SetFontSize(22);
+      ra.SetFontSize(23);
       ra.SetAnchor(inkEAnchor.TopLeft);
-      ra.SetMargin(new inkMargin(70.0, rtop, 0.0, 0.0));
+      ra.SetMargin(new inkMargin(x + 24.0, rtop, 0.0, 0.0));
       ra.Reparent(panel);
       ArrayPush(this.m_rowA, ra);
 
       let rb = new inkText();
       rb.SetFontFamily(font);
       rb.SetFontStyle(n"Medium");
-      rb.SetFontSize(21);
-      rb.SetTintColor(new HDRColor(0.72, 0.80, 0.88, 1.0));
+      rb.SetFontSize(22);
+      rb.SetTintColor(CBHudValue());
       rb.SetAnchor(inkEAnchor.TopLeft);
-      rb.SetMargin(new inkMargin(350.0, rtop + 2.0, 0.0, 0.0));
+      rb.SetMargin(new inkMargin(x + 540.0, rtop + 2.0, 0.0, 0.0));
       rb.Reparent(panel);
       ArrayPush(this.m_rowB, rb);
 
-      // Narrow middle column: a scar word, or a body count. Never more than 14 characters.
+      // Narrow middle column: a scar word, or a body count.
       let rc = new inkText();
       rc.SetFontFamily(font);
       rc.SetFontStyle(n"Medium");
-      rc.SetFontSize(21);
-      rc.SetTintColor(new HDRColor(0.80, 0.55, 0.45, 1.0));
+      rc.SetFontSize(22);
+      rc.SetTintColor(new HDRColor(1.40, 0.70, 0.45, 1.0));
       rc.SetAnchor(inkEAnchor.TopLeft);
-      rc.SetMargin(new inkMargin(600.0, rtop + 2.0, 0.0, 0.0));
+      rc.SetMargin(new inkMargin(x + 960.0, rtop + 2.0, 0.0, 0.0));
       rc.Reparent(panel);
       ArrayPush(this.m_rowC, rc);
 
+      // Right-aligned, same edge as the meter values.
       let rd = new inkText();
       rd.SetFontFamily(font);
       rd.SetFontStyle(n"Medium");
-      rd.SetFontSize(21);
-      rd.SetTintColor(new HDRColor(0.55, 0.62, 0.70, 1.0));
+      rd.SetFontSize(22);
+      rd.SetTintColor(CBHudDim());
       rd.SetAnchor(inkEAnchor.TopLeft);
-      rd.SetMargin(new inkMargin(740.0, rtop + 2.0, 0.0, 0.0));
+      rd.SetHorizontalAlignment(textHorizontalAlignment.Right);
+      rd.SetFitToContent(false);
+      rd.SetSize(new Vector2(w, 26.0));
+      rd.SetMargin(new inkMargin(x, rtop + 2.0, 0.0, 0.0));
       rd.Reparent(panel);
       ArrayPush(this.m_rowD, rd);
       r += 1;
@@ -432,6 +498,7 @@ public class CBHud {
   private func HideRows() -> Void {
     let i = 0;
     while i < ArraySize(this.m_rowA) {
+      if IsDefined(this.m_rowBg[i]) { this.m_rowBg[i].SetVisible(false); }
       if IsDefined(this.m_rowPip[i]) { this.m_rowPip[i].SetVisible(false); }
       if IsDefined(this.m_rowA[i]) { this.m_rowA[i].SetVisible(false); }
       if IsDefined(this.m_rowB[i]) { this.m_rowB[i].SetVisible(false); }
@@ -462,7 +529,7 @@ public class CBHud {
       if w < 2.0 {
         w = 2.0;      // always show a sliver, so an empty meter still reads as a meter
       }
-      this.m_barFill[idx].SetSize(new Vector2(w, 14.0));
+      this.m_barFill[idx].SetSize(new Vector2(w, 10.0));
       this.m_barFill[idx].SetTintColor(col);
       this.m_barFill[idx].SetVisible(true);
     }
@@ -476,12 +543,16 @@ public class CBHud {
     if idx < 0 || idx >= ArraySize(this.m_rowA) {
       return;
     }
+    if IsDefined(this.m_rowBg[idx]) {
+      this.m_rowBg[idx].SetVisible(true);
+    }
     if IsDefined(this.m_rowPip[idx]) {
       this.m_rowPip[idx].SetTintColor(pip);
       this.m_rowPip[idx].SetVisible(true);
     }
     if IsDefined(this.m_rowA[idx]) {
       this.m_rowA[idx].SetText(CBHudTrim(a, CBHudColA()));
+      this.m_rowA[idx].SetTintColor(CBHudHead());
       this.m_rowA[idx].SetVisible(true);
     }
     if IsDefined(this.m_rowB[idx]) {
@@ -629,13 +700,11 @@ public class CBHud {
     while i < ArraySize(this.m_chipBg) {
       let on = (i + 1) == this.m_tab;
       if IsDefined(this.m_chipBg[i]) {
-        this.m_chipBg[i].SetTintColor(on ? new HDRColor(0.10, 1.60, 1.90, 0.85)
-                                         : new HDRColor(0.10, 0.14, 0.18, 0.85));
+        this.m_chipBg[i].SetTintColor(on ? CBHudHead() : new HDRColor(0.0, 0.0, 0.0, 0.0));
       }
       if IsDefined(this.m_chipText[i]) {
         this.m_chipText[i].SetText(CBHudTabName(i + 1));
-        this.m_chipText[i].SetTintColor(on ? new HDRColor(0.02, 0.05, 0.07, 1.0)
-                                           : new HDRColor(0.60, 0.70, 0.78, 1.0));
+        this.m_chipText[i].SetTintColor(on ? CBHudHead() : CBHudLabel());
       }
       i += 1;
     }
@@ -670,14 +739,14 @@ public class CBHud {
 
     // Each screen decides what it is: meters, a list, or prose. The body text sits under
     // whatever the screen drew, rather than being the whole screen.
-    let bodyTop = 212.0;
+    let bodyTop = CBHudContentTop();
     if this.m_tab == 1 {
       this.RenderScores(sys);
-      bodyTop = 566.0;
+      bodyTop = CBHudContentTop() + Cast<Float>(CBHudBarCount()) * 96.0 + 20.0;
     } else {
       if this.m_tab == CBHudFactionsTab() {
         this.RenderFactions(sys);
-        bodyTop = 608.0;
+        bodyTop = CBHudContentTop() + Cast<Float>(CBHudRowCount()) * CBHudRowHeight() + 20.0;
       } else {
         if this.m_tab == CBHudRivalsTab() {
           this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
@@ -688,12 +757,12 @@ public class CBHud {
             this.m_holdLabel = blocked;
           }
           this.RenderRivals(sys);
-          bodyTop = 608.0;
+          bodyTop = CBHudContentTop() + Cast<Float>(CBHudRowCount()) * CBHudRowHeight() + 20.0;
         }
       }
     }
     if IsDefined(this.m_body) {
-      this.m_body.SetMargin(new inkMargin(50.0, bodyTop, 0.0, 0.0));
+      this.m_body.SetMargin(new inkMargin(CBHudMarginX(), bodyTop, 0.0, 0.0));
       this.m_body.SetText(CBHudClamp(CBHudBody(sys, game, this.m_tab), CBHudMaxLinesFor(this.m_tab)));
     }
     this.m_root.SetVisible(true);

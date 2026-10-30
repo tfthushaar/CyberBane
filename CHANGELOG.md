@@ -5,6 +5,20 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [1.3.2] - 2026-10-30
 
+### Changed
+- **The Hub is a full-screen page now, built to look like the game's own settings menu.** Same
+  font, same salmon-and-white palette, tabs centred across the top with the open one underlined,
+  a rule under them, and the key hints along the bottom. The columns are half as wide again, so
+  a Rival's full name fits where it used to be cut off, and the gang and rival lists are banded
+  so a name and its numbers stay paired across the width of the screen.
+- **The street stopped repeating itself.** There were six overheard lines in the whole mod, one
+  per mood, with nothing substituted into them, so you heard the same sentence for the hundredth
+  time and it stopped meaning anything. There are now several for every mood, the last one used
+  is never the next one used, and they name the gang, the district and your title. Most
+  importantly they can be about a specific thing you actually did: if a story has travelled to
+  the district you are standing in, that is what you overhear, which is the first time anything
+  a player can hear has come out of the rumour system at all.
+
 ### Fixed
 - **Conduct could only ever go down.** Sparing someone is worth a point of Conduct, and that
   point was never awarded: every incident was recorded as a kill, including the ones where you
@@ -20,7 +34,9 @@ This project follows [Semantic Versioning](https://semver.org/).
   and all took the brutality penalty. The weapon is read properly now: blades and bare hands
   count as brutal, clubs and hammers are their own thing, and explosives are no longer filed as
   gunfire. Five of the eleven ways a kill could be described were never detected at all, so the
-  formulas reading them were adding nothing; those are gone rather than left in looking useful.
+  formulas reading them were adding nothing. Killing someone by hand in a takedown counts as a
+  finisher again, which is the one case the brutality rule was really about; the rest are gone
+  rather than left in looking useful.
 
 ### Changed
 - **The Conduct bar's top band is called Disciplined.** It used to be Professional, which is

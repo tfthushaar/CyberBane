@@ -171,6 +171,10 @@ public abstract class CBConfig {
   public static func WhisperCooldownSeconds() -> Float = 18.0
   public static func WhisperRadius() -> Float = 13.0
   public static func WhisperChance() -> Float = 0.45
+  // How often a plain whisper gives way to one about a story that has actually reached this
+  // district. High on purpose: a line about a specific thing V did somewhere else is the whole
+  // point of the rumour engine, and hearing it is the only way a player knows it exists.
+  public static func WhisperRumorChance() -> Float = 0.6
   public static func WhisperDurationSeconds() -> Float = 4.0
 
   // ---- Morale (spec §9.4) ----------------------------------------------

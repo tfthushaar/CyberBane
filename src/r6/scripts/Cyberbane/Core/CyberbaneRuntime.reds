@@ -22,6 +22,9 @@ public class CyberbaneRuntime extends ScriptableService {
   // saying anything. A refusal that names itself turns a week of guessing into one sentence
   // from whoever is playing.
   private let m_lastSpawnBlock: Int32;
+  // Which whisper line was used last, so the next one is never the same. Session only: it is
+  // about what you just heard, and nothing about it is worth carrying into a save.
+  private let m_lastWhisperIdx: Int32;
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -98,6 +101,14 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetSecurityZone(value: Int32) -> Void {
     this.m_securityZone = value;
+  }
+
+  public func GetLastWhisperIndex() -> Int32 {
+    return this.m_lastWhisperIdx;
+  }
+
+  public func SetLastWhisperIndex(idx: Int32) -> Void {
+    this.m_lastWhisperIdx = idx;
   }
 
   public func GetLastSpawnBlock() -> Int32 {

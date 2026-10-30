@@ -51,4 +51,24 @@ func CBOnTakedownNoise(owner: wref<GameObject>, t: ETakedownActionType) -> Void 
   // V had hands on them. Everything downstream - the kill attribution in CBOnPuppetDeath and
   // the mercy check in CBSparedSweep - keys off this one flag.
   puppet.cbDamagedByPlayer = true;
+  // And if it was a killing takedown, that is a finisher.
+  //
+  // Finisher was dropped from scoring for having no signal, which was wrong: this hook already
+  // knew. ETakedownActionType says plainly whether V snapped their neck or put them down
+  // breathing, so the one case the brutality rule is really about - grabbing someone and
+  // killing them by hand - is detectable after all, and only here. By the time the puppet
+  // dies the action type is gone.
+  if CBIsLethalTakedown(t) {
+    puppet.cbLastMethodMask = CBMaskSet(puppet.cbLastMethodMask, CBMethodFinisher());
+  }
+}
+
+// A takedown that kills, as opposed to one that leaves them breathing.
+func CBIsLethalTakedown(t: ETakedownActionType) -> Bool {
+  return Equals(t, ETakedownActionType.Takedown)
+    || Equals(t, ETakedownActionType.TakedownMassiveTarget)
+    || Equals(t, ETakedownActionType.AerialTakedown)
+    || Equals(t, ETakedownActionType.BossTakedown)
+    || Equals(t, ETakedownActionType.DisposalTakedown)
+    || Equals(t, ETakedownActionType.KillTarget);
 }

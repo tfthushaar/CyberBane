@@ -182,7 +182,8 @@ public class CBReactionDirector {
       // They still flip hostile either way. Only the line is rationed.
       if this.m_whisperCooldownTicks <= 0 {
         this.m_whisperCooldownTicks = this.WhisperCooldownTicks();
-        CBShowWhisper(player.GetGame(), faction, n"hate", n"warning");
+        CBShowWhisper(CyberbaneSystem.Get(player.GetGame()), player.GetGame(),
+                      faction, n"hate", n"warning");
       }
       return true;
     }
@@ -290,7 +291,7 @@ public class CBReactionDirector {
 
     npc.cbWhispered = true;
     this.m_whisperCooldownTicks = this.WhisperCooldownTicks();
-    CBShowWhisper(game, faction, mood, topic);
+    CBShowWhisper(sys, game, faction, mood, topic);
   }
 
   private func WhisperCooldownTicks() -> Int32 {
