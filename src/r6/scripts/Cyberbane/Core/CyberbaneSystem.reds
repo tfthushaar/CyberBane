@@ -760,6 +760,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       rt.SetClockRatio(ratio);
     }
     CBLog.Info(n"Core", s"Clock check: game \(dg)s vs sim \(ds)s over 60 ticks (ratio \(ratio)). 1.0 means cooldowns are in real seconds.");
+    // While we have a one-shot slot: what the game tags V's clothes with. The concealment
+    // rules key off which slots are filled because sleeve length is not in TweakDB, and this
+    // is the only way to find out whether the real visual tags could do better.
+    CBLogEquippedTags(game);
   }
 
   public func GetTickCount() -> Int32 {

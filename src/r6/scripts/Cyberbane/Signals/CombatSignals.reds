@@ -386,7 +386,14 @@ public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
   info.district = CBEventDistrict(sys, game);
   info.position = puppet.GetWorldPosition();
   let witnesses = CBCountWitnesses(sys, info.position, info.victimEntityId);
-  info.witnessed = witnesses > 0;
+  // People saw it, but if V's face is covered they cannot say who did it, so nothing attaches
+  // to V's name. That is what `witnessed` governs: renown, standing damage and whether a story
+  // can name anybody. The body still turns up, so the unattributed dread path still runs, which
+  // is exactly the reputation a masked merc should build - a district frightened of something
+  // it cannot identify.
+  info.witnessed = witnesses > 0 && !CBPlayerMasked(game);
+  // Stealth stays literal: it is about whether anyone was there at all, and it feeds the quiet
+  // takedown count rather than attribution.
   info.stealth = witnesses == 0;
   info.at = CBGameSeconds(game);
   CBSetMethodFlags(info, puppet.cbLastMethodMask);

@@ -94,7 +94,9 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
         }
       }
       implantSum += 3.0 * mult;
-      visibleSum += CBVisibleChromeWeight(area) * mult;
+      // Scaled by what V is wearing over it (Signals/Concealment.reds). Installed chrome is
+      // still installed; this is only about what a stranger can see.
+      visibleSum += CBVisibleChromeWeight(area) * mult * CBChromeVisibility(area, data);
     }
   }
 

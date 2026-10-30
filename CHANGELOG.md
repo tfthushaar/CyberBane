@@ -26,6 +26,17 @@ This project follows [Semantic Versioning](https://semver.org/).
   turn that scoring off entirely.
 
 ### Added
+- **What you wear hides what you are carrying.** Visible chrome was counted from what you had
+  installed, so a fully chromed merc in a parka read exactly as loud as the same merc in a
+  vest. An outer layer now covers your arms and skin, trousers cover your legs, and anything
+  across your face covers your eyes. Covered chrome still counts for a quarter, because a coat
+  moves and heavy arms still change how somebody carries themselves. Everything that reads your
+  chrome follows: how frightening you are, and how far away people start noticing you.
+- **A mask means nobody can say it was you.** Wear one and witnesses stop being able to put
+  your name to what they saw. Your reputation barely grows, no story about you travels, and
+  gangs are far slower to turn against you. The bodies still turn up, so the district grows
+  frightened of something it cannot identify, which is exactly the reputation a masked merc
+  should have. Glasses and visors do not do this; they only hide eye chrome.
 - **The day runs to a plan now.** An in-game day is split into three eight-hour stretches, and
   each kind of encounter gets its own window inside them, staggered so a rival and an apex squad
   sharing a stretch arrive hours apart rather than together. Three rivals means one in each
