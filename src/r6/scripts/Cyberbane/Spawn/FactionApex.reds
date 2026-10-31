@@ -374,7 +374,8 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   while i < ArraySize(states) {
     let fs = states[i];
     i += 1;
-    if IsDefined(fs) && NotEquals(fs.id, n"") {
+    // The law does not field an apex squad; heat and MaxTac are its escalation.
+    if IsDefined(fs) && NotEquals(fs.id, n"") && CBFactionFieldsSquads(fs.id) {
       // Their toughest if V has met one, otherwise whoever V has been fighting.
       let record = TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
       if TDBID.IsValid(record) && (fs.kills - fs.apexAtKills) >= CBConfig.ApexKillThreshold() {

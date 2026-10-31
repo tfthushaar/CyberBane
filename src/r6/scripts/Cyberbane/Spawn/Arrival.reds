@@ -41,22 +41,33 @@
 // every time and never once seen. So the record has to be one the prevention system is built
 // around. These are the ones in the base game that are not liveried as police: plain nomad
 // bodies for a couple of people, and the Militech Emperor when a full squad has to fit.
+// The nomad bodies are tried first whatever the crew size.
+//
+// This picked the Militech Emperor for any crew over two, which is a corporate security
+// vehicle: a gang's hit squad pulling up in one reads as the law turning up, and that is half
+// of why players reported being chased by police. The nomad records are plain civilian bodies
+// and carry the passenger counts the chase needs, so they are the default now and the Emperor
+// is only reached when nothing else will seat the crew. Capacity is checked against the record
+// at the call site, so preferring a smaller car here costs a seat at worst, never the arrival.
 func CBChaseVehicle(factionId: CName, seats: Int32) -> TweakDBID {
   let pool: array<TweakDBID>;
-  if seats > 2 {
-    ArrayPush(pool, t"Vehicle.wasteland_chevalier_emperor_militech_heat_2");
-    ArrayPush(pool, t"Vehicle.wasteland_chevalier_emperor_militech_heat_3");
-  } else {
-    ArrayPush(pool, t"Vehicle.aldecado_thorton_galena_heat_2");
-    ArrayPush(pool, t"Vehicle.aldecado_archer_quartz_heat_3");
-    ArrayPush(pool, t"Vehicle.aldecado_thorton_colby_heat_3");
-  }
+  ArrayPush(pool, t"Vehicle.aldecado_thorton_galena_heat_2");
+  ArrayPush(pool, t"Vehicle.aldecado_archer_quartz_heat_3");
+  ArrayPush(pool, t"Vehicle.aldecado_thorton_colby_heat_3");
   // Deterministic per faction, so a gang has a look.
   let idx = (StrLen(NameToString(factionId)) * 3) % ArraySize(pool);
   if idx < 0 {
     idx = 0;
   }
-  return pool[idx];
+  let pick = pool[idx];
+  // Only when the crew genuinely will not fit in anything civilian.
+  if seats > 2 && CBChaseVehicleSeats(pick) < seats {
+    let big = t"Vehicle.wasteland_chevalier_emperor_militech_heat_2";
+    if CBChaseVehicleSeats(big) > CBChaseVehicleSeats(pick) {
+      return big;
+    }
+  }
+  return pick;
 }
 
 // How many the game will actually seat in this one. Zero means it will seat nobody, which is

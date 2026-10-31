@@ -117,7 +117,8 @@ func CBSeedRivalFromFactions(sys: ref<CyberbaneSystem>, game: GameInstance) -> r
   let best: ref<CBFactionState>;
   let bestKills = 0;
   for fs in sys.GetFactionStates() {
-    if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) && fs.kills > bestKills {
+    if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) && CBFactionFieldsSquads(fs.id)
+       && fs.kills > bestKills {
       best = fs;
       bestKills = fs.kills;
     }
@@ -245,7 +246,8 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       return;
     }
     for fs in sys.GetFactionStates() {
-      if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
+      // The law is not a gang and does not send crews; it has heat and MaxTac for that.
+      if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) && CBFactionFieldsSquads(fs.id) {
         let posture = score.GetPosture(fs.id);
         let hate = ClampF((-fs.standing / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
         let s = 0.0;

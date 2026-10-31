@@ -5,6 +5,26 @@
 // strings below are the expected names and are safe to leave until then.
 // chromeAttitude < 0 means chrome earns respect (Maelstrom).
 
+// Does this faction go to war with V the way a gang does?
+//
+// The law does not. It has its own escalation already - heat, stars, and MaxTac at the top -
+// and Cyberbane has no business bolting a second one onto it.
+//
+// `isGang` could not answer this: it only ever decided whether a faction pays tribute, so the
+// NCPD were eligible for crews, apex squads and car chases like any gang. Killing police
+// drives their standing down the same as killing Maelstrom, so a player who had been fighting
+// the law found police turning up to pick fights and ramming them in the street with no stars
+// showing, which is exactly the report. Those chases go out through the game's own police
+// pursuit call, so they behave like a pursuit while the heat system knows nothing about them.
+//
+// Corps stay in. Arasaka and Militech sending a squad after V is intended, and they are not
+// the law.
+public func CBFactionFieldsSquads(faction: CName) -> Bool {
+  return NotEquals(faction, n"NCPD")
+      && NotEquals(faction, n"Police")
+      && NotEquals(faction, n"MaxTac");
+}
+
 public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   let f: ref<CBFactionProfile>;
 
