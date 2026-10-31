@@ -3,6 +3,46 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.3] - 2026-10-31
+
+### Added
+- **Reset all Cyberbane data**, in Mod Settings under Debug. Turn it on, hit Apply, and
+  everything Cyberbane has recorded on this save is cleared: Renown, Dread, Conduct, every
+  faction and district, your Rivals, titles, log and tallies. The switch turns itself back off
+  once it is done. Reputation only ever built up before this, Conduct included, so a
+  playthrough that ended up somewhere you did not intend was stuck that way and the only way
+  out was a new save. Your cyberware rating is not affected, because it is not stored: it is
+  read back off the chrome you are wearing every few seconds and returns on its own.
+- **Interface size**, in Mod Settings under UI. Sets how large Cyberbane's own screens and bars
+  are, on top of the automatic fit below.
+
+### Fixed
+- **The Hub and the threat bars no longer overflow the screen.** They were drawn at a fixed size
+  that assumed a 1920x1080 interface. That is what you get at 1080p with the game's UI scale
+  left alone, which is why this was missed, but raise the UI scale or play below 1080p and the
+  space available shrinks under what Cyberbane was drawing, so the panel ran off the edges and
+  took the text with it. Cyberbane now measures the space it actually has and fits itself to
+  it, rechecking whenever the Hub is opened so changing resolution or UI scale takes effect
+  straight away.
+- **A Rival you put down without killing left a map marker behind forever.** The marker is
+  attached to the body and was only ever removed when one died, so beating a Rival unconscious
+  left a pin on the map for the rest of the save. Anyone raising their Conduct by going
+  non-lethal collected one per Rival and had no way to clear them.
+- **Rivals appearing to teleport.** Same cause. Because an unconscious Rival did not count as
+  being in the world, Cyberbane thought the encounter was over and sent the same Rival again
+  with a new body, placed behind you: in an alley a block on, or on top of a building you had
+  just climbed. The body you left behind stayed where it fell, which is the one players kept
+  walking back into. Leaving a Rival alive now ends the encounter properly and puts them on the
+  same cooldown as one who got away.
+- **Police picking fights and ramming you with no stars showing.** The NCPD were being treated
+  as just another gang, so once you had killed enough police they turned on you and started
+  sending crews and cars after you, dispatched through the game's own pursuit behaviour and
+  completely separately from your heat level. The law now stays out of all of that; it already
+  has heat and MaxTac for the same job. Corps are unchanged, since Arasaka and Militech sending
+  people after you is the point.
+- A gang's hit squad no longer turns up in a Militech security car. Any crew of more than two
+  was being given one, which read as the law arriving rather than the gang you had annoyed.
+
 ## [1.4.2] - 2026-10-30
 
 ### Added
