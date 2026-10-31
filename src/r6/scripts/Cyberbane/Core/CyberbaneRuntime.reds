@@ -13,6 +13,7 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_settings: ref<CyberbaneSettings>;
   private let m_rewardDepth: Int32;    // nesting depth of the reward hook (see GigBonus)
   private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
+  private let m_resetRequested: Bool;  // the player asked for a hard reset (see CyberbaneSettings)
   private let m_ngpDetected: Int32;    // same three states, for New Game Plus
   private let m_securityZone: Int32 = 9;   // last zone the game reported; 9 = not heard yet
   // Why the last arrival was refused (CBBlock*). Diagnostic only, session-only.
@@ -141,6 +142,24 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetLastSpawnBlock(reason: Int32) -> Void {
     this.m_lastSpawnBlock = reason;
+  }
+
+  // Hard reset, asked for in Mod Settings and carried out on the next settled tick.
+  //
+  // The settings callback cannot do the work itself: it has no GameInstance, and the reset
+  // sweeps spawned entities and clears live encounters, neither of which is safe while the
+  // world is mid-transition. So the request is parked here and the tick collects it, the same
+  // way the deferred entity sweep works.
+  public func RequestHardReset() -> Void {
+    this.m_resetRequested = true;
+  }
+
+  public func TakeHardResetRequest() -> Bool {
+    if !this.m_resetRequested {
+      return false;
+    }
+    this.m_resetRequested = false;
+    return true;
   }
 
   public func GetLogLevel() -> Int32 {

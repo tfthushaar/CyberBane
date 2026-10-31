@@ -268,6 +268,15 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudScale")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudScale-Desc")
+  @runtimeProperty("ModSettings.min", "50")
+  @runtimeProperty("ModSettings.max", "150")
+  @runtimeProperty("ModSettings.step", "5")
+  public let hudScale: Int32 = 100;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageHold")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageHold-Desc")
   @runtimeProperty("ModSettings.min", "100")
@@ -463,6 +472,18 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FreezeReputation-Desc")
   public let freezeReputation: Bool = false;
 
+  // Start over. Turn it on, hit Apply, and everything Cyberbane has recorded on this save is
+  // cleared; the switch turns itself back off once it is done.
+  //
+  // Mod Settings has no button control - the readme's options are bools, numbers, enums and
+  // key bindings - so a switch that performs its action and resets itself is how an action is
+  // offered. The Apply step is the confirmation, which is why this is not asked twice.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ResetAll")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ResetAll-Desc")
+  public let resetAllData: Bool = false;
+
   // Tracks the last preset we expanded, so picking a preset rewrites the intensity /
   // frequency sliders once, while later hand-tweaks to those sliders still stick.
   private let m_appliedPreset: ECBPreset = ECBPreset.Default;
@@ -490,6 +511,15 @@ public class CyberbaneSettings {
     if NotEquals(this.preset, this.m_appliedPreset) {
       this.ApplyPreset(this.preset);
       this.m_appliedPreset = this.preset;
+    }
+    // The reset switch. Hand the request to the runtime and turn the switch off again, so it
+    // reads as the momentary action it is and cannot fire twice. The tick does the work.
+    if this.resetAllData {
+      this.resetAllData = false;
+      let rrt = CyberbaneRuntime.Get();
+      if IsDefined(rrt) {
+        rrt.RequestHardReset();
+      }
     }
     let rt = CyberbaneRuntime.Get();
     if IsDefined(rt) {

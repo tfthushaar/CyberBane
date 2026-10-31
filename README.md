@@ -222,7 +222,21 @@ reputation, or make a backup save before you remove it.
 Everything is configurable from the in-game Mod Settings menu, and every option explains what
 it does. You can turn individual systems on or off (crowds, gangs, morale, vendors, rivals, hit
 squads, whispers), tune how intense and how frequent reactions are, pick a preset (Subtle,
-Default, or Dramatic), and rebind the Hub key.
+Default, or Dramatic), set the size of Cyberbane's own screens and bars, and rebind the Hub key.
+
+### Starting over
+
+Under Debug there is **Reset all Cyberbane data**. Turn it on, hit Apply, and everything
+Cyberbane has recorded on this save is cleared: Renown, Dread, Conduct, every faction and
+district, your Rivals, your titles, the log and all the tallies. The switch turns itself back
+off once it is done, and it cannot be undone.
+
+Your cyberware rating is not part of that, because it is not stored progress. It is read back
+off the chrome you are actually wearing every few seconds, so it returns on its own.
+
+Use it if a playthrough has ended up somewhere you did not intend, which is easy to do with
+Conduct, and you would rather start the city's opinion of you from nothing than start a new
+save.
 
 Three worth knowing about if a playstyle is being treated unfairly:
 

@@ -695,6 +695,15 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
     }
 
+    // Did the player ask to start over? Same reasoning as the sweep above: this tick is
+    // settled, so clearing live encounters and deleting spawned entities is safe here and
+    // would not have been in the settings callback.
+    let rtReset = CyberbaneRuntime.Get();
+    if IsDefined(rtReset) && rtReset.TakeHardResetRequest() {
+      this.HardReset();
+      CBShowMessage(game, "Cyberbane: reputation wiped. Night City has never heard of you.", 6.0);
+    }
+
     this.m_tickCount += 1;
     // Safe-area check every tick, not on the slow sample: you can walk into a bar or a
     // clinic in well under ten seconds, and the reaction systems read this.
@@ -1433,6 +1442,114 @@ public class CyberbaneSystem extends ScriptableSystem {
     let n = ArraySize(this.m_rivals);
     ArrayClear(this.m_rivals);
     return n;
+  }
+
+  // Wipe this save's Cyberbane data and start the city's opinion of V over from nothing.
+  //
+  // Offered because there was no way back. Reputation only ever accumulates, Conduct included,
+  // so a playthrough that went somewhere the player did not intend - a spree that put every
+  // gang into vendetta, a Conduct score deep in the red - was stuck that way for good, and the
+  // only remedy was a new save. This is the remedy.
+  //
+  // What is deliberately not touched: chrome, look, menace and the aura. Those are not stored
+  // progress, they are read back off V's cyberware, clothes and build every sample, so there
+  // is nothing in them to wipe - zeroing them would only make the Hub read 0 until the next
+  // refresh. They are re-sampled at the end instead, so the Hub is correct immediately.
+  //
+  // Called from a settled fast tick rather than from the settings callback, because it clears
+  // live encounters and sweeps spawned entities, and neither is safe to do mid-transition.
+  public func HardReset() -> Void {
+    let game = this.GetGameInstance();
+
+    // Anything Cyberbane put in the world goes first, along with its markers, so the reset
+    // cannot leave an orphaned hunter or a pin behind.
+    CBUntrackTagged(game, n"CB_Rival");
+    CBUntrackTagged(game, n"CB_Squad");
+    CBUntrackTagged(game, n"CB_Apex");
+    CBUntrackTagged(game, n"CB_Escort");
+    let des = GameInstance.GetDynamicEntitySystem();
+    if IsDefined(des) {
+      des.DeleteTagged(n"Cyberbane");
+    }
+
+    // The headline scores.
+    this.m_renownPoints = 0.0;
+    this.m_killDreadPoints = 0.0;
+    this.m_deedDreadPoints = 0.0;
+    this.m_heatPoints = 0.0;
+    this.m_code = 0.0;
+    this.m_primaryArchetype = -1;
+    this.m_lastNotifiedTier = 0;
+    this.m_lastHeatStage = 0;
+    ArrayClear(this.m_archetype);
+    ArrayResize(this.m_archetype, CBArchetypeCount());
+
+    // Who knows V, who hates V, and everywhere it happened.
+    ArrayClear(this.m_factions);
+    ArrayClear(this.m_districts);
+    ArrayClear(this.m_rumors);
+    ArrayClear(this.m_rivals);
+    ArrayClear(this.m_log);
+    ArrayClear(this.m_peaceDeals);
+    ArrayClear(this.m_deedsDone);
+    ArrayClear(this.m_titles);
+    this.m_activeTitle = n"";
+    this.m_nextRumorId = 0;
+    this.m_nextRivalId = 0;
+
+    // Lifetime tallies.
+    this.m_stats = new CBStats();
+    ArrayClear(this.m_killsByClass);
+    this.m_cooldowns = new CBCooldowns();
+    this.EnsureSubObjects();
+
+    // A fresh start is a fresh playthrough, so deaths recorded against the old one stop
+    // coming back as Killer Rivals. The global ledger is shared across saves and is left
+    // alone; this save simply stops answering to its old id.
+    ArrayClear(this.m_appliedLedgerIds);
+    this.m_playthroughId = CBGeneratePlaythroughId();
+
+    // Live encounters and everything queued behind them.
+    this.m_activeRivalId = 0;
+    this.m_activeSquadFaction = n"";
+    this.m_encounter = null;
+    ArrayClear(this.m_escapees);
+    this.ClearPendingArrival();
+
+    // The day's timetable of who is coming for V, and the per-lane counters behind it. Cleared
+    // so the first day after a reset rolls fresh rather than carrying a schedule built for a
+    // reputation that no longer exists.
+    this.m_schedDay = 0;
+    this.m_schedRolled = false;
+    ArrayClear(this.m_slotLane);
+    ArrayClear(this.m_slotAt);
+    ArrayClear(this.m_slotEnd);
+    ArrayClear(this.m_slotSpent);
+    this.m_laneDayRival = 0;
+    this.m_laneDaySquad = 0;
+    this.m_laneDayApex = 0;
+    this.m_laneSentRival = 0;
+    this.m_laneSentSquad = 0;
+    this.m_laneSentApex = 0;
+    this.m_laneRivalId = 0;
+    this.m_laneRivalTicks = 0;
+    this.m_laneSquadFaction = n"";
+    this.m_laneSquadTicks = 0;
+    this.m_laneApexFaction = n"";
+    this.m_laneApexTicks = 0;
+    this.m_pendingSquadFaction = n"";
+    this.m_pendingSquadTicks = 0;
+
+    // Re-sample the live inputs so the Hub is right the moment this returns, rather than
+    // reading zeroes until the next slow sample comes round.
+    if CBWorldStable(game) {
+      CBRefreshLiveInputs(this, game);
+      CBUpdateChrome(this, game);
+      CBUpdateLook(this, game);
+      CBUpdateMenace(this, game);
+    }
+    this.GetScore().MarkDirty();
+    CBLog.Info(n"Core", s"Hard reset: Cyberbane data cleared, new playthrough id \(NameToString(this.m_playthroughId)).");
   }
 
   public func FindRivalById(id: Int32) -> ref<CBRival> {

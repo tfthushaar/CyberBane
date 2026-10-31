@@ -44,6 +44,9 @@ public class CBThreatBar {
   private let m_targets: array<wref<ScriptedPuppet>>;
   private let m_ids: array<EntityID>;
   private let m_labels: array<String>;
+  // Kept so Build can measure the screen. Build is reached from Track, which has no
+  // GameInstance of its own, and Update sets this before anything can need it.
+  private let m_game: GameInstance;
 
   private func EnsureBuilt() -> Bool {
     if this.m_built && ArraySize(this.m_rows) > 0 {
@@ -69,6 +72,11 @@ public class CBThreatBar {
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
     let width = CBConfig.ThreatBarWidth();
     let stride = CBConfig.ThreatBarRowStride();
+    // Same fit as the Hub, for the same reason: these rows are authored in 1080p units and
+    // the ink space is not always that big. The stride and the top margin scale with the
+    // rows, or a shrunken stack would leave gaps where the spacing used to be.
+    let scale = CBHudScale(this.m_game);
+    stride *= scale;
 
     let i = 0;
     while i < CBConfig.ThreatBarRows() {
@@ -76,10 +84,13 @@ public class CBThreatBar {
       root.SetName(n"cyberbaneThreatRow");
       root.SetAnchor(inkEAnchor.TopCenter);
       root.SetAnchorPoint(new Vector2(0.5, 0.0));
-      root.SetMargin(new inkMargin(0.0, CBConfig.ThreatBarTopMargin() + Cast<Float>(i) * stride,
+      root.SetMargin(new inkMargin(0.0, CBConfig.ThreatBarTopMargin() * scale + Cast<Float>(i) * stride,
                                    0.0, 0.0));
       root.SetSize(new Vector2(width, stride));
       root.SetVisible(false);
+      // Top-centre anchored, so scale about the top middle to keep the stack where it is.
+      root.SetRenderTransformPivot(new Vector2(0.5, 0.0));
+      root.SetScale(new Vector2(scale, scale));
 
       let text = new inkText();
       text.SetFontFamily(font);
@@ -170,6 +181,7 @@ public class CBThreatBar {
 
   // Once per fast tick. Drops anyone who is gone, then redraws the rows that are left.
   public func Update(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    this.m_game = game;
     if ArraySize(this.m_targets) == 0 {
       return;
     }

@@ -85,6 +85,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TwrCompat-Desc", "Compatibility with They Will Remember and Night City Remembers. On Auto, Cyberbane spots them and stands down the systems that would otherwise run twice.");
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising when you are reporting a bug.");
     this.Text("Cyberbane-Settings-FreezeReputation-Desc", "Stops your reputation changing at all, while everything already earned keeps working.");
+    this.Text("Cyberbane-Settings-HudScale-Desc", "Size of Cyberbane's own screens and bars, as a percentage. Cyberbane already shrinks them to fit your resolution and the game's UI scale; this is on top of that, if you want them smaller or larger than they come out.");
+    this.Text("Cyberbane-Settings-ResetAll-Desc", "Clears everything Cyberbane has recorded on this save: Renown, Dread, Conduct, every faction and district, your Rivals, titles, log and tallies. Your cyberware rating is not stored and comes straight back from the chrome you are wearing. Turn this on and hit Apply; it switches itself off once it is done. This cannot be undone.");
     this.Text("Cyberbane-Settings-SafeZoneSpawns", "Allow spawns in safe areas");
     this.Text("Cyberbane-Settings-QuestAreas", "Stay out of quest areas");
     this.Text("Cyberbane-Settings-QuestAreas-Desc", "Nobody is sent after you while you are inside a quest or gig area, so an arrival cannot walk into the middle of someone else's story. Turn this off if rivals and squads never seem to arrive: quest areas can cover a lot of ground, and the Hub will tell you when this is what is holding them back.");
@@ -176,6 +178,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // ---- Settings: debug ------------------------------------------------
     this.Text("Cyberbane-Settings-LogLevel", "Log level");
     this.Text("Cyberbane-Settings-FreezeReputation", "Freeze reputation");
+    this.Text("Cyberbane-Settings-ResetAll", "Reset all Cyberbane data");
+    this.Text("Cyberbane-Settings-HudScale", "Interface size");
 
     // ---- Core ------------------------------------------------------------
     this.Text("Cyberbane-Name", "Cyberbane");

@@ -51,6 +51,54 @@ public func CBHudFactionsTab() -> Int32 = 2
 // well as its colours.
 public func CBHudPanelW() -> Float = 1860.0
 public func CBHudPanelH() -> Float = 1020.0
+
+// What the layout below is drawn against. Everything in this file and in ThreatBar.reds is
+// written in these units; CBHudScale turns them into whatever the screen actually is.
+public func CBHudDesignW() -> Float = 1920.0
+public func CBHudDesignH() -> Float = 1080.0
+
+// How much to shrink Cyberbane's own widgets so they fit the screen they are on.
+//
+// The ink coordinate space is not a fixed 1920x1080, which is the assumption this whole file
+// was written under. The game's own code states the relationship plainly in
+// `cyberpunk/UI/widgets/cpo/targetHitIndicator.script`:
+//
+//     let windowSize = m_uiSystem.GetCurrentWindowSize();
+//     let inverseScale = m_uiSystem.GetInverseUIScale();
+//     let uiSize = new Vector2(windowSize.X * inverseScale, windowSize.Y * inverseScale);
+//
+// So the usable space is the window size times the inverse UI scale. At 1080p with the UI
+// scale left alone that is 1920x1080 and a 1860-wide panel just fits, which is why this was
+// never noticed in development. Raise the game's UI scale, or play at anything below 1080p,
+// and the space shrinks below the panel - so the panel overflowed the screen and the text
+// with it. That is the "UI is so big I can barely see the text" report, and it is why it
+// depended on the player's resolution rather than happening to everybody.
+//
+// Never scales above 1.0 on its own: the layout is already sized to fill a 1080p screen, so
+// anything larger is the player's business and theirs is the slider below.
+public func CBUiFitScale(game: GameInstance) -> Float {
+  let ui = GameInstance.GetUISystem(game);
+  if !IsDefined(ui) {
+    return 1.0;
+  }
+  let win = ui.GetCurrentWindowSize();
+  let inv = ui.GetInverseUIScale();
+  if win.X <= 0.0 || win.Y <= 0.0 || inv <= 0.0 {
+    return 1.0;   // nothing sensible to measure against; leave the layout alone
+  }
+  let fit = MinF((win.X * inv) / CBHudDesignW(), (win.Y * inv) / CBHudDesignH());
+  return ClampF(fit, 0.35, 1.0);
+}
+
+// The fit above, times whatever the player asked for in Mod Settings.
+public func CBHudScale(game: GameInstance) -> Float {
+  let user = 1.0;
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    user = Cast<Float>(rt.GetSettings().hudScale) / 100.0;
+  }
+  return ClampF(CBUiFitScale(game) * ClampF(user, 0.5, 1.5), 0.3, 1.5);
+}
 public func CBHudMarginX() -> Float = 160.0
 public func CBHudContentW() -> Float = 1540.0
 public func CBHudChipWidth() -> Float = 250.0
@@ -142,6 +190,8 @@ public class CBHud {
   private let m_built: Bool;
   private let m_tab: Int32;               // 0 = closed, 1..CBHudTabCount = open on that tab
   private let m_root: ref<inkCanvas>;
+  private let m_panel: ref<inkCanvas>;   // the bordered card; scaled to fit the screen
+  private let m_scaled: Float;           // scale last applied, so it is only set when it moves
   private let m_subhead: ref<inkText>;
   private let m_tabline: ref<inkText>;
   private let m_body: ref<inkText>;
@@ -252,7 +302,12 @@ public class CBHud {
     panel.SetAnchor(inkEAnchor.Centered);
     panel.SetAnchorPoint(new Vector2(0.5, 0.5));
     panel.SetSize(new Vector2(CBHudPanelW(), CBHudPanelH()));
+    // Scaled about its own middle, so it shrinks towards the centre of the screen and stays
+    // there. The backdrop is left alone: it should cover the whole screen whatever the panel
+    // is doing.
+    panel.SetRenderTransformPivot(new Vector2(0.5, 0.5));
     panel.Reparent(root);
+    this.m_panel = panel;
 
     // ---- Title block, top left, the way the menus mark themselves -------
     let header = new inkText();
@@ -785,6 +840,17 @@ public class CBHud {
     if this.m_tab == 0 {
       this.m_root.SetVisible(false);
       return;
+    }
+    // Fit the card to the screen before anything is drawn into it. Re-checked on every render
+    // rather than once at build time, because the player can change resolution or UI scale
+    // without the Hub ever being rebuilt, and only written when it has actually moved.
+    if IsDefined(this.m_panel) {
+      let s = CBHudScale(game);
+      if AbsF(s - this.m_scaled) > 0.001 {
+        this.m_scaled = s;
+        this.m_panel.SetScale(new Vector2(s, s));
+        CBLog.Info(n"UI", s"Hub scaled to \(RoundF(s * 100.0))% to fit the screen.");
+      }
     }
     // Refresh the live inputs so the Hub always shows current values (the Street Cred floor on
     // Renown, chrome, look, menace), even right after a fast travel when the background tick is
