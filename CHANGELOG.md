@@ -3,6 +3,17 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.4] - 2026-10-31
+
+### Fixed
+- **Every gang was arriving in the same car.** The car was meant to be picked per faction so
+  each gang had a look, but the arithmetic behind it always landed on the first one in the
+  list, so every gang in the game turned up in the same pickup. Which car a gang brings is now
+  written down per gang rather than worked out: a pickup for the crews who live rough, a saloon
+  for the ones who work the city, a van for the ones who come in numbers. Corps keep the
+  Militech security car, which suits Arasaka, Militech and Kang Tao and was only ever wrong on
+  a gang.
+
 ## [1.4.3] - 2026-10-31
 
 ### Added

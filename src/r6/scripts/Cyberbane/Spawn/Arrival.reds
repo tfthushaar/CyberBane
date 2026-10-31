@@ -49,23 +49,45 @@
 // and carry the passenger counts the chase needs, so they are the default now and the Emperor
 // is only reached when nothing else will seat the crew. Capacity is checked against the record
 // at the call site, so preferring a smaller car here costs a seat at worst, never the arrival.
+// Named per faction rather than hashed, because the hash did not work.
+//
+// It was `(StrLen(name) * 3) % ArraySize(pool)`, and any multiple of three modulo three is
+// zero, so every gang in the game got pool[0] and the comment claiming each had its own look
+// was simply untrue. Rather than replace one arithmetic trick with another - there are only
+// three bodies to choose from and fourteen factions, so no hash is going to read as
+// characterful - the pick is written down, by what the crew is like:
+//
+//   Galena, a pickup, for the crews that live rough or out of town.
+//   Archer Quartz, a saloon, for the ones who work the city in daylight.
+//   Thorton Colby, a van, for the ones who turn up in numbers.
+//
+// Corps get the Militech Emperor on purpose. It is corporate security livery, which is
+// exactly right for Arasaka, Militech and Kang Tao and exactly wrong for a gang - a gang
+// arriving in one is what made players read a hit squad as the law turning up.
 func CBChaseVehicle(factionId: CName, seats: Int32) -> TweakDBID {
-  let pool: array<TweakDBID>;
-  ArrayPush(pool, t"Vehicle.aldecado_thorton_galena_heat_2");
-  ArrayPush(pool, t"Vehicle.aldecado_archer_quartz_heat_3");
-  ArrayPush(pool, t"Vehicle.aldecado_thorton_colby_heat_3");
-  // Deterministic per faction, so a gang has a look.
-  let idx = (StrLen(NameToString(factionId)) * 3) % ArraySize(pool);
-  if idx < 0 {
-    idx = 0;
+  let galena = t"Vehicle.aldecado_thorton_galena_heat_2";
+  let quartz = t"Vehicle.aldecado_archer_quartz_heat_3";
+  let colby = t"Vehicle.aldecado_thorton_colby_heat_3";
+  let emperor = t"Vehicle.wasteland_chevalier_emperor_militech_heat_2";
+
+  if CBIsCorpFaction(factionId) {
+    return emperor;
   }
-  let pick = pool[idx];
-  // Only when the crew genuinely will not fit in anything civilian.
-  if seats > 2 && CBChaseVehicleSeats(pick) < seats {
-    let big = t"Vehicle.wasteland_chevalier_emperor_militech_heat_2";
-    if CBChaseVehicleSeats(big) > CBChaseVehicleSeats(pick) {
-      return big;
+  let pick = quartz;
+  if Equals(factionId, n"Wraiths") || Equals(factionId, n"Aldecaldos")
+     || Equals(factionId, n"Animals") || Equals(factionId, n"Scavengers")
+     || Equals(factionId, n"Barghest") {
+    pick = galena;
+  } else {
+    if Equals(factionId, n"Maelstrom") || Equals(factionId, n"SixthStreet") {
+      pick = colby;
     }
+  }
+  // Only when the crew genuinely will not fit in what the gang would have brought. A seat
+  // lost is better than a gang in corporate colours, so this has to be a real shortfall.
+  if seats > 2 && CBChaseVehicleSeats(pick) < seats
+     && CBChaseVehicleSeats(colby) > CBChaseVehicleSeats(pick) {
+    pick = colby;   // the van first, since it is still one of theirs
   }
   return pick;
 }
