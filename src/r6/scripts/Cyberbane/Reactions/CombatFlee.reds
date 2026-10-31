@@ -322,6 +322,22 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       }
       let indebted = CBRivalSparedByV(already, content, now, district);
       already.scarMask = already.scarMask | e.scarMask;
+      // The encounter is over, so close it the way every other ending does.
+      //
+      // This was the one way out of a Rival fight that tidied nothing up. Beating one to death
+      // goes through OnDeath, and outrunning one goes through CBHandleEscape, and both clear
+      // the marker, the active id and the body. Leaving one breathing did none of it, which
+      // produced two bugs that looked unrelated and were the same omission:
+      //
+      //   - The map pin is registered against the puppet and only ever removed on death, so a
+      //     Rival put down alive kept their marker for the rest of the save. Anyone raising
+      //     Conduct by going non-lethal collected one per Rival and had no way to clear them.
+      //   - CBLiveRivalPresent asks CBStillStanding, which is false for somebody
+      //     unconscious, so the "one Rival encounter at a time" gate read as clear while the
+      //     body was still lying there. The same Rival was then queued again and given a
+      //     fresh body behind V - on a rooftop if V had climbed one. That is the Rival who
+      //     "teleported": it was never the same body moving, it was a second one.
+      CBCloseRivalEncounter(sys, game, already, e.puppet);
       if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
         let name = CBRivalDisplayName(content, already);
         if indebted {

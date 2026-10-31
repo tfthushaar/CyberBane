@@ -498,6 +498,47 @@ public func CBResolveSlainRival(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedP
   return null;
 }
 
+// The fight with this Rival is over, however it ended. Tidy up after it.
+//
+// Three things have to happen when a Rival stops being a live encounter, and before this
+// existed each caller remembered its own subset. The lethal path did all three through
+// OnDeath, the escape path did two, and the mercy path did none, which is where the stuck
+// markers and the apparently teleporting Rivals came from. One function, called from all of
+// them, so a new ending cannot miss a step.
+//
+// `body` is optional: pass the puppet when the caller has it so the marker comes off the
+// right one, or leave it null and the tagged sweep handles it.
+public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
+                                  rival: ref<CBRival>, body: wref<ScriptedPuppet>) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  // 1. The marker. Registered against the puppet, so it outlives the encounter unless it is
+  //    explicitly unregistered - a body that never dies never loses its pin.
+  if IsDefined(body) {
+    CBUntrackOnMap(game, body);
+  }
+  CBUntrackTagged(game, n"CB_Rival");
+
+  // 2. The encounter slot, so the lanes know nothing is out and the next one can be queued.
+  if IsDefined(rival) {
+    if sys.GetActiveRivalId() == rival.id {
+      sys.SetActiveRivalId(0);
+    }
+    // Forget which body was theirs. Keeping it would leave CBFindRivalByBody matching an
+    // entity that is no longer part of an encounter.
+    let none: EntityID;
+    rival.spawnedEntityId = none;
+    // 3. And a cooldown, so they do not walk straight back into the fight they just lost.
+    //    Without this the gate clears the moment they go down and they are re-queued at once.
+    if rival.huntTicks < CBConfig.RivalAfterEscapeTicks() {
+      rival.huntTicks = CBConfig.RivalAfterEscapeTicks();
+    }
+  } else {
+    sys.SetActiveRivalId(0);
+  }
+}
+
 // Forget every Rival on this save. Offered because a mod update mid-playthrough can leave
 // Rivals that no longer line up with the records they were built from, and there was no way
 // to clear them short of starting over.

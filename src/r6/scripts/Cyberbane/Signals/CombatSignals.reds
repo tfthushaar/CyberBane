@@ -114,7 +114,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       if IsDefined(slain) {
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
       }
-      sysE.SetActiveRivalId(0);
+      // Shared with the escape and mercy endings, so all three clear the same things. The
+      // marker is already off this puppet from the top of this function; this clears the
+      // encounter slot and forgets the body.
+      CBCloseRivalEncounter(sysE, game, slain, puppet);
       // Do not delete the entity from inside its own death handler - the engine is still
       // tearing this puppet down and destroying it here frees it underneath that work.
       // Queue the sweep instead; the next settled fast tick clears the tag (crash safety).
