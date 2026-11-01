@@ -167,7 +167,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let tierAfter = EnumInt(sys.GetScore().GetTier());
   if tierAfter != tierBefore {
     if tierAfter > tierBefore && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-      CBSystemNote(game, "renown rank up - " + CBTierName(tierAfter), 4.0);
+      CBContactMessage(game, "People have stopped asking who you are. On the street you are " + CBTierName(tierAfter) + " now.");
     }
     sys.SetLastNotifiedTier(tierAfter);
   }

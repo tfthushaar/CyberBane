@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.4.4).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.4.7).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -49,17 +49,22 @@ page describes what the mod does and how it installs.
   bodies still turn up, so the district gets frightened of something it cannot identify.
   Anonymity costs you fame, which is the trade. Glasses and visors do not count; they only hide
   the chrome in your eyes.
-- **The city texts you.** Everything Cyberbane has to say arrives as a message on your phone,
-  from whoever is saying it. A gang that has decided to come for you tells you so itself. A
-  broker who works the district gets in touch when your name reaches it, and it is the same
-  person every time you are in that part of town. Walk into a district where word about you got
-  there first and they will mention it. The Hub keeps the thread, so nothing is lost if you are
-  busy when it arrives.
-- **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews carry a
-  marker on the map and minimap, so you can pick the one that matters out of a street full of
-  gangers. It is the game's gang-activity marker rather than a quest pin, it does not read
-  through walls, and it comes off once the fight starts, because from then on the game shows
-  enemies in combat by itself. You can narrow it to the named ones or turn it off.
+- **The city texts you, on your own phone.** Everyone who gets in touch is a contact in V's
+  phone: the gang that has decided to come for you, the broker who works the district you are
+  in, a Rival who has found you, an unknown number. A new message arrives the way the game's own
+  texts do, with the same notification and tone, and opening the contact shows the whole thread
+  in the phone's messenger. The broker for a district is the same person every time, they get
+  in touch when your name reaches their part of town, and if you walk into a district where word
+  about you got there first, they mention it.
+- **You can answer.** When a gang you could buy off texts you something hostile, you can reply
+  from the phone the way you reply to anyone in the game: pay what they want to call it off, or
+  tell them no. Paying is the same deal the Hub brokers, at the same price, and it calls off
+  anything they already had on its way.
+- **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews carry the
+  game's gang-activity marker on the map and minimap, so you can pick the one that matters out
+  of a street full of gangers. Markers do not show through walls, and they come off once the
+  fight starts, because from then on the game marks enemies in combat by itself. You can narrow
+  them to the named ones or turn them off.
 - **Die, and whoever killed you gets the credit.** The enemy who put you down becomes a named
   rival, or climbs a rank if they already were one, and their gang starts reading you as
   somebody who can be beaten. It lands the moment you go down, so it works with a death
@@ -71,8 +76,9 @@ page describes what the mod does and how it installs.
   later as a rival, under their own name, having learned how you fight. They are no tougher
   than they were the first time; they are just better at it. Kill them instead and that is the
   end of it.
-- **You overhear the city talking about you.** Lines change with the gang, the district and the
-  title you are carrying, and when a story about something you did has actually travelled to
+- **You overhear the city talking about you.** People near you say things about you, shown as
+  a line of subtitle near the bottom of the screen. Lines change with the gang, the district and
+  the title you are carrying, and when a story about something you did has actually travelled to
   where you are standing, that is what people are talking about.
 - **The street gets word back to you.** When a rumour about you reaches somewhere new, a
   contact may get in touch about what they heard. If people saw you, your name is in it. If
@@ -91,6 +97,13 @@ page describes what the mod does and how it installs.
   strength, the Voodoo Boys care about netrunning. The same V gets different treatment from each
   gang depending on your standing and reputation: respect, a warning, or hostility. Masks and hoods
   make you harder to place, and wearing a gang's colours makes that gang slower to recognize you.
+- **Gangs at war with each other.** The Valentinos and 6th Street, the Tyger Claws and the Mox,
+  the Aldecaldos and the Wraiths, Arasaka and Militech, and everybody against the Scavs. Hurt a
+  gang and the gangs that hate it warm to you, by how much it hurt and by whether anybody saw it
+  was you. A gang that comes round tells you so. Once they are friendly their people stop
+  backing away from you, vendors on their turf give you better prices, and they warn you when
+  their enemies send people after you. Vendors on the turf of a gang that wants you dead charge
+  you more.
 - **Enemies that break, run, and remember.** Wound an enemy badly and it can lose its nerve and
   try to escape. Catch it and that is the end of it; let it get away and it comes back as a named
   Rival with a grudge. Beat one down and walk away without finishing them and they can come back
@@ -99,14 +112,22 @@ page describes what the mod does and how it installs.
   escapes it returns a rank higher and scarred. Each one is built to the same grade as a member
   of an apex squad, and they keep getting stronger: every escape, every mercy and every time
   they put you down makes the one who comes back harder than the one who left. Each arrives
-  with a bar at the top of the screen carrying their name. Put down the one hunting you and it
-  is finally finished. Anyone who kills you can also come back, and dropping a crew's member
-  can bring a gang-mate gunning for you.
-- **They drive over.** A hit squad or a gang's apex comes by car, dispatched and driven by the
-  same thing that sends police after you, so it uses real roads and keeps coming across
-  junctions. The crew gets out and comes for you, and if you are behind the wheel it gives chase.
-  An apex squad keeps its shape in the car: a heavy, a shooter, a blade and a netrunner. Indoors,
-  or anywhere there is no room for a car, they come on foot.
+  with a bar at the top of the screen carrying their name, and texts you when they have found
+  you. Put down the one hunting you and it is finally finished. Anyone who kills you can also
+  come back, wearing the face they had when they did it, and dropping a crew's member can bring
+  a gang-mate gunning for you.
+- **Rivals have traits, and weak spots.** A Tough Rival takes more killing, an Armored one
+  shrugs off more of it, a Deadeye finds the gap in your armour, a Quick one dodges, a Pack
+  Leader brings two of their own, a Grudge-Bearer is always first in line, and somebody Hard to
+  Scare never breaks and runs. Escaping you half dead leaves them Scarred, and doing it twice
+  leaves an Old Wound. Sparing one leaves them Shaken, and an avenger comes in Reckless. The
+  Rivals screen lists them for whoever is coming next.
+- **They drive over.** Crews, apex squads and Rivals can all arrive by car, dispatched and driven
+  by the same system that sends the police after you, so they use real roads and keep coming
+  across junctions. When the car reaches you they get out and come for you; if you are behind
+  the wheel they stay in and chase. If the car seats fewer than the gang sent, or never makes it,
+  the rest walk in, so an apex squad is always four. Indoors, or anywhere there is no road close
+  enough, they come on foot.
 - **A vendetta is a decision, not a dice roll.** A gang that has sworn one is already putting a
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
   of a problem they think you are, and they bring the gang's apex squad with them. Pay them off
@@ -136,9 +157,10 @@ page describes what the mod does and how it installs.
   out of cover, a blade who closes on a Sandevistan, and a netrunner who hangs back and takes
   your weapon off you. Each chair is filled with a real member of that gang you have actually
   fought, so they carry the right weapons and fight the way that kind of enemy fights, and they
-  work as a squad rather than four individuals. Each of them gets a bar at the top of the screen
-  showing their role and their gang, so a squad reads as a heavy, a blade, a netrunner and a
-  shooter rather than four of the same, and you can always tell whose people you are fighting.
+  work as a squad. Each of them gets a bar at the top of the screen showing their role and their
+  gang, the way a MaxTac drop reads as a heavy, a blade, a netrunner and a shooter, so you can
+  always tell who you are fighting and whose people they are. Like MaxTac, they hold their
+  ground: an apex squad never breaks and runs.
   You get a warning first, and a countdown. How dangerous they are is a slider, from a hard fight
   up to the game's own set-piece enforcers, and your own build scales it on top. Each one
   carries two traits of its own, so no two fight the same way. No story character is ever used,
@@ -154,20 +176,19 @@ page describes what the mod does and how it installs.
 - **Jobs count.** Finishing gigs, jobs and NCPD work builds your reputation, with bigger
   contracts worth more than street hustles.
 - **Titles and the file they keep on you.** Earn titles such as Butcher of Watson, Chrome
-  Saint, or the top title Cyberbane. The Log tab is the street's file on you, put together
-  from what people actually witnessed, so work nobody saw never reaches the page.
+  Saint, or the top title Cyberbane; the street tells you when it starts calling you something
+  new. The History screen is the street's file on you, written as plain sentences: the Rivals
+  you made and put down, the apex enforcers and bosses people saw you kill, the vendettas sworn,
+  the gangs that came round to you, the peace you bought and the tribute you took.
 - **The Hub.** One full-screen page built to look like the game's own menus, same font and
-  colours, opened with F7 by default (rebindable).
-  Your scores are meters, gangs and rivals are colour-coded rows, and the first screen shows
-  what each of the three lanes has on its way, with a live countdown to when it will reach you.
-  If something cannot arrive, it says why rather than showing a number that is not moving. Each
-  press steps through the screens - Standing, Gangs, The City, Rivals, Titles, Messages and
-  History - and the press after the last one closes it. Every screen has a line under the
-  header saying what it holds. Gangs show how long they have been quiet or how long a vendetta
-  has been running, The City shows how long since you were last busy in each district, Messages
-  keeps everything anyone has sent you this session, and History is the running ledger of what
-  the city has on you. Standing tells you in plain words what Night City is doing about you
-  right now and what it would take to change that.
+  colours, opened with F7 by default (rebindable). Your scores are meters, gangs and rivals are
+  colour-coded rows, and the first screen shows what each of the three lanes has on its way,
+  with a live countdown. If something cannot arrive, it says why. Each press steps through the
+  screens: Standing, Gangs, The City, Rivals, Titles and History. The press after the last one
+  closes it. Every screen has a line under the header saying what it holds. Gangs show how long
+  they have been quiet or how long a vendetta has been running, The City shows how long since you
+  were last busy in each district, and Standing tells you in plain words what Night City is doing
+  about you right now and what it would take to change that. Messages live in your phone.
 
 Cyberbane works anywhere in the open world. It adds no hand-placed scenes, and it is built to
 leave quests, companions, romances and your saves alone.
@@ -217,7 +238,7 @@ Cyberbane adds one key, the Hub key, with two shortcuts layered on it. Everythin
 game's normal inputs.
 
 - **Hub key (F7 by default):** opens the Hub, then steps through its screens one press at a
-  time - Standing, Gangs, The City, Rivals, Titles, Messages, History - and the press after the
+  time (Standing, Gangs, The City, Rivals, Titles, History), and the press after the
   last one closes it. Rebind it in Mod Settings. It will not open during combat.
 - **Shift + Hub key (while the Hub is open):** brokers peace with the worst gang you can afford to
   buy off, paying from your eddies on the spot.
@@ -239,10 +260,12 @@ it does. You can turn individual systems on or off (crowds, gangs, morale, vendo
 squads, whispers), tune how intense and how frequent reactions are, pick a preset (Subtle,
 Default, or Dramatic), set the size of Cyberbane's own screens and bars, and rebind the Hub key.
 
-Under UI you can also choose how Cyberbane talks to you: messages on your phone (the default)
-or the old notices across the middle of the screen, with or without the phone's message tone,
-and how long either stays up. The map markers are there too, as everyone Cyberbane sends, only
-the named ones, or none.
+Under UI you can also choose where messages go: Phone (the default) puts them in V's own phone,
+Cards draws them on the left of the screen and keeps Cyberbane out of the phone entirely, and
+Notices uses the old line across the middle of the screen. If the phone ever misbehaves on your
+setup, Cards is the switch that takes Cyberbane back out of it. You can also turn the message
+tone off and set how long anything on screen stays up. The map markers are there too, as
+everyone Cyberbane sends, only the named ones, or none.
 
 ### Starting over
 
@@ -275,6 +298,8 @@ Three worth knowing about if a playstyle is being treated unfairly:
   systems that overlap (hostility on sight, hit squads, faction-colour disguises), keeping the
   rest. Night City Remembers is treated the same way, since it replaces They Will Remember. You
   can force the compatibility mode on or off yourself in Mod Settings.
+- Phone Extension and mods built on it: work alongside. Cyberbane's phone contacts use names of
+  their own, so both can add contacts to the phone at once.
 - Street Sense: supported, detected automatically, no setup. It owns crowds noticing and
   greeting you, so Cyberbane stands its own overheard lines down and keeps everything else.
 - Much Better AI: supported, detected automatically, no setup. Its Nerve system owns morale,

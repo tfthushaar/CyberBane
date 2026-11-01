@@ -1228,7 +1228,7 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
   }
   let out = "Standing is whether they like you. Fear is how badly they want to avoid you.\n";
   out += "The last column counts their dead and how close they are to sending an apex squad.\n\n";
-  out += "Hostile means they draw on sight. Vendetta means they hunt you and put a price on your head.\n";
+  out += "Hostile means they send crews after you. Vendetta means they also open fire on sight.\n";
   out += "Hurt a gang's enemies and that gang warms to you: friendly gangs give better prices on\n";
   out += "their turf and warn you when their enemies send people after you.\n\n";
   out += "[ Shift + Hub key ]  buy off the worst gang you can afford.";
