@@ -200,7 +200,7 @@ func CBGrapevineArrivalLine(r: ref<CBRumor>, from: String, seed: Int32) -> Strin
   switch seed {
     case 0: return "Your name is already in circulation here. Came up from " + from + ".";
     case 1: return "You are known on this side of town now. Word travelled out of " + from + ".";
-    case 2: return "Heard about " + from + " weeks before you walked in here. People notice.";
+    case 2: return "Heard about " + from + " before you ever walked in here. People notice.";
     default: return "They were talking about " + from + " here before you arrived. You should know that.";
   }
 }

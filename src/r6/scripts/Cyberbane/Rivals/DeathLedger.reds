@@ -30,13 +30,27 @@ public func CBWriteDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance, pl
   if IsDefined(player) {
     killer = player.cbLastAttacker;
   }
+  let killerBody: EntityID;
   if IsDefined(killer) {
     entry.killerRecordID = killer.GetRecordID();
     entry.killerFaction = CBClassifyFaction(killer);
-    entry.killerAppearance = n"";   // appearance snapshot: S-01
+    entry.killerAppearance = killer.GetCurrentAppearanceName();
+    killerBody = killer.GetEntityID();
+    // Was it one of V's Rivals? Asked of the body, never the record: Rivals are built from the
+    // gang's ordinary records, which dozens of their people share, so matching on the record
+    // credited any ganger who happened to share one with a Rival. Writing the Rival's id into
+    // the entry also means a reload of an older save promotes that Rival instead of minting a
+    // duplicate of them.
+    let known = CBFindRivalByBody(sys, killerBody);
+    if IsDefined(known) {
+      entry.killerRivalId = known.id;
+    }
   }
 
   service.AppendLedgerEntry(entry);
+  // In the file too. If V reloads this goes with the save it was written to; if a death
+  // alternative carries V on, it stays, which is the right record either way.
+  CBFileLog(sys, n"Death", entry.at, entry.district, entry.killerFaction, 0.0);
 
   // And promote them right now, rather than only on the next load.
   //
@@ -56,7 +70,7 @@ public func CBWriteDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance, pl
   // If the player does reload instead, none of this survives, because it is save state and the
   // save is about to be replaced by an older one. Marking the entry applied stops the ledger
   // promoting the same death a second time on a later load of a session that carried on.
-  if IsDefined(killer) && CBPromoteKiller(game, entry.killerFaction, entry.killerRecordID, n"") {
+  if IsDefined(killer) && CBPromoteKiller(game, entry.killerFaction, entry.killerRecordID, n"", killerBody, entry.killerAppearance) {
     sys.MarkAppliedLedgerId(entry.id);
   }
 }

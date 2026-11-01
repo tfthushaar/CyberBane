@@ -51,9 +51,10 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
     if !sys.HasTitle(tid) {
       sys.UnlockTitle(tid);
       sys.AddRenownPoints(25.0 * renownMult);
+      // The street names you; somebody who works this part of town tells you what they are
+      // calling you. A popup about a title was the mod talking, and this is the city.
       if toasts {
-        CBSystemNote(game, "title unlocked - "
-          + CBTitleDisplayById(sys, content, tid), 5.0);
+        CBContactMessage(game, "Heard them calling you " + CBTitleDisplayById(sys, content, tid) + " today.");
       }
     }
   }

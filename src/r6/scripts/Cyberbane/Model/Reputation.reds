@@ -134,7 +134,10 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   // Faction effects.
   if NotEquals(info.faction, n"") {
     let fs = sys.EnsureFaction(info.faction);
-    fs.standing = ClampF(fs.standing + CBStandingDeltaForKill(info.victimClass) * standingWitness, -100.0, 100.0);
+    let standingLoss = CBStandingDeltaForKill(info.victimClass) * standingWitness;
+    fs.standing = ClampF(fs.standing + standingLoss, -100.0, 100.0);
+    // And their enemies hear about it (Model/GangRivalries.reds).
+    CBCreditRivalGangs(sys, GetGameInstance(), info.faction, standingLoss);
     fs.renown = ClampF(fs.renown + CBFactionRenownForKill(info.victimClass, brutal) * standingWitness, 0.0, 100.0);
     fs.renownPeak = MaxF(fs.renownPeak, fs.renown);
     fs.kills += 1;
@@ -288,6 +291,50 @@ func CBAccrueArchetypeForKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, 
     if info.mQuickhack {
       sys.AddArchetype(EnumInt(ECBArchetype.Netrunner), 0.5);
       sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 0.5);
+    }
+  }
+}
+
+// When did each gang swear its vendetta?
+//
+// `vendettaSince` was declared, cleared by brokering peace and read by the Hub, and nothing ever
+// set it, so the Gangs screen's "sworn 2h ago" never once appeared. A gang's posture is worked
+// out from its standing (CBPostureFromStanding), and standing moves in eight different places,
+// so rather than patch each of them this looks at the result: the moment a gang's posture is
+// Vendetta and no date is on file, that is when it was sworn. They say so, it goes in the file,
+// and the date clears again when the vendetta ends, however it ends.
+public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let score = sys.GetScore();
+  if !IsDefined(score) {
+    return;
+  }
+  let now = CBGameSeconds(game);
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) && NotEquals(fs.id, n"") {
+      let posture = score.GetPosture(fs.id);
+      // Coming round to V. The postures run Allied, Friendly, Neutral, Hostile, Vendetta, so a
+      // smaller number is a better one; the first look of a session only records where they
+      // are, so a load does not replay every friendship V already had.
+      let before = sys.SwapSeenPosture(fs.id, EnumInt(posture));
+      if before >= 0 && EnumInt(posture) < before && EnumInt(posture) <= EnumInt(ECBPosture.Friendly) {
+        CBAnnounceWarming(sys, game, fs.id, Equals(posture, ECBPosture.Allied));
+      }
+      let sworn = Equals(posture, ECBPosture.Vendetta);
+      if sworn && fs.vendettaSince <= 0.0 {
+        fs.vendettaSince = MaxF(now, 1.0);
+        CBFileLog(sys, n"Vendetta", now, CBEventDistrict(sys, game), fs.id, 0.0);
+        if CBToastsOn() && CBFactionFieldsSquads(fs.id) {
+          CBPhoneFromGang(game, fs.id, "You are dead to us. Every one of ours who sees you will try.");
+        }
+        CBLog.Info(n"Model", s"\(NameToString(fs.id)) swore a vendetta.");
+      } else {
+        if !sworn && fs.vendettaSince > 0.0 {
+          fs.vendettaSince = 0.0;
+        }
+      }
     }
   }
 }

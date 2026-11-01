@@ -180,8 +180,9 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   e.wasRival = IsDefined(des) && des.IsTagged(e.entityId, n"CB_Rival");
   sys.AddEscapee(e);
 
-  // Whether they actually break and run. Steadier ranks hold their ground (CBNerve).
-  if intensity <= 0.0 || RandF() < CBNerve(puppet) {
+  // Whether they actually break and run. Steadier ranks hold their ground (CBNerve), and an
+  // apex squad member or a Rival who is Hard to Scare never does.
+  if intensity <= 0.0 || CBHoldsGround(puppet) || RandF() < CBNerve(puppet) {
     return;
   }
 

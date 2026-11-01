@@ -135,30 +135,41 @@ public func CBPeacePrice(fs: ref<CBFactionState>, posture: ECBPosture) -> Int32 
   return capped;
 }
 
-// Pay off a single faction. Returns true only if peace was actually brokered.
-public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, factionId: CName) -> Bool {
+// What this gang would take right now, or -1 if there is nothing to buy: a corp or the law
+// (who cannot be bought, spec §9.8/§11.3), or a gang that is not hostile. The phone quotes
+// this on a reply button and CBBrokerPeace charges it, so the two can never disagree.
+public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionId: CName) -> Int32 {
   if !IsDefined(sys) || Equals(factionId, n"") {
-    return false;
+    return -1;
   }
   let content = CBContent(game);
   if !IsDefined(content) {
-    return false;
+    return -1;
   }
   let prof = content.GetFaction(factionId);
   if !IsDefined(prof) || !prof.canBeBought {
-    return false;   // corps and the law cannot be bought off (spec §9.8/§11.3)
+    return -1;
   }
   let fs = sys.FindFaction(factionId);
   let score = sys.GetScore();
   if !IsDefined(fs) || !IsDefined(score) {
-    return false;
+    return -1;
   }
   let posture = score.GetPosture(factionId);
   if !(Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)) {
-    return false;   // nothing to buy off
+    return -1;
   }
+  return CBPeacePrice(fs, posture);
+}
 
-  let cost = CBPeacePrice(fs, posture);
+// Pay off a single faction. Returns true only if peace was actually brokered.
+public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, factionId: CName) -> Bool {
+  let cost = CBPeaceQuote(sys, game, factionId);
+  if cost < 0 {
+    return false;   // nobody to pay, or nothing to buy off
+  }
+  let fs = sys.FindFaction(factionId);
+  let posture = sys.GetScore().GetPosture(factionId);
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
   if !IsDefined(player) || !IsDefined(ts) {
@@ -191,6 +202,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   deal.at = fs.lastPeaceAt;
   deal.cost = cost;
   sys.AddPeaceDeal(deal);
+  CBFileLog(sys, n"Peace", fs.lastPeaceAt, CBEventDistrict(sys, game), factionId, Cast<Float>(cost));
 
   if CBToastsOn() {
     let what = Equals(posture, ECBPosture.Vendetta) ? "vendetta" : "hostility";

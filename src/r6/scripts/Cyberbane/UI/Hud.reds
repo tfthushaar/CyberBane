@@ -2,8 +2,8 @@
 //
 // A native-styled reputation readout drawn straight onto the gameplay HUD layer and
 // toggled with the Hub key (F7 by default, rebindable in Mod Settings). It needs no
-// menu or mouse: each press of the key steps through the tabs - Legend, Factions,
-// Rivals, Titles, Legend Log - and the press after the last tab closes it. Because it
+// menu or mouse: each press of the key steps through the screens - Standing, Gangs,
+// The City, Rivals, Titles, History - and the press after the last one closes it. Because it
 // never takes input focus it is safe to open any time you are not mid-combat, and it
 // reads live data from CyberbaneSystem each time it is shown.
 //
@@ -11,14 +11,13 @@
 // palette, so it sits in the world like a stock UI panel. Widget geometry is tuned in
 // game; everything here is reversible (it only adds widgets to the HUD layer).
 
-// Seven, with MESSAGES added in 1.4.7. Appended rather than inserted on purpose: the tab
-// index is a number several things compare against (CBHudRivalsTab, CBHudFactionsTab, the
-// meters screen's `m_tab == 1`), and renumbering the existing six to put the new one in a
-// tidier place would be a change with no visible benefit and five places to get wrong.
+// Six. Messages used to have a screen here and do not any more: they live in V's phone, which
+// is where a player looks for a text (UI/RealPhone.reds). HISTORY took the last slot back, so
+// the screens that existed before keep their numbers (CBHudRivalsTab, CBHudFactionsTab, the
+// meters screen's `m_tab == 1`).
 //
-// Seven chips at CBHudChipWidth fit the panel: 7 x 250 is 1750 against 1860, and the row
-// centres itself, so nothing needed re-measuring.
-public func CBHudTabCount() -> Int32 = 7
+// Six chips at CBHudChipWidth fit the panel with room to spare, and the row centres itself.
+public func CBHudTabCount() -> Int32 = 6
 
 // Lines the body box can show at its size and font before text would spill past the footer.
 // Body is 640 px tall at font size 20, so about 26 lines fit; 25 leaves a line of slack.
@@ -34,9 +33,6 @@ public func CBHudMaxLines() -> Int32 = 22
 public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == 1 {
     return 11;   // under four meters
-  }
-  if tab == CBHudMessagesTab() {
-    return CBHudMaxLines();   // the thread is prose and starts at the top
   }
   if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() {
     return 9;    // under ten list rows
@@ -211,8 +207,7 @@ public func CBHudTabName(tab: Int32) -> String {
     case 3: return "THE CITY";
     case 4: return "RIVALS";
     case 5: return "TITLES";
-    case 6: return "MESSAGES";
-    case 7: return "HISTORY";
+    case 6: return "HISTORY";
     default: return "";
   }
 }
@@ -229,14 +224,11 @@ public func CBHudTabBlurb(tab: Int32) -> String {
     case 3: return "Where in Night City your name carries, district by district.";
     case 4: return "The people who have survived you and are still looking.";
     case 5: return "What the street calls you. Ctrl and the Hub key switches which one you use.";
-    case 6: return "Everything anyone has sent you this session, newest first.";
-    case 7: return "The ledger: what you did, where, and who it was.";
+    case 6: return "The ledger: what you did, where, and who it was.";
     default: return "";
   }
 }
 
-// Which tab the message thread is, so nothing has to hardcode a number.
-public func CBHudMessagesTab() -> Int32 = 6
 
 public class CBHud {
   private let m_built: Bool;
@@ -871,10 +863,16 @@ public class CBHud {
         }
       }
     }
+    // What makes this one different, in the space a column has: their first trait, or the
+    // mark V left on them if they have none.
+    let marks = CBRivalTraitList(content, r, false, 1);
+    if StrLen(marks) == 0 {
+      marks = CBScarLabel(r.scarMask);
+    }
     this.SetRow(row, hunting ? CBHudRed() : CBHudAmber(),
       IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
       gang,
-      CBScarLabel(r.scarMask),
+      marks,
       rightCol);
   }
 
@@ -1009,40 +1007,11 @@ func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Str
     case 3: return CBHudDistricts(sys);
     case 4: return CBHudRivals(sys, game);
     case 5: return CBHudTitles(sys);
-    case 6: return CBHudMessages(sys);
-    case 7: return CBHudLog(sys);
+    case 6: return CBHudLog(sys);
     default: return "";
   }
 }
 
-// The thread.
-//
-// Players asked for the gang messages to be text messages rather than HUD notices, and a
-// message you can miss needs somewhere to be read back - a card that has faded is gone, and
-// the thing it was telling you about is usually still happening. So the Hub keeps what was
-// sent, newest first, with the time it arrived and who sent it.
-//
-// Session only, and it says so rather than looking broken after a load. The reason is in
-// UI/PhoneMessages.reds: persisting it means a new persistent field, and adding one of those
-// wipes every player's saved Cyberbane state.
-func CBHudMessages(sys: ref<CyberbaneSystem>) -> String {
-  let phone = sys.GetPhone();
-  if !IsDefined(phone) || phone.LogCount() == 0 {
-    return "Nothing yet this session.\n\nGangs, brokers and the people hunting you all get in touch here. The thread starts over each time you load, so this being empty after a save is normal.";
-  }
-  let out = "";
-  let i = 0;
-  // Two lines each, so a long message is readable rather than cut to fit a column.
-  while i < phone.LogCount() && i < CBHudMessageRows() {
-    out += phone.LogStamp(i) + "   " + phone.LogSender(i) + "\n";
-    out += "    " + CBHudTrim(phone.LogBody(i), 140) + "\n\n";
-    i += 1;
-  }
-  return out;
-}
-
-// How many messages the screen shows. Two lines and a gap each, against CBHudMaxLines.
-public func CBHudMessageRows() -> Int32 = 7
 
 // What is on its way, in one place.
 //
@@ -1259,8 +1228,9 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
   }
   let out = "Standing is whether they like you. Fear is how badly they want to avoid you.\n";
   out += "The last column counts their dead and how close they are to sending an apex squad.\n\n";
-  out += "Wary means they keep an eye on you. Hostile means they draw on sight.\n";
-  out += "Vendetta means they hunt you and put a price on your head.\n\n";
+  out += "Hostile means they send crews after you. Vendetta means they also open fire on sight.\n";
+  out += "Hurt a gang's enemies and that gang warms to you: friendly gangs give better prices on\n";
+  out += "their turf and warn you when their enemies send people after you.\n\n";
   out += "[ Shift + Hub key ]  buy off the worst gang you can afford.";
   return out;
 }
@@ -1280,7 +1250,11 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
       let rd = RoundF(d.renown);
       let quiet = CBHudSince(CBGameSeconds(sys.GetGameInstance()), d.lastIncidentAt);
       let tail = StrLen(quiet) > 0 ? ("   quiet " + quiet) : "";
-      out += CBHudPad(NameToString(d.id), 18) + s"renown \(rd)   kills \(d.kills)" + tail + "\n";
+      let dname = CBDistrictLabel(d.id);
+      if StrLen(dname) == 0 {
+        dname = NameToString(d.id);
+      }
+      out += CBHudPad(dname, 18) + s"renown \(rd)   kills \(d.kills)" + tail + "\n";
       shown += 1;
     }
   }
@@ -1338,7 +1312,20 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
       let why = CBRivalSourceLine(nxt.source);
       if StrLen(why) > 0 {
         out += "NEXT  " + CBRivalDisplayName(sys.GetContent(), nxt) + " - " + why
-             + ", " + CBRivalStateName(nxt.state) + ".\n\n";
+             + ", " + CBRivalStateName(nxt.state) + ".\n";
+        let strong = CBRivalTraitList(sys.GetContent(), nxt, false, 6);
+        let weak = CBRivalTraitList(sys.GetContent(), nxt, true, 6);
+        if StrLen(strong) > 0 || StrLen(weak) > 0 {
+          out += "      ";
+          if StrLen(strong) > 0 {
+            out += "Strengths: " + strong + ".  ";
+          }
+          if StrLen(weak) > 0 {
+            out += "Weak spots: " + weak + ".";
+          }
+          out += "\n";
+        }
+        out += "\n";
       }
     }
   }
@@ -1348,8 +1335,7 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   if NotEquals(held, "") {
     out += held + "\n\n";
   }
-  out += "The clock is how long until they catch up with you. They arrive when it runs\n";
-  out += "out, wherever you are, and come back a rank higher every time one escapes.\n\n";
+  out += "They arrive when their clock runs out, wherever you are, and come back a rank higher each time one escapes.\n\n";
   if count >= cap {
     out += "Nobody new can take against you until you clear some, so the ones you\n";
     out += "already have come at you faster until you do.\n\n";
@@ -1460,20 +1446,86 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   }
 
   let shown = 0;
+  let now = CBGameSeconds(sys.GetGameInstance());
   let i = n - 1;
   while i >= 0 && shown < 11 {
     let e = log[i];
     i -= 1;
     if IsDefined(e) {
-      let where = Equals(e.district, n"") ? "" : ("  (" + NameToString(e.district) + ")");
-      // What the entry was worth, where it had a number. Recorded since the first release and
-      // never once displayed.
-      let amount = e.value != 0.0 ? s"   \(RoundF(e.value))" : "";
-      out += NameToString(e.kind) + where + amount + "\n";
+      out += CBHudLogLine(sys, e, now) + "\n";
       shown += 1;
     }
   }
   return out;
+}
+
+// One entry as a sentence. This printed the entry's internal name and its raw number, so the
+// file read "RivalCreated (CityCenter) 12", where 12 was a Rival's id.
+func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> String {
+  let gang = CBFactionLabel(e.faction);
+  let gangCap = StrLen(gang) > 0 ? StrUpper(StrMid(gang, 0, 1)) + StrMid(gang, 1, StrLen(gang) - 1) : "";
+  let line = "";
+  if Equals(e.kind, n"RivalCreated") {
+    let r = sys.FindRivalById(RoundF(e.value));
+    let who = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "Somebody";
+    line = StrLen(gang) > 0 ? s"\(who) of \(gang) took it personally." : s"\(who) took it personally.";
+  } else {
+    if Equals(e.kind, n"RivalSlain") {
+      line = StrLen(gang) > 0 ? s"You put down a rank \(RoundF(e.value)) rival from \(gang)."
+                              : s"You put down a rank \(RoundF(e.value)) rival.";
+    } else {
+      if Equals(e.kind, n"Deed") {
+        line = "A job of yours made the rounds.";
+      } else {
+        if Equals(e.kind, n"Massacre") {
+          line = s"People are still talking about the \(RoundF(e.value)) you left behind.";
+        } else {
+          if Equals(e.kind, n"BossKill") {
+            line = StrLen(gang) > 0 ? s"You took down somebody who mattered to \(gang)." : "You took down somebody who mattered.";
+          } else {
+            if Equals(e.kind, n"ApexDown") {
+              line = StrLen(gang) > 0 ? s"You put down one of \(gang)'s apex squad." : "You put down one of an apex squad.";
+            } else {
+              if Equals(e.kind, n"Vendetta") {
+                line = s"\(gangCap) swore a vendetta against you.";
+              } else {
+                if Equals(e.kind, n"Peace") {
+                  line = s"You paid \(gang) \(RoundF(e.value))eb to call it off.";
+                } else {
+                  if Equals(e.kind, n"Tribute") {
+                    line = s"\(gangCap) paid you \(RoundF(e.value))eb to stay on your good side.";
+                  } else {
+                    if Equals(e.kind, n"Death") {
+                      line = StrLen(gang) > 0 ? s"\(gangCap) put you down." : "Somebody put you down.";
+                    } else {
+                      if Equals(e.kind, n"Friendly") {
+                        line = s"\(gangCap) decided you are all right.";
+                      } else {
+                        if Equals(e.kind, n"Allied") {
+                          line = s"\(gangCap) started treating you like one of their own.";
+                        } else {
+                          line = NameToString(e.kind);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  let place = CBDistrictLabel(e.district);
+  if StrLen(place) > 0 {
+    line += "  " + place;
+  }
+  let ago = CBHudSince(now, e.at);
+  if StrLen(ago) > 0 {
+    line += ", " + ago + " ago";
+  }
+  return line;
 }
 
 // Everything V has ever paid to buy a gang off.
@@ -1585,6 +1637,22 @@ func CBHudPad(s: String, width: Int32) -> String {
   while i < width {
     out += " ";
     i += 1;
+  }
+  return out;
+}
+
+// A Rival's traits, or their weaknesses, by name: the first `limit` of them, comma separated.
+func CBRivalTraitList(content: ref<CyberbaneContent>, r: ref<CBRival>, weaknesses: Bool, limit: Int32) -> String {
+  if !IsDefined(content) || !IsDefined(r) {
+    return "";
+  }
+  let out = "";
+  let n = 0;
+  for t in content.GetTraits() {
+    if IsDefined(t) && Equals(t.isWeakness, weaknesses) && n < limit && CBRivalHasTrait(r, t.id) {
+      out += (n > 0 ? ", " : "") + t.display;
+      n += 1;
+    }
   }
   return out;
 }

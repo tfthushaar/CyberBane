@@ -47,6 +47,14 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
   if CBCrowdIgnoresPlayer(game) {
     return false;
   }
+  // A gang that likes V does not run from V. Fear is for the people who are not sure which side
+  // of V they are on, and these ones are sure.
+  if NotEquals(faction, n"") && !npc.IsCrowd() {
+    let posture = score.GetPosture(faction);
+    if Equals(posture, ECBPosture.Allied) || Equals(posture, ECBPosture.Friendly) {
+      return false;
+    }
+  }
 
   // How intimidating V is: the scarier of reputation Dread or raw visible chrome, plus a
   // bump for a dangerous build (level, street cred and skills). See CBUpdateMenace.

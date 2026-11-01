@@ -413,6 +413,10 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   if Equals(source, ECBRivalSource.Spared) {
     CBRivalGiveTrait(r, n"Humiliated");
   }
+  // Somebody out for revenge is not thinking about their own skin.
+  if Equals(source, ECBRivalSource.Avenger) {
+    CBRivalGiveTrait(r, n"Reckless");
+  }
 
   sys.AddRival(r);
   // A new name in a crew may be the only one left standing in it (spec §10.1).
@@ -443,7 +447,12 @@ public func CBRivalEscaped(rival: ref<CBRival>, content: ref<CyberbaneContent>, 
   rival.escapes += 1;
   rival.lastSeenAt = at;
   CBPromoteRival(rival, content, at);
+  // Getting away half dead leaves a mark, and getting away half dead twice leaves one that does
+  // not heal right.
   if lowHp {
+    if CBRivalHasTrait(rival, n"Scarred") {
+      CBRivalGiveTrait(rival, n"OldWound");
+    }
     CBRivalGiveTrait(rival, n"Scarred");
   }
 }
@@ -464,6 +473,8 @@ public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>
     return false;
   }
   rival.sparedByV += 1;
+  // Being let go by the person you came to kill stays with you.
+  CBRivalGiveTrait(rival, n"Shaken");
   if rival.sparedByV >= 2 && RandF() < 0.5 {
     rival.state = EnumInt(ECBRivalState.Debtor);
     return true;
@@ -683,6 +694,22 @@ public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance
 
 // Writes a Legend Log entry for a Rival event.
 func CBLogRival(sys: ref<CyberbaneSystem>, kind: CName, at: Float, district: CName, faction: CName, value: Float, rivalId: Int32) -> Void {
+  let entry = new CBLogEntry();
+  entry.kind = kind;
+  entry.at = at;
+  entry.district = district;
+  entry.faction = faction;
+  entry.value = value;
+  sys.AddLogEntry(entry);
+}
+
+// One entry in the street's file on V (the Hub's History screen). Every kind written here has a
+// sentence in CBHudLogLine; a kind without one still shows, just less gracefully.
+public func CBFileLog(sys: ref<CyberbaneSystem>, kind: CName, at: Float, district: CName,
+                      faction: CName, value: Float) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
   let entry = new CBLogEntry();
   entry.kind = kind;
   entry.at = at;

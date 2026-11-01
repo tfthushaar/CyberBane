@@ -76,6 +76,7 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
   if IsDefined(stats) {
     stats.tributeEddies += amount;
   }
+  CBFileLog(sys, n"Tribute", now, CBEventDistrict(sys, game), fs.id, Cast<Float>(amount));
 
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {

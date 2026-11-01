@@ -129,6 +129,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
       CBPhoneFromStreet(game, "Heard what you left behind. People are going to be repeating that one.");
     }
     CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
+    CBFileLog(sys, n"Massacre", CBGameSeconds(game), CBEventDistrict(sys, game), n"", Cast<Float>(enc.kills));
     CBLog.Info(n"Model", s"Massacre resolved (\(enc.kills) kills).");
   }
 

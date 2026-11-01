@@ -271,7 +271,8 @@ func CBSpawnDistanceScale(attempt: Int32) -> Float {
 
 // Queue one NPC. Split out so the placement loop stays readable.
 func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance: CName,
-                   pos: Vector4, orient: Quaternion, squadTag: CName, out created: EntityID) -> Bool {
+                   pos: Vector4, orient: Quaternion, squadTag: CName, out created: EntityID,
+                   opt extraTag: CName) -> Bool {
   let spec = new DynamicEntitySpec();
   spec.recordID = record;
   spec.appearanceName = appearance;
@@ -285,6 +286,11 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
   let tags: array<CName>;
   ArrayPush(tags, n"Cyberbane");
   ArrayPush(tags, squadTag);
+  // A second tag for the one thing a spawn cannot otherwise carry: which chair of an apex squad
+  // this body is (CBApexRoleTag). Read back in CBApplySpawnSetup.
+  if IsNameValid(extraTag) {
+    ArrayPush(tags, extraTag);
+  }
   spec.tags = tags;
   created = des.CreateEntity(spec);
   return EntityID.IsDefined(created);
@@ -345,7 +351,7 @@ func CBSpawnBearing(attempt: Int32) -> Float {
   return -2.36;
 }
 
-public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float, out lastSpawned: EntityID) -> Int32 {
+public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float, out lastSpawned: EntityID, opt extraTag: CName) -> Int32 {
   if !TDBID.IsValid(record) || count <= 0 {
     CBNoteSpawnBlock(CBBlockNoRecord());
     return 0;
@@ -414,7 +420,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       if ok {
         let facing = Quaternion.BuildFromDirectionVector(
           Vector4.Normalize2D(new Vector4(ppos.X - at.X, ppos.Y - at.Y, 0.0, 0.0)));
-        if CBCreateSpawn(des, record, appearance, at, facing, squadTag, lastSpawned) {
+        if CBCreateSpawn(des, record, appearance, at, facing, squadTag, lastSpawned, extraTag) {
           spawned += 1;
           ArrayPush(used, at);
         }
@@ -451,7 +457,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
          && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing)
          && (ArraySize(used) > 0 || (CBPointReachable(game, standing, ppos)
                                      && CBPointOutOfSight(game, ppos, fwd, standing))) {
-        if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned) {
+        if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned, extraTag) {
           spawned += 1;
           ArrayPush(used, standing);
         }
@@ -489,7 +495,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
           if CBPointIsFree(used, stand)
              && (ArraySize(used) > 0 || (CBPointReachable(game, stand, ppos)
                                          && CBPointOutOfSight(game, ppos, fwd, stand)))
-             && CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned) {
+             && CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned, extraTag) {
             spawned += 1;
             ArrayPush(used, stand);
           } else {
@@ -521,10 +527,17 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         // likeliest to land in frame. It refuses rather than guessing on both counts now; the
         // lane keeps its turn and tries again shortly, so there is nothing to buy by placing
         // somebody where the player watches them appear.
+        //
+        // It also has to be a free spot and, for the first body, one V can walk to. Neither was
+        // checked here, so two bodies could be dropped on one point (the engine then stacks them
+        // vertically) or the first could land somewhere sealed off from V.
         if !CBSafeAreaBlocksSpawn(game, fallback)
            && CBPointOutOfSight(game, ppos, fwd, fallback)
-           && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned) {
+           && CBPointIsFree(used, fallback)
+           && (ArraySize(used) > 0 || CBPointReachable(game, fallback, ppos))
+           && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned, extraTag) {
           spawned += 1;
+          ArrayPush(used, fallback);
         } else {
           CBNoteSpawnBlock(CBBlockInView());
         }
@@ -695,7 +708,16 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   if isApex {
     CBApplyApexBuff(sys, game, puppet);
-    CBKitApexSeat(puppet, sys.NextApexRole());
+    // Which chair: the one this body was spawned for, when it carries the tag that says so,
+    // otherwise the next one round. Only taken once, so a body that attaches twice does not
+    // spend a second chair and push everyone after it out of step.
+    if !puppet.cbKitted {
+      let seat = CBTaggedApexSeat(des, id);
+      if seat < 0 {
+        seat = sys.NextApexRole();
+      }
+      CBKitApexSeat(puppet, seat);
+    }
     CBShowBossBar(puppet);
   }
   // A marker on everyone the mod sends.
@@ -721,8 +743,15 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
       CBKitCyberpsycho(puppet as NPCPuppet);
     } else {
       CBKitApexMember(puppet);
+      CBKitRivalTraits(puppet as NPCPuppet, who);
     }
     if IsDefined(who) {
+      // The look they carry. A Rival on foot is spawned in it; one the city drove in was given
+      // whatever look the record rolled, because the chase cannot be told, so it is put right
+      // here once the puppet exists.
+      if IsNameValid(who.appearance) && NotEquals(puppet.GetCurrentAppearanceName(), who.appearance) {
+        puppet.ScheduleAppearanceChange(who.appearance);
+      }
       // One call, one build. The crew-rank bonus is a parameter now rather than a second
       // multiplier applied a line later; see the note in Rivals/Hierarchy.reds.
       CBApplyRivalApexBuff(sys, game, puppet, who, CBRivalRole(sys, who));

@@ -120,6 +120,11 @@ func CBMoraleEligible(npc: wref<ScriptedPuppet>) -> Bool {
   if npc.IsBoss() || npc.IsCrowd() {
     return false;
   }
+  // An apex squad holds its ground the way MaxTac does; that is what it is for. A Rival who is
+  // Hard to Scare does too.
+  if CBHoldsGround(npc) {
+    return false;
+  }
   if Equals(CBClassifyFaction(npc), n"MaxTac") {
     return false;
   }
@@ -138,4 +143,27 @@ func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<Scri
   if NotEquals(faction, n"") && RandF() < CBConfig.RivalChanceSurvivor() {
     CBCreateRival(sys, game, faction, npc.GetRecordID(), n"", ECBRivalSource.Survivor, district, CBGameSeconds(game));
   }
+}
+
+// Never breaks, never runs: an apex squad member, or a Rival with Hard to Scare.
+public func CBHoldsGround(npc: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(npc) {
+    return false;
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return false;
+  }
+  let id = npc.GetEntityID();
+  if des.IsTagged(id, n"CB_Apex") {
+    return true;
+  }
+  if des.IsTagged(id, n"CB_Rival") {
+    let sys = CyberbaneSystem.Get(npc.GetGame());
+    if IsDefined(sys) {
+      let r = CBFindRivalByBody(sys, id);
+      return IsDefined(r) && CBRivalHasTrait(r, n"HardToScare");
+    }
+  }
+  return false;
 }

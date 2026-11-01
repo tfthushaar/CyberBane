@@ -45,7 +45,9 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
     return true;
   }
   if lane == CBLaneRival() {
-    return CBLiveRivalPresent(sys, game);
+    // A Rival the city is still driving in counts as out: their body only becomes theirs once
+    // it is adopted, and until then the live test cannot see them.
+    return CBLiveRivalPresent(sys, game) || sys.GetRivalCarPending() > 0;
   }
   if lane == CBLaneApex() {
     return NotEquals(sys.GetPendingApexFaction(), n"") || CBLiveTaggedPresent(game, n"CB_Apex");
@@ -253,6 +255,10 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
               + Cast<Float>(r.rank) * 8.0
               + Cast<Float>(r.escapes) * 4.0
               + Cast<Float>(r.encounters) * 2.0;
+        // A Grudge-Bearer is the one who comes first; it is the whole of what they are about.
+        if CBRivalHasTrait(r, n"GrudgeBearer") {
+          s += CBConfig.QueueGrudgeBonus();
+        }
         // Not the same person twice in a row while somebody else is owed a turn.
         if r.id == sys.GetLaneLastRival() {
           s -= CBConfig.QueueRepeatPenalty();

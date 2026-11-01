@@ -13,7 +13,8 @@
 // affiliation is mapped: the public API maps it first, and the death hook already has the
 // answer from CBClassifyFaction.
 public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: TweakDBID,
-                            weaponCategory: CName) -> Bool {
+                            weaponCategory: CName, opt killerBody: EntityID,
+                            opt killerLook: CName) -> Bool {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.IsEnabled() {
     return false;
@@ -30,16 +31,27 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
   let now = CBGameSeconds(game);
   let district = CBEventDistrict(sys, game);
 
+  // The Rival who did it, if it was one. With a body to go on (our own death hook), only that
+  // body counts: the record is shared by everyone of that kind in the gang. Without one (another
+  // mod reporting through the API) the record is all there is, so it is used as before.
   let who: ref<CBRival>;
-  for r in sys.GetRivals() {
-    if IsDefined(r) && r.recordID == killerRecordID
-       && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-      who = r;
+  if EntityID.IsDefined(killerBody) {
+    let byBody = CBFindRivalByBody(sys, killerBody);
+    if IsDefined(byBody)
+       && (byBody.state == EnumInt(ECBRivalState.Active) || byBody.state == EnumInt(ECBRivalState.Hunting)) {
+      who = byBody;
+    }
+  } else {
+    for r in sys.GetRivals() {
+      if IsDefined(r) && r.recordID == killerRecordID
+         && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+        who = r;
+      }
     }
   }
   let isNew = false;
   if !IsDefined(who) {
-    who = CBCreateRival(sys, game, faction, killerRecordID, n"", ECBRivalSource.Killer,
+    who = CBCreateRival(sys, game, faction, killerRecordID, killerLook, ECBRivalSource.Killer,
                         district, now);
     isNew = true;
   }

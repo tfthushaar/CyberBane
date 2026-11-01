@@ -98,7 +98,7 @@ public func CBPlayerCannotFight(game: GameInstance) -> Bool {
   if !IsDefined(bbs) {
     return false;
   }
-  let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
+  let psm = CBPlayerPSM(game);
   if !IsDefined(psm) {
     return false;
   }
@@ -203,7 +203,7 @@ public func CBPlayerZone(game: GameInstance) -> Int32 {
   if !IsDefined(bbs) {
     return EnumInt(gamePSMZones.Default);
   }
-  let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
+  let psm = CBPlayerPSM(game);
   if !IsDefined(psm) {
     return EnumInt(gamePSMZones.Default);
   }

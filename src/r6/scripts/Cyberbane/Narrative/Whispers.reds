@@ -233,9 +233,8 @@ func CBWhisperPick4(a: String, b: String, c: String, d: String) -> String {
 
 public func CBShowWhisper(sys: ref<CyberbaneSystem>, game: GameInstance,
                           faction: CName, mood: CName, topic: CName) -> Void {
-  // A whisper is somebody from the gang telling you what they think of you, so it now arrives
-  // as what it always was: a message from them. How long it stays is the phone's business,
-  // which is why the per-call duration argument and its constant are both gone.
-  CBPhoneSend(game, StrUpper(CBWhisperSpeaker(faction)),
-              CBWhisperLine(sys, game, faction, mood, topic));
+  // A whisper is something said near V, not something sent to V, so it is a line of subtitle
+  // and never a text. 1.4.7's first pass sent these as texts from "Passerby" and "Ganger",
+  // which in the real phone would have meant contacts nobody could have had a number for.
+  CBOverheard(game, CBWhisperSpeaker(faction), CBWhisperLine(sys, game, faction, mood, topic));
 }

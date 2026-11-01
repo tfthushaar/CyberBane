@@ -167,7 +167,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let tierAfter = EnumInt(sys.GetScore().GetTier());
   if tierAfter != tierBefore {
     if tierAfter > tierBefore && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-      CBSystemNote(game, "renown rank up - " + CBTierName(tierAfter), 4.0);
+      CBContactMessage(game, "People have stopped asking who you are. On the street you are " + CBTierName(tierAfter) + " now.");
     }
     sys.SetLastNotifiedTier(tierAfter);
   }
@@ -190,6 +190,15 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // Boss kills spread across districts as rumors (spec §8.5).
   if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Boss) {
     CBCreateRumor(sys, game, n"BossKill", 15.0, info.district, info.faction, info.witnessed);
+    if info.witnessed {
+      CBFileLog(sys, n"BossKill", info.at, info.district, info.faction, 0.0);
+    }
+  }
+  // One of an apex squad, when somebody saw it: the file is what people passed on.
+  let desApex = GameInstance.GetDynamicEntitySystem();
+  if info.lethal && info.witnessed && IsDefined(desApex)
+     && desApex.IsTagged(puppet.GetEntityID(), n"CB_Apex") {
+    CBFileLog(sys, n"ApexDown", info.at, info.district, info.faction, 0.0);
   }
 
   // Avenger Rival (spec §10.2): killing an Officer or Boss can summon an avenger

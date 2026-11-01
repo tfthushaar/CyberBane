@@ -40,6 +40,19 @@ enum ECBMarkerScope {
   Everyone = 2,
 }
 
+// Where Cyberbane's messages go (spec 12.2).
+//
+// Phone is the default: each sender is a contact in V's own phone, a new message arrives as the
+// game's incoming-SMS notification, and the thread opens in the phone's messenger. Cards is
+// Cyberbane drawing the message on the left of the screen itself, and nothing of Cyberbane's
+// enters the phone. It exists so that a player whose phone misbehaves has a way out that does
+// not go through the phone. Notices is the old line across the middle of the screen.
+enum ECBMessageDelivery {
+  Phone = 0,
+  Cards = 1,
+  Notices = 2,
+}
+
 enum ECBLogLevel {
   Off = 0,
   Info = 1,
@@ -301,9 +314,9 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PhoneMessages")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PhoneMessages-Desc")
-  public let phoneMessages: Bool = true;
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageDelivery")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageDelivery-Desc")
+  public let messageDelivery: ECBMessageDelivery = ECBMessageDelivery.Phone;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

@@ -189,9 +189,9 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   let withApex = Equals(posture, ECBPosture.Vendetta) && CBVendettaSquadsOn()
                  && CBVendettaApexOn() && TDBID.IsValid(fs.eliteRecord);
   if withApex {
-    if CBSpawnVehicleArrival(sys, game, fs.id, fs.eliteRecord, CBConfig.ApexStrikeTeamSize(),
-                             n"CB_Apex", fs.eliteRecord, n"CB_Apex") {
-      sys.MarkArrivalRoleSquad(fs.id);
+    // All four of them, whatever the car seats: CBSendByCar walks in whoever does not fit.
+    if CBSendByCar(sys, game, fs, fs.eliteRecord, CBConfig.ApexStrikeTeamSize(), n"CB_Apex") > 0 {
+      fs.apexAtKills = fs.kills;
       CBLog.Info(n"Spawn", s"Vendetta crew from \(NameToString(fs.id)) brings an apex squad.");
       // The crew on foot is the whole squad; the car is extra.
       let footAll = CBSpawnGroup(game, fs.sampleRecord, n"", size, n"CB_Squad",
@@ -206,22 +206,18 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
       if IsDefined(rtApex) && rtApex.HasSettings() && rtApex.GetSettings().toasts {
         CBPhoneFromGang(game, fs.id, "Everybody we have is coming for you. Our best are riding in front.");
       }
+      CBAllyTipOff(sys, game, fs.id);
       CBLog.Info(n"Spawn", s"Vendetta crew from \(NameToString(fs.id)): \(footAll) on foot plus an apex squad.");
       return;
     }
   }
-  // If they can drive to you, they drive. A car seats four, so a crew bigger than that sends
-  // a car and the rest come on foot behind it - which is what a gang turning out in numbers
-  // actually looks like, rather than a bus.
-  let byCar = 0;
-  if CBSpawnVehicleArrival(sys, game, fs.id, fs.sampleRecord, CBConfig.CarMaxSeats(), n"CB_Squad",
-                           TDBID.None(), n"") {
-    byCar = CBConfig.CarMaxSeats();
-    if byCar > size {
-      byCar = size;
-    }
-  }
-  let onFoot = size - byCar;
+  // If they can drive to you, they drive. A car seats four at most, so a crew bigger than that
+  // sends a car and the rest come on foot behind it - which is what a gang turning out in
+  // numbers actually looks like, rather than a bus. The car's share is made whole by
+  // CBSendByCar whatever the car turns out to seat.
+  let carShare = size < CBConfig.CarMaxSeats() ? size : CBConfig.CarMaxSeats();
+  let byCar = CBSendByCar(sys, game, fs, fs.sampleRecord, carShare, n"CB_Squad");
+  let onFoot = byCar > 0 ? size - carShare : size;
   let spawned = byCar;
   if onFoot > 0 {
     spawned += CBSpawnGroup(game, fs.sampleRecord, n"", onFoot, n"CB_Squad",
@@ -251,5 +247,6 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
     CBPhoneFromGang(game, fs.id, "A crew is on its way to you right now. Nothing personal. All business.");
   }
+  CBAllyTipOff(sys, game, fs.id);
   CBLog.Info(n"Spawn", s"Hit squad from \(NameToString(fs.id)): \(spawned).");
 }

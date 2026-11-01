@@ -117,6 +117,30 @@ func CBBestCandidate(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> ref<
 }
 
 // Fill whatever is empty, leader first. Called whenever the shape of a gang changes.
+func CBHierarchyScore(r: ref<CBRival>) -> Int32 {
+  return IsDefined(r) ? r.rank * 100 + r.encounters : -1;
+}
+
+// The strongest of this gang's three lieutenants who is still standing, or null.
+func CBBestLieutenant(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> ref<CBRival> {
+  let best: ref<CBRival> = null;
+  let ids: array<Int32>;
+  ArrayPush(ids, fs.lt1RivalId);
+  ArrayPush(ids, fs.lt2RivalId);
+  ArrayPush(ids, fs.lt3RivalId);
+  let i = 0;
+  while i < ArraySize(ids) {
+    if CBSlotHolderActive(sys, ids[i]) {
+      let r = sys.FindRivalById(ids[i]);
+      if CBHierarchyScore(r) > CBHierarchyScore(best) {
+        best = r;
+      }
+    }
+    i += 1;
+  }
+  return best;
+}
+
 public func CBHierarchyFill(sys: ref<CyberbaneSystem>, faction: CName) -> Void {
   if !IsDefined(sys) || Equals(faction, n"") {
     return;
@@ -128,7 +152,17 @@ public func CBHierarchyFill(sys: ref<CyberbaneSystem>, faction: CName) -> Void {
   CBHierarchyPrune(sys, fs);
 
   if fs.leaderRivalId <= 0 {
+    // The strongest of the rest takes the crew, and "the rest" includes the lieutenants. This
+    // only ever looked at Rivals holding no chair, so a gang whose survivors were all
+    // lieutenants was left with nobody at the top however many of them there were.
     let promoted = CBBestCandidate(sys, fs);
+    let lt = CBBestLieutenant(sys, fs);
+    if IsDefined(lt) && (!IsDefined(promoted) || CBHierarchyScore(lt) >= CBHierarchyScore(promoted)) {
+      if fs.lt1RivalId == lt.id { fs.lt1RivalId = 0; }
+      if fs.lt2RivalId == lt.id { fs.lt2RivalId = 0; }
+      if fs.lt3RivalId == lt.id { fs.lt3RivalId = 0; }
+      promoted = lt;
+    }
     if IsDefined(promoted) {
       fs.leaderRivalId = promoted.id;
       // Running a crew makes you harder to put down than you were.

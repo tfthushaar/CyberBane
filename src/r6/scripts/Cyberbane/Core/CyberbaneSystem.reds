@@ -110,6 +110,26 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_apexSeat: Int32;         // rotates 0..3 so a squad is always four roles
   private let m_adoptUntilTick: Int32;
   private let m_chaseAwayTicks: Int32;   // consecutive ticks V has been clear of every hunter
+  // What the last car was expected to deliver, so anybody it did not deliver walks in instead
+  // (Spawn/HitSquad.reds, CBProcessCarTopUp). Session only, like every other arrival field.
+  private let m_carPathCity: Bool;       // true: the city's chase; false: Cyberbane's own convoy
+  private let m_carSeats: Int32;         // how many seats that request could fill
+  private let m_convoyCreated: Int32;    // crew the own convoy actually created at the car
+  private let m_topFaction: CName;
+  private let m_topRecord: TweakDBID;
+  private let m_topTag: CName;
+  private let m_topWanted: Int32;
+  private let m_topTicks: Int32;
+  // Whether Cyberbane has asked the road network for chase strategies (Spawn/VanillaChase.reds).
+  private let m_chasePrimed: Bool;
+  // A Rival whose current arrival is by car, and one whose last car never delivered them and so
+  // walks in next time.
+  private let m_rivalCarPending: Int32;
+  private let m_rivalCarFailed: Int32;
+  // The posture each gang had when it was last looked at, so a gang coming round to V is noticed
+  // once (Model/Reputation.reds, CBVendettaWatch). Session only.
+  private let m_seenPostureIds: array<CName>;
+  private let m_seenPostureVals: array<Int32>;
   private let m_laneRivalFreed: Int32;
   private let m_laneSquadFreed: Int32;
   private let m_laneApexFreed: Int32;
@@ -758,6 +778,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.GetPhone().Update(this, game);
     this.RefreshStealthHold(game);      // before anything that might send someone in
     CBEncounterQueueTick(this, game);   // three lanes, three clocks: who is next
+    CBChasePrimeTick(this, game);       // let the city's chase find a road before a car is due
+    if this.m_tickCount % 5 == 0 {
+      CBVendettaWatch(this, game);      // date a vendetta the moment it is sworn
+    }
+    CBProcessCarTopUp(this, game);      // anybody a car was meant to bring and did not walks in
     if this.m_tickCount % CBConfig.ChaseRefreshEveryTicks() == 0 {
       CBChaseRefreshTick(this, game);   // keep whoever was sent actually coming after you
     }
@@ -991,6 +1016,109 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_adoptLeft -= 1;
     this.m_adoptTaken += 1;
     return this.m_adoptLeft;
+  }
+
+  // ---- What a car was meant to bring ----
+  public func NoteCarPath(city: Bool, seats: Int32) -> Void {
+    this.m_carPathCity = city;
+    this.m_carSeats = seats;
+    this.m_convoyCreated = 0;
+  }
+
+  public func IsLastCarCity() -> Bool {
+    return this.m_carPathCity;
+  }
+
+  public func GetLastCarSeats() -> Int32 {
+    return this.m_carSeats;
+  }
+
+  public func NoteConvoyCreated(n: Int32) -> Void {
+    this.m_convoyCreated = n;
+  }
+
+  public func GetConvoyCreated() -> Int32 {
+    return this.m_convoyCreated;
+  }
+
+  public func ArmCarTopUp(faction: CName, record: TweakDBID, tag: CName, wanted: Int32, ticks: Int32) -> Void {
+    this.m_topFaction = faction;
+    this.m_topRecord = record;
+    this.m_topTag = tag;
+    this.m_topWanted = wanted;
+    this.m_topTicks = ticks;
+  }
+
+  public func GetTopUpWanted() -> Int32 {
+    return this.m_topWanted;
+  }
+
+  // Count the top-up's wait down; returns what is left.
+  public func TickTopUp() -> Int32 {
+    if this.m_topTicks > 0 {
+      this.m_topTicks -= 1;
+    }
+    return this.m_topTicks;
+  }
+
+  public func GetTopUpFaction() -> CName {
+    return this.m_topFaction;
+  }
+
+  public func GetTopUpRecord() -> TweakDBID {
+    return this.m_topRecord;
+  }
+
+  public func GetTopUpTag() -> CName {
+    return this.m_topTag;
+  }
+
+  public func ClearTopUp() -> Void {
+    this.m_topFaction = n"";
+    this.m_topRecord = TDBID.None();
+    this.m_topTag = n"";
+    this.m_topWanted = 0;
+    this.m_topTicks = 0;
+  }
+
+  public func IsChasePrimed() -> Bool {
+    return this.m_chasePrimed;
+  }
+
+  public func SetChasePrimed(v: Bool) -> Void {
+    this.m_chasePrimed = v;
+  }
+
+  // Record a gang's posture; returns the one recorded before, or -1 the first time this session.
+  public func SwapSeenPosture(id: CName, now: Int32) -> Int32 {
+    let i = 0;
+    while i < ArraySize(this.m_seenPostureIds) {
+      if Equals(this.m_seenPostureIds[i], id) {
+        let before = this.m_seenPostureVals[i];
+        this.m_seenPostureVals[i] = now;
+        return before;
+      }
+      i += 1;
+    }
+    ArrayPush(this.m_seenPostureIds, id);
+    ArrayPush(this.m_seenPostureVals, now);
+    return -1;
+  }
+
+  public func GetRivalCarPending() -> Int32 {
+    return this.m_rivalCarPending;
+  }
+
+  public func SetRivalCarPending(id: Int32) -> Void {
+    this.m_rivalCarPending = id;
+  }
+
+  public func GetRivalCarFailed() -> Int32 {
+    return this.m_rivalCarFailed;
+  }
+
+  public func SetRivalCarFailed(id: Int32) -> Void {
+    this.m_rivalCarFailed = id;
   }
 
   public func BumpChaseAwayTicks() -> Int32 {

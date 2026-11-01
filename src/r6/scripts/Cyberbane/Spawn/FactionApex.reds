@@ -170,8 +170,13 @@ public func CBApplyApexGradeBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
 // reasonable in isolation.
 //
 // `roleHealthMult` is the crew-rank bonus, 1.0 for anybody who is not running one.
+// `traitHealth`, `traitArmour`, `traitDamage` and `traitCrit` are a Rival's own traits and
+// weaknesses (CBRivalTraitTerms): fractions added to, or taken off, the same terms the random
+// traits use, so they are clamped by the same ceilings and can never stack past them.
 public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
-                             puppet: ref<ScriptedPuppet>, grade: Float, roleHealthMult: Float) -> Void {
+                             puppet: ref<ScriptedPuppet>, grade: Float, roleHealthMult: Float,
+                             opt traitHealth: Float, opt traitArmour: Float,
+                             opt traitDamage: Float, opt traitCrit: Float) -> Void {
   if !IsDefined(puppet) {
     return;
   }
@@ -196,6 +201,11 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   let tCritDamage = 0.0;
   let tPower = 0.0;
   CBRollApexTraits(scale, strength, tHealth, tArmour, tDamage, tCritChance, tCritDamage, tPower);
+  tHealth += traitHealth;
+  tArmour += traitArmour;
+  tDamage += traitDamage;
+  tCritChance += traitCrit;
+  tCritDamage += traitCrit * 2.5;
 
   let hpMult = CBApexLerp(CBConfig.ApexHealthMultBase() + scale * CBConfig.ApexHealthMultRange(), strength)
                * (1.0 + tHealth) * MaxF(roleHealthMult, 1.0);
@@ -309,7 +319,51 @@ public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
       roleMult = CBConfig.LieutenantHealthMult();
     }
   }
-  CBApplyApexBuild(sys, game, puppet, CBRivalGrade(r), roleMult);
+  let th = 0.0;
+  let ta = 0.0;
+  let td = 0.0;
+  let tc = 0.0;
+  CBRivalTraitTerms(r, th, ta, td, tc);
+  CBApplyApexBuild(sys, game, puppet, CBRivalGrade(r), roleMult, th, ta, td, tc);
+}
+
+// What a Rival's traits and weaknesses do to their build.
+//
+// They were rolled, promoted, kept in the save and shown nowhere, and none of them changed how a
+// Rival fought: the comment on the trait list promised the effects "once the stat-modifier API
+// is wired", and it was wired for the apex build long ago without the traits ever being plugged
+// into it. Each one is a small fraction on the same terms the build already uses, so the ceilings
+// in Config still decide the most anyone can be.
+public func CBRivalTraitTerms(r: ref<CBRival>, out health: Float, out armour: Float,
+                              out damage: Float, out crit: Float) -> Void {
+  if !IsDefined(r) {
+    return;
+  }
+  let step = CBConfig.RivalTraitStep();
+  if CBRivalHasTrait(r, n"Tough") { health += step; }
+  if CBRivalHasTrait(r, n"Scarred") { health += step * 0.6; }
+  if CBRivalHasTrait(r, n"Armored") { armour += step; }
+  if CBRivalHasTrait(r, n"ChromedOut") { armour += step * 0.6; damage += step * 0.4; }
+  if CBRivalHasTrait(r, n"Deadeye") { crit += CBConfig.RivalTraitCrit(); }
+  if CBRivalHasTrait(r, n"Confident") { damage += step * 0.6; }
+  if CBRivalHasTrait(r, n"Humiliated") { damage += step * 0.4; }
+  // Weaknesses take away from the same terms.
+  if CBRivalHasTrait(r, n"OldWound") { health -= step; }
+  if CBRivalHasTrait(r, n"Reckless") { armour -= step; damage += step * 0.4; }
+  if CBRivalHasTrait(r, n"Shaken") { damage -= step * 0.6; }
+}
+
+// The traits that are about how they fight rather than how much they can take.
+public func CBKitRivalTraits(npc: ref<NPCPuppet>, r: ref<CBRival>) -> Void {
+  if !IsDefined(npc) || !IsDefined(r) || CBAiKitOwner() {
+    return;
+  }
+  if CBRivalHasTrait(r, n"Quick") {
+    CBGrantAbility(npc, t"Ability.HasKerenzikov");
+  }
+  if CBRivalHasTrait(r, n"ChromedOut") {
+    CBGrantAbility(npc, t"Ability.HasSubdermalArmorHigh");
+  }
 }
 
 // The sound of something you do not want arriving.
@@ -406,7 +460,7 @@ public func CBFillApexSquad(sys: ref<CyberbaneSystem>, game: GameInstance, facti
     let one: EntityID;
     let seat = (sys.PeekApexRole() + i) % CBConfig.ApexStrikeTeamSize();
     if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
-                    CBConfig.ApexSpawnDistance(), one) > 0 {
+                    CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
       added += 1;
     }
     i += 1;
@@ -486,6 +540,7 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
           CBPhoneFromGang(game, fs.id, s"\(name) is coming for you, and not alone. Four of ours. Make your peace.");
         }
+        CBAllyTipOff(sys, game, fs.id);
         CBLog.Info(n"Spawn", s"Faction apex inbound for \(NameToString(fs.id)).");
         return;   // only ever one gang at a time
       }
@@ -535,11 +590,11 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     let delivered = CBLiveTaggedPresent(game, n"CB_Apex")
                  || (Equals(sys.GetAdoptTag(), n"CB_Apex") && sys.GetAdoptTaken() > 0);
     if delivered {
-      // Arrived, but possibly not all of them. The city's chase sizes its crew from the
-      // vehicle record's own passenger counts, not from what we asked for, so a gang whose car
-      // seats two delivers two - and a two-strong apex squad is not the set piece the Hub, the
-      // bars and the readme all describe. Whoever did not fit walks in behind them.
-      CBFillApexSquad(sys, game, faction);
+      // Arrived. Anyone the car could not seat walked in when it was sent, and anyone it was
+      // meant to carry and did not was walked in by CBProcessCarTopUp, so the squad is already
+      // four. This used to top up from a live head count at the end of the drive, which both
+      // left the squad short for the whole drive and replaced members the player had already
+      // killed.
       sys.SetPendingApex(n"", 0);
       return;
     }
@@ -564,11 +619,9 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   // with a lift. Every seat is tagged CB_Apex, so every one of them gets the full buff, and
   // the strength slider is how a player dials that back if four at once is too much.
   sys.ResetApexRoles();   // this squad starts again at the heavy
+  sys.ClearSquadAnchor();
   if !carFailed
-     && CBSpawnVehicleArrival(sys, game, fs.id, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex",
-                              record, n"CB_Apex") {
-    sys.MarkArrivalRoleSquad(fs.id);
-    sys.ClearSquadAnchor();
+     && CBSendByCar(sys, game, fs, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex") > 0 {
     // The warning is spent, but they are not here yet: they are driving. Keep the clock
     // running for the length of the drive so the Hub has something true to show, instead of
     // the countdown vanishing the moment the car is dispatched and the squad turning up with
@@ -599,7 +652,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   while seat < CBConfig.ApexStrikeTeamSize() {
     let one: EntityID;
     if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
-                    CBConfig.ApexSpawnDistance(), one) > 0 {
+                    CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
       arrived += 1;
       apexEntity = one;
     }
