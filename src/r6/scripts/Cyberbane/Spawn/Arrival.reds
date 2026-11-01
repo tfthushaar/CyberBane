@@ -238,9 +238,6 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   // Ask the city first. Its own chase puts the car on the road network, fills it and drives it
   // at you properly, which is the thing this mod kept failing to do by hand.
-  if CBRequestVanillaChase(sys, game, factionId, crewRecord, crew, squadTag) {
-    return true;
-  }
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
     return false;
@@ -456,12 +453,25 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     spec.alwaysSpawned = false;
     spec.spawnInView = false;
     spec.active = true;
+    // A Rival driving in wears their own face from the moment they spawn, set on the spec the
+    // way the walk-in spawner sets it, so nothing has to change their appearance afterwards.
+    let rider: ref<CBRival>;
+    if Equals(squadTag, n"CB_Rival") {
+      rider = sys.FindRivalById(sys.GetRivalCarPending());
+    }
+    if IsDefined(rider) && IsNameValid(rider.appearance) {
+      spec.appearanceName = rider.appearance;
+    }
     let tags: array<CName>;
     ArrayPush(tags, n"Cyberbane");
     ArrayPush(tags, n"CB_Crew");
     ArrayPush(tags, isLead ? leadTag : squadTag);
     spec.tags = tags;
-    des.CreateEntity(spec);
+    let made = des.CreateEntity(spec);
+    // The body is the Rival's from the moment it exists, so their death and escape count.
+    if IsDefined(rider) && EntityID.IsDefined(made) {
+      rider.spawnedEntityId = made;
+    }
     i += 1;
   }
 }
@@ -476,7 +486,7 @@ public func CBOnArrivalCrewAttached(sys: ref<CyberbaneSystem>, game: GameInstanc
     return;
   }
   let car = GameInstance.FindEntityByID(game, carId) as VehicleObject;
-  if !IsDefined(car) {
+  if !IsDefined(car) || !car.IsAttached() {
     sys.ClearPendingArrival();
     return;
   }
@@ -503,16 +513,19 @@ public func CBOnArrivalCrewAttached(sys: ref<CyberbaneSystem>, game: GameInstanc
   puppet.QueueEvent(evt);
 
   if sys.IsArrivalFull() {
-    // One tick for the mounts to settle before the car is given its orders; issuing the
-    // command while the driver is still being seated loses it.
-    let cb = new CBArrivalDriveCallback();
-    cb.carId = carId;
-    GameInstance.GetDelaySystem(game).DelayCallback(cb, CBConfig.CarStartDelay(), false);
-    // And start watching for the car to get there, so somebody actually gets out of it.
-    let watch = new CBArrivalDismountCallback();
-    watch.carId = carId;
-    watch.tries = 0;
-    GameInstance.GetDelaySystem(game).DelayCallback(watch, CBConfig.ArrivalDismountPoll(), false);
+    // A moment for the seats to settle before the car is given its orders; issuing the command
+    // while the driver is still being seated loses it. And start watching for the car to get
+    // there, so somebody actually gets out of it.
+    let ds = GameInstance.GetDelaySystem(game);
+    if IsDefined(ds) {
+      let cb = new CBArrivalDriveCallback();
+      cb.carId = carId;
+      ds.DelayCallback(cb, CBConfig.CarStartDelay(), false);
+      let watch = new CBArrivalDismountCallback();
+      watch.carId = carId;
+      watch.tries = 0;
+      ds.DelayCallback(watch, CBConfig.ArrivalDismountPoll(), false);
+    }
     sys.ClearPendingArrival();
   }
 }
@@ -543,7 +556,10 @@ public class CBArrivalDismountCallback extends DelayCallback {
         again.carId = this.carId;
         again.tries = this.tries;
         again.waits = this.waits + 1;
-        GameInstance.GetDelaySystem(game).DelayCallback(again, CBConfig.ArrivalDismountPoll(), false);
+        let dsW = GameInstance.GetDelaySystem(game);
+        if IsDefined(dsW) {
+          dsW.DelayCallback(again, CBConfig.ArrivalDismountPoll(), false);
+        }
       }
       return;
     }
@@ -554,15 +570,28 @@ public class CBArrivalDismountCallback extends DelayCallback {
     let car = GameInstance.FindEntityByID(game, this.carId) as VehicleObject;
     // A car that is gone (shot up, despawned) still means the crew should be let out.
     let arrived = true;
-    if IsDefined(car) {
+    // Nobody gets out of a car that is still moving, and nobody gets out while V is driving:
+    // then it is a car chase and they stay in it. Both waits are bounded, so a car that never
+    // stops still lets its crew out in the end.
+    let moving = false;
+    if IsDefined(car) && car.IsAttached() {
       arrived = Vector4.Distance(car.GetWorldPosition(), player.GetWorldPosition())
                 <= CBConfig.ArrivalDismountDistance();
+      moving = AbsF(car.GetCurrentSpeed()) > CBConfig.ArrivalDismountMaxSpeed();
     }
-    if !arrived && this.tries < CBConfig.ArrivalDismountMaxTries() {
+    let vDriving = IsDefined(player.GetMountedVehicle());
+    let holdOn = !arrived && this.tries < CBConfig.ArrivalDismountMaxTries();
+    if !holdOn && (moving || vDriving) && this.tries < CBConfig.ArrivalDismountMaxTries() * 3 {
+      holdOn = true;
+    }
+    if holdOn {
       let next = new CBArrivalDismountCallback();
       next.carId = this.carId;
       next.tries = this.tries + 1;
-      GameInstance.GetDelaySystem(game).DelayCallback(next, CBConfig.ArrivalDismountPoll(), false);
+      let dsN = GameInstance.GetDelaySystem(game);
+      if IsDefined(dsN) {
+        dsN.DelayCallback(next, CBConfig.ArrivalDismountPoll(), false);
+      }
       return;
     }
     CBLog.Info(n"Spawn", s"Car arrived (or was given up on) after \(this.tries) checks; crew getting out.");
@@ -581,22 +610,17 @@ public func CBDismountArrivalCrew(game: GameInstance) -> Void {
   while i < ArraySize(ids) {
     let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
-    if IsDefined(puppet) && !puppet.IsDead() {
-      // Only somebody actually sitting in a car gets told to get out of one.
-      //
-      // This used to go to everyone wearing the crew tag, and that tag is never taken off, so
-      // it also reached people who had already got out and people whose mount never took in
-      // the first place. Handing an unmount order to somebody standing on the pavement leaves
-      // them in a broken state: face down on the ground, no AI, not fighting - which is
-      // exactly what was reported. The poll repeats, so it was reaching them more than once.
+    if IsDefined(puppet) && !puppet.IsDead() && puppet.IsAttached() {
+      // Only somebody actually sitting in a car gets told to get out of one, and only once
+      // (CBUnmountOnce). An unmount order handed to somebody already on the pavement leaves
+      // them face down with no AI, which is what was reported when this reached everyone with
+      // the crew tag. The hunt orders them on once they are on their feet: a move order given
+      // to somebody still in a seat is not one the game expects.
       if VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
-        let ai = puppet.GetAIControllerComponent();
-        if IsDefined(ai) {
-          ai.SendCommand(new AIUnmountCommand());
-        }
+        CBUnmountOnce(game, puppet);
+      } else {
+        CBOrderPursue(CyberbaneSystem.Get(game), game, puppet);
       }
-      // Out of the car, and after V the way the hunt says.
-      CBOrderPursue(CyberbaneSystem.Get(game), game, puppet);
     }
   }
 }
@@ -613,13 +637,16 @@ public class CBArrivalDriveCallback extends DelayCallback {
         let again = new CBArrivalDriveCallback();
         again.carId = this.carId;
         again.waits = this.waits + 1;
-        GameInstance.GetDelaySystem(game).DelayCallback(again, CBConfig.CarStartDelay(), false);
+        let dsW = GameInstance.GetDelaySystem(game);
+        if IsDefined(dsW) {
+          dsW.DelayCallback(again, CBConfig.CarStartDelay(), false);
+        }
       }
       return;
     }
     let car = GameInstance.FindEntityByID(game, this.carId) as VehicleObject;
     let player = GetPlayer(game);
-    if !IsDefined(car) || !IsDefined(player) {
+    if !IsDefined(car) || !IsDefined(player) || !car.IsAttached() {
       return;
     }
     CBDriveAtPlayer(game, car, player);
@@ -652,7 +679,6 @@ public func CBDriveAtPlayer(game: GameInstance, car: ref<VehicleObject>, player:
     chase.boostDrivingStats = true;
     evt.command = chase;
     CBLog.Info(n"Spawn", "Car is giving chase.");
-    car.SetPoliceStrategyDestination(player.GetWorldPosition());
     car.QueueEvent(evt);
     ai.SetInitCmd(chase);
     return;
@@ -668,4 +694,96 @@ public func CBDriveAtPlayer(game: GameInstance, car: ref<VehicleObject>, player:
   evt.command = drive;
   car.QueueEvent(evt);
   ai.SetInitCmd(drive);
+}
+
+// ---- Out of the attach event ---------------------------------------------------
+//
+// The car's crew used to be created, and each of them seated, from inside the engine's own
+// attach notification for the car and for them. Creating entities and mounting NPCs from
+// inside that notification is doing entity work while the engine is still in the middle of
+// its own, and an NPC is not fully built on the frame it attaches (the 1.2.1 lesson: orders
+// given before the engine had built the enemy). Both now happen a moment later, on a settled
+// world, after checking the car and the NPC still exist.
+
+public class CBConvoyBoardCallback extends DelayCallback {
+  public let carId: EntityID;
+  public let waits: Int32;
+
+  public func Call() -> Void {
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) {
+      return;
+    }
+    if !CBWorldStable(game) {
+      if this.waits < CBConfig.CallbackStableWaits() {
+        let again = new CBConvoyBoardCallback();
+        again.carId = this.carId;
+        again.waits = this.waits + 1;
+        let ds = GameInstance.GetDelaySystem(game);
+        if IsDefined(ds) {
+          ds.DelayCallback(again, CBConfig.ConvoyStepDelay(), false);
+          return;
+        }
+      }
+      sys.ClearPendingArrival();
+      return;
+    }
+    let car = GameInstance.FindEntityByID(game, this.carId) as VehicleObject;
+    if !IsDefined(car) || !car.IsAttached() {
+      sys.ClearPendingArrival();
+      return;
+    }
+    CBOnArrivalCarAttached(sys, game, car);
+  }
+}
+
+public class CBConvoyMountCallback extends DelayCallback {
+  public let puppetId: EntityID;
+  public let waits: Int32;
+
+  public func Call() -> Void {
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) {
+      return;
+    }
+    if !CBWorldStable(game) {
+      if this.waits < CBConfig.CallbackStableWaits() {
+        let again = new CBConvoyMountCallback();
+        again.puppetId = this.puppetId;
+        again.waits = this.waits + 1;
+        let ds = GameInstance.GetDelaySystem(game);
+        if IsDefined(ds) {
+          ds.DelayCallback(again, CBConfig.ConvoyStepDelay(), false);
+        }
+      }
+      return;   // never seated; the top-up or the hunt brings them in on foot
+    }
+    let puppet = GameInstance.FindEntityByID(game, this.puppetId) as ScriptedPuppet;
+    if !CBStillStanding(puppet) || !puppet.IsAttached() {
+      return;
+    }
+    CBOnArrivalCrewAttached(sys, game, puppet);
+  }
+}
+
+public func CBScheduleConvoyBoard(game: GameInstance, carId: EntityID) -> Void {
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(ds) || !EntityID.IsDefined(carId) {
+    return;
+  }
+  let cb = new CBConvoyBoardCallback();
+  cb.carId = carId;
+  ds.DelayCallback(cb, CBConfig.ConvoyStepDelay(), false);
+}
+
+public func CBScheduleConvoyMount(game: GameInstance, puppetId: EntityID) -> Void {
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(ds) || !EntityID.IsDefined(puppetId) {
+    return;
+  }
+  let cb = new CBConvoyMountCallback();
+  cb.puppetId = puppetId;
+  ds.DelayCallback(cb, CBConfig.ConvoyStepDelay(), false);
 }

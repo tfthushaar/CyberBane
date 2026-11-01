@@ -3,31 +3,54 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [1.4.8] - 2026-11-01
+## [1.5.0] - 2026-11-02
 
-Built from player reports after 1.4.7: crashes, and a squad that "spawns behind you, eats ammo
-like no tomorrow, gives little reward, and feels like an arbitrary timer". The aim was to make
-being hunted feel like the police hunting you: you do something, somebody calls it in, they come
-looking, and you can see it happening.
+A stability release, and it includes everything that was built for 1.4.8. Players reported the
+game crashing within minutes of a Rival or a crew being due, sometimes with V just standing
+idle, and after reading a gang's texts. Every system that touches the game's engine was gone
+through again against the game's own scripts and against the crash causes recorded in earlier
+versions. Anything that could take the game down was removed or rebuilt the way the game does
+it itself.
 
 Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
 
 ### Crash fixes
-- **Opening a gang's text could crash the game.** Cyberbane drew its message bubbles and reply
-  rows by adding its own widgets to the phone's message and reply lists and clearing them with a
-  call that also removed widgets the game's own list was still tracking. Gang texts are the ones
-  with reply rows, which is why they were the ones that crashed. Cyberbane now hands its lines to
-  those lists as data, the same way the game hands them its own messages, and the game builds
-  and removes every widget itself. Choosing a reply redraws the thread on the next frame instead
-  of in the middle of the click.
-- The text notification no longer asks the game's journal for a contact using Cyberbane's own
-  number.
-- **Nothing scheduled runs while the world is loading.** Every delayed step Cyberbane schedules
-  (crews getting out of cars, cars driving off, enemies being set up after they spawn, loot
-  dropping) now waits for the world to be settled before it touches anything, and gives up
-  cleanly if that takes too long.
-- A crew you had wiped out could still produce a Rival "who got away" when its bodies were
-  cleared. Only somebody still standing can escape now.
+- **Cyberbane no longer touches the police system.** 1.4.7 asked the police chase system to
+  check the road network ahead of time and then to spawn gang cars and crews through it. Those
+  road checks were refreshed every few seconds for as long as a Rival or crew was queued, even
+  while V stood still, replacing requests the game was still working on in the background. This
+  is the most likely cause of the idle crashes and of crashes shortly after a gang's warning.
+  All of it is gone. Cars now come only from Cyberbane's own convoy: a car placed out of sight
+  on a road, its crew seated, driven to you. Rivals use the same convoy.
+- **No more risky abilities on spawned enemies.** Rivals with the Quick trait were given
+  Kerenzikov, and apex members were given Kerenzikov, Charge Jump, combat stims, quickhacks,
+  a cooling system and reinforcement calls. These drive cyberware effects, animations and
+  game systems on characters the game never made for them, the same kind of thing behind an
+  earlier recorded crash. Every kit is now behaviour only: cover, pace, firing on the move,
+  resisting stuns, seeing through smoke and camo, grenades.
+- **Orders to enemies are sent once.** Every move order was sent twice and the old one was never
+  cancelled, while the hunt re-sent orders every few seconds. Each enemy now has at most one
+  order from Cyberbane at a time.
+- **Nothing is removed from the world mid-action.** Clearing out a crew or a Rival removed
+  whoever carried the tag, including people sitting in a car seat and people the game was still
+  spawning. Those are now left until they are out and fully spawned, and they stop counting
+  against anything straight away, so nothing waits on them.
+- **Cars are set up after the game has finished building them.** The crew used to be created
+  and seated from inside the game's own notification that the car had appeared. Both now happen
+  a moment later, after checking the car and the crew still exist. A crew never gets out of a car
+  that is still moving, or while you are driving.
+- **Opening a gang's text could crash the game.** Cyberbane added its own widgets to the phone's
+  message and reply lists and removed them in a way that pulled out widgets the game was still
+  using. Messages now go into those lists as data, the way the game adds its own, and replies
+  redraw on the next frame.
+- **Loot goes straight into your inventory.** Dropping a bag from a body is something the game
+  never does, so Cyberbane no longer does it either. Everything still arrives, with the game's
+  own notices.
+- Anything Cyberbane schedules for later waits until the world has finished loading, and gives
+  up cleanly if that takes too long. Spawn setup skips anyone killed before it ran, and squads
+  are only formed from people who are still there.
+- A crew you wiped out could still produce a Rival "who got away". Only somebody still standing
+  can escape now.
 
 ### Hunted, not ambushed
 - **They tell you first, and you get time.** A crew, an apex squad or a Rival texts before they
@@ -62,8 +85,8 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   or N more kills", or ready.
 
 ### Worth the fight
-- **Loot.** Anyone Cyberbane sends who you put down drops a bag on their body. Crew sometimes
-  carry ammo and crafting parts. Rivals carry better parts the higher they ranked, more for a
+- **Loot.** Anyone Cyberbane sends who you put down leaves you something, straight into your
+  inventory. Crew sometimes carry ammo and crafting parts. Rivals carry better parts the higher they ranked, more for a
   crew leader. Apex squad members carry rare and epic parts with a chance of legendary ones.
 - **A small chance of an iconic weapon** from apex squad members, top-ranked Rivals and crew
   leaders. Only weapons you could otherwise find exploring the city: anything the game tags as

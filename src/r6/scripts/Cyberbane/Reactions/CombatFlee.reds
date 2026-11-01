@@ -386,10 +386,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       }
     }
     sys.SetActiveRivalId(0);
-    let des = GameInstance.GetDynamicEntitySystem();
-    if IsDefined(des) {
-      des.DeleteTagged(n"CB_Rival");
-    }
+    CBDeleteTaggedSafe(game, n"CB_Rival");
     return;
   }
 

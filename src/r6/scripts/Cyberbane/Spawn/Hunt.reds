@@ -115,10 +115,7 @@ public func CBOrderSearch(game: GameInstance, puppet: ref<ScriptedPuppet>, point
   cmd.ignoreNavigation = false;
   cmd.finishWhenDestinationReached = true;
   cmd.desiredDistanceFromTarget = 2.0;
-  let evt = new AICommandEvent();
-  evt.command = cmd;
-  puppet.QueueEvent(evt);
-  ai.SendCommand(cmd);
+  CBIssueMove(puppet, ai, cmd);
 }
 
 // Once per fast tick, on a settled tick. Works out whether anyone can see or hear V, moves the

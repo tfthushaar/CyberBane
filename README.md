@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.4.8).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.5.0).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -122,10 +122,9 @@ page describes what the mod does and how it installs.
   Grudge-Bearer is always first in line, and somebody Hard to Scare never breaks and runs. Escaping you half dead leaves them Scarred, and doing it twice
   leaves an Old Wound. Sparing one leaves them Shaken, and an avenger comes in Reckless. The
   Rivals screen lists them for whoever is coming next.
-- **They drive over.** Crews, apex squads and Rivals can all arrive by car, dispatched and driven
-  by the same system that sends the police after you, so they use real roads and keep coming
-  across junctions. When the car reaches you they get out and come for you; if you are behind
-  the wheel they stay in and chase. If the car seats fewer than the gang sent, or never makes it,
+- **They drive over.** Crews, apex squads and Rivals can all arrive by car. The car is placed out
+  of sight on a road, its crew takes their seats, and it drives to you. When it reaches you and
+  slows down they get out and come for you; if you are behind the wheel they stay in and chase. If the car seats fewer than the gang sent, or never makes it,
   the rest walk in, so an apex squad is always four. Indoors, or anywhere there is no road close
   enough, they come on foot.
 - **A vendetta is a decision, not a dice roll.** A gang that has sworn one is already putting a
@@ -142,7 +141,7 @@ page describes what the mod does and how it installs.
   of sight, head for where you were last seen and search the area, narrowing in, the way the
   police do. A line on the HUD says who is hunting you and whether they are on their way,
   searching for you, have you, or are losing your trail.
-- **Worth the fight.** Anyone the mod sends who you put down drops a bag on their body, scaled
+- **Worth the fight.** Anyone the mod sends who you put down leaves you something, scaled
   to who they were: ammo and parts from a crew, better parts from a Rival the higher they
   ranked, rare and epic parts from an apex squad with a chance of legendary ones, and a small
   chance of an iconic weapon from apex squads, top Rivals and crew leaders. Only iconics you
@@ -171,9 +170,9 @@ page describes what the mod does and how it installs.
 - **Gangs send an apex squad.** Wipe out a gang's crew while you are at war with them, after
   enough of their people have gone down, and they stop sending squads and send the people who
   matter: a carload of four named enforcers who fight like MaxTac. Pile up twice the bodies and
-  they come without waiting for a crew. There is a heavy who walks at you and breaks your guard, a shooter who flushes you
-  out of cover, a blade who closes on a Sandevistan, and a netrunner who hangs back and takes
-  your weapon off you. Each chair is filled with a real member of that gang you have actually
+  they come without waiting for a crew. There is a heavy who walks at you and breaks your guard,
+  a shooter who flushes you out of cover, a blade who closes in and stays on you, and a
+  netrunner who hangs back. Each chair is filled with a real member of that gang you have actually
   fought, so they carry the right weapons and fight the way that kind of enemy fights, and they
   work as a squad. Each of them gets a bar at the top of the screen showing their role and their
   gang, the way a MaxTac drop reads as a heavy, a blade, a netrunner and a shooter, so you can
@@ -324,7 +323,7 @@ Three worth knowing about if a playstyle is being treated unfairly:
 - Much Better AI: supported, detected automatically, no setup. Its Nerve system owns morale,
   so Cyberbane stands down its own morale break and terror push rather than panicking the same
   enemy twice, and it also owns equipping enemies, so Cyberbane leaves its own ability kits off
-  rather than handing the same enemy a second Sandevistan. It keeps tracking who got away, so
+  rather than doubling up on the same enemy. It keeps tracking who got away, so
   Rivals still come from enemies Much Better AI sent running, and everything that is Cyberbane's
   own still runs: who gets sent after you, when, in what, and the boss bar.
 - Responsive NPCs: works alongside. If crowd reactions feel doubled, lower civilian intensity or

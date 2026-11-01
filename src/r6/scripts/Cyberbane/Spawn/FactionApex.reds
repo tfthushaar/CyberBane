@@ -377,8 +377,11 @@ public func CBKitRivalTraits(npc: ref<NPCPuppet>, r: ref<CBRival>) -> Void {
   if !IsDefined(npc) || !IsDefined(r) || CBAiKitOwner() {
     return;
   }
+  // Quick: keeps pace and shoots on the move. Kerenzikov used to be granted here, which drives a
+  // cyberware effect on a record that was never made for one (see CBApplyRoleKit).
   if CBRivalHasTrait(r, n"Quick") {
-    CBGrantAbility(npc, t"Ability.HasKerenzikov");
+    CBGrantAbility(npc, t"Ability.CanCatchUp");
+    CBGrantAbility(npc, t"Ability.CanShootWhileMoving");
   }
   if CBRivalHasTrait(r, n"ChromedOut") {
     CBGrantAbility(npc, t"Ability.HasSubdermalArmorHigh");
