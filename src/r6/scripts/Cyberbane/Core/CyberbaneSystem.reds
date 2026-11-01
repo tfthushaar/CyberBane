@@ -103,6 +103,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_adoptVehicle: TweakDBID;
   private let m_adoptTag: CName;
   private let m_adoptLeft: Int32;
+  private let m_adoptTaken: Int32;       // seats actually filled by this arrival
+  private let m_apexSeat: Int32;         // rotates 0..3 so a squad is always four roles
   private let m_adoptUntilTick: Int32;
   private let m_chaseAwayTicks: Int32;   // consecutive ticks V has been clear of every hunter
   private let m_laneRivalFreed: Int32;
@@ -883,7 +885,32 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_adoptVehicle = vehicle;
     this.m_adoptTag = tag;
     this.m_adoptLeft = count;
+    this.m_adoptTaken = 0;
     this.m_adoptUntilTick = this.m_tickCount + CBConfig.AdoptionWindowTicks();
+  }
+
+  // How many of the seats this arrival opened were actually filled. The question "did the car
+  // ever deliver anybody" has no other honest answer: requesting one only ever meant the
+  // request was accepted.
+  public func GetAdoptTaken() -> Int32 {
+    return this.m_adoptTaken;
+  }
+
+  // The next seat in an apex squad, as a role index that cycles 0..3.
+  //
+  // A squad is meant to arrive as a heavy, a shooter, a blade and a netrunner, which was read
+  // off each spawned record's own archetype. That works when the gang has filed four different
+  // records and produces four identical enemies when it has not, which is the common case: the
+  // role records are only captured from kills of that exact kind. Handing out the roles in turn
+  // guarantees the shape whatever records the gang happens to have.
+  public func NextApexRole() -> Int32 {
+    let seat = this.m_apexSeat;
+    this.m_apexSeat = (this.m_apexSeat + 1) % 4;
+    return seat;
+  }
+
+  public func ResetApexRoles() -> Void {
+    this.m_apexSeat = 0;
   }
 
   public func IsAdoptionOpen() -> Bool {
@@ -912,6 +939,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       return -1;
     }
     this.m_adoptLeft -= 1;
+    this.m_adoptTaken += 1;
     return this.m_adoptLeft;
   }
 

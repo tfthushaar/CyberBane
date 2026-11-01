@@ -425,12 +425,32 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   if sys.TickDownPendingApex() > 0 {
     return;   // still counting down
   }
-  // The clock was a drive, not a warning: this squad has already been sent. Whether they
-  // arrived or the car never made it, there is nothing further to dispatch - putting a second
-  // squad on the road here is how this turns into an endless stream of them.
+  // The clock was a drive, not a warning: this squad has already been sent. Whether the
+  // appointment is finished depends on whether anybody actually got out of the car.
+  //
+  // This used to end here unconditionally, reasoning that a squad had been sent and sending a
+  // second would turn into a stream of them. The reasoning was right and the conclusion was
+  // wrong, because a request is not an arrival. The car can be accepted and deliver nothing:
+  // no road near the player, the spawn refused, the adoption window closing before anything
+  // attached. The squad was then written off in silence, which from the player's side is a
+  // countdown in the Hub that reaches zero and nobody ever turning up. That is exactly the
+  // report, and it got worse in 1.4.1: before that the chase request could not succeed at all,
+  // so the walk-in below always ran and an apex always arrived on foot.
+  //
+  // Two ways to be sure they came. Somebody wearing the tag is standing in the world, or the
+  // adoption counter says seats were filled, which still reads as delivered after the player
+  // has killed them. Neither is true means nobody came, so they walk in instead.
+  let carFailed = false;
   if sys.IsPendingApexDriving() {
-    sys.SetPendingApex(n"", 0);
-    return;
+    sys.SetPendingApex(faction, 0);   // the drive is over whichever way this goes
+    let delivered = CBLiveTaggedPresent(game, n"CB_Apex")
+                 || (Equals(sys.GetAdoptTag(), n"CB_Apex") && sys.GetAdoptTaken() > 0);
+    if delivered {
+      sys.SetPendingApex(n"", 0);
+      return;
+    }
+    carFailed = true;
+    CBLog.Info(n"Spawn", s"Apex squad for \(NameToString(faction)) was sent by car and nobody arrived; walking them in.");
   }
 
   let fs = sys.FindFaction(faction);
@@ -449,8 +469,10 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   // A carload of them, all boss grade - the gang's answer to MaxTac rather than one heavy
   // with a lift. Every seat is tagged CB_Apex, so every one of them gets the full buff, and
   // the strength slider is how a player dials that back if four at once is too much.
-  if CBSpawnVehicleArrival(sys, game, fs.id, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex",
-                           record, n"CB_Apex") {
+  sys.ResetApexRoles();   // this squad starts again at the heavy
+  if !carFailed
+     && CBSpawnVehicleArrival(sys, game, fs.id, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex",
+                              record, n"CB_Apex") {
     sys.MarkArrivalRoleSquad(fs.id);
     sys.ClearSquadAnchor();
     // The warning is spent, but they are not here yet: they are driving. Keep the clock

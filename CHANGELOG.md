@@ -3,6 +3,40 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.5] - 2026-11-01
+
+### Added
+- **Fenix Rebirth integration.** Fenix lets V survive death instead of reloading. Cyberbane has
+  always promoted whoever killed you, but it did that on the next load, which with Fenix never
+  comes, so the one thing a nemesis system is for was quietly missing for anyone running both.
+  Now the moment Fenix confirms a death, the enemy who did it becomes the rival who did it, or
+  the rival who already was gets promoted for doing it again. They carry the mark of the weapon
+  they used, and their gang reads you as somebody they have beaten. It needs no setup and no
+  extra download: with Fenix installed it is on, without it nothing changes. Thanks to the
+  Fenix Rebirth author for the API and for getting in touch.
+- Any mod can do the same through `CyberbaneAPI.ReportPlayerKilledBy`.
+
+### Fixed
+- **Apex squads never arrived.** The Hub counted down and nobody came. Once the squad was put
+  in a car, Cyberbane treated the request as the arrival and closed the appointment when the
+  drive clock ran out, whether or not anybody had got out of the car. If the car could not be
+  delivered, which is most places, the squad was written off in silence. Cyberbane now checks
+  whether they actually turned up and walks them in when they did not. This got worse in 1.4.1,
+  because before then the car request could not succeed at all and the walk-in always ran.
+- **An apex squad is four roles, always.** The heavy, the shooter, the blade and the netrunner
+  were worked out from each spawned enemy's own record, so a gang that had only lost shooters
+  to you sent four shooters. The roles are handed out by seat now, so a squad reads the way a
+  MaxTac drop reads whatever that gang has on file. They are the gang's own people, not
+  reskinned MaxTac, so putting them down still draws nothing from the law.
+- **Bodies stacking into a column.** Everyone arriving in a car was created at the exact centre
+  of the car and moved into their seat a moment later. When that move does not happen, and it
+  does not happen indoors or wherever the car itself landed badly, several people end up
+  occupying one point and the engine resolves it by piling them up. Reported with a photograph
+  of eight Tyger Claws fused together on a balcony. Seats are now spread around the car, and
+  nothing Cyberbane spawns can be placed on top of anybody else.
+- **The Hub at 720p and 768p.** It still ran off the edges below 1080p. It now measures the
+  screen two ways and takes the smaller, so it fits whichever way the game is reporting it.
+
 ## [1.4.4] - 2026-10-31
 
 ### Fixed

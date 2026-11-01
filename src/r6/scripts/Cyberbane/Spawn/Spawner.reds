@@ -42,6 +42,25 @@ func CBGroundAt(game: GameInstance, x: Float, y: Float, zHint: Float, out ground
   return true;
 }
 
+// Has somebody already been put here?
+//
+// Belt and braces against the same failure the car seats produced: several entities created at
+// one point do not share it, they interpenetrate and the engine stacks them vertically. Three
+// sources here can hand back the same place and none of them is wrong to - the fallback list
+// from FindPursuitPointsRange when the strict pass finds nothing, a nav snap in an interior
+// where every requested offset resolves to the same island, and the bearing sweep when only
+// one bearing has floor under it. Checking at the point of use covers all three at once.
+func CBPointIsFree(used: array<Vector4>, p: Vector4) -> Bool {
+  let i = 0;
+  while i < ArraySize(used) {
+    if Vector4.Distance(used[i], p) < CBConfig.SpawnMinSeparation() {
+      return false;
+    }
+    i += 1;
+  }
+  return true;
+}
+
 // Stand a candidate point on the floor under it, or refuse it.
 //
 // A navmesh point is meant to be standing room, and nearly always is. Nearly is not good
@@ -290,6 +309,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let orient = Quaternion.BuildFromDirectionVector(new Vector4(fwd.X, fwd.Y, 0.0, 0.0));
 
   let spawned = 0;
+  let used: array<Vector4>;   // where bodies have already gone, so nobody lands on top of one
   // Assume the worst and clear it on success, so a silent refusal cannot look like a success.
   CBNoteSpawnBlock(CBBlockNoGround());
 
@@ -302,11 +322,13 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let p = navPts[n];
       n += 1;
       let at: Vector4;
-      if CBSettleOnGround(game, p, at) && !CBSafeAreaBlocksSpawn(game, at) {
+      if CBSettleOnGround(game, p, at) && CBPointIsFree(used, at)
+         && !CBSafeAreaBlocksSpawn(game, at) {
         let facing = Quaternion.BuildFromDirectionVector(
           Vector4.Normalize2D(new Vector4(ppos.X - at.X, ppos.Y - at.Y, 0.0, 0.0)));
         if CBCreateSpawn(des, record, appearance, at, facing, squadTag, lastSpawned) {
           spawned += 1;
+          ArrayPush(used, at);
         }
       }
     }
@@ -338,9 +360,10 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let snapped: Vector4;
       let standing: Vector4;
       if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
-         && !CBSafeAreaBlocksSpawn(game, standing) {
+         && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing) {
         if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned) {
           spawned += 1;
+          ArrayPush(used, standing);
         }
         placed = true;
       }
@@ -372,9 +395,11 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         // A floor far above or below V is another level entirely - a roof, the bottom of a
         // shaft - so it is refused and the point moves in rather than dropping someone there.
         if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop() {
-          if CBCreateSpawn(des, record, appearance,
-                           new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0), orient, squadTag, lastSpawned) {
+          let stand = new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0);
+          if CBPointIsFree(used, stand)
+             && CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned) {
             spawned += 1;
+            ArrayPush(used, stand);
           } else {
             CBNoteSpawnBlock(CBBlockEngineRefused());
           }
@@ -572,7 +597,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   if isApex {
     CBApplyApexBuff(sys, game, puppet);
-    CBKitApexMember(puppet);
+    CBKitApexSeat(puppet, sys.NextApexRole());
     CBShowBossBar(puppet);
   }
   // A marker on everyone the mod sends.

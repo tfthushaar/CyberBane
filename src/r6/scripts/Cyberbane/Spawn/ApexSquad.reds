@@ -286,6 +286,42 @@ public func CBGrantAbility(npc: ref<NPCPuppet>, id: TweakDBID) -> Void {
   RPGManager.ApplyGLP(npc, npc, package);
 }
 
+// Which role this seat of a squad fills.
+public func CBApexRoleForSeat(seat: Int32) -> ECBApexRole {
+  let s = seat % 4;
+  if s == 0 { return ECBApexRole.Tank; }
+  if s == 1 { return ECBApexRole.Assault; }
+  if s == 2 { return ECBApexRole.Blade; }
+  return ECBApexRole.Netrunner;
+}
+
+// Kit one member of an apex squad by the seat they came out of.
+//
+// The squad is meant to read the way a MaxTac drop reads: a heavy, a shooter, a blade and a
+// netrunner, legible as four different problems rather than four of the same one. That was
+// read off each record's own archetype, which only works when the gang has filed four
+// different records, and the role records are captured solely from killing enemies of exactly
+// that kind. A gang V has only fought shooters sent four shooters. Taking the role from the
+// seat guarantees the shape whatever the gang has on file.
+//
+// Note what this deliberately does not do: spawn actual MaxTac. Reskinning them would hand
+// back the NCPD's own records, and killing those feeds heat and the prevention system. An apex
+// squad is the gang's own people, so putting them down draws nothing from the law.
+public func CBKitApexSeat(npc: ref<ScriptedPuppet>, seat: Int32) -> Void {
+  let asNpc = npc as NPCPuppet;
+  if !IsDefined(asNpc) || npc.cbKitted {
+    return;
+  }
+  npc.cbKitted = true;
+  if CBAiKitOwner() {
+    return;   // Much Better AI or New Game Plus is already doing this properly
+  }
+  CBApplyRoleKit(asNpc, CBApexRoleForSeat(seat));
+  if CBIsCorpFaction(CBClassifyFaction(npc)) {
+    CBApplyCorpKit(asNpc);
+  }
+}
+
 // Work out a spawned enforcer's role from what it actually is, and kit it out.
 //
 // Reading the puppet rather than remembering which seat it came out of: the puppet knows its

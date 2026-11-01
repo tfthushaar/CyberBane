@@ -293,8 +293,26 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
   let leadTag = sys.GetPendingArrivalLeadTag();
   let at = car.GetWorldPosition();
   let ori = car.GetWorldOrientation();
+  // Spread them around the car instead of stacking them on it.
+  //
+  // Every seat was created at exactly `car.GetWorldPosition()`, on the assumption that the
+  // mount a moment later would move them into the vehicle. When the mount does not happen, and
+  // it does not happen in interiors or wherever the car itself was badly placed, what is left
+  // is several entities occupying one point. The engine resolves that by pushing them apart
+  // vertically, and a player sent a photograph of eight Tyger Claws fused into a column on a
+  // balcony. Mounting teleports them into their seat regardless of where they were standing,
+  // so an offset costs nothing when it works and leaves a crew standing around a car when it
+  // does not.
+  let side = Vector4.Normalize2D(Quaternion.GetRight(ori));
+  let fwdV = Vector4.Normalize2D(Quaternion.GetForward(ori));
   let i = 0;
   while i < seats {
+    let row = Cast<Float>(i / 2) - 0.5;
+    let col = (i % 2) == 0 ? -1.0 : 1.0;
+    let spot = new Vector4(
+      at.X + side.X * col * CBConfig.ArrivalSeatSpread() + fwdV.X * row * CBConfig.ArrivalSeatSpread(),
+      at.Y + side.Y * col * CBConfig.ArrivalSeatSpread() + fwdV.Y * row * CBConfig.ArrivalSeatSpread(),
+      at.Z, 1.0);
     // Seat zero is whoever this arrival is actually about, when it is about somebody.
     let isLead = i == 0 && TDBID.IsValid(leadRecord);
     let seatRecord = isLead ? leadRecord : record;
@@ -306,7 +324,7 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     }
     let spec = new DynamicEntitySpec();
     spec.recordID = seatRecord;
-    spec.position = at;
+    spec.position = spot;
     spec.orientation = ori;
     spec.persistState = false;
     spec.persistSpawn = false;

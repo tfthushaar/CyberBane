@@ -335,6 +335,11 @@ public abstract class CBConfig {
   // floor's. Two metres covers navmesh that rides a little proud of the collision surface and a
   // kerb or a step; anything further means the point is over a drop, not on ground.
   public static func SpawnGroundSettle() -> Float = 2.0
+  // Nobody stands inside anybody else. Enough for two people to be distinct bodies and small
+  // enough that a squad still reads as a squad.
+  public static func SpawnMinSeparation() -> Float = 1.6
+  // How far apart the seats of an arriving car are created before they are mounted.
+  public static func ArrivalSeatSpread() -> Float = 1.4
   // How many abreast a spawned group stands before starting another rank behind it.
   // First ESecurityAreaType ordinal that counts as ordinary open city. Below this the game
   // treats the area as safe or restricted, and Cyberbane sends nobody.
@@ -552,6 +557,9 @@ public abstract class CBConfig {
   // A spared cyberpsycho is a coin flip, and nothing else about them is left to chance: they
   // come back with their own name, their own health and no multiplier on top of it.
   public static func CyberpsychoRivalChance() -> Float = 0.50
+  // How far a gang's opinion of V moves when one of theirs puts V down. Standing is V's
+  // footing with them, so beating V costs V footing: they have seen that it can be done.
+  public static func DeathStandingDrop() -> Float = 6.0
   // Used both when you put a Rival down (someone steps into their place) and when you kill
   // an Officer or Boss, which is rare enough that a high chance reads as "that one mattered"
   // rather than a flood.

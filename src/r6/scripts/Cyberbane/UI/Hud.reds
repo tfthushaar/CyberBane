@@ -86,8 +86,21 @@ public func CBUiFitScale(game: GameInstance) -> Float {
   if win.X <= 0.0 || win.Y <= 0.0 || inv <= 0.0 {
     return 1.0;   // nothing sensible to measure against; leave the layout alone
   }
-  let fit = MinF((win.X * inv) / CBHudDesignW(), (win.Y * inv) / CBHudDesignH());
-  return ClampF(fit, 0.35, 1.0);
+  // Measured two ways, and the smaller one wins.
+  //
+  // `GetInverseUIScale` converts between widget units and screen pixels - the game's own code
+  // reads screen space as `widgetSize * (1.0 / inv)` - but which side of that conversion the
+  // layer we draw on is already in cannot be settled by reading the source, and getting it
+  // backwards is the difference between fitting and overflowing. 1.4.3 applied the conversion
+  // and players at 720p and 768p still reported the Hub running off the edges, so on their
+  // machines the adjusted figure was the wrong one.
+  //
+  // Taking whichever measure is smaller is correct under either convention. The cost of being
+  // wrong is a Hub drawn somewhat smaller than it needed to be, against a Hub whose text runs
+  // off the screen, and only one of those is a bug the player cannot work around.
+  let byPixels = MinF(win.X / CBHudDesignW(), win.Y / CBHudDesignH());
+  let byWidget = MinF((win.X * inv) / CBHudDesignW(), (win.Y * inv) / CBHudDesignH());
+  return ClampF(MinF(byPixels, byWidget), 0.35, 1.0);
 }
 
 // The fit above, times whatever the player asked for in Mod Settings.
