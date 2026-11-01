@@ -52,7 +52,7 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
       sys.UnlockTitle(tid);
       sys.AddRenownPoints(25.0 * renownMult);
       if toasts {
-        CBShowMessage(game, "Cyberbane: Title unlocked - "
+        CBSystemNote(game, "title unlocked - "
           + CBTitleDisplayById(sys, content, tid), 5.0);
       }
     }
@@ -71,7 +71,7 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
   sys.AddLogEntry(entry);
 
   if toasts {
-    CBShowMessage(game, "Cyberbane: Your reputation grows.", 4.0);
+    CBPhoneFromStreet(game, "Your name came up again today. It is getting around.");
   }
   CBEvaluateTitles(sys, game);
 }

@@ -79,7 +79,7 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
 
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(game, s"Cyberbane: \(NameToString(fs.id)) sent \(amount) eddies in tribute.", 4.0);
+    CBPhoneFromGang(game, fs.id, s"\(amount)eb, as agreed. We would rather pay you than fight you.");
   }
   CBLog.Info(n"Model", s"Tribute from \(NameToString(fs.id)): \(amount) eddies.");
 }

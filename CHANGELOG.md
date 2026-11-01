@@ -3,6 +3,114 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.7] - 2026-11-01
+
+Six player reports, and all six were about the same thing from different angles: the mod was
+telling you what was happening instead of letting it happen to you. The enemies could not be
+killed, they appeared out of thin air, and everything the city had to say arrived as white text
+across the middle of the screen.
+
+### Changed
+- **Messages instead of popups.** Everything Cyberbane has to tell you now arrives as a text
+  message on the left of the screen, with the phone's own tone, from whoever is telling you.
+  The gang texts you itself when it is sending people. A broker who works the district gets in
+  touch when your name reaches it, and it is the same handle every time you are in that part of
+  town. Messages stack like a thread instead of replacing each other, so a rival arriving while
+  a crew is on its way no longer means reading half of one sentence. The only things left in the
+  middle of the screen are the handful where Cyberbane is talking about itself: a title
+  unlocked, a rank gained, a setting you just changed.
+- **A MESSAGES screen in the Hub**, holding everything anyone has sent you, newest first, with
+  the time it arrived. A message you miss is no longer gone. The thread starts fresh each
+  session, which is deliberate rather than lazy: keeping it across saves would mean adding a
+  stored field, and adding one of those wipes everybody's Cyberbane progress.
+- **Arriving somewhere your name got to first.** Walk or fast travel into a district where word
+  about you has already spread and the broker who works it says so, naming the district it came
+  out of. Propagation was the mod's signature mechanic and the only evidence of it was a number
+  on a screen.
+- **The Hub says what it is.** The tabs were named after the design document - LEGEND,
+  FACTIONS, THE FILE - and every screen opened straight into capitals and numbers. They are
+  now STANDING, GANGS, THE CITY, RIVALS, TITLES, MESSAGES and HISTORY, each with a line under
+  the header saying what it holds, and the dense rows of shouted key-value pairs are sentences.
+  The key hints along the bottom are in words rather than shorthand.
+- **The map markers are not quest markers any more.** They were being drawn with the pin the
+  game uses for your current objective, which is why they were yellow diamonds, and they were
+  drawn through walls. They now use the gang-activity icon, they do not read through buildings,
+  and they come off the moment the fight starts, because from then on the game shows enemies in
+  combat by itself and ours were sitting on top of the busiest moment on screen. A setting
+  chooses between everyone Cyberbane sends, only the named ones, and none.
+
+### Fixed
+- **Enemies nothing could kill.** Reported by several people, and the arithmetic was worse than
+  the numbers suggested. The stated range was only the first of four terms: a random trait could
+  add another 42% to health or armour, the Overclocked trait added ten power levels - and the
+  game derives health, armour and damage from power level, so that one term multiplied
+  everything again - and a rival who was running a crew took a further 2x on top of all of it.
+  At the top of the scale that came out near eleven times health behind three and a half times
+  armour, several levels above its own gang, and no single number in the file looked wrong.
+  Everything is now folded into one calculation per enemy with a hard ceiling on each stat, and
+  the numbers themselves are down to where an apex enforcer is a cyberpsycho you have to take
+  seriously rather than a wall. A spared cyberpsycho was also still picking up the crew-rank
+  bonus on top of a boss's own health; they get no stat changes at all now, only the kit.
+- **Rivals appearing in the middle of someone else's mission.** Reported from I WALK THE LINE:
+  a rival materialised inside the Animals' nest, the Animals ignored it, and it forced several
+  restarts. The gate meant to prevent this was switched on and did nothing, because the function
+  it asked is not about quest areas at all - reading the game's own source, it only returns true
+  during a cutscene or a locked conversation. Cyberbane now reads the zone the game publishes,
+  by name: nothing arrives while you are inside a restricted or dangerous area, which is what a
+  gang nest, a corpo floor and a quest-marked compound all report. The same change is why
+  arrivals no longer walk in on a stealth job; the old test only noticed once guards were
+  already hunting you.
+- **Enemies appearing out of nowhere, "like the old school police spawns".** Spawn points come
+  from the game's own pursuit search, which hands back places a person can stand all round the
+  player, including directly in front. The check that kept arrivals out of view existed and was
+  only ever applied to the point a group forms up on, not to the points bodies are actually
+  placed at. Every placement is now tested: outside your field of view, or far enough away to be
+  somebody walking into frame, or with something solid between you and it.
+- **Panam showing up as a rival with a sniper rifle, and unkillable.** Rivals are built from
+  records of enemies you have actually fought, and the filter that keeps the story's own
+  characters out tested for boss tags, boss rarity and a few words in the record name. Panam has
+  none of those. It now reads the record's own quest affiliation, which is the game's own
+  statement about whether it wrote and placed this person, and refuses anyone belonging to a main
+  quest, side quest, minor quest or street story. It also refuses anyone authored to have a boss
+  health bar. The sweep that runs once a session clears anyone already on your roster, so a
+  Panam on an existing save goes away without starting over.
+- **Vehicle arrivals never worked.** A gang crew or an apex squad was dispatched by car every
+  time and no car was ever seen. Cyberbane handed the city's chase system a bare strategy
+  request, with the spawn distance range left at zero to zero metres - vanilla never builds one
+  that way, it always fills in the range off the prevention heat table. So the request was
+  accepted and there was nowhere to put a car. It now uses the game's own figures, checks which
+  strategies are actually available where you are standing before asking (as vanilla does), and
+  treats a refused request as a refusal instead of as a dispatch. It also checks there is a road
+  near enough to drive in from before asking at all, rather than burning the whole drive clock
+  finding out.
+- **An apex squad is four, even when the car seats two.** The city's chase sizes its crew from
+  the vehicle's own passenger count rather than from what was asked for, so a gang whose car
+  seats two delivered a two-strong apex squad. Whoever did not fit now walks in behind them.
+- **The boss bars named the wrong roles.** Each member's kit has come from their seat since
+  1.4.5 - heavy, shooter, blade, netrunner, always - but the bar was still reading the role off
+  each enemy's own record, and those are only collected from killing an enemy of exactly that
+  kind. A gang you have only fought shooters from put four bars reading SHOOTER above four
+  enemies fighting four different ways. The bar now shows the role they were actually given.
+- **Gang crews spawned into another gang's territory were invisible to it.** An NPC created the
+  way Cyberbane creates them gets no attitude group unless something assigns one, and an agent
+  with no group has no relationship with anybody, so the gang whose turf it was had nothing to
+  look up and ignored a firefight in its own front room. They are now given the group the game
+  itself would have given them.
+
+### Removed
+- The ESecurityAreaType zone cache and the handler that filled it. It was tracking the right
+  thing through a door redscript cannot see properly: the enum's members are not exposed by
+  name, so the test compared raw numbers and the guess about which ones meant "protected" was
+  wrong. That blocked every spawn in the city for three releases in 1.1.5, and the patch for it -
+  only apply the test indoors - is precisely what let a rival into a compound courtyard during a
+  quest. The zone is now read from the player state machine as a named value, so there is
+  nothing left to guess and nothing left to cache.
+
+### Note on your settings
+The map marker option changed from a switch to a three-way choice, so Mod Settings may reset
+that one option to its default (everyone Cyberbane sends). Nothing else is affected, and no
+saved progress is touched by this release.
+
 ## [1.4.6] - 2026-11-01
 
 ### Fixed

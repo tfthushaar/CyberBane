@@ -75,11 +75,13 @@ public func CBApexLerp(full: Float, frac: Float) -> Float {
 // you know the encounter. The same idea applied to a single boss means two apexes from the
 // same gang do not fight the same way: one is wearing plate, the next one hits like a truck.
 //
-// Stat modifiers rather than the game's ability groups: an ability group is referenced by a
-// TweakDB id, and a mistyped id fails silently at runtime where a stat type is checked by the
-// compiler. These are the five stats verified present on this patch.
-public func CBApplyApexTraits(game: GameInstance, stats: ref<StatsSystem>, id: StatsObjectID,
-                              scale: Float, strength: Float) -> Void {
+// This used to add its own stat modifiers, and that is the mistake the whole rebalance is
+// about. A trait landing on Health put a second multiplier on top of the grade buff's, and
+// nothing anywhere knew the product of the two. It rolls the numbers and hands them back now,
+// so the one place that applies anything can see everything and clamp it.
+func CBRollApexTraits(scale: Float, strength: Float,
+                      out health: Float, out armour: Float, out damage: Float,
+                      out critChance: Float, out critDamage: Float, out power: Float) -> Void {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().apexTraits {
     return;
@@ -93,51 +95,32 @@ public func CBApplyApexTraits(game: GameInstance, stats: ref<StatsSystem>, id: S
   if second == first {
     second = (first + 1) % 5;
   }
-  CBApexTrait(stats, id, first, scale, strength);
-  CBApexTrait(stats, id, second, scale, strength);
+  CBRollOneApexTrait(first, scale, strength, health, armour, damage, critChance, critDamage, power);
+  CBRollOneApexTrait(second, scale, strength, health, armour, damage, critChance, critDamage, power);
 }
 
-func CBApexTrait(stats: ref<StatsSystem>, id: StatsObjectID, which: Int32,
-                 scale: Float, strength: Float) -> Void {
+func CBRollOneApexTrait(which: Int32, scale: Float, strength: Float,
+                        out health: Float, out armour: Float, out damage: Float,
+                        out critChance: Float, out critDamage: Float, out power: Float) -> Void {
   let amount = CBConfig.ApexTraitStrength() * (0.5 + scale * 0.5) * strength;
   if which == 0 {
-    // Plated: more of what was already stopping bullets.
-    let m = RPGManager.CreateStatModifier(gamedataStatType.Armor, gameStatModifierType.Multiplier, 1.0 + amount);
-    if IsDefined(m) {
-      stats.AddModifier(id, m);
-    }
+    armour += amount;              // Plated: more of what was already stopping bullets.
   } else {
     if which == 1 {
-      // Brutal: hits noticeably harder than its own gang's elite.
-      let m = RPGManager.CreateStatModifier(gamedataStatType.PhysicalDamage, gameStatModifierType.Multiplier, 1.0 + amount);
-      if IsDefined(m) {
-        stats.AddModifier(id, m);
-      }
+      damage += amount;            // Brutal: hits harder than its own gang's elite.
     } else {
       if which == 2 {
-        // Deadeye: will find the gap in your armour.
-        let c = RPGManager.CreateStatModifier(gamedataStatType.CritChance, gameStatModifierType.Additive, 20.0 * amount);
-        if IsDefined(c) {
-          stats.AddModifier(id, c);
-        }
-        let d = RPGManager.CreateStatModifier(gamedataStatType.CritDamage, gameStatModifierType.Additive, 40.0 * amount);
-        if IsDefined(d) {
-          stats.AddModifier(id, d);
-        }
+        critChance += 20.0 * amount;   // Deadeye: will find the gap in your armour.
+        critDamage += 40.0 * amount;
       } else {
         if which == 3 {
-          // Juggernaut: simply does not go down.
-          let m = RPGManager.CreateStatModifier(gamedataStatType.Health, gameStatModifierType.Multiplier, 1.0 + amount);
-          if IsDefined(m) {
-            stats.AddModifier(id, m);
-          }
+          health += amount;        // Juggernaut: takes some putting down.
         } else {
-          // Overclocked: fights above its level, which lifts everything the game derives from it.
-          let m = RPGManager.CreateStatModifier(gamedataStatType.PowerLevel, gameStatModifierType.Additive,
-            CBConfig.ApexPowerLevelBonus() * strength);
-          if IsDefined(m) {
-            stats.AddModifier(id, m);
-          }
+          // Overclocked: fights above its level. Clamped hard by the caller, because the game
+          // derives health, armour and damage from power level, so this one term quietly
+          // multiplies the other three. Ten of them was the largest single contributor to the
+          // enemy nobody could kill.
+          power += CBConfig.ApexPowerLevelBonus() * strength;
         }
       }
     }
@@ -167,10 +150,28 @@ public func CBMenaceScale(sys: ref<CyberbaneSystem>) -> Float {
 // Build one enemy to apex grade, or to a fraction of it.
 //
 // `grade` is how much of a full apex this one should be: 1.0 for a member of an apex squad,
-// less for a Rival working their way up. Split out of CBApplyApexBuff so a Rival and an apex
-// are built by the same arithmetic rather than by two sets of numbers that drift apart.
+// less for a Rival working their way up.
 public func CBApplyApexGradeBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
                                  puppet: ref<ScriptedPuppet>, grade: Float) -> Void {
+  CBApplyApexBuild(sys, game, puppet, grade, 1.0);
+}
+
+// The one place anything is ever done to a spawned enemy's stats.
+//
+// Everything that used to be applied separately - the grade multipliers, the random traits,
+// the bonus a Rival running a crew gets - is combined here into one multiplier per stat and
+// clamped against the ceilings in Config before a single modifier is created.
+//
+// That is the fix for the enemies players could not kill, and it is structural rather than a
+// tuning pass. Three functions each added a term and none of them could see the others, so
+// nothing in the codebase knew what it was building: at the top of the scale a Rival leading a
+// crew came out near eleven times health behind three and a half times armour, several power
+// levels above the gang it came from, and every individual number that produced it looked
+// reasonable in isolation.
+//
+// `roleHealthMult` is the crew-rank bonus, 1.0 for anybody who is not running one.
+public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
+                             puppet: ref<ScriptedPuppet>, grade: Float, roleHealthMult: Float) -> Void {
   if !IsDefined(puppet) {
     return;
   }
@@ -187,40 +188,68 @@ public func CBApplyApexGradeBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
   let scale = CBMenaceScale(sys);
   // How hard the player asked for this to be, as a fraction of a boss-grade build.
   let strength = CBApexStrengthFraction() * ClampF(grade, 0.0, 1.0);
-  let hpMult = CBApexLerp(CBConfig.ApexHealthMultBase() + scale * CBConfig.ApexHealthMultRange(), strength);
-  let armourMult = CBApexLerp(CBConfig.ApexArmorMultBase() + scale * CBConfig.ApexArmorMultRange(), strength);
+
+  let tHealth = 0.0;
+  let tArmour = 0.0;
+  let tDamage = 0.0;
+  let tCritChance = 0.0;
+  let tCritDamage = 0.0;
+  let tPower = 0.0;
+  CBRollApexTraits(scale, strength, tHealth, tArmour, tDamage, tCritChance, tCritDamage, tPower);
+
+  let hpMult = CBApexLerp(CBConfig.ApexHealthMultBase() + scale * CBConfig.ApexHealthMultRange(), strength)
+               * (1.0 + tHealth) * MaxF(roleHealthMult, 1.0);
+  let armourMult = CBApexLerp(CBConfig.ApexArmorMultBase() + scale * CBConfig.ApexArmorMultRange(), strength)
+                   * (1.0 + tArmour);
+  let dmgMult = CBApexLerp(CBConfig.ApexDamageMultBase() + scale * CBConfig.ApexDamageMultRange(), strength)
+                * (1.0 + tDamage);
+  let critChance = CBConfig.ApexCritChanceBonus() * scale * strength + tCritChance;
+  let critDamage = CBConfig.ApexCritDamageBonus() * scale * strength + tCritDamage;
+
+  // The ceilings. Nothing above may take a stat past these, whatever it all adds up to.
+  hpMult = ClampF(hpMult, 1.0, CBConfig.ApexHealthMultCeiling());
+  armourMult = ClampF(armourMult, 1.0, CBConfig.ApexArmorMultCeiling());
+  dmgMult = ClampF(dmgMult, 1.0, CBConfig.ApexDamageMultCeiling());
+  critChance = ClampF(critChance, 0.0, CBConfig.ApexCritChanceCeiling());
+  critDamage = ClampF(critDamage, 0.0, CBConfig.ApexCritDamageCeiling());
+  let power = ClampF(tPower, 0.0, CBConfig.ApexPowerLevelCeiling());
 
   let id = Cast<StatsObjectID>(puppet.GetEntityID());
-  let hp = RPGManager.CreateStatModifier(gamedataStatType.Health, gameStatModifierType.Multiplier, hpMult);
-  if IsDefined(hp) {
-    stats.AddModifier(id, hp);
-  }
-  let armour = RPGManager.CreateStatModifier(gamedataStatType.Armor, gameStatModifierType.Multiplier, armourMult);
-  if IsDefined(armour) {
-    stats.AddModifier(id, armour);
-  }
+  CBAddMult(stats, id, gamedataStatType.Health, hpMult);
+  CBAddMult(stats, id, gamedataStatType.Armor, armourMult);
   // Hitting back. A boss that only soaks damage is a chore; one that can actually kill you is
   // the event this is supposed to be.
-  let dmgMult = CBApexLerp(CBConfig.ApexDamageMultBase() + scale * CBConfig.ApexDamageMultRange(), strength);
-  let dmg = RPGManager.CreateStatModifier(gamedataStatType.PhysicalDamage, gameStatModifierType.Multiplier, dmgMult);
-  if IsDefined(dmg) {
-    stats.AddModifier(id, dmg);
-  }
-  let critC = RPGManager.CreateStatModifier(gamedataStatType.CritChance, gameStatModifierType.Additive,
-    CBConfig.ApexCritChanceBonus() * scale * strength);
-  if IsDefined(critC) {
-    stats.AddModifier(id, critC);
-  }
-  let critD = RPGManager.CreateStatModifier(gamedataStatType.CritDamage, gameStatModifierType.Additive,
-    CBConfig.ApexCritDamageBonus() * scale * strength);
-  if IsDefined(critD) {
-    stats.AddModifier(id, critD);
-  }
-  // And one or two things that are this particular enforcer's own.
-  CBApplyApexTraits(game, stats, id, scale, strength);
+  CBAddMult(stats, id, gamedataStatType.PhysicalDamage, dmgMult);
+  CBAddFlat(stats, id, gamedataStatType.CritChance, critChance);
+  CBAddFlat(stats, id, gamedataStatType.CritDamage, critDamage);
+  CBAddFlat(stats, id, gamedataStatType.PowerLevel, power);
+  // Logged because the numbers are the thing that keeps being wrong, and a player who reports
+  // an unkillable enemy can now send a line that says exactly what was built.
+  CBLog.Info(n"Spawn", s"Built at grade \(grade): health x\(hpMult), armour x\(armourMult), damage x\(dmgMult), +\(power) power.");
   let pools = GameInstance.GetStatPoolsSystem(game);
   if IsDefined(pools) {
     pools.RequestSettingStatPoolValue(id, gamedataStatPoolType.Health, 100.0, null);
+  }
+}
+
+// A multiplier, skipped entirely when it would change nothing.
+func CBAddMult(stats: ref<StatsSystem>, id: StatsObjectID, stat: gamedataStatType, mult: Float) -> Void {
+  if mult <= 1.0001 {
+    return;
+  }
+  let m = RPGManager.CreateStatModifier(stat, gameStatModifierType.Multiplier, mult);
+  if IsDefined(m) {
+    stats.AddModifier(id, m);
+  }
+}
+
+func CBAddFlat(stats: ref<StatsSystem>, id: StatsObjectID, stat: gamedataStatType, amount: Float) -> Void {
+  if amount <= 0.0001 {
+    return;
+  }
+  let m = RPGManager.CreateStatModifier(stat, gameStatModifierType.Additive, amount);
+  if IsDefined(m) {
+    stats.AddModifier(id, m);
   }
 }
 
@@ -250,22 +279,37 @@ public func CBRivalGrade(r: ref<CBRival>) -> Float {
 }
 
 // Build a Rival to their place on the ladder.
+//
+// `role` is CBRoleLeader, CBRoleLieutenant or CBRoleNone. It used to be a second buff applied
+// from its own function straight after this one, which is how a leader nemesis ended up with
+// twice the health of a build that was already at the ceiling. It is one term of one
+// calculation now.
 public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
-                                 puppet: ref<ScriptedPuppet>, r: ref<CBRival>) -> Void {
+                                 puppet: ref<ScriptedPuppet>, r: ref<CBRival>, role: Int32) -> Void {
   if !IsDefined(r) {
     return;
   }
-  // A cyberpsycho gets none of this. They already carry a boss's own health and armour, and
-  // multiplying that was the whole of why the first one to come back could not be killed. What
-  // they get instead is the kit: see CBKitCyberpsycho. Marking them as buffed stops the attach
-  // path from applying it a moment later from the other direction.
+  // A cyberpsycho gets none of this, the crew-rank bonus included. They already carry a boss's
+  // own health and armour, and multiplying that was the whole of why the first one to come back
+  // could not be killed. The crew-rank bonus was still reaching them, because it was applied
+  // from somewhere this check could not cover. What they get instead is the kit: see
+  // CBKitCyberpsycho. Marking them as buffed stops the attach path from applying it a moment
+  // later from the other direction.
   if CBRecordIsSightingCyberpsycho(r.recordID) {
     if IsDefined(puppet) {
       puppet.cbBuffed = true;
     }
     return;
   }
-  CBApplyApexGradeBuff(sys, game, puppet, CBRivalGrade(r));
+  let roleMult = 1.0;
+  if role == CBRoleLeader() {
+    roleMult = CBConfig.LeaderHealthMult();
+  } else {
+    if role == CBRoleLieutenant() {
+      roleMult = CBConfig.LieutenantHealthMult();
+    }
+  }
+  CBApplyApexBuild(sys, game, puppet, CBRivalGrade(r), roleMult);
 }
 
 // The sound of something you do not want arriving.
@@ -325,6 +369,51 @@ public func CBApexArrivalSound(game: GameInstance) -> Void {
   // it came from, and that is what this wants - the squad is seventy metres out and not in
   // sight yet when the horn goes.
   GameObject.PlaySound(player, n"av_maxtac_descent_horn");
+}
+
+// Top a part-delivered apex squad up to its full strength on foot.
+//
+// Counts what is actually standing in the world rather than what was asked for, which is the
+// rule this file has had to learn twice: a request is not an arrival, and neither is a seat.
+public func CBFillApexSquad(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let want = CBConfig.ApexStrikeTeamSize();
+  let have = CBCountLiveTagged(game, n"CB_Apex");
+  if have >= want {
+    return;
+  }
+  let fs = sys.FindFaction(faction);
+  if !IsDefined(fs) {
+    return;
+  }
+  let record = TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
+  if !TDBID.IsValid(record) {
+    return;
+  }
+  // Carry on round the role cycle rather than resetting it: the seats the car filled took the
+  // first few chairs, so the ones walking in are the chairs that are still empty.
+  // Carry on round the role cycle rather than resetting it: the seats the car filled took the
+  // first few chairs, so the ones walking in take the chairs still empty. Advancing the index
+  // per body matters - PeekApexRole on its own would have handed the same record to all of
+  // them, and the kit each one gets comes from NextApexRole at attach, which does advance, so
+  // the record and the kit would have disagreed for every body after the first.
+  let missing = want - have;
+  let added = 0;
+  let i = 0;
+  while i < missing {
+    let one: EntityID;
+    let seat = (sys.PeekApexRole() + i) % CBConfig.ApexStrikeTeamSize();
+    if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
+                    CBConfig.ApexSpawnDistance(), one) > 0 {
+      added += 1;
+    }
+    i += 1;
+  }
+  if added > 0 {
+    CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(faction)) arrived \(have) strong by car; \(added) more walked in.");
+  }
 }
 
 // Slow tick: has any gang lost enough people to send its apex after V?
@@ -395,7 +484,7 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
 
         let name = CBApexName(CBContent(game), fs.id, fs.kills);
         if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-          CBShowMessage(game, s"Cyberbane: \(name) is bringing an apex squad of the \(NameToString(fs.id)) after you. Watch yourself.", 5.0);
+          CBPhoneFromGang(game, fs.id, s"\(name) is coming for you, and not alone. Four of ours. Make your peace.");
         }
         CBLog.Info(n"Spawn", s"Faction apex inbound for \(NameToString(fs.id)).");
         return;   // only ever one gang at a time
@@ -446,6 +535,11 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     let delivered = CBLiveTaggedPresent(game, n"CB_Apex")
                  || (Equals(sys.GetAdoptTag(), n"CB_Apex") && sys.GetAdoptTaken() > 0);
     if delivered {
+      // Arrived, but possibly not all of them. The city's chase sizes its crew from the
+      // vehicle record's own passenger counts, not from what we asked for, so a gang whose car
+      // seats two delivers two - and a two-strong apex squad is not the set piece the Hub, the
+      // bars and the readme all describe. Whoever did not fit walks in behind them.
+      CBFillApexSquad(sys, game, faction);
       sys.SetPendingApex(n"", 0);
       return;
     }
@@ -497,6 +591,10 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   // gang has not filed yet falls back to the elite record, so a squad is always four.
   let apexEntity: EntityID;
   let arrived = 0;
+  // The roles start again at the heavy. Reset at the top of this function too, but the car
+  // path may have run since and taken some of them, so a walk-in that follows a failed car
+  // would otherwise start partway round the cycle and send two netrunners.
+  sys.ResetApexRoles();
   let seat = 0;
   while seat < CBConfig.ApexStrikeTeamSize() {
     let one: EntityID;

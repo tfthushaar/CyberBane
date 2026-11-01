@@ -72,15 +72,93 @@ public func CBRequestVanillaChase(sys: ref<CyberbaneSystem>, game: GameInstance,
     ArrayPush(crew, seat);
     i += 1;
   }
+  // Is there anywhere for a car to come from at all?
+  //
+  // This is the guard vanilla opens with and Cyberbane did not have. `SpawnPoliceVehicle`
+  // bails before it asks for anything if `IsAnyStrategyAvailable()` is false
+  // (`core/systems/preventionSystem.script:3081`), and it picks its strategy by asking which
+  // ones are available rather than naming one. Availability is about the road network around
+  // the player: on a pedestrian street, a rooftop, inside a parking structure, nothing is.
+  if !prevention.IsAnyStrategyAvailable() {
+    CBLog.Info(n"Spawn", "No chase strategy is available here; falling back to our own convoy.");
+    return false;
+  }
+  let request = CBChaseStrategyRequest(game, prevention);
+  if !IsDefined(request) {
+    CBLog.Info(n"Spawn", "No usable chase strategy here; falling back to our own convoy.");
+    return false;
+  }
   // Roles are carried in the crew list above, so the flag the hand-rolled convoy uses to pick
   // them per seat has no job here. Clearing it keeps it from being left set and quietly
   // changing how a later fallback convoy fills itself.
   sys.ClearPendingArrival();
   // Open the adoption window before asking, because the spawn can attach immediately.
   sys.OpenAdoption(factionId, crewRecord, vehicle, squadTag, seated);
-  prevention.RequestChaseVehicle(vehicle, crew, new GetToPlayerFromAnywhereStrategyRequest());
-  CBLog.Info(n"Spawn", s"Asked the city to send a car from \(NameToString(factionId)) with \(seated) aboard.");
+  let ticket = prevention.RequestChaseVehicle(vehicle, crew, request);
+  // Zero is the ticket the system hands back when it did not take the request: vanilla
+  // initialises `ticketID` to 0 and returns it unchanged on every early exit, then only
+  // registers the ticket with its agent registry when the call produced one. Treating a
+  // refusal as an acceptance is how a car could be "sent" and never exist.
+  if ticket == 0u {
+    sys.CloseAdoption();
+    CBLog.Info(n"Spawn", "The city refused the chase request; falling back to our own convoy.");
+    return false;
+  }
+  CBLog.Info(n"Spawn", s"Asked the city to send a car from \(NameToString(factionId)) with \(seated) aboard (ticket \(ticket)).");
   return true;
+}
+
+// Build the strategy request, with the game's own numbers in it.
+//
+// This is the bug that kept vehicle arrivals from ever being seen, and it is a one-line bug
+// hiding behind a working-looking call. Cyberbane passed `new GetToPlayerFromAnywhereStrategyRequest()`:
+// a bare instance, with `distanceRange` left at (0, 0) and `minDirectDistance` at 0. Vanilla
+// never constructs one that way. `PreventionSystem.CreateStrategyRequest`
+// (`core/systems/preventionSystem.script:3031`) always goes through the static `Create`, and
+// always feeds it the range off the heat table:
+//
+//     GetToPlayerFromAnywhereStrategyRequest.Create(
+//         m_preventionDataTable.Strategy5().VehicleSpawnDistanceRange(),
+//         m_preventionDataTable.Strategy5().MinDirectDistance() )
+//
+// A request asking for a road point between zero and zero metres from the player has nothing
+// to satisfy it, so the system accepted the request and found nowhere to put a car - which is
+// exactly the symptom: dispatched every time, never once arriving. The heat table is reachable
+// through `PreventionSystem.GetPreventionHeatTableRecord`, so these are the game's figures and
+// not a guess at what they ought to be.
+//
+// Strategy choice follows vanilla too: ask which ones are available and take one, rather than
+// naming the hardest one and hoping. GetToPlayerFromAnywhere is preferred because it is the
+// one that means "wherever this car is, bring it to the player", and it is what an arrival
+// wants; DriveTowardsPlayer and InterceptAtNextIntersection are the fallbacks, and both still
+// end up with a car converging on V.
+func CBChaseStrategyRequest(game: GameInstance, prevention: ref<PreventionSpawnSystem>) -> ref<BaseStrategyRequest> {
+  let table = PreventionSystem.GetPreventionHeatTableRecord(game);
+  if !IsDefined(table) {
+    return null;
+  }
+  if prevention.IsStrategyAvailable(vehiclePoliceStrategy.GetToPlayerFromAnywhere) {
+    let s5 = table.Strategy5();
+    if IsDefined(s5) {
+      return GetToPlayerFromAnywhereStrategyRequest.Create(s5.VehicleSpawnDistanceRange(),
+                                                           s5.MinDirectDistance());
+    }
+  }
+  if prevention.IsStrategyAvailable(vehiclePoliceStrategy.DriveTowardsPlayer) {
+    let s1 = table.Strategy1();
+    if IsDefined(s1) {
+      return DriveTowardsPlayerStrategyRequest.Create(s1.VehicleSpawnDistanceRange(),
+                                                      s1.MinDirectDistance());
+    }
+  }
+  if prevention.IsStrategyAvailable(vehiclePoliceStrategy.InterceptAtNextIntersection) {
+    let s4 = table.Strategy4();
+    if IsDefined(s4) {
+      return InterceptAtNextIntersectionStrategyRequest.Create(s4.VehicleSpawnDistanceRange(),
+                                                               s4.MinDirectDistance());
+    }
+  }
+  return null;
 }
 
 // Does this freshly attached entity look like something we just asked for?

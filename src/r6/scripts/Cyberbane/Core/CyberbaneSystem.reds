@@ -51,6 +51,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_encounter: ref<CBEncounter>;  // active combat episode
   private let m_hud: ref<CBHud>;              // the F7 reputation Hub (spec §12.1)
   private let m_threatBar: ref<CBThreatBar>;
+  // The messenger. Session-only by design; see the note at the top of UI/PhoneMessages.reds
+  // about why a persisted thread is not worth wiping everybody's reputation for.
+  private let m_phone: ref<CBPhone>;
   // One-shot clock measurement, session only. Every cooldown in the mod is in units of
   // TimeSystem.GetGameTimeStamp(), which is a native import, so no amount of reading the game's
   // scripts says whether it ticks in real seconds or in the compressed in-game clock. If it is
@@ -338,9 +341,14 @@ public class CyberbaneSystem extends ScriptableSystem {
           if IsDefined(who) {
             // Built to apex grade, scaled by how far up the ladder they have climbed: every
             // escape and every mercy makes the one who comes back harder than the one who
-            // left. The chair-of-the-crew buff goes on top of that.
-            CBApplyRivalApexBuff(this, this.GetGameInstance(), puppet, who);
-            CBApplyRivalRoleBuff(this, this.GetGameInstance(), puppet, CBRivalRole(this, who));
+            // left, and the chair-of-the-crew bonus is one term inside the same build.
+            //
+            // Yes, CBApplySpawnSetup does this too. Deliberately: that path is delayed until
+            // the puppet's AI components exist and may never run for somebody shot on the way
+            // in, while stats exist from attach. CBApplyApexBuild's cbBuffed guard means
+            // whichever gets there first wins and the second does nothing, which is the point
+            // of having the guard inside the builder rather than at the call sites.
+            CBApplyRivalApexBuff(this, this.GetGameInstance(), puppet, who, CBRivalRole(this, who));
             // Every Rival gets the bar, because every Rival is built to apex grade.
             if CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() {
               CBShowBossBar(puppet);
@@ -523,7 +531,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       // make sense, and there was no way to clear them without starting a new save.
       if this.m_hud.GetTab() == CBHudRivalsTab() {
         let removed = CBPurgeRivals(this, game);
-        CBShowMessage(game, s"Cyberbane: cleared \(removed) rivals.", 4.0);
+        CBSystemNote(game, s"cleared \(removed) rivals.", 4.0);
       } else {
         CBBrokerPeaceBest(this, game);
       }
@@ -543,10 +551,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       if CBToastsOn() {
         let picked = this.GetActiveTitle();
         if Equals(picked, n"") {
-          CBShowMessage(game, "Cyberbane: title set to automatic, the best one you have earned.", 4.0);
+          CBSystemNote(game, "title set to automatic, the best one you have earned.", 4.0);
         } else {
           let named = CBTitleDisplayById(this, this.GetContent(), picked);
-          CBShowMessage(game, "Cyberbane: you are going by " + named + " now.", 4.0);
+          CBSystemNote(game, "you are going by " + named + " now.", 4.0);
         }
       }
       return;
@@ -703,7 +711,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     let rtReset = CyberbaneRuntime.Get();
     if IsDefined(rtReset) && rtReset.TakeHardResetRequest() {
       this.HardReset();
-      CBShowMessage(game, "Cyberbane: reputation wiped. Night City has never heard of you.", 6.0);
+      CBSystemNote(game, "reputation wiped. Night City has never heard of you.", 6.0);
+      this.GetPhone().Clear();
     }
 
     this.m_tickCount += 1;
@@ -719,7 +728,16 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
       CBUpdateMenace(this, game);
-      this.m_currentDistrict = CBCurrentDistrict(game);
+      // Changing district is a thing that happens to the player - walking across a boundary,
+      // stepping off a fast travel - so it is worth one message from whoever works the new
+      // part of town if V's name got there first. Compared before the write, since the write
+      // is what makes it the current one.
+      let arrivedIn = CBCurrentDistrict(game);
+      let movedOn = NotEquals(arrivedIn, n"") && NotEquals(arrivedIn, this.m_currentDistrict);
+      this.m_currentDistrict = arrivedIn;
+      if movedOn {
+        CBGrapevineOnArrival(this, game, arrivedIn, CBGameSeconds(game));
+      }
     }
     CBEncounterTick(this, game);
     CBSparedSweep(this, game);          // mercy the hit hook did not see (spec §10.2)
@@ -733,6 +751,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     if CBThreatBarOn() {
       this.GetThreatBar().Update(this, game);
     }
+    // Our map pins come down when the fight starts; the game's own enemy display takes over.
+    CBMarkerCombatTick(this, game);
+    // The messages. Cheap and self-limiting: it returns on the first line when there is
+    // nothing on screen, which is almost always.
+    this.GetPhone().Update(this, game);
     this.RefreshStealthHold(game);      // before anything that might send someone in
     CBEncounterQueueTick(this, game);   // three lanes, three clocks: who is next
     if this.m_tickCount % CBConfig.ChaseRefreshEveryTicks() == 0 {
@@ -795,6 +818,18 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetTickCount() -> Int32 {
     return this.m_tickCount;
+  }
+
+  // Is the Hub panel up? Asked by the messenger, which shares the HUD layer with it.
+  public func IsHubOpen() -> Bool {
+    return IsDefined(this.m_hud) && this.m_hud.IsOpen();
+  }
+
+  public func GetPhone() -> ref<CBPhone> {
+    if !IsDefined(this.m_phone) {
+      this.m_phone = new CBPhone();
+    }
+    return this.m_phone;
   }
 
   public func GetThreatBar() -> ref<CBThreatBar> {
@@ -889,6 +924,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_adoptUntilTick = this.m_tickCount + CBConfig.AdoptionWindowTicks();
   }
 
+  // Shut it again. Needed because the window has to be opened before the request is made -
+  // the spawn can attach in the same frame - so a refused request leaves a window standing
+  // that would adopt the next unrelated ganger of that kind to stream in.
+  public func CloseAdoption() -> Void {
+    this.m_adoptLeft = 0;
+    this.m_adoptUntilTick = 0;
+  }
+
   // How many of the seats this arrival opened were actually filled. The question "did the car
   // ever deliver anybody" has no other honest answer: requesting one only ever meant the
   // request was accepted.
@@ -907,6 +950,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     let seat = this.m_apexSeat;
     this.m_apexSeat = (this.m_apexSeat + 1) % 4;
     return seat;
+  }
+
+  // Which chair is next, without taking it. For a top-up that has to fill the chairs the car
+  // did not, where the spawn may be refused and the role must not be spent on a body that
+  // never existed.
+  public func PeekApexRole() -> Int32 {
+    return this.m_apexSeat;
   }
 
   public func ResetApexRoles() -> Void {

@@ -49,9 +49,17 @@ page describes what the mod does and how it installs.
   bodies still turn up, so the district gets frightened of something it cannot identify.
   Anonymity costs you fame, which is the trade. Glasses and visors do not count; they only hide
   the chrome in your eyes.
-- **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews all carry a
-  marker on the map, on the minimap and above their head, so you can pick the one that matters
-  out of a street full of gangers. There is a setting for turning it off.
+- **The city texts you.** Everything Cyberbane has to say arrives as a message on your phone,
+  from whoever is saying it. A gang that has decided to come for you tells you so itself. A
+  broker who works the district gets in touch when your name reaches it, and it is the same
+  person every time you are in that part of town. Walk into a district where word about you got
+  there first and they will mention it. The Hub keeps the thread, so nothing is lost if you are
+  busy when it arrives.
+- **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews carry a
+  marker on the map and minimap, so you can pick the one that matters out of a street full of
+  gangers. It is the game's gang-activity marker rather than a quest pin, it does not read
+  through walls, and it comes off once the fight starts, because from then on the game shows
+  enemies in combat by itself. You can narrow it to the named ones or turn it off.
 - **Die, and whoever killed you gets the credit.** The enemy who put you down becomes a named
   rival, or climbs a rank if they already were one, and their gang starts reading you as
   somebody who can be beaten. It lands the moment you go down, so it works with a death
@@ -153,13 +161,13 @@ page describes what the mod does and how it installs.
   Your scores are meters, gangs and rivals are colour-coded rows, and the first screen shows
   what each of the three lanes has on its way, with a live countdown to when it will reach you.
   If something cannot arrive, it says why rather than showing a number that is not moving. Each
-  press steps through tabs for your reputation, the factions, the districts, your rivals, your
-  titles, and the log; the press after the last tab closes it. Gangs show how long they have
-  been quiet or how long a vendetta has been running, districts show how long since you were
-  last busy there, and the log keeps a running tally of what the city has on you. Every screen
-  explains what its numbers mean rather than throwing abbreviations at you, and the first one
-  tells you exactly what the city is doing about you right now and what it would take to
-  change that.
+  press steps through the screens - Standing, Gangs, The City, Rivals, Titles, Messages and
+  History - and the press after the last one closes it. Every screen has a line under the
+  header saying what it holds. Gangs show how long they have been quiet or how long a vendetta
+  has been running, The City shows how long since you were last busy in each district, Messages
+  keeps everything anyone has sent you this session, and History is the running ledger of what
+  the city has on you. Standing tells you in plain words what Night City is doing about you
+  right now and what it would take to change that.
 
 Cyberbane works anywhere in the open world. It adds no hand-placed scenes, and it is built to
 leave quests, companions, romances and your saves alone.
@@ -208,8 +216,9 @@ To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vo
 Cyberbane adds one key, the Hub key, with two shortcuts layered on it. Everything else uses the
 game's normal inputs.
 
-- **Hub key (F7 by default):** opens the Hub, then steps through its tabs one press at a time; the
-  press after the last tab closes it. Rebind it in Mod Settings. It will not open during combat.
+- **Hub key (F7 by default):** opens the Hub, then steps through its screens one press at a
+  time - Standing, Gangs, The City, Rivals, Titles, Messages, History - and the press after the
+  last one closes it. Rebind it in Mod Settings. It will not open during combat.
 - **Shift + Hub key (while the Hub is open):** brokers peace with the worst gang you can afford to
   buy off, paying from your eddies on the spot.
 - **Ctrl + Hub key (while the Hub is open):** cycles your active title through the ones you have
@@ -229,6 +238,11 @@ Everything is configurable from the in-game Mod Settings menu, and every option 
 it does. You can turn individual systems on or off (crowds, gangs, morale, vendors, rivals, hit
 squads, whispers), tune how intense and how frequent reactions are, pick a preset (Subtle,
 Default, or Dramatic), set the size of Cyberbane's own screens and bars, and rebind the Hub key.
+
+Under UI you can also choose how Cyberbane talks to you: messages on your phone (the default)
+or the old notices across the middle of the screen, with or without the phone's message tone,
+and how long either stays up. The map markers are there too, as everyone Cyberbane sends, only
+the named ones, or none.
 
 ### Starting over
 

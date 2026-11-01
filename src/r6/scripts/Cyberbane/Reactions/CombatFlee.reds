@@ -341,9 +341,9 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
         let name = CBRivalDisplayName(content, already);
         if indebted {
-          CBShowMessage(game, s"Cyberbane: \(name) owes you one. They will remember that too.", 4.0);
+          CBPhoneFromStreet(game, s"\(name) owes you one now. People like that remember both ways.");
         } else {
-          CBShowMessage(game, s"Cyberbane: You let \(name) walk again. They came back worse.", 4.0);
+          CBPhoneFromStreet(game, s"You let \(name) walk again. They came back worse for it.");
         }
       }
       return;
@@ -360,7 +360,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     nr.scarMask = e.scarMask;   // they remember how it went
     nr.state = EnumInt(ECBRivalState.Hunting);
     if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-      CBShowMessage(game, s"Cyberbane: You left \(CBRivalDisplayName(content, nr)) alive. They will not forget it.", 4.0);
+      CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, nr)) walked away from you breathing. They will not forget it.");
     }
   }
 }
@@ -381,7 +381,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       CBRivalEscaped(r, content, now, district, true);
       r.state = EnumInt(ECBRivalState.Hunting);
       if toasts {
-        CBShowMessage(game, s"Cyberbane: \(CBRivalDisplayName(content, r)) slipped away and came back meaner.", 4.0);
+        CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, r)) slipped you again. Word is they are not finished.");
       }
     }
     sys.SetActiveRivalId(0);
@@ -401,7 +401,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     if IsDefined(nr) {
       nr.state = EnumInt(ECBRivalState.Hunting);
       if toasts {
-        CBShowMessage(game, s"Cyberbane: \(CBRivalDisplayName(content, nr)) got away. You have not seen the last of them.", 4.0);
+        CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, nr)) got clear of you. You have not seen the last of them.");
       }
     }
   }

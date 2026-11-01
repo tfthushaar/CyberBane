@@ -194,7 +194,6 @@ public abstract class CBConfig {
   // district. High on purpose: a line about a specific thing V did somewhere else is the whole
   // point of the rumour engine, and hearing it is the only way a player knows it exists.
   public static func WhisperRumorChance() -> Float = 0.6
-  public static func WhisperDurationSeconds() -> Float = 4.0
 
   // ---- Morale (spec §9.4) ----------------------------------------------
   public static func MoraleBreakThreshold() -> Float = 0.25
@@ -293,15 +292,17 @@ public abstract class CBConfig {
   public static func GrapevineCooldownHours() -> Float = 8.0
   // Word has to be worth repeating before anyone passes it on.
   public static func GrapevineMinMagnitude() -> Float = 4.0
-  public static func GrapevineDurationSeconds() -> Float = 6.0
 
   // ---- Gang hierarchy (spec §10.1) ---------------------------------------
   // Running a crew, or standing near the top of one, makes you harder to put down. Modest
   // next to an apex hunter, which is a different kind of event entirely.
   public static func LeaderMinRank() -> Int32 = 4
   public static func LieutenantMinRank() -> Int32 = 3
-  public static func LeaderHealthMult() -> Float = 2.0
-  public static func LieutenantHealthMult() -> Float = 1.4
+  // Both were far higher (2.0 and 1.4) and both stacked on top of the full apex-grade build,
+  // which is how a leader nemesis became the enemy players could not kill. They are a nudge
+  // now, and CBApplyApexGradeBuff clamps the result anyway.
+  public static func LeaderHealthMult() -> Float = 1.25
+  public static func LieutenantHealthMult() -> Float = 1.1
 
   // ---- Succession (spec §10.1) ------------------------------------------
   // Added to the avenger roll per rank of the Rival you just put down, so the higher the
@@ -343,10 +344,6 @@ public abstract class CBConfig {
   public static func SpawnGroupRadius() -> Float = 18.0
   // How far apart the seats of an arriving car are created before they are mounted.
   public static func ArrivalSeatSpread() -> Float = 1.4
-  // How many abreast a spawned group stands before starting another rank behind it.
-  // First ESecurityAreaType ordinal that counts as ordinary open city. Below this the game
-  // treats the area as safe or restricted, and Cyberbane sends nobody.
-  public static func OpenZoneFrom() -> Int32 = 2
   // Largest cosine of the angle between V's facing and the spawn point that is still
   // accepted. 0.342 is cos(70 degrees), the same margin They Will Remember uses, expressed in
   // a form with no unit to get wrong.
@@ -395,14 +392,70 @@ public abstract class CBConfig {
   // squad and apex for the rest of the session.
   public static func PendingHoldGiveUpTicks() -> Int32 = 120
 
+  // ---- Can a car even get here (spec 9.9) ------------------------------
+  //
+  // Vanilla's own thresholds for this live on the prevention data table as
+  // FallbackMaxDistanceToRoad / FallbackMaxHeightDifference, which are TweakDB flats with no
+  // record accessor, so they cannot be read from redscript. These are the same question asked
+  // with numbers of our own: a road a hundred metres of walking away is not somewhere a crew
+  // can plausibly pull up from, and twelve metres of height is a different level of a car park.
+  public static func ArrivalMaxRoadDistance() -> Float = 100.0
+  public static func ArrivalMaxRoadHeight() -> Float = 12.0
+
+  // ---- Messages on the phone (spec 12.2) -------------------------------
+  //
+  // The card is authored in 1080p units and scaled by the same fit the Hub uses. Positioned on
+  // the left at a little above the middle, which is where the game's own incoming SMS appears -
+  // the point is that it reads as the phone rather than as a mod.
+  public static func PhoneCardRows() -> Int32 = 3
+  public static func PhoneCardWidth() -> Float = 580.0
+  public static func PhoneCardHeight() -> Float = 118.0
+  public static func PhoneCardGap() -> Float = 10.0
+  public static func PhoneCardLeft() -> Float = 70.0
+  public static func PhoneCardTop() -> Float = 330.0
+  public static func PhoneCardEdge() -> Float = 5.0
+  // Long enough to read a sentence and a half without pausing the game, and the reading-speed
+  // setting still multiplies it. The floor is what a message is worth at the lowest setting.
+  public static func PhoneHoldSeconds() -> Float = 9.0
+  public static func PhoneHoldFloor() -> Float = 5.0
+  public static func PhoneSlideSeconds() -> Float = 0.22
+  public static func PhoneSlideDistance() -> Float = 60.0
+  public static func PhoneFadeSeconds() -> Float = 0.6
+  // Three wrapped lines on a card this wide. Anything longer is a paragraph, and a message
+  // that needs a paragraph is a message that needed cutting.
+  public static func PhoneBodyMaxChars() -> Int32 = 180
+  // How much of the thread the Hub keeps. Session only; see the note in UI/PhoneMessages.reds
+  // about why this is not persisted.
+  public static func PhoneLogCap() -> Int32 = 40
+
+  // ---- Keeping an arrival out of frame ---------------------------------
+  //
+  // "They pop out of nowhere like the old police spawns" is the most repeated complaint about
+  // this mod, and `spawnInView = false` on the entity spec does not answer it: the flag is
+  // advisory and the engine honours it by delaying rather than refusing.
+  //
+  // The facing threshold is SpawnMaxFacingCosine, further down, which CBNavAnchor has used
+  // since 1.1.5. There is deliberately not a second one here: the group anchor and the
+  // pursuit points are answering the same question and had better answer it the same way.
+  //
+  // In front of V, but this far away, so all the player sees is somebody walking into frame
+  // rather than appearing. Deliberately generous: at this range a body is a few pixels.
+  public static func SpawnInViewFarDistance() -> Float = 70.0
+  // Eye height for the line-of-sight trace, so the ray clears a kerb and is stopped by a wall.
+  public static func SpawnEyeHeight() -> Float = 1.5
+
   // ---- Apex strength ----
   // Percentage of a boss-grade build, used when settings have not loaded yet.
   public static func ApexStrengthDefault() -> Int32 = 70
   // How much of its own contribution Cyberbane keeps when New Game Plus is also buffing NPCs.
   public static func ApexNgpStepDown() -> Float = 0.5
   // Size of one random trait, as a fraction added on top of the stat it touches.
-  public static func ApexTraitStrength() -> Float = 0.6
-  public static func ApexPowerLevelBonus() -> Float = 10.0
+  //
+  // Was 0.6, which at full strength put another 42% on health or armour on top of a
+  // multiplier that was already too high. A trait is supposed to make two apexes from the same
+  // gang fight differently, not to be a second difficulty slider.
+  public static func ApexTraitStrength() -> Float = 0.25
+  public static func ApexPowerLevelBonus() -> Float = 2.0
   // How many enforcers turn up when a gang sends its apex by car. A full car of them is the
   // set piece; the strength slider is what tunes how hard each one hits.
   public static func ApexStrikeTeamSize() -> Int32 = 4
@@ -527,30 +580,56 @@ public abstract class CBConfig {
   // a sponge that dies in a burst, and someone just starting out is not simply deleted.
   // Base applies at no build at all, base + range at full menace.
   // An apex is meant to read as the worst thing that gang has. These are deliberately big:
-  // at full menace it is in the same conversation as the game's own set piece bosses, and it
-  // hits as hard as it takes, because a pure health sponge is tedious rather than frightening.
   // What an apex is worth in raw survivability.
   //
-  // These were 10x..25x health behind 4x..10x armour. Against a maxed character that is not a
-  // hard fight, it is a wall: at the top of the menace scale a full apex came out at about
-  // seventeen times health and seven times armour, which outlasts a magazine of anything and
-  // reads to the player as an enemy that simply cannot be hurt. That is what was reported, in
-  // those words.
+  // Third pass at these numbers, and the first one driven by more than one report of the same
+  // thing: enemies nothing could kill. The target is a cyberpsycho, which is a fight you have
+  // to take seriously and can win with the gun you are carrying. It is not a boss with a
+  // health bar measured in magazines.
   //
-  // The brief was stronger but killable, and tactical rather than spongy. The tactical half is
-  // already carried by the kit in ApexSquad.reds - cover, advancing fire, anti-stun, reinforcements,
-  // seeing through optical camo - so the numbers come down to where an apex takes several times
-  // the punishment of the enemy it was promoted from and no more. Damage is untouched: they
-  // still hit hard enough to kill you.
-  public static func ApexHealthMultBase() -> Float = 2.5
-  public static func ApexHealthMultRange() -> Float = 2.5    // 2.5x .. 5x
-  public static func ApexArmorMultBase() -> Float = 1.5
-  public static func ApexArmorMultRange() -> Float = 1.5     // 1.5x .. 3x
-  // What they hit back with.
-  public static func ApexDamageMultBase() -> Float = 1.6
-  public static func ApexDamageMultRange() -> Float = 1.6    // 1.6x .. 3.2x
-  public static func ApexCritChanceBonus() -> Float = 25.0
-  public static func ApexCritDamageBonus() -> Float = 60.0     // 2x .. 5x
+  // The history is worth keeping, because the arithmetic is what went wrong rather than the
+  // intent. 1.2.6 had 10x..25x health behind 4x..10x armour. 1.3.0 cut that to 2.5x..5x and
+  // 1.5x..3x and called it done, which still multiplied out: the stated range is only the
+  // first of four terms. A random trait could add another 42% to health or armour, the
+  // Overclocked trait added ten power levels (and the game derives health, armour and damage
+  // from power level, so that term multiplies everything again), and a Rival who was running a
+  // crew took a further 2x on top of all of it. A leader nemesis at the top of the ladder came
+  // out near eleven times health behind three and a half times armour, several levels above
+  // its own gang. That is the immortal enemy, and no single number in the file looked wrong.
+  //
+  // So two things change. The numbers below come down to a cyberpsycho's territory, and
+  // CBApplyApexGradeBuff now folds the traits and the role into one multiplier per stat and
+  // clamps it against the ceilings underneath, so no combination of them can compound into a
+  // wall again. The tactical half of the brief is carried by the kit in ApexSquad.reds - cover,
+  // advancing fire, anti-stun, reinforcements, seeing through optical camo - which is what makes
+  // an apex a different fight rather than a longer one.
+  public static func ApexHealthMultBase() -> Float = 1.6
+  public static func ApexHealthMultRange() -> Float = 1.4     // 1.6x .. 3x before strength
+  public static func ApexArmorMultBase() -> Float = 1.2
+  public static func ApexArmorMultRange() -> Float = 0.5      // 1.2x .. 1.7x
+  // What they hit back with. Deliberately the gentlest of the three: a gang enforcer that one
+  // shots you is not a fight either, and the player is the one with no health multiplier.
+  public static func ApexDamageMultBase() -> Float = 1.15
+  public static func ApexDamageMultRange() -> Float = 0.35    // 1.15x .. 1.5x
+  public static func ApexCritChanceBonus() -> Float = 8.0
+  public static func ApexCritDamageBonus() -> Float = 20.0
+
+  // The ceilings. Nothing Cyberbane does to an NPC may take a stat past these, whatever the
+  // slider, the menace, the traits, the ladder and the role add up to.
+  //
+  // This is the part that was missing. Every term above was individually defensible and the
+  // product of them was not, and there was no single place that knew the product. There is
+  // now: CBApplyApexGradeBuff combines everything and clamps it here, so the worst enemy the
+  // mod can build is a known quantity rather than an emergent one.
+  public static func ApexHealthMultCeiling() -> Float = 3.0
+  public static func ApexArmorMultCeiling() -> Float = 1.8
+  public static func ApexDamageMultCeiling() -> Float = 1.6
+  public static func ApexCritChanceCeiling() -> Float = 15.0
+  public static func ApexCritDamageCeiling() -> Float = 40.0
+  // Power level is the one term that moves every other stat at once, which is why ten of them
+  // was a mistake rather than a tuning choice. Two keeps the "fights above its station" read
+  // without hiding a multiplier inside it.
+  public static func ApexPowerLevelCeiling() -> Float = 3.0
 
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
   // Rivals only land if they actually happen. Raised so leaving people alive or breaking a

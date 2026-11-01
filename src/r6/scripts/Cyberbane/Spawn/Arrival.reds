@@ -141,6 +141,32 @@ public func CBVehicleArrivalAllowed(game: GameInstance) -> Bool {
   if CBPlayerIndoors(game) {
     return false;
   }
+  // Is there a road near enough to drive in from?
+  //
+  // Vanilla asks exactly this before deciding whether to fall back to units on foot:
+  // `TrySpawnOnFootFallbackBasedOnRoadInfo` reads `GetNearestRoadFromPlayerInfo` and switches
+  // to the on-foot fallback when the path to the nearest road is too long or the height
+  // difference is too great (`core/systems/preventionSystem.script:3174`). Cyberbane asked for
+  // a car first and fell back only after the request came to nothing, which costs the whole
+  // drive clock - the Hub counts down a squad that was never going to be delivered, and the
+  // walk-in that would have worked does not happen until the clock expires.
+  let pss = GameInstance.GetPreventionSpawnSystem(game);
+  if IsDefined(pss) {
+    let road: NearestRoadFromPlayerInfo;
+    pss.GetNearestRoadFromPlayerInfo(road);
+    // A zero point means it found nothing, which is the same test vanilla makes.
+    if Vector4.IsXYZZero(road.point) {
+      return false;
+    }
+    if road.pathLength < 0.0 || road.pathLength > CBConfig.ArrivalMaxRoadDistance() {
+      return false;
+    }
+    let player = GetPlayer(game);
+    if IsDefined(player)
+       && AbsF(player.GetWorldPosition().Z - road.point.Z) > CBConfig.ArrivalMaxRoadHeight() {
+      return false;
+    }
+  }
   return true;
 }
 

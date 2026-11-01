@@ -90,7 +90,8 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
           if IsDefined(created) {
             CBRivalKilledV(created, content, entry.at, entry.district);
             if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-              CBShowMessage(game, "Cyberbane: You died in this city. " + CBRivalDisplayName(content, created) + " remembers.", 5.0);
+              CBPhoneFromGang(game, entry.killerFaction,
+                CBRivalDisplayName(content, created) + " put you in the ground once. Remember that next time.");
             }
           }
         }

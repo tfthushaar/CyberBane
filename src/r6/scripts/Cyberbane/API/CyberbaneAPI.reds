@@ -58,9 +58,9 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
   if rt.HasSettings() && rt.GetSettings().toasts {
     let name = CBRivalDisplayName(content, who);
     if isNew {
-      CBShowMessage(game, s"Cyberbane: \(name) put you down. They will be looking for you.", 5.0);
+      CBPhoneFromGang(game, faction, s"\(name) put you down. They will be looking for you.");
     } else {
-      CBShowMessage(game, s"Cyberbane: \(name) put you down again. They are getting better at it.", 5.0);
+      CBPhoneFromGang(game, faction, s"\(name) put you down again. They are getting better at it.");
     }
   }
   CBLog.Info(n"Rivals", s"Killed by \(NameToString(faction)) (\(TDBID.ToStringDEBUG(killerRecordID))); rival \(who.id) is now rank \(who.rank).");

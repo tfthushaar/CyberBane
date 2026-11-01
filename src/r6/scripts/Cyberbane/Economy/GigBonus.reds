@@ -104,7 +104,7 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
   }
   ts.GiveItem(player, money, bonus);
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(gameInstance, s"Cyberbane: your rep earned a \(bonus)eb bonus on that payout.", 4.0);
+    CBPhoneFromStreet(gameInstance, s"Threw an extra \(bonus)eb on that one. Your name is worth something now.");
   }
 }
 

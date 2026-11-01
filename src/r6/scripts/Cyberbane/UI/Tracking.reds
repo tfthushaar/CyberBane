@@ -9,18 +9,32 @@
 // hand. `RegisterMappinWithObject` binds the pin to the NPC instead of to a position, so it
 // follows them as they come for you and needs no updating from us.
 //
-// `Mappins.QuestEntityMappinDefinition` is the definition for a pin attached to an entity: it
-// sets `showOnMinimap`, `showOnMap` and `showInWorld` itself, and it publishes the list of
-// variants it will accept. `DefaultQuestVariant` is on that list and is in the
-// `gamedataMappinVariant` enum, which not every name in the tweak list is - `Mappins.SoloVariant`
-// appears there but has no matching enum member, so it would have been a dead pin.
+// ---- What 1.4.7 changed, and why ----
 //
-// Marked: everyone Cyberbane sends - Rivals, apex squads, crews and the escorts that come with
-// an apex squad. It was Rivals and apex only, which looked tidy and failed the one job it has:
-// a player told that a gang had sent people after them searched the minimap and found nothing,
-// because the people in question were crew. A marker that is absent by design is
-// indistinguishable from one that is broken. Anyone who would rather do the finding themselves
-// has the setting.
+// The answer to that first report over-corrected into a second one: "the obnoxious yellow
+// markers need some work". Both halves of that are fair.
+//
+// Obnoxious, because of what was being asked for. `Mappins.QuestEntityMappinDefinition` with
+// `DefaultQuestVariant` is the pin the game uses for the objective you are supposed to be
+// doing, and `MappinUIUtils.MappinToTexturePart` maps that variant to `minor_quest` - the
+// yellow quest diamond. So a gang crew turning up put yellow quest markers on the HUD, which
+// is the game's own language for "go here", pointed at people trying to kill you.
+//
+// And too many of them, because 1.1.5 widened the marker to every single body the mod sends. A
+// vendetta crew is up to twenty people. Twenty pins, through walls, is not a way of finding
+// the dangerous one; it is a second minimap laid over the first.
+//
+// Three changes, then. `GangWatchVariant` instead, which the same function maps to the bounty
+// icon the game uses for gang activity - the right language for a gang coming after you.
+// `visibleThroughWalls` off, so a pin is a place rather than a scan. And the default scope is
+// the people who are somebody: a Rival and the four of an apex squad. Crews are available on
+// the Everyone setting for anybody who wants them.
+//
+// The fourth change is the one that actually answers "obnoxious": the pin comes off when the
+// fight starts. The game already draws hostiles in combat on the minimap by itself, so from
+// the moment shooting begins ours is duplicating a display that is already there - and that is
+// precisely the stretch when the screen is busiest and a pin is most in the way. Finding them
+// is the job; fighting them is not.
 
 @addField(ScriptedPuppet)
 public let cbMappinId: NewMappinID;
@@ -28,16 +42,46 @@ public let cbMappinId: NewMappinID;
 @addField(ScriptedPuppet)
 public let cbMapped: Bool;
 
+// How much does the player want marked?
+public func CBMarkerScope() -> ECBMarkerScope {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.IsEnabled() {
+    return ECBMarkerScope.Off;
+  }
+  if !rt.HasSettings() {
+    return ECBMarkerScope.NamedOnly;
+  }
+  return rt.GetSettings().mapMarkers;
+}
+
 // Does the player want these at all?
 public func CBMapMarkersOn() -> Bool {
-  let rt = CyberbaneRuntime.Get();
-  return IsDefined(rt) && rt.IsEnabled()
-      && (!rt.HasSettings() || rt.GetSettings().mapMarkers);
+  return NotEquals(CBMarkerScope(), ECBMarkerScope.Off);
+}
+
+// Is this one of ours worth a pin, at the scope the player chose?
+//
+// A Rival and the members of an apex squad are people: one name, one role, one reason they are
+// here. A crew is a crowd, and a pin per head in a crowd is the complaint.
+func CBWorthMarking(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Bool {
+  let scope = CBMarkerScope();
+  if Equals(scope, ECBMarkerScope.Off) {
+    return false;
+  }
+  if Equals(scope, ECBMarkerScope.Everyone) {
+    return true;
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return false;
+  }
+  let id = puppet.GetEntityID();
+  return des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex");
 }
 
 // Put a marker on this one.
 public func CBTrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
-  if !IsDefined(puppet) || puppet.cbMapped || !CBMapMarkersOn() {
+  if !IsDefined(puppet) || puppet.cbMapped || !CBWorthMarking(game, puppet) {
     return;
   }
   let ms = GameInstance.GetMappinSystem(game);
@@ -46,18 +90,25 @@ public func CBTrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Voi
   }
   let data: MappinData;
   data.mappinType = t"Mappins.QuestEntityMappinDefinition";
-  data.variant = gamedataMappinVariant.DefaultQuestVariant;
+  // The gang-activity icon rather than the quest diamond. `MappinUIUtils.MappinToTexturePart`
+  // maps GangWatchVariant to `map_bounty`, which is what the game puts on gang business, and
+  // DefaultQuestVariant to `minor_quest`, which is what it puts on your current objective.
+  // Asking for the second one was the whole of the "yellow markers" complaint. GangWatchVariant
+  // is in `gamedataMappinVariant`, which not every name in the tweak list is - that is the trap
+  // Mappins.SoloVariant fell into once, and the reason this is worth writing down.
+  data.variant = gamedataMappinVariant.GangWatchVariant;
   data.active = true;
-  // Through walls deliberately. The whole reason this exists is that the player could not find
-  // them; a marker that disappears the moment they step behind a building is the same problem
-  // with extra steps. It is a position, not a scan: it says somebody is coming from that way,
-  // which is what the message on screen already told them.
-  data.visibleThroughWalls = true;
+  // Not through walls any more. A pin that reads through a building is a scan, and a scan of
+  // where every enemy is standing is both more help than this is meant to be and the main
+  // reason the markers read as intrusive. It still tells the player which direction somebody is
+  // coming from, which is what the message on screen already said.
+  data.visibleThroughWalls = false;
   puppet.cbMappinId = ms.RegisterMappinWithObject(data, puppet);
   puppet.cbMapped = true;
 }
 
-// Take it off again. Called when they die and when an encounter is swept.
+// Take it off again. Called when they die, when the encounter is swept, and when the fight
+// starts and the game's own display takes over.
 public func CBUntrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(puppet) || !puppet.cbMapped {
     return;
@@ -73,8 +124,8 @@ public func CBUntrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> V
 // marked, since each puppet checks its own flag.
 //
 // The pin is bound to the entity, so an NPC that streams out takes its pin with it. This is for
-// the cases where the encounter ends while they are still standing there: outrunning them, or
-// the session sweep.
+// the cases where the encounter ends while they are still standing there: outrunning them, the
+// session sweep, and the fight starting.
 public func CBUntrackTagged(game: GameInstance, tag: CName) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
@@ -89,4 +140,25 @@ public func CBUntrackTagged(game: GameInstance, tag: CName) -> Void {
     }
     i += 1;
   }
+}
+
+// Once the shooting starts, our pins come down.
+//
+// Called from the fast tick. The game draws hostiles it knows about on the minimap during
+// combat, so from here on ours add nothing and sit on top of the busiest moment on screen.
+// Nothing puts them back: by the time a fight is over, the player has either won or the
+// encounter has been swept, and a marker to help you find somebody you are already fighting is
+// the thing being complained about.
+public func CBMarkerCombatTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) || !CBMapMarkersOn() {
+    return;
+  }
+  let player = GetPlayer(game);
+  if !IsDefined(player) || !player.IsInCombat() {
+    return;
+  }
+  CBUntrackTagged(game, n"CB_Rival");
+  CBUntrackTagged(game, n"CB_Apex");
+  CBUntrackTagged(game, n"CB_Squad");
+  CBUntrackTagged(game, n"CB_Escort");
 }

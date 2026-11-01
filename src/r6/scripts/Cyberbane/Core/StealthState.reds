@@ -35,7 +35,16 @@ public func CBPlayerInStealthState(game: GameInstance) -> Bool {
 
 // Should an arrival hold off? True through the whole quiet stretch, not only the crouched
 // moments, because the system tops up a short grace window every tick it sees the state.
+//
+// Standing inside somebody else's turf counts too, and that is the fix for "enemies spawn in
+// and ruin stealth". The game only reports a stealth situation once there are hostiles who
+// have not found V yet, which is late: walking into a compound with a silenced gun and nobody
+// alerted was, by that test, not a quiet job. A restricted or dangerous zone is one from the
+// moment V steps into it, whatever the hostiles have noticed.
 public func CBStealthEncounterNearby(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  if CBPlayerInHostileZone(game) {
+    return true;
+  }
   if IsDefined(sys) {
     return sys.IsStealthHeld();
   }
@@ -45,6 +54,13 @@ public func CBStealthEncounterNearby(sys: ref<CyberbaneSystem>, game: GameInstan
 // One line for the Hub, so a held arrival explains itself instead of showing a countdown that
 // never reaches zero.
 public func CBStealthHoldReason(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
+  if CBPlayerInHostileZone(game) {
+    let zone = CBPlayerZoneLabel(game);
+    if StrLen(zone) == 0 {
+      zone = "somebody else's territory";
+    }
+    return "Holding off: the game calls this a " + zone + ". Nobody walks in on a job.";
+  }
   if CBStealthEncounterNearby(sys, game) {
     return "Holding off while you are working quietly. They will not walk in on a stealth job.";
   }

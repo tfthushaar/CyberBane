@@ -25,6 +25,21 @@ enum ECBTwrCompat {
   Off = 2,
 }
 
+// How much Cyberbane marks on the map (spec 12.3).
+//
+// This was a plain on/off and both answers were wrong. Off, and a player hunting for whoever
+// the mod had just announced finds nothing. On, and every crew member wears a quest marker -
+// which a player called "the obnoxious yellow markers", and they were right: fifteen of them,
+// through walls, in the colour the game reserves for the thing you are supposed to be doing.
+//
+// NamedOnly is the default: the people who are somebody, and only until the fight starts,
+// after which the game shows enemies in combat by itself and ours are redundant.
+enum ECBMarkerScope {
+  Off = 0,
+  NamedOnly = 1,
+  Everyone = 2,
+}
+
 enum ECBLogLevel {
   Off = 0,
   Info = 1,
@@ -286,9 +301,21 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PhoneMessages")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PhoneMessages-Desc")
+  public let phoneMessages: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PhoneSound")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PhoneSound-Desc")
+  public let phoneSound: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MapMarkers")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MapMarkers-Desc")
-  public let mapMarkers: Bool = true;
+  public let mapMarkers: ECBMarkerScope = ECBMarkerScope.Everyone;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

@@ -29,6 +29,8 @@ public func CBBlockSafeArea() -> Int32 = 5
 public func CBBlockNoGround() -> Int32 = 6
 public func CBBlockEngineRefused() -> Int32 = 7
 public func CBBlockNoRecord() -> Int32 = 8
+public func CBBlockInView() -> Int32 = 9
+public func CBBlockHostileArea() -> Int32 = 10
 
 public func CBNoteSpawnBlock(reason: Int32) -> Void {
   let rt = CyberbaneRuntime.Get();
@@ -62,6 +64,12 @@ public func CBBlockLabel(reason: Int32) -> String {
   }
   if reason == CBBlockNoRecord() {
     return "no gang member on file";
+  }
+  if reason == CBBlockInView() {
+    return "nowhere out of your sight";
+  }
+  if reason == CBBlockHostileArea() {
+    return "you are inside somebody else's turf";
   }
   return "";
 }
@@ -122,21 +130,48 @@ public func CBPlayerIndoors(game: GameInstance) -> Bool {
 
 // Is V inside a quest or gig area?
 //
-// The game keeps its own record of this, and it is the honest answer to "am I on a job right
-// now". Cyberbane had been inferring it from combat and stealth state, which misses the quiet
-// half of a gig: walking in, talking to somebody, waiting for a door. A Rival turning up in
-// the middle of someone else's story is the single most intrusive thing this mod can do, so
-// the whole arrival system stands down inside one.
+// This is the gate behind the worst report the mod has had: "I was attacked by rivals during
+// I WALK THE LINE, they appeared in the middle of the Animals' nest, and it forced me to
+// restart several times." The gate existed, was switched on, and did not fire.
+//
+// `PreventionSystem.IsPlayerInQuestArea` is not what its name suggests. Reading it
+// (`core/systems/preventionSystem.script:352`):
+//
+//     return ( Int32 )m_playerHLS > ( Int32 )gamePSMHighLevel.SceneTier1
+//         && ( Int32 )m_playerHLS <= ( Int32 )gamePSMHighLevel.SceneTier5;
+//
+// It is a scene test. It is true during a cutscene or a locked conversation and false for
+// every other second of a quest, so walking a gang compound with a gun out was, as far as this
+// gate was concerned, an ordinary afternoon in Night City.
+//
+// What the game does track is the zone, on `PlayerStateMachine.Zones` as a `gamePSMZones`:
+// Default, Public, Safe, Restricted, Dangerous. `Player.OnEnterRestrictedZone` and
+// `OnEnterDangerousZone` set it, and `GetCurrentZoneType` shows a quest can set it too, by
+// fact, overriding the security area. So a gang nest, a corpo floor, a compound a quest has
+// marked hostile - all of them report Restricted or Dangerous, and the open street reports
+// Public. That is exactly the question this gate was trying to ask.
+//
+// It is also safe in a way the previous attempt was not. 1.1.5 compared `ESecurityAreaType`
+// ordinals, which redscript cannot see by name, guessed wrong, and blocked every spawn in the
+// game for three releases. `gamePSMZones` is a named enum we can compile against, so there is
+// nothing left to guess.
 public func CBPlayerInQuestArea(game: GameInstance) -> Bool {
   // Switchable, because this is the one gate here that can cover a large area and there is no
-  // way to measure how large from script. It is the last unbounded blanket condition on the
-  // arrival path, and after three releases lost to gates that silently refused everything, a
-  // player who suspects it should be able to rule it out in one toggle rather than wait for a
-  // patch. The diagnostic names it too, so the Hub will say "you are on a job".
+  // way to measure how large from script. After three releases lost to gates that silently
+  // refused everything, a player who suspects it should be able to rule it out in one toggle
+  // rather than wait for a patch. The diagnostic names it too.
   let rtQ = CyberbaneRuntime.Get();
   if IsDefined(rtQ) && rtQ.HasSettings() && !rtQ.GetSettings().respectQuestAreas {
     return false;
   }
+  if CBPlayerInScene(game) {
+    return true;
+  }
+  return CBPlayerInHostileZone(game);
+}
+
+// Mid-scene: a cutscene, a locked conversation, a braindance.
+public func CBPlayerInScene(game: GameInstance) -> Bool {
   let container = GameInstance.GetScriptableSystemsContainer(game);
   if !IsDefined(container) {
     return false;
@@ -148,41 +183,64 @@ public func CBPlayerInQuestArea(game: GameInstance) -> Bool {
   return ps.IsPlayerInQuestArea();
 }
 
-// The security area V is standing in, as the game itself reports it.
+// Standing in a restricted or dangerous zone: somebody else's turf, marked as such by the
+// security system or by a quest.
 //
-// Read from the zone-change event below rather than queried, because the game only tells you
-// on the way in and out. The values are the game's own ESecurityAreaType ordinals: the low
-// ones are the safe and restricted tiers, and anything from CBOpenZoneFrom up is ordinary
-// open city where a fight is expected. Compared as a number on purpose - the enum members are
-// not exposed to redscript by name on this patch, only the type is.
-public func CBSecurityZone() -> Int32 {
-  let rt = CyberbaneRuntime.Get();
-  if !IsDefined(rt) {
-    return CBConfig.OpenZoneFrom();   // unknown: assume open city rather than block everything
-  }
-  return rt.GetSecurityZone();
+// This is also the answer to the stealth complaint. A player slipping through a compound is
+// inside one of these the whole time, whether or not the game has decided a stealth situation
+// is live, so an arrival now holds off for the duration rather than only while V is crouched
+// and already spotted-but-not-seen.
+public func CBPlayerInHostileZone(game: GameInstance) -> Bool {
+  let zone = CBPlayerZone(game);
+  return zone == EnumInt(gamePSMZones.Restricted) || zone == EnumInt(gamePSMZones.Dangerous);
 }
 
-// Is V in one of the protected tiers right now?
-public func CBInProtectedZone() -> Bool {
-  return CBSecurityZone() < CBConfig.OpenZoneFrom();
+// The zone the game says V is in. `Default` (0) means it has not said yet, which reads as
+// ordinary city rather than as a reason to refuse everything - the same bounding that keeps
+// CBPlayerCannotFight honest about an unread blackboard.
+public func CBPlayerZone(game: GameInstance) -> Int32 {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(bbs) {
+    return EnumInt(gamePSMZones.Default);
+  }
+  let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
+  if !IsDefined(psm) {
+    return EnumInt(gamePSMZones.Default);
+  }
+  return psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.Zones);
 }
 
-// Track the zone as the game hands it over.
-//
-// This is the authoritative signal and it costs nothing: the game raises it on every zone
-// transition, so Cyberbane can read a cached integer per spawn instead of guessing. Wrapped,
-// not replaced, so the game's own handling runs untouched.
-@wrapMethod(PlayerPuppet)
-protected cb func OnZoneChange(value: Variant) -> Bool {
-  let result = wrappedMethod(value);
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) {
-    let data: SecurityAreaData = FromVariant<SecurityAreaData>(value);
-    rt.SetSecurityZone(EnumInt(data.securityAreaType));
+// Short label for the Hub, so a held arrival explains itself.
+public func CBPlayerZoneLabel(game: GameInstance) -> String {
+  let zone = CBPlayerZone(game);
+  if zone == EnumInt(gamePSMZones.Safe) {
+    return "safe area";
   }
-  return result;
+  if zone == EnumInt(gamePSMZones.Restricted) {
+    return "restricted area";
+  }
+  if zone == EnumInt(gamePSMZones.Dangerous) {
+    return "dangerous area";
+  }
+  if zone == EnumInt(gamePSMZones.Public) {
+    return "open city";
+  }
+  return "";
 }
+
+// Gone with 1.4.7: the ESecurityAreaType cache, the OnZoneChange wrapper that filled it, and
+// the CBInProtectedZone test that read it.
+//
+// It was tracking the right thing through the wrong door. `ESecurityAreaType` does not expose
+// its members to redscript by name, so the test compared ordinals, and the guess about which
+// low ordinals meant "protected" was wrong: the open street reports a low one too. That
+// blocked every spawn in the city for three releases, and the eventual patch - only apply it
+// when V is also indoors - is what let a Rival appear in the middle of a gang compound during
+// a quest, because a courtyard is not an interior.
+//
+// `PlayerStateMachine.Zones` carries the same information as a named `gamePSMZones`, which the
+// compiler can check. See CBPlayerZone above. Nothing guesses any more, so there is nothing
+// left for this to cache.
 
 // Should Cyberbane refuse to put anyone down here?
 //
@@ -207,25 +265,24 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
     CBNoteSpawnBlock(CBBlockProtectedZone());
     return true;
   }
-  // Somebody else's story is already happening here.
-  if CBPlayerInQuestArea(game) {
+  // Mid-scene: a cutscene or a locked conversation.
+  if CBPlayerInScene(game) {
     CBNoteSpawnBlock(CBBlockQuestArea());
     return true;
   }
-  // The game's own zone, but only indoors.
+  // Somebody else's turf. The zone the game itself publishes, by name.
   //
-  // This is deliberately the same shape as the check They Will Remember makes, and the reason
-  // matters. ESecurityAreaType does not expose its members to redscript by name, so the
-  // ordinals cannot be read - only compared. On its own, `zone < OpenZoneFrom` was therefore a
-  // guess about what the low values mean, and it was the wrong guess: the open street reports
-  // a low ordinal too, so this blocked every spawn in the city and no Rival or apex could
-  // arrive anywhere. The Hub showed them all stuck on "any moment" because their clocks were
-  // running out against a gate that never opened.
-  //
-  // Paired with being indoors it is safe whichever way the ordinals fall: the worst a wrong
-  // guess can now do is decline a spawn inside a building, which is already the policy.
-  if CBInProtectedZone() && CBPlayerIndoors(game) {
-    CBNoteSpawnBlock(CBBlockProtectedZone());
+  // This replaces a comparison of `ESecurityAreaType` ordinals that redscript cannot read by
+  // name. That guess was wrong in 1.1.5 and blocked every spawn in the city for three
+  // releases, which is why it had been narrowed to "only when also indoors" - and that
+  // narrowing is what let a Rival walk into the middle of a gang nest during a quest, because
+  // a compound courtyard is not an interior. `gamePSMZones` is a named enum and needs no
+  // guess, so the test can be the right one again. Switchable with the quest-area gate, since
+  // it is the same question.
+  let rtZone = CyberbaneRuntime.Get();
+  let respect = !IsDefined(rtZone) || !rtZone.HasSettings() || rtZone.GetSettings().respectQuestAreas;
+  if respect && CBPlayerInHostileZone(game) {
+    CBNoteSpawnBlock(CBBlockHostileArea());
     return true;
   }
   let sam = GameInstance.GetSafeAreaManager(game);

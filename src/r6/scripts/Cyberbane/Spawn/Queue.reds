@@ -62,6 +62,27 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
 //
 // Escaping them frees it too, just not instantly: they stay alive and tagged until the sweep
 // removes them, which is the honest reading - you lost them, they are still out there.
+// How many of them are alive. Same walk as CBLiveTaggedPresent, which answers the cheaper
+// question and stops at the first one; this one has to count, so it is kept separate rather
+// than making every caller of the common case pay for a full pass.
+public func CBCountLiveTagged(game: GameInstance, tag: CName) -> Int32 {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return 0;
+  }
+  let ids = des.GetTaggedIDs(tag);
+  let n = 0;
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if CBStillStanding(p) {
+      n += 1;
+    }
+  }
+  return n;
+}
+
 public func CBLiveTaggedPresent(game: GameInstance, tag: CName) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {

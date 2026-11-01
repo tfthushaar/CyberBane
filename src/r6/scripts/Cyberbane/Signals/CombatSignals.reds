@@ -167,7 +167,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let tierAfter = EnumInt(sys.GetScore().GetTier());
   if tierAfter != tierBefore {
     if tierAfter > tierBefore && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-      CBShowMessage(game, "Cyberbane: Renown rank up - " + CBTierName(tierAfter), 4.0);
+      CBSystemNote(game, "renown rank up - " + CBTierName(tierAfter), 4.0);
     }
     sys.SetLastNotifiedTier(tierAfter);
   }
@@ -179,10 +179,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // Notable kills the city remembers: gang bosses and MaxTac (spec §7, §9.10).
   if info.lethal && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
     if info.victimClass == EnumInt(ECBVictimClass.Boss) {
-      CBShowMessage(game, "Cyberbane: Boss down. Word of this spreads fast.", 4.0);
+      CBPhoneFromStreet(game, "You took down somebody who mattered. That will be around by morning.");
     } else {
       if info.victimClass == EnumInt(ECBVictimClass.MaxTac) {
-        CBShowMessage(game, "Cyberbane: MaxTac operative down. They will not forget.", 4.0);
+        CBPhoneFromStreet(game, "You put down a MaxTac operative. Nobody does that twice and stays quiet.");
       }
     }
   }
@@ -394,7 +394,13 @@ public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
   // built from it - four copies of something with a boss's own health, with the mod's
   // apex multiplier applied on top. That is the enemy that cannot be killed, and it is the
   // same record test the Rival roster already uses, so the two now agree.
-  info.victimIsUnique = puppet.IsQuest() || CBRecordIsUniqueCharacter(puppet.GetRecordID());
+  // Three doors, because each catches something the others do not. IsQuest is true for a live
+  // puppet the quest system placed; the record test is true for anyone the story owns whether
+  // or not they are currently in a quest; and a companion is somebody fighting alongside V,
+  // who has no business becoming the template a gang spawns its crews from.
+  info.victimIsUnique = puppet.IsQuest()
+                     || ScriptedPuppet.IsPlayerCompanion(puppet)
+                     || CBRecordIsUniqueCharacter(puppet.GetRecordID());
   info.district = CBEventDistrict(sys, game);
   info.position = puppet.GetWorldPosition();
   let witnesses = CBCountWitnesses(sys, info.position, info.victimEntityId);

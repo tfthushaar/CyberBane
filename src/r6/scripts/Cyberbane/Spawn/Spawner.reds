@@ -69,6 +69,57 @@ func CBPointReachable(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
 // from FindPursuitPointsRange when the strict pass finds nothing, a nav snap in an interior
 // where every requested offset resolves to the same island, and the bearing sweep when only
 // one bearing has floor under it. Checking at the point of use covers all three at once.
+// Is this point somewhere the player would watch somebody appear?
+//
+// "They just pop out of nowhere, like the old police spawns" is the most repeated complaint
+// about this mod, and `spawnInView = false` on the entity spec is not the answer to it: that
+// flag is advisory and the engine honours it by delaying, not by refusing, so a point directly
+// in front of V still ends up occupied a moment later.
+//
+// Two tests, cheap first. The bearing: anything inside the forward cone is in view unless it
+// is far enough away to be a dot on the street. Then line of sight: a point behind a wall is
+// fine however close it is, which is what makes tight streets workable at all - most of what
+// is within thirty metres of V in Night City is behind something.
+//
+// The facing threshold is CBNavAnchor's, deliberately. That function has had this test since
+// 1.1.5, with the note explaining why it is a cosine rather than an angle; what it never had
+// was company. CBPursuitPoints became the primary placement path and never tested facing at
+// all, and FindPursuitPointsRange hands back points all round the player, so the common case
+// was a body created wherever the navmesh happened to offer one - including directly in front.
+// That is the "they pop out of nowhere like the old police spawns" report, and the fix is to
+// ask the same question everywhere a point is accepted rather than only at the anchor.
+func CBPointOutOfSight(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector4) -> Bool {
+  let toPoint = new Vector4(at.X - ppos.X, at.Y - ppos.Y, 0.0, 0.0);
+  let dist = Vector4.Length(toPoint);
+  if dist < 0.5 {
+    return false;   // on top of the player
+  }
+  let flatLen = SqrtF(fwd.X * fwd.X + fwd.Y * fwd.Y);
+  if flatLen <= 0.01 {
+    // No usable facing, so this test has no opinion. Allowing rather than refusing, because
+    // the two failures do not cost the same: a visible arrival is a thing the player can see
+    // and report, while a gate that refuses on an unknown answer is how this mod went silent
+    // for three releases running.
+    return true;
+  }
+  let facing = (fwd.X * toPoint.X + fwd.Y * toPoint.Y) / (flatLen * dist);
+  if facing <= CBConfig.SpawnMaxFacingCosine() {
+    return true;    // behind V, or far enough round the side not to be in frame
+  }
+  if dist >= CBConfig.SpawnInViewFarDistance() {
+    return true;    // in front, but far enough that walking into frame is all anybody sees
+  }
+  // In front and close. Only allowed if something solid is between it and the player.
+  let sqs = GameInstance.GetSpatialQueriesSystem(game);
+  if !IsDefined(sqs) {
+    return true;    // same reasoning as above: no opinion is not a refusal
+  }
+  let eye = new Vector4(ppos.X, ppos.Y, ppos.Z + CBConfig.SpawnEyeHeight(), 1.0);
+  let head = new Vector4(at.X, at.Y, at.Z + CBConfig.SpawnEyeHeight(), 1.0);
+  let res: TraceResult;
+  return sqs.SyncRaycastByCollisionGroup(eye, head, n"Static", res);
+}
+
 func CBPointIsFree(used: array<Vector4>, p: Vector4) -> Bool {
   let i = 0;
   while i < ArraySize(used) {
@@ -347,6 +398,12 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       // the player and the others are within sight of it, so are they.
       let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at)
                && !CBSafeAreaBlocksSpawn(game, at);
+      // Nobody appears where the player is looking. Only the first body of a group is tested:
+      // the rest form up within SpawnGroupRadius of it, so if the lead is out of frame so are
+      // they, and a squad that arrives together is the point of forming up at all.
+      if ok && ArraySize(used) == 0 {
+        ok = CBPointOutOfSight(game, ppos, fwd, at);
+      }
       if ok {
         if ArraySize(used) == 0 {
           ok = CBPointReachable(game, at, ppos);
@@ -392,7 +449,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let standing: Vector4;
       if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
          && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing)
-         && (ArraySize(used) > 0 || CBPointReachable(game, standing, ppos)) {
+         && (ArraySize(used) > 0 || (CBPointReachable(game, standing, ppos)
+                                     && CBPointOutOfSight(game, ppos, fwd, standing))) {
         if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned) {
           spawned += 1;
           ArrayPush(used, standing);
@@ -429,7 +487,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop() {
           let stand = new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0);
           if CBPointIsFree(used, stand)
-             && (ArraySize(used) > 0 || CBPointReachable(game, stand, ppos))
+             && (ArraySize(used) > 0 || (CBPointReachable(game, stand, ppos)
+                                         && CBPointOutOfSight(game, ppos, fwd, stand)))
              && CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned) {
             spawned += 1;
             ArrayPush(used, stand);
@@ -458,10 +517,16 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let fz: Float;
       if CBGroundAt(game, fx, fy, ppos.Z, fz) && AbsF(fz - ppos.Z) <= CBConfig.GroundMaxDrop() {
         let fallback = new Vector4(fx, fy, fz + CBConfig.GroundSpawnLift(), 1.0);
-        // The fallback is close in, so it is the likeliest of the lot to land indoors.
+        // The fallback is close in, so it is the likeliest of the lot to land indoors and the
+        // likeliest to land in frame. It refuses rather than guessing on both counts now; the
+        // lane keeps its turn and tries again shortly, so there is nothing to buy by placing
+        // somebody where the player watches them appear.
         if !CBSafeAreaBlocksSpawn(game, fallback)
+           && CBPointOutOfSight(game, ppos, fwd, fallback)
            && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned) {
           spawned += 1;
+        } else {
+          CBNoteSpawnBlock(CBBlockInView());
         }
       } else {
         CBNoteSpawnBlock(CBBlockNoGround());
@@ -658,8 +723,9 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
       CBKitApexMember(puppet);
     }
     if IsDefined(who) {
-      CBApplyRivalApexBuff(sys, game, puppet, who);
-      CBApplyRivalRoleBuff(sys, game, puppet, CBRivalRole(sys, who));
+      // One call, one build. The crew-rank bonus is a parameter now rather than a second
+      // multiplier applied a line later; see the note in Rivals/Hierarchy.reds.
+      CBApplyRivalApexBuff(sys, game, puppet, who, CBRivalRole(sys, who));
       if CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() {
         CBShowBossBar(puppet);
       }
@@ -772,7 +838,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   sys.SetActiveSquadFaction(n"");
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(game, "Cyberbane: you lost them.", 4.0);
+    CBPhoneFromStreet(game, "They lost you. Do not go back the way you came.");
   }
   CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");
 }
@@ -800,6 +866,29 @@ func CBChaseRefreshTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<D
   }
 }
 
+// The attitude group the game itself gives this kind of NPC.
+//
+// `Character_Record.BaseAttitudeGroup` is the group the engine would have assigned had the NPC
+// come out of a world encounter rather than out of DynamicEntitySystem, so this is the game's
+// own answer and not a list of group names typed out from memory - which could not be verified
+// offline anyway, since the attitude groups live in a binary resource rather than in the
+// shipped tweak text.
+//
+// Explicitly NOT 'HostileToEveryone', which is the group `AIActionHelper.TargetAllSquadMembers`
+// assigns and the obvious-looking thing to reach for. That action exists to turn an NPC on its
+// own squad: everyone means everyone, so a Cyberbane crew of six would have opened fire on each
+// other on arrival.
+public func CBRecordAttitudeGroup(record: TweakDBID) -> CName {
+  if !TDBID.IsValid(record) {
+    return n"";
+  }
+  let rec = TweakDBInterface.GetCharacterRecord(record);
+  if !IsDefined(rec) {
+    return n"";
+  }
+  return rec.BaseAttitudeGroup();
+}
+
 // Make a spawned NPC hostile toward V. Called when a CB_Squad / CB_Rival puppet attaches.
 public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   let player = GetPlayer(game);
@@ -809,6 +898,24 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
   let agent = puppet.GetAttitudeAgent();
   let pagent = player.GetAttitudeAgent();
   if IsDefined(agent) && IsDefined(pagent) {
+    // Hostile to V, and hostile to whoever else is hostile to them.
+    //
+    // A player reported Valentinos opening fire inside an Animals nest while every Animal in
+    // the room ignored it, which reads as the mod spawning ghosts. The cause is that an NPC
+    // created with DynamicEntitySystem gets no attitude group unless the record gives it one,
+    // and an agent with no group has no relationship with anybody: the game's own gang-versus-
+    // gang attitudes are defined between groups, so with one side ungrouped there is nothing
+    // to look up and the answer is neutral both ways.
+    //
+    // Keeping the record's own group when it has one, and falling back to the faction's name,
+    // hands the lookup back to the game. Unsavable because these are throwaway NPCs and their
+    // group has no business being written into anybody's save.
+    if !IsNameValid(agent.GetAttitudeGroup()) {
+      let group = CBRecordAttitudeGroup(puppet.GetRecordID());
+      if IsNameValid(group) {
+        agent.SetAttitudeGroupUnsavable(group);
+      }
+    }
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
   }
   // And hand them V as something to track.

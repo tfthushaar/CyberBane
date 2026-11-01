@@ -1,7 +1,7 @@
 // Cyberbane - The grapevine (spec §8.5)
 //
 // Propagation you can actually hear. When a rumor about you reaches a district it had not
-// touched before, someone who trades in information may get in touch about what they heard.
+// touched before, somebody who trades in information there gets in touch about what they heard.
 // A contact saying "heard about Northside" lands harder than a meter filling, and it is the
 // audible surface for the mod's signature mechanic.
 //
@@ -9,15 +9,14 @@
 // arrives with your name on it. Word about work nobody witnessed arrives as a question: the
 // street knows something happened and cannot say who did it.
 //
-// Deliberately NOT the in-game phone. A real SMS is authored journal content:
-// `JournalPhoneMessage` is abstract and cannot be constructed, there is no phone-notification
-// blackboard, and `ChangeEntryState` only flips the state of entries the base game already
-// ships. Faking one would mean shipping journal entries and driving the quest system - the
-// exact surface this mod refuses to touch - and it would mean putting words in a real fixer's
-// mouth, where a player could mistake flavour for an actual gig. So these arrive on the same
-// on-screen channel the whispers already use, from contacts who are nobody in particular.
+// Since 1.4.7 these arrive as text messages rather than as a line across the middle of the
+// screen, and from the broker who works the district the word reached rather than from a
+// rotating anonymous handle. That is the point of a grapevine: the same person keeps calling
+// you about their own part of town. See UI/PhoneMessages.reds for why this is Cyberbane's own
+// presentation of a message rather than a real journal entry, and for why the senders are
+// handles instead of the game's own fixers.
 //
-// Crash safety: no new engine API at all. CBShowMessage already guards the blackboard, and
+// Crash safety: no engine API beyond one guarded blackboard write inside the presenter, and
 // this runs from the rumor slow tick, which is behind the world-state gate.
 
 // Who is passing it on. Roles, never a named quest-giver: the player must never read one of
@@ -32,17 +31,15 @@
 // and it is already how word of your reputation reaches you, so milestones now arrive the
 // same way instead of as a system notice.
 public func CBContactMessage(game: GameInstance, body: String) -> Void {
-  let seed = RandRange(0, 4);
-  CBShowMessage(game, CBGrapevineSender(seed) + ": " + body, CBConfig.GrapevineDurationSeconds());
-}
-
-func CBGrapevineSender(seed: Int32) -> String {
-  switch seed {
-    case 0: return "Unknown number";
-    case 1: return "A fixer";
-    case 2: return "Ripperdoc";
-    default: return "A broker";
+  // From whoever works the part of town V is standing in, when that is known. Word about your
+  // reputation reaching you from the local broker reads as the city; the same word from a
+  // rotating "Unknown number" reads as a feed.
+  let sys = CyberbaneSystem.Get(game);
+  if IsDefined(sys) && NotEquals(sys.GetCurrentDistrict(), n"") {
+    CBPhoneFromDistrict(game, sys.GetCurrentDistrict(), body);
+    return;
   }
+  CBPhoneFromStreet(game, body);
 }
 
 // Word that carries your name, because people were there to put it there.
@@ -108,8 +105,102 @@ public func CBGrapevineOnReach(sys: ref<CyberbaneSystem>, game: GameInstance, r:
   }
   let line = r.witnessed ? CBGrapevineNamedLine(r.kind, where, seed)
                          : CBGrapevineAnonLine(where, seed);
-  CBShowMessage(game, CBGrapevineSender(seed) + ": " + line, CBConfig.GrapevineDurationSeconds());
+  // From the broker who works the district the word reached, not from the one where V happens
+  // to be standing. The message is "your name came up here", so the person saying it should be
+  // the person who heard it.
+  CBPhoneFromDistrict(game, districtId, line);
   if IsDefined(cd) {
     cd.lastGrapevineAt = now;
+  }
+}
+
+// ---- Arriving somewhere word has already reached --------------------------
+//
+// Asked for directly: "if we fast travel and land in a different region and the rumours have
+// spread there, the fixers could mention that."
+//
+// It is the right half of the mechanic to make audible, because it is the half the player can
+// verify. Propagation happening on a slow tick behind the scenes is invisible; walking off a
+// fast-travel terminal into a district that already knows your name is the mechanic happening
+// to you. The broker who works that district is the one who says so, and it is the same handle
+// every time you come back.
+//
+// Called when the cached district changes, which the fast tick already tracks for the Director.
+// Rides the same cooldown as the rest of the grapevine, so arriving somewhere does not jump the
+// queue ahead of word that is still travelling.
+public func CBGrapevineOnArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
+                                 districtId: CName, now: Float) -> Void {
+  if !IsDefined(sys) || Equals(districtId, n"") {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.IsEnabled() {
+    return;
+  }
+  if rt.HasSettings() && !rt.GetSettings().toasts {
+    return;
+  }
+  let cd = sys.GetCooldowns();
+  if IsDefined(cd) && cd.lastGrapevineAt > 0.0
+     && (now - cd.lastGrapevineAt) < CBConfig.GrapevineCooldownHours() * CBConfig.SecondsPerHour() {
+    return;
+  }
+  // Has anything about V actually reached here? The rumor's own reach mask is the honest
+  // answer, so this cannot claim a district knows something it does not.
+  let index = CBDistrictIndex(districtId);
+  if index < 0 {
+    return;
+  }
+  // Walked with GetRumorCount / GetRumorAt rather than GetRumors, which returns the array by
+  // value: indexing that temporary hands back a handle into a copy destroyed at the end of the
+  // statement. The note on the getter spells this out and it has cost a crash before.
+  let loudest: ref<CBRumor>;
+  let best = 0.0;
+  let i = 0;
+  while i < sys.GetRumorCount() {
+    let r = sys.GetRumorAt(i);
+    i += 1;
+    if IsDefined(r) && CBMaskHas(r.reachedMask, index)
+       && NotEquals(r.origin, districtId) && r.magnitude > best {
+      loudest = r;
+      best = r.magnitude;
+    }
+  }
+  if !IsDefined(loudest) || best < CBConfig.GrapevineMinMagnitude() {
+    return;
+  }
+  let from = CBDistrictLabel(loudest.origin);
+  if Equals(from, "") {
+    from = "across town";
+  }
+  CBPhoneFromDistrict(game, districtId, CBGrapevineArrivalLine(loudest, from,
+                                                               RandRange(0, 4)));
+  if IsDefined(cd) {
+    cd.lastGrapevineAt = now;
+  }
+  CBLog.Info(n"Narrative", s"Arrival in \(NameToString(districtId)): local broker mentions word out of \(NameToString(loudest.origin)).");
+}
+
+// What the local broker says when you turn up somewhere your name got to first.
+func CBGrapevineArrivalLine(r: ref<CBRumor>, from: String, seed: Int32) -> String {
+  if !r.witnessed {
+    switch seed {
+      case 0: return "You are a long way from " + from + ". Whatever happened there followed you here anyway.";
+      case 1: return "Word came in from " + from + " before you did. No name on it. Still made people careful.";
+      case 2: return "Something out of " + from + " has people here talking. You would not know anything about it.";
+      default: return "People here heard about " + from + ". Nobody can say who. Welcome to the neighbourhood.";
+    }
+  }
+  if Equals(r.kind, n"BossKill") {
+    return "They know about the boss you put down in " + from + ". That story got here before you.";
+  }
+  if Equals(r.kind, n"Massacre") {
+    return "What you left in " + from + " is being repeated on this side of town. Word for word.";
+  }
+  switch seed {
+    case 0: return "Your name is already in circulation here. Came up from " + from + ".";
+    case 1: return "You are known on this side of town now. Word travelled out of " + from + ".";
+    case 2: return "Heard about " + from + " weeks before you walked in here. People notice.";
+    default: return "They were talking about " + from + " here before you arrived. You should know that.";
   }
 }

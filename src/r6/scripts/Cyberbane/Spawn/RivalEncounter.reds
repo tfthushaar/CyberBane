@@ -160,7 +160,7 @@ public func CBRivalEscapedByPlayer(sys: ref<CyberbaneSystem>, game: GameInstance
   got.huntTicks = CBConfig.RivalAfterEscapeTicks();
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(game, s"Cyberbane: you lost \(CBRivalDisplayName(content, got)). They will be better prepared next time.", 4.0);
+    CBPhoneFromStreet(game, s"You lost \(CBRivalDisplayName(content, got)). They will come better prepared.");
   }
   CBLog.Info(n"Rivals", s"Player escaped rival id=\(got.id); promoted to rank \(got.rank).");
 }

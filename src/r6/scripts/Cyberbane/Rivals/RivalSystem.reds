@@ -207,6 +207,37 @@ public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
         return true;
       }
     }
+    // Does the story own this person?
+    //
+    // This is the test that was missing, and the report that found it could not be clearer:
+    // "I got the rival is hunting you prompt, only instead of the rival, an immortal Panam
+    // spawns in with a sniper rifle." Panam carries no Boss tag and is not Boss rarity, her
+    // record id contains none of the words below, and `ScriptedPuppet.IsQuest` - which the
+    // capture path does check - is a property of a live puppet in a quest, not of the record,
+    // so a record that reached the roster by any other door walked straight through.
+    //
+    // `Character_Record.Quest()` is the record's own quest affiliation, and it is exactly the
+    // right question: `MainQuest`, `SideQuest`, `MinorQuest` and `StreetStory` are people the
+    // game has written and placed, while generic gangers are `General`. `MinorActivity` is the
+    // deliberate exception and the narrower CBRecordIsSightingCyberpsycho test below is built
+    // on it - a cyberpsycho from a sighting is the one person the story does not come back for.
+    let quest = rec.Quest();
+    if IsDefined(quest) {
+      let affiliation = quest.Type();
+      if Equals(affiliation, gamedataNPCQuestAffiliation.MainQuest)
+         || Equals(affiliation, gamedataNPCQuestAffiliation.SideQuest)
+         || Equals(affiliation, gamedataNPCQuestAffiliation.MinorQuest)
+         || Equals(affiliation, gamedataNPCQuestAffiliation.StreetStory) {
+        return true;
+      }
+    }
+    // Authored to have a boss health bar. `bossHealthBarThresholds` is only filled in on
+    // records the game intends to put a bar across the top of the screen for, which is a
+    // statement that this is a set piece rather than a kind of enemy. Cheap, structural, and it
+    // catches anyone the affiliation test misses.
+    if rec.GetBossHealthBarThresholdsCount() > 0 {
+      return true;
+    }
   }
   let id = TDBID.ToStringDEBUG(recordID);
   return StrContains(id, "cyberpsycho") || StrContains(id, "Cyberpsycho")
@@ -269,6 +300,10 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
   if dropped > 0 {
     CBLog.Info(n"Rivals", s"Retired \(dropped) rival(s) built from story characters; they will not come back.");
   }
+  // Worth knowing: this prune is what clears a story character already written into a save.
+  // CBRecordIsUniqueCharacter got the quest-affiliation test in 1.4.7, so the sweep that has
+  // run once a session since 1.4.0 now catches the ones it used to walk past - which is how a
+  // Panam on somebody's roster goes away without them starting a new game.
 }
 
 // Is this one of Regina's cyberpsychos?
@@ -385,7 +420,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
   CBLogRival(sys, n"RivalCreated", at, origin, faction, Cast<Float>(r.id), r.id);
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(game, "Cyberbane: A Rival now remembers you - " + CBRivalDisplayName(content, r), 5.0);
+    CBPhoneFromGang(game, faction, CBRivalDisplayName(content, r) + " has your name now. That is on you.");
   }
   CBLog.Info(n"Rivals", s"Rival created id=\(r.id) faction=\(NameToString(faction)).");
   return r;
@@ -579,7 +614,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   CBHierarchyOnSlain(sys, game, rival);
   let content = CBContent(game);
   if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBShowMessage(game, "Cyberbane: Rival slain - " + CBRivalDisplayName(content, rival), 5.0);
+    CBPhoneFromStreet(game, CBRivalDisplayName(content, rival) + " is dead and everybody knows who did it.");
   }
 
   // Succession (Nemesis-inspired): a crew does not simply lose its best and move on.
@@ -600,8 +635,8 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
       // which is what made every nemesis you killed a clean reset.
       avenger.rank = Max(1, rival.rank - 1);
       if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-        CBShowMessage(game, "Cyberbane: " + CBRivalDisplayName(content, avenger)
-          + " has taken over where " + CBRivalDisplayName(content, rival) + " left off.", 5.0);
+        CBPhoneFromGang(game, rival.faction, CBRivalDisplayName(content, avenger)
+          + " picks up where " + CBRivalDisplayName(content, rival) + " left off.");
       }
     }
   }
@@ -638,7 +673,7 @@ public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance
           cd.lastPromotionAt = now;
         }
         if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-          CBShowMessage(game, "Cyberbane: " + CBRivalDisplayName(content, r) + " has climbed the ranks while you were gone.", 5.0);
+          CBPhoneFromStreet(game, CBRivalDisplayName(content, r) + " has moved up while you were busy elsewhere.");
         }
         return;
       }

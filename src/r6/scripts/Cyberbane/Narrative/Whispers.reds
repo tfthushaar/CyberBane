@@ -233,6 +233,9 @@ func CBWhisperPick4(a: String, b: String, c: String, d: String) -> String {
 
 public func CBShowWhisper(sys: ref<CyberbaneSystem>, game: GameInstance,
                           faction: CName, mood: CName, topic: CName) -> Void {
-  CBShowMessage(game, CBWhisperSpeaker(faction) + ": " + CBWhisperLine(sys, game, faction, mood, topic),
-                CBConfig.WhisperDurationSeconds());
+  // A whisper is somebody from the gang telling you what they think of you, so it now arrives
+  // as what it always was: a message from them. How long it stays is the phone's business,
+  // which is why the per-call duration argument and its constant are both gone.
+  CBPhoneSend(game, StrUpper(CBWhisperSpeaker(faction)),
+              CBWhisperLine(sys, game, faction, mood, topic));
 }

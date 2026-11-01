@@ -126,7 +126,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     sys.AddRenownPoints(10.0 * renownMult);
     sys.AddKillDreadPoints(10.0 * dreadMult);
     if toasts {
-      CBShowMessage(game, "Cyberbane: Massacre. The streets will talk about this.", 4.0);
+      CBPhoneFromStreet(game, "Heard what you left behind. People are going to be repeating that one.");
     }
     CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
     CBLog.Info(n"Model", s"Massacre resolved (\(enc.kills) kills).");

@@ -60,8 +60,16 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
   }
   if des.IsTagged(id, n"CB_Apex") {
     let role: ECBApexRole;
-    if !CBArchetypeRole(CBRecordArchetype(npc.GetRecordID()), role) {
-      role = ECBApexRole.Assault;
+    // The chair they were actually given, which is what their kit came from. Falling back to
+    // the record's own archetype only when there is no seat on file - an adopted arrival from
+    // the city's chase, say. Reading the archetype first was wrong in the common case: the
+    // role records are only captured from killing an enemy of exactly that kind, so a gang V
+    // has only fought shooters fills all four chairs with shooter records, and four bars read
+    // SHOOTER above a heavy, a shooter, a blade and a netrunner.
+    if !CBApexSeatRole(npc, role) {
+      if !CBArchetypeRole(CBRecordArchetype(npc.GetRecordID()), role) {
+        role = ECBApexRole.Assault;
+      }
     }
     label = StrUpper(CBRoleName(role));
   }

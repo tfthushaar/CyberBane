@@ -167,7 +167,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   let money = ItemID.FromTDBID(t"Items.money");
   if ts.GetItemQuantity(player, money) < cost {
     if CBToastsOn() {
-      CBShowMessage(game, s"Cyberbane: \(NameToString(factionId)) want \(cost)eb to call it off. You're short.", 4.0);
+      CBPhoneFromGang(game, factionId, s"\(cost)eb and we forget about you. Come back when you have it.");
     }
     return false;
   }
@@ -194,7 +194,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
   if CBToastsOn() {
     let what = Equals(posture, ECBPosture.Vendetta) ? "vendetta" : "hostility";
-    CBShowMessage(game, s"Cyberbane: \(NameToString(factionId)) \(what) bought off for \(cost)eb.", 4.0);
+    CBPhoneFromGang(game, factionId, s"\(cost)eb received. The \(what) is over. Do not make us revisit it.");
   }
   CBLog.Info(n"Economy", s"Peace brokered with \(NameToString(factionId)) for \(cost).");
   return true;
@@ -225,7 +225,7 @@ public func CBBrokerPeaceBest(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   if !IsDefined(worst) {
     if CBToastsOn() {
-      CBShowMessage(game, "Cyberbane: no one to make peace with right now.", 3.0);
+      CBSystemNote(game, "no one to make peace with right now.", 3.0);
     }
     return false;
   }

@@ -11,7 +11,14 @@
 // palette, so it sits in the world like a stock UI panel. Widget geometry is tuned in
 // game; everything here is reversible (it only adds widgets to the HUD layer).
 
-public func CBHudTabCount() -> Int32 = 6
+// Seven, with MESSAGES added in 1.4.7. Appended rather than inserted on purpose: the tab
+// index is a number several things compare against (CBHudRivalsTab, CBHudFactionsTab, the
+// meters screen's `m_tab == 1`), and renumbering the existing six to put the new one in a
+// tidier place would be a change with no visible benefit and five places to get wrong.
+//
+// Seven chips at CBHudChipWidth fit the panel: 7 x 250 is 1750 against 1860, and the row
+// centres itself, so nothing needed re-measuring.
+public func CBHudTabCount() -> Int32 = 7
 
 // Lines the body box can show at its size and font before text would spill past the footer.
 // Body is 640 px tall at font size 20, so about 26 lines fit; 25 leaves a line of slack.
@@ -27,6 +34,9 @@ public func CBHudMaxLines() -> Int32 = 22
 public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == 1 {
     return 11;   // under four meters
+  }
+  if tab == CBHudMessagesTab() {
+    return CBHudMaxLines();   // the thread is prose and starts at the top
   }
   if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() {
     return 9;    // under ten list rows
@@ -187,17 +197,46 @@ public func CBHudCountdown(ticks: Int32) -> String {
   return s"\(mins)m \(secs)s";
 }
 
+// Plain words, because the old ones were not.
+//
+// "LEGEND" is this mod's internal name for the reputation model and it reads on screen as a
+// map key. "FACTIONS" is a design document word for what the game and the player both call
+// gangs. "THE FILE" was atmospheric and told nobody what was on it. A player opening the Hub
+// for the first time should be able to guess what each screen holds from its name, which is
+// the whole job of a tab label.
 public func CBHudTabName(tab: Int32) -> String {
   switch tab {
-    case 1: return "LEGEND";
-    case 2: return "FACTIONS";
-    case 3: return "DISTRICTS";
+    case 1: return "STANDING";
+    case 2: return "GANGS";
+    case 3: return "THE CITY";
     case 4: return "RIVALS";
     case 5: return "TITLES";
-    case 6: return "THE FILE";
+    case 6: return "MESSAGES";
+    case 7: return "HISTORY";
     default: return "";
   }
 }
+
+// One sentence saying what this screen is for, under the header.
+//
+// The Hub was described by a player as "so cluttered and hard to use and understand", and a
+// fair part of that is that every screen opened straight into numbers with nothing to say what
+// they were numbers about. This line costs one row and answers the question before it is asked.
+public func CBHudTabBlurb(tab: Int32) -> String {
+  switch tab {
+    case 1: return "Who you are in this city, and what is on its way to you.";
+    case 2: return "What each gang thinks of you, and what they are about to do about it.";
+    case 3: return "Where in Night City your name carries, district by district.";
+    case 4: return "The people who have survived you and are still looking.";
+    case 5: return "What the street calls you. Ctrl and the Hub key switches which one you use.";
+    case 6: return "Everything anyone has sent you this session, newest first.";
+    case 7: return "The ledger: what you did, where, and who it was.";
+    default: return "";
+  }
+}
+
+// Which tab the message thread is, so nothing has to hardcode a number.
+public func CBHudMessagesTab() -> Int32 = 6
 
 public class CBHud {
   private let m_built: Bool;
@@ -377,14 +416,22 @@ public class CBHud {
     subhead.SetHorizontalAlignment(textHorizontalAlignment.Center);
     subhead.SetFitToContent(false);
     subhead.SetSize(new Vector2(CBHudPanelW(), 32.0));
-    subhead.SetMargin(new inkMargin(0.0, 122.0, 0.0, 0.0));
+    subhead.SetMargin(new inkMargin(0.0, 110.0, 0.0, 0.0));
     subhead.Reparent(panel);
     this.m_subhead = subhead;
 
-    // Kept so nothing that still references it breaks; the tabs above replaced it.
+    // Was a hidden leftover from before the tab chips existed, kept alive so nothing that
+    // referenced it broke. It has a job again: the sentence that says what this screen is.
     let tabline = new inkText();
     tabline.SetFontFamily(font);
-    tabline.SetVisible(false);
+    tabline.SetFontStyle(n"Medium");
+    tabline.SetFontSize(20);
+    tabline.SetTintColor(CBHudGrey());
+    tabline.SetAnchor(inkEAnchor.TopLeft);
+    tabline.SetHorizontalAlignment(textHorizontalAlignment.Center);
+    tabline.SetFitToContent(false);
+    tabline.SetSize(new Vector2(CBHudPanelW(), 28.0));
+    tabline.SetMargin(new inkMargin(0.0, 136.0, 0.0, 0.0));
     tabline.Reparent(panel);
     this.m_tabline = tabline;
 
@@ -421,7 +468,7 @@ public class CBHud {
     footer.SetTintColor(CBHudDim());
     footer.SetAnchor(inkEAnchor.TopLeft);
     footer.SetMargin(new inkMargin(x, CBHudFooterY(), 0.0, 0.0));
-    footer.SetText("HUB KEY  next tab, and closes on the last    SHIFT+HUB  broker peace    CTRL+HUB  switch title");
+    footer.SetText("Hub key: next screen, and closes after the last    Shift + Hub key: pay a gang off    Ctrl + Hub key: change your title");
     footer.Reparent(panel);
 
     let footerRight = new inkText();
@@ -879,6 +926,9 @@ public class CBHud {
     let titleName = CBHudActiveTitle(sys);
     let tier = IsDefined(score) ? CBTierName(EnumInt(score.GetTier())) : "Nobody";
     this.m_subhead.SetText(titleName + "   |   " + tier);
+    if IsDefined(this.m_tabline) {
+      this.m_tabline.SetText(CBHudTabBlurb(this.m_tab));
+    }
 
     this.RenderChips();
     this.HideBars();
@@ -959,10 +1009,40 @@ func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Str
     case 3: return CBHudDistricts(sys);
     case 4: return CBHudRivals(sys, game);
     case 5: return CBHudTitles(sys);
-    case 6: return CBHudLog(sys);
+    case 6: return CBHudMessages(sys);
+    case 7: return CBHudLog(sys);
     default: return "";
   }
 }
+
+// The thread.
+//
+// Players asked for the gang messages to be text messages rather than HUD notices, and a
+// message you can miss needs somewhere to be read back - a card that has faded is gone, and
+// the thing it was telling you about is usually still happening. So the Hub keeps what was
+// sent, newest first, with the time it arrived and who sent it.
+//
+// Session only, and it says so rather than looking broken after a load. The reason is in
+// UI/PhoneMessages.reds: persisting it means a new persistent field, and adding one of those
+// wipes every player's saved Cyberbane state.
+func CBHudMessages(sys: ref<CyberbaneSystem>) -> String {
+  let phone = sys.GetPhone();
+  if !IsDefined(phone) || phone.LogCount() == 0 {
+    return "Nothing yet this session.\n\nGangs, brokers and the people hunting you all get in touch here. The thread starts over each time you load, so this being empty after a save is normal.";
+  }
+  let out = "";
+  let i = 0;
+  // Two lines each, so a long message is readable rather than cut to fit a column.
+  while i < phone.LogCount() && i < CBHudMessageRows() {
+    out += phone.LogStamp(i) + "   " + phone.LogSender(i) + "\n";
+    out += "    " + CBHudTrim(phone.LogBody(i), 140) + "\n\n";
+    i += 1;
+  }
+  return out;
+}
+
+// How many messages the screen shows. Two lines and a gap each, against CBHudMaxLines.
+public func CBHudMessageRows() -> Int32 = 7
 
 // What is on its way, in one place.
 //
@@ -972,10 +1052,10 @@ func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Str
 // identical. A line that says nobody is after you right now is information. A line that says
 // held, and why, is information. A blank screen is not.
 func CBHudIncoming(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
-  let out = "INCOMING\n";
-  out += "  " + CBHudLaneLine(sys, game, CBLaneRival(), "Rival") + "\n";
-  out += "  " + CBHudLaneLine(sys, game, CBLaneSquad(), "Crew ") + "\n";
-  out += "  " + CBHudLaneLine(sys, game, CBLaneApex(), "Apex ") + "\n";
+  let out = "On its way to you\n";
+  out += "  " + CBHudLaneLine(sys, game, CBLaneRival(), "A rival    ") + "\n";
+  out += "  " + CBHudLaneLine(sys, game, CBLaneSquad(), "A gang crew") + "\n";
+  out += "  " + CBHudLaneLine(sys, game, CBLaneApex(), "An apex squad") + "\n";
   return out;
 }
 
@@ -1082,14 +1162,17 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   }
   let cred = RoundF(CBPlayerStreetCred(game));
 
-  let out = s"STREET CRED \(cred)      STYLE \(style)      HERE \(district)\n\n";
+  // Two sentences rather than two rows of shouted key-value pairs.
+  //
+  // "STREET CRED 34      STYLE Blades      HERE Watson" is six words of label for three
+  // values, in capitals, with no indication of what any of it means or why they are on the
+  // same line. A player called the Hub cluttered and hard to understand, and lines like that
+  // one are most of why: everything on screen had the same weight and none of it was a
+  // sentence. The numbers have not changed; what they sit in has.
+  let out = s"You are in \(district), street cred \(cred), fighting mostly with \(style).\n\n";
   let stats = sys.GetStats();
   if IsDefined(stats) {
-    // Two explanatory lines came out of here when the INCOMING block went in. The screen
-    // clamps at eleven lines and the block is five of them, so something had to give, and a
-    // live readout of what is actually on its way is worth more than a reminder of how apex
-    // squads are earned - which the Factions screen already counts down for you anyway.
-    out += s"APEX SQUAD KILLS \(stats.apexKills)      RIVALS PUT DOWN \(stats.rivalsSlain)      UNSEEN \(stats.unattributed)\n\n";
+    out += s"So far: \(stats.rivalsSlain) rivals put down, \(stats.apexKills) apex enforcers killed, \(stats.unattributed) jobs nobody could pin on you.\n\n";
   }
   out += CBHudIncoming(sys, game) + "\n";
   out += CBHudDreadReason(sys) + "\n";

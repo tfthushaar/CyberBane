@@ -21,6 +21,20 @@
 @addField(ScriptedPuppet)
 public let cbKitted: Bool;
 
+// Which chair of the squad this one was given, plus one, so that zero means "not one of a
+// squad" and there is no need for a negative default - which redscript field declarations do
+// not accept anyway.
+//
+// This exists because the boss bar and the kit were reading the role from two different
+// places and could disagree. The kit has come from the seat since 1.4.5, so a squad is always
+// a heavy, a shooter, a blade and a netrunner whatever records the gang has on file; the bar
+// still read each puppet's own archetype, which for a gang that has only ever lost shooters
+// means four bars all saying SHOOTER above four enemies fighting four different ways. That is
+// the "not a crew of 4 with their own roles" report, visible in the one place the player
+// actually looks.
+@addField(ScriptedPuppet)
+public let cbApexSeatRole: Int32;
+
 // Has this one already had its stat buffs applied?
 //
 // Without this, an enemy that attaches twice - which streaming can do - gets every multiplier
@@ -96,6 +110,15 @@ public func CBArchetypeRole(a: gamedataArchetypeType, out role: ECBApexRole) -> 
       break;
   };
   return false;
+}
+
+// The chair this one was actually given, if it was given one.
+public func CBApexSeatRole(npc: ref<ScriptedPuppet>, out role: ECBApexRole) -> Bool {
+  if !IsDefined(npc) || npc.cbApexSeatRole <= 0 {
+    return false;
+  }
+  role = IntEnum<ECBApexRole>(npc.cbApexSeatRole - 1);
+  return true;
 }
 
 public func CBRoleName(role: ECBApexRole) -> String {
@@ -313,10 +336,14 @@ public func CBKitApexSeat(npc: ref<ScriptedPuppet>, seat: Int32) -> Void {
     return;
   }
   npc.cbKitted = true;
+  let role = CBApexRoleForSeat(seat);
+  // Recorded before either early return below, because the bar wants the role whether or not
+  // another mod is handing out the capabilities.
+  npc.cbApexSeatRole = EnumInt(role) + 1;
   if CBAiKitOwner() {
     return;   // Much Better AI or New Game Plus is already doing this properly
   }
-  CBApplyRoleKit(asNpc, CBApexRoleForSeat(seat));
+  CBApplyRoleKit(asNpc, role);
   if CBIsCorpFaction(CBClassifyFaction(npc)) {
     CBApplyCorpKit(asNpc);
   }

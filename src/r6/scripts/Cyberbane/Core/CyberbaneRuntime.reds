@@ -15,7 +15,6 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
   private let m_resetRequested: Bool;  // the player asked for a hard reset (see CyberbaneSettings)
   private let m_ngpDetected: Int32;    // same three states, for New Game Plus
-  private let m_securityZone: Int32 = 9;   // last zone the game reported; 9 = not heard yet
   // Why the last arrival was refused (CBBlock*). Diagnostic only, session-only.
   //
   // This exists because three releases in a row shipped with a different gate silently
@@ -99,15 +98,6 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetNgpDetected(present: Bool) -> Void {
     this.m_ngpDetected = present ? 1 : 2;
-  }
-
-  // Last security area the game reported, as an ESecurityAreaType ordinal.
-  public func GetSecurityZone() -> Int32 {
-    return this.m_securityZone;
-  }
-
-  public func SetSecurityZone(value: Int32) -> Void {
-    this.m_securityZone = value;
   }
 
   public func GetLastMessageAt() -> Float {

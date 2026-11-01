@@ -177,37 +177,22 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
     let rt = CyberbaneRuntime.Get();
     if IsDefined(heir) && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
       let content = CBContent(game);
-      CBShowMessage(game, "Cyberbane: " + CBRivalDisplayName(content, heir)
-        + " now runs " + CBFactionLabel(rival.faction) + ".", 5.0);
+      CBPhoneFromGang(game, rival.faction, CBRivalDisplayName(content, heir)
+        + " runs us now. Nothing about you has changed.");
     }
   }
 }
 
 // Running a crew should be felt, not just labelled. Reuses the apex buff pattern at a much
 // gentler scale, applied on attach to a spawned Rival.
-public func CBApplyRivalRoleBuff(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, role: Int32) -> Void {
-  if !IsDefined(puppet) || role == CBRoleNone() {
-    return;
-  }
-  // Sits on top of the apex-grade buff on purpose, and like it must never be applied twice.
-  if puppet.cbRoleBuffed {
-    return;
-  }
-  puppet.cbRoleBuffed = true;
-  let stats = GameInstance.GetStatsSystem(game);
-  if !IsDefined(stats) {
-    return;
-  }
-  let mult = role == CBRoleLeader() ? CBConfig.LeaderHealthMult() : CBConfig.LieutenantHealthMult();
-  let id = Cast<StatsObjectID>(puppet.GetEntityID());
-  let hp = RPGManager.CreateStatModifier(gamedataStatType.Health, gameStatModifierType.Multiplier, mult);
-  if IsDefined(hp) {
-    stats.AddModifier(id, hp);
-  }
-}
-
-@addField(ScriptedPuppet)
-public let cbRoleBuffed: Bool;
+// Gone, deliberately, and this note is here so it is not reintroduced.
+//
+// A Rival running a crew used to get their health multiplier from a second function applied
+// straight after the apex-grade buff. Two appliers meant nothing knew the product, and the
+// product is what players met: a leader nemesis at the top of the ladder came out at roughly
+// eleven times health. The bonus still exists and is still worth the same thing relative to
+// everything else, but it is now one term inside CBApplyApexBuild, where the ceiling can see
+// it. CBRivalRole is passed to CBApplyRivalApexBuff instead.
 
 // ---- Scars -----------------------------------------------------------------
 
