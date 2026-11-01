@@ -393,6 +393,16 @@ func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
 
 // Everything that is true of a Rival the moment they set off, whichever way they are coming.
 func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Void {
+  // A Pack Leader does not come alone. Their people walk in with them, as escorts, so they
+  // fight, chase and give up with the encounter and never hold up the crew lane.
+  if CBRivalHasTrait(r, n"PackLeader") {
+    let fs = sys.FindFaction(r.faction);
+    if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
+      let escort: EntityID;
+      CBSpawnGroup(game, fs.sampleRecord, n"", CBConfig.PackLeaderEscort(), n"CB_Escort",
+                   CBConfig.RivalSpawnDistance() + 4.0, escort);
+    }
+  }
   r.state = EnumInt(ECBRivalState.Hunting);   // it is actively hunting you now
   r.lastSeenAt = now;
   sys.SetActiveRivalId(r.id);                 // track it for escape / slain handling

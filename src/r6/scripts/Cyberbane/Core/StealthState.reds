@@ -17,7 +17,7 @@ public func CBPlayerInStealthState(game: GameInstance) -> Bool {
   if !IsDefined(bbs) {
     return false;
   }
-  let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
+  let psm = CBPlayerPSM(game);
   if !IsDefined(psm) {
     return false;
   }

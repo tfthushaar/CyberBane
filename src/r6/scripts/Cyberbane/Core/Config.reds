@@ -691,6 +691,23 @@ public abstract class CBConfig {
   public static func RivalCarArrivalCheckTicks() -> Int32 = 26
   // How often a Rival drives in rather than walking, when there is a road to drive in on.
   public static func RivalCarChance() -> Float = 0.6
+  // A Rival's traits: each moves one build term by this fraction (CBRivalTraitTerms), inside
+  // the same ceilings as everything else. Deadeye adds this much crit chance.
+  public static func RivalTraitStep() -> Float = 0.15
+  public static func RivalTraitCrit() -> Float = 6.0
+  // A Pack Leader brings this many of their own with them.
+  public static func PackLeaderEscort() -> Int32 = 2
+  // How far up the Rival queue a Grudge-Bearer jumps.
+  public static func QueueGrudgeBonus() -> Float = 10.0
+  // Gangs at war (Model/GangRivalries.reds). Hurting a gang raises its enemies' standing with V
+  // by this share of what it lost, never past the ceiling: a witnessed ganger is +1 with each
+  // enemy, so Friendly (15) takes a run of work and Allied (50) takes a campaign.
+  public static func RivalGangShare() -> Float = 0.5
+  public static func RivalGangCeiling() -> Float = 75.0
+  // What vendors on a gang's turf do about where V stands with that gang.
+  public static func TurfAlliedDiscount() -> Float = 0.08
+  public static func TurfFriendlyDiscount() -> Float = 0.04
+  public static func TurfHostileSurcharge() -> Float = 0.06
   // Spread added to each Rival's countdown so two of the same rank do not arrive together.
   public static func RivalHuntJitterTicks() -> Int32 = 120
   // How long a Rival may stand around before Cyberbane gives up on the encounter, in in-game

@@ -57,6 +57,9 @@ func CBVendorBuyModifier(sys: ref<CyberbaneSystem>) -> Float {
     }
   }
 
+  // Whose turf this is, and where V stands with them (Model/GangRivalries.reds).
+  m += CBTurfPriceModifier(sys);
+
   let maxDisc = CBConfig.VendorMaxDiscount();
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() {

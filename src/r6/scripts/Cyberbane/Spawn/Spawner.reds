@@ -743,6 +743,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
       CBKitCyberpsycho(puppet as NPCPuppet);
     } else {
       CBKitApexMember(puppet);
+      CBKitRivalTraits(puppet as NPCPuppet, who);
     }
     if IsDefined(who) {
       // The look they carry. A Rival on foot is spawned in it; one the city drove in was given

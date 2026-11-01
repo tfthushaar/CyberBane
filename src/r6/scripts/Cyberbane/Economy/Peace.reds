@@ -202,6 +202,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   deal.at = fs.lastPeaceAt;
   deal.cost = cost;
   sys.AddPeaceDeal(deal);
+  CBFileLog(sys, n"Peace", fs.lastPeaceAt, CBEventDistrict(sys, game), factionId, Cast<Float>(cost));
 
   if CBToastsOn() {
     let what = Equals(posture, ECBPosture.Vendetta) ? "vendetta" : "hostility";

@@ -33,7 +33,7 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f.affiliations = [n"TygerClaws"];
   f.SetRespect(ECBArchetype.Ghost, 0.3);
   f.SetRespect(ECBArchetype.Brawler, 0.3);
-  f.rivalFactions = [n"Mox"];
+  f.rivalFactions = [n"Mox", n"Valentinos", n"Maelstrom"];
   f.turf = [n"Westbrook", n"Watson"];
   c.AddFaction(f);
 
@@ -41,6 +41,7 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f.affiliations = [n"Maelstrom"];
   f.SetRespect(ECBArchetype.Chromed, 0.6);
   f.SetRespect(ECBArchetype.Butcher, 0.3);
+  f.rivalFactions = [n"TygerClaws", n"Scavengers"];
   f.turf = [n"Watson"];
   c.AddFaction(f);
 
@@ -48,14 +49,14 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f.affiliations = [n"Valentinos"];
   f.SetRespect(ECBArchetype.Professional, 0.3);
   f.SetRespect(ECBArchetype.Brawler, 0.3);
-  f.rivalFactions = [n"SixthStreet"];
+  f.rivalFactions = [n"SixthStreet", n"TygerClaws", n"Scavengers"];
   f.turf = [n"Heywood"];
   c.AddFaction(f);
 
   f = CBMakeFaction(n"SixthStreet", 0.0, 0.0, 1.0, 0.0, true, true, "Cyberbane-Faction-SixthStreet");
   f.affiliations = [n"SixthStreet"];
   f.SetRespect(ECBArchetype.Professional, 0.4);
-  f.rivalFactions = [n"Valentinos"];
+  f.rivalFactions = [n"Valentinos", n"Scavengers"];
   f.turf = [n"SantoDomingo"];
   c.AddFaction(f);
 
@@ -73,6 +74,9 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
 
   f = CBMakeFaction(n"Scavengers", -10.0, -0.10, 1.3, 0.4, true, true, "Cyberbane-Faction-Scavengers");
   f.affiliations = [n"Scavengers"];
+  // Everybody's enemy: they harvest people, and every crew that has a neighbourhood to protect
+  // has lost somebody to them.
+  f.rivalFactions = [n"Valentinos", n"Maelstrom", n"Mox", n"SixthStreet"];
   f.turf = [n"Watson"];
   c.AddFaction(f);
 
@@ -80,7 +84,7 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f.affiliations = [n"Mox"];
   f.SetRespect(ECBArchetype.Ghost, 0.3);
   f.SetRespect(ECBArchetype.Professional, 0.3);
-  f.rivalFactions = [n"TygerClaws"];
+  f.rivalFactions = [n"TygerClaws", n"Scavengers"];
   f.turf = [n"Watson", n"Westbrook"];
   c.AddFaction(f);
 
@@ -102,6 +106,7 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f.affiliations = [n"Barghest"];
   f.SetRespect(ECBArchetype.Professional, 0.3);
   f.SetRespect(ECBArchetype.Butcher, 0.2);
+  f.rivalFactions = [n"Militech"];
   f.turf = [n"Dogtown"];
   c.AddFaction(f);
 
@@ -109,19 +114,20 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f = CBMakeFaction(n"Arasaka", 0.0, 0.05, 0.8, 0.1, false, false, "Cyberbane-Faction-Arasaka");
   f.affiliations = [n"Arasaka"];
   f.SetRespect(ECBArchetype.Professional, 0.2);
-  f.rivalFactions = [n"Militech"];
+  f.rivalFactions = [n"Militech", n"KangTao"];
   f.turf = [n"CityCenter", n"Watson"];
   c.AddFaction(f);
 
   f = CBMakeFaction(n"Militech", 0.0, 0.05, 0.8, 0.0, false, false, "Cyberbane-Faction-Militech");
   f.affiliations = [n"Militech"];
   f.SetRespect(ECBArchetype.Professional, 0.3);
-  f.rivalFactions = [n"Arasaka"];
+  f.rivalFactions = [n"Arasaka", n"Barghest"];
   f.turf = [n"CityCenter", n"Badlands"];
   c.AddFaction(f);
 
   f = CBMakeFaction(n"KangTao", 0.0, 0.0, 0.9, 0.0, false, false, "Cyberbane-Faction-KangTao");
   f.affiliations = [n"KangTao"];
+  f.rivalFactions = [n"Arasaka"];
   f.turf = [n"CityCenter"];
   c.AddFaction(f);
 

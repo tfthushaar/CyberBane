@@ -255,6 +255,10 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
               + Cast<Float>(r.rank) * 8.0
               + Cast<Float>(r.escapes) * 4.0
               + Cast<Float>(r.encounters) * 2.0;
+        // A Grudge-Bearer is the one who comes first; it is the whole of what they are about.
+        if CBRivalHasTrait(r, n"GrudgeBearer") {
+          s += CBConfig.QueueGrudgeBonus();
+        }
         // Not the same person twice in a row while somebody else is owed a turn.
         if r.id == sys.GetLaneLastRival() {
           s -= CBConfig.QueueRepeatPenalty();

@@ -126,6 +126,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   // walks in next time.
   private let m_rivalCarPending: Int32;
   private let m_rivalCarFailed: Int32;
+  // The posture each gang had when it was last looked at, so a gang coming round to V is noticed
+  // once (Model/Reputation.reds, CBVendettaWatch). Session only.
+  private let m_seenPostureIds: array<CName>;
+  private let m_seenPostureVals: array<Int32>;
   private let m_laneRivalFreed: Int32;
   private let m_laneSquadFreed: Int32;
   private let m_laneApexFreed: Int32;
@@ -775,6 +779,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.RefreshStealthHold(game);      // before anything that might send someone in
     CBEncounterQueueTick(this, game);   // three lanes, three clocks: who is next
     CBChasePrimeTick(this, game);       // let the city's chase find a road before a car is due
+    if this.m_tickCount % 5 == 0 {
+      CBVendettaWatch(this, game);      // date a vendetta the moment it is sworn
+    }
     CBProcessCarTopUp(this, game);      // anybody a car was meant to bring and did not walks in
     if this.m_tickCount % CBConfig.ChaseRefreshEveryTicks() == 0 {
       CBChaseRefreshTick(this, game);   // keep whoever was sent actually coming after you
@@ -1080,6 +1087,22 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func SetChasePrimed(v: Bool) -> Void {
     this.m_chasePrimed = v;
+  }
+
+  // Record a gang's posture; returns the one recorded before, or -1 the first time this session.
+  public func SwapSeenPosture(id: CName, now: Int32) -> Int32 {
+    let i = 0;
+    while i < ArraySize(this.m_seenPostureIds) {
+      if Equals(this.m_seenPostureIds[i], id) {
+        let before = this.m_seenPostureVals[i];
+        this.m_seenPostureVals[i] = now;
+        return before;
+      }
+      i += 1;
+    }
+    ArrayPush(this.m_seenPostureIds, id);
+    ArrayPush(this.m_seenPostureVals, now);
+    return -1;
   }
 
   public func GetRivalCarPending() -> Int32 {

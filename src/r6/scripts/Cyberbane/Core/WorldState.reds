@@ -55,10 +55,13 @@ public func CBWorldStable(game: GameInstance) -> Bool {
   // The player is in a staged / limited / cinematic scene - a holocall, a conversation, a
   // cutscene. These overlap heavy streaming and leave world state in flux, so stand down.
   // Only Default and full-gameplay (SceneTier1) are treated as safe.
-  let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
+  let psm = CBPlayerPSM(game);
   if IsDefined(psm) {
+    // SceneTier carries a GameplayTier, not a gamePSMHighLevel. The two happen to share their
+    // first two ordinals, which is why the old comparison read correctly; it is written against
+    // the right enum now that it is actually being read (see CBPlayerPSM).
     let tier = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.SceneTier);
-    if tier != EnumInt(gamePSMHighLevel.Default) && tier != EnumInt(gamePSMHighLevel.SceneTier1) {
+    if tier != EnumInt(GameplayTier.Undefined) && tier != EnumInt(GameplayTier.Tier1_FullGameplay) {
       return false;
     }
   }
@@ -105,7 +108,7 @@ public func CBPlayerInSafeZone(game: GameInstance) -> Bool {
   if !IsDefined(bbs) {
     return false;
   }
-  let psm = bbs.Get(GetAllBlackboardDefs().PlayerStateMachine);
+  let psm = CBPlayerPSM(game);
   if !IsDefined(psm) {
     return false;
   }
@@ -136,4 +139,23 @@ public func CBNpcSafe(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> B
     return true;
   }
   return (sys.GetTickCount() - npc.cbSeenTick) >= CBConfig.NpcReadyTicks();
+}
+
+// The player's own state-machine blackboard.
+//
+// Every read of the player's state in this mod went through `BlackboardSystem.Get(
+// PlayerStateMachine)`, the global instance, and the game never writes there. The player's state
+// lives on a blackboard instanced to the player entity: `PlayerPuppet.SetBlackboardIntVariable`
+// writes the zone with `GetLocalInstanced(GetEntityID(), PlayerStateMachine)`
+// (cyberpunk/player/player.script:7667), and `GetPlayerStateMachineBlackboard` returns that same
+// instance (player.script:1920). So the zone, the stealth state, the forced-empty-hands state and
+// the scene tier all read zero, always. Five gates were switched on and doing nothing: the turf
+// gate behind the I WALK THE LINE report, the stealth hold, the apartment gate, the safe-zone
+// fallback and the scene stand-down.
+public func CBPlayerPSM(game: GameInstance) -> ref<IBlackboard> {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return null;
+  }
+  return player.GetPlayerStateMachineBlackboard();
 }
