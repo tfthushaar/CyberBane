@@ -338,6 +338,9 @@ public abstract class CBConfig {
   // Nobody stands inside anybody else. Enough for two people to be distinct bodies and small
   // enough that a squad still reads as a squad.
   public static func SpawnMinSeparation() -> Float = 1.6
+  // How far the rest of a group may form up from the first one placed. Keeps a squad together
+  // and means only the first point of a group needs the full reachability test.
+  public static func SpawnGroupRadius() -> Float = 18.0
   // How far apart the seats of an arriving car are created before they are mounted.
   public static func ArrivalSeatSpread() -> Float = 1.4
   // How many abreast a spawned group stands before starting another rank behind it.

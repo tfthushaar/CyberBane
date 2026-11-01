@@ -3,6 +3,27 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.6] - 2026-11-01
+
+### Fixed
+- **1.4.5 would not compile for some people running Fenix Rebirth.** The file that talked to
+  Fenix hooked a function from Fenix's death-history API, which is a recent addition to that
+  mod, so anyone on an older build of it had the mod but not the function and redscript
+  stopped with an error. That is my mistake twice over: I tested against one version of
+  Fenix and treated "the mod is installed" as "this part of the mod exists". The file is gone.
+- **The integration still works, and now it works with any death alternative.** Cyberbane
+  already knew V had died and already knew who did it; it was only waiting for the next load
+  to act on it, which never comes if you do not reload. It acts at the moment of death now, so
+  whoever put you down becomes the rival who did it whether you are running Fenix Rebirth,
+  something else, or nothing at all. There is no longer anything to install, enable or match
+  versions with.
+- **Rivals arriving inside terrain and locked buildings.** Spawn points come from the game's
+  own navigation search, which answers "can somebody stand here" and not "can somebody walk
+  from here to the player". Those are different questions inside a sealed building or under
+  the landscape. The first arrival of any group is now checked for an actual walkable route to
+  you and refused without one, and the rest of the group forms up near them rather than each
+  going looking for its own corner.
+
 ## [1.4.5] - 2026-11-01
 
 ### Added

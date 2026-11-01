@@ -52,10 +52,12 @@ page describes what the mod does and how it installs.
 - **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews all carry a
   marker on the map, on the minimap and above their head, so you can pick the one that matters
   out of a street full of gangers. There is a setting for turning it off.
-- **Die, and whoever killed you gets the credit.** With [Fenix Rebirth](https://www.nexusmods.com/cyberpunk2077/mods/28954) installed you do not reload when you go down, so the
-  enemy who put you there becomes a named rival, or climbs a rank if they already were one.
-  They remember the weapon they used and their gang starts reading you as somebody who can be
-  beaten. Nothing to set up: install both and it works.
+- **Die, and whoever killed you gets the credit.** The enemy who put you down becomes a named
+  rival, or climbs a rank if they already were one, and their gang starts reading you as
+  somebody who can be beaten. It lands the moment you go down, so it works with a death
+  alternative such as [Fenix Rebirth](https://www.nexusmods.com/cyberpunk2077/mods/28954)
+  carrying you through without a reload, and it works on its own. Nothing to install or
+  configure either way.
 - **A cyberpsycho you take alive might come looking for you.** Regina asks you to leave them
   breathing and the game never follows it up. There is an even chance one you spared turns up
   later as a rival, under their own name, having learned how you fight. They are no tougher

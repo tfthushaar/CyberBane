@@ -42,6 +42,25 @@ func CBGroundAt(game: GameInstance, x: Float, y: Float, zHint: Float, out ground
   return true;
 }
 
+// Can a person actually walk from here to V?
+//
+// The question the navmesh alone does not answer. `FindPursuitPointsRange` hands back points
+// an agent fits on, and fitting is not the same as being connected to where the player is
+// standing: the navmesh runs through the inside of locked buildings and across geometry the
+// player has no route to. Points there pass every test this file had, so Rivals turned up
+// inside terrain and behind locked doors, which is exactly what was reported.
+//
+// `CBNavAnchor` has asked this question since it was written, with the same call. The
+// pursuit-point path added later never did, which is how the gap opened.
+func CBPointReachable(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  if !IsDefined(nav) {
+    return true;   // cannot tell; do not silently refuse every spawn in the game
+  }
+  let path = nav.CalculatePathOnlyHumanNavmesh(from, to, NavGenAgentSize.Human, 5.0);
+  return IsDefined(path) && path.CalculateLength() > 0.0;
+}
+
 // Has somebody already been put here?
 //
 // Belt and braces against the same failure the car seats produced: several entities created at
@@ -322,8 +341,20 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let p = navPts[n];
       n += 1;
       let at: Vector4;
-      if CBSettleOnGround(game, p, at) && CBPointIsFree(used, at)
-         && !CBSafeAreaBlocksSpawn(game, at) {
+      // The first body of a group is path-checked against V. The rest only have to form up
+      // near it, which is both cheaper than a path calculation each and better behaviour:
+      // a squad that arrives together reads as a squad. If the first point is connected to
+      // the player and the others are within sight of it, so are they.
+      let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at)
+               && !CBSafeAreaBlocksSpawn(game, at);
+      if ok {
+        if ArraySize(used) == 0 {
+          ok = CBPointReachable(game, at, ppos);
+        } else {
+          ok = Vector4.Distance(at, used[0]) <= CBConfig.SpawnGroupRadius();
+        }
+      }
+      if ok {
         let facing = Quaternion.BuildFromDirectionVector(
           Vector4.Normalize2D(new Vector4(ppos.X - at.X, ppos.Y - at.Y, 0.0, 0.0)));
         if CBCreateSpawn(des, record, appearance, at, facing, squadTag, lastSpawned) {
@@ -360,7 +391,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let snapped: Vector4;
       let standing: Vector4;
       if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
-         && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing) {
+         && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing)
+         && (ArraySize(used) > 0 || CBPointReachable(game, standing, ppos)) {
         if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned) {
           spawned += 1;
           ArrayPush(used, standing);
@@ -397,6 +429,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop() {
           let stand = new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0);
           if CBPointIsFree(used, stand)
+             && (ArraySize(used) > 0 || CBPointReachable(game, stand, ppos))
              && CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned) {
             spawned += 1;
             ArrayPush(used, stand);

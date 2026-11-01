@@ -7,6 +7,66 @@
 //
 // RegisterDeed / RegisterTitle are added alongside the deed and title registries.
 
+// Whoever put V down, promoted now.
+//
+// Takes a faction Cyberbane already knows, so the two callers cannot disagree about how an
+// affiliation is mapped: the public API maps it first, and the death hook already has the
+// answer from CBClassifyFaction.
+public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: TweakDBID,
+                            weaponCategory: CName) -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.IsEnabled() {
+    return false;
+  }
+  if rt.HasSettings() && !rt.GetSettings().deathsRemembered {
+    return false;
+  }
+  let sys = CyberbaneSystem.Get(game);
+  let content = CBContent(game);
+  if !IsDefined(sys) || !IsDefined(content) || !TDBID.IsValid(killerRecordID)
+     || Equals(faction, n"") {
+    return false;
+  }
+  let now = CBGameSeconds(game);
+  let district = CBEventDistrict(sys, game);
+
+  let who: ref<CBRival>;
+  for r in sys.GetRivals() {
+    if IsDefined(r) && r.recordID == killerRecordID
+       && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+      who = r;
+    }
+  }
+  let isNew = false;
+  if !IsDefined(who) {
+    who = CBCreateRival(sys, game, faction, killerRecordID, n"", ECBRivalSource.Killer,
+                        district, now);
+    isNew = true;
+  }
+  if !IsDefined(who) {
+    return false;   // refused: the roster is full, or this is somebody the story owns
+  }
+  CBRivalKilledV(who, content, now, district);
+  who.scarMask = who.scarMask | CBScarForWeaponCategory(weaponCategory);
+
+  // The gang saw it done. Standing is V's footing with them, and somebody who has put V down
+  // is harder to frighten.
+  let fs = sys.FindFaction(faction);
+  if IsDefined(fs) {
+    fs.standing = ClampF(fs.standing - CBConfig.DeathStandingDrop(), -100.0, 100.0);
+  }
+  if rt.HasSettings() && rt.GetSettings().toasts {
+    let name = CBRivalDisplayName(content, who);
+    if isNew {
+      CBShowMessage(game, s"Cyberbane: \(name) put you down. They will be looking for you.", 5.0);
+    } else {
+      CBShowMessage(game, s"Cyberbane: \(name) put you down again. They are getting better at it.", 5.0);
+    }
+  }
+  CBLog.Info(n"Rivals", s"Killed by \(NameToString(faction)) (\(TDBID.ToStringDEBUG(killerRecordID))); rival \(who.id) is now rank \(who.rank).");
+  return true;
+}
+
 // Which wound this weapon leaves on the Rival who dealt it.
 //
 // Fenix Rebirth reports the weapon's `gamedataItemType` as a name, which is the same vocabulary
@@ -14,6 +74,9 @@
 // counts as shot, which is what the overwhelming majority of deaths are.
 public func CBScarForWeaponCategory(category: CName) -> Int32 {
   let c = NameToString(category);
+  if StrLen(c) == 0 {
+    return 0;   // nothing known about the weapon; do not invent a wound
+  }
   if StrContains(c, "Katana") || StrContains(c, "Knife") || StrContains(c, "Sword")
      || StrContains(c, "Blade") || StrContains(c, "Machete") || StrContains(c, "Axe") {
     return CBScarCut();
@@ -65,47 +128,9 @@ public abstract class CyberbaneAPI {
     if Equals(faction, n"") {
       return false;   // not a gang Cyberbane tracks; nothing to pin this on
     }
-    let now = CBGameSeconds(game);
-    let district = CBEventDistrict(sys, game);
-
-    // The one who did it may already be on the books. Promoting the existing Rival rather than
-    // adding a second from the same record is what keeps a nemesis a nemesis.
-    let who: ref<CBRival>;
-    for r in sys.GetRivals() {
-      if IsDefined(r) && r.recordID == killerRecordID
-         && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-        who = r;
-      }
-    }
-    let isNew = false;
-    if !IsDefined(who) {
-      who = CBCreateRival(sys, game, faction, killerRecordID, n"", ECBRivalSource.Killer,
-                          district, now);
-      isNew = true;
-    }
-    if !IsDefined(who) {
-      return false;   // refused: the roster is full, or this is somebody the story owns
-    }
-    CBRivalKilledV(who, content, now, district);
-    who.scarMask = who.scarMask | CBScarForWeaponCategory(weaponCategory);
-
-    // The gang saw it done. Standing is V's footing with them, and somebody who has put V down
-    // is harder to frighten.
-    let fs = sys.FindFaction(faction);
-    if IsDefined(fs) {
-      fs.standing = ClampF(fs.standing - CBConfig.DeathStandingDrop(), -100.0, 100.0);
-    }
-    if rt.HasSettings() && rt.GetSettings().toasts {
-      let name = CBRivalDisplayName(content, who);
-      if isNew {
-        CBShowMessage(game, s"Cyberbane: \(name) put you down. They will be looking for you.", 5.0);
-      } else {
-        CBShowMessage(game, s"Cyberbane: \(name) put you down again. They are getting better at it.", 5.0);
-      }
-    }
-    CBLog.Info(n"Rivals", s"Killed by \(NameToString(faction)) (\(TDBID.ToStringDEBUG(killerRecordID))); rival \(who.id) is now rank \(who.rank).");
-    return true;
+    return CBPromoteKiller(game, faction, killerRecordID, weaponCategory);
   }
+
 
   // ---- Content extension ------------------------------------------------
   public static func RegisterImplant(family: CName, score: Float, visible: Bool, archetype: ECBArchetype) -> Void {
