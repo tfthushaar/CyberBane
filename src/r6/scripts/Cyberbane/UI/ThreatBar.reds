@@ -211,7 +211,9 @@ public class CBThreatBar {
     let line = CBHuntStatusLine(sys, game);
     if StrLen(line) > 0 || IsDefined(this.m_status) {
       if this.EnsureBuilt() && IsDefined(this.m_status) {
-        this.m_status.SetText(line);
+        // One line, never wider than the screen: the parts are kept short where they are built
+        // (Spawn/Hunt.reds) and this is the hard limit behind that.
+        this.m_status.SetText(CBClip(line, CBConfig.HudLineMaxChars()));
         this.m_status.SetVisible(StrLen(line) > 0 && !sys.IsHubOpen());
       }
     }

@@ -148,6 +148,21 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_apexBountyFaction: CName;
   // Iconic weapons already handed out this session, so the same one does not drop twice.
   private let m_iconicsGiven: array<TweakDBID>;
+  // The hunt's presentation and its finer states (Spawn/Hunt.reds). Session only.
+  private let m_huntGrade: String;
+  private let m_huntEndLine: String;
+  private let m_huntEndUntil: Int32;
+  private let m_spotTicks: Int32;
+  private let m_huntIdleTicks: Int32;
+  private let m_huntGiveUpTicks: Int32;
+  private let m_searchDistrict: CName;
+  // A scout sent ahead of a crew (Spawn/Hunt.reds).
+  private let m_scoutFaction: CName;
+  private let m_scoutId: EntityID;
+  private let m_scoutSentTick: Int32;
+  private let m_scoutSeenTicks: Int32;
+  // When each lane last sent an "asking around" notice, so a lane that re-queues does not repeat it.
+  private let m_trackNoticeTick: array<Int32>;
   // Gangs whose crew V has beaten since their last apex squad (Spawn/Queue.reds, CBApexEligible).
   private let m_crewBeaten: array<CName>;
   // The hostile turf V is standing on, since when, and when a lookout may next call it in
@@ -370,7 +385,8 @@ public class CyberbaneSystem extends ScriptableSystem {
         // CBNpcSafe holds every other reader off for NpcReadyTicks after attach, and this path
         // ignored it.
         if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival")
-           || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort") {
+           || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort")
+           || des.IsTagged(id, n"CB_Scout") {
           CBScheduleSpawnSetup(this.GetGameInstance(), id, riding);
         }
 
@@ -1173,6 +1189,112 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func NoteIconicGiven(id: TweakDBID) -> Void {
     ArrayPush(this.m_iconicsGiven, id);
+  }
+
+  public func GetHuntGrade() -> String {
+    return this.m_huntGrade;
+  }
+
+  public func SetHuntGrade(grade: String) -> Void {
+    this.m_huntGrade = grade;
+  }
+
+  public func GetHuntEndLine() -> String {
+    if this.m_tickCount > this.m_huntEndUntil {
+      return "";
+    }
+    return this.m_huntEndLine;
+  }
+
+  public func SetHuntEnd(line: String, ticks: Int32) -> Void {
+    this.m_huntEndLine = line;
+    this.m_huntEndUntil = this.m_tickCount + ticks;
+  }
+
+  public func BumpHuntIdleTicks() -> Int32 {
+    this.m_huntIdleTicks += 1;
+    return this.m_huntIdleTicks;
+  }
+
+  public func SetHuntIdleTicks(n: Int32) -> Void {
+    this.m_huntIdleTicks = n;
+  }
+
+  public func GetSpotTicks() -> Int32 {
+    return this.m_spotTicks;
+  }
+
+  public func SetSpotTicks(n: Int32) -> Void {
+    this.m_spotTicks = n;
+  }
+
+  public func GetHuntGiveUpTicks() -> Int32 {
+    if this.m_huntGiveUpTicks <= 0 {
+      return CBConfig.HuntGiveUpTicks();
+    }
+    return this.m_huntGiveUpTicks;
+  }
+
+  public func SetHuntGiveUpTicks(n: Int32) -> Void {
+    this.m_huntGiveUpTicks = n;
+  }
+
+  public func GetSearchDistrict() -> CName {
+    return this.m_searchDistrict;
+  }
+
+  public func SetSearchDistrict(d: CName) -> Void {
+    this.m_searchDistrict = d;
+  }
+
+  // True if this lane may send a tracking notice now, and records that it did.
+  public func TakeTrackNotice(lane: Int32, gap: Int32) -> Bool {
+    if lane < 0 || lane > 8 {
+      return false;
+    }
+    while ArraySize(this.m_trackNoticeTick) <= lane {
+      ArrayPush(this.m_trackNoticeTick, 0);
+    }
+    let last = this.m_trackNoticeTick[lane];
+    if last > 0 && (this.m_tickCount - last) < gap {
+      return false;
+    }
+    this.m_trackNoticeTick[lane] = this.m_tickCount;
+    return true;
+  }
+
+  public func GetScoutFaction() -> CName {
+    return this.m_scoutFaction;
+  }
+
+  public func GetScoutId() -> EntityID {
+    return this.m_scoutId;
+  }
+
+  public func GetScoutSentTick() -> Int32 {
+    return this.m_scoutSentTick;
+  }
+
+  public func GetScoutSeenTicks() -> Int32 {
+    return this.m_scoutSeenTicks;
+  }
+
+  public func SetScoutSeenTicks(n: Int32) -> Void {
+    this.m_scoutSeenTicks = n;
+  }
+
+  public func SetScout(faction: CName, id: EntityID) -> Void {
+    this.m_scoutFaction = faction;
+    this.m_scoutId = id;
+    this.m_scoutSentTick = this.m_tickCount;
+    this.m_scoutSeenTicks = 0;
+  }
+
+  public func ClearScout() -> Void {
+    let none: EntityID;
+    this.m_scoutFaction = n"";
+    this.m_scoutId = none;
+    this.m_scoutSeenTicks = 0;
   }
 
   public func CrewBeaten(faction: CName) -> Bool {

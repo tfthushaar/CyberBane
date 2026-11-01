@@ -82,6 +82,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Hit squads and apex squads drive to you instead of appearing on foot. The car is spawned out of sight, loads its crew and comes to find you; if you are driving, it gives chase. Turned off, or indoors where a car cannot reach, they arrive on foot as before.");
     this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous an apex enforcer is, as a percentage of a full boss build. At 100 it is in the same class as the game's own set piece enforcers and is meant to be a serious fight. The default 55 is hard but fair. This scales health, armour, damage and crit together, and it is also scaled by your own menace and by the game's difficulty: on Hard and Very Hard the game already makes every enemy hit harder, so Cyberbane adds less on top.");
     this.Text("Cyberbane-Settings-LootDrops-Desc", "Anyone Cyberbane sends who you put down leaves you something, straight into your inventory. Crew sometimes carry ammo and parts, Rivals carry better parts the higher they ranked, and apex squad members carry rare and epic parts with a chance of legendary ones and a small chance of an iconic weapon you could otherwise only find exploring the city.");
+    this.Text("Cyberbane-Settings-Pacing-Desc", "Timetable splits each day into windows and sends trouble inside them, at a random moment in each. Unpredictable has no windows: any minute might be the one, more often at night for crews and Rivals. Reactive only sends a crew when you give a gang a reason (a witnessed kill, hanging around on their turf, a vendetta) and an apex squad only after you beat one of their crews. The per-day limits apply in every mode.");
+    this.Text("Cyberbane-Settings-Scouts-Desc", "A gang that does not know where you are sometimes sends one scout ahead of the crew. The scout searches for you. If they keep eyes on you for a few seconds they call the crew in. Deal with the scout first, or stay out of sight, and the crew never comes.");
+    this.Text("Cyberbane-Settings-ShowCountdowns-Desc", "Show exact times on the Hub and the HUD line. Turned off, they say soon, any moment or later instead, so there is no clock to keep in your head.");
     this.Text("Cyberbane-Settings-Bounties-Desc", "Putting down a Rival or wiping out an apex squad pays eddies, from a gang at war with theirs that does not want you dead. They text you when the money lands.");
     this.Text("Cyberbane-Settings-ApexTraits-Desc", "Each apex gets two traits of its own, so no two fight the same way: heavier plate, a harder hit, a better eye for the gap in your armour, a deeper health pool, or simply fighting above its level. Turns itself off automatically when New Game Plus is installed, because that mod already hands out its own.");
     this.Text("Cyberbane-Settings-TwrCompat-Desc", "Compatibility with They Will Remember and Night City Remembers. On Auto, Cyberbane spots them and stands down the systems that would otherwise run twice.");
@@ -165,6 +168,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-VehicleArrivals", "Arrive by car");
     this.Text("Cyberbane-Settings-LootDrops", "Loot from the people sent after you");
     this.Text("Cyberbane-Settings-Bounties", "Bounties");
+    this.Text("Cyberbane-Settings-Pacing", "When they come");
+    this.Text("Cyberbane-Settings-Scouts", "Scouts before crews");
+    this.Text("Cyberbane-Settings-ShowCountdowns", "Show countdowns");
     this.Text("Cyberbane-Settings-ApexStrength", "Apex strength");
     this.Text("Cyberbane-Settings-ApexTraits", "Apex traits");
     this.Text("Cyberbane-Settings-ApexBossBar", "Apex squad boss bar");

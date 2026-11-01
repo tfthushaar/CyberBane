@@ -127,7 +127,7 @@ page describes what the mod does and how it installs.
   slows down they get out and come for you; if you are behind the wheel they stay in and chase. If the car seats fewer than the gang sent, or never makes it,
   the rest walk in, so an apex squad is always four. Indoors, or anywhere there is no road close
   enough, they come on foot.
-- **A vendetta is a decision, not a dice roll.** A gang that has sworn one is already putting a
+- **A vendetta is a decision.** A gang that has sworn one is already putting a
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
   of a problem they think you are, and they bring the gang's apex squad with them. Pay them off
   while they are on the way and they turn around.
@@ -137,16 +137,22 @@ page describes what the mod does and how it installs.
   have sworn a vendetta. A gang that hates you but has not seen or heard of you in a day keeps
   its people at home. Wipe out one of their crews and their apex squad is next, and they text
   you to say who is coming.
-- **Hunted, not ambushed.** Whoever is coming texts you first and you get time. They arrive out
-  of sight, head for where you were last seen and search the area, narrowing in, the way the
-  police do. A line on the HUD says who is hunting you and whether they are on their way,
-  searching for you, have you, or are losing your trail.
+- **Being hunted.** First you hear somebody is asking about you. Then whoever is coming texts
+  you and you get time. They arrive out of sight, head for where you were last seen and search
+  the area, narrowing in, the way the police do. A gang that does not know where you are may
+  send one scout first, who calls in the crew only if they keep eyes on you. A glimpse is not
+  enough for them: crouching, the dark and their own gang's colours make you harder to find, and
+  a safe area or a drive out of the district makes them give up sooner. One line on the HUD
+  says who it is, how big a threat, and whether they are tracking you, on their way, searching,
+  have spotted you or have you.
 - **Worth the fight.** Anyone the mod sends who you put down leaves you something, scaled
-  to who they were: ammo and parts from a crew, better parts from a Rival the higher they
+  to who they were and to your level: cash, ammo and parts from a crew, better parts from a Rival the higher they
   ranked, rare and epic parts from an apex squad with a chance of legendary ones, and a small
   chance of an iconic weapon from apex squads, top Rivals and crew leaders. Only iconics you
   could otherwise find exploring the city can drop; quest, gig and story weapons never do. Put
-  down a Rival or wipe out an apex squad and a gang at war with theirs pays you a bounty.
+  down a Rival or wipe out a crew or an apex squad and a gang at war with theirs pays you a
+  bounty. Run from a crew instead and that gang thinks less of you, though they do leave you
+  alone for a while.
 - **The day has a shape.** A day in Night City is split into three stretches of eight hours,
   and each kind of trouble gets its own window inside them, staggered so a Rival and an apex
   squad sharing a stretch arrive hours apart rather than together. Three Rivals means one in
@@ -155,7 +161,9 @@ page describes what the mod does and how it installs.
   timetable you can learn. How many of each per day is up to you. Sleeping or fast travelling
   past a window simply misses it, so you never arrive somewhere and get everything you were
   owed at once. The timetable only says when the city has time for you; a gang still needs a
-  reason to come.
+  reason to come. Prefer no pattern at all? Set **When they come** to Unpredictable, or to
+  Reactive so nobody comes unless you give them a reason, and turn off **Show countdowns** to
+  see "soon" and "later" in place of exact times.
 - **You can lose them.** Being hunted is a chase you can win. Get far enough from all of them
   and stay clear long enough and they give up, the same way the police in this game do. A Rival
   you shake takes it personally and comes back promoted, so getting away still costs you

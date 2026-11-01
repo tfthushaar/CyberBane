@@ -5,7 +5,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [1.5.0] - 2026-11-02
 
-A stability release, and it includes everything that was built for 1.4.8. Players reported the
+A stability release that also reworks how being hunted feels, and it includes everything that
+was built for 1.4.8. Players reported the
 game crashing within minutes of a Rival or a crew being due, sometimes with V just standing
 idle, and after reading a gang's texts. Every system that touches the game's engine was gone
 through again against the game's own scripts and against the crash causes recorded in earlier
@@ -52,7 +53,7 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
 - A crew you wiped out could still produce a Rival "who got away". Only somebody still standing
   can escape now.
 
-### Hunted, not ambushed
+### Being hunted
 - **They tell you first, and you get time.** A crew, an apex squad or a Rival texts before they
   set off, with roughly where they think you are, and there is a real gap before they arrive.
 - **They arrive out of sight and have to find you.** Spawn distances are much longer, and
@@ -62,15 +63,16 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   they are on their way, searching for you, have you, or are losing your trail.
 - **You can break contact.** Get out of sight and far enough away and they lose you, then give
   up. A Rival you lose texts you about it.
-- **Rivals say "found you" when they actually find you**, not the moment they spawn.
+- **Rivals say "found you" when they actually find you.** The text used to arrive the moment
+  they spawned.
 
 ### They come for a reason
-- **A crew needs a reason, not just a grudge.** A gang that wants you dead sends people when
+- **A crew needs a reason.** A gang that wants you dead sends people when
   you have killed their people where somebody saw it, when you have been hanging around on
   their streets long enough for a lookout to call it in, when you have hurt them in the last
   half a day, or when they have sworn a vendetta. A gang that hates you but has not seen or
-  heard of you in a day keeps its people at home. The daily timetable still limits how often
-  the city has time for you; it is no longer the reason anybody comes.
+  heard of you in a day keeps its people at home. The daily timetable only limits how often the
+  city has time for you.
 - **On their turf, they notice.** Spend a few minutes out in the open on the streets of a gang
   that wants you dead and a lookout calls it in. Their crew comes off the timetable, and their
   warning says you were seen on their streets. Sneaking, safe areas and being indoors do not
@@ -84,21 +86,66 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
 - The Hub's gang line says where each gang stands: kills until their apex squad, "beat a crew,
   or N more kills", or ready.
 
+### No clock to keep
+- **New setting: When they come.** Timetable is the daily windows from before. Unpredictable
+  has no windows: any minute might be the one, more often at night for crews and Rivals and in
+  the day for apex squads. Reactive only sends a crew when you give a gang a reason, and an apex
+  squad only after you beat one of their crews. The per-day limits apply in every mode.
+- **Every countdown varies.** How long a crew or apex squad takes to set off, and how long every
+  warning lasts, now changes each time.
+- **New setting: Show countdowns.** Turn it off and the Hub and the HUD say "soon", "any
+  moment" or "later" in place of exact times.
+
+### Warnings you can prepare for
+- **You hear you are being tracked first.** When a gang or a Rival starts coming for you, the
+  local broker texts that somebody is asking about you, or you overhear it on the street. In the
+  last two minutes before they set off, the HUD line reads TRACKED.
+- **How big the threat is.** The HUD line names it (SCOUT, CREW, HEAVY CREW, APEX SQUAD,
+  RIVAL), and a crew's warning says how many are coming, from the same number that turns up.
+- **Scouts.** A gang that does not know where you are sometimes sends one scout first. If the
+  scout keeps eyes on you for a few seconds, they call in the crew. Deal with the scout, or stay
+  out of sight, and the crew never comes and that gang backs off for a while. New setting:
+  **Scouts before crews**, on by default.
+- **How it ended.** For a few seconds after a hunt the HUD line reads LOST THEM or THREAT
+  ENDED.
+
+### Cat and mouse
+- **A glimpse is not a fix.** A hunter has to keep you in sight for a moment before the hunt
+  counts you as found, and the HUD line reads SPOTTED while they do. Break line of sight in that
+  moment and they go back to searching.
+- **Stealth counts.** Crouching, the dark and wearing the hunting gang's own colours all
+  shorten how far hunters see and hear you.
+- **They search like guards.** Searchers run to the area, then walk it, and how long they keep
+  looking varies.
+- **Ways to shake them.** Getting into a safe area, or driving out of the district they are
+  searching, makes them lose interest twice as fast.
+- **Rivals know their streets.** A Rival is more likely to come for you in the district they
+  came from.
+
 ### Worth the fight
 - **Loot.** Anyone Cyberbane sends who you put down leaves you something, straight into your
-  inventory. Crew sometimes carry ammo and crafting parts. Rivals carry better parts the higher they ranked, more for a
-  crew leader. Apex squad members carry rare and epic parts with a chance of legendary ones.
+  inventory, and more of it the higher your level. Crews carry cash, ammo and crafting parts.
+  Rivals carry better parts the higher they ranked, more for a crew leader. Apex squad members
+  carry rare and epic parts with a chance of legendary ones.
 - **A small chance of an iconic weapon** from apex squad members, top-ranked Rivals and crew
   leaders. Only weapons you could otherwise find exploring the city: anything the game tags as
   a quest item is refused, and mission, gig, story and companion weapons are not on the list.
   Each one drops at most once per session.
-- **Bounties.** Put down a Rival, or wipe out an apex squad, and a gang at war with theirs that
-  does not want you dead pays you for it, and texts to say so.
+- **Bounties.** Put down a Rival, wipe out a crew or wipe out an apex squad, and a gang at war
+  with theirs that does not want you dead pays you for it, and texts to say so.
+- **Running costs something.** Lose a crew or an apex squad by running and that gang thinks a
+  little less of you, and lets you know. They also leave you alone for a while, so lying low
+  works.
 - New settings: **Loot from the people sent after you** and **Bounties**, both on by default.
 
 ### Fairer fights
 - **Difficulty aware.** On Hard and Very Hard the game already makes every enemy hit harder,
-  and the apex build was stacking on top of that. Cyberbane now adds less at those settings.
+  and the apex build was stacking on top of that. Cyberbane now adds less at those settings,
+  sends slightly smaller crews, places them further out, gives longer warnings, and its hunters
+  do not see or hear as far.
+- **Combat overhauls.** When Immersive Shooting AI shows up in the Mod Settings list, apex
+  squads keep only part of their damage bonus. If it does not appear there on your setup, the
+  apex strength slider does the same job.
 - **Apex strength defaults to 55** (was 70). If you set it yourself, your value is kept.
 
 ### Nemesis

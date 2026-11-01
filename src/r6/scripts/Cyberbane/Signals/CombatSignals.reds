@@ -146,7 +146,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     }
     // Crew and escorts carry a little.
     if IsDefined(desE) && puppet.cbDamagedByPlayer
-       && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desE.IsTagged(puppet.GetEntityID(), n"CB_Escort")) {
+       && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desE.IsTagged(puppet.GetEntityID(), n"CB_Escort")
+           || desE.IsTagged(puppet.GetEntityID(), n"CB_Scout")) {
       CBScheduleLoot(sysE, game, puppet, CBLootTierCrew(), 0.0);
     }
     // The last of a crew: their gang's best is next (Spawn/Queue.reds). Counted without this

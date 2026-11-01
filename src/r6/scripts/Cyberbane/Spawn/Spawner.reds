@@ -351,7 +351,9 @@ func CBSpawnBearing(attempt: Int32) -> Float {
   return -2.36;
 }
 
-public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float, out lastSpawned: EntityID, opt extraTag: CName) -> Int32 {
+public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, baseDist: Float, out lastSpawned: EntityID, opt extraTag: CName) -> Int32 {
+  // Further out on harder difficulties, so there is more time between a warning and a fight.
+  let dist = baseDist + CBConfig.DifficultySpawnExtra() * Cast<Float>(CBDifficultyLevel());
   if !TDBID.IsValid(record) || count <= 0 {
     CBNoteSpawnBlock(CBBlockNoRecord());
     return 0;
@@ -844,7 +846,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   let id = puppet.GetEntityID();
   // An apex escort fights as rank and file, so it takes the squad's kit.
-  let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort");
+  let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort") || des.IsTagged(id, n"CB_Scout");
   let isRival = des.IsTagged(id, n"CB_Rival");
   let isApex = des.IsTagged(id, n"CB_Apex");
   if !isSquad && !isRival && !isApex {
@@ -940,6 +942,7 @@ func CBNearestHunterDistance(sys: ref<CyberbaneSystem>, game: GameInstance,
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Apex", best);
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Squad", best);
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Escort", best);
+  best = CBNearestForTag(sys, game, des, ppos, n"CB_Scout", best);
   return best;
 }
 
@@ -968,17 +971,33 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   if CBLiveRivalPresent(sys, game) {
     CBRivalEscapedByPlayer(sys, game);
   }
+  // A gang crew or apex squad V ran from. Running costs a little standing with them, and lying
+  // low works: they leave V alone for a while (the same cooldown a crew starts when it is sent).
+  let ranFrom = sys.GetHuntFaction();
+  let crewLost = CBLiveTaggedPresent(game, n"CB_Squad") || CBLiveTaggedPresent(game, n"CB_Apex");
+  sys.ClearScout();
   CBDeleteTaggedSafe(game, n"CB_Rival");
   CBDeleteTaggedSafe(game, n"CB_Squad");
   CBDeleteTaggedSafe(game, n"CB_Apex");
   CBDeleteTaggedSafe(game, n"CB_Escort");
+  CBDeleteTaggedSafe(game, n"CB_Scout");
+  sys.SetHuntEnd("LOST THEM", CBConfig.HuntEndLineTicks());
+  if crewLost && NotEquals(ranFrom, n"") {
+    let fs = sys.FindFaction(ranFrom);
+    if IsDefined(fs) {
+      fs.renown = ClampF(fs.renown - CBConfig.RunRenownLoss(), 0.0, 100.0);
+      fs.lastHitSquadAt = CBGameSeconds(game);
+    }
+    if CBToastsOn() && CBFactionFieldsSquads(ranFrom) {
+      CBPhoneFromGangFinal(game, ranFrom, "Ran, did you. Everybody is going to hear about that.");
+    }
+  }
   // Take the bars down with them, rather than leaving them up for the tick it would take the
   // stack to notice its targets had stopped existing.
   sys.GetThreatBar().Hide();
   sys.SetActiveRivalId(0);
   sys.SetActiveSquadFaction(n"");
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+  if CBToastsOn() && !crewLost {
     CBPhoneFromStreet(game, "They lost you. Do not go back the way you came.");
   }
   CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");

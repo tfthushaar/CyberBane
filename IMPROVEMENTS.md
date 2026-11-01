@@ -4,12 +4,65 @@ A working list of what players have asked for, what the mod already does about i
 left. Checked against the code on the development branch at 1.5.0.
 
 Players on Nexus are on 1.4.7. Everything marked "1.4.8" or "1.5.0" below is in the code but has
-not been released yet, so the player who wrote this feedback has not seen any of it.
+not been released yet, so the player who wrote this feedback has not seen any of it. The
+point-by-point section and the backlog describe the code as it was before the backlog was built;
+the status section says what has been done since.
 
 Every idea here has to follow the crash rules in STATUS.md (1.5.0 notes): no police system
 calls, one AI order per NPC, no entity work inside attach events, removals only through
 `CBDeleteTaggedSafe`, behaviour-only ability kits, no runtime appearance changes, no loot drops
 from corpses.
+
+## Status after 1.5.0
+
+The backlog below was written before any of it was built. This is where each item stands now.
+
+**Done in 1.5.0:**
+
+- 1 Random countdowns everywhere: crew and apex countdowns and every warning vary by up to 40
+  and 35 percent.
+- 2 Show countdowns setting: on by default; off shows "any moment", "soon", "before long" or
+  "later".
+- 3 Pacing setting (When they come): Timetable, Unpredictable or Reactive.
+- 4 Heat that cools: a gang whose crew or apex squad loses V, or whose scout is put down, leaves
+  V alone for its usual cooldown.
+- 5 Graded threat on the HUD line (SCOUT, CREW, HEAVY CREW, APEX SQUAD, RIVAL), and crew
+  warnings that say how many are coming.
+- 6 Tracking stage: a broker text or an overheard line when somebody starts coming, and TRACKED
+  on the HUD line in the last two minutes.
+- 7 Scouts before crews, with a setting.
+- 9 Suspicion moment: a sighting has to hold for two seconds, shown as SPOTTED.
+- 10 Stealth counts: crouching, night and the hunting gang's colours shorten sight and hearing.
+- 11 Search like guards: run to the area, walk it, varied give-up time.
+- 12 Losing them on purpose: a safe area, or driving out of the searched district, doubles how
+  fast they give up.
+- 13 Loot that scales with level, and cash from crews.
+- 14 Bounty for a wiped crew.
+- 15 A cost for running: a little renown with that gang, and a text.
+- 18 Difficulty scales crew size, spawn distance, hunter senses and warning length.
+- 19 Immersive Shooting AI: detected through the Mod Settings list. It has no script module to
+  test, so a copy that does not register settings is not seen.
+- 21 The city talks about the hunt: the tracking notice is sometimes an overheard line.
+- 22 Rivals who know their streets: more likely to come in the district they came from.
+- 23 Time of day: Unpredictable pacing favours night for crews and Rivals, and day for apex
+  squads. Hunters see less far at night. Weather is not used.
+- 25 A clearer end: LOST THEM or THREAT ENDED on the HUD line for a few seconds.
+
+**Not done, and why:**
+
+- 8 Sound cues: the event names for an engine and a car door cannot be checked offline. A wrong
+  name is silent, so this needs testing in game first.
+- 16 Loot on the body: needs an in-game check that items given to a live spawned NPC show in
+  their loot. Until then the inventory path stays.
+- 17 Trophies: an NPC's weapon record may be an NPC-only variant that is broken in V's hands.
+  Needs checking in game.
+- 20 Fair start: the accuracy stat for NPCs cannot be confirmed offline, and a stat modifier
+  that has to be removed later adds timing risk.
+- 24 Car crews that suit the gang: needs per-gang vehicle records and seats beyond four. Out of
+  scope for a stability release.
+
+The HUD keeps a single status line throughout. The name on it is cut at 22 characters and the
+whole line at 76, so it fits on every screen.
 
 ---
 

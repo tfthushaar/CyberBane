@@ -53,6 +53,16 @@ enum ECBMessageDelivery {
   Notices = 2,
 }
 
+// How the city decides when to come for V. Timetable is the day split into windows (Spawn/
+// Schedule.reds). Unpredictable has no windows at all: every minute carries a small chance that
+// rises at night for crews and Rivals. Reactive sends crews only when V gives a gang a reason, apex
+// squads only when a gang has earned one, and Rivals unpredictably.
+enum ECBPacing {
+  Timetable = 0,
+  Unpredictable = 1,
+  Reactive = 2,
+}
+
 enum ECBLogLevel {
   Off = 0,
   Info = 1,
@@ -272,6 +282,18 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Pacing")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Pacing-Desc")
+  public let pacing: ECBPacing = ECBPacing.Timetable;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Scouts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Scouts-Desc")
+  public let scouts: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EncounterGap")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EncounterGap-Desc")
   @runtimeProperty("ModSettings.min", "2")
@@ -329,6 +351,12 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageDelivery")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageDelivery-Desc")
   public let messageDelivery: ECBMessageDelivery = ECBMessageDelivery.Phone;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ShowCountdowns")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ShowCountdowns-Desc")
+  public let showCountdowns: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

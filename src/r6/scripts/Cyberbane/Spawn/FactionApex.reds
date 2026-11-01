@@ -62,6 +62,37 @@ public func CBApexStrengthFraction() -> Float {
 // The game's own difficulty already scales what every enemy does to V. On Hard and Very Hard the
 // apex build stacked on top of that, which is how an apex squad came to delete a player in a
 // couple of hits. Cyberbane gives back part of its share at those settings.
+// Steps above Easy: Hard is one, Very Hard two, Easy and Story none.
+public func CBDifficultyLevel() -> Int32 {
+  let sds = GameInstance.GetStatsDataSystem(GetGameInstance());
+  if !IsDefined(sds) {
+    return 0;
+  }
+  let d = sds.GetDifficulty();
+  if Equals(d, gameDifficulty.VeryHard) {
+    return 2;
+  }
+  if Equals(d, gameDifficulty.Hard) {
+    return 1;
+  }
+  return 0;
+}
+
+// Is a combat overhaul installed that already makes every enemy deadlier? Immersive Shooting AI
+// registers no script module Cyberbane can test at compile time, so this reads the Mod Settings
+// list, the same way They Will Remember and Street Sense are found. A mod that does not register
+// settings there is not seen, and the apex strength slider is the way to tune for it.
+public func CBCombatOverhaulActive() -> Bool {
+  let mods = ModSettings.GetMods();
+  for mod in mods {
+    let name = NameToString(mod);
+    if StrContains(name, "Immersive Shooting") || StrContains(name, "ImmersiveShooting") {
+      return true;
+    }
+  }
+  return false;
+}
+
 public func CBDifficultyStepDown() -> Float {
   let game = GetGameInstance();
   let sds = GameInstance.GetStatsDataSystem(game);
@@ -232,6 +263,10 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
                    * (1.0 + tArmour);
   let dmgMult = CBApexLerp(CBConfig.ApexDamageMultBase() + scale * CBConfig.ApexDamageMultRange(), strength)
                 * (1.0 + tDamage);
+  // With a combat overhaul already making every shot count, keep only part of the bonus.
+  if CBCombatOverhaulActive() {
+    dmgMult = 1.0 + (dmgMult - 1.0) * CBConfig.OverhaulDamageKeep();
+  }
   let critChance = CBConfig.ApexCritChanceBonus() * scale * strength + tCritChance;
   let critDamage = CBConfig.ApexCritDamageBonus() * scale * strength + tCritDamage;
 
