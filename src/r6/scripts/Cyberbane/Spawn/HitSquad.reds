@@ -44,9 +44,12 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   // V this way can leave a survivor who becomes a Hunter Rival (spec §9.9 / §10.2).
   if IsDefined(cd) && des.IsPopulated(n"CB_Squad")
      && (now - cd.lastHitSquadAt) > CBConfig.HitSquadDespawnMinutes() * 60.0 {
+    // Only somebody still standing can have got away. The tag stays on bodies until this sweep,
+    // so testing the tag alone turned a crew V had wiped out into a Hunter Rival.
+    let anyAlive = CBLiveTaggedPresent(game, n"CB_Squad");
     des.DeleteTagged(n"CB_Squad");
     let escaped = sys.GetActiveSquadFaction();
-    if NotEquals(escaped, n"") && RandF() < CBConfig.RivalChanceHunter() {
+    if anyAlive && NotEquals(escaped, n"") && RandF() < CBConfig.RivalChanceHunter() {
       let efs = sys.FindFaction(escaped);
       if IsDefined(efs) && TDBID.IsValid(efs.sampleRecord) {
         CBCreateRival(sys, game, escaped, efs.sampleRecord, n"", ECBRivalSource.Hunter, CBEventDistrict(sys, game), now);
@@ -192,6 +195,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     // All four of them, whatever the car seats: CBSendByCar walks in whoever does not fit.
     if CBSendByCar(sys, game, fs, fs.eliteRecord, CBConfig.ApexStrikeTeamSize(), n"CB_Apex") > 0 {
       fs.apexAtKills = fs.kills;
+      sys.ClearCrewBeaten(fs.id);
       CBLog.Info(n"Spawn", s"Vendetta crew from \(NameToString(fs.id)) brings an apex squad.");
       // The crew on foot is the whole squad; the car is extra.
       let footAll = CBSpawnGroup(game, fs.sampleRecord, n"", size, n"CB_Squad",
@@ -202,11 +206,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
       if IsDefined(cdApex) {
         cdApex.lastHitSquadAt = now;
       }
-      let rtApex = CyberbaneRuntime.Get();
-      if IsDefined(rtApex) && rtApex.HasSettings() && rtApex.GetSettings().toasts {
-        CBPhoneFromGang(game, fs.id, "Everybody we have is coming for you. Our best are riding in front.");
-      }
-      CBAllyTipOff(sys, game, fs.id);
+      sys.ArmApexBounty(fs.id);
       CBLog.Info(n"Spawn", s"Vendetta crew from \(NameToString(fs.id)): \(footAll) on foot plus an apex squad.");
       return;
     }
@@ -243,10 +243,6 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     cd.lastHitSquadAt = now;
   }
 
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBPhoneFromGang(game, fs.id, "A crew is on its way to you right now. Nothing personal. All business.");
-  }
-  CBAllyTipOff(sys, game, fs.id);
+  // They said they were coming when they set off (CBCrewWarning); arriving is not news.
   CBLog.Info(n"Spawn", s"Hit squad from \(NameToString(fs.id)): \(spawned).");
 }

@@ -85,6 +85,27 @@ public func CBCountLiveTagged(game: GameInstance, tag: CName) -> Int32 {
   return n;
 }
 
+// As above, leaving one body out of the count: the one whose death is being handled.
+public func CBCountLiveTaggedExcept(game: GameInstance, tag: CName, except: EntityID) -> Int32 {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return 0;
+  }
+  let ids = des.GetTaggedIDs(tag);
+  let n = 0;
+  let i = 0;
+  while i < ArraySize(ids) {
+    if NotEquals(ids[i], except) {
+      let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+      if CBStillStanding(p) {
+        n += 1;
+      }
+    }
+    i += 1;
+  }
+  return n;
+}
+
 public func CBLiveTaggedPresent(game: GameInstance, tag: CName) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
@@ -168,6 +189,7 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
 }
 
 func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Void {
+  let provokedOnly = false;
   // Their kind is already happening. The clock does not run down during the fight they are
   // waiting on - nobody should be queuing up behind an encounter you are still in.
   if CBLaneBusy(sys, game, lane) {
@@ -187,9 +209,16 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // Nothing starts unless the day's timetable says this kind is due (Spawn/Schedule.reds).
     // That is what gives a day a shape instead of leaving it to however long the player
     // happened to stay in one.
-    if !CBSlotDue(sys, game, lane) {
+    // A provoked gang does not wait for the timetable: what V just did is the reason they are
+    // coming. The day's allowance and the rest below still apply.
+    let provoked = lane == CBLaneSquad() && NotEquals(sys.GetProvoked(), n"");
+    let slotDue = CBSlotDue(sys, game, lane);
+    if !slotDue && !provoked {
       return;
     }
+    // Off the timetable, only the gang that was provoked may answer. Without this a provocation
+    // could open the lane for whichever gang happened to score highest.
+    provokedOnly = !slotDue;
     // The timetable is built from the per-day setting, so this should never bite. It is here
     // because the setting is the player's instruction and a scheduling bug must not be able to
     // exceed it: whatever the plan says, the count is the ceiling.
@@ -221,7 +250,7 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     CBLaneFire(sys, game, lane);
     return;
   }
-  CBLanePick(sys, game, lane);
+  CBLanePick(sys, game, lane, provokedOnly);
 }
 
 // Choose who has most earned this lane's next turn, and start their clock.
@@ -229,7 +258,7 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
 // Scored rather than cycled, so the order means something: a gang that has sworn a vendetta
 // outranks one that merely dislikes you, and a Rival who has got away from you repeatedly
 // outranks a new one. Scoring is within the lane only, so the three never compete.
-func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Void {
+func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt provokedOnly: Bool) -> Void {
   let score = sys.GetScore();
   if !IsDefined(score) {
     return;
@@ -239,6 +268,7 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   let bestScore = 0.0;
   let bestFaction = n"";
   let bestRival = 0;
+  let turf = CBTurfGangsHere(sys);
 
   if lane == CBLaneRival() {
     if !CBRivalsOn() {
@@ -258,6 +288,10 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
         // A Grudge-Bearer is the one who comes first; it is the whole of what they are about.
         if CBRivalHasTrait(r, n"GrudgeBearer") {
           s += CBConfig.QueueGrudgeBonus();
+        }
+        // On their own gang's streets they are easier to run into.
+        if ArrayContains(turf, r.faction) {
+          s += CBConfig.RivalTurfBonus();
         }
         // Not the same person twice in a row while somebody else is owed a turn.
         if r.id == sys.GetLaneLastRival() {
@@ -279,24 +313,30 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
         let hate = ClampF((-fs.standing / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
         let s = 0.0;
         if lane == CBLaneApex() {
-          if TDBID.IsValid(fs.eliteRecord)
-             && (fs.kills - fs.apexAtKills) >= CBConfig.ApexKillThreshold() {
+          if CBApexEligible(sys, fs) {
             s = CBConfig.QueueScoreApex() + hate * 20.0;
           }
         } else {
           let offCooldown = fs.lastHitSquadAt <= 0.0 || (now - fs.lastHitSquadAt) >= factionCooldown;
-          if offCooldown && fs.renown >= CBConfig.HitSquadMinRenown() {
+          // A crew needs a reason to come today, not only a grudge (CBCrewReason).
+          let reason = CBCrewReason(sys, fs, posture, ArrayContains(turf, fs.id), now);
+          if offCooldown && fs.renown >= CBConfig.HitSquadMinRenown() && reason >= 0.0
+             && (!provokedOnly || Equals(fs.id, sys.GetProvoked())) {
             if Equals(posture, ECBPosture.Vendetta) {
-              s = CBConfig.QueueScoreVendetta() + hate * 30.0;
+              s = CBConfig.QueueScoreVendetta() + hate * 30.0 + reason;
             } else {
               if Equals(posture, ECBPosture.Hostile) {
-                s = CBConfig.QueueScoreHostile() + hate * 30.0;
+                s = CBConfig.QueueScoreHostile() + hate * 30.0 + reason;
               }
             }
           }
         }
         if s > 0.0 && Equals(fs.id, sys.GetLaneLastFaction(lane)) {
           s -= CBConfig.QueueRepeatPenalty();
+        }
+        // The gang V has just provoked goes first.
+        if s > 0.0 && lane == CBLaneSquad() && Equals(fs.id, sys.GetProvoked()) {
+          s += CBConfig.QueueProvokedBonus();
         }
         if s > bestScore {
           bestScore = s; bestFaction = fs.id; bestRival = 0;
@@ -335,7 +375,12 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     }
     return;
   }
-  sys.SetLaneQueued(lane, bestFaction, bestRival, CBLaneTicksFor(sys, lane, bestFaction, bestRival));
+  let ticks = CBLaneTicksFor(sys, lane, bestFaction, bestRival);
+  if lane == CBLaneSquad() && Equals(bestFaction, sys.GetProvoked()) {
+    ticks = CBConfig.QueueMinTicks();   // they are already on it
+    sys.ClearProvoked();
+  }
+  sys.SetLaneQueued(lane, bestFaction, bestRival, ticks);
   CBLog.Info(n"Spawn", s"Next \(CBLaneLabel(lane)): \(NameToString(bestFaction)) in \(sys.GetLaneTicks(lane)) ticks.");
 }
 
@@ -376,6 +421,16 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
 
   if lane == CBLaneRival() {
     let r = sys.FindRivalById(sys.GetLaneRivalId(lane));
+    // They tell you first, and you get a little time. The lane's clock runs again for the
+    // warning, and the arrival is the next time it reaches zero.
+    if IsDefined(r) && sys.GetRivalWarned() != r.id {
+      sys.SetRivalWarned(r.id);
+      sys.SetLaneTicks(lane, CBConfig.RivalWarningTicks());
+      CBHuntBegin(sys, game, r.faction);
+      CBRivalWarning(sys, game, r);
+      return;
+    }
+    sys.SetRivalWarned(0);
     if !IsDefined(r) || !CBSpawnRival(sys, game, r, now) {
       // Could not be placed. Put this one on their own cooldown and let the lane go.
       //
@@ -400,12 +455,17 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // the moment the clock reaches zero rather than a second or two later. The dispatch keeps
     // all its own handling for cars, interiors, quiet jobs and giving up; this only removes
     // the hand-off delay, which served no purpose except to make a finished timer look stuck.
+    // On their way, with a warning and a countdown, rather than standing behind V the moment
+    // the clock runs out. The pending countdowns already hold for a safe area, a quiet job or a
+    // fight in progress, and bring them in when they reach zero.
+    CBHuntBegin(sys, game, faction);
     if lane == CBLaneApex() {
-      sys.SetPendingApex(faction, 0);
-      CBProcessPendingApex(sys, game);
+      sys.SetPendingApex(faction, CBConfig.ApexWarningTicks());
+      sys.ClearCrewBeaten(faction);   // the beaten crew has been answered
+      CBApexOnTheWay(sys, game, faction);
     } else {
-      sys.SetPendingSquad(faction, 0);
-      CBProcessPendingSquad(sys, game);
+      sys.SetPendingSquad(faction, CBConfig.CrewWarningTicks());
+      CBCrewWarning(sys, game, faction);
     }
     sys.SetLaneLastFaction(lane, faction);
     CBSpendSlot(sys, game, lane);
@@ -489,4 +549,210 @@ public func CBEncounterGapTicks() -> Int32 {
 public func CBRivalsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().rivals;
+}
+
+// ---- What it takes ----------------------------------------------------------------
+//
+// "It feels like an arbitrary timer." The day's timetable says when the city has time for V; it
+// should not be the reason anybody comes. These are the reasons.
+//
+// A crew comes from a gang that is hostile, knows V well enough (HitSquadMinRenown), has not sent
+// one in the last couple of days, and has a reason today:
+//   - a vendetta, which is a standing reason;
+//   - V provoked them (a witnessed kill of their people, Model/Reputation.reds);
+//   - V has been hanging around on their turf and a lookout called it in (CBTurfWatchTick);
+//   - V has hurt them recently (CrewReasonHours).
+// A gang that hates V but has not seen or heard of V in a day keeps its people at home.
+//
+// An apex squad is the gang's answer to V beating its people: it comes from a hostile gang that
+// has lost enough of its own since its last apex (ApexKillThreshold), after V has beaten one of
+// its crews, or with no crew in between once the bodies reach a massacre
+// (ApexMassacreMultiplier times the threshold). The beaten crew is remembered for the session.
+// So the ladder reads: hurt a gang and get seen, a crew comes; beat the crew, their best comes.
+
+// The gangs whose turf V is standing on. Usually one, sometimes two, often none.
+public func CBTurfGangsHere(sys: ref<CyberbaneSystem>) -> array<CName> {
+  let out: array<CName>;
+  if !IsDefined(sys) {
+    return out;
+  }
+  let content = sys.GetContent();
+  let district = sys.GetCurrentDistrict();
+  if !IsDefined(content) || Equals(district, n"") {
+    return out;
+  }
+  for prof in content.GetFactions() {
+    if IsDefined(prof) && prof.isGang && ArrayContains(prof.turf, district) {
+      ArrayPush(out, prof.id);
+    }
+  }
+  return out;
+}
+
+// Why this gang would send a crew now: a score bonus of zero or more, or -1 for no reason.
+public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, posture: ECBPosture,
+                         onTheirTurf: Bool, now: Float) -> Float {
+  if !IsDefined(sys) || !IsDefined(fs) {
+    return -1.0;
+  }
+  let bonus = 0.0;
+  let reason = false;
+  if Equals(posture, ECBPosture.Vendetta) {
+    reason = true;
+  }
+  if Equals(fs.id, sys.GetProvoked()) {
+    reason = true;
+  }
+  if onTheirTurf {
+    reason = true;
+    bonus += CBConfig.QueueTurfBonus();
+  }
+  let window = CBConfig.CrewReasonHours() * CBConfig.SecondsPerHour();
+  if fs.lastIncidentAt > 0.0 && window > 0.0 && now >= fs.lastIncidentAt
+     && (now - fs.lastIncidentAt) < window {
+    reason = true;
+    // Fresher trouble, stronger reason.
+    bonus += CBConfig.QueueRecentBonus() * (1.0 - (now - fs.lastIncidentAt) / window);
+  }
+  return reason ? bonus : -1.0;
+}
+
+// The record an apex squad from this gang would be built from: their toughest if V has met one,
+// otherwise whoever V has been fighting. The same rule CBProcessPendingApex spawns with.
+public func CBApexRecordFor(fs: ref<CBFactionState>) -> TweakDBID {
+  if !IsDefined(fs) {
+    return TDBID.None();
+  }
+  return TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
+}
+
+// Has this gang earned the right to send its best? One test for the lane, the warning text and
+// the Hub, so none of them can promise an apex squad another will not send.
+public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> Bool {
+  if !IsDefined(sys) || !IsDefined(fs) || !CBFactionFieldsSquads(fs.id)
+     || !TDBID.IsValid(CBApexRecordFor(fs)) {
+    return false;
+  }
+  let score = sys.GetScore();
+  if !IsDefined(score) {
+    return false;
+  }
+  let posture = score.GetPosture(fs.id);
+  if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
+    return false;   // a gang V is square with does not send its best
+  }
+  let since = fs.kills - fs.apexAtKills;
+  if since < CBConfig.ApexKillThreshold() {
+    return false;
+  }
+  return sys.CrewBeaten(fs.id)
+      || since >= CBConfig.ApexKillThreshold() * CBConfig.ApexMassacreMultiplier();
+}
+
+// What the Hub says about this gang's apex squad when nothing is on its way.
+public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> String {
+  if !IsDefined(sys) || !IsDefined(fs) {
+    return "";
+  }
+  let score = sys.GetScore();
+  let posture = IsDefined(score) ? score.GetPosture(fs.id) : ECBPosture.Neutral;
+  if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
+    return "";
+  }
+  if CBApexEligible(sys, fs) {
+    return "ready to send their best";
+  }
+  let since = fs.kills - fs.apexAtKills;
+  let toApex = CBConfig.ApexKillThreshold() - since;
+  if toApex > 0 {
+    return s"apex squad in \(toApex) kills";
+  }
+  // Enough bodies, no beaten crew yet.
+  let toMassacre = CBConfig.ApexKillThreshold() * CBConfig.ApexMassacreMultiplier() - since;
+  return s"beat a crew, or \(toMassacre) more kills";
+}
+
+// A crew of this gang has just been wiped out. Remember it, so their best comes next, and let
+// them say so.
+public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
+  if !IsDefined(sys) || Equals(faction, n"") {
+    return;
+  }
+  sys.SetActiveSquadFaction(n"");   // nobody left to have escaped
+  let fs = sys.FindFaction(faction);
+  if !IsDefined(fs) {
+    return;
+  }
+  sys.NoteCrewBeaten(faction);
+  CBLog.Info(n"Spawn", s"Crew from \(NameToString(faction)) wiped out; their apex squad is next in line.");
+  // Only promise what can follow: a gang that fields an apex, while the apex lane is on and
+  // nothing is already on its way.
+  if !CBToastsOn() || !CBHitSquadsOn() || CBLaneDailyCap(CBLaneApex()) <= 0
+     || !TDBID.IsValid(CBApexRecordFor(fs)) || NotEquals(sys.GetPendingApexFaction(), n"") {
+    return;
+  }
+  let name = CBApexName(CBContent(game), faction, fs.apexAtKills);
+  if CBApexEligible(sys, fs) {
+    CBPhoneFromGang(game, faction, s"That was our crew. Next time it is \(name), and three more like them.");
+  } else {
+    CBPhoneFromGang(game, faction, s"That was our crew. Keep it up and you meet \(name).");
+  }
+}
+
+// Hanging around on a hostile gang's streets gets noticed.
+//
+// The NCPD half of being hunted: do something, or simply be somewhere you should not, and
+// somebody calls it in. After TurfLingerTicks on the turf of a gang that wants V dead, out in the
+// open and not sneaking, a lookout calls it in, which provokes that gang (Spawn/Hunt.reds) and
+// lets its crew come off the timetable. One lookout per TurfSpotCooldownTicks at most. Called
+// every five ticks.
+public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) || !CBHitSquadsOn() || !CBWorldStable(game) {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && !rt.IsEnabled() {
+    return;
+  }
+  let now = sys.GetTickCount();
+  let player = GetPlayer(game);
+  if !IsDefined(player) || sys.IsInSafeZone() || CBPlayerInStealthState(game)
+     || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetProvoked(), n"") {
+    sys.SetTurfWatch(n"", now);
+    return;
+  }
+  // The worst gang whose streets these are.
+  let score = sys.GetScore();
+  if !IsDefined(score) {
+    return;
+  }
+  let owner = n"";
+  let worst = 0.0;
+  let turf = CBTurfGangsHere(sys);
+  for id in turf {
+    let posture = score.GetPosture(id);
+    if CBFactionFieldsSquads(id)
+       && (Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)) {
+      let st = score.GetStanding(id);
+      if Equals(owner, n"") || st < worst {
+        owner = id;
+        worst = st;
+      }
+    }
+  }
+  if Equals(owner, n"") {
+    sys.SetTurfWatch(n"", now);
+    return;
+  }
+  if NotEquals(owner, sys.GetTurfWatchFaction()) {
+    sys.SetTurfWatch(owner, now);
+    return;
+  }
+  if (now - sys.GetTurfWatchSince()) < CBConfig.TurfLingerTicks() || now < sys.GetTurfSpotNext() {
+    return;
+  }
+  CBProvoke(sys, game, owner);
+  sys.SetTurfSpotNext(now + CBConfig.TurfSpotCooldownTicks());
+  sys.SetTurfWatch(owner, now);
+  CBLog.Info(n"Spawn", s"A lookout for \(NameToString(owner)) spotted V on their turf.");
 }

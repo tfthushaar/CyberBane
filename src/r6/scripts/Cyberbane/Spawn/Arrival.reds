@@ -531,9 +531,22 @@ public func CBOnArrivalCrewAttached(sys: ref<CyberbaneSystem>, game: GameInstanc
 public class CBArrivalDismountCallback extends DelayCallback {
   public let carId: EntityID;
   public let tries: Int32;
+  public let waits: Int32;
 
   public func Call() -> Void {
     let game = GetGameInstance();
+    // A delayed callback can land in the middle of a load or a fast travel, which is exactly when
+    // native entity queries crash (see the note in Core/WorldState.reds). Wait it out instead.
+    if !CBWorldStable(game) {
+      if this.waits < CBConfig.CallbackStableWaits() {
+        let again = new CBArrivalDismountCallback();
+        again.carId = this.carId;
+        again.tries = this.tries;
+        again.waits = this.waits + 1;
+        GameInstance.GetDelaySystem(game).DelayCallback(again, CBConfig.ArrivalDismountPoll(), false);
+      }
+      return;
+    }
     let player = GetPlayer(game);
     if !IsDefined(player) {
       return;
@@ -582,8 +595,8 @@ public func CBDismountArrivalCrew(game: GameInstance) -> Void {
           ai.SendCommand(new AIUnmountCommand());
         }
       }
-      // Out of the car and straight at V.
-      CBOrderHunt(game, puppet);
+      // Out of the car, and after V the way the hunt says.
+      CBOrderPursue(CyberbaneSystem.Get(game), game, puppet);
     }
   }
 }
@@ -591,9 +604,19 @@ public func CBDismountArrivalCrew(game: GameInstance) -> Void {
 // Set the car moving once its crew is aboard.
 public class CBArrivalDriveCallback extends DelayCallback {
   public let carId: EntityID;
+  public let waits: Int32;
 
   public func Call() -> Void {
     let game = GetGameInstance();
+    if !CBWorldStable(game) {
+      if this.waits < CBConfig.CallbackStableWaits() {
+        let again = new CBArrivalDriveCallback();
+        again.carId = this.carId;
+        again.waits = this.waits + 1;
+        GameInstance.GetDelaySystem(game).DelayCallback(again, CBConfig.CarStartDelay(), false);
+      }
+      return;
+    }
     let car = GameInstance.FindEntityByID(game, this.carId) as VehicleObject;
     let player = GetPlayer(game);
     if !IsDefined(car) || !IsDefined(player) {

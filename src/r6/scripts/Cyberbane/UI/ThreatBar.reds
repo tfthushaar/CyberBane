@@ -39,6 +39,9 @@ public class CBThreatRow {
 public class CBThreatBar {
   private let m_rows: array<ref<CBThreatRow>>;
   private let m_built: Bool;
+  // One line above the bars while a hunt is on: who is after V and what they know
+  // (Spawn/Hunt.reds, CBHuntStatusLine). The game shows the police the same way.
+  private let m_status: ref<inkText>;
   // Parallel arrays rather than one struct per entry, for the same reason the rest of the mod
   // does it: nothing here is ever nested inside a persistent class.
   private let m_targets: array<wref<ScriptedPuppet>>;
@@ -77,6 +80,24 @@ public class CBThreatBar {
     // rows, or a shrunken stack would leave gaps where the spacing used to be.
     let scale = CBHudScale(this.m_game);
     stride *= scale;
+
+    let status = new inkText();
+    status.SetName(n"cyberbaneHuntStatus");
+    status.SetFontFamily(font);
+    status.SetFontStyle(n"Medium");
+    status.SetFontSize(20);
+    status.SetLetterCase(textLetterCase.UpperCase);
+    status.SetAnchor(inkEAnchor.TopCenter);
+    status.SetAnchorPoint(new Vector2(0.5, 0.0));
+    status.SetHorizontalAlignment(textHorizontalAlignment.Center);
+    status.SetMargin(new inkMargin(0.0, MaxF(CBConfig.ThreatBarTopMargin() - 34.0, 8.0) * scale, 0.0, 0.0));
+    status.SetRenderTransformPivot(new Vector2(0.5, 0.0));
+    status.SetScale(new Vector2(scale, scale));
+    status.SetTintColor(new HDRColor(0.88, 0.26, 0.29, 1.0));
+    status.SetText("");
+    status.SetVisible(false);
+    status.Reparent(win);
+    this.m_status = status;
 
     let i = 0;
     while i < CBConfig.ThreatBarRows() {
@@ -170,6 +191,9 @@ public class CBThreatBar {
     ArrayClear(this.m_targets);
     ArrayClear(this.m_ids);
     ArrayClear(this.m_labels);
+    if IsDefined(this.m_status) {
+      this.m_status.SetVisible(false);
+    }
     let i = 0;
     while i < ArraySize(this.m_rows) {
       if IsDefined(this.m_rows[i].root) {
@@ -182,6 +206,15 @@ public class CBThreatBar {
   // Once per fast tick. Drops anyone who is gone, then redraws the rows that are left.
   public func Update(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     this.m_game = game;
+    // The hunt line first, since it shows while they are still on their way and nobody is on
+    // the stack yet.
+    let line = CBHuntStatusLine(sys, game);
+    if StrLen(line) > 0 || IsDefined(this.m_status) {
+      if this.EnsureBuilt() && IsDefined(this.m_status) {
+        this.m_status.SetText(line);
+        this.m_status.SetVisible(StrLen(line) > 0 && !sys.IsHubOpen());
+      }
+    }
     if ArraySize(this.m_targets) == 0 {
       return;
     }

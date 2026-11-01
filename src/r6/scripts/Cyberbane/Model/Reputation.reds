@@ -138,6 +138,10 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     fs.standing = ClampF(fs.standing + standingLoss, -100.0, 100.0);
     // And their enemies hear about it (Model/GangRivalries.reds).
     CBCreditRivalGangs(sys, GetGameInstance(), info.faction, standingLoss);
+    // Killing a hostile gang's people where somebody sees it is what sends their next crew.
+    if info.lethal && info.witnessed {
+      CBProvoke(sys, GetGameInstance(), info.faction);
+    }
     fs.renown = ClampF(fs.renown + CBFactionRenownForKill(info.victimClass, brutal) * standingWitness, 0.0, 100.0);
     fs.renownPeak = MaxF(fs.renownPeak, fs.renown);
     fs.kills += 1;

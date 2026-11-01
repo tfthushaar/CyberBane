@@ -710,12 +710,13 @@ public class CBPhone {
         // One of ours is open in the phone right now: draw the new line straight into it,
         // and the player is reading it as it arrives.
         let dialog = this.m_openDialog;
-        let shownNow = IsDefined(dialog) && dialog.cbThreadHash == hash;
+        let shownNow = IsDefined(dialog) && dialog.cbThreadHash == hash
+                    && IsDefined(dialog.GetRootWidget()) && dialog.GetRootWidget().IsVisible();
         if shownNow {
           if this.m_focusedHash == hash {
             this.MarkThreadRead(thread);
           }
-          dialog.CBRenderThread(true);
+          dialog.CBQueueRedraw(true);   // drawn on the panel's own frame
         }
         this.m_phoneCtrl.CBDeliverThread(hash, sender, body, sound);
       } else {
@@ -899,6 +900,13 @@ public func CBPhoneSendTinted(game: GameInstance, sender: String, body: String,
 public func CBPhoneFromGang(game: GameInstance, faction: CName, body: String) -> Void {
   CBPhoneSendTinted(game, CBPhoneGangSender(faction), body, CBHudRed());
   CBPhoneOfferPeace(game, faction);
+}
+
+// A gang on V's side: a tip-off, a welcome, a bounty paid. Same thread as the rest of what that
+// gang sends, but nothing in it is a threat, so it is not tinted as one and never carries a peace
+// offer.
+public func CBPhoneFromAlly(game: GameInstance, faction: CName, body: String) -> Void {
+  CBPhoneSendTinted(game, CBPhoneGangSender(faction), body, CBHudCyan());
 }
 
 // The gang again, but with nothing for V to answer: their reply to V turning them down.

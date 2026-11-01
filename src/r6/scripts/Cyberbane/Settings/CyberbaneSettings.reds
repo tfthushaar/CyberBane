@@ -232,7 +232,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.min", "20")
   @runtimeProperty("ModSettings.max", "100")
   @runtimeProperty("ModSettings.step", "5")
-  public let apexStrength: Int32 = 70;
+  public let apexStrength: Int32 = 55;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
@@ -257,6 +257,18 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaApexSquad")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaApexSquad-Desc")
   public let vendettaApexSquad: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LootDrops")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LootDrops-Desc")
+  public let lootDrops: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Bounties")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Bounties-Desc")
+  public let bounties: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

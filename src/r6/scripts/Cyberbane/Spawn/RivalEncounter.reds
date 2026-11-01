@@ -158,9 +158,10 @@ public func CBRivalEscapedByPlayer(sys: ref<CyberbaneSystem>, game: GameInstance
   got.encounters += 1;
   CBPromoteRival(got, content, CBGameSeconds(game));
   got.huntTicks = CBConfig.RivalAfterEscapeTicks();
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    CBPhoneFromStreet(game, s"You lost \(CBRivalDisplayName(content, got)). They will come better prepared.");
+  // From them, not about them: the person you just lost is the one who should be telling you
+  // it is not over.
+  if CBToastsOn() && IsDefined(content) {
+    CBPhoneSendTinted(game, CBRivalDisplayName(content, got), CBRivalLostLine(got), CBHudRed());
   }
   CBLog.Info(n"Rivals", s"Player escaped rival id=\(got.id); promoted to rank \(got.rank).");
 }
@@ -393,13 +394,24 @@ func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
 
 // Everything that is true of a Rival the moment they set off, whichever way they are coming.
 func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Void {
-  // A Pack Leader does not come alone. Their people walk in with them, as escorts, so they
-  // fight, chase and give up with the encounter and never hold up the crew lane.
-  if CBRivalHasTrait(r, n"PackLeader") {
+  // Somebody who runs people does not come alone. A Pack Leader brings their own, and so does
+  // whoever holds a chair in the gang's crew: the leader brings two, a lieutenant one. They walk
+  // in as escorts, so they fight, chase and give up with the encounter and never hold up the
+  // crew lane.
+  let escorts = CBRivalHasTrait(r, n"PackLeader") ? CBConfig.PackLeaderEscort() : 0;
+  let role = CBRivalRole(sys, r);
+  if role == CBRoleLeader() {
+    escorts = Max(escorts, CBConfig.LeaderEscort());
+  } else {
+    if role == CBRoleLieutenant() {
+      escorts = Max(escorts, CBConfig.LieutenantEscort());
+    }
+  }
+  if escorts > 0 {
     let fs = sys.FindFaction(r.faction);
     if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
       let escort: EntityID;
-      CBSpawnGroup(game, fs.sampleRecord, n"", CBConfig.PackLeaderEscort(), n"CB_Escort",
+      CBSpawnGroup(game, fs.sampleRecord, n"", escorts, n"CB_Escort",
                    CBConfig.RivalSpawnDistance() + 4.0, escort);
     }
   }
@@ -410,14 +422,9 @@ func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   if IsDefined(cd) {
     cd.lastRivalEncounterAt = now;
   }
-  // The Rival tells you themselves. This was a line across the middle of the screen, the last
-  // notice in the mod that was the game talking rather than somebody in the city. Their name is
-  // on the bar at the top of the screen as soon as they are in range, so the text only has to
-  // say they have found you.
-  let content = CBContent(game);
-  if IsDefined(content) {
-    CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r), CBHudRed());
-  }
+  // No text here. They already said they were coming (CBRivalWarning), and they say they have
+  // found you when they actually lay eyes on you (Spawn/Hunt.reds, CBHuntOnLocated). A third
+  // message on arrival said "found you" before anybody had.
 }
 
 // What a Rival texts when they have found you. Chosen by how they came to be one, so the one
@@ -433,4 +440,30 @@ func CBRivalArrivalLine(r: ref<CBRival>) -> String {
     return "You let me walk. I came back. I'm close.";
   }
   return "Found you. Look around.";
+}
+
+// What a Rival texts when V has given them the slip.
+func CBRivalLostLine(r: ref<CBRival>) -> String {
+  if r.killedV > 0 {
+    return "Run, then. I found you once and I will find you again.";
+  }
+  if r.rank >= 4 {
+    return "Every time you run I get better at this. Think about that.";
+  }
+  switch RandRange(0, 3) {
+    case 0: return "Lost me. For now.";
+    case 1: return "Keep running. I know where you sleep.";
+    default: return "Next time I bring more.";
+  }
+}
+
+// What a Rival texts after getting away from V.
+func CBRivalGotAwayLine(r: ref<CBRival>) -> String {
+  if CBRivalHasTrait(r, n"OldWound") {
+    return "Same place as last time. It still hurts. You are going to pay for that.";
+  }
+  if CBRivalHasTrait(r, n"Scarred") {
+    return "You left a mark. I will remember it every time I look.";
+  }
+  return "Close. Not close enough. See you soon.";
 }

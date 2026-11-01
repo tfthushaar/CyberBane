@@ -110,9 +110,17 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     let tagged = IsDefined(desE) && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival");
     let slain = tagged ? CBResolveSlainRival(sysE, puppet)
                        : CBFindRivalByBody(sysE, puppet.GetEntityID());
+    // Their chair, read before the hierarchy fills it again.
+    let slainRole = IsDefined(slain) ? CBRivalRole(sysE, slain) : CBRoleNone();
     if IsDefined(slain) || tagged {
       if IsDefined(slain) {
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
+        // V's kill: the bounty, and what they carried (Spawn/Loot.reds).
+        if puppet.cbDamagedByPlayer {
+          CBPayRivalBounty(sysE, game, slain, slainRole);
+          let rivalIconic = (slain.rank >= 4 || slainRole == CBRoleLeader()) ? CBConfig.LootIconicChanceRival() : 0.0;
+          CBScheduleLoot(sysE, game, puppet, CBLootTierRival(slain, slainRole), rivalIconic);
+        }
       }
       // Shared with the escape and mercy endings, so all three clear the same things. The
       // marker is already off this puppet from the top of this function; this clears the
@@ -130,6 +138,23 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       if IsDefined(st) {
         st.apexKills += 1;
       }
+      CBScheduleLoot(sysE, game, puppet, CBLootTierApex(), CBConfig.LootIconicChanceApex());
+      // The last of the squad: their enemies pay for it.
+      if CBCountLiveTaggedExcept(game, n"CB_Apex", puppet.GetEntityID()) == 0 {
+        CBPayApexBounty(sysE, game);
+      }
+    }
+    // Crew and escorts carry a little.
+    if IsDefined(desE) && puppet.cbDamagedByPlayer
+       && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desE.IsTagged(puppet.GetEntityID(), n"CB_Escort")) {
+      CBScheduleLoot(sysE, game, puppet, CBLootTierCrew(), 0.0);
+    }
+    // The last of a crew: their gang's best is next (Spawn/Queue.reds). Counted without this
+    // body, which may or may not read as dead yet inside its own death event.
+    if IsDefined(desE) && desE.IsTagged(puppet.GetEntityID(), n"CB_Squad")
+       && NotEquals(sysE.GetActiveSquadFaction(), n"")
+       && CBCountLiveTaggedExcept(game, n"CB_Squad", puppet.GetEntityID()) == 0 {
+      CBOnCrewBeaten(sysE, game, sysE.GetActiveSquadFaction());
     }
   }
 

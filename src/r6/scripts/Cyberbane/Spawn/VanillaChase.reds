@@ -244,16 +244,24 @@ public class CBMountedCrewWatch extends DelayCallback {
 
   public func Call() -> Void {
     let game = GetGameInstance();
+    // Never in the middle of a load or a fast travel: that is when native entity queries from a
+    // delayed callback crash. Waiting costs one try.
+    if !CBWorldStable(game) {
+      if this.tries < CBConfig.ArrivalDismountMaxTries() * 3 {
+        this.Again(game);
+      }
+      return;
+    }
     let player = GetPlayer(game);
     let puppet = GameInstance.FindEntityByID(game, this.entityId) as ScriptedPuppet;
-    if !IsDefined(player) || !CBStillStanding(puppet) {
+    if !IsDefined(player) || !CBStillStanding(puppet) || !puppet.IsAttached() {
       return;
     }
     let mounted = VehicleComponent.IsMountedToVehicle(game, this.entityId);
     if !mounted {
       // Out already, or never seated. Either way they should be coming for V.
       if this.tries >= CBConfig.CrewWatchSettleTries() {
-        CBOrderHunt(game, puppet);
+        CBOrderPursue(CyberbaneSystem.Get(game), game, puppet);
         return;
       }
       this.Again(game);
@@ -271,7 +279,7 @@ public class CBMountedCrewWatch extends DelayCallback {
       if IsDefined(ai) {
         ai.SendCommand(new AIUnmountCommand());
       }
-      CBOrderHunt(game, puppet);
+      CBOrderPursue(CyberbaneSystem.Get(game), game, puppet);
       return;
     }
     // Riding along on a car chase. Bounded, so a crew stuck in traffic for ever stops being
