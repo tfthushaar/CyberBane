@@ -190,11 +190,20 @@ public class CBThreatBar {
       return;
     }
     // Backwards, so erasing an entry does not skip the next one.
+    //
+    // Gone means gone: no longer in the world, or dead. A target that is merely still settling
+    // stays on the stack. This used to drop anyone CBNpcSafe refused, and CBNpcSafe also refuses
+    // everyone for the first NpcReadyTicks after they attach. The bar is put up 0.4 seconds
+    // after a spawn (and a Rival's at the moment of attach), so on the very next tick every
+    // one of them was erased, never to come back. That is why nobody had a bar.
     let i = ArraySize(this.m_targets) - 1;
     while i >= 0 {
-      // CBNpcSafe covers attachment and the post-spawn settling window, so a target that is
-      // being torn down is never read.
-      if !CBNpcSafe(sys, this.m_targets[i]) || !CBStillStanding(this.m_targets[i]) {
+      let target = this.m_targets[i];
+      let gone = !IsDefined(target) || !target.IsAttached();
+      if !gone && CBNpcSafe(sys, target) && !CBStillStanding(target) {
+        gone = true;
+      }
+      if gone {
         ArrayErase(this.m_targets, i);
         ArrayErase(this.m_ids, i);
         ArrayErase(this.m_labels, i);
@@ -208,9 +217,13 @@ public class CBThreatBar {
     while r < ArraySize(this.m_rows) {
       let row = this.m_rows[r];
       if r < shown {
-        let pct = pools.GetStatPoolValue(Cast<StatsObjectID>(this.m_ids[r]),
-                                         gamedataStatPoolType.Health, false);
-        let frac = ClampF(pct / 100.0, 0.0, 1.0);
+        // Full until they have settled, and read from their stat pool after that.
+        let frac = 1.0;
+        if CBNpcSafe(sys, this.m_targets[r]) {
+          let pct = pools.GetStatPoolValue(Cast<StatsObjectID>(this.m_ids[r]),
+                                           gamedataStatPoolType.Health, false);
+          frac = ClampF(pct / 100.0, 0.0, 1.0);
+        }
         if IsDefined(row.text) {
           row.text.SetText(this.m_labels[r]);
         }

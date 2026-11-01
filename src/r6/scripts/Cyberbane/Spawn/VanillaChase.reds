@@ -79,6 +79,10 @@ public func CBRequestVanillaChase(sys: ref<CyberbaneSystem>, game: GameInstance,
   // (`core/systems/preventionSystem.script:3081`), and it picks its strategy by asking which
   // ones are available rather than naming one. Availability is about the road network around
   // the player: on a pedestrian street, a rooftop, inside a parking structure, nothing is.
+  //
+  // It is also only ever true if somebody asked the road network the question first, which is
+  // what CBChasePrimeTick below is for. Without it this was false every time outside a police
+  // chase, and every car request fell back.
   if !prevention.IsAnyStrategyAvailable() {
     CBLog.Info(n"Spawn", "No chase strategy is available here; falling back to our own convoy.");
     return false;
@@ -104,8 +108,200 @@ public func CBRequestVanillaChase(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBLog.Info(n"Spawn", "The city refused the chase request; falling back to our own convoy.");
     return false;
   }
+  sys.NoteCarPath(true, seated);
   CBLog.Info(n"Spawn", s"Asked the city to send a car from \(NameToString(factionId)) with \(seated) aboard (ticket \(ticket)).");
   return true;
+}
+
+// ---- Letting the city find a road ----------------------------------------
+//
+// Why no car ever turned up, found by reading the prevention system rather than the request.
+// `IsAnyStrategyAvailable` and `IsStrategyAvailable` do not look at the road network when they
+// are called. They report the results of "pre-check" requests the system has been given in
+// advance and evaluates in the background. The police set those up in
+// `PreventionSystem.UpdateStrategyPreCheckRequests` (core/systems/preventionSystem.script:2986),
+// and outside a police chase that function clears them and sets nothing. So with no heat,
+// nothing was ever available, and every car Cyberbane asked for fell back before it was asked.
+//
+// So Cyberbane hands the system the same three questions its own chase uses, a little before a
+// car could be needed, and keeps them current while one might be. It never touches them while
+// the police are chasing, because then the police's own, larger set is in place and covers ours;
+// and when Cyberbane is done it clears only what it set, again only when the police are not
+// chasing. The police set theirs afresh every time their heat changes, so nothing here can
+// leave them without what they need.
+
+func CBChaseRequests(game: GameInstance, prevention: ref<PreventionSpawnSystem>) -> array<ref<BaseStrategyRequest>> {
+  let out: array<ref<BaseStrategyRequest>>;
+  let table = PreventionSystem.GetPreventionHeatTableRecord(game);
+  if !IsDefined(table) {
+    return out;
+  }
+  let s5 = table.Strategy5();
+  if IsDefined(s5) {
+    ArrayPush(out, GetToPlayerFromAnywhereStrategyRequest.Create(CBChaseRange(s5.VehicleSpawnDistanceRange()),
+                                                                 s5.MinDirectDistance()));
+  }
+  let s1 = table.Strategy1();
+  if IsDefined(s1) {
+    ArrayPush(out, DriveTowardsPlayerStrategyRequest.Create(CBChaseRange(s1.VehicleSpawnDistanceRange()),
+                                                            s1.MinDirectDistance()));
+  }
+  let s4 = table.Strategy4();
+  if IsDefined(s4) {
+    ArrayPush(out, InterceptAtNextIntersectionStrategyRequest.Create(CBChaseRange(s4.VehicleSpawnDistanceRange()),
+                                                                     s4.MinDirectDistance()));
+  }
+  return out;
+}
+
+// The heat table's spawn range, unless it is empty, in which case Cyberbane's own. The table
+// in use outside a chase is the Heat_0 one, and a range of nothing there would be the old
+// zero-to-zero bug by another route.
+func CBChaseRange(r: Vector2) -> Vector2 {
+  if r.Y <= 0.0 || r.Y < r.X {
+    return new Vector2(CBConfig.ChaseSpawnRangeMin(), CBConfig.ChaseSpawnRangeMax());
+  }
+  return r;
+}
+
+public func CBPrimeChaseStrategies(game: GameInstance) -> Bool {
+  if PreventionSystem.IsChasingPlayer(game) {
+    return false;   // the police's own set is in place and covers ours
+  }
+  let prevention = GameInstance.GetPreventionSpawnSystem(game);
+  if !IsDefined(prevention) {
+    return false;
+  }
+  let reqs = CBChaseRequests(game, prevention);
+  if ArraySize(reqs) == 0 {
+    return false;
+  }
+  prevention.SetStrategyPreCheckRequests(reqs);
+  return true;
+}
+
+public func CBReleaseChaseStrategies(game: GameInstance) -> Void {
+  if PreventionSystem.IsChasingPlayer(game) {
+    return;   // theirs now; leave them alone
+  }
+  let prevention = GameInstance.GetPreventionSpawnSystem(game);
+  if IsDefined(prevention) {
+    prevention.ClearStrategyPreCheckRequests();
+  }
+}
+
+// Once per fast tick. Primes while a car could be needed soon, refreshes every few seconds so a
+// police chase that came and went cannot leave it cleared, and lets go when nothing is coming.
+public func CBChasePrimeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let want = CBVehicleArrivalsOn() && CBCarCouldBeNeeded(sys);
+  if want {
+    if !sys.IsChasePrimed() || sys.GetTickCount() % CBConfig.ChasePrimeRefreshTicks() == 0 {
+      sys.SetChasePrimed(CBPrimeChaseStrategies(game));
+    }
+    return;
+  }
+  if sys.IsChasePrimed() {
+    CBReleaseChaseStrategies(game);
+    sys.SetChasePrimed(false);
+  }
+}
+
+func CBVehicleArrivalsOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.IsEnabled() && rt.HasSettings() && rt.GetSettings().vehicleArrivals;
+}
+
+// Is any lane about to send somebody, or is an arrival already under way?
+func CBCarCouldBeNeeded(sys: ref<CyberbaneSystem>) -> Bool {
+  if sys.IsAdoptionOpen() || NotEquals(sys.GetPendingApexFaction(), n"")
+     || NotEquals(sys.GetPendingSquadFaction(), n"") {
+    return true;
+  }
+  let lead = CBConfig.ChasePrimeLeadTicks();
+  return CBLaneSoon(sys, CBLaneRival(), lead) || CBLaneSoon(sys, CBLaneSquad(), lead)
+      || CBLaneSoon(sys, CBLaneApex(), lead);
+}
+
+func CBLaneSoon(sys: ref<CyberbaneSystem>, lane: Int32, lead: Int32) -> Bool {
+  let queued = NotEquals(sys.GetLaneTarget(lane), n"") || sys.GetLaneRivalId(lane) > 0;
+  return queued && sys.GetLaneTicks(lane) <= lead;
+}
+
+// ---- Getting out of the car ------------------------------------------------
+//
+// The city drives its chase car at V, but getting out is something the police do because the
+// prevention system registers them and runs them; a gang crew it carried for Cyberbane is not
+// registered (`PreventionSystem.OnPreventionUnitSpawnedRequest` drops a ticket it did not
+// issue), so nothing would ever tell them to get out. Each one Cyberbane adopts is watched: once
+// their car is close to V and V is on foot, they get out and come for V. While V is driving
+// they stay in and the car keeps chasing, and the chase gives up the usual way if V gets clear.
+public class CBMountedCrewWatch extends DelayCallback {
+  public let entityId: EntityID;
+  public let tries: Int32;
+
+  public func Call() -> Void {
+    let game = GetGameInstance();
+    let player = GetPlayer(game);
+    let puppet = GameInstance.FindEntityByID(game, this.entityId) as ScriptedPuppet;
+    if !IsDefined(player) || !CBStillStanding(puppet) {
+      return;
+    }
+    let mounted = VehicleComponent.IsMountedToVehicle(game, this.entityId);
+    if !mounted {
+      // Out already, or never seated. Either way they should be coming for V.
+      if this.tries >= CBConfig.CrewWatchSettleTries() {
+        CBOrderHunt(game, puppet);
+        return;
+      }
+      this.Again(game);
+      return;
+    }
+    let playerDriving = IsDefined(player.GetMountedVehicle());
+    let car: wref<VehicleObject>;
+    VehicleComponent.GetVehicle(game, this.entityId, car);
+    let close = !IsDefined(car)
+             || Vector4.Distance(car.GetWorldPosition(), player.GetWorldPosition())
+                <= CBConfig.ArrivalDismountDistance();
+    let waitedLong = this.tries >= CBConfig.ArrivalDismountMaxTries();
+    if !playerDriving && (close || waitedLong) {
+      let ai = puppet.GetAIControllerComponent();
+      if IsDefined(ai) {
+        ai.SendCommand(new AIUnmountCommand());
+      }
+      CBOrderHunt(game, puppet);
+      return;
+    }
+    // Riding along on a car chase. Bounded, so a crew stuck in traffic for ever stops being
+    // polled; the chase's own give-up clears them if V has got away.
+    if this.tries < CBConfig.ArrivalDismountMaxTries() * 3 {
+      this.Again(game);
+    }
+  }
+
+  private func Again(game: GameInstance) -> Void {
+    let ds = GameInstance.GetDelaySystem(game);
+    if !IsDefined(ds) {
+      return;
+    }
+    let next = new CBMountedCrewWatch();
+    next.entityId = this.entityId;
+    next.tries = this.tries + 1;
+    ds.DelayCallback(next, CBConfig.ArrivalDismountPoll(), false);
+  }
+}
+
+func CBWatchMountedCrew(game: GameInstance, id: EntityID) -> Void {
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(ds) || !EntityID.IsDefined(id) {
+    return;
+  }
+  let watch = new CBMountedCrewWatch();
+  watch.entityId = id;
+  watch.tries = 0;
+  ds.DelayCallback(watch, CBConfig.ArrivalDismountPoll(), false);
 }
 
 // Build the strategy request, with the game's own numbers in it.
@@ -140,21 +336,21 @@ func CBChaseStrategyRequest(game: GameInstance, prevention: ref<PreventionSpawnS
   if prevention.IsStrategyAvailable(vehiclePoliceStrategy.GetToPlayerFromAnywhere) {
     let s5 = table.Strategy5();
     if IsDefined(s5) {
-      return GetToPlayerFromAnywhereStrategyRequest.Create(s5.VehicleSpawnDistanceRange(),
+      return GetToPlayerFromAnywhereStrategyRequest.Create(CBChaseRange(s5.VehicleSpawnDistanceRange()),
                                                            s5.MinDirectDistance());
     }
   }
   if prevention.IsStrategyAvailable(vehiclePoliceStrategy.DriveTowardsPlayer) {
     let s1 = table.Strategy1();
     if IsDefined(s1) {
-      return DriveTowardsPlayerStrategyRequest.Create(s1.VehicleSpawnDistanceRange(),
+      return DriveTowardsPlayerStrategyRequest.Create(CBChaseRange(s1.VehicleSpawnDistanceRange()),
                                                       s1.MinDirectDistance());
     }
   }
   if prevention.IsStrategyAvailable(vehiclePoliceStrategy.InterceptAtNextIntersection) {
     let s4 = table.Strategy4();
     if IsDefined(s4) {
-      return InterceptAtNextIntersectionStrategyRequest.Create(s4.VehicleSpawnDistanceRange(),
+      return InterceptAtNextIntersectionStrategyRequest.Create(CBChaseRange(s4.VehicleSpawnDistanceRange()),
                                                                s4.MinDirectDistance());
     }
   }
@@ -203,9 +399,20 @@ public func CBTryAdoptChaseEntity(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   des.AssignTag(id, n"Cyberbane");
   des.AssignTag(id, sys.GetAdoptTag());
+  // A Rival riding in: this body is theirs, which is what makes their death count and their
+  // escape count. The look they carry is put back on once the puppet has finished building
+  // (CBApplySpawnSetup), because the city's chase cannot be told which appearance to use.
+  if Equals(sys.GetAdoptTag(), n"CB_Rival") {
+    let who = sys.FindRivalById(sys.GetActiveRivalId());
+    if IsDefined(who) && !EntityID.IsDefined(who.spawnedEntityId) {
+      who.spawnedEntityId = id;
+    }
+  }
   // From here they are one of ours: the lanes see them, they get their buffs and kit, they
-  // chase properly, and they give up when you lose them.
+  // chase properly, they get out of the car when it reaches V, and they give up when you lose
+  // them.
   CBScheduleSpawnSetup(game, id, true);
+  CBWatchMountedCrew(game, id);
   CBLog.Info(n"Spawn", "Adopted one of the crew the city sent.");
   return true;
 }

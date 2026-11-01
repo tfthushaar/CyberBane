@@ -424,9 +424,35 @@ public abstract class CBConfig {
   // Three wrapped lines on a card this wide. Anything longer is a paragraph, and a message
   // that needs a paragraph is a message that needed cutting.
   public static func PhoneBodyMaxChars() -> Int32 = 180
-  // How much of the thread the Hub keeps. Session only; see the note in UI/PhoneMessages.reds
-  // about why this is not persisted.
-  public static func PhoneLogCap() -> Int32 = 40
+  // The threads in the phone. Session only; see the note in UI/PhoneMessages.reds about why
+  // they are not persisted. Senders are bounded (a handle per gang, a broker per district and a
+  // few unknown numbers), so the thread cap is there for safety rather than expected to bind.
+  public static func PhoneThreadCap() -> Int32 = 64
+  public static func PhoneMessageCap() -> Int32 = 240
+  // How much of one thread the phone draws. A thread longer than this shows its newest lines.
+  public static func PhoneThreadShown() -> Int32 = 30
+  // Messages waiting for a settled tick. More than this in one go is a burst, and the newest
+  // are the ones worth a notification; the rest are still filed in their threads.
+  public static func PhonePendingCap() -> Int32 = 6
+  // Where Cyberbane's contacts sit in the phone's hash space. Real contacts use hashes of their
+  // journal paths, spread over the whole Int32 range; a block of 64 at a fixed odd value is
+  // vanishingly unlikely to meet one, and every check also confirms the thread exists.
+  public static func PhoneHashBase() -> Int32 = 1128415233
+  // Asking the road network for chase strategies (Spawn/VanillaChase.reds): start this many
+  // ticks before a lane is due, and re-send this often while a car may be needed.
+  public static func ChasePrimeLeadTicks() -> Int32 = 30
+  public static func ChasePrimeRefreshTicks() -> Int32 = 8
+  // A chase spawn range for when the heat table in use has none.
+  public static func ChaseSpawnRangeMin() -> Float = 60.0
+  public static func ChaseSpawnRangeMax() -> Float = 160.0
+  // Checks a crew member the city carried gets before they are told to come on foot anyway,
+  // if they turn out not to be in a car at all.
+  public static func CrewWatchSettleTries() -> Int32 = 2
+  // Overheard lines: a subtitle near the bottom of the screen, above the game's own subtitles.
+  public static func OverheardSeconds() -> Float = 5.5
+  public static func OverheardFloor() -> Float = 3.5
+  public static func OverheardWidth() -> Float = 1100.0
+  public static func OverheardBottom() -> Float = 250.0
 
   // ---- Keeping an arrival out of frame ---------------------------------
   //
@@ -660,6 +686,11 @@ public abstract class CBConfig {
   // How long to wait before checking that a queued Rival actually appeared. Long enough for
   // an out-of-view spawn to be honoured once V has moved or turned.
   public static func RivalArrivalCheckTicks() -> Int32 = 10
+  // A Rival sent by car is a body the city spawns somewhere down the road; it is confirmed once
+  // the adoption window has had time to claim it.
+  public static func RivalCarArrivalCheckTicks() -> Int32 = 26
+  // How often a Rival drives in rather than walking, when there is a road to drive in on.
+  public static func RivalCarChance() -> Float = 0.6
   // Spread added to each Rival's countdown so two of the same rank do not arrive together.
   public static func RivalHuntJitterTicks() -> Int32 = 120
   // How long a Rival may stand around before Cyberbane gives up on the encounter, in in-game

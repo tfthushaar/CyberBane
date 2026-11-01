@@ -406,7 +406,7 @@ public func CBFillApexSquad(sys: ref<CyberbaneSystem>, game: GameInstance, facti
     let one: EntityID;
     let seat = (sys.PeekApexRole() + i) % CBConfig.ApexStrikeTeamSize();
     if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
-                    CBConfig.ApexSpawnDistance(), one) > 0 {
+                    CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
       added += 1;
     }
     i += 1;
@@ -535,11 +535,11 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     let delivered = CBLiveTaggedPresent(game, n"CB_Apex")
                  || (Equals(sys.GetAdoptTag(), n"CB_Apex") && sys.GetAdoptTaken() > 0);
     if delivered {
-      // Arrived, but possibly not all of them. The city's chase sizes its crew from the
-      // vehicle record's own passenger counts, not from what we asked for, so a gang whose car
-      // seats two delivers two - and a two-strong apex squad is not the set piece the Hub, the
-      // bars and the readme all describe. Whoever did not fit walks in behind them.
-      CBFillApexSquad(sys, game, faction);
+      // Arrived. Anyone the car could not seat walked in when it was sent, and anyone it was
+      // meant to carry and did not was walked in by CBProcessCarTopUp, so the squad is already
+      // four. This used to top up from a live head count at the end of the drive, which both
+      // left the squad short for the whole drive and replaced members the player had already
+      // killed.
       sys.SetPendingApex(n"", 0);
       return;
     }
@@ -564,11 +564,9 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   // with a lift. Every seat is tagged CB_Apex, so every one of them gets the full buff, and
   // the strength slider is how a player dials that back if four at once is too much.
   sys.ResetApexRoles();   // this squad starts again at the heavy
+  sys.ClearSquadAnchor();
   if !carFailed
-     && CBSpawnVehicleArrival(sys, game, fs.id, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex",
-                              record, n"CB_Apex") {
-    sys.MarkArrivalRoleSquad(fs.id);
-    sys.ClearSquadAnchor();
+     && CBSendByCar(sys, game, fs, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex") > 0 {
     // The warning is spent, but they are not here yet: they are driving. Keep the clock
     // running for the length of the drive so the Hub has something true to show, instead of
     // the countdown vanishing the moment the car is dispatched and the squad turning up with
@@ -599,7 +597,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   while seat < CBConfig.ApexStrikeTeamSize() {
     let one: EntityID;
     if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
-                    CBConfig.ApexSpawnDistance(), one) > 0 {
+                    CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
       arrived += 1;
       apexEntity = one;
     }

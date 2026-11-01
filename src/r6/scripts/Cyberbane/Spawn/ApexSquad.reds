@@ -443,3 +443,33 @@ public func CBJoinSquadWith(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppe
   }
   squad.Join(puppet);
 }
+
+// ---- The chair a body was spawned for ----------------------------------------------------
+//
+// An apex squad is a heavy, a shooter, a blade and a netrunner. The record each body is spawned
+// from is picked by chair, and the kit and the bar's label are given by chair at setup, so the
+// two have to agree on which chair a body is. A shared counter handed them out in the order the
+// bodies finished building, which is not the order they were spawned in, so a walk-in could
+// carry the heavy's record with the netrunner's kit. A body Cyberbane spawns for a known chair
+// now carries that chair as a tag; only the ones the city's chase seats, which cannot be
+// tagged at spawn, still take theirs from the counter.
+public func CBApexRoleTag(seat: Int32) -> CName {
+  switch seat % 4 {
+    case 0: return n"CB_Role0";
+    case 1: return n"CB_Role1";
+    case 2: return n"CB_Role2";
+    default: return n"CB_Role3";
+  }
+}
+
+// The chair this body was spawned for, or -1 if it carries none.
+public func CBTaggedApexSeat(des: ref<DynamicEntitySystem>, id: EntityID) -> Int32 {
+  if !IsDefined(des) {
+    return -1;
+  }
+  if des.IsTagged(id, n"CB_Role0") { return 0; }
+  if des.IsTagged(id, n"CB_Role1") { return 1; }
+  if des.IsTagged(id, n"CB_Role2") { return 2; }
+  if des.IsTagged(id, n"CB_Role3") { return 3; }
+  return -1;
+}

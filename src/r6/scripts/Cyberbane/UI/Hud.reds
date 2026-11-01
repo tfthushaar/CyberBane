@@ -2,8 +2,8 @@
 //
 // A native-styled reputation readout drawn straight onto the gameplay HUD layer and
 // toggled with the Hub key (F7 by default, rebindable in Mod Settings). It needs no
-// menu or mouse: each press of the key steps through the tabs - Legend, Factions,
-// Rivals, Titles, Legend Log - and the press after the last tab closes it. Because it
+// menu or mouse: each press of the key steps through the screens - Standing, Gangs,
+// The City, Rivals, Titles, History - and the press after the last one closes it. Because it
 // never takes input focus it is safe to open any time you are not mid-combat, and it
 // reads live data from CyberbaneSystem each time it is shown.
 //
@@ -11,14 +11,13 @@
 // palette, so it sits in the world like a stock UI panel. Widget geometry is tuned in
 // game; everything here is reversible (it only adds widgets to the HUD layer).
 
-// Seven, with MESSAGES added in 1.4.7. Appended rather than inserted on purpose: the tab
-// index is a number several things compare against (CBHudRivalsTab, CBHudFactionsTab, the
-// meters screen's `m_tab == 1`), and renumbering the existing six to put the new one in a
-// tidier place would be a change with no visible benefit and five places to get wrong.
+// Six. Messages used to have a screen here and do not any more: they live in V's phone, which
+// is where a player looks for a text (UI/RealPhone.reds). HISTORY took the last slot back, so
+// the screens that existed before keep their numbers (CBHudRivalsTab, CBHudFactionsTab, the
+// meters screen's `m_tab == 1`).
 //
-// Seven chips at CBHudChipWidth fit the panel: 7 x 250 is 1750 against 1860, and the row
-// centres itself, so nothing needed re-measuring.
-public func CBHudTabCount() -> Int32 = 7
+// Six chips at CBHudChipWidth fit the panel with room to spare, and the row centres itself.
+public func CBHudTabCount() -> Int32 = 6
 
 // Lines the body box can show at its size and font before text would spill past the footer.
 // Body is 640 px tall at font size 20, so about 26 lines fit; 25 leaves a line of slack.
@@ -34,9 +33,6 @@ public func CBHudMaxLines() -> Int32 = 22
 public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == 1 {
     return 11;   // under four meters
-  }
-  if tab == CBHudMessagesTab() {
-    return CBHudMaxLines();   // the thread is prose and starts at the top
   }
   if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() {
     return 9;    // under ten list rows
@@ -211,8 +207,7 @@ public func CBHudTabName(tab: Int32) -> String {
     case 3: return "THE CITY";
     case 4: return "RIVALS";
     case 5: return "TITLES";
-    case 6: return "MESSAGES";
-    case 7: return "HISTORY";
+    case 6: return "HISTORY";
     default: return "";
   }
 }
@@ -229,14 +224,11 @@ public func CBHudTabBlurb(tab: Int32) -> String {
     case 3: return "Where in Night City your name carries, district by district.";
     case 4: return "The people who have survived you and are still looking.";
     case 5: return "What the street calls you. Ctrl and the Hub key switches which one you use.";
-    case 6: return "Everything anyone has sent you this session, newest first.";
-    case 7: return "The ledger: what you did, where, and who it was.";
+    case 6: return "The ledger: what you did, where, and who it was.";
     default: return "";
   }
 }
 
-// Which tab the message thread is, so nothing has to hardcode a number.
-public func CBHudMessagesTab() -> Int32 = 6
 
 public class CBHud {
   private let m_built: Bool;
@@ -1009,40 +1001,11 @@ func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Str
     case 3: return CBHudDistricts(sys);
     case 4: return CBHudRivals(sys, game);
     case 5: return CBHudTitles(sys);
-    case 6: return CBHudMessages(sys);
-    case 7: return CBHudLog(sys);
+    case 6: return CBHudLog(sys);
     default: return "";
   }
 }
 
-// The thread.
-//
-// Players asked for the gang messages to be text messages rather than HUD notices, and a
-// message you can miss needs somewhere to be read back - a card that has faded is gone, and
-// the thing it was telling you about is usually still happening. So the Hub keeps what was
-// sent, newest first, with the time it arrived and who sent it.
-//
-// Session only, and it says so rather than looking broken after a load. The reason is in
-// UI/PhoneMessages.reds: persisting it means a new persistent field, and adding one of those
-// wipes every player's saved Cyberbane state.
-func CBHudMessages(sys: ref<CyberbaneSystem>) -> String {
-  let phone = sys.GetPhone();
-  if !IsDefined(phone) || phone.LogCount() == 0 {
-    return "Nothing yet this session.\n\nGangs, brokers and the people hunting you all get in touch here. The thread starts over each time you load, so this being empty after a save is normal.";
-  }
-  let out = "";
-  let i = 0;
-  // Two lines each, so a long message is readable rather than cut to fit a column.
-  while i < phone.LogCount() && i < CBHudMessageRows() {
-    out += phone.LogStamp(i) + "   " + phone.LogSender(i) + "\n";
-    out += "    " + CBHudTrim(phone.LogBody(i), 140) + "\n\n";
-    i += 1;
-  }
-  return out;
-}
-
-// How many messages the screen shows. Two lines and a gap each, against CBHudMaxLines.
-public func CBHudMessageRows() -> Int32 = 7
 
 // What is on its way, in one place.
 //

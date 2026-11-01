@@ -230,9 +230,10 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !CBWorldStable(game) {
     return false;
   }
-  // One convoy at a time. A second car while the first is still loading its crew would take
-  // the seats meant for the first one.
-  if sys.HasPendingArrival() {
+  // One car at a time, whichever way it is coming. A second car while the first is still
+  // loading its crew would take the seats meant for the first one, and a second request to the
+  // city while its adoption window is open would reset the window and lose the first crew.
+  if sys.HasPendingArrival() || sys.IsAdoptionOpen() || sys.GetTopUpWanted() > 0 {
     return false;
   }
   // Ask the city first. Its own chase puts the car on the road network, fills it and drives it
@@ -275,8 +276,105 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   // Remember what to put in it once it exists.
   sys.SetPendingArrival(crewRecord, crew, squadTag, leadRecord, leadTag);
+  sys.NoteCarPath(false, crew < CBConfig.CarMaxSeats() ? crew : CBConfig.CarMaxSeats());
   CBLog.Info(n"Spawn", "A car is on its way.");
   return true;
+}
+
+// Send a group by car, and make sure the whole group turns up.
+//
+// The car is never the whole story. The city's chase seats as many as its vehicle record says,
+// so a two-seat car asked for four delivers two; Cyberbane's own convoy is the same once the car
+// it placed reports its seats; and either can be accepted and deliver nobody. Every one of those
+// used to leave the group short with nothing to make up the numbers, which is how an apex squad
+// of four arrived as one enforcer with no squad behind them. So whoever the car cannot seat walks
+// in straight away, and whoever it was meant to carry but did not is walked in by
+// CBProcessCarTopUp once that is known.
+//
+// Returns how many are coming in all, by car and on foot; zero means no car at all, and the
+// caller walks the whole group in as it always has.
+public func CBSendByCar(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>,
+                        record: TweakDBID, wanted: Int32, tag: CName) -> Int32 {
+  if !IsDefined(sys) || !IsDefined(fs) || !TDBID.IsValid(record) || wanted <= 0 {
+    return 0;
+  }
+  let isApex = Equals(tag, n"CB_Apex");
+  if isApex {
+    sys.ResetApexRoles();   // the car's seats are the first chairs, from the heavy
+  }
+  let lead = isApex ? record : TDBID.None();
+  let leadTag = isApex ? n"CB_Apex" : n"";
+  if !CBSpawnVehicleArrival(sys, game, fs.id, record, wanted, tag, lead, leadTag) {
+    return 0;
+  }
+  if isApex {
+    sys.MarkArrivalRoleSquad(fs.id);
+  }
+  let carrying = sys.GetLastCarSeats();
+  if carrying > wanted {
+    carrying = wanted;
+  }
+  let total = carrying;
+  if carrying < wanted {
+    let walked = CBWalkInRest(sys, game, fs, record, tag, carrying, wanted - carrying);
+    total += walked;
+    CBLog.Info(n"Spawn", s"The car seats \(carrying) of \(wanted); \(walked) more are walking in.");
+  }
+  let wait = sys.IsLastCarCity() ? CBConfig.AdoptionWindowTicks() + 3 : CBConfig.ArrivalStaleTicks() + 3;
+  sys.ArmCarTopUp(fs.id, record, tag, carrying, wait);
+  return total;
+}
+
+// Walk `count` of a group in on foot, starting at chair `firstSeat` for an apex squad so the
+// chairs the car filled are not filled twice.
+public func CBWalkInRest(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>,
+                         record: TweakDBID, tag: CName, firstSeat: Int32, count: Int32) -> Int32 {
+  if count <= 0 {
+    return 0;
+  }
+  if Equals(tag, n"CB_Apex") {
+    let placed = 0;
+    let k = 0;
+    while k < count {
+      let seat = (firstSeat + k) % CBConfig.ApexStrikeTeamSize();
+      let one: EntityID;
+      if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
+                      CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
+        placed += 1;
+      }
+      k += 1;
+    }
+    return placed;
+  }
+  let ent: EntityID;
+  return CBSpawnGroup(game, record, n"", count, tag, CBConfig.HitSquadMinSpawnDistance() + 12.0, ent);
+}
+
+// Once per fast tick: the car has had its chance to deliver, so anybody it did not walks in.
+public func CBProcessCarTopUp(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) || sys.GetTopUpWanted() <= 0 {
+    return;
+  }
+  if sys.TickTopUp() > 0 {
+    return;
+  }
+  let tag = sys.GetTopUpTag();
+  let wanted = sys.GetTopUpWanted();
+  let delivered = 0;
+  if sys.IsLastCarCity() {
+    delivered = Equals(sys.GetAdoptTag(), tag) ? sys.GetAdoptTaken() : 0;
+  } else {
+    delivered = sys.GetConvoyCreated();
+  }
+  let fs = sys.FindFaction(sys.GetTopUpFaction());
+  let record = sys.GetTopUpRecord();
+  sys.ClearTopUp();
+  let missing = wanted - delivered;
+  if missing <= 0 || !IsDefined(fs) {
+    return;
+  }
+  let placed = CBWalkInRest(sys, game, fs, record, tag, delivered, missing);
+  CBLog.Info(n"Spawn", s"The car brought \(delivered) of \(wanted); \(placed) walked in to make up the rest.");
 }
 
 // Step 2: the car is in the world. Read its seats and queue the crew beside it.
@@ -312,6 +410,7 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     return;
   }
   sys.BeginArrivalBoarding(car.GetEntityID(), seats);
+  sys.NoteConvoyCreated(seats);
 
   let record = sys.GetPendingArrivalRecord();
   let squadTag = sys.GetPendingArrivalTag();

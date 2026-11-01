@@ -297,9 +297,18 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       if r.arrivalCheckTicks > 0 {
         r.arrivalCheckTicks -= 1;
         if r.arrivalCheckTicks <= 0 {
+          let byCar = sys.GetRivalCarPending() == r.id;
+          if byCar {
+            sys.SetRivalCarPending(0);
+          }
           if CBRivalBodyPresent(game, r) {
             r.huntTicks = CBRivalHuntTicksFor(r.rank, atCap);   // they are really here
           } else {
+            // A car that never delivered them: they walk in next time rather than waiting on
+            // the same road again.
+            if byCar {
+              sys.SetRivalCarFailed(r.id);
+            }
             CBLog.Info(n"Spawn", s"Rival \(r.id) was queued but never arrived; trying again.");
             r.state = EnumInt(ECBRivalState.Active);
             if sys.GetActiveRivalId() == r.id {
@@ -316,6 +325,16 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 }
 
 func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Bool {
+  // By car, when there is a road and the dice say so: the city's own chase drives them at V,
+  // and they get out when the car reaches V or keep chasing if V is driving.
+  if CBRivalByCar(sys, game, r) {
+    let noBody: EntityID;   // the body is filled in when the city's spawn is adopted
+    r.spawnedEntityId = noBody;
+    r.arrivalCheckTicks = CBConfig.RivalCarArrivalCheckTicks();
+    CBRivalOnTheirWay(sys, game, r, now);
+    CBLog.Info(n"Spawn", s"Rival encounter on its way by car (id \(r.id)).");
+    return true;
+  }
   // Spawn close and behind so the Rival perceives V right away and gives chase.
   let body: EntityID;
   let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance(), body);
@@ -336,6 +355,44 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   // slain, never replaced, and came back again and again.
   r.spawnedEntityId = body;
   r.arrivalCheckTicks = CBConfig.RivalArrivalCheckTicks();   // confirm they really showed up
+  CBRivalOnTheirWay(sys, game, r, now);
+  CBLog.Info(n"Spawn", s"Rival encounter spawned (id \(r.id)).");
+  return true;
+}
+
+// Should this Rival drive in, and if so, has the city taken the request?
+//
+// Only through the city's chase: it is the path that hands the body back to Cyberbane through
+// adoption, which is what ties the body to the Rival so their death and their escape count. A
+// Rival whose last car never delivered them walks in this time, so a road that looks usable and
+// is not cannot keep a Rival away.
+func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
+  if !IsDefined(sys) || !IsDefined(r) {
+    return false;
+  }
+  if sys.GetRivalCarFailed() == r.id {
+    sys.SetRivalCarFailed(0);
+    return false;
+  }
+  if !CBVehicleArrivalAllowed(game) || RandF() >= CBConfig.RivalCarChance() {
+    return false;
+  }
+  if sys.HasPendingArrival() || sys.IsAdoptionOpen() || sys.GetTopUpWanted() > 0 {
+    return false;
+  }
+  // Active before the request, so the adoption that follows knows whose body it is.
+  let previous = sys.GetActiveRivalId();
+  sys.SetActiveRivalId(r.id);
+  if !CBRequestVanillaChase(sys, game, r.faction, r.recordID, 1, n"CB_Rival") {
+    sys.SetActiveRivalId(previous);
+    return false;
+  }
+  sys.SetRivalCarPending(r.id);
+  return true;
+}
+
+// Everything that is true of a Rival the moment they set off, whichever way they are coming.
+func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Void {
   r.state = EnumInt(ECBRivalState.Hunting);   // it is actively hunting you now
   r.lastSeenAt = now;
   sys.SetActiveRivalId(r.id);                 // track it for escape / slain handling
@@ -343,19 +400,27 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   if IsDefined(cd) {
     cd.lastRivalEncounterAt = now;
   }
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
-    let content = CBContent(game);
-    let name = IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival";
-    // "Caught up with you" was read as "caught up in level" as often as "is standing behind
-    // you", and said nothing about which of the people nearby was the one that mattered. Name
-    // the gang, and point at the bar that identifies them.
-    let gang = CBFactionLabel(r.faction);
-    if StrLen(gang) == 0 {
-      gang = "a gang";
-    }
-    CBShowMessage(game, s"Cyberbane: \(name) of \(gang) is here for you. Look for their name at the top of the screen.", 4.0);
+  // The Rival tells you themselves. This was a line across the middle of the screen, the last
+  // notice in the mod that was the game talking rather than somebody in the city. Their name is
+  // on the bar at the top of the screen as soon as they are in range, so the text only has to
+  // say they have found you.
+  let content = CBContent(game);
+  if IsDefined(content) {
+    CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r), CBHudRed());
   }
-  CBLog.Info(n"Spawn", s"Rival encounter spawned (id \(r.id)).");
-  return true;
+}
+
+// What a Rival texts when they have found you. Chosen by how they came to be one, so the one
+// you let go sounds different from the one who put you down.
+func CBRivalArrivalLine(r: ref<CBRival>) -> String {
+  if r.killedV > 0 {
+    return "Found you again. You know how this went last time.";
+  }
+  if r.sparedByV > 0 {
+    return "You should have finished it when you had the chance. I'm close.";
+  }
+  if r.escapes > 0 {
+    return "You let me walk. I came back. I'm close.";
+  }
+  return "Found you. Look around.";
 }
