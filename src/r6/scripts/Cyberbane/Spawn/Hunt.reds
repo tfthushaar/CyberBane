@@ -210,7 +210,7 @@ func CBHuntOrderTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyna
     i += 1;
     // Somebody broken and running is left to run; somebody still in a car is the car's.
     if CBStillStanding(puppet) && CBNpcSafe(sys, puppet) && !puppet.cbMoraleBroken
-       && !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) && !puppet.IsInCombat() {
+       && !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) && !CBNpcInCombat(puppet) {
       let away = Vector4.Distance(puppet.GetWorldPosition(), ppos);
       if sys.GetHuntState() != CBHuntLocated() || away >= CBConfig.ChaseRefreshMinDistance() {
         CBOrderPursue(sys, game, puppet);
@@ -241,7 +241,7 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
       let d = Vector4.Distance(p.GetWorldPosition(), ppos);
       // Already fighting V: they know exactly where V is.
-      if p.IsInCombat() && d <= CBConfig.HuntCombatKnowsDistance() {
+      if CBNpcInCombat(p) && d <= CBConfig.HuntCombatKnowsDistance() {
         return true;
       }
       // Close, and nothing in the way.
