@@ -4,8 +4,8 @@
 // them." The reward was reputation and a counter in the Hub. Beating somebody the city sent after
 // you should be worth something you can hold.
 //
-// Everyone Cyberbane sends who goes down by V's hand drops a loot bag on their body, scaled to who
-// they were:
+// Everyone Cyberbane sends who goes down by V's hand leaves something for V, scaled to who they
+// were:
 //   - crew and escorts: sometimes ammo and a few common parts;
 //   - Rivals: better parts the higher they ranked, more for a leader;
 //   - apex squad members: rare and epic parts, a chance of legendary ones, and a small chance of
@@ -21,9 +21,8 @@
 // Every item is checked against TweakDB before it is used, so an id that does not exist on
 // somebody's patch is skipped rather than handed to the inventory system.
 //
-// The bag goes on the body: the items are given to the corpse and dropped from it the way vendors
-// drop what you buy (vendor.script, SpawnItemDropOfManyItems). If the corpse is gone by then, they
-// go to V directly. Scheduled a moment after death, never from inside the death handler.
+// It goes straight into V's inventory, scheduled a moment after death and never from inside the
+// death handler.
 
 // Iconic weapons found exploring the city. Edit this list to taste; each entry is still checked
 // at runtime (it must exist, carry the IconicWeapon tag, and not carry the Quest tag).
@@ -128,7 +127,7 @@ public func CBLootIconicRoll(sys: ref<CyberbaneSystem>, chance: Float) -> TweakD
   return usable[RandRange(0, ArraySize(usable))];
 }
 
-// Drop it on the body, a moment after they go down.
+// Hand it over, a moment after they go down.
 public class CBLootDropCallback extends DelayCallback {
   public let entityId: EntityID;
   public let position: Vector4;
@@ -172,23 +171,14 @@ public class CBLootDropCallback extends DelayCallback {
     if ArraySize(ids) == 0 {
       return;
     }
-    // The body if it is still there, V otherwise.
-    let holder = GameInstance.FindEntityByID(game, this.entityId) as GameObject;
-    let lm = GameInstance.GetLootManager(game);
-    let receiver: ref<GameObject> = player;
-    if IsDefined(holder) {
-      receiver = holder;
-    }
-    let instructions: array<DropInstruction>;
+    // Straight into V's inventory, with the game's own "item received" notices. 1.4.8 handed the
+    // items to the corpse and dropped a bag from it, which is not something the game ever does:
+    // every bag it drops comes from the player, a vendor or a device. The pickup is the one part
+    // worth giving up for a loot system that cannot take the game down with it.
     let i = 0;
     while i < ArraySize(ids) {
-      let item = ItemID.FromTDBID(ids[i]);
-      ts.GiveItem(receiver, item, counts[i]);
-      ArrayPush(instructions, DropInstruction.Create(item, counts[i]));
+      ts.GiveItem(player, ItemID.FromTDBID(ids[i]), counts[i]);
       i += 1;
-    }
-    if IsDefined(holder) && IsDefined(lm) {
-      lm.SpawnItemDropOfManyItems(holder, instructions, lm.GetDefaultDropItemName(), this.position);
     }
   }
 }

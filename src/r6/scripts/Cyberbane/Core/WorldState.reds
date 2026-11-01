@@ -131,6 +131,15 @@ public func CBStillStanding(p: wref<ScriptedPuppet>) -> Bool {
   return !ScriptedPuppet.IsDefeated(p) && !p.IsIncapacitated();
 }
 
+// Is this NPC in combat? NPCs have no IsInCombat of their own (that is the player's); the game
+// reads their high-level AI state off the puppet blackboard (NPCPuppet.IsInCombat).
+public func CBNpcInCombat(npc: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(npc) || !npc.IsAttached() {
+    return false;
+  }
+  return NPCPuppet.IsInCombat(npc);
+}
+
 public func CBNpcSafe(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(npc) || !npc.IsAttached() {
     return false;

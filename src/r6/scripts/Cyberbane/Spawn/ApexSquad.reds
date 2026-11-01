@@ -219,11 +219,12 @@ func CBApplyCorpKit(npc: ref<NPCPuppet>) -> Void {
   CBGrantAbility(npc, t"Ability.CanShootWhileMoving");   // advance under fire
   CBGrantAbility(npc, t"Ability.CanPreciseShoot");
   CBGrantAbility(npc, t"Ability.CanCatchUp");            // walking away is not an escape
-  CBGrantAbility(npc, t"Ability.CanCallReinforcements");
   CBGrantAbility(npc, t"Ability.CanUseAntiStun");        // cannot be stun-locked in place
   CBGrantAbility(npc, t"Ability.CanSeeThroughOpticalCamos");
-  CBGrantAbility(npc, t"Ability.CanUseCoolingSystem");   // quickhacks bite slower
-  CBGrantAbility(npc, t"Ability.CanUseEMPGrenades");
+  // 1.5.0 dropped reinforcement calls, the cooling system and EMP grenades from this kit. The
+  // first asks the game to bring in more NPCs on its own, the second plays a cyberware effect
+  // on a record that was never made for one, and the third needs grenades the record may not
+  // carry. None of them is worth a crash risk.
 }
 
 // What a cyberpsycho learns from losing to you.
@@ -255,7 +256,6 @@ public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
   // own smoke, and they pick themselves back up once.
   CBGrantAbility(npc, t"Ability.CanUseCovers");
   CBGrantAbility(npc, t"Ability.CanSeeThroughSmoke");
-  CBGrantAbility(npc, t"Ability.CanUseCombatStims");
 
   switch role {
     case ECBApexRole.Tank:
@@ -264,23 +264,27 @@ public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
       CBGrantAbility(npc, t"Ability.CanGuardBreak");
       break;
     case ECBApexRole.Blade:
-      // Closes the distance faster than you can back away from it.
-      CBGrantAbility(npc, t"Ability.HasKerenzikov");
-      CBGrantAbility(npc, t"Ability.HasChargeJump");
+      // Closes the distance and keeps on you.
+      CBGrantAbility(npc, t"Ability.CanCatchUp");
+      CBGrantAbility(npc, t"Ability.CanUseAntiStun");
       break;
     case ECBApexRole.Netrunner:
-      // Stays back and takes your weapon off you.
-      CBGrantAbility(npc, t"Ability.CanQuickhack");
-      CBGrantAbility(npc, t"Ability.CanOverheatQuickHack");
-      CBGrantAbility(npc, t"Ability.CanWeaponMalfunctionQuickHack");
+      // Stays back. A netrunner record already hacks with the kit the game gave it; a seat
+      // filled from another record does not get quickhacks bolted on.
+      CBGrantAbility(npc, t"Ability.CanSeeThroughOpticalCamos");
       break;
     default:
       // Flushes you out of cover so the others can reach you.
       CBGrantAbility(npc, t"Ability.CanUseFragGrenades");
       CBGrantAbility(npc, t"Ability.CanUseFlashbangGrenades");
-      CBGrantAbility(npc, t"Ability.HasKerenzikov");
+      CBGrantAbility(npc, t"Ability.CanShootWhileMoving");
       break;
   };
+  // 1.5.0: Kerenzikov, Charge Jump, combat stims and bolted-on quickhacks are gone from every
+  // kit. Kerenzikov and the jump drive cyberware effects and animations, stims play an item
+  // animation, and quickhacks run the hacking framework, on records the game never authored
+  // for any of them. That is the same shape as the shader effector crash below, and several
+  // Rivals and apex members were getting them on every spawn.
   // Deliberately NOT granted: Sandevistan, optical camo and berserk.
   //
   // All three drive shader effectors, and a crash report came in from an engine assert inside
@@ -422,7 +426,7 @@ public func CBJoinSquadWith(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppe
     return;
   }
   let anchor = sys.GetSquadAnchor();
-  if !IsDefined(anchor) || anchor.IsDead() {
+  if !IsDefined(anchor) || anchor.IsDead() || !anchor.IsAttached() {
     sys.SetSquadAnchor(puppet);
     return;
   }
@@ -438,7 +442,7 @@ public func CBJoinSquadWith(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppe
     return;
   }
   let squad = smc.FindSquad(name);
-  if !IsDefined(squad) {
+  if !IsDefined(squad) || !puppet.IsAttached() || puppet.IsDead() {
     return;
   }
   squad.Join(puppet);

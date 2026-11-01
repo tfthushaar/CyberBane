@@ -282,10 +282,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.EnsureCallbacks();
     if !this.m_sessionStarted {
       this.m_sessionStarted = true;
-      let des = GameInstance.GetDynamicEntitySystem();
-      if IsDefined(des) {
-        des.DeleteTagged(n"Cyberbane");
-      }
+      CBDeleteTaggedSafe(this.GetGameInstance(), n"Cyberbane");
       // Apply any deaths recorded in the global ledger for this playthrough.
       CBApplyDeathLedger(this, this.GetGameInstance());
       // And take any story characters off the Rival roster before they can be sent again.
@@ -319,9 +316,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     // Something the city sent on our behalf. Claiming it here is what makes it ours for every
     // other purpose, and it has to happen before anything below reads its tags.
-    if CBTryAdoptChaseEntity(this, this.GetGameInstance(), attachedEntity) {
-      return;
-    }
     if !IsDefined(this.m_registry) {
       return;
     }
@@ -332,7 +326,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       let desCar = GameInstance.GetDynamicEntitySystem();
       if IsDefined(desCar) && desCar.IsTagged(car.GetEntityID(), n"CB_Car")
          && CBWorldStable(this.GetGameInstance()) {
-        CBOnArrivalCarAttached(this, this.GetGameInstance(), car);
+        CBScheduleConvoyBoard(this.GetGameInstance(), car.GetEntityID());   // a moment later
       }
     }
     let puppet = event.GetEntity() as ScriptedPuppet;
@@ -361,7 +355,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         // Crew first: they belong in a seat, not running at V on foot from where the car is.
         let riding = des.IsTagged(id, n"CB_Crew");
         if riding {
-          CBOnArrivalCrewAttached(this, this.GetGameInstance(), puppet);
+          CBScheduleConvoyMount(this.GetGameInstance(), id);   // a moment later
         }
         // Everything else about one of ours - turning it hostile, telling it to come, its
         // buffs, its kit, its squad and its health bar - is deferred rather than done here.
@@ -744,10 +738,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // is settled, so the engine is no longer mid-teardown on the entity being removed.
     if this.m_pendingRivalSweep {
       this.m_pendingRivalSweep = false;
-      let des = GameInstance.GetDynamicEntitySystem();
-      if IsDefined(des) {
-        des.DeleteTagged(n"CB_Rival");
-      }
+      CBDeleteTaggedSafe(game, n"CB_Rival");
     }
 
     // Did the player ask to start over? Same reasoning as the sweep above: this tick is
@@ -803,7 +794,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.GetPhone().Update(this, game);
     this.RefreshStealthHold(game);      // before anything that might send someone in
     CBEncounterQueueTick(this, game);   // three lanes, three clocks: who is next
-    CBChasePrimeTick(this, game);       // let the city's chase find a road before a car is due
     if this.m_tickCount % 5 == 0 {
       CBVendettaWatch(this, game);      // date a vendetta the moment it is sworn
       CBTurfWatchTick(this, game);      // hanging around on a hostile gang's streets gets noticed
@@ -1634,6 +1624,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBApplyDecay(this, elapsedDays);
     CBTributeTick(this, game);
     CBHitSquadTick(this, game);
+    CBSweepOrphans(game);   // whatever was left in a car seat or mid-spawn goes now it can
     CBApexTick(this, game);
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);
@@ -1788,10 +1779,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBUntrackTagged(game, n"CB_Squad");
     CBUntrackTagged(game, n"CB_Apex");
     CBUntrackTagged(game, n"CB_Escort");
-    let des = GameInstance.GetDynamicEntitySystem();
-    if IsDefined(des) {
-      des.DeleteTagged(n"Cyberbane");
-    }
+    CBDeleteTaggedSafe(game, n"Cyberbane");
 
     // The headline scores.
     this.m_renownPoints = 0.0;

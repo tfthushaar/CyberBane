@@ -594,10 +594,7 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   }
   let removed = sys.ClearRivals();
   sys.SetActiveRivalId(0);
-  let des = GameInstance.GetDynamicEntitySystem();
-  if IsDefined(des) {
-    des.DeleteTagged(n"CB_Rival");
-  }
+  CBDeleteTaggedSafe(game, n"CB_Rival");
   CBLog.Info(n"Rivals", s"Purged \(removed) rivals at the player's request.");
   return removed;
 }

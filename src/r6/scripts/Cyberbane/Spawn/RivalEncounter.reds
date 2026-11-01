@@ -50,7 +50,7 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     //
     // Losing them now promotes them and buys real time before they find you again.
     CBRivalEscapedByPlayer(sys, game);
-    des.DeleteTagged(n"CB_Rival");
+    CBDeleteTaggedSafe(game, n"CB_Rival");
     sys.SetActiveRivalId(0);
   }
 
@@ -381,14 +381,16 @@ func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   if sys.HasPendingArrival() || sys.IsAdoptionOpen() || sys.GetTopUpWanted() > 0 {
     return false;
   }
-  // Active before the request, so the adoption that follows knows whose body it is.
+  // Active and pending before the car is sent, so the seat that is created for them knows
+  // whose body it is (Spawn/Arrival.reds, CBOnArrivalCarAttached).
   let previous = sys.GetActiveRivalId();
   sys.SetActiveRivalId(r.id);
-  if !CBRequestVanillaChase(sys, game, r.faction, r.recordID, 1, n"CB_Rival") {
+  sys.SetRivalCarPending(r.id);
+  if !CBSpawnVehicleArrival(sys, game, r.faction, r.recordID, 1, n"CB_Rival", TDBID.None(), n"") {
+    sys.SetRivalCarPending(0);
     sys.SetActiveRivalId(previous);
     return false;
   }
-  sys.SetRivalCarPending(r.id);
   return true;
 }
 

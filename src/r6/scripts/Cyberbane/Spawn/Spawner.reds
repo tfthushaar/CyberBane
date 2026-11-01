@@ -599,10 +599,151 @@ public func CBOrderHunt(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void
   cmd.finishWhenDestinationReached = true;
   // Spread where they stop so a squad surrounds V instead of stacking on one spot.
   cmd.desiredDistanceFromTarget = CBConfig.HuntStopDistance() + RandF() * CBConfig.HuntStopSpread();
-  let evt = new AICommandEvent();
-  evt.command = cmd;
-  puppet.QueueEvent(evt);
+  CBIssueMove(puppet, ai, cmd);
+}
+
+// ---- Orders, one at a time ------------------------------------------------------
+//
+// The game sends a script order to an NPC once, through the AI component
+// (AIComponent.SendCommand, core/components/aiComponent.script). Cyberbane sent every move order
+// twice, once as an AICommandEvent and once through SendCommand, and the hunt re-issues orders
+// every few seconds without ever cancelling the last one, so an NPC that could not reach its
+// target collected a growing queue of the same command object entered twice. Each NPC now has
+// at most one Cyberbane move order outstanding: the previous one is cancelled before the next
+// is sent, and it is sent once.
+@addField(ScriptedPuppet)
+public let cbMoveCmd: ref<AIMoveToCommand>;
+
+@addField(ScriptedPuppet)
+public let cbUnmountSent: Bool;
+
+public func CBIssueMove(puppet: ref<ScriptedPuppet>, ai: ref<AIHumanComponent>, cmd: ref<AIMoveToCommand>) -> Void {
+  if !IsDefined(puppet) || !IsDefined(ai) || !IsDefined(cmd) || !puppet.IsAttached() {
+    return;
+  }
+  if IsDefined(puppet.cbMoveCmd) {
+    ai.CancelCommand(puppet.cbMoveCmd);
+  }
+  puppet.cbMoveCmd = cmd;
   ai.SendCommand(cmd);
+}
+
+// Drop whatever move order Cyberbane last gave this NPC.
+public func CBCancelMove(puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(puppet) || !IsDefined(puppet.cbMoveCmd) {
+    return;
+  }
+  let ai = puppet.GetAIControllerComponent();
+  if IsDefined(ai) && puppet.IsAttached() {
+    ai.CancelCommand(puppet.cbMoveCmd);
+  }
+  puppet.cbMoveCmd = null;
+}
+
+// Tell one NPC to get out of the car it is in. Once per NPC.
+public func CBUnmountOnce(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(puppet) || puppet.cbUnmountSent || !puppet.IsAttached() || puppet.IsDead()
+     || !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
+    return;
+  }
+  let ai = puppet.GetAIControllerComponent();
+  if !IsDefined(ai) {
+    return;
+  }
+  CBCancelMove(puppet);
+  puppet.cbUnmountSent = true;
+  ai.SendCommand(new AIUnmountCommand());
+}
+
+// ---- Taking things out of the world ---------------------------------------------
+//
+// Every removal goes through here. DeleteTagged removed whatever carried the tag at that moment,
+// including an NPC sitting in a car seat and one the engine was still in the middle of
+// spawning. Neither is a state the game removes its own NPCs from. Those are skipped: they lose
+// the tag they were being removed for, so the lane that was waiting on them is free at once, and
+// they are marked CB_Orphan, which the slow tick clears once they are out of the car and fully
+// spawned (CBSweepOrphans). A car is only removed when none of Cyberbane's crew is still seated.
+// Map markers come off before anything is removed.
+public func CBDeleteTaggedSafe(game: GameInstance, tag: CName) -> Int32 {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return 0;
+  }
+  let crewSeated = CBAnyCrewSeated(game, des);
+  let ids = des.GetTaggedIDs(tag);
+  let kept = 0;
+  let i = 0;
+  while i < ArraySize(ids) {
+    let id = ids[i];
+    i += 1;
+    if !CBRemoveOne(game, des, id, crewSeated) {
+      kept += 1;
+      if NotEquals(tag, n"Cyberbane") && NotEquals(tag, n"CB_Orphan") {
+        des.UnassignTag(id, tag);
+      }
+      des.AssignTag(id, n"CB_Orphan");
+    }
+  }
+  if kept > 0 {
+    CBLog.Info(n"Spawn", s"\(kept) of ours were seated or still spawning; they go once they are out.");
+  }
+  return kept;
+}
+
+// Remove one entity if it is safe to; false if it was left for later.
+func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID, crewSeated: Bool) -> Bool {
+  if !EntityID.IsDefined(id) {
+    return true;
+  }
+  if des.IsSpawning(id) {
+    return false;
+  }
+  let ent = GameInstance.FindEntityByID(game, id);
+  if IsDefined(ent as VehicleObject) {
+    if crewSeated {
+      return false;
+    }
+  } else {
+    let p = ent as ScriptedPuppet;
+    if IsDefined(p) {
+      if VehicleComponent.IsMountedToVehicle(game, id) {
+        CBUnmountOnce(game, p);
+        return false;
+      }
+      CBUntrackOnMap(game, p);
+      CBCancelMove(p);
+    }
+  }
+  des.DeleteEntity(id);
+  return true;
+}
+
+// Is any of Cyberbane's car crew still in a seat?
+func CBAnyCrewSeated(game: GameInstance, des: ref<DynamicEntitySystem>) -> Bool {
+  let ids = des.GetTaggedIDs(n"CB_Crew");
+  let i = 0;
+  while i < ArraySize(ids) {
+    if VehicleComponent.IsMountedToVehicle(game, ids[i]) {
+      return true;
+    }
+    i += 1;
+  }
+  return false;
+}
+
+// Slow tick: clear whatever was left behind once it can be removed safely.
+public func CBSweepOrphans(game: GameInstance) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || !des.IsPopulated(n"CB_Orphan") || !CBWorldStable(game) {
+    return;
+  }
+  let crewSeated = CBAnyCrewSeated(game, des);
+  let ids = des.GetTaggedIDs(n"CB_Orphan");
+  let i = 0;
+  while i < ArraySize(ids) {
+    CBRemoveOne(game, des, ids[i], crewSeated);
+    i += 1;
+  }
 }
 
 // Finish setting up one of our own, once the engine has actually built it.
@@ -656,6 +797,10 @@ public class CBSpawnSetupCallback extends DelayCallback {
       } else {
         CBLog.Info(n"Spawn", "A spawned enemy never finished initialising; it will behave as its own kind.");
       }
+      return;
+    }
+    // Killed before it was ever set up: nothing to build, kit or show a bar for.
+    if puppet.IsDead() || !CBStillStanding(puppet) {
       return;
     }
     CBApplySpawnSetup(sys, game, puppet, this.riding);
@@ -772,10 +917,6 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
       // here once the puppet exists.
       // Only for a Rival the city drove in: one Cyberbane spawned on foot already has the look
       // from its spawn spec, and asking again would be a change nobody needs.
-      if sys.GetRivalCarPending() == who.id && IsNameValid(who.appearance)
-         && NotEquals(puppet.GetCurrentAppearanceName(), who.appearance) {
-        puppet.ScheduleAppearanceChange(who.appearance);
-      }
       // One call, one build. The crew-rank bonus is a parameter now rather than a second
       // multiplier applied a line later; see the note in Rivals/Hierarchy.reds.
       CBApplyRivalApexBuff(sys, game, puppet, who, CBRivalRole(sys, who));
@@ -827,14 +968,10 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   if CBLiveRivalPresent(sys, game) {
     CBRivalEscapedByPlayer(sys, game);
   }
-  CBUntrackTagged(game, n"CB_Rival");
-  CBUntrackTagged(game, n"CB_Squad");
-  CBUntrackTagged(game, n"CB_Apex");
-  CBUntrackTagged(game, n"CB_Escort");   // marked too now, so swept too
-  des.DeleteTagged(n"CB_Rival");
-  des.DeleteTagged(n"CB_Squad");
-  des.DeleteTagged(n"CB_Apex");
-  des.DeleteTagged(n"CB_Escort");
+  CBDeleteTaggedSafe(game, n"CB_Rival");
+  CBDeleteTaggedSafe(game, n"CB_Squad");
+  CBDeleteTaggedSafe(game, n"CB_Apex");
+  CBDeleteTaggedSafe(game, n"CB_Escort");
   // Take the bars down with them, rather than leaving them up for the tick it would take the
   // stack to notice its targets had stopped existing.
   sys.GetThreatBar().Hide();

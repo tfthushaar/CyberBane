@@ -739,6 +739,10 @@ public abstract class CBConfig {
   // How many times a delayed callback waits for the world to settle before giving up. At the
   // retry intervals used (0.4 to 2 seconds) this covers a long load or fast travel.
   public static func CallbackStableWaits() -> Int32 = 60
+  // Seconds between a car or its crew attaching and Cyberbane touching them (Spawn/Arrival.reds).
+  public static func ConvoyStepDelay() -> Float = 0.6
+  // A crew stays in a car going faster than this, in metres per second.
+  public static func ArrivalDismountMaxSpeed() -> Float = 3.0
 
   // ---- Loot and bounties (Spawn/Loot.reds) --------------------------------
   public static func LootDelaySeconds() -> Float = 0.8
