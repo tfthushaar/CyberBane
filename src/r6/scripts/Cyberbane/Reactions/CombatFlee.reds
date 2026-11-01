@@ -381,8 +381,8 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     if IsDefined(r) {
       CBRivalEscaped(r, content, now, district, true);
       r.state = EnumInt(ECBRivalState.Hunting);
-      if toasts {
-        CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, r)) slipped you again. Word is they are not finished.");
+      if toasts && IsDefined(content) {
+        CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalGotAwayLine(r), CBHudRed());
       }
     }
     sys.SetActiveRivalId(0);

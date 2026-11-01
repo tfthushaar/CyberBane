@@ -56,7 +56,26 @@ public func CBApexStrengthFraction() -> Float {
   if CBNgpActive() {
     frac *= CBConfig.ApexNgpStepDown();
   }
-  return frac;
+  return frac * CBDifficultyStepDown();
+}
+
+// The game's own difficulty already scales what every enemy does to V. On Hard and Very Hard the
+// apex build stacked on top of that, which is how an apex squad came to delete a player in a
+// couple of hits. Cyberbane gives back part of its share at those settings.
+public func CBDifficultyStepDown() -> Float {
+  let game = GetGameInstance();
+  let sds = GameInstance.GetStatsDataSystem(game);
+  if !IsDefined(sds) {
+    return 1.0;
+  }
+  let d = sds.GetDifficulty();
+  if Equals(d, gameDifficulty.VeryHard) {
+    return CBConfig.ApexVeryHardStepDown();
+  }
+  if Equals(d, gameDifficulty.Hard) {
+    return CBConfig.ApexHardStepDown();
+  }
+  return 1.0;
 }
 
 // Scale a multiplier toward 1.0 (no change) rather than toward zero.
@@ -520,8 +539,8 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // The law does not field an apex squad; heat and MaxTac are its escalation.
     if IsDefined(fs) && NotEquals(fs.id, n"") && CBFactionFieldsSquads(fs.id) {
       // Their toughest if V has met one, otherwise whoever V has been fighting.
-      let record = TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
-      if TDBID.IsValid(record) && (fs.kills - fs.apexAtKills) >= CBConfig.ApexKillThreshold() {
+      // The same test the apex lane picks with, so this never announces a squad that will not come.
+      if CBApexEligible(sys, fs) {
         // Announce only. Deciding when they actually set off belongs to Spawn/Queue.reds now,
         // which holds the one clock for the whole mod; arming a second countdown here would
         // put two encounters on their way at once and leave the Hub showing a timer for a
@@ -536,7 +555,9 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
           return;   // already told them about this one
         }
 
-        let name = CBApexName(CBContent(game), fs.id, fs.kills);
+        // Seeded by the kills already paid for, which does not move until they are sent, so the
+        // name in this warning is the name in the one that says they are on the road.
+        let name = CBApexName(CBContent(game), fs.id, fs.apexAtKills);
         if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
           CBPhoneFromGang(game, fs.id, s"\(name) is coming for you, and not alone. Four of ours. Make your peace.");
         }
@@ -629,6 +650,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     sys.SetPendingApexDriving(fs.id, CBConfig.ApexDriveTicks());
     CBApexArrivalSound(game);
     fs.apexAtKills = fs.kills;
+    sys.ArmApexBounty(fs.id);
     CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) arriving by car.");
     return;
   }
@@ -676,6 +698,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     return;
   }
   fs.apexAtKills = fs.kills;   // paid for: the next one needs fresh bodies
+  sys.ArmApexBounty(fs.id);
   CBApexArrivalSound(game);    // only once somebody is actually standing there
   CBApexTerrorWave(game);      // and everybody nearby gets out of the way
   if CBConfig.ApexEscortCount() > 0 && TDBID.IsValid(fs.sampleRecord) {

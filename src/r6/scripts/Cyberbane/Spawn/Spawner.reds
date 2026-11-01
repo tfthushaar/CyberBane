@@ -615,9 +615,27 @@ public class CBSpawnSetupCallback extends DelayCallback {
   public let entityId: EntityID;
   public let riding: Bool;
   public let tries: Int32;
+  public let waits: Int32;
 
   public func Call() -> Void {
     let game = GetGameInstance();
+    // Not while the world is loading or streaming: everything below writes attitude, stats and
+    // orders on a native puppet, which is the crash this whole mod's tick is gated against.
+    // Waiting for a settled moment does not use up the tries meant for slow components.
+    if !CBWorldStable(game) {
+      if this.waits < CBConfig.CallbackStableWaits() {
+        let ds = GameInstance.GetDelaySystem(game);
+        if IsDefined(ds) {
+          let again = new CBSpawnSetupCallback();
+          again.entityId = this.entityId;
+          again.riding = this.riding;
+          again.tries = this.tries;
+          again.waits = this.waits + 1;
+          ds.DelayCallback(again, CBConfig.SpawnSetupRetrySeconds(), false);
+        }
+      }
+      return;
+    }
     let sys = CyberbaneSystem.Get(game);
     if !IsDefined(sys) {
       return;
@@ -653,6 +671,7 @@ func CBRetrySpawnSetup(game: GameInstance, from: ref<CBSpawnSetupCallback>) -> V
   next.entityId = from.entityId;
   next.riding = from.riding;
   next.tries = from.tries + 1;
+  next.waits = from.waits;
   ds.DelayCallback(next, CBConfig.SpawnSetupRetrySeconds(), false);
 }
 
@@ -703,8 +722,10 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   CBGrantAbility(puppet as NPCPuppet, t"Ability.IsAggressive");
   CBMakeHostileToPlayer(game, puppet);
   // Hostile is not the same as coming for you. Anybody in a car is excepted: the car travels.
+  // Where they go is the hunt's business: toward where V was last known, until somebody finds V
+  // (Spawn/Hunt.reds).
   if !riding {
-    CBOrderHunt(game, puppet);
+    CBOrderPursue(sys, game, puppet);
   }
   if isApex {
     CBApplyApexBuff(sys, game, puppet);
@@ -749,7 +770,10 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
       // The look they carry. A Rival on foot is spawned in it; one the city drove in was given
       // whatever look the record rolled, because the chase cannot be told, so it is put right
       // here once the puppet exists.
-      if IsNameValid(who.appearance) && NotEquals(puppet.GetCurrentAppearanceName(), who.appearance) {
+      // Only for a Rival the city drove in: one Cyberbane spawned on foot already has the look
+      // from its spawn spec, and asking again would be a change nobody needs.
+      if sys.GetRivalCarPending() == who.id && IsNameValid(who.appearance)
+         && NotEquals(puppet.GetCurrentAppearanceName(), who.appearance) {
         puppet.ScheduleAppearanceChange(who.appearance);
       }
       // One call, one build. The crew-rank bonus is a parameter now rather than a second
@@ -763,58 +787,9 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   CBLog.Info(n"Spawn", "One of ours is up and coming for you.");
 }
 
-// Keep the people who were sent after you actually coming after you.
-//
-// The order issued at spawn finishes once they reach V, by design - it has to, or it would
-// fight the game's own combat AI for the whole encounter. But that means the moment you break
-// away they are back on ordinary behaviour and will happily lose track of you, which reads as
-// them giving up rather than you escaping.
-//
-// So anybody of ours who is still alive and has fallen behind gets told again. The distance
-// floor is what keeps this from interfering during the fight itself: somebody standing next to
-// you is already doing the right thing and must not be interrupted.
-//
-// Escaping is still entirely possible, and is meant to be: they run, you can drive, and the
-// retire timer ends the encounter if you stay away. This stops them wandering off; it does not
-// glue them to you, and nothing here moves anybody.
-public func CBChaseRefreshTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  if !IsDefined(sys) || !CBWorldStable(game) {
-    return;
-  }
-  let player = GetPlayer(game);
-  let des = GameInstance.GetDynamicEntitySystem();
-  if !IsDefined(player) || !IsDefined(des) {
-    return;
-  }
-  let ppos = player.GetWorldPosition();
-
-  // Can they still see a reason to keep coming?
-  //
-  // Re-issuing the order every few seconds made them impossible to shake: however far you got,
-  // they were handed your position again. That is not a chase, it is a tether. The police in
-  // this game give up once you have been far enough away for long enough, and these should
-  // work the same way - you should be able to drive off and lose them.
-  let nearest = CBNearestHunterDistance(sys, game, des, ppos);
-  if nearest < 0.0 {
-    sys.SetChaseAwayTicks(0);   // nobody is after you
-    return;
-  }
-  if nearest >= CBConfig.ChaseLoseDistance() {
-    if sys.BumpChaseAwayTicks() >= CBConfig.ChaseLoseTicks() {
-      CBChaseGiveUp(sys, game, des);
-      return;
-    }
-    // Far enough that they are losing you: stop handing them your position.
-    return;
-  }
-  sys.SetChaseAwayTicks(0);
-
-  let done = 0;
-  CBChaseRefreshTag(sys, game, des, ppos, n"CB_Rival", done);
-  CBChaseRefreshTag(sys, game, des, ppos, n"CB_Apex", done);
-  CBChaseRefreshTag(sys, game, des, ppos, n"CB_Squad", done);
-  CBChaseRefreshTag(sys, game, des, ppos, n"CB_Escort", done);
-}
+// The chase used to be kept going here by handing every hunter V's position every few seconds,
+// which is why nobody could ever lose them. Spawn/Hunt.reds owns that now: hunters search, find V
+// by sight or sound, and give up when V stays gone. The helpers below are shared with it.
 
 // How far away the closest living hunter is, or -1 when there is nobody.
 func CBNearestHunterDistance(sys: ref<CyberbaneSystem>, game: GameInstance,
@@ -870,29 +845,6 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
     CBPhoneFromStreet(game, "They lost you. Do not go back the way you came.");
   }
   CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");
-}
-
-func CBChaseRefreshTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
-                       ppos: Vector4, tag: CName, out done: Int32) -> Void {
-  let ids = des.GetTaggedIDs(tag);
-  let i = 0;
-  while i < ArraySize(ids) && done < CBConfig.ChaseRefreshPerPass() {
-    let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
-    i += 1;
-    // CBNpcSafe covers attachment and the settling window, so nothing half-built is touched.
-    // Somebody we broke and sent running is skipped. Re-issuing a hunt order to them cancels
-    // the panic we just caused, so the two systems were quietly undoing each other.
-    if CBStillStanding(puppet) && CBNpcSafe(sys, puppet) && !puppet.cbMoraleBroken {
-      // Anyone still riding is the car's problem, not theirs.
-      if !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
-        let away = Vector4.Distance(puppet.GetWorldPosition(), ppos);
-        if away >= CBConfig.ChaseRefreshMinDistance() && away <= CBConfig.ChaseLoseDistance() {
-          CBOrderHunt(game, puppet);
-          done += 1;
-        }
-      }
-    }
-  }
 }
 
 // The attitude group the game itself gives this kind of NPC.

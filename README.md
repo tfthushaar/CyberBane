@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.4.7).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.4.8).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -118,8 +118,8 @@ page describes what the mod does and how it installs.
   a gang-mate gunning for you.
 - **Rivals have traits, and weak spots.** A Tough Rival takes more killing, an Armored one
   shrugs off more of it, a Deadeye finds the gap in your armour, a Quick one dodges, a Pack
-  Leader brings two of their own, a Grudge-Bearer is always first in line, and somebody Hard to
-  Scare never breaks and runs. Escaping you half dead leaves them Scarred, and doing it twice
+  Leader brings two of their own (so does a crew leader, and a lieutenant brings one), a
+  Grudge-Bearer is always first in line, and somebody Hard to Scare never breaks and runs. Escaping you half dead leaves them Scarred, and doing it twice
   leaves an Old Wound. Sparing one leaves them Shaken, and an avenger comes in Reckless. The
   Rivals screen lists them for whoever is coming next.
 - **They drive over.** Crews, apex squads and Rivals can all arrive by car, dispatched and driven
@@ -132,6 +132,22 @@ page describes what the mod does and how it installs.
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
   of a problem they think you are, and they bring the gang's apex squad with them. Pay them off
   while they are on the way and they turn around.
+- **They come for a reason.** A gang that wants you dead sends a crew when it has a reason
+  today: you killed their people where somebody saw it, you have been hanging around on their
+  streets long enough for a lookout to call it in, you hurt them in the last half a day, or they
+  have sworn a vendetta. A gang that hates you but has not seen or heard of you in a day keeps
+  its people at home. Wipe out one of their crews and their apex squad is next, and they text
+  you to say who is coming.
+- **Hunted, not ambushed.** Whoever is coming texts you first and you get time. They arrive out
+  of sight, head for where you were last seen and search the area, narrowing in, the way the
+  police do. A line on the HUD says who is hunting you and whether they are on their way,
+  searching for you, have you, or are losing your trail.
+- **Worth the fight.** Anyone the mod sends who you put down drops a bag on their body, scaled
+  to who they were: ammo and parts from a crew, better parts from a Rival the higher they
+  ranked, rare and epic parts from an apex squad with a chance of legendary ones, and a small
+  chance of an iconic weapon from apex squads, top Rivals and crew leaders. Only iconics you
+  could otherwise find exploring the city can drop; quest, gig and story weapons never do. Put
+  down a Rival or wipe out an apex squad and a gang at war with theirs pays you a bounty.
 - **The day has a shape.** A day in Night City is split into three stretches of eight hours,
   and each kind of trouble gets its own window inside them, staggered so a Rival and an apex
   squad sharing a stretch arrive hours apart rather than together. Three Rivals means one in
@@ -139,7 +155,8 @@ page describes what the mod does and how it installs.
   every day, with the exact moment inside a window left to chance so it never becomes a
   timetable you can learn. How many of each per day is up to you. Sleeping or fast travelling
   past a window simply misses it, so you never arrive somewhere and get everything you were
-  owed at once.
+  owed at once. The timetable only says when the city has time for you; a gang still needs a
+  reason to come.
 - **You can lose them.** Being hunted is a chase you can win. Get far enough from all of them
   and stay clear long enough and they give up, the same way the police in this game do. A Rival
   you shake takes it personally and comes back promoted, so getting away still costs you
@@ -151,9 +168,10 @@ page describes what the mod does and how it installs.
   with a gang from the Hub, and the price reflects what they actually think of you: the bodies,
   how badly their standing has fallen, and double again if they have sworn a vendetta. Paying
   them off calls off anything they already had on its way.
-- **Gangs send an apex squad.** Keep putting one crew in the ground and they stop sending
-  squads and send the people who matter: a carload of four named enforcers who fight like
-  MaxTac. There is a heavy who walks at you and breaks your guard, a shooter who flushes you
+- **Gangs send an apex squad.** Wipe out a gang's crew while you are at war with them, after
+  enough of their people have gone down, and they stop sending squads and send the people who
+  matter: a carload of four named enforcers who fight like MaxTac. Pile up twice the bodies and
+  they come without waiting for a crew. There is a heavy who walks at you and breaks your guard, a shooter who flushes you
   out of cover, a blade who closes on a Sandevistan, and a netrunner who hangs back and takes
   your weapon off you. Each chair is filled with a real member of that gang you have actually
   fought, so they carry the right weapons and fight the way that kind of enemy fights, and they
@@ -162,7 +180,8 @@ page describes what the mod does and how it installs.
   always tell who you are fighting and whose people they are. Like MaxTac, they hold their
   ground: an apex squad never breaks and runs.
   You get a warning first, and a countdown. How dangerous they are is a slider, from a hard fight
-  up to the game's own set-piece enforcers, and your own build scales it on top. Each one
+  up to the game's own set-piece enforcers, and your own build scales it on top. On Hard and
+  Very Hard, where the game already makes every enemy hit harder, Cyberbane adds less. Each one
   carries two traits of its own, so no two fight the same way. No story character is ever used,
   so nothing gets spoiled and you never meet a duplicate of someone you already killed. It
   works for every gang. The Hub keeps count of the ones you put down.

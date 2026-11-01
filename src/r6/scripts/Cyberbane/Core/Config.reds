@@ -234,7 +234,9 @@ public abstract class CBConfig {
   public static func HitSquadBaseChance() -> Float = 0.04
   public static func HitSquadFactionCooldownDays() -> Float = 2.0
   public static func HitSquadGlobalCooldownMinutes() -> Float = 45.0
-  public static func HitSquadMinSpawnDistance() -> Float = 50.0
+  // Further out than an ambush, out of sight, and they have to come and find V (Spawn/Hunt.reds).
+  // These were 42 to 50 m, which is behind you rather than coming for you.
+  public static func HitSquadMinSpawnDistance() -> Float = 85.0
   public static func HitSquadDespawnMinutes() -> Float = 5.0
   public static func HitSquadDespawnDistance() -> Float = 300.0
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
@@ -244,7 +246,7 @@ public abstract class CBConfig {
   // camera turn put the point in view, and the engine then declines the spawn without saying
   // so - which read as a Rival that was due and never came. They are told to run at V on
   // arrival (CBOrderHunt), so the extra distance costs nothing.
-  public static func RivalSpawnDistance() -> Float = 42.0
+  public static func RivalSpawnDistance() -> Float = 80.0
 
   // How many downed enemies the mercy sweep looks at per fast tick. The sweep exists because
   // the hit hook alone misses anyone who drops to damage that does not raise a hit event we
@@ -366,7 +368,7 @@ public abstract class CBConfig {
 
   // ---- Arriving by car (spec 9.9) ----
   // Far enough out that the car is not seen appearing and has room to build up speed.
-  public static func VehicleArrivalDistance() -> Float = 70.0
+  public static func VehicleArrivalDistance() -> Float = 140.0
   // The box a car needs to be clear before one is put there, in metres.
   public static func CarFitWidth() -> Float = 2.5
   public static func CarFitLength() -> Float = 4.5
@@ -472,7 +474,7 @@ public abstract class CBConfig {
 
   // ---- Apex strength ----
   // Percentage of a boss-grade build, used when settings have not loaded yet.
-  public static func ApexStrengthDefault() -> Int32 = 70
+  public static func ApexStrengthDefault() -> Int32 = 55
   // How much of its own contribution Cyberbane keeps when New Game Plus is also buffing NPCs.
   public static func ApexNgpStepDown() -> Float = 0.5
   // Size of one random trait, as a fraction added on top of the stat it touches.
@@ -597,7 +599,7 @@ public abstract class CBConfig {
   // Fast ticks between the warning and the apex arriving. Long enough to read as a countdown
   // in the Hub and to brace for, short enough that you have not driven to another district.
   public static func ApexWarningTicks() -> Int32 = 45
-  public static func ApexSpawnDistance() -> Float = 45.0
+  public static func ApexSpawnDistance() -> Float = 90.0
   // Muscle that comes in with them. Built from the gang's rank-and-file record.
   public static func ApexEscortCount() -> Int32 = 2
   // The apex is built from a gang archetype, which on its own is nowhere near a boss, so the
@@ -697,6 +699,9 @@ public abstract class CBConfig {
   public static func RivalTraitCrit() -> Float = 6.0
   // A Pack Leader brings this many of their own with them.
   public static func PackLeaderEscort() -> Int32 = 2
+  // Escorts for a Rival holding a chair in their gang's crew (Spawn/RivalEncounter.reds).
+  public static func LeaderEscort() -> Int32 = 2
+  public static func LieutenantEscort() -> Int32 = 1
   // How far up the Rival queue a Grudge-Bearer jumps.
   public static func QueueGrudgeBonus() -> Float = 10.0
   // Gangs at war (Model/GangRivalries.reds). Hurting a gang raises its enemies' standing with V
@@ -708,6 +713,64 @@ public abstract class CBConfig {
   public static func TurfAlliedDiscount() -> Float = 0.08
   public static func TurfFriendlyDiscount() -> Float = 0.04
   public static func TurfHostileSurcharge() -> Float = 0.06
+
+  // ---- The hunt (Spawn/Hunt.reds) ----------------------------------------
+  // How far off the tip a hunt starts with can be, in metres.
+  public static func HuntTipError() -> Float = 45.0
+  // The search circle around the last known position: wide at first, tight after HuntNarrowTicks.
+  public static func HuntSearchRadiusStart() -> Float = 55.0
+  public static func HuntSearchRadiusMin() -> Float = 15.0
+  public static func HuntNarrowTicks() -> Int32 = 90
+  // A fresh search point this often, per hunter.
+  public static func HuntSearchOrderTicks() -> Int32 = 8
+  // Seeing V: close with nothing in the way, or already fighting within this range.
+  public static func HuntSpotDistance() -> Float = 35.0
+  public static func HuntCombatKnowsDistance() -> Float = 80.0
+  // Hearing V: a kill or a firefight this close to a hunter.
+  public static func HuntHearDistance() -> Float = 70.0
+  // Unseen this long and they go back to searching; unseen this long while searching, they quit.
+  public static func HuntLostTicks() -> Int32 = 10
+  public static func HuntGiveUpTicks() -> Int32 = 150
+  // Lead time between being told and them arriving.
+  public static func CrewWarningTicks() -> Int32 = 45
+  public static func RivalWarningTicks() -> Int32 = 40
+  // A provoked gang's crew comes now; the provocation counts for this long.
+  public static func ProvokeTicks() -> Int32 = 240
+  // How many times a delayed callback waits for the world to settle before giving up. At the
+  // retry intervals used (0.4 to 2 seconds) this covers a long load or fast travel.
+  public static func CallbackStableWaits() -> Int32 = 60
+
+  // ---- Loot and bounties (Spawn/Loot.reds) --------------------------------
+  public static func LootDelaySeconds() -> Float = 0.8
+  public static func LootCrewChance() -> Float = 0.5
+  public static func LootLegendaryChanceApex() -> Float = 0.25
+  public static func LootLegendaryChanceTop() -> Float = 0.4
+  // A small chance per apex member, and per top-ranked Rival or crew leader, of an iconic.
+  public static func LootIconicChanceApex() -> Float = 0.04
+  public static func LootIconicChanceRival() -> Float = 0.03
+  public static func BountyRivalPerRank() -> Int32 = 1500
+  public static func BountyLeaderBonus() -> Int32 = 3000
+  public static func BountyApexSquad() -> Int32 = 9000
+
+  // ---- Difficulty (Spawn/FactionApex.reds, CBDifficultyStepDown) -------------
+  public static func ApexHardStepDown() -> Float = 0.85
+  public static func ApexVeryHardStepDown() -> Float = 0.7
+
+  // ---- What it takes (Spawn/Queue.reds) -------------------------------------------
+  // A gang sends a crew when it has a reason: a vendetta, V provoking them, V hanging around on
+  // their turf, or trouble with V inside this many in-game hours.
+  public static func CrewReasonHours() -> Float = 12.0
+  public static func QueueTurfBonus() -> Float = 20.0
+  public static func QueueRecentBonus() -> Float = 15.0
+  public static func RivalTurfBonus() -> Float = 12.0
+  // Seconds (ticks) on a hostile gang's turf before a lookout calls V in, and how long before
+  // the next lookout can.
+  public static func TurfLingerTicks() -> Int32 = 150
+  public static func TurfSpotCooldownTicks() -> Int32 = 1500
+  // An apex squad comes after V beats one of the gang's crews, or after this many times the
+  // usual kill count with no crew in between.
+  public static func ApexMassacreMultiplier() -> Int32 = 2
+  public static func QueueProvokedBonus() -> Float = 40.0
   // Spread added to each Rival's countdown so two of the same rank do not arrive together.
   public static func RivalHuntJitterTicks() -> Int32 = 120
   // How long a Rival may stand around before Cyberbane gives up on the encounter, in in-game

@@ -3,6 +3,93 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.8] - 2026-11-01
+
+Built from player reports after 1.4.7: crashes, and a squad that "spawns behind you, eats ammo
+like no tomorrow, gives little reward, and feels like an arbitrary timer". The aim was to make
+being hunted feel like the police hunting you: you do something, somebody calls it in, they come
+looking, and you can see it happening.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Crash fixes
+- **Opening a gang's text could crash the game.** Cyberbane drew its message bubbles and reply
+  rows by adding its own widgets to the phone's message and reply lists and clearing them with a
+  call that also removed widgets the game's own list was still tracking. Gang texts are the ones
+  with reply rows, which is why they were the ones that crashed. Cyberbane now hands its lines to
+  those lists as data, the same way the game hands them its own messages, and the game builds
+  and removes every widget itself. Choosing a reply redraws the thread on the next frame instead
+  of in the middle of the click.
+- The text notification no longer asks the game's journal for a contact using Cyberbane's own
+  number.
+- **Nothing scheduled runs while the world is loading.** Every delayed step Cyberbane schedules
+  (crews getting out of cars, cars driving off, enemies being set up after they spawn, loot
+  dropping) now waits for the world to be settled before it touches anything, and gives up
+  cleanly if that takes too long.
+- A crew you had wiped out could still produce a Rival "who got away" when its bodies were
+  cleared. Only somebody still standing can escape now.
+
+### Hunted, not ambushed
+- **They tell you first, and you get time.** A crew, an apex squad or a Rival texts before they
+  set off, with roughly where they think you are, and there is a real gap before they arrive.
+- **They arrive out of sight and have to find you.** Spawn distances are much longer, and
+  nobody is placed where you can see them appear. They head for where you were last seen and
+  search the area, narrowing in, the way the police do.
+- **A line on the HUD says what is happening**, above the bars: HUNTED, then who, and whether
+  they are on their way, searching for you, have you, or are losing your trail.
+- **You can break contact.** Get out of sight and far enough away and they lose you, then give
+  up. A Rival you lose texts you about it.
+- **Rivals say "found you" when they actually find you**, not the moment they spawn.
+
+### They come for a reason
+- **A crew needs a reason, not just a grudge.** A gang that wants you dead sends people when
+  you have killed their people where somebody saw it, when you have been hanging around on
+  their streets long enough for a lookout to call it in, when you have hurt them in the last
+  half a day, or when they have sworn a vendetta. A gang that hates you but has not seen or
+  heard of you in a day keeps its people at home. The daily timetable still limits how often
+  the city has time for you; it is no longer the reason anybody comes.
+- **On their turf, they notice.** Spend a few minutes out in the open on the streets of a gang
+  that wants you dead and a lookout calls it in. Their crew comes off the timetable, and their
+  warning says you were seen on their streets. Sneaking, safe areas and being indoors do not
+  count.
+- **Their apex squad is their answer to you beating their crew.** An apex squad comes from a
+  gang that is hostile to you, has lost enough people since its last one, and has had one of
+  its crews wiped out by you. Kill twice as many with no crew in between and it comes anyway.
+  When you wipe out a crew, the gang texts you who is coming next. A gang you are square with
+  never sends its best, and the warning and the Hub use the same test as the scheduler, so
+  neither can promise a squad that will not come.
+- The Hub's gang line says where each gang stands: kills until their apex squad, "beat a crew,
+  or N more kills", or ready.
+
+### Worth the fight
+- **Loot.** Anyone Cyberbane sends who you put down drops a bag on their body. Crew sometimes
+  carry ammo and crafting parts. Rivals carry better parts the higher they ranked, more for a
+  crew leader. Apex squad members carry rare and epic parts with a chance of legendary ones.
+- **A small chance of an iconic weapon** from apex squad members, top-ranked Rivals and crew
+  leaders. Only weapons you could otherwise find exploring the city: anything the game tags as
+  a quest item is refused, and mission, gig, story and companion weapons are not on the list.
+  Each one drops at most once per session.
+- **Bounties.** Put down a Rival, or wipe out an apex squad, and a gang at war with theirs that
+  does not want you dead pays you for it, and texts to say so.
+- New settings: **Loot from the people sent after you** and **Bounties**, both on by default.
+
+### Fairer fights
+- **Difficulty aware.** On Hard and Very Hard the game already makes every enemy hit harder,
+  and the apex build was stacking on top of that. Cyberbane now adds less at those settings.
+- **Apex strength defaults to 55** (was 70). If you set it yourself, your value is kept.
+
+### Nemesis
+- **Crew leaders do not come alone.** A Rival who leads their gang's crew brings two of their
+  people, a lieutenant brings one, and a Pack Leader still brings two.
+- **Rivals talk to you themselves** when they get away from you and when you lose them, and
+  what they say depends on what you have done to them.
+
+### Other fixes
+- Gang texts that are friendly (a gang warming to you, a tip-off, a bounty) are no longer tinted
+  as threats and never carry a peace offer.
+- A provocation can no longer open the crew lane for a different gang from the one you
+  provoked.
+
 ## [1.4.7] - 2026-11-01
 
 A major release. Every report this answers came down to the same thing: the mod described what

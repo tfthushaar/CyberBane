@@ -763,9 +763,7 @@ public class CBHud {
               if Equals(sys.GetLaneTarget(CBLaneSquad()), fs.id) {
                 right = "CREW IN " + CBHudCountdown(sys.GetLaneTicks(CBLaneSquad()));
               } else {
-                let toApex = CBConfig.ApexKillThreshold() - (fs.kills - fs.apexAtKills);
-                right = toApex <= 0 ? "ready to send their best"
-                                    : s"apex squad in \(toApex) kills";
+                right = CBApexProgressLine(sys, fs);
               }
             }
           }

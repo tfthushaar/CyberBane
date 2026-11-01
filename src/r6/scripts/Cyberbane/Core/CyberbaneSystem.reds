@@ -130,6 +130,31 @@ public class CyberbaneSystem extends ScriptableSystem {
   // once (Model/Reputation.reds, CBVendettaWatch). Session only.
   private let m_seenPostureIds: array<CName>;
   private let m_seenPostureVals: array<Int32>;
+  // The hunt (Spawn/Hunt.reds): what the people after V know. Session only.
+  private let m_huntState: Int32;
+  private let m_huntLkp: Vector4;
+  private let m_huntLastSeenTick: Int32;
+  private let m_huntSearchStartTick: Int32;
+  private let m_huntFaction: CName;
+  // A Rival who has warned V they are coming (their arrival is the lane's next zero), and the
+  // Rival who has already said "found you" on this arrival.
+  private let m_rivalWarned: Int32;
+  private let m_rivalSpottedTexted: Int32;
+  // A gang V has just provoked, and until when (Spawn/Hunt.reds, CBProvoke).
+  private let m_provokedFaction: CName;
+  private let m_provokedUntil: Int32;
+  // Pay the bounty for this apex squad once, when the last of them goes down.
+  private let m_apexBountyArmed: Bool;
+  private let m_apexBountyFaction: CName;
+  // Iconic weapons already handed out this session, so the same one does not drop twice.
+  private let m_iconicsGiven: array<TweakDBID>;
+  // Gangs whose crew V has beaten since their last apex squad (Spawn/Queue.reds, CBApexEligible).
+  private let m_crewBeaten: array<CName>;
+  // The hostile turf V is standing on, since when, and when a lookout may next call it in
+  // (Spawn/Queue.reds, CBTurfWatchTick).
+  private let m_turfWatchFaction: CName;
+  private let m_turfWatchSince: Int32;
+  private let m_turfSpotNext: Int32;
   private let m_laneRivalFreed: Int32;
   private let m_laneSquadFreed: Int32;
   private let m_laneApexFreed: Int32;
@@ -781,11 +806,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBChasePrimeTick(this, game);       // let the city's chase find a road before a car is due
     if this.m_tickCount % 5 == 0 {
       CBVendettaWatch(this, game);      // date a vendetta the moment it is sworn
+      CBTurfWatchTick(this, game);      // hanging around on a hostile gang's streets gets noticed
     }
     CBProcessCarTopUp(this, game);      // anybody a car was meant to bring and did not walks in
-    if this.m_tickCount % CBConfig.ChaseRefreshEveryTicks() == 0 {
-      CBChaseRefreshTick(this, game);   // keep whoever was sent actually coming after you
-    }
+    CBHuntTick(this, game);             // the people after you search, find you, lose you
     CBRivalHuntTick(this, game);        // confirms a queued rival actually arrived
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
@@ -1103,6 +1127,97 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayPush(this.m_seenPostureIds, id);
     ArrayPush(this.m_seenPostureVals, now);
     return -1;
+  }
+
+  // ---- The hunt ----
+  public func GetHuntState() -> Int32 { return this.m_huntState; }
+  public func SetHuntState(v: Int32) -> Void { this.m_huntState = v; }
+  public func GetHuntLkp() -> Vector4 { return this.m_huntLkp; }
+  public func SetHuntLkp(v: Vector4) -> Void { this.m_huntLkp = v; }
+  public func GetHuntLastSeenTick() -> Int32 { return this.m_huntLastSeenTick; }
+  public func SetHuntLastSeenTick(v: Int32) -> Void { this.m_huntLastSeenTick = v; }
+  public func GetHuntSearchStartTick() -> Int32 { return this.m_huntSearchStartTick; }
+  public func SetHuntSearchStartTick(v: Int32) -> Void { this.m_huntSearchStartTick = v; }
+  public func GetHuntFaction() -> CName { return this.m_huntFaction; }
+  public func SetHuntFaction(v: CName) -> Void { this.m_huntFaction = v; }
+  public func GetRivalWarned() -> Int32 { return this.m_rivalWarned; }
+  public func SetRivalWarned(id: Int32) -> Void { this.m_rivalWarned = id; }
+  public func GetRivalSpottedTexted() -> Int32 { return this.m_rivalSpottedTexted; }
+  public func SetRivalSpottedTexted(id: Int32) -> Void { this.m_rivalSpottedTexted = id; }
+
+  public func SetProvoked(faction: CName, untilTick: Int32) -> Void {
+    this.m_provokedFaction = faction;
+    this.m_provokedUntil = untilTick;
+  }
+
+  // The gang V has provoked, while it still counts; n"" otherwise.
+  public func GetProvoked() -> CName {
+    if this.m_tickCount > this.m_provokedUntil {
+      return n"";
+    }
+    return this.m_provokedFaction;
+  }
+
+  public func ClearProvoked() -> Void {
+    this.m_provokedFaction = n"";
+    this.m_provokedUntil = 0;
+  }
+
+  public func ArmApexBounty(faction: CName) -> Void {
+    this.m_apexBountyArmed = true;
+    this.m_apexBountyFaction = faction;
+  }
+
+  // Take the bounty if it is armed; returns the gang it was for, or n"".
+  public func TakeApexBounty() -> CName {
+    if !this.m_apexBountyArmed {
+      return n"";
+    }
+    this.m_apexBountyArmed = false;
+    return this.m_apexBountyFaction;
+  }
+
+  public func IconicGiven(id: TweakDBID) -> Bool {
+    return ArrayContains(this.m_iconicsGiven, id);
+  }
+
+  public func NoteIconicGiven(id: TweakDBID) -> Void {
+    ArrayPush(this.m_iconicsGiven, id);
+  }
+
+  public func CrewBeaten(faction: CName) -> Bool {
+    return ArrayContains(this.m_crewBeaten, faction);
+  }
+
+  public func NoteCrewBeaten(faction: CName) -> Void {
+    if NotEquals(faction, n"") && !ArrayContains(this.m_crewBeaten, faction) {
+      ArrayPush(this.m_crewBeaten, faction);
+    }
+  }
+
+  public func ClearCrewBeaten(faction: CName) -> Void {
+    ArrayRemove(this.m_crewBeaten, faction);
+  }
+
+  public func GetTurfWatchFaction() -> CName {
+    return this.m_turfWatchFaction;
+  }
+
+  public func GetTurfWatchSince() -> Int32 {
+    return this.m_turfWatchSince;
+  }
+
+  public func SetTurfWatch(faction: CName, since: Int32) -> Void {
+    this.m_turfWatchFaction = faction;
+    this.m_turfWatchSince = since;
+  }
+
+  public func GetTurfSpotNext() -> Int32 {
+    return this.m_turfSpotNext;
+  }
+
+  public func SetTurfSpotNext(tick: Int32) -> Void {
+    this.m_turfSpotNext = tick;
   }
 
   public func GetRivalCarPending() -> Int32 {

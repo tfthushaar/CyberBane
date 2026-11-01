@@ -19,8 +19,8 @@
 // refresh) carrying a `JournalNotificationData` whose `journalEntry` it looks up by hash. Ours
 // has no journal entry, so `GotoSmsMessenger` and `RefreshSmsMessager` hand over a subclass
 // carrying the thread instead, and `PhoneMessagePopupGameController.SetupData` sets the panel up
-// for it without ever asking the journal about it. The bubbles are the messenger's own
-// `Message` widget and `MessangerItemRenderer`, spawned into its own message list.
+// for it without ever asking the journal about it. The lines are handed to the messenger's own
+// message list as list data, so the game spawns its own `MessangerItemRenderer` bubbles for them.
 //
 // The notification. `PushSMSNotification` (newHudPhoneGameController.script:1768) fills a
 // `PhoneMessageNotificationViewData` and hands it to `AddNewNotificationData`. Cyberbane does
@@ -29,11 +29,11 @@
 // `MessageToOpenHash` on the UI_ComDevice blackboard, then open the contact list.
 //
 // Answering. A gang V can buy off that has sent a hostile message leaves an answer open in its
-// thread, drawn with the messenger's own `Reply` widget and chosen the way the game's own reply
-// choices are chosen (up, down, select). Paying runs CBBrokerPeace, the same function and price
-// as the Hub's shortcut; refusing gets their answer. The game's own list of replies is built
-// from journal entries, so the panel's reply navigation, "has replies" test and activation are
-// wrapped to use Cyberbane's rows while one of its threads is showing.
+// thread, handed to the messenger's own reply list and chosen the way the game's own reply
+// choices are chosen (up, down, select, or a click). Paying runs CBBrokerPeace, the same
+// function and price as the Hub's shortcut; refusing gets their answer. The game marks a chosen
+// reply as a journal entry, and ours have none, so the panel's "has replies" test and the two
+// ways of choosing are wrapped to answer for Cyberbane's rows while one of its threads shows.
 //
 // The approach is the one the Phone Extension framework (r457 and gh057) proved on 2.x. None of
 // its code is used and nothing here depends on it; every name is Cyberbane's own, so both can
@@ -326,7 +326,9 @@ public func CBDeliverThread(hash: Int32, sender: String, body: String, sound: Bo
   let userData = new PhoneMessageNotificationViewData();
   userData.entryHash = 0;
   userData.threadHash = hash;
-  userData.contactHash = hash;
+  // No contact entry to look up: the notification asks the journal for this hash, and zero is
+  // the one value that can never collide with a real entry's.
+  userData.contactHash = 0;
   userData.title = sender;
   userData.SMSText = body;
   userData.action = action;
@@ -472,17 +474,45 @@ private final func TryCallContact() -> Void {
 }
 
 // ---- The thread itself ----------------------------------------------------
+//
+// The panel's message list and reply list are the game's own list controllers
+// (JournalEntriesListController, native ListController underneath). Each owns the widgets in its
+// container: it spawns them when data is pushed and destroys them when it is cleared. So a
+// Cyberbane thread is handed to those same controllers as data, exactly the way the game hands
+// them journal entries in MessengerDialogViewController.UpdateData, and the game builds,
+// selects, highlights and destroys every widget itself.
+//
+// 1.4.7 spawned its own bubbles and reply rows into those containers and cleared them with
+// RemoveAllChildren, which took widgets out from under a native list that was still tracking
+// them. That is the likeliest cause of the crash reported on opening a gang's text, which is
+// the thread that carries reply rows. Nothing here adds or removes a widget by hand any more.
+//
+// Each line rides in the list item's m_extraData as a CBPhoneLine, and the two item renderers
+// are wrapped to draw a CBPhoneLine when they are given one. A game entry never carries one, so
+// the game's own threads draw exactly as before.
+
+// One line of a thread or one answer, as list data.
+public class CBPhoneLine extends IScriptable {
+  public let text: String;
+  public let mine: Bool;
+}
+
+func CBPhoneLineItem(text: String, mine: Bool) -> ref<JournalEntryListItemData> {
+  let line = new CBPhoneLine();
+  line.text = text;
+  line.mine = mine;
+  let item = new JournalEntryListItemData();
+  item.m_extraData = line;
+  return item;
+}
 
 // Non-zero while this panel is showing one of Cyberbane's threads.
 @addField(MessengerDialogViewController)
 public let cbThreadHash: Int32;
 
-// The answers drawn under one of ours, and which one is picked.
+// How many answers are drawn under it. Which one is picked is the reply list's own selection.
 @addField(MessengerDialogViewController)
 public let cbChoiceCount: Int32;
-
-@addField(MessengerDialogViewController)
-public let cbChoiceIndex: Int32;
 
 @addMethod(MessengerDialogViewController)
 public func CBShowThread(hash: Int32) -> Void {
@@ -492,7 +522,6 @@ public func CBShowThread(hash: Int32) -> Void {
   this.m_parentEntry = null;
   this.m_parentHash = hash;
   this.m_singleThreadMode = true;
-  this.cbChoiceIndex = 0;
   this.CBRenderThread(false);
   let store = CBPhoneStore();
   if IsDefined(store) {
@@ -500,125 +529,102 @@ public func CBShowThread(hash: Int32) -> Void {
   }
 }
 
-// Draw the thread: the game's own bubble widget, one per message, oldest at the top.
+// Draw the thread, the same steps in the same order as the game's UpdateData.
 @addMethod(MessengerDialogViewController)
 public func CBRenderThread(animateLast: Bool) -> Void {
   if this.cbThreadHash == 0 {
     return;
   }
   this.StopDotsAnimation();
+  // Nothing of the game's may be left in these: the game's reply and visited handling walks them.
   ArrayClear(this.m_replyOptions);
   ArrayClear(this.m_messages);
+
+  let bodies = CBRealPhoneThreadBodies(this.cbThreadHash);
+  let mine = CBRealPhoneThreadMine(this.cbThreadHash);
+  let lines: array<ref<IScriptable>>;
+  let i = 0;
+  while i < ArraySize(bodies) {
+    ArrayPush(lines, CBPhoneLineItem(bodies[i], i < ArraySize(mine) && mine[i]));
+    i += 1;
+  }
+  let choices = CBRealPhoneChoices(this.cbThreadHash);
+  let answers: array<ref<IScriptable>>;
+  let c = 0;
+  while c < ArraySize(choices) {
+    ArrayPush(answers, CBPhoneLineItem(choices[c], true));
+    c += 1;
+  }
+  this.cbChoiceCount = ArraySize(answers);
+
+  inkCompoundRef.SetVisible(this.m_replayFluff, this.cbChoiceCount > 0);
   if IsDefined(this.m_messagesListController) {
     this.m_messagesListController.Clear();
+    this.m_messagesListController.PushDataList(lines, true);
   }
   if IsDefined(this.m_choicesListController) {
     this.m_choicesListController.Clear();
-  }
-  // The list controllers have just let go of their own rows, so whatever is left under them is
-  // ours from the last draw.
-  inkCompoundRef.RemoveAllChildren(this.m_messagesList);
-  inkCompoundRef.RemoveAllChildren(this.m_choicesList);
-  inkCompoundRef.SetVisible(this.m_replayFluff, false);
-  let bodies = CBRealPhoneThreadBodies(this.cbThreadHash);
-  let mine = CBRealPhoneThreadMine(this.cbThreadHash);
-  let last: wref<inkWidget>;
-  let i = 0;
-  while i < ArraySize(bodies) {
-    let bubble = this.SpawnFromLocal(inkCompoundRef.Get(this.m_messagesList), n"Message");
-    if IsDefined(bubble) {
-      let renderer = bubble.GetControllerByType(n"MessangerItemRenderer") as MessangerItemRenderer;
-      if IsDefined(renderer) {
-        renderer.CBSetLine(bodies[i], i < ArraySize(mine) && mine[i]);
-      }
-      last = bubble;
+    this.m_choicesListController.PushDataList(answers, true);
+    if this.cbChoiceCount > 0 {
+      this.SetFocus(this.m_hasFocus);
+      this.m_choicesListController.SetSelectedIndex(0);
     }
-    i += 1;
   }
-  if animateLast && IsDefined(last) {
-    this.PlayLibraryAnimationOnAutoSelectedTargets(n"reply_sent", last);
-  }
-  // The answers, under the thread where the game puts its own reply choices.
-  let choices = CBRealPhoneChoices(this.cbThreadHash);
-  this.cbChoiceCount = ArraySize(choices);
-  if this.cbChoiceIndex < 0 || this.cbChoiceIndex >= this.cbChoiceCount {
-    this.cbChoiceIndex = 0;
-  }
-  inkCompoundRef.SetVisible(this.m_replayFluff, this.cbChoiceCount > 0);
-  let c = 0;
-  while c < this.cbChoiceCount {
-    let row = this.SpawnFromLocal(inkCompoundRef.Get(this.m_choicesList), n"Reply");
-    if IsDefined(row) {
-      let reply = row.GetControllerByType(n"MessangerReplyItemRenderer") as MessangerReplyItemRenderer;
-      if IsDefined(reply) {
-        reply.cbOwner = this;
-        reply.cbIndex = c + 1;
-        reply.CBSetReply(choices[c], c == this.cbChoiceIndex, this.m_hasFocus);
+  if animateLast && IsDefined(this.m_messagesListController) {
+    let count = this.m_messagesListController.Size();
+    if count > 0 {
+      let lastWidget = this.m_messagesListController.GetItemAt(count - 1);
+      if IsDefined(lastWidget) {
+        this.PlayLibraryAnimationOnAutoSelectedTargets(n"reply_sent", lastWidget);
       }
     }
-    c += 1;
   }
   if IsDefined(this.m_scrollController) {
     this.m_scrollController.SetScrollPosition(1.0);
   }
 }
 
-// Redraw which answer is picked and whether they can be picked at all, without rebuilding.
+// Redraw on the panel's next frame rather than now. Used whenever the redraw is asked for from
+// inside something the lists are doing (a reply row being activated) or from outside the UI (a
+// message arriving): clearing a list from inside its own callback would destroy the row whose
+// callback is running. The game does the same thing for its own threads: a reply changes the
+// journal, and the redraw comes back later as a DelayedJournalUpdate.
 @addMethod(MessengerDialogViewController)
-public func CBRefreshChoices() -> Void {
-  let n = inkCompoundRef.GetNumChildren(this.m_choicesList);
-  let i = 0;
-  while i < n {
-    let row = inkCompoundRef.GetWidgetByIndex(this.m_choicesList, i);
-    if IsDefined(row) {
-      let reply = row.GetControllerByType(n"MessangerReplyItemRenderer") as MessangerReplyItemRenderer;
-      if IsDefined(reply) {
-        reply.CBSetReplyState(i == this.cbChoiceIndex, this.m_hasFocus);
-      }
-    }
-    i += 1;
+public func CBQueueRedraw(animate: Bool) -> Void {
+  if this.cbThreadHash == 0 {
+    return;
   }
+  let evt = new DelayedJournalUpdate();
+  evt.m_newMessageSpawned = animate;
+  evt.m_typing = false;
+  evt.m_delay = 0.0;
+  evt.m_contactHash = this.cbThreadHash;
+  this.QueueEvent(evt);
 }
 
-// The mouse moved onto an answer: that one is picked now, so a click sends what the player is
-// pointing at.
+// Send the answer at `index`.
 @addMethod(MessengerDialogViewController)
-public func CBPickChoice(index: Int32) -> Void {
+public func CBActivateChoice(index: Int32) -> Void {
   if this.cbThreadHash == 0 || index < 0 || index >= this.cbChoiceCount {
     return;
   }
-  this.cbChoiceIndex = index;
-  this.CBRefreshChoices();
-}
-
-// Send the picked answer.
-@addMethod(MessengerDialogViewController)
-public func CBActivateChoice() -> Void {
-  if this.cbThreadHash == 0 || this.cbChoiceCount <= 0 {
-    return;
-  }
   let hash = this.cbThreadHash;
-  let choice = this.cbChoiceIndex;
   if IsDefined(this.m_audioSystem) {
     this.m_audioSystem.Play(n"ui_messenger_select");
   }
   this.PlayRumble(RumbleStrength.SuperLight, RumbleType.Pulse, RumblePosition.Right);
-  CBRealPhoneReply(hash, choice);
-  this.cbChoiceIndex = 0;
-  this.CBRenderThread(true);
+  // No answer can be sent twice while the redraw is on its way.
+  this.cbChoiceCount = 0;
+  CBRealPhoneReply(hash, index);
+  this.CBQueueRedraw(true);
 }
 
-// Hand the panel back to the game.
+// Hand the panel back to the game. Its lists are cleared and refilled by the game's own
+// UpdateData straight after this, so there is nothing of ours to take down.
 @addMethod(MessengerDialogViewController)
 public func CBLeaveThread() -> Void {
-  if this.cbThreadHash == 0 {
-    return;
-  }
   this.cbThreadHash = 0;
   this.cbChoiceCount = 0;
-  this.cbChoiceIndex = 0;
-  inkCompoundRef.RemoveAllChildren(this.m_messagesList);
-  inkCompoundRef.RemoveAllChildren(this.m_choicesList);
 }
 
 // The game refreshes the panel whenever anything in the journal's phone section changes. While
@@ -633,8 +639,23 @@ public final func UpdateData(animateLastMessage: Bool, setVisited: Bool) -> Void
   wrappedMethod(animateLastMessage, setVisited);
 }
 
-// The game's reply controls, pointed at Cyberbane's answers while one of its threads is up.
-// Each falls straight through to the game for its own threads.
+// Journal traffic for the game's threads while one of ours is up. A redraw is a redraw of ours;
+// the typing dots belong to the game's thread and would read its message list, which is empty
+// while ours is showing.
+@wrapMethod(MessengerDialogViewController)
+protected cb func OnDelayedJournalUpdate(evt: ref<DelayedJournalUpdate>) -> Bool {
+  if this.cbThreadHash != 0 {
+    if IsDefined(evt) && evt.m_delay == 0.0 {
+      this.CBRenderThread(evt.m_newMessageSpawned && evt.m_contactHash == this.cbThreadHash);
+    }
+    return true;
+  }
+  return wrappedMethod(evt);
+}
+
+// The reply controls, pointed at Cyberbane's answers while one of its threads is up. Moving
+// between answers is left to the game: the rows are the reply list's own items, so its
+// Next/Prior and its highlight work on them unchanged.
 @wrapMethod(MessengerDialogViewController)
 public final func HasReplyOptions() -> Bool {
   if this.cbThreadHash != 0 {
@@ -644,82 +665,48 @@ public final func HasReplyOptions() -> Bool {
 }
 
 @wrapMethod(MessengerDialogViewController)
-public final func NavigateReplyOptions(isUp: Bool) -> Void {
-  if this.cbThreadHash != 0 {
-    if this.cbChoiceCount > 0 {
-      this.cbChoiceIndex = Clamp(this.cbChoiceIndex + (isUp ? -1 : 1), 0, this.cbChoiceCount - 1);
-      this.CBRefreshChoices();
-    }
-    return;
-  }
-  wrappedMethod(isUp);
-}
-
-@wrapMethod(MessengerDialogViewController)
 public final func ActivateSelectedReplyOption() -> Void {
   if this.cbThreadHash != 0 {
-    this.CBActivateChoice();
+    let index = IsDefined(this.m_choicesListController) ? this.m_choicesListController.GetSelectedIndex() : -1;
+    this.CBActivateChoice(index);
     return;
   }
   wrappedMethod();
 }
 
+// A click on an answer row. The game's version would mark a journal entry as chosen, and ours
+// have none.
 @wrapMethod(MessengerDialogViewController)
-public final func SetFocus(focused: Bool) -> Void {
-  wrappedMethod(focused);
+protected cb func OnPlayerReplyActivated(index: Int32, target: ref<ListItemController>) -> Bool {
   if this.cbThreadHash != 0 {
-    this.CBRefreshChoices();
+    this.CBActivateChoice(index);
+    return true;
   }
+  return wrappedMethod(index, target);
 }
 
-// One line of a thread, in the bubble the game uses for it: the contact's on the left, V's on
-// the right.
-@addMethod(MessangerItemRenderer)
-public func CBSetLine(text: String, mine: Bool) -> Void {
-  let noName = "";
-  inkImageRef.SetVisible(this.m_image, false);
-  this.SetMessageView(text, mine ? MessageViewType.Sent : MessageViewType.Received, noName);
+// A line of ours, in the game's message bubble: the contact's on the left, V's on the right.
+@wrapMethod(MessangerItemRenderer)
+protected func OnJournalEntryUpdated(entry: wref<JournalEntry>, extraData: ref<IScriptable>) -> Void {
+  let line = extraData as CBPhoneLine;
+  if IsDefined(line) {
+    let noName = "";
+    inkImageRef.SetVisible(this.m_image, false);
+    this.SetMessageView(line.text, line.mine ? MessageViewType.Sent : MessageViewType.Received, noName);
+    return;
+  }
+  wrappedMethod(entry, extraData);
 }
 
-// Which panel and which answer this row is, when it is one of Cyberbane's. cbIndex is the
-// answer's position plus one, so the default of zero means "a row of the game's own".
-@addField(MessangerReplyItemRenderer)
-public let cbOwner: wref<MessengerDialogViewController>;
-
-@addField(MessangerReplyItemRenderer)
-public let cbIndex: Int32;
-
-// Hovering an answer picks it, and moving off it leaves the pick where it was. The game's rows
-// get this from their list controller; ours are not in one, so they tell the panel directly.
+// An answer of ours, in the game's reply row.
 @wrapMethod(MessangerReplyItemRenderer)
-protected cb func OnSelected(parent: wref<ListItemController>) -> Bool {
-  let result = wrappedMethod(parent);
-  if this.cbIndex > 0 && IsDefined(this.cbOwner) {
-    this.cbOwner.CBPickChoice(this.cbIndex - 1);
+protected func OnJournalEntryUpdated(entry: wref<JournalEntry>, extraData: ref<IScriptable>) -> Void {
+  let line = extraData as CBPhoneLine;
+  if IsDefined(line) {
+    inkTextRef.SetText(this.m_labelPathRef, line.text);
+    this.m_isQuestImportant = false;
+    this.AnimateSelection();
+    return;
   }
-  return result;
-}
-
-@wrapMethod(MessangerReplyItemRenderer)
-protected cb func OnDeselected(parent: wref<ListItemController>) -> Bool {
-  let result = wrappedMethod(parent);
-  if this.cbIndex > 0 && IsDefined(this.cbOwner) {
-    this.cbOwner.CBRefreshChoices();
-  }
-  return result;
-}
-
-// One answer V can send, in the game's reply row.
-@addMethod(MessangerReplyItemRenderer)
-public func CBSetReply(text: String, selected: Bool, active: Bool) -> Void {
-  inkTextRef.SetText(this.m_labelPathRef, text);
-  this.m_isQuestImportant = false;
-  this.CBSetReplyState(selected, active);
-}
-
-@addMethod(MessangerReplyItemRenderer)
-public func CBSetReplyState(selected: Bool, active: Bool) -> Void {
-  this.m_selectedState = selected;
-  this.m_isActive = active;
-  this.AnimateSelection();
+  wrappedMethod(entry, extraData);
 }
