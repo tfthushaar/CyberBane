@@ -68,6 +68,13 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalFreq-Desc", "How often Rivals turn up, and how quickly they track you down.");
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines, so the street does not repeat itself.");
+    this.Text("Cyberbane-Settings-CarsOnFoot-Desc", "Lets gangs drive to you while you are on "
+      + "foot, pull up and get out, instead of walking in out of sight. It is off by default and "
+      + "marked experimental for an honest reason: driving a crew in and getting them out again "
+      + "is the most demanding thing Cyberbane asks of the game, and it was limited to car "
+      + "chases in 1.5.2 after a crash nobody could trace. Everything that was known to cause "
+      + "one has been fixed since, so this may be perfectly stable, but it has not been proven. "
+      + "If the game becomes unstable with this on, turn it off and it stops immediately.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all. Off silences every message on every surface: nothing is put in your phone, no cards, no notices and no overheard lines. Setting Where messages go to Off does exactly the same thing, so either one is enough. Nothing about the way the mod plays changes when it is off - gangs still come for you, and the Hub still shows everything and still brokers peace. If you want the warning but not the texts, leave this on and use Hunt line on the HUD instead.");
     this.Text("Cyberbane-Settings-MessageHold-Desc", "How long Cyberbane's on-screen messages stay up, as a percentage of their normal length. The default of 175 is most of a full second longer than the game's own notifications, which is about what a sentence needs. Nothing is ever shown for less than five seconds.");
     this.Text("Cyberbane-Settings-RivalsPerDay-Desc", "How many Rivals can catch up with you in a single in-game day. Once they have, no more Rivals come until the next day. Hit squads and apex squads have their own separate allowances, so a busy day of Rivals does not use theirs up. Set to 0 to stop Rivals arriving at all.");
@@ -163,6 +170,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Whispers", "Whispers");
     this.Text("Cyberbane-Settings-WhisperCooldown", "Whisper cooldown (s)");
     this.Text("Cyberbane-Settings-Toasts", "Show messages");
+    this.Text("Cyberbane-Settings-CarsOnFoot", "Cars arrive on foot too (experimental)");
 
     // ---- Settings: compatibility ----------------------------------------
     this.Text("Cyberbane-Settings-TwrCompat", "They Will Remember compatibility");

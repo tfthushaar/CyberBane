@@ -312,6 +312,11 @@ after you. Hostile gangs send crews; Vendetta means they shoot on sight as well.
 Big jobs count too. Finishing one of the city's larger stories shifts how the gangs involved
 see you, which is why the Heist costs you Arasaka for a long time afterwards.
 
+They come to you out of sight and on foot, and search for where you were last seen. Get in a
+car and they come by car instead and chase you in it. Under Gangs there is an experimental
+**Cars arrive on foot too** switch, off by default, which lets them drive up and get out while
+you are walking as well.
+
 ### Playing without the messages
 
 If you like the mechanics but would rather not be told what is coming, set **Where messages go**

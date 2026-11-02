@@ -253,6 +253,18 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VehicleArrivals-Desc")
   public let vehicleArrivals: Bool = true;
 
+  // Off by default on purpose. 1.5.2 stopped cars arriving around a player on foot as part of a
+  // robustness pass, after a crash that was reported but never traced to a cause. Everything
+  // that was known to be wrong with the convoy was fixed in 1.5.0 (setup deferred out of the
+  // attach event, one order per NPC, nobody unmounted from a moving car), and the dismount
+  // machinery was written for this case in the first place - so this may well be fine. It has
+  // not been proven fine, which is the whole reason it ships off.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarsOnFoot")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarsOnFoot-Desc")
+  public let carArrivalsOnFoot: Bool = false;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexStrength")

@@ -144,9 +144,16 @@ public func CBVehicleArrivalAllowed(game: GameInstance) -> Bool {
   // Cars are for a chase. With V on foot everybody walks in out of sight and searches, which
   // keeps seating, driving and getting out of cars (the most delicate things Cyberbane asks of
   // the engine) away from a player who is standing still. With V at the wheel they drive.
+  //
+  // The "Cars arrive on foot too" setting lifts that, and is off by default (crash rule 12 in
+  // STATUS.md, amended). The dismount poll below was written for exactly this case - a crew
+  // pulling up to a player who is not driving - and the causes 1.5.0 found were all fixed. What
+  // is missing is evidence, not code, and the only place that evidence exists is a running game.
   let driver = GetPlayer(game);
   if !IsDefined(driver) || !VehicleComponent.IsDriver(game, driver) {
-    return false;
+    if !rt.GetSettings().carArrivalsOnFoot {
+      return false;
+    }
   }
   // Is there a road near enough to drive in from?
   //

@@ -59,6 +59,15 @@ ran through somebody else's body. It no longer has to.
 - **Letting a name walk is worth more.** Spare a Rival of theirs and their gang hears that you
   had one of their own cold and let them go.
 
+### New setting
+- **Cars arrive on foot too (experimental), off by default.** Gangs normally drive to you only
+  when you are driving; on foot they walk in out of sight. Turn this on and they will pull up and
+  get out while you are on foot as well. It is off by default because driving a crew in and
+  getting them out again is the most demanding thing Cyberbane asks of the game, and it was
+  limited to chases in 1.5.2 after a crash nobody could trace. Everything known to cause one has
+  been fixed since, so this may be perfectly stable, but it has not been proven. If the game
+  becomes unstable with it on, turn it off and it stops at once.
+
 ### From player reports
 - **Your phone is no longer relentless.** Cyberbane has a sender per gang, a broker per district
   and a few unknown numbers, so a busy few minutes really could ring over and over. Notifications
