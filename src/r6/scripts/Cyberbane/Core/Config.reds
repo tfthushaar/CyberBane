@@ -704,6 +704,21 @@ public abstract class CBConfig {
   public static func LieutenantEscort() -> Int32 = 1
   // How far up the Rival queue a Grudge-Bearer jumps.
   public static func QueueGrudgeBonus() -> Float = 10.0
+  // ---- Earning a gang's respect without killing for it -------------------
+  // Before 1.5.5 the only way standing could rise was killing a gang's enemies, so the only
+  // road to Friendly ran through somebody else's body. These are the other roads.
+  //
+  // What a gang minds about one of theirs being put down, when they are still breathing. The
+  // same hit as a kill was being taken either way, which made mercy pointless.
+  public static func NonLethalStandingShare() -> Float = 0.25
+  // What each one of theirs V leaves alive is worth to them, and how far that alone can carry.
+  // At this rate Friendly (15) is a long run of restraint and nothing better - mercy makes a
+  // gang tolerate V, it does not make them allies. Only hurting their enemies does that.
+  public static func MercyCredit() -> Float = 0.4
+  public static func MercyCeiling() -> Float = 20.0
+  // Letting a named Rival of theirs walk is worth more than sparing a nobody.
+  public static func MercyRivalCredit() -> Float = 3.0
+
   // Gangs at war (Model/GangRivalries.reds). Hurting a gang raises its enemies' standing with V
   // by this share of what it lost, never past the ceiling: a witnessed ganger is +1 with each
   // enemy, so Friendly (15) takes a run of work and Allied (50) takes a campaign.

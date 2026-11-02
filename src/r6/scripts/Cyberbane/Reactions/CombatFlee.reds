@@ -322,6 +322,9 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
         st.rivalsSpared += 1;   // the counter existed and nothing ever incremented it
       }
       let indebted = CBRivalSparedByV(already, content, now, district);
+      // Their gang hears that V had one of their names cold and let them walk. Done here
+      // rather than inside CBRivalSparedByV, which has no system handle to credit against.
+      CBCreditMercy(sys, already.faction, CBConfig.MercyRivalCredit());
       already.scarMask = already.scarMask | e.scarMask;
       // The encounter is over, so close it the way every other ending does.
       //

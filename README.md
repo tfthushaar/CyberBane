@@ -294,6 +294,21 @@ misbehaves on your setup, Cards is the switch that takes Cyberbane back out of i
 turn the message tone off and set how long anything on screen stays up. The map markers are
 there too, as everyone Cyberbane sends, only the named ones, or none.
 
+### Earning a gang's respect
+
+Gangs warm to you for three reasons, and only the first involves anybody else's gang.
+
+- **Hurting the people they are at war with.** This is the strong one, and the Gangs screen now
+  names each gang's enemy so you can see who to lean on. It can carry a gang all the way to
+  Allied.
+- **Restraint.** Putting their people down without killing them costs their opinion far less
+  than a body does, and each one you leave breathing earns a little goodwill. On its own this
+  gets you tolerated, not adopted.
+- **Mercy with a name.** Let one of their Rivals walk and the gang hears about it.
+
+Friendly gangs cut their prices on their own turf and warn you when their enemies send people
+after you. Hostile gangs send crews; Vendetta means they shoot on sight as well.
+
 ### Playing without the messages
 
 If you like the mechanics but would rather not be told what is coming, set **Where messages go**

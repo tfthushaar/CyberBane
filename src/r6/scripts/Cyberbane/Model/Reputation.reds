@@ -134,7 +134,10 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   // Faction effects.
   if NotEquals(info.faction, n"") {
     let fs = sys.EnsureFaction(info.faction);
-    let standingLoss = CBStandingDeltaForKill(info.victimClass) * standingWitness;
+    // A gang minds a body far more than somebody who woke up. The same loss used to be taken
+    // either way, so there was no reason on this axis to ever hold back.
+    let standingLoss = CBStandingDeltaForKill(info.victimClass) * standingWitness
+                     * (info.lethal ? 1.0 : CBConfig.NonLethalStandingShare());
     fs.standing = ClampF(fs.standing + standingLoss, -100.0, 100.0);
     // And their enemies hear about it (Model/GangRivalries.reds).
     CBCreditRivalGangs(sys, GetGameInstance(), info.faction, standingLoss);
@@ -151,7 +154,12 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     sys.NoteRecentKill();
     if info.victimClass == EnumInt(ECBVictimClass.Officer) { fs.officersKilled += 1; }
     if info.victimClass == EnumInt(ECBVictimClass.Boss) { fs.bossesKilled += 1; }
-    if !info.lethal { fs.spared += 1; }
+    if !info.lethal {
+      fs.spared += 1;
+      // And it counts for something. fs.spared was tallied from the beginning and read by
+      // nothing (Model/GangRivalries.reds).
+      CBCreditMercy(sys, info.faction, CBConfig.MercyCredit() * standingWitness);
+    }
     fs.lastIncidentAt = info.at;
     // Remember a real combatant record so a later hit squad spawns their kind (S-08).
     // Generic gang archetypes only. A record is a template the game spawns many separate NPCs

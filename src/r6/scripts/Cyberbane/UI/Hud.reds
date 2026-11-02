@@ -34,7 +34,7 @@ public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == 1 {
     return 11;   // under four meters
   }
-  if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() {
+  if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() || tab == CBHudCityTab() {
     return 9;    // under ten list rows
   }
   return CBHudMaxLines();
@@ -43,6 +43,7 @@ public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
 // Which tab the Rivals screen is, so the key handler does not hardcode a number.
 public func CBHudRivalsTab() -> Int32 = 4
 public func CBHudFactionsTab() -> Int32 = 2
+public func CBHudCityTab() -> Int32 = 3
 
 // Layout.
 //
@@ -169,14 +170,74 @@ public func CBHudTrim(text: String, maxChars: Int32) -> String {
   return StrLeft(text, maxChars - 1) + ".";
 }
 
-// Characters each row column can show at its width and font.
-// Characters each column can show. Raised across the board when the Hub went full screen:
-// the columns are roughly half as wide again, so a Rival's full name now fits where it used
-// to be cut.
-public func CBHudColA() -> Int32 = 40
-public func CBHudColB() -> Int32 = 34
-public func CBHudColC() -> Int32 = 16
-public func CBHudColD() -> Int32 = 26
+// Row columns.
+//
+// There are six, and where they sit depends on the screen, because the two screens that use
+// rows do not hold the same shape of thing. Gangs is six short fields; Rivals is one long name
+// and three short ones.
+//
+// Before 1.5.5 there were four, and the Gangs screen packed posture, fear and how long it had
+// been quiet into one of them joined by three spaces. Rajdhani is a proportional font, so those
+// joins landed in a different place on every row and the column read as ragged rather than as a
+// column. Three fields in one string also meant the budget had to cover all three, which is
+// what cut "beat a crew, or 7 more kills" off mid-word at the right edge. One field per column,
+// positioned per screen, fixes both: the fields line up down the list and each one is trimmed
+// against its own width.
+//
+// Column 5 is right-aligned to the same edge the meter values use, because it is the "what is
+// coming" column and the settings menu puts its values there too.
+public func CBHudRowCols() -> Int32 = 6
+
+// What each column is tinted. The point is that a row should be readable as several things
+// rather than as a sentence: the name reads brightest, the two middle facts sit back in the
+// value colour, the one that says what V has done to them is warm, and the column on the right
+// is dimmed because it is a status rather than a fact about the gang.
+public func CBHudRowColTint(col: Int32) -> HDRColor {
+  if col == 0 { return CBHudHead(); }
+  if col == 1 { return CBHudValue(); }
+  if col == 2 { return CBHudGrey(); }
+  if col == 3 { return CBHudCyan(); }
+  if col == 4 { return new HDRColor(0.80, 0.52, 0.34, 1.0); }
+  return CBHudDim();
+}
+
+// x, as an offset from the content margin.
+public func CBHudRowColX(col: Int32, gangs: Bool) -> Float {
+  if gangs {
+    if col == 0 { return 24.0; }
+    if col == 1 { return 270.0; }
+    if col == 2 { return 420.0; }
+    if col == 3 { return 560.0; }
+    if col == 4 { return 820.0; }
+  } else {
+    if col == 0 { return 24.0; }
+    if col == 1 { return 480.0; }
+    if col == 2 { return 730.0; }
+    if col == 3 { return 860.0; }
+    if col == 4 { return 1130.0; }
+  }
+  return 0.0;      // column 5 is right-aligned across the whole width
+}
+
+// Characters each column can show at its width and font, measured against the positions above
+// at the 22 px body font. A name is the one worth being generous with, so Rivals gives column 0
+// most of the row.
+public func CBHudRowColChars(col: Int32, gangs: Bool) -> Int32 {
+  if gangs {
+    if col == 0 { return 18; }
+    if col == 1 { return 10; }
+    if col == 2 { return 9; }
+    if col == 3 { return 18; }
+    if col == 4 { return 12; }
+    return 28;
+  }
+  if col == 0 { return 33; }
+  if col == 1 { return 18; }
+  if col == 2 { return 9; }
+  if col == 3 { return 19; }
+  if col == 4 { return 0; }
+  return 24;
+}
 
 // A time as the player asked to see it: exact, or in words when "Show countdowns" is off, so
 // nothing on screen gives them a clock to keep.
@@ -282,10 +343,14 @@ public class CBHud {
   // without it the eye has to track across 1540 px of empty space to pair a name with a value.
   private let m_rowBg: array<ref<inkRectangle>>;
   private let m_rowPip: array<ref<inkRectangle>>;
-  private let m_rowA: array<ref<inkText>>;
-  private let m_rowB: array<ref<inkText>>;
-  private let m_rowC: array<ref<inkText>>;
-  private let m_rowD: array<ref<inkText>>;
+  // Row cells, flat: row r column c is at r * CBHudRowCols() + c. One array rather than six
+  // named ones, so adding a column is a number here and not another field to thread through
+  // build, hide and fill.
+  private let m_rowCell: array<ref<inkText>>;
+  // Which screen's column positions the cells are currently carrying, so a render only moves
+  // them when the screen has actually changed.
+  private let m_rowGangs: Bool;
+  private let m_rowPlaced: Bool;
   // Whether arrivals are currently being held back because V is in the middle of a quiet job.
   // Resolved once per render, not once per row.
   private let m_holdLabel: String;   // why no Rival can arrive right now, or "" 
@@ -583,49 +648,30 @@ public class CBHud {
       pip.Reparent(panel);
       ArrayPush(this.m_rowPip, pip);
 
-      let ra = new inkText();
-      ra.SetFontFamily(font);
-      ra.SetFontStyle(n"Semibold");
-      ra.SetFontSize(23);
-      ra.SetAnchor(inkEAnchor.TopLeft);
-      ra.SetMargin(new inkMargin(x + 24.0, rtop, 0.0, 0.0));
-      ra.Reparent(panel);
-      ArrayPush(this.m_rowA, ra);
-
-      let rb = new inkText();
-      rb.SetFontFamily(font);
-      rb.SetFontStyle(n"Medium");
-      rb.SetFontSize(22);
-      rb.SetTintColor(CBHudValue());
-      rb.SetAnchor(inkEAnchor.TopLeft);
-      rb.SetMargin(new inkMargin(x + 540.0, rtop + 2.0, 0.0, 0.0));
-      rb.Reparent(panel);
-      ArrayPush(this.m_rowB, rb);
-
-      // Narrow middle column: a scar word, or a body count.
-      let rc = new inkText();
-      rc.SetFontFamily(font);
-      rc.SetFontStyle(n"Medium");
-      rc.SetFontSize(22);
-      rc.SetTintColor(new HDRColor(0.80, 0.52, 0.34, 1.0));
-      rc.SetAnchor(inkEAnchor.TopLeft);
-      rc.SetMargin(new inkMargin(x + 960.0, rtop + 2.0, 0.0, 0.0));
-      rc.Reparent(panel);
-      ArrayPush(this.m_rowC, rc);
-
-      // Right-aligned, same edge as the meter values.
-      let rd = new inkText();
-      rd.SetFontFamily(font);
-      rd.SetFontStyle(n"Medium");
-      rd.SetFontSize(22);
-      rd.SetTintColor(CBHudDim());
-      rd.SetAnchor(inkEAnchor.TopLeft);
-      rd.SetHorizontalAlignment(textHorizontalAlignment.Right);
-      rd.SetFitToContent(false);
-      rd.SetSize(new Vector2(w, 26.0));
-      rd.SetMargin(new inkMargin(x, rtop + 2.0, 0.0, 0.0));
-      rd.Reparent(panel);
-      ArrayPush(this.m_rowD, rd);
+      // Six cells. Column 0 is the name, so it carries the heavier weight; the last column is
+      // right-aligned across the full width against the same edge as the meter values.
+      // Positions are set per screen in PlaceRows, not here, because the two screens that use
+      // rows need different ones.
+      let c = 0;
+      while c < CBHudRowCols() {
+        let cell = new inkText();
+        cell.SetFontFamily(font);
+        cell.SetFontStyle(c == 0 ? n"Semibold" : n"Medium");
+        cell.SetFontSize(c == 0 ? 23 : 22);
+        cell.SetTintColor(CBHudRowColTint(c));
+        cell.SetAnchor(inkEAnchor.TopLeft);
+        if c == CBHudRowCols() - 1 {
+          cell.SetHorizontalAlignment(textHorizontalAlignment.Right);
+          cell.SetFitToContent(false);
+          cell.SetSize(new Vector2(w, 26.0));
+          cell.SetMargin(new inkMargin(x, rtop + 2.0, 0.0, 0.0));
+        } else {
+          cell.SetMargin(new inkMargin(x + CBHudRowColX(c, true), rtop + (c == 0 ? 0.0 : 2.0), 0.0, 0.0));
+        }
+        cell.Reparent(panel);
+        ArrayPush(this.m_rowCell, cell);
+        c += 1;
+      }
       r += 1;
     }
 
@@ -651,15 +697,65 @@ public class CBHud {
 
   private func HideRows() -> Void {
     let i = 0;
-    while i < ArraySize(this.m_rowA) {
+    while i < ArraySize(this.m_rowBg) {
       if IsDefined(this.m_rowBg[i]) { this.m_rowBg[i].SetVisible(false); }
       if IsDefined(this.m_rowPip[i]) { this.m_rowPip[i].SetVisible(false); }
-      if IsDefined(this.m_rowA[i]) { this.m_rowA[i].SetVisible(false); }
-      if IsDefined(this.m_rowB[i]) { this.m_rowB[i].SetVisible(false); }
-      if IsDefined(this.m_rowC[i]) { this.m_rowC[i].SetVisible(false); }
-      if IsDefined(this.m_rowD[i]) { this.m_rowD[i].SetVisible(false); }
       i += 1;
     }
+    let c = 0;
+    while c < ArraySize(this.m_rowCell) {
+      if IsDefined(this.m_rowCell[c]) { this.m_rowCell[c].SetVisible(false); }
+      c += 1;
+    }
+  }
+
+  // Move the cells to the column positions the screen about to be drawn needs. Only touches
+  // them when the screen has changed, so stepping through the tabs is not re-laying out ten
+  // rows of six widgets every render.
+  private func PlaceRows(gangs: Bool) -> Void {
+    if this.m_rowPlaced && Equals(this.m_rowGangs, gangs) {
+      return;
+    }
+    let x = CBHudMarginX();
+    let r = 0;
+    while r < CBHudRowCount() {
+      let rtop = CBHudContentTop() + Cast<Float>(r) * CBHudRowHeight();
+      let c = 0;
+      while c < CBHudRowCols() - 1 {
+        let idx = r * CBHudRowCols() + c;
+        if idx < ArraySize(this.m_rowCell) && IsDefined(this.m_rowCell[idx]) {
+          this.m_rowCell[idx].SetMargin(
+            new inkMargin(x + CBHudRowColX(c, gangs), rtop + (c == 0 ? 0.0 : 2.0), 0.0, 0.0));
+        }
+        c += 1;
+      }
+      r += 1;
+    }
+    this.m_rowGangs = gangs;
+    this.m_rowPlaced = true;
+  }
+
+  // Conduct runs -100 to +100, so it is drawn from the middle: left of centre in red as V
+  // slides towards cyberpsycho, right of centre in green as they stay clean. Mapping it onto a
+  // 0..1 fill like the others meant -100, the worst Conduct there is, drew the 2 px "empty
+  // meter" sliver and read as a meter that had failed rather than one at its limit.
+  private func SetBipolarBar(idx: Int32, label: String, value: String, signed: Float,
+                             col: HDRColor, caption: String) -> Void {
+    this.SetBar(idx, label, value, 0.0, col, caption);
+    if idx < 0 || idx >= ArraySize(this.m_barFill) || !IsDefined(this.m_barFill[idx]) {
+      return;
+    }
+    let half = CBHudBarWidth() * 0.5;
+    let reach = ClampF(AbsF(signed) / 100.0, 0.0, 1.0) * half;
+    if reach < 2.0 {
+      reach = 2.0;
+    }
+    let left = signed < 0.0 ? half - reach : half;
+    this.m_barFill[idx].SetSize(new Vector2(reach, 10.0));
+    this.m_barFill[idx].SetMargin(
+      new inkMargin(CBHudMarginX() + left, CBHudContentTop() + Cast<Float>(idx) * 96.0 + 36.0, 0.0, 0.0));
+    this.m_barFill[idx].SetTintColor(col);
+    this.m_barFill[idx].SetVisible(true);
   }
 
   private func SetBar(idx: Int32, label: String, value: String, frac: Float, col: HDRColor, caption: String) -> Void {
@@ -683,6 +779,10 @@ public class CBHud {
       if w < 2.0 {
         w = 2.0;      // always show a sliver, so an empty meter still reads as a meter
       }
+      // Back to the left edge: SetBipolarBar moves this same widget to the middle, and the
+      // meters share one pool of widgets across every screen.
+      this.m_barFill[idx].SetMargin(
+        new inkMargin(CBHudMarginX(), CBHudContentTop() + Cast<Float>(idx) * 96.0 + 36.0, 0.0, 0.0));
       this.m_barFill[idx].SetSize(new Vector2(w, 10.0));
       this.m_barFill[idx].SetTintColor(col);
       this.m_barFill[idx].SetVisible(true);
@@ -693,8 +793,11 @@ public class CBHud {
     }
   }
 
-  private func SetRow(idx: Int32, pip: HDRColor, a: String, b: String, c: String, d: String) -> Void {
-    if idx < 0 || idx >= ArraySize(this.m_rowA) {
+  // One row, six fields. Anything handed an empty string stays hidden, so a screen that has
+  // nothing for a column does not leave the last screen's value sitting there.
+  private func SetRow(idx: Int32, gangs: Bool, pip: HDRColor,
+                      a: String, b: String, c: String, d: String, e: String, f: String) -> Void {
+    if idx < 0 || idx >= CBHudRowCount() || idx >= ArraySize(this.m_rowBg) {
       return;
     }
     if IsDefined(this.m_rowBg[idx]) {
@@ -704,22 +807,25 @@ public class CBHud {
       this.m_rowPip[idx].SetTintColor(pip);
       this.m_rowPip[idx].SetVisible(true);
     }
-    if IsDefined(this.m_rowA[idx]) {
-      this.m_rowA[idx].SetText(CBHudTrim(a, CBHudColA()));
-      this.m_rowA[idx].SetTintColor(CBHudHead());
-      this.m_rowA[idx].SetVisible(true);
-    }
-    if IsDefined(this.m_rowB[idx]) {
-      this.m_rowB[idx].SetText(CBHudTrim(b, CBHudColB()));
-      this.m_rowB[idx].SetVisible(true);
-    }
-    if IsDefined(this.m_rowC[idx]) {
-      this.m_rowC[idx].SetText(CBHudTrim(c, CBHudColC()));
-      this.m_rowC[idx].SetVisible(true);
-    }
-    if IsDefined(this.m_rowD[idx]) {
-      this.m_rowD[idx].SetText(CBHudTrim(d, CBHudColD()));
-      this.m_rowD[idx].SetVisible(true);
+    let col = 0;
+    while col < CBHudRowCols() {
+      let cellIdx = idx * CBHudRowCols() + col;
+      if cellIdx < ArraySize(this.m_rowCell) && IsDefined(this.m_rowCell[cellIdx]) {
+        let text = a;
+        if col == 1 { text = b; }
+        if col == 2 { text = c; }
+        if col == 3 { text = d; }
+        if col == 4 { text = e; }
+        if col == 5 { text = f; }
+        let budget = CBHudRowColChars(col, gangs);
+        if StrLen(text) == 0 || budget <= 0 {
+          this.m_rowCell[cellIdx].SetVisible(false);
+        } else {
+          this.m_rowCell[cellIdx].SetText(CBHudTrim(text, budget));
+          this.m_rowCell[cellIdx].SetVisible(true);
+        }
+      }
+      col += 1;
     }
   }
 
@@ -747,12 +853,13 @@ public class CBHud {
       "What a stranger clocks from across the street. Arms read loudest.");
 
     // Code runs -100..100, so the meter shows how far along that line you sit.
-    this.SetBar(3, "Conduct", s"\(RoundF(code))   \(CBCodeLabel(code))",
-      (code + 100.0) / 200.0, code < 0.0 ? CBHudRed() : CBHudGreen(),
-      "Clean and controlled, or one bad night from going over.");
+    this.SetBipolarBar(3, "Conduct", s"\(RoundF(code))   \(CBCodeLabel(code))",
+      code, code < 0.0 ? CBHudRed() : CBHudGreen(),
+      "Clean and controlled, or one bad night from going over. This one runs both ways from the middle.");
   }
 
   private func RenderFactions(sys: ref<CyberbaneSystem>) -> Void {
+    this.PlaceRows(true);
     let score = sys.GetScore();
     if !IsDefined(score) {
       return;
@@ -796,25 +903,72 @@ public class CBHud {
             }
           }
         }
-        // How long this has been going on. Both of these were recorded and read by nothing.
-        let now = CBGameSeconds(sys.GetGameInstance());
-        let age = "";
-        if Equals(posture, ECBPosture.Vendetta) {
-          let sworn = CBHudSince(now, fs.vendettaSince);
-          age = StrLen(sworn) > 0 ? "   sworn " + sworn : "";
-        } else {
-          let quiet = CBHudSince(now, fs.lastIncidentAt);
-          age = StrLen(quiet) > 0 ? "   quiet " + quiet : "";
+        // Who this gang is at war with, because that is the one thing on this screen V can
+        // act on: hurting a gang warms the gangs that hate it (Model/GangRivalries.reds), and
+        // before 1.5.5 the only way to know who hated whom was to read the source.
+        let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), fs.id));
+        this.SetRow(shown, true, pip,
+          CBFactionLabel(fs.id),
+          CBPostureName(posture),
+          s"fear \(RoundF(score.GetFactionFear(fs.id)))",
+          StrLen(enemy) > 0 ? "at war: " + enemy : "",
+          s"\(fs.kills) down",
+          right);
+        shown += 1;
+      }
+    }
+  }
+
+  // The City, as a list rather than a paragraph.
+  //
+  // This screen used to be the district lines padded into one string and handed to the body
+  // text, which is exactly the "block of text" it looked like, with two thirds of the screen
+  // empty under it. The districts are a table - a name and three numbers - so they are drawn as
+  // one, with the renown bar giving the shape of where V is known at a glance instead of making
+  // the player compare nine numbers.
+  private func RenderCity(sys: ref<CyberbaneSystem>) -> Void {
+    this.PlaceRows(false);
+    let states = sys.GetDistrictStates();
+    let now = CBGameSeconds(sys.GetGameInstance());
+    let shown = 0;
+    let i = 0;
+    while i < ArraySize(states) && shown < CBHudRowCount() {
+      let d = states[i];
+      i += 1;
+      if IsDefined(d) {
+        let dname = CBDistrictLabel(d.id);
+        if StrLen(dname) == 0 {
+          dname = NameToString(d.id);
         }
-        this.SetRow(shown, pip, CBFactionLabel(fs.id),
-          CBPostureName(posture) + s"   fear \(RoundF(score.GetFactionFear(fs.id)))" + age,
-          s"\(fs.kills) down", right);
+        let rd = RoundF(d.renown);
+        let quiet = CBHudSince(now, d.lastIncidentAt);
+        // The pip says how well known V is here without needing the number read.
+        let pip = CBHudGrey();
+        if rd >= 75 {
+          pip = CBHudRed();
+        } else {
+          if rd >= 40 {
+            pip = CBHudAmber();
+          } else {
+            if rd >= 15 {
+              pip = CBHudCyan();
+            }
+          }
+        }
+        this.SetRow(shown, false, pip,
+          dname,
+          CBHudMeter(d.renown, 100.0, 10),
+          s"\(rd)",
+          s"\(d.kills) down",
+          "",
+          StrLen(quiet) > 0 ? "quiet " + quiet : "nothing yet");
         shown += 1;
       }
     }
   }
 
   private func RenderRivals(sys: ref<CyberbaneSystem>) -> Void {
+    this.PlaceRows(false);
     let content = sys.GetContent();
     let rivals = sys.GetRivals();
     let shown = 0;
@@ -862,10 +1016,8 @@ public class CBHud {
     let hunting = EntityID.IsDefined(r.spawnedEntityId) && CBStillStanding(body);
     let role = CBRoleShort(CBRivalRole(sys, r));
     let gang = CBFactionLabel(r.faction);
-    if NotEquals(role, "") {
-      gang += "  " + role;
-    } else {
-      gang += s"  rank \(r.rank)";
+    if Equals(role, "") {
+      role = s"rank \(r.rank)";
     }
     // Only one Rival is ever on the clock, so only that one shows a countdown. The rest say
     // plainly that they are waiting rather than each showing a timer for a turn they are not
@@ -895,10 +1047,12 @@ public class CBHud {
     if StrLen(marks) == 0 {
       marks = CBScarLabel(r.scarMask);
     }
-    this.SetRow(row, hunting ? CBHudRed() : CBHudAmber(),
+    this.SetRow(row, false, hunting ? CBHudRed() : CBHudAmber(),
       IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
       gang,
+      role,
       marks,
+      "",
       rightCol);
   }
 
@@ -969,6 +1123,10 @@ public class CBHud {
         this.RenderFactions(sys);
         bodyTop = CBHudContentTop() + Cast<Float>(CBHudRowCount()) * CBHudRowHeight() + 20.0;
       } else {
+        if this.m_tab == CBHudCityTab() {
+          this.RenderCity(sys);
+          bodyTop = CBHudContentTop() + Cast<Float>(CBHudRowCount()) * CBHudRowHeight() + 20.0;
+        } else {
         if this.m_tab == CBHudRivalsTab() {
           this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
           // If an arrival was actually attempted and refused, that is more specific than the
@@ -979,6 +1137,7 @@ public class CBHud {
           }
           this.RenderRivals(sys);
           bodyTop = CBHudContentTop() + Cast<Float>(CBHudRowCount()) * CBHudRowHeight() + 20.0;
+        }
         }
       }
     }
@@ -1262,11 +1421,10 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
   if ArraySize(states) == 0 {
     return "No gang has formed an opinion of you yet.\n\nWork in their territory and that changes quickly.";
   }
-  let out = "Standing is whether they like you. Fear is how badly they want to avoid you.\n";
-  out += "The last column counts their dead and how close they are to sending an apex squad.\n\n";
-  out += "Hostile means they send crews after you. Vendetta means they also open fire on sight.\n";
-  out += "Hurt a gang's enemies and that gang warms to you: friendly gangs give better prices on\n";
-  out += "their turf and warn you when their enemies send people after you.\n\n";
+  let out = "Hostile gangs send crews. Vendetta means they also shoot on sight.\n\n";
+  out += "To be thought well of: hurt the gang they are at war with, or put their people down\n";
+  out += "without killing them and let their names walk. Friendly gangs cut their prices on\n";
+  out += "their own turf and warn you when their enemies come for you.\n\n";
   out += "[ Shift + Hub key ]  buy off the worst gang you can afford.";
   return out;
 }
@@ -1275,24 +1433,25 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
   if ArraySize(states) == 0 {
     return "Your name has not travelled to any district yet.";
   }
-  let out = "Where your name has travelled. Word spreads outward from where things happened,\n";
-  out += "so you can be a legend in one district and a nobody in the next.\n\n";
-  let shown = 0;
+  // The districts themselves are drawn as rows (RenderCity). This is only the line that says
+  // how to read them.
+  return "Word spreads outward from where things happened, so you can be a legend in one "
+       + "district and a nobody in the next. The bar is how widely your name carries there.";
+}
+
+// A number as a short bar of blocks, for a list where a real widget would be ten more of them.
+// Filled blocks then empty ones, so a column of these reads as a shape down the screen the way
+// the meters on the first screen do.
+public func CBHudMeter(value: Float, full: Float, cells: Int32) -> String {
+  if cells <= 0 || full <= 0.0 {
+    return "";
+  }
+  let on = RoundF(ClampF(value / full, 0.0, 1.0) * Cast<Float>(cells));
+  let out = "";
   let i = 0;
-  while i < ArraySize(states) && shown < 14 {
-    let d = states[i];
+  while i < cells {
+    out += i < on ? "|" : ".";
     i += 1;
-    if IsDefined(d) {
-      let rd = RoundF(d.renown);
-      let quiet = CBHudSince(CBGameSeconds(sys.GetGameInstance()), d.lastIncidentAt);
-      let tail = StrLen(quiet) > 0 ? ("   quiet " + quiet) : "";
-      let dname = CBDistrictLabel(d.id);
-      if StrLen(dname) == 0 {
-        dname = NameToString(d.id);
-      }
-      out += CBHudPad(dname, 18) + s"renown \(rd)   kills \(d.kills)" + tail + "\n";
-      shown += 1;
-    }
   }
   return out;
 }
@@ -1333,7 +1492,7 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   }
   let count = sys.CountActiveRivals();
   let cap = CBRivalCap();
-  let out = s"CARRYING \(count) OF \(cap)\n\n";
+  let out = s"\(count) of a possible \(cap) are still looking for you.\n\n";
   // Why the one who is next is after you.
   //
   // The rows carry name, gang, rank, scars and a clock, and never once say what any of this is
@@ -1664,17 +1823,6 @@ func CBRivalStateName(state: Int32) -> String {
     return "at large";
   }
   return "quiet";
-}
-
-// Pad a label with spaces to a column width for the fixed-width readout.
-func CBHudPad(s: String, width: Int32) -> String {
-  let out = s;
-  let i = StrLen(s);
-  while i < width {
-    out += " ";
-    i += 1;
-  }
-  return out;
 }
 
 // A Rival's traits, or their weaknesses, by name: the first `limit` of them, comma separated.

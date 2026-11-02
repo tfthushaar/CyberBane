@@ -109,8 +109,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Enabled", "Enabled");
     this.Text("Cyberbane-Settings-Enabled-Desc", "Turns Cyberbane on or off. Off stops every reaction and reverts temporary changes; your reputation is kept.");
     this.Text("Cyberbane-Settings-Preset", "Preset");
-    this.Text("Cyberbane-Settings-FlatHub", "Flat Hub panel");
-    this.Text("Cyberbane-Settings-FlatHub-Desc", "Draws the Hub with straight lines instead of letting it curve with the rest of the heads-up display. On by default. If the Hub ever stops opening, or the Escape key starts controlling it instead of your Hub key, turn this off and it goes back to the old behaviour straight away. Nothing else about the mod is affected either way.");
     this.Text("Cyberbane-Settings-MessageDelivery", "Where messages go");
     this.Text("Cyberbane-Settings-PhoneSound", "Message tone");
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");

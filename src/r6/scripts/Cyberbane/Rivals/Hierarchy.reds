@@ -208,7 +208,6 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
   // Taking the top off a crew is worth hearing about.
   if wasLeader && fs.leaderRivalId > 0 {
     let heir = sys.FindRivalById(fs.leaderRivalId);
-    let rt = CyberbaneRuntime.Get();
     if IsDefined(heir) && CBMessagesOn() {
       let content = CBContent(game);
       CBPhoneFromGang(game, rival.faction, CBRivalDisplayName(content, heir)

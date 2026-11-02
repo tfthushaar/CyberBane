@@ -24,6 +24,49 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   turn both off and meet them with no warning at all. Hunt line on the HUD has Everything,
   HuntsOnly and Off.
 
+### The Hub
+- **The lists are laid out as lists.** The Gangs screen used to pack a gang's posture, how
+  frightened of you they are and how long they had been quiet into a single column joined by
+  spaces. The font is proportional, so those joins landed somewhere different on every row and
+  the column read as ragged. Each fact now has its own column and lines up down the screen.
+- **Nothing is cut off mid-word.** Packing three things into one column meant its width had to
+  cover all three, which is why "beat a crew, or 7 more kills" arrived as "beat a crew, or 7
+  more ki." at the right edge.
+- **The Gangs screen says who each gang is at war with.** Hurting a gang warms the gangs that
+  hate it, and until now the only way to know who hated whom was to find out the hard way.
+- **The City is a list instead of a paragraph.** Nine districts padded into a block of text,
+  with two thirds of the screen empty underneath, is now a row per district with a bar for how
+  widely your name carries there and a colour for how well known you are.
+- **Conduct reads properly at the bottom of its range.** It runs from -100 to +100 and was drawn
+  as a left-to-right fill, so -100 - the worst Conduct there is - showed an empty bar and looked
+  broken. It now fills from the middle: left in red towards cyberpsycho, right in green for
+  clean.
+- **Less text.** The Gangs screen explained each of its own columns in five lines; it now says
+  only the part you cannot see, which is how to be thought well of. "CARRYING 11 OF 15" is now a
+  sentence.
+- The Hub already fits every screen: it is scaled by the smaller of width and height against a
+  1920x1080 design and centred, so no aspect ratio crops it, and the scale slider is still there
+  on top of that. Verified, not changed.
+
+### More ways to be thought well of by a gang
+Standing could only rise by hurting the gang they are at war with, so the only road to Friendly
+ran through somebody else's body. It no longer has to.
+- **Mercy counts.** Putting one of their people down without killing them costs their opinion of
+  you a quarter of what a body costs, instead of exactly the same.
+- **And it earns a little.** Every one of theirs you leave breathing is worth something to them.
+  On its own this road reaches tolerated and stops well short of allied, because restraint makes
+  a gang put up with you - only hurting their enemies makes them like you.
+- **Letting a name walk is worth more.** Spare a Rival of theirs and their gang hears that you
+  had one of their own cold and let them go.
+
+### Fixed
+- **Rumours checked end to end.** Word still spreads the way it is meant to: a notable thing
+  creates a rumour where it happened, it reaches neighbouring districts every six in-game hours
+  at half strength, two hops, and it expires after three days. The City screen reads the same
+  district record the engine writes to, so what it shows is what happened.
+- A handful of functions and one setting label that no longer did anything were removed,
+  including the padding helper that produced the ragged columns above.
+
 ### Changed
 - The **Toasts** setting is now called **Show messages**, and both it and Where messages go
   explain that they do the same thing and that neither affects how anything plays. It was the

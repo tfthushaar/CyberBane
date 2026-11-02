@@ -83,6 +83,23 @@ func CBTopEnemyOf(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, fac
   return best;
 }
 
+// V put one of theirs down and left them breathing, or let a Rival of theirs walk.
+//
+// This is the other way to be thought well of, and it is deliberately the weaker one: it is
+// capped at MercyCeiling, which is above Neutral and below Allied, so restraint alone makes a
+// gang tolerate V and nothing more. A gang already past the cap is left alone rather than
+// pulled back down to it, because a gang that likes V for other reasons does not mind mercy.
+public func CBCreditMercy(sys: ref<CyberbaneSystem>, faction: CName, amount: Float) -> Void {
+  if !IsDefined(sys) || Equals(faction, n"") || amount <= 0.0 {
+    return;
+  }
+  let fs = sys.EnsureFaction(faction);
+  if !IsDefined(fs) || fs.standing >= CBConfig.MercyCeiling() {
+    return;
+  }
+  fs.standing = ClampF(fs.standing + amount, -100.0, CBConfig.MercyCeiling());
+}
+
 // A gang has just come round to V. Called from the posture watch, once per crossing.
 public func CBAnnounceWarming(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, allied: Bool) -> Void {
   let content = CBContent(game);
