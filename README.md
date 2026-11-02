@@ -288,11 +288,27 @@ squads, whispers), tune how intense and how frequent reactions are, pick a prese
 Default, or Dramatic), set the size of Cyberbane's own screens and bars, and rebind the Hub key.
 
 Under UI you can also choose where messages go: Phone (the default) puts them in V's own phone,
-Cards draws them on the left of the screen and keeps Cyberbane out of the phone entirely, and
-Notices uses the old line across the middle of the screen. If the phone ever misbehaves on your
-setup, Cards is the switch that takes Cyberbane back out of it. You can also turn the message
-tone off and set how long anything on screen stays up. The map markers are there too, as
-everyone Cyberbane sends, only the named ones, or none.
+Cards draws them on the left of the screen and keeps Cyberbane out of the phone entirely,
+Notices uses the old line across the middle of the screen, and Off is silence. If the phone ever
+misbehaves on your setup, Cards is the switch that takes Cyberbane back out of it. You can also
+turn the message tone off and set how long anything on screen stays up. The map markers are
+there too, as everyone Cyberbane sends, only the named ones, or none.
+
+### Playing without the messages
+
+If you like the mechanics but would rather not be told what is coming, set **Where messages go**
+to **Off**. Nothing is put in your phone, no cards, no notices, no overheard lines and no message
+tone. The **Show messages** switch does the same thing, so either one is enough.
+
+None of it changes the way the mod plays. Gangs still send crews, apex squads still come, Rivals
+still hunt you, loot and bounties still arrive with the game's own notices, and the Hub still
+shows you where you stand with everyone and still brokers peace. The only thing you give up is
+the warning, which is the point if you would rather be surprised.
+
+The HUD line is a separate setting, so you can mix them. **Hunt line on the HUD** has Everything,
+HuntsOnly (only while somebody is actually on their way or out looking) and Off. Messages off with
+the HUD line on Everything keeps the one line and loses the texts; both off means the first you
+know about it is when they walk round the corner.
 
 ### Starting over
 

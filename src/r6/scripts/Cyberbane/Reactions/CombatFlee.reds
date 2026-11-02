@@ -339,7 +339,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       //     fresh body behind V - on a rooftop if V had climbed one. That is the Rival who
       //     "teleported": it was never the same body moving, it was a second one.
       CBCloseRivalEncounter(sys, game, already, e.puppet);
-      if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+      if CBMessagesOn() {
         let name = CBRivalDisplayName(content, already);
         if indebted {
           CBPhoneFromStreet(game, s"\(name) owes you one now. People like that remember both ways.");
@@ -360,7 +360,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   if IsDefined(nr) {
     nr.scarMask = e.scarMask;   // they remember how it went
     nr.state = EnumInt(ECBRivalState.Hunting);
-    if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+    if CBMessagesOn() {
       CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, nr)) walked away from you breathing. They will not forget it.");
     }
   }
@@ -373,7 +373,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   }
   let content = CBContent(game);
   let district = CBEventDistrict(sys, game);
-  let toasts = IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts;
+  let toasts = CBMessagesOn();
 
   // The Rival that was hunting you got away again: it ranks up and comes back meaner.
   if e.wasRival && sys.GetActiveRivalId() > 0 {

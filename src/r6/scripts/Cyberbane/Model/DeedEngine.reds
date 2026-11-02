@@ -29,7 +29,7 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
   if IsDefined(rt) && rt.HasSettings() {
     renownMult = rt.GetSettings().renownGainMult;
     dreadMult = rt.GetSettings().dreadGainMult;
-    toasts = rt.GetSettings().toasts && !silent;
+    toasts = CBMessagesOn() && !silent;
   }
 
   sys.AddRenownPoints(def.renown * renownMult);

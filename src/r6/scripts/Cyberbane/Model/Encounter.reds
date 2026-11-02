@@ -107,7 +107,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
   if IsDefined(rt) && rt.HasSettings() {
     renownMult = rt.GetSettings().renownGainMult;
     dreadMult = rt.GetSettings().dreadGainMult;
-    toasts = rt.GetSettings().toasts;
+    toasts = CBMessagesOn();
   }
 
   // Came through a real fight without being hurt (spec §8.1). Needs at least a couple of

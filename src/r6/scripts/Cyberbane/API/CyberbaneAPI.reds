@@ -67,7 +67,7 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
   if IsDefined(fs) {
     fs.standing = ClampF(fs.standing - CBConfig.DeathStandingDrop(), -100.0, 100.0);
   }
-  if rt.HasSettings() && rt.GetSettings().toasts {
+  if CBMessagesOn() {
     let name = CBRivalDisplayName(content, who);
     if isNew {
       CBPhoneFromGang(game, faction, s"\(name) put you down. They will be looking for you.");

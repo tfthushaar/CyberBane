@@ -47,10 +47,19 @@ enum ECBMarkerScope {
 // Cyberbane drawing the message on the left of the screen itself, and nothing of Cyberbane's
 // enters the phone. It exists so that a player whose phone misbehaves has a way out that does
 // not go through the phone. Notices is the old line across the middle of the screen.
+//
+// Off is silence, and it is here rather than only on the Toasts switch because this is the
+// setting a player looking to turn messages off actually opens. A player asked for it: they
+// liked the mechanics and did not want to be told their nemesis had climbed a rank or that
+// somebody was tracking them - they would rather be surprised. Off files nothing, draws nothing
+// and keeps Cyberbane out of the phone, and the gameplay is untouched: they still come, the
+// Hub still brokers peace, and the HUD line is its own setting (ECBHudLine) for anyone who
+// wants the warning without the texts.
 enum ECBMessageDelivery {
   Phone = 0,
   Cards = 1,
   Notices = 2,
+  Off = 3,
 }
 
 // How the city decides when to come for V. Timetable is the day split into windows (Spawn/

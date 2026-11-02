@@ -103,7 +103,7 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
     return;
   }
   ts.GiveItem(player, money, bonus);
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+  if CBMessagesOn() {
     CBContactMessage(gameInstance, s"Threw an extra \(bonus)eb on that one. Your name is worth something now.");
   }
 }

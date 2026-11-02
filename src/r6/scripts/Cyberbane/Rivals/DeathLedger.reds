@@ -103,7 +103,7 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
           let created = CBCreateRival(sys, game, entry.killerFaction, entry.killerRecordID, entry.killerAppearance, ECBRivalSource.Killer, entry.district, entry.at);
           if IsDefined(created) {
             CBRivalKilledV(created, content, entry.at, entry.district);
-            if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+            if CBMessagesOn() {
               CBPhoneFromGang(game, entry.killerFaction,
                 CBRivalDisplayName(content, created) + " put you in the ground once. Remember that next time.");
             }

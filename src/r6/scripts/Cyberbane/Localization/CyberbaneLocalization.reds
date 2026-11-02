@@ -68,7 +68,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalFreq-Desc", "How often Rivals turn up, and how quickly they track you down.");
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines, so the street does not repeat itself.");
-    this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane shows its messages on screen at all.");
+    this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all. Off silences every message on every surface: nothing is put in your phone, no cards, no notices and no overheard lines. Setting Where messages go to Off does exactly the same thing, so either one is enough. Nothing about the way the mod plays changes when it is off - gangs still come for you, and the Hub still shows everything and still brokers peace. If you want the warning but not the texts, leave this on and use Hunt line on the HUD instead.");
     this.Text("Cyberbane-Settings-MessageHold-Desc", "How long Cyberbane's on-screen messages stay up, as a percentage of their normal length. The default of 175 is most of a full second longer than the game's own notifications, which is about what a sentence needs. Nothing is ever shown for less than five seconds.");
     this.Text("Cyberbane-Settings-RivalsPerDay-Desc", "How many Rivals can catch up with you in a single in-game day. Once they have, no more Rivals come until the next day. Hit squads and apex squads have their own separate allowances, so a busy day of Rivals does not use theirs up. Set to 0 to stop Rivals arriving at all.");
     this.Text("Cyberbane-Settings-HitSquadsPerDay-Desc", "How many gang crews can be sent after you in a single in-game day, counted separately from Rivals and apex squads. Set to 0 to stop crews arriving at all.");
@@ -116,7 +116,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");
     this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who Cyberbane marks on the map and minimap. Named only marks a rival and the members of an apex squad, which is enough to pick the dangerous one out of a crowd, and takes the marker off again once the fight has started, because the game shows enemies in combat by itself. Everyone adds the gang crews and the escorts that come with an apex squad. Off leaves you to find them.");
     this.Text("Cyberbane-Settings-PhoneSound-Desc", "Plays the phone's own text message tone when a message arrives. It is the game's sound, not one of ours.");
-    this.Text("Cyberbane-Settings-MessageDelivery-Desc", "Phone puts everyone who gets in touch into your own phone as a contact: the gang coming for you, the broker who works the district you are in, an unknown number. New messages arrive as the game's own text notification and the thread opens in the phone's Messages list. Cards draws them on the left of the screen instead and keeps Cyberbane out of the phone entirely, which is the one to pick if the phone ever misbehaves. Notices is the old line across the middle of the screen.");
+    this.Text("Cyberbane-Settings-MessageDelivery-Desc", "Phone puts everyone who gets in touch into your own phone as a contact: the gang coming for you, the broker who works the district you are in, an unknown number. New messages arrive as the game's own text notification and the thread opens in the phone's Messages list. Cards draws them on the left of the screen instead and keeps Cyberbane out of the phone entirely, which is the one to pick if the phone ever misbehaves. Notices is the old line across the middle of the screen. Off is silence: no phone thread, no card, no notice and no overheard line, and Cyberbane stays out of the phone entirely. Pick it if you would rather be surprised. It changes nothing about the way the mod plays - they still come, and the Hub still shows who is who and still brokers peace - and the HUD line is a separate setting, so you can keep that and lose the texts.");
     this.Text("Cyberbane-Settings-HubKey", "Hub key");
 
     // ---- Settings: reputation -------------------------------------------
@@ -164,7 +164,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // ---- Settings: interface --------------------------------------------
     this.Text("Cyberbane-Settings-Whispers", "Whispers");
     this.Text("Cyberbane-Settings-WhisperCooldown", "Whisper cooldown (s)");
-    this.Text("Cyberbane-Settings-Toasts", "Toasts");
+    this.Text("Cyberbane-Settings-Toasts", "Show messages");
 
     // ---- Settings: compatibility ----------------------------------------
     this.Text("Cyberbane-Settings-TwrCompat", "They Will Remember compatibility");

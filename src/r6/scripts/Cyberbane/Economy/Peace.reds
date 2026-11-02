@@ -244,7 +244,10 @@ public func CBBrokerPeaceBest(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   return CBBrokerPeace(sys, game, worst.id);
 }
 
+// Whether there is any point composing a message. Every caller of this guards a message and
+// nothing else - the bounty is paid, the vendetta sworn and the street's file written before it
+// is asked - so answering it with the one silence test (UI/PhoneMessages.reds, CBMessagesOn)
+// covers "Where messages go: Off" everywhere at once without touching how anything plays.
 func CBToastsOn() -> Bool {
-  let rt = CyberbaneRuntime.Get();
-  return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts;
+  return CBMessagesOn();
 }

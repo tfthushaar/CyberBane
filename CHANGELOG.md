@@ -3,6 +3,40 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.5] - 2026-11-02
+
+A player asked whether there was any way to turn all the messages off: they liked the mechanics
+but did not care that a Rival had climbed a rank or that somebody was tracking them, and would
+rather be surprised. There was a way, and it was called Toasts, which is not a word anybody goes
+looking for. Now it is where you would expect it.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### New
+- **Where messages go: Off.** Silence, in the setting you would actually open to find it. Nothing
+  goes in your phone, no cards, no notices, no overheard lines and no message tone. Cyberbane
+  stays out of the phone entirely.
+- **None of it changes the way the mod plays.** Gangs still send crews, apex squads still come,
+  Rivals still hunt you, loot and bounties still arrive with the game's own notices, and the Hub
+  still shows where you stand with everyone and still brokers peace. The only thing you give up is
+  being told.
+- **The HUD line stays its own setting**, so you can keep the one line and lose the texts, or
+  turn both off and meet them with no warning at all. Hunt line on the HUD has Everything,
+  HuntsOnly and Off.
+
+### Changed
+- The **Toasts** setting is now called **Show messages**, and both it and Where messages go
+  explain that they do the same thing and that neither affects how anything plays. It was the
+  master switch all along; nobody could find it under that name.
+
+### Fixed
+- **A superseded file was still in the source tree and stopped the mod compiling.** An earlier
+  draft of the phone screen, replaced in 1.4.7 by the real phone integration, referred to a
+  setting and three functions that no longer exist. Because redscript compiles every mod's
+  scripts together, this did not just break Cyberbane: on any install where it had shipped it
+  would have taken down every other redscript mod with it. It is gone, and the build is
+  compile-checked against the game again.
+
 ## [1.5.3] - 2026-11-02
 
 Fixes for player reports on 1.5.2, each traced to its cause rather than patched where it showed.

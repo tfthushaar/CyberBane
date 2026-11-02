@@ -461,7 +461,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   CBHierarchyFill(sys, faction);
 
   CBLogRival(sys, n"RivalCreated", at, origin, faction, Cast<Float>(r.id), r.id);
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+  if CBMessagesOn() {
     CBPhoneFromGang(game, faction, CBRivalDisplayName(content, r) + " has your name now. That is on you.");
   }
   CBLog.Info(n"Rivals", s"Rival created id=\(r.id) faction=\(NameToString(faction)).");
@@ -659,7 +659,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   // Their chair does not stay empty (spec §10.1).
   CBHierarchyOnSlain(sys, game, rival);
   let content = CBContent(game);
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+  if CBMessagesOn() {
     CBPhoneFromStreet(game, CBRivalDisplayName(content, rival) + " is dead and everybody knows who did it.");
   }
 
@@ -680,7 +680,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
       // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1,
       // which is what made every nemesis you killed a clean reset.
       avenger.rank = Max(1, rival.rank - 1);
-      if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+      if CBMessagesOn() {
         CBPhoneFromGang(game, rival.faction, CBRivalDisplayName(content, avenger)
           + " picks up where " + CBRivalDisplayName(content, rival) + " left off.");
       }
@@ -718,7 +718,7 @@ public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance
         if IsDefined(cd) {
           cd.lastPromotionAt = now;
         }
-        if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+        if CBMessagesOn() {
           CBPhoneFromStreet(game, CBRivalDisplayName(content, r) + " has moved up while you were busy elsewhere.");
         }
         return;

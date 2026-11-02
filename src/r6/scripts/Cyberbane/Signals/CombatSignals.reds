@@ -197,7 +197,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   CBMoraleOnKill(sys, game, info);
   let tierAfter = EnumInt(sys.GetScore().GetTier());
   if tierAfter != tierBefore {
-    if tierAfter > tierBefore && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+    if tierAfter > tierBefore && CBMessagesOn() {
       CBContactMessage(game, "People have stopped asking who you are. On the street you are " + CBTierName(tierAfter) + " now.");
     }
     sys.SetLastNotifiedTier(tierAfter);
@@ -208,7 +208,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   CBEvaluateTitles(sys, game);
 
   // Notable kills the city remembers: gang bosses and MaxTac (spec §7, §9.10).
-  if info.lethal && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+  if info.lethal && CBMessagesOn() {
     if info.victimClass == EnumInt(ECBVictimClass.Boss) {
       CBPhoneFromStreet(game, "You took down somebody who mattered. That will be around by morning.");
     } else {

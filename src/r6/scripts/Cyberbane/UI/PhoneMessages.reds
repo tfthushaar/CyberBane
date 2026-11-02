@@ -98,6 +98,29 @@ public func CBMessageDelivery() -> ECBMessageDelivery {
   return rt.GetSettings().messageDelivery;
 }
 
+// Whether Cyberbane says anything on screen at all.
+//
+// Two settings can silence it and they mean the same thing, so they are answered in one place:
+// the Toasts switch under Interface, and Off on "Where messages go". The second exists because
+// it is the one a player actually opens when they want quiet - "Toasts" is not a word anybody
+// goes looking for. Either one off means every surface is off: no phone thread filed, no card
+// drawn, no notice, no overheard line, and no message tone.
+//
+// What it deliberately does not touch: the HUD line (its own setting), the Hub, and the replies
+// to something V just did in a menu (CBSystemNote). Nothing about the gameplay changes either -
+// they still come, and the Hub still brokers peace - so silence costs the player nothing except
+// being told, which is the point.
+public func CBMessagesOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.IsEnabled() {
+    return false;
+  }
+  if rt.HasSettings() && !rt.GetSettings().toasts {
+    return false;
+  }
+  return !Equals(CBMessageDelivery(), ECBMessageDelivery.Off);
+}
+
 // The phone hook is live: Cyberbane's threads go into the phone and its wraps act on them.
 // Off in every other mode, and off with the kill switch, so the fallbacks really are fallbacks.
 public func CBRealPhoneOn() -> Bool {
@@ -840,11 +863,7 @@ public func CBOverheardSeconds() -> Float {
 
 // Something V overheard. Never a text and never in the phone; see CBPhone.Overhear.
 public func CBOverheard(game: GameInstance, speaker: String, line: String) -> Void {
-  let rt = CyberbaneRuntime.Get();
-  if !IsDefined(rt) || !rt.IsEnabled() {
-    return;
-  }
-  if rt.HasSettings() && !rt.GetSettings().toasts {
+  if !CBMessagesOn() {
     return;
   }
   if Equals(CBMessageDelivery(), ECBMessageDelivery.Notices) {
@@ -872,12 +891,8 @@ public func CBPhoneSend(game: GameInstance, sender: String, body: String) -> Voi
 // As above, with the accent a card uses to say what kind of message this is.
 public func CBPhoneSendTinted(game: GameInstance, sender: String, body: String,
                               accent: HDRColor) -> Void {
-  let rt = CyberbaneRuntime.Get();
-  if !IsDefined(rt) || !rt.IsEnabled() {
-    return;
-  }
-  // The messages switch covers every surface, so a player who wants silence gets it.
-  if rt.HasSettings() && !rt.GetSettings().toasts {
+  // Either silence switch covers every surface, so a player who wants quiet gets it.
+  if !CBMessagesOn() {
     return;
   }
   // Anyone who would rather have the old centre-screen line keeps it.

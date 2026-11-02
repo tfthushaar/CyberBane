@@ -209,7 +209,7 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
   if wasLeader && fs.leaderRivalId > 0 {
     let heir = sys.FindRivalById(fs.leaderRivalId);
     let rt = CyberbaneRuntime.Get();
-    if IsDefined(heir) && IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+    if IsDefined(heir) && CBMessagesOn() {
       let content = CBContent(game);
       CBPhoneFromGang(game, rival.faction, CBRivalDisplayName(content, heir)
         + " runs us now. Nothing about you has changed.");

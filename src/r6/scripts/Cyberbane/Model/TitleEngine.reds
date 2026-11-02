@@ -15,7 +15,7 @@ public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
       sys.UnlockTitle(def.id);
       sys.AddRenownPoints(Equals(def.id, n"T_CYBERBANE") ? 100.0 : 25.0);
       let rt = CyberbaneRuntime.Get();
-      if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+      if CBMessagesOn() {
         // From somebody on the street rather than from the mod. A title is a thing other
         // people decided to call you, so hearing it from them is the right way round.
         CBContactMessage(game, "People are calling you " + CBTitleDisplay(sys, def) + " now.");

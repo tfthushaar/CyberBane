@@ -603,7 +603,7 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         // Seeded by the kills already paid for, which does not move until they are sent, so the
         // name in this warning is the name in the one that says they are on the road.
         let name = CBApexName(CBContent(game), fs.id, fs.apexAtKills);
-        if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+        if CBMessagesOn() {
           CBPhoneFromGang(game, fs.id, s"\(name) is coming for you, and not alone. Four of ours. Make your peace.");
         }
         CBAllyTipOff(sys, game, fs.id);

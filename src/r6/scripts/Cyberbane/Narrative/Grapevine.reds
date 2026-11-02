@@ -79,7 +79,7 @@ public func CBGrapevineOnReach(sys: ref<CyberbaneSystem>, game: GameInstance, r:
     return;
   }
   // Rides the existing toast setting: anyone who turned Cyberbane's messages off gets none.
-  if rt.HasSettings() && !rt.GetSettings().toasts {
+  if !CBMessagesOn() {
     return;
   }
   // Word has to be worth repeating before anyone bothers passing it along.
@@ -137,7 +137,7 @@ public func CBGrapevineOnArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !IsDefined(rt) || !rt.IsEnabled() {
     return;
   }
-  if rt.HasSettings() && !rt.GetSettings().toasts {
+  if !CBMessagesOn() {
     return;
   }
   let cd = sys.GetCooldowns();
