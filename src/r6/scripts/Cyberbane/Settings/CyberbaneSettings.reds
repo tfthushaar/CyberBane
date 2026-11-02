@@ -63,6 +63,15 @@ enum ECBPacing {
   Reactive = 2,
 }
 
+// What the HUD line at the top of the screen shows. Everything is the full story: tracked, on
+// their way, searching, spotted, found, and how it ended. Hunts only drops TRACKED and the ending.
+// Off hides the line.
+enum ECBHudLine {
+  Everything = 0,
+  HuntsOnly = 1,
+  Off = 2,
+}
+
 enum ECBLogLevel {
   Off = 0,
   Info = 1,
@@ -357,6 +366,12 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ShowCountdowns")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ShowCountdowns-Desc")
   public let showCountdowns: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
+  public let hudLine: ECBHudLine = ECBHudLine.Everything;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

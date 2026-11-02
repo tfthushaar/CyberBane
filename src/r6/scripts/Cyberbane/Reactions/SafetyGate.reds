@@ -24,6 +24,16 @@ public abstract class CBSafetyGate {
     if puppet.IsQuest() {
       return false;   // never touch quest NPCs (spec §16.1)
     }
+    // Nor anybody the story wrote. IsQuest is only set on some of them: a gig's contact such as
+    // Alan in Treating Symptoms is not flagged, and was turned hostile mid-conversation. The
+    // record's own quest affiliation is the game's statement about who it authored, the same test
+    // that keeps story characters off the Rival roster. Worked out once per NPC.
+    if puppet.cbAuthoredState == 0 {
+      puppet.cbAuthoredState = CBRecordIsUniqueCharacter(puppet.GetRecordID()) ? 1 : 2;
+    }
+    if puppet.cbAuthoredState == 1 {
+      return false;
+    }
     if puppet.IsPlayerCompanion() {
       return false;   // never touch companions / crew (spec §16.1)
     }
@@ -48,3 +58,7 @@ public abstract class CBSafetyGate {
     return true;
   }
 }
+
+// Whether this NPC's record is one the story wrote: 0 not yet known, 1 yes, 2 no.
+@addField(ScriptedPuppet)
+public let cbAuthoredState: Int32;

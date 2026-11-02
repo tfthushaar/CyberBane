@@ -237,6 +237,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   // open a window for someone to walk in. Session-only.
   private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
+  private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
+  private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
 
   // ---- Access -----------------------------------------------------------
@@ -774,6 +776,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Safe-area check every tick, not on the slow sample: you can walk into a bar or a
     // clinic in well under ten seconds, and the reaction systems read this.
     this.m_inSafeZone = CBPlayerInSafeZone(game);
+    if this.m_tickCount % 3 == 0 {
+      this.m_inQuestArea = CBComputeQuestArea(game);
+    }
+    CBSafeZoneArmsTick(this, game);     // keep the weapon lock lifted in safe areas when asked
+    if this.m_tickCount % 2 == 0 {
+      CBCombatReleaseTick(this, game);  // let go of anyone of ours keeping V in combat from afar
+    }
     // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district)
     // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
     // Prevention-system district/heat queries never fire mid-stream. The director reads the
@@ -1709,6 +1718,19 @@ public class CyberbaneSystem extends ScriptableSystem {
   // gangs, morale, panic driving) stand down while this is true. Refreshed every tick.
   public func IsInSafeZone() -> Bool {
     return this.m_inSafeZone;
+  }
+
+  // On a job, in a scene, or in a restricted or dangerous zone, when "Stay out of quest areas" is on.
+  public func IsInQuestArea() -> Bool {
+    return this.m_inQuestArea;
+  }
+
+  public func IsSafeArmsApplied() -> Bool {
+    return this.m_safeArmsApplied;
+  }
+
+  public func SetSafeArmsApplied(on: Bool) -> Void {
+    this.m_safeArmsApplied = on;
   }
 
   // Content service, fetched once (lazily) and cached. Everything goes through CBContent/this so

@@ -749,6 +749,12 @@ public abstract class CBConfig {
   public static func RemainsCap() -> Int32 = 96
   // The most of Cyberbane's people alive in the world at once (Spawn/Spawner.reds, CBSpawnGroup).
   public static func MaxLiveSpawns() -> Int32 = 18
+  // Within this many metres of the tracked objective's map pins, V is on a job (Core/SafeAreas.reds).
+  public static func QuestAreaRadius() -> Float = 120.0
+  // One of ours in combat with V but farther than this and out of sight for this many seconds is
+  // let go, so the fight can end (Spawn/Hunt.reds, CBCombatReleaseTick).
+  public static func CombatReleaseDistance() -> Float = 45.0
+  public static func CombatReleaseTicks() -> Int32 = 20
 
   // ---- Loot and bounties (Spawn/Loot.reds) --------------------------------
   public static func LootDelaySeconds() -> Float = 0.8

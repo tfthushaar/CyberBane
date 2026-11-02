@@ -364,7 +364,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     CBLog.Info(n"Spawn", s"Already \(CBConfig.MaxLiveSpawns()) of ours in the world; nobody else is sent until some are gone.");
     return 0;
   }
-  if !TDBID.IsValid(record) || count <= 0 {
+  if !TDBID.IsValid(record) || count <= 0 || !CBRecordIsPerson(record) {
     CBNoteSpawnBlock(CBBlockNoRecord());
     return 0;
   }

@@ -54,6 +54,12 @@ public class CBReactionDirector {
     if sys.IsInSafeZone() {
       return;
     }
+    // Never during a conversation or a scene, and never on a job when V has asked Cyberbane to stay
+    // out of quest areas. Turning somebody hostile mid-dialogue is how a gig contact ended up
+    // attacking V in the middle of Treating Symptoms.
+    if CBPlayerInScene(game) || sys.IsInQuestArea() {
+      return;
+    }
 
     if this.m_whisperCooldownTicks > 0 {
       this.m_whisperCooldownTicks -= 1;
@@ -191,6 +197,10 @@ public class CBReactionDirector {
     let pagent = player.GetAttitudeAgent();
     if !IsDefined(agent) || !IsDefined(pagent) {
       return true;
+    }
+    // Somebody the game has made friendly towards V (a job contact, a quest ally) stays that way.
+    if Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Friendly) {
+      return false;
     }
     CBTrace("attitude: world NPC hostile on sight");
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);

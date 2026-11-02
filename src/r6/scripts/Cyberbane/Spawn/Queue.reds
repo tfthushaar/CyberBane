@@ -184,7 +184,7 @@ func CBSeedRivalFromFactions(sys: ref<CyberbaneSystem>, game: GameInstance) -> r
 // so the two can never disagree about who is eligible.
 public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool {
   let r = sys.FindRivalById(rivalId);
-  if !IsDefined(r) || !TDBID.IsValid(r.recordID) {
+  if !IsDefined(r) || !TDBID.IsValid(r.recordID) || !CBRecordIsPerson(r.recordID) {
     return false;
   }
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
@@ -196,6 +196,10 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   // waiting on - nobody should be queuing up behind an encounter you are still in.
   if CBLaneBusy(sys, game, lane) {
     sys.MarkLaneBusy(lane);
+    return;
+  }
+  // Nobody can arrive right now (a safe area, a job, a scene): the clock waits with them.
+  if CBArrivalsHeld(sys, game) {
     return;
   }
   // And a breather afterwards.
@@ -738,7 +742,7 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   }
   let now = sys.GetTickCount();
   let player = GetPlayer(game);
-  if !IsDefined(player) || sys.IsInSafeZone() || CBPlayerInStealthState(game)
+  if !IsDefined(player) || sys.IsInSafeZone() || sys.IsInQuestArea() || CBPlayerInStealthState(game)
      || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetProvoked(), n"") {
     sys.SetTurfWatch(n"", now);
     return;

@@ -3,6 +3,47 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.3] - 2026-11-02
+
+Fixes for player reports on 1.5.2, each traced to its cause rather than patched where it showed.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **A drone as a Rival.** Anything that escaped or was spared could become a Rival, drones
+  included, and a Rival gets a boss-grade build. A Maelstrom drone came back again and again,
+  nearly unkillable and firing missiles. Only people can become Rivals or a gang's spawn template
+  now: drones, mechs, spiderbots, androids and turrets are refused, and any already in your save
+  are retired when it loads.
+- **A gig contact turned hostile mid-conversation** (Alan in Treating Symptoms, with low Voodoo
+  Boys standing). The check that keeps Cyberbane away from story characters only knew the ones
+  the game flags directly, and most job contacts are not flagged. It now uses the same record
+  test that keeps story characters off the Rival roster. Nobody is turned hostile during a
+  conversation or a scene, nobody the game has made friendly towards you is turned at all, and
+  with Stay out of quest areas on, nothing happens on a job.
+- **Stay out of quest areas did almost nothing.** The quest-area test was never called, so the
+  switch only kept arrivals out of restricted and dangerous zones. It now covers being on a job,
+  worked out the way the game's world map places the job: within reach of the tracked
+  objective's map pins. Nobody arrives, nobody is called in by a lookout, and nobody is turned
+  hostile while you are on one. Scenes and conversations count too.
+- **Let me fight in safe areas did not work.** It lifted the game's weapon lock once, at the
+  moment you walked in, and the game puts the lock back every time the area updates. It also
+  missed loading a save inside a safe area and turning the setting on while already inside. It
+  now keeps the lock lifted for as long as you are inside with the setting on, and puts it back if
+  you turn the setting off. A few places (the Afterlife, some apartments) also have a story
+  restriction on fighting, and Cyberbane leaves that alone.
+- **Stuck in combat after the hunters were dead.** The game keeps you in combat while anyone is in
+  combat with you. Cyberbane's people who had broken and run, got stuck, or were still sitting in a
+  car far away kept it going. Anyone of ours in combat with you but far away and out of sight for
+  twenty seconds is now let go, out of sight.
+- **TRACKED kept coming back.** The countdowns ran while you were somewhere nobody could reach
+  you, such as home, a job or a scene. The arrival was then refused, and the next attempt showed
+  TRACKED again. The countdowns now wait while nobody can arrive.
+
+### New setting
+- **Hunt line on the HUD:** Everything (default), HuntsOnly (only while somebody is on their way
+  or out looking, no TRACKED) or Off.
+
 ## [1.5.2] - 2026-11-02
 
 A robustness release. A crash was still reported on 1.5.1 after playing for a while. Every

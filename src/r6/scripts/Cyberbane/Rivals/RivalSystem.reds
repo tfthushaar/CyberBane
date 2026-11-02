@@ -252,6 +252,39 @@ public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
 // something the player empties magazines into for nothing. That has now been reported twice, as
 // an unkillable enemy nobody could name. Refusing new ones does not clear the ones already
 // written down, so they are cleared here, once a session, by the same test.
+// Is this record a person? Drones, mechs, spiderbots, androids and the rest are not, and none of
+// them may become a Rival or a gang's spawn template. A Maelstrom drone that got away was being
+// made a Rival, given a boss-grade build and sent back again and again: the near-immortal
+// missile drone a player reported being stuck in a loop with.
+public func CBRecordIsPerson(recordID: TweakDBID) -> Bool {
+  if !TDBID.IsValid(recordID) {
+    return false;
+  }
+  let rec = TweakDBInterface.GetCharacterRecord(recordID);
+  if !IsDefined(rec) {
+    return false;
+  }
+  let kind = rec.CharacterType();
+  if IsDefined(kind) {
+    let t = kind.Type();
+    if Equals(t, gamedataNPCType.Drone) || Equals(t, gamedataNPCType.Mech)
+       || Equals(t, gamedataNPCType.Spiderbot) || Equals(t, gamedataNPCType.Android)
+       || Equals(t, gamedataNPCType.Cerberus) || Equals(t, gamedataNPCType.Chimera)
+       || Equals(t, gamedataNPCType.Device) {
+      return false;
+    }
+  }
+  // A record without a type is judged by its name, so a drone filed without one is still caught.
+  let id = StrLower(TDBID.ToStringDEBUG(recordID));
+  return !StrContains(id, "drone") && !StrContains(id, "android") && !StrContains(id, "mech_")
+      && !StrContains(id, "robot") && !StrContains(id, "spiderbot") && !StrContains(id, "turret");
+}
+
+// Not fit to be a gang's template: somebody the story owns, or not a person at all.
+public func CBRecordUnfitTemplate(recordID: TweakDBID) -> Bool {
+  return CBRecordIsUniqueCharacter(recordID) || !CBRecordIsPerson(recordID);
+}
+
 public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
   if !IsDefined(sys) {
     return;
@@ -262,22 +295,22 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
   let wiped = 0;
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) {
-      if TDBID.IsValid(fs.sampleRecord) && CBRecordIsUniqueCharacter(fs.sampleRecord) {
+      if TDBID.IsValid(fs.sampleRecord) && CBRecordUnfitTemplate(fs.sampleRecord) {
         fs.sampleRecord = TDBID.None(); wiped += 1;
       }
-      if TDBID.IsValid(fs.eliteRecord) && CBRecordIsUniqueCharacter(fs.eliteRecord) {
+      if TDBID.IsValid(fs.eliteRecord) && CBRecordUnfitTemplate(fs.eliteRecord) {
         fs.eliteRecord = TDBID.None(); wiped += 1;
       }
-      if TDBID.IsValid(fs.roleTankRecord) && CBRecordIsUniqueCharacter(fs.roleTankRecord) {
+      if TDBID.IsValid(fs.roleTankRecord) && CBRecordUnfitTemplate(fs.roleTankRecord) {
         fs.roleTankRecord = TDBID.None(); wiped += 1;
       }
-      if TDBID.IsValid(fs.roleAssaultRecord) && CBRecordIsUniqueCharacter(fs.roleAssaultRecord) {
+      if TDBID.IsValid(fs.roleAssaultRecord) && CBRecordUnfitTemplate(fs.roleAssaultRecord) {
         fs.roleAssaultRecord = TDBID.None(); wiped += 1;
       }
-      if TDBID.IsValid(fs.roleBladeRecord) && CBRecordIsUniqueCharacter(fs.roleBladeRecord) {
+      if TDBID.IsValid(fs.roleBladeRecord) && CBRecordUnfitTemplate(fs.roleBladeRecord) {
         fs.roleBladeRecord = TDBID.None(); wiped += 1;
       }
-      if TDBID.IsValid(fs.roleNetrunnerRecord) && CBRecordIsUniqueCharacter(fs.roleNetrunnerRecord) {
+      if TDBID.IsValid(fs.roleNetrunnerRecord) && CBRecordUnfitTemplate(fs.roleNetrunnerRecord) {
         fs.roleNetrunnerRecord = TDBID.None(); wiped += 1;
       }
     }
@@ -290,9 +323,10 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
     if IsDefined(r)
        && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)
            || r.state == EnumInt(ECBRivalState.Dormant))
-       && CBRecordIsUniqueCharacter(r.recordID)
-       && !(r.source == EnumInt(ECBRivalSource.Spared)
-            && CBRecordIsSightingCyberpsycho(r.recordID)) {
+       && (!CBRecordIsPerson(r.recordID)
+           || CBRecordIsUniqueCharacter(r.recordID)
+              && !(r.source == EnumInt(ECBRivalSource.Spared)
+                   && CBRecordIsSightingCyberpsycho(r.recordID))) {
       r.state = EnumInt(ECBRivalState.Retired);
       dropped += 1;
     }
@@ -378,6 +412,10 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   // record straight off a puppet. Guarding each of them would mean missing one. The single
   // exception is a spared cyberpsycho, on a coin flip; see CBCyberpsychoMayReturn.
   if CBRecordIsUniqueCharacter(recordID) && !CBCyberpsychoMayReturn(recordID, source) {
+    return null;
+  }
+  // People only: never a drone, mech or robot (CBRecordIsPerson).
+  if !CBRecordIsPerson(recordID) {
     return null;
   }
   let rt = CyberbaneRuntime.Get();

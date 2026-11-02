@@ -353,9 +353,11 @@ func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
 // One line for the HUD while a hunt is on, the way the game shows that the police are after you.
 // Empty when nobody is.
 public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
-  if !IsDefined(sys) {
+  let mode = CBHudLineMode();
+  if !IsDefined(sys) || Equals(mode, ECBHudLine.Off) {
     return "";
   }
+  let huntsOnly = Equals(mode, ECBHudLine.HuntsOnly);
   // One short line, never more. Longest first is the name, so the name is what gets clipped.
   let who = CBClip(CBBarFactionLabel(sys.GetHuntFaction()), CBConfig.HudNameMaxChars());
   let head = StrLen(who) > 0 ? "HUNTED: " + who : "HUNTED";
@@ -388,6 +390,9 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
       let what = StrLen(grade) > 0 ? named + " " + grade : named;
       return "HUNTED: " + what + "   -   ON THEIR WAY " + StrUpper(CBTimeText(eta));
     }
+    if huntsOnly {
+      return "";   // only while somebody is on their way or out looking
+    }
     // Nobody on the way yet, but somebody is asking around about V.
     let tracker = CBTrackedBy(sys);
     if StrLen(tracker) > 0 {
@@ -415,6 +420,9 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
 // Only once departure is close (TrackedShowTicks), so the line means "soon" and is not on screen
 // for the whole time somebody is merely queued.
 func CBTrackedBy(sys: ref<CyberbaneSystem>) -> String {
+  if CBArrivalsHeld(sys, sys.GetGameInstance()) {
+    return "";   // nobody is counting down while V cannot be reached
+  }
   let near = CBConfig.TrackedShowTicks();
   let apex = sys.GetLaneTarget(CBLaneApex());
   let apexTicks = sys.GetLaneTicks(CBLaneApex());
@@ -664,3 +672,63 @@ func CBScoutCallIn(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
   }
   CBCrewWarning(sys, game, faction);
 }
+
+public func CBHudLineMode() -> ECBHudLine {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return ECBHudLine.Everything;
+  }
+  return rt.GetSettings().hudLine;
+}
+
+// ---- Letting go of a fight that is over -----------------------------------------
+//
+// "After the people hunting me find me and get killed, I stay stuck in combat for a long time."
+// The game keeps V in combat for as long as any NPC is in combat with V. Once the ones who found V
+// are dead, the ones keeping it going are Cyberbane's people who are still in combat but nowhere
+// near: one who broke and ran, one stuck behind geometry, one still sitting in a car. They will
+// never reach V, and the combat never ends. Anyone of ours who has been in combat with V for
+// CombatReleaseTicks while farther than CombatReleaseDistance and unable to see V is let go:
+// removed out of sight through the safe path, or ordered out of the car first.
+public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let player = GetPlayer(game);
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(sys) || !IsDefined(player) || !IsDefined(des) || !player.IsInCombat() || !CBWorldStable(game) {
+    return;
+  }
+  CBReleaseTag(sys, game, des, player, n"CB_Rival");
+  CBReleaseTag(sys, game, des, player, n"CB_Apex");
+  CBReleaseTag(sys, game, des, player, n"CB_Squad");
+  CBReleaseTag(sys, game, des, player, n"CB_Escort");
+  CBReleaseTag(sys, game, des, player, n"CB_Scout");
+}
+
+func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                  player: ref<PlayerPuppet>, tag: CName) -> Void {
+  let ppos = player.GetWorldPosition();
+  let crewSeated = CBAnyCrewSeated(game, des);
+  let ids = des.GetTaggedIDs(tag);
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if CBStillStanding(p) && CBNpcSafe(sys, p) {
+      let far = Vector4.Distance(p.GetWorldPosition(), ppos) > CBConfig.CombatReleaseDistance();
+      if CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) {
+        p.cbOutOfFightTicks += 2;
+        if p.cbOutOfFightTicks >= CBConfig.CombatReleaseTicks() {
+          CBLog.Info(n"Spawn", "One of ours was keeping you in combat from too far away; letting them go.");
+          if !CBRemoveOne(game, des, p.GetEntityID(), crewSeated) {
+            des.UnassignTag(p.GetEntityID(), tag);
+            des.AssignTag(p.GetEntityID(), n"CB_Orphan");
+          }
+        }
+      } else {
+        p.cbOutOfFightTicks = 0;
+      }
+    }
+  }
+}
+
+@addField(ScriptedPuppet)
+public let cbOutOfFightTicks: Int32;
