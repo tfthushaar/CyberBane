@@ -237,6 +237,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // open a window for someone to walk in. Session-only.
   private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
+  private let m_factsProbed: Bool;            // the deed-fact probe has already run this session (not persisted)
   private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
   private let m_questPins: array<Vector4>;    // the tracked objective's map pins, refreshed every 3 ticks
   private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
@@ -760,7 +761,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     // is settled, so the engine is no longer mid-teardown on the entity being removed.
     if this.m_pendingRivalSweep {
       this.m_pendingRivalSweep = false;
-      CBDeleteTaggedSafe(game, n"CB_Rival", true);   // the living only; the body goes later
+      // The living only; the body goes later, and neither goes while V is watching.
+      CBDeleteTaggedSafe(game, n"CB_Rival", true, true);
     }
 
     // Did the player ask to start over? Same reasoning as the sweep above: this tick is
@@ -1810,6 +1812,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBSweepOrphans(game);   // whatever was left in a car seat or mid-spawn goes now it can
     CBSweepRemains(this, game);   // our dead and our spent cars, once V is far from them
     CBApexTick(this, game);
+    CBDeedFactTick(this, game);     // what V has finished, from the game's own quest facts
+    if !this.m_factsProbed {
+      this.m_factsProbed = true;
+      CBProbeDeedFacts(game);       // Verbose only: names the deeds still need (spike S-02)
+    }
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);
     CBRivalProgressionTick(this, game);

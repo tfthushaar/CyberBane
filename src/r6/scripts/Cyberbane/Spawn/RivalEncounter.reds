@@ -50,7 +50,7 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     //
     // Losing them now promotes them and buys real time before they find you again.
     CBRivalEscapedByPlayer(sys, game);
-    CBDeleteTaggedSafe(game, n"CB_Rival");
+    CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
     sys.SetActiveRivalId(0);
   }
 

@@ -681,7 +681,14 @@ public func CBUnmountOnce(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Vo
 //
 // `livingOnly` leaves bodies where they are. A body that has just fallen may still be ragdolling
 // in front of V; bodies are cleared by CBSweepRemains once V is well away from them.
-public func CBDeleteTaggedSafe(game: GameInstance, tag: CName, opt livingOnly: Bool) -> Int32 {
+// `unseenOnly` is for the endings a player is watching: somebody who broke off and ran, or who
+// was let go. Those used to be deleted the instant the escape resolved, which is the "he just
+// vanished in front of my eyes" report - the enemy really did run, and then the mod took the
+// body away while it was still on screen. With it set, anybody V can still see is handed to the
+// CB_Orphan sweep instead, which already removes only what is out of view (CBSweepOrphans), so
+// they finish running off and go once nobody is watching.
+public func CBDeleteTaggedSafe(game: GameInstance, tag: CName, opt livingOnly: Bool,
+                               opt unseenOnly: Bool) -> Int32 {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
     return 0;
@@ -698,7 +705,7 @@ public func CBDeleteTaggedSafe(game: GameInstance, tag: CName, opt livingOnly: B
       let body = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
       dead = IsDefined(body) && body.IsDead();
     }
-    if !dead && !CBRemoveOne(game, des, id, crewSeated) {
+    if !dead && !CBRemoveOne(game, des, id, crewSeated, unseenOnly) {
       kept += 1;
       if NotEquals(tag, n"Cyberbane") && NotEquals(tag, n"CB_Orphan") {
         des.UnassignTag(id, tag);
@@ -713,7 +720,8 @@ public func CBDeleteTaggedSafe(game: GameInstance, tag: CName, opt livingOnly: B
 }
 
 // Remove one entity if it is safe to; false if it was left for later.
-func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID, crewSeated: Bool) -> Bool {
+func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID, crewSeated: Bool,
+                 opt unseenOnly: Bool) -> Bool {
   if !EntityID.IsDefined(id) {
     return true;
   }
@@ -721,6 +729,10 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
     return false;
   }
   let ent = GameInstance.FindEntityByID(game, id);
+  // Asked to be discreet and V can still see them: leave them to the sweep.
+  if unseenOnly && IsDefined(ent) && !CBOutOfView(game, ent.GetWorldPosition()) {
+    return false;
+  }
   if IsDefined(ent as VehicleObject) {
     if crewSeated {
       return false;
@@ -1015,11 +1027,12 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   let ranFrom = sys.GetHuntFaction();
   let crewLost = CBLiveTaggedPresent(game, n"CB_Squad") || CBLiveTaggedPresent(game, n"CB_Apex");
   sys.ClearScout();
-  CBDeleteTaggedSafe(game, n"CB_Rival");
-  CBDeleteTaggedSafe(game, n"CB_Squad");
-  CBDeleteTaggedSafe(game, n"CB_Apex");
-  CBDeleteTaggedSafe(game, n"CB_Escort");
-  CBDeleteTaggedSafe(game, n"CB_Scout");
+  // V lost them, so they are allowed to be seen leaving rather than blinking out.
+  CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
+  CBDeleteTaggedSafe(game, n"CB_Squad", false, true);
+  CBDeleteTaggedSafe(game, n"CB_Apex", false, true);
+  CBDeleteTaggedSafe(game, n"CB_Escort", false, true);
+  CBDeleteTaggedSafe(game, n"CB_Scout", false, true);
   sys.SetHuntEnd("LOST THEM", CBConfig.HuntEndLineTicks());
   if crewLost && NotEquals(ranFrom, n"") {
     let fs = sys.FindFaction(ranFrom);

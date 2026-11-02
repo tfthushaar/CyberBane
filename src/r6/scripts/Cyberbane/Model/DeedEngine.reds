@@ -5,6 +5,69 @@
 // calls CBApplyDeedById when it detects completion; bootstrap applies past deeds
 // with `silent = true` (no messages). Generic gigs/hustles use their own helpers.
 
+// Deeds, fired from the game's own completion record (spec 7.2, spike S-02).
+//
+// This was blocked for most of the project's life and the reason recorded for it was wrong.
+// The note said `JournalManager.ChangeEntryState` is inherited from a class missing from the
+// Codeware dump; it is in fact declared on `JournalManager` itself
+// (core/systems/journalManager.script:424) and the real obstacle is that it is
+// `public import function` - a native, and redscript cannot wrap natives. So no amount of
+// work on that method was ever going to succeed.
+//
+// The game does not need to be hooked at all. It records what V has finished as quest facts
+// and reads them back the same way anywhere it cares - `GetFact( gi, 'q005_done' )` in
+// cyberpunk/managers/rpgManager.script:2465. `QuestsSystem.GetFact` is an ordinary readable
+// native (core/systems/questSystem.script:24), so the deeds just ask.
+//
+// Polling is safe here: `CBApplyDeed` already refuses a deed `sys.HasDeed` has recorded, so a
+// fact that stays set fires its deed exactly once, and a fact name that does not exist reads 0
+// for ever and simply never fires. That last part is why the unverified names below cost
+// nothing - the failure mode of a wrong guess is the behaviour this already had.
+public func CBDeedFactTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let content = CBContent(game);
+  let qs = GameInstance.GetQuestsSystem(game);
+  if !IsDefined(sys) || !IsDefined(content) || !IsDefined(qs) {
+    return;
+  }
+  // Held in a local: this getter returns the array by value, and indexing the call result
+  // directly reads out of a temporary that is gone by the end of the statement (the crash
+  // note on GetRumors in Model/RumorEngine.reds).
+  let deeds = content.GetDeeds();
+  let i = 0;
+  while i < ArraySize(deeds) {
+    let def = deeds[i];
+    i += 1;
+    if IsDefined(def) && NotEquals(def.fact, n"") && !sys.HasDeed(def.id) {
+      if qs.GetFact(def.fact) > 0 {
+        CBLog.Info(n"Model", s"Deed \(NameToString(def.id)) fired from fact \(NameToString(def.fact)).");
+        CBApplyDeed(sys, game, def, false);
+      }
+    }
+  }
+}
+
+// Print the candidate quest facts and what the game says they are, so the names the deeds still
+// need can be read off a real playthrough instead of guessed. Verbose only, once per session,
+// and it reads facts and nothing else.
+public func CBProbeDeedFacts(game: GameInstance) -> Void {
+  let qs = GameInstance.GetQuestsSystem(game);
+  // CBLog.Verbose gates on the configured level itself, so no extra check is needed here.
+  if !IsDefined(qs) {
+    return;
+  }
+  let names: array<CName> = [
+    n"q003_done", n"q005_done", n"q101_done", n"q110_done", n"q201_done", n"q202_done",
+    n"q203_done", n"q204_done", n"mq048_done", n"mq057_done", n"mq058_done", n"sq024_done",
+    n"sq027_done", n"sq028_done", n"sq030_done", n"q301_done", n"q302_done", n"q303_done",
+    n"courier_missions_done", n"prologue_sts_done", n"wat_sts_counter"
+  ];
+  let i = 0;
+  while i < ArraySize(names) {
+    CBLog.Verbose(n"Probe", s"fact \(NameToString(names[i])) = \(qs.GetFact(names[i]))");
+    i += 1;
+  }
+}
+
 public func CBApplyDeedById(sys: ref<CyberbaneSystem>, game: GameInstance, deedId: CName, silent: Bool) -> Void {
   let content = CBContent(game);
   if !IsDefined(content) {

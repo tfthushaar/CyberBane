@@ -309,6 +309,9 @@ Gangs warm to you for three reasons, and only the first involves anybody else's 
 Friendly gangs cut their prices on their own turf and warn you when their enemies send people
 after you. Hostile gangs send crews; Vendetta means they shoot on sight as well.
 
+Big jobs count too. Finishing one of the city's larger stories shifts how the gangs involved
+see you, which is why the Heist costs you Arasaka for a long time afterwards.
+
 ### Playing without the messages
 
 If you like the mechanics but would rather not be told what is coming, set **Where messages go**

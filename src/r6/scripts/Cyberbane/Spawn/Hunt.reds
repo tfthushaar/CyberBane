@@ -713,6 +713,11 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
   CBReleaseTag(sys, game, des, player, n"CB_Squad");
   CBReleaseTag(sys, game, des, player, n"CB_Escort");
   CBReleaseTag(sys, game, des, player, n"CB_Scout");
+  // Anyone handed to the orphan sweep because they were still in view when their encounter
+  // ended is still alive and may still be in combat with V, and the sweep only runs on the slow
+  // tick. Without this they could hold V in combat in the meantime, which is the 1.5.3 report
+  // arriving by a new road.
+  CBReleaseTag(sys, game, des, player, n"CB_Orphan");
 }
 
 func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,

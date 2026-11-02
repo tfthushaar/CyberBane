@@ -1,14 +1,31 @@
 // Cyberbane - Deed catalogue seed (spec Appendix F)
 //
-// requiredState: 0 = Succeeded, 1 = Failed, 2 = Any-finished. Journal paths and
-// outcome facts are filled in during spike S-02; the deed effects (Renown, Dread,
-// faction standing, rumor, titles) are complete here and apply once the journal
-// signal detects completion. Generic gigs/hustles are handled by their own path.
+// requiredState: 0 = Succeeded, 1 = Failed, 2 = Any-finished. The deed effects (Renown, Dread,
+// faction standing, rumor, titles) have always been complete here; what was missing was anything
+// to fire them. Generic gigs/hustles are handled by their own path (CBApplyHustle).
+//
+// `d.fact` is the game's own record that this happened, read with QuestsSystem.GetFact on the
+// slow tick (Model/DeedEngine.reds, CBDeedFactTick). The convention is `<questid>_done` and is
+// confirmed by the shipped scripts, which contain q005_done, q101_done, q201_done..q204_done,
+// mq048_done, mq057_done, mq058_done, sq024_done and q001_ripperdoc_done.
+//
+// Only the ones whose exact fact name appears in the game's own source are wired. A wrong name
+// reads 0 for ever and the deed simply never fires, so a guess cannot break anything - but it
+// also cannot be told apart from the bug this is fixing, which is the whole reason the rest are
+// left empty rather than filled in optimistically. To confirm the others: set Mod Settings >
+// Cyberbane > Debug > Log level to Verbose, finish the job, and CBProbeDeedFacts prints the
+// candidates and their values.
+//
+// Deliberately NOT guessed: DEED_PICKUP_DEAL and DEED_PICKUP_ROYCE are opposite endings of the
+// same quest (q003), so a single `q003_done` would fire the wrong one half the time. Those two
+// need the branch fact, not the quest fact.
 
 public func CBSeedDeeds(c: ref<CyberbaneContent>) -> Void {
   let d: ref<CBDeedDef>;
 
   d = CBMakeDeed(n"DEED_HEIST", 0, 150.0, 40.0, n"CityCenter", 30.0);
+  // Verified: cyberpunk/managers/rpgManager.script:2465 reads GetFact( gi, 'q005_done' ).
+  d.fact = n"q005_done";
   d.AddFactionEffect(n"Arasaka", -60.0, 10.0);
   d.AddTitle(n"T_KONPEKI_GHOST");
   c.AddDeed(d);

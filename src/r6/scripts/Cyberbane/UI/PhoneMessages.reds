@@ -176,6 +176,11 @@ public class CBPhone {
   private let m_focusedHash: Int32;
 
   // Waiting for a settled tick to be delivered.
+  // When a notification was last put on screen, and what it said, so the phone neither repeats
+  // itself nor rings continuously (Config.PhoneNotifyGapSeconds / PhoneRepeatGuardSeconds).
+  private let m_lastNotifyAt: Float;
+  private let m_lastNotifyBody: String;
+  private let m_lastNotifyThread: Int32;
   private let m_pendThread: array<Int32>;
   private let m_pendBody: array<String>;
   private let m_pendAccent: array<HDRColor>;
@@ -718,6 +723,10 @@ public class CBPhone {
     }
     let usePhone = CBRealPhoneOn() && IsDefined(this.m_phoneCtrl);
     let sound = CBPhoneSoundOn();
+    // Real seconds, for the two guards below. The simulation clock is the one the cards age on,
+    // so the phone and the cards agree about what "a moment ago" means.
+    let tsNow = GameInstance.GetTimeSystem(game);
+    let nowReal = IsDefined(tsNow) ? EngineTime.ToFloat(tsNow.GetSimTime()) : 0.0;
     let k = 0;
     while k < ArraySize(this.m_pendBody) {
       let thread = this.m_pendThread[k];
@@ -728,6 +737,22 @@ public class CBPhone {
       }
       // The phone, when there is one to hand it to and the message has a thread to open.
       // Anything else falls back to a card rather than being lost.
+      // Is this one allowed to announce itself?
+      //
+      // Either guard only suppresses the notification. The line is already filed in its thread
+      // (Send -> File) and the thread is already marked unread, so nothing is lost: the player
+      // sees it on the contact the next time they look at their phone.
+      let repeat = Equals(body, this.m_lastNotifyBody) && thread == this.m_lastNotifyThread
+                && nowReal > 0.0 && this.m_lastNotifyAt > 0.0
+                && (nowReal - this.m_lastNotifyAt) < CBConfig.PhoneRepeatGuardSeconds();
+      let tooSoon = nowReal > 0.0 && this.m_lastNotifyAt > 0.0
+                 && (nowReal - this.m_lastNotifyAt) < CBConfig.PhoneNotifyGapSeconds();
+      let announce = !repeat && !tooSoon;
+      if announce {
+        this.m_lastNotifyAt = nowReal;
+        this.m_lastNotifyBody = body;
+        this.m_lastNotifyThread = thread;
+      }
       if usePhone && thread >= 0 {
         let hash = CBPhoneThreadHash(thread);
         // One of ours is open in the phone right now: draw the new line straight into it,
@@ -741,9 +766,14 @@ public class CBPhone {
           }
           dialog.CBQueueRedraw(true);   // drawn on the panel's own frame
         }
-        this.m_phoneCtrl.CBDeliverThread(hash, sender, body, sound);
+        // A thread V is reading is redrawn either way; only the notification is held back.
+        if announce || shownNow {
+          this.m_phoneCtrl.CBDeliverThread(hash, sender, body, sound);
+        }
       } else {
-        this.ShowCard(game, sender, body, this.m_pendAccent[k], sound);
+        if announce {
+          this.ShowCard(game, sender, body, this.m_pendAccent[k], sound);
+        }
       }
       k += 1;
     }

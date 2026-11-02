@@ -389,7 +389,8 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       }
     }
     sys.SetActiveRivalId(0);
-    CBDeleteTaggedSafe(game, n"CB_Rival");
+    // They got away, so let them be seen getting away.
+    CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
     return;
   }
 

@@ -59,6 +59,35 @@ ran through somebody else's body. It no longer has to.
 - **Letting a name walk is worth more.** Spare a Rival of theirs and their gang hears that you
   had one of their own cold and let them go.
 
+### From player reports
+- **Your phone is no longer relentless.** Cyberbane has a sender per gang, a broker per district
+  and a few unknown numbers, so a busy few minutes really could ring over and over. Notifications
+  are now spaced out, and a message that arrives while the phone is still busy is filed in its
+  thread and marks the contact unread without putting anything on screen. Nothing is lost - it is
+  waiting on the contact when you next look.
+- **One notification per message.** A message identical to the last one from the same contact
+  within a few seconds is now announced once.
+- **Nobody vanishes in front of you any more.** This is the one that mattered. When somebody
+  broke off and ran, or was let go, they were removed the instant the escape resolved - so an
+  enemy who really did flee was taken off the screen while you were still watching them go.
+  Everyone whose encounter ends while you can see them now stays until you cannot, and leaves
+  then. The low-health flee you suggested was already in the mod; this is what was hiding it.
+- Anybody held back that way can still be let out of a fight with you, so they cannot keep you
+  in combat while they wait to be removed.
+
+### Deeds finally fire
+- **Finishing a big job now changes what gangs think of you.** The deeds have had their effects
+  written since early development - the Heist costing you Arasaka, Panam's people and the Mox and
+  the NCPD thinking better of you - and nothing ever triggered them. The reason recorded for it
+  was also wrong: the method the mod was trying to hook is native, and native functions cannot be
+  hooked at all, so no amount of work on it would ever have succeeded. The game records what you
+  have finished as quest facts and reads them back that way itself, so Cyberbane just asks.
+- **The Heist is live**, because its fact name appears in the game's own scripts. The rest are
+  left switched off rather than guessed: a wrong name silently never fires, which is
+  indistinguishable from the bug being fixed here. With Debug > Log level on Verbose the mod now
+  prints the candidate names and their values, so the remaining ones can be confirmed from one
+  playthrough and switched on in the next release.
+
 ### Fixed
 - **Rumours checked end to end.** Word still spreads the way it is meant to: a notable thing
   creates a rumour where it happened, it reaches neighbouring districts every six in-game hours

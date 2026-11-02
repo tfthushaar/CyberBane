@@ -144,6 +144,9 @@ public class CBDeedDef {
   public let id: CName;
   public let requiredState: Int32;   // 0 Succeeded, 1 Failed, 2 Any-finished
   public let journalPath: String;
+  // The game's own record that this happened: a quest fact, read with
+  // QuestsSystem.GetFact. Empty means nothing can fire this deed yet.
+  public let fact: CName;
   public let renown: Float;
   public let dread: Float;
   public let district: CName;

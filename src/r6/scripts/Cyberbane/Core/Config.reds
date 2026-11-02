@@ -433,6 +433,17 @@ public abstract class CBConfig {
   public static func PhoneMessageCap() -> Int32 = 240
   // How much of one thread the phone draws. A thread longer than this shows its newest lines.
   public static func PhoneThreadShown() -> Int32 = 30
+  // The quietest the phone is allowed to be busy. A player on 1.4.7 reported it "constantly
+  // blowing up", and the mod has a sender per gang, a broker per district and a few unknown
+  // numbers, so a busy few minutes really can ring repeatedly. Messages are always filed in
+  // their thread and always mark it unread; this only limits how often one of them is allowed
+  // to put a notification on screen, in real seconds.
+  public static func PhoneNotifyGapSeconds() -> Float = 9.0
+  // A message identical to the last one from the same contact, within this long, is the same
+  // message arriving twice - the second one is filed but never announced. ("Pretty sure I'm
+  // getting more than one notification per message.")
+  public static func PhoneRepeatGuardSeconds() -> Float = 12.0
+
   // Messages waiting for a settled tick. More than this in one go is a burst, and the newest
   // are the ones worth a notification; the rest are still filed in their threads.
   public static func PhonePendingCap() -> Int32 = 6
