@@ -754,7 +754,7 @@ func CBAnyCrewSeated(game: GameInstance, des: ref<DynamicEntitySystem>) -> Bool 
   return false;
 }
 
-// Slow tick: clear whatever was left behind once it can be removed safely.
+// Slow tick: clear whatever was left behind once it can be removed safely, out of V's sight.
 public func CBSweepOrphans(game: GameInstance) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !des.IsPopulated(n"CB_Orphan") || !CBWorldStable(game) {
@@ -764,9 +764,27 @@ public func CBSweepOrphans(game: GameInstance) -> Void {
   let ids = des.GetTaggedIDs(n"CB_Orphan");
   let i = 0;
   while i < ArraySize(ids) {
-    CBRemoveOne(game, des, ids[i], crewSeated);
+    let ent = GameInstance.FindEntityByID(game, ids[i]);
+    if !IsDefined(ent) || CBOutOfView(game, ent.GetWorldPosition()) {
+      CBRemoveOne(game, des, ids[i], crewSeated);
+    }
     i += 1;
   }
+}
+
+// Could V see something vanish here? Out of view means behind V, round the side, blocked by a
+// wall, or simply a long way off. Every removal that can happen near V checks this, so nobody and
+// nothing disappears in front of the player.
+public func CBOutOfView(game: GameInstance, at: Vector4) -> Bool {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return true;
+  }
+  let ppos = player.GetWorldPosition();
+  if Vector4.Distance(ppos, at) >= CBConfig.VanishSafeDistance() {
+    return true;
+  }
+  return CBPointOutOfSight(game, ppos, player.GetWorldForward(), at);
 }
 
 // Finish setting up one of our own, once the engine has actually built it.
@@ -1112,7 +1130,8 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     let id = dead[i];
     i += 1;
     let ent = GameInstance.FindEntityByID(game, id);
-    let far = !IsDefined(ent) || Vector4.Distance(ent.GetWorldPosition(), ppos) > reach;
+    let far = !IsDefined(ent)
+              || Vector4.Distance(ent.GetWorldPosition(), ppos) > reach && CBOutOfView(game, ent.GetWorldPosition());
     if far && !des.IsSpawning(id) && !VehicleComponent.IsMountedToVehicle(game, id) {
       let p = ent as ScriptedPuppet;
       if IsDefined(p) {
@@ -1134,7 +1153,8 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     let carId = cars[c];
     c += 1;
     let car = GameInstance.FindEntityByID(game, carId);
-    let farCar = !IsDefined(car) || Vector4.Distance(car.GetWorldPosition(), ppos) > reach;
+    let farCar = !IsDefined(car)
+                 || Vector4.Distance(car.GetWorldPosition(), ppos) > reach && CBOutOfView(game, car.GetWorldPosition());
     if farCar && !des.IsSpawning(carId) && !Equals(carId, sys.GetArrivalCarId()) {
       CBTrace("remove: a spent car of ours");
       des.DeleteEntity(carId);

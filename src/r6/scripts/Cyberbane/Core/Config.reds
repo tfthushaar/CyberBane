@@ -750,7 +750,12 @@ public abstract class CBConfig {
   // The most of Cyberbane's people alive in the world at once (Spawn/Spawner.reds, CBSpawnGroup).
   public static func MaxLiveSpawns() -> Int32 = 18
   // Within this many metres of the tracked objective's map pins, V is on a job (Core/SafeAreas.reds).
-  public static func QuestAreaRadius() -> Float = 120.0
+  public static func QuestAreaRadius() -> Float = 80.0
+  // Nobody is placed, and no NPC is pushed, within this many metres of a tracked objective's pin,
+  // wherever V is standing (Core/SafeAreas.reds).
+  public static func QuestSpawnClearance() -> Float = 60.0
+  // Removals happen out of V's sight, or beyond this distance (Spawn/Spawner.reds, CBOutOfView).
+  public static func VanishSafeDistance() -> Float = 150.0
   // One of ours in combat with V but farther than this and out of sight for this many seconds is
   // let go, so the fight can end (Spawn/Hunt.reds, CBCombatReleaseTick).
   public static func CombatReleaseDistance() -> Float = 45.0

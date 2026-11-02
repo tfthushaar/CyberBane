@@ -457,6 +457,11 @@ public func CBApexTerrorWave(game: GameInstance) -> Void {
   if intensity <= 0.0 {
     return;
   }
+  // Not when the wave would reach the job V is tracking: it would scatter that job's people.
+  let sysWave = CyberbaneSystem.Get(game);
+  if IsDefined(sysWave) && sysWave.NearQuestPins(player.GetWorldPosition(), CBConfig.ApexTerrorRadius() * intensity) {
+    return;
+  }
   StimBroadcasterComponent.BroadcastStim(player, gamedataStimType.Terror,
                                          CBConfig.ApexTerrorRadius() * intensity);
   CBLog.Info(n"Spawn", "Apex squad arrival: terror wave sent.");

@@ -238,6 +238,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
   private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
+  private let m_questPins: array<Vector4>;    // the tracked objective's map pins, refreshed every 3 ticks
   private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
 
@@ -777,6 +778,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // clinic in well under ten seconds, and the reaction systems read this.
     this.m_inSafeZone = CBPlayerInSafeZone(game);
     if this.m_tickCount % 3 == 0 {
+      CBRefreshQuestPins(this, game);
       this.m_inQuestArea = CBComputeQuestArea(game);
     }
     CBSafeZoneArmsTick(this, game);     // keep the weapon lock lifted in safe areas when asked
@@ -1723,6 +1725,22 @@ public class CyberbaneSystem extends ScriptableSystem {
   // On a job, in a scene, or in a restricted or dangerous zone, when "Stay out of quest areas" is on.
   public func IsInQuestArea() -> Bool {
     return this.m_inQuestArea;
+  }
+
+  public func SetQuestPins(pins: array<Vector4>) -> Void {
+    this.m_questPins = pins;
+  }
+
+  // Is this point within `radius` of any of the tracked objective's pins?
+  public func NearQuestPins(at: Vector4, radius: Float) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_questPins) {
+      if Vector4.Distance(this.m_questPins[i], at) <= radius {
+        return true;
+      }
+      i += 1;
+    }
+    return false;
   }
 
   public func IsSafeArmsApplied() -> Bool {

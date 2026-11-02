@@ -34,6 +34,12 @@ public abstract class CBSafetyGate {
     if puppet.cbAuthoredState == 1 {
       return false;
     }
+    // Standing at the job V is tracking: part of somebody else's story, whoever they are. This
+    // covers crowd fear, morale, fleeing and hostility on sight alike, wherever V is.
+    let sysGate = CyberbaneSystem.Get(puppet.GetGame());
+    if IsDefined(sysGate) && sysGate.NearQuestPins(puppet.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
+      return false;
+    }
     if puppet.IsPlayerCompanion() {
       return false;   // never touch companions / crew (spec §16.1)
     }

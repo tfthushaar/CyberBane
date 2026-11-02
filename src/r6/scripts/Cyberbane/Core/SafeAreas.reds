@@ -176,31 +176,45 @@ public func CBComputeQuestArea(game: GameInstance) -> Bool {
   if CBPlayerInScene(game) || CBPlayerInHostileZone(game) {
     return true;
   }
-  return CBNearTrackedObjective(game, CBConfig.QuestAreaRadius());
+  let sys = CyberbaneSystem.Get(game);
+  let player = GetPlayer(game);
+  return IsDefined(sys) && IsDefined(player)
+      && sys.NearQuestPins(player.GetWorldPosition(), CBQuestAreaRadius());
 }
 
-public func CBNearTrackedObjective(game: GameInstance, radius: Float) -> Bool {
-  let player = GetPlayer(game);
+// The player's chosen size of a quest area, in metres.
+public func CBQuestAreaRadius() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return CBConfig.QuestAreaRadius();
+  }
+  return ClampF(Cast<Float>(rt.GetSettings().questAreaRadius), 40.0, 150.0);
+}
+
+// The tracked objective's map pins, read the way the game's own world map reads them
+// (MappinSystem.GetQuestMappinPositionsByObjective, worldMap.script), and kept on the system so
+// every check that needs them (V's position, spawn points, NPCs, search points) uses one copy.
+// Empty when "Stay out of quest areas" is off or nothing is tracked.
+public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let pins: array<Vector4>;
+  let rtQ = CyberbaneRuntime.Get();
+  let respect = !IsDefined(rtQ) || !rtQ.HasSettings() || rtQ.GetSettings().respectQuestAreas;
   let journal = GameInstance.GetJournalManager(game);
   let ms = GameInstance.GetMappinSystem(game);
-  if !IsDefined(player) || !IsDefined(journal) || !IsDefined(ms) {
-    return false;
-  }
-  let tracked = journal.GetTrackedEntry() as JournalQuestObjectiveBase;
-  if !IsDefined(tracked) {
-    return false;
-  }
-  let positions: array<Vector3>;
-  if !ms.GetQuestMappinPositionsByObjective(Cast<Uint32>(journal.GetEntryHash(tracked)), positions) {
-    return false;
-  }
-  let ppos = player.GetWorldPosition();
-  for p in positions {
-    if Vector4.Distance(Vector4.Vector3To4(p), ppos) <= radius {
-      return true;
+  if IsDefined(sys) && respect && IsDefined(journal) && IsDefined(ms) {
+    let tracked = journal.GetTrackedEntry() as JournalQuestObjectiveBase;
+    if IsDefined(tracked) {
+      let positions: array<Vector3>;
+      if ms.GetQuestMappinPositionsByObjective(Cast<Uint32>(journal.GetEntryHash(tracked)), positions) {
+        for p in positions {
+          ArrayPush(pins, Vector4.Vector3To4(p));
+        }
+      }
     }
   }
-  return false;
+  if IsDefined(sys) {
+    sys.SetQuestPins(pins);
+  }
 }
 
 // Can anybody arrive right now? Not in a safe area (unless allowed), not on a job, not in a scene.
@@ -324,6 +338,13 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   // it is the same question.
   // On a job, or in a restricted or dangerous zone, when V asked Cyberbane to stay out of them.
   if CBPlayerInQuestArea(game) {
+    CBNoteSpawnBlock(CBBlockQuestArea());
+    return true;
+  }
+  // And never placed at the job itself, wherever V is standing. Checking only V's position let a
+  // crew be placed inside the job area while V stood just outside it.
+  let sysQ = CyberbaneSystem.Get(game);
+  if IsDefined(sysQ) && sysQ.NearQuestPins(at, CBConfig.QuestSpawnClearance()) {
     CBNoteSpawnBlock(CBBlockQuestArea());
     return true;
   }

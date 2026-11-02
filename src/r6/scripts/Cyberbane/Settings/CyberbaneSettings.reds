@@ -512,6 +512,15 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-QuestAreaRadius")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-QuestAreaRadius-Desc")
+  @runtimeProperty("ModSettings.min", "40")
+  @runtimeProperty("ModSettings.max", "150")
+  @runtimeProperty("ModSettings.step", "10")
+  public let questAreaRadius: Int32 = 80;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SafeZoneCombat")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SafeZoneCombat-Desc")
   public let allowSafeZoneCombat: Bool = false;

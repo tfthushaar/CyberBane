@@ -101,9 +101,19 @@ public func CBHuntSearchPoint(sys: ref<CyberbaneSystem>) -> Vector4 {
   let looked = Cast<Float>(sys.GetTickCount() - sys.GetHuntSearchStartTick());
   let t = ClampF(looked / Cast<Float>(CBConfig.HuntNarrowTicks()), 0.0, 1.0);
   let r = CBConfig.HuntSearchRadiusStart() + (CBConfig.HuntSearchRadiusMin() - CBConfig.HuntSearchRadiusStart()) * t;
-  let ang = RandRangeF(0.0, 6.2831);
-  let d = RandRangeF(r * 0.25, r);
-  return new Vector4(lkp.X + CosF(ang) * d, lkp.Y + SinF(ang) * d, lkp.Z, 1.0);
+  // A few tries for a point that is not at a job site; searchers are never sent into one.
+  let pick = lkp;
+  let tries = 0;
+  while tries < 4 {
+    let ang = RandRangeF(0.0, 6.2831);
+    let d = RandRangeF(r * 0.25, r);
+    pick = new Vector4(lkp.X + CosF(ang) * d, lkp.Y + SinF(ang) * d, lkp.Z, 1.0);
+    if !sys.NearQuestPins(pick, CBConfig.QuestSpawnClearance()) {
+      return pick;
+    }
+    tries += 1;
+  }
+  return pick;
 }
 
 // Walk somewhere and look around. A position rather than V, at a run rather than a sprint, and
@@ -214,7 +224,8 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let driving = IsDefined(player.GetMountedVehicle());
     let leftArea = driving && NotEquals(sys.GetSearchDistrict(), n"")
                    && NotEquals(sys.GetCurrentDistrict(), sys.GetSearchDistrict());
-    if sys.IsInSafeZone() || leftArea {
+    // A job counts as somewhere safe for this: they lose interest faster, and they do not follow.
+    if sys.IsInSafeZone() || sys.IsInQuestArea() || leftArea {
       sys.SetHuntLastSeenTick(sys.GetHuntLastSeenTick() - 1);
     }
     let unseen = now - sys.GetHuntLastSeenTick();
@@ -237,7 +248,8 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // Orders, a few at a time. Searching hunters get a fresh point every so often; located hunters
   // are kept coming while they are not already on V.
   let every = sys.GetHuntState() == CBHuntLocated() ? CBConfig.ChaseRefreshEveryTicks() : CBConfig.HuntSearchOrderTicks();
-  if now % every == 0 {
+  // No search orders while V is on a job: they hold where they are rather than walk into it.
+  if now % every == 0 && !(sys.IsInQuestArea() && sys.GetHuntState() != CBHuntLocated()) {
     let done = 0;
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Rival", done);
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Apex", done);
@@ -714,7 +726,7 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
     i += 1;
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
       let far = Vector4.Distance(p.GetWorldPosition(), ppos) > CBConfig.CombatReleaseDistance();
-      if CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) {
+      if CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) && CBOutOfView(game, p.GetWorldPosition()) {
         p.cbOutOfFightTicks += 2;
         if p.cbOutOfFightTicks >= CBConfig.CombatReleaseTicks() {
           CBLog.Info(n"Spawn", "One of ours was keeping you in combat from too far away; letting them go.");

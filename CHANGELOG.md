@@ -23,9 +23,19 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   with Stay out of quest areas on, nothing happens on a job.
 - **Stay out of quest areas did almost nothing.** The quest-area test was never called, so the
   switch only kept arrivals out of restricted and dangerous zones. It now covers being on a job,
-  worked out the way the game's world map places the job: within reach of the tracked
-  objective's map pins. Nobody arrives, nobody is called in by a lookout, and nobody is turned
-  hostile while you are on one. Scenes and conversations count too.
+  worked out the way the game's world map places the job: within 80 metres of the tracked
+  objective's map pins (adjustable from 40 to 150 with the new **Quest area size** setting).
+  Nobody arrives, nobody is called in by a lookout, and nobody is turned hostile while you are on
+  one. Scenes and conversations count too.
+- **The job site itself is protected, wherever you stand.** Only your own position was checked,
+  so a crew could still be placed at the job while you stood just outside it. Nobody is placed
+  within 60 metres of the job's pins, nobody standing there is pushed by crowd fear, morale or
+  hostility, searchers are never sent into it, hunters already out stop following you onto it,
+  a car crew stays in the car rather than getting out there, and an apex squad's arrival scare
+  does not reach it. Anybody Cyberbane had already turned hostile who is standing at the job goes
+  back to how the game had them.
+- **Nothing vanishes in front of you.** Bodies, spent cars, leftovers and anyone let go to end a
+  fight are only removed when you cannot see them.
 - **Let me fight in safe areas did not work.** It lifted the game's weapon lock once, at the
   moment you walked in, and the game puts the lock back every time the area updates. It also
   missed loading a save inside a safe area and turning the setting on while already inside. It
