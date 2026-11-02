@@ -75,6 +75,22 @@ enum ECBPacing {
 // What the HUD line at the top of the screen shows. Everything is the full story: tracked, on
 // their way, searching, spotted, found, and how it ended. Hunts only drops TRACKED and the ending.
 // Off hides the line.
+// Where the Hub is drawn.
+//
+// Menu puts it on inkMenuLayer, which is the layer the game's own menus use (60 references in
+// the shipped scripts, against none for inkHUDLayer). It is flat, it has a cursor, and the game
+// treats it as an open menu, so Escape closes it. Overlay is the old behaviour: drawn on the
+// gameplay HUD layer, which curves with the rest of the heads-up display and takes no input.
+//
+// 1.3.4 tried the menu layer and reverted it because the game treated the Hub as an open menu
+// and Escape drove it. That was the objection when the Hub was meant to be a glance at a readout
+// while playing. Asked for as a menu, it is the behaviour wanted, so the objection is gone - but
+// the path is the one that was backed out of once, which is why Overlay is kept as a way back.
+enum ECBHubStyle {
+  Menu = 0,
+  Overlay = 1,
+}
+
 enum ECBHudLine {
   Everything = 0,
   HuntsOnly = 1,
@@ -375,6 +391,12 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.max", "400")
   @runtimeProperty("ModSettings.step", "25")
   public let messageHold: Int32 = 175;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubStyle")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubStyle-Desc")
+  public let hubStyle: ECBHubStyle = ECBHubStyle.Menu;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

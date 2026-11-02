@@ -209,6 +209,11 @@ public class CBThreatBar {
     // The hunt line first, since it shows while they are still on their way and nobody is on
     // the stack yet.
     let line = CBHuntStatusLine(sys, game);
+    // Nobody is after V: the same line says where V stands here instead. One widget doing two
+    // jobs rather than two widgets, which is what keeps the screen quiet (Spawn/Hunt.reds).
+    if StrLen(line) == 0 {
+      line = CBDistrictStatusLine(sys, game);
+    }
     if StrLen(line) > 0 || IsDefined(this.m_status) {
       if this.EnsureBuilt() && IsDefined(this.m_status) {
         // One line, never wider than the screen: the parts are kept short where they are built

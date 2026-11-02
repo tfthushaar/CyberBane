@@ -362,6 +362,52 @@ func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
 }
 
+// Where V stands in the district they are standing in, for the HUD.
+//
+// This goes in the hunt line's own widget rather than next to it. The hunt line is empty most of
+// the time - nobody is hunting V for most of a session - so the space is already there, already
+// positioned, already length-limited, and already respects the one setting that governs it. A
+// second widget would have been one more thing on screen to read, which is the opposite of what
+// was asked for.
+//
+// It reads as the street would put it rather than as a number first: the district, then how well
+// known V is there, with the figure in brackets for anybody who wants it.
+public func CBDistrictStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
+  // Only on Everything. HuntsOnly means what it says, and Off means nothing at all.
+  if !IsDefined(sys) || !Equals(CBHudLineMode(), ECBHudLine.Everything) {
+    return "";
+  }
+  let id = sys.GetCurrentDistrict();
+  if Equals(id, n"") {
+    return "";
+  }
+  let label = CBDistrictLabel(id);
+  if StrLen(label) == 0 {
+    label = NameToString(id);
+  }
+  // FindDistrict rather than EnsureDistrict: a render path must never create state, and a
+  // district V has done nothing in has no record yet, which is itself the answer.
+  let ds = sys.FindDistrict(id);
+  let renown = IsDefined(ds) ? ds.renown : 0.0;
+  let word = "UNKNOWN HERE";
+  if renown >= 75.0 {
+    word = "A NAME HERE";
+  } else {
+    if renown >= 40.0 {
+      word = "KNOWN HERE";
+    } else {
+      if renown >= 15.0 {
+        word = "TALKED ABOUT HERE";
+      }
+    }
+  }
+  if renown < 1.0 {
+    return StrUpper(CBClip(label, CBConfig.HudNameMaxChars())) + "   -   " + word;
+  }
+  return StrUpper(CBClip(label, CBConfig.HudNameMaxChars())) + "   -   " + word
+       + s"  (\(RoundF(renown)))";
+}
+
 // One line for the HUD while a hunt is on, the way the game shows that the police are after you.
 // Empty when nobody is.
 public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {

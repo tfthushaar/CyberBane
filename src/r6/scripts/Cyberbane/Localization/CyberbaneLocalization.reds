@@ -116,6 +116,12 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Enabled", "Enabled");
     this.Text("Cyberbane-Settings-Enabled-Desc", "Turns Cyberbane on or off. Off stops every reaction and reverts temporary changes; your reputation is kept.");
     this.Text("Cyberbane-Settings-Preset", "Preset");
+    this.Text("Cyberbane-Settings-HubStyle", "Hub style");
+    this.Text("Cyberbane-Settings-HubStyle-Desc", "Menu draws the Hub on the layer the game's own "
+      + "menus use: flat rather than curved, with a mouse cursor, and Escape closes it like any "
+      + "other screen. Overlay is the old behaviour, drawn over the gameplay heads-up display, "
+      + "which curves with the rest of it and takes no mouse input. If the Hub stops opening, or "
+      + "your Escape key starts behaving oddly, switch to Overlay and it goes back at once.");
     this.Text("Cyberbane-Settings-MessageDelivery", "Where messages go");
     this.Text("Cyberbane-Settings-PhoneSound", "Message tone");
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");

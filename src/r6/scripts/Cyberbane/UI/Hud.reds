@@ -331,6 +331,7 @@ public class CBHud {
   // Tab chips: one background and one label per tab, so the open tab is something you can
   // see rather than a word in a sentence.
   private let m_chipBg: array<ref<inkRectangle>>;
+  private let m_chipHit: array<ref<inkRectangle>>;
   private let m_chipText: array<ref<inkText>>;
   // Meters: label, value, track, fill and caption per score on the Legend screen.
   private let m_barLabel: array<ref<inkText>>;
@@ -349,6 +350,8 @@ public class CBHud {
   private let m_rowCell: array<ref<inkText>>;
   // Which screen's column positions the cells are currently carrying, so a render only moves
   // them when the screen has actually changed.
+  // The layer the current widget tree was built against, so a change of setting rebuilds it.
+  private let m_layer: CName;
   private let m_rowGangs: Bool;
   private let m_rowPlaced: Bool;
   // Whether arrivals are currently being held back because V is in the middle of a quiet job.
@@ -389,7 +392,16 @@ public class CBHud {
     }
   }
 
-  // inkHUDLayer, and that is now a settled question rather than a guess.
+  // Which layer the Hub is drawn on, and the name of it, from the setting.
+  public func CBHubLayerName() -> CName {
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) && rt.HasSettings() && Equals(rt.GetSettings().hubStyle, ECBHubStyle.Overlay) {
+      return n"inkHUDLayer";
+    }
+    return n"inkMenuLayer";
+  }
+
+  // inkHUDLayer was a settled question for a long time, and is now a setting.
   //
   // Three layers were tried. inkMenuLayer (1.3.4) is flat but makes the game treat the Hub as
   // an open menu, so Escape drove it. inkGameNotificationLayer (1.3.5) has no virtual window
@@ -407,7 +419,48 @@ public class CBHud {
     if !IsDefined(ink) {
       return false;
     }
-    let layer = ink.GetLayer(n"inkHUDLayer");
+    // Built against one layer and the player has since asked for the other: tear the old tree
+    // down first, or the Hub exists twice and the key toggles the invisible one. The widget goes
+    // with its parent window, so dropping the handles is the whole of it.
+    let want = this.CBHubLayerName();
+    if this.m_built && NotEquals(want, this.m_layer) {
+      // Hand the callbacks back before the widgets they are on are destroyed. Leaving a
+      // registration pointing at a widget that is being torn down is the shape of the 1.4.7
+      // phone crash (crash rule 9), and it costs one loop to not find out again.
+      let c = 0;
+      while c < ArraySize(this.m_chipHit) {
+        if IsDefined(this.m_chipHit[c]) {
+          if c == 0 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip0"); }
+          if c == 1 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip1"); }
+          if c == 2 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip2"); }
+          if c == 3 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip3"); }
+          if c == 4 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip4"); }
+          if c == 5 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip5"); }
+          this.m_chipHit[c].SetInteractive(false);
+        }
+        c += 1;
+      }
+      if IsDefined(this.m_root) {
+        this.m_root.SetVisible(false);
+        this.m_root.RemoveAllChildren();
+      }
+      this.m_root = null;
+      this.m_panel = null;
+      this.m_built = false;
+      ArrayClear(this.m_chipBg);
+      ArrayClear(this.m_chipHit);
+      ArrayClear(this.m_chipText);
+      ArrayClear(this.m_barLabel);
+      ArrayClear(this.m_barValue);
+      ArrayClear(this.m_barTrack);
+      ArrayClear(this.m_barFill);
+      ArrayClear(this.m_barCap);
+      ArrayClear(this.m_rowBg);
+      ArrayClear(this.m_rowPip);
+      ArrayClear(this.m_rowCell);
+      this.m_rowPlaced = false;
+    }
+    let layer = ink.GetLayer(want);
     if !IsDefined(layer) {
       return false;
     }
@@ -416,6 +469,7 @@ public class CBHud {
       return false;
     }
     this.Build(win);
+    this.m_layer = want;
     return this.m_built;
   }
 
@@ -488,6 +542,33 @@ public class CBHud {
       under.SetMargin(new inkMargin(cx + 20.0, 96.0, 0.0, 0.0));
       under.Reparent(panel);
       ArrayPush(this.m_chipBg, under);
+
+      // Something to click on.
+      //
+      // A transparent rectangle over the tab rather than the label itself, so the whole chip is
+      // the target and the text stays a plain text widget. It only does anything on the menu
+      // layer, which is the one with a cursor; on the overlay layer nothing is delivered to it
+      // and the key still steps through the tabs as before.
+      //
+      // One handler per chip, because the event carries no target: inkPointerEvent is
+      // `importonly final` and exposes only position, and inkInputEvent above it offers
+      // IsAction and the modifier keys but nothing to say which widget was hit
+      // (core/ui/events.script:22-49). Six small methods is the honest way to do it.
+      let hit = new inkRectangle();
+      hit.SetAnchor(inkEAnchor.TopLeft);
+      hit.SetSize(new Vector2(CBHudChipWidth(), 48.0));
+      hit.SetMargin(new inkMargin(cx, 54.0, 0.0, 0.0));
+      hit.SetTintColor(new HDRColor(0.0, 0.0, 0.0, 0.0));
+      hit.SetOpacity(0.01);          // fully clear still receives the cursor; zero does not
+      hit.SetInteractive(true);
+      hit.Reparent(panel);
+      if t == 0 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip0"); }
+      if t == 1 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip1"); }
+      if t == 2 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip2"); }
+      if t == 3 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip3"); }
+      if t == 4 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip4"); }
+      if t == 5 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip5"); }
+      ArrayPush(this.m_chipHit, hit);
       t += 1;
     }
 
@@ -1054,6 +1135,33 @@ public class CBHud {
       marks,
       "",
       rightCol);
+  }
+
+  // A tab was clicked. Goes through the same Render the key does, so there is one drawing path
+  // however the tab was chosen.
+  protected cb func CBOnChip0(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 1); }
+  protected cb func CBOnChip1(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 2); }
+  protected cb func CBOnChip2(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 3); }
+  protected cb func CBOnChip3(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 4); }
+  protected cb func CBOnChip4(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 5); }
+  protected cb func CBOnChip5(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 6); }
+
+  private func ChipClicked(e: ref<inkPointerEvent>, tab: Int32) -> Bool {
+    if !IsDefined(e) || !e.IsAction(n"click") {
+      return false;
+    }
+    // Clicking a tab on a Hub that is not open would draw it without anybody asking for it.
+    if !this.IsOpen() || tab < 1 || tab > CBHudTabCount() {
+      return false;
+    }
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) {
+      return false;
+    }
+    this.m_tab = tab;
+    this.Render(sys, game);
+    return true;
   }
 
   private func RenderChips() -> Void {
