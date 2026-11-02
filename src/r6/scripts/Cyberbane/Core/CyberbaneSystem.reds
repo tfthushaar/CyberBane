@@ -238,6 +238,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
   private let m_factsProbed: Bool;            // the deed-fact probe has already run this session (not persisted)
+  private let m_pendingHubOpen: Bool;         // a Hub open asked for from a menu callback (not persisted)
   private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
   private let m_questPins: array<Vector4>;    // the tracked objective's map pins, refreshed every 3 ticks
   private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
@@ -813,6 +814,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
     CBProcessPendingSquad(this, game);  // and a vendetta squad arrives when its timer runs out
     this.AgePendingArrival();           // forget a car that was sent and never arrived
+    this.ServiceHubOpen(game);          // a Hub asked for from the pause menu, opened off-callback
     this.TickHub(game);                 // live countdowns while the Hub is open
     // The bar for whoever is hunting you. Cheap: it reads one stat pool and resizes one
     // rectangle, and hides itself the moment its target is gone.
@@ -892,6 +894,36 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Is the Hub panel up? Asked by the messenger, which shares the HUD layer with it.
+  // Ask for the Hub, from somewhere that is not the key handler - the pause menu entry
+  // (UI/PauseMenuEntry.reds).
+  //
+  // This only records the request. Opening the Hub builds its whole widget tree, and the caller
+  // is a menu scenario callback that is about to dismiss its own menu; building a tree on the
+  // menu layer from inside that, while the menu it belongs to is being torn down, is the
+  // interleaving that produced the rebuild loop in 1.3.5 and is the UI shape of crash rule 3.
+  // The fast tick picks it up a moment later, when nothing is mid-teardown.
+  public func RequestHubOpen() -> Void {
+    this.m_pendingHubOpen = true;
+  }
+
+  // Carry out a deferred Hub open. Called from the fast tick, never from a callback.
+  private func ServiceHubOpen(game: GameInstance) -> Void {
+    if !this.m_pendingHubOpen {
+      return;
+    }
+    // Wait rather than give up: the request came from a menu that is still closing.
+    if !CBWorldStable(game) {
+      return;
+    }
+    this.m_pendingHubOpen = false;
+    if !IsDefined(this.m_hud) {
+      this.m_hud = new CBHud();
+    }
+    if !this.m_hud.IsOpen() {
+      this.m_hud.Advance(this, game);
+    }
+  }
+
   public func IsHubOpen() -> Bool {
     return IsDefined(this.m_hud) && this.m_hud.IsOpen();
   }
