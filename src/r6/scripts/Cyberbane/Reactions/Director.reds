@@ -192,6 +192,7 @@ public class CBReactionDirector {
     if !IsDefined(agent) || !IsDefined(pagent) {
       return true;
     }
+    CBTrace("attitude: world NPC hostile on sight");
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
     npc.cbHostileByCyberbane = true;
     this.TrackHostile(npc);
@@ -226,7 +227,7 @@ public class CBReactionDirector {
       pagent = player.GetAttitudeAgent();
     }
     for npc in this.m_hostileNpcs {
-      if IsDefined(npc) && npc.cbHostileByCyberbane {
+      if IsDefined(npc) && npc.IsAttached() && npc.cbHostileByCyberbane {
         let agent = npc.GetAttitudeAgent();
         if IsDefined(agent) && IsDefined(pagent) {
           agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);

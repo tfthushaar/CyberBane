@@ -97,6 +97,11 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
   CBUntrackOnMap(game, puppet);   // no marker left hanging over a body
   let sysE = CyberbaneSystem.Get(game);
+  // One of ours: its body is cleared later, once V has moved well away (CBSweepRemains).
+  let desD = GameInstance.GetDynamicEntitySystem();
+  if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
+    sysE.NoteDeadOurs(puppet.GetEntityID());
+  }
   // Any death cancels a pending escape: this enemy did not get away (spec §10.2). If it
   // was the Rival hunting V, V just slew it.
   if IsDefined(sysE) {

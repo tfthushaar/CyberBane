@@ -13,6 +13,11 @@ public abstract class CBSafetyGate {
     if puppet.IsPlayer() {
       return false;
     }
+    // Not fully in the world: just streamed in, or on its way out. Every reaction that passes this
+    // gate goes on to call into the NPC's components, which is only safe on an attached entity.
+    if !puppet.IsAttached() {
+      return false;
+    }
     if puppet.IsDead() {
       return false;
     }

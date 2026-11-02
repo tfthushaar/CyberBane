@@ -3,6 +3,41 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.2] - 2026-11-02
+
+A robustness release. A crash was still reported on 1.5.1 after playing for a while. Every
+system that runs on a timer or reacts to NPCs was read again, end to end, for anything that
+could touch an NPC or a car after it had left the world, for anything that builds up over a long
+session, and for calls into the game that have been part of a crash before.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Stability
+- **Nothing builds up over a long session.** The bodies of everyone Cyberbane sent, and the car
+  every convoy arrived in, used to stay registered with the game for the rest of the session and
+  spawn back in whenever you passed. They are now cleared once you are well away from them.
+- **No more than 18 of Cyberbane's people alive at once.** A vendetta crew of twenty on top of an
+  apex squad, escorts and a Rival was a lot for the game to stream in at one spot.
+- **Cars are for chases.** Cyberbane's people drive in only while you are driving. On foot,
+  everybody walks in out of sight and searches for you. Seating a crew in a car, driving it and
+  getting them out are the most delicate things Cyberbane asks of the game, and they no longer
+  happen around a player standing still.
+- **Bodies are never removed in front of you.** A Rival's body and a crew's bodies were cleared
+  a moment after death, while they could still be falling. Bodies now go only once you are far
+  from them.
+- **Nothing touches an NPC that has left the world.** Crowd fear, morale, hostility on sight,
+  witness checks, abilities, stat changes, map markers and squad forming all check first that the
+  NPC is still fully in the world, including NPCs that streamed out a moment earlier.
+- **The phone forgets a controller the moment the HUD tears it down**, along with any open
+  thread, so a text can never be delivered into a piece of interface that no longer exists.
+  Until the new one is ready, texts show as cards.
+
+### For bug reports
+- With **Mod Settings > Cyberbane > Debug > Log level** set to Verbose, Cyberbane writes a short
+  line before every call into the game that has ever been part of a crash: spawning, seating a
+  crew, giving orders, removing an NPC, showing a text, changing an NPC's stats or attitude. The
+  last lines before a crash then say what it was doing.
+
 ## [1.5.1] - 2026-11-02
 
 Built from player feedback on being hunted: the timer was easy to read and hard to forget, squads

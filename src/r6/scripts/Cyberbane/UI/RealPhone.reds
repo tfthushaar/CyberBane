@@ -306,6 +306,26 @@ protected cb func OnPlayerAttach(playerPuppet: ref<GameObject>) -> Bool {
   return result;
 }
 
+// And let go of it the moment the HUD tears it down. Texts never go to a controller that is on
+// its way out: until the next one attaches they show as cards instead (CBPhone.Deliver).
+@wrapMethod(NewHudPhoneGameController)
+protected cb func OnUninitialize() -> Bool {
+  let store = CBPhoneStore();
+  if IsDefined(store) {
+    store.SetPhoneController(null);
+  }
+  return wrappedMethod();
+}
+
+@wrapMethod(NewHudPhoneGameController)
+protected cb func OnPlayerDetach(playerPuppet: ref<GameObject>) -> Bool {
+  let store = CBPhoneStore();
+  if IsDefined(store) {
+    store.SetPhoneController(null);
+  }
+  return wrappedMethod(playerPuppet);
+}
+
 // A new message from one of ours. Called from CBPhone.Deliver, on a settled tick.
 @addMethod(NewHudPhoneGameController)
 public func CBDeliverThread(hash: Int32, sender: String, body: String, sound: Bool) -> Void {
@@ -339,6 +359,7 @@ public func CBDeliverThread(hash: Int32, sender: String, body: String, sound: Bo
   notification.time = 6.7;
   notification.widgetLibraryItemName = n"notification_message";
   notification.notificationData = userData;
+  CBTrace("phone: text notification");
   this.AddNewNotificationData(notification);
 }
 
@@ -625,6 +646,18 @@ public func CBActivateChoice(index: Int32) -> Void {
 public func CBLeaveThread() -> Void {
   this.cbThreadHash = 0;
   this.cbChoiceCount = 0;
+}
+
+// The panel is going away: forget it, so nothing is redrawn into a dialog that no longer exists.
+@wrapMethod(MessengerDialogViewController)
+protected cb func OnUninitialize() -> Bool {
+  this.cbThreadHash = 0;
+  this.cbChoiceCount = 0;
+  let store = CBPhoneStore();
+  if IsDefined(store) {
+    store.SetOpenDialog(null);
+  }
+  return wrappedMethod();
 }
 
 // The game refreshes the panel whenever anything in the journal's phone section changes. While

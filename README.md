@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.5.1).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.5.2).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -122,8 +122,9 @@ page describes what the mod does and how it installs.
   Grudge-Bearer is always first in line, and somebody Hard to Scare never breaks and runs. Escaping you half dead leaves them Scarred, and doing it twice
   leaves an Old Wound. Sparing one leaves them Shaken, and an avenger comes in Reckless. The
   Rivals screen lists them for whoever is coming next.
-- **They drive over.** Crews, apex squads and Rivals can all arrive by car. The car is placed out
-  of sight on a road, its crew takes their seats, and it drives to you. When it reaches you and
+- **They drive over.** While you are driving, crews, apex squads and Rivals come after you by car.
+  The car is placed out of sight on a road, its crew takes their seats, and it gives chase. On
+  foot, they walk in out of sight and search for you. When it reaches you and
   slows down they get out and come for you; if you are behind the wheel they stay in and chase. If the car seats fewer than the gang sent, or never makes it,
   the rest walk in, so an apex squad is always four. Indoors, or anywhere there is no road close
   enough, they come on foot.

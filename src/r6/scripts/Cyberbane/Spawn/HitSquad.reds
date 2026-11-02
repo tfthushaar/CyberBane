@@ -47,7 +47,7 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     // Only somebody still standing can have got away. The tag stays on bodies until this sweep,
     // so testing the tag alone turned a crew V had wiped out into a Hunter Rival.
     let anyAlive = CBLiveTaggedPresent(game, n"CB_Squad");
-    CBDeleteTaggedSafe(game, n"CB_Squad");
+    CBDeleteTaggedSafe(game, n"CB_Squad", true);   // bodies are cleared once V is away from them
     let escaped = sys.GetActiveSquadFaction();
     if anyAlive && NotEquals(escaped, n"") && RandF() < CBConfig.RivalChanceHunter() {
       let efs = sys.FindFaction(escaped);

@@ -161,6 +161,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_scoutId: EntityID;
   private let m_scoutSentTick: Int32;
   private let m_scoutSeenTicks: Int32;
+  // Our own dead, waiting to be cleared once V is far enough away (Spawn/Spawner.reds,
+  // CBSweepRemains). Session only.
+  private let m_deadOurs: array<EntityID>;
   // When each lane last sent an "asking around" notice, so a lane that re-queues does not repeat it.
   private let m_trackNoticeTick: array<Int32>;
   // Gangs whose crew V has beaten since their last apex squad (Spawn/Queue.reds, CBApexEligible).
@@ -754,7 +757,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // is settled, so the engine is no longer mid-teardown on the entity being removed.
     if this.m_pendingRivalSweep {
       this.m_pendingRivalSweep = false;
-      CBDeleteTaggedSafe(game, n"CB_Rival");
+      CBDeleteTaggedSafe(game, n"CB_Rival", true);   // the living only; the body goes later
     }
 
     // Did the player ask to start over? Same reasoning as the sweep above: this tick is
@@ -1245,6 +1248,24 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func SetSearchDistrict(d: CName) -> Void {
     this.m_searchDistrict = d;
+  }
+
+  public func NoteDeadOurs(id: EntityID) -> Void {
+    if !EntityID.IsDefined(id) || ArrayContains(this.m_deadOurs, id) {
+      return;
+    }
+    if ArraySize(this.m_deadOurs) >= CBConfig.RemainsCap() {
+      ArrayErase(this.m_deadOurs, 0);
+    }
+    ArrayPush(this.m_deadOurs, id);
+  }
+
+  public func GetDeadOurs() -> array<EntityID> {
+    return this.m_deadOurs;
+  }
+
+  public func ForgetDeadOurs(id: EntityID) -> Void {
+    ArrayRemove(this.m_deadOurs, id);
   }
 
   // True if this lane may send a tracking notice now, and records that it did.
@@ -1747,6 +1768,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBTributeTick(this, game);
     CBHitSquadTick(this, game);
     CBSweepOrphans(game);   // whatever was left in a car seat or mid-spawn goes now it can
+    CBSweepRemains(this, game);   // our dead and our spent cars, once V is far from them
     CBApexTick(this, game);
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);

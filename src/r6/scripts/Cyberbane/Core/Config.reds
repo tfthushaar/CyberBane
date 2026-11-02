@@ -743,6 +743,12 @@ public abstract class CBConfig {
   public static func ConvoyStepDelay() -> Float = 0.6
   // A crew stays in a car going faster than this, in metres per second.
   public static func ArrivalDismountMaxSpeed() -> Float = 3.0
+  // Our dead and our spent cars are cleared once V is at least this far from them, or they have
+  // streamed out (Spawn/Spawner.reds, CBSweepRemains).
+  public static func RemainsSweepDistance() -> Float = 70.0
+  public static func RemainsCap() -> Int32 = 96
+  // The most of Cyberbane's people alive in the world at once (Spawn/Spawner.reds, CBSpawnGroup).
+  public static func MaxLiveSpawns() -> Int32 = 18
 
   // ---- Loot and bounties (Spawn/Loot.reds) --------------------------------
   public static func LootDelaySeconds() -> Float = 0.8

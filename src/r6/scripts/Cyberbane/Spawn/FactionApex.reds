@@ -227,9 +227,11 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
                              puppet: ref<ScriptedPuppet>, grade: Float, roleHealthMult: Float,
                              opt traitHealth: Float, opt traitArmour: Float,
                              opt traitDamage: Float, opt traitCrit: Float) -> Void {
-  if !IsDefined(puppet) {
+  // Stat modifiers go only on somebody fully in the world and alive.
+  if !IsDefined(puppet) || !puppet.IsAttached() || puppet.IsDead() {
     return;
   }
+  CBTrace("stats: building a spawned enemy");
   // Once only. Stat modifiers add on top of each other, so a second pass squares every
   // multiplier and produces something nothing can hurt.
   if puppet.cbBuffed {
