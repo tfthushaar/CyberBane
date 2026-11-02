@@ -54,6 +54,16 @@ public class CBReactionDirector {
     if sys.IsInSafeZone() {
       return;
     }
+    // Never during a conversation or a scene, and never on a job when V has asked Cyberbane to stay
+    // out of quest areas. Turning somebody hostile mid-dialogue is how a gig contact ended up
+    // attacking V in the middle of Treating Symptoms.
+    if CBPlayerInScene(game) || sys.IsInQuestArea() {
+      // Anybody Cyberbane already turned hostile who is standing at the job, or who turns out to be
+      // somebody the story wrote, goes back to how the game had them. Hostility set before V took
+      // the job must not carry into it.
+      this.RevertHostileAtJob(game, sys);
+      return;
+    }
 
     if this.m_whisperCooldownTicks > 0 {
       this.m_whisperCooldownTicks -= 1;
@@ -192,6 +202,11 @@ public class CBReactionDirector {
     if !IsDefined(agent) || !IsDefined(pagent) {
       return true;
     }
+    // Somebody the game has made friendly towards V (a job contact, a quest ally) stays that way.
+    if Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Friendly) {
+      return false;
+    }
+    CBTrace("attitude: world NPC hostile on sight");
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
     npc.cbHostileByCyberbane = true;
     this.TrackHostile(npc);
@@ -219,6 +234,32 @@ public class CBReactionDirector {
     ArrayPush(this.m_hostileNpcs, npc);
   }
 
+  private func RevertHostileAtJob(game: GameInstance, sys: ref<CyberbaneSystem>) -> Void {
+    let player = GetPlayer(game);
+    if !IsDefined(player) || !IsDefined(sys) {
+      return;
+    }
+    let pagent = player.GetAttitudeAgent();
+    if !IsDefined(pagent) {
+      return;
+    }
+    let i = 0;
+    while i < ArraySize(this.m_hostileNpcs) {
+      let npc = this.m_hostileNpcs[i];
+      i += 1;
+      if IsDefined(npc) && npc.IsAttached() && !npc.IsDead() && npc.cbHostileByCyberbane
+         && (sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.QuestSpawnClearance())
+             || CBRecordIsUniqueCharacter(npc.GetRecordID())) {
+        let agent = npc.GetAttitudeAgent();
+        if IsDefined(agent) {
+          CBTrace("attitude: world NPC back to neutral at a job");
+          agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+        }
+        npc.cbHostileByCyberbane = false;
+      }
+    }
+  }
+
   private func RevertAllHostile(game: GameInstance) -> Void {
     let player = GetPlayer(game);
     let pagent: ref<AttitudeAgent>;
@@ -226,7 +267,7 @@ public class CBReactionDirector {
       pagent = player.GetAttitudeAgent();
     }
     for npc in this.m_hostileNpcs {
-      if IsDefined(npc) && npc.cbHostileByCyberbane {
+      if IsDefined(npc) && npc.IsAttached() && npc.cbHostileByCyberbane {
         let agent = npc.GetAttitudeAgent();
         if IsDefined(agent) && IsDefined(pagent) {
           agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);

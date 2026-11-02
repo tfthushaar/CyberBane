@@ -52,7 +52,9 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
   if lane == CBLaneApex() {
     return NotEquals(sys.GetPendingApexFaction(), n"") || CBLiveTaggedPresent(game, n"CB_Apex");
   }
-  return NotEquals(sys.GetPendingSquadFaction(), n"") || CBLiveTaggedPresent(game, n"CB_Squad");
+  // A scout out looking holds the crew lane: the crew is waiting on what the scout finds.
+  return NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetScoutFaction(), n"")
+      || CBLiveTaggedPresent(game, n"CB_Squad");
 }
 
 // Is anyone wearing this tag still alive?
@@ -182,7 +184,7 @@ func CBSeedRivalFromFactions(sys: ref<CyberbaneSystem>, game: GameInstance) -> r
 // so the two can never disagree about who is eligible.
 public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool {
   let r = sys.FindRivalById(rivalId);
-  if !IsDefined(r) || !TDBID.IsValid(r.recordID) {
+  if !IsDefined(r) || !TDBID.IsValid(r.recordID) || !CBRecordIsPerson(r.recordID) {
     return false;
   }
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
@@ -194,6 +196,10 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   // waiting on - nobody should be queuing up behind an encounter you are still in.
   if CBLaneBusy(sys, game, lane) {
     sys.MarkLaneBusy(lane);
+    return;
+  }
+  // Nobody can arrive right now (a safe area, a job, a scene): the clock waits with them.
+  if CBArrivalsHeld(sys, game) {
     return;
   }
   // And a breather afterwards.
@@ -212,7 +218,7 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // A provoked gang does not wait for the timetable: what V just did is the reason they are
     // coming. The day's allowance and the rest below still apply.
     let provoked = lane == CBLaneSquad() && NotEquals(sys.GetProvoked(), n"");
-    let slotDue = CBSlotDue(sys, game, lane);
+    let slotDue = CBPacingDue(sys, game, lane);
     if !slotDue && !provoked {
       return;
     }
@@ -289,9 +295,13 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
         if CBRivalHasTrait(r, n"GrudgeBearer") {
           s += CBConfig.QueueGrudgeBonus();
         }
-        // On their own gang's streets they are easier to run into.
+        // On their own gang's streets they are easier to run into, and easier still where they
+        // came from: they know those streets.
         if ArrayContains(turf, r.faction) {
           s += CBConfig.RivalTurfBonus();
+        }
+        if NotEquals(r.origin, n"") && Equals(r.origin, sys.GetCurrentDistrict()) {
+          s += CBConfig.RivalHomeBonus();
         }
         // Not the same person twice in a row while somebody else is owed a turn.
         if r.id == sys.GetLaneLastRival() {
@@ -376,11 +386,16 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
     return;
   }
   let ticks = CBLaneTicksFor(sys, lane, bestFaction, bestRival);
-  if lane == CBLaneSquad() && Equals(bestFaction, sys.GetProvoked()) {
+  let provokedPick = lane == CBLaneSquad() && Equals(bestFaction, sys.GetProvoked());
+  if provokedPick {
     ticks = CBConfig.QueueMinTicks();   // they are already on it
     sys.ClearProvoked();
   }
   sys.SetLaneQueued(lane, bestFaction, bestRival, ticks);
+  // Somebody starts asking around. A provoked gang already knows where V is, so it skips this.
+  if !provokedPick {
+    CBTrackingNotice(sys, game, lane, bestFaction, bestRival);
+  }
   CBLog.Info(n"Spawn", s"Next \(CBLaneLabel(lane)): \(NameToString(bestFaction)) in \(sys.GetLaneTicks(lane)) ticks.");
 }
 
@@ -397,12 +412,12 @@ func CBLaneTicksFor(sys: ref<CyberbaneSystem>, lane: Int32, faction: CName, riva
     ticks = IsDefined(r) ? CBRivalHuntTicksFor(r.rank, CBRivalsAtCap(sys)) : CBConfig.RivalHuntTicksBase();
   } else {
     if lane == CBLaneApex() {
-      ticks = CBConfig.ApexQueueTicks();
+      ticks = CBJitter(CBConfig.ApexQueueTicks(), CBConfig.QueueJitterFraction());
     } else {
       let fs = sys.FindFaction(faction);
       let hate = IsDefined(fs) ? ClampF((-fs.standing / 100.0) * (fs.renown / 100.0), 0.0, 1.0) : 0.0;
       let span = Cast<Float>(CBConfig.HostileSquadTicksMax() - CBConfig.HostileSquadTicksMin());
-      ticks = CBConfig.HostileSquadTicksMax() - FloorF(span * hate);
+      ticks = CBJitter(CBConfig.HostileSquadTicksMax() - FloorF(span * hate), CBConfig.QueueJitterFraction());
     }
   }
   if freq > 0.01 {
@@ -425,7 +440,8 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // warning, and the arrival is the next time it reaches zero.
     if IsDefined(r) && sys.GetRivalWarned() != r.id {
       sys.SetRivalWarned(r.id);
-      sys.SetLaneTicks(lane, CBConfig.RivalWarningTicks());
+      sys.SetLaneTicks(lane, CBWarningTicks(CBConfig.RivalWarningTicks()));
+      sys.SetHuntGrade("RIVAL");
       CBHuntBegin(sys, game, r.faction);
       CBRivalWarning(sys, game, r);
       return;
@@ -460,12 +476,18 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // fight in progress, and bring them in when they reach zero.
     CBHuntBegin(sys, game, faction);
     if lane == CBLaneApex() {
-      sys.SetPendingApex(faction, CBConfig.ApexWarningTicks());
+      sys.SetPendingApex(faction, CBWarningTicks(CBConfig.ApexWarningTicks()));
+      sys.SetHuntGrade("APEX SQUAD");
       sys.ClearCrewBeaten(faction);   // the beaten crew has been answered
       CBApexOnTheWay(sys, game, faction);
     } else {
-      sys.SetPendingSquad(faction, CBConfig.CrewWarningTicks());
-      CBCrewWarning(sys, game, faction);
+      // A gang that does not know where V is may send one person to look first (Spawn/Hunt.reds).
+      // The crew then only comes if the scout finds V.
+      if !CBTrySendScout(sys, game, faction) {
+        sys.SetPendingSquad(faction, CBWarningTicks(CBConfig.CrewWarningTicks()));
+        sys.SetHuntGrade(CBCrewGrade(sys, faction));
+        CBCrewWarning(sys, game, faction);
+      }
     }
     sys.SetLaneLastFaction(lane, faction);
     CBSpendSlot(sys, game, lane);
@@ -685,6 +707,10 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   }
   sys.NoteCrewBeaten(faction);
   CBLog.Info(n"Spawn", s"Crew from \(NameToString(faction)) wiped out; their apex squad is next in line.");
+  // Somebody is glad to see that crew gone, and pays for it (Spawn/Loot.reds).
+  let crewLabel = CBFactionLabel(faction);
+  CBPayBounty(sys, game, faction, RoundF(Cast<Float>(CBConfig.BountyCrew()) * CBLootLevelScale(game) / 50.0) * 50,
+              StrLen(crewLabel) > 0 ? s"Heard you dealt with \(crewLabel)'s crew." : "Heard you dealt with that crew.");
   // Only promise what can follow: a gang that fields an apex, while the apex lane is on and
   // nothing is already on its way.
   if !CBToastsOn() || !CBHitSquadsOn() || CBLaneDailyCap(CBLaneApex()) <= 0
@@ -716,7 +742,7 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   }
   let now = sys.GetTickCount();
   let player = GetPlayer(game);
-  if !IsDefined(player) || sys.IsInSafeZone() || CBPlayerInStealthState(game)
+  if !IsDefined(player) || sys.IsInSafeZone() || sys.IsInQuestArea() || CBPlayerInStealthState(game)
      || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetProvoked(), n"") {
     sys.SetTurfWatch(n"", now);
     return;
@@ -755,4 +781,185 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   sys.SetTurfSpotNext(now + CBConfig.TurfSpotCooldownTicks());
   sys.SetTurfWatch(owner, now);
   CBLog.Info(n"Spawn", s"A lookout for \(NameToString(owner)) spotted V on their turf.");
+}
+
+// ---- Pacing without a clock ------------------------------------------------------
+//
+// "I eventually kept a mental clock in my head." Three things fed that clock: windows on a daily
+// timetable, countdowns that were the same length every time, and the exact times on the Hub and
+// the HUD. The windows are now one of three pacing modes, every countdown and warning varies, and
+// the times can be turned into words (UI/Hud.reds, CBTimeText).
+
+public func CBPacing() -> ECBPacing {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return ECBPacing.Timetable;
+  }
+  return rt.GetSettings().pacing;
+}
+
+// Is this lane allowed to pick somebody this tick? The day's allowance, the rest between
+// encounters and the reasons a gang needs are all still checked by the caller.
+public func CBPacingDue(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Bool {
+  let mode = CBPacing();
+  if Equals(mode, ECBPacing.Timetable) {
+    return CBSlotDue(sys, game, lane);
+  }
+  if Equals(mode, ECBPacing.Reactive) {
+    if lane == CBLaneSquad() {
+      return false;   // a crew only comes when provoked, which the caller lets through
+    }
+    if lane == CBLaneApex() {
+      return true;    // an apex squad only ever comes for a gang that has earned it
+    }
+  }
+  // Unpredictable, and Rivals under Reactive: a small chance every second, so that the day's
+  // allowance is spread over about a day of play with no pattern to it.
+  let cap = CBLaneDailyCap(lane);
+  if cap <= 0 {
+    return false;
+  }
+  let p = Cast<Float>(cap) / Cast<Float>(Max(1, CBConfig.UnpredictableDayTicks()));
+  return RandF() < p * CBTimeOfDayPacing(game, lane);
+}
+
+public func CBIsNight(game: GameInstance) -> Bool {
+  let h = CBGameHourOfDay(game);
+  return h >= CBConfig.NightStartHour() || h < CBConfig.NightEndHour();
+}
+
+// Crews and Rivals come more often after dark; an apex squad, sent to be seen, favours the day.
+func CBTimeOfDayPacing(game: GameInstance, lane: Int32) -> Float {
+  let night = CBIsNight(game);
+  if lane == CBLaneApex() {
+    return night ? CBConfig.DayPacingMult() : CBConfig.NightPacingMult();
+  }
+  return night ? CBConfig.NightPacingMult() : CBConfig.DayPacingMult();
+}
+
+// A count of ticks, varied by up to `frac` either way. Never below one.
+public func CBJitter(ticks: Int32, frac: Float) -> Int32 {
+  if ticks <= 0 || frac <= 0.0 {
+    return ticks;
+  }
+  let span = RoundF(Cast<Float>(ticks) * frac);
+  if span <= 0 {
+    return ticks;
+  }
+  return Max(1, ticks + RandRange(-span, span + 1));
+}
+
+// How long a warning lasts: varied, and longer on harder difficulties so there is time to get
+// ready.
+public func CBWarningTicks(base: Int32) -> Int32 {
+  return CBJitter(base, CBConfig.WarningJitterFraction())
+       + CBConfig.DifficultyWarningExtra() * CBDifficultyLevel();
+}
+
+// ---- Being tracked -----------------------------------------------------------------
+//
+// "If it warned me I was being actively tracked." Before anybody sets off, somebody starts asking
+// around about V. Either the local broker texts, or V overhears it, never both. The HUD line
+// shows TRACKED while it lasts. It says nothing about how long.
+public func CBTrackingNotice(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32,
+                             faction: CName, rivalId: Int32) -> Void {
+  if !IsDefined(sys) || !CBToastsOn() || !sys.TakeTrackNotice(lane, CBConfig.TrackNoticeGapTicks()) {
+    return;
+  }
+  let who = "";
+  if lane == CBLaneRival() {
+    let r = sys.FindRivalById(rivalId);
+    let content = CBContent(game);
+    if IsDefined(r) && IsDefined(content) {
+      who = CBRivalDisplayName(content, r);
+    }
+  } else {
+    who = CBFactionLabel(faction);
+  }
+  if StrLen(who) == 0 {
+    return;
+  }
+  let line = "";
+  if lane == CBLaneApex() {
+    line = s"\(who) are asking about you, and not their usual people.";
+  } else {
+    if lane == CBLaneRival() {
+      line = s"\(who) has been asking around about you.";
+    } else {
+      switch RandRange(0, 3) {
+        case 0: line = s"Somebody from \(who) was asking where you drink."; break;
+        case 1: line = s"\(who) are asking questions about you."; break;
+        default: line = s"Your name came up with \(who). They want to know where you are."; break;
+      }
+    }
+  }
+  if RandF() < 0.6 || NotEquals(CBMessageDelivery(), ECBMessageDelivery.Phone) {
+    let district = sys.GetCurrentDistrict();
+    if NotEquals(district, n"") {
+      CBPhoneFromDistrict(game, district, line);
+    } else {
+      CBPhoneFromStreet(game, line);
+    }
+  } else {
+    CBOverheard(game, "Passer-by", line);
+  }
+}
+
+// ---- How big a threat ----------------------------------------------------------------
+
+// How many a crew from this gang would be. The one formula, used by the spawn and by the warning,
+// so the warning never promises a different number from the one that turns up.
+public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, infamous: Bool) -> Int32 {
+  if !IsDefined(sys) || !IsDefined(fs) {
+    return 3;
+  }
+  let size = 3 + FloorF(-fs.standing / 35.0);
+  if size > 6 {
+    size = 6;
+  }
+  if infamous {
+    size += 1;
+  }
+  let score = sys.GetScore();
+  let posture = IsDefined(score) ? score.GetPosture(fs.id) : ECBPosture.Neutral;
+  if Equals(posture, ECBPosture.Vendetta) && CBVendettaSquadsOn() {
+    let menace = IsDefined(score) ? ClampF(score.GetMenace() / 100.0, 0.0, 1.0) : 0.0;
+    let target = CBVendettaSquadSize();
+    let floorSize = FloorF(Cast<Float>(target) * CBConfig.VendettaSquadFloorFraction());
+    let scaled = floorSize + FloorF(Cast<Float>(target - floorSize) * menace);
+    if scaled > size {
+      size = scaled;
+    }
+  }
+  // Harder difficulty means harder fights, not instant deaths: a little smaller.
+  return Max(2, size - CBConfig.DifficultyCrewTrim() * CBDifficultyLevel());
+}
+
+func CBCrewIsInfamous(sys: ref<CyberbaneSystem>) -> Bool {
+  let score = sys.GetScore();
+  return IsDefined(score) && EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.Infamous);
+}
+
+// One word for how bad this is, shown on the HUD line and the Hub.
+public func CBCrewGrade(sys: ref<CyberbaneSystem>, faction: CName) -> String {
+  if !IsDefined(sys) {
+    return "CREW";
+  }
+  let fs = sys.FindFaction(faction);
+  let size = CBCrewSizeFor(sys, fs, CBCrewIsInfamous(sys));
+  return size >= 5 ? "HEAVY CREW" : "CREW";
+}
+
+public func CBNumberWord(n: Int32) -> String {
+  switch n {
+    case 1: return "One";
+    case 2: return "Two";
+    case 3: return "Three";
+    case 4: return "Four";
+    case 5: return "Five";
+    case 6: return "Six";
+    case 7: return "Seven";
+    case 8: return "Eight";
+    default: return s"\(n)";
+  }
 }

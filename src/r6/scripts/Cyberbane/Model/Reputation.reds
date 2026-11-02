@@ -159,7 +159,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     // that only holds for generic archetypes. A one-off story character's record would spawn a
     // visible duplicate of that individual, so it is never kept.
     if info.victimClass != EnumInt(ECBVictimClass.Civilian) && TDBID.IsValid(info.recordID)
-       && !info.victimIsUnique {
+       && !info.victimIsUnique && CBRecordIsPerson(info.recordID) {
       fs.sampleRecord = info.recordID;
       // And file it under its combat role, for the apex squad (spec §9.9).
       CBCaptureRoleRecord(fs, info.recordID);

@@ -299,7 +299,7 @@ public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
 
 // Apply one gameplay ability, through its package, the way the game does it itself.
 public func CBGrantAbility(npc: ref<NPCPuppet>, id: TweakDBID) -> Void {
-  if !IsDefined(npc) || !TDBID.IsValid(id) {
+  if !IsDefined(npc) || !TDBID.IsValid(id) || !npc.IsAttached() || npc.IsDead() {
     return;
   }
   let ability = TweakDBInterface.GetGameplayAbilityRecord(id);
@@ -445,6 +445,7 @@ public func CBJoinSquadWith(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppe
   if !IsDefined(squad) || !puppet.IsAttached() || puppet.IsDead() {
     return;
   }
+  CBTrace("squad: joining a spawned enemy to its team");
   squad.Join(puppet);
 }
 

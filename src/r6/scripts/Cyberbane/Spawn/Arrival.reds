@@ -141,6 +141,13 @@ public func CBVehicleArrivalAllowed(game: GameInstance) -> Bool {
   if CBPlayerIndoors(game) {
     return false;
   }
+  // Cars are for a chase. With V on foot everybody walks in out of sight and searches, which
+  // keeps seating, driving and getting out of cars (the most delicate things Cyberbane asks of
+  // the engine) away from a player who is standing still. With V at the wheel they drive.
+  let driver = GetPlayer(game);
+  if !IsDefined(driver) || !VehicleComponent.IsDriver(game, driver) {
+    return false;
+  }
   // Is there a road near enough to drive in from?
   //
   // Vanilla asks exactly this before deciding whether to fall back to units on foot:
@@ -267,6 +274,7 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   ArrayPush(tags, n"Cyberbane");
   ArrayPush(tags, n"CB_Car");
   spec.tags = tags;
+  CBTrace("vehicle: creating a car");
   let carId = des.CreateEntity(spec);
   if !EntityID.IsDefined(carId) {
     return false;
@@ -467,6 +475,7 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     ArrayPush(tags, n"CB_Crew");
     ArrayPush(tags, isLead ? leadTag : squadTag);
     spec.tags = tags;
+    CBTrace("vehicle: creating a car's crew member");
     let made = des.CreateEntity(spec);
     // The body is the Rival's from the moment it exists, so their death and escape count.
     if IsDefined(rider) && EntityID.IsDefined(made) {
@@ -507,6 +516,7 @@ public func CBOnArrivalCrewAttached(sys: ref<CyberbaneSystem>, game: GameInstanc
   data.mountParentEntityId = carId;
   data.isInstant = true;
   data.ignoreHLS = true;
+  CBTrace("vehicle: seating a crew member");
   let evt = new MountAIEvent();
   evt.name = n"Mount";
   evt.data = data;
@@ -580,6 +590,11 @@ public class CBArrivalDismountCallback extends DelayCallback {
       moving = AbsF(car.GetCurrentSpeed()) > CBConfig.ArrivalDismountMaxSpeed();
     }
     let vDriving = IsDefined(player.GetMountedVehicle());
+    // Nobody gets out at a job: while V is on one they stay in the car (bounded, like the rest).
+    let sysD = CyberbaneSystem.Get(game);
+    if IsDefined(sysD) && sysD.IsInQuestArea() {
+      vDriving = true;
+    }
     let holdOn = !arrived && this.tries < CBConfig.ArrivalDismountMaxTries();
     if !holdOn && (moving || vDriving) && this.tries < CBConfig.ArrivalDismountMaxTries() * 3 {
       holdOn = true;
@@ -679,11 +694,13 @@ public func CBDriveAtPlayer(game: GameInstance, car: ref<VehicleObject>, player:
     chase.boostDrivingStats = true;
     evt.command = chase;
     CBLog.Info(n"Spawn", "Car is giving chase.");
+    CBTrace("vehicle: chase order");
     car.QueueEvent(evt);
     ai.SetInitCmd(chase);
     return;
   }
   CBLog.Info(n"Spawn", "Car has its crew and is driving to you.");
+  CBTrace("vehicle: drive order");
   let drive = new AIVehicleDriveToPointAutonomousCommand();
   drive.maxSpeed = CBConfig.ArrivalDriveMaxSpeed();
   drive.minSpeed = CBConfig.ArrivalDriveMinSpeed();

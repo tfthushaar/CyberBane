@@ -47,7 +47,7 @@ public func CBHitSquadTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     // Only somebody still standing can have got away. The tag stays on bodies until this sweep,
     // so testing the tag alone turned a crew V had wiped out into a Hunter Rival.
     let anyAlive = CBLiveTaggedPresent(game, n"CB_Squad");
-    CBDeleteTaggedSafe(game, n"CB_Squad");
+    CBDeleteTaggedSafe(game, n"CB_Squad", true);   // bodies are cleared once V is away from them
     let escaped = sys.GetActiveSquadFaction();
     if anyAlive && NotEquals(escaped, n"") && RandF() < CBConfig.RivalChanceHunter() {
       let efs = sys.FindFaction(escaped);
@@ -160,28 +160,11 @@ public func CBVendettaApexOn() -> Bool {
 }
 
 func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, infamous: Bool, now: Float) -> Void {
-  // size = 3 + floor(-S_f / 35), capped at 6, +1 at Infamous or above (spec §9.9).
-  let size = 3 + FloorF(-fs.standing / 35.0);
-  if size > 6 {
-    size = 6;
-  }
-  if infamous {
-    size += 1;
-  }
-  // A vendetta sends a crew, not a patrol, and how big a crew depends on what they think
-  // they are dealing with. Menace is the same number the Hub reports, so a maxed out merc
-  // gets the full party and an early character gets something they can survive.
+  // How many: the one formula the warning also uses (Spawn/Queue.reds, CBCrewSizeFor), so the
+  // number they texted is the number that turns up.
+  let size = CBCrewSizeFor(sys, fs, infamous);
   let score = sys.GetScore();
   let posture = IsDefined(score) ? score.GetPosture(fs.id) : ECBPosture.Neutral;
-  if Equals(posture, ECBPosture.Vendetta) && CBVendettaSquadsOn() {
-    let menace = IsDefined(score) ? ClampF(score.GetMenace() / 100.0, 0.0, 1.0) : 0.0;
-    let target = CBVendettaSquadSize();
-    let floorSize = FloorF(Cast<Float>(target) * CBConfig.VendettaSquadFloorFraction());
-    let scaled = floorSize + FloorF(Cast<Float>(target - floorSize) * menace);
-    if scaled > size {
-      size = scaled;
-    }
-  }
 
   let squadEntity: EntityID;
   sys.ClearSquadAnchor();   // this crew is its own squad, not a late joiner to the last one

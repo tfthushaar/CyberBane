@@ -156,18 +156,75 @@ public func CBPlayerIndoors(game: GameInstance) -> Bool {
 // game for three releases. `gamePSMZones` is a named enum we can compile against, so there is
 // nothing left to guess.
 public func CBPlayerInQuestArea(game: GameInstance) -> Bool {
-  // Switchable, because this is the one gate here that can cover a large area and there is no
-  // way to measure how large from script. After three releases lost to gates that silently
-  // refused everything, a player who suspects it should be able to rule it out in one toggle
-  // rather than wait for a patch. The diagnostic names it too.
+  let sys = CyberbaneSystem.Get(game);
+  return IsDefined(sys) && sys.IsInQuestArea();
+}
+
+// What "Stay out of quest areas" means, worked out every few ticks (CyberbaneSystem fast tick).
+//
+// Until 1.5.3 nothing called the quest-area test at all, so the switch only ever kept arrivals out
+// of restricted and dangerous zones, and a gig in an ordinary street had no protection. A job is
+// now recognised the way the game's own world map places it: the tracked objective's map pins
+// (MappinSystem.GetQuestMappinPositionsByObjective, worldMap.script). Within QuestAreaRadius of
+// any of them, V is on a job. A scene or a conversation, and a restricted or dangerous zone,
+// count too.
+public func CBComputeQuestArea(game: GameInstance) -> Bool {
   let rtQ = CyberbaneRuntime.Get();
   if IsDefined(rtQ) && rtQ.HasSettings() && !rtQ.GetSettings().respectQuestAreas {
     return false;
   }
-  if CBPlayerInScene(game) {
+  if CBPlayerInScene(game) || CBPlayerInHostileZone(game) {
     return true;
   }
-  return CBPlayerInHostileZone(game);
+  let sys = CyberbaneSystem.Get(game);
+  let player = GetPlayer(game);
+  return IsDefined(sys) && IsDefined(player)
+      && sys.NearQuestPins(player.GetWorldPosition(), CBQuestAreaRadius());
+}
+
+// The player's chosen size of a quest area, in metres.
+public func CBQuestAreaRadius() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return CBConfig.QuestAreaRadius();
+  }
+  return ClampF(Cast<Float>(rt.GetSettings().questAreaRadius), 40.0, 150.0);
+}
+
+// The tracked objective's map pins, read the way the game's own world map reads them
+// (MappinSystem.GetQuestMappinPositionsByObjective, worldMap.script), and kept on the system so
+// every check that needs them (V's position, spawn points, NPCs, search points) uses one copy.
+// Empty when "Stay out of quest areas" is off or nothing is tracked.
+public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let pins: array<Vector4>;
+  let rtQ = CyberbaneRuntime.Get();
+  let respect = !IsDefined(rtQ) || !rtQ.HasSettings() || rtQ.GetSettings().respectQuestAreas;
+  let journal = GameInstance.GetJournalManager(game);
+  let ms = GameInstance.GetMappinSystem(game);
+  if IsDefined(sys) && respect && IsDefined(journal) && IsDefined(ms) {
+    let tracked = journal.GetTrackedEntry() as JournalQuestObjectiveBase;
+    if IsDefined(tracked) {
+      let positions: array<Vector3>;
+      if ms.GetQuestMappinPositionsByObjective(Cast<Uint32>(journal.GetEntryHash(tracked)), positions) {
+        for p in positions {
+          ArrayPush(pins, Vector4.Vector3To4(p));
+        }
+      }
+    }
+  }
+  if IsDefined(sys) {
+    sys.SetQuestPins(pins);
+  }
+}
+
+// Can anybody arrive right now? Not in a safe area (unless allowed), not on a job, not in a scene.
+// While this is false the lanes do not count down and the HUD does not say TRACKED: counting down
+// to an arrival that will only be refused is what kept TRACKED coming back at home.
+public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  if !IsDefined(sys) {
+    return true;
+  }
+  return (sys.IsInSafeZone() && !CBAllowSafeZoneSpawns()) || sys.IsInQuestArea() || CBPlayerInScene(game);
 }
 
 // Mid-scene: a cutscene, a locked conversation, a braindance.
@@ -279,10 +336,16 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   // a compound courtyard is not an interior. `gamePSMZones` is a named enum and needs no
   // guess, so the test can be the right one again. Switchable with the quest-area gate, since
   // it is the same question.
-  let rtZone = CyberbaneRuntime.Get();
-  let respect = !IsDefined(rtZone) || !rtZone.HasSettings() || rtZone.GetSettings().respectQuestAreas;
-  if respect && CBPlayerInHostileZone(game) {
-    CBNoteSpawnBlock(CBBlockHostileArea());
+  // On a job, or in a restricted or dangerous zone, when V asked Cyberbane to stay out of them.
+  if CBPlayerInQuestArea(game) {
+    CBNoteSpawnBlock(CBBlockQuestArea());
+    return true;
+  }
+  // And never placed at the job itself, wherever V is standing. Checking only V's position let a
+  // crew be placed inside the job area while V stood just outside it.
+  let sysQ = CyberbaneSystem.Get(game);
+  if IsDefined(sysQ) && sysQ.NearQuestPins(at, CBConfig.QuestSpawnClearance()) {
+    CBNoteSpawnBlock(CBBlockQuestArea());
     return true;
   }
   let sam = GameInstance.GetSafeAreaManager(game);
@@ -348,4 +411,47 @@ private final func OnEnterSafeZone() -> Void {
   evt.value = false;
   evt.aspect = gamestateMachineParameterAspect.Permanent;
   this.QueueEvent(evt);
+}
+
+// Keep the safe-area weapon lock lifted for as long as V is in a safe area with the setting on.
+//
+// The wrap on OnEnterSafeZone above lifts it once, at the moment of entry. That was the whole of
+// the fix before 1.5.3, and it did nothing for most players: the game re-sends the lock every
+// time the zone fact changes, the settings are often not loaded yet when a save starts inside a
+// safe area, and turning the setting on while already inside never reached the lock at all. This
+// re-asserts the lift every few seconds while it applies, and puts the lock back if the setting is
+// turned off inside. It is the same parameter the game itself sets, and nothing else.
+//
+// Some interiors (the Afterlife, some apartments) also apply a quest restriction that forbids
+// combat outright. That is the story's, and Cyberbane leaves it alone.
+public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let player = GetPlayer(game);
+  if !IsDefined(sys) || !IsDefined(player) {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  let want = IsDefined(rt) && rt.IsEnabled() && rt.HasSettings() && rt.GetSettings().allowSafeZoneCombat
+             && sys.IsInSafeZone() && !CBPlayerInScene(game);
+  if want {
+    if !sys.IsSafeArmsApplied() || sys.GetTickCount() % 4 == 0 {
+      CBQueueZoneArmsLock(player, false);
+      sys.SetSafeArmsApplied(true);
+    }
+    return;
+  }
+  if sys.IsSafeArmsApplied() {
+    // Lifted by us and no longer wanted: put the game's own lock back if V is still inside.
+    if sys.IsInSafeZone() {
+      CBQueueZoneArmsLock(player, true);
+    }
+    sys.SetSafeArmsApplied(false);
+  }
+}
+
+func CBQueueZoneArmsLock(player: ref<PlayerPuppet>, locked: Bool) -> Void {
+  let evt = new PSMPostponedParameterBool();
+  evt.id = n"ForceEmptyHandsByZone";
+  evt.value = locked;
+  evt.aspect = gamestateMachineParameterAspect.Permanent;
+  player.QueueEvent(evt);
 }

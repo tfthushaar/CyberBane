@@ -37,6 +37,17 @@ public func CBLootIconics() -> array<TweakDBID> {
   return out;
 }
 
+// How much more V gets at V's level: 1.0 at level 1, up to 1 + LootLevelScaleMax at level 60.
+public func CBLootLevelScale(game: GameInstance) -> Float {
+  let player = GetPlayer(game);
+  let stats = GameInstance.GetStatsSystem(game);
+  if !IsDefined(player) || !IsDefined(stats) {
+    return 1.0;
+  }
+  let level = stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.Level);
+  return 1.0 + ClampF(level / 60.0, 0.0, 1.0) * CBConfig.LootLevelScaleMax();
+}
+
 // Loot tiers.
 public func CBLootTierCrew() -> Int32 = 1
 public func CBLootTierApex() -> Int32 = 4
@@ -161,6 +172,22 @@ public class CBLootDropCallback extends DelayCallback {
     let ids: array<TweakDBID>;
     let counts: array<Int32>;
     CBLootRoll(this.tier, ids, counts);
+    // More for a stronger V: the parts and ammo scale with level, so a late-game fight is still
+    // worth winning.
+    let scale = CBLootLevelScale(game);
+    let k = 0;
+    while k < ArraySize(counts) {
+      counts[k] = Max(1, RoundF(Cast<Float>(counts[k]) * scale));
+      k += 1;
+    }
+    // Crews carry some cash. Six of them is worth going through.
+    if this.tier <= 1 {
+      let cash = RoundF(Cast<Float>(RandRange(CBConfig.CrewEddiesMin(), CBConfig.CrewEddiesMax() + 1)) * scale);
+      if cash > 0 {
+        ArrayPush(ids, t"Items.money");
+        ArrayPush(counts, cash);
+      }
+    }
     let iconic = CBLootIconicRoll(sys, this.iconicChance);
     if TDBID.IsValid(iconic) {
       ArrayPush(ids, iconic);

@@ -743,6 +743,23 @@ public abstract class CBConfig {
   public static func ConvoyStepDelay() -> Float = 0.6
   // A crew stays in a car going faster than this, in metres per second.
   public static func ArrivalDismountMaxSpeed() -> Float = 3.0
+  // Our dead and our spent cars are cleared once V is at least this far from them, or they have
+  // streamed out (Spawn/Spawner.reds, CBSweepRemains).
+  public static func RemainsSweepDistance() -> Float = 70.0
+  public static func RemainsCap() -> Int32 = 96
+  // The most of Cyberbane's people alive in the world at once (Spawn/Spawner.reds, CBSpawnGroup).
+  public static func MaxLiveSpawns() -> Int32 = 18
+  // Within this many metres of the tracked objective's map pins, V is on a job (Core/SafeAreas.reds).
+  public static func QuestAreaRadius() -> Float = 80.0
+  // Nobody is placed, and no NPC is pushed, within this many metres of a tracked objective's pin,
+  // wherever V is standing (Core/SafeAreas.reds).
+  public static func QuestSpawnClearance() -> Float = 60.0
+  // Removals happen out of V's sight, or beyond this distance (Spawn/Spawner.reds, CBOutOfView).
+  public static func VanishSafeDistance() -> Float = 150.0
+  // One of ours in combat with V but farther than this and out of sight for this many seconds is
+  // let go, so the fight can end (Spawn/Hunt.reds, CBCombatReleaseTick).
+  public static func CombatReleaseDistance() -> Float = 45.0
+  public static func CombatReleaseTicks() -> Int32 = 20
 
   // ---- Loot and bounties (Spawn/Loot.reds) --------------------------------
   public static func LootDelaySeconds() -> Float = 0.8
@@ -774,6 +791,65 @@ public abstract class CBConfig {
   // An apex squad comes after V beats one of the gang's crews, or after this many times the
   // usual kill count with no crew in between.
   public static func ApexMassacreMultiplier() -> Int32 = 2
+
+  // ---- Pacing without a clock (Spawn/Queue.reds) ------------------------------------
+  // Countdowns and warnings vary by this fraction either way.
+  public static func QueueJitterFraction() -> Float = 0.4
+  public static func WarningJitterFraction() -> Float = 0.35
+  // Unpredictable pacing: a lane's daily allowance spread over about this many seconds.
+  public static func UnpredictableDayTicks() -> Int32 = 10800
+  public static func NightPacingMult() -> Float = 1.3
+  public static func DayPacingMult() -> Float = 0.85
+  public static func NightStartHour() -> Float = 21.0
+  public static func NightEndHour() -> Float = 5.0
+
+  // ---- Scouts (Spawn/Hunt.reds) ----------------------------------------------------
+  public static func ScoutChance() -> Float = 0.5
+  // Seconds of eyes on V before the scout calls the crew in.
+  public static func ScoutCallTicks() -> Int32 = 6
+  // A scout is only sent when the gang has not had trouble with V for this many in-game hours.
+  public static func ScoutFreshHours() -> Float = 2.0
+  // How long a scout may take to appear before the crew comes anyway.
+  public static func ScoutSpawnGraceTicks() -> Int32 = 25
+
+  // ---- Cat and mouse (Spawn/Hunt.reds) ---------------------------------------------
+  // Seconds a hunter has to keep V in sight before the hunt counts V as found.
+  public static func SpotConfirmTicks() -> Int32 = 2
+  public static func CrouchSenseMult() -> Float = 0.6
+  public static func NightSenseMult() -> Float = 0.75
+  public static func DisguiseSenseMult() -> Float = 0.5
+  // Searchers walk once they are this close to the point they were sent to.
+  public static func HuntWalkDistance() -> Float = 20.0
+  public static func HuntGiveUpJitter() -> Int32 = 60
+  // How long the HUD line says how a hunt ended.
+  public static func HuntEndLineTicks() -> Int32 = 6
+  // Seconds with nobody out and nobody on the way before a hunt counts as over.
+  public static func HuntIdleEndTicks() -> Int32 = 8
+
+  // ---- Rewards and costs -----------------------------------------------------------
+  // Loot counts grow by up to this fraction at level 60.
+  public static func LootLevelScaleMax() -> Float = 1.0
+  public static func CrewEddiesMin() -> Int32 = 40
+  public static func CrewEddiesMax() -> Int32 = 120
+  public static func BountyCrew() -> Int32 = 2500
+  // Renown lost with a gang whose crew or apex squad V ran from.
+  public static func RunRenownLoss() -> Float = 3.0
+
+  // ---- Difficulty (per step above Easy: Hard is one, Very Hard two) ------------------
+  public static func DifficultyCrewTrim() -> Int32 = 1
+  public static func DifficultySpawnExtra() -> Float = 10.0
+  public static func DifficultySenseStep() -> Float = 0.1
+  public static func DifficultyWarningExtra() -> Int32 = 10
+  // Damage bonus kept when a combat overhaul that already makes enemies deadlier is installed.
+  public static func OverhaulDamageKeep() -> Float = 0.6
+  public static func RivalHomeBonus() -> Float = 10.0
+  // Longest name the HUD line shows before cutting it short.
+  public static func HudNameMaxChars() -> Int32 = 22
+  public static func HudLineMaxChars() -> Int32 = 76
+  // TRACKED shows on the HUD line only in the last stretch before somebody sets off.
+  public static func TrackedShowTicks() -> Int32 = 120
+  // At most one "asking around" notice per lane in this many seconds.
+  public static func TrackNoticeGapTicks() -> Int32 = 600
   public static func QueueProvokedBonus() -> Float = 40.0
   // Spread added to each Rival's countdown so two of the same rank do not arrive together.
   public static func RivalHuntJitterTicks() -> Int32 = 120

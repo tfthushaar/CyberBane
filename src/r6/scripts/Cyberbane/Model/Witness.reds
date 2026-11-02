@@ -22,6 +22,9 @@ func CBWitnessCanSee(npc: wref<ScriptedPuppet>, player: wref<GameObject>) -> Boo
   if !CBConfig.WitnessRequiresLineOfSight() || !IsDefined(player) {
     return true;
   }
+  if !IsDefined(npc) || !npc.IsAttached() {
+    return false;
+  }
   let reaction = npc.GetStimReactionComponent();
   if !IsDefined(reaction) {
     return true;

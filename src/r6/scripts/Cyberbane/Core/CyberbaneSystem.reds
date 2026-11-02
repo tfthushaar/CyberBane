@@ -148,6 +148,24 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_apexBountyFaction: CName;
   // Iconic weapons already handed out this session, so the same one does not drop twice.
   private let m_iconicsGiven: array<TweakDBID>;
+  // The hunt's presentation and its finer states (Spawn/Hunt.reds). Session only.
+  private let m_huntGrade: String;
+  private let m_huntEndLine: String;
+  private let m_huntEndUntil: Int32;
+  private let m_spotTicks: Int32;
+  private let m_huntIdleTicks: Int32;
+  private let m_huntGiveUpTicks: Int32;
+  private let m_searchDistrict: CName;
+  // A scout sent ahead of a crew (Spawn/Hunt.reds).
+  private let m_scoutFaction: CName;
+  private let m_scoutId: EntityID;
+  private let m_scoutSentTick: Int32;
+  private let m_scoutSeenTicks: Int32;
+  // Our own dead, waiting to be cleared once V is far enough away (Spawn/Spawner.reds,
+  // CBSweepRemains). Session only.
+  private let m_deadOurs: array<EntityID>;
+  // When each lane last sent an "asking around" notice, so a lane that re-queues does not repeat it.
+  private let m_trackNoticeTick: array<Int32>;
   // Gangs whose crew V has beaten since their last apex squad (Spawn/Queue.reds, CBApexEligible).
   private let m_crewBeaten: array<CName>;
   // The hostile turf V is standing on, since when, and when a lookout may next call it in
@@ -219,6 +237,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   // open a window for someone to walk in. Session-only.
   private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
+  private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
+  private let m_questPins: array<Vector4>;    // the tracked objective's map pins, refreshed every 3 ticks
+  private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
 
   // ---- Access -----------------------------------------------------------
@@ -370,7 +391,8 @@ public class CyberbaneSystem extends ScriptableSystem {
         // CBNpcSafe holds every other reader off for NpcReadyTicks after attach, and this path
         // ignored it.
         if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival")
-           || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort") {
+           || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort")
+           || des.IsTagged(id, n"CB_Scout") {
           CBScheduleSpawnSetup(this.GetGameInstance(), id, riding);
         }
 
@@ -738,7 +760,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // is settled, so the engine is no longer mid-teardown on the entity being removed.
     if this.m_pendingRivalSweep {
       this.m_pendingRivalSweep = false;
-      CBDeleteTaggedSafe(game, n"CB_Rival");
+      CBDeleteTaggedSafe(game, n"CB_Rival", true);   // the living only; the body goes later
     }
 
     // Did the player ask to start over? Same reasoning as the sweep above: this tick is
@@ -755,6 +777,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Safe-area check every tick, not on the slow sample: you can walk into a bar or a
     // clinic in well under ten seconds, and the reaction systems read this.
     this.m_inSafeZone = CBPlayerInSafeZone(game);
+    if this.m_tickCount % 3 == 0 {
+      CBRefreshQuestPins(this, game);
+      this.m_inQuestArea = CBComputeQuestArea(game);
+    }
+    CBSafeZoneArmsTick(this, game);     // keep the weapon lock lifted in safe areas when asked
+    if this.m_tickCount % 2 == 0 {
+      CBCombatReleaseTick(this, game);  // let go of anyone of ours keeping V in combat from afar
+    }
     // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district)
     // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
     // Prevention-system district/heat queries never fire mid-stream. The director reads the
@@ -1175,6 +1205,130 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayPush(this.m_iconicsGiven, id);
   }
 
+  public func GetHuntGrade() -> String {
+    return this.m_huntGrade;
+  }
+
+  public func SetHuntGrade(grade: String) -> Void {
+    this.m_huntGrade = grade;
+  }
+
+  public func GetHuntEndLine() -> String {
+    if this.m_tickCount > this.m_huntEndUntil {
+      return "";
+    }
+    return this.m_huntEndLine;
+  }
+
+  public func SetHuntEnd(line: String, ticks: Int32) -> Void {
+    this.m_huntEndLine = line;
+    this.m_huntEndUntil = this.m_tickCount + ticks;
+  }
+
+  public func BumpHuntIdleTicks() -> Int32 {
+    this.m_huntIdleTicks += 1;
+    return this.m_huntIdleTicks;
+  }
+
+  public func SetHuntIdleTicks(n: Int32) -> Void {
+    this.m_huntIdleTicks = n;
+  }
+
+  public func GetSpotTicks() -> Int32 {
+    return this.m_spotTicks;
+  }
+
+  public func SetSpotTicks(n: Int32) -> Void {
+    this.m_spotTicks = n;
+  }
+
+  public func GetHuntGiveUpTicks() -> Int32 {
+    if this.m_huntGiveUpTicks <= 0 {
+      return CBConfig.HuntGiveUpTicks();
+    }
+    return this.m_huntGiveUpTicks;
+  }
+
+  public func SetHuntGiveUpTicks(n: Int32) -> Void {
+    this.m_huntGiveUpTicks = n;
+  }
+
+  public func GetSearchDistrict() -> CName {
+    return this.m_searchDistrict;
+  }
+
+  public func SetSearchDistrict(d: CName) -> Void {
+    this.m_searchDistrict = d;
+  }
+
+  public func NoteDeadOurs(id: EntityID) -> Void {
+    if !EntityID.IsDefined(id) || ArrayContains(this.m_deadOurs, id) {
+      return;
+    }
+    if ArraySize(this.m_deadOurs) >= CBConfig.RemainsCap() {
+      ArrayErase(this.m_deadOurs, 0);
+    }
+    ArrayPush(this.m_deadOurs, id);
+  }
+
+  public func GetDeadOurs() -> array<EntityID> {
+    return this.m_deadOurs;
+  }
+
+  public func ForgetDeadOurs(id: EntityID) -> Void {
+    ArrayRemove(this.m_deadOurs, id);
+  }
+
+  // True if this lane may send a tracking notice now, and records that it did.
+  public func TakeTrackNotice(lane: Int32, gap: Int32) -> Bool {
+    if lane < 0 || lane > 8 {
+      return false;
+    }
+    while ArraySize(this.m_trackNoticeTick) <= lane {
+      ArrayPush(this.m_trackNoticeTick, 0);
+    }
+    let last = this.m_trackNoticeTick[lane];
+    if last > 0 && (this.m_tickCount - last) < gap {
+      return false;
+    }
+    this.m_trackNoticeTick[lane] = this.m_tickCount;
+    return true;
+  }
+
+  public func GetScoutFaction() -> CName {
+    return this.m_scoutFaction;
+  }
+
+  public func GetScoutId() -> EntityID {
+    return this.m_scoutId;
+  }
+
+  public func GetScoutSentTick() -> Int32 {
+    return this.m_scoutSentTick;
+  }
+
+  public func GetScoutSeenTicks() -> Int32 {
+    return this.m_scoutSeenTicks;
+  }
+
+  public func SetScoutSeenTicks(n: Int32) -> Void {
+    this.m_scoutSeenTicks = n;
+  }
+
+  public func SetScout(faction: CName, id: EntityID) -> Void {
+    this.m_scoutFaction = faction;
+    this.m_scoutId = id;
+    this.m_scoutSentTick = this.m_tickCount;
+    this.m_scoutSeenTicks = 0;
+  }
+
+  public func ClearScout() -> Void {
+    let none: EntityID;
+    this.m_scoutFaction = n"";
+    this.m_scoutId = none;
+    this.m_scoutSeenTicks = 0;
+  }
+
   public func CrewBeaten(faction: CName) -> Bool {
     return ArrayContains(this.m_crewBeaten, faction);
   }
@@ -1568,6 +1722,35 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_inSafeZone;
   }
 
+  // On a job, in a scene, or in a restricted or dangerous zone, when "Stay out of quest areas" is on.
+  public func IsInQuestArea() -> Bool {
+    return this.m_inQuestArea;
+  }
+
+  public func SetQuestPins(pins: array<Vector4>) -> Void {
+    this.m_questPins = pins;
+  }
+
+  // Is this point within `radius` of any of the tracked objective's pins?
+  public func NearQuestPins(at: Vector4, radius: Float) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_questPins) {
+      if Vector4.Distance(this.m_questPins[i], at) <= radius {
+        return true;
+      }
+      i += 1;
+    }
+    return false;
+  }
+
+  public func IsSafeArmsApplied() -> Bool {
+    return this.m_safeArmsApplied;
+  }
+
+  public func SetSafeArmsApplied(on: Bool) -> Void {
+    this.m_safeArmsApplied = on;
+  }
+
   // Content service, fetched once (lazily) and cached. Everything goes through CBContent/this so
   // the tick never re-locks the global service container, which during a load or streaming can
   // return a dead-but-non-null reference that passes IsDefined and then crashes on the context
@@ -1625,6 +1808,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBTributeTick(this, game);
     CBHitSquadTick(this, game);
     CBSweepOrphans(game);   // whatever was left in a car seat or mid-spawn goes now it can
+    CBSweepRemains(this, game);   // our dead and our spent cars, once V is far from them
     CBApexTick(this, game);
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);

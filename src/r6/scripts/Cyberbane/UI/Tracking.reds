@@ -103,6 +103,10 @@ public func CBTrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Voi
   // reason the markers read as intrusive. It still tells the player which direction somebody is
   // coming from, which is what the message on screen already said.
   data.visibleThroughWalls = false;
+  if !puppet.IsAttached() || puppet.IsDead() {
+    return;
+  }
+  CBTrace("map: marker on a spawned enemy");
   puppet.cbMappinId = ms.RegisterMappinWithObject(data, puppet);
   puppet.cbMapped = true;
 }
@@ -161,4 +165,5 @@ public func CBMarkerCombatTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   CBUntrackTagged(game, n"CB_Apex");
   CBUntrackTagged(game, n"CB_Squad");
   CBUntrackTagged(game, n"CB_Escort");
+  CBUntrackTagged(game, n"CB_Scout");
 }

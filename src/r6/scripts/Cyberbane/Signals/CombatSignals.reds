@@ -97,6 +97,11 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
   CBUntrackOnMap(game, puppet);   // no marker left hanging over a body
   let sysE = CyberbaneSystem.Get(game);
+  // One of ours: its body is cleared later, once V has moved well away (CBSweepRemains).
+  let desD = GameInstance.GetDynamicEntitySystem();
+  if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
+    sysE.NoteDeadOurs(puppet.GetEntityID());
+  }
   // Any death cancels a pending escape: this enemy did not get away (spec §10.2). If it
   // was the Rival hunting V, V just slew it.
   if IsDefined(sysE) {
@@ -146,7 +151,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     }
     // Crew and escorts carry a little.
     if IsDefined(desE) && puppet.cbDamagedByPlayer
-       && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desE.IsTagged(puppet.GetEntityID(), n"CB_Escort")) {
+       && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desE.IsTagged(puppet.GetEntityID(), n"CB_Escort")
+           || desE.IsTagged(puppet.GetEntityID(), n"CB_Scout")) {
       CBScheduleLoot(sysE, game, puppet, CBLootTierCrew(), 0.0);
     }
     // The last of a crew: their gang's best is next (Spawn/Queue.reds). Counted without this

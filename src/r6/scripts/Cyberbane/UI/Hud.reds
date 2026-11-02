@@ -178,6 +178,34 @@ public func CBHudColB() -> Int32 = 34
 public func CBHudColC() -> Int32 = 16
 public func CBHudColD() -> Int32 = 26
 
+// A time as the player asked to see it: exact, or in words when "Show countdowns" is off, so
+// nothing on screen gives them a clock to keep.
+public func CBTimeText(ticks: Int32) -> String {
+  if CBShowCountdowns() {
+    return CBHudCountdown(ticks);
+  }
+  if ticks <= 30 {
+    return "any moment";
+  }
+  if ticks <= 120 {
+    return "soon";
+  }
+  if ticks <= 600 {
+    return "before long";
+  }
+  return "later";
+}
+
+// "in 2m 05s" with countdowns on, "soon" without: reads right after a noun either way.
+public func CBWhen(ticks: Int32) -> String {
+  return CBShowCountdowns() && ticks > 0 ? "in " + CBHudCountdown(ticks) : CBTimeText(ticks);
+}
+
+public func CBShowCountdowns() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().showCountdowns;
+}
+
 public func CBHudCountdown(ticks: Int32) -> String {
   if ticks <= 0 {
     return "any moment";
@@ -746,22 +774,22 @@ public class CBHud {
         // count of how far off the next thing is.
         let right = "";
         if Equals(sys.GetPendingApexFaction(), fs.id) {
-          right = (sys.IsPendingApexDriving() ? "APEX SQUAD DRIVING " : "APEX SQUAD IN ")
-                + CBHudCountdown(sys.GetPendingApexTicks());
+          right = (sys.IsPendingApexDriving() ? "APEX SQUAD DRIVING " + CBTimeText(sys.GetPendingApexTicks())
+                                             : "APEX SQUAD " + CBWhen(sys.GetPendingApexTicks()));
         } else {
           if Equals(sys.GetPendingSquadFaction(), fs.id) {
             if sys.GetPendingSquadTicks() <= 0 {
               let why = CBBlockLabel(CBLastSpawnBlock());
               right = StrLen(why) > 0 ? "HELD: " + why : "CREW HELD UP";
             } else {
-              right = "CREW INBOUND " + CBHudCountdown(sys.GetPendingSquadTicks());
+              right = "CREW INBOUND " + CBTimeText(sys.GetPendingSquadTicks());
             }
           } else {
             if Equals(sys.GetLaneTarget(CBLaneApex()), fs.id) {
-              right = "APEX SQUAD IN " + CBHudCountdown(sys.GetLaneTicks(CBLaneApex()));
+              right = "APEX SQUAD " + CBWhen(sys.GetLaneTicks(CBLaneApex()));
             } else {
               if Equals(sys.GetLaneTarget(CBLaneSquad()), fs.id) {
-                right = "CREW IN " + CBHudCountdown(sys.GetLaneTicks(CBLaneSquad()));
+                right = "CREW " + CBWhen(sys.GetLaneTicks(CBLaneSquad()));
               } else {
                 right = CBApexProgressLine(sys, fs);
               }
@@ -848,7 +876,7 @@ public class CBHud {
       rightCol = "here now";
     } else {
       if onClock && sys.GetLaneTicks(CBLaneRival()) > 0 {
-        rightCol = "arrives in " + CBHudCountdown(sys.GetLaneTicks(CBLaneRival()));
+        rightCol = "arrives " + CBWhen(sys.GetLaneTicks(CBLaneRival()));
       } else {
         if onClock {
           // Their clock has run out and they are being placed. The Legend screen says the same
@@ -1057,6 +1085,16 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     // When the day's timetable next has room for this kind, in the player's own minutes. The
     // schedule is kept in in-game hours because that is what the sectors are made of; nobody
     // reading a Hub wants to be told "in 3 game hours", so it is converted here.
+    // Without a timetable there is no next window to name.
+    if !Equals(CBPacing(), ECBPacing.Timetable) {
+      if CBLaneBudgetLeft(sys, game, lane) <= 0 {
+        return label + "   done for today" + CBHudBudgetTail(sys, game, lane);
+      }
+      if Equals(CBPacing(), ECBPacing.Reactive) && lane == CBLaneSquad() {
+        return label + "   only if you give them a reason" + CBHudBudgetTail(sys, game, lane);
+      }
+      return label + "   no telling when" + CBHudBudgetTail(sys, game, lane);
+    }
     let hrs = CBHoursUntilNextSlot(sys, game, lane);
     if hrs < 0.0 {
       return label + "   done for today" + CBHudBudgetTail(sys, game, lane);
@@ -1072,11 +1110,11 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
       // eleven names long and working perfectly.
       let rest = CBLaneRestLeft(sys, lane);
       if rest > 0 {
-        return label + "   breather, " + CBHudCountdown(rest) + CBHudBudgetTail(sys, game, lane);
+        return label + "   breather, " + CBTimeText(rest) + CBHudBudgetTail(sys, game, lane);
       }
       return label + "   due, nobody qualifies yet" + CBHudBudgetTail(sys, game, lane);
     }
-    return label + "   next in " + CBHudRealFromGameHours(hrs) + CBHudBudgetTail(sys, game, lane);
+    return label + "   next " + (CBShowCountdowns() ? "in " + CBHudRealFromGameHours(hrs) : "later today") + CBHudBudgetTail(sys, game, lane);
   }
   let ticks = sys.GetLaneTicks(lane);
   if ticks <= 0 {
@@ -1085,7 +1123,7 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     return StrLen(why) > 0 ? label + "   " + who + "  held: " + why + tail
                            : label + "   " + who + "  any moment" + tail;
   }
-  return label + "   " + who + "  " + CBHudCountdown(ticks) + CBHudBudgetTail(sys, game, lane);
+  return label + "   " + who + "  " + CBTimeText(ticks) + CBHudBudgetTail(sys, game, lane);
 }
 
 // In-game hours as the real time they will actually take, using the clock rate measured at the

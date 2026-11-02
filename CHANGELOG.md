@@ -3,6 +3,157 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.5.3] - 2026-11-02
+
+Fixes for player reports on 1.5.2, each traced to its cause rather than patched where it showed.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **A drone as a Rival.** Anything that escaped or was spared could become a Rival, drones
+  included, and a Rival gets a boss-grade build. A Maelstrom drone came back again and again,
+  nearly unkillable and firing missiles. Only people can become Rivals or a gang's spawn template
+  now: drones, mechs, spiderbots, androids and turrets are refused, and any already in your save
+  are retired when it loads.
+- **A gig contact turned hostile mid-conversation** (Alan in Treating Symptoms, with low Voodoo
+  Boys standing). The check that keeps Cyberbane away from story characters only knew the ones
+  the game flags directly, and most job contacts are not flagged. It now uses the same record
+  test that keeps story characters off the Rival roster. Nobody is turned hostile during a
+  conversation or a scene, nobody the game has made friendly towards you is turned at all, and
+  with Stay out of quest areas on, nothing happens on a job.
+- **Stay out of quest areas did almost nothing.** The quest-area test was never called, so the
+  switch only kept arrivals out of restricted and dangerous zones. It now covers being on a job,
+  worked out the way the game's world map places the job: within 80 metres of the tracked
+  objective's map pins (adjustable from 40 to 150 with the new **Quest area size** setting).
+  Nobody arrives, nobody is called in by a lookout, and nobody is turned hostile while you are on
+  one. Scenes and conversations count too.
+- **The job site itself is protected, wherever you stand.** Only your own position was checked,
+  so a crew could still be placed at the job while you stood just outside it. Nobody is placed
+  within 60 metres of the job's pins, nobody standing there is pushed by crowd fear, morale or
+  hostility, searchers are never sent into it, hunters already out stop following you onto it,
+  a car crew stays in the car rather than getting out there, and an apex squad's arrival scare
+  does not reach it. Anybody Cyberbane had already turned hostile who is standing at the job goes
+  back to how the game had them.
+- **Nothing vanishes in front of you.** Bodies, spent cars, leftovers and anyone let go to end a
+  fight are only removed when you cannot see them.
+- **Let me fight in safe areas did not work.** It lifted the game's weapon lock once, at the
+  moment you walked in, and the game puts the lock back every time the area updates. It also
+  missed loading a save inside a safe area and turning the setting on while already inside. It
+  now keeps the lock lifted for as long as you are inside with the setting on, and puts it back if
+  you turn the setting off. A few places (the Afterlife, some apartments) also have a story
+  restriction on fighting, and Cyberbane leaves that alone.
+- **Stuck in combat after the hunters were dead.** The game keeps you in combat while anyone is in
+  combat with you. Cyberbane's people who had broken and run, got stuck, or were still sitting in a
+  car far away kept it going. Anyone of ours in combat with you but far away and out of sight for
+  twenty seconds is now let go, out of sight.
+- **TRACKED kept coming back.** The countdowns ran while you were somewhere nobody could reach
+  you, such as home, a job or a scene. The arrival was then refused, and the next attempt showed
+  TRACKED again. The countdowns now wait while nobody can arrive.
+
+### New setting
+- **Hunt line on the HUD:** Everything (default), HuntsOnly (only while somebody is on their way
+  or out looking, no TRACKED) or Off.
+
+## [1.5.2] - 2026-11-02
+
+A robustness release. A crash was still reported on 1.5.1 after playing for a while. Every
+system that runs on a timer or reacts to NPCs was read again, end to end, for anything that
+could touch an NPC or a car after it had left the world, for anything that builds up over a long
+session, and for calls into the game that have been part of a crash before.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Stability
+- **Nothing builds up over a long session.** The bodies of everyone Cyberbane sent, and the car
+  every convoy arrived in, used to stay registered with the game for the rest of the session and
+  spawn back in whenever you passed. They are now cleared once you are well away from them.
+- **No more than 18 of Cyberbane's people alive at once.** A vendetta crew of twenty on top of an
+  apex squad, escorts and a Rival was a lot for the game to stream in at one spot.
+- **Cars are for chases.** Cyberbane's people drive in only while you are driving. On foot,
+  everybody walks in out of sight and searches for you. Seating a crew in a car, driving it and
+  getting them out are the most delicate things Cyberbane asks of the game, and they no longer
+  happen around a player standing still.
+- **Bodies are never removed in front of you.** A Rival's body and a crew's bodies were cleared
+  a moment after death, while they could still be falling. Bodies now go only once you are far
+  from them.
+- **Nothing touches an NPC that has left the world.** Crowd fear, morale, hostility on sight,
+  witness checks, abilities, stat changes, map markers and squad forming all check first that the
+  NPC is still fully in the world, including NPCs that streamed out a moment earlier.
+- **The phone forgets a controller the moment the HUD tears it down**, along with any open
+  thread, so a text can never be delivered into a piece of interface that no longer exists.
+  Until the new one is ready, texts show as cards.
+
+### For bug reports
+- With **Mod Settings > Cyberbane > Debug > Log level** set to Verbose, Cyberbane writes a short
+  line before every call into the game that has ever been part of a crash: spawning, seating a
+  crew, giving orders, removing an NPC, showing a text, changing an NPC's stats or attitude. The
+  last lines before a crash then say what it was doing.
+
+## [1.5.1] - 2026-11-02
+
+Built from player feedback on being hunted: the timer was easy to read and hard to forget, squads
+appeared with no sense of how bad it was going to be, and every encounter ended in a fight. This
+release takes the clock away, warns you earlier and more clearly, and gives passive play a real
+cat and mouse loop. Everything follows the crash rules 1.5.0 set.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### No clock to keep
+- **New setting: When they come.** Timetable is the daily windows from before. Unpredictable
+  has no windows: any minute might be the one, more often at night for crews and Rivals and in
+  the day for apex squads. Reactive only sends a crew when you give a gang a reason, and an apex
+  squad only after you beat one of their crews. The per-day limits apply in every mode.
+- **Every countdown varies.** How long a crew or apex squad takes to set off, and how long every
+  warning lasts, now changes each time.
+- **New setting: Show countdowns.** Turn it off and the Hub and the HUD say "soon", "any
+  moment" or "later" in place of exact times.
+
+### Warnings you can prepare for
+- **You hear you are being tracked first.** When a gang or a Rival starts coming for you, the
+  local broker texts that somebody is asking about you, or you overhear it on the street. In the
+  last two minutes before they set off, the HUD line reads TRACKED.
+- **How big the threat is.** The HUD line names it (SCOUT, CREW, HEAVY CREW, APEX SQUAD,
+  RIVAL), and a crew's warning says how many are coming, from the same number that turns up.
+- **Scouts.** A gang that does not know where you are sometimes sends one scout first. If the
+  scout keeps eyes on you for a few seconds, they call in the crew. Deal with the scout, or stay
+  out of sight, and the crew never comes and that gang backs off for a while. New setting:
+  **Scouts before crews**, on by default.
+- **How it ended.** For a few seconds after a hunt the HUD line reads LOST THEM or THREAT
+  ENDED.
+
+### Cat and mouse
+- **A glimpse is not a fix.** A hunter has to keep you in sight for a moment before the hunt
+  counts you as found, and the HUD line reads SPOTTED while they do. Break line of sight in that
+  moment and they go back to searching.
+- **Stealth counts.** Crouching, the dark and wearing the hunting gang's own colours all
+  shorten how far hunters see and hear you.
+- **They search like guards.** Searchers run to the area, then walk it, and how long they keep
+  looking varies.
+- **Ways to shake them.** Getting into a safe area, or driving out of the district they are
+  searching, makes them lose interest twice as fast.
+- **Rivals know their streets.** A Rival is more likely to come for you in the district they
+  came from.
+
+### Worth the fight
+- **Loot scales with your level**, and crews now carry cash.
+- **A bounty for a wiped crew**, paid by a gang at war with theirs that does not want you dead.
+- **Running costs something.** Lose a crew or an apex squad by running and that gang thinks a
+  little less of you, and lets you know. They also leave you alone for a while, so lying low
+  works.
+
+### Fairer fights
+- **Difficulty does more.** On Hard and Very Hard, crews are slightly smaller and placed further
+  out, warnings last longer, and hunters do not see or hear as far.
+- **Combat overhauls.** When Immersive Shooting AI shows up in the Mod Settings list, apex
+  squads keep only part of their damage bonus. If it does not appear there on your setup, the
+  apex strength slider does the same job.
+
+### HUD
+- Still one line, never more. Names on it are cut short and the whole line has a hard length
+  limit, so it fits on every screen.
+- Fixed in testing: right after a crew's warning ran out, the line could briefly read THREAT
+  ENDED before they appeared.
+
 ## [1.5.0] - 2026-11-02
 
 A stability release, and it includes everything that was built for 1.4.8. Players reported the
@@ -52,7 +203,7 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
 - A crew you wiped out could still produce a Rival "who got away". Only somebody still standing
   can escape now.
 
-### Hunted, not ambushed
+### Being hunted
 - **They tell you first, and you get time.** A crew, an apex squad or a Rival texts before they
   set off, with roughly where they think you are, and there is a real gap before they arrive.
 - **They arrive out of sight and have to find you.** Spawn distances are much longer, and
@@ -62,15 +213,16 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   they are on their way, searching for you, have you, or are losing your trail.
 - **You can break contact.** Get out of sight and far enough away and they lose you, then give
   up. A Rival you lose texts you about it.
-- **Rivals say "found you" when they actually find you**, not the moment they spawn.
+- **Rivals say "found you" when they actually find you.** The text used to arrive the moment
+  they spawned.
 
 ### They come for a reason
-- **A crew needs a reason, not just a grudge.** A gang that wants you dead sends people when
+- **A crew needs a reason.** A gang that wants you dead sends people when
   you have killed their people where somebody saw it, when you have been hanging around on
   their streets long enough for a lookout to call it in, when you have hurt them in the last
   half a day, or when they have sworn a vendetta. A gang that hates you but has not seen or
-  heard of you in a day keeps its people at home. The daily timetable still limits how often
-  the city has time for you; it is no longer the reason anybody comes.
+  heard of you in a day keeps its people at home. The daily timetable only limits how often the
+  city has time for you.
 - **On their turf, they notice.** Spend a few minutes out in the open on the streets of a gang
   that wants you dead and a lookout calls it in. Their crew comes off the timetable, and their
   warning says you were seen on their streets. Sneaking, safe areas and being indoors do not

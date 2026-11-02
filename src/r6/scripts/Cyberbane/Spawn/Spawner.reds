@@ -292,6 +292,7 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
     ArrayPush(tags, extraTag);
   }
   spec.tags = tags;
+  CBTrace("spawn: creating an NPC");
   created = des.CreateEntity(spec);
   return EntityID.IsDefined(created);
 }
@@ -351,8 +352,19 @@ func CBSpawnBearing(attempt: Int32) -> Float {
   return -2.36;
 }
 
-public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, count: Int32, squadTag: CName, dist: Float, out lastSpawned: EntityID, opt extraTag: CName) -> Int32 {
-  if !TDBID.IsValid(record) || count <= 0 {
+public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, wanted: Int32, squadTag: CName, baseDist: Float, out lastSpawned: EntityID, opt extraTag: CName) -> Int32 {
+  // Further out on harder difficulties, so there is more time between a warning and a fight.
+  let dist = baseDist + CBConfig.DifficultySpawnExtra() * Cast<Float>(CBDifficultyLevel());
+  // Never more of ours alive at once than the ceiling. A vendetta crew of twenty on top of an
+  // apex squad, escorts and a Rival is a lot of fully simulated NPCs for the game to stream in
+  // at one spot, and nothing about the fight needs every one of them at the same moment.
+  let room = CBConfig.MaxLiveSpawns() - CBCountLiveTagged(game, n"Cyberbane");
+  let count = wanted < room ? wanted : room;
+  if room <= 0 {
+    CBLog.Info(n"Spawn", s"Already \(CBConfig.MaxLiveSpawns()) of ours in the world; nobody else is sent until some are gone.");
+    return 0;
+  }
+  if !TDBID.IsValid(record) || count <= 0 || !CBRecordIsPerson(record) {
     CBNoteSpawnBlock(CBBlockNoRecord());
     return 0;
   }
@@ -625,6 +637,7 @@ public func CBIssueMove(puppet: ref<ScriptedPuppet>, ai: ref<AIHumanComponent>, 
     ai.CancelCommand(puppet.cbMoveCmd);
   }
   puppet.cbMoveCmd = cmd;
+  CBTrace("ai: move order");
   ai.SendCommand(cmd);
 }
 
@@ -652,6 +665,7 @@ public func CBUnmountOnce(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Vo
   }
   CBCancelMove(puppet);
   puppet.cbUnmountSent = true;
+  CBTrace("vehicle: ordering an NPC out of a car");
   ai.SendCommand(new AIUnmountCommand());
 }
 
@@ -664,7 +678,10 @@ public func CBUnmountOnce(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Vo
 // they are marked CB_Orphan, which the slow tick clears once they are out of the car and fully
 // spawned (CBSweepOrphans). A car is only removed when none of Cyberbane's crew is still seated.
 // Map markers come off before anything is removed.
-public func CBDeleteTaggedSafe(game: GameInstance, tag: CName) -> Int32 {
+//
+// `livingOnly` leaves bodies where they are. A body that has just fallen may still be ragdolling
+// in front of V; bodies are cleared by CBSweepRemains once V is well away from them.
+public func CBDeleteTaggedSafe(game: GameInstance, tag: CName, opt livingOnly: Bool) -> Int32 {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
     return 0;
@@ -676,7 +693,12 @@ public func CBDeleteTaggedSafe(game: GameInstance, tag: CName) -> Int32 {
   while i < ArraySize(ids) {
     let id = ids[i];
     i += 1;
-    if !CBRemoveOne(game, des, id, crewSeated) {
+    let dead = false;
+    if livingOnly {
+      let body = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+      dead = IsDefined(body) && body.IsDead();
+    }
+    if !dead && !CBRemoveOne(game, des, id, crewSeated) {
       kept += 1;
       if NotEquals(tag, n"Cyberbane") && NotEquals(tag, n"CB_Orphan") {
         des.UnassignTag(id, tag);
@@ -714,6 +736,7 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
       CBCancelMove(p);
     }
   }
+  CBTrace("remove: one of ours");
   des.DeleteEntity(id);
   return true;
 }
@@ -731,7 +754,7 @@ func CBAnyCrewSeated(game: GameInstance, des: ref<DynamicEntitySystem>) -> Bool 
   return false;
 }
 
-// Slow tick: clear whatever was left behind once it can be removed safely.
+// Slow tick: clear whatever was left behind once it can be removed safely, out of V's sight.
 public func CBSweepOrphans(game: GameInstance) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !des.IsPopulated(n"CB_Orphan") || !CBWorldStable(game) {
@@ -741,9 +764,27 @@ public func CBSweepOrphans(game: GameInstance) -> Void {
   let ids = des.GetTaggedIDs(n"CB_Orphan");
   let i = 0;
   while i < ArraySize(ids) {
-    CBRemoveOne(game, des, ids[i], crewSeated);
+    let ent = GameInstance.FindEntityByID(game, ids[i]);
+    if !IsDefined(ent) || CBOutOfView(game, ent.GetWorldPosition()) {
+      CBRemoveOne(game, des, ids[i], crewSeated);
+    }
     i += 1;
   }
+}
+
+// Could V see something vanish here? Out of view means behind V, round the side, blocked by a
+// wall, or simply a long way off. Every removal that can happen near V checks this, so nobody and
+// nothing disappears in front of the player.
+public func CBOutOfView(game: GameInstance, at: Vector4) -> Bool {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return true;
+  }
+  let ppos = player.GetWorldPosition();
+  if Vector4.Distance(ppos, at) >= CBConfig.VanishSafeDistance() {
+    return true;
+  }
+  return CBPointOutOfSight(game, ppos, player.GetWorldForward(), at);
 }
 
 // Finish setting up one of our own, once the engine has actually built it.
@@ -844,7 +885,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   let id = puppet.GetEntityID();
   // An apex escort fights as rank and file, so it takes the squad's kit.
-  let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort");
+  let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort") || des.IsTagged(id, n"CB_Scout");
   let isRival = des.IsTagged(id, n"CB_Rival");
   let isApex = des.IsTagged(id, n"CB_Apex");
   if !isSquad && !isRival && !isApex {
@@ -940,6 +981,7 @@ func CBNearestHunterDistance(sys: ref<CyberbaneSystem>, game: GameInstance,
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Apex", best);
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Squad", best);
   best = CBNearestForTag(sys, game, des, ppos, n"CB_Escort", best);
+  best = CBNearestForTag(sys, game, des, ppos, n"CB_Scout", best);
   return best;
 }
 
@@ -968,17 +1010,33 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   if CBLiveRivalPresent(sys, game) {
     CBRivalEscapedByPlayer(sys, game);
   }
+  // A gang crew or apex squad V ran from. Running costs a little standing with them, and lying
+  // low works: they leave V alone for a while (the same cooldown a crew starts when it is sent).
+  let ranFrom = sys.GetHuntFaction();
+  let crewLost = CBLiveTaggedPresent(game, n"CB_Squad") || CBLiveTaggedPresent(game, n"CB_Apex");
+  sys.ClearScout();
   CBDeleteTaggedSafe(game, n"CB_Rival");
   CBDeleteTaggedSafe(game, n"CB_Squad");
   CBDeleteTaggedSafe(game, n"CB_Apex");
   CBDeleteTaggedSafe(game, n"CB_Escort");
+  CBDeleteTaggedSafe(game, n"CB_Scout");
+  sys.SetHuntEnd("LOST THEM", CBConfig.HuntEndLineTicks());
+  if crewLost && NotEquals(ranFrom, n"") {
+    let fs = sys.FindFaction(ranFrom);
+    if IsDefined(fs) {
+      fs.renown = ClampF(fs.renown - CBConfig.RunRenownLoss(), 0.0, 100.0);
+      fs.lastHitSquadAt = CBGameSeconds(game);
+    }
+    if CBToastsOn() && CBFactionFieldsSquads(ranFrom) {
+      CBPhoneFromGangFinal(game, ranFrom, "Ran, did you. Everybody is going to hear about that.");
+    }
+  }
   // Take the bars down with them, rather than leaving them up for the tick it would take the
   // stack to notice its targets had stopped existing.
   sys.GetThreatBar().Hide();
   sys.SetActiveRivalId(0);
   sys.SetActiveSquadFaction(n"");
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.HasSettings() && rt.GetSettings().toasts {
+  if CBToastsOn() && !crewLost {
     CBPhoneFromStreet(game, "They lost you. Do not go back the way you came.");
   }
   CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");
@@ -1010,9 +1068,10 @@ public func CBRecordAttitudeGroup(record: TweakDBID) -> CName {
 // Make a spawned NPC hostile toward V. Called when a CB_Squad / CB_Rival puppet attaches.
 public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   let player = GetPlayer(game);
-  if !IsDefined(player) || !IsDefined(puppet) {
+  if !IsDefined(player) || !IsDefined(puppet) || !puppet.IsAttached() || puppet.IsDead() {
     return;
   }
+  CBTrace("attitude: spawned enemy hostile to V");
   let agent = puppet.GetAttitudeAgent();
   let pagent = player.GetAttitudeAgent();
   if IsDefined(agent) && IsDefined(pagent) {
@@ -1046,4 +1105,65 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
   // and it only injects the threat when that succeeded. Setting the attitude ourselves and
   // injecting the threat ourselves gets both halves regardless.
   TargetTrackingExtension.InjectThreat(puppet, player);
+}
+
+// ---- Clearing up after ourselves --------------------------------------------------
+//
+// Everything Cyberbane spawns is a managed entity that stays registered until it is removed, and
+// before 1.5.2 two kinds never were for the rest of the session: the bodies of anyone killed, and
+// the car every convoy arrived in. Over a long session that is dozens of registered bodies and
+// cars across the city, each one spawned back in whenever V passes. This clears them on the slow
+// tick, through the same safe removal as everything else, once V is far enough away that nothing
+// can be seen to vanish: a body V might still loot, or a car somebody is still sitting in, stays.
+public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  let player = GetPlayer(game);
+  if !IsDefined(sys) || !IsDefined(des) || !IsDefined(player) || !CBWorldStable(game) {
+    return;
+  }
+  let ppos = player.GetWorldPosition();
+  let reach = CBConfig.RemainsSweepDistance();
+
+  let dead = sys.GetDeadOurs();
+  let i = 0;
+  while i < ArraySize(dead) {
+    let id = dead[i];
+    i += 1;
+    let ent = GameInstance.FindEntityByID(game, id);
+    let far = !IsDefined(ent)
+              || Vector4.Distance(ent.GetWorldPosition(), ppos) > reach && CBOutOfView(game, ent.GetWorldPosition());
+    if far && !des.IsSpawning(id) && !VehicleComponent.IsMountedToVehicle(game, id) {
+      let p = ent as ScriptedPuppet;
+      if IsDefined(p) {
+        CBUntrackOnMap(game, p);
+      }
+      CBTrace("remove: a body of ours");
+      des.DeleteEntity(id);
+      sys.ForgetDeadOurs(id);
+    }
+  }
+
+  // Cars: only when no car is on its way or being boarded and nobody of ours is in a seat.
+  if sys.HasPendingArrival() || CBAnyCrewSeated(game, des) {
+    return;
+  }
+  let cars = des.GetTaggedIDs(n"CB_Car");
+  let c = 0;
+  while c < ArraySize(cars) {
+    let carId = cars[c];
+    c += 1;
+    let car = GameInstance.FindEntityByID(game, carId);
+    let farCar = !IsDefined(car)
+                 || Vector4.Distance(car.GetWorldPosition(), ppos) > reach && CBOutOfView(game, car.GetWorldPosition());
+    if farCar && !des.IsSpawning(carId) && !Equals(carId, sys.GetArrivalCarId()) {
+      CBTrace("remove: a spent car of ours");
+      des.DeleteEntity(carId);
+    }
+  }
+}
+
+// A breadcrumb before each call into the engine that has ever been part of a crash. Written only
+// at the Verbose log level, so the last lines before a crash say what Cyberbane was doing.
+public func CBTrace(what: String) -> Void {
+  CBLog.Verbose(n"Trace", what);
 }
