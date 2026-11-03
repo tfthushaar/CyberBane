@@ -25,7 +25,8 @@
 //
 // ---- The hooks, and what each one is for ------------------------------------------------------
 //
-//   AddMenuItem / PopulateMenuItemList  - put the entry in the list, after the game's Mods entry.
+//   AddMenuItem / PopulateMenuItemList  - put the entry in the list, after the game's Mods entry
+//                                         (2.5) or its Settings entry (2.31, which has no Mods).
 //   OnInitialize / OnUninitialize       - tell CyberbaneSystem the pause menu is up, and take the
 //                                         page down with it. Nothing outlives the menu.
 //   OnSwitchToCyberbane (scenario)      - the entry was chosen: show the page.
@@ -54,20 +55,34 @@
 @addField(gameuiMenuItemListGameController)
 private let m_cbEntryAdded: Bool;
 
+// Where it goes depends on the patch, because the pause menu's own list is not the same on both:
+//
+//   2.5   Resume, Save, Load, Mods, Settings, Credits, Exit to Main Menu
+//   2.31  Resume, Save, Load, Settings, Credits, Exit to Main Menu   (there is no Mods entry)
+//
+// (pauseMenu.script, PopulateMenuItemList, on each patch.) So the entry goes right after Mods
+// where there is one, and right after Settings where there is not. Mods always comes before
+// Settings on 2.5, so by the time Settings is added there the entry is already in and the flag
+// stops a second one: on 2.5 the Settings anchor never fires and the entry sits where it always
+// has. Settings is the game's own entry, present on every patch whatever else is installed, so on
+// 2.31 the entry does not depend on Mod Settings or any other mod putting something in the list.
+// If neither shows up at all, the fallback below still puts it on the end.
 @wrapMethod(gameuiMenuItemListGameController)
 protected func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) {
   wrappedMethod(label, spawnEvent);
   if this.m_cbEntryAdded || !this.IsA(n"PauseMenuGameController") {
     return;
   }
-  // Right after the game's own Mods entry.
-  if Equals(spawnEvent, n"OnSwitchToModioMenu") {
+  // Right after the game's own Mods entry (2.5), or its Settings entry where there is no Mods
+  // entry to follow (2.31).
+  if Equals(spawnEvent, n"OnSwitchToModioMenu") || Equals(spawnEvent, n"OnSwitchToSettings") {
     wrappedMethod(CBPauseMenuLabel(), n"OnSwitchToCyberbane");
     this.m_cbEntryAdded = true;
   }
 }
 
-// If the Mods entry never turned up, put ours on the end rather than losing it.
+// If neither the Mods entry nor the Settings entry turned up (another mod rebuilt the list without
+// them), put ours on the end rather than losing it.
 //
 // The list has already been refreshed by the time this runs (PopulateMenuItemList ends with
 // m_menuListController.Refresh()), so an entry pushed now is data the list has not drawn. Mod

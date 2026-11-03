@@ -23,8 +23,8 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.6.0).** Built for Cyberpunk 2077 v2.5 and in active development. This
-page describes what the mod does and how it installs.
+**Status: released (1.6.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+in active development. This page describes what the mod does and how it installs.
 
 ## What it does
 
@@ -208,7 +208,7 @@ page describes what the mod does and how it installs.
   you made and put down, the apex enforcers and bosses people saw you kill, the vendettas sworn,
   the gangs that came round to you, the peace you bought and the tribute you took.
 - **The Hub.** A page of the pause menu: press Escape and choose Cyberbane, next to Mods and Mod
-  Settings. It uses the game's own
+  Settings (on 2.31, which has no Mods entry, right after Settings). It uses the game's own
   font and colours and the menu's own cursor, the game stays paused while you read it, and Escape
   takes you back to the pause menu. Click a screen to switch: Standing, Gangs, The City, Rivals,
   Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
@@ -237,9 +237,17 @@ Install these first, each from its own page and following that mod's instruction
 There are no optional requirements. Cyberbane reads your clothing through the game's own
 equipment slots, so outfit mods are picked up without any integration.
 
-Cyberbane is built for Cyberpunk 2077 v2.5. Install the 2.5 versions of the required frameworks
-above. Each game patch is treated as unsupported until it has been checked, and a compatibility
-note goes out with every release.
+Cyberbane supports Cyberpunk 2077 v2.5 and v2.31. The same download works on both: install the
+versions of the required frameworks that match your game.
+
+| Game | RED4ext | redscript | Codeware | Mod Settings |
+| --- | --- | --- | --- | --- |
+| 2.5 | latest | latest | latest | latest |
+| 2.31 | 1.29.1 or 1.30.0 | 0.5.31 | 1.20.6 | 0.2.21 |
+
+The 2.31 row is the last build of each framework made for 2.31; every later build needs 2.5. Use
+the builds for the patch you are on and not the other one. Every other patch is treated as
+unsupported until it has been checked, and a compatibility note goes out with every release.
 
 ## Installation
 

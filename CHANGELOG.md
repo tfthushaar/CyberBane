@@ -3,7 +3,39 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [1.6.0] - 2026-11-03
+## [1.6.1] - 2026-11-03
+
+Cyberbane runs on Cyberpunk 2077 2.31 as well as 2.5. Players who have not moved to 2.5 asked to
+try it, and it is one download for both: install the versions of the required frameworks that
+match your game (the table is in the readme). Nothing changes for anyone already on 2.5.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### What stood in the way on 2.31
+- **One call to the game did not exist in the same shape.** The function the game uses to hand an
+  NPC an ability takes two arguments on 2.31 and three on 2.5, and Cyberbane called the 2.5 form
+  when kitting Rivals and apex squads. On 2.31 that is a script compile error, and a compile error
+  stops every script mod from loading, not only this one. Cyberbane now does what that function
+  does itself, through the two calls underneath it, which are the same on both patches. On 2.5 an
+  NPC gets exactly the same abilities, applied exactly the same way.
+- **The Cyberbane entry in the pause menu has a sensible place on 2.31.** It goes right after the
+  game's Mods entry, and 2.31 has no Mods entry, so it was being added below Exit to Main Menu. On
+  2.31 it now goes right after Settings, which is the game's own entry and does not depend on any
+  other mod. On 2.5 it stays where it was.
+
+### How it was checked
+Without a 2.31 install to compile against, everything Cyberbane uses from outside itself was
+checked against the game's own script source for both patches, and against the 2.31 builds of
+Codeware (1.20.6) and Mod Settings (0.2.21):
+- Every one of the 30 game functions Cyberbane hooks has exactly the same signature on 2.31.
+- Every game field those hooks read, every enum value Cyberbane names, and every function it calls
+  exists on 2.31 with the same shape, or comes from Codeware 1.20.6 with the same shape (the text
+  wrapping, service and callback functions that 2.5 took into the game itself).
+- Every vehicle, weapon, crafting material, ability and map marker record Cyberbane names exists in
+  2.31's game data.
+- The phone and pause menu code Cyberbane hooks into differs between the patches only in touch,
+  gyro and Mac input, none of which Cyberbane touches.
+
 
 Cyberbane stays out of the story. A Rival walked into a VR fight where the only thing you could do
 was pistol-whip, and a crew attacked on the way to the water tower with River. Both came from the
