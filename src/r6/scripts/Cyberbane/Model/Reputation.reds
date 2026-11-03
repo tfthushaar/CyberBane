@@ -324,6 +324,8 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     return;
   }
   let now = CBGameSeconds(game);
+  // At most one gang states its price per pass; see the note further down.
+  let demanded = false;
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) && NotEquals(fs.id, n"") {
       let posture = score.GetPosture(fs.id);
@@ -340,11 +342,36 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
         CBFileLog(sys, n"Vendetta", now, CBEventDistrict(sys, game), fs.id, 0.0);
         if CBToastsOn() && CBFactionFieldsSquads(fs.id) {
           CBPhoneFromGang(game, fs.id, "You are dead to us. Every one of ours who sees you will try.");
+          // That message already carries the pay-off answer, so this gang has had its say.
+          sys.NotePeaceOffered(fs.id);
         }
         CBLog.Info(n"Model", s"\(NameToString(fs.id)) swore a vendetta.");
       } else {
         if !sworn && fs.vendettaSince > 0.0 {
           fs.vendettaSince = 0.0;
+        }
+      }
+      // Every hostile gang that can be bought puts its price to V once a session.
+      //
+      // A vendetta is persisted (`vendettaSince`), but the phone's threads are not: they start
+      // empty after a load ("Session only" at the top of UI/PhoneMessages.reds). The pay-off
+      // answer lives on a thread (UI/RealPhone.reds, m_thOffer), and the only message that
+      // opened one was the swearing-in above, which is sent once, on the transition. So a player
+      // who loaded a save with a gang already against them had nobody to answer and no way to
+      // buy them off from the phone at all - reported as "I don't get the messages where you can
+      // either pay for the vendetta to be over or not". The Hub could still broker it; the
+      // messages the mod advertises could not be reached.
+      //
+      // One gang per pass, so several at once do not all text in the same instant after a load,
+      // and never a gang that has already been offered this session - including one that refused
+      // one, because NotePeaceOffered marks them the first time either way.
+      if !demanded && CBToastsOn() && CBFactionFieldsSquads(fs.id)
+         && (sworn || Equals(posture, ECBPosture.Hostile)) {
+        let quote = CBPeaceQuote(sys, game, fs.id);
+        if quote >= 0 && sys.NotePeaceOffered(fs.id) {
+          CBPhoneFromGang(game, fs.id, CBPeaceDemandLine(quote, sworn));
+          demanded = true;
+          CBLog.Info(n"Model", s"\(NameToString(fs.id)) put its price to you: \(quote)eb.");
         }
       }
     }

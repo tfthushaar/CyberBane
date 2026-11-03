@@ -1,19 +1,47 @@
 # Cyberbane improvements
 
 A working list of what players have asked for, what the mod already does about it, and what is
-left. Checked against the code on the development branch at 1.5.0.
+left.
 
-Players on Nexus are on 1.4.7. Everything marked "1.4.8" or "1.5.0" below is in the code but has
-not been released yet, so the player who wrote this feedback has not seen any of it. The
-point-by-point section and the backlog describe the code as it was before the backlog was built;
-the status section says what has been done since.
+The released version is 1.6.2. The "Requests after 1.6.1" section at the top is the current one;
+everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
+description of today's code. The original point-by-point section and the backlog describe the mod
+as it was *before* that backlog was built, and each entry's own status line says what has been
+done since - so read the status lines, not the surrounding prose, for what is true now.
 
-Every idea here has to follow the crash rules in STATUS.md (1.5.0 notes): no police system
-calls, one AI order per NPC, no entity work inside attach events, removals only through
-`CBDeleteTaggedSafe`, behaviour-only ability kits, no runtime appearance changes, no loot drops
-from corpses.
+Every idea here has to follow the crash rules that came out of 1.5.0, which are summarised here
+because the file holding them in full (`STATUS.md`) is a local developer note and is not part of
+this repository: no police system calls, one AI order per NPC, no entity work inside attach
+events, removals only through `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing touching
+an NPC that has left the world, behaviour-only ability kits, no runtime appearance changes, no
+loot drops from corpses, and UI as data rather than injected widgets.
 
 ## Requests after 1.6.1
+
+### "I dont get the messages where you can either pay for the vendetta to be over or not, is it a bug?"
+
+**Status: it was a bug, fixed in 1.6.2** (`Model/Reputation.reds`, `Economy/Peace.reds`).
+
+Yes, and it was reachable for almost nobody. The answer V can send - pay what they want, or refuse
+- is attached to a phone thread, and a thread only gets one when the gang sends a message through
+`CBPhoneFromGang`. For a vendetta, the only such message was the one sent the moment the gang swore
+it. But a vendetta is kept in the save (`fs.vendettaSince`) while the phone's threads are
+deliberately not (see the "Session only" note in `UI/PhoneMessages.reds` - keeping them would mean a
+new persistent field, which wipes everyone's reputation). So:
+
+- swear a vendetta, and the offer is there for the rest of that session;
+- save, quit, come back, and the vendetta is still on file, the gang never announces it again, and
+  the phone has nothing in it to answer.
+
+The Hub's pay-off shortcut still worked throughout, so the feature was never gone - but the
+messages the README describes could not be reached at all by anyone who had angered a gang in an
+earlier session, which is most people who hit it.
+
+**The fix:** every gang that is hostile to V and can be bought now states its price once a session,
+unprompted, from the vendetta watch. It goes out through `CBPhoneFromGang`, so it re-files the
+thread and re-opens the answer through the path that already existed - no new persistent field, no
+new engine call, no new widget. One gang per pass so a save with several enemies does not fill the
+phone at once, and a gang V has already turned down stays turned down until the next session.
 
 ### "Rivals should show their names in the scanner, like the named NCPD targets do."
 
@@ -212,7 +240,7 @@ whole line at 76, so it fits on every screen.
 - Wiping out a crew pays no bounty; only Rivals and apex squads do.
 - Running has no cost, except that a Rival you escape comes back promoted. Nothing happens when
   a crew or apex squad loses you.
-- The iconic list has not been checked in game (see STATUS.md).
+- The iconic list has not been checked in game.
 
 ### 2. "I hate that it's on a timer, some randomization option would be nice."
 

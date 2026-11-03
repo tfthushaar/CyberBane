@@ -155,6 +155,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   // once (Model/Reputation.reds, CBVendettaWatch). Session only.
   private let m_seenPostureIds: array<CName>;
   private let m_seenPostureVals: array<Int32>;
+  // Which hostile gangs have restated their price this session, so each one does it once
+  // (Model/Reputation.reds, CBVendettaWatch). Session only, like the phone threads it re-opens.
+  private let m_peaceOfferedIds: array<CName>;
   // The hunt (Spawn/Hunt.reds): what the people after V know. Session only.
   private let m_huntState: Int32;
   private let m_huntLkp: Vector4;
@@ -1411,6 +1414,16 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayPush(this.m_seenPostureIds, id);
     ArrayPush(this.m_seenPostureVals, now);
     return -1;
+  }
+
+  // Has this gang already put its price to V this session? Marks them either way, so the caller
+  // gets true exactly once per gang per session.
+  public func NotePeaceOffered(id: CName) -> Bool {
+    if !IsNameValid(id) || ArrayContains(this.m_peaceOfferedIds, id) {
+      return false;
+    }
+    ArrayPush(this.m_peaceOfferedIds, id);
+    return true;
   }
 
   // ---- The hunt ----

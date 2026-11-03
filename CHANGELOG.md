@@ -12,7 +12,8 @@ Rival scans under their own name.
 
 This release also fixes "I cleared my rivals on the Hub, closed the game, loaded my save and they
 were all back", at the root, along with a worse problem that came from the same place: Start over
-could wipe the wrong save.
+could wipe the wrong save. And gangs that already want you dead will now name their price, so the
+offer to pay a vendetta off is reachable again instead of only arriving the moment they turn.
 
 Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
 
@@ -103,6 +104,16 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   they next load, instead of bringing back what you wiped.
 
 ### Fixed
+- **You could not buy off a gang you had already angered.** Reported as "I don't get the messages
+  where you can either pay for the vendetta to be over or not". The message that carries the
+  pay-or-refuse answer was only ever the one a gang sends at the moment it turns on you, and your
+  phone's Cyberbane threads start empty every time you load. So if a gang swore a vendetta in an
+  earlier session, there was nothing left in the phone to answer and no way to pay them off from
+  it at all — only the Hub's shortcut still worked. Now every gang that is hostile to you and can
+  be bought puts its price to you once a session, unprompted, which re-opens the answer in their
+  thread: pay what they want, or tell them no. One gang at a time, so a save with several enemies
+  does not light up your phone at once, and a gang you have already turned down stays turned down
+  for that session.
 - **Sparing a Rival could make a second Rival of them.** When a Rival you put down without killing
   was settled after their body had already streamed out or been cleared, Cyberbane looked for the
   body to work out who they were, found nothing, and took them for a stranger. It made a brand new

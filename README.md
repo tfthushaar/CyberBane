@@ -59,7 +59,9 @@ in active development. This page describes what the mod does and how it installs
 - **You can answer.** When a gang you could buy off texts you something hostile, you can reply
   from the phone the way you reply to anyone in the game: pay what they want to call it off, or
   tell them no. Paying is the same deal the Hub brokers, at the same price, and it calls off
-  anything they already had on its way.
+  anything they already had on its way. Any gang that already wants you dead names its price
+  once a session without being prompted, so the offer is there whether or not you were around
+  the moment they turned on you.
 - **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews carry the
   game's gang-activity marker on the map and minimap, so you can pick the one that matters out
   of a street full of gangers. Markers do not show through walls, and they come off once the

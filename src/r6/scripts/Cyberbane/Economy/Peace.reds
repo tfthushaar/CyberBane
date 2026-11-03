@@ -163,6 +163,25 @@ public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionI
   return CBPeacePrice(fs, posture);
 }
 
+// A gang putting its price to V unprompted, for the once-a-session standing demand
+// (Model/Reputation.reds, CBVendettaWatch). Theirs is the thread that carries the answer, so the
+// wording has to open the conversation rather than answer anything: it may arrive a long time
+// after they turned on V, in a session where they have not said a word yet.
+public func CBPeaceDemandLine(cost: Int32, vendetta: Bool) -> String {
+  if vendetta {
+    switch RandRange(0, 3) {
+      case 0: return s"You are still walking around. \(cost)eb and we let you keep doing it.";
+      case 1: return s"Our price has not changed. \(cost)eb and we call every one of ours off you.";
+      default: return s"\(cost)eb. That is what it costs to stop being our problem.";
+    }
+  }
+  switch RandRange(0, 3) {
+    case 0: return s"We have not forgotten you. \(cost)eb and we do.";
+    case 1: return s"\(cost)eb settles what is between us. Think about it.";
+    default: return s"You can keep looking over your shoulder, or you can pay \(cost)eb.";
+  }
+}
+
 // Pay off a single faction. Returns true only if peace was actually brokered.
 public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, factionId: CName) -> Bool {
   let cost = CBPeaceQuote(sys, game, factionId);
