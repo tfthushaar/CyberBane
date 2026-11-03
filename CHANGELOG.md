@@ -3,13 +3,50 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] - 1.6
+## [1.6.0] - 2026-11-03
 
-The Hub moves into the pause menu. Press Escape and it is there, next to Mods and Mod Settings:
-the same menu, the same cursor, the game paused underneath it, and everything on it can be
-clicked. Two player reports are fixed along the way.
+Cyberbane stays out of the story. A Rival walked into a VR fight where the only thing you could do
+was pistol-whip, and a crew attacked on the way to the water tower with River. Both came from the
+same blind spot, and it is closed at the root rather than for those two quests. And the Hub moves
+into the pause menu: press Escape and it is there, next to Mods and Mod Settings, with the game
+paused underneath it and everything on it clickable.
 
 Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Nobody walks in on the story
+- **Why it happened.** Cyberbane decided whether somebody could arrive by asking about places: a
+  safe area, somebody else's turf, the map pins of the objective you were tracking, a cutscene. A VR
+  fight is ordinary gameplay with no map pins and no turf, and a walk with River is an open field
+  with the pin somewhere else, or nothing tracked at all. Every check passed.
+- **What it asks now is what the game itself says about you**, which is far harder to miss:
+  - **Are you V?** In the VR fight you are not: you are a VR avatar, the same way you are Johnny in
+    his flashbacks. While you are somebody else, or in cyberspace or a braindance, Cyberbane does
+    nothing at all. Nobody is sent, nothing counts, nobody reacts, and nothing is paid out of the
+    wrong pocket.
+  - **Has the story taken over what you can do?** Quests limit V for their set pieces: fists only,
+    one weapon you cannot put away, no weapons, a seat in somebody's car, a metro ride, a scene you
+    cannot walk out of. The game marks each of these on V, and Cyberbane now reads them.
+  - **Is somebody from the story walking with you?** When River, Panam or anyone the story placed
+    is following you, you are in the middle of their quest, wherever the objective's pin is. A
+    companion you spawned yourself with a mod is not counted when it can be told apart from the
+    story's: one the quest system has not flagged and that the mod created through Codeware, or
+    one who is not a story character at all. That keeps Cyberbane from going quiet for the people
+    who walk around with one.
+- **While any of those is true**, nobody is sent, every countdown waits where it is, and the street
+  does not turn on you: anybody Cyberbane had turned hostile who is not already fighting you goes
+  back to how the game had them.
+- **Anybody already on their way is called back** quietly, out of your sight. A Rival goes back to
+  waiting their turn without being promoted, nobody texts you, and no gang thinks less of you for
+  it. Anybody you can already see is left exactly as they are, so a fight that has started still
+  counts. A crew in a car stays in it.
+- **Kills that are not V's no longer count as V's.** Fighting as the VR avatar or as Johnny used to
+  raise V's Dread, cost real gangs' standing and could even send a VR enemy back as a Rival. Their
+  loot and V's deaths are not recorded for somebody else either.
+- **"Allow spawns in safe areas" only opens safe areas.** Turning it on used to switch off the
+  scene, job and no-combat checks along with them, so asking to be found in your apartment also
+  asked to be found in the middle of every quest.
+- None of this can be switched off, because none of it is a preference: it is the game saying the
+  stage is taken. **Stay out of quest areas** still covers everything else, as before.
 
 ### The Hub is a page of the pause menu
 - **Escape, then Cyberbane.** It opens over the pause menu's own list, and Escape takes you back to

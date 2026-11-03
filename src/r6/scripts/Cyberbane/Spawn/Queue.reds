@@ -743,6 +743,7 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   let now = sys.GetTickCount();
   let player = GetPlayer(game);
   if !IsDefined(player) || sys.IsInSafeZone() || sys.IsInQuestArea() || CBPlayerInStealthState(game)
+     || sys.GetStoryHold() != CBStoryNone()
      || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetProvoked(), n"") {
     sys.SetTurfWatch(n"", now);
     return;

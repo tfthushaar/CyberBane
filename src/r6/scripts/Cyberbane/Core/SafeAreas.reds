@@ -31,6 +31,7 @@ public func CBBlockEngineRefused() -> Int32 = 7
 public func CBBlockNoRecord() -> Int32 = 8
 public func CBBlockInView() -> Int32 = 9
 public func CBBlockHostileArea() -> Int32 = 10
+public func CBBlockStory() -> Int32 = 11
 
 public func CBNoteSpawnBlock(reason: Int32) -> Void {
   let rt = CyberbaneRuntime.Get();
@@ -70,6 +71,9 @@ public func CBBlockLabel(reason: Int32) -> String {
   }
   if reason == CBBlockHostileArea() {
     return "you are inside somebody else's turf";
+  }
+  if reason == CBBlockStory() {
+    return "the story has the stage";
   }
   return "";
 }
@@ -217,14 +221,16 @@ public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   }
 }
 
-// Can anybody arrive right now? Not in a safe area (unless allowed), not on a job, not in a scene.
-// While this is false the lanes do not count down and the HUD does not say TRACKED: counting down
-// to an arrival that will only be refused is what kept TRACKED coming back at home.
+// Can anybody arrive right now? Not in a safe area (unless allowed), not on a job, not in a scene,
+// and never while the story has the stage (Core/StoryHold.reds). While this is false the lanes do
+// not count down and the HUD does not say TRACKED: counting down to an arrival that will only be
+// refused is what kept TRACKED coming back at home.
 public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   if !IsDefined(sys) {
     return true;
   }
-  return (sys.IsInSafeZone() && !CBAllowSafeZoneSpawns()) || sys.IsInQuestArea() || CBPlayerInScene(game);
+  return (sys.IsInSafeZone() && !CBAllowSafeZoneSpawns()) || sys.IsInQuestArea() || CBPlayerInScene(game)
+      || sys.GetStoryHold() != CBStoryNone();
 }
 
 // Mid-scene: a cutscene, a locked conversation, a braindance.
@@ -304,48 +310,53 @@ public func CBPlayerZoneLabel(game: GameInstance) -> String {
 // Checks the spawn point itself, not just where V is standing. V can be on the pavement with
 // the point behind them inside a bar, or the reverse, and only the point matters for whether
 // the arrival lands somewhere the player cannot fight.
+//
+// In three groups, strongest first, and the order is the fix for a gate that let a Rival into a
+// VR fight. The safe-area opt-in used to return straight away from the top of this, which switched
+// off not only the safe-area tests it is about but the scene test, the quest-area test and the
+// no-combat restriction under it. A player who asked to be found in their apartment had, without
+// knowing it, asked to be found in the middle of every quest too. Each group now answers only to
+// its own switch.
 public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
-  if CBAllowSafeZoneSpawns() {
-    return false;   // the player has asked for this fight
+  // 1. The story has the stage: V is not V, a scene is playing, the story is directing what V
+  //    can do, or somebody from the story is walking with V. No setting opens this up.
+  if CBStoryHoldNow(game) {
+    CBNoteSpawnBlock(CBBlockStory());
+    return true;
   }
-  // The restriction layer, which is what actually stops V drawing a weapon in an apartment.
-  if CBPlayerCannotFight(game) {
+  let sysQ = CyberbaneSystem.Get(game);
+  let optIn = CBAllowSafeZoneSpawns();
+  // 2. V's hands forced empty. Inside a safe area with the opt-in, that is the zone's own weapon
+  //    lock, which the player asked to fight through (and can lift with the setting beside it).
+  //    Anywhere else it is the story's, and it holds whatever the settings say.
+  let inSafe = IsDefined(sysQ) && sysQ.IsInSafeZone();
+  if CBPlayerCannotFight(game) && !(optIn && inSafe) {
     CBNoteSpawnBlock(CBBlockCannotFight());
     return true;
   }
-  // The game's own no-spawn areas, which is how the NCPD know not to materialise inside a
-  // megabuilding lobby. Reusing the police answer rather than keeping a second opinion: this
-  // is a plain point test with no side effects, and it can only ever refuse a point, never
-  // allow one the checks below would have rejected.
-  let pss = GameInstance.GetPreventionSpawnSystem(game);
-  if IsDefined(pss) && pss.IsPointInPreventionFreeArea(at) {
-    CBNoteSpawnBlock(CBBlockProtectedZone());
-    return true;
-  }
-  // Mid-scene: a cutscene or a locked conversation.
-  if CBPlayerInScene(game) {
-    CBNoteSpawnBlock(CBBlockQuestArea());
-    return true;
-  }
-  // Somebody else's turf. The zone the game itself publishes, by name.
-  //
-  // This replaces a comparison of `ESecurityAreaType` ordinals that redscript cannot read by
-  // name. That guess was wrong in 1.1.5 and blocked every spawn in the city for three
-  // releases, which is why it had been narrowed to "only when also indoors" - and that
-  // narrowing is what let a Rival walk into the middle of a gang nest during a quest, because
-  // a compound courtyard is not an interior. `gamePSMZones` is a named enum and needs no
-  // guess, so the test can be the right one again. Switchable with the quest-area gate, since
-  // it is the same question.
-  // On a job, or in a restricted or dangerous zone, when V asked Cyberbane to stay out of them.
+  // 3. On a job, or in a restricted or dangerous zone, when V asked Cyberbane to stay out of them -
+  //    the quest-area switch's own question, which the safe-area opt-in has nothing to do with.
   if CBPlayerInQuestArea(game) {
     CBNoteSpawnBlock(CBBlockQuestArea());
     return true;
   }
   // And never placed at the job itself, wherever V is standing. Checking only V's position let a
   // crew be placed inside the job area while V stood just outside it.
-  let sysQ = CyberbaneSystem.Get(game);
   if IsDefined(sysQ) && sysQ.NearQuestPins(at, CBConfig.QuestSpawnClearance()) {
     CBNoteSpawnBlock(CBBlockQuestArea());
+    return true;
+  }
+  // 4. Safe areas, and the places the game keeps free of police. This is all the opt-in opens.
+  if optIn {
+    return false;   // the player has asked for this fight
+  }
+  // The game's own no-spawn areas, which is how the NCPD know not to materialise inside a
+  // megabuilding lobby. Reusing the police answer rather than keeping a second opinion: this
+  // is a plain point test with no side effects, and it can only ever refuse a point, never
+  // allow one the checks above would have rejected.
+  let pss = GameInstance.GetPreventionSpawnSystem(game);
+  if IsDefined(pss) && pss.IsPointInPreventionFreeArea(at) {
+    CBNoteSpawnBlock(CBBlockProtectedZone());
     return true;
   }
   let sam = GameInstance.GetSafeAreaManager(game);

@@ -48,6 +48,10 @@ func CBOnTakedownNoise(owner: wref<GameObject>, t: ETakedownActionType) -> Void 
   if !IsDefined(puppet) || puppet.IsPlayer() {
     return;   // the stim owner is the one being taken down, never V
   }
+  // Taken down by somebody the story made you, not by V (Core/StoryHold.reds).
+  if !CBGameHasVHere(puppet.GetGame()) {
+    return;
+  }
   // V had hands on them. Everything downstream - the kill attribution in CBOnPuppetDeath and
   // the mercy check in CBSparedSweep - keys off this one flag.
   puppet.cbDamagedByPlayer = true;

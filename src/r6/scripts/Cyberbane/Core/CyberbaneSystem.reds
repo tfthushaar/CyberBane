@@ -247,6 +247,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
   private let m_factsProbed: Bool;            // the deed-fact probe has already run this session (not persisted)
   private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
+  private let m_storyHold: Int32;             // why the story has the stage right now, CBStory* (Core/StoryHold.reds; not persisted)
+  private let m_storyRestrictTicks: Int32;    // settled ticks in a row a story restriction has been on V (not persisted)
   private let m_questPins: array<Vector4>;    // the tracked objective's map pins, refreshed every 3 ticks
   private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
@@ -777,7 +779,22 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBSystemNote(game, "reputation wiped. Night City has never heard of you.", 6.0);
       this.GetPhone().Clear();
     }
-    // What the player chose on the Hub while the game was paused. Same reasoning again.
+    // Is the player V, in V's own world, and has the story left the stage to Cyberbane?
+    // (Core/StoryHold.reds) Worked out before anything that sends, scores or reacts, so every one
+    // of them reads the same answer for this tick.
+    this.RefreshStoryHold(game);
+    if this.m_storyHold == CBStoryNotV() {
+      // Not V at all: the VR avatar, Johnny in a flashback, V in cyberspace or a braindance. Nothing
+      // the rest of this tick does means anything here - it would send people into a world V is
+      // not in, score fights V is not having against gangs that are not there, and sample the
+      // chrome and the look of somebody else. Everybody of ours out of sight has been called back
+      // above; the clocks stand still, the line at the top of the screen comes down, the texts wait.
+      this.GetThreatBar().Hide();
+      this.ScheduleFastTick();
+      return;
+    }
+    // What the player chose on the Hub while the game was paused. Same reasoning again. After the
+    // check above on purpose: a payment comes out of the player's pocket, and the player has to be V.
     this.ServiceHubActions(game);
 
     this.m_tickCount += 1;
@@ -892,6 +909,46 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetTickCount() -> Int32 {
     return this.m_tickCount;
+  }
+
+  // ---- When the story has the stage (Core/StoryHold.reds) -----------------------------------
+
+  // CBStoryNone when nothing holds Cyberbane back; otherwise why not. As of the last settled tick.
+  public func GetStoryHold() -> Int32 {
+    return this.m_storyHold;
+  }
+
+  // Once per settled tick. Says so in the log whenever the answer changes, because "nobody came for
+  // the whole of that quest" is only reassuring if it can be seen to be deliberate, and calls back
+  // anybody of ours who has not reached V for as long as the story has the stage.
+  private func RefreshStoryHold(game: GameInstance) -> Void {
+    let was = this.m_storyHold;
+    // A restriction counts once it has held for a few ticks in a row, so the moment-long ones the
+    // game applies in ordinary play (a thrown knife, getting into a car) never call anybody back.
+    if CBPlayerStoryRestricted(game) {
+      this.m_storyRestrictTicks = Min(this.m_storyRestrictTicks + 1, 1000);
+    } else {
+      this.m_storyRestrictTicks = 0;
+    }
+    let restrictionHeld = this.m_storyRestrictTicks >= CBConfig.StoryRestrictionSettleTicks();
+    this.m_storyHold = CBComputeStoryHold(this, game, restrictionHeld);
+    if this.m_storyHold != was {
+      if this.m_storyHold == CBStoryNone() {
+        CBLog.Info(n"Spawn", "The story has let go; arrivals can be arranged again.");
+      } else {
+        CBLog.Info(n"Spawn", s"The story has the stage: \(CBStoryLabel(this.m_storyHold)). Nobody is sent until it lets go.");
+        if this.m_storyHold == CBStoryNotV() {
+          // Which body, so a report of Cyberbane going quiet can be traced to a record at once.
+          let who = GetPlayer(game);
+          if IsDefined(who) {
+            CBLog.Info(n"Spawn", s"Playing as \(TDBID.ToStringDEBUG(who.GetRecordID())), not V.");
+          }
+        }
+      }
+    }
+    if this.m_storyHold != CBStoryNone() {
+      CBStoryStandDown(this, game);
+    }
   }
 
   // ---- The Hub (UI/Hud.reds, UI/PauseMenuEntry.reds) ----------------------------------------

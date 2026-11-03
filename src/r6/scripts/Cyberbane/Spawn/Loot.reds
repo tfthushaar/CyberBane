@@ -148,7 +148,9 @@ public class CBLootDropCallback extends DelayCallback {
 
   public func Call() -> Void {
     let game = GetGameInstance();
-    if !CBWorldStable(game) {
+    // Waits while the world is unsettled, and while the player is not V: it is V's loot, and it
+    // goes in V's pockets, not the VR avatar's or Johnny's (Core/StoryHold.reds).
+    if !CBWorldStable(game) || !CBGameHasVHere(game) {
       if this.waits < CBConfig.CallbackStableWaits() {
         let ds = GameInstance.GetDelaySystem(game);
         if IsDefined(ds) {

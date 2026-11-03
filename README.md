@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.5.3).** Built for Cyberpunk 2077 v2.5 and in active development. This
+**Status: released (1.6.0).** Built for Cyberpunk 2077 v2.5 and in active development. This
 page describes what the mod does and how it installs.
 
 ## What it does
@@ -219,7 +219,11 @@ page describes what the mod does and how it installs.
   Messages live in your phone.
 
 Cyberbane works anywhere in the open world. It adds no hand-placed scenes, and it is built to
-leave quests, companions, romances and your saves alone.
+leave quests, companions, romances and your saves alone. Whenever the story has the stage - a
+scene, a set piece where the quest decides what you can use (a VR bout, a boxing match, a ride in
+somebody's car), a story character walking with you, or any time you are playing as somebody other
+than V - nobody is sent after you, anybody already on the way is called back out of sight, and
+nothing you do as somebody else counts as V's.
 
 ## Requirements
 

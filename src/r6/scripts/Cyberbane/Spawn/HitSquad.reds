@@ -110,6 +110,11 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
   if Equals(faction, n"") {
     return;
   }
+  // The story has the stage: the clock stops where it is, and nothing about waiting it out counts
+  // against them either. They are still coming, once it lets go (Core/StoryHold.reds).
+  if sys.GetStoryHold() != CBStoryNone() {
+    return;
+  }
   if sys.GetPendingSquadTicks() > 0 {
     sys.TickDownPendingSquad();
     return;

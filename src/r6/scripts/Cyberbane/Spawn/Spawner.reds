@@ -379,6 +379,12 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     CBNoteSpawnBlock(CBBlockWorldBusy());
     return 0;
   }
+  // Nor while the story has the stage. Every point is checked for this as well (CBSafeAreaBlocksSpawn),
+  // but asking once here means a refused arrival is refused as a whole, before any point is probed.
+  if CBStoryHoldNow(game) {
+    CBNoteSpawnBlock(CBBlockStory());
+    return 0;
+  }
   let ppos = player.GetWorldPosition();
   let fwd = player.GetWorldForward();
 

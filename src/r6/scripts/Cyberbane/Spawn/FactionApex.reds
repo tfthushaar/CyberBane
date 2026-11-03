@@ -623,6 +623,10 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   if Equals(faction, n"") {
     return;
   }
+  // The story has the stage: the warning's clock stops, and is not aged either (Core/StoryHold.reds).
+  if sys.GetStoryHold() != CBStoryNone() {
+    return;
+  }
   // Hold the clock rather than spending it: if the apex is due while V is picking a place
   // apart quietly, it waits at the door instead of arriving and blowing the job.
   if CBStealthEncounterNearby(sys, game) {
