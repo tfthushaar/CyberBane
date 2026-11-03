@@ -105,11 +105,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Preset-Desc")
   public let preset: ECBPreset = ECBPreset.Default;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubKey")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubKey-Desc")
-  public let hubKey: EInputKey = EInputKey.IK_F7;
 
 
   // ---- Reputation -------------------------------------------------------

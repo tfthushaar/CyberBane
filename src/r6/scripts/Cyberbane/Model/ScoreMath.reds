@@ -151,6 +151,30 @@ public func CBPerceivedThreat(
 }
 
 // E = T/100 - courage
+// How frightening V is to a crowd, as one number.
+//
+// This existed twice, inline, and the two copies had drifted. `Reactions/Crowd.reds` - the one
+// that actually decides whether anybody runs - added V's aura and scaled the lot by the civilian
+// intensity slider. `UI/Hud.reds` - the one that tells the player what is happening - did
+// neither. So the Hub could say "people are uneasy" while people were running, and ignored the
+// player's own intensity setting entirely: the screen was describing a formula the mod does not
+// use.
+//
+// The named function next to it (CBEffectiveFear) was never the same thing - that is the
+// per-NPC test, threat against one person's courage. This is the aggregate, and now there is
+// exactly one of it.
+//
+// Aura is added rather than maxed because it is what V is doing right now, where the rest is
+// what V is known for, and a frightening reputation with a drawn weapon compounds.
+public func CBCrowdFear(score: ref<CBScoreEngine>, intensity: Float) -> Float {
+  if !IsDefined(score) {
+    return 0.0;
+  }
+  return (MaxF(score.GetDreadCiv(), score.GetChromeVisible())
+          + score.GetAura()
+          + score.GetMenace() * CBConfig.MenaceFearWeight()) * intensity;
+}
+
 public func CBEffectiveFear(perceivedThreat: Float, courage: Float) -> Float {
   return perceivedThreat / 100.0 - courage;
 }

@@ -59,11 +59,9 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
   // How intimidating V is: the scarier of reputation Dread or raw visible chrome, plus a
   // bump for a dangerous build (level, street cred and skills). See CBUpdateMenace.
   let chromeVisible = score.GetChromeVisible();
-  // Aura is what V is doing right now; the rest is what V is known for. Added rather than
-  // maxed, because a frightening reputation and a drawn weapon compound.
-  let eff = (MaxF(score.GetDreadCiv(), chromeVisible)
-             + score.GetAura()
-             + score.GetMenace() * CBConfig.MenaceFearWeight()) * intensity;
+  // One copy of this, in Model/ScoreMath.reds, because the Hub needs the same answer and used
+  // to work it out differently.
+  let eff = CBCrowdFear(score, intensity);
 
   // Obvious chrome gets read from further out. Someone walking around with blades for arms is
   // clocked halfway down the block, where a clean-looking merc has to be close before anyone

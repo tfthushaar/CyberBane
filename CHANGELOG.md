@@ -99,7 +99,43 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
     nothing either. Each switch now controls its own part of the screen, every second.
 - Your existing choice for the bars is kept; only its name and place in the list changed.
 
+### The Hub looks like the game
+- **It takes its colours from the game.** The page is painted from Cyberpunk's own palette rather
+  than from colours written into the mod, so the headings, the descriptions and the footer are the
+  same red and grey the rest of the interface uses, and they follow it if it ever changes.
+- **It is narrower, and the long lines are gone.** The two full-width rules have been removed and
+  the screen names tightened up. The whole interface is drawn with a slight curve, and a
+  pixel-thin line a metre wide is the one shape that shows it: no screen in the game draws one,
+  which is why theirs look flat and this one did not. It is much less obvious now, and turning off
+  the interface distortion in the game's own Accessibility settings removes it everywhere.
+
+### Only what you need to read
+- **The Standing screen is shorter.** Your district and street cred are already on screen while you
+  play and in the game's own menus, and the lifetime totals belong in a ledger, so they have moved
+  to History along with your fighting style. Nothing stopped being counted. What is left is what is
+  coming, why people are frightened of you, and what that does right now.
+- **Dread reads like the other three meters.** They say a number and then a word; Dread said a
+  number and then another number. It now says what the street actually does - "people are uneasy",
+  "people are afraid", "people run" - with the figure the street reads explained underneath.
+- **Fixed: the Standing screen could disagree with the street.** It worked out how frightening you
+  are with a different sum from the one the crowd uses, leaving out what you are doing right now
+  and ignoring the civilian intensity setting entirely. So it could say people were uneasy while
+  they were running. Both now use the same figure.
+- **Fixed: "fighting mostly with Butcher"** read as a gang you were fighting. It was your own
+  fighting style. It says "Your style is Butcher" now, on the History screen.
+
+### Starting over, from the Hub
+- **A Start over button on the History screen**, which asks twice. It clears everything you earned
+  by playing - reputation, gangs, districts, rumours, Rivals, titles, deeds and the log - and
+  leaves everything that is read off your build, so your chrome, your look and how dangerous you
+  carry yourself stay exactly as they are. Same thing the Reset all Cyberbane data switch in Mod
+  Settings does, now where you can see it.
+- Forgetting your Rivals, paying a gang off and starting over all happen when you are back in the
+  game, and all of them need a save afterwards to stick, the same as everything else in your save.
+
 ### Settings
+- **The Hub key is gone.** The Hub is a page of the pause menu, so a key that opens the pause menu
+  on it was a second way in for no gain. Escape, then Cyberbane.
 - **Hub style** is gone. It chose between two ways of drawing the Hub that it is no longer drawn
   either way.
 - If the Mods entry is missing from the pause menu because another mod removed it, Cyberbane's

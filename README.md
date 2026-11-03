@@ -208,7 +208,7 @@ page describes what the mod does and how it installs.
   you made and put down, the apex enforcers and bosses people saw you kill, the vendettas sworn,
   the gangs that came round to you, the peace you bought and the tribute you took.
 - **The Hub.** A page of the pause menu: press Escape and choose Cyberbane, next to Mods and Mod
-  Settings, or press F7 (rebindable) to open the pause menu straight on it. It uses the game's own
+  Settings. It uses the game's own
   font and colours and the menu's own cursor, the game stays paused while you read it, and Escape
   takes you back to the pause menu. Click a screen to switch: Standing, Gangs, The City, Rivals,
   Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
@@ -251,7 +251,7 @@ Download the latest `Cyberbane-x.y.z.zip` from the
 1. Install the required mods listed above.
 2. In Vortex, add the zip with "Install From File" (or drag it onto the Mods area), then enable it
    and click Deploy.
-3. Launch the game, press Escape and choose Cyberbane to open the Hub (or press F7).
+3. Launch the game, press Escape and choose Cyberbane to open the Hub.
 
 ### Manual
 
@@ -260,24 +260,25 @@ Download the latest `Cyberbane-x.y.z.zip` from the
    `Cyberpunk2077.exe`. The zip's `r6` folder merges into the game's existing `r6` folder, so the
    scripts land at `r6\scripts\Cyberbane\`. A typical Steam path is
    `...\steamapps\common\Cyberpunk 2077\`.
-3. Launch the game, press Escape and choose Cyberbane to open the Hub, or press F7. You can
+3. Launch the game, press Escape and choose Cyberbane to open the Hub. You can
    rebind the key in Mod Settings.
 
 To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vortex.
 
 ## Controls
 
-The Hub is a page of the pause menu, so it uses the menu's own controls. Cyberbane adds one key,
-and everything else uses the game's normal inputs.
+The Hub is a page of the pause menu, so it uses the menu's own controls. Cyberbane adds no keys of
+its own.
 
-- **Escape, then Cyberbane:** opens the Hub. Escape goes back to the pause menu.
-- **Hub key (F7 by default):** a shortcut that opens the pause menu straight on the Hub, and closes
-  it again. It works wherever the game would let you pause. Rebind it in Mod Settings.
+- **Escape, then Cyberbane:** opens the Hub, the same way you would open Settings or Load Game.
+  Escape takes you back to the pause menu, and again from there closes it as usual.
 - **On the Hub:** click a screen name, or use Q and E (LB and RB), to switch screens. On Gangs,
   click a gang to see more and to pay them off; on Rivals, click a Rival for their file, and use
   Forget every rival (it asks twice) to clear them; on Titles, click the title you want to go by, or
   Automatic for your highest one. Paying a gang off and forgetting your Rivals happen a few seconds
-  after you go back to the game, and can be cancelled until then. Mod Settings, bottom right, goes
+  after you go back to the game, and can be cancelled until then. On History, Start over (it asks
+  twice) clears everything you earned by playing and leaves everything that is read off your build,
+  so your chrome and your look are untouched. Mod Settings, bottom right, goes
   straight to Cyberbane's settings.
 
 ## Uninstalling
@@ -293,7 +294,7 @@ reputation, or make a backup save before you remove it.
 Everything is configurable from the in-game Mod Settings menu, and every option explains what
 it does. You can turn individual systems on or off (crowds, gangs, morale, vendors, rivals, hit
 squads, whispers), tune how intense and how frequent reactions are, pick a preset (Subtle,
-Default, or Dramatic), set the size of Cyberbane's own screens and bars, and rebind the Hub key.
+Default, or Dramatic), and set the size of Cyberbane's own screens and bars.
 
 Under UI you can also choose where messages go: Phone (the default) puts them in V's own phone,
 Cards draws them on the left of the screen and keeps Cyberbane out of the phone entirely,

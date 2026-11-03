@@ -3,7 +3,8 @@
 // Escape, then Cyberbane, the way you would reach anything else about your character. The Hub is
 // a page of the pause menu: it opens over the menu's own list, the game stays paused underneath
 // it, the cursor is the menu's cursor, and Escape takes you back to the list the way it does from
-// Settings or Load. The Hub key is a shortcut to the same page (Core/CyberbaneSystem.reds).
+// Settings or Load. It is the only way in: there is no separate key, because there is no longer
+// a separate Hub to open.
 //
 // ---- Why the page lives inside the pause menu's own widget tree --------------------------------
 //
@@ -112,10 +113,6 @@ protected cb func OnInitialize() -> Bool {
   let sys = CyberbaneSystem.Get(GetGameInstance());
   if IsDefined(sys) {
     this.m_cbGeneration = sys.PauseMenuOpened(this);
-    // The Hub key asked for the pause menu so that it could open on this page.
-    if sys.TakeHubOnPause() {
-      this.CBShowHub();
-    }
   }
   return result;
 }
@@ -182,16 +179,6 @@ private func CBSetListVisible(visible: Bool) -> Void {
   let list = this.m_menuListController.GetRootWidget();
   if IsDefined(list) {
     list.SetVisible(visible);
-  }
-}
-
-// Close the pause menu altogether and go back to the game, the way the Resume entry does: through
-// the menu's own dispatcher, never by pulling widgets out by hand.
-@addMethod(PauseMenuGameController)
-public func CBResumeGame() -> Void {
-  this.CBHideHub();
-  if IsDefined(this.m_menuEventDispatcher) {
-    this.m_menuEventDispatcher.SpawnEvent(n"OnClosePauseMenu");
   }
 }
 

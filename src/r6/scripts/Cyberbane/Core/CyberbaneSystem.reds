@@ -50,11 +50,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_tickCount: Int32;             // monotonic ~1/second, for encounter timing
   private let m_encounter: ref<CBEncounter>;  // active combat episode
   // The pause menu, while it is up. The Hub is a page of it (UI/PauseMenuEntry.reds) and the menu
-  // owns that page; this is only how the scenario, the tick and the Hub key find it. Weak, so the
+  // owns that page; this is only how the scenario and the tick find it. Weak, so the
   // system can never keep a closed menu alive. Not persisted.
   private let m_pauseMenu: wref<PauseMenuGameController>;
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
-  private let m_hubOnPauseTtl: Int32;         // fast ticks left on "the Hub key asked for the pause menu" (not persisted)
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
   private let m_pendingRivalPurge: Bool;      // "forget every rival" chosen on the Hub while paused, done on resume
@@ -237,7 +236,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
   private let m_callbacksRegistered: Bool;    // Codeware entity + input callbacks registered; retried until it sticks
-  private let m_hubKeyDown: Bool;             // Hub key debounce: some setups deliver only Press, some only Release
   private let m_pendingApexFaction: CName;    // gang whose apex has been announced and is walking in
   private let m_pendingApexTicks: Int32;      // fast ticks left on that warning (session-only)
   // Fast ticks left on the "V is working quietly" hold. The game only reports the Stealth
@@ -269,7 +267,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.EnsureSettings();
     this.Initialize();
     this.RegisterPlayerAttach();
-    this.EnsureCallbacks();   // so the Hub key works even if the player-attached callback is missed
+    this.EnsureCallbacks();   // in case the player-attached callback was missed
   }
 
   // The player-puppet-attached callback is the reliable "session is ready" signal
@@ -285,10 +283,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.StartSession();
   }
 
-  // Register the Codeware callbacks: NPC tracking and the Hub key. Guarded and idempotent, and
+  // Register the Codeware callbacks: NPC tracking. Guarded and idempotent, and
   // called from OnAttach, from session start and from the tick. If the callback system is not up
-  // yet at one of those points a later call still gets it, so the Hub key can never end up
-  // silently unregistered (which is one way F7 appears to "do nothing").
+  // yet at one of those points a later call still gets it.
   private func EnsureCallbacks() -> Void {
     if this.m_callbacksRegistered {
       return;
@@ -298,7 +295,6 @@ public class CyberbaneSystem extends ScriptableSystem {
       return;   // not available yet - a later call will register
     }
     cbs.RegisterCallback(n"Entity/Attached", this, n"OnCBEntityAttached");
-    cbs.RegisterCallback(n"Input/Key", this, n"OnCBKeyInput");
     this.m_callbacksRegistered = true;
   }
 
@@ -324,7 +320,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBUpdateChrome(this, this.GetGameInstance());
 
     // Nothing asked for on a Hub in another session is carried into this one.
-    this.m_hubOnPauseTtl = 0;
     this.m_pendingPeace = n"";
     this.m_pendingRivalPurge = false;
 
@@ -572,95 +567,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_arrivalFilled = 0;
   }
 
-  // The Hub key (spec §12.1): a shortcut to the Hub page of the pause menu. Escape, then
-  // Cyberbane, gets to the same place; this just saves the second step.
-  private cb func OnCBKeyInput(event: ref<KeyInputEvent>) -> Void {
-    if !Equals(event.GetKey(), this.GetHubKey()) {
-      return;
-    }
-    // Act on the press, and fall back to the release for setups that never deliver a press for
-    // this key - one reported way the Hub key appears to do nothing. The down-flag keeps a normal
-    // press+release pair from acting twice, and stops a held key from repeating.
-    let action = event.GetAction();
-    if Equals(action, EInputAction.IACT_Press) {
-      if this.m_hubKeyDown {
-        return;
-      }
-      this.m_hubKeyDown = true;
-    } else {
-      if !Equals(action, EInputAction.IACT_Release) {
-        return;   // repeats and anything else
-      }
-      let pressWasSeen = this.m_hubKeyDown;
-      this.m_hubKeyDown = false;
-      if pressWasSeen {
-        return;   // already handled on the press
-      }
-    }
-    let game = this.GetGameInstance();
-    // The pause menu is up: the key opens the Hub page on it, or, with the page already open,
-    // closes the menu and goes back to the game - the press after the last screen used to close
-    // the Hub, and this is that press.
-    if IsDefined(this.m_pauseMenu) {
-      if this.m_pauseMenu.CBHubIsOpen() {
-        this.m_pauseMenu.CBResumeGame();
-      } else {
-        this.m_pauseMenu.CBShowHub();
-      }
-      return;
-    }
-    this.OpenPauseMenuOnHub(game);
-  }
-
-  // The Hub key, in the game: open the pause menu straight onto the Hub page.
-  //
-  // The Hub lives in the pause menu now, so the key is a shortcut to it rather than a second way
-  // of drawing it. The event is the one the game itself queues to open the pause menu from script
-  // (tutorialGameController.script:164-167). It does not pass through the input context that
-  // decides whether pausing is allowed right now, so this decides that itself, conservatively:
-  // only in plain gameplay - no menu, no scene, no workspot, nothing loading, not already paused
-  // (CBWorldStable) - and never during the one cutscene the game blocks its own pause key in
-  // (inGameMenuGameController.script:292-296). Anywhere else the key does nothing, and Escape
-  // still works exactly as the game allows.
-  //
-  // The page opens when that pause menu initialises (TakeHubOnPause). The request lasts a
-  // couple of seconds of unpaused time and then lapses, so if the menu never came up, the next
-  // pause menu the player opens by hand is an ordinary one and not the Hub.
-  private func OpenPauseMenuOnHub(game: GameInstance) -> Void {
-    if !CBWorldStable(game) {
-      return;
-    }
-    let quests = GameInstance.GetQuestsSystem(game);
-    if IsDefined(quests) && quests.GetFact(n"q301_02a_stadium_stopUIInCutscene") > 0 {
-      return;
-    }
-    let ui = GameInstance.GetUISystem(game);
-    if !IsDefined(ui) {
-      return;
-    }
-    this.m_hubOnPauseTtl = 2;
-    let evt = new inkMenuInstance_SpawnEvent();
-    evt.Init(n"OnOpenPauseMenu");
-    ui.QueueEvent(evt);
-  }
-
-  private func GetHubKey() -> EInputKey {
-    let rt = CyberbaneRuntime.Get();
-    if IsDefined(rt) && rt.HasSettings() {
-      let k = rt.GetSettings().hubKey;
-      // A settings store that has not filled in yet reads as IK_None, which would leave the Hub
-      // with no key at all and look exactly like "F7 does nothing". Fall back to F7 instead.
-      //
-      // Escape is refused outright. The game owns it, and a Hub that answers to it fights the
-      // pause menu over every press. It should not be reachable through the dropdown, but a
-      // stored value is a stored value and this costs one comparison.
-      if NotEquals(k, EInputKey.IK_None) && NotEquals(k, EInputKey.IK_Escape) {
-        return k;
-      }
-    }
-    return EInputKey.IK_F7;
-  }
-
   private func ScheduleFastTick() -> Void {
     let ds = GameInstance.GetDelaySystem(this.GetGameInstance());
     if !IsDefined(ds) {
@@ -679,9 +585,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     // A Hub-key request for the pause menu lapses after a couple of ticks whatever else this tick
     // does, so it can never wait around to hijack a pause menu opened by hand later on.
-    if this.m_hubOnPauseTtl > 0 {
-      this.m_hubOnPauseTtl -= 1;
-    }
     let game = this.GetGameInstance();
 
     // Crash safety (spec §16): stand down during loading, fast travel, time skips, ripperdoc
@@ -967,13 +870,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
-  // Did the Hub key ask for this pause menu? Answered once.
-  public func TakeHubOnPause() -> Bool {
-    let wanted = this.m_hubOnPauseTtl > 0;
-    this.m_hubOnPauseTtl = 0;
-    return wanted;
-  }
-
   // The pause menu's Cyberbane entry was chosen.
   public func ShowHubPage() -> Void {
     if IsDefined(this.m_pauseMenu) {
@@ -1021,7 +917,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Carry out what was chosen on the Hub while the game was paused. Called from the settled part
   // of the fast tick, never from the page: paying a gang moves eddies and sends texts, and
   // forgetting the Rivals deletes people from the world, and neither belongs inside a paused menu.
-  // Both go through exactly the code the old Shift + Hub key shortcut called.
+  // Both go through exactly the code the old Shift + Hub key shortcut called, before the key went.
   private func ServiceHubActions(game: GameInstance) -> Void {
     if this.m_pendingRivalPurge {
       this.m_pendingRivalPurge = false;

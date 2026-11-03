@@ -52,7 +52,18 @@ public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
 // Everything is written against a fixed 1920x1080 design, centred and scaled as one piece to the
 // space it is drawn in. Fixed rather than stretched because every row is positioned by hand, and a
 // design that is centred reads correctly at any resolution while one that is stretched does not.
-public func CBHudPanelW() -> Float = 1860.0
+// 1640 x 1020, not 1860.
+//
+// The page is the widest thing in the game's interface by a long way, and width is what exposes
+// the distortion the whole UI is drawn with: a 1540 px horizontal run bows visibly where a 300 px
+// one does not. The game's own screens keep content in a narrower column for exactly that reason,
+// and Engram - the mod on this machine that does read as native - wraps its text at 1180.
+//
+// Narrowed by 14% rather than to 1180, because every row column is positioned by hand and
+// budgeted in characters: at 1180 a Rival's full name no longer fits. 14% takes the widest run
+// from 1540 to 1320 and still leaves 28 characters for a name. The margin stays 160, so the
+// content is still centred (1640 - 1320 = 320, 160 a side).
+public func CBHudPanelW() -> Float = 1640.0
 public func CBHudPanelH() -> Float = 1020.0
 public func CBHudDesignW() -> Float = 1920.0
 public func CBHudDesignH() -> Float = 1080.0
@@ -150,10 +161,23 @@ public func CBHubPageScale(game: GameInstance, root: wref<inkCompoundWidget>) ->
 }
 
 public func CBHudMarginX() -> Float = 160.0
-public func CBHudContentW() -> Float = 1540.0
-public func CBHudChipWidth() -> Float = 250.0
+public func CBHudContentW() -> Float = 1320.0
+// Tabs: narrower, so the row spans about 1000 px instead of 1500.
+//
+// Reported twice: the Hub looks curved while the game's own menus and Mod Settings look flat, and
+// it stayed curved after being moved onto the menu layer and again after being moved inside the
+// pause menu's own widget tree. Nothing in this file warps anything - the only transform on the
+// page is a uniform scale, and a uniform scale cannot bow a straight line.
+//
+// What the page did have, and no menu in the game has, is 1540 px-wide one-pixel horizontal rules
+// and a tab row almost as wide. A long thin horizontal line is the shape that shows the UI's
+// distortion most; the game's own screens keep their content in a narrower column and divide it
+// with panels rather than hairlines, which is why the same distortion is invisible on them. So
+// the fix for "it looks curved" is the same as the fix for "it does not look like the game":
+// stop drawing the shapes that reveal it.
+public func CBHudChipWidth() -> Float = 172.0
 public func CBHudBarCount() -> Int32 = 4
-public func CBHudBarWidth() -> Float = 1540.0
+public func CBHudBarWidth() -> Float = 1320.0
 public func CBHudContentTop() -> Float = 200.0
 public func CBHudFooterY() -> Float = 952.0
 
@@ -184,7 +208,6 @@ public func CBHudLayoutTitles() -> Int32 = 2
 public func CBHudLabel() -> HDRColor = new HDRColor(0.85, 0.28, 0.30, 1.0)
 public func CBHudValue() -> HDRColor = new HDRColor(0.92, 0.93, 0.95, 1.0)
 public func CBHudHead() -> HDRColor = new HDRColor(1.00, 1.00, 1.00, 1.0)
-public func CBHudRule() -> HDRColor = new HDRColor(0.62, 0.18, 0.20, 0.70)
 public func CBHudDim() -> HDRColor = new HDRColor(0.62, 0.40, 0.41, 0.95)
 public func CBHudCyan() -> HDRColor = new HDRColor(0.16, 0.78, 0.88, 1.0)
 public func CBHudAmber() -> HDRColor = new HDRColor(0.88, 0.64, 0.16, 1.0)
@@ -239,42 +262,44 @@ public func CBHudRowColTint(col: Int32) -> HDRColor {
 // x, as an offset from the row's left edge.
 public func CBHudRowColX(col: Int32, layout: Int32) -> Float {
   if layout == CBHudLayoutGangs() {
-    if col == 0 { return 24.0; }
-    if col == 1 { return 270.0; }
-    if col == 2 { return 420.0; }
-    if col == 3 { return 560.0; }
-    if col == 4 { return 820.0; }
+    if col == 0 { return 21.0; }
+    if col == 1 { return 231.0; }
+    if col == 2 { return 360.0; }
+    if col == 3 { return 480.0; }
+    if col == 4 { return 703.0; }
   } else {
-    if col == 0 { return 24.0; }
-    if col == 1 { return 480.0; }
-    if col == 2 { return 730.0; }
-    if col == 3 { return 860.0; }
-    if col == 4 { return 1130.0; }
+    if col == 0 { return 21.0; }
+    if col == 1 { return 411.0; }
+    if col == 2 { return 626.0; }
+    if col == 3 { return 737.0; }
+    if col == 4 { return 968.0; }
   }
   return 0.0;      // column 5 is right-aligned across the row
 }
 
 // Characters each column can show at its width and font, measured against the positions above.
 public func CBHudRowColChars(col: Int32, layout: Int32) -> Int32 {
+  // Scaled with the widths above (x 0.857). A budget that did not move would let one column's
+  // text run under the next one's, which reads worse than a word being cut short.
   if layout == CBHudLayoutTitles() {
-    if col == 0 { return 40; }
-    if col == 5 { return 14; }
+    if col == 0 { return 34; }
+    if col == 5 { return 12; }
     return 0;
   }
   if layout == CBHudLayoutGangs() {
-    if col == 0 { return 18; }
-    if col == 1 { return 10; }
-    if col == 2 { return 9; }
-    if col == 3 { return 18; }
-    if col == 4 { return 12; }
-    return 28;
+    if col == 0 { return 15; }
+    if col == 1 { return 9; }
+    if col == 2 { return 8; }
+    if col == 3 { return 15; }
+    if col == 4 { return 10; }
+    return 24;
   }
-  if col == 0 { return 33; }
-  if col == 1 { return 18; }
-  if col == 2 { return 9; }
-  if col == 3 { return 19; }
+  if col == 0 { return 28; }
+  if col == 1 { return 15; }
+  if col == 2 { return 8; }
+  if col == 3 { return 16; }
   if col == 4 { return 0; }
-  return 24;
+  return 20;
 }
 
 // A time as the player asked to see it: exact, or in words when "Show countdowns" is off, so
@@ -425,6 +450,7 @@ public class CBHud {
   private let m_pickFaction: CName;
   private let m_pickRival: Int32;
   private let m_purgeArmed: Bool;          // "forget every rival" asks twice
+  private let m_resetArmed: Bool;          // "start over" asks twice as well
   private let m_hover: CName;              // the clickable thing under the cursor, by name
   private let m_inputBound: Bool;          // the tab keys are registered with the pause menu
   // Why no Rival can arrive right now, or "". Resolved once per render, not once per row.
@@ -451,6 +477,7 @@ public class CBHud {
     }
     this.m_open = true;
     this.m_purgeArmed = false;
+    this.m_resetArmed = false;
     this.m_hover = n"";
     this.Render(sys, game);
     return true;
@@ -461,6 +488,7 @@ public class CBHud {
   public func Hide() -> Void {
     this.m_open = false;
     this.m_purgeArmed = false;
+    this.m_resetArmed = false;
     this.m_hover = n"";
     if IsDefined(this.m_root) {
       this.m_root.SetVisible(false);
@@ -519,7 +547,35 @@ public class CBHud {
 
   // ---- Building --------------------------------------------------------------------------------
 
-  private func NewText(parent: ref<inkCompoundWidget>, size: Int32, style: CName, tint: HDRColor) -> ref<inkText> {
+  // Take a colour from the game instead of naming one here.
+  //
+  // `main_colors.inkstyle` is the palette the whole interface is drawn from, and its names carry
+  // a system: plain (`Red`, `Blue`, `Grey`) for foreground, `Panel*` for backgrounds, `Active*`
+  // for the selected thing, `Mild*` and `Faint*` for what should sit back. Binding to it is what
+  // makes a code-built page read as part of the game rather than as something drawn on top of it,
+  // and it is how Engram - the other mod on this machine, which does look native - gets its look.
+  // There is no borrowed artwork in this: the native feel is the palette, the type scale and the
+  // spacing, not an atlas.
+  //
+  // Two rules learned the hard way:
+  //
+  //   1. **Tint first, bind second.** `BindProperty` returns a Bool and a name that does not
+  //      resolve simply does not bind, leaving whatever tint the widget already had. Every caller
+  //      therefore passes a real colour as well, so the failure mode is the old palette rather
+  //      than an untinted white box.
+  //   2. **Only bind what does not change.** A bound property wins over a later `SetTintColor`,
+  //      so anything whose colour is a state - a picked tab, a hovered row, a meter fill - keeps
+  //      its explicit tint and is not bound at all. Static text is bound; state is not.
+  private func Paint(w: ref<inkWidget>, colour: CName) -> Void {
+    if !IsDefined(w) || Equals(colour, n"") {
+      return;
+    }
+    w.SetStyle(r"base\\gameplay\\gui\\common\\main_colors.inkstyle");
+    w.BindProperty(n"tintColor", colour);
+  }
+
+  private func NewText(parent: ref<inkCompoundWidget>, size: Int32, style: CName, tint: HDRColor,
+                       opt colour: CName) -> ref<inkText> {
     let t = new inkText();
     t.SetFontFamily("base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily");
     t.SetFontStyle(style);
@@ -527,6 +583,7 @@ public class CBHud {
     t.SetTintColor(tint);
     t.SetAnchor(inkEAnchor.TopLeft);
     t.Reparent(parent, -1);
+    this.Paint(t, colour);
     return t;
   }
 
@@ -589,7 +646,7 @@ public class CBHud {
     panel.Reparent(root, -1);
 
     // ---- Title block, top left, the way the menus mark themselves --------
-    let header = this.NewText(panel, 28, n"Semibold", CBHudLabel());
+    let header = this.NewText(panel, 28, n"Semibold", CBHudLabel(), n"MainColors.Red");
     header.SetLetterCase(textLetterCase.UpperCase);
     header.SetText("CYBERBANE");
     header.SetMargin(new inkMargin(x, 10.0, 0.0, 0.0));
@@ -623,29 +680,28 @@ public class CBHud {
     }
 
     // ---- The lines under the tabs that say what you are looking at ---------
-    let subhead = this.NewText(panel, 24, n"Medium", CBHudDim());
+    let subhead = this.NewText(panel, 24, n"Medium", CBHudDim(), n"MainColors.Grey");
     subhead.SetHorizontalAlignment(textHorizontalAlignment.Center);
     subhead.SetFitToContent(false);
     subhead.SetSize(new Vector2(CBHudPanelW(), 32.0));
     subhead.SetMargin(new inkMargin(0.0, 110.0, 0.0, 0.0));
     this.m_subhead = subhead;
 
-    let tabline = this.NewText(panel, 20, n"Medium", CBHudGrey());
+    let tabline = this.NewText(panel, 20, n"Medium", CBHudGrey(), n"MainColors.Grey");
     tabline.SetHorizontalAlignment(textHorizontalAlignment.Center);
     tabline.SetFitToContent(false);
     tabline.SetSize(new Vector2(CBHudPanelW(), 28.0));
     tabline.SetMargin(new inkMargin(0.0, 136.0, 0.0, 0.0));
     this.m_tabline = tabline;
 
-    let divider = this.NewRect(panel, CBHudRule());
-    divider.SetSize(new Vector2(w, 2.0));
-    divider.SetMargin(new inkMargin(x, 164.0, 0.0, 0.0));
+    // No rule under the header. It was 1540 px of two-pixel line, which is the single most
+    // warp-revealing shape on the page, and the heading above it already separates the screens.
 
     // ---- Score meters -------------------------------------------------------
     let b = 0;
     while b < CBHudBarCount() {
       let top = CBHudContentTop() + Cast<Float>(b) * 96.0;
-      let bl = this.NewText(panel, 25, n"Semibold", CBHudLabel());
+      let bl = this.NewText(panel, 25, n"Semibold", CBHudLabel(), n"MainColors.Red");
       bl.SetLetterCase(textLetterCase.UpperCase);
       bl.SetMargin(new inkMargin(x, top, 0.0, 0.0));
       // Right-aligned against the edge the meter ends on, so every value lines up in one column.
@@ -660,7 +716,7 @@ public class CBHud {
       let fill = this.NewRect(panel, CBHudCyan());
       fill.SetSize(new Vector2(2.0, 10.0));
       fill.SetMargin(new inkMargin(x, top + 36.0, 0.0, 0.0));
-      let cap = this.NewText(panel, 19, n"Medium", CBHudDim());
+      let cap = this.NewText(panel, 19, n"Medium", CBHudDim(), n"MainColors.Grey");
       cap.SetMargin(new inkMargin(x, top + 54.0, 0.0, 0.0));
       cap.SetWrapping(true, w);
       ArrayPush(this.m_barLabel, bl);
@@ -731,11 +787,10 @@ public class CBHud {
     this.m_actionText = actionText;
 
     // ---- Footer: hints on the left, the Mod Settings link on the right -----------
-    let footRule = this.NewRect(panel, CBHudRule());
-    footRule.SetSize(new Vector2(w, 2.0));
-    footRule.SetMargin(new inkMargin(x, CBHudFooterY() - 18.0, 0.0, 0.0));
+    // The footer is set off by its own dimmer text and the gap above it rather than by a rule
+    // across the whole page, for the same reason as the header.
 
-    let footer = this.NewText(panel, 19, n"Medium", CBHudDim());
+    let footer = this.NewText(panel, 19, n"Medium", CBHudDim(), n"MainColors.Grey");
     footer.SetMargin(new inkMargin(x, CBHudFooterY(), 0.0, 0.0));
     footer.SetText("Click a screen, or Q / E (LB / RB) to switch      Click a row for more      Esc / B: back to the pause menu");
 
@@ -914,6 +969,7 @@ public class CBHud {
     this.m_tab = CBHudClampTab(tab);
     sys.SetHubTab(this.m_tab);
     this.m_purgeArmed = false;
+    this.m_resetArmed = false;
     this.m_hover = n"";
     this.Render(sys, game);
   }
@@ -927,6 +983,7 @@ public class CBHud {
       if this.m_tab == CBHudRivalsTab() {
         this.m_pickRival = this.m_rowRival[row];
         this.m_purgeArmed = false;
+        this.m_resetArmed = false;
       } else {
         if this.m_tab == CBHudTitlesTab() {
           // A value in a field; safe to set at once, paused or not. n"" is automatic.
@@ -953,18 +1010,33 @@ public class CBHud {
         }
       }
     } else {
+      if this.m_tab == CBHudHistoryTab() {
+        if this.m_resetArmed {
+          this.m_resetArmed = false;
+          let rtReset = CyberbaneRuntime.Get();
+          if IsDefined(rtReset) {
+            rtReset.RequestHardReset();
+            CBLog.Info(n"UI", "Start over chosen on the Hub; the next tick back in the game wipes this save's Cyberbane data.");
+          }
+        } else {
+          this.m_resetArmed = true;
+        }
+      } else {
       if this.m_tab == CBHudRivalsTab() {
         if sys.IsRivalPurgePending() {
           sys.RequestRivalPurge(false);
           this.m_purgeArmed = false;
+          this.m_resetArmed = false;
         } else {
           if this.m_purgeArmed {
             sys.RequestRivalPurge(true);
             this.m_purgeArmed = false;
+            this.m_resetArmed = false;
           } else {
             this.m_purgeArmed = true;
           }
         }
+      }
       }
     }
     this.Render(sys, game);
@@ -1220,9 +1292,13 @@ public class CBHud {
       renown / 1000.0, CBHudCyan(),
       "How widely Night City knows your name.");
 
-    this.SetBar(1, "Dread", s"\(RoundF(dread))   the street reads \(RoundF(score.GetDreadCiv()))",
+    // The number is Dread; the word is what the street does with it. The second figure is what
+    // the street actually reads, which is not the same number and never was - it belongs in the
+    // sentence that explains it rather than loose beside the first.
+    let civ = score.GetDreadCiv();
+    this.SetBar(1, "Dread", s"\(RoundF(dread))   \(CBDreadWord(civ))",
       dread / 100.0, CBHudRed(),
-      "How frightening you are. This is what makes people back off.");
+      s"How frightening you are. The street reads it as \(RoundF(civ)), and that is the figure that makes people back off.");
 
     this.SetBar(2, "Visible chrome", s"\(RoundF(chrome))",
       chrome / 100.0, CBHudAmber(),
@@ -1588,6 +1664,25 @@ public class CBHud {
               let colX = x + CBHudTitleListW() + 60.0;
               this.SetBody(colX, CBHudContentTop(), w - CBHudTitleListW() - 60.0, CBHudTitles(sys), maxLines);
             } else {
+              // History is the ledger - everything V has accumulated - so starting over belongs
+              // on it, rather than buried in Mod Settings where a player looking at what they
+              // have built is not looking.
+              //
+              // The work is the switch that already exists: RequestHardReset, taken by the fast
+              // tick (CyberbaneSystem, TakeHardResetRequest). That matters twice over - it
+              // happens out of the paused menu like every other Hub action, and it is one code
+              // path rather than a second wipe that could drift from the first.
+              //
+              // It clears what playing earned: reputation, gangs, districts, rumours, Rivals,
+              // titles, deeds, the log. It deliberately leaves chrome, look, menace and aura,
+              // because those are not stored progress - they are read back off V's cyberware,
+              // clothes and build on every sample, so wiping them would mean nothing and they
+              // would be back within the second.
+              if this.m_resetArmed {
+                this.SetAction("Click again: erase everything", true);
+              } else {
+                this.SetAction("Start over", true);
+              }
               this.SetBody(x, CBHudContentTop(), w, CBHudLog(sys), maxLines);
             }
           }
@@ -1808,14 +1903,6 @@ func CBHudBudgetTail(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32)
 func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   // The four scores are meters now, so this screen's text only carries what a meter cannot:
   // where you are, what the city has already sent, and what it is doing about you right now.
-  let style = CBArchetypeName(sys.GetPrimaryArchetypeIndex());
-  let districtId = CBEventDistrict(sys, game);
-  let district = CBDistrictLabel(districtId);
-  if Equals(district, "") {
-    district = NameToString(districtId);
-  }
-  let cred = RoundF(CBPlayerStreetCred(game));
-
   // Two sentences rather than two rows of shouted key-value pairs.
   //
   // "STREET CRED 34      STYLE Blades      HERE Watson" is six words of label for three
@@ -1823,12 +1910,35 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   // same line. A player called the Hub cluttered and hard to understand, and lines like that
   // one are most of why: everything on screen had the same weight and none of it was a
   // sentence. The numbers have not changed; what they sit in has.
-  let out = s"You are in \(district), street cred \(cred), fighting mostly with \(style).\n\n";
-  let stats = sys.GetStats();
-  if IsDefined(stats) {
-    out += s"So far: \(stats.rivalsSlain) rivals put down, \(stats.apexKills) apex enforcers killed, \(stats.unattributed) jobs nobody could pin on you.\n\n";
-  }
-  out += CBHudIncoming(sys, game) + "\n";
+  // "fighting mostly with Butcher" was read by a player as fighting the Butchers - a gang.
+  //
+  // It never meant that: `style` is V's archetype, and Butcher is one of six (CBArchetypeName
+  // below). "Fighting with" takes an opponent in English, so a style put there reads as a gang
+  // on a screen whose other lines really are about gangs, and the title block overhead saying
+  // "Butcher of City Center" makes it worse. This is the third time this collision has been
+  // fixed in this file - see the notes on Operator and Disciplined below - and the lesson each
+  // time is the same: do not put a style where a name is expected.
+  //
+  // Its own sentence now, with no preposition that can take an object, and no article to get
+  // wrong ("a Butcher" against "an Operator").
+  // What is left on this screen, and what went.
+  //
+  // Asked for directly: keep only what a player needs. The four meters above already say who V
+  // is; under them belongs the one thing they cannot say, which is what is on its way. Everything
+  // else here was either already on screen somewhere better or was a number with nothing to do:
+  //
+  //   - "You are in Heywood, street cred 50" - the district is on the HUD line during play now
+  //     (CBDistrictStatusLine) and street cred is the game's own readout, two inches away in the
+  //     same pause menu. Repeating both at the top of a reputation screen said nothing new.
+  //   - "Your style is Butcher" - interesting once, not every time, and it is what the archetype
+  //     meters and the titles already express. Gone from here; the archetype still drives titles.
+  //   - "So far: 4 rivals put down, 8 apex enforcers killed, 833 jobs nobody could pin on you" -
+  //     a lifetime ledger, which is what the History screen is for. Moved there rather than
+  //     dropped, so nothing stops being counted.
+  //
+  // What stays: what is coming, why people are frightened, and what that does right now. Three
+  // things a player can act on.
+  let out = CBHudIncoming(sys, game) + "\n";
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
   return out;
@@ -1864,7 +1974,9 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
     return s"Right now: your face is covered, so nobody can place you and nobody runs. (\(reg.Count()) tracked)";
   }
   let chromeVisible = score.GetChromeVisible();
-  let eff = MaxF(score.GetDreadCiv(), chromeVisible) + score.GetMenace() * CBConfig.MenaceFearWeight();
+  // The crowd's own number, from the crowd's own formula, including the intensity slider the
+  // player set. Working it out separately here is what let this screen disagree with the street.
+  let eff = CBCrowdFear(score, CBCivIntensity());
   let reach = 1.0 + (chromeVisible / 100.0) * CBConfig.ChromeNoticeRangeBonus();
   if eff >= CBConfig.CivTierTerror() {
     let r = RoundF(CBConfig.CivFleeRadius() * reach);
@@ -2096,8 +2208,19 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   if IsDefined(stats) {
     out += s"TALLY   put down \(stats.deaths) times      recognised \(stats.timesRecognized) times";
     out += s"      rivals spared \(stats.rivalsSpared)\n";
+    // Moved off the Standing screen, where it was three lifetime numbers in the middle of a
+    // screen about right now. This is the ledger; it belongs here.
+    out += s"        rivals put down \(stats.rivalsSlain)      apex enforcers killed \(stats.apexKills)";
+    out += s"      never pinned on you \(stats.unattributed)\n";
     let spent = CBHudPeaceSpend(sys);
-    out += s"        tribute taken \(stats.tributeEddies)eb      paid out for peace \(spent)eb\n\n";
+    out += s"        tribute taken \(stats.tributeEddies)eb      paid out for peace \(spent)eb\n";
+    // How V fights, in a word. It left the Standing screen with the rest of the lifetime numbers,
+    // and it is still worth saying once - this is the screen that says things once.
+    let style = CBArchetypeName(sys.GetPrimaryArchetypeIndex());
+    if NotEquals(style, "Undefined") {
+      out += s"        style \(style)\n";
+    }
+    out += "\n";
   }
 
   let shown = 0;
@@ -2198,6 +2321,40 @@ func CBHudPeaceSpend(sys: ref<CyberbaneSystem>) -> Int32 {
 }
 
 // ---- Small label helpers ---------------------------------------------------
+
+// What the street actually does at this much Dread, in a word.
+//
+// The four meters are read as a column and three of them said "number, then a word" - 700
+// Infamous, -99 Cyberpsycho, and chrome with no word at all. Dread said "70   the street reads
+// 84": two numbers side by side with nothing to say which was which, on the one meter whose own
+// caption promises to explain what it does to people. The bands are the same thresholds the
+// crowd itself uses (Config.CivTier*), so the word is not a new idea invented for the readout -
+// it is the behaviour the number already drives.
+func CBDreadWord(civ: Float) -> String {
+  if civ >= CBConfig.CivTierTerror() {
+    return "people run";
+  }
+  if civ >= CBConfig.CivTierAfraid() {
+    return "people are afraid";
+  }
+  if civ >= CBConfig.CivTierUneasy() {
+    return "people are uneasy";
+  }
+  if civ >= CBConfig.CivTierNotice() {
+    return "people notice";
+  }
+  return "nobody minds";
+}
+
+// The civilian intensity slider, as the Director passes it to the crowd (Director.reds:87-106).
+// Defaults to 1.0 before the settings store has filled in, which is what the Director does too.
+func CBCivIntensity() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    return rt.GetSettings().civIntensity;
+  }
+  return 1.0;
+}
 
 func CBArchetypeName(idx: Int32) -> String {
   switch idx {

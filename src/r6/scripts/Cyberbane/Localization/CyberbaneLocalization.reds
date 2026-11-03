@@ -36,7 +36,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-Rivals", "Rivals");
     this.Text("Cyberbane-Settings-Category-SafeAreas", "Safe areas");
     this.Text("Cyberbane-Settings-Preset-Desc", "Subtle, Default or Dramatic. Sets how loud and how frequent everything is in one go. Picking one overwrites the individual settings below.");
-    this.Text("Cyberbane-Settings-HubKey-Desc", "A shortcut to the Hub, which is a page of the pause menu: press it in the game and the pause menu opens straight on Cyberbane, press it again to close it and go back to the game. Escape, then Cyberbane, gets you to the same place. It only works in plain gameplay, the same places the game lets you pause. F7 by default.");
     this.Text("Cyberbane-Settings-RenownGain-Desc", "Multiplies how fast your name spreads. Lower it for a slow climb, raise it to be known quickly.");
     this.Text("Cyberbane-Settings-DreadGain-Desc", "Multiplies how fast you become frightening. Dread is the score that actually makes people back off.");
     this.Text("Cyberbane-Settings-Decay-Desc", "How fast reputation fades when you stop earning it. Zero means it never fades.");
@@ -122,7 +121,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who Cyberbane marks on the map and minimap. Named only marks a rival and the members of an apex squad, which is enough to pick the dangerous one out of a crowd, and takes the marker off again once the fight has started, because the game shows enemies in combat by itself. Everyone adds the gang crews and the escorts that come with an apex squad. Off leaves you to find them.");
     this.Text("Cyberbane-Settings-PhoneSound-Desc", "Plays the phone's own text message tone when a message arrives. It is the game's sound, not one of ours.");
     this.Text("Cyberbane-Settings-MessageDelivery-Desc", "Phone puts everyone who gets in touch into your own phone as a contact: the gang coming for you, the broker who works the district you are in, an unknown number. New messages arrive as the game's own text notification and the thread opens in the phone's Messages list. Cards draws them on the left of the screen instead and keeps Cyberbane out of the phone entirely, which is the one to pick if the phone ever misbehaves. Notices is the old line across the middle of the screen. Off is silence: no phone thread, no card, no notice and no overheard line, and Cyberbane stays out of the phone entirely. Pick it if you would rather be surprised. It changes nothing about the way the mod plays - they still come, and the Hub still shows who is who and still brokers peace - and the HUD line is a separate setting, so you can keep that and lose the texts.");
-    this.Text("Cyberbane-Settings-HubKey", "Hub key");
 
     // ---- Settings: reputation -------------------------------------------
     this.Text("Cyberbane-Settings-RenownGain", "Renown gain");
