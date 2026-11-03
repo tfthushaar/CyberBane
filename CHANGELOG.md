@@ -36,6 +36,25 @@ Codeware (1.20.6) and Mod Settings (0.2.21):
 - The phone and pause menu code Cyberbane hooks into differs between the patches only in touch,
   gyro and Mac input, none of which Cyberbane touches.
 
+### The line at the top of the screen goes away on its own
+- **Where you stand in the district you are in no longer sits there.** DOGTOWN - TALKED ABOUT
+  HERE stayed up for as long as nobody was hunting you, which is most of a session. It now shows
+  when you arrive somewhere and again when your standing there crosses into the next word, then
+  clears itself after ten seconds.
+- **District line**, under Interface, sets that: Briefly is the new default, Always is what it did
+  before, Off never shows it. **District line, seconds** sets how long Briefly lasts, from 3 to
+  60.
+- The hunt warnings are untouched, and **Hunt line on the HUD** still governs the whole line, so
+  HuntsOnly and Off hide the district half as they always did.
+
+### Shorter descriptions in Mod Settings
+- **Every setting description has been cut**, from 194 characters on average to 97. They used to
+  say why a setting exists and what it was written for. They now say what it does, what each
+  choice means, and what zero means where that matters. The reasoning is in the readme and in the
+  source, where there is room for it.
+
+
+## [1.6.0] - 2026-11-03
 
 Cyberbane stays out of the story. A Rival walked into a VR fight where the only thing you could do
 was pistol-whip, and a crew attacked on the way to the water tower with River. Both came from the

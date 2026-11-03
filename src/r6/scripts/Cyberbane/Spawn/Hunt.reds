@@ -365,6 +365,29 @@ func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
 }
 
+// One word for how well known V is in a district. Lifted out of the line below so that the line
+// and the slow sample that decides when the line has something new to say (Core/CyberbaneSystem
+// .reds) cannot drift to different thresholds - the third time that class of bug has turned up
+// here. FindDistrict rather than EnsureDistrict: neither caller may create state, and a district
+// V has done nothing in has no record yet, which is itself the answer.
+public func CBDistrictRenownWord(sys: ref<CyberbaneSystem>, id: CName) -> String {
+  if !IsDefined(sys) || Equals(id, n"") {
+    return "";
+  }
+  let ds = sys.FindDistrict(id);
+  let renown = IsDefined(ds) ? ds.renown : 0.0;
+  if renown >= 75.0 {
+    return "A NAME HERE";
+  }
+  if renown >= 40.0 {
+    return "KNOWN HERE";
+  }
+  if renown >= 15.0 {
+    return "TALKED ABOUT HERE";
+  }
+  return "UNKNOWN HERE";
+}
+
 // Where V stands in the district they are standing in, for the HUD.
 //
 // This goes in the hunt line's own widget rather than next to it. The hunt line is empty most of
@@ -384,26 +407,22 @@ public func CBDistrictStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) 
   if Equals(id, n"") {
     return "";
   }
+  // Its own switch, under the one above. Off never draws it; Briefly draws it only while the
+  // slow sample says it still has news (Core/CyberbaneSystem.reds).
+  let mode = CBDistrictLineMode();
+  if Equals(mode, ECBDistrictLine.Off) {
+    return "";
+  }
+  if Equals(mode, ECBDistrictLine.Briefly) && !sys.DistrictLineFresh(CBDistrictLineSeconds()) {
+    return "";
+  }
   let label = CBDistrictLabel(id);
   if StrLen(label) == 0 {
     label = NameToString(id);
   }
-  // FindDistrict rather than EnsureDistrict: a render path must never create state, and a
-  // district V has done nothing in has no record yet, which is itself the answer.
   let ds = sys.FindDistrict(id);
   let renown = IsDefined(ds) ? ds.renown : 0.0;
-  let word = "UNKNOWN HERE";
-  if renown >= 75.0 {
-    word = "A NAME HERE";
-  } else {
-    if renown >= 40.0 {
-      word = "KNOWN HERE";
-    } else {
-      if renown >= 15.0 {
-        word = "TALKED ABOUT HERE";
-      }
-    }
-  }
+  let word = CBDistrictRenownWord(sys, id);
   if renown < 1.0 {
     return StrUpper(CBClip(label, CBConfig.HudNameMaxChars())) + "   -   " + word;
   }
@@ -740,6 +759,26 @@ public func CBHudLineMode() -> ECBHudLine {
     return ECBHudLine.Everything;
   }
   return rt.GetSettings().hudLine;
+}
+
+public func CBDistrictLineMode() -> ECBDistrictLine {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return ECBDistrictLine.Briefly;
+  }
+  return rt.GetSettings().districtLine;
+}
+
+public func CBDistrictLineSeconds() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return 10;
+  }
+  let n = rt.GetSettings().districtLineSeconds;
+  if n < 1 {
+    return 1;
+  }
+  return n;
 }
 
 // ---- Letting go of a fight that is over -----------------------------------------

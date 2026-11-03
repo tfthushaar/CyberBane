@@ -85,6 +85,16 @@ enum ECBHudLine {
   Off = 2,
 }
 
+// How long the district half of that line stays up. Always is what 1.6.0 shipped and what the
+// first report about it was: "the text just stays there on top of the screen". Briefly puts it up
+// when V arrives somewhere and again when their standing there crosses into the next word, then
+// clears it. Off never draws it and leaves the hunt warnings alone.
+enum ECBDistrictLine {
+  Always = 0,
+  Briefly = 1,
+  Off = 2,
+}
+
 enum ECBLogLevel {
   Off = 0,
   Info = 1,
@@ -386,6 +396,24 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
   public let hudLine: ECBHudLine = ECBHudLine.Everything;
+
+  // The district line borrows the hunt line's widget (Spawn/Hunt.reds), so the setting above
+  // still hides the whole line; this governs the district half of it. Briefly by default rather
+  // than Always, because a line that never changes is one a player stops reading.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DistrictLine")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DistrictLine-Desc")
+  public let districtLine: ECBDistrictLine = ECBDistrictLine.Briefly;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DistrictLineSeconds")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DistrictLineSeconds-Desc")
+  @runtimeProperty("ModSettings.min", "3")
+  @runtimeProperty("ModSettings.max", "60")
+  @runtimeProperty("ModSettings.step", "1")
+  public let districtLineSeconds: Int32 = 10;
 
   // The name-and-health bars at the top of the screen (UI/ThreatBar.reds). Kept beside the hunt
   // line because the two sit one above the other, and a player looking to clear the top of the

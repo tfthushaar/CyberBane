@@ -345,11 +345,14 @@ still hunt you, loot and bounties still arrive with the game's own notices, and 
 shows you where you stand with everyone and still brokers peace. The only thing you give up is
 the warning, which is the point if you would rather be surprised.
 
-The top of the screen is separate again, so you can mix them. Two settings under Interface cover
-it. **Hunt line on the HUD** is the line of text (TRACKED, HUNTED, SEARCHING and so on), with
-Everything, HuntsOnly (only while somebody is actually on their way or out looking) and Off.
-**Rival and apex bars** is the name and health bar under it for a Rival who has come for you and
-for each member of an apex squad. Messages off with the hunt line on keeps the one line and loses
+The top of the screen is separate again, so you can mix them. Three settings under Interface
+cover it. **Hunt line on the HUD** is the line of text (TRACKED, HUNTED, SEARCHING and so on),
+with Everything, HuntsOnly (only while somebody is actually on their way or out looking) and Off.
+**District line** is the other thing that line says, where you stand in the district you are in:
+Briefly puts it up when you arrive somewhere and when your standing there changes and then clears
+it, which is the default, Always leaves it up, and Off never shows it. **District line, seconds**
+is how long Briefly lasts. **Rival and apex bars** is the name and health bar under it for a Rival
+who has come for you and for each member of an apex squad. Messages off with the hunt line on keeps the one line and loses
 the texts; everything off means the first you know about it is when they walk round the corner.
 
 ### Starting over

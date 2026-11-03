@@ -234,6 +234,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_recentKillTick: Int32;
   private let m_pendingApexDriving: Bool;     // the apex clock is a drive, not a warning
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
+  // When the district line last had something to say, and what it said. Session only: it
+  // describes the last few seconds, not the playthrough.
+  private let m_districtNewsTick: Int32;
+  private let m_districtWord: String;
   private let m_content: ref<CyberbaneContent>;   // content service, fetched once from a stable tick then reused (crash safety)
   private let m_callbacksRegistered: Bool;    // Codeware entity + input callbacks registered; retried until it sticks
   private let m_pendingApexFaction: CName;    // gang whose apex has been announced and is walking in
@@ -730,6 +734,15 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_currentDistrict = arrivedIn;
       if movedOn {
         CBGrapevineOnArrival(this, game, arrivedIn, CBGameSeconds(game));
+      }
+      // The district line has news twice: when V arrives somewhere, and when their standing
+      // there crosses into the next word. Noted here rather than where the line is drawn,
+      // because the thing that draws it runs every tick and a render path must never write
+      // state (UI/ThreatBar.reds).
+      let standing = CBDistrictRenownWord(this, arrivedIn);
+      if movedOn || NotEquals(standing, this.m_districtWord) {
+        this.m_districtWord = standing;
+        this.m_districtNewsTick = this.m_tickCount;
       }
     }
     CBEncounterTick(this, game);
@@ -1251,6 +1264,13 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func SetHuntGrade(grade: String) -> Void {
     this.m_huntGrade = grade;
+  }
+
+  // Whether the district line still has something new to say. The tick it last had news is what
+  // is stored, rather than a deadline, so moving the slider in Mod Settings takes effect at once
+  // instead of on the next district V walks into.
+  public func DistrictLineFresh(seconds: Int32) -> Bool {
+    return (this.m_tickCount - this.m_districtNewsTick) <= seconds;
   }
 
   public func GetHuntEndLine() -> String {
