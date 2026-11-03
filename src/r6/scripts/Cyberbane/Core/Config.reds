@@ -913,6 +913,32 @@ public abstract class CBConfig {
   public static func CapLedgerTotal() -> Int32 = 100
   public static func CapLedgerPerPlaythrough() -> Int32 = 30
   public static func CapPeaceDeals() -> Int32 = 16
+  // In the global service (Core/CyberbaneService.reds), shared by every save.
+  public static func CapForgetNotes() -> Int32 = 32
+  public static func CapRetiredIds() -> Int32 = 64
+  public static func CapSightings() -> Int32 = 48
+
+  // ---- Hunting a Rival down (Rivals/Whereabouts.reds) --------------------
+  // How likely a tip is on each slow tick (one in-game hour) when one could be given.
+  public static func TipChancePerHour() -> Float = 0.3
+  // In-game hours between tips, and how old a sighting must be before anybody passes it on.
+  public static func TipGapHours() -> Float = 4.0
+  public static func TipMinAgeHours() -> Float = 1.0
+  // A lead goes stale after this many in-game hours: they have moved on.
+  public static func LeadLifetimeHours() -> Float = 24.0
+  // V within this distance of the place, and no closer than the minimum, places the Rival there.
+  public static func LairPlaceDistance() -> Float = 85.0
+  public static func LairMinDistance() -> Float = 30.0
+  // Further than this from a waiting Rival who never noticed V, and they are taken back out.
+  public static func LairLeaveDistance() -> Float = 160.0
+  // Ticks V must have been on foot, out of combat, in a settled world before anybody is placed.
+  public static func LairCalmTicks() -> Int32 = 5
+  // How far round the place to look for standing room, and how often to try while in range.
+  public static func LairSearchRadius() -> Float = 12.0
+  public static func LairTryEveryTicks() -> Int32 = 3
+  // Extra renown for putting a Rival down before they ever knew V was there, as a fraction of
+  // what the kill itself pays.
+  public static func LairAmbushRenownShare() -> Float = 0.5
   // Kill timestamps kept per encounter. Only the massacre window is ever read back, so
   // this is comfortably more than the rule needs.
   public static func CapEncounterKillTicks() -> Int32 = 64

@@ -906,7 +906,10 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort") || des.IsTagged(id, n"CB_Scout");
   let isRival = des.IsTagged(id, n"CB_Rival");
   let isApex = des.IsTagged(id, n"CB_Apex");
-  if !isSquad && !isRival && !isApex {
+  // A Rival waiting at their own place for V to come to them (Rivals/Whereabouts.reds). Set up
+  // like any Rival, except that nobody tells them to go anywhere.
+  let isLair = des.IsTagged(id, n"CB_Lair");
+  if !isSquad && !isRival && !isApex && !isLair {
     return;
   }
   // Aggressive first, because the rest of it depends on being aggressive.
@@ -928,7 +931,9 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   // Hostile is not the same as coming for you. Anybody in a car is excepted: the car travels.
   // Where they go is the hunt's business: toward where V was last known, until somebody finds V
   // (Spawn/Hunt.reds).
-  if !riding {
+  // Not one waiting at their place: hostile, so they fight when they see V, and otherwise left
+  // exactly where they were put. No order at all is the whole of the waiting.
+  if !riding && !isLair {
     CBOrderPursue(sys, game, puppet);
   }
   if isApex {
@@ -960,16 +965,16 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   if isApex || isSquad {
     CBJoinSquadWith(sys, puppet);
   }
-  if isRival {
-    let who = sys.FindRivalById(sys.GetActiveRivalId());
-    // Their name in the scanner (UI/ScannerName.reds). The body recorded at spawn is the exact
-    // answer; the active Rival is what the rest of this block already goes by, so it is the
-    // fallback for a body that was not recorded.
-    let named = CBFindRivalByBody(sys, id);
-    if !IsDefined(named) {
-      named = who;
+  if isRival || isLair {
+    // Whose body this is. The body recorded at spawn is the exact answer, and the only one for a
+    // Rival waiting at their place, who is nobody's active encounter. For one sent after V the
+    // active Rival is the same person and stays the fallback for a body that was not recorded.
+    let who = CBFindRivalByBody(sys, id);
+    if !IsDefined(who) && !isLair {
+      who = sys.FindRivalById(sys.GetActiveRivalId());
     }
-    CBMarkRivalBody(puppet, named);
+    // Their name in the scanner (UI/ScannerName.reds).
+    CBMarkRivalBody(puppet, who);
     // A named enemy that never uses cover or chrome is a ganger with a nameplate. A cyberpsycho
     // takes the lighter kit, which adds no armour on top of what they already have.
     if IsDefined(who) && CBRecordIsSightingCyberpsycho(who.recordID) {
@@ -987,7 +992,9 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
       // One call, one build. The crew-rank bonus is a parameter now rather than a second
       // multiplier applied a line later; see the note in Rivals/Hierarchy.reds.
       CBApplyRivalApexBuff(sys, game, puppet, who, CBRivalRole(sys, who));
-      if CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() {
+      // The bar says somebody is on you. One waiting at their place gets it when the fight
+      // starts (CBLairPromote), not before.
+      if !isLair && CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() {
         CBShowBossBar(puppet);
       }
     }

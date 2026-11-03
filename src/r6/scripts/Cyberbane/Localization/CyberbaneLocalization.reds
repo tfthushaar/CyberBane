@@ -64,6 +64,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Rivals-Desc", "Whether enemies who get away from you, or who you spare, come back as named Rivals.");
     this.Text("Cyberbane-Settings-MaxRivals-Desc", "How many Rivals you carry at once. At the limit nobody new takes against you, and the ones you have close in faster.");
     this.Text("Cyberbane-Settings-DeathsRemembered-Desc", "Whether whoever kills you can come back as a Rival.");
+    this.Text("Cyberbane-Settings-RivalHideouts-Desc", "Gangs and the street sometimes text you where a Rival was last seen. Go there on foot and they may be waiting, not expecting you.");
     this.Text("Cyberbane-Settings-RivalFreq-Desc", "How often Rivals turn up, and how quickly they track you down.");
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines.");
@@ -158,6 +159,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Rivals", "Rivals");
     this.Text("Cyberbane-Settings-MaxRivals", "Max active Rivals");
     this.Text("Cyberbane-Settings-DeathsRemembered", "Night City remembers your deaths");
+    this.Text("Cyberbane-Settings-RivalHideouts", "Tips on where Rivals are");
     this.Text("Cyberbane-Settings-RivalFreq", "Rival frequency");
 
     // ---- Settings: interface --------------------------------------------

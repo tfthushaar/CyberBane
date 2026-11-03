@@ -630,6 +630,13 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   if !IsDefined(sys) {
     return 0;
   }
+  // Where they were seen, and the pin on anybody's place, go with them (Rivals/Whereabouts.reds).
+  let svc = sys.GetPlayService();
+  if IsDefined(svc) {
+    svc.DropSightingsUpTo(sys.GetPlaythroughId(), sys.HighestRivalId());
+  }
+  CBDropLead(sys, game);
+  CBLairStandDown(sys, game);
   let removed = sys.ClearRivals();
   sys.SetActiveRivalId(0);
   CBDeleteTaggedSafe(game, n"CB_Rival");

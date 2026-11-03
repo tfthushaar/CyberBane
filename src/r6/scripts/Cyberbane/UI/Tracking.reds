@@ -76,7 +76,8 @@ func CBWorthMarking(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Bool {
     return false;
   }
   let id = puppet.GetEntityID();
-  return des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex");
+  // A Rival waiting at their place is a Rival (Rivals/Whereabouts.reds).
+  return des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Lair");
 }
 
 // Put a marker on this one.
@@ -166,4 +167,5 @@ public func CBMarkerCombatTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   CBUntrackTagged(game, n"CB_Squad");
   CBUntrackTagged(game, n"CB_Escort");
   CBUntrackTagged(game, n"CB_Scout");
+  CBUntrackTagged(game, n"CB_Lair");
 }

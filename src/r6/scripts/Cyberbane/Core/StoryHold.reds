@@ -275,7 +275,8 @@ public func CBStoryStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
               + CBStoryRemoveUnseen(game, des, n"CB_Squad")
               + CBStoryRemoveUnseen(game, des, n"CB_Apex")
               + CBStoryRemoveUnseen(game, des, n"CB_Escort")
-              + CBStoryRemoveUnseen(game, des, n"CB_Scout");
+              + CBStoryRemoveUnseen(game, des, n"CB_Scout")
+              + CBStoryRemoveUnseen(game, des, n"CB_Lair");
   if removed > 0 {
     CBLog.Info(n"Spawn", s"The story has the stage (\(CBStoryLabel(sys.GetStoryHold()))): called back \(removed) of ours who had not reached you.");
   }

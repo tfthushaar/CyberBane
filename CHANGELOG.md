@@ -5,11 +5,63 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [1.6.2] - 2026-11-03
 
-Scan a Rival and the scanner tells you who they are. The one who has been texting you all evening
-now scans under the name they go by in the Hub and in their messages, the way the scanner names an
-NCPD target.
+You can go after your Rivals now, the way they come after you. Somebody who walked away from you
+alive gets seen somewhere afterwards, and sooner or later a gang that hates theirs, or somebody on
+the street, texts you where. Go there on foot and they are there, not expecting anybody. And a
+Rival scans under their own name.
+
+This release also fixes "I cleared my rivals on the Hub, closed the game, loaded my save and they
+were all back", at the root, along with a worse problem that came from the same place: Start over
+could wipe the wrong save.
 
 Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Hunting a Rival down
+- **Where they were last seen.** When a Rival walks away from an encounter alive (you lost them,
+  they ran, or you let them go), the street notes where they were standing.
+- **Somebody tells you.** Now and then a gang at war with the Rival's gang texts you where they
+  were seen: "Heard you got beef with Kenji. Our people saw them in Heywood not long ago." If no
+  gang that tolerates you hates theirs, it comes from somebody on the street instead. A pin goes
+  on your map, with the same icon as a Rival's marker. One lead at a time, and at most one tip
+  every few hours.
+- **Go there.** Get within about 80 metres on foot and they are there: idle, minding their own
+  business, given no orders at all. Sneak up, take a shot, or knock them out. Once they see you
+  or you hurt them, it is an ordinary Rival fight, and everything that applies to one applies
+  here: they can run, they can be spared, and they can be killed for good.
+- **Catch them before they react** and it counts as an ambush: extra renown on top of the kill,
+  a line in the street's file on the History screen, and word back from whoever tipped you off.
+- **Leads go stale.** Leave it a day and they move on; whoever told you says so. Every encounter
+  they survive gets them seen somewhere new.
+- **They still come for you** on their own schedule, exactly as before. Somebody waiting at their
+  place counts as the one Rival in the world, so no other Rival is sent while they wait.
+- **On the Hub,** a Rival you have a lead on reads "you know where", and their file says who told
+  you and where. One waiting at their place reads "at their place".
+- **Tips on where Rivals are,** under Rivals in Mod Settings, turns all of this off. With messages
+  off you are not texted, but the lead, the pin and the Hub's file still work. The pin follows the
+  Map markers setting.
+
+### How it stays out of trouble
+- **Nobody is placed at a bad moment.** A waiting Rival is put there only when you are on foot,
+  out of combat, the world is settled and has been for several seconds, the story and your job
+  both leave the stage to Cyberbane, and nothing else of Cyberbane's is out or on its way.
+  Arriving by car or by fast travel is exactly when the game is busiest loading, which is where
+  this mod's crashes have always come from, so those are the moments it waits out.
+- **Only the checks every arrival already passes:** a floor under them, on the walkable map, not
+  in a safe area or at a job, a path to you, and not in front of your eyes. Placing them uses the
+  same call as every other arrival, and they are taken out the same way, out of your sight. One
+  at a time, and never past the cap on how many of Cyberbane's people can be in the world at
+  once.
+- **The hunt cannot see them while they wait.** They wear their own tag until the fight starts,
+  so nothing sends them off after you or decides you have "lost" them while you are still sneaking
+  up. The moment the fight starts they become an ordinary Rival encounter, handled entirely by
+  the code that already runs every other one.
+- **Walk away and they go quietly.** Get far enough away, or let the story take over, and they
+  are taken back out of sight, with no promotion and no text. The pin comes back.
+- **The pin does not outlive the session.** It uses the game's own map pins, and the game does
+  not keep those in the save; its own systems put theirs back on every load. Cyberbane puts its
+  pin back the same way, from what the street saw.
+- **Checked against both patches.** The only engine call Cyberbane had not made before is placing
+  a map pin at a position. Both 2.31 and 2.5 have it, and the game's own drop points use it.
 
 ### Rivals in the scanner
 - **The scanner gives a Rival's name.** A player pointed out that Rivals scanned as Racketeer,
@@ -24,7 +76,38 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
 - It runs on both 2.31 and 2.5. The game builds the scanner's name the same way on both patches,
   and that was checked against each patch's script source.
 
+### Forgetting your Rivals sticks now
+- **What was happening.** "Forget every rival" changed only the save's own copy of your Rivals,
+  and only once you went back to the game. So quitting from the pause menu straight after
+  choosing it threw it away, and loading any save written before it brought every Rival back.
+- **What it does now.** It is recorded the moment you confirm it, against the playthrough rather
+  than the save, in the same place Cyberbane already keeps the deaths it remembers across saves.
+  Every save of that playthrough forgets those Rivals when it loads, including saves older than
+  the one you chose it on.
+- **Deaths from before the forget no longer bring anybody back** as a Rival either, so loading an
+  older save cannot raise one through that door.
+- **"Keep them" still takes it back,** exactly as it was, until you go back to the game.
+- New Rivals after a forget are numbered past the forgotten ones, so a Rival made later is never
+  mistaken for one of them.
+
+### Start over could wipe the wrong save
+- **What was happening.** Start over was parked in a place that outlives every save, and nothing
+  tied it to the playthrough it was chosen in. Choose Start over, then Load Game from the pause
+  menu, and the reset ran on whatever loaded, even a save from a completely different
+  playthrough. The Reset all Cyberbane data switch in Mod Settings went the same way.
+- **What it does now.** A reset belongs to the playthrough it was chosen in. A save from any other
+  playthrough is never touched by it. From the main menu, with nothing loaded, the switch still
+  applies to the next save you load, as it always did.
+- **And it sticks, like forgetting your Rivals.** Start over on the Hub is recorded against the
+  playthrough when you confirm it, and older saves of that playthrough are started over too when
+  they next load, instead of bringing back what you wiped.
+
 ### Fixed
+- **Sparing a Rival could make a second Rival of them.** When a Rival you put down without killing
+  was settled after their body had already streamed out or been cleared, Cyberbane looked for the
+  body to work out who they were, found nothing, and took them for a stranger. It made a brand new
+  Rival of the same person. It now goes by the id it noted when they went down, which outlives the
+  body.
 - **The first Rival on a save was missing part of their behaviour.** Rivals are numbered, the
   numbering started at 0, and Cyberbane also uses 0 to mean "nobody". So the first Rival on every
   save, and the first after Start over, had three faults:
@@ -34,14 +117,6 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
     Rival out of them instead of promoting them.
 
   New Rivals are numbered from 1. A Rival your save already numbers 0 stays as they are.
-
-### Asked for, not built yet
-- **Hunting a Rival down.** A player asked to be able to track a Rival and ambush them, the way
-  Rivals ambush you. It was researched for this release and held back, because it carries crash
-  risk: a Rival would have to appear as you arrive somewhere, which is when the game is busiest
-  loading the world, and their body would have to stay in the world away from you for a long
-  time. Most of the mod's past crashes came from those two situations. What was found, and a
-  step-by-step plan for building it safely, are in IMPROVEMENTS.md.
 
 
 ## [1.6.1] - 2026-11-03

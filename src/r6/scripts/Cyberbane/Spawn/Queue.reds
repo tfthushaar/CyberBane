@@ -47,7 +47,9 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
   if lane == CBLaneRival() {
     // A Rival the city is still driving in counts as out: their body only becomes theirs once
     // it is adopted, and until then the live test cannot see them.
-    return CBLiveRivalPresent(sys, game) || sys.GetRivalCarPending() > 0;
+    // So does one waiting at their place for V (Rivals/Whereabouts.reds): one Rival in the world
+    // at a time, whichever way round the ambush is.
+    return CBLiveRivalPresent(sys, game) || sys.GetRivalCarPending() > 0 || sys.IsLairActive();
   }
   if lane == CBLaneApex() {
     return NotEquals(sys.GetPendingApexFaction(), n"") || CBLiveTaggedPresent(game, n"CB_Apex");
