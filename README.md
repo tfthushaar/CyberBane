@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.6.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.6.2).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -113,7 +113,8 @@ in active development. This page describes what the mod does and how it installs
   of an apex squad, and they keep getting stronger: every escape, every mercy and every time
   they put you down makes the one who comes back harder than the one who left. Each arrives
   with a bar at the top of the screen carrying their name, and texts you when they have found
-  you. Put down the one hunting you and it is finally finished. Anyone who kills you can also
+  you. Scan one and the scanner gives that name too, over their class, the way it names an NCPD
+  target. Put down the one hunting you and it is finally finished. Anyone who kills you can also
   come back, wearing the face they had when they did it, and dropping a crew's member can bring
   a gang-mate gunning for you.
 - **Rivals have traits, and weak spots.** A Tough Rival takes more killing, an Armored one

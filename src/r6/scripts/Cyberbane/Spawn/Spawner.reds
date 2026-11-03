@@ -962,6 +962,14 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   if isRival {
     let who = sys.FindRivalById(sys.GetActiveRivalId());
+    // Their name in the scanner (UI/ScannerName.reds). The body recorded at spawn is the exact
+    // answer; the active Rival is what the rest of this block already goes by, so it is the
+    // fallback for a body that was not recorded.
+    let named = CBFindRivalByBody(sys, id);
+    if !IsDefined(named) {
+      named = who;
+    }
+    CBMarkRivalBody(puppet, named);
     // A named enemy that never uses cover or chrome is a ganger with a nameplate. A cyberpsycho
     // takes the lighter kit, which adds no armour on top of what they already have.
     if IsDefined(who) && CBRecordIsSightingCyberpsycho(who.recordID) {

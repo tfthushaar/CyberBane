@@ -13,6 +13,176 @@ calls, one AI order per NPC, no entity work inside attach events, removals only 
 `CBDeleteTaggedSafe`, behaviour-only ability kits, no runtime appearance changes, no loot drops
 from corpses.
 
+## Requests after 1.6.1
+
+### "Rivals should show their names in the scanner, like the named NCPD targets do."
+
+**Status: done in 1.6.2** (`UI/ScannerName.reds`).
+
+- A Rival scans under the name Cyberbane uses everywhere else, with their class underneath. These
+  are the same two lines the game shows for a named NCPD target.
+- It wraps `NPCPuppet.CompileScannerChunks`. The game builds the scan as normal, and then the name
+  chunk is written again for a Rival's body only.
+- The body carries its Rival id from set-up, so a corpse or somebody knocked out still scans as
+  themselves.
+- Checked against the 2.31 and 2.5 script source. Both build the name chunk with the same code,
+  and every call used exists with the same signature on both.
+
+### "It would be peak to track my Nemesis and go ambush them. Like they do with us."
+
+**Status: researched for 1.6.2, not built.** It carries crash risk, so this section records what
+was found and how it could be built safely.
+
+The ask is to turn the hunt around: V finds out where a Rival is, goes there, and gets the drop on
+them before they know V is coming.
+
+**What already exists that it could reuse**
+
+- A spawned Rival with no order to move stands where they were put until V comes into sight (see
+  the note on `CBOrderHunt`). That is the waiting behaviour, and it needs a step left out rather
+  than a new AI call.
+- Kill, mercy and escape attribution already follow the body recorded at spawn
+  (`CBFindRivalByBody`). An ambushed Rival's death, bounty, loot and successor would all work
+  unchanged.
+- Rivals already arrive about 80 m out (`RivalSpawnDistance`), so a waiting Rival would not be
+  placed any further away than now.
+- The Hub already has a button that is chosen while paused and carried out on resume (peace
+  deals). A "buy their whereabouts" button could copy it.
+- The scanner names Rivals as of 1.6.2, so V can confirm they have found the right person.
+
+**Why it is not safe to add as it stands**
+
+1. **It moves spawning to the riskiest moment.** Today every arrival runs off a clock and happens
+   wherever V already is. A waiting Rival has to appear when V gets near them, which is usually
+   just after a fast travel, getting out of a car, or driving into a district. The world streams
+   hardest at those moments. `CBWorldStable`, the settle window and the attach-flood detector
+   exist to wait those moments out, and most of the mod's past crashes came from them. The gates
+   would hold the spawn back, but this feature would lean on them on every arrival instead of
+   occasionally.
+2. **Bodies would live away from V for a long time.** A waiting Rival exists before the fight, and
+   stays while V approaches, circles round or leaves. Spawns use `alwaysSpawned = false`, so the
+   body streams out when V moves away. Everything that manages a Rival encounter assumes the body
+   stays near V for its whole life: `CBLiveRivalPresent`, the arrival check, the retire sweep,
+   `CBChaseGiveUp` and the one-Rival-at-a-time gate. A streamed-out body reads as absent. That
+   reopens the Rival lane, and a second Rival body can appear while the first is still recorded
+   as active. The mod's crash fixes cluster around entity lifetime: no removal inside a death
+   handler, and removals only through `CBDeleteTaggedSafe`.
+3. **A pin for a place, not a person.** Every pin Cyberbane draws today is bound to an NPC and goes
+   away with them. A hideout needs a pin before the NPC exists. `MappinSystem.RegisterMappin(data,
+   position)` exists on both 2.31 and 2.5, and the drop point system uses it. But Cyberbane would
+   have to remove the pin on every way a stakeout can end, including a load, Start over, Forget
+   every Rival and the kill switch, and the pin id cannot be saved. Nobody has checked whether the
+   game saves a position pin registered from script. If it does, a save made mid-stakeout keeps a
+   pin that nothing can remove. That is the same kind of bug as the stuck Rival markers fixed in
+   1.4.3.
+4. **The hunt works against it.** These would be bugs rather than crashes, and each one is certain
+   without changes:
+   - `CBHuntTick` orders every living `CB_Rival` toward V, so a waiting Rival would walk off to
+     look for V.
+   - A waiting Rival has not seen V, so after about 150 ticks the hunt calls LOST THEM.
+     `CBChaseGiveUp` then promotes and removes the Rival while V is still sneaking up.
+   - Escorts (Pack Leader, crew leader, lieutenant) are spawned in `CBRivalOnTheirWay`, and
+     `CBApplySpawnSetup` orders them to pursue like any other crew.
+   - The HUD line and the Rival bar say HUNTING YOU.
+5. **There is nowhere to send them.** Cyberbane stores no positions. Districts come from the
+   game's PreventionSystem by name, with no coordinates. A hideout needs a world position that is
+   standing room, reachable on foot, outside safe areas and away from jobs. Something has to find
+   or record that position first.
+6. **It is too big to ship untested.** It touches the spawner, the hunt, the queue, the Hub and the
+   phone. A redscript compile error stops every script mod from loading. A change this size needs
+   an in-game compile and a playtest before release.
+
+**How it could be built safely**
+
+Build it in stages. Each stage can be released on its own and should be checked in game before
+the next one starts.
+
+1. **Where they were last seen.** Record where a Rival was standing whenever an encounter ends
+   without their death:
+   - when the retire sweep removes them;
+   - when `CBChaseGiveUp` runs;
+   - when `CBHandleEscape` runs;
+   - when they are spared.
+
+   A body Cyberbane placed has already passed the ground, safe-area and reachability tests, so
+   that position is valid standing room. Store it as three new persisted `Float`s on `CBRival`.
+   New scalars on an existing persisted class load as 0 on old saves, the same as `scarMask`. Show
+   the district in the Rival's file on the Hub ("last seen in Kabuki"). No new engine calls.
+   Risk: none.
+2. **Buying their whereabouts.**
+   - Add a button to the Rival's file, priced by rank and carried out on resume like a peace deal.
+   - The button puts the Rival in a staked-out state, which the Rival lane skips, and texts V the
+     district.
+   - Before adding a pin, check in game whether a `RegisterMappin` position pin survives a save
+     and load. If it does not, pin the last-seen position. If it does, send the text only.
+
+   Risk: low.
+3. **The waiting Rival.** Spawn them only when all of these are true:
+   - V is on foot and out of combat.
+   - The world has been stable for several seconds.
+   - No other Cyberbane encounter is live.
+   - V is within about 80 m of the stakeout point.
+
+   Then:
+   - Place them with the existing tests, centred on the stakeout point instead of on V:
+     `FindPursuitPointsRange` around the point, `CBSettleOnGround`, `CBSafeAreaBlocksSpawn`,
+     `NearQuestPins`, `CBPointReachable` from V and `CBPointOutOfSight`.
+   - Tag them `CB_Rival` plus a new `CB_Waiting`.
+   - In `CBApplySpawnSetup`, skip `CBOrderPursue` for `CB_Waiting`, and do the same for their
+     escorts. Giving no order at all also keeps the one-order-per-NPC rule.
+   - `CBHuntTick`, `CBHuntOrderTag` and `CBChaseGiveUp` leave `CB_Waiting` bodies alone until the
+     game's own combat starts on them (`CBNpcInCombat`) or they spot V.
+   - If V moves more than about 200 m away, remove the body through `CBDeleteTaggedSafe` and keep
+     the stakeout. No promotion and no text.
+   - A stakeout that is never visited expires after an in-game day, and the Rival goes back into
+     the queue.
+
+   Risk: medium until playtested. It uses only calls the mod already makes.
+4. **The payoff.** A kill before the Rival ever entered combat counts as an ambush. It pays more
+   renown and a better loot tier than an ordinary Rival kill, and gets a line on the History
+   screen.
+
+**Checks to run in game before stage 3 ships**
+
+- Fast travel to the data term nearest a stakeout, and separately drive into the district at
+  speed. The spawn must wait until the world settles.
+- Walk up, leave, and come back. The body must be removed and placed again, never duplicated.
+- Save mid-stakeout and load. No pin or body may be left over.
+- Set a stakeout next to a gig or story objective. Nobody may spawn inside it.
+- Kill silently, kill loudly, knock them out, and let them run. Each must end the stakeout and
+  count exactly once.
+
+**A wider version: Rivals who live in the city**
+
+The proposal: once somebody becomes a Rival they stay in the world, going about their business.
+V can hunt or ambush them at any time, and when their turn comes they still ambush V as they do
+now.
+
+As a design this is where a nemesis system wants to end up, and it fits the mod. It cannot be
+built literally, but it can be built as an illusion.
+
+- **Literally, no.** The game only loads ground, collision and navmesh around V, and only runs
+  NPCs near V. A Rival kept spawned on the far side of the city has nothing to stand on and
+  nothing to walk on. Up to 15 of them (`RivalMaxActiveHardCap`) would also use almost all of the
+  18-body ceiling (`MaxLiveSpawns`), leaving no room for the crews and apex squads they belong to.
+  Keeping their bodies in the save (`persistSpawn`) breaks the rule that Cyberbane writes no
+  entities to the save. That rule is part of why removing the mod makes no permanent change to the game.
+- **As an illusion, yes.** Each Rival gets a place, saved as data only: a district and a point,
+  which moves now and then on a timetable (home turf by day, somewhere else at night, gone to
+  ground after an escape). Their body exists only while V is near that point. Stage 3 above
+  already does this for one Rival, so this generalises it rather than replacing it. Rivals'
+  ambushes on V stay exactly as they are.
+- **What it adds to the risks above.** V would pass close to Rivals all the time, mostly while
+  driving, so spawns triggered by V's arrival would become routine rather than occasional. The
+  encounter code also assumes one Rival in the world at a time, through a single active Rival id.
+  So:
+  - only one Rival may be placed at a time;
+  - placement happens on foot only;
+  - anybody already hunting V always takes priority.
+- **A sensible first version** gives each Rival a home: their own turf between hunts, where V can
+  find them through stage 2's intel and catch them off guard. Free roaming can come later, once
+  stage 3 has proved itself in game.
+
 ## Status after 1.5.0
 
 The backlog below was written before any of it was built. This is where each item stands now.

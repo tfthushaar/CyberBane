@@ -3,6 +3,47 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.2] - 2026-11-03
+
+Scan a Rival and the scanner tells you who they are. The one who has been texting you all evening
+now scans under the name they go by in the Hub and in their messages, the way the scanner names an
+NCPD target.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Rivals in the scanner
+- **The scanner gives a Rival's name.** A player pointed out that Rivals scanned as Racketeer,
+  Thug or Tyger, or sometimes under a generated name that was never the one they used anywhere
+  else. The scanner now shows the name Cyberbane gives them everywhere, such as Kenji "Who Ran"
+  Morita, with their class (Netrunner, Sniper and so on) underneath. These are the same two lines
+  the game uses for named targets.
+- **It stays with the body.** Somebody you put down, or knocked out, still scans as themselves.
+- **The rest of the scan is the game's own.** Level, health, faction, weaknesses and bounty are
+  untouched, and nobody but a Rival is affected. Where the game would not show a name at all,
+  this does not show one either.
+- It runs on both 2.31 and 2.5. The game builds the scanner's name the same way on both patches,
+  and that was checked against each patch's script source.
+
+### Fixed
+- **The first Rival on a save was missing part of their behaviour.** Rivals are numbered, the
+  numbering started at 0, and Cyberbane also uses 0 to mean "nobody". So the first Rival on every
+  save, and the first after Start over, had three faults:
+  - they arrived without texting first;
+  - they never came by car;
+  - when they fled at low health they were taken for an ordinary ganger, which made a second
+    Rival out of them instead of promoting them.
+
+  New Rivals are numbered from 1. A Rival your save already numbers 0 stays as they are.
+
+### Asked for, not built yet
+- **Hunting a Rival down.** A player asked to be able to track a Rival and ambush them, the way
+  Rivals ambush you. It was researched for this release and held back, because it carries crash
+  risk: a Rival would have to appear as you arrive somewhere, which is when the game is busiest
+  loading the world, and their body would have to stay in the world away from you for a long
+  time. Most of the mod's past crashes came from those two situations. What was found, and a
+  step-by-step plan for building it safely, are in IMPROVEMENTS.md.
+
+
 ## [1.6.1] - 2026-11-03
 
 Cyberbane runs on Cyberpunk 2077 2.31 as well as 2.5. Players who have not moved to 2.5 asked to

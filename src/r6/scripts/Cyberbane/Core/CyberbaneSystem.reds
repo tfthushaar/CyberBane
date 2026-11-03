@@ -1968,6 +1968,17 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // ---- Rivals (spec §10) ------------------------------------------------
   public func AllocateRivalId() -> Int32 {
+    // Ids start at 1. Everything that holds a Rival id in a slot - the active encounter, the
+    // warning already sent, the car in flight or the car that failed - uses 0 for "nobody", and
+    // this counter started at 0, so the first Rival on every save (and the first after Start
+    // over) was nobody to those slots. They arrived without texting first (the warning slot
+    // already read as theirs), never came by car (the failed-car slot always matched them), and
+    // fleeing V at low health was taken for an ordinary ganger fleeing, which made a second
+    // Rival out of them instead of promoting them. A save that already has a Rival 0 keeps them
+    // as they are; only new ids change.
+    if this.m_nextRivalId < 1 {
+      this.m_nextRivalId = 1;
+    }
     let id = this.m_nextRivalId;
     this.m_nextRivalId += 1;
     return id;
