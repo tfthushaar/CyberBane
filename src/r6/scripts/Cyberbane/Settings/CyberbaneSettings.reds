@@ -75,22 +75,10 @@ enum ECBPacing {
 // What the HUD line at the top of the screen shows. Everything is the full story: tracked, on
 // their way, searching, spotted, found, and how it ended. Hunts only drops TRACKED and the ending.
 // Off hides the line.
-// Where the Hub is drawn.
 //
-// Menu puts it on inkMenuLayer, which is the layer the game's own menus use (60 references in
-// the shipped scripts, against none for inkHUDLayer). It is flat, it has a cursor, and the game
-// treats it as an open menu, so Escape closes it. Overlay is the old behaviour: drawn on the
-// gameplay HUD layer, which curves with the rest of the heads-up display and takes no input.
-//
-// 1.3.4 tried the menu layer and reverted it because the game treated the Hub as an open menu
-// and Escape drove it. That was the objection when the Hub was meant to be a glance at a readout
-// while playing. Asked for as a menu, it is the behaviour wanted, so the objection is gone - but
-// the path is the one that was backed out of once, which is why Overlay is kept as a way back.
-enum ECBHubStyle {
-  Menu = 0,
-  Overlay = 1,
-}
-
+// (A Hub style setting sat here in the 1.6 work in progress, choosing between drawing the Hub on
+// the menu layer and on the HUD layer. Neither is how the Hub is drawn any more - it is a page of
+// the pause menu (UI/PauseMenuEntry.reds) - so the choice it offered no longer exists.)
 enum ECBHudLine {
   Everything = 0,
   HuntsOnly = 1,
@@ -298,12 +286,6 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexBossBar")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexBossBar-Desc")
-  public let apexBossBar: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexArrivalSound")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexArrivalSound-Desc")
   public let apexArrivalSound: Bool = true;
@@ -394,12 +376,6 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubStyle")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubStyle-Desc")
-  public let hubStyle: ECBHubStyle = ECBHubStyle.Menu;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageDelivery")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageDelivery-Desc")
   public let messageDelivery: ECBMessageDelivery = ECBMessageDelivery.Phone;
@@ -415,6 +391,17 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
   public let hudLine: ECBHudLine = ECBHudLine.Everything;
+
+  // The name-and-health bars at the top of the screen (UI/ThreatBar.reds). Kept beside the hunt
+  // line because the two sit one above the other, and a player looking to clear the top of the
+  // screen looked here for both and found only one. The field keeps its old name, because Mod
+  // Settings stores values by class and field and a rename would reset everybody's choice; only
+  // where it is listed and what it is called have changed.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexBossBar")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexBossBar-Desc")
+  public let apexBossBar: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

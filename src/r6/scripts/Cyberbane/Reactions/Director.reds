@@ -54,14 +54,21 @@ public class CBReactionDirector {
     if sys.IsInSafeZone() {
       return;
     }
-    // Never during a conversation or a scene, and never on a job when V has asked Cyberbane to stay
-    // out of quest areas. Turning somebody hostile mid-dialogue is how a gig contact ended up
+    // Never during a conversation or a scene, never while the story has the stage (a companion at
+    // V's side, a fight the story is staging), and never on a job when V has asked Cyberbane to
+    // stay out of quest areas. Turning somebody hostile mid-dialogue is how a gig contact ended up
     // attacking V in the middle of Treating Symptoms.
-    if CBPlayerInScene(game) || sys.IsInQuestArea() {
+    if CBPlayerInScene(game) || sys.IsInQuestArea() || sys.GetStoryHold() != CBStoryNone() {
       // Anybody Cyberbane already turned hostile who is standing at the job, or who turns out to be
       // somebody the story wrote, goes back to how the game had them. Hostility set before V took
       // the job must not carry into it.
       this.RevertHostileAtJob(game, sys);
+      // And while the story has the stage, everybody Cyberbane turned who is not already fighting:
+      // a ganger set off a minute ago must not walk into River's scene. Anybody mid-fight is left
+      // as they are; flipping somebody neutral in the middle of a swing helps nobody.
+      if sys.GetStoryHold() != CBStoryNone() {
+        this.RevertHostileNotFighting(game);
+      }
       return;
     }
 
@@ -253,6 +260,28 @@ public class CBReactionDirector {
         let agent = npc.GetAttitudeAgent();
         if IsDefined(agent) {
           CBTrace("attitude: world NPC back to neutral at a job");
+          agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+        }
+        npc.cbHostileByCyberbane = false;
+      }
+    }
+  }
+
+  private func RevertHostileNotFighting(game: GameInstance) -> Void {
+    let player = GetPlayer(game);
+    if !IsDefined(player) {
+      return;
+    }
+    let pagent = player.GetAttitudeAgent();
+    if !IsDefined(pagent) {
+      return;
+    }
+    for npc in this.m_hostileNpcs {
+      if IsDefined(npc) && npc.IsAttached() && !npc.IsDead() && npc.cbHostileByCyberbane
+         && !CBNpcInCombat(npc) {
+        let agent = npc.GetAttitudeAgent();
+        if IsDefined(agent) {
+          CBTrace("attitude: world NPC back to neutral while the story has the stage");
           agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
         }
         npc.cbHostileByCyberbane = false;

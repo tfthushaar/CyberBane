@@ -54,6 +54,10 @@ public func CBStealthEncounterNearby(sys: ref<CyberbaneSystem>, game: GameInstan
 // One line for the Hub, so a held arrival explains itself instead of showing a countdown that
 // never reaches zero.
 public func CBStealthHoldReason(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
+  // The story first: it is the one hold no setting changes, and the one most worth explaining.
+  if IsDefined(sys) && sys.GetStoryHold() != CBStoryNone() {
+    return "Holding off: " + CBStoryLabel(sys.GetStoryHold()) + ". Nobody walks in on the story.";
+  }
   if CBPlayerInHostileZone(game) {
     let zone = CBPlayerZoneLabel(game);
     if StrLen(zone) == 0 {
@@ -77,6 +81,7 @@ public func CBHoldOneAlreadyOut() -> Int32 = 2
 public func CBHoldInCombat() -> Int32 = 3
 public func CBHoldNoRoom() -> Int32 = 4
 public func CBHoldWorldBusy() -> Int32 = 5
+public func CBHoldStory() -> Int32 = 6
 
 // What the Hub says while the clocks are stopped.
 public func CBHoldLabel(reason: Int32) -> String {
@@ -94,6 +99,9 @@ public func CBHoldLabel(reason: Int32) -> String {
   }
   if reason == CBHoldWorldBusy() {
     return "holding, world is loading";
+  }
+  if reason == CBHoldStory() {
+    return "holding off, story";
   }
   return "";
 }

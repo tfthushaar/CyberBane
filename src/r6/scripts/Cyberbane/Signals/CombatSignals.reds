@@ -55,6 +55,11 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 }
 
 func CBOnPlayerDeath(player: ref<PlayerPuppet>) -> Void {
+  // Somebody the story made you dying is not V dying: Johnny's last stand in a flashback, a VR
+  // bout lost. No death on the tally, no killer turned Rival (Core/StoryHold.reds).
+  if !CBPlayerIsVHere(player) {
+    return;
+  }
   let sys = CyberbaneSystem.Get(player.GetGame());
   if !IsDefined(sys) {
     return;
@@ -72,7 +77,10 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
     return;
   }
   let instigator = evt.attackData.GetInstigator();
-  if IsDefined(instigator) && instigator.IsPlayer() {
+  // The player, and the player being V. A hit landed as the VR avatar or as Johnny is not V's: it
+  // marks nobody as V's to score, breaks nobody's nerve and spares nobody, so a VR bout cannot cost
+  // a real gang's standing or send a VR enemy back as a Rival (Core/StoryHold.reds).
+  if IsDefined(instigator) && instigator.IsPlayer() && CBPlayerIsVHere(instigator as PlayerPuppet) {
     puppet.cbDamagedByPlayer = true;
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
     puppet.cbScarMask = CBMaskSet(puppet.cbScarMask, CBScarBitFor(puppet.cbLastAttackType));

@@ -111,11 +111,18 @@ public abstract class CBConfig {
   public static func RumorMagnitudeCivilian() -> Float = 6.0
   // Unseen kills needed, as a Ghost, for the Konpeki Ghost title.
   public static func KonpekiUnattributed() -> Int32 = 25
-  // How many titles the Hub lists on the Titles screen, earned and still to earn. The screen
-  // clamps its own line count, so these keep the "not yet" list from pushing the earned list
-  // off the top of it.
-  public static func HudTitlesEarnedShown() -> Int32 = 8
-  public static func HudTitlesLockedShown() -> Int32 = 7
+  // How many titles still to earn the Hub's Titles screen lists beside the earned ones. Earned
+  // titles are rows of their own now, every one of them, so this only limits the right-hand column:
+  // nine entries of two lines each, with room left for the longer requirements to wrap. (There used
+  // to be a limit of eight on the earned list too, which hid every title past the eighth.)
+  public static func HudTitlesLockedShown() -> Int32 = 9
+  // How close a story companion has to be for the story to have the stage (Core/StoryHold.reds).
+  // Generous, because a companion leading the way or a step behind is still walking with V, and a
+  // crew arriving forty metres off is arriving in the middle of their scene.
+  public static func StoryCompanionRadius() -> Float = 40.0
+  // Settled fast ticks (about seconds) a story restriction has to hold before anybody is called
+  // back. The game puts some of the same restrictions on V for a moment in ordinary play.
+  public static func StoryRestrictionSettleTicks() -> Int32 = 3
   // Width of the threat bar across the top of the screen.
   // Narrower than it was, because there is a stack of these now rather than one.
   public static func ThreatBarWidth() -> Float = 520.0

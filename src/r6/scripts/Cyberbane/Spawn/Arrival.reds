@@ -597,9 +597,10 @@ public class CBArrivalDismountCallback extends DelayCallback {
       moving = AbsF(car.GetCurrentSpeed()) > CBConfig.ArrivalDismountMaxSpeed();
     }
     let vDriving = IsDefined(player.GetMountedVehicle());
-    // Nobody gets out at a job: while V is on one they stay in the car (bounded, like the rest).
+    // Nobody gets out at a job, or into the story: while V is on one, or the story has the stage,
+    // they stay in the car (bounded, like the rest).
     let sysD = CyberbaneSystem.Get(game);
-    if IsDefined(sysD) && sysD.IsInQuestArea() {
+    if IsDefined(sysD) && (sysD.IsInQuestArea() || sysD.GetStoryHold() != CBStoryNone()) {
       vDriving = true;
     }
     let holdOn = !arrived && this.tries < CBConfig.ArrivalDismountMaxTries();

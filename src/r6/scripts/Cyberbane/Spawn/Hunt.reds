@@ -248,8 +248,11 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // Orders, a few at a time. Searching hunters get a fresh point every so often; located hunters
   // are kept coming while they are not already on V.
   let every = sys.GetHuntState() == CBHuntLocated() ? CBConfig.ChaseRefreshEveryTicks() : CBConfig.HuntSearchOrderTicks();
-  // No search orders while V is on a job: they hold where they are rather than walk into it.
-  if now % every == 0 && !(sys.IsInQuestArea() && sys.GetHuntState() != CBHuntLocated()) {
+  // No search orders while V is on a job: they hold where they are rather than walk into it. And
+  // no orders at all while the story has the stage, whether or not they had found V: anybody still
+  // out is somebody V can see, left alone until they are not (Core/StoryHold.reds).
+  if now % every == 0 && !(sys.IsInQuestArea() && sys.GetHuntState() != CBHuntLocated())
+     && sys.GetStoryHold() == CBStoryNone() {
     let done = 0;
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Rival", done);
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Apex", done);

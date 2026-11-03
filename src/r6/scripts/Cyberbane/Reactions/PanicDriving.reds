@@ -32,8 +32,9 @@ public func CBPanicDrivingTick(sys: ref<CyberbaneSystem>, game: GameInstance, ti
   if CBCrowdIgnoresPlayer(game) {
     return;
   }
-  // Not on a job or in a scene: a gunshot stim there sets the job's own people off.
-  if sys.IsInQuestArea() || CBPlayerInScene(game) {
+  // Not on a job, in a scene, or while the story has the stage: a gunshot stim there sets the
+  // story's own people off.
+  if sys.IsInQuestArea() || CBPlayerInScene(game) || sys.GetStoryHold() != CBStoryNone() {
     return;
   }
   let player = GetPlayer(game);

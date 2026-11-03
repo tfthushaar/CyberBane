@@ -261,14 +261,18 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   // render time, showed every Rival pinned at the same small number forever. A held clock has
   // to actually stop.
   let hold = CBHoldNone();
-  if quietWork {
-    hold = CBHoldQuietWork();
+  if sys.GetStoryHold() != CBStoryNone() {
+    hold = CBHoldStory();   // the story has the stage (Core/StoryHold.reds)
   } else {
-    if busy {
-      hold = CBHoldOneAlreadyOut();
+    if quietWork {
+      hold = CBHoldQuietWork();
     } else {
-      if inCombat {
-        hold = CBHoldInCombat();
+      if busy {
+        hold = CBHoldOneAlreadyOut();
+      } else {
+        if inCombat {
+          hold = CBHoldInCombat();
+        }
       }
     }
   }

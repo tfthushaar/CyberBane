@@ -49,7 +49,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_playerAttachCbId: Uint32;
   private let m_tickCount: Int32;             // monotonic ~1/second, for encounter timing
   private let m_encounter: ref<CBEncounter>;  // active combat episode
-  private let m_hud: ref<CBHud>;              // the F7 reputation Hub (spec §12.1)
+  // The pause menu, while it is up. The Hub is a page of it (UI/PauseMenuEntry.reds) and the menu
+  // owns that page; this is only how the scenario, the tick and the Hub key find it. Weak, so the
+  // system can never keep a closed menu alive. Not persisted.
+  private let m_pauseMenu: wref<PauseMenuGameController>;
+  private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
+  private let m_hubOnPauseTtl: Int32;         // fast ticks left on "the Hub key asked for the pause menu" (not persisted)
+  private let m_hubTab: Int32;                // the Hub screen last looked at, this session
+  private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
+  private let m_pendingRivalPurge: Bool;      // "forget every rival" chosen on the Hub while paused, done on resume
   private let m_threatBar: ref<CBThreatBar>;
   // The messenger. Session-only by design; see the note at the top of UI/PhoneMessages.reds
   // about why a persisted thread is not worth wiping everybody's reputation for.
@@ -238,8 +246,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
   private let m_factsProbed: Bool;            // the deed-fact probe has already run this session (not persisted)
-  private let m_pendingHubOpen: Bool;         // a Hub open asked for from a menu callback (not persisted)
   private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
+  private let m_storyHold: Int32;             // why the story has the stage right now, CBStory* (Core/StoryHold.reds; not persisted)
+  private let m_storyRestrictTicks: Int32;    // settled ticks in a row a story restriction has been on V (not persisted)
   private let m_questPins: array<Vector4>;    // the tracked objective's map pins, refreshed every 3 ticks
   private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
@@ -313,6 +322,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     // Seed chrome once up front so it is current before the first slow refresh.
     CBUpdateChrome(this, this.GetGameInstance());
+
+    // Nothing asked for on a Hub in another session is carried into this one.
+    this.m_hubOnPauseTtl = 0;
+    this.m_pendingPeace = n"";
+    this.m_pendingRivalPurge = false;
 
     // Bump the generation so any stale tick chain stops, then start a fresh one.
     this.m_tickGeneration += 1;
@@ -558,14 +572,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_arrivalFilled = 0;
   }
 
-  // Hub toggle (spec §12.1). Fires on key release so a tap advances exactly one tab.
+  // The Hub key (spec §12.1): a shortcut to the Hub page of the pause menu. Escape, then
+  // Cyberbane, gets to the same place; this just saves the second step.
   private cb func OnCBKeyInput(event: ref<KeyInputEvent>) -> Void {
     if !Equals(event.GetKey(), this.GetHubKey()) {
       return;
     }
     // Act on the press, and fall back to the release for setups that never deliver a press for
     // this key - one reported way the Hub key appears to do nothing. The down-flag keeps a normal
-    // press+release pair from advancing two tabs, and stops a held key from repeating.
+    // press+release pair from acting twice, and stops a held key from repeating.
     let action = event.GetAction();
     if Equals(action, EInputAction.IACT_Press) {
       if this.m_hubKeyDown {
@@ -582,54 +597,51 @@ public class CyberbaneSystem extends ScriptableSystem {
         return;   // already handled on the press
       }
     }
-    if !IsDefined(this.m_hud) {
-      this.m_hud = new CBHud();
-    }
     let game = this.GetGameInstance();
-    // Shift + Hub key while the Hub is open brokers peace with the worst gang you can
-    // buy off, without changing tab (spec §11.3 Hub action).
-    if event.IsShiftDown() && this.m_hud.IsOpen() {
-      // On the Rivals screen the same shortcut wipes your Rivals instead of brokering peace.
-      // Updating the mod mid-playthrough can leave Rivals built from records that no longer
-      // make sense, and there was no way to clear them without starting a new save.
-      if this.m_hud.GetTab() == CBHudRivalsTab() {
-        let removed = CBPurgeRivals(this, game);
-        CBSystemNote(game, s"cleared \(removed) rivals.", 4.0);
+    // The pause menu is up: the key opens the Hub page on it, or, with the page already open,
+    // closes the menu and goes back to the game - the press after the last screen used to close
+    // the Hub, and this is that press.
+    if IsDefined(this.m_pauseMenu) {
+      if this.m_pauseMenu.CBHubIsOpen() {
+        this.m_pauseMenu.CBResumeGame();
       } else {
-        CBBrokerPeaceBest(this, game);
-      }
-      this.m_hud.Refresh(this, game);
-      return;
-    }
-    // Ctrl + Hub key cycles the active title (Auto -> each earned title -> Auto).
-    if event.IsControlDown() && this.m_hud.IsOpen() {
-      CBCycleActiveTitle(this);
-      this.m_hud.Refresh(this, game);
-      // Say what just happened.
-      //
-      // The cycling itself always worked and persisted, but it was completely silent: unless
-      // you happened to be looking at the Titles tab or the header, pressing the shortcut
-      // looked exactly like pressing nothing, which makes a working feature indistinguishable
-      // from a broken one.
-      if CBToastsOn() {
-        let picked = this.GetActiveTitle();
-        if Equals(picked, n"") {
-          CBSystemNote(game, "title set to automatic, the best one you have earned.", 4.0);
-        } else {
-          let named = CBTitleDisplayById(this, this.GetContent(), picked);
-          CBSystemNote(game, "you are going by " + named + " now.", 4.0);
-        }
+        this.m_pauseMenu.CBShowHub();
       }
       return;
     }
-    // Don't pop the Hub open mid-fight, but always allow closing it.
-    if !this.m_hud.IsOpen() {
-      let player = GetPlayer(game);
-      if IsDefined(player) && player.IsInCombat() {
-        return;
-      }
+    this.OpenPauseMenuOnHub(game);
+  }
+
+  // The Hub key, in the game: open the pause menu straight onto the Hub page.
+  //
+  // The Hub lives in the pause menu now, so the key is a shortcut to it rather than a second way
+  // of drawing it. The event is the one the game itself queues to open the pause menu from script
+  // (tutorialGameController.script:164-167). It does not pass through the input context that
+  // decides whether pausing is allowed right now, so this decides that itself, conservatively:
+  // only in plain gameplay - no menu, no scene, no workspot, nothing loading, not already paused
+  // (CBWorldStable) - and never during the one cutscene the game blocks its own pause key in
+  // (inGameMenuGameController.script:292-296). Anywhere else the key does nothing, and Escape
+  // still works exactly as the game allows.
+  //
+  // The page opens when that pause menu initialises (TakeHubOnPause). The request lasts a
+  // couple of seconds of unpaused time and then lapses, so if the menu never came up, the next
+  // pause menu the player opens by hand is an ordinary one and not the Hub.
+  private func OpenPauseMenuOnHub(game: GameInstance) -> Void {
+    if !CBWorldStable(game) {
+      return;
     }
-    this.m_hud.Advance(this, game);
+    let quests = GameInstance.GetQuestsSystem(game);
+    if IsDefined(quests) && quests.GetFact(n"q301_02a_stadium_stopUIInCutscene") > 0 {
+      return;
+    }
+    let ui = GameInstance.GetUISystem(game);
+    if !IsDefined(ui) {
+      return;
+    }
+    this.m_hubOnPauseTtl = 2;
+    let evt = new inkMenuInstance_SpawnEvent();
+    evt.Init(n"OnOpenPauseMenu");
+    ui.QueueEvent(evt);
   }
 
   private func GetHubKey() -> EInputKey {
@@ -649,19 +661,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     return EInputKey.IK_F7;
   }
 
-  // Re-render the Hub once a tick while it is open.
-  //
-  // The Hub drew itself once when opened and then sat there, so every countdown on it was a
-  // snapshot from the moment it was opened. That is the whole of the "static time" report: the
-  // numbers were right when they were drawn and then never moved. Refresh is the same call the
-  // Hub already uses after an action, so this adds no new drawing path.
-  private func TickHub(game: GameInstance) -> Void {
-    if !IsDefined(this.m_hud) || !this.m_hud.IsOpen() {
-      return;
-    }
-    this.m_hud.Refresh(this, game);
-  }
-
   private func ScheduleFastTick() -> Void {
     let ds = GameInstance.GetDelaySystem(this.GetGameInstance());
     if !IsDefined(ds) {
@@ -677,6 +676,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func OnFastTick(generation: Int32) -> Void {
     if generation != this.m_tickGeneration {
       return;
+    }
+    // A Hub-key request for the pause menu lapses after a couple of ticks whatever else this tick
+    // does, so it can never wait around to hijack a pause menu opened by hand later on.
+    if this.m_hubOnPauseTtl > 0 {
+      this.m_hubOnPauseTtl -= 1;
     }
     let game = this.GetGameInstance();
 
@@ -775,6 +779,23 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBSystemNote(game, "reputation wiped. Night City has never heard of you.", 6.0);
       this.GetPhone().Clear();
     }
+    // Is the player V, in V's own world, and has the story left the stage to Cyberbane?
+    // (Core/StoryHold.reds) Worked out before anything that sends, scores or reacts, so every one
+    // of them reads the same answer for this tick.
+    this.RefreshStoryHold(game);
+    if this.m_storyHold == CBStoryNotV() {
+      // Not V at all: the VR avatar, Johnny in a flashback, V in cyberspace or a braindance. Nothing
+      // the rest of this tick does means anything here - it would send people into a world V is
+      // not in, score fights V is not having against gangs that are not there, and sample the
+      // chrome and the look of somebody else. Everybody of ours out of sight has been called back
+      // above; the clocks stand still, the line at the top of the screen comes down, the texts wait.
+      this.GetThreatBar().Hide();
+      this.ScheduleFastTick();
+      return;
+    }
+    // What the player chose on the Hub while the game was paused. Same reasoning again. After the
+    // check above on purpose: a payment comes out of the player's pocket, and the player has to be V.
+    this.ServiceHubActions(game);
 
     this.m_tickCount += 1;
     // Safe-area check every tick, not on the slow sample: you can walk into a bar or a
@@ -814,13 +835,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
     CBProcessPendingSquad(this, game);  // and a vendetta squad arrives when its timer runs out
     this.AgePendingArrival();           // forget a car that was sent and never arrived
-    this.ServiceHubOpen(game);          // a Hub asked for from the pause menu, opened off-callback
-    this.TickHub(game);                 // live countdowns while the Hub is open
-    // The bar for whoever is hunting you. Cheap: it reads one stat pool and resizes one
-    // rectangle, and hides itself the moment its target is gone.
-    if CBThreatBarOn() {
-      this.GetThreatBar().Update(this, game);
-    }
+    // The hunt line and the bars for whoever is hunting you. Cheap: it reads one stat pool and
+    // resizes one rectangle, and hides itself the moment its target is gone. Always called, even
+    // with both switched off, because it is also what takes them down (UI/ThreatBar.reds).
+    this.GetThreatBar().Update(this, game);
     // Our map pins come down when the fight starts; the game's own enemy display takes over.
     CBMarkerCombatTick(this, game);
     // The messages. Cheap and self-limiting: it returns on the first line when there is
@@ -893,39 +911,131 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_tickCount;
   }
 
-  // Is the Hub panel up? Asked by the messenger, which shares the HUD layer with it.
-  // Ask for the Hub, from somewhere that is not the key handler - the pause menu entry
-  // (UI/PauseMenuEntry.reds).
-  //
-  // This only records the request. Opening the Hub builds its whole widget tree, and the caller
-  // is a menu scenario callback that is about to dismiss its own menu; building a tree on the
-  // menu layer from inside that, while the menu it belongs to is being torn down, is the
-  // interleaving that produced the rebuild loop in 1.3.5 and is the UI shape of crash rule 3.
-  // The fast tick picks it up a moment later, when nothing is mid-teardown.
-  public func RequestHubOpen() -> Void {
-    this.m_pendingHubOpen = true;
+  // ---- When the story has the stage (Core/StoryHold.reds) -----------------------------------
+
+  // CBStoryNone when nothing holds Cyberbane back; otherwise why not. As of the last settled tick.
+  public func GetStoryHold() -> Int32 {
+    return this.m_storyHold;
   }
 
-  // Carry out a deferred Hub open. Called from the fast tick, never from a callback.
-  private func ServiceHubOpen(game: GameInstance) -> Void {
-    if !this.m_pendingHubOpen {
-      return;
+  // Once per settled tick. Says so in the log whenever the answer changes, because "nobody came for
+  // the whole of that quest" is only reassuring if it can be seen to be deliberate, and calls back
+  // anybody of ours who has not reached V for as long as the story has the stage.
+  private func RefreshStoryHold(game: GameInstance) -> Void {
+    let was = this.m_storyHold;
+    // A restriction counts once it has held for a few ticks in a row, so the moment-long ones the
+    // game applies in ordinary play (a thrown knife, getting into a car) never call anybody back.
+    if CBPlayerStoryRestricted(game) {
+      this.m_storyRestrictTicks = Min(this.m_storyRestrictTicks + 1, 1000);
+    } else {
+      this.m_storyRestrictTicks = 0;
     }
-    // Wait rather than give up: the request came from a menu that is still closing.
-    if !CBWorldStable(game) {
-      return;
+    let restrictionHeld = this.m_storyRestrictTicks >= CBConfig.StoryRestrictionSettleTicks();
+    this.m_storyHold = CBComputeStoryHold(this, game, restrictionHeld);
+    if this.m_storyHold != was {
+      if this.m_storyHold == CBStoryNone() {
+        CBLog.Info(n"Spawn", "The story has let go; arrivals can be arranged again.");
+      } else {
+        CBLog.Info(n"Spawn", s"The story has the stage: \(CBStoryLabel(this.m_storyHold)). Nobody is sent until it lets go.");
+        if this.m_storyHold == CBStoryNotV() {
+          // Which body, so a report of Cyberbane going quiet can be traced to a record at once.
+          let who = GetPlayer(game);
+          if IsDefined(who) {
+            CBLog.Info(n"Spawn", s"Playing as \(TDBID.ToStringDEBUG(who.GetRecordID())), not V.");
+          }
+        }
+      }
     }
-    this.m_pendingHubOpen = false;
-    if !IsDefined(this.m_hud) {
-      this.m_hud = new CBHud();
-    }
-    if !this.m_hud.IsOpen() {
-      this.m_hud.Advance(this, game);
+    if this.m_storyHold != CBStoryNone() {
+      CBStoryStandDown(this, game);
     }
   }
 
+  // ---- The Hub (UI/Hud.reds, UI/PauseMenuEntry.reds) ----------------------------------------
+
+  // The pause menu has come up. Returns the registration number the menu hands back on its way
+  // out, so a menu torn down after a newer one has registered cannot clear the newer one.
+  public func PauseMenuOpened(pm: ref<PauseMenuGameController>) -> Int32 {
+    this.m_pauseMenuGen += 1;
+    this.m_pauseMenu = pm;
+    return this.m_pauseMenuGen;
+  }
+
+  public func PauseMenuClosed(generation: Int32) -> Void {
+    if generation == this.m_pauseMenuGen {
+      this.m_pauseMenu = null;
+    }
+  }
+
+  // Did the Hub key ask for this pause menu? Answered once.
+  public func TakeHubOnPause() -> Bool {
+    let wanted = this.m_hubOnPauseTtl > 0;
+    this.m_hubOnPauseTtl = 0;
+    return wanted;
+  }
+
+  // The pause menu's Cyberbane entry was chosen.
+  public func ShowHubPage() -> Void {
+    if IsDefined(this.m_pauseMenu) {
+      this.m_pauseMenu.CBShowHub();
+    } else {
+      CBLog.Info(n"UI", "The Cyberbane entry was chosen but no pause menu has registered; nothing to draw the Hub in.");
+    }
+  }
+
+  // Escape / B in the pause menu. True when it closed the Hub page, which ends that press.
+  public func HideHubPage() -> Bool {
+    return IsDefined(this.m_pauseMenu) && this.m_pauseMenu.CBHideHub();
+  }
+
+  // Is the Hub page up? Asked by the messenger and the hunt line, which stand back while it is.
   public func IsHubOpen() -> Bool {
-    return IsDefined(this.m_hud) && this.m_hud.IsOpen();
+    return IsDefined(this.m_pauseMenu) && this.m_pauseMenu.CBHubIsOpen();
+  }
+
+  public func GetHubTab() -> Int32 {
+    return this.m_hubTab;
+  }
+
+  public func SetHubTab(tab: Int32) -> Void {
+    this.m_hubTab = tab;
+  }
+
+  // A pay-off chosen on the Hub. n"" takes the request back. Carried out on resume.
+  public func RequestPeace(faction: CName) -> Void {
+    this.m_pendingPeace = faction;
+  }
+
+  public func GetPendingPeace() -> CName {
+    return this.m_pendingPeace;
+  }
+
+  public func RequestRivalPurge(wanted: Bool) -> Void {
+    this.m_pendingRivalPurge = wanted;
+  }
+
+  public func IsRivalPurgePending() -> Bool {
+    return this.m_pendingRivalPurge;
+  }
+
+  // Carry out what was chosen on the Hub while the game was paused. Called from the settled part
+  // of the fast tick, never from the page: paying a gang moves eddies and sends texts, and
+  // forgetting the Rivals deletes people from the world, and neither belongs inside a paused menu.
+  // Both go through exactly the code the old Shift + Hub key shortcut called.
+  private func ServiceHubActions(game: GameInstance) -> Void {
+    if this.m_pendingRivalPurge {
+      this.m_pendingRivalPurge = false;
+      let removed = CBPurgeRivals(this, game);
+      CBSystemNote(game, s"cleared \(removed) rivals.", 4.0);
+    }
+    if NotEquals(this.m_pendingPeace, n"") {
+      let faction = this.m_pendingPeace;
+      this.m_pendingPeace = n"";
+      // Quoted again here, not on the page: the price is whatever it is now.
+      if !CBBrokerPeace(this, game, faction) {
+        CBLog.Info(n"Economy", s"A pay-off chosen on the Hub for \(NameToString(faction)) did not go through.");
+      }
+    }
   }
 
   public func GetPhone() -> ref<CBPhone> {
@@ -1875,14 +1985,36 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_titles;
   }
 
+  // n"" means automatic. Anything else has to be a title V actually holds, or it is refused and
+  // the choice goes back to automatic rather than naming something V has not earned.
   public func SetActiveTitle(id: CName) -> Void {
+    if NotEquals(id, n"") && !ArrayContains(this.m_titles, id) {
+      this.m_activeTitle = n"";
+      return;
+    }
     this.m_activeTitle = id;
+  }
+
+  // What the player picked, as stored: n"" when they left it on automatic.
+  //
+  // Not the same question as GetActiveTitle, and treating it as one was the "I have five titles
+  // and can only switch to the last two" report. GetActiveTitle answers "which title is showing",
+  // so on automatic it returns the best earned one and never n"". The cycle asked it "am I on
+  // automatic?", always heard no, and stepped on from wherever the best title sat in the list -
+  // so with the best one fourth of five, the only stops left were the fifth and automatic, which
+  // shows the fourth. Anything that needs to know whether a choice was made asks this instead.
+  public func GetChosenTitle() -> CName {
+    if NotEquals(this.m_activeTitle, n"") && !ArrayContains(this.m_titles, this.m_activeTitle) {
+      return n"";   // a choice that no longer names a held title is no choice
+    }
+    return this.m_activeTitle;
   }
 
   // The active title: an explicit choice, else the highest-priority unlocked one.
   public func GetActiveTitle() -> CName {
-    if NotEquals(this.m_activeTitle, n"") {
-      return this.m_activeTitle;
+    let chosen = this.GetChosenTitle();
+    if NotEquals(chosen, n"") {
+      return chosen;
     }
     let content = this.GetContent();
     let best = n"";
