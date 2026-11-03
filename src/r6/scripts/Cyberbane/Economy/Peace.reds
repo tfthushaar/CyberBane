@@ -2,8 +2,9 @@
 //
 // Broker peace: pay a gang you can buy off to drop a hostility or vendetta. It costs
 // eddies scaled by how much blood is between you, pulls their standing back out of the
-// hostile band and clears the vendetta. Triggered from the Hub (Shift + Hub key) or the
-// public API.
+// hostile band and clears the vendetta. Triggered from the Hub (the Gangs screen: click a gang,
+// then Pay them off, carried out when the pause menu closes), from a reply in the phone, or from
+// the public API.
 //
 // Compatibility: when They Will Remember compatibility is on (or auto-detected), Cyberbane
 // stands down from the systems that overlap - hostile-on-sight, hit squads and faction
@@ -210,38 +211,6 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   }
   CBLog.Info(n"Economy", s"Peace brokered with \(NameToString(factionId)) for \(cost).");
   return true;
-}
-
-// Broker peace with the worst gang you can buy off (used by the Hub shortcut).
-public func CBBrokerPeaceBest(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
-  if !IsDefined(sys) {
-    return false;
-  }
-  let content = CBContent(game);
-  let score = sys.GetScore();
-  if !IsDefined(content) || !IsDefined(score) {
-    return false;
-  }
-  let worst: ref<CBFactionState>;
-  let worstStanding = 1000.0;
-  for fs in sys.GetFactionStates() {
-    if IsDefined(fs) {
-      let prof = content.GetFaction(fs.id);
-      let posture = score.GetPosture(fs.id);
-      let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
-      if IsDefined(prof) && prof.canBeBought && hostile && fs.standing < worstStanding {
-        worst = fs;
-        worstStanding = fs.standing;
-      }
-    }
-  }
-  if !IsDefined(worst) {
-    if CBToastsOn() {
-      CBSystemNote(game, "no one to make peace with right now.", 3.0);
-    }
-    return false;
-  }
-  return CBBrokerPeace(sys, game, worst.id);
 }
 
 // Whether there is any point composing a message. Every caller of this guards a message and

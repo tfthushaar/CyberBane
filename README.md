@@ -207,15 +207,16 @@ page describes what the mod does and how it installs.
   new. The History screen is the street's file on you, written as plain sentences: the Rivals
   you made and put down, the apex enforcers and bosses people saw you kill, the vendettas sworn,
   the gangs that came round to you, the peace you bought and the tribute you took.
-- **The Hub.** One full-screen page built to look like the game's own menus, same font and
-  colours, opened with F7 by default (rebindable). Your scores are meters, gangs and rivals are
-  colour-coded rows, and the first screen shows what each of the three lanes has on its way,
-  with a live countdown. If something cannot arrive, it says why. Each press steps through the
-  screens: Standing, Gangs, The City, Rivals, Titles and History. The press after the last one
-  closes it. Every screen has a line under the header saying what it holds. Gangs show how long
-  they have been quiet or how long a vendetta has been running, The City shows how long since you
-  were last busy in each district, and Standing tells you in plain words what Night City is doing
-  about you right now and what it would take to change that. Messages live in your phone.
+- **The Hub.** A page of the pause menu: press Escape and choose Cyberbane, next to Mods and Mod
+  Settings, or press F7 (rebindable) to open the pause menu straight on it. It uses the game's own
+  font and colours and the menu's own cursor, the game stays paused while you read it, and Escape
+  takes you back to the pause menu. Click a screen to switch: Standing, Gangs, The City, Rivals,
+  Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
+  screen shows what each of the three lanes has on its way and when, as it stood when you paused.
+  If something cannot arrive, it says why. Click a gang to see what they are about to do and to pay
+  them off, click a Rival for their file, and click a title to go by it. Standing tells you in plain
+  words what Night City is doing about you right now and what it would take to change that.
+  Messages live in your phone.
 
 Cyberbane works anywhere in the open world. It adds no hand-placed scenes, and it is built to
 leave quests, companions, romances and your saves alone.
@@ -246,7 +247,7 @@ Download the latest `Cyberbane-x.y.z.zip` from the
 1. Install the required mods listed above.
 2. In Vortex, add the zip with "Install From File" (or drag it onto the Mods area), then enable it
    and click Deploy.
-3. Launch the game and press F7 to open the Hub.
+3. Launch the game, press Escape and choose Cyberbane to open the Hub (or press F7).
 
 ### Manual
 
@@ -255,22 +256,25 @@ Download the latest `Cyberbane-x.y.z.zip` from the
    `Cyberpunk2077.exe`. The zip's `r6` folder merges into the game's existing `r6` folder, so the
    scripts land at `r6\scripts\Cyberbane\`. A typical Steam path is
    `...\steamapps\common\Cyberpunk 2077\`.
-3. Launch the game and press F7 to open the Hub. You can rebind the key in Mod Settings.
+3. Launch the game, press Escape and choose Cyberbane to open the Hub, or press F7. You can
+   rebind the key in Mod Settings.
 
 To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vortex.
 
 ## Controls
 
-Cyberbane adds one key, the Hub key, with two shortcuts layered on it. Everything else uses the
-game's normal inputs.
+The Hub is a page of the pause menu, so it uses the menu's own controls. Cyberbane adds one key,
+and everything else uses the game's normal inputs.
 
-- **Hub key (F7 by default):** opens the Hub, then steps through its screens one press at a
-  time (Standing, Gangs, The City, Rivals, Titles, History), and the press after the
-  last one closes it. Rebind it in Mod Settings. It will not open during combat.
-- **Shift + Hub key (while the Hub is open):** brokers peace with the worst gang you can afford to
-  buy off, paying from your eddies on the spot.
-- **Ctrl + Hub key (while the Hub is open):** cycles your active title through the ones you have
-  earned, or back to Auto (which always shows your highest title).
+- **Escape, then Cyberbane:** opens the Hub. Escape goes back to the pause menu.
+- **Hub key (F7 by default):** a shortcut that opens the pause menu straight on the Hub, and closes
+  it again. It works wherever the game would let you pause. Rebind it in Mod Settings.
+- **On the Hub:** click a screen name, or use Q and E (LB and RB), to switch screens. On Gangs,
+  click a gang to see more and to pay them off; on Rivals, click a Rival for their file, and use
+  Forget every rival (it asks twice) to clear them; on Titles, click the title you want to go by, or
+  Automatic for your highest one. Paying a gang off and forgetting your Rivals happen a few seconds
+  after you go back to the game, and can be cancelled until then. Mod Settings, bottom right, goes
+  straight to Cyberbane's settings.
 
 ## Uninstalling
 
@@ -328,10 +332,12 @@ still hunt you, loot and bounties still arrive with the game's own notices, and 
 shows you where you stand with everyone and still brokers peace. The only thing you give up is
 the warning, which is the point if you would rather be surprised.
 
-The HUD line is a separate setting, so you can mix them. **Hunt line on the HUD** has Everything,
-HuntsOnly (only while somebody is actually on their way or out looking) and Off. Messages off with
-the HUD line on Everything keeps the one line and loses the texts; both off means the first you
-know about it is when they walk round the corner.
+The top of the screen is separate again, so you can mix them. Two settings under Interface cover
+it. **Hunt line on the HUD** is the line of text (TRACKED, HUNTED, SEARCHING and so on), with
+Everything, HuntsOnly (only while somebody is actually on their way or out looking) and Off.
+**Rival and apex bars** is the name and health bar under it for a Rival who has come for you and
+for each member of an apex squad. Messages off with the hunt line on keeps the one line and loses
+the texts; everything off means the first you know about it is when they walk round the corner.
 
 ### Starting over
 

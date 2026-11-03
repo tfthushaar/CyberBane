@@ -3,6 +3,71 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - 1.6
+
+The Hub moves into the pause menu. Press Escape and it is there, next to Mods and Mod Settings:
+the same menu, the same cursor, the game paused underneath it, and everything on it can be
+clicked. Two player reports are fixed along the way.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### The Hub is a page of the pause menu
+- **Escape, then Cyberbane.** It opens over the pause menu's own list, and Escape takes you back to
+  that list, the way it does from Settings or Load Game. Escape again closes the pause menu as
+  usual. Nothing about Escape or the pause menu changes when the Hub is not open.
+- **Click everything.** Click a screen name to switch screens, or use Q and E (LB and RB on a
+  controller), the same keys the game's settings menu uses.
+- **The game is paused while you read it**, because it is the pause menu. The countdowns show the
+  time as it stood when you paused, and start moving again when you go back to the game.
+- **The Hub key is now a shortcut** to the same page: press it in the game and the pause menu opens
+  straight on Cyberbane, press it again to close it. It only works where the game would let you
+  pause anyway.
+- **Gangs: click a gang** to see who they are at war with, how many of theirs are down, what they
+  are about to do, and what it would cost to buy them off, with a button to do it. You choose which
+  gang now; before, the shortcut always picked the worst one you could afford. The payment goes
+  through a few seconds after you are back in the game, and clicking again before then cancels it.
+- **Hostile gangs are listed first**, so a gang that wants you dead is never pushed off the bottom
+  of the list by gangs that do not.
+- **Rivals: click a Rival** for their file: why they have it in for you, their strengths and weak
+  spots, and the mark you left on them. It opens on whoever is coming next.
+- **Forgetting every Rival asks twice** now that it is a button, and like a payment it happens when
+  you are back in the game, and can be taken back until then.
+- **A Mod Settings button** at the bottom of the page goes straight to Cyberbane's settings.
+- The page is built from the game's own menu: it lives inside the pause menu and is taken down with
+  it, so it can never be left on screen over anything else. The first 1.6 builds drew it on its
+  own, where it had no cursor, took no input, stayed on top of whatever opened next, and made
+  Escape look like it went to the Hub instead of the pause menu. That is gone.
+
+### Titles
+- **"I have five titles and can only switch to the last two."** Fixed. Switching asked the game
+  which title was showing, rather than whether you had picked one, and on automatic those are
+  different answers: it started from whichever title was best and could only step forward from
+  there. With the best one fourth of five, the only choices left were the fifth and automatic.
+- **Titles are clicked now.** The Titles screen lists every title you have earned, plus Automatic;
+  click the one you want to go by. The ones you have not earned yet are listed beside them with
+  what each takes.
+- **Every earned title is listed.** The screen used to show the first eight and say nothing about
+  the rest.
+
+### The top of the screen
+- **"How do I turn off who is tracking me? I turned off show messages and the hunt line and it is
+  still there."** Two things, both fixed.
+  - The name and health bar at the top of the screen is not the hunt line: it is its own setting,
+    and it was filed under Gangs as "Apex squad boss bar", which says nothing about Rivals or about
+    the top of the screen. It is now **Rival and apex bars**, under Interface, directly below
+    **Hunt line on the HUD**, and each one's description says which of the two it is.
+  - Turning either of them off now takes it down at once. The only thing that ever hid them was
+    skipped whenever the bars were switched off, so switching the bars off mid-hunt froze both the
+    bars and the hunt line exactly where they were, and with the bars off the hunt line setting did
+    nothing either. Each switch now controls its own part of the screen, every second.
+- Your existing choice for the bars is kept; only its name and place in the list changed.
+
+### Settings
+- **Hub style** is gone. It chose between two ways of drawing the Hub that it is no longer drawn
+  either way.
+- If the Mods entry is missing from the pause menu because another mod removed it, Cyberbane's
+  entry is still added at the end, and now actually appears there.
+
 ## [1.5.5] - 2026-11-02
 
 A player asked whether there was any way to turn all the messages off: they liked the mechanics

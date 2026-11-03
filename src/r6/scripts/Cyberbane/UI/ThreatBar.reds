@@ -188,12 +188,17 @@ public class CBThreatBar {
   }
 
   public func Hide() -> Void {
-    ArrayClear(this.m_targets);
-    ArrayClear(this.m_ids);
-    ArrayClear(this.m_labels);
     if IsDefined(this.m_status) {
       this.m_status.SetVisible(false);
     }
+    this.DropBars();
+  }
+
+  // The bars only, leaving the hunt line alone. The two have separate switches.
+  private func DropBars() -> Void {
+    ArrayClear(this.m_targets);
+    ArrayClear(this.m_ids);
+    ArrayClear(this.m_labels);
     let i = 0;
     while i < ArraySize(this.m_rows) {
       if IsDefined(this.m_rows[i].root) {
@@ -203,15 +208,29 @@ public class CBThreatBar {
     }
   }
 
-  // Once per fast tick. Drops anyone who is gone, then redraws the rows that are left.
+  // Once per fast tick, whatever the settings say. Drops anyone who is gone, then redraws the
+  // rows that are left.
+  //
+  // Called unconditionally because this is the only thing that ever takes either surface down.
+  // It used to be skipped whenever the bar setting was off, and that is the "I turned it off and
+  // it is still at the top of my screen" report from both ends: switch the bars off mid-hunt and
+  // the line and the bars froze where they were, for good, since nothing else hides them; and
+  // with the bars off the hunt line could never change again, so its own setting did nothing
+  // either. Each switch now governs its own widget, here, every tick.
   public func Update(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     this.m_game = game;
     // The hunt line first, since it shows while they are still on their way and nobody is on
     // the stack yet.
-    let line = CBHuntStatusLine(sys, game);
+    //
+    // Nothing at all while the mod is switched off or its settings have not loaded. The bar
+    // setting used to stand in for that check by stopping this whole method, so it has to be
+    // said out loud now that the method always runs.
+    let rt = CyberbaneRuntime.Get();
+    let modOn = IsDefined(rt) && rt.IsEnabled() && rt.HasSettings();
+    let line = modOn ? CBHuntStatusLine(sys, game) : "";
     // Nobody is after V: the same line says where V stands here instead. One widget doing two
     // jobs rather than two widgets, which is what keeps the screen quiet (Spawn/Hunt.reds).
-    if StrLen(line) == 0 {
+    if modOn && StrLen(line) == 0 {
       line = CBDistrictStatusLine(sys, game);
     }
     if StrLen(line) > 0 || IsDefined(this.m_status) {
@@ -221,6 +240,13 @@ public class CBThreatBar {
         this.m_status.SetText(CBClip(line, CBConfig.HudLineMaxChars()));
         this.m_status.SetVisible(StrLen(line) > 0 && !sys.IsHubOpen());
       }
+    }
+    // The bars have a switch of their own, and off means off now rather than frozen as they were.
+    if !CBThreatBarOn() {
+      if ArraySize(this.m_targets) > 0 {
+        this.DropBars();
+      }
+      return;
     }
     if ArraySize(this.m_targets) == 0 {
       return;

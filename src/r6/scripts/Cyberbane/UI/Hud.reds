@@ -1,88 +1,74 @@
 // Cyberbane - The Hub (spec §12.1)
 //
-// A native-styled reputation readout drawn straight onto the gameplay HUD layer and
-// toggled with the Hub key (F7 by default, rebindable in Mod Settings). It needs no
-// menu or mouse: each press of the key steps through the screens - Standing, Gangs,
-// The City, Rivals, Titles, History - and the press after the last one closes it. Because it
-// never takes input focus it is safe to open any time you are not mid-combat, and it
-// reads live data from CyberbaneSystem each time it is shown.
+// A page of the pause menu: Escape, then Cyberbane. It opens over the menu's own list, the game
+// stays paused underneath it, and everything on it is driven with the menu's own cursor. Click a
+// screen name to change screen (or use the previous/next tab keys, Q and E or LB and RB), click a
+// row to see more about it, click a title to go by it. Escape goes back to the pause menu's list.
+// The hooks that put it there, and the reasons it is built this way, are in UI/PauseMenuEntry.reds.
 //
-// The look is built from the game's own font (Rajdhani) and Cyberpunk's cyan-on-black
-// palette, so it sits in the world like a stock UI panel. Widget geometry is tuned in
-// game; everything here is reversible (it only adds widgets to the HUD layer).
+// The look is the game's settings menu: the same font (Rajdhani), a centred row of tabs, a line
+// saying what the screen is, a rule, then the content, with hints along the bottom. Every colour is
+// flat, nothing above 1.0, because HDR colours above white bloom and read as glow, not as a menu.
+//
+// ---- Paused, and what that means for the numbers --------------------------------------------------
+//
+// The pause menu stops the game clock, and Cyberbane's own tick stops with it, so every countdown
+// on this page is the time as it stood when the menu was opened. That is the honest reading of a
+// paused game and it is what was asked for. It also settles the rule for anything the page can
+// *do*: choosing a title is a value in a field and happens at once, but paying a gang off moves
+// eddies and sends texts, and forgetting the Rivals deletes people from the world. Neither of
+// those is done from inside a paused menu. The page records the request and the first settled
+// tick after you resume carries it out (CyberbaneSystem.ServiceHubActions), the same way every
+// other piece of world work in this mod is kept off UI callbacks.
 
-// Six. Messages used to have a screen here and do not any more: they live in V's phone, which
-// is where a player looks for a text (UI/RealPhone.reds). HISTORY took the last slot back, so
-// the screens that existed before keep their numbers (CBHudRivalsTab, CBHudFactionsTab, the
-// meters screen's `m_tab == 1`).
-//
-// Six chips at CBHudChipWidth fit the panel with room to spare, and the row centres itself.
+// Six screens. Messages are not one of them: they live in V's phone (UI/RealPhone.reds).
 public func CBHudTabCount() -> Int32 = 6
+public func CBHudStandingTab() -> Int32 = 1
+public func CBHudFactionsTab() -> Int32 = 2
+public func CBHudCityTab() -> Int32 = 3
+public func CBHudRivalsTab() -> Int32 = 4
+public func CBHudTitlesTab() -> Int32 = 5
+public func CBHudHistoryTab() -> Int32 = 6
 
-// Lines the body box can show at its size and font before text would spill past the footer.
-// Body is 640 px tall at font size 20, so about 26 lines fit; 25 leaves a line of slack.
-public func CBHudMaxLines() -> Int32 = 22
-
-// Lines that fit below each screen's own content, before the footer at y=854. The meters
-// end at 566 and the lists at 608, so those screens have far less room for prose than the
-// plain ones that start at 212. Text is clamped to this, so nothing can run into the footer.
-// Every screen draws its own content first and the prose goes underneath, so what fits is
-// whatever is left between that content and the footer. These are measured against the
-// positions in Build and the 26 px line height of the body font; leaving a line of slack is
-// deliberate, since text running into the footer is the one failure a player actually sees.
+// Lines of prose each screen has room for under its own content, before the footer rule at 934.
+// Every screen draws its own content first and the prose goes underneath or beside it; these are
+// measured against the positions below and the 26 px line height of the body font, with a line of
+// slack, because text running into the footer is the one failure a player actually sees.
 public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
-  if tab == 1 {
+  if tab == CBHudStandingTab() {
     return 11;   // under four meters
   }
   if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() || tab == CBHudCityTab() {
     return 9;    // under ten list rows
   }
-  return CBHudMaxLines();
+  if tab == CBHudTitlesTab() {
+    return 26;   // the right-hand column, full height
+  }
+  return 26;
 }
 
-// Which tab the Rivals screen is, so the key handler does not hardcode a number.
-public func CBHudRivalsTab() -> Int32 = 4
-public func CBHudFactionsTab() -> Int32 = 2
-public func CBHudCityTab() -> Int32 = 3
-
-// Layout.
+// ---- Layout ----------------------------------------------------------------------------------------
 //
-// Full screen, laid out against a fixed 1860x1020 design that is centred on whatever the
-// screen actually is. Fixed rather than stretched because every row below is positioned by
-// hand, and a design that is centred reads correctly at any resolution while one that is
-// stretched does not.
-//
-// The shape is the game's own settings menu: a centred row of tabs across the top, a line of
-// description under them, a rule, then the content, with the key hints along the bottom. That
-// screen is the one players already know how to read, so the Hub borrows its proportions as
-// well as its colours.
+// Everything is written against a fixed 1920x1080 design, centred and scaled as one piece to the
+// space it is drawn in. Fixed rather than stretched because every row is positioned by hand, and a
+// design that is centred reads correctly at any resolution while one that is stretched does not.
 public func CBHudPanelW() -> Float = 1860.0
 public func CBHudPanelH() -> Float = 1020.0
-
-// What the layout below is drawn against. Everything in this file and in ThreatBar.reds is
-// written in these units; CBHudScale turns them into whatever the screen actually is.
 public func CBHudDesignW() -> Float = 1920.0
 public func CBHudDesignH() -> Float = 1080.0
 
-// How much to shrink Cyberbane's own widgets so they fit the screen they are on.
+// How much to shrink Cyberbane's HUD widgets (the threat bars and the message cards) so they fit
+// the screen they are on.
 //
-// The ink coordinate space is not a fixed 1920x1080, which is the assumption this whole file
-// was written under. The game's own code states the relationship plainly in
-// `cyberpunk/UI/widgets/cpo/targetHitIndicator.script`:
+// The ink coordinate space is not a fixed 1920x1080. The game's own code states the relationship
+// in `cyberpunk/UI/widgets/cpo/targetHitIndicator.script`: the usable space is the window size times
+// the inverse UI scale. Raise the game's UI scale, or play below 1080p, and the space shrinks below
+// the layout - the "UI is so big I can barely see the text" report.
 //
-//     let windowSize = m_uiSystem.GetCurrentWindowSize();
-//     let inverseScale = m_uiSystem.GetInverseUIScale();
-//     let uiSize = new Vector2(windowSize.X * inverseScale, windowSize.Y * inverseScale);
-//
-// So the usable space is the window size times the inverse UI scale. At 1080p with the UI
-// scale left alone that is 1920x1080 and a 1860-wide panel just fits, which is why this was
-// never noticed in development. Raise the game's UI scale, or play at anything below 1080p,
-// and the space shrinks below the panel - so the panel overflowed the screen and the text
-// with it. That is the "UI is so big I can barely see the text" report, and it is why it
-// depended on the player's resolution rather than happening to everybody.
-//
-// Never scales above 1.0 on its own: the layout is already sized to fill a 1080p screen, so
-// anything larger is the player's business and theirs is the slider below.
+// Measured two ways and the smaller wins, because which side of that conversion the HUD layer is
+// already in could not be settled from the source, and the cost of being wrong is a widget drawn
+// somewhat smaller than it needed to be rather than one running off the screen. Never above 1.0 on
+// its own; anything larger is the player's business, through the slider below.
 public func CBUiFitScale(game: GameInstance) -> Float {
   let ui = GameInstance.GetUISystem(game);
   if !IsDefined(ui) {
@@ -93,55 +79,108 @@ public func CBUiFitScale(game: GameInstance) -> Float {
   if win.X <= 0.0 || win.Y <= 0.0 || inv <= 0.0 {
     return 1.0;   // nothing sensible to measure against; leave the layout alone
   }
-  // Measured two ways, and the smaller one wins.
-  //
-  // `GetInverseUIScale` converts between widget units and screen pixels - the game's own code
-  // reads screen space as `widgetSize * (1.0 / inv)` - but which side of that conversion the
-  // layer we draw on is already in cannot be settled by reading the source, and getting it
-  // backwards is the difference between fitting and overflowing. 1.4.3 applied the conversion
-  // and players at 720p and 768p still reported the Hub running off the edges, so on their
-  // machines the adjusted figure was the wrong one.
-  //
-  // Taking whichever measure is smaller is correct under either convention. The cost of being
-  // wrong is a Hub drawn somewhat smaller than it needed to be, against a Hub whose text runs
-  // off the screen, and only one of those is a bug the player cannot work around.
   let byPixels = MinF(win.X / CBHudDesignW(), win.Y / CBHudDesignH());
   let byWidget = MinF((win.X * inv) / CBHudDesignW(), (win.Y * inv) / CBHudDesignH());
   return ClampF(MinF(byPixels, byWidget), 0.35, 1.0);
 }
 
-// The fit above, times whatever the player asked for in Mod Settings.
-public func CBHudScale(game: GameInstance) -> Float {
+// The player's own size preference from Mod Settings (Interface size), as a multiplier.
+public func CBHudUserScale() -> Float {
   let user = 1.0;
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() {
     user = Cast<Float>(rt.GetSettings().hudScale) / 100.0;
   }
-  return ClampF(CBUiFitScale(game) * ClampF(user, 0.5, 1.5), 0.3, 1.5);
+  return ClampF(user, 0.5, 1.5);
 }
+
+// The HUD fit above, times what the player asked for. Used by the threat bars and the cards.
+public func CBHudScale(game: GameInstance) -> Float {
+  return ClampF(CBUiFitScale(game) * CBHudUserScale(), 0.3, 1.5);
+}
+
+// How much to scale the Hub page so the 1920x1080 design fills the pause menu.
+//
+// The page is drawn in the pause menu's own units, which are not the HUD's. The game converts
+// between menu units and screen pixels with the inverse UI scale: on the perks screen a menu-space
+// height times 1 / GetInverseUIScale is compared against the cursor in pixels
+// (NewPerksCategoriesGameController.script:530-536), so the whole screen is window size times the
+// inverse scale in menu units. The game's menus are authored at 3840x2160, which at 1080p is an
+// inverse scale of 2, so this normally comes out at about 2.
+//
+// The size the pause menu's root reports is taken as a second opinion, and the smaller of the two
+// wins, for the same reason as the HUD fit: a page drawn a little small is a cosmetic problem and a
+// page running off the screen is one the player cannot work around. The figures are logged, so a
+// report of a wrongly sized Hub comes with the numbers that explain it.
+public func CBHubPageScale(game: GameInstance, root: wref<inkCompoundWidget>) -> Float {
+  let s = 0.0;
+  let ui = GameInstance.GetUISystem(game);
+  let winX = 0.0;
+  let winY = 0.0;
+  let inv = 0.0;
+  if IsDefined(ui) {
+    let win = ui.GetCurrentWindowSize();
+    winX = win.X;
+    winY = win.Y;
+    inv = ui.GetInverseUIScale();
+    if winX > 0.0 && winY > 0.0 && inv > 0.0 {
+      s = MinF((winX * inv) / CBHudDesignW(), (winY * inv) / CBHudDesignH());
+    }
+  }
+  let rootX = 0.0;
+  let rootY = 0.0;
+  let rootKind = "none";
+  if IsDefined(root) {
+    rootKind = NameToString(root.GetClassName());
+    let size = root.GetSize();
+    rootX = size.X;
+    rootY = size.Y;
+    // Only a size that could be a whole screen counts; a root sized by its anchor reports little.
+    if rootX >= 1000.0 && rootY >= 560.0 {
+      let byRoot = MinF(rootX / CBHudDesignW(), rootY / CBHudDesignH());
+      s = s > 0.0 ? MinF(s, byRoot) : byRoot;
+    }
+  }
+  if s <= 0.0 {
+    s = 2.0;   // nothing to measure: the menus are authored at twice the design
+  }
+  let scaled = ClampF(s * CBHudUserScale(), 0.4, 4.0);
+  CBLog.Info(n"UI", s"Hub page: window \(RoundF(winX))x\(RoundF(winY)), inverse scale \(inv), menu root \(rootKind) \(RoundF(rootX))x\(RoundF(rootY)), drawn at \(RoundF(scaled * 100.0))%.");
+  return scaled;
+}
+
 public func CBHudMarginX() -> Float = 160.0
 public func CBHudContentW() -> Float = 1540.0
 public func CBHudChipWidth() -> Float = 250.0
 public func CBHudBarCount() -> Int32 = 4
 public func CBHudBarWidth() -> Float = 1540.0
-public func CBHudRowCount() -> Int32 = 10
-public func CBHudRowHeight() -> Float = 44.0
 public func CBHudContentTop() -> Float = 200.0
 public func CBHudFooterY() -> Float = 952.0
+
+// The list rows. One pool, laid out per screen: ten wide rows for the gangs, the city and the
+// Rivals, or a narrow column of up to twenty-one for the titles (all twenty plus "automatic").
+public func CBHudRowPool() -> Int32 = 21
+public func CBHudListRows() -> Int32 = 10
+public func CBHudRowHeight() -> Float = 44.0
+public func CBHudTitleRowHeight() -> Float = 32.0
+public func CBHudTitleListW() -> Float = 760.0
+
+// The panel under a list, where the selected row is described, and the one button beside it.
+public func CBHudDetailTop() -> Float = 664.0
+public func CBHudActionW() -> Float = 420.0
+public func CBHudActionH() -> Float = 56.0
+
+// Row layouts, as the columns are positioned for them.
+public func CBHudLayoutGangs() -> Int32 = 0
+public func CBHudLayoutWide() -> Int32 = 1
+public func CBHudLayoutTitles() -> Int32 = 2
 
 // Colours.
 //
 // The first five are the settings menu's: salmon labels, white values, a brighter white for
-// anything selected, and a dim red rule. The last five are Cyberbane's own and are used for
-// meters and status pips, where a reputation screen needs to say good, bad or dangerous and
-// the settings menu has nothing to borrow.
-// Nothing here goes above 1.0, and that is the whole point.
-//
-// HDRColor is high dynamic range: a channel above 1.0 is brighter than white and the game
-// blooms it. The first version of this palette ran up to 2.25, so every label, every meter and
-// every rule was emitting light, the thin ones worst of all. On a dark background that reads as
-// a screen smeared in glow rather than a menu. The game's own settings screen is flat colour,
-// so these are flat too.
+// anything selected, and a dim red rule. The next five are Cyberbane's own, for meters and status
+// pips, where a reputation screen needs to say good, bad or dangerous and the settings menu has
+// nothing to borrow. Nothing here goes above 1.0.
 public func CBHudLabel() -> HDRColor = new HDRColor(0.85, 0.28, 0.30, 1.0)
 public func CBHudValue() -> HDRColor = new HDRColor(0.92, 0.93, 0.95, 1.0)
 public func CBHudHead() -> HDRColor = new HDRColor(1.00, 1.00, 1.00, 1.0)
@@ -153,13 +192,22 @@ public func CBHudRed() -> HDRColor = new HDRColor(0.88, 0.26, 0.29, 1.0)
 public func CBHudGreen() -> HDRColor = new HDRColor(0.26, 0.78, 0.50, 1.0)
 public func CBHudGrey() -> HDRColor = new HDRColor(0.55, 0.62, 0.70, 1.0)
 
-// Fast ticks are about a second, so this reads as real time to the player.
+// What something you can click looks like at rest, under the cursor, and chosen. The settings
+// menu marks hover with a lighter band and the chosen item with a stronger one; so does this.
+public func CBHudBandEven() -> HDRColor = new HDRColor(0.14, 0.05, 0.06, 0.50)
+public func CBHudBandOdd() -> HDRColor = new HDRColor(0.08, 0.03, 0.04, 0.30)
+public func CBHudBandHover() -> HDRColor = new HDRColor(0.26, 0.08, 0.10, 0.80)
+public func CBHudBandPicked() -> HDRColor = new HDRColor(0.38, 0.11, 0.13, 0.90)
+public func CBHudButtonIdle() -> HDRColor = new HDRColor(0.30, 0.09, 0.11, 0.85)
+public func CBHudButtonHover() -> HDRColor = new HDRColor(0.48, 0.14, 0.16, 0.95)
+public func CBHudButtonOff() -> HDRColor = new HDRColor(0.12, 0.05, 0.06, 0.60)
+public func CBHudClear() -> HDRColor = new HDRColor(0.0, 0.0, 0.0, 0.0)
+
 // Cut a column's text to what its box can actually show.
 //
-// The row columns are fixed pixel widths, and inkText does not clip, so an over-long string
-// runs straight into the next column. Rival names are the dangerous ones: a name like
-// Santiago "Last One Standing" Ibarra is 35 characters against a 28 character column.
-// Budgets are per column and enforced in SetRow, so this cannot be forgotten at a call site.
+// The row columns are fixed widths, and inkText does not clip, so an over-long string runs straight
+// into the next column. Budgets are per column and enforced in SetRow, so this cannot be forgotten
+// at a call site.
 public func CBHudTrim(text: String, maxChars: Int32) -> String {
   if StrLen(text) <= maxChars {
     return text;
@@ -172,26 +220,13 @@ public func CBHudTrim(text: String, maxChars: Int32) -> String {
 
 // Row columns.
 //
-// There are six, and where they sit depends on the screen, because the two screens that use
-// rows do not hold the same shape of thing. Gangs is six short fields; Rivals is one long name
-// and three short ones.
-//
-// Before 1.5.5 there were four, and the Gangs screen packed posture, fear and how long it had
-// been quiet into one of them joined by three spaces. Rajdhani is a proportional font, so those
-// joins landed in a different place on every row and the column read as ragged rather than as a
-// column. Three fields in one string also meant the budget had to cover all three, which is
-// what cut "beat a crew, or 7 more kills" off mid-word at the right edge. One field per column,
-// positioned per screen, fixes both: the fields line up down the list and each one is trimmed
-// against its own width.
-//
-// Column 5 is right-aligned to the same edge the meter values use, because it is the "what is
-// coming" column and the settings menu puts its values there too.
+// Six fields per row, one field per column, positioned per screen, so the fields line up down the
+// list and each one is trimmed against its own width. Column 5 is right-aligned to the row's right
+// edge, because it is the "what is coming" column and the settings menu puts its values there too.
 public func CBHudRowCols() -> Int32 = 6
 
-// What each column is tinted. The point is that a row should be readable as several things
-// rather than as a sentence: the name reads brightest, the two middle facts sit back in the
-// value colour, the one that says what V has done to them is warm, and the column on the right
-// is dimmed because it is a status rather than a fact about the gang.
+// What each column is tinted: the name brightest, the two middle facts in the value colour, the one
+// that says what V has done to them warm, and the status on the right dimmed.
 public func CBHudRowColTint(col: Int32) -> HDRColor {
   if col == 0 { return CBHudHead(); }
   if col == 1 { return CBHudValue(); }
@@ -201,9 +236,9 @@ public func CBHudRowColTint(col: Int32) -> HDRColor {
   return CBHudDim();
 }
 
-// x, as an offset from the content margin.
-public func CBHudRowColX(col: Int32, gangs: Bool) -> Float {
-  if gangs {
+// x, as an offset from the row's left edge.
+public func CBHudRowColX(col: Int32, layout: Int32) -> Float {
+  if layout == CBHudLayoutGangs() {
     if col == 0 { return 24.0; }
     if col == 1 { return 270.0; }
     if col == 2 { return 420.0; }
@@ -216,14 +251,17 @@ public func CBHudRowColX(col: Int32, gangs: Bool) -> Float {
     if col == 3 { return 860.0; }
     if col == 4 { return 1130.0; }
   }
-  return 0.0;      // column 5 is right-aligned across the whole width
+  return 0.0;      // column 5 is right-aligned across the row
 }
 
-// Characters each column can show at its width and font, measured against the positions above
-// at the 22 px body font. A name is the one worth being generous with, so Rivals gives column 0
-// most of the row.
-public func CBHudRowColChars(col: Int32, gangs: Bool) -> Int32 {
-  if gangs {
+// Characters each column can show at its width and font, measured against the positions above.
+public func CBHudRowColChars(col: Int32, layout: Int32) -> Int32 {
+  if layout == CBHudLayoutTitles() {
+    if col == 0 { return 40; }
+    if col == 5 { return 14; }
+    return 0;
+  }
+  if layout == CBHudLayoutGangs() {
     if col == 0 { return 18; }
     if col == 1 { return 10; }
     if col == 2 { return 9; }
@@ -282,13 +320,8 @@ public func CBHudCountdown(ticks: Int32) -> String {
   return s"\(mins)m \(secs)s";
 }
 
-// Plain words, because the old ones were not.
-//
-// "LEGEND" is this mod's internal name for the reputation model and it reads on screen as a
-// map key. "FACTIONS" is a design document word for what the game and the player both call
-// gangs. "THE FILE" was atmospheric and told nobody what was on it. A player opening the Hub
-// for the first time should be able to guess what each screen holds from its name, which is
-// the whole job of a tab label.
+// Plain words: a player opening the Hub for the first time should be able to guess what each
+// screen holds from its name, which is the whole job of a tab label.
 public func CBHudTabName(tab: Int32) -> String {
   switch tab {
     case 1: return "STANDING";
@@ -302,179 +335,234 @@ public func CBHudTabName(tab: Int32) -> String {
 }
 
 // One sentence saying what this screen is for, under the header.
-//
-// The Hub was described by a player as "so cluttered and hard to use and understand", and a
-// fair part of that is that every screen opened straight into numbers with nothing to say what
-// they were numbers about. This line costs one row and answers the question before it is asked.
 public func CBHudTabBlurb(tab: Int32) -> String {
   switch tab {
     case 1: return "Who you are in this city, and what is on its way to you.";
-    case 2: return "What each gang thinks of you, and what they are about to do about it.";
+    case 2: return "What each gang thinks of you. Click one to see more, or to pay them off.";
     case 3: return "Where in Night City your name carries, district by district.";
-    case 4: return "The people who have survived you and are still looking.";
-    case 5: return "What the street calls you. Ctrl and the Hub key switches which one you use.";
+    case 4: return "The people who have survived you and are still looking. Click one for their file.";
+    case 5: return "What the street calls you. Click a title to go by it.";
     case 6: return "The ledger: what you did, where, and who it was.";
     default: return "";
   }
 }
 
+// A screen number that is always one of the six.
+public func CBHudClampTab(tab: Int32) -> Int32 {
+  if tab < 1 {
+    return 1;
+  }
+  if tab > CBHudTabCount() {
+    return CBHudTabCount();
+  }
+  return tab;
+}
+
+// A widget name for a clickable thing, made once at build time. The click handler is told which
+// widget it is running for (inkEvent.GetCurrentTarget, core/ui/events.script:7) and matches the
+// name against these, so one handler serves every tab, row and button.
+func CBHudWidgetName(prefix: String, index: Int32) -> CName {
+  let text = prefix + IntToString(index);
+  return StringToName(text);
+}
+
+public func CBHudActionName() -> CName = n"cbHubAction"
+public func CBHudSettingsName() -> CName = n"cbHubModSettings"
+
+// The event Mod Settings adds to the pause scenario for its own entry. Spawning it from the page is
+// exactly what clicking "Mod Settings" in the pause menu's list does.
+public func CBModSettingsEvent() -> CName = n"OnSwitchToModSettings"
 
 public class CBHud {
+  // The pause menu this page is drawn in. Weak: the menu owns the page, never the other way round.
+  private let m_owner: wref<PauseMenuGameController>;
   private let m_built: Bool;
-  private let m_tab: Int32;               // 0 = closed, 1..CBHudTabCount = open on that tab
-  private let m_root: ref<inkCanvas>;
-  private let m_panel: ref<inkCanvas>;   // the bordered card; scaled to fit the screen
-  private let m_scaled: Float;           // scale last applied, so it is only set when it moves
-  private let m_subhead: ref<inkText>;
-  private let m_tabline: ref<inkText>;
-  private let m_body: ref<inkText>;
-  // Tab chips: one background and one label per tab, so the open tab is something you can
-  // see rather than a word in a sentence.
-  private let m_chipBg: array<ref<inkRectangle>>;
-  private let m_chipHit: array<ref<inkRectangle>>;
-  private let m_chipText: array<ref<inkText>>;
-  // Meters: label, value, track, fill and caption per score on the Legend screen.
-  private let m_barLabel: array<ref<inkText>>;
-  private let m_barValue: array<ref<inkText>>;
-  private let m_barTrack: array<ref<inkRectangle>>;
-  private let m_barFill: array<ref<inkRectangle>>;
-  private let m_barCap: array<ref<inkText>>;
-  // List rows: a colour pip and three columns, reused by the gang and rival screens.
-  // One strip behind each row. The settings menu banding is what makes a long list scannable;
-  // without it the eye has to track across 1540 px of empty space to pair a name with a value.
-  private let m_rowBg: array<ref<inkRectangle>>;
-  private let m_rowPip: array<ref<inkRectangle>>;
-  // Row cells, flat: row r column c is at r * CBHudRowCols() + c. One array rather than six
-  // named ones, so adding a column is a number here and not another field to thread through
-  // build, hide and fill.
-  private let m_rowCell: array<ref<inkText>>;
-  // Which screen's column positions the cells are currently carrying, so a render only moves
-  // them when the screen has actually changed.
-  // The layer the current widget tree was built against, so a change of setting rebuilds it.
-  private let m_layer: CName;
-  private let m_rowGangs: Bool;
+  private let m_open: Bool;
+  private let m_tab: Int32;               // 1..CBHudTabCount
+  // Every widget is held weakly. The pause menu's tree owns them, and when the menu goes they go
+  // with it; nothing here can keep a widget alive past the menu it was drawn in.
+  private let m_root: wref<inkCanvas>;
+  private let m_panel: wref<inkCanvas>;
+  private let m_subhead: wref<inkText>;
+  private let m_tabline: wref<inkText>;
+  private let m_body: wref<inkText>;
+  // Tabs: a clickable box per screen, with a band behind the name and a bar under the open one.
+  private let m_tabBox: array<wref<inkCanvas>>;
+  private let m_tabBg: array<wref<inkRectangle>>;
+  private let m_tabUnder: array<wref<inkRectangle>>;
+  private let m_tabText: array<wref<inkText>>;
+  private let m_tabNames: array<CName>;
+  // Meters: label, value, track, fill and caption per score on the Standing screen.
+  private let m_barLabel: array<wref<inkText>>;
+  private let m_barValue: array<wref<inkText>>;
+  private let m_barTrack: array<wref<inkRectangle>>;
+  private let m_barFill: array<wref<inkRectangle>>;
+  private let m_barCap: array<wref<inkText>>;
+  // List rows: a clickable box per row holding a band, a colour pip and six cells. Cells are flat:
+  // row r column c is at r * CBHudRowCols() + c.
+  private let m_rowBox: array<wref<inkCanvas>>;
+  private let m_rowBg: array<wref<inkRectangle>>;
+  private let m_rowPip: array<wref<inkRectangle>>;
+  private let m_rowCell: array<wref<inkText>>;
+  private let m_rowNames: array<CName>;
+  private let m_rowLayout: Int32;
   private let m_rowPlaced: Bool;
-  // Whether arrivals are currently being held back because V is in the middle of a quiet job.
-  // Resolved once per render, not once per row.
-  private let m_holdLabel: String;   // why no Rival can arrive right now, or "" 
+  // What each row stands for as drawn, so a click can be answered without recomputing the list.
+  private let m_rowShown: array<Bool>;
+  private let m_rowClickable: array<Bool>;
+  private let m_rowPicked: array<Bool>;
+  private let m_rowFaction: array<CName>;
+  private let m_rowRival: array<Int32>;
+  private let m_rowTitle: array<CName>;
+  // The one action button beside the detail panel, and the Mod Settings link in the footer.
+  private let m_actionBox: wref<inkCanvas>;
+  private let m_actionBg: wref<inkRectangle>;
+  private let m_actionText: wref<inkText>;
+  private let m_actionOn: Bool;
+  private let m_settingsBox: wref<inkCanvas>;
+  private let m_settingsBg: wref<inkRectangle>;
+  // What the player has picked on the screens that have something to pick.
+  private let m_pickFaction: CName;
+  private let m_pickRival: Int32;
+  private let m_purgeArmed: Bool;          // "forget every rival" asks twice
+  private let m_hover: CName;              // the clickable thing under the cursor, by name
+  private let m_inputBound: Bool;          // the tab keys are registered with the pause menu
+  // Why no Rival can arrive right now, or "". Resolved once per render, not once per row.
+  private let m_holdLabel: String;
 
   public func IsOpen() -> Bool {
-    return this.m_tab != 0;
+    return this.m_open && this.m_built;
   }
 
-  public func GetTab() -> Int32 {
-    return this.m_tab;
-  }
-
-  // Hub key pressed: advance to the next tab, closing once we step past the last.
-  public func Advance(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-    if !this.EnsureBuilt() {
-      return;
+  // Show the page in this pause menu, building it the first time. False if there was nowhere to
+  // draw it, in which case the menu is left exactly as it was.
+  public func Show(owner: ref<PauseMenuGameController>, sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+    if !IsDefined(owner) || !IsDefined(sys) {
+      return false;
     }
-    this.m_tab += 1;
-    if this.m_tab > CBHudTabCount() {
-      this.m_tab = 0;
+    if !this.m_built {
+      this.m_owner = owner;
+      if !this.Build(owner, game) {
+        return false;
+      }
     }
+    if this.m_tab < 1 || this.m_tab > CBHudTabCount() {
+      this.m_tab = CBHudClampTab(sys.GetHubTab());
+    }
+    this.m_open = true;
+    this.m_purgeArmed = false;
+    this.m_hover = n"";
     this.Render(sys, game);
+    return true;
   }
 
-  public func Close() -> Void {
-    this.m_tab = 0;
+  // Out of sight. Nothing is removed: the widgets stay in the menu's tree until the menu goes,
+  // because taking widgets out by hand is what the 1.4.7 phone crash was made of.
+  public func Hide() -> Void {
+    this.m_open = false;
+    this.m_purgeArmed = false;
+    this.m_hover = n"";
     if IsDefined(this.m_root) {
       this.m_root.SetVisible(false);
     }
   }
 
-  // Re-render the current tab in place (e.g. after an action like brokering peace).
-  public func Refresh(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-    if this.m_tab != 0 {
-      this.Render(sys, game);
+  // The pause menu is going. Hand every callback back while the widgets still exist, then let go.
+  // Called from the menu's OnUninitialize, before the game starts dismantling it.
+  public func Detach() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_tabBox) {
+      this.Unhook(this.m_tabBox[i]);
+      i += 1;
+    }
+    i = 0;
+    while i < ArraySize(this.m_rowBox) {
+      this.Unhook(this.m_rowBox[i]);
+      i += 1;
+    }
+    this.Unhook(this.m_actionBox);
+    this.Unhook(this.m_settingsBox);
+    if this.m_inputBound && IsDefined(this.m_owner) {
+      this.m_owner.UnregisterFromGlobalInputCallback(n"OnPostOnRelease", this, n"CBOnGlobalRelease");
+    }
+    this.m_inputBound = false;
+    this.m_open = false;
+    this.m_built = false;
+    this.m_owner = null;
+  }
+
+  private func Hook(box: wref<inkCanvas>) -> Void {
+    if !IsDefined(box) {
+      return;
+    }
+    box.SetInteractive(true);
+    box.RegisterToCallback(n"OnRelease", this, n"CBOnClick");
+    box.RegisterToCallback(n"OnHoverOver", this, n"CBOnHoverOver");
+    box.RegisterToCallback(n"OnHoverOut", this, n"CBOnHoverOut");
+  }
+
+  private func Unhook(box: wref<inkCanvas>) -> Void {
+    if !IsDefined(box) {
+      return;
+    }
+    box.UnregisterFromCallback(n"OnRelease", this, n"CBOnClick");
+    box.UnregisterFromCallback(n"OnHoverOver", this, n"CBOnHoverOver");
+    box.UnregisterFromCallback(n"OnHoverOut", this, n"CBOnHoverOut");
+    box.SetInteractive(false);
+  }
+
+  private func Click() -> Void {
+    if IsDefined(this.m_owner) {
+      this.m_owner.CBPlayClick();
     }
   }
 
-  // Which layer the Hub is drawn on, and the name of it, from the setting.
-  public func CBHubLayerName() -> CName {
-    let rt = CyberbaneRuntime.Get();
-    if IsDefined(rt) && rt.HasSettings() && Equals(rt.GetSettings().hubStyle, ECBHubStyle.Overlay) {
-      return n"inkHUDLayer";
-    }
-    return n"inkMenuLayer";
+  // ---- Building --------------------------------------------------------------------------------
+
+  private func NewText(parent: ref<inkCompoundWidget>, size: Int32, style: CName, tint: HDRColor) -> ref<inkText> {
+    let t = new inkText();
+    t.SetFontFamily("base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily");
+    t.SetFontStyle(style);
+    t.SetFontSize(size);
+    t.SetTintColor(tint);
+    t.SetAnchor(inkEAnchor.TopLeft);
+    t.Reparent(parent, -1);
+    return t;
   }
 
-  // inkHUDLayer was a settled question for a long time, and is now a setting.
-  //
-  // Three layers were tried. inkMenuLayer (1.3.4) is flat but makes the game treat the Hub as
-  // an open menu, so Escape drove it. inkGameNotificationLayer (1.3.5) has no virtual window
-  // at all, so every build fell back to the HUD layer anyway - and because the wanted layer
-  // never matched the built one, the Hub tore itself down and rebuilt on every single open,
-  // which the log shows plainly. That is worse than the curve it was meant to cure.
-  //
-  // So: the HUD layer, which has always worked, and the curve stays. The glow was the larger
-  // half of how that screen read and flat colour fixed it without touching the layer.
-  private func EnsureBuilt() -> Bool {
-    if this.m_built && IsDefined(this.m_root) {
-      return true;
-    }
-    let ink = GameInstance.GetInkSystem();
-    if !IsDefined(ink) {
-      return false;
-    }
-    // Built against one layer and the player has since asked for the other: tear the old tree
-    // down first, or the Hub exists twice and the key toggles the invisible one. The widget goes
-    // with its parent window, so dropping the handles is the whole of it.
-    let want = this.CBHubLayerName();
-    if this.m_built && NotEquals(want, this.m_layer) {
-      // Hand the callbacks back before the widgets they are on are destroyed. Leaving a
-      // registration pointing at a widget that is being torn down is the shape of the 1.4.7
-      // phone crash (crash rule 9), and it costs one loop to not find out again.
-      let c = 0;
-      while c < ArraySize(this.m_chipHit) {
-        if IsDefined(this.m_chipHit[c]) {
-          if c == 0 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip0"); }
-          if c == 1 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip1"); }
-          if c == 2 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip2"); }
-          if c == 3 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip3"); }
-          if c == 4 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip4"); }
-          if c == 5 { this.m_chipHit[c].UnregisterFromCallback(n"OnRelease", this, n"CBOnChip5"); }
-          this.m_chipHit[c].SetInteractive(false);
-        }
-        c += 1;
-      }
-      if IsDefined(this.m_root) {
-        this.m_root.SetVisible(false);
-        this.m_root.RemoveAllChildren();
-      }
-      this.m_root = null;
-      this.m_panel = null;
-      this.m_built = false;
-      ArrayClear(this.m_chipBg);
-      ArrayClear(this.m_chipHit);
-      ArrayClear(this.m_chipText);
-      ArrayClear(this.m_barLabel);
-      ArrayClear(this.m_barValue);
-      ArrayClear(this.m_barTrack);
-      ArrayClear(this.m_barFill);
-      ArrayClear(this.m_barCap);
-      ArrayClear(this.m_rowBg);
-      ArrayClear(this.m_rowPip);
-      ArrayClear(this.m_rowCell);
-      this.m_rowPlaced = false;
-    }
-    let layer = ink.GetLayer(want);
-    if !IsDefined(layer) {
-      return false;
-    }
-    let win = layer.GetVirtualWindow();
-    if !IsDefined(win) {
-      return false;
-    }
-    this.Build(win);
-    this.m_layer = want;
-    return this.m_built;
+  private func NewRect(parent: ref<inkCompoundWidget>, tint: HDRColor) -> ref<inkRectangle> {
+    let r = new inkRectangle();
+    r.SetAnchor(inkEAnchor.TopLeft);
+    r.SetTintColor(tint);
+    r.Reparent(parent, -1);
+    return r;
   }
 
-  private func Build(win: wref<inkCompoundWidget>) -> Void {
-    let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
+  // A box that can be clicked: a canvas with a band filling it. The canvas is the target, so the
+  // text drawn on it is part of the target too, and the band is what changes under the cursor.
+  private func NewBox(parent: ref<inkCompoundWidget>, name: CName, x: Float, y: Float, w: Float, h: Float) -> ref<inkCanvas> {
+    let box = new inkCanvas();
+    box.SetName(name);
+    box.SetAnchor(inkEAnchor.TopLeft);
+    box.SetSize(new Vector2(w, h));
+    box.SetMargin(new inkMargin(x, y, 0.0, 0.0));
+    box.Reparent(parent, -1);
+    return box;
+  }
+
+  private func NewBand(box: ref<inkCanvas>, tint: HDRColor) -> ref<inkRectangle> {
+    let bg = new inkRectangle();
+    bg.SetAnchor(inkEAnchor.Fill);
+    bg.SetTintColor(tint);
+    bg.Reparent(box, -1);
+    return bg;
+  }
+
+  private func Build(owner: ref<PauseMenuGameController>, game: GameInstance) -> Bool {
+    let parent = owner.GetRootCompoundWidget();
+    if !IsDefined(parent) {
+      return false;
+    }
     let x = CBHudMarginX();
     let w = CBHudContentW();
 
@@ -484,285 +572,464 @@ public class CBHud {
     root.SetVisible(false);
 
     // The settings menu dims the world almost to black with a red cast rather than greying it.
+    // Interactive, so the cursor lands on the page and never on the menu underneath it.
     let backdrop = new inkRectangle();
     backdrop.SetAnchor(inkEAnchor.Fill);
     backdrop.SetTintColor(new HDRColor(0.055, 0.012, 0.022, 0.97));
-    backdrop.Reparent(root);
+    backdrop.SetInteractive(true);
+    backdrop.Reparent(root, -1);
 
     let panel = new inkCanvas();
     panel.SetAnchor(inkEAnchor.Centered);
     panel.SetAnchorPoint(new Vector2(0.5, 0.5));
     panel.SetSize(new Vector2(CBHudPanelW(), CBHudPanelH()));
-    // Scaled about its own middle, so it shrinks towards the centre of the screen and stays
-    // there. The backdrop is left alone: it should cover the whole screen whatever the panel
-    // is doing.
     panel.SetRenderTransformPivot(new Vector2(0.5, 0.5));
-    panel.Reparent(root);
-    this.m_panel = panel;
+    let s = CBHubPageScale(game, parent);
+    panel.SetScale(new Vector2(s, s));
+    panel.Reparent(root, -1);
 
-    // ---- Title block, top left, the way the menus mark themselves -------
-    let header = new inkText();
-    header.SetFontFamily(font);
-    header.SetFontStyle(n"Semibold");
-    header.SetFontSize(28);
+    // ---- Title block, top left, the way the menus mark themselves --------
+    let header = this.NewText(panel, 28, n"Semibold", CBHudLabel());
     header.SetLetterCase(textLetterCase.UpperCase);
     header.SetText("CYBERBANE");
-    header.SetTintColor(CBHudLabel());
-    header.SetAnchor(inkEAnchor.TopLeft);
-    // Its own line. The tab row is centred across the panel and the first tab started at
-    // x=180 against a title at x=160, so LEGEND was printed over CYBERBANE.
-    header.SetMargin(new inkMargin(x, 14.0, 0.0, 0.0));
-    header.Reparent(panel);
+    header.SetMargin(new inkMargin(x, 10.0, 0.0, 0.0));
 
-    // ---- Tabs, centred across the top ------------------------------------
+    // ---- Tabs, centred across the top -------------------------------------
     let tabsW = Cast<Float>(CBHudTabCount()) * CBHudChipWidth();
     let tabsX = (CBHudPanelW() - tabsW) / 2.0;
     let t = 0;
     while t < CBHudTabCount() {
-      let cx = tabsX + Cast<Float>(t) * CBHudChipWidth();
-
-      let label = new inkText();
-      label.SetFontFamily(font);
-      label.SetFontStyle(n"Semibold");
-      label.SetFontSize(24);
+      let name = CBHudWidgetName("cbHubTab", t + 1);
+      let box = this.NewBox(panel, name, tabsX + Cast<Float>(t) * CBHudChipWidth() + 4.0, 48.0,
+                            CBHudChipWidth() - 8.0, 52.0);
+      let bg = this.NewBand(box, CBHudClear());
+      let label = this.NewText(box, 24, n"Semibold", CBHudLabel());
       label.SetLetterCase(textLetterCase.UpperCase);
-      label.SetAnchor(inkEAnchor.TopLeft);
       label.SetHorizontalAlignment(textHorizontalAlignment.Center);
       label.SetFitToContent(false);
-      label.SetSize(new Vector2(CBHudChipWidth(), 32.0));
-      label.SetMargin(new inkMargin(cx, 58.0, 0.0, 0.0));
-      label.Reparent(panel);
-      ArrayPush(this.m_chipText, label);
-
-      // The open tab is marked by a bar under it, which is what the game does. A filled
-      // chip was the old look and it reads as a button you are meant to click.
-      let under = new inkRectangle();
-      under.SetAnchor(inkEAnchor.TopLeft);
-      under.SetSize(new Vector2(CBHudChipWidth() - 40.0, 3.0));
-      under.SetMargin(new inkMargin(cx + 20.0, 96.0, 0.0, 0.0));
-      under.Reparent(panel);
-      ArrayPush(this.m_chipBg, under);
-
-      // Something to click on.
-      //
-      // A transparent rectangle over the tab rather than the label itself, so the whole chip is
-      // the target and the text stays a plain text widget. It only does anything on the menu
-      // layer, which is the one with a cursor; on the overlay layer nothing is delivered to it
-      // and the key still steps through the tabs as before.
-      //
-      // One handler per chip, because the event carries no target: inkPointerEvent is
-      // `importonly final` and exposes only position, and inkInputEvent above it offers
-      // IsAction and the modifier keys but nothing to say which widget was hit
-      // (core/ui/events.script:22-49). Six small methods is the honest way to do it.
-      let hit = new inkRectangle();
-      hit.SetAnchor(inkEAnchor.TopLeft);
-      hit.SetSize(new Vector2(CBHudChipWidth(), 48.0));
-      hit.SetMargin(new inkMargin(cx, 54.0, 0.0, 0.0));
-      hit.SetTintColor(new HDRColor(0.0, 0.0, 0.0, 0.0));
-      hit.SetOpacity(0.01);          // fully clear still receives the cursor; zero does not
-      hit.SetInteractive(true);
-      hit.Reparent(panel);
-      if t == 0 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip0"); }
-      if t == 1 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip1"); }
-      if t == 2 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip2"); }
-      if t == 3 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip3"); }
-      if t == 4 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip4"); }
-      if t == 5 { hit.RegisterToCallback(n"OnRelease", this, n"CBOnChip5"); }
-      ArrayPush(this.m_chipHit, hit);
+      label.SetSize(new Vector2(CBHudChipWidth() - 8.0, 32.0));
+      label.SetMargin(new inkMargin(0.0, 9.0, 0.0, 0.0));
+      label.SetText(CBHudTabName(t + 1));
+      // The open screen is marked by a bar under its name, which is what the game does.
+      let under = this.NewRect(box, CBHudClear());
+      under.SetSize(new Vector2(CBHudChipWidth() - 48.0, 3.0));
+      under.SetMargin(new inkMargin(20.0, 47.0, 0.0, 0.0));
+      ArrayPush(this.m_tabBox, box);
+      ArrayPush(this.m_tabBg, bg);
+      ArrayPush(this.m_tabText, label);
+      ArrayPush(this.m_tabUnder, under);
+      ArrayPush(this.m_tabNames, name);
       t += 1;
     }
 
-    // ---- The line under the tabs that says what you are looking at -------
-    let subhead = new inkText();
-    subhead.SetFontFamily(font);
-    subhead.SetFontStyle(n"Medium");
-    subhead.SetFontSize(24);
-    subhead.SetTintColor(CBHudDim());
-    subhead.SetAnchor(inkEAnchor.TopLeft);
+    // ---- The lines under the tabs that say what you are looking at ---------
+    let subhead = this.NewText(panel, 24, n"Medium", CBHudDim());
     subhead.SetHorizontalAlignment(textHorizontalAlignment.Center);
     subhead.SetFitToContent(false);
     subhead.SetSize(new Vector2(CBHudPanelW(), 32.0));
     subhead.SetMargin(new inkMargin(0.0, 110.0, 0.0, 0.0));
-    subhead.Reparent(panel);
     this.m_subhead = subhead;
 
-    // Was a hidden leftover from before the tab chips existed, kept alive so nothing that
-    // referenced it broke. It has a job again: the sentence that says what this screen is.
-    let tabline = new inkText();
-    tabline.SetFontFamily(font);
-    tabline.SetFontStyle(n"Medium");
-    tabline.SetFontSize(20);
-    tabline.SetTintColor(CBHudGrey());
-    tabline.SetAnchor(inkEAnchor.TopLeft);
+    let tabline = this.NewText(panel, 20, n"Medium", CBHudGrey());
     tabline.SetHorizontalAlignment(textHorizontalAlignment.Center);
     tabline.SetFitToContent(false);
     tabline.SetSize(new Vector2(CBHudPanelW(), 28.0));
     tabline.SetMargin(new inkMargin(0.0, 136.0, 0.0, 0.0));
-    tabline.Reparent(panel);
     this.m_tabline = tabline;
 
-    let divider = new inkRectangle();
-    divider.SetAnchor(inkEAnchor.TopLeft);
+    let divider = this.NewRect(panel, CBHudRule());
     divider.SetSize(new Vector2(w, 2.0));
-    divider.SetTintColor(CBHudRule());
     divider.SetMargin(new inkMargin(x, 164.0, 0.0, 0.0));
-    divider.Reparent(panel);
 
-    let body = new inkText();
-    body.SetFontFamily(font);
-    body.SetFontStyle(n"Medium");
-    body.SetFontSize(21);
-    body.SetTintColor(CBHudValue());
-    body.SetAnchor(inkEAnchor.TopLeft);
-    body.SetMargin(new inkMargin(x, CBHudContentTop(), 0.0, 0.0));
-    body.SetWrapping(true, w);
-    body.SetSize(new Vector2(w, 740.0));
-    body.Reparent(panel);
-    this.m_body = body;
-
-    let footRule = new inkRectangle();
-    footRule.SetAnchor(inkEAnchor.TopLeft);
-    footRule.SetSize(new Vector2(w, 2.0));
-    footRule.SetTintColor(CBHudRule());
-    footRule.SetMargin(new inkMargin(x, CBHudFooterY() - 18.0, 0.0, 0.0));
-    footRule.Reparent(panel);
-
-    let footer = new inkText();
-    footer.SetFontFamily(font);
-    footer.SetFontStyle(n"Medium");
-    footer.SetFontSize(19);
-    footer.SetTintColor(CBHudDim());
-    footer.SetAnchor(inkEAnchor.TopLeft);
-    footer.SetMargin(new inkMargin(x, CBHudFooterY(), 0.0, 0.0));
-    footer.SetText("Hub key: next screen, and closes after the last    Shift + Hub key: pay a gang off    Ctrl + Hub key: change your title");
-    footer.Reparent(panel);
-
-    let footerRight = new inkText();
-    footerRight.SetFontFamily(font);
-    footerRight.SetFontStyle(n"Medium");
-    footerRight.SetFontSize(19);
-    footerRight.SetTintColor(CBHudDim());
-    footerRight.SetAnchor(inkEAnchor.TopLeft);
-    footerRight.SetHorizontalAlignment(textHorizontalAlignment.Right);
-    footerRight.SetFitToContent(false);
-    footerRight.SetSize(new Vector2(w, 26.0));
-    footerRight.SetMargin(new inkMargin(x, CBHudFooterY(), 0.0, 0.0));
-    footerRight.SetText("SETTINGS  Pause > Mods > Cyberbane");
-    footerRight.Reparent(panel);
-
-    // ---- Score meters ---------------------------------------------------
+    // ---- Score meters -------------------------------------------------------
     let b = 0;
     while b < CBHudBarCount() {
       let top = CBHudContentTop() + Cast<Float>(b) * 96.0;
-
-      let bl = new inkText();
-      bl.SetFontFamily(font);
-      bl.SetFontStyle(n"Semibold");
-      bl.SetFontSize(25);
+      let bl = this.NewText(panel, 25, n"Semibold", CBHudLabel());
       bl.SetLetterCase(textLetterCase.UpperCase);
-      bl.SetTintColor(CBHudLabel());
-      bl.SetAnchor(inkEAnchor.TopLeft);
       bl.SetMargin(new inkMargin(x, top, 0.0, 0.0));
-      bl.Reparent(panel);
-      ArrayPush(this.m_barLabel, bl);
-
-      // Right-aligned against the same edge the meter ends on, so every value on the screen
-      // lines up in one column the way a settings page does.
-      let bv = new inkText();
-      bv.SetFontFamily(font);
-      bv.SetFontStyle(n"Semibold");
-      bv.SetFontSize(25);
-      bv.SetAnchor(inkEAnchor.TopLeft);
+      // Right-aligned against the edge the meter ends on, so every value lines up in one column.
+      let bv = this.NewText(panel, 25, n"Semibold", CBHudValue());
       bv.SetHorizontalAlignment(textHorizontalAlignment.Right);
       bv.SetFitToContent(false);
       bv.SetSize(new Vector2(w, 30.0));
       bv.SetMargin(new inkMargin(x, top, 0.0, 0.0));
-      bv.Reparent(panel);
-      ArrayPush(this.m_barValue, bv);
-
-      let track = new inkRectangle();
-      track.SetAnchor(inkEAnchor.TopLeft);
+      let track = this.NewRect(panel, new HDRColor(0.26, 0.08, 0.10, 0.9));
       track.SetSize(new Vector2(CBHudBarWidth(), 10.0));
-      track.SetTintColor(new HDRColor(0.26, 0.08, 0.10, 0.9));
       track.SetMargin(new inkMargin(x, top + 36.0, 0.0, 0.0));
-      track.Reparent(panel);
-      ArrayPush(this.m_barTrack, track);
-
-      let fill = new inkRectangle();
-      fill.SetAnchor(inkEAnchor.TopLeft);
-      fill.SetSize(new Vector2(1.0, 10.0));
+      let fill = this.NewRect(panel, CBHudCyan());
+      fill.SetSize(new Vector2(2.0, 10.0));
       fill.SetMargin(new inkMargin(x, top + 36.0, 0.0, 0.0));
-      fill.Reparent(panel);
-      ArrayPush(this.m_barFill, fill);
-
-      let cap = new inkText();
-      cap.SetFontFamily(font);
-      cap.SetFontStyle(n"Medium");
-      cap.SetFontSize(19);
-      cap.SetTintColor(CBHudDim());
-      cap.SetAnchor(inkEAnchor.TopLeft);
+      let cap = this.NewText(panel, 19, n"Medium", CBHudDim());
       cap.SetMargin(new inkMargin(x, top + 54.0, 0.0, 0.0));
       cap.SetWrapping(true, w);
-      cap.Reparent(panel);
+      ArrayPush(this.m_barLabel, bl);
+      ArrayPush(this.m_barValue, bv);
+      ArrayPush(this.m_barTrack, track);
+      ArrayPush(this.m_barFill, fill);
       ArrayPush(this.m_barCap, cap);
       b += 1;
     }
 
-    // ---- List rows ------------------------------------------------------
+    // ---- List rows -----------------------------------------------------------
+    // Positions are set per screen in PlaceRows; here they only need to exist.
     let r = 0;
-    while r < CBHudRowCount() {
-      let rtop = CBHudContentTop() + Cast<Float>(r) * CBHudRowHeight();
-
-      let bg = new inkRectangle();
-      bg.SetAnchor(inkEAnchor.TopLeft);
-      bg.SetSize(new Vector2(w, CBHudRowHeight() - 4.0));
-      bg.SetTintColor(r % 2 == 0 ? new HDRColor(0.14, 0.05, 0.06, 0.50)
-                                 : new HDRColor(0.08, 0.03, 0.04, 0.30));
-      bg.SetMargin(new inkMargin(x, rtop - 4.0, 0.0, 0.0));
-      bg.Reparent(panel);
-      ArrayPush(this.m_rowBg, bg);
-
-      let pip = new inkRectangle();
-      pip.SetAnchor(inkEAnchor.TopLeft);
+    while r < CBHudRowPool() {
+      let rname = CBHudWidgetName("cbHubRow", r);
+      let rbox = this.NewBox(panel, rname, x, CBHudContentTop() + Cast<Float>(r) * CBHudRowHeight(),
+                             w, CBHudRowHeight() - 4.0);
+      let band = this.NewBand(rbox, r % 2 == 0 ? CBHudBandEven() : CBHudBandOdd());
+      let pip = this.NewRect(rbox, CBHudGrey());
       pip.SetSize(new Vector2(5.0, 26.0));
-      pip.SetMargin(new inkMargin(x, rtop, 0.0, 0.0));
-      pip.Reparent(panel);
+      pip.SetMargin(new inkMargin(0.0, 7.0, 0.0, 0.0));
+      ArrayPush(this.m_rowBox, rbox);
+      ArrayPush(this.m_rowBg, band);
       ArrayPush(this.m_rowPip, pip);
-
-      // Six cells. Column 0 is the name, so it carries the heavier weight; the last column is
-      // right-aligned across the full width against the same edge as the meter values.
-      // Positions are set per screen in PlaceRows, not here, because the two screens that use
-      // rows need different ones.
+      ArrayPush(this.m_rowNames, rname);
+      ArrayPush(this.m_rowShown, false);
+      ArrayPush(this.m_rowClickable, false);
+      ArrayPush(this.m_rowPicked, false);
+      ArrayPush(this.m_rowFaction, n"");
+      ArrayPush(this.m_rowRival, 0);
+      ArrayPush(this.m_rowTitle, n"");
+      // Column 0 is the name, so it carries the heavier weight; the last column is right-aligned.
       let c = 0;
       while c < CBHudRowCols() {
-        let cell = new inkText();
-        cell.SetFontFamily(font);
-        cell.SetFontStyle(c == 0 ? n"Semibold" : n"Medium");
-        cell.SetFontSize(c == 0 ? 23 : 22);
-        cell.SetTintColor(CBHudRowColTint(c));
-        cell.SetAnchor(inkEAnchor.TopLeft);
+        let cell = this.NewText(rbox, c == 0 ? 23 : 22, c == 0 ? n"Semibold" : n"Medium", CBHudRowColTint(c));
         if c == CBHudRowCols() - 1 {
           cell.SetHorizontalAlignment(textHorizontalAlignment.Right);
           cell.SetFitToContent(false);
-          cell.SetSize(new Vector2(w, 26.0));
-          cell.SetMargin(new inkMargin(x, rtop + 2.0, 0.0, 0.0));
-        } else {
-          cell.SetMargin(new inkMargin(x + CBHudRowColX(c, true), rtop + (c == 0 ? 0.0 : 2.0), 0.0, 0.0));
+          cell.SetSize(new Vector2(w - 16.0, 28.0));
         }
-        cell.Reparent(panel);
         ArrayPush(this.m_rowCell, cell);
         c += 1;
       }
+      rbox.SetVisible(false);
       r += 1;
     }
 
-    root.Reparent(win);
+    // ---- Prose: under the meters, under a list, or beside the titles -----------
+    let body = this.NewText(panel, 21, n"Medium", CBHudValue());
+    body.SetMargin(new inkMargin(x, CBHudContentTop(), 0.0, 0.0));
+    body.SetWrapping(true, w);
+    body.SetSize(new Vector2(w, 700.0));
+    this.m_body = body;
+
+    // ---- The button beside the detail panel ---------------------------------------
+    let action = this.NewBox(panel, CBHudActionName(), x + w - CBHudActionW(), CBHudDetailTop() - 4.0,
+                             CBHudActionW(), CBHudActionH());
+    let actionBg = this.NewBand(action, CBHudButtonIdle());
+    let actionText = this.NewText(action, 23, n"Semibold", CBHudHead());
+    actionText.SetLetterCase(textLetterCase.UpperCase);
+    actionText.SetHorizontalAlignment(textHorizontalAlignment.Center);
+    actionText.SetFitToContent(false);
+    actionText.SetSize(new Vector2(CBHudActionW(), 30.0));
+    actionText.SetMargin(new inkMargin(0.0, 13.0, 0.0, 0.0));
+    action.SetVisible(false);
+    this.m_actionBox = action;
+    this.m_actionBg = actionBg;
+    this.m_actionText = actionText;
+
+    // ---- Footer: hints on the left, the Mod Settings link on the right -----------
+    let footRule = this.NewRect(panel, CBHudRule());
+    footRule.SetSize(new Vector2(w, 2.0));
+    footRule.SetMargin(new inkMargin(x, CBHudFooterY() - 18.0, 0.0, 0.0));
+
+    let footer = this.NewText(panel, 19, n"Medium", CBHudDim());
+    footer.SetMargin(new inkMargin(x, CBHudFooterY(), 0.0, 0.0));
+    footer.SetText("Click a screen, or Q / E (LB / RB) to switch      Click a row for more      Esc / B: back to the pause menu");
+
+    let settings = this.NewBox(panel, CBHudSettingsName(), x + w - 260.0, CBHudFooterY() - 8.0, 260.0, 40.0);
+    let settingsBg = this.NewBand(settings, CBHudButtonIdle());
+    let settingsText = this.NewText(settings, 19, n"Semibold", CBHudHead());
+    settingsText.SetLetterCase(textLetterCase.UpperCase);
+    settingsText.SetHorizontalAlignment(textHorizontalAlignment.Center);
+    settingsText.SetFitToContent(false);
+    settingsText.SetSize(new Vector2(260.0, 26.0));
+    settingsText.SetMargin(new inkMargin(0.0, 8.0, 0.0, 0.0));
+    settingsText.SetText("Mod Settings");
+    this.m_settingsBox = settings;
+    this.m_settingsBg = settingsBg;
+
+    // Into the pause menu, on top of everything it already draws. A root drawn back to front puts
+    // its first child on top, so the page goes in first there and last everywhere else.
+    if Equals(parent.GetChildOrder(), inkEChildOrder.Backward) {
+      root.Reparent(parent, 0);
+    } else {
+      root.Reparent(parent, -1);
+    }
     this.m_root = root;
+    this.m_panel = panel;
+
+    // Clicks and hover, once, for the life of the menu.
+    let i = 0;
+    while i < ArraySize(this.m_tabBox) {
+      this.Hook(this.m_tabBox[i]);
+      i += 1;
+    }
+    i = 0;
+    while i < ArraySize(this.m_rowBox) {
+      this.Hook(this.m_rowBox[i]);
+      i += 1;
+    }
+    this.Hook(this.m_actionBox);
+    this.Hook(this.m_settingsBox);
+    // The previous/next tab keys. Registered once and left until the menu goes, rather than on
+    // every show and hide, so nothing is ever registered or unregistered in the middle of the very
+    // input event that is being delivered.
+    owner.RegisterToGlobalInputCallback(n"OnPostOnRelease", this, n"CBOnGlobalRelease");
+    this.m_inputBound = true;
     this.m_built = true;
+    return true;
   }
 
-  // ---- Widget helpers. Every one checks the handle first, so a widget that failed to
-  // build can never take the Hub (or the game) down with it. ----------------------
+  // ---- Input -----------------------------------------------------------------------------------
+
+  // Every tab, row and button. Which one it was comes from the widget the handler is running for.
+  protected cb func CBOnClick(e: ref<inkPointerEvent>) -> Bool {
+    if !this.IsOpen() || !IsDefined(e) {
+      return false;
+    }
+    // The mouse button is `click`; a controller's confirm button is `select` in some menus; touch is
+    // `tap`. The game's own handlers take whichever of these they expect (pauseMenu.script:196,
+    // inventoryGameController.script:942), and one release is one event however many it matches,
+    // so taking all three cannot fire anything twice.
+    if !e.IsAction(n"click") && !e.IsAction(n"select") && !e.IsAction(n"tap") {
+      return false;
+    }
+    let target = e.GetCurrentTarget();
+    if !IsDefined(target) {
+      return false;
+    }
+    let name = target.GetName();
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) {
+      return false;
+    }
+    let i = 0;
+    while i < ArraySize(this.m_tabNames) {
+      if Equals(this.m_tabNames[i], name) {
+        e.Handle();
+        if this.m_tab != i + 1 {
+          this.Click();
+          this.SelectTab(sys, game, i + 1);
+        }
+        return true;
+      }
+      i += 1;
+    }
+    i = 0;
+    while i < ArraySize(this.m_rowNames) {
+      if Equals(this.m_rowNames[i], name) {
+        e.Handle();
+        if this.m_rowShown[i] && this.m_rowClickable[i] {
+          this.Click();
+          this.RowClicked(sys, game, i);
+        }
+        return true;
+      }
+      i += 1;
+    }
+    if Equals(name, CBHudActionName()) {
+      e.Handle();
+      if this.m_actionOn {
+        this.Click();
+        this.ActionClicked(sys, game);
+      }
+      return true;
+    }
+    if Equals(name, CBHudSettingsName()) {
+      e.Handle();
+      this.Click();
+      // Last thing done here: switching screens closes the pause menu's page, which takes this one
+      // with it, so nothing may touch the page after the event is spawned.
+      if IsDefined(this.m_owner) {
+        this.m_owner.CBSpawnMenuEvent(CBModSettingsEvent());
+      }
+      return true;
+    }
+    return false;
+  }
+
+  protected cb func CBOnHoverOver(e: ref<inkPointerEvent>) -> Bool {
+    if !this.IsOpen() || !IsDefined(e) {
+      return false;
+    }
+    let target = e.GetCurrentTarget();
+    if IsDefined(target) {
+      this.m_hover = target.GetName();
+      this.Paint();
+    }
+    return false;
+  }
+
+  protected cb func CBOnHoverOut(e: ref<inkPointerEvent>) -> Bool {
+    if !this.IsOpen() || !IsDefined(e) {
+      return false;
+    }
+    let target = e.GetCurrentTarget();
+    if IsDefined(target) && Equals(target.GetName(), this.m_hover) {
+      this.m_hover = n"";
+      this.Paint();
+    }
+    return false;
+  }
+
+  // The previous/next tab keys, the same actions the settings menu uses (settingsMain.script:1311).
+  protected cb func CBOnGlobalRelease(e: ref<inkPointerEvent>) -> Bool {
+    if !this.IsOpen() || !IsDefined(e) || e.IsHandled() {
+      return false;
+    }
+    let step = 0;
+    if e.IsAction(n"prior_menu") {
+      step = -1;
+    } else {
+      if e.IsAction(n"next_menu") {
+        step = 1;
+      }
+    }
+    if step == 0 {
+      return false;
+    }
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) {
+      return false;
+    }
+    let tab = this.m_tab + step;
+    if tab < 1 {
+      tab = CBHudTabCount();
+    }
+    if tab > CBHudTabCount() {
+      tab = 1;
+    }
+    e.Handle();
+    this.Click();
+    this.SelectTab(sys, game, tab);
+    return true;
+  }
+
+  private func SelectTab(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Void {
+    this.m_tab = CBHudClampTab(tab);
+    sys.SetHubTab(this.m_tab);
+    this.m_purgeArmed = false;
+    this.m_hover = n"";
+    this.Render(sys, game);
+  }
+
+  private func RowClicked(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32) -> Void {
+    if this.m_tab == CBHudFactionsTab() {
+      let f = this.m_rowFaction[row];
+      // Clicking the one already open closes it again.
+      this.m_pickFaction = Equals(f, this.m_pickFaction) ? n"" : f;
+    } else {
+      if this.m_tab == CBHudRivalsTab() {
+        this.m_pickRival = this.m_rowRival[row];
+        this.m_purgeArmed = false;
+      } else {
+        if this.m_tab == CBHudTitlesTab() {
+          // A value in a field; safe to set at once, paused or not. n"" is automatic.
+          sys.SetActiveTitle(this.m_rowTitle[row]);
+          CBLog.Info(n"UI", s"Title chosen on the Hub: \(NameToString(sys.GetChosenTitle())).");
+        }
+      }
+    }
+    this.Render(sys, game);
+  }
+
+  // The button beside the detail panel. Neither action is carried out from here: the game is
+  // paused, and both touch the world. They are recorded, and done on the first settled tick after
+  // the menu closes. Clicking again before then takes the request back.
+  private func ActionClicked(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    if this.m_tab == CBHudFactionsTab() {
+      if NotEquals(this.m_pickFaction, n"") {
+        if Equals(sys.GetPendingPeace(), this.m_pickFaction) {
+          sys.RequestPeace(n"");
+        } else {
+          if CBHudCanPayOff(sys, game, this.m_pickFaction) {
+            sys.RequestPeace(this.m_pickFaction);
+          }
+        }
+      }
+    } else {
+      if this.m_tab == CBHudRivalsTab() {
+        if sys.IsRivalPurgePending() {
+          sys.RequestRivalPurge(false);
+          this.m_purgeArmed = false;
+        } else {
+          if this.m_purgeArmed {
+            sys.RequestRivalPurge(true);
+            this.m_purgeArmed = false;
+          } else {
+            this.m_purgeArmed = true;
+          }
+        }
+      }
+    }
+    this.Render(sys, game);
+  }
+
+  // ---- Painting --------------------------------------------------------------------------------
+
+  // Recolour everything that reacts to the cursor or to being chosen. Cheap: a tint per widget.
+  private func Paint() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_tabBox) {
+      let on = (i + 1) == this.m_tab;
+      let hot = Equals(this.m_tabNames[i], this.m_hover);
+      if IsDefined(this.m_tabBg[i]) {
+        this.m_tabBg[i].SetTintColor(on ? CBHudBandPicked() : (hot ? CBHudBandHover() : CBHudClear()));
+      }
+      if IsDefined(this.m_tabText[i]) {
+        this.m_tabText[i].SetTintColor((on || hot) ? CBHudHead() : CBHudLabel());
+      }
+      if IsDefined(this.m_tabUnder[i]) {
+        this.m_tabUnder[i].SetTintColor(on ? CBHudHead() : CBHudClear());
+      }
+      i += 1;
+    }
+    let r = 0;
+    while r < ArraySize(this.m_rowBg) {
+      if IsDefined(this.m_rowBg[r]) {
+        let band = r % 2 == 0 ? CBHudBandEven() : CBHudBandOdd();
+        if this.m_rowClickable[r] && Equals(this.m_rowNames[r], this.m_hover) {
+          band = CBHudBandHover();
+        }
+        if this.m_rowPicked[r] {
+          band = CBHudBandPicked();
+        }
+        this.m_rowBg[r].SetTintColor(band);
+      }
+      r += 1;
+    }
+    if IsDefined(this.m_actionBg) {
+      let tint = CBHudButtonOff();
+      if this.m_actionOn {
+        tint = Equals(this.m_hover, CBHudActionName()) ? CBHudButtonHover() : CBHudButtonIdle();
+      }
+      this.m_actionBg.SetTintColor(tint);
+    }
+    if IsDefined(this.m_actionText) {
+      this.m_actionText.SetTintColor(this.m_actionOn ? CBHudHead() : CBHudDim());
+    }
+    if IsDefined(this.m_settingsBg) {
+      this.m_settingsBg.SetTintColor(Equals(this.m_hover, CBHudSettingsName()) ? CBHudButtonHover() : CBHudButtonIdle());
+    }
+  }
+
+  private func SetAction(label: String, enabled: Bool) -> Void {
+    this.m_actionOn = enabled;
+    if IsDefined(this.m_actionText) {
+      this.m_actionText.SetText(label);
+    }
+    if IsDefined(this.m_actionBox) {
+      this.m_actionBox.SetVisible(StrLen(label) > 0);
+    }
+  }
+
+  // ---- Widget helpers. Every one checks the handle first, so a widget that failed to build can
+  // never take the page (or the game) down with it. -------------------------------------------
 
   private func HideBars() -> Void {
     let i = 0;
@@ -778,48 +1045,62 @@ public class CBHud {
 
   private func HideRows() -> Void {
     let i = 0;
-    while i < ArraySize(this.m_rowBg) {
-      if IsDefined(this.m_rowBg[i]) { this.m_rowBg[i].SetVisible(false); }
-      if IsDefined(this.m_rowPip[i]) { this.m_rowPip[i].SetVisible(false); }
+    while i < ArraySize(this.m_rowBox) {
+      if IsDefined(this.m_rowBox[i]) {
+        this.m_rowBox[i].SetVisible(false);
+      }
+      this.m_rowShown[i] = false;
+      this.m_rowClickable[i] = false;
+      this.m_rowPicked[i] = false;
+      this.m_rowFaction[i] = n"";
+      this.m_rowRival[i] = 0;
+      this.m_rowTitle[i] = n"";
       i += 1;
-    }
-    let c = 0;
-    while c < ArraySize(this.m_rowCell) {
-      if IsDefined(this.m_rowCell[c]) { this.m_rowCell[c].SetVisible(false); }
-      c += 1;
     }
   }
 
-  // Move the cells to the column positions the screen about to be drawn needs. Only touches
-  // them when the screen has changed, so stepping through the tabs is not re-laying out ten
-  // rows of six widgets every render.
-  private func PlaceRows(gangs: Bool) -> Void {
-    if this.m_rowPlaced && Equals(this.m_rowGangs, gangs) {
+  // Move the rows and their cells to where the screen about to be drawn needs them. Only touches
+  // them when the layout has changed, so changing screen is not re-laying out every cell.
+  private func PlaceRows(layout: Int32) -> Void {
+    if this.m_rowPlaced && this.m_rowLayout == layout {
       return;
     }
-    let x = CBHudMarginX();
+    let titles = layout == CBHudLayoutTitles();
+    let stride = titles ? CBHudTitleRowHeight() : CBHudRowHeight();
+    let rowW = titles ? CBHudTitleListW() : CBHudContentW();
+    let rowH = stride - 4.0;
+    let textY = titles ? 0.0 : 5.0;
     let r = 0;
-    while r < CBHudRowCount() {
-      let rtop = CBHudContentTop() + Cast<Float>(r) * CBHudRowHeight();
+    while r < ArraySize(this.m_rowBox) {
+      if IsDefined(this.m_rowBox[r]) {
+        this.m_rowBox[r].SetMargin(new inkMargin(CBHudMarginX(), CBHudContentTop() + Cast<Float>(r) * stride, 0.0, 0.0));
+        this.m_rowBox[r].SetSize(new Vector2(rowW, rowH));
+      }
+      if IsDefined(this.m_rowPip[r]) {
+        this.m_rowPip[r].SetSize(new Vector2(5.0, rowH - 12.0));
+        this.m_rowPip[r].SetMargin(new inkMargin(0.0, 6.0, 0.0, 0.0));
+      }
       let c = 0;
-      while c < CBHudRowCols() - 1 {
+      while c < CBHudRowCols() {
         let idx = r * CBHudRowCols() + c;
         if idx < ArraySize(this.m_rowCell) && IsDefined(this.m_rowCell[idx]) {
-          this.m_rowCell[idx].SetMargin(
-            new inkMargin(x + CBHudRowColX(c, gangs), rtop + (c == 0 ? 0.0 : 2.0), 0.0, 0.0));
+          if c == CBHudRowCols() - 1 {
+            this.m_rowCell[idx].SetSize(new Vector2(rowW - 16.0, 28.0));
+            this.m_rowCell[idx].SetMargin(new inkMargin(0.0, textY + 2.0, 0.0, 0.0));
+          } else {
+            this.m_rowCell[idx].SetMargin(new inkMargin(CBHudRowColX(c, layout), textY + (c == 0 ? 0.0 : 2.0), 0.0, 0.0));
+          }
         }
         c += 1;
       }
       r += 1;
     }
-    this.m_rowGangs = gangs;
+    this.m_rowLayout = layout;
     this.m_rowPlaced = true;
   }
 
-  // Conduct runs -100 to +100, so it is drawn from the middle: left of centre in red as V
-  // slides towards cyberpsycho, right of centre in green as they stay clean. Mapping it onto a
-  // 0..1 fill like the others meant -100, the worst Conduct there is, drew the 2 px "empty
-  // meter" sliver and read as a meter that had failed rather than one at its limit.
+  // Conduct runs -100 to +100, so it is drawn from the middle: left of centre in red as V slides
+  // towards cyberpsycho, right of centre in green as they stay clean.
   private func SetBipolarBar(idx: Int32, label: String, value: String, signed: Float,
                              col: HDRColor, caption: String) -> Void {
     this.SetBar(idx, label, value, 0.0, col, caption);
@@ -860,8 +1141,7 @@ public class CBHud {
       if w < 2.0 {
         w = 2.0;      // always show a sliver, so an empty meter still reads as a meter
       }
-      // Back to the left edge: SetBipolarBar moves this same widget to the middle, and the
-      // meters share one pool of widgets across every screen.
+      // Back to the left edge: SetBipolarBar moves this same widget to the middle.
       this.m_barFill[idx].SetMargin(
         new inkMargin(CBHudMarginX(), CBHudContentTop() + Cast<Float>(idx) * 96.0 + 36.0, 0.0, 0.0));
       this.m_barFill[idx].SetSize(new Vector2(w, 10.0));
@@ -874,19 +1154,21 @@ public class CBHud {
     }
   }
 
-  // One row, six fields. Anything handed an empty string stays hidden, so a screen that has
-  // nothing for a column does not leave the last screen's value sitting there.
-  private func SetRow(idx: Int32, gangs: Bool, pip: HDRColor,
+  // One row, six fields, and what it stands for. Anything handed an empty string stays hidden, so
+  // a screen that has nothing for a column does not leave the last screen's value sitting there.
+  private func SetRow(idx: Int32, layout: Int32, pip: HDRColor, clickable: Bool, picked: Bool,
                       a: String, b: String, c: String, d: String, e: String, f: String) -> Void {
-    if idx < 0 || idx >= CBHudRowCount() || idx >= ArraySize(this.m_rowBg) {
+    if idx < 0 || idx >= ArraySize(this.m_rowBox) {
       return;
     }
-    if IsDefined(this.m_rowBg[idx]) {
-      this.m_rowBg[idx].SetVisible(true);
+    this.m_rowShown[idx] = true;
+    this.m_rowClickable[idx] = clickable;
+    this.m_rowPicked[idx] = picked;
+    if IsDefined(this.m_rowBox[idx]) {
+      this.m_rowBox[idx].SetVisible(true);
     }
     if IsDefined(this.m_rowPip[idx]) {
       this.m_rowPip[idx].SetTintColor(pip);
-      this.m_rowPip[idx].SetVisible(true);
     }
     let col = 0;
     while col < CBHudRowCols() {
@@ -898,7 +1180,7 @@ public class CBHud {
         if col == 3 { text = d; }
         if col == 4 { text = e; }
         if col == 5 { text = f; }
-        let budget = CBHudRowColChars(col, gangs);
+        let budget = CBHudRowColChars(col, layout);
         if StrLen(text) == 0 || budget <= 0 {
           this.m_rowCell[cellIdx].SetVisible(false);
         } else {
@@ -909,6 +1191,19 @@ public class CBHud {
       col += 1;
     }
   }
+
+  // Where the prose goes on this screen, how wide it may run, and what it says.
+  private func SetBody(x: Float, y: Float, width: Float, text: String, maxLines: Int32) -> Void {
+    if !IsDefined(this.m_body) {
+      return;
+    }
+    this.m_body.SetMargin(new inkMargin(x, y, 0.0, 0.0));
+    this.m_body.SetWrapping(true, width);
+    this.m_body.SetSize(new Vector2(width, CBHudFooterY() - 30.0 - y));
+    this.m_body.SetText(CBHudClamp(text, maxLines));
+  }
+
+  // ---- Screens ---------------------------------------------------------------------------------
 
   // The four scores, as meters you can read at a glance instead of numbers in a sentence.
   private func RenderScores(sys: ref<CyberbaneSystem>) -> Void {
@@ -933,87 +1228,137 @@ public class CBHud {
       chrome / 100.0, CBHudAmber(),
       "What a stranger clocks from across the street. Arms read loudest.");
 
-    // Code runs -100..100, so the meter shows how far along that line you sit.
     this.SetBipolarBar(3, "Conduct", s"\(RoundF(code))   \(CBCodeLabel(code))",
       code, code < 0.0 ? CBHudRed() : CBHudGreen(),
       "Clean and controlled, or one bad night from going over. This one runs both ways from the middle.");
   }
 
+  // The gangs, the ones that want you dead first.
+  //
+  // The list holds ten. Taken in storage order, a hostile gang past the tenth row was simply not
+  // there, and with buying peace now done by clicking a row, a gang that is not on screen is a gang
+  // you cannot pay off. So the hostile and the sworn go in first and everybody else fills the rest.
   private func RenderFactions(sys: ref<CyberbaneSystem>) -> Void {
-    this.PlaceRows(true);
+    this.PlaceRows(CBHudLayoutGangs());
     let score = sys.GetScore();
     if !IsDefined(score) {
       return;
     }
     let states = sys.GetFactionStates();
     let shown = 0;
-    let i = 0;
-    while i < ArraySize(states) && shown < CBHudRowCount() {
-      let fs = states[i];
-      i += 1;
-      if IsDefined(fs) {
-        let posture = score.GetPosture(fs.id);
-        let pip = CBHudGrey();
-        if Equals(posture, ECBPosture.Vendetta) { pip = CBHudRed(); }
-        if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
-        if Equals(posture, ECBPosture.Friendly) { pip = CBHudGreen(); }
-
-        // Most urgent thing this gang is doing. Anything actually on its way wins over a
-        // count of how far off the next thing is.
-        let right = "";
-        if Equals(sys.GetPendingApexFaction(), fs.id) {
-          right = (sys.IsPendingApexDriving() ? "APEX SQUAD DRIVING " + CBTimeText(sys.GetPendingApexTicks())
-                                             : "APEX SQUAD " + CBWhen(sys.GetPendingApexTicks()));
-        } else {
-          if Equals(sys.GetPendingSquadFaction(), fs.id) {
-            if sys.GetPendingSquadTicks() <= 0 {
-              let why = CBBlockLabel(CBLastSpawnBlock());
-              right = StrLen(why) > 0 ? "HELD: " + why : "CREW HELD UP";
-            } else {
-              right = "CREW INBOUND " + CBTimeText(sys.GetPendingSquadTicks());
+    let sweep = 0;
+    let pickedShown = false;
+    while sweep < 2 {
+      let i = 0;
+      while i < ArraySize(states) && shown < CBHudListRows() {
+        let fs = states[i];
+        i += 1;
+        if IsDefined(fs) {
+          let posture = score.GetPosture(fs.id);
+          let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
+          if (sweep == 0 && hostile) || (sweep == 1 && !hostile) {
+            let picked = Equals(fs.id, this.m_pickFaction);
+            if picked {
+              pickedShown = true;
             }
-          } else {
-            if Equals(sys.GetLaneTarget(CBLaneApex()), fs.id) {
-              right = "APEX SQUAD " + CBWhen(sys.GetLaneTicks(CBLaneApex()));
-            } else {
-              if Equals(sys.GetLaneTarget(CBLaneSquad()), fs.id) {
-                right = "CREW " + CBWhen(sys.GetLaneTicks(CBLaneSquad()));
-              } else {
-                right = CBApexProgressLine(sys, fs);
-              }
-            }
+            this.RenderFactionRow(sys, score, fs, posture, shown, picked);
+            shown += 1;
           }
         }
-        // Who this gang is at war with, because that is the one thing on this screen V can
-        // act on: hurting a gang warms the gangs that hate it (Model/GangRivalries.reds), and
-        // before 1.5.5 the only way to know who hated whom was to read the source.
-        let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), fs.id));
-        this.SetRow(shown, true, pip,
-          CBFactionLabel(fs.id),
-          CBPostureName(posture),
-          s"fear \(RoundF(score.GetFactionFear(fs.id)))",
-          StrLen(enemy) > 0 ? "at war: " + enemy : "",
-          s"\(fs.kills) down",
-          right);
-        shown += 1;
       }
+      sweep += 1;
+    }
+    // A pick that is no longer on the list (reset, or pushed off by new gangs) is no pick.
+    if !pickedShown {
+      this.m_pickFaction = n"";
     }
   }
 
-  // The City, as a list rather than a paragraph.
-  //
-  // This screen used to be the district lines padded into one string and handed to the body
-  // text, which is exactly the "block of text" it looked like, with two thirds of the screen
-  // empty under it. The districts are a table - a name and three numbers - so they are drawn as
-  // one, with the renown bar giving the shape of where V is known at a glance instead of making
-  // the player compare nine numbers.
+  private func RenderFactionRow(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, fs: ref<CBFactionState>,
+                                posture: ECBPosture, row: Int32, picked: Bool) -> Void {
+    let pip = CBHudGrey();
+    if Equals(posture, ECBPosture.Vendetta) { pip = CBHudRed(); }
+    if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
+    if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) { pip = CBHudGreen(); }
+    let right = CBHudGangStatus(sys, fs);
+    if Equals(sys.GetPendingPeace(), fs.id) {
+      right = "PAYING OFF ON RESUME";
+    }
+    // Who this gang is at war with, because that is the one thing on this screen V can act on:
+    // hurting a gang warms the gangs that hate it (Model/GangRivalries.reds).
+    let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), fs.id));
+    this.SetRow(row, CBHudLayoutGangs(), pip, true, picked,
+      CBFactionLabel(fs.id),
+      CBPostureName(posture),
+      s"fear \(RoundF(score.GetFactionFear(fs.id)))",
+      StrLen(enemy) > 0 ? "at war: " + enemy : "",
+      s"\(fs.kills) down",
+      right);
+    this.m_rowFaction[row] = fs.id;
+  }
+
+  // The panel under the gangs: the one you clicked, and the button to buy them off.
+  private func RenderFactionDetail(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    let top = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
+    let width = CBHudContentW() - CBHudActionW() - 40.0;
+    if Equals(this.m_pickFaction, n"") {
+      this.SetAction("", false);
+      this.SetBody(CBHudMarginX(), top, CBHudContentW(), CBHudFactions(sys), CBHudMaxLinesFor(this.m_tab));
+      return;
+    }
+    let id = this.m_pickFaction;
+    let fs = sys.FindFaction(id);
+    let score = sys.GetScore();
+    if !IsDefined(fs) || !IsDefined(score) {
+      this.m_pickFaction = n"";
+      this.SetAction("", false);
+      this.SetBody(CBHudMarginX(), top, CBHudContentW(), CBHudFactions(sys), CBHudMaxLinesFor(this.m_tab));
+      return;
+    }
+    let posture = score.GetPosture(id);
+    let gang = CBFactionLabel(id);
+    let out = StrUpper(gang) + "   " + CBPostureName(posture) + "\n";
+    let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), id));
+    if StrLen(enemy) > 0 {
+      out += "At war with " + enemy + ". Hurting " + enemy + " is how this gang comes to like you.\n";
+    }
+    out += s"\(fs.kills) of theirs down. They fear you at \(RoundF(score.GetFactionFear(id))) of 100.\n";
+    let status = CBHudGangStatus(sys, fs);
+    if StrLen(status) > 0 {
+      out += "Right now: " + StrLower(status) + ".\n";
+    }
+    out += "\n";
+    let quote = CBPeaceQuote(sys, game, id);
+    let money = CBHudEddies(game);
+    if Equals(sys.GetPendingPeace(), id) {
+      let price = quote >= 0 ? s"\(quote)eb" : "what they ask";
+      out += "You are paying them " + price + ". It goes through a few seconds after you are back in the game,\nand anything they had on its way to you is called off.";
+      this.SetAction("Cancel the payment", true);
+    } else {
+      if quote >= 0 {
+        out += s"They will call it off for \(quote)eb. You have \(money)eb.";
+        if money >= quote {
+          this.SetAction(s"Pay them off: \(quote)eb", true);
+        } else {
+          this.SetAction("Not enough eddies", false);
+        }
+      } else {
+        out += CBHudWhyNoPeace(game, id, posture);
+        this.SetAction("", false);
+      }
+    }
+    this.SetBody(CBHudMarginX(), top, width, out, CBHudMaxLinesFor(this.m_tab));
+  }
+
+  // The City, as a list rather than a paragraph: a name and three numbers per district, with the
+  // renown bar giving the shape of where V is known at a glance.
   private func RenderCity(sys: ref<CyberbaneSystem>) -> Void {
-    this.PlaceRows(false);
+    this.PlaceRows(CBHudLayoutWide());
     let states = sys.GetDistrictStates();
     let now = CBGameSeconds(sys.GetGameInstance());
     let shown = 0;
     let i = 0;
-    while i < ArraySize(states) && shown < CBHudRowCount() {
+    while i < ArraySize(states) && shown < CBHudListRows() {
       let d = states[i];
       i += 1;
       if IsDefined(d) {
@@ -1023,7 +1368,6 @@ public class CBHud {
         }
         let rd = RoundF(d.renown);
         let quiet = CBHudSince(now, d.lastIncidentAt);
-        // The pip says how well known V is here without needing the number read.
         let pip = CBHudGrey();
         if rd >= 75 {
           pip = CBHudRed();
@@ -1036,7 +1380,7 @@ public class CBHud {
             }
           }
         }
-        this.SetRow(shown, false, pip,
+        this.SetRow(shown, CBHudLayoutWide(), pip, false, false,
           dname,
           CBHudMeter(d.renown, 100.0, 10),
           s"\(rd)",
@@ -1049,22 +1393,24 @@ public class CBHud {
   }
 
   private func RenderRivals(sys: ref<CyberbaneSystem>) -> Void {
-    this.PlaceRows(false);
+    this.PlaceRows(CBHudLayoutWide());
     let content = sys.GetContent();
     let rivals = sys.GetRivals();
     let shown = 0;
+    let pickedShown = false;
 
-    // The one who is actually coming goes first.
-    //
-    // The list is capped at CBHudRowCount rows and taken in storage order, so with more
-    // Rivals than rows the one the Legend screen names as incoming could be past the end and
-    // simply absent. From the outside that reads as the mod naming somebody who does not
-    // exist. Pinning the queued Rival to the top means the name on INCOMING is always on this
-    // screen, whatever the cap is.
+    // The one who is actually coming goes first, so the name the Standing screen gives as incoming
+    // is always on this screen, whatever the cap is.
     let queuedId = sys.GetLaneRivalId(CBLaneRival());
     let pinned = sys.FindRivalById(queuedId);
     if IsDefined(pinned) && (pinned.state == EnumInt(ECBRivalState.Active)
                              || pinned.state == EnumInt(ECBRivalState.Hunting)) {
+      if this.m_pickRival == 0 {
+        this.m_pickRival = pinned.id;   // open on whoever is next
+      }
+      if pinned.id == this.m_pickRival {
+        pickedShown = true;
+      }
       this.RenderRivalRow(sys, content, pinned, shown);
       shown += 1;
     } else {
@@ -1072,14 +1418,28 @@ public class CBHud {
     }
 
     let i = 0;
-    while i < ArraySize(rivals) && shown < CBHudRowCount() {
+    while i < ArraySize(rivals) && shown < CBHudListRows() {
       let r = rivals[i];
       i += 1;
       // Skipping the pinned one by id rather than by `continue`, which redscript does not have.
       if IsDefined(r) && r.id != queuedId
          && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+        if this.m_pickRival == 0 {
+          this.m_pickRival = r.id;
+        }
+        if r.id == this.m_pickRival {
+          pickedShown = true;
+        }
         this.RenderRivalRow(sys, content, r, shown);
         shown += 1;
+      }
+    }
+    // The one that was picked is gone (put down, forgotten): fall back to the top of the list,
+    // which is whoever is next, rather than leaving the panel under the list empty.
+    if !pickedShown {
+      this.m_pickRival = shown > 0 ? this.m_rowRival[0] : 0;
+      if shown > 0 {
+        this.m_rowPicked[0] = true;
       }
     }
   }
@@ -1088,11 +1448,8 @@ public class CBHud {
   // drawn first without duplicating any of this.
   private func RenderRivalRow(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>,
                               r: ref<CBRival>, row: Int32) -> Void {
-    // Standing in front of you, not merely carrying a grudge.
-    //
-    // This read the Hunting state, which is set when a Rival starts coming for you and is
-    // never cleared afterwards, so every Rival who had ever hunted you claimed to be here
-    // now - several at once, while the lane only ever has one out. Ask the world instead.
+    // Standing in front of you, not merely carrying a grudge: ask the world, not the state, which
+    // is set when a Rival starts hunting and never cleared afterwards.
     let body = GameInstance.FindEntityByID(sys.GetGameInstance(), r.spawnedEntityId) as ScriptedPuppet;
     let hunting = EntityID.IsDefined(r.spawnedEntityId) && CBStillStanding(body);
     let role = CBRoleShort(CBRivalRole(sys, r));
@@ -1100,9 +1457,7 @@ public class CBHud {
     if Equals(role, "") {
       role = s"rank \(r.rank)";
     }
-    // Only one Rival is ever on the clock, so only that one shows a countdown. The rest say
-    // plainly that they are waiting rather than each showing a timer for a turn they are not
-    // having, which is what made several clocks appear to run at once.
+    // Only one Rival is ever on the clock, so only that one shows a countdown.
     let onClock = r.id == sys.GetLaneRivalId(CBLaneRival());
     let rightCol = "waiting their turn";
     if hunting {
@@ -1112,8 +1467,6 @@ public class CBHud {
         rightCol = "arrives " + CBWhen(sys.GetLaneTicks(CBLaneRival()));
       } else {
         if onClock {
-          // Their clock has run out and they are being placed. The Legend screen says the same
-          // thing about them, and the two screens disagreeing is what this is here to stop.
           rightCol = "any moment";
         } else {
           if StrLen(this.m_holdLabel) > 0 {
@@ -1122,153 +1475,194 @@ public class CBHud {
         }
       }
     }
-    // What makes this one different, in the space a column has: their first trait, or the
-    // mark V left on them if they have none.
+    // What makes this one different, in the space a column has: their first trait, or the mark V
+    // left on them if they have none.
     let marks = CBRivalTraitList(content, r, false, 1);
     if StrLen(marks) == 0 {
       marks = CBScarLabel(r.scarMask);
     }
-    this.SetRow(row, false, hunting ? CBHudRed() : CBHudAmber(),
+    this.SetRow(row, CBHudLayoutWide(), hunting ? CBHudRed() : CBHudAmber(), true, r.id == this.m_pickRival,
       IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
       gang,
       role,
       marks,
       "",
       rightCol);
+    this.m_rowRival[row] = r.id;
   }
 
-  // A tab was clicked. Goes through the same Render the key does, so there is one drawing path
-  // however the tab was chosen.
-  protected cb func CBOnChip0(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 1); }
-  protected cb func CBOnChip1(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 2); }
-  protected cb func CBOnChip2(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 3); }
-  protected cb func CBOnChip3(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 4); }
-  protected cb func CBOnChip4(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 5); }
-  protected cb func CBOnChip5(e: ref<inkPointerEvent>) -> Bool { return this.ChipClicked(e, 6); }
-
-  private func ChipClicked(e: ref<inkPointerEvent>, tab: Int32) -> Bool {
-    if !IsDefined(e) || !e.IsAction(n"click") {
-      return false;
+  // The panel under the Rivals: the file on the one you clicked, and the button that forgets them.
+  private func RenderRivalDetail(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    let top = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
+    let width = CBHudContentW() - CBHudActionW() - 40.0;
+    let count = sys.CountActiveRivals();
+    if count <= 0 && !sys.IsRivalPurgePending() {
+      this.SetAction("", false);
+      this.SetBody(CBHudMarginX(), top, CBHudContentW(), CBHudRivals(sys, game, 0), CBHudMaxLinesFor(this.m_tab));
+      return;
     }
-    // Clicking a tab on a Hub that is not open would draw it without anybody asking for it.
-    if !this.IsOpen() || tab < 1 || tab > CBHudTabCount() {
-      return false;
+    if sys.IsRivalPurgePending() {
+      this.SetAction("Keep them", true);
+    } else {
+      if this.m_purgeArmed {
+        this.SetAction(s"Click again: forget all \(count)", true);
+      } else {
+        this.SetAction("Forget every rival", true);
+      }
     }
-    let game = GetGameInstance();
-    let sys = CyberbaneSystem.Get(game);
-    if !IsDefined(sys) {
-      return false;
-    }
-    this.m_tab = tab;
-    this.Render(sys, game);
-    return true;
+    this.SetBody(CBHudMarginX(), top, width, CBHudRivals(sys, game, this.m_pickRival), CBHudMaxLinesFor(this.m_tab));
   }
 
-  private func RenderChips() -> Void {
+  // The titles, as a list you can click. Automatic first, then every one V has earned - all of
+  // them: this screen used to show the first eight and say nothing about the rest.
+  private func RenderTitles(sys: ref<CyberbaneSystem>) -> Void {
+    this.PlaceRows(CBHudLayoutTitles());
+    let content = sys.GetContent();
+    let chosen = sys.GetChosenTitle();
+    let unlocked = sys.GetUnlockedTitles();
+    let onAuto = Equals(chosen, n"");
+    let autoLabel = ArraySize(unlocked) > 0 ? "Automatic: " + CBHudActiveTitle(sys) : "Automatic";
+    this.SetRow(0, CBHudLayoutTitles(), onAuto ? CBHudCyan() : CBHudGrey(), ArraySize(unlocked) > 0, onAuto,
+      autoLabel, "", "", "", "", onAuto ? "GOING BY" : "");
+    this.m_rowTitle[0] = n"";
     let i = 0;
-    while i < ArraySize(this.m_chipBg) {
-      let on = (i + 1) == this.m_tab;
-      if IsDefined(this.m_chipBg[i]) {
-        this.m_chipBg[i].SetTintColor(on ? CBHudHead() : new HDRColor(0.0, 0.0, 0.0, 0.0));
-      }
-      if IsDefined(this.m_chipText[i]) {
-        this.m_chipText[i].SetText(CBHudTabName(i + 1));
-        this.m_chipText[i].SetTintColor(on ? CBHudHead() : CBHudLabel());
-      }
+    while i < ArraySize(unlocked) && i + 1 < CBHudRowPool() {
+      let id = unlocked[i];
+      let mine = Equals(id, chosen);
+      this.SetRow(i + 1, CBHudLayoutTitles(), mine ? CBHudCyan() : CBHudAmber(), true, mine,
+        CBTitleDisplayById(sys, content, id), "", "", "", "", mine ? "GOING BY" : "");
+      this.m_rowTitle[i + 1] = id;
       i += 1;
     }
   }
 
   private func Render(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-    if !IsDefined(this.m_root) {
+    if !IsDefined(this.m_root) || !this.m_open {
       return;
-    }
-    if this.m_tab == 0 {
-      this.m_root.SetVisible(false);
-      return;
-    }
-    // Fit the card to the screen before anything is drawn into it. Re-checked on every render
-    // rather than once at build time, because the player can change resolution or UI scale
-    // without the Hub ever being rebuilt, and only written when it has actually moved.
-    if IsDefined(this.m_panel) {
-      let s = CBHudScale(game);
-      if AbsF(s - this.m_scaled) > 0.001 {
-        this.m_scaled = s;
-        this.m_panel.SetScale(new Vector2(s, s));
-        CBLog.Info(n"UI", s"Hub scaled to \(RoundF(s * 100.0))% to fit the screen.");
-      }
-    }
-    // Refresh the live inputs so the Hub always shows current values (the Street Cred floor on
-    // Renown, chrome, look, menace), even right after a fast travel when the background tick is
-    // still in its settle window. Gated by CBWorldStable so it only reads player/world state when
-    // the world is ready - never during a transition, so it cannot reintroduce the crash.
-    if CBWorldStable(game) {
-      CBRefreshLiveInputs(sys, game);
-      CBUpdateChrome(sys, game);
-      CBUpdateLook(sys, game);
-      CBUpdateMenace(sys, game);
     }
     let score = sys.GetScore();
     let titleName = CBHudActiveTitle(sys);
     let tier = IsDefined(score) ? CBTierName(EnumInt(score.GetTier())) : "Nobody";
-    this.m_subhead.SetText(titleName + "   |   " + tier);
+    if IsDefined(this.m_subhead) {
+      this.m_subhead.SetText(titleName + "   |   " + tier);
+    }
     if IsDefined(this.m_tabline) {
       this.m_tabline.SetText(CBHudTabBlurb(this.m_tab));
     }
 
-    this.RenderChips();
     this.HideBars();
     this.HideRows();
+    this.SetAction("", false);
 
-    // Each screen decides what it is: meters, a list, or prose. The body text sits under
+    // Each screen decides what it is: meters, a list, or prose. The prose sits under or beside
     // whatever the screen drew, rather than being the whole screen.
-    let bodyTop = CBHudContentTop();
-    if this.m_tab == 1 {
+    let x = CBHudMarginX();
+    let w = CBHudContentW();
+    let maxLines = CBHudMaxLinesFor(this.m_tab);
+    let listBottom = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
+    if this.m_tab == CBHudStandingTab() {
       this.RenderScores(sys);
-      bodyTop = CBHudContentTop() + Cast<Float>(CBHudBarCount()) * 96.0 + 20.0;
+      this.SetBody(x, CBHudContentTop() + Cast<Float>(CBHudBarCount()) * 96.0 + 20.0, w,
+                   CBHudLegend(sys, game), maxLines);
     } else {
       if this.m_tab == CBHudFactionsTab() {
         this.RenderFactions(sys);
-        bodyTop = CBHudContentTop() + Cast<Float>(CBHudRowCount()) * CBHudRowHeight() + 20.0;
+        this.RenderFactionDetail(sys, game);
       } else {
         if this.m_tab == CBHudCityTab() {
           this.RenderCity(sys);
-          bodyTop = CBHudContentTop() + Cast<Float>(CBHudRowCount()) * CBHudRowHeight() + 20.0;
+          this.SetBody(x, listBottom, w, CBHudDistricts(sys), maxLines);
         } else {
-        if this.m_tab == CBHudRivalsTab() {
-          this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
-          // If an arrival was actually attempted and refused, that is more specific than the
-          // hold reason and more useful to say.
-          let blocked = CBBlockLabel(CBLastSpawnBlock());
-          if StrLen(blocked) > 0 && sys.GetHuntHoldReason() == CBHoldNoRoom() {
-            this.m_holdLabel = blocked;
+          if this.m_tab == CBHudRivalsTab() {
+            this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
+            // An arrival that was actually attempted and refused is more specific than the hold.
+            let blocked = CBBlockLabel(CBLastSpawnBlock());
+            if StrLen(blocked) > 0 && sys.GetHuntHoldReason() == CBHoldNoRoom() {
+              this.m_holdLabel = blocked;
+            }
+            this.RenderRivals(sys);
+            this.RenderRivalDetail(sys, game);
+          } else {
+            if this.m_tab == CBHudTitlesTab() {
+              this.RenderTitles(sys);
+              let colX = x + CBHudTitleListW() + 60.0;
+              this.SetBody(colX, CBHudContentTop(), w - CBHudTitleListW() - 60.0, CBHudTitles(sys), maxLines);
+            } else {
+              this.SetBody(x, CBHudContentTop(), w, CBHudLog(sys), maxLines);
+            }
           }
-          this.RenderRivals(sys);
-          bodyTop = CBHudContentTop() + Cast<Float>(CBHudRowCount()) * CBHudRowHeight() + 20.0;
-        }
         }
       }
     }
-    if IsDefined(this.m_body) {
-      this.m_body.SetMargin(new inkMargin(CBHudMarginX(), bodyTop, 0.0, 0.0));
-      this.m_body.SetText(CBHudClamp(CBHudBody(sys, game, this.m_tab), CBHudMaxLinesFor(this.m_tab)));
-    }
+    this.Paint();
     this.m_root.SetVisible(true);
   }
+}
+
+// ---- Things the gang screen says ----------------------------------------------------------------
+
+// Most urgent thing this gang is doing. Anything actually on its way wins over a count of how far
+// off the next thing is.
+func CBHudGangStatus(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> String {
+  if Equals(sys.GetPendingApexFaction(), fs.id) {
+    return sys.IsPendingApexDriving() ? "APEX SQUAD DRIVING " + CBTimeText(sys.GetPendingApexTicks())
+                                      : "APEX SQUAD " + CBWhen(sys.GetPendingApexTicks());
+  }
+  if Equals(sys.GetPendingSquadFaction(), fs.id) {
+    if sys.GetPendingSquadTicks() <= 0 {
+      let why = CBBlockLabel(CBLastSpawnBlock());
+      return StrLen(why) > 0 ? "HELD: " + why : "CREW HELD UP";
+    }
+    return "CREW INBOUND " + CBTimeText(sys.GetPendingSquadTicks());
+  }
+  if Equals(sys.GetLaneTarget(CBLaneApex()), fs.id) {
+    return "APEX SQUAD " + CBWhen(sys.GetLaneTicks(CBLaneApex()));
+  }
+  if Equals(sys.GetLaneTarget(CBLaneSquad()), fs.id) {
+    return "CREW " + CBWhen(sys.GetLaneTicks(CBLaneSquad()));
+  }
+  return CBApexProgressLine(sys, fs);
+}
+
+// V's eddies. Read only: nothing here takes any.
+func CBHudEddies(game: GameInstance) -> Int32 {
+  let player = GetPlayer(game);
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !IsDefined(player) || !IsDefined(ts) {
+    return 0;
+  }
+  return ts.GetItemQuantity(player, ItemID.FromTDBID(t"Items.money"));
+}
+
+// Whether the button may offer a payment: there is something to buy and V can afford it now.
+func CBHudCanPayOff(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Bool {
+  let quote = CBPeaceQuote(sys, game, faction);
+  return quote >= 0 && CBHudEddies(game) >= quote;
+}
+
+// Why there is no price on this gang, in the same terms CBPeaceQuote decides it.
+func CBHudWhyNoPeace(game: GameInstance, id: CName, posture: ECBPosture) -> String {
+  let content = CBContent(game);
+  if IsDefined(content) {
+    let prof = content.GetFaction(id);
+    if IsDefined(prof) && !prof.canBeBought {
+      return "Nobody here takes money to forget you. Corporations and the law cannot be bought off.";
+    }
+  }
+  if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) {
+    return "They like you. Friendly gangs cut their prices on their own turf and warn you when their enemies come for you.";
+  }
+  return "They are not hostile, so there is nothing to pay them for.";
 }
 
 // ---- Tab content -----------------------------------------------------------
 
 func CBHudActiveTitle(sys: ref<CyberbaneSystem>) -> String {
+  // The title that is showing: the player's choice, else the best one earned. GetActiveTitle only
+  // comes back empty when nothing has been earned at all.
   let id = sys.GetActiveTitle();
   if Equals(id, n"") {
-    let unlocked = sys.GetUnlockedTitles();
-    if ArraySize(unlocked) > 0 {
-      id = unlocked[ArraySize(unlocked) - 1];
-    }
-  }
-  if Equals(id, n"") {
-    return "Unknown";
+    return "No title yet";
   }
   // Names the district or gang the title is actually about (Model/TitleNaming.reds).
   return CBTitleDisplayById(sys, sys.GetContent(), id);
@@ -1291,18 +1685,6 @@ func CBHudClamp(text: String, maxLines: Int32) -> String {
   }
   out += "    ...";
   return out;
-}
-
-func CBHudBody(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> String {
-  switch tab {
-    case 1: return CBHudLegend(sys, game);
-    case 2: return CBHudFactions(sys);
-    case 3: return CBHudDistricts(sys);
-    case 4: return CBHudRivals(sys, game);
-    case 5: return CBHudTitles(sys);
-    case 6: return CBHudLog(sys);
-    default: return "";
-  }
 }
 
 
@@ -1529,11 +1911,11 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
   if ArraySize(states) == 0 {
     return "No gang has formed an opinion of you yet.\n\nWork in their territory and that changes quickly.";
   }
-  let out = "Hostile gangs send crews. Vendetta means they also shoot on sight.\n\n";
+  let out = "Hostile gangs send crews. Vendetta means they also shoot on sight. Hostile and sworn gangs are listed first.\n\n";
   out += "To be thought well of: hurt the gang they are at war with, or put their people down\n";
   out += "without killing them and let their names walk. Friendly gangs cut their prices on\n";
   out += "their own turf and warn you when their enemies come for you.\n\n";
-  out += "[ Shift + Hub key ]  buy off the worst gang you can afford.";
+  out += "Click a gang to see more about them, and to pay off one that wants you dead.";
   return out;
 }
 func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
@@ -1584,116 +1966,86 @@ func CBRivalSourceLine(source: Int32) -> String {
   return "remembers you";
 }
 
-func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
-  let rivals = sys.GetRivals();
-  let any = false;
-  let i = 0;
-  while i < ArraySize(rivals) {
-    let r = rivals[i];
-    i += 1;
-    if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-      any = true;
-    }
-  }
-  if !any {
-    return "No active rivals yet.\n\nLeave someone alive after you put them down, or let a wounded\nenemy get away, and one of them will come back with your name.";
+func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32) -> String {
+  if sys.IsRivalPurgePending() {
+    return "Every rival is forgotten a few seconds after you are back in the game.\n\nThe ones out looking for you stop, and nobody on this list comes after you again.\nClick the button again to keep them after all.";
   }
   let count = sys.CountActiveRivals();
+  if count <= 0 {
+    return "No active rivals yet.\n\nLeave someone alive after you put them down, or let a wounded\nenemy get away, and one of them will come back with your name.";
+  }
   let cap = CBRivalCap();
-  let out = s"\(count) of a possible \(cap) are still looking for you.\n\n";
-  // Why the one who is next is after you.
+  let out = "";
+  // The file on whoever was clicked, or on whoever is next when nobody was.
   //
   // The rows carry name, gang, rank, scars and a clock, and never once say what any of this is
-  // about. CBRivalSourceLine has existed as long as rivals have and was never called, so the
-  // single most interesting fact about a nemesis - that you spared them, or that they put you
-  // down once - was being kept from the player. Shown for whoever is next rather than on every
-  // row, because it is a sentence and the rows are columns.
-  let nextId = sys.GetLaneRivalId(CBLaneRival());
-  if nextId > 0 {
-    let nxt = sys.FindRivalById(nextId);
-    if IsDefined(nxt) {
-      let why = CBRivalSourceLine(nxt.source);
-      if StrLen(why) > 0 {
-        out += "NEXT  " + CBRivalDisplayName(sys.GetContent(), nxt) + " - " + why
-             + ", " + CBRivalStateName(nxt.state) + ".\n";
-        let strong = CBRivalTraitList(sys.GetContent(), nxt, false, 6);
-        let weak = CBRivalTraitList(sys.GetContent(), nxt, true, 6);
-        if StrLen(strong) > 0 || StrLen(weak) > 0 {
-          out += "      ";
-          if StrLen(strong) > 0 {
-            out += "Strengths: " + strong + ".  ";
-          }
-          if StrLen(weak) > 0 {
-            out += "Weak spots: " + weak + ".";
-          }
-          out += "\n";
-        }
-        out += "\n";
-      }
+  // about. CBRivalSourceLine is the single most interesting fact about a nemesis - that you spared
+  // them, or that they put you down once - so it is the first line of the file.
+  let r = sys.FindRivalById(pickedId);
+  if IsDefined(r) {
+    let content = sys.GetContent();
+    out += StrUpper(CBRivalDisplayName(content, r)) + "\n";
+    out += CBRivalSourceLine(r.source) + ", " + CBRivalStateName(r.state);
+    if r.id == sys.GetLaneRivalId(CBLaneRival()) {
+      out += ", and next in line";
     }
+    out += ".\n";
+    let strong = CBRivalTraitList(content, r, false, 6);
+    let weak = CBRivalTraitList(content, r, true, 6);
+    if StrLen(strong) > 0 {
+      out += "Strengths: " + strong + ".\n";
+    }
+    if StrLen(weak) > 0 {
+      out += "Weak spots: " + weak + ".\n";
+    }
+    let scars = CBScarLabel(r.scarMask);
+    if StrLen(scars) > 0 {
+      out += "Carries your mark: " + scars + ".\n";
+    }
+    out += "\n";
   }
-  // A held arrival used to keep resetting its clock to a few seconds and never come, which
-  // read as the Hub promising someone was seconds away over and over. Say what is happening.
+  // A held arrival used to keep resetting its clock to a few seconds and never come, which read as
+  // the Hub promising someone was seconds away over and over. Say what is happening.
   let held = CBStealthHoldReason(sys, game);
   if NotEquals(held, "") {
-    out += held + "\n\n";
+    out += held + "\n";
   }
-  out += "They arrive when their clock runs out, wherever you are, and come back a rank higher each time one escapes.\n\n";
+  out += s"\(count) of a possible \(cap) are still looking for you. They come back a rank higher each time one escapes.";
   if count >= cap {
-    out += "Nobody new can take against you until you clear some, so the ones you\n";
-    out += "already have come at you faster until you do.\n\n";
+    out += "\nNobody new can take against you until you clear some, so the ones you have come faster.";
   }
-  out += "[ Shift + Hub key ]  forget every rival (use after updating the mod).";
   return out;
 }
 func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
-  let unlocked = sys.GetUnlockedTitles();
   let content = sys.GetContent();
-  let active = sys.GetActiveTitle();
   let out = "";
-
-  if ArraySize(unlocked) == 0 {
-    out += "EARNED: nothing yet.\n";
+  if Equals(sys.GetChosenTitle(), n"") {
+    out += "On automatic: you go by the best title you have earned.\n\n";
   } else {
-    out += "EARNED:\n";
-    let i = 0;
-    while i < ArraySize(unlocked) && i < CBConfig.HudTitlesEarnedShown() {
-      let id = unlocked[i];
-      // Names the district or gang the title is actually about (Model/TitleNaming.reds).
-      let name = CBTitleDisplayById(sys, content, id);
-      let mark = Equals(id, active) ? "   <- you are going by this" : "";
-      out += "  " + name + mark + "\n";
-      i += 1;
-    }
+    out += "Click Automatic to go back to going by the best one you have earned.\n\n";
   }
-
-  // And the ones you have not got, with what each of them takes.
+  // The ones you have not got, with what each of them takes.
   //
-  // A player reported that the titles were the least understandable part of the mod: they
-  // arrive unannounced, and nothing anywhere says what they mean or how to go after one. A
-  // list of names you already have cannot fix that. A list of the ones you do not, each with
-  // the thing you would have to do, turns the whole system into something you can aim at.
+  // A player reported that the titles were the least understandable part of the mod: they arrive
+  // unannounced, and nothing anywhere said what they mean or how to go after one. A list of the
+  // ones you do not have, each with the thing you would have to do, turns the whole system into
+  // something you can aim at. Earned titles are the rows on the left.
   if IsDefined(content) {
     let shown = 0;
-    out += "\nNOT YET:\n";
+    out += "NOT YET\n";
     for def in content.GetTitles() {
       if IsDefined(def) && !sys.HasTitle(def.id) && shown < CBConfig.HudTitlesLockedShown() {
         let need = CBTitleRequirement(sys, def.id);
         if StrLen(need) > 0 {
-          out += "  " + CBTitleDisplayById(sys, content, def.id) + "\n      " + need + "\n";
+          out += CBTitleDisplayById(sys, content, def.id) + "\n    " + need + "\n";
           shown += 1;
         }
       }
     }
     if shown == 0 {
-      out += "  Nothing left. You have all of them.\n";
+      out += "Nothing left. You have all of them.\n";
     }
   }
-
-  if Equals(active, n"") {
-    out += "\nGoing by: whichever is the best one you have earned.";
-  }
-  out += "\n[ Ctrl + Hub key ]  change which title you go by.";
   return out;
 }
 
@@ -1751,7 +2103,7 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   let shown = 0;
   let now = CBGameSeconds(sys.GetGameInstance());
   let i = n - 1;
-  while i >= 0 && shown < 11 {
+  while i >= 0 && shown < 18 {
     let e = log[i];
     i -= 1;
     if IsDefined(e) {
@@ -1843,36 +2195,6 @@ func CBHudPeaceSpend(sys: ref<CyberbaneSystem>) -> Int32 {
     i += 1;
   }
   return total;
-}
-
-// Cycle the active title: Auto -> each unlocked title -> Auto (spec §12.1 Titles tab).
-public func CBCycleActiveTitle(sys: ref<CyberbaneSystem>) -> Void {
-  if !IsDefined(sys) {
-    return;
-  }
-  let unlocked = sys.GetUnlockedTitles();
-  if ArraySize(unlocked) == 0 {
-    return;
-  }
-  let cur = sys.GetActiveTitle();
-  if Equals(cur, n"") {
-    sys.SetActiveTitle(unlocked[0]);   // Auto -> first earned title
-    return;
-  }
-  let idx = -1;
-  let i = 0;
-  while i < ArraySize(unlocked) {
-    if Equals(unlocked[i], cur) {
-      idx = i;
-    }
-    i += 1;
-  }
-  let next = idx + 1;
-  if next >= ArraySize(unlocked) {
-    sys.SetActiveTitle(n"");            // wrap back to Auto
-  } else {
-    sys.SetActiveTitle(unlocked[next]);
-  }
 }
 
 // ---- Small label helpers ---------------------------------------------------

@@ -227,8 +227,8 @@ public class CBPhone {
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
     let width = CBConfig.PhoneCardWidth();
     let height = CBConfig.PhoneCardHeight();
-    // The same fit the Hub and the threat bars use: these are authored in 1080p units and the
-    // ink space is not always that big.
+    // The same fit the threat bars use: these are authored in 1080p units and the ink space is
+    // not always that big.
     let scale = CBHudScale(this.m_game);
 
     let i = 0;
@@ -605,9 +605,10 @@ public class CBPhone {
     if ArraySize(this.m_sender) == 0 && this.m_subLeft <= 0.0 {
       return;
     }
-    // The Hub is a full-screen panel on this same layer and a card sits over the left of its
-    // body text. Cards keep ageing while hidden, so closing the Hub does not hand back a stack
-    // of stale ones, and every one of them is still in the phone.
+    // The cards stand back while the Hub page is up. It is a page of the pause menu now, which
+    // hides the HUD by itself, so this is belt and braces. Cards keep ageing while hidden, so
+    // closing the Hub does not hand back a stack of stale ones, and every one of them is still in
+    // the phone.
     let hubOpen = IsDefined(sys) && sys.IsHubOpen();
     let ts = GameInstance.GetTimeSystem(game);
     if !IsDefined(ts) {
