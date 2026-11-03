@@ -298,6 +298,15 @@ public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
 }
 
 // Apply one gameplay ability, through its package, the way the game does it itself.
+//
+// This is RPGManager.ApplyGLP written out, rather than a call to it, because that function's
+// signature is not the same on every patch Cyberbane supports: 2.31 has ApplyGLP(owner, package)
+// and 2.5 added an instigator, ApplyGLP(owner, instigator, package). Calling either form fails to
+// compile on the other patch, and a compile failure takes every script mod down with it. The two
+// engine calls inside it are identical on both patches (gameplayLogicPackageSystem.script), and
+// so is the body: skip a package that is already applied unless it stacks, otherwise apply it.
+// With the NPC as both owner and instigator this is exactly what 2.31's ApplyGLP did, and what
+// 2.5's does when given the same NPC twice.
 public func CBGrantAbility(npc: ref<NPCPuppet>, id: TweakDBID) -> Void {
   if !IsDefined(npc) || !TDBID.IsValid(id) || !npc.IsAttached() || npc.IsDead() {
     return;
@@ -310,7 +319,16 @@ public func CBGrantAbility(npc: ref<NPCPuppet>, id: TweakDBID) -> Void {
   if !IsDefined(package) {
     return;
   }
-  RPGManager.ApplyGLP(npc, npc, package);
+  let glp = GameInstance.GetGameplayLogicPackageSystem(npc.GetGame());
+  if !IsDefined(glp) {
+    return;
+  }
+  let packageID = package.GetID();
+  let applied: array<TweakDBID>;
+  glp.GetAppliedPackages(npc, applied);
+  if !ArrayContains(applied, packageID) || package.Stackable() {
+    glp.ApplyPackage(npc, npc, packageID);
+  }
 }
 
 // Which role this seat of a squad fills.
