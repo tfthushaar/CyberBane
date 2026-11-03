@@ -14,6 +14,12 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_rewardDepth: Int32;    // nesting depth of the reward hook (see GigBonus)
   private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
   private let m_resetRequested: Bool;  // the player asked for a hard reset (see CyberbaneSettings)
+  // Which playthrough that reset is for, and which one is loaded now. This service outlives every
+  // save, so a request parked here used to survive a Load Game from the pause menu and wipe
+  // whichever save was loaded next, even one from another playthrough. n"" means none is loaded:
+  // the switch was flipped from the main menu, and it is for the next save to load.
+  private let m_resetFor: CName;
+  private let m_sessionPlaythrough: CName;
   private let m_ngpDetected: Int32;    // same three states, for New Game Plus
   // Why the last arrival was refused (CBBlock*). Diagnostic only, session-only.
   //
@@ -142,14 +148,37 @@ public class CyberbaneRuntime extends ScriptableService {
   // way the deferred entity sweep works.
   public func RequestHardReset() -> Void {
     this.m_resetRequested = true;
+    this.m_resetFor = this.m_sessionPlaythrough;
   }
 
-  public func TakeHardResetRequest() -> Bool {
+  // A reset for one particular playthrough: one that was started over on a save that is newer
+  // than the one just loaded (CyberbaneSystem.StartSession).
+  public func QueueHardResetFor(playthroughId: CName) -> Void {
+    this.m_resetRequested = true;
+    this.m_resetFor = playthroughId;
+  }
+
+  // Taken by the settled tick of the playthrough that is loaded. A request made for a different
+  // playthrough is dropped rather than carried out here: that playthrough is on record as started
+  // over (CyberbaneService.Retire), and it is reset the next time one of its saves loads.
+  public func TakeHardResetRequest(playthroughId: CName) -> Bool {
     if !this.m_resetRequested {
       return false;
     }
+    let forId = this.m_resetFor;
     this.m_resetRequested = false;
+    this.m_resetFor = n"";
+    if IsNameValid(forId) && NotEquals(forId, playthroughId) {
+      CBLog.Info(n"Core", s"A reset asked for in playthrough \(NameToString(forId)) was not carried out in \(NameToString(playthroughId)).");
+      return false;
+    }
     return true;
+  }
+
+  // Which playthrough is loaded. Set at session start and after a reset, cleared when the session
+  // ends, so a request made from the main menu belongs to the next save rather than the last.
+  public func SetSessionPlaythrough(playthroughId: CName) -> Void {
+    this.m_sessionPlaythrough = playthroughId;
   }
 
   public func GetLogLevel() -> Int32 {

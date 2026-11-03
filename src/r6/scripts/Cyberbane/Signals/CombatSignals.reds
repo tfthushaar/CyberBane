@@ -110,6 +110,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
     sysE.NoteDeadOurs(puppet.GetEntityID());
   }
+  // Still waiting at their place when they went down: they never got into the fight at all
+  // (Rivals/Whereabouts.reds). Read before anything below can change the body's tags.
+  let caughtWaiting = IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Lair");
   // Any death cancels a pending escape: this enemy did not get away (spec §10.2). If it
   // was the Rival hunting V, V just slew it.
   if IsDefined(sysE) {
@@ -133,6 +136,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
           CBPayRivalBounty(sysE, game, slain, slainRole);
           let rivalIconic = (slain.rank >= 4 || slainRole == CBRoleLeader()) ? CBConfig.LootIconicChanceRival() : 0.0;
           CBScheduleLoot(sysE, game, puppet, CBLootTierRival(slain, slainRole), rivalIconic);
+          // And V caught them before they knew V was there: an ambush, on top of the kill.
+          if caughtWaiting {
+            CBLairAmbushed(sysE, game, slain);
+          }
         }
       }
       // Shared with the escape and mercy endings, so all three clear the same things. The

@@ -546,6 +546,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DeathsRemembered-Desc")
   public let deathsRemembered: Bool = true;
 
+  // Tips on where a Rival was last seen, and the Rival waiting there (Rivals/Whereabouts.reds).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalHideouts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalHideouts-Desc")
+  public let rivalHideouts: Bool = true;
+
   // ---- Safe areas -------------------------------------------------------
   // Off by default, and they should stay that way for most players. A Rival arriving inside
   // an apartment is a fight you cannot have: the game forces your hands empty in there, so

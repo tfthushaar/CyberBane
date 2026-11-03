@@ -90,8 +90,19 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   }
   let myId = sys.GetPlaythroughId();
   let content = CBContent(game);
+  // Deaths from before "Forget every rival" was chosen on any save of this playthrough make
+  // nobody a Rival: forgetting them has to cover the ones a reload would otherwise bring back.
+  let forgottenUpTo = -1;
+  let note = service.GetForgetNote(myId);
+  if IsDefined(note) {
+    forgottenUpTo = note.ledgerUpTo;
+  }
 
   for entry in service.GetLedger() {
+    if IsDefined(entry) && Equals(entry.playthroughId, myId) && !sys.HasAppliedLedgerId(entry.id)
+       && entry.id <= forgottenUpTo {
+      sys.MarkAppliedLedgerId(entry.id);
+    }
     if IsDefined(entry) && Equals(entry.playthroughId, myId) && !sys.HasAppliedLedgerId(entry.id) {
       if entry.killerRivalId >= 0 {
         let existing = sys.FindRivalById(entry.killerRivalId);

@@ -13,6 +13,129 @@ calls, one AI order per NPC, no entity work inside attach events, removals only 
 `CBDeleteTaggedSafe`, behaviour-only ability kits, no runtime appearance changes, no loot drops
 from corpses.
 
+## Requests after 1.6.1
+
+### "Rivals should show their names in the scanner, like the named NCPD targets do."
+
+**Status: done in 1.6.2** (`UI/ScannerName.reds`).
+
+- A Rival scans under the name Cyberbane uses everywhere else, with their class underneath. These
+  are the same two lines the game shows for a named NCPD target.
+- It wraps `NPCPuppet.CompileScannerChunks`. The game builds the scan as normal, and then the name
+  chunk is written again for a Rival's body only.
+- The body carries its Rival id from set-up, so a corpse or somebody knocked out still scans as
+  themselves.
+- Checked against the 2.31 and 2.5 script source. Both build the name chunk with the same code,
+  and every call used exists with the same signature on both.
+
+### "It would be peak to track my Nemesis and go ambush them. Like they do with us."
+
+**Status: built in 1.6.2** (`Rivals/Whereabouts.reds`), using the staged plan this section first
+laid out. The research found real crash risk in the obvious version of the idea, so the version
+that was built is shaped around each risk. Each one is listed below with how it was answered.
+The in-game checks at the end are still owed: nothing here could be compiled or played where it
+was written.
+
+**What it does**
+
+1. **Seen.** When a Rival walks away from an encounter alive, the spot they were standing on is
+   recorded. That happens through `CBRivalEscapedByPlayer` (V lost them, which covers the retire
+   sweep and `CBChaseGiveUp`), `CBHandleEscape` and `CBHandleSpared`.
+2. **Tip.** On the slow tick, now and then, a gang at war with theirs that does not want V dead
+   texts V where, or the street does. A pin goes on the map. One lead at a time; it goes stale
+   after an in-game day.
+3. **Waiting.** Within about 80 m of the pin, on foot and calm, the Rival is placed there idle,
+   tagged `CB_Lair`.
+4. **The fight.** In combat or hurt by V, the tag becomes `CB_Rival` (`CBLairPromote`), and it is
+   an ordinary Rival encounter from then on.
+5. **Ambush.** Killed while still `CB_Lair`: extra renown, a History line, word from the tipster.
+
+**The risks found, and how each was answered**
+
+1. **Spawning at the riskiest moment** (V arriving by car or fast travel, while the world
+   streams). A waiting Rival is placed only when all of these hold:
+   - V has been on foot, out of combat and in a settled world for `LairCalmTicks` ticks;
+   - no story hold, safe area or job is in the way;
+   - nothing else of Cyberbane's is out or on its way;
+   - there is room under `MaxLiveSpawns`.
+
+   The spawn point passes every test an ordinary arrival passes (`CBNavSnap`, `CBSettleOnGround`,
+   `CBSafeAreaBlocksSpawn`, `CBPointOutOfSight`, `CBPointReachable`), and the body is created with
+   the same `CBCreateSpawn` call.
+2. **Bodies living away from V.** One waiting Rival at a time, held in session fields on the
+   system. They are taken back out through `CBDeleteTaggedSafe`, out of sight, in any of these
+   cases:
+   - V gets more than `LairLeaveDistance` away;
+   - the story takes the stage;
+   - the switch goes off;
+   - the body never appears.
+
+   A body that is down is never removed by this code. The mercy path settles it, or, if V did
+   not put them down, the slot is simply let go. While they wait, the Rival lane counts as busy
+   (`CBLaneBusy`), so a second Rival body cannot appear. Their state is Active rather than
+   Hunting, so `CBLiveRivalPresent` does not read them as a Rival out hunting V.
+3. **A pin for a place.** `MappinSystem.RegisterMappin(data, position)` exists on 2.31 and 2.5.
+   The game's own drop point and fast travel systems register their pins again in `OnRestored`
+   on every load, which they could not do if the save kept them. So a position pin does not
+   outlive the session, and Cyberbane re-pins from the stored lead the same way. Within a session
+   there is one pin, removed in every way a lead can end: it goes stale, is spent, is replaced,
+   the Rival is forgotten, Start over, the switch, the map markers setting.
+4. **The hunt working against it.** While waiting the body carries `CB_Lair`, not `CB_Rival`, so
+   `CBHuntTick`, `CBHuntOrderTag`, `CBChaseGiveUp`, the retire sweep and the lanes cannot see it.
+   `CBApplySpawnSetup` gives it no order at all. The boss bar waits for the fight.
+5. **Nowhere to send them.** Sightings are positions a body Cyberbane placed actually stood on.
+   They are filtered when noted and again when tipped (`CBLairPointUsable`: not at a job, not in
+   a safe area, not in a police-free zone). Then they are checked once more at placement.
+6. **No save may change shape.** Sightings live in the global service (`CBSighting`), where
+   Codeware allows the layout to change. Every read is checked against the Rival in the loaded
+   save: same playthrough, same id, same record, still Active or Hunting. Anything from a newer
+   branch of the playthrough is dropped.
+
+**Checks to run in game**
+
+- Fast travel to the data term nearest a lead, and separately drive into the district at speed.
+  Nobody may be placed until V is on foot and the world has settled.
+- Walk up, leave, and come back. The body must be removed and placed again, never duplicated.
+- Save with a lead pinned and load. Exactly one pin, no leftover body.
+- Get a lead near a gig or story objective. Nobody may be placed inside it.
+- Kill them silently, kill them loudly, knock them out, and let them run. Each must end the lead
+  and count exactly once. Knocking them out must not make a second Rival of them.
+- Confirm the pin shows with the Rival marker's icon. `Mappins.DefaultStaticMappin` with
+  `GangWatchVariant` is what the code asks for; if the game draws a different icon, that is the
+  line to change.
+
+**A wider version: Rivals who live in the city**
+
+The proposal: once somebody becomes a Rival they stay in the world, going about their business.
+V can hunt or ambush them at any time, and when their turn comes they still ambush V as they do
+now.
+
+As a design this is where a nemesis system wants to end up, and it fits the mod. It cannot be
+built literally, but it can be built as an illusion.
+
+- **Literally, no.** The game only loads ground, collision and navmesh around V, and only runs
+  NPCs near V. A Rival kept spawned on the far side of the city has nothing to stand on and
+  nothing to walk on. Up to 15 of them (`RivalMaxActiveHardCap`) would also use almost all of the
+  18-body ceiling (`MaxLiveSpawns`), leaving no room for the crews and apex squads they belong to.
+  Keeping their bodies in the save (`persistSpawn`) breaks the rule that Cyberbane writes no
+  entities to the save. That rule is part of why removing the mod makes no permanent change to the game.
+- **As an illusion, yes.** Each Rival gets a place, saved as data only: a district and a point,
+  which moves now and then on a timetable (home turf by day, somewhere else at night, gone to
+  ground after an escape). Their body exists only while V is near that point. Stage 3 above
+  already does this for one Rival, so this generalises it rather than replacing it. Rivals'
+  ambushes on V stay exactly as they are.
+- **What it adds to the risks above.** V would pass close to Rivals all the time, mostly while
+  driving, so spawns triggered by V's arrival would become routine rather than occasional. The
+  encounter code also assumes one Rival in the world at a time, through a single active Rival id.
+  So:
+  - only one Rival may be placed at a time;
+  - placement happens on foot only;
+  - anybody already hunting V always takes priority.
+- **The first version is in 1.6.2.** A Rival is found where they were last seen, through a tip,
+  and caught there. Free roaming (a place that moves on a timetable between sightings) can come
+  later, once the waiting Rival has proved itself in game; it would reuse everything above and
+  only change where the point comes from.
+
 ## Status after 1.5.0
 
 The backlog below was written before any of it was built. This is where each item stands now.

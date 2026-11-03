@@ -155,6 +155,11 @@ public func CBRivalEscapedByPlayer(sys: ref<CyberbaneSystem>, game: GameInstance
     return;
   }
   let content = CBContent(game);
+  // Where they were standing when V shook them off: both callers run this before the body is
+  // removed, so it is still there to read (Rivals/Whereabouts.reds).
+  if EntityID.IsDefined(got.spawnedEntityId) {
+    CBNoteRivalSeen(sys, game, got, GameInstance.FindEntityByID(game, got.spawnedEntityId) as ScriptedPuppet);
+  }
   got.encounters += 1;
   CBPromoteRival(got, content, CBGameSeconds(game));
   got.huntTicks = CBConfig.RivalAfterEscapeTicks();

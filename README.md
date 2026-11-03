@@ -23,7 +23,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.6.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.6.2).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -113,9 +113,16 @@ in active development. This page describes what the mod does and how it installs
   of an apex squad, and they keep getting stronger: every escape, every mercy and every time
   they put you down makes the one who comes back harder than the one who left. Each arrives
   with a bar at the top of the screen carrying their name, and texts you when they have found
-  you. Put down the one hunting you and it is finally finished. Anyone who kills you can also
+  you. Scan one and the scanner gives that name too, over their class, the way it names an NCPD
+  target. Put down the one hunting you and it is finally finished. Anyone who kills you can also
   come back, wearing the face they had when they did it, and dropping a crew's member can bring
   a gang-mate gunning for you.
+- **You can go after them too.** A Rival who walks away from you alive gets seen somewhere
+  afterwards. Now and then a gang at war with theirs, or somebody on the street, texts you where,
+  and a pin goes on your map. Go there on foot and they are there, not expecting anybody: catch
+  them before they react and the street hears about it. Wait too long and they move on. They still
+  come for you on their own schedule as well. **Tips on where Rivals are**, under Rivals, turns
+  this off.
 - **Rivals have traits, and weak spots.** A Tough Rival takes more killing, an Armored one
   shrugs off more of it, a Deadeye finds the gap in your armour, a Quick one dodges, a Pack
   Leader brings two of their own (so does a crew leader, and a lieutenant brings one), a
@@ -286,8 +293,9 @@ its own.
   Automatic for your highest one. Paying a gang off and forgetting your Rivals happen a few seconds
   after you go back to the game, and can be cancelled until then. On History, Start over (it asks
   twice) clears everything you earned by playing and leaves everything that is read off your build,
-  so your chrome and your look are untouched. Mod Settings, bottom right, goes
-  straight to Cyberbane's settings.
+  so your chrome and your look are untouched. Forgetting your Rivals and starting over both stick:
+  quitting straight afterwards, or loading an older save of the same playthrough, does not bring
+  anything back. Mod Settings, bottom right, goes straight to Cyberbane's settings.
 
 ## Uninstalling
 
@@ -360,7 +368,9 @@ the texts; everything off means the first you know about it is when they walk ro
 Under Debug there is **Reset all Cyberbane data**. Turn it on, hit Apply, and everything
 Cyberbane has recorded on this save is cleared: Renown, Dread, Conduct, every faction and
 district, your Rivals, your titles, the log and all the tallies. The switch turns itself back
-off once it is done, and it cannot be undone.
+off once it is done, and it cannot be undone. Every other save of the same playthrough is
+cleared too the next time you load it, so an older save cannot bring it back. A save from a
+different playthrough is never touched, even if you load one before going back to the game.
 
 Your cyberware rating is not part of that, because it is not stored progress. It is read back
 off the chrome you are actually wearing every few seconds, so it returns on its own.

@@ -57,6 +57,24 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
   private let m_pendingRivalPurge: Bool;      // "forget every rival" chosen on the Hub while paused, done on resume
+  // The global service, fetched at session start or on a settled tick and reused, the same way
+  // the content cache is (see GetContent). Session only.
+  private let m_playService: ref<CyberbaneService>;
+  // The forget chosen on the Hub is already on record in the service, and what the record said
+  // before it, so "Keep them" can put it back exactly. Session only.
+  private let m_purgeNoted: Bool;
+  private let m_purgeUndoRival: Int32;
+  private let m_purgeUndoLedger: Int32;
+  // Hunting a Rival down (Rivals/Whereabouts.reds). Session only: the body is not saved, and the
+  // pin does not survive a load, so neither does the record of them.
+  private let m_lairActive: Bool;             // a Rival is waiting at their place right now
+  private let m_lairRivalId: Int32;           // who
+  private let m_lairCalmTicks: Int32;         // ticks V has been on foot, out of combat, settled
+  private let m_lairPlacedTick: Int32;        // when they were placed, to give up on a no-show
+  private let m_leadPinned: Bool;             // a pin is on the map for somebody's place
+  private let m_leadPinRival: Int32;          // whose
+  private let m_leadPinId: NewMappinID;
+  private let m_lastTipAt: Float;             // game seconds of the last tip, this session
   private let m_threatBar: ref<CBThreatBar>;
   // The messenger. Session-only by design; see the note at the top of UI/PhoneMessages.reds
   // about why a persisted thread is not worth wiping everybody's reputation for.
@@ -315,8 +333,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !this.m_sessionStarted {
       this.m_sessionStarted = true;
       CBDeleteTaggedSafe(this.GetGameInstance(), n"Cyberbane");
-      // Apply any deaths recorded in the global ledger for this playthrough.
-      CBApplyDeathLedger(this, this.GetGameInstance());
+      // What the player has told Cyberbane about this playthrough on any save of it: Rivals they
+      // forgot, or that they started over. Read before the ledger, because a forgotten Rival must
+      // not be promoted, and a death from before the forget must not make a new one.
+      let startedOver = this.ApplyPlaythroughNotes();
+      // Apply any deaths recorded in the global ledger for this playthrough. Not for one that is
+      // about to be started over: the reset would wipe what it made a moment later.
+      if !startedOver {
+        CBApplyDeathLedger(this, this.GetGameInstance());
+      }
       // And take any story characters off the Rival roster before they can be sent again.
       CBPruneUniqueRivals(this);
     }
@@ -407,7 +432,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         // ignored it.
         if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival")
            || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort")
-           || des.IsTagged(id, n"CB_Scout") {
+           || des.IsTagged(id, n"CB_Scout") || des.IsTagged(id, n"CB_Lair") {
           CBScheduleSpawnSetup(this.GetGameInstance(), id, riding);
         }
 
@@ -667,6 +692,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // lookup happens here, in a safe context, so the slow tick can reuse the cached reference
     // instead of re-locking a possibly-dead container (crash safety).
     this.GetContent();
+    this.WarmPlaythroughService();   // same reasoning, for the global service (1.6.2)
     this.EnsureCallbacks();   // last-resort retry if the callback system was not up earlier
 
     // Carry out any entity cleanup that was deferred out of a lifecycle callback. This tick
@@ -681,7 +707,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // settled, so clearing live encounters and deleting spawned entities is safe here and
     // would not have been in the settings callback.
     let rtReset = CyberbaneRuntime.Get();
-    if IsDefined(rtReset) && rtReset.TakeHardResetRequest() {
+    if IsDefined(rtReset) && rtReset.TakeHardResetRequest(this.m_playthroughId) {
       this.HardReset();
       CBSystemNote(game, "reputation wiped. Night City has never heard of you.", 6.0);
       this.GetPhone().Clear();
@@ -769,6 +795,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBProcessCarTopUp(this, game);      // anybody a car was meant to bring and did not walks in
     CBHuntTick(this, game);             // the people after you search, find you, lose you
     CBRivalHuntTick(this, game);        // confirms a queued rival actually arrived
+    CBWhereaboutsTick(this, game);      // a Rival waiting where they were last seen, and its pin
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) && !heavyStreaming {
@@ -919,8 +946,186 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_pendingPeace;
   }
 
+  // Chosen on the Hub, carried out on resume. On record the moment it is chosen, so quitting from
+  // the pause menu cannot lose it and no older save of this playthrough can bring them back;
+  // "Keep them" takes the record back out exactly as it was.
   public func RequestRivalPurge(wanted: Bool) -> Void {
+    if wanted && !this.m_pendingRivalPurge {
+      this.NoteRivalPurge();
+    }
+    if !wanted && this.m_pendingRivalPurge {
+      this.UnnoteRivalPurge();
+    }
     this.m_pendingRivalPurge = wanted;
+  }
+
+  // ---- What the player has told Cyberbane about this playthrough (1.6.2) ------------------
+
+  // The global service, cached. Only ever fetched at session start, which the death ledger has
+  // always done, or from a settled tick, never from a menu or a transition.
+  public func GetPlayService() -> ref<CyberbaneService> {
+    return this.m_playService;
+  }
+
+  private func WarmPlaythroughService() -> Void {
+    if !IsDefined(this.m_playService) {
+      this.m_playService = CyberbaneService.Get();
+    }
+  }
+
+  // Every Rival id this save has handed out so far. -1 when it has handed out none.
+  public func HighestRivalId() -> Int32 {
+    return this.m_nextRivalId - 1;
+  }
+
+  private func NoteRivalPurge() -> Void {
+    this.m_purgeNoted = false;
+    let svc = this.GetPlayService();
+    if !IsDefined(svc) || !IsNameValid(this.m_playthroughId) {
+      return;   // the tick notes it when it carries the forget out
+    }
+    let before = svc.GetForgetNote(this.m_playthroughId);
+    this.m_purgeUndoRival = IsDefined(before) ? before.rivalUpTo : -1;
+    this.m_purgeUndoLedger = IsDefined(before) ? before.ledgerUpTo : -1;
+    svc.NoteForget(this.m_playthroughId, this.HighestRivalId(), svc.LastLedgerId());
+    this.m_purgeNoted = true;
+  }
+
+  private func UnnoteRivalPurge() -> Void {
+    let svc = this.GetPlayService();
+    if this.m_purgeNoted && IsDefined(svc) {
+      svc.RestoreForget(this.m_playthroughId, this.m_purgeUndoRival, this.m_purgeUndoLedger);
+    }
+    this.m_purgeNoted = false;
+  }
+
+  // Start over, chosen on the Hub. On record for this playthrough at once, for the same reasons as
+  // forgetting the Rivals; the reset itself happens on resume, from the settled tick.
+  public func RequestStartOver() -> Void {
+    let svc = this.GetPlayService();
+    if IsDefined(svc) {
+      svc.Retire(this.m_playthroughId);
+    }
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) {
+      rt.QueueHardResetFor(this.m_playthroughId);
+    }
+  }
+
+  // Read the service's notes on this playthrough and act on them. Called once a session, from
+  // StartSession, which is where the death ledger has always read the same service. Returns true
+  // when the playthrough was started over on some save and this one is about to be reset too.
+  private func ApplyPlaythroughNotes() -> Bool {
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) {
+      rt.SetSessionPlaythrough(this.m_playthroughId);
+    }
+    this.WarmPlaythroughService();
+    let svc = this.GetPlayService();
+    if !IsDefined(svc) || !IsNameValid(this.m_playthroughId) {
+      return false;
+    }
+    if svc.IsRetired(this.m_playthroughId) {
+      // Started over on another save of this playthrough. The reset itself waits for the first
+      // settled tick, the same as a reset chosen on the Hub, because it sweeps the world.
+      if IsDefined(rt) {
+        rt.QueueHardResetFor(this.m_playthroughId);
+      }
+      CBLog.Info(n"Core", s"Playthrough \(NameToString(this.m_playthroughId)) was started over on a later save; this one is reset to match.");
+      return true;
+    }
+    let note = svc.GetForgetNote(this.m_playthroughId);
+    if IsDefined(note) && note.rivalUpTo >= 0 {
+      let removed = this.RemoveRivalsUpTo(note.rivalUpTo);
+      // New Rivals are numbered past everything that was forgotten, so one made from here on can
+      // never be mistaken for one of them on a later load.
+      if this.m_nextRivalId <= note.rivalUpTo {
+        this.m_nextRivalId = note.rivalUpTo + 1;
+      }
+      if removed > 0 {
+        CBLog.Info(n"Rivals", s"Forgot \(removed) rival(s) that were forgotten on a later save of this playthrough.");
+      }
+    }
+    return false;
+  }
+
+  // ---- Hunting a Rival down (Rivals/Whereabouts.reds) -------------------------------------
+
+  public func IsLairActive() -> Bool {
+    return this.m_lairActive;
+  }
+
+  public func GetLairRivalId() -> Int32 {
+    return this.m_lairRivalId;
+  }
+
+  public func GetLairPlacedTick() -> Int32 {
+    return this.m_lairPlacedTick;
+  }
+
+  public func SetLair(rivalId: Int32) -> Void {
+    this.m_lairActive = true;
+    this.m_lairRivalId = rivalId;
+    this.m_lairPlacedTick = this.m_tickCount;
+  }
+
+  public func ClearLair() -> Void {
+    this.m_lairActive = false;
+  }
+
+  public func GetLairCalmTicks() -> Int32 {
+    return this.m_lairCalmTicks;
+  }
+
+  public func SetLairCalmTicks(ticks: Int32) -> Void {
+    this.m_lairCalmTicks = ticks;
+  }
+
+  public func IsLeadPinned() -> Bool {
+    return this.m_leadPinned;
+  }
+
+  public func GetLeadPinRival() -> Int32 {
+    return this.m_leadPinRival;
+  }
+
+  public func GetLeadPinId() -> NewMappinID {
+    return this.m_leadPinId;
+  }
+
+  public func SetLeadPin(rivalId: Int32, id: NewMappinID) -> Void {
+    this.m_leadPinned = true;
+    this.m_leadPinRival = rivalId;
+    this.m_leadPinId = id;
+  }
+
+  public func ClearLeadPin() -> Void {
+    this.m_leadPinned = false;
+  }
+
+  public func GetLastTipAt() -> Float {
+    return this.m_lastTipAt;
+  }
+
+  public func SetLastTipAt(at: Float) -> Void {
+    this.m_lastTipAt = at;
+  }
+
+  // Take every Rival numbered up to `upTo` off the roster. Returns how many went.
+  public func RemoveRivalsUpTo(upTo: Int32) -> Int32 {
+    let removed = 0;
+    let i = ArraySize(this.m_rivals) - 1;
+    while i >= 0 {
+      let r = this.m_rivals[i];
+      if !IsDefined(r) || r.id <= upTo {
+        ArrayErase(this.m_rivals, i);
+        if IsDefined(r) {
+          removed += 1;
+        }
+      }
+      i -= 1;
+    }
+    return removed;
   }
 
   public func IsRivalPurgePending() -> Bool {
@@ -934,6 +1139,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   private func ServiceHubActions(game: GameInstance) -> Void {
     if this.m_pendingRivalPurge {
       this.m_pendingRivalPurge = false;
+      // On record since it was chosen, unless the service could not be reached from the menu;
+      // in which case it is noted now, before anything is cleared, so it sticks either way.
+      if !this.m_purgeNoted {
+        this.NoteRivalPurge();
+      }
+      this.m_purgeNoted = false;
       let removed = CBPurgeRivals(this, game);
       CBSystemNote(game, s"cleared \(removed) rivals.", 4.0);
     }
@@ -1879,6 +2090,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRumorTick(this, game);
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
+    CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
     CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
 
@@ -1968,6 +2180,17 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // ---- Rivals (spec §10) ------------------------------------------------
   public func AllocateRivalId() -> Int32 {
+    // Ids start at 1. Everything that holds a Rival id in a slot - the active encounter, the
+    // warning already sent, the car in flight or the car that failed - uses 0 for "nobody", and
+    // this counter started at 0, so the first Rival on every save (and the first after Start
+    // over) was nobody to those slots. They arrived without texting first (the warning slot
+    // already read as theirs), never came by car (the failed-car slot always matched them), and
+    // fleeing V at low health was taken for an ordinary ganger fleeing, which made a second
+    // Rival out of them instead of promoting them. A save that already has a Rival 0 keeps them
+    // as they are; only new ids change.
+    if this.m_nextRivalId < 1 {
+      this.m_nextRivalId = 1;
+    }
     let id = this.m_nextRivalId;
     this.m_nextRivalId += 1;
     return id;
@@ -2050,6 +2273,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBUntrackTagged(game, n"CB_Squad");
     CBUntrackTagged(game, n"CB_Apex");
     CBUntrackTagged(game, n"CB_Escort");
+    CBUntrackTagged(game, n"CB_Lair");
+    // The pin on somebody's place is the map's, not an NPC's, so it is taken down by hand.
+    CBDropLead(this, game);
+    this.m_lairActive = false;
     CBDeleteTaggedSafe(game, n"Cyberbane");
 
     // The headline scores.
@@ -2087,7 +2314,18 @@ public class CyberbaneSystem extends ScriptableSystem {
     // coming back as Killer Rivals. The global ledger is shared across saves and is left
     // alone; this save simply stops answering to its old id.
     ArrayClear(this.m_appliedLedgerIds);
+    // And every older save of the old one is started over too when it next loads, so loading one
+    // cannot bring back what was wiped here (1.6.2). Where its Rivals were seen goes with it.
+    let svc = this.GetPlayService();
+    if IsDefined(svc) {
+      svc.Retire(this.m_playthroughId);
+      svc.DropPlaythroughSightings(this.m_playthroughId);
+    }
     this.m_playthroughId = CBGeneratePlaythroughId();
+    let rtNow = CyberbaneRuntime.Get();
+    if IsDefined(rtNow) {
+      rtNow.SetSessionPlaythrough(this.m_playthroughId);
+    }
 
     // Live encounters and everything queued behind them.
     this.m_activeRivalId = 0;
@@ -2248,6 +2486,12 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   private func OnDetach() -> Void {
     CBLog.Verbose(n"Core", "Cyberbane detaching.");
+    // No playthrough is loaded now, so a reset asked for from the main menu is for the next save.
+    // The same runtime lookup the log line above has always made here (CBCurrentLogLevel).
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) {
+      rt.SetSessionPlaythrough(n"");
+    }
   }
 
   // Idempotent: safe to call from both OnAttach and OnRestored.

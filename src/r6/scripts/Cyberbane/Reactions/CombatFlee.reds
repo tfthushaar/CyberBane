@@ -177,7 +177,10 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   e.at = CBGameSeconds(game);
   e.scarMask = puppet.cbScarMask;
   let des = GameInstance.GetDynamicEntitySystem();
-  e.wasRival = IsDefined(des) && des.IsTagged(e.entityId, n"CB_Rival");
+  // A Rival waiting at their place is still a Rival: the first shot can drop them low before the
+  // tick that turns the encounter into an ordinary one has run (Rivals/Whereabouts.reds).
+  e.wasRival = IsDefined(des)
+               && (des.IsTagged(e.entityId, n"CB_Rival") || des.IsTagged(e.entityId, n"CB_Lair"));
   sys.AddEscapee(e);
 
   // Whether they actually break and run. Steadier ranks hold their ground (CBNerve), and an
@@ -314,8 +317,13 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   // into a Debtor and promotes them - was never called from anywhere in the mod. That also
   // left the mercy term of the nemesis ladder permanently zero, so a Rival only ever got
   // harder from escaping, never from being let go.
-  if IsDefined(e.puppet) {
-    let already = CBFindRivalByBody(sys, e.puppet.GetEntityID());
+  //
+  // Asked of the entity id the escapee was logged with, not of the puppet. The puppet is only a
+  // weak reference, and it is gone by the time this runs whenever the body streamed out or was
+  // cleared away first - which is one of the two ways this resolves at all. Asking the puppet
+  // took every such Rival for a stranger and made a second Rival of the same person.
+  if EntityID.IsDefined(e.entityId) {
+    let already = CBFindRivalByBody(sys, e.entityId);
     if IsDefined(already) {
       let st = sys.GetStats();
       if IsDefined(st) {
@@ -326,6 +334,8 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       // rather than inside CBRivalSparedByV, which has no system handle to credit against.
       CBCreditMercy(sys, already.faction, CBConfig.MercyRivalCredit());
       already.scarMask = already.scarMask | e.scarMask;
+      // Left lying here, alive. Somebody will have seen it (Rivals/Whereabouts.reds).
+      CBNoteRivalSeen(sys, game, already, e.puppet);
       // The encounter is over, so close it the way every other ending does.
       //
       // This was the one way out of a Rival fight that tidied nothing up. Beating one to death
@@ -362,6 +372,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now);
   if IsDefined(nr) {
     nr.scarMask = e.scarMask;   // they remember how it went
+    CBNoteRivalSeen(sys, game, nr, e.puppet);
     nr.state = EnumInt(ECBRivalState.Hunting);
     if CBMessagesOn() {
       CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, nr)) walked away from you breathing. They will not forget it.");
@@ -382,6 +393,8 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   if e.wasRival && sys.GetActiveRivalId() > 0 {
     let r = sys.FindRivalById(sys.GetActiveRivalId());
     if IsDefined(r) {
+      // Where they were when V last saw them, for whoever passes it on (Rivals/Whereabouts.reds).
+      CBNoteRivalSeen(sys, game, r, e.puppet);
       CBRivalEscaped(r, content, now, district, true);
       r.state = EnumInt(ECBRivalState.Hunting);
       if toasts && IsDefined(content) {
@@ -399,6 +412,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Survivor, district, now);
     if IsDefined(nr) {
       nr.scarMask = e.scarMask;
+      CBNoteRivalSeen(sys, game, nr, e.puppet);
     }
     if IsDefined(nr) {
       nr.state = EnumInt(ECBRivalState.Hunting);

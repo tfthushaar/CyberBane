@@ -1013,11 +1013,11 @@ public class CBHud {
       if this.m_tab == CBHudHistoryTab() {
         if this.m_resetArmed {
           this.m_resetArmed = false;
-          let rtReset = CyberbaneRuntime.Get();
-          if IsDefined(rtReset) {
-            rtReset.RequestHardReset();
-            CBLog.Info(n"UI", "Start over chosen on the Hub; the next tick back in the game wipes this save's Cyberbane data.");
-          }
+          // For this playthrough and no other, and on record at once (CyberbaneSystem,
+          // RequestStartOver): loading another save from here cannot be wiped by it, and an
+          // older save of this playthrough is started over too when it next loads.
+          sys.RequestStartOver();
+          CBLog.Info(n"UI", "Start over chosen on the Hub; the next tick back in the game wipes this playthrough's Cyberbane data.");
         } else {
           this.m_resetArmed = true;
         }
@@ -1538,6 +1538,10 @@ public class CBHud {
     let rightCol = "waiting their turn";
     if hunting {
       rightCol = "here now";
+      // Not after V: standing where they were seen, for V to come to (Rivals/Whereabouts.reds).
+      if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
+        rightCol = "at their place";
+      }
     } else {
       if onClock && sys.GetLaneTicks(CBLaneRival()) > 0 {
         rightCol = "arrives " + CBWhen(sys.GetLaneTicks(CBLaneRival()));
@@ -1547,6 +1551,10 @@ public class CBHud {
         } else {
           if StrLen(this.m_holdLabel) > 0 {
             rightCol = this.m_holdLabel;
+          }
+          let lead = CBCurrentLead(sys, sys.GetGameInstance());
+          if IsDefined(lead) && lead.rivalId == r.id {
+            rightCol = "you know where";
           }
         }
       }
@@ -2080,7 +2088,7 @@ func CBRivalSourceLine(source: Int32) -> String {
 
 func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32) -> String {
   if sys.IsRivalPurgePending() {
-    return "Every rival is forgotten a few seconds after you are back in the game.\n\nThe ones out looking for you stop, and nobody on this list comes after you again.\nClick the button again to keep them after all.";
+    return "Every rival is forgotten a few seconds after you are back in the game.\n\nThe ones out looking for you stop, and nobody on this list comes after you again.\nIt sticks: quitting now, or loading an older save of this playthrough, forgets them too.\nClick the button again to keep them after all.";
   }
   let count = sys.CountActiveRivals();
   if count <= 0 {
@@ -2102,6 +2110,14 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32)
       out += ", and next in line";
     }
     out += ".\n";
+    // Somebody told V where they were seen (Rivals/Whereabouts.reds).
+    let lead = CBCurrentLead(sys, game);
+    if IsDefined(lead) && lead.rivalId == r.id {
+      let from = IsNameValid(lead.tipFaction) ? CBFactionLabel(lead.tipFaction) : "the street";
+      let ago = CBHudSince(CBGameSeconds(game), lead.seenAt);
+      let when = StrLen(ago) > 0 ? ", " + ago + " ago" : "";
+      out += s"Word from \(from): seen \(CBPlacePhrase(lead.district))\(when). Go on foot and they may not see you coming.\n";
+    }
     let strong = CBRivalTraitList(content, r, false, 6);
     let weak = CBRivalTraitList(content, r, true, 6);
     if StrLen(strong) > 0 {
@@ -2252,6 +2268,10 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
       line = StrLen(gang) > 0 ? s"You put down a rank \(RoundF(e.value)) rival from \(gang)."
                               : s"You put down a rank \(RoundF(e.value)) rival.";
     } else {
+      if Equals(e.kind, n"RivalAmbushed") {
+        line = StrLen(gang) > 0 ? s"You caught a rank \(RoundF(e.value)) rival from \(gang) where they were lying low. They never saw you."
+                                : s"You caught a rank \(RoundF(e.value)) rival where they were lying low. They never saw you.";
+      } else {
       if Equals(e.kind, n"Deed") {
         line = "A job of yours made the rounds.";
       } else {
@@ -2292,6 +2312,7 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
             }
           }
         }
+      }
       }
     }
   }
