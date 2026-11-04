@@ -211,11 +211,18 @@ public abstract class CBConfig {
   public static func FleeHealthThreshold() -> Float = 25.0   // health % below which they may run
   public static func FleeChance() -> Float = 0.5             // else they fight to the death
   public static func EscapeDistance() -> Float = 60.0        // ran this far from V = got away
-  public static func EscapeTimeoutSeconds() -> Float = 120.0 // give up tracking an escapee after this
+  // Both of these are fast ticks, about a real second each. They were compared against the
+  // in-game clock, which runs about eight times faster, so "two minutes" to get away was fifteen
+  // real seconds and somebody V knocked out was declared spared three real seconds later - in the
+  // middle of the fight, with a text saying they had walked away breathing, and before V had any
+  // chance to finish them.
+  public static func EscapeTimeoutTicks() -> Int32 = 120    // give up tracking an escapee after this
   // Someone you put down and left does not run anywhere, so there is nothing to wait for.
   // Two minutes of standing around before the Rival existed is why sparing felt like it did
-  // nothing at all.
-  public static func SparedResolveSeconds() -> Float = 25.0
+  // nothing at all. It also needs V to have walked off: out of the fight, or well away.
+  public static func SparedResolveTicks() -> Int32 = 25
+  // However the fight goes, a mercy is settled by this point.
+  public static func SparedResolveMaxTicks() -> Int32 = 180
   public static func EscapeeCap() -> Int32 = 24
 
   // ---- Vendors (spec §9.6) ---------------------------------------------
@@ -240,11 +247,9 @@ public abstract class CBConfig {
   // ---- Hit squads (spec §9.9) ------------------------------------------
   public static func HitSquadBaseChance() -> Float = 0.04
   public static func HitSquadFactionCooldownDays() -> Float = 2.0
-  public static func HitSquadGlobalCooldownMinutes() -> Float = 45.0
   // Further out than an ambush, out of sight, and they have to come and find V (Spawn/Hunt.reds).
   // These were 42 to 50 m, which is behind you rather than coming for you.
   public static func HitSquadMinSpawnDistance() -> Float = 85.0
-  public static func HitSquadDespawnMinutes() -> Float = 5.0
   public static func HitSquadDespawnDistance() -> Float = 300.0
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
   // Close enough that V meets them before driving off. At 35 m a Rival could spawn behind
@@ -620,6 +625,9 @@ public abstract class CBConfig {
   public static func ApexSpawnDistance() -> Float = 90.0
   // Muscle that comes in with them. Built from the gang's rank-and-file record.
   public static func ApexEscortCount() -> Int32 = 2
+  // How long, in fast ticks, an apex squad that arrived short keeps walking in its missing
+  // chairs (Spawn/FactionApex.reds, CBApexMusterTick).
+  public static func ApexMusterTicks() -> Int32 = 120
   // The apex is built from a gang archetype, which on its own is nowhere near a boss, so the
   // spawned one is lifted to boss grade. The lift scales with how dangerous V actually is
   // (menace: level, Street Cred and skills), so a maxed-out merc gets a real fight instead of
@@ -917,10 +925,41 @@ public abstract class CBConfig {
   public static func CapForgetNotes() -> Int32 = 32
   public static func CapRetiredIds() -> Int32 = 64
   public static func CapSightings() -> Int32 = 48
+  public static func CapGangPower() -> Int32 = 96
+
+  // ---- Turf wars (Model/Territory.reds) -----------------------------------
+  // What V costs a gang: each of their people put down, an officer or elite, a boss, a Rival of
+  // theirs, a crew wiped out, their apex squad wiped out. Knocked out counts half.
+  public static func GangLossMember() -> Float = 0.8
+  public static func GangLossOfficer() -> Float = 3.0
+  public static func GangLossBoss() -> Float = 8.0
+  public static func GangLossRival() -> Float = 6.0
+  public static func GangLossRivalPerRank() -> Float = 2.0
+  public static func GangLossCrew() -> Float = 6.0
+  public static func GangLossApexSquad() -> Float = 10.0
+  // How fast they rebuild while V leaves them alone, and how low they can go.
+  public static func GangRecoverPerDay() -> Float = 12.0
+  public static func GangStrengthFloor() -> Float = 15.0
+  // The words the street uses, and the texts that go with crossing them.
+  public static func GangBleedingStrength() -> Float = 50.0
+  public static func GangBrokenStrength() -> Float = 30.0
+  // Below this, a gang's districts are open to a gang at war with them from next door, and the push
+  // such a gang makes, against a native's strength squared.
+  public static func TurfOpenStrength() -> Float = 55.0
+  public static func TurfInvaderWeight() -> Float = 0.6
+  // Day-to-day drift in who holds how much, as a fraction either way.
+  public static func TurfDrift() -> Float = 0.2
+  // A share of a district at least this large means a gang is on its own streets there.
+  public static func TurfPresenceShare() -> Float = 0.2
 
   // ---- Hunting a Rival down (Rivals/Whereabouts.reds) --------------------
   // How likely a tip is on each slow tick (one in-game hour) when one could be given.
   public static func TipChancePerHour() -> Float = 0.3
+  // And how much likelier, for each in-game hour a sighting has gone untold past the minimum age.
+  public static func TipChanceRisePerHour() -> Float = 0.25
+  // A Rival's last seen position stands in for their body for this many fast ticks after it was
+  // taken (Rivals/Whereabouts.reds, CBNoteRivalSeen).
+  public static func RivalLastPosFreshTicks() -> Int32 = 180
   // In-game hours between tips, and how old a sighting must be before anybody passes it on.
   public static func TipGapHours() -> Float = 4.0
   public static func TipMinAgeHours() -> Float = 1.0

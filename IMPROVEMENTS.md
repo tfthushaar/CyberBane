@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.6.2. The "Requests after 1.6.1" section at the top is the current one;
+The released version is 1.6.3. The "Requests after 1.6.2" section at the top is the current one;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -15,6 +15,55 @@ this repository: no police system calls, one AI order per NPC, no entity work in
 events, removals only through `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing touching
 an NPC that has left the world, behaviour-only ability kits, no runtime appearance changes, no
 loot drops from corpses, and UI as data rather than injected widgets.
+
+## Requests after 1.6.2
+
+### "Sometimes enemies spawned by Cyberbane despawn mid fight. Hit squads, not Rivals."
+
+**Status: it was a bug, fixed in 1.6.3** (`Spawn/HitSquad.reds`, `Spawn/Hunt.reds`).
+
+`CBHitSquadTick` still carried the crew despawn from before the hunt existed: on the slow tick, once
+`HitSquadDespawnMinutes * 60` had passed since the crew was sent, every living `CB_Squad` member out
+of view was deleted and the rest were orphaned (and deleted the moment they were out of view). That
+was compared against `CBGameSeconds`, so "five minutes" was under forty real seconds, and the slow
+tick runs once an in-game hour - any fight that hourly look landed in lost its flankers. Only
+`CB_Squad` was ever swept, which is why Rivals were never affected.
+
+**The fix:** the timer is gone, not retuned - no length of it can know whether a fight is on. The
+hunt owns a crew's lifetime (`CBChaseGiveUp` when V gets away, the story stand-down). The two jobs
+the timer also did moved where they belong: a survivor of a crew V gave the slip becomes a Hunter
+Rival in `CBChaseGiveUp`, and knocked-out crew are cleared by the remains sweep. The combat release
+no longer lets go of anybody while somebody of ours is close to V or can see V, and the Rival
+retire backstop does not fire while the hunt is Located.
+
+### "I'm not getting tips to hunt my Rivals."
+
+**Status: it was a bug, fixed in 1.6.3** (`Rivals/Whereabouts.reds`).
+
+A sighting needed the body attached at the moment the encounter ended, and the commonest escape -
+V outrunning them - ends with the body 120 m+ away and streamed out. The Rival lane's queued Rival
+was also excluded from tips, and that is nearly always the Rival V just lost. Now the active Rival's
+last standing position is kept every other tick and used as a fallback (escapees keep theirs too),
+being queued no longer blocks a tip (finding them first takes them off the queue), and an untold
+sighting gets likelier to be told the longer it waits (`TipChanceRisePerHour`).
+
+### "The hit squads don't contain apex members." / "A hit squad should contain an apex squad and other crew."
+
+**Status: done in 1.6.3** (`Spawn/HitSquad.reds`, `Spawn/FactionApex.reds`).
+
+Only a vendetta crew brought its apex, and only through `CBSendByCar`, which refuses whenever V is
+on foot - so no crew ever had one. Every crew is now its gang's apex squad plus the rest
+(`CBCrewBringsApex`, one decision for the spawn, the text and the HUD). An apex squad is always
+four: every placement marks its chair, and `CBApexMusterTick` walks in the chairs still missing.
+
+### "Gang Retaliation has a cool territory war graph - can we borrow from it?"
+
+**Status: done in 1.6.3** (`Model/Territory.reds`, the Hub's Turf screen).
+
+Gang strength falls with what V does to a gang and recovers over in-game days, districts are split
+between their gangs by strength, and a broken gang's district is pushed into by a gang at war with
+it from next door. Strength lives in the play service, as sightings do, so no save changes shape.
+The Turf screen is one row per district drawn with the existing row grid and text meters.
 
 ## Requests after 1.6.1
 

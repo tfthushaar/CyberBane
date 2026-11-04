@@ -31,13 +31,18 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
 
   // Retire a Rival who has been left standing around too long.
   //
-  // This used to run at HitSquadDespawnMinutes * 120 in-game seconds, which is about ten real
+  // This used to run at the old crew despawn time * 120 in-game seconds, which is about ten real
   // seconds: a Rival was being untagged almost as soon as they arrived. If the engine then
   // could not destroy the puppet because V was fighting it, the body stayed in the world with
   // no tag, the kill was never attributed, and the same Rival returned forever.
   //
   // Now it is a sensible stretch, and it never fires while V is in a fight.
-  let fighting = IsDefined(player) && player.IsInCombat();
+  //
+  // Nor while the hunt has eyes on V. V being out of combat for one moment - reloading behind a
+  // wall, sneaking round to flank - is not the encounter having gone stale, and the hunt is what
+  // knows whether the Rival is still on V (Spawn/Hunt.reds). This is the backstop for a Rival
+  // nobody is engaging, which is exactly when the hunt is not Located.
+  let fighting = (IsDefined(player) && player.IsInCombat()) || sys.GetHuntState() == CBHuntLocated();
   if IsDefined(cd) && !fighting && des.IsPopulated(n"CB_Rival")
      && (now - cd.lastRivalEncounterAt) > CBConfig.RivalRetireGameSeconds() {
     // You got away from them, and that has to count.
@@ -156,10 +161,13 @@ public func CBRivalEscapedByPlayer(sys: ref<CyberbaneSystem>, game: GameInstance
   }
   let content = CBContent(game);
   // Where they were standing when V shook them off: both callers run this before the body is
-  // removed, so it is still there to read (Rivals/Whereabouts.reds).
+  // removed, so it is still there to read if it is still in the world at all, and where it was
+  // last seen standing if it is not (Rivals/Whereabouts.reds).
+  let lostBody: ref<ScriptedPuppet>;
   if EntityID.IsDefined(got.spawnedEntityId) {
-    CBNoteRivalSeen(sys, game, got, GameInstance.FindEntityByID(game, got.spawnedEntityId) as ScriptedPuppet);
+    lostBody = GameInstance.FindEntityByID(game, got.spawnedEntityId) as ScriptedPuppet;
   }
+  CBNoteRivalSeen(sys, game, got, lostBody);
   got.encounters += 1;
   CBPromoteRival(got, content, CBGameSeconds(game));
   got.huntTicks = CBConfig.RivalAfterEscapeTicks();

@@ -3,6 +3,109 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.3] - 2026-11-04
+
+Three reports fixed at the root, and gangs now fight over the city's streets. Crews no longer
+vanish in the middle of a fight, tips on where your Rivals are actually arrive, and every crew a
+gang sends is led by its apex squad. Turf wars are new: hurting a gang weakens it, and a broken
+gang loses its districts to the gang at war with it next door.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **Crews vanished in the middle of fights.** Reported as "enemies spawned by Cyberbane despawn
+  mid fight, with hit squads, not Rivals". A timer left over from before crews hunted you deleted
+  every living crew member you could not see "five minutes" after the crew was sent. Those were
+  five minutes of the in-game clock, which is under forty real seconds, checked once an in-game
+  hour: so whenever that hourly check fell during a fight, anybody flanking behind you or ducked
+  behind cover disappeared, and anybody you could see disappeared the moment you could not. It
+  only ever looked at crews, which is why Rivals never did it. The timer is gone. How long a crew
+  stays is decided by the hunt alone: they search, find you, fight, and leave only when you have
+  got away from them or the story takes the stage.
+- **The fight-release could take a flanker.** Somebody of Cyberbane's keeping you in combat from
+  far off is still let go so a finished fight can end, but only once nobody of theirs is close to
+  you or can see you. While the fight is on, the ones working round behind a wall stay in it.
+- **A Rival could be retired while still on you.** The backstop that takes away a Rival nobody is
+  engaging no longer fires while the hunt has eyes on you.
+- **Tips on where your Rivals are never came.** Two causes. A sighting was only written down if
+  the Rival's body was still in the world when the encounter ended, and the usual way a Rival
+  walks away - you outrunning them - ends with them over a hundred metres off and usually already
+  streamed out, so nothing was written down and there was nothing to tip you off about. Where a
+  Rival was last seen standing is now kept as they move, and used when their body cannot answer.
+  The same goes for anybody who escaped you and came back as a Rival. And the Rival you had just
+  lost was nearly always the next one queued to come after you, which made them the one Rival
+  nobody would tip you about; being next in the queue no longer counts as being on their way, and
+  if you find them first they are taken off the queue. A sighting nobody has passed on also gets
+  likelier to be passed on the longer it waits.
+- **Hit squads never had apex members.** Only a gang at vendetta brought its apex squad, and only
+  when all four could come by car, which never happens while you are on foot - so in practice no
+  crew ever had one. See below.
+- **Somebody you knocked out was "spared" three seconds later.** The wait before a knockout counts
+  as mercy, and the time a wounded enemy has to get away, were measured on the in-game clock and
+  meant real seconds, so they ran eight times fast. A knockout became a Spared Rival, with a text
+  saying they walked away breathing, while you were still fighting over them, and finishing them
+  a moment later no longer counted. Mercy now needs you to have walked off or the fight to be over.
+- **A crew or apex squad that could not be placed on its first try was dropped.** Both were meant
+  to hold and try again for a while; both cleared their appointment before the retry could
+  happen. They now keep it until somebody arrives or the wait runs out.
+- **Paying a gang off did not cancel what was queued.** A crew or apex squad already picked from
+  that gang and not yet on its way still came, and an apex squad never checked whether its gang
+  still wanted you dead before setting off. Both are called off now.
+- **An apex car could seat the wrong kit.** Seats in a car took their role in the order they
+  finished loading, so the heavy's body could be given the netrunner's kit and bar. Each seat now
+  carries its role from the moment it is created.
+- **The cap on how many of Cyberbane's people can be out at once leaked.** It only counted people
+  who had finished arriving, so several groups sent in the same moment each saw it empty. It
+  counts everybody on their way into the world now. A crew is also never promised as bigger than
+  can actually turn up, so the number in the text is the number that arrives.
+- **Knocked-out crew were never cleared up** except by the timer above. They are now cleared like
+  bodies, once you are well away and cannot see them.
+
+### Every crew is led by its apex squad
+- **A hit squad is the gang's apex squad and the rest of its crew.** Four of their best - a heavy,
+  a shooter, a blade and a netrunner, each fighting the way their kind fights, the way a MaxTac
+  drop reads - with the crew behind them. The text names who is leading them and how many follow,
+  and the line on the HUD reads APEX CREW.
+- **Always four.** Whoever a car has no seat for, or the street will not take on the first try,
+  walks in shortly after, chair by chair, so the right person fills the right role. Nobody you
+  have already put down is replaced, and nobody walks into a fight that is already over.
+- **One squad.** The crew counts as beaten only when its apex squad is down too, and only then
+  does the gang pay the bounty and text you about it. No second apex squad is sent into a fight
+  that already has one, and you get the apex squad's own bounty when the last of the four falls.
+- **Give a crew the slip** and one of the people you actually lost can come back as a Rival, seen
+  where they were standing. This used to happen on the timer above, mid-fight, out of a generic
+  member of the gang.
+- **Crews bring the apex squad**, under Gangs (it was Vendetta brings the apex squad, and keeps
+  your setting), sends crews alone.
+
+### Turf wars
+- **Gangs have strength.** Each of their people you put down weakens a gang a little; an officer,
+  a boss, one of their Rivals, a whole crew or their apex squad, a lot. They rebuild while you
+  leave them alone, and are never wiped out.
+- **Districts are split between the gangs that work them,** and the stronger holds more. The
+  front line drifts a little from day to day on its own, because gangs fight each other too.
+- **Break a gang and its enemies move in.** A gang at war with them whose streets are next door
+  pushes into their district, harder the more broken they are. Let them rebuild and they take it
+  back. The street texts you when a district changes hands, and the History screen keeps it.
+- **The holder is who counts there.** Whoever holds a real share of a district is on their own
+  streets: their lookouts watch you, their crews know where you are, their vendors price you by
+  what they think of you. A gang pushed out of a district is none of those there any more.
+- **The Turf screen on the Hub,** next to Gangs: one line a district, with who holds it, how
+  firmly, and who is fighting them for it, and underneath, only the gangs you have actually hurt
+  and how badly.
+- **Turf wars**, under Gangs, turns it off: every gang keeps its own streets, as before.
+- The idea comes from Gang Retaliation by NovaAntonsito. No code from it is used.
+
+### How it stays out of trouble
+- **No new calls into the game.** Everything above is Cyberbane's own arithmetic over numbers it
+  already keeps, and every arrival still goes through the one placement path with all of its
+  checks. Checked against the engine surface of 1.6.2: the list of engine calls is unchanged.
+- **Nothing in your save changed shape.** Gang strength is kept where 1.6.2 keeps where Rivals
+  were seen, outside the save and tied to the playthrough. Loading an older save ignores what was
+  written later, and Start over clears it.
+- **The Hub stays data, not new widgets.** The Turf screen is drawn with the same rows and bars as
+  the other screens.
+
 ## [1.6.2] - 2026-11-03
 
 You can go after your Rivals now, the way they come after you. Somebody who walked away from you

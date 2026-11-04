@@ -154,6 +154,8 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     sys.NoteRecentKill();
     if info.victimClass == EnumInt(ECBVictimClass.Officer) { fs.officersKilled += 1; }
     if info.victimClass == EnumInt(ECBVictimClass.Boss) { fs.bossesKilled += 1; }
+    // And it thins their numbers on the street (Model/Territory.reds).
+    CBWeakenGang(sys, GetGameInstance(), info.faction, CBGangLossForKill(info.victimClass, info.lethal));
     if !info.lethal {
       fs.spared += 1;
       // And it counts for something. fs.spared was tallied from the beginning and read by

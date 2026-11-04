@@ -303,6 +303,12 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TurfWars")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfWars-Desc")
+  public let turfWars: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LootDrops")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LootDrops-Desc")
   public let lootDrops: Bool = true;

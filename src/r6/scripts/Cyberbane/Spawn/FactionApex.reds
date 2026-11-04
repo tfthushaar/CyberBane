@@ -489,50 +489,71 @@ public func CBApexArrivalSound(game: GameInstance) -> Void {
   GameObject.PlaySound(player, n"av_maxtac_descent_horn");
 }
 
-// Top a part-delivered apex squad up to its full strength on foot.
+// ---- Four, every time ----------------------------------------------------------------
 //
-// Counts what is actually standing in the world rather than what was asked for, which is the
-// rule this file has had to learn twice: a request is not an arrival, and neither is a seat.
-public func CBFillApexSquad(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
+// "Apex squad should always be four members with MaxTac-like roles." Every path that brings one
+// in - the apex lane's car or walk-in, a crew bringing its best - marks each chair as somebody is
+// put in the world for it (sys.NoteApexChair). This tick walks in whoever is still missing: the
+// chairs a car had no seat for, the ones the street refused on the first try, the whole squad if
+// the car never turned up. By chair rather than by head count, so the right record and the right
+// kit fill the right chair, and a chair whose member V has already put down is never filled a
+// second time. It stops when the squad is whole, when the window closes, or when everybody who
+// did arrive is down - nobody walks into a fight that is already over.
+//
+// Crash safety: every placement goes through CBSpawnGroup, which already refuses an unsettled
+// world, the story, a quiet job and the live ceiling; this only decides who to ask for.
+public func CBApexMusterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
   }
-  let want = CBConfig.ApexStrikeTeamSize();
-  let have = CBCountLiveTagged(game, n"CB_Apex");
-  if have >= want {
+  let faction = sys.GetApexMusterFaction();
+  if Equals(faction, n"") {
     return;
+  }
+  let mask = sys.GetApexMusterMask();
+  if mask == CBApexChairsAll() {
+    sys.ClearApexMuster();   // all four are in
+    return;
+  }
+  if sys.TickApexMuster() <= 0 {
+    CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(faction)) could not be brought to four in time.");
+    sys.ClearApexMuster();
+    return;
+  }
+  // A car still seating chairs: let it finish, or let it be given up on.
+  if sys.HasPendingArrival() && sys.IsArrivalRoleSquad() {
+    return;
+  }
+  // The apex lane's own drive is still on the clock and nobody has arrived yet: when it runs out,
+  // CBProcessPendingApex walks the squad in if the car delivered nobody.
+  if mask == 0 && sys.IsPendingApexDriving() && Equals(sys.GetPendingApexFaction(), faction) {
+    return;
+  }
+  // Everyone who came is down already: the fight is over, and nobody else is sent into it.
+  if mask != 0 && CBCountLiveOrSpawning(game, n"CB_Apex") == 0 {
+    sys.ClearApexMuster();
+    return;
+  }
+  if sys.GetStoryHold() != CBStoryNone() || CBStealthEncounterNearby(sys, game) {
+    return;   // wait for the stage, or the quiet job, to be over
+  }
+  if sys.GetTickCount() % 3 != 0 {
+    return;   // a few seconds between tries is plenty, and keeps the probing cheap
   }
   let fs = sys.FindFaction(faction);
-  if !IsDefined(fs) {
+  let record = sys.GetApexMusterRecord();
+  if !IsDefined(fs) || !TDBID.IsValid(record) {
+    sys.ClearApexMuster();
     return;
   }
-  let record = TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
-  if !TDBID.IsValid(record) {
-    return;
-  }
-  // Carry on round the role cycle rather than resetting it: the seats the car filled took the
-  // first few chairs, so the ones walking in are the chairs that are still empty.
-  // Carry on round the role cycle rather than resetting it: the seats the car filled took the
-  // first few chairs, so the ones walking in take the chairs still empty. Advancing the index
-  // per body matters - PeekApexRole on its own would have handed the same record to all of
-  // them, and the kit each one gets comes from NextApexRole at attach, which does advance, so
-  // the record and the kit would have disagreed for every body after the first.
-  let missing = want - have;
-  let added = 0;
-  let i = 0;
-  while i < missing {
-    let one: EntityID;
-    let seat = (sys.PeekApexRole() + i) % CBConfig.ApexStrikeTeamSize();
-    if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
-                    CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
-      added += 1;
-    }
-    i += 1;
-  }
+  let added = CBWalkInRest(sys, game, fs, record, n"CB_Apex", 0, CBConfig.ApexStrikeTeamSize());
   if added > 0 {
-    CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(faction)) arrived \(have) strong by car; \(added) more walked in.");
+    CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(faction)): \(added) more walked in to make four.");
   }
 }
+
+// The four chairs as bits, so a squad can say which of them are filled.
+public func CBApexChairsAll() -> Int32 = 15
 
 // Slow tick: has any gang lost enough people to send its apex after V?
 public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
@@ -657,14 +678,14 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   let carFailed = false;
   if sys.IsPendingApexDriving() {
     sys.SetPendingApex(faction, 0);   // the drive is over whichever way this goes
+    // A chair the car filled counts as delivered even after V has put that member down, which
+    // is what a live head count could not tell apart from nobody turning up.
     let delivered = CBLiveTaggedPresent(game, n"CB_Apex")
+                 || (Equals(sys.GetApexMusterFaction(), faction) && sys.GetApexMusterMask() != 0)
                  || (Equals(sys.GetAdoptTag(), n"CB_Apex") && sys.GetAdoptTaken() > 0);
     if delivered {
-      // Arrived. Anyone the car could not seat walked in when it was sent, and anyone it was
-      // meant to carry and did not was walked in by CBProcessCarTopUp, so the squad is already
-      // four. This used to top up from a live head count at the end of the drive, which both
-      // left the squad short for the whole drive and replaced members the player had already
-      // killed.
+      // Arrived. Whoever the car could not seat is walked in by the muster, chair by chair
+      // (CBApexMusterTick), so the squad is four without replacing anybody V already killed.
       sys.SetPendingApex(n"", 0);
       return;
     }
@@ -677,7 +698,22 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     sys.SetPendingApex(n"", 0);   // nothing to send; do not sit on a dead appointment
     return;
   }
-  let record = TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
+  // They may have been paid off, or come round to V, while their best were on their way - the
+  // same question the crew asks before it sets off (CBProcessPendingSquad). The apex never asked
+  // it, so a gang V had just bought peace from could still send its four.
+  let score = sys.GetScore();
+  if IsDefined(score) {
+    let nowPosture = score.GetPosture(fs.id);
+    if NotEquals(nowPosture, ECBPosture.Vendetta) && NotEquals(nowPosture, ECBPosture.Hostile) {
+      sys.SetPendingApex(n"", 0);
+      if Equals(sys.GetApexMusterFaction(), fs.id) {
+        sys.ClearApexMuster();
+      }
+      CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) called off.");
+      return;
+    }
+  }
+  let record = CBApexRecordFor(fs);
   if !TDBID.IsValid(record) {
     sys.SetPendingApex(n"", 0);
     return;
@@ -690,6 +726,11 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   // the strength slider is how a player dials that back if four at once is too much.
   sys.ResetApexRoles();   // this squad starts again at the heavy
   sys.ClearSquadAnchor();
+  // One muster for this squad, whichever way it comes. Kept if it is already this gang's - a
+  // walk-in after a failed car must not forget a chair somebody already filled.
+  if NotEquals(sys.GetApexMusterFaction(), fs.id) {
+    sys.BeginApexMuster(fs.id, record);
+  }
   if !carFailed
      && CBSendByCar(sys, game, fs, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex") > 0 {
     // The warning is spent, but they are not here yet: they are driving. Keep the clock
@@ -703,49 +744,31 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) arriving by car.");
     return;
   }
-  sys.SetPendingApex(n"", 0);
   // CBSpawnGroup will refuse while the world is still streaming in, so this can only land on
   // a settled frame. CB_Apex is also tagged n"Cyberbane", so the session sweep clears it.
-  // Four of them, with their roles, the same as the carload.
-  //
-  // This spawned exactly one. Only the car arrival ever built a squad, so an apex that had to
-  // walk in - indoors, a tight street, anywhere a car could not be placed, which is most of the
-  // time - was one enemy with a couple of ordinary crew behind them. That is not an apex squad,
-  // and it is not what the Hub, the bars or the readme describe. A seat whose role record the
-  // gang has not filed yet falls back to the elite record, so a squad is always four.
-  let apexEntity: EntityID;
-  let arrived = 0;
-  // The roles start again at the heavy. Reset at the top of this function too, but the car
-  // path may have run since and taken some of them, so a walk-in that follows a failed car
-  // would otherwise start partway round the cycle and send two netrunners.
-  sys.ResetApexRoles();
-  let seat = 0;
-  while seat < CBConfig.ApexStrikeTeamSize() {
-    let one: EntityID;
-    if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
-                    CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
-      arrived += 1;
-      apexEntity = one;
-    }
-    seat += 1;
-  }
-  if arrived <= 0 {
-    // The world was not settled enough to place anyone. Keep the kills on the books so the
-    // next slow tick tries again, rather than charging the player for a no-show.
+  // Four of them, with their roles, the same as the carload: one per chair, each chair's own
+  // record and tag (CBWalkInRest), any chair the street refuses now walked in by the muster.
+  CBWalkInRest(sys, game, fs, record, n"CB_Apex", 0, CBConfig.ApexStrikeTeamSize());
+  if sys.GetApexMusterMask() == 0 {
+    // The world was not settled enough to place anyone. Keep the kills on the books and keep
+    // the appointment, so the next tick tries again rather than charging the player for a
+    // no-show.
     //
-    // Age the hold while doing so. Returning here without it left the appointment standing,
-    // and an appointment that is still standing makes the lane busy, so an apex squad that
-    // could never be placed blocked every later one indefinitely. The same trap as the Rival
-    // lane, in a second place; AgePendingApexHold gives up after a bounded wait and lets it be
-    // rescheduled.
+    // The appointment used to be cleared just above this, before anybody had been placed, so
+    // the hold aged here was already gone and a squad that failed its first try simply never
+    // came. AgePendingApexHold still gives up after a bounded wait and lets the lane
+    // reschedule, so a squad that can never be placed cannot block every later one.
     let why = CBBlockLabel(CBLastSpawnBlock());
     if StrLen(why) == 0 {
       why = "no reason recorded";
     }
     CBLog.Info(n"Spawn", s"Apex squad for \(NameToString(faction)) could not be placed: \(why).");
-    sys.AgePendingApexHold();
+    if sys.AgePendingApexHold() {
+      sys.ClearApexMuster();
+    }
     return;
   }
+  sys.SetPendingApex(n"", 0);   // somebody is standing there: the appointment is kept
   fs.apexAtKills = fs.kills;   // paid for: the next one needs fresh bodies
   sys.ArmApexBounty(fs.id);
   CBApexArrivalSound(game);    // only once somebody is actually standing there

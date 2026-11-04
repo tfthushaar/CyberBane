@@ -74,9 +74,12 @@ public func CBHuntersOut(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool 
 public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
   let rivalComing = sys.GetRivalWarned() > 0 && sys.GetLaneRivalId(CBLaneRival()) == sys.GetRivalWarned();
   // A car on its way counts too: its crew are in the world only once the car has arrived.
+  // So does an apex squad still being brought up to four (Spawn/FactionApex.reds): the chairs it
+  // is still walking in are on their way, and the hunt is not over before they get here.
   return NotEquals(sys.GetScoutFaction(), n"")
       || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetPendingApexFaction(), n"")
       || sys.HasPendingArrival() || sys.GetRivalCarPending() > 0
+      || NotEquals(sys.GetApexMusterFaction(), n"")
       || rivalComing;
 }
 
@@ -572,16 +575,16 @@ public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     // On their own streets, somebody of theirs saw V there; anywhere else they heard about it.
     let turf = CBTurfGangsHere(sys);
     let onTheirTurf = ArrayContains(turf, faction);
-    // How many, in their own words, from the same number the spawn uses.
+    // How many, in their own words, from the same numbers the spawn uses - and who leads them.
     let fs = sys.FindFaction(faction);
-    let count = CBNumberWord(CBCrewSizeFor(sys, fs, CBCrewIsInfamous(sys)));
+    let coming = CBCrewComingLine(sys, game, fs);
     if vendetta {
-      CBPhoneFromGang(game, faction, s"Everybody we have is coming for you. Somebody saw you in \(where).");
+      CBPhoneFromGang(game, faction, s"Everybody we have is coming for you. Somebody saw you in \(where). \(coming)");
     } else {
       if onTheirTurf {
-        CBPhoneFromGang(game, faction, s"You are on our streets in \(where). \(count) of ours are on their way.");
+        CBPhoneFromGang(game, faction, s"You are on our streets in \(where). \(coming)");
       } else {
-        CBPhoneFromGang(game, faction, s"\(count) of ours are on their way. We hear you are in \(where).");
+        CBPhoneFromGang(game, faction, s"\(coming) We hear you are in \(where).");
       }
     }
   }
@@ -744,8 +747,7 @@ func CBScoutCallIn(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
   sys.SetHuntGrade(CBCrewGrade(sys, faction));
   if spotted && CBToastsOn() {
     let fs = sys.FindFaction(faction);
-    let count = CBNumberWord(CBCrewSizeFor(sys, fs, CBCrewIsInfamous(sys)));
-    CBPhoneFromGang(game, faction, s"Our scout has eyes on you. \(count) of ours are on their way.");
+    CBPhoneFromGang(game, faction, s"Our scout has eyes on you. \(CBCrewComingLine(sys, game, fs))");
     CBAllyTipOff(sys, game, faction);
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout found you and called in the crew.");
     return;
@@ -796,20 +798,56 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
   if !IsDefined(sys) || !IsDefined(player) || !IsDefined(des) || !player.IsInCombat() || !CBWorldStable(game) {
     return;
   }
-  CBReleaseTag(sys, game, des, player, n"CB_Rival");
-  CBReleaseTag(sys, game, des, player, n"CB_Apex");
-  CBReleaseTag(sys, game, des, player, n"CB_Squad");
-  CBReleaseTag(sys, game, des, player, n"CB_Escort");
-  CBReleaseTag(sys, game, des, player, n"CB_Scout");
+  // Only once the fight near V is over. While anybody of ours is still close to V, or has eyes
+  // on V, the people further out are part of that fight - a flanker working round behind a wall,
+  // somebody hanging back in cover - and letting them go was another way for a crew to vanish in
+  // the middle of a firefight. The report this exists for is the other case: everybody close is
+  // down and somebody far off is still holding V in combat, and that is exactly when nobody is
+  // engaged.
+  let engaged = CBOursEngagedNear(sys, game, des, player);
+  CBReleaseTag(sys, game, des, player, n"CB_Rival", engaged);
+  CBReleaseTag(sys, game, des, player, n"CB_Apex", engaged);
+  CBReleaseTag(sys, game, des, player, n"CB_Squad", engaged);
+  CBReleaseTag(sys, game, des, player, n"CB_Escort", engaged);
+  CBReleaseTag(sys, game, des, player, n"CB_Scout", engaged);
   // Anyone handed to the orphan sweep because they were still in view when their encounter
   // ended is still alive and may still be in combat with V, and the sweep only runs on the slow
   // tick. Without this they could hold V in combat in the meantime, which is the 1.5.3 report
-  // arriving by a new road.
-  CBReleaseTag(sys, game, des, player, n"CB_Orphan");
+  // arriving by a new road. Their encounter is over, so a fight still going on near V is not
+  // theirs and does not hold them.
+  CBReleaseTag(sys, game, des, player, n"CB_Orphan", false);
+}
+
+// Is anybody of ours still in the fight with V: close, or able to see V?
+func CBOursEngagedNear(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                       player: ref<PlayerPuppet>) -> Bool {
+  return CBTagEngagedNear(sys, game, des, player, n"CB_Rival")
+      || CBTagEngagedNear(sys, game, des, player, n"CB_Apex")
+      || CBTagEngagedNear(sys, game, des, player, n"CB_Squad")
+      || CBTagEngagedNear(sys, game, des, player, n"CB_Escort")
+      || CBTagEngagedNear(sys, game, des, player, n"CB_Scout");
+}
+
+func CBTagEngagedNear(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                      player: ref<PlayerPuppet>, tag: CName) -> Bool {
+  let ppos = player.GetWorldPosition();
+  let ids = des.GetTaggedIDs(tag);
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if CBStillStanding(p) && CBNpcSafe(sys, p) {
+      if Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.CombatReleaseDistance()
+         || CBWitnessCanSee(p, player) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
-                  player: ref<PlayerPuppet>, tag: CName) -> Void {
+                  player: ref<PlayerPuppet>, tag: CName, engaged: Bool) -> Void {
   let ppos = player.GetWorldPosition();
   let crewSeated = CBAnyCrewSeated(game, des);
   let ids = des.GetTaggedIDs(tag);
@@ -819,7 +857,7 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
     i += 1;
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
       let far = Vector4.Distance(p.GetWorldPosition(), ppos) > CBConfig.CombatReleaseDistance();
-      if CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) && CBOutOfView(game, p.GetWorldPosition()) {
+      if !engaged && CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) && CBOutOfView(game, p.GetWorldPosition()) {
         p.cbOutOfFightTicks += 2;
         if p.cbOutOfFightTicks >= CBConfig.CombatReleaseTicks() {
           CBLog.Info(n"Spawn", "One of ours was keeping you in combat from too far away; letting them go.");

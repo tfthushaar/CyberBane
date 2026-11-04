@@ -485,6 +485,16 @@ public func CBApexRoleTag(seat: Int32) -> CName {
   }
 }
 
+// One chair as a bit of the squad's muster mask (Spawn/FactionApex.reds, CBApexMusterTick).
+public func CBApexChairBit(seat: Int32) -> Int32 {
+  switch seat % 4 {
+    case 0: return 1;
+    case 1: return 2;
+    case 2: return 4;
+    default: return 8;
+  }
+}
+
 // The chair this body was spawned for, or -1 if it carries none.
 public func CBTaggedApexSeat(des: ref<DynamicEntitySystem>, id: EntityID) -> Int32 {
   if !IsDefined(des) {

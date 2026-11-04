@@ -663,6 +663,9 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   sys.AddRenownPoints((25.0 + 10.0 * Cast<Float>(rival.rank)) * renownMult);
 
   CBLogRival(sys, n"RivalSlain", at, district, rival.faction, Cast<Float>(rival.rank), rival.id);
+  // A name of theirs in the ground costs a gang more than a body does (Model/Territory.reds).
+  CBWeakenGang(sys, game, rival.faction,
+               CBConfig.GangLossRival() + CBConfig.GangLossRivalPerRank() * Cast<Float>(rival.rank));
   // Their chair does not stay empty (spec §10.1).
   CBHierarchyOnSlain(sys, game, rival);
   let content = CBContent(game);
