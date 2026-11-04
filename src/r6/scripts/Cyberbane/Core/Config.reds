@@ -86,6 +86,16 @@ public abstract class CBConfig {
   public static func DreadWeightH() -> Float = 0.10            // police history
   public static func KillDreadCurveScale() -> Float = 600.0
   public static func DeedDreadCurveScale() -> Float = 400.0
+  // How fast the body count and the jobs fade while V lies low, in points of their 0..100 value
+  // per in-game day, before the Decay rate setting (Model/Decay.reds).
+  public static func KillDreadFadePerDay() -> Float = 6.0
+  public static func DeedDreadFadePerDay() -> Float = 4.0
+  // What a whole record still earns: the body count never fades below KillDreadFloorMax of its
+  // value at a lifetime of kills, approached over about KillDreadFloorKills of them, and the jobs
+  // never below DeedDreadFloorShare of what they and the unseen killing were worth.
+  public static func KillDreadFloorMax() -> Float = 40.0
+  public static func KillDreadFloorKills() -> Float = 300.0
+  public static func DeedDreadFloorShare() -> Float = 0.5
   public static func HeatCurveScale() -> Float = 150.0
   public static func UnwitnessedDreadMult() -> Float = 0.5
 
@@ -737,6 +747,8 @@ public abstract class CBConfig {
   // What a gang minds about one of theirs being put down, when they are still breathing. The
   // same hit as a kill was being taken either way, which made mercy pointless.
   public static func NonLethalStandingShare() -> Float = 0.25
+  // The share of a kill's Dread that putting somebody down alive adds (Model/Reputation.reds).
+  public static func NonLethalDreadShare() -> Float = 0.25
   // What each one of theirs V leaves alive is worth to them, and how far that alone can carry.
   // At this rate Friendly (15) is a long run of restraint and nothing better - mercy makes a
   // gang tolerate V, it does not make them allies. Only hurting their enemies does that.
@@ -767,6 +779,9 @@ public abstract class CBConfig {
   // Seeing V: close with nothing in the way, or already fighting within this range.
   public static func HuntSpotDistance() -> Float = 35.0
   public static func HuntCombatKnowsDistance() -> Float = 80.0
+  // Once the hunt has found V, everybody of ours this close is told where V is and joins the
+  // fight (Spawn/Hunt.reds, CBHuntEngage). The rest keep converging and join as they close in.
+  public static func HuntEngageDistance() -> Float = 60.0
   // Hearing V: a kill or a firefight this close to a hunter.
   public static func HuntHearDistance() -> Float = 70.0
   // Unseen this long and they go back to searching; unseen this long while searching, they quit.

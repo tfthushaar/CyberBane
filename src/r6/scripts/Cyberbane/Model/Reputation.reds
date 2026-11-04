@@ -119,12 +119,16 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     sys.AddRenownPoints(CBRenownForKill(info.victimClass) * renownWitness * renownMult);
   }
 
-  // Kill-dread.
+  // Kill-dread. Somebody V put down and left breathing frightens people a good deal less than a
+  // body does: they get up and tell it, and the street hears restraint in it. This was the full
+  // amount for a knockout, so a player who never killed anybody grew exactly as frightening as one
+  // who killed everybody - the opposite of what leaving people breathing is meant to say.
   let brutalMelee = info.mBlade || info.mFists || info.mBlunt;
   let killDread = (CBKillDreadBase(info.victimClass)
                  + CBKillDreadMethodBonus(brutalMelee, info.mFinisher, info.mExplosive,
                                           info.mQuickhack))
-                 * dreadWitness * dreadMult;
+                 * dreadWitness * dreadMult
+                 * (info.lethal ? 1.0 : CBConfig.NonLethalDreadShare());
   sys.AddKillDreadPoints(killDread);
 
   // Archetype accrual, then refresh the primary.

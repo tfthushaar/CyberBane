@@ -2083,24 +2083,31 @@ func CBHudDreadReason(sys: ref<CyberbaneSystem>) -> String {
   // 0.35) whenever its number was bigger, so the Hub kept telling players they were feared
   // for their chrome after hundreds of kills. Dread is
   // 0.35K + 0.20C + 0.15L + 0.20X + 0.10H, so the comparison has to use the same weights.
+  //
+  // Visible chrome, the same figure Dread is built from (Model/ScoreEngine.reds). This read the
+  // chrome V has installed, so a player who had put a coat on over it was still told they were
+  // feared for their chrome - and covering it up is exactly what they would have tried.
   let k = CBKillDreadComponent(sys.GetKillDreadPoints()) * CBConfig.DreadWeightK();
   let x = CBDeedDreadComponent(sys.GetDeedDreadPoints()) * CBConfig.DreadWeightX();
   let h = CBHeatDreadComponent(sys.GetHeatPoints()) * CBConfig.DreadWeightH();
-  let c = score.GetChrome() * CBConfig.DreadWeightC();
+  let c = score.GetChromeVisible() * CBConfig.DreadWeightC();
   let l = score.GetLook() * CBConfig.DreadWeightL();
 
   let bestLabel = "nothing in particular yet";
+  let bestHint = "";
   let best = 0.0;
-  if k > best { best = k; bestLabel = "your body count"; }
-  if c > best { best = c; bestLabel = "all that chrome"; }
-  if l > best { best = l; bestLabel = "the way you carry yourself"; }
-  if x > best { best = x; bestLabel = "the jobs you have pulled"; }
-  if h > best { best = h; bestLabel = "the heat you draw from the law"; }
+  if k > best { best = k; bestLabel = "your body count"; bestHint = "It fades while you lie low."; }
+  if c > best { best = c; bestLabel = "all that chrome"; bestHint = "Cover it up and they see less of it."; }
+  if l > best { best = l; bestLabel = "the way you carry yourself"; bestHint = "Dress down and it eases."; }
+  if x > best { best = x; bestLabel = "the jobs you have pulled"; bestHint = "The stories fade while you lie low."; }
+  if h > best { best = h; bestLabel = "the heat you draw from the law"; bestHint = "Stay off the NCPD's radar and it cools."; }
 
   if best <= 0.0 {
     return "People barely know you. Make some noise.";
   }
-  return "People fear you mostly for " + bestLabel + ".";
+  // What it is, then the one thing that brings it down: the question a player looking at this
+  // line is asking. One line, so the screen stays as quiet as it was.
+  return "People fear you mostly for " + bestLabel + ". " + bestHint;
 }
 
 func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {

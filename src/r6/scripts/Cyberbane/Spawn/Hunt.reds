@@ -219,6 +219,14 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     }
   }
 
+  // Found: everybody of ours close enough is told where V is, and the fight is on. This is the
+  // only place a hunter is handed V as a target (Spawn/Spawner.reds, CBEngageV), so until somebody
+  // has actually found V nobody is tracking V and V is not in combat - the phone, saving and fast
+  // travel all work while they are still looking. Not while the story has the stage.
+  if sys.GetHuntState() == CBHuntLocated() && sys.GetStoryHold() == CBStoryNone() {
+    CBHuntEngage(sys, game, des, ppos);
+  }
+
   // Over? Either V has been gone a long time while they searched, or V has simply put a lot of
   // distance between them and every hunter and stayed out of sight.
   if sys.GetHuntState() == CBHuntSearching() {
@@ -262,6 +270,31 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Squad", done);
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Escort", done);
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Scout", done);
+  }
+}
+
+// Tell everybody of ours close to V where V is. Somebody already fighting V needs nothing, and
+// somebody broken and running is left to run.
+func CBHuntEngage(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                  ppos: Vector4) -> Void {
+  CBHuntEngageTag(sys, game, des, ppos, n"CB_Rival");
+  CBHuntEngageTag(sys, game, des, ppos, n"CB_Apex");
+  CBHuntEngageTag(sys, game, des, ppos, n"CB_Squad");
+  CBHuntEngageTag(sys, game, des, ppos, n"CB_Escort");
+  CBHuntEngageTag(sys, game, des, ppos, n"CB_Scout");
+}
+
+func CBHuntEngageTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                     ppos: Vector4, tag: CName) -> Void {
+  let ids = des.GetTaggedIDs(tag);
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p)
+       && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.HuntEngageDistance() {
+      CBEngageV(game, p);
+    }
   }
 }
 
