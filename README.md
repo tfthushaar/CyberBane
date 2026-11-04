@@ -34,8 +34,9 @@ in active development. This page describes what the mod does and how it installs
   so you can be a legend in Watson while Pacifica has never heard of you. Dread comes down too:
   cover your chrome or dress down and it drops at once, and while you lie low your body count
   and the stories about your jobs fade a little every day, down to what your whole record still
-  earns. The Standing screen on the Hub says what you are feared for most and what brings it
-  down; **Decay rate** sets how fast it fades.
+  earns. Go three in-game days without putting anybody down and the city forgets twice as fast,
+  until the next one. The Standing screen on the Hub says what you are feared for most and what
+  brings it down; **Decay rate** sets how fast it fades.
 - **A reputation for how you work.** Night City also reads your conduct. Leave people breathing
   when you could have finished them and you get treated as disciplined: vendors give you a
   little goodwill, and the street talks about you with respect rather than fear. Somebody you

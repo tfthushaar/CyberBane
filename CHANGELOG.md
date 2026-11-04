@@ -37,6 +37,13 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   a day each, down to what your whole record still earns, so a few dozen bodies fade to almost
   nothing and a few hundred never quite do. Decay rate, under Reputation, sets the pace, and at
   zero nothing fades, as before. Titles you have earned are never taken away.
+- **Laying low did nothing.** It was always meant to: three in-game days without putting anybody
+  down, lethally or otherwise, and the city was supposed to forget twice as fast. Nothing ever
+  implemented it, so a quiet spell faded your reputation at exactly the same rate as a killing
+  spree. It works now, and it covers your body count, the jobs you have pulled, your heat with
+  the law and each gang's renown. Put anybody down and the clock starts again. Your own build and
+  a gang's settled opinion of you are not affected, and neither is your reputation in a
+  particular district, so lying low does not quietly erase where you are known.
 - **The Hub blamed chrome you had covered up.** "People fear you mostly for all that chrome"
   counted the chrome you have installed, while Dread counts the chrome people can see. It counts
   what they can see now, and says what brings the biggest part down.
@@ -46,7 +53,8 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   Those two are a third of Dread and follow what you are wearing.
 - **What the street reacts to** is lower still with a mask on, the more people you leave
   breathing, and the quieter your style.
-- **Over time:** lie low. Your body count, your jobs and your heat with the law all fade.
+- **Over time:** lie low. Your body count, your jobs and your heat with the law all fade. Go three
+  in-game days without putting anybody down and they fade twice as fast, until the next one.
 - **To stop it climbing:** leave people alive, avoid finishers, blades, explosives and
   bystanders, and lower Dread gain under Reputation.
 

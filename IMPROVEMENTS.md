@@ -45,6 +45,18 @@ record (`CBKillDreadFloor`, `CBDeedDreadFloor`). Knockouts add `NonLethalDreadSh
 Dread, massacres count bodies only, and the Hub's reason line uses visible chrome and says what
 brings it down.
 
+**And Laying Low finally works,** which doubles all of that. §11.5 of the spec has said since the
+first draft that three in-game days without putting anybody down doubles the decay of kill-dread,
+heat and faction renown; nothing had ever implemented it, so answering "how do I bring Dread down"
+with "lie low" was only half true. `CBIsLayingLow` reads `lastIncidentAt`, which is already saved
+and already written on every kill including non-lethal ones, so it needed **no new persistent
+field** - worth remembering as a first question whenever something looks like it needs one.
+Excluded on purpose: V's archetype mix, standing drifting to baseline, and district renown.
+
+So the short answer for a player: cover your chrome and dress down for an immediate drop (a third
+of Dread), then stop putting people down - three in-game days of that and the rest fades twice as
+fast, though a long record never fades to nothing.
+
 ## Requests after 1.6.2
 
 ### "Sometimes enemies spawned by Cyberbane despawn mid fight. Hit squads, not Rivals."

@@ -96,6 +96,10 @@ public abstract class CBConfig {
   public static func KillDreadFloorMax() -> Float = 40.0
   public static func KillDreadFloorKills() -> Float = 300.0
   public static func DeedDreadFloorShare() -> Float = 0.5
+  // Laying Low (spec 11.5): nobody put down, lethally or otherwise, for this many in-game days
+  // and the city forgets this much faster, until the next one (Model/Decay.reds).
+  public static func LayingLowDays() -> Float = 3.0
+  public static func LayingLowMult() -> Float = 2.0
   public static func HeatCurveScale() -> Float = 150.0
   public static func UnwitnessedDreadMult() -> Float = 0.5
 
