@@ -12,6 +12,9 @@ public class CBEncounter {
   public let active: Bool;
   public let startTick: Int32;
   public let kills: Int32;
+  // Bodies only: what the massacre test counts. `kills` counts everybody put down, alive or not,
+  // which is right for a flawless fight and wrong for a massacre.
+  public let bodies: Int32;
   public let civilianKills: Int32;
   public let bossDown: Bool;
   public let outOfCombatTicks: Int32;
@@ -44,6 +47,7 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     enc.active = true;
     enc.startTick = sys.GetTickCount();
     enc.kills = 0;
+    enc.bodies = 0;
     enc.civilianKills = 0;
     enc.bossDown = false;
     enc.playerHpMin = -1.0;
@@ -58,7 +62,11 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
   if info.victimClass == EnumInt(ECBVictimClass.Boss) {
     enc.bossDown = true;
   }
-  ArrayPush(enc.killTicks, sys.GetTickCount());
+  // The massacre window too: a room of people knocked out in thirty seconds is not a massacre.
+  if info.lethal {
+    enc.bodies += 1;
+    ArrayPush(enc.killTicks, sys.GetTickCount());
+  }
   // The massacre test only looks at a 30-tick window, so older entries can never change
   // the answer. Keeping the list bounded matters because a fight V never breaks off would
   // otherwise grow it for the whole session, and the window scan is quadratic.
@@ -116,7 +124,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     stats.flawless += 1;
   }
 
-  let massacre = enc.kills >= CBConfig.MassacreTotalKills()
+  let massacre = enc.bodies >= CBConfig.MassacreTotalKills()
     || CBMaxKillsInWindow(enc.killTicks, RoundF(CBConfig.MassacreWindowSeconds())) >= CBConfig.MassacreWindowKills();
 
   if massacre {
@@ -129,8 +137,8 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
       CBPhoneFromStreet(game, "Heard what you left behind. People are going to be repeating that one.");
     }
     CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
-    CBFileLog(sys, n"Massacre", CBGameSeconds(game), CBEventDistrict(sys, game), n"", Cast<Float>(enc.kills));
-    CBLog.Info(n"Model", s"Massacre resolved (\(enc.kills) kills).");
+    CBFileLog(sys, n"Massacre", CBGameSeconds(game), CBEventDistrict(sys, game), n"", Cast<Float>(enc.bodies));
+    CBLog.Info(n"Model", s"Massacre resolved (\(enc.bodies) bodies).");
   }
 
   if enc.bossDown {

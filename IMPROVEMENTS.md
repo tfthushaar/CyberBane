@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.6.3. The "Requests after 1.6.2" section at the top is the current one;
+The released version is 1.6.4. The "Requests after 1.6.3" section at the top is the current one;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -15,6 +15,35 @@ this repository: no police system calls, one AI order per NPC, no entity work in
 events, removals only through `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing touching
 an NPC that has left the world, behaviour-only ability kits, no runtime appearance changes, no
 loot drops from corpses, and UI as data rather than injected widgets.
+
+## Requests after 1.6.3
+
+### "I can't access my phone, it says you can't do that right now."
+
+**Status: it was Cyberbane, fixed in 1.6.4** (`Spawn/Spawner.reds`, `Spawn/Hunt.reds`).
+
+The notice is the game's one answer for every reason `PhoneSystem.IsPhoneEnabled()` can be false
+(combat, the cinematic camera, the NoPhone / PhoneInterrupted / BlockAllHubMenu tags, scene tiers
+3-5, device control, diving, a forced-hidden phone). Cyberbane sets none of those directly, but it
+drove the first one: the game counts V as in combat while any hostile tracks V
+(`playerCombatController.script`, `m_isTracked`), and `CBMakeHostileToPlayer` injected V into
+every spawn's target tracker at setup. So every hunt locked the phone, saving and fast travel from
+the moment anybody was placed. The injection now happens only from the hunt, once V is Located,
+and only for hunters within `HuntEngageDistance` (`CBHuntEngage`); a waiting Rival is never given
+it. That also makes the search, the scout's call-in and the waiting Rival work as designed.
+
+### "How do I bring Dread down?"
+
+**Status: answered, and fixed in 1.6.4** (`Model/Decay.reds`, `Model/ScoreMath.reds`,
+`Model/Reputation.reds`, `UI/Hud.reds`).
+
+Dread is 0.35 body count + 0.20 visible chrome + 0.15 look + 0.20 jobs + 0.10 heat. Chrome and
+look follow what V wears. The body count decayed 0.5%/day on points that saturate (so it never
+visibly moved) and the jobs never decayed, so 55% of Dread only rose. Both now fade a fixed number
+of points of their 0..100 value per day (`CBFadeDreadPoints`) down to a floor from V's lifetime
+record (`CBKillDreadFloor`, `CBDeedDreadFloor`). Knockouts add `NonLethalDreadShare` of a kill's
+Dread, massacres count bodies only, and the Hub's reason line uses visible chrome and says what
+brings it down.
 
 ## Requests after 1.6.2
 

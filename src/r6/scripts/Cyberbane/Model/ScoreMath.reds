@@ -42,6 +42,26 @@ public func CBHeatDreadComponent(heatPoints: Float) -> Float {
   return 100.0 * (1.0 - ExpF(-heatPoints / CBConfig.HeatCurveScale()));
 }
 
+// Fade one of the saturating parts (body count, jobs) by `fade` points of its 0..100 value,
+// never below `floorComp`, and hand back the points that give the faded value.
+//
+// Fading the points themselves, which is what decay did, barely moves a part that has saturated:
+// at a few thousand points the body count reads 99 and halving the points still reads 95, so
+// Dread went up and never came down. Fading the value V actually sees and working the points
+// back out of it gives a steady, readable decline whatever the points are.
+public func CBFadeDreadPoints(points: Float, scale: Float, fade: Float, floorComp: Float) -> Float {
+  if points <= 0.0 || scale <= 0.0 || fade <= 0.0 {
+    return points;
+  }
+  let comp = 100.0 * (1.0 - ExpF(-points / scale));
+  if comp <= floorComp {
+    return points;
+  }
+  let target = ClampF(MaxF(floorComp, comp - fade), 0.0, 99.9);
+  let faded = -scale * LogF(1.0 - target / 100.0);
+  return MinF(points, MaxF(0.0, faded));
+}
+
 // D = clamp(0.35K + 0.20C + 0.15L + 0.20X + 0.10H, 0, 100)
 public func CBComputeDread(k: Float, c: Float, l: Float, x: Float, h: Float) -> Float {
   let d = CBConfig.DreadWeightK() * k

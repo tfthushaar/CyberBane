@@ -1168,15 +1168,32 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
     }
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
   }
-  // And hand them V as something to track.
+  // Hostile, and nothing more. They are not handed V as a target here.
   //
-  // Attitude only decides how they feel about V; it does not put V on their target tracker, so
-  // until their own perception happened to pick V up they had nobody to fight. This is the
-  // second half of what the game does in AIActionHelper.TryStartCombatWithTarget, and it was
-  // missing. The first half of that helper is no use to us directly: it changes nothing and
-  // returns false unless the NPC is already aggressive, which a freshly spawned ganger is not,
-  // and it only injects the threat when that succeeded. Setting the attitude ourselves and
-  // injecting the threat ourselves gets both halves regardless.
+  // This used to inject V into their target tracker the moment they were set up, so that a
+  // spawned enemy had somebody to fight before its own perception had picked V up. The game
+  // counts V as in combat whenever any hostile is tracking V (playerCombatController.script,
+  // m_isTracked), wherever that hostile is - so from the instant a crew was placed, ninety metres
+  // off and out of sight, V was in combat: the phone refused to open ("you can't do that right
+  // now"), saving and fast travel were locked, and the hunt's own "searching for you" was a fight
+  // in all but name, because everybody already knew exactly where V was. A Rival waiting at their
+  // place knew V was coming the moment they were placed, which is not an ambush.
+  //
+  // What gives them V now is the hunt finding V (Spawn/Hunt.reds, CBHuntEngage): the moment one
+  // of them has eyes on V, or hears V fighting, everybody close is told where V is. Until then they
+  // search, and if they walk into V's line of sight the game's own perception starts the fight,
+  // because they are hostile and aggressive.
+}
+
+// One of ours is told exactly where V is, which starts the fight. Only ever from the hunt, once V
+// has actually been found (CBHuntEngage). The game's own call for it (targetTrackingComponent
+// .script), which does nothing if V is already on their tracker.
+public func CBEngageV(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  let player = GetPlayer(game);
+  if !IsDefined(player) || !CBStillStanding(puppet) || !puppet.IsAttached() {
+    return;
+  }
+  CBTrace("combat: one of ours is told where V is");
   TargetTrackingExtension.InjectThreat(puppet, player);
 }
 

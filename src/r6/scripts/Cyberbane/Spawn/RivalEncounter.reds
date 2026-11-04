@@ -353,7 +353,8 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
     CBLog.Info(n"Spawn", s"Rival encounter on its way by car (id \(r.id)).");
     return true;
   }
-  // Spawn close and behind so the Rival perceives V right away and gives chase.
+  // Closer than a crew, behind V and out of sight. They start from the tip their warning gave and
+  // search; the fight starts when they find V (Spawn/Hunt.reds), not the moment they are placed.
   let body: EntityID;
   let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance(), body);
   if spawned <= 0 {

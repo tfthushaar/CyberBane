@@ -24,17 +24,22 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.6.3).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.6.4).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
 
 - **Reputation you earn.** Two main scores grow from your actions: Renown (how widely you are
   known) and Dread (how frightening you are). Word spreads outward from where things happened,
-  so you can be a legend in Watson while Pacifica has never heard of you.
+  so you can be a legend in Watson while Pacifica has never heard of you. Dread comes down too:
+  cover your chrome or dress down and it drops at once, and while you lie low your body count
+  and the stories about your jobs fade a little every day, down to what your whole record still
+  earns. The Standing screen on the Hub says what you are feared for most and what brings it
+  down; **Decay rate** sets how fast it fades.
 - **A reputation for how you work.** Night City also reads your conduct. Leave people breathing
   when you could have finished them and you get treated as disciplined: vendors give you a
-  little goodwill, and the street talks about you with respect rather than fear. Gun down
+  little goodwill, and the street talks about you with respect rather than fear. Somebody you
+  put down alive adds a quarter of the Dread a body does. Gun down
   civilians, or kill by hand with a blade, and the Street starts talking about you the way it
   talks about cyberpsychos, one bad night from going over. How you kill counts separately from
   how much: a blade and bare hands read as brutal, a gun does not, and a club is its own thing.
@@ -167,9 +172,10 @@ in active development. This page describes what the mod does and how it installs
   the area, narrowing in, the way the police do. A gang that does not know where you are may
   send one scout first, who calls in the crew only if they keep eyes on you. A glimpse is not
   enough for them: crouching, the dark and their own gang's colours make you harder to find, and
-  a safe area or a drive out of the district makes them give up sooner. One line on the HUD
-  says who it is, how big a threat, and whether they are tracking you, on their way, searching,
-  have spotted you or have you.
+  a safe area or a drive out of the district makes them give up sooner. Until one of them has
+  actually found you, you are not in combat: your phone, saving and fast travel all work while
+  they are still looking. One line on the HUD says who it is, how big a threat, and whether they
+  are tracking you, on their way, searching, have spotted you or have you.
 - **Worth the fight.** Anyone the mod sends who you put down leaves you something, scaled
   to who they were and to your level: cash, ammo and parts from a crew, better parts from a Rival the higher they
   ranked, rare and epic parts from an apex squad with a chance of legendary ones, and a small

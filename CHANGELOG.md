@@ -3,6 +3,59 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.4] - 2026-11-04
+
+Your phone works while people are still looking for you, and Dread comes down when you stop
+earning it.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **The phone said "you can't do that right now" while you were being hunted.** The game blocks
+  the phone, saving and fast travel while you are in combat, and it counts you as in combat
+  whenever any hostile is tracking you, wherever they are. Everybody Cyberbane sent was handed
+  your position the moment they were placed, ninety metres off and out of sight, so you were in
+  combat from then until the hunt ended, with nobody in view and the HUD saying they were still
+  searching. Now they are only told where you are once one of them has actually found you: has
+  eyes on you, or hears you fighting. Until then they search, the phone opens, and you can save.
+  If one of them walks into your line of sight, the fight starts the way any fight does.
+- **The hunt searches for real.** Because everybody already knew where you were, "searching" was
+  a fight in all but name, a scout's call-in was over before it began, and the Rival who texts
+  "found you" texted it almost as soon as they arrived. They now arrive, search, and say so when
+  they find you.
+- **A Rival you were tipped off about knew you were coming.** The one waiting at their place was
+  handed your position when they were placed, so they were in the fight before you got near.
+  They now stand there minding their own business until they see you, or you hurt them.
+- **Putting people down alive made you as frightening as killing them.** A knockout added the
+  same Dread as a body. It adds a quarter now, the same share it already cost a gang's opinion
+  of you.
+- **A room of people knocked out counted as a massacre.** Massacres, and the title that counts
+  them, count bodies only.
+- **Dread only went up.** More than half of it - your body count and the jobs you have pulled -
+  never came down: the body count lost half a percent a day of a number that had long since
+  stopped moving, and the jobs lost nothing at all. While you lie low they now fade a few points
+  a day each, down to what your whole record still earns, so a few dozen bodies fade to almost
+  nothing and a few hundred never quite do. Decay rate, under Reputation, sets the pace, and at
+  zero nothing fades, as before. Titles you have earned are never taken away.
+- **The Hub blamed chrome you had covered up.** "People fear you mostly for all that chrome"
+  counted the chrome you have installed, while Dread counts the chrome people can see. It counts
+  what they can see now, and says what brings the biggest part down.
+
+### How to bring Dread down
+- **At once:** cover your chrome (a coat, trousers, something across your face) and dress down.
+  Those two are a third of Dread and follow what you are wearing.
+- **What the street reacts to** is lower still with a mask on, the more people you leave
+  breathing, and the quieter your style.
+- **Over time:** lie low. Your body count, your jobs and your heat with the law all fade.
+- **To stop it climbing:** leave people alive, avoid finishers, blades, explosives and
+  bystanders, and lower Dread gain under Reputation.
+
+### How it stays out of trouble
+- No new calls into the game: the call that hands a hunter your position is the same one, moved
+  to the moment you are found. The fade uses the game's own logarithm, next to the exponential
+  Dread has always used.
+- Nothing in your save changed shape.
+
 ## [1.6.3] - 2026-11-04
 
 Three reports fixed at the root, and gangs now fight over the city's streets. Crews no longer

@@ -18,8 +18,19 @@ public func CBApplyDecay(sys: ref<CyberbaneSystem>, elapsedDays: Float) -> Void 
   }
   let f = elapsedDays * decayMult;
 
-  // Kill-dread points -0.5%/day; heat points -2%/day; archetypes x0.995/day.
-  sys.AddKillDreadPoints(sys.GetKillDreadPoints() * (PowF(0.995, f) - 1.0));
+  // The body count and the jobs fade while V lies low, a few points of each a day, down to what
+  // V's whole record still earns. Until 1.6.4 the body count lost half a percent of its points a
+  // day and the jobs nothing at all, so between them more than half of Dread only ever went up
+  // (see CBFadeDreadPoints for why fading the points could not have fixed it). Heat points -2%/day;
+  // archetypes x0.995/day.
+  let kNow = sys.GetKillDreadPoints();
+  let kNext = CBFadeDreadPoints(kNow, CBConfig.KillDreadCurveScale(),
+                                CBConfig.KillDreadFadePerDay() * f, CBKillDreadFloor(sys));
+  sys.AddKillDreadPoints(kNext - kNow);
+  let xNow = sys.GetDeedDreadPoints();
+  let xNext = CBFadeDreadPoints(xNow, CBConfig.DeedDreadCurveScale(),
+                                CBConfig.DeedDreadFadePerDay() * f, CBDeedDreadFloor(sys));
+  sys.AddDeedDreadPoints(xNext - xNow);
   sys.AddHeatPoints(sys.GetHeatPoints() * (PowF(0.98, f) - 1.0));
   sys.DecayArchetypes(PowF(0.995, f));
   sys.RefreshPrimaryArchetype();
@@ -55,4 +66,37 @@ public func CBApplyDecay(sys: ref<CyberbaneSystem>, elapsedDays: Float) -> Void 
   }
 
   sys.GetScore().MarkDirty();
+}
+
+// What V's body count can never fade below: everybody V has ever killed. A few dozen bodies fade
+// to almost nothing; a few hundred leave something people never quite forget.
+public func CBKillDreadFloor(sys: ref<CyberbaneSystem>) -> Float {
+  if !IsDefined(sys) {
+    return 0.0;
+  }
+  let kills = Cast<Float>(sys.TotalKills());
+  return CBConfig.KillDreadFloorMax() * (1.0 - ExpF(-kills / CBConfig.KillDreadFloorKills()));
+}
+
+// And the jobs: a share of what every job V finished was worth, and of the killing nobody could
+// put a name to. The street keeps the story long after it stops telling it.
+public func CBDeedDreadFloor(sys: ref<CyberbaneSystem>) -> Float {
+  if !IsDefined(sys) {
+    return 0.0;
+  }
+  let pts = 0.0;
+  let content = sys.GetContent();
+  if IsDefined(content) {
+    for id in sys.GetDeedsDone() {
+      let def = content.GetDeed(id);
+      if IsDefined(def) {
+        pts += def.dread;
+      }
+    }
+  }
+  let stats = sys.GetStats();
+  if IsDefined(stats) {
+    pts += Cast<Float>(stats.unattributed) * CBConfig.UnattributedDeedDread();
+  }
+  return CBDeedDreadComponent(pts * CBConfig.DeedDreadFloorShare());
 }
