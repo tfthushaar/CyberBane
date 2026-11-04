@@ -80,6 +80,7 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   e.faction = faction;
   e.record = puppet.GetRecordID();
   e.at = CBGameSeconds(game);
+  e.tick = sys.GetTickCount();
   e.spared = true;
   e.scarMask = puppet.cbScarMask;   // what V did on the way down, before the puppet is gone
   sys.AddEscapee(e);
@@ -175,6 +176,7 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   e.faction = faction;
   e.record = puppet.GetRecordID();
   e.at = CBGameSeconds(game);
+  e.tick = sys.GetTickCount();
   e.scarMask = puppet.cbScarMask;
   let des = GameInstance.GetDynamicEntitySystem();
   // A Rival waiting at their place is still a Rival: the first shot can drop them low before the
@@ -267,10 +269,20 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
       // as attached while its components are being torn down, and reading its position
       // then is exactly the kind of query that takes the game down (crash safety).
       let gone = !CBNpcSafe(sys, e.puppet);   // despawned / streamed out = got away
+      let age = sys.GetTickCount() - e.tick;
+      if !gone {
+        e.lastPos = e.puppet.GetWorldPosition();
+        e.hasPos = true;
+      }
       if e.spared {
         // Someone V put down and did not finish. They do not run, so "left alive" means either
-        // they streamed away still breathing, or enough time passed that V clearly walked off.
-        if gone || (now - e.at) > CBConfig.SparedResolveSeconds() {
+        // they streamed away still breathing, or V clearly walked off: a little while has passed
+        // and V is out of the fight or well away from them. Not while V is still fighting over
+        // them - that is not mercy yet, and finishing them a moment later has to count as a kill.
+        let walkedOff = !IsDefined(player) || !player.IsInCombat()
+                     || (!gone && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance());
+        if gone || (age >= CBConfig.SparedResolveTicks() && walkedOff)
+           || age >= CBConfig.SparedResolveMaxTicks() {
           CBHandleSpared(sys, game, e, now);
           sys.RemoveEscapee(e);
         }
@@ -281,7 +293,7 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
           CBHandleEscape(sys, game, e, now);
           sys.RemoveEscapee(e);
         } else {
-          if (now - e.at) > CBConfig.EscapeTimeoutSeconds() {
+          if age > CBConfig.EscapeTimeoutTicks() {
             sys.RemoveEscapee(e);
           }
         }
@@ -335,7 +347,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       CBCreditMercy(sys, already.faction, CBConfig.MercyRivalCredit());
       already.scarMask = already.scarMask | e.scarMask;
       // Left lying here, alive. Somebody will have seen it (Rivals/Whereabouts.reds).
-      CBNoteRivalSeen(sys, game, already, e.puppet);
+      CBNoteEscapeeSeen(sys, game, already, e);
       // The encounter is over, so close it the way every other ending does.
       //
       // This was the one way out of a Rival fight that tidied nothing up. Beating one to death
@@ -372,7 +384,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now);
   if IsDefined(nr) {
     nr.scarMask = e.scarMask;   // they remember how it went
-    CBNoteRivalSeen(sys, game, nr, e.puppet);
+    CBNoteEscapeeSeen(sys, game, nr, e);
     nr.state = EnumInt(ECBRivalState.Hunting);
     if CBMessagesOn() {
       CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, nr)) walked away from you breathing. They will not forget it.");
@@ -394,7 +406,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     let r = sys.FindRivalById(sys.GetActiveRivalId());
     if IsDefined(r) {
       // Where they were when V last saw them, for whoever passes it on (Rivals/Whereabouts.reds).
-      CBNoteRivalSeen(sys, game, r, e.puppet);
+      CBNoteEscapeeSeen(sys, game, r, e);
       CBRivalEscaped(r, content, now, district, true);
       r.state = EnumInt(ECBRivalState.Hunting);
       if toasts && IsDefined(content) {
@@ -412,7 +424,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Survivor, district, now);
     if IsDefined(nr) {
       nr.scarMask = e.scarMask;
-      CBNoteRivalSeen(sys, game, nr, e.puppet);
+      CBNoteEscapeeSeen(sys, game, nr, e);
     }
     if IsDefined(nr) {
       nr.state = EnumInt(ECBRivalState.Hunting);

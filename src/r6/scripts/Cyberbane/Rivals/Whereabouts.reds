@@ -77,18 +77,52 @@ func CBLairPointUsable(sys: ref<CyberbaneSystem>, game: GameInstance, at: Vector
 }
 
 // This Rival was standing here, alive, as an encounter ended. Called from the places where one
-// ends that way (CBRivalEscapedByPlayer, CBHandleEscape, CBHandleSpared), all on settled ticks.
+// ends that way (CBRivalEscapedByPlayer, CBHandleEscape, CBHandleSpared, a crew survivor in
+// CBChaseGiveUp), all on settled ticks.
+//
+// "I'm not getting tips to hunt my rivals." This asked only the body, and only a body that was
+// still attached. The usual way a Rival walks away alive is V outrunning them, and the hunt only
+// gives up once every hunter is well over a hundred metres off and has stayed there - which is
+// exactly where a body streams out. So the commonest escape wrote nothing down, and with nothing
+// written down there was nothing for anybody to tip V off about. Where the Rival was last seen
+// standing is kept as they move (CBTrackRivalWhereabouts), and that is used when the body cannot
+// answer for itself.
 public func CBNoteRivalSeen(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>,
                             body: wref<ScriptedPuppet>) -> Void {
-  if !IsDefined(sys) || !IsDefined(r) || !CBNpcSafe(sys, body) || !CBWorldStable(game) {
+  if !IsDefined(sys) || !IsDefined(r) || !CBWorldStable(game) {
     return;
   }
+  let at: Vector4;
+  if CBNpcSafe(sys, body) {
+    at = body.GetWorldPosition();
+  } else {
+    if !sys.RivalLastPos(r.id, CBConfig.RivalLastPosFreshTicks(), at) {
+      return;
+    }
+  }
+  CBNoteRivalSeenAt(sys, game, r, at);
+}
+
+// The same, for somebody who walked away from V as an escapee: their body if it is still here,
+// otherwise the last place the escape tracker saw them standing (Reactions/CombatFlee.reds).
+public func CBNoteEscapeeSeen(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>,
+                              e: ref<CBEscapee>) -> Void {
+  if !IsDefined(sys) || !IsDefined(r) || !IsDefined(e) {
+    return;
+  }
+  if CBNpcSafe(sys, e.puppet) || !e.hasPos {
+    CBNoteRivalSeen(sys, game, r, e.puppet);
+    return;
+  }
+  if CBWorldStable(game) {
+    CBNoteRivalSeenAt(sys, game, r, e.lastPos);
+  }
+}
+
+// Write down that this Rival was seen standing here.
+func CBNoteRivalSeenAt(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, at: Vector4) -> Void {
   let svc = sys.GetPlayService();
-  if !IsDefined(svc) {
-    return;
-  }
-  let at = body.GetWorldPosition();
-  if !CBLairPointUsable(sys, game, at) {
+  if !IsDefined(svc) || !CBLairPointUsable(sys, game, at) {
     return;
   }
   // Somewhere new, so whatever V was told before no longer holds.
@@ -198,9 +232,15 @@ func CBPickTipster(sys: ref<CyberbaneSystem>, faction: CName) -> CName {
 
 // Can this Rival be the subject of a tip right now? Not while they are on their way to V, out
 // there already, or waiting at their place.
+//
+// Merely being next in the Rival lane's queue does not count as on their way. It used to: the
+// lane picks whoever has got away from V most, which is almost always the Rival V has just lost,
+// so the one Rival there was a sighting of was the one Rival nobody would tip V off about. Until
+// they text V that they are coming they are only asking around about V, somewhere - and that
+// somewhere is what the tip is about. If V finds them first, the lane lets them go
+// (CBLairTryPlace).
 func CBTipEligible(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
-  if r.id == sys.GetActiveRivalId() || r.id == sys.GetLaneRivalId(CBLaneRival())
-     || r.id == sys.GetRivalWarned() {
+  if r.id == sys.GetActiveRivalId() || r.id == sys.GetRivalWarned() || r.id == sys.GetRivalCarPending() {
     return false;
   }
   if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
@@ -249,20 +289,27 @@ public func CBTipTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if last > 0.0 && now >= last && (now - last) < CBConfig.TipGapHours() * CBConfig.SecondsPerHour() {
     return;
   }
-  if RandF() >= CBConfig.TipChancePerHour() {
-    return;
-  }
   let minAge = CBConfig.TipMinAgeHours() * CBConfig.SecondsPerHour();
   let picks: array<ref<CBSighting>>;
+  let oldest = 0.0;
   for s in svc.GetSightings() {
     if IsDefined(s) && s.tippedAt <= 0.0 && now >= s.seenAt && (now - s.seenAt) >= minAge {
       let r = CBSightingRival(sys, s);
       if IsDefined(r) && CBTipEligible(sys, game, r) && CBLairPointUsable(sys, game, CBSightingPos(s)) {
         ArrayPush(picks, s);
+        oldest = MaxF(oldest, now - s.seenAt);
       }
     }
   }
   if ArraySize(picks) == 0 {
+    return;
+  }
+  // Word gets round. The longer somebody has been seen and nobody has said, the likelier it is
+  // that somebody does: a flat chance an hour could leave a sighting untold until the Rival had
+  // come back for V anyway, which is the other half of why tips felt like they never came.
+  let overHours = (oldest - minAge) / CBConfig.SecondsPerHour();
+  let chance = ClampF(CBConfig.TipChancePerHour() + CBConfig.TipChanceRisePerHour() * overHours, 0.0, 1.0);
+  if RandF() >= chance {
     return;
   }
   let pick = picks[RandRange(0, ArraySize(picks))];
@@ -407,6 +454,9 @@ public func CBWhereaboutsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   let on = CBHideoutsOn();
   let tick = sys.GetTickCount();
+  if tick % 2 == 0 {
+    CBTrackRivalWhereabouts(sys, game);
+  }
   if tick % 10 == 0 {
     CBLeadExpiryTick(sys, game);
   }
@@ -426,6 +476,25 @@ public func CBWhereaboutsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   if on && tick % CBConfig.LairTryEveryTicks() == 0 {
     CBLairTryPlace(sys, game, player);
+  }
+}
+
+// Keep note of where the Rival out in the world is standing, while they are standing, so the
+// street can say where they were last seen even once their body has streamed out of reach
+// (CBNoteRivalSeen). One read of a position every other tick, on our own recorded body only.
+func CBTrackRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let id = sys.GetActiveRivalId();
+  if id <= 0 {
+    return;
+  }
+  let r = sys.FindRivalById(id);
+  if !IsDefined(r) || !EntityID.IsDefined(r.spawnedEntityId) {
+    return;
+  }
+  let body = GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet;
+  if CBStillStanding(body) && CBNpcSafe(sys, body)
+     && !VehicleComponent.IsMountedToVehicle(game, body.GetEntityID()) {
+    sys.NoteRivalLastPos(id, body.GetWorldPosition());
   }
 }
 
@@ -454,7 +523,7 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
      || CBStoryHoldNow(game) || !CBWorldStable(game) {
     return;
   }
-  if CBCountLiveTagged(game, n"Cyberbane") >= CBConfig.MaxLiveSpawns() {
+  if CBSpawnRoom(game) <= 0 {
     return;
   }
   let des = GameInstance.GetDynamicEntitySystem();
@@ -489,6 +558,12 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
       let body: EntityID;
       if CBCreateSpawn(des, r.recordID, r.appearance, at, facing, n"CB_Lair", body) {
         r.spawnedEntityId = body;
+        // V found them before their turn came round: the lane lets them go rather than send the
+        // same person after V from somewhere else as well. The lane is busy while they wait, and
+        // picks again once this encounter is over.
+        if sys.GetLaneRivalId(CBLaneRival()) == r.id {
+          sys.ClearLane(CBLaneRival());
+        }
         // Nothing else may think it sent them: a leftover arrival check from an earlier walk-in
         // would otherwise have the Rival tick re-examine this body as if it had.
         r.arrivalCheckTicks = 0;

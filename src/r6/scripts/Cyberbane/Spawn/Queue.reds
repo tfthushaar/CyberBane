@@ -52,11 +52,128 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
     return CBLiveRivalPresent(sys, game) || sys.GetRivalCarPending() > 0 || sys.IsLairActive();
   }
   if lane == CBLaneApex() {
-    return NotEquals(sys.GetPendingApexFaction(), n"") || CBLiveTaggedPresent(game, n"CB_Apex");
+    // A crew on its way brings its own gang's apex squad (CBCrewBringsApex), so the apex lane
+    // does not send a second one into the same fight; nor while a squad is still being brought
+    // up to four.
+    let crewApexComing = CBCrewApexOn()
+                      && (NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetScoutFaction(), n""));
+    return NotEquals(sys.GetPendingApexFaction(), n"") || CBLiveTaggedPresent(game, n"CB_Apex")
+        || NotEquals(sys.GetApexMusterFaction(), n"") || crewApexComing;
   }
-  // A scout out looking holds the crew lane: the crew is waiting on what the scout finds.
+  // A scout out looking holds the crew lane: the crew is waiting on what the scout finds. A crew
+  // that came with its apex squad is out for as long as either half of it is standing.
   return NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetScoutFaction(), n"")
-      || CBLiveTaggedPresent(game, n"CB_Squad");
+      || CBLiveTaggedPresent(game, n"CB_Squad")
+      || (sys.ActiveSquadHasApex() && CBLiveTaggedPresent(game, n"CB_Apex"));
+}
+
+// How many of ours are in the world or on their way into it.
+//
+// The ceiling on live spawns (CBSpawnGroup) counted only bodies that had finished attaching, and
+// a spawn is a request that takes a moment to attach. So several groups asked for in the same
+// tick - an apex squad and its crew, a Rival and their escorts - each saw the whole ceiling free,
+// and the ceiling held only between ticks. Counting anything still spawning closes that.
+public func CBCountLiveOrSpawning(game: GameInstance, tag: CName) -> Int32 {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return 0;
+  }
+  let ids = des.GetTaggedIDs(tag);
+  let n = 0;
+  let i = 0;
+  while i < ArraySize(ids) {
+    let id = ids[i];
+    i += 1;
+    if des.IsSpawning(id) {
+      n += 1;
+    } else {
+      let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+      if CBStillStanding(p) {
+        n += 1;
+      }
+    }
+  }
+  return n;
+}
+
+// As above, leaving one body out: the one whose death is being handled. For "was that the last of
+// them" - somebody still on their way into the world is not beaten yet.
+public func CBCountLiveOrSpawningExcept(game: GameInstance, tag: CName, except: EntityID) -> Int32 {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return 0;
+  }
+  let ids = des.GetTaggedIDs(tag);
+  let n = 0;
+  let i = 0;
+  while i < ArraySize(ids) {
+    let id = ids[i];
+    i += 1;
+    if NotEquals(id, except) {
+      if des.IsSpawning(id) {
+        n += 1;
+      } else {
+        let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+        if CBStillStanding(p) {
+          n += 1;
+        }
+      }
+    }
+  }
+  return n;
+}
+
+// Room left under the ceiling on how many of ours may be in the world at once.
+public func CBSpawnRoom(game: GameInstance) -> Int32 {
+  return Max(0, CBConfig.MaxLiveSpawns() - CBCountLiveOrSpawning(game, n"Cyberbane"));
+}
+
+// ---- A hit squad is an apex squad and a crew ------------------------------------------
+//
+// "Apex squad should always be four members with MaxTac-like roles; a hit squad should contain an
+// apex squad and other crew." Until 1.6.3 only a gang at vendetta brought its apex, and only when
+// the four of them could be put in a car - which, with V on foot (the default), is never - so in
+// practice no crew ever arrived with one. Now every crew brings its gang's apex squad, whichever
+// way they come, and the one setting (Crews bring the apex squad) turns it off.
+public func CBCrewApexOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return true;
+  }
+  return rt.GetSettings().vendettaApexSquad;
+}
+
+// Does this gang's next crew come with its apex squad? The one answer for the spawn, the warning
+// text and the HUD line, so none of them promises what another will not do.
+//
+// Not while another apex squad is already in the world, on its way, or still being brought up to
+// four: one apex squad at a time, as the apex lane has always kept it, and the people already out
+// are in the fight anyway.
+public func CBCrewBringsApex(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> Bool {
+  if !IsDefined(sys) || !IsDefined(fs) || !CBCrewApexOn() {
+    return false;
+  }
+  let record = CBApexRecordFor(fs);
+  if !TDBID.IsValid(record) || !CBRecordIsPerson(record) {
+    return false;
+  }
+  if NotEquals(sys.GetPendingApexFaction(), n"") || NotEquals(sys.GetApexMusterFaction(), n"") {
+    return false;
+  }
+  return !CBLiveTaggedPresent(sys.GetGameInstance(), n"CB_Apex");
+}
+
+// What a gang says is coming, in its own words: the crew's number, and its best leading them.
+public func CBCrewComingLine(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>) -> String {
+  if !IsDefined(sys) || !IsDefined(fs) {
+    return "Our people are on their way.";
+  }
+  let count = CBNumberWord(CBCrewSizeFor(sys, fs, CBCrewIsInfamous(sys)));
+  if CBCrewBringsApex(sys, fs) {
+    let name = CBApexName(CBContent(game), fs.id, fs.apexAtKills);
+    return s"\(name) and three of our best are on their way. \(count) more of ours with them.";
+  }
+  return s"\(count) of ours are on their way.";
 }
 
 // Is anyone wearing this tag still alive?
@@ -85,27 +202,6 @@ public func CBCountLiveTagged(game: GameInstance, tag: CName) -> Int32 {
     if CBStillStanding(p) {
       n += 1;
     }
-  }
-  return n;
-}
-
-// As above, leaving one body out of the count: the one whose death is being handled.
-public func CBCountLiveTaggedExcept(game: GameInstance, tag: CName, except: EntityID) -> Int32 {
-  let des = GameInstance.GetDynamicEntitySystem();
-  if !IsDefined(des) {
-    return 0;
-  }
-  let ids = des.GetTaggedIDs(tag);
-  let n = 0;
-  let i = 0;
-  while i < ArraySize(ids) {
-    if NotEquals(ids[i], except) {
-      let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
-      if CBStillStanding(p) {
-        n += 1;
-      }
-    }
-    i += 1;
   }
   return n;
 }
@@ -595,6 +691,11 @@ public func CBRivalsOn() -> Bool {
 // So the ladder reads: hurt a gang and get seen, a crew comes; beat the crew, their best comes.
 
 // The gangs whose turf V is standing on. Usually one, sometimes two, often none.
+//
+// With turf wars on, that is whoever actually holds a share of the district now
+// (Model/Territory.reds): a gang V has broken is pushed off its own streets, and a gang that moved
+// in on them is on its streets there. Every question about turf - whose lookouts watch V, whose
+// crew knows where V is, whose vendors know where V stands - goes through here, so they all agree.
 public func CBTurfGangsHere(sys: ref<CyberbaneSystem>) -> array<CName> {
   let out: array<CName>;
   if !IsDefined(sys) {
@@ -604,6 +705,14 @@ public func CBTurfGangsHere(sys: ref<CyberbaneSystem>) -> array<CName> {
   let district = sys.GetCurrentDistrict();
   if !IsDefined(content) || Equals(district, n"") {
     return out;
+  }
+  if CBTurfWarsOn() {
+    // The answer from the last district sample, when it is about this district; worked out on
+    // the spot only in the moment between walking into a district and the next sample.
+    if Equals(sys.GetTurfHereDistrict(), district) {
+      return sys.GetTurfHereGangs();
+    }
+    return CBTurfGangsIn(sys, sys.GetGameInstance(), district);
   }
   for prof in content.GetFactions() {
     if IsDefined(prof) && prof.isGang && ArrayContains(prof.turf, district) {
@@ -702,12 +811,18 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   if !IsDefined(sys) || Equals(faction, n"") {
     return;
   }
+  // Their apex squad came with them and is down too: nobody else of it walks into a fight that
+  // is over. Read before the line below, which forgets that it came.
+  if sys.ActiveSquadHasApex() && Equals(sys.GetApexMusterFaction(), faction) {
+    sys.ClearApexMuster();
+  }
   sys.SetActiveSquadFaction(n"");   // nobody left to have escaped
   let fs = sys.FindFaction(faction);
   if !IsDefined(fs) {
     return;
   }
   sys.NoteCrewBeaten(faction);
+  CBWeakenGang(sys, game, faction, CBConfig.GangLossCrew());   // a whole crew gone is felt on the street
   CBLog.Info(n"Spawn", s"Crew from \(NameToString(faction)) wiped out; their apex squad is next in line.");
   // Somebody is glad to see that crew gone, and pays for it (Spawn/Loot.reds).
   let crewLabel = CBFactionLabel(faction);
@@ -935,7 +1050,13 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
     }
   }
   // Harder difficulty means harder fights, not instant deaths: a little smaller.
-  return Max(2, size - CBConfig.DifficultyCrewTrim() * CBDifficultyLevel());
+  size = Max(2, size - CBConfig.DifficultyCrewTrim() * CBDifficultyLevel());
+  // Never more than can actually be in the world at once (CBSpawnGroup's ceiling), leaving the
+  // apex squad's four chairs free when crews bring it. The vendetta slider goes past the ceiling,
+  // so the text could promise twenty and eighteen at most could ever turn up; this is the one
+  // number both the text and the spawn use, so it is the number that arrives.
+  let ceiling = CBConfig.MaxLiveSpawns() - (CBCrewApexOn() ? CBConfig.ApexStrikeTeamSize() : 0);
+  return Min(size, Max(2, ceiling));
 }
 
 func CBCrewIsInfamous(sys: ref<CyberbaneSystem>) -> Bool {
@@ -949,6 +1070,9 @@ public func CBCrewGrade(sys: ref<CyberbaneSystem>, faction: CName) -> String {
     return "CREW";
   }
   let fs = sys.FindFaction(faction);
+  if CBCrewBringsApex(sys, fs) {
+    return "APEX CREW";
+  }
   let size = CBCrewSizeFor(sys, fs, CBCrewIsInfamous(sys));
   return size >= 5 ? "HEAVY CREW" : "CREW";
 }

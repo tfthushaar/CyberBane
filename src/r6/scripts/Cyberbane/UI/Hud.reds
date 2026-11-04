@@ -22,13 +22,15 @@
 // other piece of world work in this mod is kept off UI callbacks.
 
 // Six screens. Messages are not one of them: they live in V's phone (UI/RealPhone.reds).
-public func CBHudTabCount() -> Int32 = 6
+public func CBHudTabCount() -> Int32 = 7
 public func CBHudStandingTab() -> Int32 = 1
 public func CBHudFactionsTab() -> Int32 = 2
-public func CBHudCityTab() -> Int32 = 3
-public func CBHudRivalsTab() -> Int32 = 4
-public func CBHudTitlesTab() -> Int32 = 5
-public func CBHudHistoryTab() -> Int32 = 6
+// Next to GANGS on purpose: what the gangs think of V, then what V has done to their streets.
+public func CBHudTurfTab() -> Int32 = 3
+public func CBHudCityTab() -> Int32 = 4
+public func CBHudRivalsTab() -> Int32 = 5
+public func CBHudTitlesTab() -> Int32 = 6
+public func CBHudHistoryTab() -> Int32 = 7
 
 // Lines of prose each screen has room for under its own content, before the footer rule at 934.
 // Every screen draws its own content first and the prose goes underneath or beside it; these are
@@ -38,7 +40,8 @@ public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == CBHudStandingTab() {
     return 11;   // under four meters
   }
-  if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() || tab == CBHudCityTab() {
+  if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() || tab == CBHudCityTab()
+     || tab == CBHudTurfTab() {
     return 9;    // under ten list rows
   }
   if tab == CBHudTitlesTab() {
@@ -351,10 +354,11 @@ public func CBHudTabName(tab: Int32) -> String {
   switch tab {
     case 1: return "STANDING";
     case 2: return "GANGS";
-    case 3: return "THE CITY";
-    case 4: return "RIVALS";
-    case 5: return "TITLES";
-    case 6: return "HISTORY";
+    case 3: return "TURF";
+    case 4: return "THE CITY";
+    case 5: return "RIVALS";
+    case 6: return "TITLES";
+    case 7: return "HISTORY";
     default: return "";
   }
 }
@@ -364,15 +368,16 @@ public func CBHudTabBlurb(tab: Int32) -> String {
   switch tab {
     case 1: return "Who you are in this city, and what is on its way to you.";
     case 2: return "What each gang thinks of you. Click one to see more, or to pay them off.";
-    case 3: return "Where in Night City your name carries, district by district.";
-    case 4: return "The people who have survived you and are still looking. Click one for their file.";
-    case 5: return "What the street calls you. Click a title to go by it.";
-    case 6: return "The ledger: what you did, where, and who it was.";
+    case 3: return "Who holds each district, how firmly, and who is fighting them for it.";
+    case 4: return "Where in Night City your name carries, district by district.";
+    case 5: return "The people who have survived you and are still looking. Click one for their file.";
+    case 6: return "What the street calls you. Click a title to go by it.";
+    case 7: return "The ledger: what you did, where, and who it was.";
     default: return "";
   }
 }
 
-// A screen number that is always one of the six.
+// A screen number that is always one of the seven.
 public func CBHudClampTab(tab: Int32) -> Int32 {
   if tab < 1 {
     return 1;
@@ -1468,6 +1473,71 @@ public class CBHud {
     }
   }
 
+  // Who holds each district (Model/Territory.reds). One row a district: the gang that holds it,
+  // a bar for how much of it they hold, and one word or two for what is going on there. Nothing on
+  // it is clickable, because there is nothing to do here but read it. Returns how many rows it drew.
+  private func RenderTurf(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int32 {
+    this.PlaceRows(CBHudLayoutWide());
+    let shown = 0;
+    if !CBTurfWarsOn() {
+      return shown;
+    }
+    let score = sys.GetScore();
+    let content = sys.GetContent();
+    let i = 0;
+    while i < CBDistrictCount() && shown < CBHudListRows() {
+      let district = CBDistrictAt(i);
+      i += 1;
+      let ids: array<CName>;
+      let shares: array<Float>;
+      CBTurfShares(sys, game, district, ids, shares);
+      if ArraySize(ids) > 0 {
+        let top = 0;
+        let k = 1;
+        while k < ArraySize(ids) {
+          if shares[k] > shares[top] {
+            top = k;
+          }
+          k += 1;
+        }
+        let second = -1;
+        k = 0;
+        while k < ArraySize(ids) {
+          if k != top && (second < 0 || shares[k] > shares[second]) {
+            second = k;
+          }
+          k += 1;
+        }
+        let holder = ids[top];
+        let status = CBHudTurfStatus(content, district, holder, ids, shares, second);
+        let pip = CBHudGrey();
+        if IsDefined(score) {
+          let posture = score.GetPosture(holder);
+          if Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) {
+            pip = CBHudRed();
+          } else {
+            if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) {
+              pip = CBHudGreen();
+            }
+          }
+        }
+        let place = CBDistrictLabel(district);
+        if StrLen(place) == 0 {
+          place = NameToString(district);
+        }
+        this.SetRow(shown, CBHudLayoutWide(), pip, false, false,
+          place,
+          CBHudMeter(shares[top], 1.0, 12),
+          s"\(RoundF(shares[top] * 100.0))%",
+          CBBarFactionLabel(holder),
+          "",
+          status);
+        shown += 1;
+      }
+    }
+    return shown;
+  }
+
   private func RenderRivals(sys: ref<CyberbaneSystem>) -> Void {
     this.PlaceRows(CBHudLayoutWide());
     let content = sys.GetContent();
@@ -1653,45 +1723,52 @@ public class CBHud {
         this.RenderFactions(sys);
         this.RenderFactionDetail(sys, game);
       } else {
-        if this.m_tab == CBHudCityTab() {
-          this.RenderCity(sys);
-          this.SetBody(x, listBottom, w, CBHudDistricts(sys), maxLines);
+        if this.m_tab == CBHudTurfTab() {
+          let turfRows = this.RenderTurf(sys, game);
+          // Straight under the last district rather than under ten rows' worth of empty space.
+          let turfTop = CBHudContentTop() + Cast<Float>(Max(turfRows, 1)) * CBHudRowHeight() + 24.0;
+          this.SetBody(x, turfTop, w, CBHudTurfBody(sys), maxLines);
         } else {
-          if this.m_tab == CBHudRivalsTab() {
-            this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
-            // An arrival that was actually attempted and refused is more specific than the hold.
-            let blocked = CBBlockLabel(CBLastSpawnBlock());
-            if StrLen(blocked) > 0 && sys.GetHuntHoldReason() == CBHoldNoRoom() {
-              this.m_holdLabel = blocked;
-            }
-            this.RenderRivals(sys);
-            this.RenderRivalDetail(sys, game);
+          if this.m_tab == CBHudCityTab() {
+            this.RenderCity(sys);
+            this.SetBody(x, listBottom, w, CBHudDistricts(sys), maxLines);
           } else {
-            if this.m_tab == CBHudTitlesTab() {
-              this.RenderTitles(sys);
-              let colX = x + CBHudTitleListW() + 60.0;
-              this.SetBody(colX, CBHudContentTop(), w - CBHudTitleListW() - 60.0, CBHudTitles(sys), maxLines);
-            } else {
-              // History is the ledger - everything V has accumulated - so starting over belongs
-              // on it, rather than buried in Mod Settings where a player looking at what they
-              // have built is not looking.
-              //
-              // The work is the switch that already exists: RequestHardReset, taken by the fast
-              // tick (CyberbaneSystem, TakeHardResetRequest). That matters twice over - it
-              // happens out of the paused menu like every other Hub action, and it is one code
-              // path rather than a second wipe that could drift from the first.
-              //
-              // It clears what playing earned: reputation, gangs, districts, rumours, Rivals,
-              // titles, deeds, the log. It deliberately leaves chrome, look, menace and aura,
-              // because those are not stored progress - they are read back off V's cyberware,
-              // clothes and build on every sample, so wiping them would mean nothing and they
-              // would be back within the second.
-              if this.m_resetArmed {
-                this.SetAction("Click again: erase everything", true);
-              } else {
-                this.SetAction("Start over", true);
+            if this.m_tab == CBHudRivalsTab() {
+              this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
+              // An arrival that was actually attempted and refused is more specific than the hold.
+              let blocked = CBBlockLabel(CBLastSpawnBlock());
+              if StrLen(blocked) > 0 && sys.GetHuntHoldReason() == CBHoldNoRoom() {
+                this.m_holdLabel = blocked;
               }
-              this.SetBody(x, CBHudContentTop(), w, CBHudLog(sys), maxLines);
+              this.RenderRivals(sys);
+              this.RenderRivalDetail(sys, game);
+            } else {
+              if this.m_tab == CBHudTitlesTab() {
+                this.RenderTitles(sys);
+                let colX = x + CBHudTitleListW() + 60.0;
+                this.SetBody(colX, CBHudContentTop(), w - CBHudTitleListW() - 60.0, CBHudTitles(sys), maxLines);
+              } else {
+                // History is the ledger - everything V has accumulated - so starting over belongs
+                // on it, rather than buried in Mod Settings where a player looking at what they
+                // have built is not looking.
+                //
+                // The work is the switch that already exists: RequestHardReset, taken by the fast
+                // tick (CyberbaneSystem, TakeHardResetRequest). That matters twice over - it
+                // happens out of the paused menu like every other Hub action, and it is one code
+                // path rather than a second wipe that could drift from the first.
+                //
+                // It clears what playing earned: reputation, gangs, districts, rumours, Rivals,
+                // titles, deeds, the log. It deliberately leaves chrome, look, menace and aura,
+                // because those are not stored progress - they are read back off V's cyberware,
+                // clothes and build on every sample, so wiping them would mean nothing and they
+                // would be back within the second.
+                if this.m_resetArmed {
+                  this.SetAction("Click again: erase everything", true);
+                } else {
+                  this.SetAction("Start over", true);
+                }
+                this.SetBody(x, CBHudContentTop(), w, CBHudLog(sys), maxLines);
+              }
             }
           }
         }
@@ -2049,6 +2126,66 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
        + "district and a nobody in the next. The bar is how widely your name carries there.";
 }
 
+// What is going on in a district, in as few words as will do, for the right-hand column of TURF.
+func CBHudTurfStatus(content: ref<CyberbaneContent>, district: CName, holder: CName,
+                     ids: array<CName>, shares: array<Float>, second: Int32) -> String {
+  if !IsDefined(content) {
+    return "";
+  }
+  let prof = content.GetFaction(holder);
+  let home = IsDefined(prof) && ArrayContains(prof.turf, district);
+  if second >= 0 && shares[second] >= CBConfig.TurfPresenceShare()
+     && (CBGangsAreRivals(content, holder, ids[second]) || CBGangsAreRivals(content, ids[second], holder)) {
+    return s"VS \(CBBarFactionLabel(ids[second])) \(RoundF(shares[second] * 100.0))%";
+  }
+  if !home {
+    return "MOVED IN";
+  }
+  if second >= 0 && shares[second] >= CBConfig.TurfPresenceShare() {
+    return "SHARED";
+  }
+  return "HELD";
+}
+
+// The few lines under the districts: which gangs V has hurt, and how badly. Only those, so a
+// player who has hurt nobody reads one sentence instead of a table of full bars.
+func CBHudTurfBody(sys: ref<CyberbaneSystem>) -> String {
+  if !CBTurfWarsOn() {
+    return "Turf wars are off in Mod Settings: every gang keeps its own streets whatever you do to it.";
+  }
+  let content = sys.GetContent();
+  if !IsDefined(content) {
+    return "";
+  }
+  // The weakest few, weakest first. A handful of gangs, so a pick-the-lowest pass is plenty.
+  let picked: array<CName>;
+  let out = "";
+  let n = 0;
+  while n < 4 {
+    let best = n"";
+    let bestS = 97.0;   // anything this close to full is not worth a line
+    for prof in content.GetFactions() {
+      if IsDefined(prof) && prof.isGang && ArraySize(prof.turf) > 0 && !ArrayContains(picked, prof.id) {
+        let st = CBGangStrength(sys, prof.id);
+        if st < bestS {
+          best = prof.id;
+          bestS = st;
+        }
+      }
+    }
+    if Equals(best, n"") {
+      break;
+    }
+    ArrayPush(picked, best);
+    out += s"\(CBBarFactionLabel(best))   \(CBHudMeter(bestS, 100.0, 10))   \(CBGangStrengthWord(bestS))" + "\n";
+    n += 1;
+  }
+  if n == 0 {
+    return "Every gang is at full strength. Hurt one and its grip on its streets slips; break one and the gang at war with it next door moves in.";
+  }
+  return out + "They rebuild while you leave them alone. Break one and the gang at war with it next door moves in.";
+}
+
 // A number as a short bar of blocks, for a list where a real widget would be ten more of them.
 // Filled blocks then empty ones, so a column of these reads as a shape down the screen the way
 // the meters on the first screen do.
@@ -2302,7 +2439,11 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
                         if Equals(e.kind, n"Allied") {
                           line = s"\(gangCap) started treating you like one of their own.";
                         } else {
-                          line = NameToString(e.kind);
+                          if Equals(e.kind, n"TurfTaken") {
+                            line = s"\(gangCap) took over the streets.";
+                          } else {
+                            line = NameToString(e.kind);
+                          }
                         }
                       }
                     }

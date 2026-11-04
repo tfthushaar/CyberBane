@@ -167,9 +167,11 @@ public func CBTurfPriceModifier(sys: ref<CyberbaneSystem>) -> Float {
   }
   let best = 0.0;
   let worst = 0.0;
-  for prof in content.GetFactions() {
-    if IsDefined(prof) && prof.isGang && ArrayContains(prof.turf, district) {
-      let posture = score.GetPosture(prof.id);
+  // Whoever holds these streets now (Spawn/Queue.reds, CBTurfGangsHere): a gang pushed out of a
+  // district no longer has the vendors there looking over their shoulder at it.
+  for id in CBTurfGangsHere(sys) {
+    if NotEquals(id, n"") {
+      let posture = score.GetPosture(id);
       if Equals(posture, ECBPosture.Allied) {
         best = MinF(best, -CBConfig.TurfAlliedDiscount());
       } else {

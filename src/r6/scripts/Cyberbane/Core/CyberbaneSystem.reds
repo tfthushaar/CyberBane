@@ -75,6 +75,21 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_leadPinRival: Int32;          // whose
   private let m_leadPinId: NewMappinID;
   private let m_lastTipAt: Float;             // game seconds of the last tip, this session
+  // Where the Rival out in the world was last standing, and on which tick (Rivals/Whereabouts.reds).
+  // A Rival V outruns is a long way off by the time the hunt gives up, and often already streamed
+  // out, so their body cannot be asked where they are; this can. Session only.
+  private let m_rivalLastPosId: Int32;
+  private let m_rivalLastPos: Vector4;
+  private let m_rivalLastPosTick: Int32;
+  // Who held each district at the last look, by CBDistrictIndex, so a district changing hands is
+  // noticed once (Model/Territory.reds). Session only: the first look of a session only learns.
+  private let m_turfHolders: array<CName>;
+  private let m_turfKnown: Bool;
+  // Who is on their own streets in the district V is standing in, worked out on the district
+  // sample (a settled tick) so every reader - vendor prices included, which are asked for every
+  // item on a list - reads the answer instead of working it out again. Session only.
+  private let m_turfHereDistrict: CName;
+  private let m_turfHereGangs: array<CName>;
   private let m_threatBar: ref<CBThreatBar>;
   // The messenger. Session-only by design; see the note at the top of UI/PhoneMessages.reds
   // about why a persisted thread is not worth wiping everybody's reputation for.
@@ -246,6 +261,16 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_arrivalLeadTag: CName;        // and the tag that makes them matter
   private let m_arrivalFaction: CName;        // whose car this is, for picking role records
   private let m_arrivalRoleSquad: Bool;       // fill the seats by role rather than four alike
+  // The apex squad being brought to four (Spawn/FactionApex.reds, CBApexMusterTick). Which chairs
+  // have been put in the world for it, as bits 0..3, so the chairs a car or a walk-in could not
+  // fill are filled later, and a chair whose member V has already killed is never filled twice.
+  // Session only, like every other arrival field.
+  private let m_musterFaction: CName;
+  private let m_musterRecord: TweakDBID;
+  private let m_musterMask: Int32;
+  private let m_musterTicks: Int32;
+  // The hit squad out right now came with its gang's apex squad (Spawn/HitSquad.reds). Session only.
+  private let m_activeSquadApex: Bool;
   private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
   private let m_huntHoldReason: Int32;        // why no Rival can arrive right now (CBHold*)
   // Kills V has made recently, for Aura. Session-only: it describes the last minute, not the
@@ -773,6 +798,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         this.m_districtWord = standing;
         this.m_districtNewsTick = this.m_tickCount;
       }
+      CBRefreshTurfHere(this, game);   // whose streets these are now (Model/Territory.reds)
     }
     CBEncounterTick(this, game);
     CBSparedSweep(this, game);          // mercy the hit hook did not see (spec §10.2)
@@ -796,6 +822,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBTurfWatchTick(this, game);      // hanging around on a hostile gang's streets gets noticed
     }
     CBProcessCarTopUp(this, game);      // anybody a car was meant to bring and did not walks in
+    CBApexMusterTick(this, game);       // and an apex squad is always four, chair by chair
     CBHuntTick(this, game);             // the people after you search, find you, lose you
     CBRivalHuntTick(this, game);        // confirms a queued rival actually arrived
     CBWhereaboutsTick(this, game);      // a Rival waiting where they were last seen, and its pin
@@ -1114,6 +1141,65 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_lastTipAt = at;
   }
 
+  public func GetTurfHolder(index: Int32) -> CName {
+    if index < 0 || index >= ArraySize(this.m_turfHolders) {
+      return n"";
+    }
+    return this.m_turfHolders[index];
+  }
+
+  public func SetTurfHolder(index: Int32, holder: CName) -> Void {
+    if index < 0 || index >= CBDistrictCount() {
+      return;
+    }
+    while ArraySize(this.m_turfHolders) <= index {
+      ArrayPush(this.m_turfHolders, n"");
+    }
+    this.m_turfHolders[index] = holder;
+  }
+
+  public func GetTurfHereDistrict() -> CName {
+    return this.m_turfHereDistrict;
+  }
+
+  public func GetTurfHereGangs() -> array<CName> {
+    return this.m_turfHereGangs;
+  }
+
+  public func SetTurfHere(district: CName, gangs: array<CName>) -> Void {
+    this.m_turfHereDistrict = district;
+    this.m_turfHereGangs = gangs;
+  }
+
+  public func TurfHoldersKnown() -> Bool {
+    return this.m_turfKnown;
+  }
+
+  public func SetTurfHoldersKnown() -> Void {
+    this.m_turfKnown = true;
+  }
+
+  public func ForgetTurfHolders() -> Void {
+    ArrayClear(this.m_turfHolders);
+    this.m_turfKnown = false;
+  }
+
+  public func NoteRivalLastPos(rivalId: Int32, at: Vector4) -> Void {
+    this.m_rivalLastPosId = rivalId;
+    this.m_rivalLastPos = at;
+    this.m_rivalLastPosTick = this.m_tickCount;
+  }
+
+  // Where this Rival was last seen standing, if it was recently enough to still be true.
+  public func RivalLastPos(rivalId: Int32, maxAgeTicks: Int32, out at: Vector4) -> Bool {
+    if rivalId <= 0 || this.m_rivalLastPosId != rivalId
+       || (this.m_tickCount - this.m_rivalLastPosTick) > maxAgeTicks {
+      return false;
+    }
+    at = this.m_rivalLastPos;
+    return true;
+  }
+
   // Take every Rival numbered up to `upTo` off the roster. Returns how many went.
   public func RemoveRivalsUpTo(upTo: Int32) -> Int32 {
     let removed = 0;
@@ -1297,6 +1383,68 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func ResetApexRoles() -> Void {
     this.m_apexSeat = 0;
+  }
+
+  // ---- Bringing an apex squad to four -------------------------------------------------
+  //
+  // A squad is four chairs whatever the car seats, whatever the street will take on the first
+  // try. Every path that puts an apex member in the world marks their chair here; the muster
+  // tick walks in whoever is still missing until the squad is whole or the window closes.
+  public func BeginApexMuster(faction: CName, record: TweakDBID) -> Void {
+    this.m_musterFaction = faction;
+    this.m_musterRecord = record;
+    this.m_musterMask = 0;
+    this.m_musterTicks = CBConfig.ApexMusterTicks();
+  }
+
+  public func ClearApexMuster() -> Void {
+    this.m_musterFaction = n"";
+    this.m_musterRecord = TDBID.None();
+    this.m_musterMask = 0;
+    this.m_musterTicks = 0;
+  }
+
+  public func GetApexMusterFaction() -> CName {
+    return this.m_musterFaction;
+  }
+
+  public func GetApexMusterRecord() -> TweakDBID {
+    return this.m_musterRecord;
+  }
+
+  public func GetApexMusterMask() -> Int32 {
+    return this.m_musterMask;
+  }
+
+  // This chair has somebody in it now.
+  public func NoteApexChair(seat: Int32) -> Void {
+    if seat < 0 || seat > 3 || Equals(this.m_musterFaction, n"") {
+      return;
+    }
+    this.m_musterMask = this.m_musterMask | CBApexChairBit(seat);
+  }
+
+  public func ApexChairFilled(seat: Int32) -> Bool {
+    if seat < 0 || seat > 3 {
+      return true;
+    }
+    return (this.m_musterMask & CBApexChairBit(seat)) != 0;
+  }
+
+  // Counts the window down; returns what is left.
+  public func TickApexMuster() -> Int32 {
+    if this.m_musterTicks > 0 {
+      this.m_musterTicks -= 1;
+    }
+    return this.m_musterTicks;
+  }
+
+  public func SetActiveSquadApex(on: Bool) -> Void {
+    this.m_activeSquadApex = on;
+  }
+
+  public func ActiveSquadHasApex() -> Bool {
+    return this.m_activeSquadApex;
   }
 
   public func IsAdoptionOpen() -> Bool {
@@ -2090,7 +2238,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     let game = this.GetGameInstance();
     CBApplyDecay(this, elapsedDays);
     CBTributeTick(this, game);
-    CBHitSquadTick(this, game);
     CBSweepOrphans(game);   // whatever was left in a car seat or mid-spawn goes now it can
     CBSweepRemains(this, game);   // our dead and our spent cars, once V is far from them
     CBApexTick(this, game);
@@ -2104,6 +2251,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
+    CBTurfTick(this, game);         // a district changing hands is news (Model/Territory.reds)
     CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
 
@@ -2290,6 +2438,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // The pin on somebody's place is the map's, not an NPC's, so it is taken down by hand.
     CBDropLead(this, game);
     this.m_lairActive = false;
+    this.ClearApexMuster();   // nothing walks in after the reset to finish a squad
     CBDeleteTaggedSafe(game, n"Cyberbane");
 
     // The headline scores.
@@ -2333,7 +2482,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(svc) {
       svc.Retire(this.m_playthroughId);
       svc.DropPlaythroughSightings(this.m_playthroughId);
+      svc.DropPlaythroughGangPower(this.m_playthroughId);   // and how hard V had hit each gang
     }
+    this.ForgetTurfHolders();   // the new playthrough's map is learnt afresh, with nothing announced
     this.m_playthroughId = CBGeneratePlaythroughId();
     let rtNow = CyberbaneRuntime.Get();
     if IsDefined(rtNow) {
@@ -2790,6 +2941,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Faction of the hit squad currently deployed (for a Hunter Rival if it loses V, §9.9).
   public func SetActiveSquadFaction(faction: CName) -> Void {
     this.m_activeSquadFaction = faction;
+    // No crew out means no crew's apex either. Cleared here so every place that ends a crew -
+    // beaten, lost, called back for the story - ends both without having to remember to.
+    if Equals(faction, n"") {
+      this.m_activeSquadApex = false;
+    }
   }
   public func GetActiveSquadFaction() -> CName {
     return this.m_activeSquadFaction;

@@ -315,6 +315,7 @@ func CBStoryResetHunt(sys: ref<CyberbaneSystem>) -> Void {
     r.huntTicks = Max(r.huntTicks, CBConfig.RivalHuntRetryTicks());
   }
   sys.ClearScout();
+  sys.ClearApexMuster();   // nobody of theirs keeps walking in while the story has the stage
   sys.SetHuntState(CBHuntNone());
   sys.SetHuntFaction(n"");
   sys.SetHuntGrade("");

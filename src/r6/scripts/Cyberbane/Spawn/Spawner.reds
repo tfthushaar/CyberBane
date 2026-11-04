@@ -358,7 +358,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   // Never more of ours alive at once than the ceiling. A vendetta crew of twenty on top of an
   // apex squad, escorts and a Rival is a lot of fully simulated NPCs for the game to stream in
   // at one spot, and nothing about the fight needs every one of them at the same moment.
-  let room = CBConfig.MaxLiveSpawns() - CBCountLiveTagged(game, n"Cyberbane");
+  // Counting anybody still spawning as well, so groups asked for in the same tick share it.
+  let room = CBSpawnRoom(game);
   let count = wanted < room ? wanted : room;
   if room <= 0 {
     CBLog.Info(n"Spawn", s"Already \(CBConfig.MaxLiveSpawns()) of ours in the world; nobody else is sent until some are gone.");
@@ -1047,7 +1048,12 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   // low works: they leave V alone for a while (the same cooldown a crew starts when it is sent).
   let ranFrom = sys.GetHuntFaction();
   let crewLost = CBLiveTaggedPresent(game, n"CB_Squad") || CBLiveTaggedPresent(game, n"CB_Apex");
+  // Give a hit squad the slip and one of them can take it personally (spec §9.9 / §10.2). Read
+  // before anybody is removed: it is one of the people V actually lost, and where they stood is
+  // where the street will say they were seen.
+  CBCrewSurvivorTakesItPersonally(sys, game, des, sys.GetActiveSquadFaction());
   sys.ClearScout();
+  sys.ClearApexMuster();   // nobody else of theirs walks in after the hunt is over
   // V lost them, so they are allowed to be seen leaving rather than blinking out.
   CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
   CBDeleteTaggedSafe(game, n"CB_Squad", false, true);
@@ -1074,6 +1080,39 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
     CBPhoneFromStreet(game, "They lost you. Do not go back the way you came.");
   }
   CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");
+}
+
+// One of a crew V gave the slip comes back with a name (spec §9.9 / §10.2).
+//
+// This used to live in the hit squad's timed sweep, which fired on the in-game clock whether or
+// not V had escaped anybody - usually in the middle of the fight - and made the Rival out of the
+// gang's sample record rather than out of anybody who had been there. It happens now at the one
+// moment the promise in the readme describes: the hunt has given up because V lost them. The
+// survivor is a real member of the crew that was standing when it did, so the Rival who comes
+// back is somebody V met, and the spot they were standing on is where the street saw them last
+// (Rivals/Whereabouts.reds).
+func CBCrewSurvivorTakesItPersonally(sys: ref<CyberbaneSystem>, game: GameInstance,
+                                     des: ref<DynamicEntitySystem>, faction: CName) -> Void {
+  if !IsDefined(sys) || !IsDefined(des) || Equals(faction, n"") || !CBRivalsOn() {
+    return;
+  }
+  if RandF() >= CBConfig.RivalChanceHunter() {
+    return;
+  }
+  let ids = des.GetTaggedIDs(n"CB_Squad");
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if CBStillStanding(p) && CBNpcSafe(sys, p) {
+      let nr = CBCreateRival(sys, game, faction, p.GetRecordID(), n"", ECBRivalSource.Hunter,
+                             CBEventDistrict(sys, game), CBGameSeconds(game));
+      if IsDefined(nr) {
+        CBNoteRivalSeen(sys, game, nr, p);
+      }
+      return;   // one is enough; CBCreateRival refusing (caps, a story record) is final too
+    }
+  }
 }
 
 // The attitude group the game itself gives this kind of NPC.
@@ -1177,6 +1216,17 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     }
   }
 
+  // Ours who were put down alive and left there: knocked out, a non-lethal takedown. They never
+  // reach the death handler, so they are not in the list above, and until 1.6.3 the only thing
+  // that ever cleared them was the crew's timed despawn - which is gone because it was also
+  // deleting crews in the middle of fights. Same rule as a body: only once V is well away and
+  // cannot see them. Rivals are left to their own endings (the mercy path closes those), and a
+  // waiting Rival's place has its own sweep (Rivals/Whereabouts.reds).
+  CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Squad");
+  CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Apex");
+  CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Escort");
+  CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Scout");
+
   // Cars: only when no car is on its way or being boarded and nobody of ours is in a seat.
   if sys.HasPendingArrival() || CBAnyCrewSeated(game, des) {
     return;
@@ -1192,6 +1242,25 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     if farCar && !des.IsSpawning(carId) && !Equals(carId, sys.GetArrivalCarId()) {
       CBTrace("remove: a spent car of ours");
       des.DeleteEntity(carId);
+    }
+  }
+}
+
+// Remove anybody wearing this tag who is down but breathing, far from V and out of V's sight.
+// Through CBRemoveOne, so a seated or still-spawning body is left for a later pass.
+func CBSweepDownedTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                      ppos: Vector4, reach: Float, tag: CName) -> Void {
+  let ids = des.GetTaggedIDs(tag);
+  let i = 0;
+  while i < ArraySize(ids) {
+    let id = ids[i];
+    i += 1;
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if IsDefined(p) && CBNpcSafe(sys, p) && !p.IsDead() && !CBStillStanding(p) {
+      let at = p.GetWorldPosition();
+      if Vector4.Distance(at, ppos) > reach && CBOutOfView(game, at) {
+        CBRemoveOne(game, des, id, false, true);
+      }
     }
   }
 }

@@ -177,6 +177,13 @@ public class CBEscapee {
   public let faction: CName;
   public let record: TweakDBID;
   public let at: Float;
+  // The fast tick it was logged on. How long ago something happened in real time is counted in
+  // ticks; `at` is the in-game clock, which is for the Rival's own record.
+  public let tick: Int32;
+  // Where they were last seen standing, read while they were still in the world, so a Rival made
+  // of them after they streamed out can still be said to have been seen somewhere.
+  public let lastPos: Vector4;
+  public let hasPos: Bool;
   public let wasRival: Bool;
   // Logged because V put them down without killing them (a knockout / non-lethal takedown)
   // rather than because they ran. Resolved into a Spared Rival if V leaves them breathing.

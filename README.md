@@ -14,8 +14,9 @@ Cyberbane is a reputation overhaul for Cyberpunk 2077. Night City forms an opini
 on it. Fight, finish jobs, install chrome and put a look together, and a reputation spreads
 district by district. Crowds clear out of your way, gangs decide whether to respect you or hunt
 you, and vendors move their prices. The enemies who got away from you, and the ones you beat and
-left breathing, come back with names and grudges. Keep hitting one crew and they stop sending
-squads and send an apex hunter, sized to how dangerous you have become.
+left breathing, come back with names and grudges. A gang that wants you dead sends its crew with
+its apex squad at the front, sized to how dangerous you have become, and a gang you keep hurting
+loses its grip on its streets to the gangs at war with it.
 
 Every reaction comes from something you did. When you want to know why the city treats you a
 certain way, open the Hub: it spells out what each number means, and tells you exactly what the
@@ -23,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.6.2).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.6.3).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -106,6 +107,16 @@ in active development. This page describes what the mod does and how it installs
   backing away from you, vendors on their turf give you better prices, and they warn you when
   their enemies send people after you. Vendors on the turf of a gang that wants you dead charge
   you more.
+- **Turf wars.** Every gang's streets are split between the gangs that work them, and the
+  stronger gang holds more. Each of their people you put down weakens a gang a little; an
+  officer, a boss, one of their Rivals, a whole crew or their apex squad, a lot. They rebuild
+  while you leave them alone. Break a gang and the gang at war with it next door moves in: break
+  the Valentinos and 6th Street walks into Heywood, until the Valentinos are strong enough to
+  take it back. The street texts you when a district changes hands, the History screen keeps it,
+  and the Hub's Turf screen shows who holds each district, how firmly, and who is fighting them
+  for it. Whoever holds a district is the gang whose lookouts watch you there, whose crews know
+  where you are and whose vendors know where you stand with them. Turf wars can be turned off,
+  under Gangs.
 - **Enemies that break, run, and remember.** Wound an enemy badly and it can lose its nerve and
   try to escape. Catch it and that is the end of it; let it get away and it comes back as a named
   Rival with a grudge. Beat one down and walk away without finishing them and they can come back
@@ -139,8 +150,12 @@ in active development. This page describes what the mod does and how it installs
   enough, they come on foot.
 - **A vendetta is a decision.** A gang that has sworn one is already putting a
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
-  of a problem they think you are, and they bring the gang's apex squad with them. Pay them off
-  while they are on the way and they turn around.
+  of a problem they think you are. Pay them off while they are on the way and they turn around.
+- **A crew comes with its best.** Every crew a gang sends is led by its apex squad: four of its
+  best, one heavy, one shooter, one blade and one netrunner, with the rest of the crew behind
+  them. The text tells you who is leading them and how many follow. They stay until the fight is
+  settled: until you put them down, or get far enough away and stay gone long enough that they
+  give up. **Crews bring the apex squad**, under Gangs, sends the crew alone.
 - **They come for a reason.** A gang that wants you dead sends a crew when it has a reason
   today: you killed their people where somebody saw it, you have been hanging around on their
   streets long enough for a lookout to call it in, you hurt them in the last half a day, or they
@@ -185,10 +200,12 @@ in active development. This page describes what the mod does and how it installs
   with a gang from the Hub, and the price reflects what they actually think of you: the bodies,
   how badly their standing has fallen, and double again if they have sworn a vendetta. Paying
   them off calls off anything they already had on its way.
-- **Gangs send an apex squad.** Wipe out a gang's crew while you are at war with them, after
-  enough of their people have gone down, and they stop sending squads and send the people who
-  matter: a carload of four named enforcers who fight like MaxTac. Pile up twice the bodies and
-  they come without waiting for a crew. There is a heavy who walks at you and breaks your guard,
+- **Gangs send an apex squad.** An apex squad leads every crew, and a gang can also send it on
+  its own: wipe out one of their crews while you are at war with them, after enough of their
+  people have gone down, and the people who matter come for you with a couple of their own behind
+  them - a carload of four named enforcers who fight like MaxTac. Pile up twice the bodies and
+  they come without waiting for a crew. An apex squad is always four: whoever a car could not
+  seat, or the street would not take on the first try, walks in after them. There is a heavy who walks at you and breaks your guard,
   a shooter who flushes you out of cover, a blade who closes in and stays on you, and a
   netrunner who hangs back. Each chair is filled with a real member of that gang you have actually
   fought, so they carry the right weapons and fight the way that kind of enemy fights, and they
@@ -219,8 +236,8 @@ in active development. This page describes what the mod does and how it installs
 - **The Hub.** A page of the pause menu: press Escape and choose Cyberbane, next to Mods and Mod
   Settings (on 2.31, which has no Mods entry, right after Settings). It uses the game's own
   font and colours and the menu's own cursor, the game stays paused while you read it, and Escape
-  takes you back to the pause menu. Click a screen to switch: Standing, Gangs, The City, Rivals,
-  Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
+  takes you back to the pause menu. Click a screen to switch: Standing, Gangs, Turf, The City,
+  Rivals, Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
   screen shows what each of the three lanes has on its way and when, as it stood when you paused.
   If something cannot arrive, it says why. Click a gang to see what they are about to do and to pay
   them off, click a Rival for their file, and click a title to go by it. Standing tells you in plain
@@ -434,6 +451,10 @@ code from that mod is used here.
 Thanks to Nolo for Grudge. Two of its designs are in Cyberbane now: Rivals carrying the scars
 of how you hurt them, and gangs having a leader and lieutenants so a crew cannot be beheaded.
 Different mod, good ideas. No code from that mod is used here.
+
+Thanks to NovaAntonsito for Gang Retaliation. Its gangs that fight over districts, where the
+stronger one wins and every name you put down weakens their gang, are the idea behind Cyberbane's
+turf wars. Different mod, good ideas. No code from that mod is used here.
 
 Thanks to DigitalVixen for Street Sense, which Cyberbane detects and makes room for.
 

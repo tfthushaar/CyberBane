@@ -216,6 +216,19 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   if Equals(sys.GetPendingApexFaction(), factionId) {
     sys.SetPendingApex(n"", 0);
   }
+  // And anything of theirs still only in the queue: a crew or an apex squad the lanes have
+  // picked from this gang and not yet sent. Until 1.6.3 those stayed queued, and an apex squad
+  // in particular was sent anyway when its turn came, because nothing on its way checked whether
+  // the gang still wanted V dead. Nobody of theirs walks in to finish a squad either.
+  if Equals(sys.GetLaneTarget(CBLaneSquad()), factionId) {
+    sys.ClearLane(CBLaneSquad());
+  }
+  if Equals(sys.GetLaneTarget(CBLaneApex()), factionId) {
+    sys.ClearLane(CBLaneApex());
+  }
+  if Equals(sys.GetApexMusterFaction(), factionId) {
+    sys.ClearApexMuster();
+  }
 
   let deal = new CBPeaceDeal();
   deal.faction = factionId;

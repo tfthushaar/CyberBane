@@ -313,6 +313,9 @@ public func CBSendByCar(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<C
   let isApex = Equals(tag, n"CB_Apex");
   if isApex {
     sys.ResetApexRoles();   // the car's seats are the first chairs, from the heavy
+    if NotEquals(sys.GetApexMusterFaction(), fs.id) {
+      sys.BeginApexMuster(fs.id, record);
+    }
   }
   let lead = isApex ? record : TDBID.None();
   let leadTag = isApex ? n"CB_Apex" : n"";
@@ -321,6 +324,11 @@ public func CBSendByCar(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<C
   }
   if isApex {
     sys.MarkArrivalRoleSquad(fs.id);
+    // Each seat marks its chair as it is created (CBOnArrivalCarAttached), and once the car is
+    // done, the muster walks in whichever chairs it did not fill (FactionApex.reds). That is the
+    // whole of making an apex squad four, so none of the head-count top-up below is needed for
+    // it - and a head count cannot tell which chairs are missing, only how many.
+    return wanted;
   }
   let carrying = sys.GetLastCarSeats();
   if carrying > wanted {
@@ -345,14 +353,22 @@ public func CBWalkInRest(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<
     return 0;
   }
   if Equals(tag, n"CB_Apex") {
+    // A chair the muster for this gang's squad already has filled is skipped, so a walk-in that
+    // follows a car, or a retry, can never put a second heavy in the world.
+    let mustering = IsDefined(sys) && IsDefined(fs) && Equals(sys.GetApexMusterFaction(), fs.id);
     let placed = 0;
     let k = 0;
     while k < count {
       let seat = (firstSeat + k) % CBConfig.ApexStrikeTeamSize();
-      let one: EntityID;
-      if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
-                      CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
-        placed += 1;
+      if !mustering || !sys.ApexChairFilled(seat) {
+        let one: EntityID;
+        if CBSpawnGroup(game, CBApexRoleRecord(fs, seat, record), n"", 1, n"CB_Apex",
+                        CBConfig.ApexSpawnDistance(), one, CBApexRoleTag(seat)) > 0 {
+          placed += 1;
+          if mustering {
+            sys.NoteApexChair(seat);
+          }
+        }
       }
       k += 1;
     }
@@ -381,6 +397,10 @@ public func CBProcessCarTopUp(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   let fs = sys.FindFaction(sys.GetTopUpFaction());
   let record = sys.GetTopUpRecord();
   sys.ClearTopUp();
+  // An apex squad is made whole by its chairs, not by a head count (CBApexMusterTick).
+  if Equals(tag, n"CB_Apex") {
+    return;
+  }
   let missing = wanted - delivered;
   if missing <= 0 || !IsDefined(fs) {
     return;
@@ -481,12 +501,23 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     ArrayPush(tags, n"Cyberbane");
     ArrayPush(tags, n"CB_Crew");
     ArrayPush(tags, isLead ? leadTag : squadTag);
+    // An apex seat carries the chair it was filled for, the same tag a walk-in carries, so the
+    // kit and the bar given at setup are the chair this body's record was picked for. Without it
+    // the seats took their chair from a counter in the order they finished building, which is
+    // not the order they were created in, and the heavy's record could get the netrunner's kit.
+    if sys.IsArrivalRoleSquad() {
+      ArrayPush(tags, CBApexRoleTag(i));
+    }
     spec.tags = tags;
     CBTrace("vehicle: creating a car's crew member");
     let made = des.CreateEntity(spec);
     // The body is the Rival's from the moment it exists, so their death and escape count.
     if IsDefined(rider) && EntityID.IsDefined(made) {
       rider.spawnedEntityId = made;
+    }
+    // That chair of the apex squad is filled; the muster brings whoever the car could not seat.
+    if sys.IsArrivalRoleSquad() && EntityID.IsDefined(made) {
+      sys.NoteApexChair(i);
     }
     i += 1;
   }

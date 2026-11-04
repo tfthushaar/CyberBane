@@ -160,8 +160,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       }
       CBScheduleLoot(sysE, game, puppet, CBLootTierApex(), CBConfig.LootIconicChanceApex());
       // The last of the squad: their enemies pay for it.
-      if CBCountLiveTaggedExcept(game, n"CB_Apex", puppet.GetEntityID()) == 0 {
+      if CBCountLiveOrSpawningExcept(game, n"CB_Apex", puppet.GetEntityID()) == 0 {
         CBPayApexBounty(sysE, game);
+        // Their best, all four, put down: the gang feels it (Model/Territory.reds).
+        CBWeakenGang(sysE, game, CBClassifyFaction(puppet), CBConfig.GangLossApexSquad());
       }
     }
     // Crew and escorts carry a little.
@@ -171,10 +173,16 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       CBScheduleLoot(sysE, game, puppet, CBLootTierCrew(), 0.0);
     }
     // The last of a crew: their gang's best is next (Spawn/Queue.reds). Counted without this
-    // body, which may or may not read as dead yet inside its own death event.
-    if IsDefined(desE) && desE.IsTagged(puppet.GetEntityID(), n"CB_Squad")
-       && NotEquals(sysE.GetActiveSquadFaction(), n"")
-       && CBCountLiveTaggedExcept(game, n"CB_Squad", puppet.GetEntityID()) == 0 {
+    // body, which may or may not read as dead yet inside its own death event. A crew that came
+    // with its apex squad is one hit squad, and it is beaten when the last of either half goes
+    // down with nobody left in the other - not while four of their best are still on V.
+    let squadApex = sysE.ActiveSquadHasApex();
+    let crewBody = IsDefined(desE)
+                   && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad")
+                       || (squadApex && desE.IsTagged(puppet.GetEntityID(), n"CB_Apex")));
+    if crewBody && NotEquals(sysE.GetActiveSquadFaction(), n"")
+       && CBCountLiveOrSpawningExcept(game, n"CB_Squad", puppet.GetEntityID()) == 0
+       && (!squadApex || CBCountLiveOrSpawningExcept(game, n"CB_Apex", puppet.GetEntityID()) == 0) {
       CBOnCrewBeaten(sysE, game, sysE.GetActiveSquadFaction());
     }
   }

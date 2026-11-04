@@ -75,7 +75,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-HitSquadsPerDay-Desc", "How many gang crews can be sent after you in one in-game day. 0 stops them coming.");
     this.Text("Cyberbane-Settings-ApexPerDay-Desc", "How many apex squads can be sent after you in one in-game day. 0 stops them coming.");
     this.Text("Cyberbane-Settings-EncounterGap-Desc", "How long the city leaves you alone after a fight before arranging the next of that kind. Rivals, crews and apex squads rest separately.");
-    this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "A gang at vendetta sends its apex squad along with the crew. The hardest fight Cyberbane will put in front of you.");
+    this.Text("Cyberbane-Settings-TurfWars-Desc", "Hurting a gang weakens it, and a broken gang loses its districts to its enemies next door. Off keeps every gang on its own streets.");
+    this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "Every crew a gang sends is led by its apex squad: a heavy, a shooter, a blade and a netrunner. Off sends the crew alone.");
     this.Text("Cyberbane-Settings-ApexArrivalSound-Desc", "Plays the game's own MaxTac descent horn when a gang sends its apex squad.");
     this.Text("Cyberbane-Settings-ApexBossBar-Desc", "The name and health bars at the top of the screen: one for a Rival, one for each apex. The line of text above them is Hunt line on the HUD.");
     this.Text("Cyberbane-Settings-VendettaSquads-Desc", "A gang at vendetta simply comes for you rather than rolling dice. The Hub shows how long until they arrive.");
@@ -183,7 +184,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexTraits", "Apex traits");
     this.Text("Cyberbane-Settings-ApexBossBar", "Rival and apex bars");
     this.Text("Cyberbane-Settings-ApexArrivalSound", "Apex squad arrival horn");
-    this.Text("Cyberbane-Settings-VendettaApexSquad", "Vendetta brings the apex squad");
+    this.Text("Cyberbane-Settings-VendettaApexSquad", "Crews bring the apex squad");
+    this.Text("Cyberbane-Settings-TurfWars", "Turf wars");
     this.Text("Cyberbane-Settings-UnseenDread", "How frightening unseen work is");
     this.Text("Cyberbane-Settings-UnseenDread-Desc", "How much a killing nobody witnessed still adds to how frightening you are. Zero counts only what people saw.");
     this.Text("Cyberbane-Settings-BrutalConduct", "Melee kills cost Conduct");

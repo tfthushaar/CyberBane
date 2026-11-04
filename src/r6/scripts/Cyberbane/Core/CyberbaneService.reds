@@ -46,6 +46,16 @@ public class CBSighting {
   public persistent let tipFaction: CName;     // the gang that told V; n"" = the street
 }
 
+// How strong a gang is in one playthrough, and when that was last written (1.6.3,
+// Model/Territory.reds). Here for the same reason as CBSighting: nothing may be added to a class
+// the save holds. What it was rebuilt since `at` is worked out on reading, never stored.
+public class CBGangPower {
+  public persistent let playthroughId: CName;
+  public persistent let faction: CName;
+  public persistent let strength: Float;
+  public persistent let at: Float;             // game seconds
+}
+
 public class CyberbaneService extends ScriptableService {
   private persistent let m_schemaVersion: Int32;
   private persistent let m_nextLedgerId: Int32;
@@ -62,6 +72,8 @@ public class CyberbaneService extends ScriptableService {
   private persistent let m_retiredIds: array<CName>;                // started over; cap CapRetiredIds
   // Where Rivals were last seen (Rivals/Whereabouts.reds). Cap CapSightings, oldest first.
   private persistent let m_sightings: array<ref<CBSighting>>;
+  // How strong each gang is, per playthrough (Model/Territory.reds). Cap CapGangPower, oldest first.
+  private persistent let m_gangPower: array<ref<CBGangPower>>;
 
   public static func Get() -> ref<CyberbaneService> {
     // The service container is null during world transitions; calling GetService on a null
@@ -283,6 +295,52 @@ public class CyberbaneService extends ScriptableService {
       let s = this.m_sightings[i];
       if !IsDefined(s) || (s.rivalId <= rivalUpTo && Equals(s.playthroughId, playthroughId)) {
         ArrayErase(this.m_sightings, i);
+      }
+      i -= 1;
+    }
+  }
+
+  // ---- Gang strength (Model/Territory.reds) ---------------------------------------------
+
+  public func FindGangPower(playthroughId: CName, faction: CName) -> ref<CBGangPower> {
+    if !IsNameValid(playthroughId) {
+      return null;
+    }
+    let i = 0;
+    while i < ArraySize(this.m_gangPower) {
+      let p = this.m_gangPower[i];
+      if IsDefined(p) && Equals(p.faction, faction) && Equals(p.playthroughId, playthroughId) {
+        return p;
+      }
+      i += 1;
+    }
+    return null;
+  }
+
+  public func NoteGangPower(playthroughId: CName, faction: CName, strength: Float, at: Float) -> Void {
+    if !IsNameValid(playthroughId) || Equals(faction, n"") {
+      return;
+    }
+    let p = this.FindGangPower(playthroughId, faction);
+    if !IsDefined(p) {
+      p = new CBGangPower();
+      p.playthroughId = playthroughId;
+      p.faction = faction;
+      ArrayPush(this.m_gangPower, p);
+      while ArraySize(this.m_gangPower) > CBConfig.CapGangPower() {
+        ArrayErase(this.m_gangPower, 0);
+      }
+    }
+    p.strength = strength;
+    p.at = at;
+  }
+
+  public func DropPlaythroughGangPower(playthroughId: CName) -> Void {
+    let i = ArraySize(this.m_gangPower) - 1;
+    while i >= 0 {
+      let p = this.m_gangPower[i];
+      if !IsDefined(p) || Equals(p.playthroughId, playthroughId) {
+        ArrayErase(this.m_gangPower, i);
       }
       i -= 1;
     }
