@@ -414,6 +414,13 @@ public abstract class CBConfig {
   // ---- Arriving by car (spec 9.9) ----
   // Far enough out that the car is not seen appearing and has room to build up speed.
   public static func VehicleArrivalDistance() -> Float = 140.0
+  // How many of the game's pursuit points a car arrival may try when the navmesh anchor has no
+  // room for a car (CBCarSpawnPoint). Each costs two overlap tests and a floor trace.
+  public static func CarPointCandidates() -> Int32 = 6
+  // Cars one arrival may bring before the rest walk (setting default), and how many ticks in a
+  // row a convoy's next car may fail to be sent before that leg walks in instead.
+  public static func CarsPerArrivalDefault() -> Int32 = 4
+  public static func ConvoyCarTries() -> Int32 = 4
   // The box a car needs to be clear before one is put there, in metres.
   public static func CarFitWidth() -> Float = 2.5
   public static func CarFitLength() -> Float = 4.5
@@ -432,6 +439,11 @@ public abstract class CBConfig {
   public static func ArrivalDismountDistance() -> Float = 35.0
   public static func ArrivalDismountPoll() -> Float = 2.0
   public static func ArrivalDismountMaxTries() -> Int32 = 30
+  // Sending a car on foot-bound V somewhere new while it drives (CBArrivalDismountCallback):
+  // only once V is this far from where it was sent, at most every this many polls, this often.
+  public static func ArrivalRetargetDistance() -> Float = 40.0
+  public static func ArrivalRetargetEvery() -> Int32 = 5
+  public static func ArrivalMaxRetargets() -> Int32 = 3
   // Ticks (about a second each) before a car that never attached is written off.
   public static func ArrivalStaleTicks() -> Int32 = 30
   // How long an expired appointment may wait for a workable moment before it gives up and lets

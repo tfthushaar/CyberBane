@@ -78,7 +78,7 @@ public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
   // is still walking in are on their way, and the hunt is not over before they get here.
   return NotEquals(sys.GetScoutFaction(), n"")
       || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetPendingApexFaction(), n"")
-      || sys.HasPendingArrival() || sys.GetRivalCarPending() > 0
+      || sys.HasPendingArrival() || sys.HasConvoyLegs() || sys.GetRivalCarPending() > 0
       || NotEquals(sys.GetApexMusterFaction(), n"")
       || rivalComing;
 }

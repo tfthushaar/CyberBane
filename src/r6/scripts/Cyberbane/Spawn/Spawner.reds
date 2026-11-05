@@ -1295,8 +1295,8 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Scout");
 
   // Cars: only when no car is on its way or being boarded and nobody of ours is in a seat.
-  if sys.HasPendingArrival() || CBAnyCrewSeated(game, des) {
-    return;
+  if sys.HasPendingArrival() || sys.HasConvoyLegs() || CBAnyCrewSeated(game, des) {
+    return;   // a convoy still sending cars is a car on its way too
   }
   let cars = des.GetTaggedIDs(n"CB_Car");
   let c = 0;

@@ -520,8 +520,10 @@ public func CBApexMusterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     sys.ClearApexMuster();
     return;
   }
-  // A car still seating chairs: let it finish, or let it be given up on.
-  if sys.HasPendingArrival() && sys.IsArrivalRoleSquad() {
+  // A car still seating chairs: let it finish, or let it be given up on. And chairs still
+  // waiting for the next car of their convoy are on their way too (CBConvoyTick); walking them
+  // in now would put a second heavy in the world when that car comes.
+  if (sys.HasPendingArrival() && sys.IsArrivalRoleSquad()) || sys.ConvoyHasTag(n"CB_Apex") {
     return;
   }
   // The apex lane's own drive is still on the clock and nobody has arrived yet: when it runs out,

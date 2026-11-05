@@ -144,20 +144,19 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   }
 
   // The rest of the crew, inside whatever room the ceiling has left, keeping room for the apex
-  // chairs a car is still bringing. If they can drive to you, they drive: a car seats four at
-  // most, so a crew bigger than that sends a car and the rest come on foot behind it - which is
-  // what a gang turning out in numbers actually looks like, rather than a bus. Only one car is
-  // ever on the road at a time, so with the apex squad in it the crew walks.
+  // chairs a car is still bringing. If they can drive to you, they drive, all of them: as many
+  // cars as it takes, one after another, behind the apex squad's own (CBSendByCar, CBConvoyTick).
+  // This used to send one car of four at most and walk everybody else in, and with the apex squad
+  // in that one car the whole crew walked. Whoever the "Cars per arrival" limit leaves over, or a
+  // car cannot be sent for, still comes on foot.
   let crew = Min(size, Max(0, CBSpawnRoom(game) - apexFuture));
   let spawned = 0;
   if crew > 0 {
-    let carShare = crew < CBConfig.CarMaxSeats() ? crew : CBConfig.CarMaxSeats();
-    let byCar = CBSendByCar(sys, game, fs, fs.sampleRecord, carShare, n"CB_Squad");
-    let onFoot = byCar > 0 ? crew - carShare : crew;
+    let byCar = CBSendByCar(sys, game, fs, fs.sampleRecord, crew, n"CB_Squad");
     spawned = byCar;
-    if onFoot > 0 {
-      spawned += CBSpawnGroup(game, fs.sampleRecord, n"", onFoot, n"CB_Squad",
-                              CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
+    if byCar <= 0 {
+      spawned = CBSpawnGroup(game, fs.sampleRecord, n"", crew, n"CB_Squad",
+                             CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
     }
   }
   if spawned <= 0 && !withApex {

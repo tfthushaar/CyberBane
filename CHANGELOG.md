@@ -5,8 +5,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [1.6.6] - 2026-11-05
 
-Finishing somebody you knocked out is a kill, Rivals stand on the ground, and news of what you
-did takes time to reach your phone.
+Finishing somebody you knocked out is a kill, Rivals stand on the ground, news of what you did
+takes time to reach your phone, and gangs drive to you.
 
 Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
 
@@ -33,8 +33,41 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   gap, and the same story is told once while it gets around: a cyberpsycho episode is one "you
   left a mess" message, not one per lull in the fight. A contact sending the same words twice
   within the hour files them once. Gangs and Rivals talking to you in the moment are unchanged.
+- **Cars arrived empty, or with the crew standing in a heap beside them.** The car was picked
+  by the length of the gang's name, blind to how many it had to carry, and its seats were read
+  from a passenger count that the traffic cars Cyberbane uses leave blank - so it read zero, the
+  car seated nobody, and the whole crew was walked in afterwards. When a count did come back,
+  the crew were mounted by a fixed list of four seat names, so a two-seater was handed people
+  for back seats it does not have. The car is now chosen by the seats it really has (from its
+  own seat set), the gang's own kind of car first, and the crew is seated by that car's own
+  seat names, driver first.
+- **A crew too big for one car walked in.** One car came, seating four at most, and everybody
+  else - and the whole crew, whenever their apex squad was in that car - walked up behind it. A
+  group now comes in as many cars as it needs, one after another, each picked to seat as many as
+  it can: an apex squad in one or two, the crew in the cars behind theirs. Only those past the
+  new **Cars per arrival** limit, or anybody a car cannot be sent for, come on foot. Each car's
+  crew gets out of their own car only, so nobody is ever ordered out of a car still driving.
+- **A car that could not finish boarding never left.** If one seat never filled, the car was
+  never given its orders, and whoever was already in it sat parked out of sight for good. It now
+  sets off with whoever got in, and the rest come on foot.
+- **A crowded spot behind you sent the whole crew in on foot.** Finding room for a car made one
+  real attempt. It now also tries the places the game itself would put a pursuer, with the same
+  out-of-sight, same-level and room-for-a-car tests.
+- **A car drove to where you were, not where you are.** On foot, it was sent to the spot you
+  stood on when it set off, and sat there until it gave up waiting. It is now sent on to you if
+  you have moved well away, a few times at most.
+
+### Changed
+- **Cars arrive on foot too is on by default.** Gangs, Rivals and apex squads now drive up and
+  get out while you are walking, not only while you are driving. Indoors, or with no road near,
+  they still come on foot. It was turned off in 1.5.2 after a crash that was never traced; the
+  seat faults above are fixed at the source and are the likeliest candidates, but if you see
+  instability around cars arriving, turn it off under Gangs and it stops at once. The switch was
+  renamed so the new default reaches installs that never changed it.
 
 ### Added
+- **Cars per arrival** (Gangs): how many cars one crew or apex squad can arrive in, 1 to 5. 4 by
+  default.
 - **Word travels** (Interface): how many in-game minutes news takes to reach your phone. 30 by
   default; 0 is the old behaviour.
 - **Gap between messages** (Interface): the least time, in real seconds, between two pieces of

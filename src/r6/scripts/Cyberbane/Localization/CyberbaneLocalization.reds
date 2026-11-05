@@ -68,7 +68,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalFreq-Desc", "How often Rivals turn up, and how quickly they track you down.");
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines.");
-    this.Text("Cyberbane-Settings-CarsOnFoot-Desc", "Lets gangs drive to you while you are on foot, pull up and get out. Experimental: driving a crew in is the most demanding thing Cyberbane asks of the game, and it has not been proven stable. Turn it off and it stops at once.");
+    this.Text("Cyberbane-Settings-CarsOnFoot-Desc", "Lets gangs, Rivals and apex squads drive to you while you are on foot, pull up and get out. Off, they only drive while you are driving and otherwise walk in out of sight. Turning it off takes effect at once.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all: phone, cards, notices and overheard lines. Off changes nothing about the way the mod plays. The line and bars at the top of the screen have their own settings, under Interface.");
     this.Text("Cyberbane-Settings-MessageHold-Desc", "How long on-screen messages stay up, as a percentage. Never less than five seconds.");
     this.Text("Cyberbane-Settings-RivalsPerDay-Desc", "How many Rivals can catch up with you in one in-game day, counted separately from crews and apex squads. 0 stops them coming.");
@@ -167,7 +167,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Whispers", "Whispers");
     this.Text("Cyberbane-Settings-WhisperCooldown", "Whisper cooldown (s)");
     this.Text("Cyberbane-Settings-Toasts", "Show messages");
-    this.Text("Cyberbane-Settings-CarsOnFoot", "Cars arrive on foot too (experimental)");
+    this.Text("Cyberbane-Settings-CarsOnFoot", "Cars arrive on foot too");
+    this.Text("Cyberbane-Settings-CarsPerArrival", "Cars per arrival");
+    this.Text("Cyberbane-Settings-CarsPerArrival-Desc", "How many cars one crew or apex squad can arrive in. A group too big for one car comes in several, one after another, each picked to seat as many as it can; past this many, the rest walk in.");
 
     // ---- Settings: compatibility ----------------------------------------
     this.Text("Cyberbane-Settings-TwrCompat", "They Will Remember compatibility");
