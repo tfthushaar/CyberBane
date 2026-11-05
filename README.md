@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.6.4).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.6.5).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -69,8 +69,9 @@ in active development. This page describes what the mod does and how it installs
   once a session without being prompted, so the offer is there whether or not you were around
   the moment they turned on you.
 - **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews carry the
-  game's gang-activity marker on the map and minimap, so you can pick the one that matters out
-  of a street full of gangers. Markers do not show through walls, and they come off once the
+  game's gang-activity marker over their heads and on the world map, so you can pick the one
+  that matters out of a street full of gangers. The minimap does not show these markers; it
+  starts showing them as enemies once the fight is on. Markers do not show through walls, and they come off once the
   fight starts, because from then on the game marks enemies in combat by itself. You can narrow
   them to the named ones or turn them off.
 - **Die, and whoever killed you gets the credit.** The enemy who put you down becomes a named
@@ -137,7 +138,9 @@ in active development. This page describes what the mod does and how it installs
   a gang-mate gunning for you.
 - **You can go after them too.** A Rival who walks away from you alive gets seen somewhere
   afterwards. Now and then a gang at war with theirs, or somebody on the street, texts you where,
-  and a pin goes on your map. Go there on foot and they are there, not expecting anybody: catch
+  and a pin goes on your map and minimap: the same marker as a waypoint, labelled as a custom
+  location. Select it on the map and track it for a route. Go there on foot and they are there,
+  not expecting anybody: catch
   them before they react and the street hears about it. Wait too long and they move on. They still
   come for you on their own schedule as well. **Tips on where Rivals are**, under Rivals, turns
   this off.

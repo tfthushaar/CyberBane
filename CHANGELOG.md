@@ -3,6 +3,27 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.5] - 2026-11-05
+
+The pin a tip puts on your map is one you can actually find.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **"They said they'd put it on my map, but I can't find it."** The pin for where a Rival was
+  seen used the game's gang-activity marker, and the game's own map code treats that marker as
+  an NCPD scanner hustle. So the minimap never drew it at all, and the world map drew it with the
+  same icon as every NCPD hustle around it, folded it into their clusters when zoomed out, hid it
+  whenever the NCPD filter was off, and described it as a police activity when you hovered it. In
+  Watson, which is full of hustles, it was as good as invisible. It now uses the marker the game
+  uses for a waypoint dropped on your map: always on the minimap, its own icon on the world map,
+  and labelled as a custom location. Select it on the map and track it for a route. A pin already
+  on your map changes the next time you load.
+- **The readme promised markers on people on the minimap.** Rivals, apex squads and crews carry
+  their marker over their heads and on the world map; the game's minimap has no way to draw that
+  marker on a person, so they appear there only as enemies once the fight starts. The readme says
+  so now.
+
 ## [1.6.4] - 2026-11-04
 
 Your phone works while people are still looking for you, and Dread comes down when you stop
