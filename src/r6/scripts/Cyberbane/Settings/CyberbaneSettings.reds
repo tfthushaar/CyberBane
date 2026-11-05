@@ -262,17 +262,31 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VehicleArrivals-Desc")
   public let vehicleArrivals: Bool = true;
 
-  // Off by default on purpose. 1.5.2 stopped cars arriving around a player on foot as part of a
-  // robustness pass, after a crash that was reported but never traced to a cause. Everything
-  // that was known to be wrong with the convoy was fixed in 1.5.0 (setup deferred out of the
-  // attach event, one order per NPC, nobody unmounted from a moving car), and the dismount
-  // machinery was written for this case in the first place - so this may well be fine. It has
-  // not been proven fine, which is the whole reason it ships off.
+  // On by default since 1.6.6. 1.5.2 had stopped cars arriving around a player on foot after a
+  // crash that was reported but never traced. 1.6.6 found the convoy choosing its car without
+  // regard to the crew and mounting people by a fixed list of four seat names, so a two-seater
+  // was handed back-seat passengers it has no slots for, and reading every car's seats from a
+  // field the traffic records leave empty (Spawn/Arrival.reds, CBVehicleSeatNames). Those are
+  // fixed at the source, and the switch is kept so anybody can still turn it off.
+  //
+  // Renamed from carArrivalsOnFoot so the new default reaches installs that never touched it:
+  // Mod Settings keeps values by field name, and the old one was stored as off for everybody.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarsOnFoot")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarsOnFoot-Desc")
-  public let carArrivalsOnFoot: Bool = false;
+  public let carsWhileOnFoot: Bool = true;
+
+  // How many cars one arrival can come in (Spawn/Arrival.reds, CBSendByCar). A crew too big for
+  // one car comes in several, one after another; past this many, the rest walk in.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarsPerArrival")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarsPerArrival-Desc")
+  @runtimeProperty("ModSettings.min", "1")
+  @runtimeProperty("ModSettings.max", "5")
+  @runtimeProperty("ModSettings.step", "1")
+  public let carsPerArrival: Int32 = 4;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
@@ -384,6 +398,28 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.max", "400")
   @runtimeProperty("ModSettings.step", "25")
   public let messageHold: Int32 = 175;
+
+  // How long word of what V did takes to reach V's phone, in in-game minutes (UI/PhoneMessages.reds,
+  // CBPhone.Hearsay). Somebody passing on a body, a dead Rival, a payout or a crew changing hands
+  // has to have heard about it first. 0 is the old behaviour: as it happens.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WordTravel")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WordTravel-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "240")
+  @runtimeProperty("ModSettings.step", "5")
+  public let wordTravelMinutes: Int32 = 30;
+
+  // The least time between two pieces of word arriving, in real seconds.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-InboxGap")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-InboxGap-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "300")
+  @runtimeProperty("ModSettings.step", "5")
+  public let inboxGapSeconds: Int32 = 45;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

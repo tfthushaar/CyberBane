@@ -17,7 +17,7 @@ public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
       if CBMessagesOn() {
         // From somebody on the street rather than from the mod. A title is a thing other
         // people decided to call you, so hearing it from them is the right way round.
-        CBContactMessage(game, "People are calling you " + CBTitleDisplay(sys, def) + " now.");
+        CBHearsayFromContact(game, "People are calling you " + CBTitleDisplay(sys, def) + " now.", n"");
       }
       CBLog.Info(n"Model", s"Title unlocked: \(NameToString(def.id)).");
     }

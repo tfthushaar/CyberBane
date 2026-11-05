@@ -78,7 +78,7 @@ public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
   // is still walking in are on their way, and the hunt is not over before they get here.
   return NotEquals(sys.GetScoutFaction(), n"")
       || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetPendingApexFaction(), n"")
-      || sys.HasPendingArrival() || sys.GetRivalCarPending() > 0
+      || sys.HasPendingArrival() || sys.HasConvoyLegs() || sys.GetRivalCarPending() > 0
       || NotEquals(sys.GetApexMusterFaction(), n"")
       || rivalComing;
 }
@@ -746,7 +746,7 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
       fs.lastHitSquadAt = CBGameSeconds(game);
     }
     if CBToastsOn() {
-      CBPhoneFromGangFinal(game, faction, "Our guy stopped answering. We will find you another way.");
+      CBHearsayFromGangFinal(game, faction, "Our guy stopped answering. We will find you another way.", n"");
     }
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout went down before calling it in.");
     return;

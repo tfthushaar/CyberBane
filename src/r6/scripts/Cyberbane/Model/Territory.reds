@@ -105,10 +105,10 @@ public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
   }
   let cap = StrUpper(StrMid(label, 0, 1)) + StrMid(label, 1, StrLen(label) - 1);
   if before >= CBConfig.GangBrokenStrength() && after < CBConfig.GangBrokenStrength() {
-    CBPhoneFromStreet(game, s"\(cap) are broken. Half their corners are empty, and everybody knows who emptied them.");
+    CBHearsayFromStreet(game, s"\(cap) are broken. Half their corners are empty, and everybody knows who emptied them.", n"");
   } else {
     if before >= CBConfig.GangBleedingStrength() && after < CBConfig.GangBleedingStrength() {
-      CBPhoneFromStreet(game, s"\(cap) are bleeding. Their corners have been thin since you started on them.");
+      CBHearsayFromStreet(game, s"\(cap) are bleeding. Their corners have been thin since you started on them.", n"");
     }
   }
 }
@@ -344,7 +344,7 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
   let prof = content.GetFaction(winner);
   let home = IsDefined(prof) && ArrayContains(prof.turf, district);
   if home {
-    CBPhoneFromDistrict(game, district, s"\(wCap) have taken \(place) back from \(l).");
+    CBHearsayFromDistrict(game, district, s"\(wCap) have taken \(place) back from \(l).", n"");
     return;
   }
   // Moved in on somebody V broke. A gang that does not want V dead says thank you, in its own way;
@@ -353,8 +353,8 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
   let posture = IsDefined(score) ? score.GetPosture(winner) : ECBPosture.Neutral;
   if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
     let lCap = StrUpper(StrMid(l, 0, 1)) + StrMid(l, 1, StrLen(l) - 1);
-    CBPhoneFromAlly(game, winner, s"\(place) is ours now. \(lCap) could not hold it after what you did to them. We remember who to thank.");
+    CBHearsayFromAlly(game, winner, s"\(place) is ours now. \(lCap) could not hold it after what you did to them. We remember who to thank.", n"");
   } else {
-    CBPhoneFromDistrict(game, district, s"\(wCap) moved into \(place) the moment \(l) could not hold it. Everybody knows who broke them.");
+    CBHearsayFromDistrict(game, district, s"\(wCap) moved into \(place) the moment \(l) could not hold it. Everybody knows who broke them.", n"");
   }
 }

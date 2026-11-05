@@ -38,11 +38,15 @@ func CBSamplePlayerHp(game: GameInstance, player: ref<PlayerPuppet>) -> Float {
   return sps.GetStatPoolValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatPoolType.Health, false);
 }
 
-public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Void {
+// `alreadyDown`: this one was counted in the encounter when they went down alive, and has now
+// been finished. Inside that same encounter they become a body without being counted twice; if
+// the encounter has closed since, this is a fresh incident like any other.
+public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, opt alreadyDown: Bool) -> Void {
   if !IsDefined(sys) || !IsDefined(info) {
     return;
   }
   let enc = sys.EnsureEncounter();
+  let recount = !(alreadyDown && enc.active);
   if !enc.active {
     enc.active = true;
     enc.startTick = sys.GetTickCount();
@@ -53,7 +57,9 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     enc.playerHpMin = -1.0;
     ArrayClear(enc.killTicks);
   }
-  enc.kills += 1;
+  if recount {
+    enc.kills += 1;
+  }
   // Only a body counts here. This feeds the massacre test, and a street full of unconscious
   // civilians is not a massacre however many of them there are.
   if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Civilian) {
@@ -134,7 +140,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     sys.AddRenownPoints(10.0 * renownMult);
     sys.AddKillDreadPoints(10.0 * dreadMult);
     if toasts {
-      CBPhoneFromStreet(game, "Heard what you left behind. People are going to be repeating that one.");
+      CBHearsayFromStreet(game, "Heard what you left behind. People are going to be repeating that one.", n"Massacre");
     }
     CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
     CBFileLog(sys, n"Massacre", CBGameSeconds(game), CBEventDistrict(sys, game), n"", Cast<Float>(enc.bodies));

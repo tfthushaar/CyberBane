@@ -13,6 +13,18 @@ public let cbLowHealthFled: Bool;
 @addField(ScriptedPuppet)
 public let cbSparedLogged: Bool;
 
+// The mercy for this one has been settled and scored (CBSettleMercy). Only then is there
+// anything to take back if V comes back later and kills them.
+@addField(ScriptedPuppet)
+public let cbMercyScored: Bool;
+
+// What that settled mercy was scored from, so taking it back undoes the same things.
+@addField(ScriptedPuppet)
+public let cbMercyInfo: ref<CBKillInfo>;
+
+@addField(ScriptedPuppet)
+public let cbMercyPsycho: Bool;
+
 // Called from OnHit when V has just damaged this puppet. If that blow put them down without
 // killing them - a knockout, a non-lethal takedown, a defeat - log it. If V then walks away and
 // leaves them breathing, CBProcessEscapees turns them into a Spared Rival who remembers being
@@ -52,27 +64,30 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   }
 
   puppet.cbSparedLogged = true;
-  // Score it. This is the line that was missing: the spared path recorded an escapee and
-  // stopped, so nothing non-lethal ever reached CBApplyKill and the +1 conduct, the nonLethal
-  // tally, fs.spared and the quiet-takedown count were all unreachable. Only V's own work
-  // counts, the same rule the kill path uses.
+  // Classified now, scored later.
+  //
+  // This used to be scored the moment they dropped: +Conduct, the nonLethal tally, fs.spared,
+  // the mercy credit with their rivals, the quiet-takedown count, all of it. Being down is not
+  // being spared, though. Put a room to sleep with Pax, walk round scanning them and put a round
+  // through each head, and every one of them had already been booked as mercy - the kill path
+  // tried to take it back with CBRevokeMercy, which only knew about three of those axes, and the
+  // escapee resolve below could settle the mercy while V was still standing over the body, so
+  // the Spared Rival and the message were out before the shot was fired.
+  //
+  // So the incident is classified here, while who saw it and how it was done are still true,
+  // and held on the escapee. CBSettleMercy scores it once V has really left them breathing; if
+  // V finishes them first, the death handler drops the escapee and the mercy never existed.
+  // Only V's own work counts, the same rule the kill path uses.
+  let mercy: ref<CBKillInfo>;
   if puppet.cbDamagedByPlayer {
-    let info = CBBuildKillInfo(sys, game, puppet, false);
-    CBApplyKill(sys, info);
-    // And it counts toward the fight you are in. Clearing a room without killing anybody was
-    // not registering as clearing a room at all, so a non-lethal playthrough could never end
-    // an encounter, which is what the flawless and massacre tests are measured against.
-    CBEncounterRecordKill(sys, info);
+    mercy = CBBuildKillInfo(sys, game, puppet, false);
+    // The fight you are in does count it now: somebody down is out of the fight either way, and
+    // a non-lethal playthrough has to be able to end an encounter. If V finishes them, the death
+    // handler turns this down into a body instead of counting them twice.
+    CBEncounterRecordKill(sys, mercy);
   }
-  // Talking one down rather than putting them in the ground is its own kind of reputation.
-  if CBIsCyberpsycho(puppet) {
-    let st = sys.GetStats();
-    if IsDefined(st) {
-      st.psychosPacified += 1;
-    }
-  }
-  if !rivalsOn {
-    return;   // scored above; only the Rival that would come of it is switched off
+  if !rivalsOn && !IsDefined(mercy) {
+    return;   // nothing to score and no Rival to make of it
   }
   let e = new CBEscapee();
   e.puppet = puppet;
@@ -83,7 +98,44 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   e.tick = sys.GetTickCount();
   e.spared = true;
   e.scarMask = puppet.cbScarMask;   // what V did on the way down, before the puppet is gone
+  e.mercy = mercy;
+  e.psycho = CBIsCyberpsycho(puppet);
+  // One of the Rivals, sent after V or waiting at their place. Their mercy keeps the timing it
+  // has always had, because settling it is also what closes their encounter (CBHandleSpared).
+  let desS = GameInstance.GetDynamicEntitySystem();
+  e.wasRival = IsDefined(desS)
+               && (desS.IsTagged(e.entityId, n"CB_Rival") || desS.IsTagged(e.entityId, n"CB_Lair"));
   sys.AddEscapee(e);
+}
+
+// V left them breathing: score the takedown that put them down.
+//
+// `alive` is the caller's answer to whether they still are; a body V or anything else finished
+// in the meantime is not mercy. The Rival setting has no say here - Conduct is earned whether or
+// not Rivals are on (see CBSparedCheck).
+public func CBSettleMercy(sys: ref<CyberbaneSystem>, e: ref<CBEscapee>, alive: Bool) -> Void {
+  if !IsDefined(sys) || !IsDefined(e) || !IsDefined(e.mercy) || !alive {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && !rt.IsEnabled() {
+    return;
+  }
+  let info = e.mercy;
+  e.mercy = null;   // once, however this was reached
+  CBApplyKill(sys, info);
+  // Talking one down rather than putting them in the ground is its own kind of reputation.
+  if e.psycho {
+    let st = sys.GetStats();
+    if IsDefined(st) {
+      st.psychosPacified += 1;
+    }
+  }
+  if IsDefined(e.puppet) {
+    e.puppet.cbMercyScored = true;
+    e.puppet.cbMercyInfo = info;
+    e.puppet.cbMercyPsycho = e.psycho;
+  }
 }
 
 // Called from OnHit when V has just damaged this puppet.
@@ -219,14 +271,11 @@ public func CBSparedSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   if !IsDefined(sys) {
     return;
   }
+  // Not gated on the Rival setting: this is also how a mercy the hit hook missed gets scored,
+  // and Conduct does not answer to that setting (see CBSparedCheck).
   let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) {
-    if !rt.IsEnabled() {
-      return;
-    }
-    if rt.HasSettings() && !rt.GetSettings().rivals {
-      return;
-    }
+  if IsDefined(rt) && !rt.IsEnabled() {
+    return;
   }
   let reg = sys.GetRegistry();
   if !IsDefined(reg) {
@@ -276,13 +325,28 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
       }
       if e.spared {
         // Someone V put down and did not finish. They do not run, so "left alive" means either
-        // they streamed away still breathing, or V clearly walked off: a little while has passed
-        // and V is out of the fight or well away from them. Not while V is still fighting over
-        // them - that is not mercy yet, and finishing them a moment later has to count as a kill.
-        let walkedOff = !IsDefined(player) || !player.IsInCombat()
-                     || (!gone && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance());
-        if gone || (age >= CBConfig.SparedResolveTicks() && walkedOff)
-           || age >= CBConfig.SparedResolveMaxTicks() {
+        // they streamed away still breathing, or V walked away from them.
+        //
+        // It used to also be enough for V to be out of combat for twenty-five seconds, with a
+        // three-minute backstop. After a quiet takedown V is out of combat the whole time, so
+        // walking round a sleeping room with a scanner settled every one of them as spared
+        // while V stood there, and the headshots that followed a minute later were kills of
+        // people already booked as mercy. Being near them is the question now: V has to have
+        // actually gone. The escapee cap still settles the oldest if a long stay fills it.
+        let distance = !gone ? Vector4.Distance(ppos, e.puppet.GetWorldPosition()) : 0.0;
+        let leftThem = !IsDefined(player) || (!gone && distance > CBConfig.SparedLeftDistance());
+        // A Rival's encounter is closed by this resolution, and holding it open for as long as V
+        // stays near the body would leave the Rival lane reading as free (CBLiveRivalPresent asks
+        // for somebody standing) - the re-queued, "teleporting" Rival. They keep the old timing.
+        if e.wasRival {
+          leftThem = leftThem || !player.IsInCombat()
+                  || (!gone && distance > CBConfig.EscapeDistance());
+        }
+        let backstop = e.wasRival && age >= CBConfig.SparedResolveMaxTicks();
+        if gone || (age >= CBConfig.SparedResolveTicks() && leftThem) || backstop {
+          // Gone is gone, not dead: one that streamed out was still breathing when last seen.
+          // Only a body still in the world can say it died, and CBNpcSafe has just said it is.
+          CBSettleMercy(sys, e, gone || !e.puppet.IsDead());
           CBHandleSpared(sys, game, e, now);
           sys.RemoveEscapee(e);
         }
@@ -367,9 +431,9 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       if CBMessagesOn() {
         let name = CBRivalDisplayName(content, already);
         if indebted {
-          CBPhoneFromStreet(game, s"\(name) owes you one now. People like that remember both ways.");
+          CBHearsayFromStreet(game, s"\(name) owes you one now. People like that remember both ways.", n"");
         } else {
-          CBPhoneFromStreet(game, s"You let \(name) walk again. They came back worse for it.");
+          CBHearsayFromStreet(game, s"You let \(name) walk again. They came back worse for it.", n"");
         }
       }
       return;
@@ -387,7 +451,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     CBNoteEscapeeSeen(sys, game, nr, e);
     nr.state = EnumInt(ECBRivalState.Hunting);
     if CBMessagesOn() {
-      CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, nr)) walked away from you breathing. They will not forget it.");
+      CBHearsayFromStreet(game, s"\(CBRivalDisplayName(content, nr)) walked away from you breathing. They will not forget it.", n"");
     }
   }
 }
@@ -429,7 +493,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     if IsDefined(nr) {
       nr.state = EnumInt(ECBRivalState.Hunting);
       if toasts {
-        CBPhoneFromStreet(game, s"\(CBRivalDisplayName(content, nr)) got clear of you. You have not seen the last of them.");
+        CBHearsayFromStreet(game, s"\(CBRivalDisplayName(content, nr)) got clear of you. You have not seen the last of them.", n"");
       }
     }
   }

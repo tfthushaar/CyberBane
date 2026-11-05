@@ -836,9 +836,9 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   }
   let name = CBApexName(CBContent(game), faction, fs.apexAtKills);
   if CBApexEligible(sys, fs) {
-    CBPhoneFromGang(game, faction, s"That was our crew. Next time it is \(name), and three more like them.");
+    CBHearsayFromGang(game, faction, s"That was our crew. Next time it is \(name), and three more like them.", n"");
   } else {
-    CBPhoneFromGang(game, faction, s"That was our crew. Keep it up and you meet \(name).");
+    CBHearsayFromGang(game, faction, s"That was our crew. Keep it up and you meet \(name).", n"");
   }
 }
 

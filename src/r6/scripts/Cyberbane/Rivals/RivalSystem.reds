@@ -670,7 +670,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   CBHierarchyOnSlain(sys, game, rival);
   let content = CBContent(game);
   if CBMessagesOn() {
-    CBPhoneFromStreet(game, CBRivalDisplayName(content, rival) + " is dead and everybody knows who did it.");
+    CBHearsayFromStreet(game, CBRivalDisplayName(content, rival) + " is dead and everybody knows who did it.", n"");
   }
 
   // Succession (Nemesis-inspired): a crew does not simply lose its best and move on.
@@ -691,8 +691,8 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
       // which is what made every nemesis you killed a clean reset.
       avenger.rank = Max(1, rival.rank - 1);
       if CBMessagesOn() {
-        CBPhoneFromGang(game, rival.faction, CBRivalDisplayName(content, avenger)
-          + " picks up where " + CBRivalDisplayName(content, rival) + " left off.");
+        CBHearsayFromGang(game, rival.faction, CBRivalDisplayName(content, avenger)
+          + " picks up where " + CBRivalDisplayName(content, rival) + " left off.", n"");
       }
     }
   }
@@ -729,7 +729,7 @@ public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance
           cd.lastPromotionAt = now;
         }
         if CBMessagesOn() {
-          CBPhoneFromStreet(game, CBRivalDisplayName(content, r) + " has moved up while you were busy elsewhere.");
+          CBHearsayFromStreet(game, CBRivalDisplayName(content, r) + " has moved up while you were busy elsewhere.", n"");
         }
         return;
       }

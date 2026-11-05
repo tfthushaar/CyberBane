@@ -19,12 +19,27 @@
 // use, and TraceResult is a value the engine fills in. A miss returns false and the caller
 // moves the point rather than placing an NPC blind.
 func CBGroundAt(game: GameInstance, x: Float, y: Float, zHint: Float, out ground: Float) -> Bool {
+  return CBGroundRay(game, x, y, zHint + CBConfig.GroundProbeUp(), zHint - CBConfig.GroundProbeDown(), ground);
+}
+
+// The floor under a point that is already known to be standing room - a navmesh point.
+//
+// CBGroundAt starts its ray three metres above the guess, which is right for a flat offset
+// behind V whose height is only V's own, and wrong for a navmesh point, whose height is the
+// answer already. From three metres up the first thing the ray meets can be an awning, a
+// ledge, a stair flight or a hoarding above the point, and the old settle step then moved the
+// spawn up onto that. This starts just above the point, so it only ever finds what is under it.
+func CBFloorUnder(game: GameInstance, p: Vector4, out ground: Float) -> Bool {
+  return CBGroundRay(game, p.X, p.Y, p.Z + CBConfig.NavFloorProbeUp(), p.Z - CBConfig.GroundProbeDown(), ground);
+}
+
+func CBGroundRay(game: GameInstance, x: Float, y: Float, fromZ: Float, toZ: Float, out ground: Float) -> Bool {
   let sqs = GameInstance.GetSpatialQueriesSystem(game);
   if !IsDefined(sqs) {
     return false;
   }
-  let from = new Vector4(x, y, zHint + CBConfig.GroundProbeUp(), 1.0);
-  let to = new Vector4(x, y, zHint - CBConfig.GroundProbeDown(), 1.0);
+  let from = new Vector4(x, y, fromZ, 1.0);
+  let to = new Vector4(x, y, toZ, 1.0);
   let res: TraceResult;
   let hit = sqs.SyncRaycastByCollisionGroup(from, to, n"Static", res);
   if !hit {
@@ -131,31 +146,64 @@ func CBPointIsFree(used: array<Vector4>, p: Vector4) -> Bool {
   return true;
 }
 
-// Stand a candidate point on the floor under it, or refuse it.
+// Stand a candidate navmesh point on the floor under it, or refuse it.
 //
 // A navmesh point is meant to be standing room, and nearly always is. Nearly is not good
 // enough. FindPursuitPointsRange also returns a fallback list for when the strict pass finds
 // nothing, and in the vertical parts of the city - the walkways and decks around City Center,
 // overpasses, the lip of a ramp - a point can sit well above whatever is actually underneath
-// it. An NPC created there falls. What lands is a ragdoll that cannot be shot and carries no
-// health bar, which is exactly what was reported: spawned in mid air, no bar, seemingly
-// invulnerable.
+// it. So every point is checked for a floor beneath it, and one over a drop is refused.
 //
-// So every point now gets the treatment the hand-rolled placement already gave its own: trace
-// for the floor beneath it and stand them on that. No floor within reach means the point is
-// over a drop and it is refused, and the caller moves on to the next one. If every point is
-// refused the old bearing sweep still runs underneath, so this can cost a better spawn point
-// but never costs the arrival.
+// What this no longer does is move the point. It used to re-seat every spawn at the raycast
+// floor plus 0.35 m, and that was the floating Rival. A spawned NPC is not dropped by physics
+// on arrival: it stands at the height it was created at until its movement puts it on the
+// navmesh or a hit reaction ragdolls it. One that never needs to walk anywhere - a Rival that
+// spawns close and opens fire where it stands - hovers there until enough damage knocks it
+// over, which is exactly the report. The game's own pursuers (PreventionSystem, which takes
+// its points from the same FindPursuitPointsRange) are created on the navmesh point as given,
+// and that is what is done here: the navmesh height, or the floor if the floor is a hair
+// higher, so nobody starts inside the surface either.
 func CBSettleOnGround(game: GameInstance, p: Vector4, out at: Vector4) -> Bool {
   let ground = 0.0;
-  if !CBGroundAt(game, p.X, p.Y, p.Z, ground) {
+  if !CBFloorUnder(game, p, ground) {
     return false;
   }
   // A floor a long way below the point is not this point's floor.
-  if AbsF(ground - p.Z) > CBConfig.SpawnGroundSettle() {
+  if p.Z - ground > CBConfig.SpawnGroundSettle() {
     return false;
   }
-  at = new Vector4(p.X, p.Y, ground + CBConfig.GroundSpawnLift(), 1.0);
+  at = new Vector4(p.X, p.Y, MaxF(p.Z, ground) + CBConfig.NavSpawnClearance(), 1.0);
+  return true;
+}
+
+// Put a point found by raycast alone onto the navmesh under it, or refuse it.
+//
+// The bearing sweep and the last-resort fallback find a floor by raycast and nothing else, and
+// used to create the NPC at that floor plus a lift. A body made off the navmesh hovers at that
+// lift for the reason given above, and cannot path toward V either, so it stands there in the
+// air. The point is now snapped to the navmesh directly under it; one with no navmesh close
+// underneath is refused like any other bad point, and the lane tries again shortly.
+//
+// Only when the navigation system cannot be asked at all is the old placement kept, so a world
+// state this cannot read still gets its arrival rather than going silent.
+func CBStandOnNavmesh(game: GameInstance, x: Float, y: Float, groundZ: Float, out at: Vector4) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  if !IsDefined(nav) {
+    at = new Vector4(x, y, groundZ + CBConfig.GroundSpawnLift(), 1.0);
+    return true;
+  }
+  let cand = new Vector4(x, y, groundZ + CBConfig.NavFloorProbeUp(), 1.0);
+  let snapped = nav.GetNearestNavmeshPointBelowOnlyHumanNavmesh(cand, 0.5, 6);
+  if Vector4.Length(snapped) < 1.0 {
+    return false;   // no navmesh here
+  }
+  let dx = snapped.X - x;
+  let dy = snapped.Y - y;
+  if SqrtF(dx * dx + dy * dy) > CBConfig.NavFloorSnapRadius()
+     || AbsF(snapped.Z - groundZ) > CBConfig.NavFloorSnapHeight() {
+    return false;   // the nearest navmesh is somewhere else, not under this floor
+  }
+  at = new Vector4(snapped.X, snapped.Y, MaxF(snapped.Z, groundZ) + CBConfig.NavSpawnClearance(), 1.0);
   return true;
 }
 
@@ -509,8 +557,9 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       if !CBSafeAreaBlocksSpawn(game, new Vector4(px, py, ppos.Z, 1.0)) {
         // A floor far above or below V is another level entirely - a roof, the bottom of a
         // shaft - so it is refused and the point moves in rather than dropping someone there.
-        if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop() {
-          let stand = new Vector4(px, py, gz + CBConfig.GroundSpawnLift(), 1.0);
+        let stand: Vector4;
+        if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop()
+           && CBStandOnNavmesh(game, px, py, gz, stand) {
           if CBPointIsFree(used, stand)
              && (ArraySize(used) > 0 || (CBPointReachable(game, stand, ppos)
                                          && CBPointOutOfSight(game, ppos, fwd, stand)))
@@ -540,8 +589,9 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let fx = ppos.X - fwd.X * (dist * 0.4 + rankBack) + rx * lane * 2.5;
       let fy = ppos.Y - fwd.Y * (dist * 0.4 + rankBack) + ry * lane * 2.5;
       let fz: Float;
-      if CBGroundAt(game, fx, fy, ppos.Z, fz) && AbsF(fz - ppos.Z) <= CBConfig.GroundMaxDrop() {
-        let fallback = new Vector4(fx, fy, fz + CBConfig.GroundSpawnLift(), 1.0);
+      let fallback: Vector4;
+      if CBGroundAt(game, fx, fy, ppos.Z, fz) && AbsF(fz - ppos.Z) <= CBConfig.GroundMaxDrop()
+         && CBStandOnNavmesh(game, fx, fy, fz, fallback) {
         // The fallback is close in, so it is the likeliest of the lot to land indoors and the
         // likeliest to land in frame. It refuses rather than guessing on both counts now; the
         // lane keeps its turn and tries again shortly, so there is nothing to buy by placing
@@ -1245,8 +1295,8 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Scout");
 
   // Cars: only when no car is on its way or being boarded and nobody of ours is in a seat.
-  if sys.HasPendingArrival() || CBAnyCrewSeated(game, des) {
-    return;
+  if sys.HasPendingArrival() || sys.HasConvoyLegs() || CBAnyCrewSeated(game, des) {
+    return;   // a convoy still sending cars is a car on its way too
   }
   let cars = des.GetTaggedIDs(n"CB_Car");
   let c = 0;

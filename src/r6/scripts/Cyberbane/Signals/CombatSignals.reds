@@ -206,22 +206,29 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // (spec §8.5); it was hardcoded before 0.1.16, which scored every kill as if a crowd watched.
   let info = CBBuildKillInfo(sys, game, puppet, true);
 
-  // They were put down alive earlier and V has now finished them. Take the mercy back, or
-  // knocking somebody out and then shooting them would pay for both.
-  if puppet.cbSparedLogged {
-    CBRevokeMercy(sys, info.faction);
+  // They were put down alive earlier and V has now finished them.
+  //
+  // Normally there is nothing to take back: the mercy waits on the escapee until V has left
+  // them breathing, and the escapee was dropped at the top of this function, so it is simply
+  // never scored and this is an ordinary kill. Only if V walked away, the mercy was settled, and
+  // V then came back and killed them, is there credit on the books to reverse.
+  if puppet.cbSparedLogged && puppet.cbMercyScored {
+    CBRevokeMercy(sys, info.faction, puppet.cbMercyInfo, puppet.cbMercyPsycho);
+    puppet.cbMercyScored = false;
+    puppet.cbMercyInfo = null;
   }
 
   let tierBefore = sys.GetLastNotifiedTier();
   CBApplyKill(sys, info);
-  CBEncounterRecordKill(sys, info);
+  // Already counted in this fight as somebody down; now they are a body. Not a second person.
+  CBEncounterRecordKill(sys, info, puppet.cbSparedLogged);
 
   // Nearby squad-mates may lose their nerve and run (spec §9.4).
   CBMoraleOnKill(sys, game, info);
   let tierAfter = EnumInt(sys.GetScore().GetTier());
   if tierAfter != tierBefore {
     if tierAfter > tierBefore && CBMessagesOn() {
-      CBContactMessage(game, "People have stopped asking who you are. On the street you are " + CBTierName(tierAfter) + " now.");
+      CBHearsayFromContact(game, "People have stopped asking who you are. On the street you are " + CBTierName(tierAfter) + " now.", n"");
     }
     sys.SetLastNotifiedTier(tierAfter);
   }
@@ -233,10 +240,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // Notable kills the city remembers: gang bosses and MaxTac (spec §7, §9.10).
   if info.lethal && CBMessagesOn() {
     if info.victimClass == EnumInt(ECBVictimClass.Boss) {
-      CBPhoneFromStreet(game, "You took down somebody who mattered. That will be around by morning.");
+      CBHearsayFromStreet(game, "You took down somebody who mattered. That will be around by morning.", n"BossKill");
     } else {
       if info.victimClass == EnumInt(ECBVictimClass.MaxTac) {
-        CBPhoneFromStreet(game, "You put down a MaxTac operative. Nobody does that twice and stays quiet.");
+        CBHearsayFromStreet(game, "You put down a MaxTac operative. Nobody does that twice and stays quiet.", n"MaxTacDown");
       }
     }
   }
@@ -358,8 +365,11 @@ public func CBScarBitFor(attackType: gamedataAttackType) -> Int32 {
   return CBScarShot();
 }
 
-// Undo the credit a non-lethal takedown was given, because V went back and killed them.
-public func CBRevokeMercy(sys: ref<CyberbaneSystem>, faction: CName) -> Void {
+// Undo the credit a settled non-lethal takedown was given, because V went back and killed them.
+// The knockout itself still happened - the fear it caused and the standing it cost stay - but
+// what it earned for being mercy goes. `mercy` is what it was scored from (CBSettleMercy).
+public func CBRevokeMercy(sys: ref<CyberbaneSystem>, faction: CName, opt mercy: ref<CBKillInfo>,
+                          opt psycho: Bool) -> Void {
   if !IsDefined(sys) {
     return;
   }
@@ -367,6 +377,15 @@ public func CBRevokeMercy(sys: ref<CyberbaneSystem>, faction: CName) -> Void {
   let stats = sys.GetStats();
   if IsDefined(stats) && stats.nonLethal > 0 {
     stats.nonLethal -= 1;
+  }
+  if IsDefined(stats) && psycho && stats.psychosPacified > 0 {
+    stats.psychosPacified -= 1;
+  }
+  if IsDefined(mercy) && mercy.stealth && NotEquals(mercy.district, n"") {
+    let ds = sys.EnsureDistrict(mercy.district);
+    if IsDefined(ds) && ds.quietTakedowns > 0 {
+      ds.quietTakedowns -= 1;
+    }
   }
   if NotEquals(faction, n"") {
     let fs = sys.FindFaction(faction);

@@ -154,7 +154,22 @@ public class CyberbaneSystem extends ScriptableSystem {
   // (Spawn/HitSquad.reds, CBProcessCarTopUp). Session only, like every other arrival field.
   private let m_carPathCity: Bool;       // true: the city's chase; false: Cyberbane's own convoy
   private let m_carSeats: Int32;         // how many seats that request could fill
-  private let m_convoyCreated: Int32;    // crew the own convoy actually created at the car
+  private let m_convoyCreated: Int32;    // crew (not apex) the convoy has put in the world so far
+  // The rest of a group waiting for the next car (Spawn/Arrival.reds, CBConvoyTick). One car
+  // boards at a time, so a group bigger than a car is carried in several, one after another.
+  // A leg is one group - an apex squad, a crew - and each car carries people from one leg only.
+  // Parallel arrays, like everything else here. Session only.
+  private let m_legFaction: array<CName>;
+  private let m_legRecord: array<TweakDBID>;
+  private let m_legTag: array<CName>;
+  private let m_legLeft: array<Int32>;    // still to be carried
+  private let m_legTotal: array<Int32>;   // the whole group, for the crew top-up at the end
+  private let m_legChair: array<Int32>;   // next apex chair to seat, or -1 for a crew
+  private let m_legTries: array<Int32>;   // ticks a car could not be sent for this leg
+  private let m_convoyFaction: CName;     // whose convoy this is
+  private let m_convoyCars: Int32;        // cars sent in it so far
+  private let m_arrivalChairBase: Int32;  // the apex chair the boarding car's first seat is
+  private let m_arrivalCarSlot: Int32;    // which car of its convoy the boarding car is (0 first)
   private let m_topFaction: CName;
   private let m_topRecord: TweakDBID;
   private let m_topTag: CName;
@@ -256,6 +271,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_arrivalCarId: EntityID;       // the car, once it exists
   private let m_arrivalSeats: Int32;          // seats being filled
   private let m_arrivalFilled: Int32;         // seats filled so far
+  // The car's own seat slots, driver first, read from its record (CBVehicleSeatNames). Mounting
+  // by a fixed list of four names put people into seats a two-seater does not have.
+  private let m_arrivalSeatNames: array<CName>;
   private let m_arrivalAge: Int32;            // ticks since the car was queued (stale guard)
   private let m_arrivalLeadRecord: TweakDBID; // the one who matters, if this convoy has one
   private let m_arrivalLeadTag: CName;        // and the tag that makes them matter
@@ -508,9 +526,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_arrivalCarId = noCar;
     this.m_arrivalSeats = 0;
     this.m_arrivalFilled = 0;
+    ArrayClear(this.m_arrivalSeatNames);
     this.m_arrivalAge = 0;
     this.m_arrivalFaction = n"";
     this.m_arrivalRoleSquad = false;
+    this.m_arrivalChairBase = 0;
+    this.m_arrivalCarSlot = 0;
   }
 
   public func GetPendingArrivalLeadRecord() -> TweakDBID {
@@ -532,7 +553,16 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     this.m_arrivalAge += 1;
     if this.m_arrivalAge > CBConfig.ArrivalStaleTicks() {
-      CBLog.Info(n"Spawn", "A car that was sent never turned up; clearing it.");
+      // The car is here and somebody is in it, but a seat never filled: send it with whoever
+      // got in rather than leaving them parked (CBLaunchArrivalCar). Anybody it was meant to
+      // carry and did not is walked in by the top-up, which counts seats created, not filled.
+      if EntityID.IsDefined(this.m_arrivalCarId) && this.m_arrivalFilled > 0
+         && this.m_arrivalFilled < this.m_arrivalSeats {
+        CBLog.Info(n"Spawn", s"Boarding stalled at \(this.m_arrivalFilled) of \(this.m_arrivalSeats); sending the car with them.");
+        CBLaunchArrivalCar(this.GetGameInstance(), this.m_arrivalCarId, this.m_arrivalCarSlot);
+      } else {
+        CBLog.Info(n"Spawn", "A car that was sent never turned up; clearing it.");
+      }
       this.ClearPendingArrival();
     }
   }
@@ -549,10 +579,20 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_arrivalTag;
   }
 
-  public func BeginArrivalBoarding(carId: EntityID, seats: Int32) -> Void {
+  // `seatNames` are the car's real slots, driver first; only the first `seats` are filled.
+  public func BeginArrivalBoarding(carId: EntityID, seats: Int32, seatNames: array<CName>) -> Void {
     this.m_arrivalCarId = carId;
-    this.m_arrivalSeats = seats;
+    this.m_arrivalSeats = Min(seats, ArraySize(seatNames));
     this.m_arrivalFilled = 0;
+    this.m_arrivalSeatNames = seatNames;
+  }
+
+  // The slot a claimed seat mounts into, or n"" if there is no such seat.
+  public func GetArrivalSeatName(slot: Int32) -> CName {
+    if slot < 0 || slot >= ArraySize(this.m_arrivalSeatNames) {
+      return n"";
+    }
+    return this.m_arrivalSeatNames[slot];
   }
 
   public func GetArrivalCarId() -> EntityID {
@@ -622,6 +662,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_arrivalCarId = noCar;
     this.m_arrivalSeats = 0;
     this.m_arrivalFilled = 0;
+    ArrayClear(this.m_arrivalSeatNames);
   }
 
   private func ScheduleFastTick() -> Void {
@@ -821,6 +862,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBVendettaWatch(this, game);      // date a vendetta the moment it is sworn
       CBTurfWatchTick(this, game);      // hanging around on a hostile gang's streets gets noticed
     }
+    CBConvoyTick(this, game);           // the next car for a group too big for one
     CBProcessCarTopUp(this, game);      // anybody a car was meant to bring and did not walks in
     CBApexMusterTick(this, game);       // and an apex squad is always four, chair by chair
     CBHuntTick(this, game);             // the people after you search, find you, lose you
@@ -1478,10 +1520,13 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // ---- What a car was meant to bring ----
-  public func NoteCarPath(city: Bool, seats: Int32) -> Void {
+  // `nextCar`: another car of a convoy already under way, which keeps its running count.
+  public func NoteCarPath(city: Bool, seats: Int32, opt nextCar: Bool) -> Void {
     this.m_carPathCity = city;
     this.m_carSeats = seats;
-    this.m_convoyCreated = 0;
+    if !nextCar {
+      this.m_convoyCreated = 0;
+    }
   }
 
   public func IsLastCarCity() -> Bool {
@@ -1492,8 +1537,126 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_carSeats;
   }
 
+  // Added up across every car of a convoy, and any of the group walked in when a car could not
+  // be sent, so the top-up compares the whole group with everybody who was put in the world.
   public func NoteConvoyCreated(n: Int32) -> Void {
-    this.m_convoyCreated = n;
+    this.m_convoyCreated += Max(0, n);
+  }
+
+  // ---- A convoy: a group carried in several cars ----
+  public func BeginConvoy(faction: CName) -> Void {
+    this.ClearConvoy();
+    this.m_convoyFaction = faction;
+    this.m_convoyCars = 1;   // the car that started it
+  }
+
+  public func ClearConvoy() -> Void {
+    ArrayClear(this.m_legFaction);
+    ArrayClear(this.m_legRecord);
+    ArrayClear(this.m_legTag);
+    ArrayClear(this.m_legLeft);
+    ArrayClear(this.m_legTotal);
+    ArrayClear(this.m_legChair);
+    ArrayClear(this.m_legTries);
+    this.m_convoyFaction = n"";
+    this.m_convoyCars = 0;
+  }
+
+  public func GetConvoyFaction() -> CName {
+    return this.m_convoyFaction;
+  }
+
+  public func GetConvoyCars() -> Int32 {
+    return this.m_convoyCars;
+  }
+
+  public func NoteConvoyCar() -> Void {
+    this.m_convoyCars += 1;
+  }
+
+  public func HasConvoyLegs() -> Bool {
+    return ArraySize(this.m_legLeft) > 0;
+  }
+
+  // Somebody of this kind is still waiting for a car.
+  public func ConvoyHasTag(tag: CName) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_legTag) {
+      if Equals(this.m_legTag[i], tag) {
+        return true;
+      }
+      i += 1;
+    }
+    return false;
+  }
+
+  public func QueueConvoyLeg(faction: CName, record: TweakDBID, tag: CName, left: Int32,
+                             total: Int32, chair: Int32) -> Void {
+    if left <= 0 {
+      return;
+    }
+    ArrayPush(this.m_legFaction, faction);
+    ArrayPush(this.m_legRecord, record);
+    ArrayPush(this.m_legTag, tag);
+    ArrayPush(this.m_legLeft, left);
+    ArrayPush(this.m_legTotal, total);
+    ArrayPush(this.m_legChair, chair);
+    ArrayPush(this.m_legTries, 0);
+  }
+
+  // The front leg, read field by field. Callers check HasConvoyLegs first.
+  public func LegFaction() -> CName { return this.m_legFaction[0]; }
+  public func LegRecord() -> TweakDBID { return this.m_legRecord[0]; }
+  public func LegTag() -> CName { return this.m_legTag[0]; }
+  public func LegLeft() -> Int32 { return this.m_legLeft[0]; }
+  public func LegTotal() -> Int32 { return this.m_legTotal[0]; }
+  public func LegChair() -> Int32 { return this.m_legChair[0]; }
+
+  // A car took `carried` of the front leg.
+  public func LegCarried(carried: Int32) -> Void {
+    this.m_legLeft[0] = this.m_legLeft[0] - carried;
+    if this.m_legChair[0] >= 0 {
+      this.m_legChair[0] = this.m_legChair[0] + carried;
+    }
+    this.m_legTries[0] = 0;
+  }
+
+  // No car this tick; how many ticks in a row that has now been.
+  public func LegMissed() -> Int32 {
+    this.m_legTries[0] = this.m_legTries[0] + 1;
+    return this.m_legTries[0];
+  }
+
+  public func DropLeg() -> Void {
+    if ArraySize(this.m_legLeft) == 0 {
+      return;
+    }
+    ArrayErase(this.m_legFaction, 0);
+    ArrayErase(this.m_legRecord, 0);
+    ArrayErase(this.m_legTag, 0);
+    ArrayErase(this.m_legLeft, 0);
+    ArrayErase(this.m_legTotal, 0);
+    ArrayErase(this.m_legChair, 0);
+    ArrayErase(this.m_legTries, 0);
+    if ArraySize(this.m_legLeft) == 0 {
+      this.m_convoyFaction = n"";
+    }
+  }
+
+  public func SetArrivalCarSlot(slot: Int32) -> Void {
+    this.m_arrivalCarSlot = Max(0, slot);
+  }
+
+  public func GetArrivalCarSlot() -> Int32 {
+    return this.m_arrivalCarSlot;
+  }
+
+  public func SetArrivalChairBase(chair: Int32) -> Void {
+    this.m_arrivalChairBase = Max(0, chair);
+  }
+
+  public func GetArrivalChairBase() -> Int32 {
+    return this.m_arrivalChairBase;
   }
 
   public func GetConvoyCreated() -> Int32 {
@@ -2497,6 +2660,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_encounter = null;
     ArrayClear(this.m_escapees);
     this.ClearPendingArrival();
+    this.ClearConvoy();
 
     // The day's timetable of who is coming for V, and the per-lane counters behind it. Cleared
     // so the first day after a reset rolls fresh rather than carrying a schedule built for a
@@ -2966,7 +3130,29 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     ArrayPush(this.m_escapees, e);
     while ArraySize(this.m_escapees) > CBConfig.EscapeeCap() {
-      ArrayErase(this.m_escapees, 0);
+      // The oldest runaway goes first: a runaway is only a maybe-Rival, while a spared one is
+      // also takedown credit V has not been given yet (CBSettleMercy).
+      let victim = 0;
+      let k = 0;
+      while k < ArraySize(this.m_escapees) {
+        let cand = this.m_escapees[k];
+        if !IsDefined(cand) || !cand.spared {
+          victim = k;
+          break;
+        }
+        k += 1;
+      }
+      let evicted = this.m_escapees[victim];
+      ArrayErase(this.m_escapees, victim);
+      // A mercy pushed out is settled now, as if V had left, rather than lost. Dead is only
+      // asked of a body CBNpcSafe vouches for; one that has gone was alive when last seen.
+      if IsDefined(evicted) && evicted.spared && IsDefined(evicted.mercy) {
+        let alive = true;
+        if CBNpcSafe(this, evicted.puppet) {
+          alive = !evicted.puppet.IsDead();
+        }
+        CBSettleMercy(this, evicted, alive);
+      }
     }
   }
   public func GetEscapees() -> array<ref<CBEscapee>> {
