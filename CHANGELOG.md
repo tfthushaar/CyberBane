@@ -3,6 +3,46 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.6] - 2026-11-05
+
+Finishing somebody you knocked out is a kill, Rivals stand on the ground, and news of what you
+did takes time to reach your phone.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **"I put them down with Pax, then headshot them, and it still counted as non-lethal."** A
+  knockout was scored as mercy the moment they dropped - Conduct, the non-lethal tally, the
+  gang's "spared" count, goodwill with their rivals, the quiet-takedown count - and killing them
+  afterwards only took back three of those. Worse, the mercy was settled for good once you had
+  been out of combat for twenty-five seconds, which after a stealth takedown is right away, so
+  walking round scanning a sleeping room locked every one of them in as spared (and could make
+  a Spared Rival of them) before the shots. A takedown is now recorded when it happens and only
+  scored as mercy once you have actually left them breathing: walked away (45 m), or they
+  streamed out of the world. Finish them first and it is an ordinary kill, counted once. Mercy
+  also no longer depends on the Rivals setting.
+- **Rivals spawning near you floated until enough damage knocked them over.** Every spawn was
+  placed 0.35 m above the floor found by a ray cast from three metres up, which could also land
+  on an awning or ledge above the real spot. An NPC is not dropped by physics when it is
+  created, so one that opened fire without moving hung there. Spawns now stand on the navmesh
+  point itself, the way the game places its own pursuers, and spots found by raycast alone are
+  moved onto the navmesh under them or skipped.
+- **The phone knew everything the instant it happened, and filled up with repeats.** News of
+  what you did - a body, a dead Rival, a crew taking over, a gang finding its crew gone, your
+  name going up - now takes in-game time to reach you, arrives no closer together than a set
+  gap, and the same story is told once while it gets around: a cyberpsycho episode is one "you
+  left a mess" message, not one per lull in the fight. A contact sending the same words twice
+  within the hour files them once. Gangs and Rivals talking to you in the moment are unchanged.
+
+### Added
+- **Word travels** (Interface): how many in-game minutes news takes to reach your phone. 30 by
+  default; 0 is the old behaviour.
+- **Gap between messages** (Interface): the least time, in real seconds, between two pieces of
+  news. 45 by default.
+
+Bounty payouts are still paid, and announced, the moment you earn them, so a reload can never
+lose one.
+
 ## [1.6.5] - 2026-11-05
 
 The pin a tip puts on your map is one you can actually find.

@@ -190,4 +190,10 @@ public class CBEscapee {
   public let spared: Bool;
   // What V did to them on the way down, copied off the puppet so it survives the puppet.
   public let scarMask: Int32;
+  // The non-lethal takedown V is owed credit for, classified at the moment they went down (who
+  // saw it, where, how) and held here until it is settled that V really left them breathing.
+  // Null when V was not the one who put them down. Session only, like the rest of this.
+  public let mercy: ref<CBKillInfo>;
+  // Put down while being a cyberpsycho: settling it counts one talked down.
+  public let psycho: Bool;
 }

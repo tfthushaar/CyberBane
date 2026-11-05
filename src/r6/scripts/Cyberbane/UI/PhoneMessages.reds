@@ -185,6 +185,29 @@ public class CBPhone {
   private let m_pendBody: array<String>;
   private let m_pendAccent: array<HDRColor>;
 
+  // The last line each thread received and when (game seconds), parallel to m_thName. A contact
+  // repeating itself word for word is one message, not two unread ones.
+  private let m_thLastBody: array<String>;
+  private let m_thLastAt: array<Float>;
+
+  // Word that has not reached V yet (Hearsay). Anything a third party tells V about what V did -
+  // a body, a Rival in the ground, a crew taking over, a payout - used to arrive in the same tick
+  // as the deed, so the city knew before the smoke cleared, and a long fight filed one copy per
+  // encounter. It waits here for an in-game delay, is let out no faster than one every so many
+  // real seconds, and a story that is already waiting or was told recently is not told again.
+  // Session only, like the threads: a story still on its way when the game is loaded was never
+  // told, which is how word that had not got round yet should behave.
+  private let m_hsSender: array<String>;
+  private let m_hsBody: array<String>;
+  private let m_hsAccent: array<HDRColor>;
+  private let m_hsKey: array<CName>;
+  private let m_hsFaction: array<CName>;   // a gang whose message carries a peace offer, or n""
+  private let m_hsDue: array<Float>;       // game seconds
+  // Stories already told, and when (game seconds), for the repeat window.
+  private let m_toldKey: array<CName>;
+  private let m_toldAt: array<Float>;
+  private let m_lastWordReal: Float;       // sim seconds the last story was let out
+
   // The phone in V's hand, and the messenger panel if one of ours is open in it. Weak, and
   // checked on every use: the HUD is rebuilt on every load and fast travel.
   private let m_phoneCtrl: wref<NewHudPhoneGameController>;
@@ -375,6 +398,16 @@ public class CBPhone {
     }
     let thread = this.ThreadFor(sender);
     if thread >= 0 {
+      // The same contact saying the same thing again, within the hour: already in the thread and
+      // already unread. Filing it twice is how a long fight became a screen of identical lines.
+      let now = CBGameSeconds(game);
+      if now > 0.0 && this.m_thLastAt[thread] > 0.0 && Equals(this.m_thLastBody[thread], body)
+         && now >= this.m_thLastAt[thread]
+         && (now - this.m_thLastAt[thread]) < CBConfig.PhoneDuplicateHours() * CBConfig.SecondsPerHour() {
+        return;
+      }
+      this.m_thLastBody[thread] = body;
+      this.m_thLastAt[thread] = now;
       this.File(game, thread, body, false);
       this.m_thUnread[thread] += 1;
     }
@@ -389,6 +422,125 @@ public class CBPhone {
       ArrayErase(this.m_pendAccent, 0);
     }
     CBLog.Info(n"UI", s"Message from \(sender): \(body)");
+  }
+
+  // ---- Word getting around ------------------------------------------------
+
+  // Somebody will tell V about this, once it has had time to get round. Safe from any hook: it
+  // only touches our own arrays. `key` names the story; a second one with the same key while
+  // the first is still waiting, or soon after it was told, is the same story and is dropped.
+  // n"" means this one never merges with anything.
+  public func Hearsay(game: GameInstance, sender: String, body: String, accent: HDRColor,
+                      key: CName, offerFaction: CName) -> Void {
+    this.m_game = game;
+    if StrLen(body) == 0 {
+      return;
+    }
+    let now = CBGameSeconds(game);
+    if IsNameValid(key) {
+      let q = 0;
+      while q < ArraySize(this.m_hsKey) {
+        if Equals(this.m_hsKey[q], key) {
+          return;   // already on its way
+        }
+        q += 1;
+      }
+      let t = 0;
+      while t < ArraySize(this.m_toldKey) {
+        if Equals(this.m_toldKey[t], key) && now >= this.m_toldAt[t]
+           && (now - this.m_toldAt[t]) < CBConfig.HearsayRepeatHours() * CBConfig.SecondsPerHour() {
+          return;   // V heard this one not long ago
+        }
+        t += 1;
+      }
+    }
+    // A full queue is a busy hour, and the stories already waiting are the older news; the new
+    // one is let go rather than pushing them out.
+    if ArraySize(this.m_hsBody) >= CBConfig.HearsayQueueCap() {
+      CBLog.Info(n"UI", s"Word dropped (queue full) from \(sender): \(body)");
+      return;
+    }
+    // Not to the minute: two things done together reach V at different times, the way word does.
+    let delay = CBWordTravelSeconds() * RandRangeF(0.6, 1.4);
+    ArrayPush(this.m_hsSender, sender);
+    ArrayPush(this.m_hsBody, body);
+    ArrayPush(this.m_hsAccent, accent);
+    ArrayPush(this.m_hsKey, key);
+    ArrayPush(this.m_hsFaction, offerFaction);
+    // With the clock not yet readable (straight after a load), now is 0 and it is due at once;
+    // the release below waits for a readable clock anyway.
+    ArrayPush(this.m_hsDue, now + delay);
+    CBLog.Info(n"UI", s"Word on its way from \(sender): \(body)");
+  }
+
+  // Let out at most one story whose time has come. Runs from Update, on a settled tick.
+  private func ReleaseWord(game: GameInstance) -> Void {
+    if ArraySize(this.m_hsBody) == 0 {
+      return;
+    }
+    let now = CBGameSeconds(game);
+    if now <= 0.0 {
+      return;   // the clock is not up yet
+    }
+    let tsNow = GameInstance.GetTimeSystem(game);
+    if !IsDefined(tsNow) {
+      return;
+    }
+    let simNow = EngineTime.ToFloat(tsNow.GetSimTime());
+    if this.m_lastWordReal > 0.0 && simNow >= this.m_lastWordReal
+       && (simNow - this.m_lastWordReal) < CBInboxGapSeconds() {
+      return;
+    }
+    // The one that has been due longest.
+    let pick = -1;
+    let i = 0;
+    while i < ArraySize(this.m_hsDue) {
+      if this.m_hsDue[i] <= now && (pick < 0 || this.m_hsDue[i] < this.m_hsDue[pick]) {
+        pick = i;
+      }
+      i += 1;
+    }
+    if pick < 0 {
+      return;
+    }
+    let sender = this.m_hsSender[pick];
+    let body = this.m_hsBody[pick];
+    let accent = this.m_hsAccent[pick];
+    let key = this.m_hsKey[pick];
+    let faction = this.m_hsFaction[pick];
+    ArrayErase(this.m_hsSender, pick);
+    ArrayErase(this.m_hsBody, pick);
+    ArrayErase(this.m_hsAccent, pick);
+    ArrayErase(this.m_hsKey, pick);
+    ArrayErase(this.m_hsFaction, pick);
+    ArrayErase(this.m_hsDue, pick);
+    this.m_lastWordReal = simNow;
+    if IsNameValid(key) {
+      this.NoteTold(key, now);
+    }
+    // Through the ordinary door, so the silence switches and the delivery mode are asked about
+    // now, when it arrives, not back when it was queued.
+    CBPhoneSendTinted(game, sender, body, accent);
+    if IsNameValid(faction) {
+      CBPhoneOfferPeace(game, faction);
+    }
+  }
+
+  private func NoteTold(key: CName, now: Float) -> Void {
+    let t = 0;
+    while t < ArraySize(this.m_toldKey) {
+      if Equals(this.m_toldKey[t], key) {
+        this.m_toldAt[t] = now;
+        return;
+      }
+      t += 1;
+    }
+    ArrayPush(this.m_toldKey, key);
+    ArrayPush(this.m_toldAt, now);
+    while ArraySize(this.m_toldKey) > CBConfig.HearsayToldCap() {
+      ArrayErase(this.m_toldKey, 0);
+      ArrayErase(this.m_toldAt, 0);
+    }
   }
 
   // ---- Threads ------------------------------------------------------------
@@ -463,6 +615,8 @@ public class CBPhone {
     ArrayPush(this.m_thUnread, 0);
     ArrayPush(this.m_thTime, empty);
     ArrayPush(this.m_thOffer, n"");
+    ArrayPush(this.m_thLastBody, "");
+    ArrayPush(this.m_thLastAt, 0.0);
     return ArraySize(this.m_thName) - 1;
   }
 
@@ -601,6 +755,7 @@ public class CBPhone {
   // setting and a card's life is in seconds the player can read.
   public func Update(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     this.m_game = game;
+    this.ReleaseWord(game);   // before Deliver, so a story let out this tick is shown this tick
     this.Deliver(game);
     if ArraySize(this.m_sender) == 0 && this.m_subLeft <= 0.0 {
       return;
@@ -834,6 +989,17 @@ public class CBPhone {
     ArrayClear(this.m_thUnread);
     ArrayClear(this.m_thTime);
     ArrayClear(this.m_thOffer);
+    ArrayClear(this.m_thLastBody);
+    ArrayClear(this.m_thLastAt);
+    ArrayClear(this.m_hsSender);
+    ArrayClear(this.m_hsBody);
+    ArrayClear(this.m_hsAccent);
+    ArrayClear(this.m_hsKey);
+    ArrayClear(this.m_hsFaction);
+    ArrayClear(this.m_hsDue);
+    ArrayClear(this.m_toldKey);
+    ArrayClear(this.m_toldAt);
+    this.m_lastWordReal = 0.0;
     ArrayClear(this.m_msgThread);
     ArrayClear(this.m_msgBody);
     ArrayClear(this.m_msgMine);
@@ -989,4 +1155,73 @@ public func CBPhoneFromStreet(game: GameInstance, body: String) -> Void {
 // of white text.
 public func CBSystemNote(game: GameInstance, body: String, duration: Float) -> Void {
   CBShowMessage(game, "Cyberbane: " + body, duration);
+}
+
+// ---- Word that has to get round first --------------------------------------
+//
+// The same senders as above, for anything that is somebody passing on what V did. It reaches the
+// phone after an in-game delay ("Word travels" in Mod Settings), no closer together than the
+// inbox gap, and a story already on its way is not queued twice (see CBPhone.Hearsay). Messages
+// that are somebody speaking to V in the moment - a crew on the road, a scout with eyes on V, a
+// Rival's own voice - stay on the doors above.
+
+public func CBWordTravelSeconds() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  let minutes = CBConfig.WordTravelMinutesDefault();
+  if IsDefined(rt) && rt.HasSettings() {
+    minutes = rt.GetSettings().wordTravelMinutes;
+  }
+  return Cast<Float>(Max(0, minutes)) * CBConfig.SecondsPerHour() / 60.0;
+}
+
+public func CBInboxGapSeconds() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  let gap = CBConfig.InboxGapSecondsDefault();
+  if IsDefined(rt) && rt.HasSettings() {
+    gap = rt.GetSettings().inboxGapSeconds;
+  }
+  return Cast<Float>(Max(0, gap));
+}
+
+func CBHearsayTinted(game: GameInstance, sender: String, body: String, accent: HDRColor,
+                     key: CName, offerFaction: CName) -> Void {
+  if !CBMessagesOn() {
+    return;
+  }
+  let sys = CyberbaneSystem.Get(game);
+  if !IsDefined(sys) {
+    return;
+  }
+  sys.GetPhone().Hearsay(game, sender, body, accent, key, offerFaction);
+}
+
+public func CBHearsayFromStreet(game: GameInstance, body: String, key: CName) -> Void {
+  CBHearsayTinted(game, CBPhoneStreetSender(RandRange(0, 4)), body, CBHudCyan(), key, n"");
+}
+
+public func CBHearsayFromDistrict(game: GameInstance, district: CName, body: String, key: CName) -> Void {
+  CBHearsayTinted(game, CBPhoneDistrictSender(district), body, CBHudCyan(), key, n"");
+}
+
+public func CBHearsayFromGang(game: GameInstance, faction: CName, body: String, key: CName) -> Void {
+  CBHearsayTinted(game, CBPhoneGangSender(faction), body, CBHudRed(), key, faction);
+}
+
+// The gang, with nothing for V to answer.
+public func CBHearsayFromGangFinal(game: GameInstance, faction: CName, body: String, key: CName) -> Void {
+  CBHearsayTinted(game, CBPhoneGangSender(faction), body, CBHudRed(), key, n"");
+}
+
+public func CBHearsayFromAlly(game: GameInstance, faction: CName, body: String, key: CName) -> Void {
+  CBHearsayTinted(game, CBPhoneGangSender(faction), body, CBHudCyan(), key, n"");
+}
+
+// From the broker who works the part of town V is in now, the way CBContactMessage picks them.
+public func CBHearsayFromContact(game: GameInstance, body: String, key: CName) -> Void {
+  let sys = CyberbaneSystem.Get(game);
+  if IsDefined(sys) && NotEquals(sys.GetCurrentDistrict(), n"") {
+    CBHearsayFromDistrict(game, sys.GetCurrentDistrict(), body, key);
+    return;
+  }
+  CBHearsayFromStreet(game, body, key);
 }

@@ -746,7 +746,7 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
       fs.lastHitSquadAt = CBGameSeconds(game);
     }
     if CBToastsOn() {
-      CBPhoneFromGangFinal(game, faction, "Our guy stopped answering. We will find you another way.");
+      CBHearsayFromGangFinal(game, faction, "Our guy stopped answering. We will find you another way.", n"");
     }
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout went down before calling it in.");
     return;

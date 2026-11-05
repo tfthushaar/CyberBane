@@ -751,9 +751,9 @@ public func CBLairAmbushed(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
   }
   let name = CBRivalDisplayName(sys.GetContent(), r);
   if IsNameValid(from) {
-    CBPhoneFromAlly(game, from, s"Heard about \(name). Never saw you coming. Clean work.");
+    CBHearsayFromAlly(game, from, s"Heard about \(name). Never saw you coming. Clean work.", n"");
   } else {
-    CBPhoneFromStreet(game, s"Word is \(name) never saw it coming.");
+    CBHearsayFromStreet(game, s"Word is \(name) never saw it coming.", n"");
   }
   CBLog.Info(n"Rivals", s"Rival \(r.id) ambushed at their place.");
 }

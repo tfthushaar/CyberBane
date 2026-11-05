@@ -385,6 +385,28 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "25")
   public let messageHold: Int32 = 175;
 
+  // How long word of what V did takes to reach V's phone, in in-game minutes (UI/PhoneMessages.reds,
+  // CBPhone.Hearsay). Somebody passing on a body, a dead Rival, a payout or a crew changing hands
+  // has to have heard about it first. 0 is the old behaviour: as it happens.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WordTravel")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WordTravel-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "240")
+  @runtimeProperty("ModSettings.step", "5")
+  public let wordTravelMinutes: Int32 = 30;
+
+  // The least time between two pieces of word arriving, in real seconds.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-InboxGap")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-InboxGap-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "300")
+  @runtimeProperty("ModSettings.step", "5")
+  public let inboxGapSeconds: Int32 = 45;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageDelivery")

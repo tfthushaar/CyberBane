@@ -235,9 +235,15 @@ public abstract class CBConfig {
   // Two minutes of standing around before the Rival existed is why sparing felt like it did
   // nothing at all. It also needs V to have walked off: out of the fight, or well away.
   public static func SparedResolveTicks() -> Int32 = 25
-  // However the fight goes, a mercy is settled by this point.
+  // However the fight goes, a Rival's mercy is settled by this point. Anyone else's waits for V
+  // to actually leave them (SparedLeftDistance), or for the body to stream out.
   public static func SparedResolveMaxTicks() -> Int32 = 180
-  public static func EscapeeCap() -> Int32 = 24
+  // How far V has to be from somebody left breathing before V has left them. Closer than the
+  // escape distance: nobody is running, V only has to have moved on.
+  public static func SparedLeftDistance() -> Float = 45.0
+  // Room for a whole compound put to sleep, since a mercy now waits for V to leave. When it does
+  // fill, runaways go first, and a mercy pushed out is settled rather than lost.
+  public static func EscapeeCap() -> Int32 = 48
 
   // ---- Vendors (spec §9.6) ---------------------------------------------
   public static func VendorMaxDiscount() -> Float = 0.20
@@ -360,6 +366,19 @@ public abstract class CBConfig {
   // intersecting the surface they had just been put on, which the engine resolves by dropping
   // them into a ragdoll.
   public static func GroundSpawnLift() -> Float = 0.35
+  // Only used where the navigation system cannot be asked at all. Every other spawn is created
+  // on the navmesh point itself (CBSettleOnGround / CBStandOnNavmesh): an NPC is not dropped by
+  // physics when it is created, so 0.35 m of lift was 0.35 m of hovering.
+  //
+  // How far above a navmesh point the floor probe starts. Just enough to catch a floor a hair
+  // above the navmesh; three metres (GroundProbeUp) found awnings and ledges instead.
+  public static func NavFloorProbeUp() -> Float = 0.5
+  // A hair of clearance over the navmesh point or the floor, whichever is higher. The game's
+  // own pursuers use the point exactly; this only keeps the feet out of the surface.
+  public static func NavSpawnClearance() -> Float = 0.03
+  // How far a raycast floor point may be from the navmesh under it and still be that point.
+  public static func NavFloorSnapRadius() -> Float = 1.5
+  public static func NavFloorSnapHeight() -> Float = 0.6
   // How far a candidate point may sit above the floor underneath it and still count as that
   // floor's. Two metres covers navmesh that rides a little proud of the collision surface and a
   // kerb or a step; anything further means the point is over a drop, not on ground.
@@ -473,6 +492,18 @@ public abstract class CBConfig {
   // Messages waiting for a settled tick. More than this in one go is a burst, and the newest
   // are the ones worth a notification; the rest are still filed in their threads.
   public static func PhonePendingCap() -> Int32 = 6
+  // Word getting around (CBPhone.Hearsay). Defaults for the two settings, used before Mod
+  // Settings is up.
+  public static func WordTravelMinutesDefault() -> Int32 = 30
+  public static func InboxGapSecondsDefault() -> Int32 = 45
+  // A story already told is not told again inside this many in-game hours. A cyberpsycho
+  // episode is one massacre to the street, not one per lull in the shooting.
+  public static func HearsayRepeatHours() -> Float = 6.0
+  // Stories waiting at once, and how many recently told ones are remembered for that window.
+  public static func HearsayQueueCap() -> Int32 = 12
+  public static func HearsayToldCap() -> Int32 = 32
+  // The same contact sending the same words inside this many in-game hours is filed once.
+  public static func PhoneDuplicateHours() -> Float = 1.0
   // Where Cyberbane's contacts sit in the phone's hash space. Real contacts use hashes of their
   // journal paths, spread over the whole Int32 range; a block of 64 at a fixed odd value is
   // vanishingly unlikely to meet one, and every check also confirms the thread exists.

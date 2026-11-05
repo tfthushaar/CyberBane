@@ -195,6 +195,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-HitSquadsPerDay", "Hit squads per day");
     this.Text("Cyberbane-Settings-ApexPerDay", "Apex squads per day");
     this.Text("Cyberbane-Settings-MessageHold", "Message hold");
+    this.Text("Cyberbane-Settings-WordTravel", "Word travels (in-game minutes)");
+    this.Text("Cyberbane-Settings-WordTravel-Desc", "How long it takes for news of what you did - a body, a dead Rival, a payout, a crew changing hands - to reach your phone. The same story is only told once while it gets around. 0 sends it as it happens.");
+    this.Text("Cyberbane-Settings-InboxGap", "Gap between messages (seconds)");
+    this.Text("Cyberbane-Settings-InboxGap-Desc", "The least time between two pieces of news arriving. Anything waiting arrives later, in order. 0 lets them through as soon as they are due.");
     this.Text("Cyberbane-Settings-CyberpsychoRivals", "Spared cyberpsychos come back");
     this.Text("Cyberbane-Settings-VendettaSquads", "Vendetta hit squads");
     this.Text("Cyberbane-Settings-VendettaSquadSize", "Vendetta squad size");

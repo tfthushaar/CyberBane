@@ -210,8 +210,8 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
     let heir = sys.FindRivalById(fs.leaderRivalId);
     if IsDefined(heir) && CBMessagesOn() {
       let content = CBContent(game);
-      CBPhoneFromGang(game, rival.faction, CBRivalDisplayName(content, heir)
-        + " runs us now. Nothing about you has changed.");
+      CBHearsayFromGang(game, rival.faction, CBRivalDisplayName(content, heir)
+        + " runs us now. Nothing about you has changed.", n"");
     }
   }
 }

@@ -2966,7 +2966,29 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     ArrayPush(this.m_escapees, e);
     while ArraySize(this.m_escapees) > CBConfig.EscapeeCap() {
-      ArrayErase(this.m_escapees, 0);
+      // The oldest runaway goes first: a runaway is only a maybe-Rival, while a spared one is
+      // also takedown credit V has not been given yet (CBSettleMercy).
+      let victim = 0;
+      let k = 0;
+      while k < ArraySize(this.m_escapees) {
+        let cand = this.m_escapees[k];
+        if !IsDefined(cand) || !cand.spared {
+          victim = k;
+          break;
+        }
+        k += 1;
+      }
+      let evicted = this.m_escapees[victim];
+      ArrayErase(this.m_escapees, victim);
+      // A mercy pushed out is settled now, as if V had left, rather than lost. Dead is only
+      // asked of a body CBNpcSafe vouches for; one that has gone was alive when last seen.
+      if IsDefined(evicted) && evicted.spared && IsDefined(evicted.mercy) {
+        let alive = true;
+        if CBNpcSafe(this, evicted.puppet) {
+          alive = !evicted.puppet.IsDead();
+        }
+        CBSettleMercy(this, evicted, alive);
+      }
     }
   }
   public func GetEscapees() -> array<ref<CBEscapee>> {
