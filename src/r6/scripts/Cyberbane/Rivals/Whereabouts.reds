@@ -376,10 +376,25 @@ func CBLeadPinTick(sys: ref<CyberbaneSystem>, game: GameInstance, on: Bool) -> V
     return;
   }
   let data: MappinData;
-  // A pin for a place rather than a person. Same gang-business icon the Rival pins use
-  // (UI/Tracking.reds explains why it is that icon and not the quest diamond).
+  // A pin for a place, drawn the way the game draws a waypoint somebody dropped for you.
+  //
+  // "I got a text that they'd put it on my map, but I can't for the life of me find it." This was
+  // the gang-business variant the Rival markers use, and for a pin on a place that was the wrong
+  // answer three times over, all of it in the game's own UI scripts:
+  //   - the minimap never drew it. Its profile list (minimap.script, CreateMappinUIProfile) has no
+  //     entry for that variant on a plain position pin, so it fell through to MappinUIProfile.None;
+  //   - the world map drew it with the NCPD scanner icon (map_bounty, mappinUtils.script), in the
+  //     police group with the police tooltip (worldMap.script, IsPoliceTooltip), so in Watson it sat
+  //     among dozens of identical hustle icons, collapsed into their clusters at a distance and
+  //     hidden whenever the NCPD filter was off;
+  //   - hovering it described a police activity, not a Rival.
+  // CustomPositionVariant is the one variant the minimap always draws for a position pin
+  // (MappinUISpawnProfile.Always), with its own icon on the world map and a plain "custom
+  // location" tooltip that asks the journal for nothing. Select it on the map and track it like any
+  // other pin to get a route. The player's own waypoint is made and removed by the map itself
+  // (worldMap.script, TrackCustomPositionMappin); Cyberbane never touches that one.
   data.mappinType = t"Mappins.DefaultStaticMappin";
-  data.variant = gamedataMappinVariant.GangWatchVariant;
+  data.variant = gamedataMappinVariant.CustomPositionVariant;
   data.active = true;
   data.visibleThroughWalls = false;
   CBTrace("map: pin on a rival's last known place");

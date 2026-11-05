@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.6.4. The "Requests after 1.6.3" section at the top is the current one;
+The released version is 1.6.5. The "Requests after 1.6.4" section at the top is the current one;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -15,6 +15,26 @@ this repository: no police system calls, one AI order per NPC, no entity work in
 events, removals only through `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing touching
 an NPC that has left the world, behaviour-only ability kits, no runtime appearance changes, no
 loot drops from corpses, and UI as data rather than injected widgets.
+
+## Requests after 1.6.4
+
+### "I got a text that they'd put it on my map, but I can't find it. What does the icon look like?"
+
+**Status: it was a bug, fixed in 1.6.5** (`Rivals/Whereabouts.reds`, `CBLeadPinTick`).
+
+The lead pin was `Mappins.DefaultStaticMappin` with `GangWatchVariant`. Read against the game's UI
+scripts: the minimap's `CreateMappinUIProfile` has no profile for that variant on a plain position
+pin and returns `MappinUIProfile.None`, so it was never on the minimap; the world map draws every
+pin, but `MappinToTexturePart` gives this variant `map_bounty` (the NCPD scanner icon),
+`IsPoliceTooltip` gives it the police tooltip, and it shares the NCPD group's filter and zoom
+clustering. In a district full of hustles it was indistinguishable. `CustomPositionVariant` is the
+only variant the minimap always draws for a position pin, has its own icon (`dynamic_event`) and a
+journal-free "custom location" tooltip, and is trackable from the world map.
+
+Same cause, not changed: the markers on people (`UI/Tracking.reds`, quest entity pins with
+`GangWatchVariant`) are also not drawn on the minimap. The only minimap-visible choices there are
+the yellow quest markers taken out in 1.4.7 or the gameplay-role marker path, which needs testing
+in game. The readme no longer claims minimap markers on people.
 
 ## Requests after 1.6.3
 
