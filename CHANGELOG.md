@@ -3,6 +3,52 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.8] - 2026-11-06
+
+People sent to find you walk where they search, and they can find you if you stay put.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **"They kept teleporting around me, and vanished every time I scanned one."** While a crew or
+  a Rival was searching, every searcher was given a new spot to go and look every eight seconds,
+  whether or not they had got anywhere near the last one. The spot was anywhere in a circle round
+  where they thought you were, at your height, and it was never checked against anything but job
+  sites (and after a gig, when every try was near one, the last try was used anyway). So
+  searchers were sent into walls, onto roofs, over drops and into lots nobody can get into. The
+  game cannot walk somebody to a place like that, and what it does instead, out of your sight, is
+  put them there. That is the Tyger Claw who blinked out of the scanner after a couple of seconds
+  and turned up somewhere else on the minimap. Every spot a searcher is sent to is now a floor
+  with navmesh on it that this searcher has a path to - the same tests a spawn point has to pass
+  - and they get a new one only once they reach it, the walk takes too long, or a new search
+  starts. If there is nowhere walkable to send them they stay where they are and are asked again
+  shortly, instead of being given an order they cannot carry out.
+- **"The countdown ends and the Rival never shows up, even with the health bar on screen."** A
+  hunt starts from a tip that can be up to 45 m off where you really are, and the search circle
+  narrowed round that tip for the whole hunt. Standing still where the warning found you meant
+  being searched for 30 to 60 m away until they gave up: they had arrived, which is why the
+  health bar showed, and they never came near. Until somebody has actually seen you, the tip now
+  firms up the longer they ask around, towards the street's latest word on where you are, which
+  is only refreshed every twenty seconds. They still have to see you to start the fight;
+  crouching, the dark and moving on still lose them; once they have lost sight of you, they
+  search where they last saw you, as before.
+- **A Rival coming by car turned up on foot with their people.** A Rival who brings people of
+  their own (a Pack Leader, or one of the gang's leader or lieutenant) had those people walked in
+  the moment the car set off, so the group arrived on foot and the car, if it came, came
+  separately. If the car never delivered the Rival, the walk-in that followed brought a second
+  set of them. Their people now ride in the car with them, the Rival in the first seat; whoever
+  the car cannot seat walks in, and a walk-in after a failed car only brings whoever of theirs is
+  not already here.
+
+### Known
+- **"1.6.7 would not launch on Steam Deck; 1.6.6 did."** Not reproduced. 1.6.7 changed only the
+  Hub page in the pause menu, and none of that runs until you open it, so if the game stops
+  before the main menu, the likeliest cause is the script compile at startup. On Steam Deck in
+  Game Mode, the error box the script compiler shows can sit hidden behind the game window, and
+  that looks exactly like a game that will not start. If it happens with 1.6.8, start once from
+  Desktop Mode and send the text of that box, or `r6/logs/redscript_rCURRENT.log`, along with
+  your report.
+
 ## [1.6.7] - 2026-11-06
 
 The Cyberbane page in the pause menu answers the mouse where it is drawn, and nothing on it runs

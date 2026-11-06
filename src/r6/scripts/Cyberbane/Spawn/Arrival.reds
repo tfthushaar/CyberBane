@@ -772,8 +772,10 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     spec.active = true;
     // A Rival driving in wears their own face from the moment they spawn, set on the spec the
     // way the walk-in spawner sets it, so nothing has to change their appearance afterwards.
+    // Only the seat that is the Rival's: a Rival's car also carries their own people, who wear
+    // their own faces and whose bodies are not the Rival's.
     let rider: ref<CBRival>;
-    if Equals(squadTag, n"CB_Rival") {
+    if (isLead && Equals(leadTag, n"CB_Rival")) || (!isLead && Equals(squadTag, n"CB_Rival")) {
       rider = sys.FindRivalById(sys.GetRivalCarPending());
     }
     if IsDefined(rider) && IsNameValid(rider.appearance) {

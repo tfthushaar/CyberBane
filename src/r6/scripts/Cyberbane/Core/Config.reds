@@ -821,7 +821,8 @@ public abstract class CBConfig {
   public static func HuntSearchRadiusStart() -> Float = 55.0
   public static func HuntSearchRadiusMin() -> Float = 15.0
   public static func HuntNarrowTicks() -> Int32 = 90
-  // A fresh search point this often, per hunter.
+  // How often searchers are looked at to see whether they need somewhere new to look
+  // (Spawn/Hunt.reds, CBHuntNeedsNewPoint). They are not given a new point every time.
   public static func HuntSearchOrderTicks() -> Int32 = 8
   // Seeing V: close with nothing in the way, or already fighting within this range.
   public static func HuntSpotDistance() -> Float = 35.0
@@ -923,6 +924,18 @@ public abstract class CBConfig {
   public static func DisguiseSenseMult() -> Float = 0.5
   // Searchers walk once they are this close to the point they were sent to.
   public static func HuntWalkDistance() -> Float = 20.0
+  // A searcher is given a new point once this close to the one they were sent to, or once the
+  // walk has gone on this many seconds.
+  public static func HuntSearchArrivedDistance() -> Float = 4.0
+  public static func HuntSearchPointMaxTicks() -> Int32 = 30
+  // Tries for a walkable search point before falling back to the middle of the search.
+  public static func HuntSearchPointTries() -> Int32 = 4
+  // How far above or below the middle of the search a search point's floor may be.
+  public static func HuntSearchMaxDrop() -> Float = 6.0
+  // Before anybody has found V, how far the tip firms up towards the street's word on V once the
+  // search has fully narrowed (0 never, 1 all the way), and how often that word is refreshed.
+  public static func HuntTipFirmUp() -> Float = 0.8
+  public static func HuntTipWordTicks() -> Int32 = 20
   public static func HuntGiveUpJitter() -> Int32 = 60
   // How long the HUD line says how a hunt ended.
   public static func HuntEndLineTicks() -> Int32 = 6

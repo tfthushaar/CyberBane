@@ -193,6 +193,13 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_huntLkp: Vector4;
   private let m_huntLastSeenTick: Int32;
   private let m_huntSearchStartTick: Int32;
+  // Whether the hunt is still working from the tip it started with (nobody has found V yet), and
+  // the street's latest word on where V is, which the tip firms up towards (Spawn/Hunt.reds).
+  private let m_huntFromTip: Bool;
+  private let m_huntTipWord: Vector4;
+  private let m_huntTipWordTick: Int32;
+  // Bumped every time a search starts, so every searcher is given a fresh point for it.
+  private let m_huntSearchGen: Int32;
   private let m_huntFaction: CName;
   // A Rival who has warned V they are coming (their arrival is the lane's next zero), and the
   // Rival who has already said "found you" on this arrival.
@@ -1746,6 +1753,16 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func SetHuntLastSeenTick(v: Int32) -> Void { this.m_huntLastSeenTick = v; }
   public func GetHuntSearchStartTick() -> Int32 { return this.m_huntSearchStartTick; }
   public func SetHuntSearchStartTick(v: Int32) -> Void { this.m_huntSearchStartTick = v; }
+  public func IsHuntFromTip() -> Bool { return this.m_huntFromTip; }
+  public func SetHuntFromTip(v: Bool) -> Void { this.m_huntFromTip = v; }
+  public func GetHuntTipWord() -> Vector4 { return this.m_huntTipWord; }
+  public func GetHuntTipWordTick() -> Int32 { return this.m_huntTipWordTick; }
+  public func SetHuntTipWord(v: Vector4, tick: Int32) -> Void {
+    this.m_huntTipWord = v;
+    this.m_huntTipWordTick = tick;
+  }
+  public func GetHuntSearchGen() -> Int32 { return this.m_huntSearchGen; }
+  public func BumpHuntSearchGen() -> Void { this.m_huntSearchGen += 1; }
   public func GetHuntFaction() -> CName { return this.m_huntFaction; }
   public func SetHuntFaction(v: CName) -> Void { this.m_huntFaction = v; }
   public func GetRivalWarned() -> Int32 { return this.m_rivalWarned; }

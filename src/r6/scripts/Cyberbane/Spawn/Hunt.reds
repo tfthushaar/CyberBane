@@ -48,6 +48,10 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
     sys.SetHuntLkp(tip);
     sys.SetHuntLastSeenTick(sys.GetTickCount());
     sys.SetHuntSearchStartTick(sys.GetTickCount());
+    // Nobody has laid eyes on V yet: they are working from a tip, and the tip firms up the
+    // longer they ask around (CBHuntSearchCenter).
+    sys.SetHuntFromTip(true);
+    sys.SetHuntTipWord(p, sys.GetTickCount());
     CBHuntStartSearch(sys);
   }
   sys.SetHuntFaction(faction);
@@ -59,6 +63,9 @@ func CBHuntStartSearch(sys: ref<CyberbaneSystem>) -> Void {
   sys.SetHuntGiveUpTicks(Max(30, CBConfig.HuntGiveUpTicks() + RandRange(-j, j + 1)));
   sys.SetSearchDistrict(sys.GetCurrentDistrict());
   sys.SetSpotTicks(0);
+  // Every searcher is given a fresh point for this search, rather than finishing the walk to
+  // one picked for the last.
+  sys.BumpHuntSearchGen();
 }
 
 // Is anybody of ours alive and out there, or on their way?
@@ -84,39 +91,131 @@ public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
 }
 
 // Send one hunter where the hunt says they should go: at V while V is located, otherwise to a
-// point near where V was last known. Used by spawn setup, the car watch and the hunt tick, so a
+// point near where V is thought to be. Used by spawn setup, the car watch and the hunt tick, so a
 // hunter is never handed V's position by some other door.
 public func CBOrderPursue(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(puppet) {
     return;
   }
   if !IsDefined(sys) || sys.GetHuntState() != CBHuntSearching() {
+    puppet.cbSearchGen = 0;   // whatever they were searching for is no longer the question
     CBOrderHunt(game, puppet);
     return;
   }
-  CBOrderSearch(game, puppet, CBHuntSearchPoint(sys));
+  let point: Vector4;
+  if !CBHuntPickSearchPoint(sys, game, puppet, point) {
+    // Nowhere near the search this person can walk to. They are given no order rather than an
+    // impossible one, and asked again on the next pass (CBHuntNeedsNewPoint).
+    puppet.cbSearchGen = 0;
+    return;
+  }
+  puppet.cbSearchPoint = point;
+  puppet.cbSearchTick = sys.GetTickCount();
+  puppet.cbSearchGen = sys.GetHuntSearchGen();
+  CBOrderSearch(game, puppet, point);
 }
 
-// Somewhere near the last known position. The circle starts wide and tightens the longer they
-// have been looking, the way a search does.
-public func CBHuntSearchPoint(sys: ref<CyberbaneSystem>) -> Vector4 {
-  let lkp = sys.GetHuntLkp();
+// The point a searcher is walking to, and when and for which search it was given. Session only.
+@addField(ScriptedPuppet)
+public let cbSearchPoint: Vector4;
+
+@addField(ScriptedPuppet)
+public let cbSearchTick: Int32;
+
+@addField(ScriptedPuppet)
+public let cbSearchGen: Int32;
+
+// Does this searcher need somewhere new to look? Only once they have got where they were sent,
+// or the walk has gone on too long, or a new search has started since.
+//
+// Every searcher used to be handed a brand new point every eight seconds whether or not they had
+// got anywhere near the last one. Together with points that nobody could walk to (see
+// CBHuntPickSearchPoint), that is the "they teleport around every few seconds" report: the
+// order was replaced before it could ever be walked.
+func CBHuntNeedsNewPoint(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> Bool {
+  if puppet.cbSearchGen == 0 || puppet.cbSearchGen != sys.GetHuntSearchGen() {
+    return true;
+  }
+  if sys.GetTickCount() - puppet.cbSearchTick >= CBConfig.HuntSearchPointMaxTicks() {
+    return true;
+  }
+  return Vector4.Distance(puppet.GetWorldPosition(), puppet.cbSearchPoint) <= CBConfig.HuntSearchArrivedDistance();
+}
+
+// How far into narrowing the search is, 0 when it starts and 1 once it is as tight as it gets.
+func CBHuntNarrowing(sys: ref<CyberbaneSystem>) -> Float {
   let looked = Cast<Float>(sys.GetTickCount() - sys.GetHuntSearchStartTick());
-  let t = ClampF(looked / Cast<Float>(CBConfig.HuntNarrowTicks()), 0.0, 1.0);
+  return ClampF(looked / Cast<Float>(CBConfig.HuntNarrowTicks()), 0.0, 1.0);
+}
+
+// The middle of the search.
+//
+// After contact is lost it is where V was last seen, and stays there: V broke away, and they only
+// know where that happened. Before anybody has found V at all it is the tip they set off with,
+// which could be up to HuntTipError out - and it stayed that far out for the whole search. The
+// circle narrowed round the wrong spot, so somebody standing still where the warning found them
+// was searched for thirty or sixty metres away until the hunters gave up, never seen and never
+// seen coming: "the countdown ends and they never show up", with the health bar on screen. The
+// tip now firms up as they ask around, towards the street's latest word on where V is, which is
+// only refreshed every so often (HuntTipWordTicks). It is still not V's position: they still
+// have to see V, crouching and the dark still hide V, and moving on still leaves them behind.
+public func CBHuntSearchCenter(sys: ref<CyberbaneSystem>) -> Vector4 {
+  let lkp = sys.GetHuntLkp();
+  if !sys.IsHuntFromTip() {
+    return lkp;
+  }
+  let word = sys.GetHuntTipWord();
+  let k = CBHuntNarrowing(sys) * CBConfig.HuntTipFirmUp();
+  return new Vector4(lkp.X + (word.X - lkp.X) * k, lkp.Y + (word.Y - lkp.Y) * k,
+                     lkp.Z + (word.Z - lkp.Z) * k, 1.0);
+}
+
+// Somewhere near the middle of the search that this hunter can actually walk to. The circle
+// starts wide and tightens the longer they have been looking, the way a search does.
+//
+// The point used to be any spot in the circle, at V's height, checked against nothing but job
+// sites - and when every try was near a job site (V had just finished one) the last try was used
+// anyway. So hunters were sent into walls, onto roofs, into the middle of the air over a drop and
+// into sealed lots. The game cannot walk an NPC to a place like that, and what it does instead,
+// out of the player's sight, is put them there: the searchers who jumped from spot to spot on the
+// minimap and vanished from the scanner after a couple of seconds. Every point is now a floor
+// with navmesh on it that this hunter has a path to, the same tests a spawn point has to pass.
+// False when there is none; the hunter is then left where they are and asked again shortly.
+public func CBHuntPickSearchPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>,
+                                  out point: Vector4) -> Bool {
+  let center = CBHuntSearchCenter(sys);
+  let t = CBHuntNarrowing(sys);
   let r = CBConfig.HuntSearchRadiusStart() + (CBConfig.HuntSearchRadiusMin() - CBConfig.HuntSearchRadiusStart()) * t;
-  // A few tries for a point that is not at a job site; searchers are never sent into one.
-  let pick = lkp;
+  let from = puppet.GetWorldPosition();
   let tries = 0;
-  while tries < 4 {
+  while tries < CBConfig.HuntSearchPointTries() {
     let ang = RandRangeF(0.0, 6.2831);
     let d = RandRangeF(r * 0.25, r);
-    pick = new Vector4(lkp.X + CosF(ang) * d, lkp.Y + SinF(ang) * d, lkp.Z, 1.0);
-    if !sys.NearQuestPins(pick, CBConfig.QuestSpawnClearance()) {
-      return pick;
+    let at: Vector4;
+    // Searchers are never sent into a job site.
+    if CBHuntStandAt(game, center.X + CosF(ang) * d, center.Y + SinF(ang) * d, center.Z, at)
+       && !sys.NearQuestPins(at, CBConfig.QuestSpawnClearance())
+       && CBPointReachable(game, from, at) {
+      point = at;
+      return true;
     }
     tries += 1;
   }
-  return pick;
+  // The middle of the search itself. Orders are not given at all while V is on a job
+  // (CBHuntTick), so this is never a walk into one.
+  let mid: Vector4;
+  if CBHuntStandAt(game, center.X, center.Y, center.Z, mid) && CBPointReachable(game, from, mid) {
+    point = mid;
+    return true;
+  }
+  return false;
+}
+
+// A floor at this spot, near this height, with navmesh on it.
+func CBHuntStandAt(game: GameInstance, x: Float, y: Float, zHint: Float, out at: Vector4) -> Bool {
+  let gz: Float;
+  return CBGroundAt(game, x, y, zHint, gz) && AbsF(gz - zHint) <= CBConfig.HuntSearchMaxDrop()
+      && CBStandOnNavmesh(game, x, y, gz, at);
 }
 
 // Walk somewhere and look around. A position rather than V, at a run rather than a sprint, and
@@ -204,6 +303,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     sys.SetHuntLkp(ppos);
     sys.SetHuntLastSeenTick(now);
     sys.SetHuntState(CBHuntLocated());
+    sys.SetHuntFromTip(false);   // from here on they search where they last saw V
     sys.SetSpotTicks(0);
     if was != CBHuntLocated() {
       CBHuntOnLocated(sys, game);
@@ -225,6 +325,12 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // travel all work while they are still looking. Not while the story has the stage.
   if sys.GetHuntState() == CBHuntLocated() && sys.GetStoryHold() == CBStoryNone() {
     CBHuntEngage(sys, game, des, ppos);
+  }
+
+  // The street's word on where V is, while they are still working from the tip. Refreshed only
+  // every so often, so it is a rumour that firms up, not a fix (CBHuntSearchCenter).
+  if sys.IsHuntFromTip() && now - sys.GetHuntTipWordTick() >= CBConfig.HuntTipWordTicks() {
+    sys.SetHuntTipWord(ppos, now);
   }
 
   // Over? Either V has been gone a long time while they searched, or V has simply put a lot of
@@ -309,7 +415,8 @@ func CBHuntOrderTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyna
     if CBStillStanding(puppet) && CBNpcSafe(sys, puppet) && !puppet.cbMoraleBroken
        && !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) && !CBNpcInCombat(puppet) {
       let away = Vector4.Distance(puppet.GetWorldPosition(), ppos);
-      if sys.GetHuntState() != CBHuntLocated() || away >= CBConfig.ChaseRefreshMinDistance() {
+      let searching = sys.GetHuntState() != CBHuntLocated();
+      if (searching && CBHuntNeedsNewPoint(sys, puppet)) || (!searching && away >= CBConfig.ChaseRefreshMinDistance()) {
         CBOrderPursue(sys, game, puppet);
         done += 1;
       }
