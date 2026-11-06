@@ -456,9 +456,15 @@ func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   // Their people walk in as escorts, so they fight, chase and give up with the encounter and
   // never hold up the crew lane. Only as many as are not already out: a Rival whose car never
   // delivered them walks in on the next try, and whoever of theirs did get here is still here.
+  //
+  // Counted with CBCountLiveOrSpawning, which includes anybody the engine has been asked for and
+  // has not finished building. The standing-only count misses exactly the people this test is
+  // about: an escort queued a moment ago by this same path is not standing yet, so it read as
+  // absent and a second one was sent for it - the group arriving over strength and eating room
+  // under MaxLiveSpawns. Same reason CBSpawnGroup shares its room by the or-spawning count.
   let escorts = 0;
   if !byCar {
-    escorts = CBRivalEscortCount(sys, r) - CBCountLiveTagged(game, n"CB_Escort");
+    escorts = CBRivalEscortCount(sys, r) - CBCountLiveOrSpawning(game, n"CB_Escort");
   }
   if escorts > 0 {
     let fs = sys.FindFaction(r.faction);

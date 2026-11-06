@@ -54,6 +54,13 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   back in while another was boarding was mounted into it instantly, from wherever they stood:
   another way for somebody to blink out of sight, and the new car left with a seat its own crew
   needed. Only the people created for the car now boarding are seated in it.
+- **A Rival who runs people could arrive with twice as many.** The count of how many of their
+  people were already here only saw the ones standing, not the ones the game was still building.
+  So escorts asked for a moment earlier read as absent and a second set was sent for them: the
+  group turned up over strength and ate room that other arrivals needed. It now counts anybody
+  already on the way in as present, the same way everything else that asks "how many of ours are
+  out" does. The head count that only sees people standing has been removed so nothing can reach
+  for it again.
 - **Two places that could read past the end of a list.** The queue of cars still to send for a
   convoy, and the day's timetable read from your save, were each read by position, trusting
   every caller to have checked the length first. Reading past the end is a crash, not an error.

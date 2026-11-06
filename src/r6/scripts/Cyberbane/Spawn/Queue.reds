@@ -185,26 +185,17 @@ public func CBCrewComingLine(sys: ref<CyberbaneSystem>, game: GameInstance, fs: 
 //
 // Escaping them frees it too, just not instantly: they stay alive and tagged until the sweep
 // removes them, which is the honest reading - you lost them, they are still out there.
-// How many of them are alive. Same walk as CBLiveTaggedPresent, which answers the cheaper
-// question and stops at the first one; this one has to count, so it is kept separate rather
-// than making every caller of the common case pay for a full pass.
-public func CBCountLiveTagged(game: GameInstance, tag: CName) -> Int32 {
-  let des = GameInstance.GetDynamicEntitySystem();
-  if !IsDefined(des) {
-    return 0;
-  }
-  let ids = des.GetTaggedIDs(tag);
-  let n = 0;
-  let i = 0;
-  while i < ArraySize(ids) {
-    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
-    i += 1;
-    if CBStillStanding(p) {
-      n += 1;
-    }
-  }
-  return n;
-}
+// `CBCountLiveTagged` was here: a standing-only head count, with no caller from 1.6.3 to 1.6.7
+// and then one new one in 1.6.8 (the Rival escort top-up), which it got wrong. **Deleted on
+// purpose - do not add it back.** Counting only bodies that are already standing misses everybody
+// the engine has been asked for and has not finished building, so any "how many are already out"
+// test written on it double-sends whatever was queued a moment ago. That is the same fault 1.6.3
+// swept the codebase for (`CBCountLiveTaggedExcept` -> `CBCountLiveOrSpawningExcept`) and the
+// reason `CBSpawnRoom` and `CBSpawnGroup` share their room by the or-spawning count.
+//
+// Use `CBCountLiveOrSpawning` (or `CBCountLiveOrSpawningExcept` inside a death event). If a
+// standing-only count is ever genuinely wanted, say why at the call site - the default is wrong
+// often enough that it should not be reachable by accident.
 
 public func CBLiveTaggedPresent(game: GameInstance, tag: CName) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
