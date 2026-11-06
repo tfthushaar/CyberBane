@@ -73,9 +73,40 @@ first switch to try: a car coming for you on foot is the path this release opens
   never warn you first, come by car or be picked by a lane. They are renumbered on load.
 - **A few overheard lines read wrong**, such as "Everyone's talking about in Watson" and "They put
   Maelstrom' boss in the ground". Lines that open with a gang's name start with a capital now.
+- **All of Japantown counted as nowhere.** The game spells it JapanTown, and the mod was looking
+  for Japantown. So nothing you did there reached any district, and no gang was on its own streets
+  there, which took turf, hanging around in the wrong place and vendor prices with it. Four spots
+  in Vista del Rey and one in the Badlands went the same way. Japantown is Westbrook now, as it
+  was always meant to be.
+- **The Mox were never the Mox.** The game calls them TheMox, so no Mox member was ever recognised
+  as one. Hurting them cost you nothing with them and gained you nothing with the Tyger Claws, and
+  none could become a Rival. They count now.
+- **MaxTac were never MaxTac.** Every MaxTac officer is filed under the NCPD, so they scored as
+  cops, MaxTac's Problem could not be earned, and "MaxTac hold their ground" was not being enforced.
+  All three work now.
+- **The Wraiths had no name.** Their row in the Hub was blank and their texts came from Unknown
+  Number. MaxTac's row was blank too.
+- **The Heist named you T_KONPEKI_GHOST.** The title had been left out of the list while the Heist
+  still awarded it. Konpeki Ghost is a real title again, and earning it by working unseen, which
+  has been promised since 1.2.0, works for the first time.
+- **Anybody of ours who arrived while you were in a menu, on a call or in a scene stood there doing
+  nothing.** They were never made hostile, marked or given orders. They are now set up as soon as
+  the world settles.
+- **Start Over left things running.** An apex squad already announced still arrived, the hunt line
+  stayed up, and the first new Rival could skip their warning. It all stops now.
+- **Presets overwrote your sliders on every launch.** With Subtle or Dramatic saved, anything you
+  had tuned by hand went back to the preset's numbers when the game started.
+- **Disguises did nothing in a wardrobe set**, and could not have done anything anyway, because no
+  clothing had ever been listed. Nomad clothing now slows the Aldecaldos down and the Wraiths vest
+  slows the Wraiths. Those are the only gang clothes in the game that V can wear.
+- **A running Sandevistan did not make you look dangerous**, because the mod was checking a tag the
+  game does not use.
+- **Messages in Notices mode could vanish after loading a save.**
+- **Titles built from a place or a gang read wrong**, such as "the Tyger Claws's Nightmare". It is
+  "The Tyger Claws' Nightmare" now.
 
 ### Changed
-- The settings text for vehicles and markers says what they do now.
+- The settings text for vehicles, markers and disguises says what they do now.
 
 ## [1.6.8] - 2026-11-06
 

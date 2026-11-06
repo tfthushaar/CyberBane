@@ -81,7 +81,9 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   c.AddFaction(f);
 
   f = CBMakeFaction(n"Mox", 5.0, -0.05, 1.1, 0.2, true, true, "Cyberbane-Faction-Mox");
-  f.affiliations = [n"Mox"];
+  // TheMox is the game's name for them (factions.tweak). This said Mox and nothing else, so nobody
+  // in the game was ever one of the Mox: not a kill, not a Rival, not a witness.
+  f.affiliations = [n"TheMox", n"Mox"];
   f.SetRespect(ECBArchetype.Ghost, 0.3);
   f.SetRespect(ECBArchetype.Professional, 0.3);
   f.rivalFactions = [n"TygerClaws", n"Scavengers"];

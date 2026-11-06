@@ -31,7 +31,9 @@ public func CBShowMessage(game: GameInstance, text: String, duration: Float) -> 
   let ts = GameInstance.GetTimeSystem(game);
   if IsDefined(rt) && IsDefined(ts) {
     let now = EngineTime.ToFloat(ts.GetSimTime());
-    if now - rt.GetLastMessageAt() < CBConfig.MessageMinGapSeconds() {
+    // The stamp lives on a service, which outlasts a load, and the sim clock need not. Read without
+    // the first test, a clock behind the stamp is a gap that looks negative and so always too small.
+    if now >= rt.GetLastMessageAt() && now - rt.GetLastMessageAt() < CBConfig.MessageMinGapSeconds() {
       return;
     }
     rt.SetLastMessageAt(now);

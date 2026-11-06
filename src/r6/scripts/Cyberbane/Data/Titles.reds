@@ -31,6 +31,10 @@ public func CBSeedTitles(c: ref<CyberbaneContent>) -> Void {
   c.AddTitle(CBMakeTitle(n"T_RED_TIDE",          "Red Tide",                  35, true));
   c.AddTitle(CBMakeTitle(n"T_MAXTAC_PROBLEM",    "MaxTac's Problem",          35, true));
   c.AddTitle(CBMakeTitle(n"T_MERCIFUL",          "The Merciful",              35, true));
+  // Dropped from this table once and given a condition in 1.2.0, which nothing could reach with the
+  // title not listed here. The Heist still awarded it, as the raw id: "Heard them calling you
+  // T_KONPEKI_GHOST today."
+  c.AddTitle(CBMakeTitle(n"T_KONPEKI_GHOST",     "Konpeki Ghost",             35, false));
   c.AddTitle(CBMakeTitle(n"T_LANDLORD",          "Feared Landlord",           30, true));
   c.AddTitle(CBMakeTitle(n"T_MERC_FROM",         "The Merc from the District", 20, false));
 }

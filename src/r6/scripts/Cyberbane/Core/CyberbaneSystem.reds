@@ -474,6 +474,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         // Crew first: they belong in a seat, not running at V on foot from where the car is.
         let riding = des.IsTagged(id, n"CB_Crew");
         if riding {
+          puppet.cbSetupQueued = true;
           CBScheduleConvoyMount(this.GetGameInstance(), id);   // a moment later
         }
         // Everything else about one of ours - turning it hostile, telling it to come, its
@@ -491,6 +492,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival")
            || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort")
            || des.IsTagged(id, n"CB_Scout") || des.IsTagged(id, n"CB_Lair") {
+          puppet.cbSetupQueued = true;
           CBScheduleSpawnSetup(this.GetGameInstance(), id, riding);
         }
 
@@ -902,6 +904,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.GetThreatBar().Update(this, game);
     // Our marker stays on the minimap through the fight; only the one over their heads goes.
     CBMarkerCombatTick(this, game);
+    if this.m_tickCount % 3 == 0 {
+      CBRescueMissedSetup(game);        // anybody of ours who attached while the world was busy
+    }
     // The messages. Cheap and self-limiting: it returns on the first line when there is
     // nothing on screen, which is almost always.
     this.GetPhone().Update(this, game);
@@ -2344,6 +2349,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_pendingApexFaction = faction;
     this.m_pendingApexTicks = ticks;
     this.m_pendingApexDriving = true;
+    this.m_pendingApexStuck = 0;
   }
 
   public func IsPendingApexDriving() -> Bool {
@@ -2746,6 +2752,33 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_escapees);
     this.ClearPendingArrival();
     this.ClearConvoy();
+    // And everything live that was still pointing at the old playthrough. Only the saved half was
+    // being cleared, so after a Start Over an apex squad already announced still walked in, the
+    // hunt line stayed up with nobody behind it, and with ids starting again at 1 the new Rival 1
+    // read as already warned and already by car.
+    this.SetPendingApex(n"", 0);
+    this.ClearTopUp();
+    this.ClearScout();
+    this.ClearProvoked();
+    this.m_huntState = CBHuntNone();
+    this.m_huntFaction = n"";
+    this.m_huntGrade = "";
+    this.m_rivalWarned = 0;
+    this.m_rivalSpottedTexted = 0;
+    this.m_rivalCarPending = 0;
+    this.m_rivalCarFailed = 0;
+    this.m_laneLastRival = 0;
+    this.m_laneLastSquadFaction = n"";
+    this.m_laneLastApexFaction = n"";
+    this.m_apexAnnounced = n"";
+    this.m_apexBountyArmed = false;
+    this.m_turfWatchFaction = n"";
+    this.m_pendingRivalSweep = false;
+    ArrayClear(this.m_crewBeaten);
+    ArrayClear(this.m_seenPostureIds);
+    ArrayClear(this.m_seenPostureVals);
+    ArrayClear(this.m_peaceOfferedIds);
+    this.GetThreatBar().Hide();
 
     // The day's timetable of who is coming for V, and the per-lane counters behind it. Cleared
     // so the first day after a reset rolls fresh rather than carrying a schedule built for a

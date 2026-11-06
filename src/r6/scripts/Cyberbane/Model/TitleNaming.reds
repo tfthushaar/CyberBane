@@ -38,16 +38,26 @@ public func CBFactionLabel(id: CName) -> String {
   if Equals(id, n"Mox") { return "the Mox"; }
   if Equals(id, n"Barghest") { return "Barghest"; }
   if Equals(id, n"Aldecaldos") { return "the Aldecaldos"; }
+  if Equals(id, n"Wraiths") { return "the Wraiths"; }
   if Equals(id, n"Arasaka") { return "Arasaka"; }
   if Equals(id, n"Militech") { return "Militech"; }
   if Equals(id, n"KangTao") { return "Kang Tao"; }
   if Equals(id, n"NCPD") { return "the NCPD"; }
+  if Equals(id, n"MaxTac") { return "MaxTac"; }
   return "";
 }
 
 // The same, to start a sentence with: "the Tyger Claws" opens with a small letter.
 public func CBCapFirst(s: String) -> String {
   return StrLen(s) > 0 ? StrUpper(StrMid(s, 0, 1)) + StrMid(s, 1, StrLen(s) - 1) : s;
+}
+
+// "Maelstrom's", "the Mox's", "the Tyger Claws'". Every label here that ends in an s is a plural.
+public func CBPossessive(s: String) -> String {
+  if StrLen(s) == 0 {
+    return s;
+  }
+  return StrEndsWith(s, "s") ? s + "'" : s + "'s";
 }
 
 // mode 0 = most lethal/brutal work (Butcher), 1 = most quiet work (Ghost), 2 = best known.
@@ -135,9 +145,9 @@ public func CBTitleDisplay(sys: ref<CyberbaneSystem>, def: ref<CBTitleDef>) -> S
   }
   if Equals(def.id, n"T_BUTCHER_OF") { return "Butcher of " + token; }
   if Equals(def.id, n"T_GHOST_OF") { return "Ghost of " + token; }
-  if Equals(def.id, n"T_DISTRICT_PROBLEM") { return token + "'s Problem"; }
+  if Equals(def.id, n"T_DISTRICT_PROBLEM") { return CBCapFirst(CBPossessive(token)) + " Problem"; }
   if Equals(def.id, n"T_MERC_FROM") { return "The Merc from " + token; }
-  if Equals(def.id, n"T_FACTION_NIGHTMARE") { return token + "'s Nightmare"; }
+  if Equals(def.id, n"T_FACTION_NIGHTMARE") { return CBCapFirst(CBPossessive(token)) + " Nightmare"; }
   if Equals(def.id, n"T_FACTION_FRIEND") { return "Friend of " + token; }
   return def.display;
 }

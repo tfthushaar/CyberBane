@@ -2659,7 +2659,7 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
             line = StrLen(gang) > 0 ? s"You took down somebody who mattered to \(gang)." : "You took down somebody who mattered.";
           } else {
             if Equals(e.kind, n"ApexDown") {
-              line = StrLen(gang) > 0 ? s"You put down one of \(gang)'s apex squad." : "You put down one of an apex squad.";
+              line = StrLen(gang) > 0 ? "You put down one of " + CBPossessive(gang) + " apex squad." : "You put down one of an apex squad.";
             } else {
               if Equals(e.kind, n"Vendetta") {
                 line = s"\(gangCap) swore a vendetta against you.";

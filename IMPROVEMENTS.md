@@ -61,6 +61,19 @@ which `minimapMappins.script` says outright (`IsNcpdScanner`). That is what this
 `prevention_dogtown_*` records are Barghest-affiliated police, and they could be sampled into crews
 and Rivals. Whether that is what this player's save held has not been confirmed.
 
+### "Fix any and all bugs you notice in all systems"
+
+**Status: done in 1.7.0.** Every source file has now been read. What that found, past the reports
+above, was mostly one kind of bug: a name typed by hand that the game spells differently, which
+fails silently. `JapanTown` (15 district values unmapped, ten of them Japantown), `TheMox`, MaxTac (not an affiliation at all),
+`SandevistanPlayerBuff`, and the Wraiths and Konpeki Ghost missing from our own tables. Every
+`t"..."` record (160) and every status or record tag (35) has since been checked against the game's
+files, and all resolve. The other pattern was units: three callers read hit points as a percentage.
+
+**Left as they are, deliberately:** deeds other than the Heist have no verified quest fact, so they
+do not fire (`Data/Deeds.reds` says why). Look scores nothing, because no clothing record carries a
+visual tag. `CBPanicDrivingTick`'s stim has no radius, and giving it one could draw police.
+
 ## Requests after 1.6.4
 
 ### "I got a text that they'd put it on my map, but I can't find it. What does the icon look like?"

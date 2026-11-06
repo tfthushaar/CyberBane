@@ -49,7 +49,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-HostileOnSight-Desc", "Whether a gang at vendetta draws the moment they recognise you.");
     this.Text("Cyberbane-Settings-Warnings-Desc", "Whether a hostile gang gives you one spoken warning before turning on you.");
     this.Text("Cyberbane-Settings-CyberpsychoRivals-Desc", "A cyberpsycho you take alive may come back as a rival, with their own name and strength.");
-    this.Text("Cyberbane-Settings-FactionDisguises-Desc", "Whether wearing a gang's colours makes that gang slower to place you.");
+    this.Text("Cyberbane-Settings-FactionDisguises-Desc", "Whether wearing a gang's own gear makes that gang slower to place you: nomad clothing with the Aldecaldos, the Wraiths vest with the Wraiths.");
     this.Text("Cyberbane-Settings-Tribute-Desc", "Whether a gang that fears you sends eddies to stay on your good side.");
     this.Text("Cyberbane-Settings-TributeMult-Desc", "How much that tribute pays.");
     this.Text("Cyberbane-Settings-HitSquads-Desc", "Whether gangs send people after you. This also controls apex squads.");

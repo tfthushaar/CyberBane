@@ -945,6 +945,40 @@ public func CBScheduleSpawnSetup(game: GameInstance, id: EntityID, riding: Bool)
   ds.DelayCallback(cb, CBConfig.SpawnSetupRetrySeconds(), false);
 }
 
+// Handed to the setup above, so the sweep below does not do it twice.
+@addField(ScriptedPuppet)
+public let cbSetupQueued: Bool;
+
+// The second chance the attach event cannot give.
+//
+// That event stands down when the world is not stable, which is right for the event and wrong for
+// the NPC: nothing asks again, so anybody of ours who attached while V had a menu open, took a call
+// or sat through a scene was never made hostile, never marked, never ordered anywhere and never
+// kitted. They stood there as whatever they were spawned as, counted as a hunter, for the rest of
+// the encounter. The setup has its own wait for a settled world, so this only has to start it.
+public func CBRescueMissedSetup(game: GameInstance) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || !des.IsPopulated(n"Cyberbane") {
+    return;
+  }
+  let ids = des.GetTaggedIDs(n"Cyberbane");
+  let i = 0;
+  while i < ArraySize(ids) {
+    let id = ids[i];
+    i += 1;
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if IsDefined(p) && p.IsAttached() && !p.cbSetupQueued && !p.IsDead() {
+      p.cbSetupQueued = true;
+      let riding = des.IsTagged(id, n"CB_Crew");
+      if riding {
+        CBScheduleConvoyMount(game, id);
+      }
+      CBScheduleSpawnSetup(game, id, riding);
+      CBLog.Info(n"Spawn", "One of ours attached while the world was busy; setting them up now.");
+    }
+  }
+}
+
 // Everything that makes one of ours behave like one of ours.
 public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
                               puppet: ref<ScriptedPuppet>, riding: Bool) -> Void {
@@ -1035,11 +1069,6 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
       CBKitRivalTraits(puppet as NPCPuppet, who);
     }
     if IsDefined(who) {
-      // The look they carry. A Rival on foot is spawned in it; one the city drove in was given
-      // whatever look the record rolled, because the chase cannot be told, so it is put right
-      // here once the puppet exists.
-      // Only for a Rival the city drove in: one Cyberbane spawned on foot already has the look
-      // from its spawn spec, and asking again would be a change nobody needs.
       // One call, one build. The crew-rank bonus is a parameter now rather than a second
       // multiplier applied a line later; see the note in Rivals/Hierarchy.reds.
       CBApplyRivalApexBuff(sys, game, puppet, who, CBRivalRole(sys, who));

@@ -290,7 +290,29 @@ func CBClassifyFaction(puppet: ref<ScriptedPuppet>) -> CName {
   if !IsDefined(content) {
     return n"";
   }
-  return content.FactionForAffiliation(aff.EnumName());
+  let faction = content.FactionForAffiliation(aff.EnumName());
+  // MaxTac is not an affiliation. gamedataAffiliation has no such value and every MaxTac record is
+  // Factions.NCPD, so nobody was ever classed as MaxTac: their kills scored as cops, MaxTac's Problem
+  // could not be earned, and every "MaxTac holds its ground" test here was reading a name that
+  // never turned up. Only asked of the NCPD, so ordinary NPCs pay nothing for it.
+  if Equals(faction, n"NCPD") && CBRecordIsMaxTac(rec, puppet.GetRecordID()) {
+    return n"MaxTac";
+  }
+  return faction;
+}
+
+// Three doors, because the game marks them three ways: the rarity on the ones sent from an AV, a
+// tag on the ones a quest placed, and the record's own name on the rest.
+func CBRecordIsMaxTac(rec: wref<Character_Record>, id: TweakDBID) -> Bool {
+  if !IsDefined(rec) {
+    return false;
+  }
+  let rarity = rec.Rarity();
+  if IsDefined(rarity) && Equals(rarity.Type(), gamedataNPCRarity.MaxTac) {
+    return true;
+  }
+  return rec.TagsContains(n"MaxTac_NotPrevention")
+      || StrContains(StrLower(TDBID.ToStringDEBUG(id)), "maxtac");
 }
 
 // Is this one of Night City's cyberpsychos?

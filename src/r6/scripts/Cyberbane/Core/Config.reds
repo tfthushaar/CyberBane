@@ -880,6 +880,8 @@ public abstract class CBConfig {
   public static func CombatReleaseTicks() -> Int32 = 30
   // Metres closer since the last two-second pass that counts as still coming.
   public static func CombatReleaseClosing() -> Float = 2.0
+  // How much a gang's own clothes slow that gang down, as a share of the chance they place V.
+  public static func GangColoursDisguise() -> Float = 0.35
 
   // ---- Loot and bounties (Spawn/Loot.reds) --------------------------------
   public static func LootDelaySeconds() -> Float = 0.8

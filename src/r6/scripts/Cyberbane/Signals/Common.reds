@@ -101,35 +101,41 @@ public func CBEventDistrict(sys: ref<CyberbaneSystem>, game: GameInstance) -> CN
 // Maps a game district/sub-district enum name to a Cyberbane district id.
 // Exact game names are confirmed in spike S-06; this covers the common forms.
 // District_Record.EnumName() returns a String.
-public func CBMapGameDistrict(n: String) -> CName {
-  if StrContains(n, "Kabuki") || StrContains(n, "Northside") || StrContains(n, "LittleChina")
-     || StrContains(n, "Watson") || StrContains(n, "ArasakaWaterfront") {
+public func CBMapGameDistrict(name: String) -> CName {
+  // Lower-cased first, because the game does not spell its own districts one way. It is JapanTown
+  // with a capital T, and both Vista_del_Rey and Vista_del_rey, and a case-sensitive "Japantown"
+  // never matched: all of Japantown was no district at all, so nothing V did there counted, no gang
+  // was on its own streets there and Westbrook only ever heard about half of itself. Checked by
+  // running this over every value of gamedataDistrict. Morro Rock and the Langley clinic are the
+  // only ones left out, and both are quest stages with no parent district.
+  let n = StrLower(name);
+  if StrContains(n, "kabuki") || StrContains(n, "northside") || StrContains(n, "littlechina")
+     || StrContains(n, "watson") || StrContains(n, "arasakawaterfront") {
     return n"Watson";
   }
-  if StrContains(n, "Japantown") || StrContains(n, "CharterHill") || StrContains(n, "NorthOak")
-     || StrContains(n, "Westbrook") {
+  if StrContains(n, "japantown") || StrContains(n, "charterhill") || StrContains(n, "northoak")
+     || StrContains(n, "westbrook") {
     return n"Westbrook";
   }
-  if StrContains(n, "Downtown") || StrContains(n, "CorpoPlaza") || StrContains(n, "CityCenter")
-     || StrContains(n, "City_Center") {
+  if StrContains(n, "downtown") || StrContains(n, "corpoplaza") || StrContains(n, "citycenter")
+     || StrContains(n, "city_center") {
     return n"CityCenter";
   }
-  if StrContains(n, "Glen") || StrContains(n, "Wellsprings") || StrContains(n, "VistaDelRey")
-     || StrContains(n, "Heywood") {
+  if StrContains(n, "glen") || StrContains(n, "wellsprings") || StrContains(n, "vistadelrey")
+     || StrContains(n, "vista_del_rey") || StrContains(n, "heywood") {
     return n"Heywood";
   }
-  if StrContains(n, "Arroyo") || StrContains(n, "Rancho") || StrContains(n, "SantoDomingo")
-     || StrContains(n, "Santo") {
+  if StrContains(n, "arroyo") || StrContains(n, "rancho") || StrContains(n, "santo") {
     return n"SantoDomingo";
   }
-  if StrContains(n, "Coastview") || StrContains(n, "WestWind") || StrContains(n, "Pacifica") {
+  if StrContains(n, "coastview") || StrContains(n, "westwind") || StrContains(n, "pacifica") {
     return n"Pacifica";
   }
-  if StrContains(n, "Dogtown") || StrContains(n, "Combat") {
+  if StrContains(n, "dogtown") || StrContains(n, "combat") {
     return n"Dogtown";
   }
-  if StrContains(n, "Badlands") || StrContains(n, "RockyRidge") || StrContains(n, "RedPeaks")
-     || StrContains(n, "Biotechnica") {
+  if StrContains(n, "badlands") || StrContains(n, "rockyridge") || StrContains(n, "redpeaks")
+     || StrContains(n, "biotechnica") || StrContains(n, "lagunabend") {
     return n"Badlands";
   }
   return n"";

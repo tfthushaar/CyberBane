@@ -698,6 +698,10 @@ public class CyberbaneSettings {
   public func Register() -> Void {
     ModSettings.RegisterListenerToClass(this);
     ModSettings.RegisterListenerToModifications(this);
+    // What was just read back is the choice already made, along with whatever was tuned after it.
+    // m_appliedPreset is not saved, so on every launch a saved Subtle or Dramatic looked newly
+    // picked and wrote its numbers over the sliders the note above says are kept.
+    this.m_appliedPreset = this.preset;
     this.Apply();
   }
 

@@ -39,8 +39,11 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   let bestFaction = n"";
   let bestFactionDisguise = 0.0;
 
+  // Through the same three routes as Signals/Concealment.reds. This asked the equipment area alone,
+  // which is empty whenever a wardrobe set is on: the trap that file was rewritten for, still here.
+  let noSlot: TweakDBID;
   for area in areas {
-    let item = data.GetActiveItem(area);
+    let item = CBWornItem(game, data, area, noSlot);
     if ItemID.IsValid(item) {
       let tdbid = ItemID.GetTDBID(item);
 
@@ -48,10 +51,14 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
       let li = content.GetLookItem(tdbid);
       if IsDefined(li) {
         lookSum += li.score;
-        disguiseSum += li.disguise;
-        if NotEquals(li.factionTag, n"") && li.disguise > bestFactionDisguise {
-          bestFaction = li.factionTag;
-          bestFactionDisguise = li.disguise;
+        // A gang's colours fool that gang. Nobody else is taken in by them.
+        if NotEquals(li.factionTag, n"") {
+          if li.disguise > bestFactionDisguise {
+            bestFaction = li.factionTag;
+            bestFactionDisguise = li.disguise;
+          }
+        } else {
+          disguiseSum += li.disguise;
         }
       }
 

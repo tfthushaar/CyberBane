@@ -43,8 +43,9 @@ public func CBUpdateAura(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   // chromed, which is what the term was always supposed to mean.
   let bladed = IsDefined(weapon) && (weapon.IsBlade() || weapon.IsBlunt());
   let obvious = score.GetChromeVisible() >= CBConfig.AuraObviousChrome() || bladed;
-  let chromeRunning = StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"Sandevistan")
-                   || StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"Berserk");
+  // The game's own tags, as its AI conditions read them (commonconditionchecks.tweak). The bare
+  // n"Sandevistan" is no gameplay tag, so a Sandevistan running never counted here.
+  let chromeRunning = CBHasAnyTag(player, [n"SandevistanPlayerBuff", n"BerserkBuff", n"Berserk"]);
   score.SetAura(CBComputeAura(drawn, obvious, chromeRunning, player.IsInCombat(),
                               sys.GetRecentKills(), score.GetHeatStage() >= 3));
 }

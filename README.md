@@ -105,7 +105,8 @@ in active development. This page describes what the mod does and how it installs
 - **Gangs with their own values.** Maelstrom cares about chrome, the Animals care about raw
   strength, the Voodoo Boys care about netrunning. The same V gets different treatment from each
   gang depending on your standing and reputation: respect, a warning, or hostility. Masks and hoods
-  make you harder to place, and wearing a gang's colours makes that gang slower to recognize you.
+  make you harder to place, and a gang's own gear makes that gang slower to recognize you: nomad
+  clothing with the Aldecaldos and the Wraiths vest with the Wraiths, the only gang clothes V can wear.
 - **Gangs at war with each other.** The Valentinos and 6th Street, the Tyger Claws and the Mox,
   the Aldecaldos and the Wraiths, Arasaka and Militech, and everybody against the Scavs. Hurt a
   gang and the gangs that hate it warm to you, by how much it hurt and by whether anybody saw it
