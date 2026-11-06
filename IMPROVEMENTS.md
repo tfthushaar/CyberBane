@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.6.8. The "Requests after 1.6.4" section at the top is the current one;
+The released version is 1.7.0. The "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -15,6 +15,51 @@ this repository: no police system calls, one AI order per NPC, no entity work in
 events, removals only through `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing touching
 an NPC that has left the world, behaviour-only ability kits, no runtime appearance changes, no
 loot drops from corpses, and UI as data rather than injected widgets.
+
+## Requests after 1.6.8
+
+All from one play session, all fixed in 1.7.0. None of this has been played yet: it compiles and
+the logic was read against the game's scripts. The Hunt, car and marker sections below say what to
+look for in the log on the first session.
+
+### "They spawn but they don't actively search"
+
+**Status: fixed in 1.7.0** (`Spawn/Hunt.reds`, `Reactions/Director.reds`). Five causes: the hunt's
+clocks ran from the warning instead of from arrival; the search was a walk to random points; the
+Director sent Terror to our own hunters and through them to their crew (`CBSentByUs`); the combat
+release deleted hunters who were still closing (`cbReleaseAway`); and the give-up clock ran while a
+car was coming. A log line every 30 s now says how a search is going.
+
+### "All the apex do is use guns"
+
+**Status: fixed in 1.7.0** (`Data/ApexRoster.reds`, `Spawn/ApexSquad.reds`). Chairs fell back to one
+record unless V had killed that kind. There is now a roster of 88 verified records for 14 gangs.
+`CBArchetypeRole` was also wrong: it filed melee and snipers in the wrong chairs.
+
+### "They don't arrive in cars"
+
+**Status: fixed in 1.7.0, cause inferred** (`Spawn/Arrival.reds`, `Spawn/RivalEncounter.reds`). The
+last on-foot car in the log is dated before the 1.4.7 road gate, which makes the gate the likeliest
+blocker; the native's behaviour at zero heat cannot be read from here. The gate is gone, along with
+the 60% Rival roll and an oversized fit box. **The on-foot car path has never appeared in a log, so
+this is its first real run:** `carsWhileOnFoot` is the first switch on any crash report.
+
+### "They are marked by NCPD markers. Can they have our own?"
+
+**Status: fixed in 1.7.0** (`UI/Tracking.reds`). `GameplayRoleMappinData` on a device mappin draws
+any UI icon record on the minimap, coloured by quality. The icon is the game's own
+`ChoiceIcons.BountyHuntIcon`, which has not been seen on screen yet. A truly bespoke icon needs an
+`.archive`, which needs WolvenKit, which is not on this machine.
+
+**Correction:** 1.6.5 said `GangWatchVariant` is never on the minimap. That was only true of a
+position pin, and only `minimap.script` was searched. On an NPC it is drawn, as an NCPD scanner,
+which `minimapMappins.script` says outright (`IsNcpdScanner`). That is what this report was.
+
+### "Barghest give me wanted stars outside Dogtown"
+
+**Status: fixed in 1.7.0, cause inferred** (`Rivals/RivalSystem.reds`, `CBRecordDrawsPolice`).
+`prevention_dogtown_*` records are Barghest-affiliated police, and they could be sampled into crews
+and Rivals. Whether that is what this player's save held has not been confirmed.
 
 ## Requests after 1.6.4
 

@@ -172,8 +172,10 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     // from, so reusing one is "they sent another of those", not the dead one walking back - but
     // that only holds for generic archetypes. A one-off story character's record would spawn a
     // visible duplicate of that individual, so it is never kept.
+    // Never a police record, whoever's colours it wears (CBRecordDrawsPolice).
     if info.victimClass != EnumInt(ECBVictimClass.Civilian) && TDBID.IsValid(info.recordID)
-       && !info.victimIsUnique && CBRecordIsPerson(info.recordID) {
+       && !info.victimIsUnique && CBRecordIsPerson(info.recordID)
+       && !CBRecordDrawsPolice(info.recordID) {
       fs.sampleRecord = info.recordID;
       // And file it under its combat role, for the apex squad (spec §9.9).
       CBCaptureRoleRecord(fs, info.recordID);

@@ -282,7 +282,38 @@ public func CBRecordIsPerson(recordID: TweakDBID) -> Bool {
 
 // Not fit to be a gang's template: somebody the story owns, or not a person at all.
 public func CBRecordUnfitTemplate(recordID: TweakDBID) -> Bool {
-  return CBRecordIsUniqueCharacter(recordID) || !CBRecordIsPerson(recordID);
+  return CBRecordIsUniqueCharacter(recordID) || !CBRecordIsPerson(recordID)
+      || CBRecordDrawsPolice(recordID);
+}
+
+// Would shooting this person bring the law down on V?
+//
+// "When Barghest ambushes you, it gives you wanted stars immediately, even when you are out of
+// Dogtown." In Dogtown the Barghest are the police. The game's prevention_dogtown_ records wear
+// their colours and carry the Barghest affiliation, but they descend from prevention_unit_base and
+// use a Police reaction preset, so anything that hurts one is a crime
+// (PreventionSystem.ShouldPreventionSystemReactToDamageDealt: IsPrevention, or the
+// TriggerPrevention tag). Cyberbane files spawn templates from whoever V fights, sorted by
+// affiliation, so one such kill made every crew and Rival that gang sent afterwards a police unit,
+// and the first shot at them anywhere the law operates raised the stars. Dogtown has no prevention
+// of its own to raise, which is why it only ever happened outside it. The same is true of the
+// other prevention_ uniforms (Aldecaldos, Militech) and of anybody NCPD.
+//
+// This is the game's own test, made on the record instead of a live body: IsPrevention is
+// IsCharacterPolice, which is a Police reaction group (ScriptedPuppet.RefreshCachedReactionPresetData).
+public func CBRecordDrawsPolice(recordID: TweakDBID) -> Bool {
+  if !TDBID.IsValid(recordID) {
+    return false;
+  }
+  let rec = TweakDBInterface.GetCharacterRecord(recordID);
+  if !IsDefined(rec) {
+    return false;
+  }
+  if rec.TagsContains(n"TriggerPrevention") || rec.TagsContains(n"InActivePoliceChase") {
+    return true;
+  }
+  let preset = rec.ReactionPreset();
+  return IsDefined(preset) && Equals(preset.ReactionGroup(), "Police");
 }
 
 public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
@@ -313,17 +344,34 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
       if TDBID.IsValid(fs.roleNetrunnerRecord) && CBRecordUnfitTemplate(fs.roleNetrunnerRecord) {
         fs.roleNetrunnerRecord = TDBID.None(); wiped += 1;
       }
+      // A gang left with no crew template would stop sending anybody until V next killed one of
+      // theirs, so it falls back on its own rank and file.
+      if !TDBID.IsValid(fs.sampleRecord) && CBFactionFieldsSquads(fs.id) {
+        fs.sampleRecord = CBApexRosterRecord(fs.id, 1);
+      }
     }
   }
   if wiped > 0 {
     CBLog.Info(n"Rivals", s"Dropped \(wiped) spawn template(s) built from story characters; the gangs will file new ones from their next losses.");
   }
   let dropped = 0;
+  let enlisted = 0;
   for r in sys.GetRivals() {
+    // A Rival built from a police record keeps their name, rank and grudge and comes back as one
+    // of their gang's own people, so fighting them is a fight rather than a crime. Anybody who
+    // really is the law has no gang to fall back on and is retired below.
+    if IsDefined(r) && CBRecordDrawsPolice(r.recordID) {
+      let swap = CBApexRosterRecord(r.faction, 1);
+      if TDBID.IsValid(swap) {
+        r.recordID = swap;
+        r.appearance = n"";
+        enlisted += 1;
+      }
+    }
     if IsDefined(r)
        && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)
            || r.state == EnumInt(ECBRivalState.Dormant))
-       && (!CBRecordIsPerson(r.recordID)
+       && (!CBRecordIsPerson(r.recordID) || CBRecordDrawsPolice(r.recordID)
            || CBRecordIsUniqueCharacter(r.recordID)
               && !(r.source == EnumInt(ECBRivalSource.Spared)
                    && CBRecordIsSightingCyberpsycho(r.recordID))) {
@@ -332,7 +380,10 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
     }
   }
   if dropped > 0 {
-    CBLog.Info(n"Rivals", s"Retired \(dropped) rival(s) built from story characters; they will not come back.");
+    CBLog.Info(n"Rivals", s"Retired \(dropped) rival(s) built from story characters or the police; they will not come back.");
+  }
+  if enlisted > 0 {
+    CBLog.Info(n"Rivals", s"\(enlisted) rival(s) built from police records are their gang's own people now, so fighting them draws no heat.");
   }
   // Worth knowing: this prune is what clears a story character already written into a save.
   // CBRecordIsUniqueCharacter got the quest-affiliation test in 1.4.7, so the sweep that has
@@ -417,6 +468,15 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   // People only: never a drone, mech or robot (CBRecordIsPerson).
   if !CBRecordIsPerson(recordID) {
     return null;
+  }
+  // Never the police. Somebody in a police uniform who survives V comes back as one of their
+  // gang's own people; the law itself keeps no Rivals (CBRecordDrawsPolice).
+  if CBRecordDrawsPolice(recordID) {
+    recordID = CBApexRosterRecord(faction, 1);
+    appearance = n"";
+    if !TDBID.IsValid(recordID) {
+      return null;
+    }
   }
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().rivals {

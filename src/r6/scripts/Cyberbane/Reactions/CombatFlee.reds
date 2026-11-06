@@ -210,7 +210,10 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   if !IsDefined(sps) {
     return;
   }
-  let hp = sps.GetStatPoolValue(Cast<StatsObjectID>(puppet.GetEntityID()), gamedataStatPoolType.Health, false);
+  // A percentage, which is what the threshold is. The last argument is `perc`: false is hit points
+  // (the game compares it with GetStatPoolMaxPointValue, damageSystem.script:2938), so this read
+  // "25 hit points left" and nearly nobody survived to that, which is why wounded enemies never ran.
+  let hp = sps.GetStatPoolValue(Cast<StatsObjectID>(puppet.GetEntityID()), gamedataStatPoolType.Health, true);
   if hp > CBConfig.FleeHealthThreshold() {
     return;
   }
@@ -249,7 +252,8 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   if !CBExternalMoraleOwner() {
     let b = puppet.GetStimBroadcasterComponent();
     if IsDefined(b) {
-      b.TriggerSingleBroadcast(puppet, gamedataStimType.Terror);
+      // With a radius, as the crowd and morale broadcasts have (Reactions/Crowd.reds).
+      b.TriggerSingleBroadcast(puppet, gamedataStimType.Terror, CBConfig.FearStimRadius());
     }
   }
 }
@@ -483,7 +487,17 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     return;
   }
 
-  // A regular enemy got away: it becomes a Survivor Rival already on your trail.
+  // A regular enemy got away: it may become a Survivor Rival already on your trail. The same chance
+  // a morale break has. There was no roll here because this door was all but shut (see the health
+  // check in CBCombatFleeCheck), and now that it opens at a quarter health, everybody V walked away
+  // from wounded would otherwise come back with a name.
+  let survivorOdds = CBConfig.RivalChanceSurvivor();
+  if IsDefined(rt) && rt.HasSettings() {
+    survivorOdds *= rt.GetSettings().rivalFrequencyMult;
+  }
+  if RandF() >= survivorOdds {
+    return;
+  }
   if NotEquals(e.faction, n"") && TDBID.IsValid(e.record) {
     let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Survivor, district, now);
     if IsDefined(nr) {

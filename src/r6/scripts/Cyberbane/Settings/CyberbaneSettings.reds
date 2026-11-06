@@ -32,8 +32,8 @@ enum ECBTwrCompat {
 // which a player called "the obnoxious yellow markers", and they were right: fifteen of them,
 // through walls, in the colour the game reserves for the thing you are supposed to be doing.
 //
-// NamedOnly is the default: the people who are somebody, and only until the fight starts,
-// after which the game shows enemies in combat by itself and ours are redundant.
+// Everyone is the default: if Cyberbane sent them, the player can see where they are. NamedOnly is
+// the people who are somebody: a Rival and an apex squad (UI/Tracking.reds).
 enum ECBMarkerScope {
   Off = 0,
   NamedOnly = 1,

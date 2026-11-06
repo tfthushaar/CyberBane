@@ -289,10 +289,11 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       }
     }
   }
-  if hold != CBHoldNone() {
-    sys.SetHuntHoldReason(hold);
-    return;   // everybody waits, and every clock stays where it is
-  }
+  // Everybody waits, and every clock stays where it is, except the one below. Whether the Rival
+  // just sent actually turned up is a question about now, and it used to sit behind this hold: the
+  // moment they arrived the hold came on (somebody is out, V is in a fight), so the ten-second
+  // check did not run until the encounter was over, minutes later, with the body gone by then.
+  // The log said they never arrived, and they were put back in the queue with no escape counted.
 
   // Written once, at the end, rather than up here. Setting it before the loop overwrote any
   // "nowhere to put them" recorded by the previous tick's spawn attempt, so that reason never
@@ -339,12 +340,16 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       }
     }
   }
+  if hold != CBHoldNone() {
+    sys.SetHuntHoldReason(hold);
+    return;
+  }
   sys.SetHuntHoldReason(failedToPlace ? CBHoldNoRoom() : CBHoldNone());
 }
 
 func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Bool {
-  // By car, when there is a road and the dice say so: the city's own chase drives them at V,
-  // and they get out when the car reaches V or keep chasing if V is driving.
+  // By car whenever a car can be sent, on foot only when it cannot. They get out when the car
+  // reaches V, or keep chasing if V is driving.
   if CBRivalByCar(sys, game, r) {
     let noBody: EntityID;   // the body is filled in when the city's spawn is adopted
     r.spawnedEntityId = noBody;
@@ -379,12 +384,12 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   return true;
 }
 
-// Should this Rival drive in, and if so, has the city taken the request?
+// Send this Rival by car, if a car can be sent.
 //
-// Only through the city's chase: it is the path that hands the body back to Cyberbane through
-// adoption, which is what ties the body to the Rival so their death and their escape count. A
-// Rival whose last car never delivered them walks in this time, so a road that looks usable and
-// is not cannot keep a Rival away.
+// The seat that is created for them carries their body (CBOnArrivalCarAttached), which is what ties
+// it to the Rival so their death and their escape count. A Rival whose last car never delivered
+// them walks in this time, so a road that looks usable and is not cannot keep a Rival away. This
+// was also a 60% roll, so two Rivals in five walked in however good the road was.
 func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
   if !IsDefined(sys) || !IsDefined(r) {
     return false;
@@ -393,10 +398,13 @@ func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
     sys.SetRivalCarFailed(0);
     return false;
   }
-  if !CBVehicleArrivalAllowed(game) || RandF() >= CBConfig.RivalCarChance() {
+  let refused = CBCarRefusal(game);
+  if StrLen(refused) > 0 {
+    CBCarRefused(refused);
     return false;
   }
   if sys.HasPendingArrival() || sys.IsAdoptionOpen() || sys.GetTopUpWanted() > 0 {
+    CBCarRefused("another car is still on its way");
     return false;
   }
   // Active and pending before the car is sent, so the seat that is created for them knows

@@ -79,7 +79,9 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
   CBFileLog(sys, n"Tribute", now, CBEventDistrict(sys, game), fs.id, Cast<Float>(amount));
 
   if CBMessagesOn() {
-    CBPhoneFromGang(game, fs.id, s"\(amount)eb, as agreed. We would rather pay you than fight you.");
+    // From a gang paying V, so not as a threat, and with no "pay them off" answer attached: a
+    // hostile gang's tribute used to offer V the chance to pay them, in the message paying V.
+    CBPhoneFromAlly(game, fs.id, s"\(amount)eb, as agreed. We would rather pay you than fight you.");
   }
   CBLog.Info(n"Model", s"Tribute from \(NameToString(fs.id)): \(amount) eddies.");
 }

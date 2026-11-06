@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.6.8).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.7.0).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -69,12 +69,11 @@ in active development. This page describes what the mod does and how it installs
   anything they already had on its way. Any gang that already wants you dead names its price
   once a session without being prompted, so the offer is there whether or not you were around
   the moment they turned on you.
-- **Anyone the mod sends after you is on your map.** Rivals, apex squads and crews carry the
-  game's gang-activity marker over their heads and on the world map, so you can pick the one
-  that matters out of a street full of gangers. The minimap does not show these markers; it
-  starts showing them as enemies once the fight is on. Markers do not show through walls, and they come off once the
-  fight starts, because from then on the game marks enemies in combat by itself. You can narrow
-  them to the named ones or turn them off.
+- **Anyone the mod sends after you is on your minimap.** Rivals, apex squads and crews carry their
+  own marker: gold for a Rival, purple for an apex squad, white for a crew. You can pick the one
+  that matters out of a street full of gangers, and nobody reads as police. It stays on the minimap
+  for the whole fight. The one over their head comes off while they are fighting you, because the
+  game marks enemies in combat by itself. You can narrow them to the named ones or turn them off.
 - **Die, and whoever killed you gets the credit.** The enemy who put you down becomes a named
   rival, or climbs a rank if they already were one, and their gang starts reading you as
   somebody who can be beaten. It lands the moment you go down, so it works with a death
@@ -151,12 +150,11 @@ in active development. This page describes what the mod does and how it installs
   Grudge-Bearer is always first in line, and somebody Hard to Scare never breaks and runs. Escaping you half dead leaves them Scarred, and doing it twice
   leaves an Old Wound. Sparing one leaves them Shaken, and an avenger comes in Reckless. The
   Rivals screen lists them for whoever is coming next.
-- **They drive over.** While you are driving, crews, apex squads and Rivals come after you by car.
-  The car is placed out of sight on a road, its crew takes their seats, and it gives chase. On
-  foot, they walk in out of sight and search for you. When it reaches you and
-  slows down they get out and come for you; if you are behind the wheel they stay in and chase. If the car seats fewer than the gang sent, or never makes it,
-  the rest walk in, so an apex squad is always four. Indoors, or anywhere there is no road close
-  enough, they come on foot.
+- **They drive over.** Crews, apex squads and Rivals come after you by car, whether you are driving
+  or on foot, wherever a car can be put down out of sight. If you are on foot they get out when it
+  reaches you; if you are behind the wheel they stay in and chase. If the car seats fewer than the
+  gang sent, gets stuck or never makes it, the rest come on foot, so an apex squad is always four.
+  Indoors, or anywhere there is no room for a car, they come on foot.
 - **A vendetta is a decision.** A gang that has sworn one is already putting a
   crew together, and the Hub tells you how long you have. How many turn out depends on how much
   of a problem they think you are. Pay them off while they are on the way and they turn around.
@@ -172,8 +170,9 @@ in active development. This page describes what the mod does and how it installs
   its people at home. Wipe out one of their crews and their apex squad is next, and they text
   you to say who is coming.
 - **Being hunted.** First you hear somebody is asking about you. Then whoever is coming texts
-  you and you get time. They arrive out of sight, head for where you were last seen and search
-  the area, narrowing in, the way the police do. A gang that does not know where you are may
+  you and you get time. They arrive out of sight and go straight for the word they have on you,
+  running, in a ring that closes on you from their side, the way the police do. A gang that does
+  not know where you are may
   send one scout first, who calls in the crew only if they keep eyes on you. A glimpse is not
   enough for them: crouching, the dark and their own gang's colours make you harder to find, and
   a safe area or a drive out of the district makes them give up sooner. Until one of them has
@@ -217,9 +216,9 @@ in active development. This page describes what the mod does and how it installs
   they come without waiting for a crew. An apex squad is always four: whoever a car could not
   seat, or the street would not take on the first try, walks in after them. There is a heavy who walks at you and breaks your guard,
   a shooter who flushes you out of cover, a blade who closes in and stays on you, and a
-  netrunner who hangs back. Each chair is filled with a real member of that gang you have actually
-  fought, so they carry the right weapons and fight the way that kind of enemy fights, and they
-  work as a squad. Each of them gets a bar at the top of the screen showing their role and their
+  netrunner who hangs back and hacks you. Each chair is filled from that gang's own people of that
+  kind, and a gang with nobody of a kind sends the nearest thing it really fields, so they carry
+  the right weapons and fight the way that kind of enemy fights, and they work as a squad. Each of them gets a bar at the top of the screen showing their role and their
   gang, the way a MaxTac drop reads as a heavy, a blade, a netrunner and a shooter, so you can
   always tell who you are fighting and whose people they are. Like MaxTac, they hold their
   ground: an apex squad never breaks and runs.
@@ -366,12 +365,11 @@ after you. Hostile gangs send crews; Vendetta means they shoot on sight as well.
 Big jobs count too. Finishing one of the city's larger stories shifts how the gangs involved
 see you, which is why the Heist costs you Arasaka for a long time afterwards.
 
-Where there is a road to bring them, they drive: a car is placed out of sight, picked to seat
-the crew it is carrying - a big crew comes in several - drives to you, and they get out and
-search for you. Get in a
-car and they chase you in it. Indoors, or with no road near, they come on foot. **Cars arrive on
-foot too**, under Gangs, is on by default; turn it off and they only drive while you are
-driving.
+Wherever a car can be put down out of sight, they drive: it is picked to seat the crew it is
+carrying, a big crew comes in several, and it drives to you. If you are on foot they get out and
+search for you. Get in a car and they chase you in it. Indoors, or with no room for a car, they
+come on foot. **Cars arrive on foot too**, under Gangs, is on by default; turn it off and they only
+drive while you are driving. If cars ever misbehave on your setup, that is the switch to try first.
 
 ### Playing without the messages
 

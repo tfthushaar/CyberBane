@@ -286,8 +286,10 @@ public class CBThreatBar {
         // Full until they have settled, and read from their stat pool after that.
         let frac = 1.0;
         if CBNpcSafe(sys, this.m_targets[r]) {
+          // true for a percentage. This was hit points, so a bar stayed full until they were
+          // down to their last hundred and then fell off a cliff.
           let pct = pools.GetStatPoolValue(Cast<StatsObjectID>(this.m_ids[r]),
-                                           gamedataStatPoolType.Health, false);
+                                           gamedataStatPoolType.Health, true);
           frac = ClampF(pct / 100.0, 0.0, 1.0);
         }
         if IsDefined(row.text) {

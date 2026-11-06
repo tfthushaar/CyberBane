@@ -45,6 +45,11 @@ public func CBFactionLabel(id: CName) -> String {
   return "";
 }
 
+// The same, to start a sentence with: "the Tyger Claws" opens with a small letter.
+public func CBCapFirst(s: String) -> String {
+  return StrLen(s) > 0 ? StrUpper(StrMid(s, 0, 1)) + StrMid(s, 1, StrLen(s) - 1) : s;
+}
+
 // mode 0 = most lethal/brutal work (Butcher), 1 = most quiet work (Ghost), 2 = best known.
 func CBTopDistrictLabel(sys: ref<CyberbaneSystem>, mode: Int32) -> String {
   if !IsDefined(sys) {

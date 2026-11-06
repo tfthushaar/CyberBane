@@ -747,7 +747,13 @@ public func CBApexRecordFor(fs: ref<CBFactionState>) -> TweakDBID {
   if !IsDefined(fs) {
     return TDBID.None();
   }
-  return TDBID.IsValid(fs.eliteRecord) ? fs.eliteRecord : fs.sampleRecord;
+  if TDBID.IsValid(fs.eliteRecord) {
+    return fs.eliteRecord;
+  }
+  if TDBID.IsValid(fs.sampleRecord) {
+    return fs.sampleRecord;
+  }
+  return CBApexRosterRecord(fs.id, 0);
 }
 
 // Has this gang earned the right to send its best? One test for the lane, the warning text and
@@ -818,7 +824,7 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   // Somebody is glad to see that crew gone, and pays for it (Spawn/Loot.reds).
   let crewLabel = CBFactionLabel(faction);
   CBPayBounty(sys, game, faction, RoundF(Cast<Float>(CBConfig.BountyCrew()) * CBLootLevelScale(game) / 50.0) * 50,
-              StrLen(crewLabel) > 0 ? s"Heard you dealt with \(crewLabel)'s crew." : "Heard you dealt with that crew.");
+              StrLen(crewLabel) > 0 ? s"Heard you dealt with that crew of \(crewLabel)." : "Heard you dealt with that crew.");
   // Only promise what can follow: a gang that fields an apex, while the apex lane is on and
   // nothing is already on its way.
   if !CBToastsOn() || !CBHitSquadsOn() || CBLaneDailyCap(CBLaneApex()) <= 0
@@ -990,14 +996,14 @@ public func CBTrackingNotice(sys: ref<CyberbaneSystem>, game: GameInstance, lane
   }
   let line = "";
   if lane == CBLaneApex() {
-    line = s"\(who) are asking about you, and not their usual people.";
+    line = CBCapFirst(who) + " are asking about you, and not their usual people.";
   } else {
     if lane == CBLaneRival() {
       line = s"\(who) has been asking around about you.";
     } else {
       switch RandRange(0, 3) {
         case 0: line = s"Somebody from \(who) was asking where you drink."; break;
-        case 1: line = s"\(who) are asking questions about you."; break;
+        case 1: line = CBCapFirst(who) + " are asking questions about you."; break;
         default: line = s"Your name came up with \(who). They want to know where you are."; break;
       }
     }

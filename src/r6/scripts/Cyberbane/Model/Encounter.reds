@@ -35,7 +35,9 @@ func CBSamplePlayerHp(game: GameInstance, player: ref<PlayerPuppet>) -> Float {
   if !IsDefined(sps) || !IsDefined(player) {
     return -1.0;
   }
-  return sps.GetStatPoolValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatPoolType.Health, false);
+  // true for a percentage, which is what CBFlawlessFloor is. Read as hit points, V was "flawless"
+  // at anything over 95 of them, so a fight that took half V's health still counted.
+  return sps.GetStatPoolValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatPoolType.Health, true);
 }
 
 // `alreadyDown`: this one was counted in the encounter when they went down alive, and has now

@@ -12,7 +12,7 @@
 // sends:
 //
 //   Dispatched   the gang or the Rival tells you they are coming, and you get lead time.
-//   Searching    they arrive further out and sweep the area around where they think you are.
+//   Searching    they arrive further out and run a closing ring around where they think you are.
 //                That starts as a rough tip and tightens the longer they look.
 //   Located      one of them has seen you, or heard you: gunfire and bodies carry. Now they get
 //                your position, and only while somebody can actually see you.
@@ -39,9 +39,7 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
     return;
   }
   let p = player.GetWorldPosition();
-  let err = CBConfig.HuntTipError();
-  let ang = RandRangeF(0.0, 6.2831);
-  let tip = new Vector4(p.X + CosF(ang) * RandRangeF(err * 0.3, err), p.Y + SinF(ang) * RandRangeF(err * 0.3, err), p.Z, 1.0);
+  let tip = CBHuntTipNear(p);
   // A hunt already under way keeps what it knows; a new one starts from the tip.
   if sys.GetHuntState() == CBHuntNone() || !CBHuntersOut(sys, game) {
     sys.SetHuntState(CBHuntSearching());
@@ -55,6 +53,13 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
     CBHuntStartSearch(sys);
   }
   sys.SetHuntFaction(faction);
+}
+
+// Word on where V is: somewhere within HuntTipError of this spot.
+func CBHuntTipNear(p: Vector4) -> Vector4 {
+  let err = CBConfig.HuntTipError();
+  let ang = RandRangeF(0.0, 6.2831);
+  return new Vector4(p.X + CosF(ang) * RandRangeF(err * 0.3, err), p.Y + SinF(ang) * RandRangeF(err * 0.3, err), p.Z, 1.0);
 }
 
 // A search starts: how long they will give it, varied every time, and where V was when it began.
@@ -161,6 +166,10 @@ func CBHuntNeedsNewPoint(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>)
   if sys.GetTickCount() - puppet.cbSearchTick >= CBConfig.HuntSearchPointMaxTicks() {
     return true;
   }
+  // The ring has closed past where they were sent, or the word has moved on from it.
+  if Vector4.Distance(puppet.cbSearchPoint, CBHuntSearchCenter(sys)) > CBHuntRadius(sys) + CBConfig.HuntRingSlack() {
+    return true;
+  }
   return Vector4.Distance(puppet.GetWorldPosition(), puppet.cbSearchPoint) <= CBConfig.HuntSearchArrivedDistance();
 }
 
@@ -192,8 +201,23 @@ public func CBHuntSearchCenter(sys: ref<CyberbaneSystem>) -> Vector4 {
                      lkp.Z + (word.Z - lkp.Z) * k, 1.0);
 }
 
-// Somewhere near the middle of the search that this hunter can actually walk to. The circle
-// starts wide and tightens the longer they have been looking, the way a search does.
+// How wide the ring is right now: it starts wide and closes the longer they have been looking.
+func CBHuntRadius(sys: ref<CyberbaneSystem>) -> Float {
+  let start = CBConfig.HuntSearchRadiusStart();
+  return start + (CBConfig.HuntSearchRadiusMin() - start) * CBHuntNarrowing(sys);
+}
+
+// Somewhere on the closing ring that this hunter can actually walk to.
+//
+// "They don't actively search for me, they just walk around and hit me if they find me." That is
+// what this asked of them. Each searcher drew a random point anywhere in a circle fifty metres
+// wide, walked the last twenty metres of it, drew another, and nothing about any of it depended on
+// where anybody else was or brought them closer together, so a crew was a handful of people
+// strolling about a neighbourhood for a minute and a half. Now the circle is a ring that closes:
+// each searcher runs in on their own side of it, so a crew arrives from several directions, and a
+// searcher already inside it cuts across. The middle is the street's latest word on V
+// (CBHuntSearchCenter), so standing still gets V found in well under a minute and moving on still
+// leaves them behind.
 //
 // The point used to be any spot in the circle, at V's height, checked against nothing but job
 // sites - and when every try was near a job site (V had just finished one) the last try was used
@@ -206,16 +230,27 @@ public func CBHuntSearchCenter(sys: ref<CyberbaneSystem>) -> Vector4 {
 public func CBHuntPickSearchPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>,
                                   out point: Vector4) -> Bool {
   let center = CBHuntSearchCenter(sys);
-  let t = CBHuntNarrowing(sys);
-  let r = CBConfig.HuntSearchRadiusStart() + (CBConfig.HuntSearchRadiusMin() - CBConfig.HuntSearchRadiusStart()) * t;
+  let r = CBHuntRadius(sys);
   let from = puppet.GetWorldPosition();
+  // Their own side of the ring: the way they are already coming from.
+  let dx = from.X - center.X;
+  let dy = from.Y - center.Y;
+  let away = SqrtF(dx * dx + dy * dy);
+  let ux = away > 1.0 ? dx / away : 1.0;
+  let uy = away > 1.0 ? dy / away : 0.0;
+  let inside = away <= r;
   let tries = 0;
   while tries < CBConfig.HuntSearchPointTries() {
-    let ang = RandRangeF(0.0, 6.2831);
-    let d = RandRangeF(r * 0.25, r);
+    // Close to their own line at first, wider with each try that finds no floor. Somebody already
+    // inside the ring goes anywhere across it.
+    let spread = inside ? 3.14159 : 0.45 + 0.35 * Cast<Float>(tries);
+    let turn = RandRangeF(-spread, spread);
+    let vx = ux * CosF(turn) - uy * SinF(turn);
+    let vy = ux * SinF(turn) + uy * CosF(turn);
+    let d = inside ? RandRangeF(r * 0.3, r) : RandRangeF(r * 0.7, r);
     let at: Vector4;
     // Searchers are never sent into a job site.
-    if CBHuntStandAt(game, center.X + CosF(ang) * d, center.Y + SinF(ang) * d, center.Z, at)
+    if CBHuntStandAt(game, center.X + vx * d, center.Y + vy * d, center.Z, at)
        && !sys.NearQuestPins(at, CBConfig.QuestSpawnClearance())
        && CBPointReachable(game, from, at) {
       point = at;
@@ -230,6 +265,19 @@ public func CBHuntPickSearchPoint(sys: ref<CyberbaneSystem>, game: GameInstance,
     point = mid;
     return true;
   }
+  // A long way off, with nothing in the ring that can be routed to from here: a hop towards it,
+  // at their own height. Standing still until the ring came to them was the other half of "they
+  // just walk around".
+  let hop = CBConfig.HuntHopDistance();
+  if away > hop {
+    let step: Vector4;
+    if CBHuntStandAt(game, from.X - ux * hop, from.Y - uy * hop, from.Z, step)
+       && !sys.NearQuestPins(step, CBConfig.QuestSpawnClearance())
+       && CBPointReachable(game, from, step) {
+      point = step;
+      return true;
+    }
+  }
   return false;
 }
 
@@ -240,8 +288,9 @@ func CBHuntStandAt(game: GameInstance, x: Float, y: Float, zHint: Float, out at:
       && CBStandOnNavmesh(game, x, y, gz, at);
 }
 
-// Walk somewhere and look around. A position rather than V, at a run rather than a sprint, and
-// released when they get there or the moment combat starts.
+// Get somewhere and look around. A position rather than V, and released when they get there or the
+// moment combat starts. Nobody on a hunt walks: walking the last of every leg is what made a crew
+// look like people out for a stroll. A sprint across the ground, a run once they are close.
 public func CBOrderSearch(game: GameInstance, puppet: ref<ScriptedPuppet>, point: Vector4) -> Void {
   if !IsDefined(puppet) {
     return;
@@ -256,9 +305,8 @@ public func CBOrderSearch(game: GameInstance, puppet: ref<ScriptedPuppet>, point
   WorldPosition.SetVector4(wp, point);
   AIPositionSpec.SetWorldPosition(dest, wp);
   cmd.movementTarget = dest;
-  // Run to the area, then walk it the way a guard would.
-  let nearPoint = Vector4.Distance(puppet.GetWorldPosition(), point) <= CBConfig.HuntWalkDistance();
-  cmd.movementType = nearPoint ? moveMovementType.Walk : moveMovementType.Run;
+  let far = Vector4.Distance(puppet.GetWorldPosition(), point) > CBConfig.HuntSprintDistance();
+  cmd.movementType = far ? moveMovementType.Sprint : moveMovementType.Run;
   cmd.ignoreInCombat = true;
   cmd.alwaysUseStealth = false;
   cmd.ignoreNavigation = false;
@@ -315,6 +363,21 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       }
     } else {
       sys.SetHuntIdleTicks(0);
+      // Nobody has arrived yet, so nobody has started looking.
+      //
+      // The hunt is opened when the warning goes out, a minute or two before anybody is in the
+      // world, and every clock on it ran from that moment. So they turned up with most of their
+      // patience already spent and the ring already closed tight around wherever V stood when the
+      // text arrived, gave it a few seconds and left. All of it starts now: from word on where V
+      // is today, when they get here.
+      if sys.GetHuntState() == CBHuntSearching() && sys.IsHuntFromTip() {
+        let waiting = sys.GetTickCount();
+        let vAt = player.GetWorldPosition();
+        sys.SetHuntLastSeenTick(waiting);
+        sys.SetHuntSearchStartTick(waiting);
+        sys.SetHuntLkp(CBHuntTipNear(vAt));
+        sys.SetHuntTipWord(vAt, waiting);
+      }
     }
     sys.SetChaseAwayTicks(0);
     return;
@@ -390,8 +453,21 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     }
     let unseen = now - sys.GetHuntLastSeenTick();
     let nearest = CBNearestHunterDistance(sys, game, des, ppos);
-    if unseen >= sys.GetHuntGiveUpTicks()
-       || (nearest >= CBConfig.ChaseLoseDistance() && sys.BumpChaseAwayTicks() >= CBConfig.ChaseLoseTicks()) {
+    // A car on its way has not lost V: it is further off than the lose distance by design, and its
+    // crew count as hunters from the moment they are seated. Without this a car on its way to V
+    // was called off and its crew deleted after twenty-two seconds, before it could arrive.
+    let carComing = sys.CarRecentlyOnTheWay() || sys.HasPendingArrival() || sys.HasConvoyLegs();
+    if carComing {
+      sys.SetChaseAwayTicks(0);
+      sys.SetHuntLastSeenTick(now);
+    }
+    // Said in the log every half minute: a search that finds nobody looks exactly like a search
+    // that is not happening, and only this can tell the two apart.
+    if now % 30 == 0 {
+      CBLog.Info(n"Spawn", s"Searching: \(unseen)s unseen of \(sys.GetHuntGiveUpTicks()), ring \(RoundF(CBHuntRadius(sys)))m, nearest of ours \(RoundF(nearest))m\(carComing ? ", a car on its way" : "").");
+    }
+    if !carComing && (unseen >= sys.GetHuntGiveUpTicks()
+       || (nearest >= CBConfig.ChaseLoseDistance() && sys.BumpChaseAwayTicks() >= CBConfig.ChaseLoseTicks())) {
       CBChaseGiveUp(sys, game, des);
       sys.SetHuntState(CBHuntNone());
       sys.SetHuntFaction(n"");
@@ -440,7 +516,10 @@ func CBHuntEngageTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
+    // Somebody still in a car gets out first: a fight started from a seat, in a moving car, is
+    // one of the things 1.5.0 found taking the game down. The car watch lets them out.
     if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p)
+       && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID())
        && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.HuntEngageDistance() {
       CBEngageV(game, p);
     }
@@ -1039,8 +1118,14 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
-      let far = Vector4.Distance(p.GetWorldPosition(), ppos) > CBConfig.CombatReleaseDistance();
-      if !engaged && CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) && CBOutOfView(game, p.GetWorldPosition()) {
+      let away = Vector4.Distance(p.GetWorldPosition(), ppos);
+      let far = away > CBConfig.CombatReleaseDistance();
+      // Somebody getting closer is on their way back into the fight, not stuck out of it. Without
+      // this, running forty-five metres was enough to have hunters deleted while they chased: the
+      // clock was already nearly full, and they went a second after losing sight of V.
+      let closing = p.cbReleaseAway > 0.0 && away < p.cbReleaseAway - CBConfig.CombatReleaseClosing();
+      p.cbReleaseAway = away;
+      if !engaged && !closing && CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) && CBOutOfView(game, p.GetWorldPosition()) {
         p.cbOutOfFightTicks += 2;
         if p.cbOutOfFightTicks >= CBConfig.CombatReleaseTicks() {
           CBLog.Info(n"Spawn", "One of ours was keeping you in combat from too far away; letting them go.");
@@ -1058,3 +1143,7 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
 
 @addField(ScriptedPuppet)
 public let cbOutOfFightTicks: Int32;
+
+// How far off they were last pass, to tell somebody coming back from somebody stuck.
+@addField(ScriptedPuppet)
+public let cbReleaseAway: Float;

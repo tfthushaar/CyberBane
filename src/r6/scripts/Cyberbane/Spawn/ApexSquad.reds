@@ -4,13 +4,11 @@
 // a tank, a shooter, a blade and a netrunner. The point is that it fights like MaxTac rather
 // than like four copies of the same ganger standing in a row.
 //
-// The trick is to let the game do the work. Each role is filled with a real record of that
-// kind, taken from a member of that gang V has actually fought, so the game's own AI gives
-// them the right weapon, the right stance and the right behaviour with no faking at all: a
-// netrunner record netruns, a sniper record finds an angle, a heavy record walks at you. On
-// top of that each one is handed a kit of real gameplay abilities, which is the part borrowed
-// from Much Better AI - an NPC with Sandevistan, grenades, cover use and optical camo is a
-// different opponent to one with none of it, and the game already knows how to use all of it.
+// The trick is to let the game do the work. Each chair is filled with a real record of that
+// kind from that gang's own people (Data/ApexRoster.reds), so the game's own AI gives them the
+// right weapon, the right stance and the right behaviour with no faking at all: a netrunner
+// record netruns, a blade record closes in with a katana, a heavy record walks at you behind an
+// HMG. On top of that each one is handed a small kit of behaviour-only abilities (crash rule 6).
 //
 // Roles are read from the game's own `gamedataArchetypeType`, so this is the game's opinion of
 // what a record is, not a guess from its name.
@@ -84,26 +82,34 @@ public func CBArchetypeRole(a: gamedataArchetypeType, out role: ECBApexRole) -> 
     case gamedataArchetypeType.HeavyRangedT3:
       role = ECBApexRole.Tank;
       return true;
-    case gamedataArchetypeType.SniperT2:
-    case gamedataArchetypeType.FastSniperT3:
+    // Anybody who fights hand to hand is a blade, and nobody else is. Snipers used to be filed
+    // here and melee fighters under Assault, so the "blade" chair could be a sniper and a man
+    // with a machete could be a "shooter".
     case gamedataArchetypeType.FastMeleeT2:
     case gamedataArchetypeType.FastMeleeT3:
+    case gamedataArchetypeType.GenericMeleeT1:
+    case gamedataArchetypeType.GenericMeleeT2:
       role = ECBApexRole.Blade;
       return true;
+    // A techie throws grenades and hacks nothing, so a techie is not a netrunner.
     case gamedataArchetypeType.NetrunnerT1:
     case gamedataArchetypeType.NetrunnerT2:
     case gamedataArchetypeType.NetrunnerT3:
-    case gamedataArchetypeType.TechieT2:
-    case gamedataArchetypeType.TechieT3:
       role = ECBApexRole.Netrunner;
       return true;
     case gamedataArchetypeType.GenericRangedT1:
     case gamedataArchetypeType.GenericRangedT2:
     case gamedataArchetypeType.GenericRangedT3:
+    case gamedataArchetypeType.FastRangedT2:
+    case gamedataArchetypeType.FastRangedT3:
     case gamedataArchetypeType.ShotgunnerT2:
     case gamedataArchetypeType.ShotgunnerT3:
-    case gamedataArchetypeType.GenericMeleeT1:
-    case gamedataArchetypeType.GenericMeleeT2:
+    case gamedataArchetypeType.FastShotgunnerT2:
+    case gamedataArchetypeType.FastShotgunnerT3:
+    case gamedataArchetypeType.SniperT2:
+    case gamedataArchetypeType.FastSniperT3:
+    case gamedataArchetypeType.TechieT2:
+    case gamedataArchetypeType.TechieT3:
       role = ECBApexRole.Assault;
       return true;
     default:
@@ -132,10 +138,9 @@ public func CBRoleName(role: ECBApexRole) -> String {
 
 // Remember this record as the gang's template for its role.
 //
-// Called from the same place the gang's sample and elite records are kept, so the team is
-// always assembled out of people V has genuinely fought. A gang V has only ever met shooters
-// from will field four shooters, which is correct: they cannot send a netrunner they do not
-// have.
+// Called from the same place the gang's sample and elite records are kept. The roster comes
+// first (CBApexRoleRecord); this is what a faction with no roster sends, built from people V has
+// genuinely fought.
 public func CBCaptureRoleRecord(fs: ref<CBFactionState>, record: TweakDBID) -> Void {
   if !IsDefined(fs) || !TDBID.IsValid(record) {
     return;
@@ -162,11 +167,16 @@ public func CBCaptureRoleRecord(fs: ref<CBFactionState>, record: TweakDBID) -> V
 
 // Which record fills seat `seat` of the team.
 //
-// Falls back to the gang's elite, then to whatever Cyberbane has, so a gang Cyberbane knows
-// little about still sends a full car rather than an empty one.
+// The gang's own person for that chair (Data/ApexRoster.reds). Only for a faction with no roster,
+// the kind of member V has fought, then the gang's elite, then whatever Cyberbane has, so a gang
+// Cyberbane knows little about still sends a full car rather than an empty one.
 public func CBApexRoleRecord(fs: ref<CBFactionState>, seat: Int32, fallback: TweakDBID) -> TweakDBID {
   if !IsDefined(fs) {
     return fallback;
+  }
+  let listed = CBApexRosterRecord(fs.id, seat);
+  if TDBID.IsValid(listed) {
+    return listed;
   }
   let wanted = fallback;
   if seat == 0 {
@@ -340,14 +350,14 @@ public func CBApexRoleForSeat(seat: Int32) -> ECBApexRole {
   return ECBApexRole.Netrunner;
 }
 
-// Kit one member of an apex squad by the seat they came out of.
+// Kit one member of an apex squad.
 //
 // The squad is meant to read the way a MaxTac drop reads: a heavy, a shooter, a blade and a
-// netrunner, legible as four different problems rather than four of the same one. That was
-// read off each record's own archetype, which only works when the gang has filed four
-// different records, and the role records are captured solely from killing enemies of exactly
-// that kind. A gang V has only fought shooters sent four shooters. Taking the role from the
-// seat guarantees the shape whatever the gang has on file.
+// netrunner, legible as four different problems rather than four of the same one. The chairs are
+// filled from the roster so that is what they really are, and the role here is what this body
+// really is, read off its record, with the chair only for a record the game files under no role.
+// Taking it from the chair alone is how four identical shooters came to be labelled a heavy, a
+// blade and a netrunner, with the bar promising a fight that never happened.
 //
 // Note what this deliberately does not do: spawn actual MaxTac. Reskinning them would hand
 // back the NCPD's own records, and killing those feeds heat and the prevention system. An apex
@@ -359,6 +369,10 @@ public func CBKitApexSeat(npc: ref<ScriptedPuppet>, seat: Int32) -> Void {
   }
   npc.cbKitted = true;
   let role = CBApexRoleForSeat(seat);
+  let actual: ECBApexRole;
+  if CBArchetypeRole(CBRecordArchetype(npc.GetRecordID()), actual) {
+    role = actual;
+  }
   // Recorded before either early return below, because the bar wants the role whether or not
   // another mod is handing out the capabilities.
   npc.cbApexSeatRole = EnumInt(role) + 1;
@@ -474,8 +488,7 @@ public func CBJoinSquadWith(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppe
 // two have to agree on which chair a body is. A shared counter handed them out in the order the
 // bodies finished building, which is not the order they were spawned in, so a walk-in could
 // carry the heavy's record with the netrunner's kit. A body Cyberbane spawns for a known chair
-// now carries that chair as a tag; only the ones the city's chase seats, which cannot be
-// tagged at spawn, still take theirs from the counter.
+// now carries that chair as a tag; the counter is only the fallback for one that has no tag.
 public func CBApexRoleTag(seat: Int32) -> CName {
   switch seat % 4 {
     case 0: return n"CB_Role0";

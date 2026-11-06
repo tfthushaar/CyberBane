@@ -412,8 +412,10 @@ public abstract class CBConfig {
   public static func HuntStopSpread() -> Float = 8.0
 
   // ---- Arriving by car (spec 9.9) ----
-  // Far enough out that the car is not seen appearing and has room to build up speed.
-  public static func VehicleArrivalDistance() -> Float = 140.0
+  // Far enough out that the car is not seen appearing and has room to build up speed. Under
+  // ChaseLoseDistance on purpose, and a car on its way never counts as lost whatever the distance
+  // (Spawn/Hunt.reds).
+  public static func VehicleArrivalDistance() -> Float = 110.0
   // How many of the game's pursuit points a car arrival may try when the navmesh anchor has no
   // room for a car (CBCarSpawnPoint). Each costs two overlap tests and a floor trace.
   public static func CarPointCandidates() -> Int32 = 6
@@ -422,9 +424,18 @@ public abstract class CBConfig {
   public static func CarsPerArrivalDefault() -> Int32 = 4
   public static func ConvoyCarTries() -> Int32 = 4
   // The box a car needs to be clear before one is put there, in metres.
-  public static func CarFitWidth() -> Float = 2.5
-  public static func CarFitLength() -> Float = 4.5
-  public static func CarFitHeight() -> Float = 1.0
+  //
+  // These are half extents: SpatialQueriesSystem.Overlap takes half the box, as the game's own
+  // calls do (NPCPuppet.script, queryDimensions * 0.5). They were written as the car's full size,
+  // so the box asked for was five metres by nine by two, starting twenty centimetres off the
+  // ground: wider than a lane, longer than a truck, and stopped by a lamp post, a kerb or a road
+  // with any slope to it. Very little of Night City passes that, which is half of why a car so
+  // seldom got as far as being sent.
+  public static func CarFitWidth() -> Float = 1.2
+  public static func CarFitLength() -> Float = 2.6
+  public static func CarFitHeight() -> Float = 0.7
+  // How far off the floor the bottom of that box sits: over a kerb or a camber, under a car.
+  public static func CarFitClearance() -> Float = 0.5
   public static func CarMaxSeats() -> Int32 = 4
   // One beat for the mounts to settle before the driver is given orders.
   public static func CarStartDelay() -> Float = 0.3
@@ -441,9 +452,14 @@ public abstract class CBConfig {
   public static func ArrivalDismountMaxTries() -> Int32 = 30
   // Sending a car on foot-bound V somewhere new while it drives (CBArrivalDismountCallback):
   // only once V is this far from where it was sent, at most every this many polls, this often.
-  public static func ArrivalRetargetDistance() -> Float = 40.0
-  public static func ArrivalRetargetEvery() -> Int32 = 5
-  public static func ArrivalMaxRetargets() -> Int32 = 3
+  public static func ArrivalRetargetDistance() -> Float = 20.0
+  public static func ArrivalRetargetEvery() -> Int32 = 3
+  public static func ArrivalMaxRetargets() -> Int32 = 12
+  // A car under this speed and not there yet is stuck. After this many polls in a row it is given
+  // its order again, and after this many the crew get out and come on foot (CBArrivalDismountCallback).
+  public static func CarStuckSpeed() -> Float = 1.0
+  public static func CarStuckRetryPolls() -> Int32 = 3
+  public static func CarStuckGiveUpPolls() -> Int32 = 6
   // Ticks (about a second each) before a car that never attached is written off.
   public static func ArrivalStaleTicks() -> Int32 = 30
   // How long an expired appointment may wait for a workable moment before it gives up and lets
@@ -453,13 +469,6 @@ public abstract class CBConfig {
 
   // ---- Can a car even get here (spec 9.9) ------------------------------
   //
-  // Vanilla's own thresholds for this live on the prevention data table as
-  // FallbackMaxDistanceToRoad / FallbackMaxHeightDifference, which are TweakDB flats with no
-  // record accessor, so they cannot be read from redscript. These are the same question asked
-  // with numbers of our own: a road a hundred metres of walking away is not somewhere a crew
-  // can plausibly pull up from, and twelve metres of height is a different level of a car park.
-  public static func ArrivalMaxRoadDistance() -> Float = 100.0
-  public static func ArrivalMaxRoadHeight() -> Float = 12.0
 
   // ---- Messages on the phone (spec 12.2) -------------------------------
   //
@@ -653,7 +662,7 @@ public abstract class CBConfig {
   public static func ChaseRefreshMinDistance() -> Float = 18.0
   public static func ChaseRefreshMaxDistance() -> Float = 160.0
   // Cap per pass, so a twenty-strong crew never turns one tick into twenty AI commands.
-  public static func ChaseRefreshPerPass() -> Int32 = 5
+  public static func ChaseRefreshPerPass() -> Int32 = 8
   // Get this far from every one of them, and stay there this long, and they lose you. Roughly
   // what the police in this game give you, and the reason a chase is a chase and not a leash.
   public static func ChaseLoseDistance() -> Float = 120.0
@@ -771,11 +780,10 @@ public abstract class CBConfig {
   // How long to wait before checking that a queued Rival actually appeared. Long enough for
   // an out-of-view spawn to be honoured once V has moved or turned.
   public static func RivalArrivalCheckTicks() -> Int32 = 10
-  // A Rival sent by car is a body the city spawns somewhere down the road; it is confirmed once
-  // the adoption window has had time to claim it.
-  public static func RivalCarArrivalCheckTicks() -> Int32 = 26
-  // How often a Rival drives in rather than walking, when there is a road to drive in on.
-  public static func RivalCarChance() -> Float = 0.6
+  // A Rival sent by car is created once the car is in the world and boarding. This is how long
+  // that may take before the car counts as a no-show; the drive itself comes after and is the
+  // dismount watch's business (Spawn/Arrival.reds).
+  public static func RivalCarArrivalCheckTicks() -> Int32 = 40
   // A Rival's traits: each moves one build term by this fraction (CBRivalTraitTerms), inside
   // the same ceilings as everything else. Deadeye adds this much crit chance.
   public static func RivalTraitStep() -> Float = 0.15
@@ -816,20 +824,26 @@ public abstract class CBConfig {
 
   // ---- The hunt (Spawn/Hunt.reds) ----------------------------------------
   // How far off the tip a hunt starts with can be, in metres.
-  public static func HuntTipError() -> Float = 45.0
-  // The search circle around the last known position: wide at first, tight after HuntNarrowTicks.
-  public static func HuntSearchRadiusStart() -> Float = 55.0
-  public static func HuntSearchRadiusMin() -> Float = 15.0
-  public static func HuntNarrowTicks() -> Int32 = 90
+  public static func HuntTipError() -> Float = 25.0
+  // The ring closing on the last known position: wide at first, tight after HuntNarrowTicks.
+  public static func HuntSearchRadiusStart() -> Float = 40.0
+  public static func HuntSearchRadiusMin() -> Float = 8.0
+  public static func HuntNarrowTicks() -> Int32 = 45
+  // How far a searcher's point may fall outside the ring before they are sent on to a new one.
+  public static func HuntRingSlack() -> Float = 10.0
+  // Farther than this from the search and they cross the ground at a sprint.
+  public static func HuntSprintDistance() -> Float = 30.0
+  // When nowhere in the ring can be routed to from where they are, a hop this long towards it.
+  public static func HuntHopDistance() -> Float = 35.0
   // How often searchers are looked at to see whether they need somewhere new to look
   // (Spawn/Hunt.reds, CBHuntNeedsNewPoint). They are not given a new point every time.
-  public static func HuntSearchOrderTicks() -> Int32 = 8
+  public static func HuntSearchOrderTicks() -> Int32 = 3
   // Seeing V: close with nothing in the way, or already fighting within this range.
   public static func HuntSpotDistance() -> Float = 35.0
   public static func HuntCombatKnowsDistance() -> Float = 80.0
   // Once the hunt has found V, everybody of ours this close is told where V is and joins the
   // fight (Spawn/Hunt.reds, CBHuntEngage). The rest keep converging and join as they close in.
-  public static func HuntEngageDistance() -> Float = 60.0
+  public static func HuntEngageDistance() -> Float = 90.0
   // Hearing V: a kill or a firefight this close to a hunter.
   public static func HuntHearDistance() -> Float = 70.0
   // Unseen this long and they go back to searching; unseen this long while searching, they quit.
@@ -863,7 +877,9 @@ public abstract class CBConfig {
   // One of ours in combat with V but farther than this and out of sight for this many seconds is
   // let go, so the fight can end (Spawn/Hunt.reds, CBCombatReleaseTick).
   public static func CombatReleaseDistance() -> Float = 45.0
-  public static func CombatReleaseTicks() -> Int32 = 20
+  public static func CombatReleaseTicks() -> Int32 = 30
+  // Metres closer since the last two-second pass that counts as still coming.
+  public static func CombatReleaseClosing() -> Float = 2.0
 
   // ---- Loot and bounties (Spawn/Loot.reds) --------------------------------
   public static func LootDelaySeconds() -> Float = 0.8
@@ -922,20 +938,18 @@ public abstract class CBConfig {
   public static func CrouchSenseMult() -> Float = 0.6
   public static func NightSenseMult() -> Float = 0.75
   public static func DisguiseSenseMult() -> Float = 0.5
-  // Searchers walk once they are this close to the point they were sent to.
-  public static func HuntWalkDistance() -> Float = 20.0
   // A searcher is given a new point once this close to the one they were sent to, or once the
-  // walk has gone on this many seconds.
-  public static func HuntSearchArrivedDistance() -> Float = 4.0
-  public static func HuntSearchPointMaxTicks() -> Int32 = 30
+  // run has gone on this many seconds.
+  public static func HuntSearchArrivedDistance() -> Float = 5.0
+  public static func HuntSearchPointMaxTicks() -> Int32 = 12
   // Tries for a walkable search point before falling back to the middle of the search.
-  public static func HuntSearchPointTries() -> Int32 = 4
+  public static func HuntSearchPointTries() -> Int32 = 8
   // How far above or below the middle of the search a search point's floor may be.
   public static func HuntSearchMaxDrop() -> Float = 6.0
   // Before anybody has found V, how far the tip firms up towards the street's word on V once the
   // search has fully narrowed (0 never, 1 all the way), and how often that word is refreshed.
-  public static func HuntTipFirmUp() -> Float = 0.8
-  public static func HuntTipWordTicks() -> Int32 = 20
+  public static func HuntTipFirmUp() -> Float = 1.0
+  public static func HuntTipWordTicks() -> Int32 = 6
   // How long after a car of ours was last seen on its way its crew still count as coming, not
   // left behind, while none of them is in the world.
   public static func CarWatchGraceTicks() -> Int32 = 15

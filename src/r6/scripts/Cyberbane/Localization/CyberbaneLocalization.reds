@@ -81,7 +81,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexBossBar-Desc", "The name and health bars at the top of the screen: one for a Rival, one for each apex. The line of text above them is Hunt line on the HUD.");
     this.Text("Cyberbane-Settings-VendettaSquads-Desc", "A gang at vendetta simply comes for you rather than rolling dice. The Hub shows how long until they arrive.");
     this.Text("Cyberbane-Settings-VendettaSquadSize-Desc", "How many a vendetta sends at full menace. Lower it if the frame rate dips when a crew arrives.");
-    this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Crews and apex squads drive to you instead of appearing on foot, and give chase if you are driving.");
+    this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Rivals, crews and apex squads drive to you whenever a car can be sent, and give chase if you are driving. If a car cannot get through, they come on foot.");
     this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous an apex is, as a percentage of a full boss build. 100 matches the game's own set piece enforcers; 55 is hard but fair. Your menace and the game's difficulty scale it further.");
     this.Text("Cyberbane-Settings-LootDrops-Desc", "Anyone Cyberbane sends who you put down leaves you something, straight into your inventory. The higher they ranked, the better it is.");
     this.Text("Cyberbane-Settings-Pacing-Desc", "Timetable sends trouble inside daily windows. Unpredictable: any minute might be the one. Reactive: only when you give a gang a reason. The per-day limits apply in every mode.");
@@ -115,8 +115,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Preset", "Preset");
     this.Text("Cyberbane-Settings-MessageDelivery", "Where messages go");
     this.Text("Cyberbane-Settings-PhoneSound", "Message tone");
-    this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");
-    this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who gets a map marker. Named is a Rival and the apex squad. Everyone adds the crews and the escorts. Off leaves you to find them.");
+    this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the minimap");
+    this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who carries a Cyberbane marker on your minimap: gold for a Rival, purple for an apex squad, white for a crew. Named is the first two. Off leaves you to find them.");
     this.Text("Cyberbane-Settings-PhoneSound-Desc", "Plays the phone's own text message tone when a message arrives.");
     this.Text("Cyberbane-Settings-MessageDelivery-Desc", "Phone puts everyone who gets in touch into your phone as a contact. Cards draws them on the left instead and keeps Cyberbane out of the phone. Notices is the old centre screen line. Off is silence, and changes nothing about the way the mod plays.");
 

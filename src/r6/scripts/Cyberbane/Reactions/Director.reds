@@ -25,6 +25,17 @@ func CBWarningsOn() -> Bool {
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().warnings;
 }
 
+// One of the people Cyberbane sent. Every spawn carries this tag (Spawn/Spawner.reds, Arrival.reds).
+//
+// Nothing kept them out of the Director, so a Rival or a crew closing on a frightening V was read as
+// one more ganger on the street who might back off: rolled for recognition, overheard, and above all
+// made to broadcast Terror and SpreadFear ten metres around themselves, which reached the rest of
+// their own crew. People sent to find V were being frightened out of looking for V, on the very
+// ticks they were getting close. Whether they break is morale's question (Reactions/Morale.reds).
+func CBSentByUs(des: ref<DynamicEntitySystem>, npc: wref<ScriptedPuppet>) -> Bool {
+  return IsDefined(des) && des.IsTagged(npc.GetEntityID(), n"Cyberbane");
+}
+
 public class CBReactionDirector {
   private let m_whisperCooldownTicks: Int32;
   // Street Sense detection, resolved once and kept: 0 unknown, 1 present, 2 absent. The
@@ -113,6 +124,7 @@ public class CBReactionDirector {
     let dread = score.GetDread();
     let district = sys.GetCurrentDistrict();   // cached; kept off the hot path (crash safety)
 
+    let des = GameInstance.GetDynamicEntitySystem();
     let npcs = reg.GetAll();
     let evaluated = 0;
     let i = 0;
@@ -124,7 +136,7 @@ public class CBReactionDirector {
       // only run it for NPCs actually in range. A dense registry then stays cheap per tick.
       if CBNpcSafe(sys, npc) {
         let dist = Vector4.Distance(ppos, npc.GetWorldPosition());
-        if dist <= CBConfig.NpcEvalRadius() && CBSafetyGate.CanAffect(npc) {
+        if dist <= CBConfig.NpcEvalRadius() && !CBSentByUs(des, npc) && CBSafetyGate.CanAffect(npc) {
           evaluated += 1;
           let faction = CBClassifyFaction(npc);
 

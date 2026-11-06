@@ -78,9 +78,9 @@ func CBRumorPhrase(sys: ref<CyberbaneSystem>, r: ref<CBRumor>) -> String {
   if Equals(r.kind, n"BossKill") {
     if StrLen(gang) > 0 {
       return CBWhisperPick3(
-        "They put " + gang + "' boss in the ground " + where + ".",
-        gang + " lost someone who mattered " + where + ".",
-        "Heard " + gang + " are short a boss. " + where + ", they say.");
+        "They put a boss of " + gang + " in the ground " + where + ".",
+        CBCapFirst(gang) + " lost someone who mattered " + where + ".",
+        "Heard " + gang + " are short a boss " + where + ".");
     }
     return "Somebody took a boss off the board " + where + ".";
   }
@@ -88,15 +88,15 @@ func CBRumorPhrase(sys: ref<CyberbaneSystem>, r: ref<CBRumor>) -> String {
     return CBWhisperPick3(
       "Something went down " + where + ". Street's still chewing on it.",
       "You hear about that job " + where + "?",
-      "Everyone's talking about " + where + " right now.");
+      "Everyone's talking about what happened " + where + ".");
   }
   if StrLen(gang) > 0 {
     return CBWhisperPick3(
-      gang + " are counting bodies " + where + ".",
+      CBCapFirst(gang) + " are counting bodies " + where + ".",
       "Another one of " + gang + " down " + where + ".",
       "Not a good week to be " + gang + ".");
   }
-  return "Word from " + where + " is somebody's been busy.";
+  return "Word is somebody's been busy " + where + ".";
 }
 
 // The line itself.
@@ -126,7 +126,7 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
     return CBWhisperPick4(
       "You've got a lot of nerve showing up here. Walk away while you still can.",
       "Wrong street, choom. Turn around.",
-      gang + " want you gone. This is the only time we ask nicely.",
+      CBCapFirst(gang) + " want you gone. This is the only time we ask nicely.",
       "You're standing on our block. That's one mistake. Don't make two.");
   }
 

@@ -401,6 +401,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
       // And take any story characters off the Rival roster before they can be sent again.
       CBPruneUniqueRivals(this);
+      this.RenumberRivalZero();
     }
     // Seed chrome once up front so it is current before the first slow refresh.
     CBUpdateChrome(this, this.GetGameInstance());
@@ -899,7 +900,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // resizes one rectangle, and hides itself the moment its target is gone. Always called, even
     // with both switched off, because it is also what takes them down (UI/ThreatBar.reds).
     this.GetThreatBar().Update(this, game);
-    // Our map pins come down when the fight starts; the game's own enemy display takes over.
+    // Our marker stays on the minimap through the fight; only the one over their heads goes.
     CBMarkerCombatTick(this, game);
     // The messages. Cheap and self-limiting: it returns on the first line when there is
     // nothing on screen, which is almost always.
@@ -2575,6 +2576,18 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // ---- Rivals (spec §10) ------------------------------------------------
+  // A save from before 1.6.2 can still hold a Rival numbered 0, and 0 means "nobody" in every slot
+  // that holds a Rival id. That one could never text first, never come by car and never be picked
+  // by a lane, for as long as they lived. After the playthrough's notes are applied, so a forget
+  // covering them has already taken them. Nothing else holds their id at session start.
+  private func RenumberRivalZero() -> Void {
+    for r in this.m_rivals {
+      if IsDefined(r) && r.id <= 0 {
+        r.id = this.AllocateRivalId();
+      }
+    }
+  }
+
   public func AllocateRivalId() -> Int32 {
     // Ids start at 1. Everything that holds a Rival id in a slot - the active encounter, the
     // warning already sent, the car in flight or the car that failed - uses 0 for "nobody", and

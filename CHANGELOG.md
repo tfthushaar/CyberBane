@@ -3,6 +3,80 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] - 2026-11-06
+
+Everybody sent after you now comes looking for you, drives to you, and has a marker of their own on
+your minimap. Apex squads fight like four different people. A few systems that had been quietly
+doing nothing work now.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+If cars misbehave on your setup, turn off **Cars arrive on foot too**, under Gangs. That is the
+first switch to try: a car coming for you on foot is the path this release opens up the most.
+
+### Fixed
+- **"They spawn, but they don't actively search. They just walk around and hit me if they find
+  me."** Five separate causes, and it took all of them:
+  - The hunt's clocks started when the warning went out, a minute or two before anybody was in the
+    world. They arrived with their patience mostly spent and their search already closed tight
+    round wherever you stood when the text came. The search now starts when they arrive, from word
+    on where you are at that moment.
+  - The search itself was a walk to a random point in a circle. It is now a ring that closes on you
+    from their own side, tightening over time. They sprint while they are far off and run when
+    they are close, and anybody already inside the ring cuts across it.
+  - The fear system treated them as bystanders. Anybody near a frightening V could be told to panic,
+    so a crew closing in was broadcasting terror at its own members. People sent after you are
+    now out of that system. Whether they break under fire is still up to morale.
+  - Hunters still running at you were being deleted. Getting forty-five metres clear of a fight was
+    enough to have them released as "stuck", even while they were closing the gap. Anybody still
+    getting closer is left alone.
+  - Their give-up clock ran while a car was on its way to them, so a crew could call the hunt off
+    before its own ride turned up.
+- **"The apex squad are all the same. All they do is use guns."** A chair was only filled by a
+  record of that kind if you had already killed one, so a gang you had only fought shooters from
+  sent four shooters with different labels. Every gang now has its own roster: 88 of the game's real
+  characters across 14 gangs, a heavy who carries a heavy weapon, a blade who closes in with one, a
+  netrunner who hacks you. A gang that has nobody of a kind sends the nearest thing it really
+  fields. Their role on the bar now comes from who they are, so the label and the fighting agree.
+- **"They don't arrive in cars. I was standing in the middle of the road."** On foot, a car was
+  only sent if the game's road data agreed you were near a road, and that test is the likeliest
+  reason the logs show no car sent at all since it went in. It is gone. A Rival also only took a car 60%
+  of the time, the space a car needed was measured at twice its real size, and hunters could be
+  lost at 120 m while their car spawned at 140 m. Cars now come from 110 m, the spot is tried at
+  several distances and facings, and every refusal is written to the log. A car that gets stuck
+  lets its crew out to come on foot, and the car's orders change if you get in or out of a car
+  while it is on its way.
+- **"They're all marked with NCPD markers."** The marker was the game's gang-activity pin, which is
+  drawn everywhere as an NCPD scanner hustle. Rivals, apex squads and crews now carry their own
+  marker on the minimap: gold for a Rival, purple for an apex squad, white for a crew. It stays on
+  the minimap through the fight; the one over their head comes off while they are fighting you.
+- **"Barghest ambushes give me wanted stars right away, even outside Dogtown."** Most likely because
+  Dogtown's Barghest patrols are built on the game's police records, and a kill of one was kept as
+  a template for that gang's crews and Rivals, and an enemy built on a police record brings the
+  police the moment it fights, wherever it stands. Those records are no longer kept, and any
+  Rival already built from one is re-enlisted from the gang's roster the next time you load.
+  **This one is an inference from the game's files.** If Barghest still bring stars, please say so.
+- **Rival and apex health bars stayed full until the last moment.** The bar read hit points and
+  treated them as a percentage, so it sat at 100% until they were under 100 hit points.
+- **Wounded enemies almost never ran.** The same mistake: "below 25%" was reading "below 25 hit
+  points", and very few people survive to that. Enemies now really do break at a quarter health.
+  Because everybody you leave wounded could otherwise come back as a Rival, one who gets away
+  now rolls the same chance as one who breaks in a morale collapse.
+- **Flawless was nearly automatic.** Same mistake a third time: you counted as unhurt with anything
+  over 95 hit points. It now means what it says, and Untouchable is earned.
+- **A Rival who arrived could be logged as never having arrived.** The ten-second check waited
+  behind "one Rival at a time", which the Rival's own arrival switched on. Minutes later the check
+  ran, found the body gone, and put them back in the queue with no escape counted.
+- **A gang's tribute offered to let you pay them.** The message paying you went out as a threat,
+  with the "pay them off" answer attached.
+- **The first Rival on an old save** was numbered 0, which every slot reads as "nobody". They could
+  never warn you first, come by car or be picked by a lane. They are renumbered on load.
+- **A few overheard lines read wrong**, such as "Everyone's talking about in Watson" and "They put
+  Maelstrom' boss in the ground". Lines that open with a gang's name start with a capital now.
+
+### Changed
+- The settings text for vehicles and markers says what they do now.
+
 ## [1.6.8] - 2026-11-06
 
 People sent to find you walk where they search, they can find you if you stay put, and the ones

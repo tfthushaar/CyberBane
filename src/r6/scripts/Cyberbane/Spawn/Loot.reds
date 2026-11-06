@@ -314,5 +314,5 @@ public func CBPayApexBounty(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   let amount = RoundF(Cast<Float>(CBConfig.BountyApexSquad()) * scale / 50.0) * 50;
   let label = CBFactionLabel(faction);
   CBPayBounty(sys, game, faction, amount,
-              StrLen(label) > 0 ? s"You took apart \(label)'s best." : "You took apart their best.");
+              StrLen(label) > 0 ? s"You took apart the best of \(label)." : "You took apart their best.");
 }
