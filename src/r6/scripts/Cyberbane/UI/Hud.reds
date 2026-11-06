@@ -996,7 +996,11 @@ public class CBHud {
     }
     if Equals(name, CBHudPrevName()) || Equals(name, CBHudNextName()) {
       e.Handle();
-      this.StepTab(sys, game, Equals(name, CBHudPrevName()) ? -1 : 1);
+      let dir = 1;
+      if Equals(name, CBHudPrevName()) {
+        dir = -1;
+      }
+      this.StepTab(sys, game, dir);
       return true;
     }
     if Equals(name, CBHudSettingsName()) {
@@ -1983,7 +1987,9 @@ func CBHudActiveTitle(sys: ref<CyberbaneSystem>) -> String {
 // purpose; capitals are wider, so text drawn upper case gets its own figure.
 public func CBHudCharEm() -> Float = 0.58
 public func CBHudCapsEm() -> Float = 0.70
-public func CBHudLineHeight(fontSize: Int32) -> Float = Cast<Float>(fontSize) * 1.32
+public func CBHudLineHeight(fontSize: Int32) -> Float {
+  return Cast<Float>(fontSize) * 1.32;
+}
 
 public func CBHudCharsPerLine(width: Float, fontSize: Int32, opt caps: Bool) -> Int32 {
   let em = caps ? CBHudCapsEm() : CBHudCharEm();
