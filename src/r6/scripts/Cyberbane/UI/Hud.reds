@@ -158,7 +158,12 @@ public func CBHubPageScale(game: GameInstance, root: wref<inkCompoundWidget>) ->
   if s <= 0.0 {
     s = 2.0;   // nothing to measure: the menus are authored at twice the design
   }
-  let scaled = ClampF(s * CBHudUserScale(), 0.4, 4.0);
+  // Interface size can shrink the page but never push it off the screen. `s` fits the 1920x1080
+  // design to the space; the panel is a little smaller than the design, so the most it may be
+  // enlarged is until the panel itself meets the edge. Above that, 150% Interface size ran the
+  // page's top, bottom and sides off the screen, footer and tabs included.
+  let fullFit = s * MinF(CBHudDesignW() / CBHudPanelW(), CBHudDesignH() / CBHudPanelH());
+  let scaled = ClampF(s * CBHudUserScale(), 0.4, MaxF(fullFit, 0.4));
   CBLog.Info(n"UI", s"Hub page: window \(RoundF(winX))x\(RoundF(winY)), inverse scale \(inv), menu root \(rootKind) \(RoundF(rootX))x\(RoundF(rootY)), drawn at \(RoundF(scaled * 100.0))%.");
   return scaled;
 }
@@ -183,6 +188,10 @@ public func CBHudBarCount() -> Int32 = 4
 public func CBHudBarWidth() -> Float = 1320.0
 public func CBHudContentTop() -> Float = 200.0
 public func CBHudFooterY() -> Float = 952.0
+// Space kept clear above the footer, so the last line of prose never touches it.
+public func CBHudFooterGap() -> Float = 24.0
+// The prose under and beside the lists.
+public func CBHudBodyFont() -> Int32 = 21
 
 // The list rows. One pool, laid out per screen: ten wide rows for the gangs, the city and the
 // Rivals, or a narrow column of up to twenty-one for the titles (all twenty plus "automatic").
@@ -196,6 +205,10 @@ public func CBHudTitleListW() -> Float = 760.0
 public func CBHudDetailTop() -> Float = 664.0
 public func CBHudActionW() -> Float = 420.0
 public func CBHudActionH() -> Float = 56.0
+// The button's label is drawn in capitals, which run wide: at 23 "CLICK AGAIN: ERASE EVERYTHING"
+// was wider than the button. At 20, with that one reworded, every label the page uses fits, and
+// CBHudFit guards anything added later.
+public func CBHudActionFont() -> Int32 = 20
 
 // Row layouts, as the columns are positioned for them.
 public func CBHudLayoutGangs() -> Int32 = 0
@@ -764,15 +777,15 @@ public class CBHud {
     let subhead = this.NewText(panel, 24, n"Medium", CBHudDim(), n"MainColors.Grey");
     subhead.SetHorizontalAlignment(textHorizontalAlignment.Center);
     subhead.SetFitToContent(false);
-    subhead.SetSize(this.PxSize(CBHudPanelW(), 32.0));
-    subhead.SetMargin(this.PxAt(0.0, 110.0));
+    subhead.SetSize(this.PxSize(w, 32.0));
+    subhead.SetMargin(this.PxAt(x, 110.0));
     this.m_subhead = subhead;
 
     let tabline = this.NewText(panel, 20, n"Medium", CBHudGrey(), n"MainColors.Grey");
     tabline.SetHorizontalAlignment(textHorizontalAlignment.Center);
     tabline.SetFitToContent(false);
-    tabline.SetSize(this.PxSize(CBHudPanelW(), 28.0));
-    tabline.SetMargin(this.PxAt(0.0, 136.0));
+    tabline.SetSize(this.PxSize(w, 28.0));
+    tabline.SetMargin(this.PxAt(x, 136.0));
     this.m_tabline = tabline;
 
     // No rule under the header. It was 1540 px of two-pixel line, which is the single most
@@ -846,7 +859,7 @@ public class CBHud {
     }
 
     // ---- Prose: under the meters, under a list, or beside the titles -----------
-    let body = this.NewText(panel, 21, n"Medium", CBHudValue());
+    let body = this.NewText(panel, CBHudBodyFont(), n"Medium", CBHudValue());
     body.SetMargin(this.PxAt(x, CBHudContentTop()));
     body.SetWrapping(true, this.Px(w));
     body.SetSize(this.PxSize(w, 700.0));
@@ -856,7 +869,7 @@ public class CBHud {
     let action = this.NewBox(panel, CBHudActionName(), x + w - CBHudActionW(), CBHudDetailTop() - 4.0,
                              CBHudActionW(), CBHudActionH());
     let actionBg = this.NewBand(action, CBHudButtonIdle());
-    let actionText = this.NewText(action, 23, n"Semibold", CBHudHead());
+    let actionText = this.NewText(action, CBHudActionFont(), n"Semibold", CBHudHead());
     actionText.SetLetterCase(textLetterCase.UpperCase);
     actionText.SetHorizontalAlignment(textHorizontalAlignment.Center);
     actionText.SetFitToContent(false);
@@ -873,7 +886,11 @@ public class CBHud {
 
     let footer = this.NewText(panel, 19, n"Medium", CBHudDim(), n"MainColors.Grey");
     footer.SetMargin(this.PxAt(x, CBHudFooterY()));
-    footer.SetText("Click a screen, or Q / E (LB / RB on a controller)      Click a row for more      Esc / B: back to the pause menu");
+    // Kept short enough to stop well clear of the Mod Settings button at the right of the same
+    // line. It used to also explain Q and E, and ran some way underneath that button; the keys are
+    // on the tab bar now, where they are used.
+    footer.SetText(CBHudFit("Click a screen or a row for more      LB / RB on a controller      Esc / B: back",
+                            w - 260.0 - 40.0, 19, 1));
 
     let settings = this.NewBox(panel, CBHudSettingsName(), x + w - 260.0, CBHudFooterY() - 8.0, 260.0, 40.0);
     let settingsBg = this.NewBand(settings, CBHudButtonIdle());
@@ -1193,7 +1210,7 @@ public class CBHud {
   private func SetAction(label: String, enabled: Bool) -> Void {
     this.m_actionOn = enabled;
     if IsDefined(this.m_actionText) {
-      this.m_actionText.SetText(label);
+      this.m_actionText.SetText(CBHudFit(label, CBHudActionW() - 24.0, CBHudActionFont(), 1, true));
     }
     if IsDefined(this.m_actionBox) {
       this.m_actionBox.SetVisible(StrLen(label) > 0);
@@ -1319,7 +1336,9 @@ public class CBHud {
       this.m_barFill[idx].SetVisible(true);
     }
     if IsDefined(this.m_barCap[idx]) {
-      this.m_barCap[idx].SetText(caption);
+      // One line: the next meter starts 42 px below this caption, and a second line would be
+      // drawn over its label.
+      this.m_barCap[idx].SetText(CBHudFit(caption, CBHudContentW(), 19, 1));
       this.m_barCap[idx].SetVisible(true);
     }
   }
@@ -1363,14 +1382,20 @@ public class CBHud {
   }
 
   // Where the prose goes on this screen, how wide it may run, and what it says.
-  private func SetBody(x: Float, y: Float, width: Float, text: String, maxLines: Int32) -> Void {
+  // `bottom`, when given, is where the prose must stop instead of the footer: something else is
+  // drawn below it across the same width.
+  private func SetBody(x: Float, y: Float, width: Float, text: String, maxLines: Int32,
+                       opt bottom: Float) -> Void {
     if !IsDefined(this.m_body) {
       return;
     }
     this.m_body.SetMargin(this.PxAt(x, y));
     this.m_body.SetWrapping(true, this.Px(width));
-    this.m_body.SetSize(this.PxSize(width, CBHudFooterY() - 30.0 - y));
-    this.m_body.SetText(CBHudClamp(text, maxLines));
+    // As many lines as there is room for above the footer, never more than the screen asked for.
+    let room = (bottom > 0.0 ? bottom : CBHudFooterY() - CBHudFooterGap()) - y;
+    let fits = Cast<Int32>(room / CBHudLineHeight(CBHudBodyFont()));
+    this.m_body.SetSize(this.PxSize(width, MaxF(room, 0.0)));
+    this.m_body.SetText(CBHudFit(text, width, CBHudBodyFont(), Min(maxLines, fits)));
   }
 
   // ---- Screens ---------------------------------------------------------------------------------
@@ -1396,7 +1421,7 @@ public class CBHud {
     let civ = score.GetDreadCiv();
     this.SetBar(1, "Dread", s"\(RoundF(dread))   \(CBDreadWord(civ))",
       dread / 100.0, CBHudRed(),
-      s"How frightening you are. The street reads it as \(RoundF(civ)), and that is the figure that makes people back off.");
+      s"How frightening you are. The street reads it as \(RoundF(civ)): that is what makes people back off.");
 
     this.SetBar(2, "Visible chrome", s"\(RoundF(chrome))",
       chrome / 100.0, CBHudAmber(),
@@ -1404,7 +1429,7 @@ public class CBHud {
 
     this.SetBipolarBar(3, "Conduct", s"\(RoundF(code))   \(CBCodeLabel(code))",
       code, code < 0.0 ? CBHudRed() : CBHudGreen(),
-      "Clean and controlled, or one bad night from going over. This one runs both ways from the middle.");
+      "Clean and controlled, or one bad night from going over. Runs both ways from the middle.");
   }
 
   // The gangs, the ones that want you dead first.
@@ -1791,10 +1816,10 @@ public class CBHud {
     let titleName = CBHudActiveTitle(sys);
     let tier = IsDefined(score) ? CBTierName(EnumInt(score.GetTier())) : "Nobody";
     if IsDefined(this.m_subhead) {
-      this.m_subhead.SetText(titleName + "   |   " + tier);
+      this.m_subhead.SetText(CBHudFit(titleName + "   |   " + tier, CBHudContentW(), 24, 1));
     }
     if IsDefined(this.m_tabline) {
-      this.m_tabline.SetText(CBHudTabBlurb(this.m_tab));
+      this.m_tabline.SetText(CBHudFit(CBHudTabBlurb(this.m_tab), CBHudContentW(), 20, 1));
     }
 
     this.HideBars();
@@ -1856,11 +1881,14 @@ public class CBHud {
                 // clothes and build on every sample, so wiping them would mean nothing and they
                 // would be back within the second.
                 if this.m_resetArmed {
-                  this.SetAction("Click again: erase everything", true);
+                  this.SetAction("Click again: erase it all", true);
                 } else {
                   this.SetAction("Start over", true);
                 }
-                this.SetBody(x, CBHudContentTop(), w, CBHudLog(sys), maxLines);
+                // Full width, but it stops above the button: run on to the footer, the ledger's last
+                // lines were drawn underneath Start over.
+                this.SetBody(x, CBHudContentTop(), w, CBHudLog(sys), maxLines,
+                             CBHudDetailTop() - 4.0 - CBHudFooterGap());
               }
             }
           }
@@ -1941,25 +1969,131 @@ func CBHudActiveTitle(sys: ref<CyberbaneSystem>) -> String {
   return CBTitleDisplayById(sys, sys.GetContent(), id);
 }
 
-// inkText does not clip to its box: hand it more lines than fit and they render straight
-// over the footer and off the bottom of the panel, which is exactly what a longer Legend tab
-// did. Every tab body goes through here so that can never happen again, whatever is added to
-// a tab later. Truncation is the failure mode, not overlap.
-func CBHudClamp(text: String, maxLines: Int32) -> String {
-  let lines = StrSplit(text, "\n");
-  if ArraySize(lines) <= maxLines {
-    return text;
+// inkText does not clip to its box: hand it more than fits and it renders straight over the
+// footer, the button beside it, or off the panel. So nothing reaches the page without being fitted
+// to the box it goes in first. Truncation, at a word, is the failure mode - never overlap.
+//
+// This used to count lines by the line breaks in the text, which is not what the screen does: a
+// sentence with no break in it wraps onto two or three lines and counted as one, so a long Rival
+// file or a long gang note ran on down into the footer. Wrapping is now worked out the way the
+// text box does it - word by word against the width - from a deliberately generous estimate of
+// how wide a character is, so the estimate can only ever err towards cutting a line short.
+
+// Average width of a character as a fraction of the font size, for the menu font. Generous on
+// purpose; capitals are wider, so text drawn upper case gets its own figure.
+public func CBHudCharEm() -> Float = 0.58
+public func CBHudCapsEm() -> Float = 0.70
+public func CBHudLineHeight(fontSize: Int32) -> Float = Cast<Float>(fontSize) * 1.32
+
+public func CBHudCharsPerLine(width: Float, fontSize: Int32, opt caps: Bool) -> Int32 {
+  let em = caps ? CBHudCapsEm() : CBHudCharEm();
+  let per = Cast<Float>(Max(fontSize, 1)) * em;
+  return Max(6, Cast<Int32>(width / per));
+}
+
+// How many lines one paragraph (no line breaks in it) takes once wrapped at `cpl` characters.
+public func CBHudWrapCount(line: String, cpl: Int32) -> Int32 {
+  if StrLen(line) <= cpl {
+    return 1;
   }
-  let out = "";
+  let words = StrSplit(line, " ");
+  let lines = 1;
+  let run = 0;
   let i = 0;
-  while i < maxLines - 1 {
-    out += lines[i] + "\n";
+  while i < ArraySize(words) {
+    let n = StrLen(words[i]);
+    if n > cpl {
+      // A word longer than the line is broken by the box; count every line it fills.
+      if run > 0 {
+        lines += 1;
+      }
+      lines += (n - 1) / cpl;
+      run = n % cpl;
+    } else {
+      let need = run == 0 ? n : run + 1 + n;
+      if need > cpl {
+        lines += 1;
+        run = n;
+      } else {
+        run = need;
+      }
+    }
     i += 1;
   }
-  out += "    ...";
+  return lines;
+}
+
+// The words of one paragraph that fit in `room` lines, with " ..." on the end to say there was
+// more. Empty if there is no room at all.
+public func CBHudCutToLines(line: String, cpl: Int32, room: Int32) -> String {
+  if room <= 0 {
+    return "";
+  }
+  let words = StrSplit(line, " ");
+  let out = "";
+  let lines = 1;
+  let run = 0;
+  let i = 0;
+  while i < ArraySize(words) {
+    let w = words[i];
+    let n = StrLen(w);
+    // The last line keeps four characters back for the marker.
+    let limit = lines == room ? cpl - 4 : cpl;
+    let need = run == 0 ? n : run + 1 + n;
+    if need > limit {
+      if lines == room || n > cpl {
+        return out + " ...";
+      }
+      lines += 1;
+      run = n;
+      out += " " + w;
+    } else {
+      out += run == 0 ? w : " " + w;
+      run = need;
+    }
+    i += 1;
+  }
   return out;
 }
 
+// Fit text to a box `width` wide that has room for `maxLines` lines at this font size.
+public func CBHudFit(text: String, width: Float, fontSize: Int32, maxLines: Int32,
+                     opt caps: Bool) -> String {
+  if maxLines <= 0 || StrLen(text) == 0 {
+    return "";
+  }
+  let cpl = CBHudCharsPerLine(width, fontSize, caps);
+  let paras = StrSplit(text, "\n");
+  let out = "";
+  let used = 0;
+  let i = 0;
+  while i < ArraySize(paras) {
+    let para = paras[i];
+    let need = CBHudWrapCount(para, cpl);
+    let room = maxLines - used;
+    let last = i == ArraySize(paras) - 1;
+    // Fits, and either it is the end or there is still a line left after it for what follows.
+    if need < room || (need == room && last) {
+      out += i == 0 ? para : "\n" + para;
+      used += need;
+    } else {
+      let cut = CBHudCutToLines(para, cpl, room);
+      if StrLen(cut) > 0 {
+        out += i == 0 ? cut : "\n" + cut;
+      } else {
+        out += " ...";
+      }
+      return out;
+    }
+    i += 1;
+  }
+  return out;
+}
+
+// Kept for anything that only knows a line count. Fits against the full content width.
+func CBHudClamp(text: String, maxLines: Int32) -> String {
+  return CBHudFit(text, CBHudContentW(), 21, maxLines);
+}
 
 // What is on its way, in one place.
 //
