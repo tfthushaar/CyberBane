@@ -3,6 +3,49 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.7] - 2026-11-06
+
+The Cyberbane page in the pause menu answers the mouse where it is drawn, and nothing on it runs
+off the page or into anything else.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **"I can't click the rows, and Q and E don't line up with anything."** The page was laid out at
+  1920x1080 and then enlarged, usually to about twice that, by scaling the whole panel at draw
+  time. That kind of scaling only changes how the panel is painted; the game still works out what
+  is under the mouse from where everything was laid out, at the small size. So every row, tab and
+  button answered clicks and hover from a spot that was not where it was drawn - rows could not be
+  clicked, the highlight under the cursor lit the wrong thing, and nothing on the page lined up
+  with what it responded to. The page is now laid out at its real size, so what you see is exactly
+  where you click. It looks the same as before.
+- **Text no longer sits between the mouse and the rows.** The paragraph under a list is as wide as
+  the list and laid over it. Every piece of text and every coloured band on the page is now set to
+  ignore the mouse, so only the rows, tabs and buttons can be clicked.
+- **Q and E are on the tab bar.** The keys that change screen were only named in the footer, at
+  the other end of the page from the tabs they move between. They are now drawn at the two ends of
+  the tab bar, level with it, the way the game's own menus show them, and clicking them changes
+  screen too.
+- **Text ran into the footer.** The prose under each list was held to a number of lines by
+  counting the line breaks in it, but a sentence with no break wraps onto two or three lines on
+  screen and still counted as one, so a long Rival file or gang note ran down into the footer.
+  Every piece of text on the page is now fitted to its own box, wrapped word by word against the
+  box's real width and the room left above whatever is under it, and cut short at a word with
+  "..." rather than ever drawn over something else.
+- **The History ledger ran underneath the Start over button.** It now stops above it.
+- **The footer ran underneath the Mod Settings button.** It is shorter now that Q and E are on
+  the tab bar, and held to the space left of the button.
+- **The button under a list could be too narrow for its own label.** "Click again: erase
+  everything", in capitals, was wider than the button. Button labels are a size smaller and fitted
+  to the button, and that one now reads "Click again: erase it all".
+- **The captions under the meters stay on one line**, so a long one can no longer wrap onto the
+  next meter's name. The two longest were reworded to read whole.
+- **The line under the tabs stays inside the page.** The title and tier line and the screen's
+  one-line description are held to the content column instead of the full width of the panel.
+- **Interface size above 100% pushed the page off the screen.** It enlarged the page past the
+  edges, footer and tabs included. It can now enlarge the page only until it fills the screen;
+  below 100% it still shrinks it as before.
+
 ## [1.6.6] - 2026-11-05
 
 Finishing somebody you knocked out is a kill, Rivals stand on the ground, news of what you did
