@@ -349,7 +349,7 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
     let noBody: EntityID;   // the body is filled in when the city's spawn is adopted
     r.spawnedEntityId = noBody;
     r.arrivalCheckTicks = CBConfig.RivalCarArrivalCheckTicks();
-    CBRivalOnTheirWay(sys, game, r, now);
+    CBRivalOnTheirWay(sys, game, r, now, true);   // their people are in the car with them
     CBLog.Info(n"Spawn", s"Rival encounter on its way by car (id \(r.id)).");
     return true;
   }
@@ -404,20 +404,38 @@ func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   let previous = sys.GetActiveRivalId();
   sys.SetActiveRivalId(r.id);
   sys.SetRivalCarPending(r.id);
-  if !CBSpawnVehicleArrival(sys, game, r.faction, r.recordID, 1, n"CB_Rival", TDBID.None(), n"") {
+  // Their own people ride with them. They used to be walked in the moment the car set off, so a
+  // Rival "coming by car" turned up as a group on foot first and a car later, if at all - and if
+  // the car never delivered, the walk-in that followed brought a second set. The Rival takes the
+  // first seat, their people the rest, and whoever the car cannot seat walks in now.
+  let escorts = CBRivalEscortCount(sys, r);
+  let fs = sys.FindFaction(r.faction);
+  let sent = false;
+  if escorts > 0 && IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
+    sent = CBSpawnVehicleArrival(sys, game, r.faction, fs.sampleRecord, 1 + escorts, n"CB_Escort",
+                                 r.recordID, n"CB_Rival");
+  } else {
+    escorts = 0;
+    sent = CBSpawnVehicleArrival(sys, game, r.faction, r.recordID, 1, n"CB_Rival", TDBID.None(), n"");
+  }
+  if !sent {
     sys.SetRivalCarPending(0);
     sys.SetActiveRivalId(previous);
     return false;
   }
+  let seated = Max(0, Min(sys.GetLastCarSeats(), 1 + escorts) - 1);
+  if escorts > seated {
+    let walker: EntityID;
+    CBSpawnGroup(game, fs.sampleRecord, n"", escorts - seated, n"CB_Escort",
+                 CBConfig.RivalSpawnDistance() + 4.0, walker);
+  }
   return true;
 }
 
-// Everything that is true of a Rival the moment they set off, whichever way they are coming.
-func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Void {
-  // Somebody who runs people does not come alone. A Pack Leader brings their own, and so does
-  // whoever holds a chair in the gang's crew: the leader brings two, a lieutenant one. They walk
-  // in as escorts, so they fight, chase and give up with the encounter and never hold up the
-  // crew lane.
+// How many of their own people a Rival brings. Somebody who runs people does not come alone: a
+// Pack Leader brings their own, and so does whoever holds a chair in the gang's crew - the leader
+// brings two, a lieutenant one.
+func CBRivalEscortCount(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> Int32 {
   let escorts = CBRivalHasTrait(r, n"PackLeader") ? CBConfig.PackLeaderEscort() : 0;
   let role = CBRivalRole(sys, r);
   if role == CBRoleLeader() {
@@ -426,6 +444,21 @@ func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
     if role == CBRoleLieutenant() {
       escorts = Max(escorts, CBConfig.LieutenantEscort());
     }
+  }
+  return escorts;
+}
+
+// Everything that is true of a Rival the moment they set off, whichever way they are coming.
+//
+// `byCar`: their people are already in the car with them (CBRivalByCar), so nobody walks in here.
+func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float,
+                       opt byCar: Bool) -> Void {
+  // Their people walk in as escorts, so they fight, chase and give up with the encounter and
+  // never hold up the crew lane. Only as many as are not already out: a Rival whose car never
+  // delivered them walks in on the next try, and whoever of theirs did get here is still here.
+  let escorts = 0;
+  if !byCar {
+    escorts = CBRivalEscortCount(sys, r) - CBCountLiveTagged(game, n"CB_Escort");
   }
   if escorts > 0 {
     let fs = sys.FindFaction(r.faction);

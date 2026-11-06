@@ -772,8 +772,10 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     spec.active = true;
     // A Rival driving in wears their own face from the moment they spawn, set on the spec the
     // way the walk-in spawner sets it, so nothing has to change their appearance afterwards.
+    // Only the seat that is the Rival's: a Rival's car also carries their own people, who wear
+    // their own faces and whose bodies are not the Rival's.
     let rider: ref<CBRival>;
-    if Equals(squadTag, n"CB_Rival") {
+    if (isLead && Equals(leadTag, n"CB_Rival")) || (!isLead && Equals(squadTag, n"CB_Rival")) {
       rider = sys.FindRivalById(sys.GetRivalCarPending());
     }
     if IsDefined(rider) && IsNameValid(rider.appearance) {
@@ -794,6 +796,7 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     spec.tags = tags;
     CBTrace("vehicle: creating a car's crew member");
     let made = des.CreateEntity(spec);
+    sys.NoteArrivalBoarder(made);   // only these are given this car's seats
     // The body is the Rival's from the moment it exists, so their death and escape count.
     if IsDefined(rider) && EntityID.IsDefined(made) {
       rider.spawnedEntityId = made;
@@ -818,6 +821,12 @@ public func CBOnArrivalCrewAttached(sys: ref<CyberbaneSystem>, game: GameInstanc
   let car = GameInstance.FindEntityByID(game, carId) as VehicleObject;
   if !IsDefined(car) || !car.IsAttached() {
     sys.ClearPendingArrival();
+    return;
+  }
+  // Only somebody created for this car, once. Anybody else with the crew tag came in an earlier
+  // car and has merely streamed back in.
+  if !sys.TakeArrivalBoarder(puppet.GetEntityID())
+     || VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
     return;
   }
   let slot = sys.TakeArrivalSeat();
@@ -962,6 +971,9 @@ public class CBArrivalDismountCallback extends DelayCallback {
       this.retargets += 1;
     }
     if holdOn {
+      if IsDefined(sysD) {
+        sysD.NoteCarOnTheWay();
+      }
       let next = new CBArrivalDismountCallback();
       next.carId = this.carId;
       next.tries = this.tries + 1;
