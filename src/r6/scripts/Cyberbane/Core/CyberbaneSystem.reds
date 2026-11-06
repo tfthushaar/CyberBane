@@ -193,6 +193,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_huntLkp: Vector4;
   private let m_huntLastSeenTick: Int32;
   private let m_huntSearchStartTick: Int32;
+  // Who was created for the car now boarding (TakeArrivalBoarder). Session only.
+  private let m_arrivalBoarders: array<EntityID>;
+  // The last tick a car of ours was still on its way to V (CBArrivalDismountCallback). Session only.
+  private let m_carWatchTick: Int32;
   // Whether the hunt is still working from the tip it started with (nobody has found V yet), and
   // the street's latest word on where V is, which the tip firms up towards (Spawn/Hunt.reds).
   private let m_huntFromTip: Bool;
@@ -592,6 +596,42 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_arrivalSeats = Min(seats, ArraySize(seatNames));
     this.m_arrivalFilled = 0;
     this.m_arrivalSeatNames = seatNames;
+    ArrayClear(this.m_arrivalBoarders);
+  }
+
+  // The people created for the car now boarding. Only they are given its seats.
+  //
+  // Seating was keyed on the CB_Crew tag, which every car's crew keeps for good, and the attach
+  // callback that seats people fires again whenever one of them streams back in. So somebody who
+  // got out of an earlier car and streamed in again while a later car was boarding was taken by
+  // that car: an instant mount moved them from wherever they were into a seat out of sight, and
+  // the car left with a seat its own crew needed.
+  // A car of ours is still driving in. Its crew can be out of the world while it is far off, and
+  // that is not the same as having been left behind (Spawn/Hunt.reds, CBHuntersLeftBehind).
+  public func NoteCarOnTheWay() -> Void {
+    this.m_carWatchTick = this.m_tickCount;
+  }
+
+  public func CarRecentlyOnTheWay() -> Bool {
+    return this.m_carWatchTick > 0 && (this.m_tickCount - this.m_carWatchTick) <= CBConfig.CarWatchGraceTicks();
+  }
+
+  public func NoteArrivalBoarder(id: EntityID) -> Void {
+    if EntityID.IsDefined(id) {
+      ArrayPush(this.m_arrivalBoarders, id);
+    }
+  }
+
+  public func TakeArrivalBoarder(id: EntityID) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_arrivalBoarders) {
+      if Equals(this.m_arrivalBoarders[i], id) {
+        ArrayErase(this.m_arrivalBoarders, i);
+        return true;
+      }
+      i += 1;
+    }
+    return false;
   }
 
   // The slot a claimed seat mounts into, or n"" if there is no such seat.
@@ -670,6 +710,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_arrivalSeats = 0;
     this.m_arrivalFilled = 0;
     ArrayClear(this.m_arrivalSeatNames);
+    ArrayClear(this.m_arrivalBoarders);
   }
 
   private func ScheduleFastTick() -> Void {
@@ -1611,16 +1652,21 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayPush(this.m_legTries, 0);
   }
 
-  // The front leg, read field by field. Callers check HasConvoyLegs first.
-  public func LegFaction() -> CName { return this.m_legFaction[0]; }
-  public func LegRecord() -> TweakDBID { return this.m_legRecord[0]; }
-  public func LegTag() -> CName { return this.m_legTag[0]; }
-  public func LegLeft() -> Int32 { return this.m_legLeft[0]; }
-  public func LegTotal() -> Int32 { return this.m_legTotal[0]; }
-  public func LegChair() -> Int32 { return this.m_legChair[0]; }
+  // The front leg, read field by field. Callers check HasConvoyLegs first, and each of these
+  // checks again: an index past the end of an array is a hard crash, not an error, and a leg can
+  // be dropped between two reads of it (a walk-in, a convoy cleared by a new car).
+  public func LegFaction() -> CName { return ArraySize(this.m_legFaction) > 0 ? this.m_legFaction[0] : n""; }
+  public func LegRecord() -> TweakDBID { return ArraySize(this.m_legRecord) > 0 ? this.m_legRecord[0] : TDBID.None(); }
+  public func LegTag() -> CName { return ArraySize(this.m_legTag) > 0 ? this.m_legTag[0] : n""; }
+  public func LegLeft() -> Int32 { return ArraySize(this.m_legLeft) > 0 ? this.m_legLeft[0] : 0; }
+  public func LegTotal() -> Int32 { return ArraySize(this.m_legTotal) > 0 ? this.m_legTotal[0] : 0; }
+  public func LegChair() -> Int32 { return ArraySize(this.m_legChair) > 0 ? this.m_legChair[0] : -1; }
 
   // A car took `carried` of the front leg.
   public func LegCarried(carried: Int32) -> Void {
+    if ArraySize(this.m_legLeft) == 0 || ArraySize(this.m_legChair) == 0 || ArraySize(this.m_legTries) == 0 {
+      return;
+    }
     this.m_legLeft[0] = this.m_legLeft[0] - carried;
     if this.m_legChair[0] >= 0 {
       this.m_legChair[0] = this.m_legChair[0] + carried;
@@ -1630,6 +1676,9 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // No car this tick; how many ticks in a row that has now been.
   public func LegMissed() -> Int32 {
+    if ArraySize(this.m_legTries) == 0 {
+      return 0;
+    }
     this.m_legTries[0] = this.m_legTries[0] + 1;
     return this.m_legTries[0];
   }
@@ -2027,11 +2076,17 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Roll the counter over when the calendar day changes, then report what is left.
   public func ScheduleDay() -> Int32 { return this.m_schedDay; }
   public func ScheduleRolled() -> Bool { return this.m_schedRolled; }
-  public func SlotCount() -> Int32 { return ArraySize(this.m_slotLane); }
-  public func SlotLane(i: Int32) -> Int32 { return this.m_slotLane[i]; }
-  public func SlotAt(i: Int32) -> Float { return this.m_slotAt[i]; }
-  public func SlotEnd(i: Int32) -> Float { return this.m_slotEnd[i]; }
-  public func SlotSpent(i: Int32) -> Bool { return this.m_slotSpent[i]; }
+  // The timetable is four arrays kept in step and stored in the save. Counted by the shortest and
+  // read with bounds checks, so a save in which one of them came back short (written by another
+  // version, or cut off) is read as a shorter timetable rather than an index past the end.
+  public func SlotCount() -> Int32 {
+    return Min(Min(ArraySize(this.m_slotLane), ArraySize(this.m_slotAt)),
+               Min(ArraySize(this.m_slotEnd), ArraySize(this.m_slotSpent)));
+  }
+  public func SlotLane(i: Int32) -> Int32 { return i >= 0 && i < ArraySize(this.m_slotLane) ? this.m_slotLane[i] : 0; }
+  public func SlotAt(i: Int32) -> Float { return i >= 0 && i < ArraySize(this.m_slotAt) ? this.m_slotAt[i] : 0.0; }
+  public func SlotEnd(i: Int32) -> Float { return i >= 0 && i < ArraySize(this.m_slotEnd) ? this.m_slotEnd[i] : 0.0; }
+  public func SlotSpent(i: Int32) -> Bool { return i >= 0 && i < ArraySize(this.m_slotSpent) ? this.m_slotSpent[i] : true; }
 
   public func MoveSlot(i: Int32, at: Float) -> Void {
     if i >= 0 && i < ArraySize(this.m_slotAt) {

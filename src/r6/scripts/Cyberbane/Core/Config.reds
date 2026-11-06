@@ -936,6 +936,9 @@ public abstract class CBConfig {
   // search has fully narrowed (0 never, 1 all the way), and how often that word is refreshed.
   public static func HuntTipFirmUp() -> Float = 0.8
   public static func HuntTipWordTicks() -> Int32 = 20
+  // How long after a car of ours was last seen on its way its crew still count as coming, not
+  // left behind, while none of them is in the world.
+  public static func CarWatchGraceTicks() -> Int32 = 15
   public static func HuntGiveUpJitter() -> Int32 = 60
   // How long the HUD line says how a hunt ended.
   public static func HuntEndLineTicks() -> Int32 = 6

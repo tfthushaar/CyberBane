@@ -5,7 +5,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [1.6.8] - 2026-11-06
 
-People sent to find you walk where they search, and they can find you if you stay put.
+People sent to find you walk where they search, they can find you if you stay put, and the ones
+you got away from stay gone.
 
 Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
 
@@ -39,6 +40,25 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   set of them. Their people now ride in the car with them, the Rival in the first seat; whoever
   the car cannot seat walks in, and a walk-in after a failed car only brings whoever of theirs is
   not already here.
+
+- **People you got away from came back.** When everybody hunting you had streamed out of the
+  world - you drove off, or went far enough - the hunt ended as "threat ended", but they stayed
+  registered. Whenever you next passed that way they came back into the world as hostile
+  hunters, starting a hunt out of nowhere, and a Rival among them stayed "hunting" with a body
+  nobody could reach. Getting that far away now ends it the way losing them does: "lost them",
+  the Rival counts it as an escape, and the people left behind are cleared. A crew still driving
+  in from a long way off is not counted as left behind.
+- **Somebody from an earlier car could be pulled into a later one.** Seats were handed to anybody
+  carrying the car-crew tag, which they keep for good, and the hand-out runs again whenever one
+  of them streams back into the world. So a crew member who had got out of one car and streamed
+  back in while another was boarding was mounted into it instantly, from wherever they stood:
+  another way for somebody to blink out of sight, and the new car left with a seat its own crew
+  needed. Only the people created for the car now boarding are seated in it.
+- **Two places that could read past the end of a list.** The queue of cars still to send for a
+  convoy, and the day's timetable read from your save, were each read by position, trusting
+  every caller to have checked the length first. Reading past the end is a crash, not an error.
+  Both now check for themselves, and the timetable is counted by its shortest part, so a save in
+  which one part came back short is read as a shorter day rather than taking the game down.
 
 ### Known
 - **"1.6.7 would not launch on Steam Deck; 1.6.6 did."** Not reproduced. 1.6.7 changed only the

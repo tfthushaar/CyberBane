@@ -68,6 +68,28 @@ func CBHuntStartSearch(sys: ref<CyberbaneSystem>) -> Void {
   sys.BumpHuntSearchGen();
 }
 
+// Is anybody of ours still registered but not in the world: not attached, not on their way in,
+// and not a body we already know about? Those are people V has left behind.
+func CBHuntersLeftBehind(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>) -> Bool {
+  return CBTagLeftBehind(sys, game, des, n"CB_Rival") || CBTagLeftBehind(sys, game, des, n"CB_Apex")
+      || CBTagLeftBehind(sys, game, des, n"CB_Squad") || CBTagLeftBehind(sys, game, des, n"CB_Escort")
+      || CBTagLeftBehind(sys, game, des, n"CB_Scout");
+}
+
+func CBTagLeftBehind(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, tag: CName) -> Bool {
+  let dead = sys.GetDeadOurs();
+  let ids = des.GetTaggedIDs(tag);
+  let i = 0;
+  while i < ArraySize(ids) {
+    let id = ids[i];
+    i += 1;
+    if !des.IsSpawning(id) && !IsDefined(GameInstance.FindEntityByID(game, id)) && !ArrayContains(dead, id) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Is anybody of ours alive and out there, or on their way?
 public func CBHuntersOut(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   if !IsDefined(sys) {
@@ -263,6 +285,27 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // that has just been sent takes a moment to appear), the hunt is over.
     if !CBHuntPending(sys) && sys.GetHuntState() != CBHuntNone() {
       if sys.BumpHuntIdleTicks() >= CBConfig.HuntIdleEndTicks() {
+        // Nobody of ours is in the world, but that is not the same as nobody being left. V can
+        // simply have gone far enough for them to stream out, and they stay registered: the
+        // hunt used to end here with them still on the books, so they came back into the world
+        // as hostile hunters whenever V next passed that way (starting a hunt from nowhere), and
+        // a Rival among them stayed "hunting" with a body nobody could reach. V got away from
+        // them, so it ends the way getting away does.
+        if !sys.CarRecentlyOnTheWay() && CBHuntersLeftBehind(sys, game, des) {
+          let r = sys.FindRivalById(sys.GetActiveRivalId());
+          if IsDefined(r) && r.state == EnumInt(ECBRivalState.Hunting) && EntityID.IsDefined(r.spawnedEntityId)
+             && !IsDefined(GameInstance.FindEntityByID(game, r.spawnedEntityId)) && !sys.IsLairActive() {
+            CBRivalEscapedByPlayer(sys, game);
+            CBCloseRivalEncounter(sys, game, r, null);
+          }
+          CBChaseGiveUp(sys, game, des);
+          sys.SetHuntState(CBHuntNone());
+          sys.SetHuntFaction(n"");
+          sys.SetHuntGrade("");
+          sys.SetSpotTicks(0);
+          sys.SetHuntIdleTicks(0);
+          return;
+        }
         sys.SetHuntState(CBHuntNone());
         sys.SetHuntFaction(n"");
         sys.SetHuntGrade("");
