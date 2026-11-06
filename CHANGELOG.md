@@ -3,6 +3,29 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.7] - 2026-11-06
+
+The Cyberbane page in the pause menu answers the mouse where it is drawn.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **"I can't click the rows, and Q and E don't line up with anything."** The page was laid out at
+  1920x1080 and then enlarged, usually to about twice that, by scaling the whole panel at draw
+  time. That kind of scaling only changes how the panel is painted; the game still works out what
+  is under the mouse from where everything was laid out, at the small size. So every row, tab and
+  button answered clicks and hover from a spot that was not where it was drawn - rows could not be
+  clicked, the highlight under the cursor lit the wrong thing, and nothing on the page lined up
+  with what it responded to. The page is now laid out at its real size, so what you see is exactly
+  where you click. It looks the same as before.
+- **Text no longer sits between the mouse and the rows.** The paragraph under a list is as wide as
+  the list and laid over it. Every piece of text and every coloured band on the page is now set to
+  ignore the mouse, so only the rows, tabs and buttons can be clicked.
+- **Q and E are on the tab bar.** The keys that change screen were only named in the footer, at
+  the other end of the page from the tabs they move between. They are now drawn at the two ends of
+  the tab bar, level with it, the way the game's own menus show them, and clicking them changes
+  screen too.
+
 ## [1.6.6] - 2026-11-05
 
 Finishing somebody you knocked out is a kill, Rivals stand on the ground, news of what you did
