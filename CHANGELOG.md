@@ -3,6 +3,40 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.1] - 2026-11-07
+
+The pin a tip puts on your map stays where the Rival is, and the Rival is waiting there when you
+arrive instead of appearing in front of you.
+
+Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
+
+### Fixed
+- **"I get tips that a Rival has been spotted, I check the map and I just see the NCPD icons."**
+  Since 1.6.5 the pin used the variant of the waypoint you drop on the map yourself. That variant is
+  not a look but a role: the game keeps one waypoint, finds it by that variant, and moves whichever
+  pin it finds. So the pin was not where the Rival was, and anything that touched your own waypoint
+  could take it. It now uses the game's marker for a dangerous person to hunt, the one a cyberpsycho
+  sighting has, which nothing in the game claims. It has its own icon on the map, not the hustle
+  icon, and hovering it reads Cyberpsycho Sighting because that is the game's name for the marker.
+  Select it and track it, and it is on your minimap with a route. A pin from before this update was
+  never kept in your save, so the new one goes up as soon as you load.
+- **"When I get to his location he isn't there, then he spawns after a few seconds in front of
+  me."** A Rival at their place was only ever put there while you were at least 30 m from it, so
+  pulling up at the pin, or walking straight to it, found nobody. They went in once you wandered back
+  out past 30 m looking for them, and the check on whether you could see them was the one for
+  somebody who walks up to you: anywhere behind you passed with nothing in the way, and so did
+  anywhere far in front. They appear a few seconds after the spot is chosen, which is when a player
+  looking for them turns round. Now they are put there however close you are, at the place or round
+  it, and only where a wall stands between you and them at the shins, the waist and the head, so
+  turning round shows you nobody appearing. The search covers a wider ring round the place to find a
+  spot like that.
+
+### Known
+- **"1.7 gets me a red error."** That is redscript reporting a script that did not compile. Every
+  file was checked against the game's own scripts for 2.31 and 2.5 and the Codeware build each one
+  uses, and against the compiler's own rules, and no fault turned up. Please send
+  `r6\logs\redscript_rCURRENT.log` and your game version: the log names the file and the line.
+
 ## [1.7.0] - 2026-11-06
 
 Everybody sent after you now comes looking for you, drives to you, and has a marker of their own on

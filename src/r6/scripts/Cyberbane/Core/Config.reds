@@ -560,6 +560,11 @@ public abstract class CBConfig {
   public static func SpawnInViewFarDistance() -> Float = 70.0
   // Eye height for the line-of-sight trace, so the ray clears a kerb and is stopped by a wall.
   public static func SpawnEyeHeight() -> Float = 1.5
+  // Where on a standing body CBPointHiddenFrom aims its three rays, in metres above the ground
+  // they stand on: shins, waist, the top of the head. All three blocked is hidden.
+  public static func HiddenRayLow() -> Float = 0.4
+  public static func HiddenRayMid() -> Float = 1.0
+  public static func HiddenRayHigh() -> Float = 1.75
 
   // ---- Apex strength ----
   // Percentage of a boss-grade build, used when settings have not loaded yet.
@@ -1059,15 +1064,19 @@ public abstract class CBConfig {
   public static func TipMinAgeHours() -> Float = 1.0
   // A lead goes stale after this many in-game hours: they have moved on.
   public static func LeadLifetimeHours() -> Float = 24.0
-  // V within this distance of the place, and no closer than the minimum, places the Rival there.
+  // V within this distance of the place puts the Rival there, out of V's sight.
   public static func LairPlaceDistance() -> Float = 85.0
-  public static func LairMinDistance() -> Float = 30.0
+  // No closer to V than this, wherever V is standing. It was 30 m and measured from the place
+  // itself, so V standing at the pin was too close for anybody ever to be put there (1.7.1).
+  public static func LairMinDistance() -> Float = 10.0
   // Further than this from a waiting Rival who never noticed V, and they are taken back out.
   public static func LairLeaveDistance() -> Float = 160.0
   // Ticks V must have been on foot, out of combat, in a settled world before anybody is placed.
   public static func LairCalmTicks() -> Int32 = 5
   // How far round the place to look for standing room, and how often to try while in range.
+  // Two rings, so there is usually somewhere round a corner from V to put them.
   public static func LairSearchRadius() -> Float = 12.0
+  public static func LairOuterSearchRadius() -> Float = 22.0
   public static func LairTryEveryTicks() -> Int32 = 3
   // Extra renown for putting a Rival down before they ever knew V was there, as a fraction of
   // what the kill itself pays.

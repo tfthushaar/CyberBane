@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.7.0).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.7.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -139,10 +139,11 @@ in active development. This page describes what the mod does and how it installs
   a gang-mate gunning for you.
 - **You can go after them too.** A Rival who walks away from you alive gets seen somewhere
   afterwards. Now and then a gang at war with theirs, or somebody on the street, texts you where,
-  and a pin goes on your map and minimap: the same marker as a waypoint, labelled as a custom
-  location. Select it on the map and track it for a route. Go there on foot and they are there,
-  not expecting anybody: catch
-  them before they react and the street hears about it. Wait too long and they move on. They still
+  and a pin goes on your map: the game's marker for a dangerous person to hunt down, the one it
+  uses for a cyberpsycho sighting, so it stands out from the NCPD icons around it. Select it on the
+  map and track it, and it is on your minimap with a route. Get there and get out of the car, and
+  they are there, somewhere round the place you cannot see from where you stand, not expecting
+  anybody: catch them before they react and the street hears about it. Wait too long and they move on. They still
   come for you on their own schedule as well. **Tips on where Rivals are**, under Rivals, turns
   this off.
 - **Rivals have traits, and weak spots.** A Tough Rival takes more killing, an Armored one
@@ -284,6 +285,11 @@ versions of the required frameworks that match your game.
 The 2.31 row is the last build of each framework made for 2.31; every later build needs 2.5. Use
 the builds for the patch you are on and not the other one. Every other patch is treated as
 unsupported until it has been checked, and a compatibility note goes out with every release.
+
+If the game shows a red error when it starts, that is redscript saying a script did not compile,
+and none of Cyberbane is running. Please send `r6\logs\redscript_rCURRENT.log` from your game
+folder with the report, along with your game version: the log names the exact file, line and
+other mod involved, which is the one thing that cannot be worked out without it.
 
 ## Installation
 

@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.0. The "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.7.1. The "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -15,6 +15,56 @@ this repository: no police system calls, one AI order per NPC, no entity work in
 events, removals only through `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing touching
 an NPC that has left the world, behaviour-only ability kits, no runtime appearance changes, no
 loot drops from corpses, and UI as data rather than injected widgets.
+
+## Requests after 1.7.0
+
+Three reports from players on 1.7.0, two of them fixed in 1.7.1. None of the fixes has been played
+yet: they compile by every check that can be made here, and the reasoning was read against the
+game's own 2.31 and 2.5 scripts.
+
+### "I get tips, I check the map and I just see the NCPD icons" (and "I can't see the new icons")
+
+**Status: the tip pin is fixed in 1.7.1** (`Rivals/Whereabouts.reds`, `CBLeadPinTick`). The reporter
+is on 1.7.0. `CustomPositionVariant`, which the pin used from 1.6.5, is the role of the player's own
+waypoint, not a look: the map keeps one pin in that role and writes to whichever it finds (another
+mod saw its pin moved to a spot nobody chose: spuddeh's NC Zoning District Guide, `WorldActions.reds`),
+and 2.31's auto-drive unregisters any tracked pin of that variant on arrival
+(`autoDriveSystem.script`). The pin is now `HuntForPsychoVariant`: no 2.31 or 2.5 script owns it, the
+tooltip is null-safe with no journal entry, it has its own icon, and CET mods mark spawned hostiles
+with exactly this `Mappins.DefaultStaticMappin` pairing. It is not drawn on the minimap until it is
+tracked (`minimap.script` has no plain-position entry for it), which the readme says.
+
+The markers on people (gold, purple, white) were traced through `minimap.script` and
+`minimapMappins.script` on both patches: a pin with `GameplayRoleMappinData` goes to the device mappin,
+spawn profile Always, drawn when `m_showOnMiniMap` is set and `m_textureID` is valid, the same path the
+game uses for a tagged NPC, and the fallback icon `MappinIcons.NPCMappin` is the game's own NPC role
+icon. Nothing in script stops them. If they still do not show, that is native, and the next report
+should say whether the pin or the markers are meant.
+
+### "When I get to his location he isn't there, then he spawns in front of me"
+
+**Status: fixed in 1.7.1** (`CBLairTryPlace`, `CBPointHiddenFrom` in `Spawn/Spawner.reds`). Two
+causes. The place was only filled while V was 30-85 m from it, so arriving at the pin found nobody;
+and the visibility test was `CBPointOutOfSight`, which passes any point behind V and any point 70 m
+or more in front, both right for somebody walking at V and wrong for somebody standing still where V
+is looking. The body appears seconds after the point is chosen, which is when V turns. Now the only
+distance rule is 10 m from V, there is a second ring of spots at 22 m, and a spot needs static
+geometry across all three rays from V's eye (shins, waist, head), or to be out of frame and 70 m off.
+The rays run before the path query, so the extra spots cost little.
+
+### "1.7 gets me a red error"
+
+**Status: open, waiting on a log.** The reporter went back to 1.6.4. A red error at launch is a
+redscript compile failure. What was checked, all clean: every mod-internal call by name, argument
+count and value type; every `this.` field and literal; every engine name against the official 2.31 and
+2.5 scripts with Codeware 1.20.6 and 1.21.2 (and back to 2.2 for anything new since 1.6.4); engine
+call argument counts (3,172 call/version pairs); 244 game enum references; collisions of the mod's
+824 globals and 56 added members with vanilla and Codeware; and the forms new in 1.7.0 (array
+literals in `for`, `return` and arguments, a string inside an interpolation) against redscript
+0.5.31's own parser, typechecker and desugaring. Nothing was removed from `src` since 1.6.4, so an
+install over the top leaves no stale file. What is left is outside the files: another mod in the
+same compile, or a framework build that does not match the patch. `r6\logs\redscript_rCURRENT.log`
+settles it.
 
 ## Requests after 1.6.8
 
