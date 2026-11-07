@@ -32,7 +32,6 @@
 //
 // `Mappins.DeviceWorldMapMappinDefinition` shows on the minimap, over their heads and on the big map
 // (1.7.1; the plain device definition, used in 1.7.0, is the one with the map switched off).
-// (Rivals/Whereabouts.reds).
 //
 // ---- And what stays from before ----
 //
