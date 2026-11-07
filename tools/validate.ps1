@@ -32,6 +32,8 @@ foreach ($p in @($scc, $vanilla, $cwScripts, $msDir)) {
   if (-not (Test-Path $p)) { throw "Required path not found: $p" }
 }
 
+& (Join-Path $PSScriptRoot 'check_removed.ps1')
+
 $sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ("cyberbane-validate-" + [Guid]::NewGuid().ToString('N'))
 $scripts = Join-Path $sandbox 'scripts'
 try {

@@ -42,6 +42,10 @@ if ($offenders) {
   throw "Build aborted: TODO-RELEASE marker(s) present."
 }
 
+# --- nothing the mod ever shipped may go missing ----------------------------
+# An old copy left on an install is compiled with everything else (see check_removed.ps1).
+& (Join-Path $PSScriptRoot 'check_removed.ps1')
+
 # --- stamp the version -----------------------------------------------------
 # Read/write as UTF-8 without BOM via .NET so the file's encoding is preserved
 # (Windows PowerShell 5.1's Get-Content/Set-Content would corrupt non-ASCII and

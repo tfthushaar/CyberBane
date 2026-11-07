@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.7.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.7.2).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -316,6 +316,10 @@ Download the latest `Cyberbane-x.y.z.zip` from the
    `...\steamapps\common\Cyberpunk 2077\`.
 3. Launch the game, press Escape and choose Cyberbane to open the Hub. You can
    rebind the key in Mod Settings.
+
+To update by hand, extract the new zip over the old one. Any script the mod no longer uses is
+replaced by an empty one at the same path, so there is nothing to delete, whichever version you are
+coming from.
 
 To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vortex.
 

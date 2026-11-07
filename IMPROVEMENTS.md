@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.1. The "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.7.2. The "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -14,7 +14,9 @@ because the file holding them in full (`STATUS.md`) is a local developer note an
 this repository: no police system calls, one AI order per NPC, no entity work inside attach
 events, removals only through `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing touching
 an NPC that has left the world, behaviour-only ability kits, no runtime appearance changes, no
-loot drops from corpses, and UI as data rather than injected widgets.
+loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
+deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
+otherwise), because installing over the top does not remove files and an old copy keeps compiling.
 
 ## Requests after 1.7.0
 
@@ -69,24 +71,30 @@ The rays run before the path query, so the extra spots cost little.
 
 ### "1.7 gets me a red error"
 
-**Status: open, waiting on a log.** The reporter went back to 1.6.4. A red error at launch is a
-redscript compile failure. What was checked, all clean: every mod-internal call by name, argument
-count and value type; every `this.` field and literal; every engine name against the official 2.31 and
-2.5 scripts with Codeware 1.20.6 and 1.21.2 (and back to 2.2 for anything new since 1.6.4); engine
-call argument counts (3,172 call/version pairs); 244 game enum references; collisions of the mod's
-824 globals and 56 added members with vanilla and Codeware; and the forms new in 1.7.0 (array
-literals in `for`, `return` and arguments, a string inside an interpolation) against redscript
-0.5.31's own parser, typechecker and desugaring. Nothing was removed from `src` since 1.6.4, so an
-install over the top leaves no stale file. What is left is outside the files: another mod in the
-same compile, or a framework build that does not match the patch. `r6\logs\redscript_rCURRENT.log`
-settles it.
+**Status: fixed in 1.7.2. The cause was found from a player's log, and it was not what 1.7.1 thought.**
 
-**Precaution taken in 1.7.1.** Reading a compiler's source is not the same as running it, and no 2.31
-install can be compiled here. Three forms were new in 1.7.0 and in no release before it: `return
-[...]` (56, the apex roster), `for x in [...]` (the nomad clothes) and a string inside an
-interpolation (a log line). The reporter's last working version predates all three. They are now
-written the way the mod always has, with no change in behaviour, so 1.7.1 uses no syntax it did not
-already ship in 1.6.4. This does not prove they were the cause.
+```
+[UNRESOLVED_FN] At ...\r6\scripts\Cyberbane\Spawn\VanillaChase.reds:51:17:
+function 'CBChaseVehicle' not found
+```
+
+`Spawn/VanillaChase.reds` was deleted from the mod in 1.5.0. Installing over the top does not remove
+files, so it stayed on every install updated by hand and was compiled with everything else, and it
+kept compiling because `CBChaseVehicle` was still in `Spawn/Arrival.reds`, dead. 1.7.0 deleted that
+function as dead code. Reproduced exactly: a clean 1.7.1 plus the old file gives the same error.
+
+**Two things said here before were wrong.** "Nothing was removed from `src` since 1.6.4, so an install
+over the top leaves no stale file" only looked as far back as 1.6.4, and the file dated from before
+it. Every check on 1.7.1 compiled the clean tree, which is exactly the one thing a player with an old
+folder does not have. The three syntax forms rewritten in 1.7.1 were not the cause. They stay
+rewritten, because that cost nothing.
+
+**The fix is the rule, not the function.** Putting `CBChaseVehicle` back would have left the next
+deleted symbol to do the same thing. An install now always ends up with exactly the files in the
+zip, whichever version it started from: every script ever shipped stays at its path, the two retired
+ones as stubs (`Spawn/VanillaChase.reds`, `Compat/FenixRebirth.reds`), and `tools/check_removed.ps1`
+fails the build and the validation if any path from the git history goes missing. Tested by
+extracting the real zip over older versions and compiling the result.
 
 ### "Crews get stuck inside buildings and underground so cannot be killed"
 

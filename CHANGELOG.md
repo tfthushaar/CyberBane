@@ -3,6 +3,27 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.2] - 2026-11-07
+
+The red error at startup on 1.7 is fixed. Your saved Cyberbane progress carries over. Nothing stored
+in your save changed shape, and nothing else in the mod plays differently.
+
+### Fixed
+- **"I get a redscript error at launch: function 'CBChaseVehicle' not found."** If you updated by
+  extracting the zip over an older version, the game could not start Cyberbane on 1.7.0 or 1.7.1, and
+  a failed compile stops every script mod you have, not only this one. Updating that way does not
+  remove files, so a script the mod stopped using back in 1.5.0 was still in your folder, and 1.7.0
+  removed something it depended on. That file is now replaced when you install, along with the one
+  other file the mod has ever retired. Extract 1.7.2 over what you have and it is gone. There is
+  nothing to delete by hand, and it works from any older version.
+- **It cannot happen this way again.** No script is ever deleted from the mod now. A retired one is
+  replaced by an empty one at the same path, so installing over the top always leaves exactly the
+  files in the download, and the release build refuses to run if one goes missing.
+
+### Corrected
+- 1.7.1 said no fault could be found and rewrote a few lines as a precaution. Those lines were not
+  the cause, and the earlier note that updating over the top leaves no stale files was wrong.
+
 ## [1.7.1] - 2026-11-07
 
 The pin a tip puts on your map is Cyberbane's own and stays where the Rival is, and the Rival is
