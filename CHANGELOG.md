@@ -42,6 +42,9 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   file was checked against the game's own scripts for 2.31 and 2.5 and the Codeware build each one
   uses, and against the compiler's own rules, and no fault turned up. Please send
   `r6\logs\redscript_rCURRENT.log` and your game version: the log names the file and the line.
+  As a precaution, the few lines 1.7.0 wrote in a way the mod had never used before are now written
+  the way the rest of it is. Nothing plays differently. Whether those lines were the cause is not
+  known, so if you still see the error, the log is still what is needed.
 
 ## [1.7.0] - 2026-11-06
 

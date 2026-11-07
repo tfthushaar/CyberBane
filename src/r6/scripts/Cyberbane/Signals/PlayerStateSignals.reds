@@ -45,7 +45,8 @@ public func CBUpdateAura(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   let obvious = score.GetChromeVisible() >= CBConfig.AuraObviousChrome() || bladed;
   // The game's own tags, as its AI conditions read them (commonconditionchecks.tweak). The bare
   // n"Sandevistan" is no gameplay tag, so a Sandevistan running never counted here.
-  let chromeRunning = CBHasAnyTag(player, [n"SandevistanPlayerBuff", n"BerserkBuff", n"Berserk"]);
+  let running: array<CName> = [n"SandevistanPlayerBuff", n"BerserkBuff", n"Berserk"];
+  let chromeRunning = CBHasAnyTag(player, running);
   score.SetAura(CBComputeAura(drawn, obvious, chromeRunning, player.IsInCombat(),
                               sys.GetRecentKills(), score.GetHeatStage() >= 3));
 }

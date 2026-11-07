@@ -81,6 +81,100 @@ install over the top leaves no stale file. What is left is outside the files: an
 same compile, or a framework build that does not match the patch. `r6\logs\redscript_rCURRENT.log`
 settles it.
 
+**Precaution taken in 1.7.1.** Reading a compiler's source is not the same as running it, and no 2.31
+install can be compiled here. Three forms were new in 1.7.0 and in no release before it: `return
+[...]` (56, the apex roster), `for x in [...]` (the nomad clothes) and a string inside an
+interpolation (a log line). The reporter's last working version predates all three. They are now
+written the way the mod always has, with no change in behaviour, so 1.7.1 uses no syntax it did not
+already ship in 1.6.4. This does not prove they were the cause.
+
+Two more ideas, from a different player, recorded and not built. The ideas under each are
+starting points, and none of them has been decided.
+
+### "More explicit or active ways to become friendly with a gang besides fighting their enemies"
+
+**Status: open, not built.**
+
+What V can do today, at the default numbers. Friendly starts at 15 standing and Allied at 50.
+
+- Hurt a gang's enemies: they warm by half of what the victim lost, up to 75 (`CBCreditRivalGangs`).
+- Let one of their Rivals walk: +3 (`MercyRivalCredit`).
+- Pay off a hostile gang: standing jumps to 15, the edge of Friendly, and then drifts back towards
+  their baseline at a point a day (`CBBrokerPeace`, `CBApplyDecay`). It only exists for a gang that
+  is already hostile.
+- Tribute: +5, but a gang pays it because it fears V, so it is not something V can choose.
+
+**Found while writing this: leaving their people alive does not work.** The Hub's Gangs screen and
+`Model/GangRivalries.reds` both call it a way to be thought well of, and it loses standing. A
+non-lethal takedown costs a quarter of what the kill would (`NonLethalStandingShare`) and earns
++0.4 (`MercyCredit`), both in `CBApplyKill`:
+
+| Who | Cost | Mercy | Net |
+|---|---|---|---|
+| Ganger | -0.50 | +0.40 | -0.10 |
+| Elite | -1.00 | +0.40 | -0.60 |
+| Officer | -1.50 | +0.40 | -1.10 |
+| Boss | -6.25 | +0.40 | -5.85 |
+
+Nobody seeing it scales both sides alike, so the sign stays the same. `MercyCeiling` (20) can never
+be reached this way, and the slow drift back to baseline works against it too. Fix this before
+adding anything new, because it is the route the mod already tells players to use. Until it is
+fixed, the only way to warm a gang without hurting their enemies is letting a Rival walk.
+
+Ideas:
+
+- **Favours over the phone.** A gang V is on neutral terms with texts a small ask with a price, and
+  V answers on the same reply rows the pay-off uses (`UI/RealPhone.reds`). This adds no new engine
+  surface, and it is the only one here that is not fighting.
+- **Keeping the peace on their streets.** Time on a gang's turf with no trouble warms them slowly,
+  read from what is already stored, the way Laying Low reads `lastIncidentAt`.
+- **Spending on their turf.** Natural, but `GetBuyPrice` only works out a price, so seeing a real
+  purchase would need a new wrap, which is a 2.31 risk.
+
+Whatever is built keeps to the save rule: no new `persistent let` on anything the save holds. Keep
+new records in the play service, keyed by playthrough, as sightings and gang strength are.
+
+### "Be part of the turf wars and change the tides for a chosen gang"
+
+The player's example: "killing x amount of tiger claws while in their turf reduces their dominion
+over a region by y%".
+
+**Status: half there. Picking a side and any effect by region are not built.**
+
+What exists (`Model/Territory.reds`): every one of a gang's people V puts down costs it strength
+(0.8 a member, 3 an officer, 8 a boss), and a district is split by strength squared. A gang sharing
+a district with one other gang at full strength, in a short stretch and before rebuilding:
+
+| Ordinary kills | Strength | Share of the district |
+|---|---|---|
+| 0 | 100 | 50% |
+| 20 | 84 | 41% |
+| 40 | 68 | 32% |
+| 56 | 55 | 23% |
+| 80 | 36 | 11% |
+
+They rebuild 12 strength an in-game day and never fall below 15. Under 55 a gang at war with them
+from next door moves in. The Hub's Turf screen shows all of it.
+
+What is missing:
+
+- **It is citywide.** A Tyger Claw killed anywhere costs the same strength, which lowers their share
+  of every district at once. Where V did it makes no difference, and that is the player's request.
+- **V cannot choose a side.** Hurting one gang helps whoever is next door, by accident. A gang that
+  likes V gets nothing from V except a thank-you text when it moves in.
+
+Ideas:
+
+- **Pressure by district.** Keep a number per gang and district, fed from the district of the kill
+  (`CBEventDistrict`), and apply it to that gang's weight in `CBTurfContenders`. It decays the way
+  strength recovers. Arithmetic on our own numbers, so it touches no engine state.
+- **Backing a gang.** One gang at a time, chosen on the Turf screen with the Hub's existing action
+  button. Their gains become V's news, and holding a district for them pays or raises standing.
+- **Show V's hand.** The Turf screen says what V has done to a district, so the effect can be seen.
+
+The same player likes gangs going extinct. Here a gang is weakened and never wiped out, on purpose
+(`GangStrengthFloor`), so that would be a design change rather than an addition.
+
 ## Requests after 1.6.8
 
 All from one play session, all fixed in 1.7.0. None of this has been played yet: it compiles and

@@ -464,7 +464,8 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // Said in the log every half minute: a search that finds nobody looks exactly like a search
     // that is not happening, and only this can tell the two apart.
     if now % 30 == 0 {
-      CBLog.Info(n"Spawn", s"Searching: \(unseen)s unseen of \(sys.GetHuntGiveUpTicks()), ring \(RoundF(CBHuntRadius(sys)))m, nearest of ours \(RoundF(nearest))m\(carComing ? ", a car on its way" : "").");
+      let carNote = carComing ? ", a car on its way" : "";
+      CBLog.Info(n"Spawn", s"Searching: \(unseen)s unseen of \(sys.GetHuntGiveUpTicks()), ring \(RoundF(CBHuntRadius(sys)))m, nearest of ours \(RoundF(nearest))m\(carNote).");
     }
     if !carComing && (unseen >= sys.GetHuntGiveUpTicks()
        || (nearest >= CBConfig.ChaseLoseDistance() && sys.BumpChaseAwayTicks() >= CBConfig.ChaseLoseTicks())) {

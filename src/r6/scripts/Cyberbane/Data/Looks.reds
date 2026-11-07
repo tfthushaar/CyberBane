@@ -18,14 +18,15 @@ public func CBSeedLooks(c: ref<CyberbaneContent>) -> Void {
   // had ever been put in it, so the setting did nothing. This is everything in the game's clothing
   // files that belongs to a gang by name: the nomads, and one Wraiths vest. Other gangs' colours
   // are on their NPCs' appearances, which are not items V can wear.
-  for nomad in [t"Items.Nomad_01_Set_Boots", t"Items.Nomad_01_Set_Jacket", t"Items.Nomad_01_Set_Mask",
+  let nomads: array<TweakDBID> = [t"Items.Nomad_01_Set_Boots", t"Items.Nomad_01_Set_Jacket", t"Items.Nomad_01_Set_Mask",
                 t"Items.Nomad_01_Set_Pants", t"Items.Nomad_01_Set_TShirt", t"Items.Q000_Nomad_Boots",
                 t"Items.Q000_Nomad_Pants", t"Items.Q000_Nomad_TShirt", t"Items.Q000_Nomad_Vest",
                 t"Items.Q000_Nomad_noPatch_Vest", t"Items.Q000_half_Nomad", t"Items.Q114_Aldecaldo_Jacket",
                 t"Items.Q301_Nomad_MA_Boots", t"Items.Q301_Nomad_MA_Face", t"Items.Q301_Nomad_MA_InnerTorso",
                 t"Items.Q301_Nomad_MA_OuterTorso", t"Items.Q301_Nomad_MA_Pants", t"Items.Q301_Nomad_WA_Boots",
                 t"Items.Q301_Nomad_WA_Face", t"Items.Q301_Nomad_WA_InnerTorso",
-                t"Items.Q301_Nomad_WA_OuterTorso", t"Items.Q301_Nomad_WA_Pants"] {
+                t"Items.Q301_Nomad_WA_OuterTorso", t"Items.Q301_Nomad_WA_Pants"];
+  for nomad in nomads {
     CBGangClothes(c, nomad, n"Aldecaldos");
   }
   CBGangClothes(c, t"Items.SQ021_Wraiths_Vest", n"Wraiths");
