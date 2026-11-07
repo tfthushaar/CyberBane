@@ -135,6 +135,55 @@ func CBPointOutOfSight(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vect
   return sqs.SyncRaycastByCollisionGroup(eye, head, n"Static", res);
 }
 
+// Could V see a body standing here, whichever way V turns in the next few seconds? (1.7.1)
+//
+// CBPointOutOfSight is the question for somebody who is about to walk at V, and both of its
+// allowances only make sense for them: a point behind V passes with nothing in the way, and so
+// does one far off in front, because either way what the player sees is a person walking into
+// frame. Somebody who will stand still is different. They are placed at the very spot V is
+// heading for, and the body appears a few seconds after the point is chosen, so "behind V" is
+// exactly where a player who is looking for them turns next, and "far in front" is the spot they
+// are walking towards. That is "he wasn't there, then he spawned in front of me".
+//
+// So this asks about walls, not about facing. A body is hidden only when V's line of sight to
+// it is blocked at the shins, the waist and the top of the head: one ray let a lamp post or a
+// railing count as cover. Turning on the spot changes nothing a wall decides. The one
+// allowance kept is the distant one, out of frame and far enough to be a dot on the street.
+//
+// No spatial queries at all is no opinion, as everywhere in this file, and falls back to the
+// bearing test rather than refusing every placement for good.
+public func CBPointHiddenFrom(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector4) -> Bool {
+  let sqs = GameInstance.GetSpatialQueriesSystem(game);
+  if !IsDefined(sqs) {
+    return CBPointOutOfSight(game, ppos, fwd, at);
+  }
+  let eye = new Vector4(ppos.X, ppos.Y, ppos.Z + CBConfig.SpawnEyeHeight(), 1.0);
+  let heights: array<Float>;
+  ArrayPush(heights, CBConfig.HiddenRayLow());
+  ArrayPush(heights, CBConfig.HiddenRayMid());
+  ArrayPush(heights, CBConfig.HiddenRayHigh());
+  let blocked = true;
+  let i = 0;
+  while i < ArraySize(heights) && blocked {
+    let part = new Vector4(at.X, at.Y, at.Z + heights[i], 1.0);
+    let res: TraceResult;
+    blocked = sqs.SyncRaycastByCollisionGroup(eye, part, n"Static", res);
+    i += 1;
+  }
+  if blocked {
+    return true;
+  }
+  // In plain view of V's position. Only the far allowance is left: out of frame, and far.
+  let toPoint = new Vector4(at.X - ppos.X, at.Y - ppos.Y, 0.0, 0.0);
+  let dist = Vector4.Length(toPoint);
+  let flatLen = SqrtF(fwd.X * fwd.X + fwd.Y * fwd.Y);
+  if dist < CBConfig.SpawnInViewFarDistance() || flatLen <= 0.01 {
+    return false;
+  }
+  let facing = (fwd.X * toPoint.X + fwd.Y * toPoint.Y) / (flatLen * dist);
+  return facing <= CBConfig.SpawnMaxFacingCosine();
+}
+
 func CBPointIsFree(used: array<Vector4>, p: Vector4) -> Bool {
   let i = 0;
   while i < ArraySize(used) {

@@ -13,9 +13,10 @@
 //   Tip        Now and then, a gang at war with theirs, or somebody on the street, texts V where
 //              the Rival was seen and a pin goes on the map. One lead at a time; it goes stale
 //              after a day, because people move on.
-//   Waiting    V walks up to the pin. Inside LairPlaceDistance, on foot, out of combat, with the
+//   Waiting    V comes to the pin. Inside LairPlaceDistance, on foot, out of combat, with the
 //              world settled and nothing else of Cyberbane's out or on its way, the Rival is put
-//              there - idle, given no orders at all, and tagged CB_Lair instead of CB_Rival.
+//              there - at the place or round it, somewhere V cannot see (1.7.1), idle, given no
+//              orders at all, and tagged CB_Lair instead of CB_Rival.
 //   The fight  The moment they are in combat or V has hurt them, the tag becomes CB_Rival and
 //              from then on it is an ordinary Rival encounter, run entirely by the code that
 //              already runs every other one: the hunt, the escape, the mercy, the death.
@@ -376,27 +377,33 @@ func CBLeadPinTick(sys: ref<CyberbaneSystem>, game: GameInstance, on: Bool) -> V
     return;
   }
   let data: MappinData;
-  // A pin for a place, drawn the way the game draws a waypoint somebody dropped for you.
+  // A pin for a place, wearing Cyberbane's own mark (UI/RivalPin.reds).
   //
-  // "I got a text that they'd put it on my map, but I can't for the life of me find it." This was
-  // the gang-business variant the Rival markers use, and for a pin on a place that was the wrong
-  // answer three times over, all of it in the game's own UI scripts:
-  //   - the minimap never drew it. Its profile list (minimap.script, CreateMappinUIProfile) has no
-  //     entry for that variant on a plain position pin, so it fell through to MappinUIProfile.None;
-  //   - the world map drew it with the NCPD scanner icon (map_bounty, mappinUtils.script), in the
-  //     police group with the police tooltip (worldMap.script, IsPoliceTooltip), so in Watson it sat
-  //     among dozens of identical hustle icons, collapsed into their clusters at a distance and
-  //     hidden whenever the NCPD filter was off;
-  //   - hovering it described a police activity, not a Rival.
-  // CustomPositionVariant is the one variant the minimap always draws for a position pin
-  // (MappinUISpawnProfile.Always), with its own icon on the world map and a plain "custom
-  // location" tooltip that asks the journal for nothing. Select it on the map and track it like any
-  // other pin to get a route. The player's own waypoint is made and removed by the map itself
-  // (worldMap.script, TrackCustomPositionMappin); Cyberbane never touches that one.
+  // It has been wrong twice. Up to 1.6.4 it was the gang-business variant the Rival markers used,
+  // which the game draws as an NCPD scanner hustle (map_bounty, mappinUtils.script): on the map
+  // it was one more hustle among dozens, and the minimap never drew it at all.
+  //
+  // 1.6.5 to 1.7.0 used CustomPositionVariant, and a player on 1.7.0 still found nothing but the
+  // NCPD icons where the text said to look. That variant is not a look, it is a role: the one
+  // waypoint the player drops on the map. The game keeps exactly one pin in that role and finds
+  // it by variant. The map writes to whichever one it finds - another mod that registered a
+  // second one saw its pin moved to a spot nobody chose (spuddeh's NC Zoning District Guide,
+  // WorldActions.reds) - and on 2.31 the auto-drive deletes any tracked pin of that variant when it
+  // arrives (autoDriveSystem.script, OnStopAutoDriveOnDestinationReachedRequest). So the pin was
+  // not where the Rival was, and Cyberbane, which owns neither of those, could not keep it there.
+  //
+  // Now the variant only decides where the pin may live, never what it looks like. ApartmentVariant:
+  // the world map draws it, no 2.31 or 2.5 script reads it, it is not a quest pin so it can be
+  // tracked for a route, and its filter is Your Property, with the player's own waypoint and cars,
+  // which is on unless the player turns it off. The caption carries Cyberbane's tag and the Rival's
+  // name, and every controller that draws a pin with that tag draws Cyberbane's gold mark and the
+  // Rival's name instead of an apartment. Through walls, as a destination is: the reason the people
+  // markers stay off that does not apply to a place.
   data.mappinType = t"Mappins.DefaultStaticMappin";
-  data.variant = gamedataMappinVariant.CustomPositionVariant;
+  data.variant = gamedataMappinVariant.ApartmentVariant;
   data.active = true;
-  data.visibleThroughWalls = false;
+  data.visibleThroughWalls = true;
+  data.debugCaption = CBRivalPinCaption(CBRivalDisplayName(sys.GetContent(), CBSightingRival(sys, lead)));
   CBTrace("map: pin on a rival's last known place");
   let id = ms.RegisterMappin(data, CBSightingPos(lead));
   sys.SetLeadPin(leadId, id);
@@ -524,8 +531,12 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
   }
   let center = CBSightingPos(lead);
   let ppos = player.GetWorldPosition();
-  let d = Vector4.Distance(ppos, center);
-  if d > CBConfig.LairPlaceDistance() || d < CBConfig.LairMinDistance() {
+  // Anywhere within reach of the place, the place itself included. This used to refuse V closer
+  // than 30 m, and getting out of a car at the pin, or walking straight up to it, is exactly
+  // that: so the place was empty when V arrived, and the Rival was only put there once V had
+  // wandered back out past 30 m looking for them - into whatever V had just turned away from.
+  // How close a spot may be to V is now a test on the spot, below.
+  if Vector4.Distance(ppos, center) > CBConfig.LairPlaceDistance() {
     return;
   }
   let r = CBSightingRival(sys, lead);
@@ -546,18 +557,28 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
     return;
   }
   let fwd = player.GetWorldForward();
-  let radius = CBConfig.LairSearchRadius();
-  // The spot itself, then six round it. Every test is one an ordinary arrival passes: a floor
-  // under them, on the navmesh, not at a job or in a safe area, a path to V, and not in front of
-  // V's eyes. The first spot that passes them all is used; none passing means not this time.
+  let inner = CBConfig.LairSearchRadius();
+  let outer = CBConfig.LairOuterSearchRadius();
+  // The spot itself, then six round it, then six further out between those. Every test is one
+  // an ordinary arrival passes - a floor under them, on the navmesh, not at a job or in a safe
+  // area, a path to V - except the one about being seen. Somebody who is going to stand still
+  // where V is looking for them has to be put where V cannot see them at all, whichever way V
+  // turns while the body streams in (CBPointHiddenFrom); the walk-in test let a point merely
+  // behind V through. The cheap rays go before the path query. The first spot that passes is
+  // used; none passing means not this time, and the next try is three seconds off.
   let k = 0;
-  while k < 7 {
+  while k < 13 {
     let px = center.X;
     let py = center.Y;
-    if k > 0 {
-      let ang = Cast<Float>(k - 1) * 1.0472;
-      px = center.X + CosF(ang) * radius;
-      py = center.Y + SinF(ang) * radius;
+    if k > 0 && k <= 6 {
+      let angIn = Cast<Float>(k - 1) * 1.0472;
+      px = center.X + CosF(angIn) * inner;
+      py = center.Y + SinF(angIn) * inner;
+    }
+    if k > 6 {
+      let angOut = Cast<Float>(k - 7) * 1.0472 + 0.5236;
+      px = center.X + CosF(angOut) * outer;
+      py = center.Y + SinF(angOut) * outer;
     }
     k += 1;
     let snapped: Vector4;
@@ -565,7 +586,7 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
     if CBNavSnap(game, px, py, center.Z, snapped) && CBSettleOnGround(game, snapped, at)
        && Vector4.Distance(at, ppos) >= CBConfig.LairMinDistance()
        && !CBSafeAreaBlocksSpawn(game, at)
-       && CBPointOutOfSight(game, ppos, fwd, at)
+       && CBPointHiddenFrom(game, ppos, fwd, at)
        && CBPointReachable(game, at, ppos) {
       // Facing anywhere but at V: they are minding their own business.
       let yaw = RandRangeF(0.0, 6.2831);

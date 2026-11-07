@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.7.0).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.7.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -139,10 +139,13 @@ in active development. This page describes what the mod does and how it installs
   a gang-mate gunning for you.
 - **You can go after them too.** A Rival who walks away from you alive gets seen somewhere
   afterwards. Now and then a gang at war with theirs, or somebody on the street, texts you where,
-  and a pin goes on your map and minimap: the same marker as a waypoint, labelled as a custom
-  location. Select it on the map and track it for a route. Go there on foot and they are there,
-  not expecting anybody: catch
-  them before they react and the street hears about it. Wait too long and they move on. They still
+  and a pin goes on your map and minimap: Cyberbane's own mark, a gold bounty-hunt glyph that
+  nothing else in the game puts on a map, and the same mark a Rival carries on your minimap when
+  they come for you. Hover it on the map and it names the Rival. Select it and track it for a
+  route. It sits under the **Your Property** filter, with your own waypoint and cars, so it only
+  disappears if you turn that filter off. Get there and get out of the car, and
+  they are there, somewhere round the place you cannot see from where you stand, not expecting
+  anybody: catch them before they react and the street hears about it. Wait too long and they move on. They still
   come for you on their own schedule as well. **Tips on where Rivals are**, under Rivals, turns
   this off.
 - **Rivals have traits, and weak spots.** A Tough Rival takes more killing, an Armored one
@@ -284,6 +287,11 @@ versions of the required frameworks that match your game.
 The 2.31 row is the last build of each framework made for 2.31; every later build needs 2.5. Use
 the builds for the patch you are on and not the other one. Every other patch is treated as
 unsupported until it has been checked, and a compatibility note goes out with every release.
+
+If the game shows a red error when it starts, that is redscript saying a script did not compile,
+and none of Cyberbane is running. Please send `r6\logs\redscript_rCURRENT.log` from your game
+folder with the report, along with your game version: the log names the exact file, line and
+other mod involved, which is the one thing that cannot be worked out without it.
 
 ## Installation
 
@@ -468,6 +476,11 @@ stronger one wins and every name you put down weakens their gang, are the idea b
 turf wars. Different mod, good ideas. No code from that mod is used here.
 
 Thanks to DigitalVixen for Street Sense, which Cyberbane detects and makes room for.
+
+Thanks to Spuddeh for NC Zoning District Guide (MIT). Its notes on why a mod's map pin must never
+be the player's waypoint, and how to give a pin its own face on the map, the minimap and in the
+world without an archive, are how the pin on a Rival's place became Cyberbane's own. Cyberbane's
+version is written for its own pin; the technique and the two crashes to avoid are theirs.
 
 Thanks to everyone who reported bugs and sent in crash reports, and especially to r3bels90, who
 pinned down the exact cause of the world-transition crash and made the 0.1.6 fix possible. This
