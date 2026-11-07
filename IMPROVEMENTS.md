@@ -29,10 +29,25 @@ is on 1.7.0. `CustomPositionVariant`, which the pin used from 1.6.5, is the role
 waypoint, not a look: the map keeps one pin in that role and writes to whichever it finds (another
 mod saw its pin moved to a spot nobody chose: spuddeh's NC Zoning District Guide, `WorldActions.reds`),
 and 2.31's auto-drive unregisters any tracked pin of that variant on arrival
-(`autoDriveSystem.script`). The pin is now `HuntForPsychoVariant`: no 2.31 or 2.5 script owns it, the
-tooltip is null-safe with no journal entry, it has its own icon, and CET mods mark spawned hostiles
-with exactly this `Mappins.DefaultStaticMappin` pairing. It is not drawn on the minimap until it is
-tracked (`minimap.script` has no plain-position entry for it), which the readme says.
+(`autoDriveSystem.script`).
+
+**"I don't want a cyberpsycho pin. I want a proper custom pin that can't be confused with anything
+else."** Done in 1.7.1 (`UI/RivalPin.reds`). Any vanilla variant brings its own icon, label and
+filter (`HuntForPsychoVariant` is filed under the Cyberpsycho filter, `world_map.tweak`), so the look
+no longer comes from the variant. The base is `ApartmentVariant`: drawn on the world map, read by no
+2.31 or 2.5 script, player-trackable, and in `CommonFilterGroup` (Your Property, with the player's
+own waypoint and vehicles). `debugCaption` carries `CB_RIVAL|<name>`, and five wraps redraw any pin
+with that tag: `BaseWorldMapMappinController.UpdateIcon`, `MinimapPOIMappinController.UpdateIcon`,
+`QuestMappinController.UpdateIcon` (the world pin, whose `displayName` would otherwise print the
+tag within `showNameMinRange`), `WorldMapTooltipController.SetData` (title and description) and
+`MinimapContainerController.CreateMappinUIProfile` (the waypoint's own minimap profile, so it is on
+the minimap untracked). The glyph is `ChoiceIcons.BountyHuntIcon` (`mappin_icons.inkatlas`,
+`bounty_hunt`), which on both patches no map variant, pin record or script draws: the same mark as
+the Rival minimap marker. Tinted `CBHudAmber`, unbound first. Technique and both crash traps from
+Spuddeh's NC Zoning District Guide (MIT, `MapMarker.reds`): identity is read only where the mappin is
+alive, never in `UpdateTrackedState`. All five signatures match the decompiled game code exactly.
+A glyph that is Cyberbane's alone, rather than an unused game one, needs an `.archive` with its own
+atlas, which needs WolvenKit.
 
 The markers on people (gold, purple, white) were traced through `minimap.script` and
 `minimapMappins.script` on both patches: a pin with `GameplayRoleMappinData` goes to the device mappin,

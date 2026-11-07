@@ -377,7 +377,7 @@ func CBLeadPinTick(sys: ref<CyberbaneSystem>, game: GameInstance, on: Bool) -> V
     return;
   }
   let data: MappinData;
-  // A pin for a place, on the game's own marker for somebody dangerous to go and find.
+  // A pin for a place, wearing Cyberbane's own mark (UI/RivalPin.reds).
   //
   // It has been wrong twice. Up to 1.6.4 it was the gang-business variant the Rival markers used,
   // which the game draws as an NCPD scanner hustle (map_bounty, mappinUtils.script): on the map
@@ -392,18 +392,18 @@ func CBLeadPinTick(sys: ref<CyberbaneSystem>, game: GameInstance, on: Bool) -> V
   // arrives (autoDriveSystem.script, OnStopAutoDriveOnDestinationReachedRequest). So the pin was
   // not where the Rival was, and Cyberbane, which owns neither of those, could not keep it there.
   //
-  // HuntForPsychoVariant is owned by nothing: no system in 2.31 or 2.5 looks it up, moves it or
-  // removes it; the only script that reads it is the map tooltip, which with no journal entry
-  // behind it falls back to the variant's own label (worldMapTooltips.script). It draws its own
-  // icon, the one for a cyberpsycho to hunt (hunt_for_psycho), not the hustle icon, and other
-  // mods mark the hostiles they place exactly this way. It is not a quest pin, so it can be
-  // selected and tracked from the map like any other, and a tracked pin is on the minimap and
-  // has a route (minimap.script, TrackedMappinControllerCustomData). Through walls, as a
-  // destination is: the reason the people markers stay off that does not apply to a place.
+  // Now the variant only decides where the pin may live, never what it looks like. ApartmentVariant:
+  // the world map draws it, no 2.31 or 2.5 script reads it, it is not a quest pin so it can be
+  // tracked for a route, and its filter is Your Property, with the player's own waypoint and cars,
+  // which is on unless the player turns it off. The caption carries Cyberbane's tag and the Rival's
+  // name, and every controller that draws a pin with that tag draws Cyberbane's gold mark and the
+  // Rival's name instead of an apartment. Through walls, as a destination is: the reason the people
+  // markers stay off that does not apply to a place.
   data.mappinType = t"Mappins.DefaultStaticMappin";
-  data.variant = gamedataMappinVariant.HuntForPsychoVariant;
+  data.variant = gamedataMappinVariant.ApartmentVariant;
   data.active = true;
   data.visibleThroughWalls = true;
+  data.debugCaption = CBRivalPinCaption(CBRivalDisplayName(sys.GetContent(), CBSightingRival(sys, lead)));
   CBTrace("map: pin on a rival's last known place");
   let id = ms.RegisterMappin(data, CBSightingPos(lead));
   sys.SetLeadPin(leadId, id);

@@ -5,8 +5,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [1.7.1] - 2026-11-07
 
-The pin a tip puts on your map stays where the Rival is, and the Rival is waiting there when you
-arrive instead of appearing in front of you.
+The pin a tip puts on your map is Cyberbane's own and stays where the Rival is, and the Rival is
+waiting there when you arrive instead of appearing in front of you.
 
 Your saved Cyberbane progress carries over. Nothing stored in your save changed shape.
 
@@ -15,11 +15,17 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   Since 1.6.5 the pin used the variant of the waypoint you drop on the map yourself. That variant is
   not a look but a role: the game keeps one waypoint, finds it by that variant, and moves whichever
   pin it finds. So the pin was not where the Rival was, and anything that touched your own waypoint
-  could take it. It now uses the game's marker for a dangerous person to hunt, the one a cyberpsycho
-  sighting has, which nothing in the game claims. It has its own icon on the map, not the hustle
-  icon, and hovering it reads Cyberpsycho Sighting because that is the game's name for the marker.
-  Select it and track it, and it is on your minimap with a route. A pin from before this update was
-  never kept in your save, so the new one goes up as soon as you load.
+  could take it.
+- **The pin is Cyberbane's own now, and cannot be mistaken for anything else.** Every pin the game
+  has already means something - a hustle, a gig, a cyberpsycho, your waypoint - so the pin no longer
+  wears one. On the world map, the minimap and in the world it is a gold bounty-hunt glyph: a mark
+  the game has but never puts on any map, and the same one a Rival carries on your minimap when they
+  come for you, so the person and their place look like the same thing. Hovering it on the map gives
+  the Rival's name and "Cyberbane Rival. Last seen here.", and the pin in the world shows their name
+  when you are close. It is on the minimap from the moment the tip comes in, not only once tracked.
+  Select it and track it for a route. It is listed under the **Your Property** filter, beside your
+  own waypoint and cars. A pin from before this update was never kept in your save, so the new one
+  goes up as soon as you load.
 - **"When I get to his location he isn't there, then he spawns after a few seconds in front of
   me."** A Rival at their place was only ever put there while you were at least 30 m from it, so
   pulling up at the pin, or walking straight to it, found nobody. They went in once you wandered back

@@ -139,9 +139,11 @@ in active development. This page describes what the mod does and how it installs
   a gang-mate gunning for you.
 - **You can go after them too.** A Rival who walks away from you alive gets seen somewhere
   afterwards. Now and then a gang at war with theirs, or somebody on the street, texts you where,
-  and a pin goes on your map: the game's marker for a dangerous person to hunt down, the one it
-  uses for a cyberpsycho sighting, so it stands out from the NCPD icons around it. Select it on the
-  map and track it, and it is on your minimap with a route. Get there and get out of the car, and
+  and a pin goes on your map and minimap: Cyberbane's own mark, a gold bounty-hunt glyph that
+  nothing else in the game puts on a map, and the same mark a Rival carries on your minimap when
+  they come for you. Hover it on the map and it names the Rival. Select it and track it for a
+  route. It sits under the **Your Property** filter, with your own waypoint and cars, so it only
+  disappears if you turn that filter off. Get there and get out of the car, and
   they are there, somewhere round the place you cannot see from where you stand, not expecting
   anybody: catch them before they react and the street hears about it. Wait too long and they move on. They still
   come for you on their own schedule as well. **Tips on where Rivals are**, under Rivals, turns
@@ -474,6 +476,11 @@ stronger one wins and every name you put down weakens their gang, are the idea b
 turf wars. Different mod, good ideas. No code from that mod is used here.
 
 Thanks to DigitalVixen for Street Sense, which Cyberbane detects and makes room for.
+
+Thanks to Spuddeh for NC Zoning District Guide (MIT). Its notes on why a mod's map pin must never
+be the player's waypoint, and how to give a pin its own face on the map, the minimap and in the
+world without an archive, are how the pin on a Rival's place became Cyberbane's own. Cyberbane's
+version is written for its own pin; the technique and the two crashes to avoid are theirs.
 
 Thanks to everyone who reported bugs and sent in crash reports, and especially to r3bels90, who
 pinned down the exact cause of the world-transition crash and made the 0.1.6 fix possible. This
