@@ -37,6 +37,29 @@ Your saved Cyberbane progress carries over. Nothing stored in your save changed 
   turning round shows you nobody appearing. The search covers a wider ring round the place to find a
   spot like that.
 
+- **"Crews get stuck inside buildings and underground so cannot be killed."** Part of this was
+  1.7.0, which let cars arrive anywhere with a floor and room, and that includes a car park or a
+  warehouse. But the same gap ran through everything that puts somebody in the world, so it is
+  closed at each of them:
+  - A route to you now has to be a real one. Somebody on the level below used to count as able to
+    reach you because a ramp three blocks away joined the two.
+  - Every member of a group has to pass. Only the first did, and the rest just had to be within
+    eighteen metres, through a wall or through the floor.
+  - While you are out in the open, people come from out in the open, not from under a roof.
+  - A car needs open sky and a route to you, on every way of finding it a spot, and there are twice
+    as many spots to choose from, so cars keep coming. A car that still lands indoors is sent back
+    before anybody gets in, and they come on foot.
+  - A car's crew are put on the ground beside it. The spot used to be a sum, which could be inside a
+    wall or under a slope, and that is where they stayed if they did not get a seat.
+  - Anybody who still ends up cut off, however it happened, stops holding up the fight, and is taken
+    out once you cannot see them. This used to happen only past 45 m, so somebody stuck right under
+    you could never be cleared.
+- **"Map marker is non-existent for leaders."** Since 1.7.0 the people hunting you were only on the
+  minimap: moving off the NCPD icon also took everybody off the big map, so a leader you went
+  looking for was nowhere on it. Everyone the mod sends is on the big map again, in the same colours
+  as the minimap, under the **Your Property** filter. Hover one to see who it is. A marker also comes
+  down when the person it is on leaves the area, and is never left behind on an empty street.
+
 ### Known
 - **"1.7 gets me a red error."** That is redscript reporting a script that did not compile. Every
   file was checked against the game's own scripts for 2.31 and 2.5 and the Codeware build each one

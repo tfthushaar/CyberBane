@@ -72,8 +72,82 @@ func CBPointReachable(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
   if !IsDefined(nav) {
     return true;   // cannot tell; do not silently refuse every spawn in the game
   }
-  let path = nav.CalculatePathOnlyHumanNavmesh(from, to, NavGenAgentSize.Human, 5.0);
-  return IsDefined(path) && path.CalculateLength() > 0.0;
+  let path = nav.CalculatePathOnlyHumanNavmesh(from, to, NavGenAgentSize.Human, CBConfig.PathEndTolerance());
+  if !IsDefined(path) {
+    return false;
+  }
+  // A route has to be a real one, as well as existing. The navmesh joins almost everything to
+  // everything eventually: a car park under the street is connected to the street by a ramp three
+  // blocks away, so somebody ten metres beneath V "could walk to V" and would spend the whole
+  // fight trying. Every placement, every search point and the cut-off test below all ask here, so
+  // this is the one place that decides it.
+  let walk = path.CalculateLength();
+  return walk > 0.0
+      && walk <= Vector4.Distance(from, to) * CBConfig.PathDetourMax() + CBConfig.PathDetourSlack();
+}
+
+// Is there a ceiling over this point?
+//
+// The game has no way to ask whether a point is indoors: IsEntityInInteriorArea needs an entity,
+// and the navmesh runs straight through locked doors, so a path says nothing about it. A roof is the
+// honest test that is left, and it is what indoors and underground have in common. Several rays a
+// few metres apart, because a lamp arm, a sign or an awning covers one of them and a ceiling covers
+// them all. Static and terrain, so a tunnel counts. No spatial queries is no opinion, as everywhere
+// in this file.
+public func CBPointCovered(game: GameInstance, at: Vector4) -> Bool {
+  let sqs = GameInstance.GetSpatialQueriesSystem(game);
+  if !IsDefined(sqs) {
+    return false;
+  }
+  let s = CBConfig.CeilingRaySpread();
+  let dx: array<Float>;
+  let dy: array<Float>;
+  ArrayPush(dx, 0.0);
+  ArrayPush(dy, 0.0);
+  ArrayPush(dx, s);
+  ArrayPush(dy, 0.0);
+  ArrayPush(dx, -s);
+  ArrayPush(dy, 0.0);
+  ArrayPush(dx, 0.0);
+  ArrayPush(dy, s);
+  ArrayPush(dx, 0.0);
+  ArrayPush(dy, -s);
+  let hits = 0;
+  let i = 0;
+  while i < ArraySize(dx) {
+    let low = new Vector4(at.X + dx[i], at.Y + dy[i], at.Z + CBConfig.CeilingRayStart(), 1.0);
+    let high = new Vector4(at.X + dx[i], at.Y + dy[i], at.Z + CBConfig.CeilingRayEnd(), 1.0);
+    let res: TraceResult;
+    if sqs.SyncRaycastByCollisionGroup(low, high, n"Static", res)
+       || sqs.SyncRaycastByCollisionGroup(low, high, n"Terrain", res) {
+      hits += 1;
+    }
+    i += 1;
+  }
+  return hits >= CBConfig.CeilingRaysNeeded();
+}
+
+// Does this arrival have to come from under the open sky? When V is, yes. V indoors, or under a
+// roof of some other kind, and the people coming are under one too.
+func CBArrivalOpenAir(game: GameInstance, ppos: Vector4) -> Bool {
+  return !CBPlayerIndoors(game) && !CBPointCovered(game, ppos);
+}
+
+// May somebody be put here? Every body of every group, on every placement route, comes through this.
+//
+// Only the first body used to be asked. The rest had only to be within eighteen metres of it, in a
+// straight line and in any direction, so a group formed up on the street could have members on the
+// far side of a wall, or on the level below, with nothing to connect them to anybody. Each is now
+// tied to the one before: to V for the first, to the first for the rest, which is a short path.
+func CBPointArrivable(game: GameInstance, at: Vector4, used: array<Vector4>, ppos: Vector4,
+                      openAir: Bool) -> Bool {
+  if openAir && CBPointCovered(game, at) {
+    return false;
+  }
+  if ArraySize(used) == 0 {
+    return CBPointReachable(game, at, ppos);
+  }
+  return CBPointReachable(game, at, used[0]);
 }
 
 // Has somebody already been put here?
@@ -311,8 +385,7 @@ func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
         if facing <= CBConfig.SpawnMaxFacingCosine() && away >= CBConfig.SpawnMinDistance()
            && AbsF(found.Z - ppos.Z) <= CBConfig.GroundMaxDrop() {
           // A point they cannot walk from is a point they will stand on forever.
-          let path = nav.CalculatePathOnlyHumanNavmesh(found, ppos, NavGenAgentSize.Human, 5.0);
-          if IsDefined(path) && path.CalculateLength() > 0.0 {
+          if CBPointReachable(game, found, ppos) {
             anchor = found;
             return true;
           }
@@ -485,6 +558,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   }
   let ppos = player.GetWorldPosition();
   let fwd = player.GetWorldForward();
+  let openAir = CBArrivalOpenAir(game, ppos);
 
   // Where the group forms up. The navmesh anchor is the good answer; the flat offset behind V
   // is the old one, kept because interiors and some streamed-in areas have no navmesh and a
@@ -514,10 +588,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let p = navPts[n];
       n += 1;
       let at: Vector4;
-      // The first body of a group is path-checked against V. The rest only have to form up
-      // near it, which is both cheaper than a path calculation each and better behaviour:
-      // a squad that arrives together reads as a squad. If the first point is connected to
-      // the player and the others are within sight of it, so are they.
+      // The rest of a group form up near the first, because a squad that arrives together reads
+      // as a squad, and every one of them has to be joined to the group (CBPointArrivable).
       let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at)
                && !CBSafeAreaBlocksSpawn(game, at);
       // Nobody appears where the player is looking. Only the first body of a group is tested:
@@ -526,12 +598,11 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       if ok && ArraySize(used) == 0 {
         ok = CBPointOutOfSight(game, ppos, fwd, at);
       }
+      if ok && ArraySize(used) > 0 {
+        ok = Vector4.Distance(at, used[0]) <= CBConfig.SpawnGroupRadius();
+      }
       if ok {
-        if ArraySize(used) == 0 {
-          ok = CBPointReachable(game, at, ppos);
-        } else {
-          ok = Vector4.Distance(at, used[0]) <= CBConfig.SpawnGroupRadius();
-        }
+        ok = CBPointArrivable(game, at, used, ppos, openAir);
       }
       if ok {
         let facing = Quaternion.BuildFromDirectionVector(
@@ -571,8 +642,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let standing: Vector4;
       if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
          && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing)
-         && (ArraySize(used) > 0 || (CBPointReachable(game, standing, ppos)
-                                     && CBPointOutOfSight(game, ppos, fwd, standing))) {
+         && (ArraySize(used) > 0 || CBPointOutOfSight(game, ppos, fwd, standing))
+         && CBPointArrivable(game, standing, used, ppos, openAir) {
         if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned, extraTag) {
           spawned += 1;
           ArrayPush(used, standing);
@@ -610,8 +681,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop()
            && CBStandOnNavmesh(game, px, py, gz, stand) {
           if CBPointIsFree(used, stand)
-             && (ArraySize(used) > 0 || (CBPointReachable(game, stand, ppos)
-                                         && CBPointOutOfSight(game, ppos, fwd, stand)))
+             && (ArraySize(used) > 0 || CBPointOutOfSight(game, ppos, fwd, stand))
+             && CBPointArrivable(game, stand, used, ppos, openAir)
              && CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned, extraTag) {
             spawned += 1;
             ArrayPush(used, stand);
@@ -649,10 +720,14 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         // It also has to be a free spot and, for the first body, one V can walk to. Neither was
         // checked here, so two bodies could be dropped on one point (the engine then stacks them
         // vertically) or the first could land somewhere sealed off from V.
+        //
+        // The one test not asked here is the roof. This is the last place anybody can be put, close
+        // to V and joined to V, and a street under a walkway should not be able to stop an arrival
+        // outright: a gate that refuses everywhere is how this mod has gone silent before.
         if !CBSafeAreaBlocksSpawn(game, fallback)
            && CBPointOutOfSight(game, ppos, fwd, fallback)
            && CBPointIsFree(used, fallback)
-           && (ArraySize(used) > 0 || CBPointReachable(game, fallback, ppos))
+           && CBPointArrivable(game, fallback, used, ppos, false)
            && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned, extraTag) {
           spawned += 1;
           ArrayPush(used, fallback);

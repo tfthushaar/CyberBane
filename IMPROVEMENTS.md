@@ -88,6 +88,57 @@ interpolation (a log line). The reporter's last working version predates all thr
 written the way the mod always has, with no change in behaviour, so 1.7.1 uses no syntax it did not
 already ship in 1.6.4. This does not prove they were the cause.
 
+### "Crews get stuck inside buildings and underground so cannot be killed"
+
+**Status: fixed in 1.7.1, at the rules rather than the report.** None of it has been played yet.
+
+The rule that was being broken is that nobody is put, or kept, where they and V cannot reach each
+other. It was broken in five places, and 1.7.0's removal of the road gate made one of them much more
+likely.
+
+- `CBPointReachable` accepted any route of any length, so a ramp three blocks away joined a car park
+  to the street above it. It now refuses a route over three times the straight line plus 40 m.
+  Placement, search points and the Rival's place all ask it, and `CBNavAnchor` has stopped carrying
+  its own copy.
+- `CBSpawnGroup` asked only of the first body. The rest had to be within 18 m in a straight line, in
+  any direction. `CBPointArrivable` now ties each to the first, on all four placement routes.
+- Cars: the pursuit-point route had no route test at all. There is no road query to go back to:
+  `NavGenAgentSize` has only `Human`, nothing shows what the navmesh masks mean, and the road query
+  belongs to the prevention system (crash rule 1). So a spot now needs open sky (`CBPointCovered`, a
+  ceiling across five rays, while V is under open sky too), room, and a route. The candidates went
+  from 6 to 12 over a wider range so that cars keep coming. `IsEntityInInteriorArea`, the game's own
+  test, cannot be asked of a point, so it is asked of the car once it exists, before anybody boards.
+- A car's crew were created at an untested sum beside the car. They are now snapped to the ground
+  within 3 m (`ArrivalSeatSnap`).
+- `CBCombatReleaseTick` looked only past 45 m and counted anybody close as engaged, so somebody stuck
+  under V held every release off. `CBCutOffTick` now judges the person: not seeing V, not seen by V,
+  and either on one patch of ground or with no route. Past `ChaseLoseDistance` it leaves them to the
+  chase, so a real escape still counts as one. After 21 s they stop counting as engaged, after 45 s
+  they are removed out of sight, and a Rival among them closes their encounter and comes back later.
+
+A roof cannot stop an arrival outright: the close-in last resort skips that test, because a gate that
+refuses everywhere is how this mod has gone quiet before.
+
+### "Map marker is non-existent for leaders"
+
+**Status: fixed in 1.7.1 as a regression from 1.7.0. What the player means by "leaders" is inferred.**
+
+Nothing in the code treats a Rival who holds the leader's chair differently: same spawn, same tags,
+same pin. What did change is that 1.7.0 moved every marker from `QuestEntityMappinDefinition` to
+`DeviceMappinDefinition`, which has `showOnMap = false`, so nobody the mod sends has been on the big
+map since, and a leader is who somebody goes to the map to find. The pin is now
+`DeviceWorldMapMappinDefinition`, the same pin with the map on, so the minimap and in-world behaviour
+stay as they were. `ApartmentVariant` puts it in the map's Your Property filter, since `GenericRole`
+is in none (a definition's variant list is not enforced: neither the 1.6.8 pin nor the 1.7.0 pin was
+on its list). `UI/RivalPin.reds` draws it on the map from a `CB_RIVAL|+` caption, in the marker's own
+colour, with who it is and "Hunting you."
+
+Pins also have an owner now. psiberx's map pin sample warns that a pin on an object goes to an
+unpredictable place when the object does, and an NPC who streamed out took the pin's id with it.
+`CBMarkerSweep` keeps owners on the system and takes down any pin whose owner has left. **If the
+report comes back on 1.7.1, ask whether the leader was on the minimap in a fight or expected on the
+map before they arrived, because a Rival has no marker until they are in the world.**
+
 Two more ideas, from a different player, recorded and not built. The ideas under each are
 starting points, and none of them has been decided.
 

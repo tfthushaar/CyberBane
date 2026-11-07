@@ -74,6 +74,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_leadPinned: Bool;             // a pin is on the map for somebody's place
   private let m_leadPinRival: Int32;          // whose
   private let m_leadPinId: NewMappinID;
+  private let m_markerOwners: array<EntityID>;   // who each marker is on (UI/Tracking.reds)
+  private let m_markerPins: array<NewMappinID>;  // in step with the owners
   private let m_lastTipAt: Float;             // game seconds of the last tip, this session
   // Where the Rival out in the world was last standing, and on which tick (Rivals/Whereabouts.reds).
   // A Rival V outruns is a long way off by the time the hunt gives up, and often already streamed
@@ -862,6 +864,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_tickCount % 2 == 0 {
       CBCombatReleaseTick(this, game);  // let go of anyone of ours keeping V in combat from afar
     }
+    if this.m_tickCount % CBConfig.CutOffPassTicks() == 0 {
+      CBCutOffTick(this, game);         // and of anyone who cannot get to V, however close
+    }
     // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district)
     // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
     // Prevention-system district/heat queries never fire mid-stream. The director reads the
@@ -1213,6 +1218,48 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetLeadPinRival() -> Int32 {
     return this.m_leadPinRival;
+  }
+
+  public func NoteMarker(owner: EntityID, pin: NewMappinID) -> Void {
+    ArrayPush(this.m_markerOwners, owner);
+    ArrayPush(this.m_markerPins, pin);
+  }
+
+  public func ForgetMarker(owner: EntityID) -> Void {
+    let i = ArraySize(this.m_markerOwners) - 1;
+    while i >= 0 {
+      if Equals(this.m_markerOwners[i], owner) {
+        this.DropMarkerAt(i);
+      }
+      i -= 1;
+    }
+  }
+
+  public func DropMarkerAt(i: Int32) -> Void {
+    if i >= 0 && i < ArraySize(this.m_markerOwners) && i < ArraySize(this.m_markerPins) {
+      ArrayErase(this.m_markerOwners, i);
+      ArrayErase(this.m_markerPins, i);
+    }
+  }
+
+  public func MarkerCount() -> Int32 {
+    return Min(ArraySize(this.m_markerOwners), ArraySize(this.m_markerPins));
+  }
+
+  public func MarkerOwner(i: Int32) -> EntityID {
+    if i >= 0 && i < ArraySize(this.m_markerOwners) {
+      return this.m_markerOwners[i];
+    }
+    let none: EntityID;
+    return none;
+  }
+
+  public func MarkerPin(i: Int32) -> NewMappinID {
+    if i >= 0 && i < ArraySize(this.m_markerPins) {
+      return this.m_markerPins[i];
+    }
+    let none: NewMappinID;
+    return none;
   }
 
   public func GetLeadPinId() -> NewMappinID {

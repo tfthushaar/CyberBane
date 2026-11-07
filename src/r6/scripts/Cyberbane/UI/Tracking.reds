@@ -30,8 +30,8 @@
 //   the colour  gold for a Rival, purple for an apex squad, white for a crew, so the one that
 //               matters can be picked out of a street full.
 //
-// `Mappins.DeviceMappinDefinition` shows on the minimap and over their heads and not on the world
-// map, where a moving enemy is no use anyway. The lead on a Rival's place keeps its own pin there
+// `Mappins.DeviceWorldMapMappinDefinition` shows on the minimap, over their heads and on the big map
+// (1.7.1; the plain device definition, used in 1.7.0, is the one with the map switched off).
 // (Rivals/Whereabouts.reds).
 //
 // ---- And what stays from before ----
@@ -140,16 +140,72 @@ public func CBTrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Voi
   look.m_showOnMiniMap = true;
   look.m_visibleThroughWalls = false;
   let data: MappinData;
-  data.mappinType = t"Mappins.DeviceMappinDefinition";
-  data.variant = gamedataMappinVariant.GenericRoleVariant;
+  // DeviceWorldMapMappinDefinition is the same pin with the big map switched on. 1.7.0 used the
+  // plain device definition, which has showOnMap false, so moving off the NCPD icon also took
+  // everybody off the map: the pins stayed on the minimap and a player looking for a leader on the
+  // big map found nothing. The variant is here for the map's filters alone, because GenericRole is
+  // in none of them. Everything that draws this pin elsewhere goes by the role data, and the map
+  // draws it from the caption (UI/RivalPin.reds).
+  data.mappinType = t"Mappins.DeviceWorldMapMappinDefinition";
+  data.variant = gamedataMappinVariant.ApartmentVariant;
   data.active = true;
   data.visibleThroughWalls = false;
   data.scriptData = look;
+  data.debugCaption = CBHunterPinCaption(CBMarkerName(game, puppet));
   CBTrace("map: marker on a spawned enemy");
   // The same slot the game hangs its own role pins from, so the icon sits over the head.
   puppet.cbMappinId = ms.RegisterMappinWithObject(data, puppet, puppet.GetRoleMappinSlotName());
   puppet.cbMapData = look;
   puppet.cbMapped = true;
+  let sys = CyberbaneSystem.Get(game);
+  if IsDefined(sys) {
+    sys.NoteMarker(puppet.GetEntityID(), puppet.cbMappinId);
+  }
+}
+
+// Who this is, for the map's tooltip.
+func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
+  let sys = CyberbaneSystem.Get(game);
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(sys) || !IsDefined(des) {
+    return "";
+  }
+  let id = puppet.GetEntityID();
+  if des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Lair") {
+    let who = CBFindRivalByBody(sys, id);
+    if !IsDefined(who) {
+      who = sys.FindRivalById(sys.GetActiveRivalId());
+    }
+    return CBRivalDisplayName(sys.GetContent(), who);
+  }
+  let gang = CBCapFirst(CBFactionLabel(CBClassifyFaction(puppet)));
+  if StrLen(gang) == 0 {
+    return des.IsTagged(id, n"CB_Apex") ? "Apex squad" : "Crew";
+  }
+  return gang + (des.IsTagged(id, n"CB_Apex") ? " apex squad" : " crew");
+}
+
+// Take down any pin whose owner has left the world.
+//
+// A pin on an object goes to an unpredictable place when the object does (psiberx's map pin sample
+// says so outright). An NPC who streams out never reaches CBUntrackOnMap, and its id went with the
+// puppet, so nothing could take that pin down. On the minimap it was never noticed. On the big map
+// it would be a marker on somebody who is not there. The owner and the pin are kept on the system
+// for this, and only the entity's id is looked up, so nothing here touches anybody who has gone.
+func CBMarkerSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let ms = GameInstance.GetMappinSystem(game);
+  if !IsDefined(ms) {
+    return;
+  }
+  let i = sys.MarkerCount() - 1;
+  while i >= 0 {
+    let p = GameInstance.FindEntityByID(game, sys.MarkerOwner(i)) as ScriptedPuppet;
+    if !IsDefined(p) || !p.IsAttached() {
+      ms.UnregisterMappin(sys.MarkerPin(i));
+      sys.DropMarkerAt(i);
+    }
+    i -= 1;
+  }
 }
 
 // Take it off again. Called when they die and when the encounter is swept.
@@ -163,6 +219,10 @@ public func CBUntrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> V
   }
   puppet.cbMapped = false;
   puppet.cbMapData = null;
+  let sys = CyberbaneSystem.Get(game);
+  if IsDefined(sys) {
+    sys.ForgetMarker(puppet.GetEntityID());
+  }
 }
 
 // Clear the markers off everyone wearing one of our tags. Harmless on tags that were never
@@ -210,6 +270,7 @@ public func CBMarkerCombatTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   if !IsDefined(des) {
     return;
   }
+  CBMarkerSweep(sys, game);
   // Switched off with people out: their markers go now, not when they next happen to be swept.
   let on = CBMapMarkersOn();
   if !on {

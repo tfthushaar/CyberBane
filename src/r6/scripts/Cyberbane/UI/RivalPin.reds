@@ -44,6 +44,22 @@ public func CBRivalPinCaption(name: String) -> String {
   return CBRivalPinTag() + name;
 }
 
+// The marker on somebody out looking for V, as opposed to the pin on a place (UI/Tracking.reds). It
+// goes through the world map's hooks below and no others: on the minimap and in the world it is an
+// ordinary role pin, with the colour and the fight rules it has always had.
+public func CBHunterPinMark() -> String = "+"
+
+public func CBHunterPinCaption(name: String) -> String {
+  return CBRivalPinTag() + CBHunterPinMark() + name;
+}
+
+public func CBIsHunterPin(mappin: wref<IMappin>) -> Bool {
+  if !IsDefined(mappin) {
+    return false;
+  }
+  return StrBeginsWith(mappin.GetDisplayName(), CBRivalPinTag() + CBHunterPinMark());
+}
+
 // One of ours? Runs for every pin the game draws, so it stays this small.
 public func CBIsRivalPin(mappin: wref<IMappin>) -> Bool {
   if !IsDefined(mappin) {
@@ -56,14 +72,29 @@ public func CBIsRivalPin(mappin: wref<IMappin>) -> Bool {
 public func CBRivalPinName(mappin: wref<IMappin>) -> String {
   let caption = mappin.GetDisplayName();
   let skip = StrLen(CBRivalPinTag());
+  if CBIsHunterPin(mappin) {
+    skip += StrLen(CBHunterPinMark());
+  }
   return StrMid(caption, skip, StrLen(caption) - skip);
 }
 
-public func CBRivalPinColor() -> HDRColor {
+// Rival gold, unless the pin says otherwise: the same three colours as the minimap's markers.
+public func CBRivalPinColor(mappin: wref<IMappin>) -> HDRColor {
+  let look = mappin.GetScriptData() as GameplayRoleMappinData;
+  if IsDefined(look) {
+    if Equals(look.m_quality, gamedataQuality.Epic) {
+      return new HDRColor(0.66, 0.38, 0.92, 1.0);
+    }
+    if Equals(look.m_quality, gamedataQuality.Common) {
+      return CBHudValue();
+    }
+  }
   return CBHudAmber();
 }
 
-public func CBRivalPinSubtitle() -> String = "Cyberbane Rival. Last seen here."
+public func CBRivalPinSubtitle(mappin: wref<IMappin>) -> String {
+  return CBIsHunterPin(mappin) ? "Hunting you." : "Cyberbane Rival. Last seen here.";
+}
 
 // Draw Cyberbane's mark on this controller's icon, if the pin is ours. Safe on any controller: the
 // glyph comes from a record checked at runtime, and with no record the game's own icon is left alone.
@@ -81,7 +112,7 @@ protected final func CBBrandRivalPin() -> Bool {
   let icon = inkWidgetRef.Get(this.iconWidget);
   if IsDefined(icon) {
     icon.UnbindProperty(n"tintColor");
-    icon.SetTintColor(CBRivalPinColor());
+    icon.SetTintColor(CBRivalPinColor(this.GetMappin()));
   }
   return true;
 }
@@ -103,7 +134,7 @@ public func SetData(const data: script_ref<WorldMapTooltipData>, menu: ref<World
     return;
   }
   inkTextRef.SetText(this.m_titleText, CBRivalPinName(mappin));
-  inkTextRef.SetText(this.m_descText, CBRivalPinSubtitle());
+  inkTextRef.SetText(this.m_descText, CBRivalPinSubtitle(mappin));
 }
 
 // ---- The minimap ------------------------------------------------------------------------------
@@ -115,7 +146,7 @@ public func SetData(const data: script_ref<WorldMapTooltipData>, menu: ref<World
 public func CreateMappinUIProfile(mappin: wref<IMappin>, mappinVariant: gamedataMappinVariant,
                                   customData: ref<MappinControllerCustomData>) -> MappinUIProfile {
   let profile = wrappedMethod(mappin, mappinVariant, customData);
-  if !CBIsRivalPin(mappin) {
+  if !CBIsRivalPin(mappin) || CBIsHunterPin(mappin) {
     return profile;
   }
   return MappinUIProfile.Create(r"base\\gameplay\\gui\\widgets\\minimap\\minimap_poi_mappin.inkwidget",

@@ -391,6 +391,9 @@ public abstract class CBConfig {
   public static func SpawnGroupRadius() -> Float = 18.0
   // How far apart the seats of an arriving car are created before they are mounted.
   public static func ArrivalSeatSpread() -> Float = 1.4
+  // A crew member's spot beside the car may move this far to reach the ground. A snap can reach much
+  // further, and past a wall that is the next room.
+  public static func ArrivalSeatSnap() -> Float = 3.0
   // Largest cosine of the angle between V's facing and the spawn point that is still
   // accepted. 0.342 is cos(70 degrees), the same margin They Will Remember uses, expressed in
   // a form with no unit to get wrong.
@@ -418,7 +421,7 @@ public abstract class CBConfig {
   public static func VehicleArrivalDistance() -> Float = 110.0
   // How many of the game's pursuit points a car arrival may try when the navmesh anchor has no
   // room for a car (CBCarSpawnPoint). Each costs two overlap tests and a floor trace.
-  public static func CarPointCandidates() -> Int32 = 6
+  public static func CarPointCandidates() -> Int32 = 12
   // Cars one arrival may bring before the rest walk (setting default), and how many ticks in a
   // row a convoy's next car may fail to be sent before that leg walks in instead.
   public static func CarsPerArrivalDefault() -> Int32 = 4
@@ -885,6 +888,26 @@ public abstract class CBConfig {
   public static func CombatReleaseTicks() -> Int32 = 30
   // Metres closer since the last two-second pass that counts as still coming.
   public static func CombatReleaseClosing() -> Float = 2.0
+  // Somebody cut off from V (Spawn/Hunt.reds, CBCutOffTick). How often they are looked at, how far
+  // they have to move to count as going somewhere, how many routes one pass may work out, when they
+  // stop counting as being in the fight and when they are taken out, in seconds.
+  public static func CutOffPassTicks() -> Int32 = 3
+  public static func CutOffRoam() -> Float = 6.0
+  public static func CutOffPathsPerPass() -> Int32 = 4
+  public static func CutOffQuietTicks() -> Int32 = 21
+  public static func CutOffTicks() -> Int32 = 45
+  // A walking route (CBPointReachable). It may end this far from where it was asked to, for a V
+  // standing off the navmesh, and is a real route up to this many times the straight line plus
+  // this many metres. Further than that it is another level of the city, not a way here.
+  public static func PathEndTolerance() -> Float = 5.0
+  public static func PathDetourMax() -> Float = 3.0
+  public static func PathDetourSlack() -> Float = 40.0
+  // A ceiling (CBPointCovered): rays this far apart, from this far above the point to this far,
+  // and how many of the five have to hit. High enough for a car park, a tunnel or a warehouse.
+  public static func CeilingRaySpread() -> Float = 3.0
+  public static func CeilingRayStart() -> Float = 2.0
+  public static func CeilingRayEnd() -> Float = 10.0
+  public static func CeilingRaysNeeded() -> Int32 = 4
   // How much a gang's own clothes slow that gang down, as a share of the chance they place V.
   public static func GangColoursDisguise() -> Float = 0.35
 

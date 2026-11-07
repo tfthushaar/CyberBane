@@ -227,16 +227,23 @@ public func CBCarRefused(why: String) -> Void {
 
 // Find somewhere a car can actually sit: on the navmesh, out of V's view, with room for it.
 //
-// The navmesh is a pedestrian surface rather than a road, so this is not a guarantee of
-// tarmac. It is a guarantee of open, outdoor, connected ground far enough away not to be seen
-// appearing, which is what the complaint about spawns was really about. The box overlap is
-// what stops a car being dropped into a wall or on top of another vehicle.
+// There is no asking for a road. NavGenAgentSize has only Human, the navmesh masks are used by
+// nothing that says what their bits mean, and the one road query belongs to the prevention system
+// (crash rule 1). So a spot has to have everything a road has, which every route below is tested
+// for: open sky over it (CBPointCovered), a real walking route to V (CBPointReachable, so a crew
+// that has to get out can still come), and room for the car. This was claimed for years and only
+// half true: the pursuit points below had no route test at all, and with the road gate gone in
+// 1.7.0 nothing kept a car out of a car park or a warehouse. A spot that passes all this and is
+// still indoors is caught once the car exists (CBOnArrivalCarAttached).
 func CBCarSpawnPoint(game: GameInstance, dist: Float, out pos: Vector4, out ori: Quaternion) -> Bool {
   let player = GetPlayer(game);
   if !IsDefined(player) {
     return false;
   }
   let ppos = player.GetWorldPosition();
+  // V is outdoors here (CBCarRefusal). Under a bridge or in a road tunnel, a car may come from under
+  // cover as well, because that is where the road is.
+  let openAir = CBArrivalOpenAir(game, ppos);
   // The navmesh anchor first: behind V, connected to V, the right distance away. Nearer, then
   // further, before giving up on it: one parked van at exactly that distance used to cost the car.
   let reach: array<Float>;
@@ -246,7 +253,7 @@ func CBCarSpawnPoint(game: GameInstance, dist: Float, out pos: Vector4, out ori:
   let r = 0;
   while r < ArraySize(reach) {
     let anchor: Vector4;
-    if CBNavAnchor(game, reach[r], anchor) && CBCarFitsAt(game, anchor, ppos, pos, ori) {
+    if CBNavAnchor(game, reach[r], anchor) && CBCarCanSitAt(game, anchor, ppos, openAir, pos, ori) {
       return true;
     }
     r += 1;
@@ -260,7 +267,7 @@ func CBCarSpawnPoint(game: GameInstance, dist: Float, out pos: Vector4, out ori:
   // them, far enough off, and room for a car.
   let pts: array<Vector4>;
   if !CBPursuitPoints(game, ppos, player.GetWorldForward(), CBConfig.CarPointCandidates(),
-                      dist * 0.7, dist * 1.2, pts) {
+                      dist * 0.6, dist * 1.4, pts) {
     return false;
   }
   let fwd = player.GetWorldForward();
@@ -273,11 +280,21 @@ func CBCarSpawnPoint(game: GameInstance, dist: Float, out pos: Vector4, out ori:
        && AbsF(p.Z - ppos.Z) <= CBConfig.GroundMaxDrop()
        && CBSettleOnGround(game, p, ground)
        && CBPointOutOfSight(game, ppos, fwd, ground)
-       && CBCarFitsAt(game, ground, ppos, pos, ori) {
+       && CBCarCanSitAt(game, ground, ppos, openAir, pos, ori)
+       && CBPointReachable(game, ground, ppos) {
       return true;
     }
   }
   return false;
+}
+
+// Open sky and room for a car.
+func CBCarCanSitAt(game: GameInstance, anchor: Vector4, ppos: Vector4, openAir: Bool,
+                   out pos: Vector4, out ori: Quaternion) -> Bool {
+  if openAir && CBPointCovered(game, anchor) {
+    return false;
+  }
+  return CBCarFitsAt(game, anchor, ppos, pos, ori);
 }
 
 // Is there room for a car here? Fills `pos` and `ori` when there is.
@@ -631,6 +648,16 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
   if !IsDefined(des) {
     return;
   }
+  // The game's own word on where this car ended up, which it can only give about something that
+  // exists. A car never comes for a V who is indoors (CBCarRefusal), so a car indoors is a car in
+  // the wrong place: nobody gets in, and this ends the way a car that never turned up ends, with
+  // whoever it was bringing walking in (CBProcessCarTopUp, the apex muster, the Rival's next try).
+  if IsEntityInInteriorArea(car) {
+    CBCarRefused("the spot turned out to be indoors");
+    sys.ClearPendingArrival();
+    CBRemoveOne(game, des, car.GetEntityID(), false, true);
+    return;
+  }
   // The seats this car really has, from its own record (CBVehicleSeatNames).
   let seatNames: array<CName>;
   let rec: ref<Vehicle_Record>;
@@ -698,6 +725,22 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
       at.X + side.X * col * CBConfig.ArrivalSeatSpread() + fwdV.X * row * CBConfig.ArrivalSeatSpread(),
       at.Y + side.Y * col * CBConfig.ArrivalSeatSpread() + fwdV.Y * row * CBConfig.ArrivalSeatSpread(),
       at.Z, 1.0);
+    // On the ground beside the car, and no further than that was ever tested.
+    //
+    // A seat a metre and a half to the side of a car is only a sum: with the car against a wall it
+    // is inside the wall, and on a slope it is under the ground. Mounting teleports them into the
+    // car and hides that. When a mount fails, or they are told to get out, that is where they
+    // are, inside something, shooting nobody and impossible to reach.
+    let snapped: Vector4;
+    let standing: Vector4;
+    if CBNavSnap(game, spot.X, spot.Y, at.Z, snapped) && CBSettleOnGround(game, snapped, standing)
+       && Vector4.Distance(standing, spot) <= CBConfig.ArrivalSeatSnap() {
+      spot = standing;
+    } else {
+      if CBNavSnap(game, at.X, at.Y, at.Z, snapped) && CBSettleOnGround(game, snapped, standing) {
+        spot = standing;
+      }
+    }
     // Seat zero is whoever this arrival is actually about, when it is about somebody.
     let isLead = i == 0 && TDBID.IsValid(leadRecord);
     let seatRecord = isLead ? leadRecord : record;

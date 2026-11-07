@@ -1100,8 +1100,12 @@ func CBTagEngagedNear(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dy
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
-      if Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.CombatReleaseDistance()
-         || CBWitnessCanSee(p, player) {
+      // Close only counts for somebody who can get here. Somebody stuck under V's feet was close
+      // for ever, which held every release in the mod off for the whole of a fight nobody could
+      // finish, themselves included.
+      let close = Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.CombatReleaseDistance()
+                  && p.cbCutOffTicks < CBConfig.CutOffQuietTicks();
+      if close || CBWitnessCanSee(p, player) {
         return true;
       }
     }
@@ -1140,6 +1144,105 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
       }
     }
   }
+}
+
+// ---- Cut off ------------------------------------------------------------------------------------
+//
+// Somebody of ours who cannot get to V and whom V cannot get to. Placement is held to a high standard
+// (CBPointArrivable), but it can only speak for the moment it happens: V moves, a door is locked, a car
+// stops somewhere bad, a body lands in something. And the combat release could not help, because it
+// only looked past 45 m, and "cannot be killed" is exactly somebody below or behind V, close by.
+//
+// So this asks about the person rather than about how they got there. Nobody who can see V, or
+// whom V can see, is ever counted. Everybody else is counted if they are not getting anywhere: still
+// in one small patch of ground, or moving around with no route to V from where they are. Counted
+// long enough, they are taken out, out of V's sight, through the same removal as everybody else.
+// The route is the costly question, so it is asked only of somebody who has moved, a few a pass.
+
+@addField(ScriptedPuppet)
+public let cbCutOffTicks: Int32;
+
+@addField(ScriptedPuppet)
+public let cbCutOffAnchor: Vector4;
+
+@addField(ScriptedPuppet)
+public let cbCutOffAnchored: Bool;
+
+public func CBCutOffTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let player = GetPlayer(game);
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(sys) || !IsDefined(player) || !IsDefined(des) || !des.IsPopulated(n"Cyberbane")
+     || !CBWorldStable(game) {
+    return;
+  }
+  let budget = CBConfig.CutOffPathsPerPass();
+  budget = CBCutOffTag(sys, game, des, player, n"CB_Rival", budget);
+  budget = CBCutOffTag(sys, game, des, player, n"CB_Apex", budget);
+  budget = CBCutOffTag(sys, game, des, player, n"CB_Squad", budget);
+  budget = CBCutOffTag(sys, game, des, player, n"CB_Escort", budget);
+  CBCutOffTag(sys, game, des, player, n"CB_Scout", budget);
+}
+
+func CBCutOffTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                 player: ref<PlayerPuppet>, tag: CName, budget: Int32) -> Int32 {
+  let left = budget;
+  let ids = des.GetTaggedIDs(tag);
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if CBStillStanding(p) && CBNpcSafe(sys, p) {
+      left = CBCutOffOne(sys, game, des, player, p, tag, left);
+    }
+  }
+  return left;
+}
+
+func CBCutOffOne(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                 player: ref<PlayerPuppet>, p: ref<ScriptedPuppet>, tag: CName, budget: Int32) -> Int32 {
+  let id = p.GetEntityID();
+  let at = p.GetWorldPosition();
+  // In a seat is the car's business (CBArrivalDismountCallback). Seeing V or seen by V is a fight.
+  if VehicleComponent.IsMountedToVehicle(game, id) || CBWitnessCanSee(p, player)
+     || !CBOutOfView(game, at) {
+    p.cbCutOffTicks = 0;
+    p.cbCutOffAnchored = false;
+    return budget;
+  }
+  // Left behind is the chase's to judge, and it has a say this does not: a Rival V really has shaken
+  // counts it as an escape (CBChaseGiveUp).
+  if Vector4.Distance(at, player.GetWorldPosition()) > CBConfig.ChaseLoseDistance() {
+    p.cbCutOffTicks = 0;
+    p.cbCutOffAnchored = false;
+    return budget;
+  }
+  let left = budget;
+  if !p.cbCutOffAnchored || Vector4.Distance(at, p.cbCutOffAnchor) > CBConfig.CutOffRoam() {
+    p.cbCutOffAnchor = at;
+    p.cbCutOffAnchored = true;
+    if left <= 0 {
+      return left;   // nobody left to ask about this pass; nothing learned either way
+    }
+    left -= 1;
+    if CBPointReachable(game, at, player.GetWorldPosition()) {
+      p.cbCutOffTicks = 0;
+      return left;
+    }
+  }
+  p.cbCutOffTicks += CBConfig.CutOffPassTicks();
+  if p.cbCutOffTicks >= CBConfig.CutOffTicks() {
+    CBLog.Info(n"Spawn", "One of ours could not get to you and you could not get to them; taking them out.");
+    // A Rival's encounter ends with them. They come back, and it does not count as an escape: V
+    // did nothing to shake them.
+    if Equals(tag, n"CB_Rival") {
+      let r = CBFindRivalByBody(sys, id);
+      if IsDefined(r) {
+        CBCloseRivalEncounter(sys, game, r, p);
+      }
+    }
+    CBRemoveOne(game, des, id, false, true);
+  }
+  return left;
 }
 
 @addField(ScriptedPuppet)

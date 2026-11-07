@@ -69,9 +69,10 @@ in active development. This page describes what the mod does and how it installs
   anything they already had on its way. Any gang that already wants you dead names its price
   once a session without being prompted, so the offer is there whether or not you were around
   the moment they turned on you.
-- **Anyone the mod sends after you is on your minimap.** Rivals, apex squads and crews carry their
-  own marker: gold for a Rival, purple for an apex squad, white for a crew. You can pick the one
-  that matters out of a street full of gangers, and nobody reads as police. It stays on the minimap
+- **Anyone the mod sends after you is on your map and minimap.** Rivals, apex squads and crews carry
+  their own marker: gold for a Rival, purple for an apex squad, white for a crew. You can pick the
+  one that matters out of a street full of gangers, and nobody reads as police. On the big map it
+  sits under the **Your Property** filter, and hovering it says who it is. It stays on the minimap
   for the whole fight. The one over their head comes off while they are fighting you, because the
   game marks enemies in combat by itself. You can narrow them to the named ones or turn them off.
 - **Die, and whoever killed you gets the credit.** The enemy who put you down becomes a named
@@ -182,7 +183,8 @@ in active development. This page describes what the mod does and how it installs
   a safe area or a drive out of the district makes them give up sooner. Until one of them has
   actually found you, you are not in combat: your phone, saving and fast travel all work while
   they are still looking. One line on the HUD says who it is, how big a threat, and whether they
-  are tracking you, on their way, searching, have spotted you or have you.
+  are tracking you, on their way, searching, have spotted you or have you. Anybody who gets stuck
+  somewhere neither of you can reach is taken out of the fight once you cannot see them.
 - **Worth the fight.** Anyone the mod sends who you put down leaves you something, scaled
   to who they were and to your level: cash, ammo and parts from a crew, better parts from a Rival the higher they
   ranked, rare and epic parts from an apex squad with a chance of legendary ones, and a small
