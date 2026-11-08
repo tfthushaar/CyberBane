@@ -70,7 +70,8 @@ private let m_cbEntryAdded: Bool;
 @wrapMethod(gameuiMenuItemListGameController)
 protected func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) {
   wrappedMethod(label, spawnEvent);
-  if this.m_cbEntryAdded || !this.IsA(n"PauseMenuGameController") {
+  // Where the player has moved the Hub to the game's menu instead (UI/HubTab.reds), it is not here.
+  if this.m_cbEntryAdded || !this.IsA(n"PauseMenuGameController") || CBHubAsGameMenuTab() {
     return;
   }
   // Right after the game's own Mods entry (2.5), or its Settings entry where there is no Mods
@@ -90,7 +91,7 @@ protected func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) {
 // did, the fallback added an entry nobody could see.
 @addMethod(gameuiMenuItemListGameController)
 protected func CBAddEntryIfMissing() {
-  if !this.m_cbEntryAdded && this.IsA(n"PauseMenuGameController") {
+  if !this.m_cbEntryAdded && this.IsA(n"PauseMenuGameController") && !CBHubAsGameMenuTab() {
     this.m_cbEntryAdded = true;      // set first: AddMenuItem below re-enters the wrapper
     this.AddMenuItem(CBPauseMenuLabel(), n"OnSwitchToCyberbane");
     if IsDefined(this.m_menuListController) {
@@ -159,7 +160,7 @@ public func CBShowHub() -> Void {
   if !IsDefined(this.m_cbHub) {
     this.m_cbHub = new CBHud();
   }
-  if this.m_cbHub.Show(this, sys, game) {
+  if this.m_cbHub.Show(this, sys, game, false) {
     this.CBSetListVisible(false);
   }
 }
@@ -204,11 +205,6 @@ public func CBSpawnMenuEvent(eventName: CName) -> Void {
   if IsDefined(this.m_menuEventDispatcher) {
     this.m_menuEventDispatcher.SpawnEvent(eventName);
   }
-}
-
-@addMethod(PauseMenuGameController)
-public func CBPlayClick() -> Void {
-  this.PlaySound(n"Button", n"OnPress");
 }
 
 // ---- The scenario -------------------------------------------------------------------------------

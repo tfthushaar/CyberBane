@@ -229,7 +229,7 @@ public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Boo
   if !IsDefined(sys) {
     return true;
   }
-  return (sys.IsInSafeZone() && !CBAllowSafeZoneSpawns()) || sys.IsInQuestArea() || CBPlayerInScene(game)
+  return sys.IsInSanctuary() || sys.IsInQuestArea() || CBPlayerInScene(game)
       || sys.GetStoryHold() != CBStoryNone();
 }
 

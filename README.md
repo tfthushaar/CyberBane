@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.7.2).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.7.3).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -326,11 +326,14 @@ To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vo
 ## Controls
 
 The Hub is a page of the pause menu, so it uses the menu's own controls. Cyberbane adds no keys of
-its own.
+its own. There is an experimental setting, "Hub in the game menu" under Interface in Mod Settings,
+that moves it to a tab of its own beside Inventory and Character, built from the game's own tabs and
+buttons. There, A and D change screen and Escape closes the menu. It is off by default, and turning
+it off puts the Hub back in the pause menu.
 
 - **Escape, then Cyberbane:** opens the Hub, the same way you would open Settings or Load Game.
   Escape takes you back to the pause menu, and again from there closes it as usual.
-- **On the Hub:** click a screen name, or use Q and E (LB and RB), to switch screens. On Gangs,
+- **On the Hub:** click a screen name, or use 1 and 3 (LB and RB), to switch screens. On Gangs,
   click a gang to see more and to pay them off; on Rivals, click a Rival for their file, and use
   Forget every rival (it asks twice) to clear them; on Titles, click the title you want to go by, or
   Automatic for your highest one. Paying a gang off and forgetting your Rivals happen a few seconds

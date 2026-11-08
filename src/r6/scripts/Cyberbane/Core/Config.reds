@@ -852,6 +852,8 @@ public abstract class CBConfig {
   // Once the hunt has found V, everybody of ours this close is told where V is and joins the
   // fight (Spawn/Hunt.reds, CBHuntEngage). The rest keep converging and join as they close in.
   public static func HuntEngageDistance() -> Float = 90.0
+  // How far from V a door still counts as V's door. Big enough for the far end of a bar.
+  public static func SanctuaryDoorReach() -> Float = 40.0
   // Hearing V: a kill or a firefight this close to a hunter.
   public static func HuntHearDistance() -> Float = 70.0
   // Unseen this long and they go back to searching; unseen this long while searching, they quit.

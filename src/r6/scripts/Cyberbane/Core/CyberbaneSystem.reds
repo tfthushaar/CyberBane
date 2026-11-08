@@ -53,6 +53,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // owns that page; this is only how the scenario and the tick find it. Weak, so the
   // system can never keep a closed menu alive. Not persisted.
   private let m_pauseMenu: wref<PauseMenuGameController>;
+  private let m_hubOnMenu: wref<CBHud>;          // the Hub as a tab of the game's menu, while that is up (UI/HubTab.reds)
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
@@ -330,6 +331,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_storyRestrictTicks: Int32;    // settled ticks in a row a story restriction has been on V (not persisted)
   private let m_questPins: array<Vector4>;    // the tracked objective's map pins, refreshed every 3 ticks
   private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
+  private let m_inSanctuary: Bool;            // V is somewhere nobody of ours may follow (Spawn/Sanctuary.reds)
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
 
   // ---- Access -----------------------------------------------------------
@@ -856,6 +858,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Safe-area check every tick, not on the slow sample: you can walk into a bar or a
     // clinic in well under ten seconds, and the reaction systems read this.
     this.m_inSafeZone = CBPlayerInSafeZone(game);
+    this.m_inSanctuary = CBComputeSanctuary(this, game);
     if this.m_tickCount % 3 == 0 {
       CBRefreshQuestPins(this, game);
       this.m_inQuestArea = CBComputeQuestArea(game);
@@ -1056,7 +1059,21 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Is the Hub page up? Asked by the messenger and the hunt line, which stand back while it is.
+  public func HubTabOpened(hub: ref<CBHud>) -> Void {
+    this.m_hubOnMenu = hub;
+  }
+
+  // Only the page that is registered: a tab reopened in place comes up before the old one has gone.
+  public func HubTabClosed(hub: ref<CBHud>) -> Void {
+    if this.m_hubOnMenu == hub {
+      this.m_hubOnMenu = null;
+    }
+  }
+
   public func IsHubOpen() -> Bool {
+    if IsDefined(this.m_hubOnMenu) && this.m_hubOnMenu.IsOpen() {
+      return true;
+    }
     return IsDefined(this.m_pauseMenu) && this.m_pauseMenu.CBHubIsOpen();
   }
 
@@ -2441,6 +2458,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   // gangs, morale, panic driving) stand down while this is true. Refreshed every tick.
   public func IsInSafeZone() -> Bool {
     return this.m_inSafeZone;
+  }
+
+  // V is somewhere the people after them must not follow, and has not asked to be found there.
+  public func IsInSanctuary() -> Bool {
+    return this.m_inSanctuary;
   }
 
   // On a job, in a scene, or in a restricted or dangerous zone, when "Stay out of quest areas" is on.

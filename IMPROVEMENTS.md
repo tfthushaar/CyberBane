@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.2. The "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.7.3. The "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,32 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.7.2
+
+Two requests, both in 1.7.3. Neither has been played: they compile on 2.5, and every game function
+they hook was read in both the 2.5 scripts and a public copy of the 2.31 ones.
+
+### "They don't spawn in the safe area, however unlock the door and walk in"
+
+**Status: fixed in 1.7.3** (`Spawn/Sanctuary.reds`). The safe-area rules only ever spoke for where
+somebody is placed. Once out, nothing stopped them: the search ring follows V inside, a hunter who has
+found V is handed V to walk to, and the game lets an NPC through any closed, powered, unlocked door
+(`Door.EvaluateOffMeshLinksTask`). The rule is now about V: while V is in a safe area, unless the
+player opted in, nobody gets a move order, nobody is handed V as a target, anybody who has lost sight
+of V stops fighting V, and a door will not open for anybody of ours. Every order on foot goes
+through `CBOrderPursue`, so that is where it is enforced. The door itself is never locked or changed,
+because the story uses it. Search points also refuse a safe area wherever V is.
+
+### "Move the Hub to the top row, using the game's own interface"
+
+**Status: built in 1.7.3 as an experimental setting, off by default** (`UI/HubTab.reds`). The top
+row is a list, so one more entry is a real tab. A tab has to open a screen the game already knows,
+and adding a new one needs a new interface file, so the tab opens the Stats screen with a marker, and
+that screen hides its content and shows the Hub. Its screens row is the game's own tab label and key
+glyph, its button and rows are cut from the game's button art, and its hints are the game's. Off, the
+new hooks pass straight through. If this proves itself in play, removing the pause menu entry is one
+condition in `UI/PauseMenuEntry.reds`.
 
 ## Requests after 1.7.0
 

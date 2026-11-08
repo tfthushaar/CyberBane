@@ -3,6 +3,31 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.3] - 2026-11-08
+
+Enemies stop at your front door. Your saved Cyberbane progress carries over, and nothing stored in
+your save changed shape.
+
+### Fixed
+- **"They don't spawn in the safe area, but they unlock the door of V's room and walk in."** Nobody
+  was being placed inside, but once they existed nothing told them where to stop: they kept searching
+  around you, and whoever had found you walked straight to you. While you are in an apartment, bar,
+  clinic or any other safe area, nobody Cyberbane sends is given anywhere to go, anybody who has lost
+  sight of you stops fighting you, and doors will not open for them. They wait outside and lose
+  interest twice as fast. Step back out while they are still there and it starts again. Your door
+  still works for everyone else, the story included. "Allow spawns in safe areas" still lets them in.
+- **Searchers no longer go through your apartment** to look for you when you are standing outside it.
+- **The Hub's keys were labelled wrong.** The buttons at each end of the Hub's tabs said Q and E. Those
+  keys never did anything there. The keys that change screen are 1 and 3 (LB and RB on a controller),
+  and the buttons now say so.
+
+### Added
+- **The Hub as a tab of the game's menu (experimental, off by default).** Turn on "Hub in the game
+  menu" in Mod Settings under Interface and the Hub moves out of the pause menu into a tab of its own
+  beside Inventory and Character, built from the game's own tabs, keys, buttons and hints. A and D
+  change screen there. Off, the pause menu is exactly as it was. If the tab misbehaves, turn the
+  setting off and the pause menu entry comes back.
+
 ## [1.7.2] - 2026-11-07
 
 The red error at startup on 1.7 is fixed. Your saved Cyberbane progress carries over. Nothing stored
