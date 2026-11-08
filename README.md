@@ -248,10 +248,9 @@ in active development. This page describes what the mod does and how it installs
   new. The History screen is the street's file on you, written as plain sentences: the Rivals
   you made and put down, the apex enforcers and bosses people saw you kill, the vendettas sworn,
   the gangs that came round to you, the peace you bought and the tribute you took.
-- **The Hub.** A page of the pause menu: press Escape and choose Cyberbane, next to Mods and Mod
-  Settings (on 2.31, which has no Mods entry, right after Settings). It uses the game's own
-  font and colours and the menu's own cursor, the game stays paused while you read it, and Escape
-  takes you back to the pause menu. Click a screen to switch: Standing, Gangs, Turf, The City,
+- **The Hub.** A tab of its own at the top of the game menu, after Journal, built from the game's own
+  tabs, buttons and hints so it looks like the screens around it. If you would rather have it in the
+  pause menu, there is a setting for that. Click a screen to switch: Standing, Gangs, Turf, The City,
   Rivals, Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
   screen shows what each of the three lanes has on its way and when, as it stood when you paused.
   If something cannot arrive, it says why. Click a gang to see what they are about to do and to pay
@@ -305,7 +304,7 @@ Download the latest `Cyberbane-x.y.z.zip` from the
 1. Install the required mods listed above.
 2. In Vortex, add the zip with "Install From File" (or drag it onto the Mods area), then enable it
    and click Deploy.
-3. Launch the game, press Escape and choose Cyberbane to open the Hub.
+3. Launch the game, open the game menu and choose the Cyberbane tab to open the Hub.
 
 ### Manual
 
@@ -314,7 +313,7 @@ Download the latest `Cyberbane-x.y.z.zip` from the
    `Cyberpunk2077.exe`. The zip's `r6` folder merges into the game's existing `r6` folder, so the
    scripts land at `r6\scripts\Cyberbane\`. A typical Steam path is
    `...\steamapps\common\Cyberpunk 2077\`.
-3. Launch the game, press Escape and choose Cyberbane to open the Hub. You can
+3. Launch the game, open the game menu and choose the Cyberbane tab to open the Hub. You can
    rebind the key in Mod Settings.
 
 To update by hand, extract the new zip over the old one. Any script the mod no longer uses is
@@ -325,15 +324,14 @@ To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vo
 
 ## Controls
 
-The Hub is a page of the pause menu, so it uses the menu's own controls. Cyberbane adds no keys of
-its own. There is an experimental setting, "Hub in the game menu" under Interface in Mod Settings,
-that moves it to a tab of its own beside Inventory and Character, built from the game's own tabs and
-buttons. There, A and D change screen and Escape closes the menu. It is off by default, and turning
-it off puts the Hub back in the pause menu.
+The Hub is a tab of the game's own menu, so it uses that menu's controls. Cyberbane adds no keys of
+its own.
 
-- **Escape, then Cyberbane:** opens the Hub, the same way you would open Settings or Load Game.
-  Escape takes you back to the pause menu, and again from there closes it as usual.
-- **On the Hub:** click a screen name, or use 1 and 3 (LB and RB), to switch screens. On Gangs,
+- **The game menu, then Cyberbane:** the last tab in the row across the top, after Journal. Escape
+  closes the menu as usual.
+- **In the pause menu instead:** turn on "Hub in the pause menu" under Interface in Mod Settings.
+  Then it is Escape, then Cyberbane, and 1 and 3 (LB and RB) change screen.
+- **On the Hub:** click a screen name, or use A and D (LT and RT), to switch screens. On Gangs,
   click a gang to see more and to pay them off; on Rivals, click a Rival for their file, and use
   Forget every rival (it asks twice) to clear them; on Titles, click the title you want to go by, or
   Automatic for your highest one. Paying a gang off and forgetting your Rivals happen a few seconds

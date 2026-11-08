@@ -70,7 +70,7 @@ private let m_cbEntryAdded: Bool;
 @wrapMethod(gameuiMenuItemListGameController)
 protected func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) {
   wrappedMethod(label, spawnEvent);
-  // Where the player has moved the Hub to the game's menu instead (UI/HubTab.reds), it is not here.
+  // Only for a player who has asked for the Hub here: it is a tab of the game's menu otherwise.
   if this.m_cbEntryAdded || !this.IsA(n"PauseMenuGameController") || CBHubAsGameMenuTab() {
     return;
   }

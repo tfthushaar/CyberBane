@@ -381,13 +381,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "1")
   public let apexSquadsPerDay: Int32 = 4;
 
-  // Off by default, and it stays that way until it has been played: with it off the pause menu is
-  // exactly what it was, and none of UI/HubTab.reds runs.
+  // The Hub is a tab of the game's menu (UI/HubTab.reds) unless the player would rather have it in
+  // the pause menu, where it lived until 1.7.3.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubTab")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubTab-Desc")
-  public let hubAsGameMenuTab: Bool = false;
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubPauseMenu")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubPauseMenu-Desc")
+  public let hubInPauseMenu: Bool = false;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

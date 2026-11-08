@@ -18,15 +18,15 @@ your save changed shape.
   still works for everyone else, the story included. "Allow spawns in safe areas" still lets them in.
 - **Searchers no longer go through your apartment** to look for you when you are standing outside it.
 - **The Hub's keys were labelled wrong.** The buttons at each end of the Hub's tabs said Q and E. Those
-  keys never did anything there. The keys that change screen are 1 and 3 (LB and RB on a controller),
-  and the buttons now say so.
+  keys never did anything there. In the pause menu the keys that change screen are 1 and 3 (LB and RB
+  on a controller), and the buttons now say so.
 
-### Added
-- **The Hub as a tab of the game's menu (experimental, off by default).** Turn on "Hub in the game
-  menu" in Mod Settings under Interface and the Hub moves out of the pause menu into a tab of its own
-  beside Inventory and Character, built from the game's own tabs, keys, buttons and hints. A and D
-  change screen there. Off, the pause menu is exactly as it was. If the tab misbehaves, turn the
-  setting off and the pause menu entry comes back.
+### Changed
+- **The Hub has moved to the game menu.** It is now a tab of its own at the end of the row across the
+  top, after Journal, and it looks like the screens around it: the game's own tabs, keys, buttons,
+  framed rows and hints, on the game's own background. A and D (LT and RT) change screen, and Escape
+  closes the menu. Prefer it where it was? Turn on "Hub in the pause menu" in Mod Settings under
+  Interface.
 
 ## [1.7.2] - 2026-11-07
 

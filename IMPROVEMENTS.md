@@ -36,13 +36,12 @@ because the story uses it. Search points also refuse a safe area wherever V is.
 
 ### "Move the Hub to the top row, using the game's own interface"
 
-**Status: built in 1.7.3 as an experimental setting, off by default** (`UI/HubTab.reds`). The top
-row is a list, so one more entry is a real tab. A tab has to open a screen the game already knows,
+**Status: built in 1.7.3, and the default after the user tried it in game** (`UI/HubTab.reds`). "Hub
+in the pause menu" under Interface puts it back where it was. The top row is a list, so one more entry is a real tab. A tab has to open a screen the game already knows,
 and adding a new one needs a new interface file, so the tab opens the Stats screen with a marker, and
 that screen hides its content and shows the Hub. Its screens row is the game's own tab label and key
-glyph, its button and rows are cut from the game's button art, and its hints are the game's. Off, the
-new hooks pass straight through. If this proves itself in play, removing the pause menu entry is one
-condition in `UI/PauseMenuEntry.reds`.
+glyph, its button and rows are cut from the game's button art, its hints are the game's, and it draws
+nothing over the game's background. With the pause menu option on, the new hooks pass straight through.
 
 ## Requests after 1.7.0
 

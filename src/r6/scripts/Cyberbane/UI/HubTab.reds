@@ -1,4 +1,4 @@
-// Cyberbane - The Hub as a tab of the game's own menu (1.7.3, experimental, off by default)
+// Cyberbane - The Hub as a tab of the game's own menu (1.7.3)
 //
 // The row across the top of the game's menu (Cyberware, Inventory, Map, Character, Journal) is drawn
 // from a list, one label per entry, so an entry on that list is a real tab: the same label, the same
@@ -8,17 +8,13 @@
 // would mean shipping a new interface file, which Cyberbane does not do and does not require anything
 // to do. So the tab opens the game's Stats screen, which nothing reaches from this row, with a marker
 // handed to it. That screen sees the marker, puts its own content out of sight and draws the Hub
-// page in its place. Everything around the page is then the game's: the row above it, the button
-// hints below it, opening and closing, and Esc, which closes the menu here as it does on any other tab.
+// page in its place. Everything around the page is then the game's: the row above it, the background
+// behind it, the button hints below it, opening and closing, and Esc, which closes the menu here as it
+// does on any other tab. The page itself is built from the game's parts on this screen (CBHud).
 //
-// Off, none of this runs. The entry is not added, so nothing can ever hand the Stats screen the marker,
-// and the Stats screen goes on being the Stats screen. The setting is read each time the menu opens.
-// The Hub keeps its place in the pause menu until the player turns this on, and gets it back when they
-// turn this off, which is the way out if this misbehaves on somebody's install: Mod Settings does not
-// go through the Hub.
-//
-// The page is built from the game's own parts here (CBHud.BuildGameTabs and the helpers beside it):
-// the row of screens, the keys at either end of it, the button, the hints.
+// This is where the Hub lives unless the player turns on "Hub in the pause menu". Then the entry is
+// not added, nothing can hand the Stats screen the marker, and the Stats screen goes on being the
+// Stats screen. The setting is read each time the menu opens.
 //
 // Mod Settings is the one thing the page cannot link to from here. It is a screen of the pause menu's,
 // and this is not the pause menu, so the page does not offer the button.
@@ -35,7 +31,7 @@ public func CBHubTabLabel() -> String = "CYBERBANE"
 
 public func CBHubAsGameMenuTab() -> Bool {
   let rt = CyberbaneRuntime.Get();
-  return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().hubAsGameMenuTab;
+  return !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().hubInPauseMenu;
 }
 
 // At the end of the row. Nothing the game does depends on where an entry is, and the end is the one

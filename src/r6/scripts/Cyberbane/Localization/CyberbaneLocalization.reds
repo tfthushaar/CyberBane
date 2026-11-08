@@ -106,8 +106,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-SafeZoneCombat", "Let me fight in safe areas");
     this.Text("Cyberbane-Settings-SafeZoneCombat-Desc", "Keeps your hands free in a safe area so you can fight back. Use it with the setting above.");
     this.Text("Cyberbane-Settings-Category-UI", "Interface");
-    this.Text("Cyberbane-Settings-HubTab", "Hub in the game menu (experimental)");
-    this.Text("Cyberbane-Settings-HubTab-Desc", "Moves the Hub out of the pause menu and into a tab of its own at the top of the game menu, next to Inventory and Character. Off keeps it in the pause menu. If the tab misbehaves, turn this off and the pause menu entry comes back.");
+    this.Text("Cyberbane-Settings-HubPauseMenu", "Hub in the pause menu");
+    this.Text("Cyberbane-Settings-HubPauseMenu-Desc", "The Hub has its own tab at the top of the game menu, next to Inventory and Character. Turn this on to have it in the pause menu instead.");
     this.Text("Cyberbane-Settings-Category-Compat", "Compatibility");
     this.Text("Cyberbane-Settings-Category-Debug", "Debug");
 

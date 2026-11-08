@@ -73,7 +73,7 @@ public func CBHudPanelH() -> Float = 1020.0
 // 3840x2160 its tabs start (level with the game's own content), and the y on the page they are at.
 public func CBHudTabFit() -> Float = 0.94
 public func CBHudTabMaxScale() -> Float = 1.88
-public func CBHudTabTop() -> Float = 210.0
+public func CBHudTabTop() -> Float = 280.0
 public func CBHudTabFirstY() -> Float = 48.0
 public func CBHudDesignW() -> Float = 1920.0
 public func CBHudDesignH() -> Float = 1080.0
@@ -248,9 +248,13 @@ public func CBHudButtonIdle() -> HDRColor = new HDRColor(0.30, 0.09, 0.11, 0.85)
 public func CBHudButtonHover() -> HDRColor = new HDRColor(0.48, 0.14, 0.16, 0.95)
 public func CBHudButtonOff() -> HDRColor = new HDRColor(0.12, 0.05, 0.06, 0.60)
 // The game's button when the page is a tab: dark, lit from behind when the cursor is on it.
-public func CBHudGameButtonBack() -> HDRColor = new HDRColor(0.05, 0.03, 0.04, 0.80)
-public func CBHudGameButtonHot() -> HDRColor = new HDRColor(0.16, 0.36, 0.40, 0.55)
-public func CBHudGameRowPicked() -> HDRColor = new HDRColor(0.20, 0.48, 0.54, 0.65)
+// The tint's own alpha does nothing on these, so they are dark colours rather than see-through ones.
+public func CBHudGameButtonBack() -> HDRColor = new HDRColor(0.05, 0.03, 0.04, 1.0)
+public func CBHudGameButtonHot() -> HDRColor = new HDRColor(0.06, 0.17, 0.19, 1.0)
+public func CBHudGameRowPicked() -> HDRColor = new HDRColor(0.05, 0.15, 0.17, 1.0)
+public func CBHudGameCell() -> HDRColor = new HDRColor(0.06, 0.025, 0.035, 1.0)
+public func CBHudGameCellHot() -> HDRColor = new HDRColor(0.10, 0.05, 0.06, 1.0)
+public func CBHudGameCellEdge() -> HDRColor = new HDRColor(0.40, 0.13, 0.15, 1.0)
 public func CBHudClear() -> HDRColor = new HDRColor(0.0, 0.0, 0.0, 0.0)
 
 // Cut a column's text to what its box can actually show.
@@ -277,6 +281,17 @@ public func CBHudRowCols() -> Int32 = 6
 
 // What each column is tinted: the name brightest, the two middle facts in the value colour, the one
 // that says what V has done to them warm, and the status on the right dimmed.
+// The same columns on the game's own screens: a list's name is cyan there, in capitals, and what is
+// said about it sits back.
+public func CBHudGameRowTint(col: Int32) -> HDRColor {
+  if col == 0 { return CBHudCyan(); }
+  if col == 1 { return new HDRColor(0.78, 0.80, 0.84, 1.0); }
+  if col == 2 { return CBHudGrey(); }
+  if col == 3 { return CBHudLabel(); }
+  if col == 4 { return new HDRColor(0.80, 0.52, 0.34, 1.0); }
+  return CBHudGrey();
+}
+
 public func CBHudRowColTint(col: Int32) -> HDRColor {
   if col == 0 { return CBHudHead(); }
   if col == 1 { return CBHudValue(); }
@@ -453,6 +468,9 @@ public class CBHud {
   // The same tabs as the game's own widgets, when the page is a tab of the game's menu.
   private let m_gameTabRoot: array<wref<inkWidget>>;
   private let m_gameTabLabel: array<wref<HubMenuLabelContentContainer>>;
+  private let m_gameRow: wref<inkHorizontalPanel>;
+  private let m_gameStep: Int32;
+  private let m_rowFrame: array<wref<inkImage>>;
   private let m_tabNames: array<CName>;
   // Meters: label, value, track, fill and caption per score on the Standing screen.
   private let m_barLabel: array<wref<inkText>>;
@@ -580,6 +598,9 @@ public class CBHud {
     this.m_inputBound = false;
     this.m_open = false;
     this.m_built = false;
+    if this.m_inTab && IsDefined(this.m_owner) {
+      this.m_owner.SetCursorContext(n"Default");
+    }
     this.m_owner = null;
   }
 
@@ -623,6 +644,15 @@ public class CBHud {
   private func Click() -> Void {
     if IsDefined(this.m_owner) {
       this.m_owner.PlaySound(n"Button", n"OnPress");
+    }
+  }
+
+  // Changing screen sounds like the game's own tabs, on its own screen.
+  private func ClickTab() -> Void {
+    if this.m_inTab && IsDefined(this.m_owner) {
+      this.m_owner.PlaySound(n"TabButton", n"OnPress");
+    } else {
+      this.Click();
     }
   }
 
@@ -710,51 +740,88 @@ public class CBHud {
   // has moved comes back as nothing, and then the page falls back on what it draws for the pause menu.
 
   // The screens, in a row: the game's key for "previous", its labels, its key for "next", which is how
-  // the game lays out its own row. False, with nothing left behind, if the game would not give us one.
-  private func BuildGameTabs(owner: ref<inkGameController>, panel: ref<inkCanvas>) -> Bool {
+  // the game lays out its own row.
+  //
+  // Loaded rather than spawned on the spot. A screen can only spawn at once from the libraries its own
+  // file already names, and the Stats screen names the button hints and nothing else, so the game
+  // quietly gave back nothing. One at a time, so they land in order. Until the last is in, the boxes
+  // drawn in Build are what the player sees, and if the game never delivers, they stay.
+  private func StartGameTabs(panel: ref<inkCanvas>) -> Void {
     let row = new inkHorizontalPanel();
     row.SetName(n"cbHubGameTabs");
     row.SetAnchor(inkEAnchor.TopCenter);
     row.SetAnchorPoint(new Vector2(0.5, 0.0));
     row.SetFitToContent(true);
     row.SetMargin(new inkMargin(0.0, this.Px(CBHudTabFirstY()), 0.0, 0.0));
+    row.SetVisible(false);
     row.Reparent(panel, -1);
-    this.AddGameKey(owner, row, n"option_switch_prev_settings");
-    let t = 0;
-    while t < CBHudTabCount() {
-      let widget = owner.SpawnFromExternal(row, r"base\\gameplay\\gui\\fullscreen\\hub_menu\\new_hub.inkwidget", n"new_menu_element");
-      let label: wref<HubMenuLabelContentContainer>;
-      if IsDefined(widget) {
-        label = widget.GetController() as HubMenuLabelContentContainer;
-      }
-      if !IsDefined(label) {
-        // Hidden and not removed: taking widgets out by hand is what the 1.4.7 crash was made of.
-        row.SetVisible(false);
-        ArrayClear(this.m_gameTabRoot);
-        ArrayClear(this.m_gameTabLabel);
-        ArrayClear(this.m_tabNames);
-        CBLog.Info(n"UI", "The game's tab label was not there; the Hub tab is drawing its own.");
+    this.m_gameRow = row;
+    this.m_gameStep = 0;
+    this.SpawnGamePart();
+  }
+
+  // Step 0 and the last step are the keys, and the steps between are the screens.
+  private func GameStepIsKey() -> Bool {
+    return this.m_gameStep == 0 || this.m_gameStep == CBHudTabCount() + 1;
+  }
+
+  private func SpawnGamePart() -> Void {
+    if !IsDefined(this.m_owner) || !IsDefined(this.m_gameRow) {
+      return;
+    }
+    if this.GameStepIsKey() {
+      this.m_owner.AsyncSpawnFromExternal(this.m_gameRow, r"base\\gameplay\\gui\\common\\buttons\\base_buttons.inkwidget", n"inputDisplayLabelFlex",
+                                          this, n"CBOnGamePartSpawned");
+    } else {
+      this.m_owner.AsyncSpawnFromExternal(this.m_gameRow, r"base\\gameplay\\gui\\fullscreen\\hub_menu\\new_hub.inkwidget", n"new_menu_element",
+                                          this, n"CBOnGamePartSpawned");
+    }
+  }
+
+  protected cb func CBOnGamePartSpawned(widget: ref<inkWidget>, userData: ref<IScriptable>) -> Bool {
+    // The menu can have gone in the time it took.
+    if !IsDefined(this.m_owner) || !IsDefined(this.m_gameRow) {
+      return false;
+    }
+    if this.GameStepIsKey() {
+      this.PlaceGameKey(widget, this.m_gameStep == 0 ? n"option_switch_prev_settings" : n"option_switch_next_settings");
+    } else {
+      if !this.PlaceGameTab(widget, this.m_gameStep - 1) {
+        CBLog.Info(n"UI", "The game's tab label did not arrive; the Hub tab is drawing its own.");
         return false;
       }
-      let data: MenuData;
-      data.label = StrUpper(CBHudTabName(t + 1));
-      label.SetData(data);
-      let name = CBHudWidgetName("cbHubTab", t + 1);
-      widget.SetName(name);
-      widget.SetVAlign(inkEVerticalAlign.Center);
-      widget.SetMargin(new inkMargin(20.0, 0.0, 20.0, 0.0));
-      ArrayPush(this.m_gameTabRoot, widget);
-      ArrayPush(this.m_gameTabLabel, label);
-      ArrayPush(this.m_tabNames, name);
-      t += 1;
     }
-    this.AddGameKey(owner, row, n"option_switch_next_settings");
+    this.m_gameStep += 1;
+    if this.m_gameStep > CBHudTabCount() + 1 {
+      this.ShowGameTabs();
+    } else {
+      this.SpawnGamePart();
+    }
+    return true;
+  }
+
+  private func PlaceGameTab(widget: ref<inkWidget>, index: Int32) -> Bool {
+    if !IsDefined(widget) || index >= ArraySize(this.m_tabNames) {
+      return false;
+    }
+    let label = widget.GetController() as HubMenuLabelContentContainer;
+    if !IsDefined(label) {
+      return false;
+    }
+    let data: MenuData;
+    data.label = StrUpper(CBHudTabName(index + 1));
+    label.SetData(data);
+    widget.SetName(this.m_tabNames[index]);
+    widget.SetVAlign(inkEVerticalAlign.Center);
+    widget.SetMargin(new inkMargin(20.0, 0.0, 20.0, 0.0));
+    ArrayPush(this.m_gameTabRoot, widget);
+    ArrayPush(this.m_gameTabLabel, label);
+    this.Hook(widget);
     return true;
   }
 
   // The game's key glyph for this action: whatever the player has bound, or the controller's button.
-  private func AddGameKey(owner: ref<inkGameController>, row: ref<inkHorizontalPanel>, action: CName) -> Void {
-    let widget = owner.SpawnFromExternal(row, r"base\\gameplay\\gui\\common\\buttons\\base_buttons.inkwidget", n"inputDisplayLabelFlex");
+  private func PlaceGameKey(widget: ref<inkWidget>, action: CName) -> Void {
     if !IsDefined(widget) {
       return;
     }
@@ -763,6 +830,47 @@ public class CBHud {
       key.SetInputActionLabel(action, "");
       widget.SetVAlign(inkEVerticalAlign.Center);
     }
+  }
+
+  // All of it is here: the game's row in, the boxes out. Hidden, not removed (crash rule 9).
+  private func ShowGameTabs() -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_tabBox) {
+      if IsDefined(this.m_tabBox[i]) {
+        this.m_tabBox[i].SetVisible(false);
+      }
+      i += 1;
+    }
+    if IsDefined(this.m_prevBox) {
+      this.m_prevBox.SetVisible(false);
+    }
+    if IsDefined(this.m_nextBox) {
+      this.m_nextBox.SetVisible(false);
+    }
+    this.m_gameRow.SetVisible(true);
+    this.Paint();
+  }
+
+  // What can be clicked right now, for the hand cursor and the hover sound.
+  private func IsLive(name: CName) -> Bool {
+    if Equals(name, CBHudActionName()) {
+      return this.m_actionOn;
+    }
+    let i = 0;
+    while i < ArraySize(this.m_tabNames) {
+      if Equals(this.m_tabNames[i], name) {
+        return true;
+      }
+      i += 1;
+    }
+    i = 0;
+    while i < ArraySize(this.m_rowNames) {
+      if Equals(this.m_rowNames[i], name) {
+        return this.m_rowClickable[i];
+      }
+      i += 1;
+    }
+    return false;
   }
 
   // A layer of the game's button, out of the atlas its own buttons are cut from. The cut corner stays
@@ -805,11 +913,10 @@ public class CBHud {
     backdrop.SetAnchor(inkEAnchor.Fill);
     backdrop.SetTintColor(new HDRColor(0.055, 0.012, 0.022, 0.97));
     backdrop.SetInteractive(true);
-    // As a tab the game's own background is the page's, with only enough dark over it to read on,
-    // and it stops short of the row across the top. Nothing is underneath to be clicked by accident.
+    // As a tab the game's own background is the page's, and its button hints have to show. Nothing is
+    // underneath to be clicked by accident: the screen's own content is hidden (UI/HubTab.reds).
     if this.m_inTab {
-      backdrop.SetTintColor(new HDRColor(0.055, 0.012, 0.022, 0.55));
-      backdrop.SetMargin(new inkMargin(0.0, 170.0, 0.0, 0.0));
+      backdrop.SetVisible(false);
       backdrop.SetInteractive(false);
     }
     backdrop.Reparent(root, -1);
@@ -835,9 +942,8 @@ public class CBHud {
     // ---- Tabs, centred across the top -------------------------------------
     let tabsW = Cast<Float>(CBHudTabCount()) * CBHudChipWidth();
     let tabsX = (CBHudPanelW() - tabsW) / 2.0;
-    let gameTabs = this.m_inTab && this.BuildGameTabs(owner, panel);
     let t = 0;
-    while t < CBHudTabCount() && !gameTabs {
+    while t < CBHudTabCount() {
       let name = CBHudWidgetName("cbHubTab", t + 1);
       let box = this.NewBox(panel, name, tabsX + Cast<Float>(t) * CBHudChipWidth() + 4.0, 48.0,
                             CBHudChipWidth() - 8.0, 52.0);
@@ -889,10 +995,6 @@ public class CBHud {
     nextText.SetSize(this.PxSize(keyW, 32.0));
     nextText.SetMargin(this.PxAt(0.0, (keyW - 32.0) / 2.0));
     nextText.SetText(this.m_inTab ? "D" : "3");
-    if gameTabs {
-      prev.SetVisible(false);
-      next.SetVisible(false);
-    }
     this.m_prevBox = prev;
     this.m_prevBg = prevBg;
     this.m_nextBox = next;
@@ -953,11 +1055,13 @@ public class CBHud {
       let rname = CBHudWidgetName("cbHubRow", r);
       let rbox = this.NewBox(panel, rname, x, CBHudContentTop() + Cast<Float>(r) * CBHudRowHeight(),
                              w, CBHudRowHeight() - 4.0);
-      // As a tab, a row is the game's own cell, clear until the cursor is on it. No stripes: the game
-      // does not stripe its lists.
+      // As a tab, a row is the game's own framed cell, the way the journal draws its list. No stripes:
+      // the game does not stripe its lists.
       let band: ref<inkWidget>;
       if this.m_inTab {
-        band = this.NewGameArt(rbox, n"cell_bg", CBHudClear());
+        band = this.NewGameArt(rbox, n"cell_bg", CBHudGameCell());
+        band.SetOpacity(0.85);
+        ArrayPush(this.m_rowFrame, this.NewGameArt(rbox, n"cell_fg", CBHudGameCellEdge()));
       } else {
         band = this.NewBand(rbox, r % 2 == 0 ? CBHudBandEven() : CBHudBandOdd());
       }
@@ -977,7 +1081,11 @@ public class CBHud {
       // Column 0 is the name, so it carries the heavier weight; the last column is right-aligned.
       let c = 0;
       while c < CBHudRowCols() {
-        let cell = this.NewText(rbox, c == 0 ? 23 : 22, c == 0 ? n"Semibold" : n"Medium", CBHudRowColTint(c));
+        let cell = this.NewText(rbox, c == 0 ? 23 : 22, c == 0 ? n"Semibold" : n"Medium",
+                                this.m_inTab ? CBHudGameRowTint(c) : CBHudRowColTint(c));
+        if this.m_inTab && c == 0 {
+          cell.SetLetterCase(textLetterCase.UpperCase);
+        }
         if c == CBHudRowCols() - 1 {
           cell.SetHorizontalAlignment(textHorizontalAlignment.Right);
           cell.SetFitToContent(false);
@@ -991,7 +1099,9 @@ public class CBHud {
     }
 
     // ---- Prose: under the meters, under a list, or beside the titles -----------
-    let body = this.NewText(panel, CBHudBodyFont(), n"Medium", CBHudValue());
+    // The game writes its descriptions in its red, and the page does the same on its own screen.
+    let body = this.NewText(panel, CBHudBodyFont(), n"Medium", this.m_inTab ? CBHudLabel() : CBHudValue(),
+                            this.m_inTab ? n"MainColors.Red" : n"");
     body.SetMargin(this.PxAt(x, CBHudContentTop()));
     body.SetWrapping(true, this.Px(w));
     body.SetSize(this.PxSize(w, 700.0));
@@ -1060,11 +1170,6 @@ public class CBHud {
       i += 1;
     }
     i = 0;
-    while i < ArraySize(this.m_gameTabRoot) {
-      this.Hook(this.m_gameTabRoot[i]);
-      i += 1;
-    }
-    i = 0;
     while i < ArraySize(this.m_rowBox) {
       this.Hook(this.m_rowBox[i]);
       i += 1;
@@ -1079,6 +1184,17 @@ public class CBHud {
     owner.RegisterToGlobalInputCallback(n"OnPostOnRelease", this, n"CBOnGlobalRelease");
     this.m_inputBound = true;
     this.m_built = true;
+    if this.m_inTab {
+      this.StartGameTabs(panel);
+      // Eases in like the game's own screens, which also covers the moment before its tabs arrive.
+      let fade = new inkAnimTransparency();
+      fade.SetStartTransparency(0.0);
+      fade.SetEndTransparency(1.0);
+      fade.SetDuration(0.2);
+      let intro = new inkAnimDef();
+      intro.AddInterpolator(fade);
+      root.PlayAnimation(intro);
+    }
     return true;
   }
 
@@ -1111,7 +1227,7 @@ public class CBHud {
       if Equals(this.m_tabNames[i], name) {
         e.Handle();
         if this.m_tab != i + 1 {
-          this.Click();
+          this.ClickTab();
           this.SelectTab(sys, game, i + 1);
         }
         return true;
@@ -1169,6 +1285,10 @@ public class CBHud {
     if IsDefined(target) {
       this.m_hover = target.GetName();
       this.Paint();
+      if this.m_inTab && IsDefined(this.m_owner) && this.IsLive(this.m_hover) {
+        this.m_owner.SetCursorContext(n"Hover");
+        this.m_owner.PlaySound(n"Button", n"OnHover");
+      }
     }
     return false;
   }
@@ -1181,6 +1301,9 @@ public class CBHud {
     if IsDefined(target) && Equals(target.GetName(), this.m_hover) {
       this.m_hover = n"";
       this.Paint();
+      if this.m_inTab && IsDefined(this.m_owner) {
+        this.m_owner.SetCursorContext(n"Default");
+      }
     }
     return false;
   }
@@ -1234,7 +1357,7 @@ public class CBHud {
     if tab > CBHudTabCount() {
       tab = 1;
     }
-    this.Click();
+    this.ClickTab();
     this.SelectTab(sys, game, tab);
   }
 
@@ -1353,14 +1476,20 @@ public class CBHud {
     while r < ArraySize(this.m_rowBg) {
       if IsDefined(this.m_rowBg[r]) {
         let band = r % 2 == 0 ? CBHudBandEven() : CBHudBandOdd();
+        let lit = false;
         if this.m_inTab {
-          band = CBHudClear();
+          band = CBHudGameCell();
         }
         if this.m_rowClickable[r] && Equals(this.m_rowNames[r], this.m_hover) {
-          band = this.m_inTab ? CBHudGameButtonHot() : CBHudBandHover();
+          band = this.m_inTab ? CBHudGameCellHot() : CBHudBandHover();
+          lit = true;
         }
         if this.m_rowPicked[r] {
           band = this.m_inTab ? CBHudGameRowPicked() : CBHudBandPicked();
+          lit = true;
+        }
+        if r < ArraySize(this.m_rowFrame) && IsDefined(this.m_rowFrame[r]) {
+          this.m_rowFrame[r].SetTintColor(lit ? CBHudCyan() : CBHudGameCellEdge());
         }
         this.m_rowBg[r].SetTintColor(band);
       }
