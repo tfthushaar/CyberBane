@@ -446,6 +446,16 @@ public func CBHudKeyW() -> Float = 48.0
 // exactly what clicking "Mod Settings" in the pause menu's list does.
 public func CBModSettingsEvent() -> CName = n"OnSwitchToModSettings"
 
+// Which of the game's parts this is, handed back when it lands: a screen's index, or one of the keys.
+public class CBHudGamePart {
+  public let index: Int32;
+}
+
+public func CBHudGamePartPrev() -> Int32 = -1
+public func CBHudGamePartNext() -> Int32 = -2
+// Long enough for a slow disk, and only ever waited out if the parts are not coming at all.
+public func CBHudGameTabsWait() -> Float = 1.5
+
 public class CBHud {
   // The pause menu this page is drawn in. Weak: the menu owns the page, never the other way round.
   private let m_owner: wref<inkGameController>;
@@ -469,7 +479,10 @@ public class CBHud {
   private let m_gameTabRoot: array<wref<inkWidget>>;
   private let m_gameTabLabel: array<wref<HubMenuLabelContentContainer>>;
   private let m_gameRow: wref<inkHorizontalPanel>;
-  private let m_gameStep: Int32;
+  private let m_gameLabels: wref<inkHorizontalPanel>;
+  private let m_gameArrived: Int32;
+  private let m_gameTabsSettled: Bool;
+  private let m_gameTimer: ref<inkAnimProxy>;
   private let m_rowFrame: array<wref<inkImage>>;
   private let m_tabNames: array<CName>;
   // Meters: label, value, track, fill and caption per score on the Standing screen.
@@ -598,6 +611,11 @@ public class CBHud {
     this.m_inputBound = false;
     this.m_open = false;
     this.m_built = false;
+    if IsDefined(this.m_gameTimer) {
+      this.m_gameTimer.UnregisterFromCallback(inkanimEventType.OnFinish, this, n"CBOnGameTabsLate");
+      this.m_gameTimer.Stop();
+      this.m_gameTimer = null;
+    }
     if this.m_inTab && IsDefined(this.m_owner) {
       this.m_owner.SetCursorContext(n"Default");
     }
@@ -744,8 +762,11 @@ public class CBHud {
   //
   // Loaded rather than spawned on the spot. A screen can only spawn at once from the libraries its own
   // file already names, and the Stats screen names the button hints and nothing else, so the game
-  // quietly gave back nothing. One at a time, so they land in order. Until the last is in, the boxes
-  // drawn in Build are what the player sees, and if the game never delivers, they stay.
+  // quietly gave back nothing. They are all asked for together, each with its place, and the page stays
+  // out of sight until the last has landed, then comes up once. The first version put the page's own
+  // boxes up while it waited and swapped them, and the swap could be seen.
+  //
+  // The boxes are still built, hidden, for a game that never delivers (CBOnGameTabsLate).
   private func StartGameTabs(panel: ref<inkCanvas>) -> Void {
     let row = new inkHorizontalPanel();
     row.SetName(n"cbHubGameTabs");
@@ -753,49 +774,76 @@ public class CBHud {
     row.SetAnchorPoint(new Vector2(0.5, 0.0));
     row.SetFitToContent(true);
     row.SetMargin(new inkMargin(0.0, this.Px(CBHudTabFirstY()), 0.0, 0.0));
-    row.SetVisible(false);
     row.Reparent(panel, -1);
+    // A holder each, because parts from two different files need not land in the order they were asked for.
+    let leftKey = this.NewGameHolder(row);
+    let labels = this.NewGameHolder(row);
+    let rightKey = this.NewGameHolder(row);
     this.m_gameRow = row;
-    this.m_gameStep = 0;
-    this.SpawnGamePart();
+    this.m_gameLabels = labels;
+    this.m_gameArrived = 0;
+    ArrayResize(this.m_gameTabRoot, CBHudTabCount());
+    ArrayResize(this.m_gameTabLabel, CBHudTabCount());
+    // If it has not all come by then, it is not coming. Measured on the interface's own clock, by an
+    // animation that changes nothing, because the world's clock is slowed while this menu is open.
+    let wait = new inkAnimTransparency();
+    wait.SetStartTransparency(1.0);
+    wait.SetEndTransparency(1.0);
+    wait.SetDuration(CBHudGameTabsWait());
+    let timer = new inkAnimDef();
+    timer.AddInterpolator(wait);
+    this.m_gameTimer = panel.PlayAnimation(timer);
+    if IsDefined(this.m_gameTimer) {
+      this.m_gameTimer.RegisterToCallback(inkanimEventType.OnFinish, this, n"CBOnGameTabsLate");
+    }
+    this.SpawnGameKey(leftKey, CBHudGamePartPrev());
+    let t = 0;
+    while t < CBHudTabCount() {
+      let part = new CBHudGamePart();
+      part.index = t;
+      this.m_owner.AsyncSpawnFromExternal(labels, r"base\\gameplay\\gui\\fullscreen\\hub_menu\\new_hub.inkwidget", n"new_menu_element",
+                                          this, n"CBOnGamePartSpawned", part);
+      t += 1;
+    }
+    this.SpawnGameKey(rightKey, CBHudGamePartNext());
   }
 
-  // Step 0 and the last step are the keys, and the steps between are the screens.
-  private func GameStepIsKey() -> Bool {
-    return this.m_gameStep == 0 || this.m_gameStep == CBHudTabCount() + 1;
+  private func NewGameHolder(row: ref<inkHorizontalPanel>) -> ref<inkHorizontalPanel> {
+    let holder = new inkHorizontalPanel();
+    holder.SetFitToContent(true);
+    holder.SetVAlign(inkEVerticalAlign.Center);
+    holder.Reparent(row, -1);
+    return holder;
   }
 
-  private func SpawnGamePart() -> Void {
-    if !IsDefined(this.m_owner) || !IsDefined(this.m_gameRow) {
-      return;
-    }
-    if this.GameStepIsKey() {
-      this.m_owner.AsyncSpawnFromExternal(this.m_gameRow, r"base\\gameplay\\gui\\common\\buttons\\base_buttons.inkwidget", n"inputDisplayLabelFlex",
-                                          this, n"CBOnGamePartSpawned");
-    } else {
-      this.m_owner.AsyncSpawnFromExternal(this.m_gameRow, r"base\\gameplay\\gui\\fullscreen\\hub_menu\\new_hub.inkwidget", n"new_menu_element",
-                                          this, n"CBOnGamePartSpawned");
-    }
+  private func SpawnGameKey(holder: ref<inkHorizontalPanel>, which: Int32) -> Void {
+    let part = new CBHudGamePart();
+    part.index = which;
+    this.m_owner.AsyncSpawnFromExternal(holder, r"base\\gameplay\\gui\\common\\buttons\\base_buttons.inkwidget", n"inputDisplayLabelFlex",
+                                        this, n"CBOnGamePartSpawned", part);
   }
 
   protected cb func CBOnGamePartSpawned(widget: ref<inkWidget>, userData: ref<IScriptable>) -> Bool {
-    // The menu can have gone in the time it took.
-    if !IsDefined(this.m_owner) || !IsDefined(this.m_gameRow) {
+    // The menu can have gone in the time it took, or the wait can have run out.
+    let part = userData as CBHudGamePart;
+    if !IsDefined(this.m_owner) || !IsDefined(this.m_gameRow) || this.m_gameTabsSettled || !IsDefined(part) {
       return false;
     }
-    if this.GameStepIsKey() {
-      this.PlaceGameKey(widget, this.m_gameStep == 0 ? n"option_switch_prev_settings" : n"option_switch_next_settings");
+    if part.index == CBHudGamePartPrev() {
+      this.PlaceGameKey(widget, n"option_switch_prev_settings");
     } else {
-      if !this.PlaceGameTab(widget, this.m_gameStep - 1) {
-        CBLog.Info(n"UI", "The game's tab label did not arrive; the Hub tab is drawing its own.");
-        return false;
+      if part.index == CBHudGamePartNext() {
+        this.PlaceGameKey(widget, n"option_switch_next_settings");
+      } else {
+        if !this.PlaceGameTab(widget, part.index) {
+          this.UseOwnTabs();
+          return false;
+        }
       }
     }
-    this.m_gameStep += 1;
-    if this.m_gameStep > CBHudTabCount() + 1 {
+    this.m_gameArrived += 1;
+    if this.m_gameArrived >= CBHudTabCount() + 2 {
       this.ShowGameTabs();
-    } else {
-      this.SpawnGamePart();
     }
     return true;
   }
@@ -814,8 +862,8 @@ public class CBHud {
     widget.SetName(this.m_tabNames[index]);
     widget.SetVAlign(inkEVerticalAlign.Center);
     widget.SetMargin(new inkMargin(20.0, 0.0, 20.0, 0.0));
-    ArrayPush(this.m_gameTabRoot, widget);
-    ArrayPush(this.m_gameTabLabel, label);
+    this.m_gameTabRoot[index] = widget;
+    this.m_gameTabLabel[index] = label;
     this.Hook(widget);
     return true;
   }
@@ -832,23 +880,70 @@ public class CBHud {
     }
   }
 
-  // All of it is here: the game's row in, the boxes out. Hidden, not removed (crash rule 9).
+  // Everything is here. In the order the screens go, whatever order it landed in.
   private func ShowGameTabs() -> Void {
+    this.m_gameTabsSettled = true;
+    let i = 0;
+    while i < ArraySize(this.m_gameTabRoot) {
+      if IsDefined(this.m_gameTabRoot[i]) {
+        this.m_gameLabels.ReorderChild(this.m_gameTabRoot[i], i);
+      }
+      i += 1;
+    }
+    this.Paint();
+    this.RevealPage();
+  }
+
+  // The game did not hand over its parts. The page's own boxes do the job.
+  private func UseOwnTabs() -> Void {
+    this.m_gameTabsSettled = true;
+    CBLog.Info(n"UI", "The game's tab labels did not arrive; the Hub tab is drawing its own.");
+    if IsDefined(this.m_gameRow) {
+      this.m_gameRow.SetVisible(false);
+    }
     let i = 0;
     while i < ArraySize(this.m_tabBox) {
       if IsDefined(this.m_tabBox[i]) {
-        this.m_tabBox[i].SetVisible(false);
+        this.m_tabBox[i].SetVisible(true);
       }
       i += 1;
     }
     if IsDefined(this.m_prevBox) {
-      this.m_prevBox.SetVisible(false);
+      this.m_prevBox.SetVisible(true);
     }
     if IsDefined(this.m_nextBox) {
-      this.m_nextBox.SetVisible(false);
+      this.m_nextBox.SetVisible(true);
     }
-    this.m_gameRow.SetVisible(true);
+    // Their labels came to nothing: nothing to colour, and nothing to answer the mouse.
+    ArrayClear(this.m_gameTabLabel);
     this.Paint();
+    this.RevealPage();
+  }
+
+  protected cb func CBOnGameTabsLate(proxy: ref<inkAnimProxy>) -> Bool {
+    if !this.m_gameTabsSettled && IsDefined(this.m_owner) {
+      this.UseOwnTabs();
+    }
+    return true;
+  }
+
+  // Once, eased in like the game's own screens.
+  private func RevealPage() -> Void {
+    if IsDefined(this.m_gameTimer) {
+      this.m_gameTimer.UnregisterFromCallback(inkanimEventType.OnFinish, this, n"CBOnGameTabsLate");
+      this.m_gameTimer.Stop();
+      this.m_gameTimer = null;
+    }
+    if !IsDefined(this.m_root) {
+      return;
+    }
+    let fade = new inkAnimTransparency();
+    fade.SetStartTransparency(0.0);
+    fade.SetEndTransparency(1.0);
+    fade.SetDuration(0.2);
+    let intro = new inkAnimDef();
+    intro.AddInterpolator(fade);
+    this.m_root.PlayAnimation(intro);
   }
 
   // What can be clicked right now, for the hand cursor and the hover sound.
@@ -964,6 +1059,7 @@ public class CBHud {
       ArrayPush(this.m_tabText, label);
       ArrayPush(this.m_tabUnder, under);
       ArrayPush(this.m_tabNames, name);
+      box.SetVisible(!this.m_inTab);
       t += 1;
     }
 
@@ -995,6 +1091,8 @@ public class CBHud {
     nextText.SetSize(this.PxSize(keyW, 32.0));
     nextText.SetMargin(this.PxAt(0.0, (keyW - 32.0) / 2.0));
     nextText.SetText(this.m_inTab ? "D" : "3");
+    prev.SetVisible(!this.m_inTab);
+    next.SetVisible(!this.m_inTab);
     this.m_prevBox = prev;
     this.m_prevBg = prevBg;
     this.m_nextBox = next;
@@ -1185,15 +1283,9 @@ public class CBHud {
     this.m_inputBound = true;
     this.m_built = true;
     if this.m_inTab {
+      // Nothing on screen until it can all come up at once (StartGameTabs).
+      root.SetOpacity(0.0);
       this.StartGameTabs(panel);
-      // Eases in like the game's own screens, which also covers the moment before its tabs arrive.
-      let fade = new inkAnimTransparency();
-      fade.SetStartTransparency(0.0);
-      fade.SetEndTransparency(1.0);
-      fade.SetDuration(0.2);
-      let intro = new inkAnimDef();
-      intro.AddInterpolator(fade);
-      root.PlayAnimation(intro);
     }
     return true;
   }
