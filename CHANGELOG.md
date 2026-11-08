@@ -3,6 +3,22 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.6] - 2026-11-09
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Fixed
+- **"I still can't click on a gang to pay them off."** Every click on the Hub was being counted twice.
+  Opening a gang opened it and closed it again in the same click, so nothing seemed to happen.
+  It now takes one click.
+- **One click could confirm "Forget every rival" and "Start over".** Both are meant to ask twice, and
+  the doubled click answered for you. They ask again now, and so does paying a gang off.
+- **"I still can't scroll down."** Long lists now have Up and Down buttons above them, beside the line
+  that says which part you are looking at. The mouse wheel and the right stick still work too.
+  The buttons only appear when a list has more than ten entries.
+- **The arrows at either end of the Hub's screens skipped a screen** in the pause menu, for the same
+  reason. They move one screen now.
+
 ## [1.7.5] - 2026-11-08
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.

@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.5. The "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.7.6. The "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -34,15 +34,22 @@ it joins Character's group. "Hub in the pause menu" stays the way out.
 
 ### "I have 14 max rivals enabled, but I can see max 10"
 
-**Status: fixed in 1.7.5** (`UI/Hud.reds`, `ListWindow`). Every list stopped at `CBHudListRows` (10),
+**Status: 1.7.5 did not fix it for the user; 1.7.6 adds Up and Down buttons** (`UI/Hud.reds`,
+`ListWindow`). Why the wheel did not move it is not known: it may never have reached the page, or the
+list may have had ten or fewer entries. The buttons are clicked like everything else on the page,
+so they work wherever clicks do, and the first scroll each time the page opens is logged
+("Hub list scrolled"), which settles the question next time. Every list stopped at `CBHudListRows` (10),
 and Gangs has 16 factions as well. Rivals and Gangs now build the whole list, then show a window onto
 it that the mouse wheel and the right stick move. A line over the list says which part is showing.
 The City and Turf top out at 8 districts and Titles at 21 rows, all of which fit.
 
 ### "Pay off a gang from the Hub after clicking on it, with a confirm button"
 
-**Status: done in 1.7.5.** The button was there, and it paid on the first click. It now asks once,
-like Forget every rival.
+**Status: fixed in 1.7.6. The cause was every click arriving twice.** The left mouse button and A are
+bound to both `click` and `select`, and the Hub took either, so each press ran twice: the log has
+every title chosen written two times. A gang toggles open, so the second run closed it again, and
+the two-step buttons (Forget every rival, Start over, and 1.7.5's pay-off) were armed and confirmed
+in one press. The Hub now takes `click` alone, as the game's pause menu does.
 
 ### Crash report: "Likely culprit: Cyberbane", Execute -> HasEquipment
 

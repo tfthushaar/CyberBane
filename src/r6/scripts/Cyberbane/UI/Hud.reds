@@ -440,6 +440,10 @@ public func CBHudSettingsName() -> CName = n"cbHubModSettings"
 // The previous and next screen keys drawn at the two ends of the tab bar.
 public func CBHudPrevName() -> CName = n"cbHubPrevTab"
 public func CBHudNextName() -> CName = n"cbHubNextTab"
+// The two buttons that page a long list, beside the line that says where in it you are.
+public func CBHudListUpName() -> CName = n"cbHubListUp"
+public func CBHudListDownName() -> CName = n"cbHubListDown"
+public func CBHudListButtonW() -> Float = 110.0
 public func CBHudKeyW() -> Float = 48.0
 
 // The event Mod Settings adds to the pause scenario for its own entry. Spawning it from the page is
@@ -532,6 +536,13 @@ public class CBHud {
   private let m_listTotal: Int32;
   private let m_listRows: Int32;
   private let m_listMore: wref<inkText>;
+  private let m_listUpBox: wref<inkCanvas>;
+  private let m_listUpBg: wref<inkWidget>;
+  private let m_listUpText: wref<inkText>;
+  private let m_listDownBox: wref<inkCanvas>;
+  private let m_listDownBg: wref<inkWidget>;
+  private let m_listDownText: wref<inkText>;
+  private let m_listScrolled: Bool;        // said so in the log once this page was opened
   private let m_stickLatched: Bool;
   private let m_resetArmed: Bool;          // "start over" asks twice as well
   private let m_hover: CName;              // the clickable thing under the cursor, by name
@@ -576,6 +587,7 @@ public class CBHud {
     this.m_resetArmed = false;
     this.m_payArmed = n"";
     this.m_listTop = 0;
+    this.m_listScrolled = false;
     this.m_hover = n"";
     this.Render(sys, game);
     return true;
@@ -616,6 +628,8 @@ public class CBHud {
     this.Unhook(this.m_settingsBox);
     this.Unhook(this.m_prevBox);
     this.Unhook(this.m_nextBox);
+    this.Unhook(this.m_listUpBox);
+    this.Unhook(this.m_listDownBox);
     if this.m_inputBound && IsDefined(this.m_owner) {
       this.m_owner.UnregisterFromGlobalInputCallback(n"OnPostOnRelease", this, n"CBOnGlobalRelease");
       this.m_owner.UnregisterFromGlobalInputCallback(n"OnPostOnRelative", this, n"CBOnWheel");
@@ -964,6 +978,12 @@ public class CBHud {
     if Equals(name, CBHudActionName()) {
       return this.m_actionOn;
     }
+    if Equals(name, CBHudListUpName()) {
+      return this.m_listTop > 0;
+    }
+    if Equals(name, CBHudListDownName()) {
+      return this.m_listTop + this.m_listRows < this.m_listTotal;
+    }
     let i = 0;
     while i < ArraySize(this.m_tabNames) {
       if Equals(this.m_tabNames[i], name) {
@@ -979,6 +999,27 @@ public class CBHud {
       i += 1;
     }
     return false;
+  }
+
+  // What the page's buttons are drawn with: the game's own button on its own screen, a band elsewhere.
+  private func NewListButtonBack(box: ref<inkCanvas>) -> ref<inkWidget> {
+    if this.m_inTab {
+      let back: ref<inkWidget> = this.NewGameArt(box, n"cell_bg", CBHudGameButtonBack());
+      this.NewGameArt(box, n"cell_fg", CBHudLabel());
+      return back;
+    }
+    return this.NewBand(box, CBHudButtonIdle());
+  }
+
+  private func NewListButtonText(box: ref<inkCanvas>, label: String) -> ref<inkText> {
+    let t = this.NewText(box, 19, n"Semibold", CBHudHead());
+    t.SetLetterCase(textLetterCase.UpperCase);
+    t.SetHorizontalAlignment(textHorizontalAlignment.Center);
+    t.SetFitToContent(false);
+    t.SetSize(this.PxSize(CBHudListButtonW(), 24.0));
+    t.SetMargin(this.PxAt(0.0, 5.0));
+    t.SetText(label);
+    return t;
   }
 
   // A layer of the game's button, out of the atlas its own buttons are cut from. The cut corner stays
@@ -1130,10 +1171,24 @@ public class CBHud {
     let more = this.NewText(panel, 19, n"Medium", CBHudGrey(), n"MainColors.Grey");
     more.SetHorizontalAlignment(textHorizontalAlignment.Right);
     more.SetFitToContent(false);
-    more.SetSize(this.PxSize(w, 26.0));
+    more.SetSize(this.PxSize(w - 2.0 * CBHudListButtonW() - 24.0, 26.0));
     more.SetMargin(this.PxAt(x, CBHudContentTop() - 30.0));
     more.SetVisible(false);
     this.m_listMore = more;
+
+    // Up and down, a page at a time. The wheel and the stick are quicker, and these are the ones that
+    // always work: they are clicked like everything else on the page.
+    let btnW = CBHudListButtonW();
+    let up = this.NewBox(panel, CBHudListUpName(), x + w - 2.0 * btnW - 8.0, CBHudContentTop() - 36.0, btnW, 32.0);
+    let down = this.NewBox(panel, CBHudListDownName(), x + w - btnW, CBHudContentTop() - 36.0, btnW, 32.0);
+    this.m_listUpBg = this.NewListButtonBack(up);
+    this.m_listDownBg = this.NewListButtonBack(down);
+    this.m_listUpText = this.NewListButtonText(up, "Up");
+    this.m_listDownText = this.NewListButtonText(down, "Down");
+    up.SetVisible(false);
+    down.SetVisible(false);
+    this.m_listUpBox = up;
+    this.m_listDownBox = down;
 
     // No rule under the header. It was 1540 px of two-pixel line, which is the single most
     // warp-revealing shape on the page, and the heading above it already separates the screens.
@@ -1298,6 +1353,8 @@ public class CBHud {
     this.Hook(this.m_settingsBox);
     this.Hook(this.m_prevBox);
     this.Hook(this.m_nextBox);
+    this.Hook(this.m_listUpBox);
+    this.Hook(this.m_listDownBox);
     // The previous/next tab keys. Registered once and left until the menu goes, rather than on
     // every show and hide, so nothing is ever registered or unregistered in the middle of the very
     // input event that is being delivered.
@@ -1323,11 +1380,14 @@ public class CBHud {
     if !this.IsOpen() || !IsDefined(e) {
       return false;
     }
-    // The mouse button is `click`; a controller's confirm button is `select` in some menus; touch is
-    // `tap`. The game's own handlers take whichever of these they expect (pauseMenu.script:196,
-    // inventoryGameController.script:942), and one release is one event however many it matches,
-    // so taking all three cannot fire anything twice.
-    if !e.IsAction(n"click") && !e.IsAction(n"select") && !e.IsAction(n"tap") {
+    // `click` only. A release arrives once for every action bound to the button, and the left mouse
+    // button and A are bound to `click` (UIMenuShared) and to `select` (UIMenu) at once
+    // (r6/config/inputContexts.xml, inputUserMappings.xml). Taking either ran every press here twice:
+    // the log has every title chosen on the Hub written two times. That opened a gang and closed it
+    // again in one press, so clicking a gang showed nothing, and it armed and confirmed Forget every
+    // rival and Start over in one press as well. `click` also carries Enter, F and a touch tap, and it
+    // is the one the game's own pause menu takes (pauseMenu.script, OnGogPressed).
+    if !e.IsAction(n"click") {
       return false;
     }
     let target = e.GetCurrentTarget();
@@ -1369,6 +1429,14 @@ public class CBHud {
       if this.m_actionOn {
         this.Click();
         this.ActionClicked(sys, game);
+      }
+      return true;
+    }
+    if Equals(name, CBHudListUpName()) || Equals(name, CBHudListDownName()) {
+      e.Handle();
+      let page = Equals(name, CBHudListUpName()) ? -this.m_listRows : this.m_listRows;
+      if this.ScrollBy(sys, game, page) {
+        this.Click();
       }
       return true;
     }
@@ -1466,18 +1534,23 @@ public class CBHud {
   }
 
   // The mouse wheel moves a long list a row a notch. Up is a positive notch, as the gallery reads it.
+  //
+  // Not refused when something else has already marked the event handled: on its own screen the
+  // page sits over the game's, and a scroll area of the game's hidden underneath could take the wheel
+  // first. Nothing of the game's is in view to have wanted it.
   protected cb func CBOnWheel(e: ref<inkPointerEvent>) -> Bool {
-    if !this.IsOpen() || !IsDefined(e) || e.IsHandled() || !e.IsAction(n"mouse_wheel") {
+    if !this.IsOpen() || !IsDefined(e) || !e.IsAction(n"mouse_wheel") {
       return false;
     }
     let v = e.GetAxisData();
+    let step = 0;
     if v > 0.0 {
-      return this.ScrollList(e, -1);
+      step = -1;
     }
     if v < 0.0 {
-      return this.ScrollList(e, 1);
+      step = 1;
     }
-    return false;
+    return step != 0 && this.ScrollFromInput(e, step);
   }
 
   // The right stick, a row a push: it has to come back towards the middle before it moves again.
@@ -1494,10 +1567,21 @@ public class CBHud {
       return false;
     }
     this.m_stickLatched = true;
-    return this.ScrollList(e, v > 0.0 ? -1 : 1);
+    return this.ScrollFromInput(e, v > 0.0 ? -1 : 1);
   }
 
-  private func ScrollList(e: ref<inkPointerEvent>, step: Int32) -> Bool {
+  private func ScrollFromInput(e: ref<inkPointerEvent>, step: Int32) -> Bool {
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) || !this.ScrollBy(sys, game, step) {
+      return false;
+    }
+    e.Handle();
+    return true;
+  }
+
+  // Move the window on the list being shown. False when it is already as far as it goes that way.
+  private func ScrollBy(sys: ref<CyberbaneSystem>, game: GameInstance, step: Int32) -> Bool {
     if this.m_listTotal <= this.m_listRows {
       return false;
     }
@@ -1505,13 +1589,11 @@ public class CBHud {
     if top == this.m_listTop {
       return false;
     }
-    let game = GetGameInstance();
-    let sys = CyberbaneSystem.Get(game);
-    if !IsDefined(sys) {
-      return false;
-    }
-    e.Handle();
     this.m_listTop = top;
+    if !this.m_listScrolled {
+      this.m_listScrolled = true;
+      CBLog.Info(n"UI", s"Hub list scrolled: \(top + 1) to \(Min(top + this.m_listRows, this.m_listTotal)) of \(this.m_listTotal).");
+    }
     this.Render(sys, game);
     return true;
   }
@@ -1523,14 +1605,19 @@ public class CBHud {
     this.m_listTotal = total;
     this.m_listRows = rows;
     this.m_listTop = Max(0, Min(this.m_listTop, total - rows));
+    let long = total > rows;
     if IsDefined(this.m_listMore) {
-      if total > rows {
+      if long {
         let last = Min(this.m_listTop + rows, total);
-        this.m_listMore.SetText(s"\(this.m_listTop + 1)-\(last) of \(total)      scroll for more");
-        this.m_listMore.SetVisible(true);
-      } else {
-        this.m_listMore.SetVisible(false);
+        this.m_listMore.SetText(s"\(this.m_listTop + 1)-\(last) of \(total)");
       }
+      this.m_listMore.SetVisible(long);
+    }
+    if IsDefined(this.m_listUpBox) {
+      this.m_listUpBox.SetVisible(long);
+    }
+    if IsDefined(this.m_listDownBox) {
+      this.m_listDownBox.SetVisible(long);
     }
     return this.m_listTop;
   }
@@ -1556,6 +1643,7 @@ public class CBHud {
     this.m_resetArmed = false;
     this.m_payArmed = n"";
     this.m_listTop = 0;
+    this.m_listScrolled = false;
     this.m_hover = n"";
     this.Render(sys, game);
   }
@@ -1723,6 +1811,24 @@ public class CBHud {
     }
     if IsDefined(this.m_nextBg) {
       this.m_nextBg.SetTintColor(Equals(this.m_hover, CBHudNextName()) ? CBHudButtonHover() : CBHudButtonIdle());
+    }
+    this.PaintListButton(this.m_listUpBg, this.m_listUpText, CBHudListUpName());
+    this.PaintListButton(this.m_listDownBg, this.m_listDownText, CBHudListDownName());
+  }
+
+  // Lit under the cursor, dimmed when there is nothing further that way.
+  private func PaintListButton(bg: wref<inkWidget>, label: wref<inkText>, name: CName) -> Void {
+    let live = this.IsLive(name);
+    let hot = live && Equals(this.m_hover, name);
+    if IsDefined(bg) {
+      if this.m_inTab {
+        bg.SetTintColor(hot ? CBHudGameButtonHot() : CBHudGameButtonBack());
+      } else {
+        bg.SetTintColor(hot ? CBHudButtonHover() : (live ? CBHudButtonIdle() : CBHudButtonOff()));
+      }
+    }
+    if IsDefined(label) {
+      label.SetTintColor(live ? (this.m_inTab ? CBHudCyan() : CBHudHead()) : CBHudDim());
     }
   }
 
@@ -2363,6 +2469,12 @@ public class CBHud {
     this.m_listRows = 0;
     if IsDefined(this.m_listMore) {
       this.m_listMore.SetVisible(false);
+    }
+    if IsDefined(this.m_listUpBox) {
+      this.m_listUpBox.SetVisible(false);
+    }
+    if IsDefined(this.m_listDownBox) {
+      this.m_listDownBox.SetVisible(false);
     }
 
     // Each screen decides what it is: meters, a list, or prose. The prose sits under or beside

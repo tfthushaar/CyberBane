@@ -333,7 +333,7 @@ its own.
 - **In the pause menu instead:** turn on "Hub in the pause menu" under Interface in Mod Settings.
   Then it is Escape, then Cyberbane, and 1 and 3 (LB and RB) change screen.
 - **On the Hub:** click a screen name, or use A and D (LT and RT), to switch screens. A list longer
-  than the page scrolls with the mouse wheel or the right stick. On Gangs, click a gang to see more
+  than the page scrolls with the Up and Down buttons above it, the mouse wheel or the right stick. On Gangs, click a gang to see more
   and to pay them off (it asks you to confirm); on Rivals, click a Rival for their file, and use
   Forget every rival (it asks twice) to clear them; on Titles, click the title you want to go by, or
   Automatic for your highest one. Paying a gang off and forgetting your Rivals happen in the next few
