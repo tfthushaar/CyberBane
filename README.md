@@ -328,14 +328,16 @@ The Hub is a tab of the game's own menu, so it uses that menu's controls. Cyberb
 its own.
 
 - **The game menu, then Cyberbane:** the last tab in the row across the top, after Journal. Escape
-  closes the menu as usual.
+  closes the menu as usual. With the game's radial hub turned on, it is in the row beside Character
+  and Stats.
 - **In the pause menu instead:** turn on "Hub in the pause menu" under Interface in Mod Settings.
   Then it is Escape, then Cyberbane, and 1 and 3 (LB and RB) change screen.
-- **On the Hub:** click a screen name, or use A and D (LT and RT), to switch screens. On Gangs,
-  click a gang to see more and to pay them off; on Rivals, click a Rival for their file, and use
+- **On the Hub:** click a screen name, or use A and D (LT and RT), to switch screens. A list longer
+  than the page scrolls with the mouse wheel or the right stick. On Gangs, click a gang to see more
+  and to pay them off (it asks you to confirm); on Rivals, click a Rival for their file, and use
   Forget every rival (it asks twice) to clear them; on Titles, click the title you want to go by, or
-  Automatic for your highest one. Paying a gang off and forgetting your Rivals happen a few seconds
-  after you go back to the game, and can be cancelled until then. On History, Start over (it asks
+  Automatic for your highest one. Paying a gang off and forgetting your Rivals happen in the next few
+  seconds of play, and can be cancelled until then. On History, Start over (it asks
   twice) clears everything you earned by playing and leaves everything that is read off your build,
   so your chrome and your look are untouched. Forgetting your Rivals and starting over both stick:
   quitting straight afterwards, or loading an older save of the same playthrough, does not bring

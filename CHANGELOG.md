@@ -3,6 +3,19 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.5] - 2026-11-08
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Fixed
+- **"I can't see the new Hub tab."** It was only added one way, and the radial hub option, or another
+  menu mod, could leave it out. It now joins the row however the game menu was built. With the radial
+  hub, it is in the row beside Character and Stats.
+- **"I have 14 max rivals, but I can only see 10."** The Rivals and Gangs lists stopped at ten. Every
+  list on the Hub now scrolls with the mouse wheel or the right stick, and says where you are in it.
+- **Paying a gang off now asks first.** Click a gang, click Pay them off, then confirm. A payment you
+  have chosen can still be cancelled until it goes through.
+
 ## [1.7.3] - 2026-11-08
 
 Enemies stop at your front door. Your saved Cyberbane progress carries over, and nothing stored in

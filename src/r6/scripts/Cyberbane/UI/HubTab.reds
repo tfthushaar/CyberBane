@@ -34,23 +34,67 @@ public func CBHubAsGameMenuTab() -> Bool {
   return !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().hubInPauseMenu;
 }
 
-// At the end of the row. Nothing the game does depends on where an entry is, and the end is the one
-// place that cannot change the position of anything another mod has counted on.
-@wrapMethod(HubMenuUtility)
-public final static func CreateMenuData(player: wref<PlayerPuppet>) -> ref<MenuDataBuilder> {
-  let menus = wrappedMethod(player);
-  if IsDefined(menus) && CBHubAsGameMenuTab() {
-    let tab: MenuData;
-    tab.identifier = CBHubTabId();
-    tab.parentIdentifier = EnumInt(HubMenuItems.None);
-    tab.label = CBHubTabLabel();
-    tab.fullscreenName = CBHubTabScreen();
-    tab.userData = new CBHubTabData();
-    // Gone for the stretch of the story that takes V's hardware away, with the tabs it takes.
-    tab.disabled = HubMenuUtility.IsPlayerHardwareDisabled(player);
-    ArrayPush(menus.m_data, tab);
+// The entry goes in where the hub hands its row to the screen, not where the game builds the list.
+// There are two hubs, and only one of them builds its list with HubMenuUtility.CreateMenuData: the
+// radial hub (the game's own option, `radial_hub_menu_enabled`) builds its own and never calls it, and
+// a mod that replaces that function from CET without calling the original drops anything added to it.
+// 1.7.3 added the tab there, and a player with several menu mods installed never saw it. Both hubs
+// pass their row through AddMenus on the panel that draws it, whoever built it.
+//
+// The standard hub's row is every entry with no parent, so the tab is one of those, at the end.
+// The radial hub's row is the group of the screen that is open, so the tab joins Character's group,
+// beside Character and Stats: open Character from the wheel and it is in the row.
+@wrapMethod(SubMenuPanelLogicController)
+public func AddMenus(const selectedMenu: script_ref<MenuData>, const menuDataArray: script_ref<array<MenuData>>,
+                     opt subMenuData: MenuData, opt forceRefreshLines: Bool) -> Void {
+  if !CBHubAsGameMenuTab() {
+    wrappedMethod(selectedMenu, menuDataArray, subMenuData, forceRefreshLines);
+    return;
   }
-  return menus;
+  let menus = Deref(menuDataArray);
+  if !CBHasHubTab(menus) {
+    ArrayPush(menus, CBHubTabEntry(EnumInt(HubMenuItems.None)));
+  }
+  wrappedMethod(selectedMenu, menus, subMenuData, forceRefreshLines);
+}
+
+@wrapMethod(RadialSubMenuPanelLogicController)
+public func AddMenus(const selectedMenu: script_ref<MenuData>, const menuDataArray: script_ref<array<MenuData>>,
+                     opt subMenuData: MenuData, opt forceRefreshLines: Bool) -> Void {
+  if !CBHubAsGameMenuTab() {
+    wrappedMethod(selectedMenu, menuDataArray, subMenuData, forceRefreshLines);
+    return;
+  }
+  let menus = Deref(menuDataArray);
+  if !CBHasHubTab(menus) {
+    ArrayPush(menus, CBHubTabEntry(EnumInt(HubMenuItems.Character)));
+  }
+  wrappedMethod(selectedMenu, menus, subMenuData, forceRefreshLines);
+}
+
+// Taken by value: a copy of a short list, and never an array intrinsic on somebody else's temporary.
+func CBHasHubTab(menus: array<MenuData>) -> Bool {
+  let i = 0;
+  while i < ArraySize(menus) {
+    if menus[i].identifier == CBHubTabId() {
+      return true;
+    }
+    i += 1;
+  }
+  return false;
+}
+
+func CBHubTabEntry(parent: Int32) -> MenuData {
+  let tab: MenuData;
+  tab.identifier = CBHubTabId();
+  tab.parentIdentifier = parent;
+  tab.label = CBHubTabLabel();
+  tab.fullscreenName = CBHubTabScreen();
+  tab.userData = new CBHubTabData();
+  // Gone for the stretch of the story that takes V's hardware away, with the tabs it takes.
+  let player = GetPlayer(GetGameInstance());
+  tab.disabled = IsDefined(player) && HubMenuUtility.IsPlayerHardwareDisabled(player);
+  return tab;
 }
 
 // ---- The screen -------------------------------------------------------------------------------

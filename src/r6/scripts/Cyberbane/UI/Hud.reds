@@ -525,6 +525,14 @@ public class CBHud {
   private let m_pickFaction: CName;
   private let m_pickRival: Int32;
   private let m_purgeArmed: Bool;          // "forget every rival" asks twice
+  private let m_payArmed: CName;           // paying a gang off asks twice too: the gang it is armed for
+  // A list longer than the page scrolls (ListWindow): which entry is in the top row, how long the
+  // list is, how many rows it gets, the line saying so, and the stick's latch.
+  private let m_listTop: Int32;
+  private let m_listTotal: Int32;
+  private let m_listRows: Int32;
+  private let m_listMore: wref<inkText>;
+  private let m_stickLatched: Bool;
   private let m_resetArmed: Bool;          // "start over" asks twice as well
   private let m_hover: CName;              // the clickable thing under the cursor, by name
   private let m_inputBound: Bool;          // the tab keys are registered with the pause menu
@@ -566,6 +574,8 @@ public class CBHud {
     this.m_open = true;
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_payArmed = n"";
+    this.m_listTop = 0;
     this.m_hover = n"";
     this.Render(sys, game);
     return true;
@@ -577,6 +587,7 @@ public class CBHud {
     this.m_open = false;
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_payArmed = n"";
     this.m_hover = n"";
     if IsDefined(this.m_root) {
       this.m_root.SetVisible(false);
@@ -607,6 +618,8 @@ public class CBHud {
     this.Unhook(this.m_nextBox);
     if this.m_inputBound && IsDefined(this.m_owner) {
       this.m_owner.UnregisterFromGlobalInputCallback(n"OnPostOnRelease", this, n"CBOnGlobalRelease");
+      this.m_owner.UnregisterFromGlobalInputCallback(n"OnPostOnRelative", this, n"CBOnWheel");
+      this.m_owner.UnregisterFromGlobalInputCallback(n"OnPostOnAxis", this, n"CBOnStick");
     }
     this.m_inputBound = false;
     this.m_open = false;
@@ -1113,6 +1126,15 @@ public class CBHud {
     tabline.SetMargin(this.PxAt(x, 136.0));
     this.m_tabline = tabline;
 
+    // Over the right end of a list that runs past the page: where in it you are, and that it scrolls.
+    let more = this.NewText(panel, 19, n"Medium", CBHudGrey(), n"MainColors.Grey");
+    more.SetHorizontalAlignment(textHorizontalAlignment.Right);
+    more.SetFitToContent(false);
+    more.SetSize(this.PxSize(w, 26.0));
+    more.SetMargin(this.PxAt(x, CBHudContentTop() - 30.0));
+    more.SetVisible(false);
+    this.m_listMore = more;
+
     // No rule under the header. It was 1540 px of two-pixel line, which is the single most
     // warp-revealing shape on the page, and the heading above it already separates the screens.
 
@@ -1280,6 +1302,10 @@ public class CBHud {
     // every show and hide, so nothing is ever registered or unregistered in the middle of the very
     // input event that is being delivered.
     owner.RegisterToGlobalInputCallback(n"OnPostOnRelease", this, n"CBOnGlobalRelease");
+    // The wheel comes as relative input and the stick as an axis, as in the game's own gallery and
+    // map, so each has its own handler and one notch can never move a list twice.
+    owner.RegisterToGlobalInputCallback(n"OnPostOnRelative", this, n"CBOnWheel");
+    owner.RegisterToGlobalInputCallback(n"OnPostOnAxis", this, n"CBOnStick");
     this.m_inputBound = true;
     this.m_built = true;
     if this.m_inTab {
@@ -1439,6 +1465,76 @@ public class CBHud {
     return true;
   }
 
+  // The mouse wheel moves a long list a row a notch. Up is a positive notch, as the gallery reads it.
+  protected cb func CBOnWheel(e: ref<inkPointerEvent>) -> Bool {
+    if !this.IsOpen() || !IsDefined(e) || e.IsHandled() || !e.IsAction(n"mouse_wheel") {
+      return false;
+    }
+    let v = e.GetAxisData();
+    if v > 0.0 {
+      return this.ScrollList(e, -1);
+    }
+    if v < 0.0 {
+      return this.ScrollList(e, 1);
+    }
+    return false;
+  }
+
+  // The right stick, a row a push: it has to come back towards the middle before it moves again.
+  protected cb func CBOnStick(e: ref<inkPointerEvent>) -> Bool {
+    if !this.IsOpen() || !IsDefined(e) || e.IsHandled() || !e.IsAction(n"right_stick_y") {
+      return false;
+    }
+    let v = e.GetAxisData();
+    if AbsF(v) < 0.3 {
+      this.m_stickLatched = false;
+      return false;
+    }
+    if this.m_stickLatched || AbsF(v) < 0.6 {
+      return false;
+    }
+    this.m_stickLatched = true;
+    return this.ScrollList(e, v > 0.0 ? -1 : 1);
+  }
+
+  private func ScrollList(e: ref<inkPointerEvent>, step: Int32) -> Bool {
+    if this.m_listTotal <= this.m_listRows {
+      return false;
+    }
+    let top = Max(0, Min(this.m_listTop + step, this.m_listTotal - this.m_listRows));
+    if top == this.m_listTop {
+      return false;
+    }
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) {
+      return false;
+    }
+    e.Handle();
+    this.m_listTop = top;
+    this.Render(sys, game);
+    return true;
+  }
+
+  // The window onto a list: which entry goes in the top row, kept inside the list as it grows and
+  // shrinks, and the line over it that says there is more. Every list screen asks this before it
+  // draws, so none of them can have entries nobody can reach again.
+  private func ListWindow(total: Int32, rows: Int32) -> Int32 {
+    this.m_listTotal = total;
+    this.m_listRows = rows;
+    this.m_listTop = Max(0, Min(this.m_listTop, total - rows));
+    if IsDefined(this.m_listMore) {
+      if total > rows {
+        let last = Min(this.m_listTop + rows, total);
+        this.m_listMore.SetText(s"\(this.m_listTop + 1)-\(last) of \(total)      scroll for more");
+        this.m_listMore.SetVisible(true);
+      } else {
+        this.m_listMore.SetVisible(false);
+      }
+    }
+    return this.m_listTop;
+  }
+
   // One screen back or forward, wrapping round. The keys and the key boxes on the tab bar both
   // come here, so the two can never disagree about where they go.
   private func StepTab(sys: ref<CyberbaneSystem>, game: GameInstance, step: Int32) -> Void {
@@ -1458,6 +1554,8 @@ public class CBHud {
     sys.SetHubTab(this.m_tab);
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_payArmed = n"";
+    this.m_listTop = 0;
     this.m_hover = n"";
     this.Render(sys, game);
   }
@@ -1467,6 +1565,7 @@ public class CBHud {
       let f = this.m_rowFaction[row];
       // Clicking the one already open closes it again.
       this.m_pickFaction = Equals(f, this.m_pickFaction) ? n"" : f;
+      this.m_payArmed = n"";
     } else {
       if this.m_tab == CBHudRivalsTab() {
         this.m_pickRival = this.m_rowRival[row];
@@ -1488,12 +1587,21 @@ public class CBHud {
   // the menu closes. Clicking again before then takes the request back.
   private func ActionClicked(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if this.m_tab == CBHudFactionsTab() {
+      // Money leaves V's pocket, so it asks first: the first click turns the button into a
+      // confirmation, the second pays. A payment already chosen can be taken back in one.
       if NotEquals(this.m_pickFaction, n"") {
         if Equals(sys.GetPendingPeace(), this.m_pickFaction) {
           sys.RequestPeace(n"");
+          this.m_payArmed = n"";
         } else {
           if CBHudCanPayOff(sys, game, this.m_pickFaction) {
-            sys.RequestPeace(this.m_pickFaction);
+            if Equals(this.m_payArmed, this.m_pickFaction) {
+              this.m_payArmed = n"";
+              sys.RequestPeace(this.m_pickFaction);
+              CBLog.Info(n"UI", s"Pay-off confirmed on the Hub for \(NameToString(this.m_pickFaction)).");
+            } else {
+              this.m_payArmed = this.m_pickFaction;
+            }
           }
         }
       }
@@ -1854,33 +1962,46 @@ public class CBHud {
     if !IsDefined(score) {
       return;
     }
+    // Every gang, the hostile ones first, and the page shows a window onto it. It used to stop at
+    // the tenth, and there are sixteen.
     let states = sys.GetFactionStates();
-    let shown = 0;
+    let order: array<ref<CBFactionState>>;
     let sweep = 0;
-    let pickedShown = false;
     while sweep < 2 {
       let i = 0;
-      while i < ArraySize(states) && shown < CBHudListRows() {
+      while i < ArraySize(states) {
         let fs = states[i];
         i += 1;
         if IsDefined(fs) {
           let posture = score.GetPosture(fs.id);
           let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
           if (sweep == 0 && hostile) || (sweep == 1 && !hostile) {
-            let picked = Equals(fs.id, this.m_pickFaction);
-            if picked {
-              pickedShown = true;
-            }
-            this.RenderFactionRow(sys, score, fs, posture, shown, picked);
-            shown += 1;
+            ArrayPush(order, fs);
           }
         }
       }
       sweep += 1;
     }
-    // A pick that is no longer on the list (reset, or pushed off by new gangs) is no pick.
-    if !pickedShown {
+    // A pick that is no longer on the list (reset, or forgotten) is no pick. Scrolled out of view
+    // is still a pick: the panel underneath goes on showing it.
+    let pickedOn = false;
+    let k = 0;
+    while k < ArraySize(order) {
+      if Equals(order[k].id, this.m_pickFaction) {
+        pickedOn = true;
+      }
+      k += 1;
+    }
+    if !pickedOn {
       this.m_pickFaction = n"";
+    }
+    let top = this.ListWindow(ArraySize(order), CBHudListRows());
+    let row = 0;
+    while row < CBHudListRows() && top + row < ArraySize(order) {
+      let shownFs = order[top + row];
+      this.RenderFactionRow(sys, score, shownFs, score.GetPosture(shownFs.id), row,
+                            Equals(shownFs.id, this.m_pickFaction));
+      row += 1;
     }
   }
 
@@ -1892,7 +2013,7 @@ public class CBHud {
     if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) { pip = CBHudGreen(); }
     let right = CBHudGangStatus(sys, fs);
     if Equals(sys.GetPendingPeace(), fs.id) {
-      right = "PAYING OFF ON RESUME";
+      right = "PAYING OFF";
     }
     // Who this gang is at war with, because that is the one thing on this screen V can act on:
     // hurting a gang warms the gangs that hate it (Model/GangRivalries.reds).
@@ -1942,13 +2063,18 @@ public class CBHud {
     let money = CBHudEddies(game);
     if Equals(sys.GetPendingPeace(), id) {
       let price = quote >= 0 ? s"\(quote)eb" : "what they ask";
-      out += "You are paying them " + price + ". It goes through a few seconds after you are back in the game,\nand anything they had on its way to you is called off.";
+      out += "You are paying them " + price + ". It goes through in the next few seconds of play,\nand anything they had on its way to you is called off.";
       this.SetAction("Cancel the payment", true);
     } else {
       if quote >= 0 {
         out += s"They will call it off for \(quote)eb. You have \(money)eb.";
         if money >= quote {
-          this.SetAction(s"Pay them off: \(quote)eb", true);
+          if Equals(this.m_payArmed, id) {
+            out += "\nClick again to pay.";
+            this.SetAction(s"Confirm: pay \(quote)eb", true);
+          } else {
+            this.SetAction(s"Pay them off: \(quote)eb", true);
+          }
         } else {
           this.SetAction("Not enough eddies", false);
         }
@@ -2071,51 +2197,48 @@ public class CBHud {
     this.PlaceRows(CBHudLayoutWide());
     let content = sys.GetContent();
     let rivals = sys.GetRivals();
-    let shown = 0;
-    let pickedShown = false;
-
+    // Everybody still after V, and the page shows a window onto it. It used to stop at ten, and the
+    // setting goes higher: "I have 14 max rivals but can see 10".
+    //
     // The one who is actually coming goes first, so the name the Standing screen gives as incoming
-    // is always on this screen, whatever the cap is.
+    // is always at the top of this screen, whatever the cap is.
+    let order: array<ref<CBRival>>;
     let queuedId = sys.GetLaneRivalId(CBLaneRival());
     let pinned = sys.FindRivalById(queuedId);
     if IsDefined(pinned) && (pinned.state == EnumInt(ECBRivalState.Active)
                              || pinned.state == EnumInt(ECBRivalState.Hunting)) {
-      if this.m_pickRival == 0 {
-        this.m_pickRival = pinned.id;   // open on whoever is next
-      }
-      if pinned.id == this.m_pickRival {
-        pickedShown = true;
-      }
-      this.RenderRivalRow(sys, content, pinned, shown);
-      shown += 1;
+      ArrayPush(order, pinned);
     } else {
       queuedId = 0;
     }
-
     let i = 0;
-    while i < ArraySize(rivals) && shown < CBHudListRows() {
+    while i < ArraySize(rivals) {
       let r = rivals[i];
       i += 1;
       // Skipping the pinned one by id rather than by `continue`, which redscript does not have.
       if IsDefined(r) && r.id != queuedId
          && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-        if this.m_pickRival == 0 {
-          this.m_pickRival = r.id;
-        }
-        if r.id == this.m_pickRival {
-          pickedShown = true;
-        }
-        this.RenderRivalRow(sys, content, r, shown);
-        shown += 1;
+        ArrayPush(order, r);
       }
     }
-    // The one that was picked is gone (put down, forgotten): fall back to the top of the list,
-    // which is whoever is next, rather than leaving the panel under the list empty.
-    if !pickedShown {
-      this.m_pickRival = shown > 0 ? this.m_rowRival[0] : 0;
-      if shown > 0 {
-        this.m_rowPicked[0] = true;
+    // The one that was picked is gone (put down, forgotten), or nobody was: the top of the list,
+    // which is whoever is next, rather than an empty panel. Scrolled out of view is still picked.
+    let pickedOn = false;
+    let k = 0;
+    while k < ArraySize(order) {
+      if order[k].id == this.m_pickRival {
+        pickedOn = true;
       }
+      k += 1;
+    }
+    if !pickedOn {
+      this.m_pickRival = ArraySize(order) > 0 ? order[0].id : 0;
+    }
+    let top = this.ListWindow(ArraySize(order), CBHudListRows());
+    let row = 0;
+    while row < CBHudListRows() && top + row < ArraySize(order) {
+      this.RenderRivalRow(sys, content, order[top + row], row);
+      row += 1;
     }
   }
 
@@ -2236,6 +2359,11 @@ public class CBHud {
     this.HideBars();
     this.HideRows();
     this.SetAction("", false);
+    this.m_listTotal = 0;
+    this.m_listRows = 0;
+    if IsDefined(this.m_listMore) {
+      this.m_listMore.SetVisible(false);
+    }
 
     // Each screen decides what it is: meters, a list, or prose. The prose sits under or beside
     // whatever the screen drew, rather than being the whole screen.
@@ -2872,7 +3000,7 @@ func CBRivalSourceLine(source: Int32) -> String {
 
 func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32) -> String {
   if sys.IsRivalPurgePending() {
-    return "Every rival is forgotten a few seconds after you are back in the game.\n\nThe ones out looking for you stop, and nobody on this list comes after you again.\nIt sticks: quitting now, or loading an older save of this playthrough, forgets them too.\nClick the button again to keep them after all.";
+    return "Every rival is forgotten in the next few seconds of play.\n\nThe ones out looking for you stop, and nobody on this list comes after you again.\nIt sticks: quitting now, or loading an older save of this playthrough, forgets them too.\nClick the button again to keep them after all.";
   }
   let count = sys.CountActiveRivals();
   if count <= 0 {

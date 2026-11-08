@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.3. The "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.7.5. The "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,40 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.7.3
+
+Three requests and one crash report, the requests all in 1.7.5. Compiled on 2.5; the hooks read in
+both the 2.5 scripts and the public 2.31 copy, where they are identical.
+
+### "Can't see the new hub button. Maybe other mods that add their own buttons"
+
+**Status: fixed in 1.7.5** (`UI/HubTab.reds`). 1.7.3 added the tab to `HubMenuUtility.CreateMenuData`,
+which only one of the game's two hubs calls. The radial hub (`radial_hub_menu_enabled`) builds its own
+list, and a CET `Override` of `CreateMenuData` that does not call the original drops anything added
+to it. The reporter has seven menu mods, so which applied is unknown, but the fix covers both: the tab
+goes in at `AddMenus` on each hub's panel, which receives the row whoever built it. In the radial hub
+it joins Character's group. "Hub in the pause menu" stays the way out.
+
+### "I have 14 max rivals enabled, but I can see max 10"
+
+**Status: fixed in 1.7.5** (`UI/Hud.reds`, `ListWindow`). Every list stopped at `CBHudListRows` (10),
+and Gangs has 16 factions as well. Rivals and Gangs now build the whole list, then show a window onto
+it that the mouse wheel and the right stick move. A line over the list says which part is showing.
+The City and Turf top out at 8 districts and Titles at 21 rows, all of which fit.
+
+### "Pay off a gang from the Hub after clicking on it, with a confirm button"
+
+**Status: done in 1.7.5.** The button was there, and it paid on the first click. It now asks once,
+like Forget every rival.
+
+### Crash report: "Likely culprit: Cyberbane", Execute -> HasEquipment
+
+**Status: not Cyberbane.** A police MaxTac soldier's weapon record
+(`Items.Preset_Ajax_Military_MaxTac_2nd_wave`) came back as a garbage pointer inside the game's own AI
+task `AddWeapon.Execute`. The reporter matched the name `Execute` against mod sources and found
+`CBOpenThreadAction.Execute` in `UI/RealPhone.reds`, which overrides a notification action and cannot
+be renamed. Cyberbane calls nothing on that path. Expect more reports like it on any game `Execute`.
 
 ## Requests after 1.7.2
 
