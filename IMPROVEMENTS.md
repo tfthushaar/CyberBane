@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.9. The "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.8.0. The "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -22,7 +22,7 @@ otherwise), because installing over the top does not remove files and an old cop
 
 ### "It looks like it has become a little harder to make Rivals"
 
-**Status: fixed in 1.7.9** (`Core/CyberbaneSystem.reds`, `Reactions/CombatFlee.reds`, `Reactions/Morale.reds`).
+**Status: fixed in 1.8.0** (`Core/CyberbaneSystem.reds`, `Reactions/CombatFlee.reds`, `Reactions/Morale.reds`).
 The log agreed: 7 Rivals and 8 spared messages in a 1.7.6 session, none of either in 40 minutes of 1.7.8
 with two massacres. Three causes:
 
@@ -39,6 +39,26 @@ with two massacres. Three causes:
   without a word; it logs once a minute now. Neither limit changed.
 
 Unchanged and intended since 1.7.7: a runner has to get away to become a Rival, and fewer enemies break.
+
+### "Are there any other bugs like this?"
+
+**Status: five found and fixed in 1.8.0.** Searched by shape: duplicate guards, two writers on one event,
+states nothing ends, guards at the top of a function, and refusals the log never mentions.
+
+- **A runner who failed to get away stayed broken for good.** The hunt skips `cbMoraleBroken`, so nothing
+  ordered them again: the crew stayed live, its lane busy, and `CBChaseGiveUp` charged V for running.
+  `CBRally` at the end of the escape window clears it.
+- **Distance alone counted as escaping.** A wounded record 60 m off but still in combat became a Rival
+  (`CBHandleEscape`), with no link to the body V then killed. Now running, or out of combat, as well.
+- **The Morale switch returned from `CBCombatFleeCheck` before the wounded were recorded**, so it also
+  turned off the wounded-and-got-away Rivals. It now only zeroes the break chance.
+- **Two map pins on one body.** A re-attached NPC loses `cbMapped` and is set up again; `CBTrackOnMap`
+  now unregisters any pin it already noted for that owner.
+- **A Dogtown holder stored by 1.7.8** (before `sealed`) would have taken four in-game hours to revert.
+  `CBTurfTickDistrict` restores the home gang at once.
+
+Checked and found sound: seating on re-attach (`TakeArrivalBoarder`), the apex build (`WasBuiltAt`), kits
+(applied-package check), the threat bar (dedupes by id), bounties (one-shot), and every other duplicate guard.
 
 ## Requests after 1.7.7
 

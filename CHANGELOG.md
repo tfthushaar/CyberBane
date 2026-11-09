@@ -3,7 +3,7 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [1.7.9] - 2026-11-09
+## [1.8.0] - 2026-11-09
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
 
@@ -15,6 +15,15 @@ Your saved Cyberbane progress carries over, and nothing stored in your save chan
   hurt instead of when they turned to run, so anyone who fought on for a while before breaking almost
   never escaped to come back as a Rival.
 - **Someone you had just knocked out could be told to run**, and was counted as having broken.
+- **A runner who could not get away stayed frozen.** They never fought again or came back for you,
+  so their crew could never be beaten, and the hunt could end by telling you that you had run. Now
+  they turn and fight.
+- **A wounded enemy still shooting at you from a distance counted as having escaped**, which made a
+  Rival out of someone you then killed. They have to stop fighting, or actually run, to escape.
+- **Turning Morale off also stopped wounded enemies from becoming Rivals.** Morale now only decides
+  who breaks and runs.
+- **A hunter who left the area and came back could carry two map markers.**
+- **A Dogtown save from 1.7.8 could show Dogtown held by another gang.** It goes back to Barghest.
 
 ### Changed
 - When a gang already has as many Rivals after you as it can, the log now says so, instead of no new

@@ -153,6 +153,19 @@ public func CBTrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Voi
   data.debugCaption = CBHunterPinCaption(CBMarkerName(game, puppet));
   CBTrace("map: marker on a spawned enemy");
   // The same slot the game hangs its own role pins from, so the icon sits over the head.
+  // A body that streamed out and back in has lost cbMapped and is set up again. Whatever pin it had
+  // goes first, so it never wears two.
+  let sysPin = CyberbaneSystem.Get(game);
+  if IsDefined(sysPin) {
+    let k = sysPin.MarkerCount() - 1;
+    while k >= 0 {
+      if Equals(sysPin.MarkerOwner(k), puppet.GetEntityID()) {
+        ms.UnregisterMappin(sysPin.MarkerPin(k));
+        sysPin.DropMarkerAt(k);
+      }
+      k -= 1;
+    }
+  }
   puppet.cbMappinId = ms.RegisterMappinWithObject(data, puppet, puppet.GetRoleMappinSlotName());
   puppet.cbMapData = look;
   puppet.cbMapped = true;

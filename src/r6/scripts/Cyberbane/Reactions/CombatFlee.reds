@@ -186,11 +186,10 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     if !rt.IsEnabled() {
       return;
     }
+    // Morale off means nobody breaks. It used to return here, which also meant nobody wounded was
+    // ever remembered, so turning Morale off quietly took the wounded-and-got-away Rivals with it.
     if rt.HasSettings() {
-      if !rt.GetSettings().morale {
-        return;
-      }
-      intensity = rt.GetSettings().moraleIntensity;
+      intensity = rt.GetSettings().morale ? rt.GetSettings().moraleIntensity : 0.0;
     }
   }
   if sys.IsInSafeZone() {
@@ -343,8 +342,12 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
           sys.RemoveEscapee(e);
         }
       } else {
+        // Far away is only away for somebody who is running, or who has stopped fighting. A wounded
+        // shooter sixty metres off and still firing has not escaped anything, and made a Rival of
+        // somebody V then killed.
         let far = !gone && IsDefined(player)
-               && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance();
+               && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance()
+               && (e.fleeing || !CBNpcInCombat(e.puppet));
         if gone || far {
           CBHandleEscape(sys, game, e, now);
           if e.fleeing {
@@ -359,6 +362,9 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
             CBOrderFlee(game, e.puppet);
           }
           if age > CBConfig.EscapeTimeoutTicks() {
+            if e.fleeing && !gone {
+              CBRally(e.puppet);
+            }
             sys.RemoveEscapee(e);
           }
         }
@@ -550,4 +556,17 @@ func CBRunnerGotAway(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsc
      && (!sys.ActiveSquadHasApex() || CBCountLiveOrSpawningExcept(game, n"CB_Apex", id) == 0) {
     CBOnCrewBeaten(sys, game, sys.GetActiveSquadFaction());
   }
+}
+
+// Ran, and could not get clear. They turn and fight again. Left broken, nothing would ever give them
+// an order (the hunt skips anybody broken), so one of a crew stood about for good: the crew could not
+// be beaten, its lane stayed busy, and the hunt ended by telling V that V had run.
+func CBRally(npc: wref<ScriptedPuppet>) -> Void {
+  if !IsDefined(npc) || !npc.cbMoraleBroken {
+    return;
+  }
+  npc.cbMoraleBroken = false;
+  npc.cbLowHealthFled = false;   // hurt again later, they are judged again
+  CBCancelMove(npc);
+  CBLog.Info(n"Reactions", "A runner who could not get away turned to fight again.");
 }

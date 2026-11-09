@@ -105,6 +105,18 @@ public class CBTurfBook extends ScriptableSystem {
     }
   }
 
+  // As if it had never changed hands.
+  public func Restore(i: Int32, gang: CName, at: Float) -> Void {
+    if this.InRange(i) {
+      this.m_holders[i] = gang;
+      this.m_since[i] = at;
+      this.m_from[i] = n"";
+      this.m_challengers[i] = n"";
+      this.m_challengeAt[i] = 0.0;
+      this.m_pushAt[i] = 0.0;
+    }
+  }
+
   public func Flip(i: Int32, winner: CName, loser: CName, at: Float) -> Void {
     if this.InRange(i) {
       this.m_holders[i] = winner;

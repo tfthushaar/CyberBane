@@ -428,6 +428,15 @@ func CBTurfTickDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
     book.StartHolding(i, leader, now);
     return;
   }
+  // Sealed since 1.7.8: a save that saw it taken before then gets it back at once, without a
+  // story about a war that is not happening.
+  let content = sys.GetContent();
+  let def = IsDefined(content) ? content.GetDistrict(district) : null;
+  let heldProf = IsDefined(content) ? content.GetFaction(held) : null;
+  if IsDefined(def) && def.sealed && (!IsDefined(heldProf) || !ArrayContains(heldProf.turf, district)) {
+    book.Restore(i, leader, now);
+    return;
+  }
   if Equals(leader, held)
      || CBTurfShareOf(ids, shares, leader) < CBTurfShareOf(ids, shares, held) * CBConfig.TurfFlipMargin() {
     book.ClearChallenge(i);
