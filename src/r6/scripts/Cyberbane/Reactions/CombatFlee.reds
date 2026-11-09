@@ -225,20 +225,7 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   // sparing them just as much as letting one escape is, and tying this record to the flee
   // roll meant half of everyone you wounded and walked away from was never even considered
   // for a Rival. Tracking costs nothing: the escapee list is session-only and self-pruning.
-  let e = new CBEscapee();
-  e.puppet = puppet;
-  e.entityId = puppet.GetEntityID();
-  e.faction = faction;
-  e.record = puppet.GetRecordID();
-  e.at = CBGameSeconds(game);
-  e.tick = sys.GetTickCount();
-  e.scarMask = puppet.cbScarMask;
-  let des = GameInstance.GetDynamicEntitySystem();
-  // A Rival waiting at their place is still a Rival: the first shot can drop them low before the
-  // tick that turns the encounter into an ordinary one has run (Rivals/Whereabouts.reds).
-  e.wasRival = IsDefined(des)
-               && (des.IsTagged(e.entityId, n"CB_Rival") || des.IsTagged(e.entityId, n"CB_Lair"));
-  sys.AddEscapee(e);
+  CBAddEscapee(sys, game, puppet, faction);
 
   // Whether they actually break and run. Steadier ranks hold their ground (CBNerve), and an
   // apex squad member or a Rival who is Hard to Scare never does.
@@ -511,4 +498,21 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       }
     }
   }
+}
+
+// Somebody who has turned to run. Whether they turn into a Rival is settled once they have really got
+// away (CBHandleEscape); if V catches them first, their death takes them off the list.
+func CBAddEscapee(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, faction: CName) -> Void {
+  let e = new CBEscapee();
+  e.puppet = puppet;
+  e.entityId = puppet.GetEntityID();
+  e.faction = faction;
+  e.record = puppet.GetRecordID();
+  e.at = CBGameSeconds(game);
+  e.tick = sys.GetTickCount();
+  e.scarMask = puppet.cbScarMask;
+  let des = GameInstance.GetDynamicEntitySystem();
+  e.wasRival = IsDefined(des)
+            && (des.IsTagged(e.entityId, n"CB_Rival") || des.IsTagged(e.entityId, n"CB_Lair"));
+  sys.AddEscapee(e);
 }

@@ -9,7 +9,7 @@
 // lands, origins are n"" and district effects are skipped, but the plumbing runs.
 
 public func CBApplyDistrictRenown(sys: ref<CyberbaneSystem>, districtId: CName, amount: Float) -> Void {
-  if !IsDefined(sys) || Equals(districtId, n"") || amount <= 0.0 {
+  if !IsDefined(sys) || Equals(districtId, n"") || amount <= 0.0 || CBReputationFrozen() {
     return;
   }
   let ds = sys.EnsureDistrict(districtId);

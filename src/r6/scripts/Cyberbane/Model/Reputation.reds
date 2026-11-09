@@ -56,6 +56,11 @@ public func CBUnwitnessedDread() -> Float {
 }
 
 // Does the player want how-you-killed scored against their Conduct at all?
+public func CBReputationFrozen() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().freezeReputation;
+}
+
 public func CBBrutalConductOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().brutalConduct;

@@ -3446,18 +3446,30 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // ---- Accumulator mutators (clamped at zero; called by the model layer) -
   public func AddRenownPoints(delta: Float) -> Void {
+    if delta > 0.0 && CBReputationFrozen() {
+      return;
+    }
     this.m_renownPoints = MaxF(0.0, this.m_renownPoints + delta);
     this.GetScore().MarkDirty();
   }
   public func AddKillDreadPoints(delta: Float) -> Void {
+    if delta > 0.0 && CBReputationFrozen() {
+      return;
+    }
     this.m_killDreadPoints = MaxF(0.0, this.m_killDreadPoints + delta);
     this.GetScore().MarkDirty();
   }
   public func AddDeedDreadPoints(delta: Float) -> Void {
+    if delta > 0.0 && CBReputationFrozen() {
+      return;
+    }
     this.m_deedDreadPoints = MaxF(0.0, this.m_deedDreadPoints + delta);
     this.GetScore().MarkDirty();
   }
   public func AddHeatPoints(delta: Float) -> Void {
+    if delta > 0.0 && CBReputationFrozen() {
+      return;
+    }
     this.m_heatPoints = MaxF(0.0, this.m_heatPoints + delta);
     this.GetScore().MarkDirty();
   }

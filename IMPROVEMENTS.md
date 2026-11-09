@@ -58,8 +58,9 @@ stim and a stage-3 SpreadFear, so there was nothing between no reaction and a st
 slider only moved the point where one became the other. The game's crowd code has four stages: a look,
 walking away, hands up, running. `CBFearStage` picks one by fear and distance, and the stim goes
 straight from V to that one person. A gang member's fear used to be shouted at 10 m, so one nervous
-ganger on a corner sent every civilian near them running; it is sent to themselves now. New
-thresholds are `CivFear*`, left apart from `CivTier*`, which also price vendors and name V on the Hub.
+ganger on a corner sent every civilian near them running; they look at V now, and that broadcast is
+gone. It never affected the person sending it: `IsStimuliEventValid` drops a stim whose source is its
+own target. New thresholds are `CivFear*`, left apart from `CivTier*`, which also price vendors and name V on the Hub.
 
 ### "Gangs with a vendetta could set up roadblocks, or hide in their car to ambush"
 
@@ -76,6 +77,18 @@ The 1.7.6 log has no failed deliveries or refused spawns. Scans found no unforma
 divisions, or unbounded saved lists. Two bugs turned up, both fixed: the nickname repeat above, and an
 **apex squad sent twice**. Killed inside the 90-tick drive clock, the squad looked undelivered, because
 the muster forgets its chairs when all four are in or all are down. `PendingApexCame` now remembers.
+
+A second, wider pass after that read Economy, Narrative, Reactions, Signals, the scoring and title code
+and the Rival lifecycle with the comments stripped, and cross-checked the whole tree by script (dead
+functions, wrapped methods, the reset list, localization keys, unbounded lists). Two more fixes:
+**Freeze reputation** only stopped kills, so deeds, gigs, titles and rumours kept adding to it; the
+four `Add*Points` now refuse a gain while frozen. And `CBMoraleBreak` made a Rival on the spot, before
+anybody knew if the person got away; it now goes through the escapee path like any other runner.
+
+**Open, deliberately not changed:** an enemy who "breaks" does not itself run. The Terror it broadcasts
+reaches the people around it and, per `IsStimuliEventValid`, not the sender. A direct stim from V would
+make it run, but with up to 60% of a group allowed to break, that changes how every fight plays and
+needs testing in the game first.
 
 ## Requests after 1.7.3
 

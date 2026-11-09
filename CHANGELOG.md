@@ -32,6 +32,11 @@ Your saved Cyberbane progress carries over, and nothing already stored in your s
   no longer sends a whole street running.
 - **An apex squad could come twice.** One that arrived by car and was dead within about a minute and a
   half was counted as never having arrived, and a second one walked in.
+- **"Freeze reputation" did not freeze everything.** Jobs, story moments, titles and rumours kept adding
+  to your reputation while it was on. Now it holds still, and anything from the story that happens
+  while frozen counts once you turn it off.
+- **Enemies you killed could still become Rivals.** Somebody who broke in a fight could be named a
+  survivor on the spot, even if you shot them a second later. Now they have to actually get away.
 
 ## [1.7.6] - 2026-11-09
 

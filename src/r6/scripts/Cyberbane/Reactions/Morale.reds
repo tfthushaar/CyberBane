@@ -102,7 +102,7 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
     if !npc.cbMoraleBroken
        && npc.cbMorale < CBConfig.MoraleBreakThreshold()
        && brokenCount < breakCap {
-      CBMoraleBreak(sys, game, npc, info.faction, info.district);
+      CBMoraleBreak(sys, game, npc, info.faction);
       brokenCount += 1;
     }
   }
@@ -131,7 +131,7 @@ func CBMoraleEligible(npc: wref<ScriptedPuppet>) -> Bool {
   return true;
 }
 
-func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>, faction: CName, district: CName) -> Void {
+func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>, faction: CName) -> Void {
   npc.cbMoraleBroken = true;
   let b = npc.GetStimBroadcasterComponent();
   if IsDefined(b) {
@@ -140,8 +140,11 @@ func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<Scri
     b.TriggerSingleBroadcast(npc, gamedataStimType.Terror, CBConfig.FearStimRadius());
   }
   CBLog.Info(n"Reactions", "An enemy broke and ran.");
-  if NotEquals(faction, n"") && RandF() < CBConfig.RivalChanceSurvivor() {
-    CBCreateRival(sys, game, faction, npc.GetRecordID(), n"", ECBRivalSource.Survivor, district, CBGameSeconds(game));
+  // Made a Rival here, on the spot, they were a survivor even if V shot them in the back a second
+  // later. Same road as anybody else who runs, which also keeps them from counting twice.
+  if NotEquals(faction, n"") && !npc.cbLowHealthFled {
+    npc.cbLowHealthFled = true;
+    CBAddEscapee(sys, game, npc, faction);
   }
 }
 

@@ -69,7 +69,9 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
     ts.GiveItem(player, ItemID.FromTDBID(t"Items.money"), amount);
   }
 
-  fs.standing = ClampF(fs.standing + 5.0, -100.0, 100.0);
+  if !CBReputationFrozen() {
+    fs.standing = ClampF(fs.standing + 5.0, -100.0, 100.0);
+  }
   fs.lastTributeAt = now;
   fs.tributes += 1;
   let stats = sys.GetStats();

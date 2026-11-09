@@ -24,6 +24,10 @@
 // for ever and simply never fires. That last part is why the unverified names below cost
 // nothing - the failure mode of a wrong guess is the behaviour this already had.
 public func CBDeedFactTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  // A deed done while reputation is frozen waits, and counts when it is thawed.
+  if CBReputationFrozen() {
+    return;
+  }
   let content = CBContent(game);
   let qs = GameInstance.GetQuestsSystem(game);
   if !IsDefined(sys) || !IsDefined(content) || !IsDefined(qs) {
@@ -80,7 +84,7 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
   if !IsDefined(sys) || !IsDefined(def) {
     return;
   }
-  if sys.HasDeed(def.id) {
+  if sys.HasDeed(def.id) || CBReputationFrozen() {
     return;
   }
   sys.MarkDeed(def.id);
@@ -142,7 +146,7 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
 
 // Generic gig completion (spec §7.2.3): +20 Renown, Professional +3.
 public func CBApplyGig(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  if !IsDefined(sys) {
+  if !IsDefined(sys) || CBReputationFrozen() {
     return;
   }
   let mult = 1.0;
@@ -157,7 +161,7 @@ public func CBApplyGig(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
 
 // Generic NCPD hustle (spec §7.2.3): +5 Renown, NCPD +1.5, Professional +1.
 public func CBApplyHustle(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  if !IsDefined(sys) {
+  if !IsDefined(sys) || CBReputationFrozen() {
     return;
   }
   let mult = 1.0;

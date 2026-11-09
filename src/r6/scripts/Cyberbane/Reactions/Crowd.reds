@@ -139,36 +139,32 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
   // The game's own test for who takes the crowd's path through its reaction code.
   let civilian = npc.IsCrowd() || npc.IsCharacterCivilian();
   let counted = false;
-  if stage == 3 && !civilian {
-    // Somebody with a job to do only breaks at the very top of the scale. Sent to themselves: the
-    // same stim shouted out loud also sent every civilian within ten metres running, which is
-    // much of why walking near a gang corner emptied the street.
-    StimBroadcasterComponent.SendStimDirectly(npc, gamedataStimType.Terror, npc);
-    counted = true;
+  if stage == 0 || !civilian {
+    // Somebody with a job to do sizes V up and stays put. They used to shout Terror at everyone
+    // within ten metres, which did nothing to them (the game drops a stim whose source is its own
+    // target, IsStimuliEventValid) and sent every civilian nearby running: much of why walking past
+    // a gang corner emptied the street.
+    let reactions = npc.GetStimReactionComponent();
+    if IsDefined(reactions) {
+      reactions.CBGlanceAt(player);
+    }
   } else {
-    if stage == 0 || !civilian {
-      let reactions = npc.GetStimReactionComponent();
-      if IsDefined(reactions) {
-        reactions.CBGlanceAt(player);
-      }
-    } else {
-      // SpreadFear is the one stim the game lets a sender choose the stage of. It comes from V, so
-      // they turn to V and move away from V, and it is tagged to stop with this person: the crowd
-      // does not pass it on, and it cannot start an armed civilian on V.
-      let data: stimInvestigateData;
-      data.fearPhase = stage;
-      StimBroadcasterComponent.SendStimDirectly(player, gamedataStimType.SpreadFear, npc, data);
-      counted = true;
+    // SpreadFear is the one stim the game lets a sender choose the stage of. It comes from V, so
+    // they turn to V and move away from V, and it is tagged to stop with this person: the crowd
+    // does not pass it on, and it cannot start an armed civilian on V.
+    let data: stimInvestigateData;
+    data.fearPhase = stage;
+    StimBroadcasterComponent.SendStimDirectly(player, gamedataStimType.SpreadFear, npc, data);
+    counted = true;
 
-      // Somebody bolting past you is startling, and no more than that.
-      if stage == 3 {
-        let b = npc.GetStimBroadcasterComponent();
-        if IsDefined(b) {
-          let spread: stimInvestigateData;
-          spread.fearPhase = 1;
-          b.TriggerSingleBroadcast(npc, gamedataStimType.SpreadFear,
-                                   CBConfig.FearSpreadRadius() * intensity, spread);
-        }
+    // Somebody bolting past you is startling, and no more than that.
+    if stage == 3 {
+      let b = npc.GetStimBroadcasterComponent();
+      if IsDefined(b) {
+        let spread: stimInvestigateData;
+        spread.fearPhase = 1;
+        b.TriggerSingleBroadcast(npc, gamedataStimType.SpreadFear,
+                                 CBConfig.FearSpreadRadius() * intensity, spread);
       }
     }
   }
