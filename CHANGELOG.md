@@ -3,6 +3,23 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.9] - 2026-11-09
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Fixed
+- **Knocking someone out did nothing in 1.7.8.** It never made a Rival, and it never counted towards
+  your reputation, your Conduct, or titles like The Merciful, Ghost of the District and Psycho
+  Whisperer. Knockouts count again.
+- **Enemies who ran had too little time to get away.** Their time started when they were first badly
+  hurt instead of when they turned to run, so anyone who fought on for a while before breaking almost
+  never escaped to come back as a Rival.
+- **Someone you had just knocked out could be told to run**, and was counted as having broken.
+
+### Changed
+- When a gang already has as many Rivals after you as it can, the log now says so, instead of no new
+  Rival appearing for no visible reason.
+
 ## [1.7.8] - 2026-11-09
 
 Your saved Cyberbane progress carries over, and nothing already stored in your save changed shape.

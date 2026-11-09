@@ -114,6 +114,11 @@ func CBMoraleEligible(npc: wref<ScriptedPuppet>) -> Bool {
   if !CBSafetyGate.CanAffect(npc) {
     return false;   // excludes the player, the dead, and quest NPCs
   }
+  // Nor anybody lying on the ground: an unconscious body cannot break, or be counted as one of a
+  // group that might.
+  if !CBStillStanding(npc) {
+    return false;
+  }
   if npc.IsBoss() || npc.IsCrowd() {
     return false;
   }

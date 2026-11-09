@@ -623,10 +623,17 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   if IsDefined(rt) && rt.HasSettings() {
     maxRivals = rt.GetSettings().maxRivals;
   }
+  // Both limits used to refuse in silence, so "no new Rivals" could not be told apart from a fault.
   if sys.CountActiveRivals() >= maxRivals {
+    if sys.TakeRivalCapLog() {
+      CBLog.Info(n"Rivals", s"No new Rival: you already have \(maxRivals), the Max rivals setting.");
+    }
     return null;
   }
   if sys.CountActiveFactionRivals(faction) >= CBConfig.RivalMaxPerFaction() {
+    if sys.TakeRivalCapLog() {
+      CBLog.Info(n"Rivals", s"No new Rival from \(NameToString(faction)): they already have \(CBConfig.RivalMaxPerFaction()) after you.");
+    }
     return null;
   }
 

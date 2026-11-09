@@ -201,6 +201,11 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   if !CBSafetyGate.CanAffect(puppet) || puppet.IsBoss() {
     return;
   }
+  // Knocked out by this very hit, or already down: that is CBSparedCheck's business. Read as a
+  // quarter of their health, they were logged as a runner and even given an order to run.
+  if !CBStillStanding(puppet) {
+    return;
+  }
   let faction = CBClassifyFaction(puppet);
   if Equals(faction, n"MaxTac") {
     return;

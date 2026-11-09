@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.8. The "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.7.9. The "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,28 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.7.8
+
+### "It looks like it has become a little harder to make Rivals"
+
+**Status: fixed in 1.7.9** (`Core/CyberbaneSystem.reds`, `Reactions/CombatFlee.reds`, `Reactions/Morale.reds`).
+The log agreed: 7 Rivals and 8 spared messages in a 1.7.6 session, none of either in 40 minutes of 1.7.8
+with two massacres. Three causes:
+
+- **Knockouts were thrown away (a 1.7.8 regression).** `CBOnPuppetHit` runs `CBCombatFleeCheck` before
+  `CBSparedCheck`, so a hit that knocks somebody out first logs them as a runner (zero health is under a
+  quarter). 1.7.8's guard against two records for one person then kept that and dropped the spared
+  record, and with it the mercy. No Spared Rival, no `CBSettleMercy`: no renown, standing, Conduct,
+  `nonLethal`, `quietTakedowns` or `psychosPacified`. Now a spared record replaces a runner record,
+  never the reverse, and `CBCombatFleeCheck` and `CBMoraleEligible` skip anybody not
+  `CBStillStanding`: a defeated NPC had also been given a flee order.
+- **The escape clock started when they were first hurt,** not when they ran. `MarkEscapeeFleeing` now
+  restarts it.
+- **The limits were silent.** `CBCreateRival` refused at the Max rivals setting and at three per gang
+  without a word; it logs once a minute now. Neither limit changed.
+
+Unchanged and intended since 1.7.7: a runner has to get away to become a Rival, and fewer enemies break.
 
 ## Requests after 1.7.7
 

@@ -178,6 +178,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_builtIds: array<EntityID>;
   private let m_builtHealth: array<Float>;
   private let m_ambushWanted: Bool;
+  // When the log last said a Rival could not be made because of a limit (CBCreateRival).
+  private let m_rivalCapLoggedTick: Int32;
   private let m_arrivalAmbush: Bool;
   private let m_arrivalCarSlot: Int32;    // which car of its convoy the boarding car is (0 first)
   private let m_topFaction: CName;
@@ -624,6 +626,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   // the car left with a seat its own crew needed.
   // A car of ours is still driving in. Its crew can be out of the world while it is far off, and
   // that is not the same as having been left behind (Spawn/Hunt.reds, CBHuntersLeftBehind).
+  // At most once a minute, so a long fight against a full gang does not fill the log.
+  public func TakeRivalCapLog() -> Bool {
+    if this.m_rivalCapLoggedTick > 0 && (this.m_tickCount - this.m_rivalCapLoggedTick) < 60 {
+      return false;
+    }
+    this.m_rivalCapLoggedTick = Max(1, this.m_tickCount);
+    return true;
+  }
+
   public func SetAmbushWanted(wanted: Bool) -> Void {
     this.m_ambushWanted = wanted;
   }
@@ -3379,9 +3390,16 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Wounded runaways pending resolution (spec §10.2).
+  // They have started running. The clock for getting away starts now, not when they were first hurt:
+  // somebody who fought on at a quarter of their health for a minute used to break with only seconds
+  // left to get clear.
   public func MarkEscapeeFleeing(id: EntityID) -> Void {
     for e in this.m_escapees {
-      if IsDefined(e) && Equals(e.entityId, id) {
+      if IsDefined(e) && Equals(e.entityId, id) && !e.spared {
+        if !e.fleeing {
+          e.tick = this.m_tickCount;
+          e.fleeOrders = 0;
+        }
         e.fleeing = true;
       }
     }
@@ -3391,12 +3409,24 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !IsDefined(e) {
       return;
     }
-    // Already being watched. An NPC streamed out and back in has lost its flags, and two records
-    // of one person are two chances at a Rival from somebody who only ran once.
-    for known in this.m_escapees {
+    // One record per person: an NPC streamed out and back in has lost its flags, and two records of
+    // one person are two chances at a Rival from somebody who only went down once.
+    //
+    // But which record is kept matters. Everybody V knocks out was badly hurt first, so they were
+    // already being watched as somebody who might run. 1.7.8 kept that first record and threw the
+    // knockout away, which cost every knockout its Spared Rival and its credit with the street. Being
+    // down is the later and surer fact: it replaces the runner record, and a runner record never
+    // replaces it.
+    let k = 0;
+    while k < ArraySize(this.m_escapees) {
+      let known = this.m_escapees[k];
       if IsDefined(known) && Equals(known.entityId, e.entityId) {
+        if e.spared && !known.spared {
+          this.m_escapees[k] = e;
+        }
         return;
       }
+      k += 1;
     }
     ArrayPush(this.m_escapees, e);
     while ArraySize(this.m_escapees) > CBConfig.EscapeeCap() {
