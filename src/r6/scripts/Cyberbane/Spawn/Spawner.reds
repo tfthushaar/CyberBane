@@ -835,19 +835,39 @@ public func CBCancelMove(puppet: ref<ScriptedPuppet>) -> Void {
 }
 
 // Tell one NPC to get out of the car it is in. Once per NPC.
+//
+// With the game's own event, the one it sends passengers when a car is hijacked or stops for good
+// (VehicleComponent.QueueExitEventToAllNonFriendlyActivePassengers, AIEvents.ExitVehicleEvent). This
+// sent an AIUnmountCommand until 1.7.7, with nothing in it. That command is for a quest to hand over
+// a MountEventData, and the task that runs it reads that data and stays in progress for as long as it
+// is given none (aiVehicleBehaviorDelegate.script, MountCommandHandlerTask, MountRequestCondition). So
+// the crew never left their seats and sat there running an order with no end, until V walked up and
+// the game's own combat took them out of the car. Every car arrival since the crews were first seated
+// has only ever emptied that way.
 public func CBUnmountOnce(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(puppet) || puppet.cbUnmountSent || !puppet.IsAttached() || puppet.IsDead()
      || !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
     return;
   }
-  let ai = puppet.GetAIControllerComponent();
-  if !IsDefined(ai) {
-    return;
-  }
-  CBCancelMove(puppet);
   puppet.cbUnmountSent = true;
-  CBTrace("vehicle: ordering an NPC out of a car");
-  ai.SendCommand(new AIUnmountCommand());
+  CBAskOutOfCar(puppet);
+}
+
+// Again, for somebody already asked who is still sitting there. Only those: the slot tags stay on
+// people for good, and somebody who has never been asked is in a different car, and may be moving.
+public func CBUnmountAgain(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(puppet) || !puppet.cbUnmountSent || !puppet.IsAttached() || puppet.IsDead()
+     || !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
+    return false;
+  }
+  CBAskOutOfCar(puppet);
+  return true;
+}
+
+func CBAskOutOfCar(puppet: ref<ScriptedPuppet>) -> Void {
+  CBCancelMove(puppet);
+  CBTrace("vehicle: asking an NPC out of a car");
+  puppet.QueueEvent(AIEvents.ExitVehicleEvent());
 }
 
 // ---- Taking things out of the world ---------------------------------------------

@@ -900,6 +900,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
   // Polls in a row it has sat still short of V, and whether its order is the chase one.
   public let stuck: Int32;
   public let chasing: Bool;
+  public let braked: Bool;
 
   public func Call() -> Void {
     let game = GetGameInstance();
@@ -915,6 +916,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
         again.retargets = this.retargets;
         again.slot = this.slot;
         again.stuck = this.stuck;
+        again.braked = this.braked;
         again.chasing = this.chasing;
         let dsW = GameInstance.GetDelaySystem(game);
         if IsDefined(dsW) {
@@ -947,6 +949,14 @@ public class CBArrivalDismountCallback extends DelayCallback {
     if IsDefined(sysD) && (sysD.IsInQuestArea() || sysD.GetStoryHold() != CBStoryNone()) {
       vDriving = true;
     }
+    // There, and still rolling: the order was to where V stood when it was given, and V has moved
+    // or the car would be slowing already. Left alone it drives on past V to that spot. Stopped once,
+    // here, the way the game stops a car for an emergency exit.
+    let braked = this.braked;
+    if IsDefined(car) && car.IsAttached() && arrived && moving && !vDriving && !braked {
+      car.ForceBrakesUntilStoppedOrFor(CBConfig.ArrivalBrakeSeconds());
+      braked = true;
+    }
     let holdOn = !arrived && this.tries < CBConfig.ArrivalDismountMaxTries();
     if !holdOn && (moving || vDriving) && this.tries < CBConfig.ArrivalDismountMaxTries() * 3 {
       holdOn = true;
@@ -964,6 +974,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
     if stuck >= CBConfig.CarStuckGiveUpPolls() && !vDriving {
       CBLog.Info(n"Spawn", s"The car could not get through after \(this.tries) checks; its crew come on foot.");
       CBDismountArrivalCrew(game, this.slot);
+      CBWatchCrewOut(game, this.slot);
       return;
     }
     // V got into a car or out of one: a different chase, so a different order (CBDriveAtPlayer).
@@ -999,6 +1010,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
       next.retargets = this.retargets;
       next.slot = this.slot;
       next.stuck = stuck;
+      next.braked = braked;
       next.chasing = chasing;
       let dsN = GameInstance.GetDelaySystem(game);
       if IsDefined(dsN) {
@@ -1007,8 +1019,72 @@ public class CBArrivalDismountCallback extends DelayCallback {
       return;
     }
     CBLog.Info(n"Spawn", s"Car arrived (or was given up on) after \(this.tries) checks; crew getting out.");
+    // Parked next to V, having been sent to V: there is nothing left for them to search for.
+    if carHere && arrived && !vDriving {
+      CBHuntCrewPulledUp(sysD, game);
+    }
     CBDismountArrivalCrew(game, this.slot);
+    CBWatchCrewOut(game, this.slot);
   }
+}
+
+// Getting out is asked for, and the event can land while somebody is busy. Asked again a few times
+// for anybody still seated, and said in the log if it never takes, because a crew sitting in a car
+// is otherwise silent: nothing else in the mod touches somebody in a seat.
+public class CBArrivalCrewOutCallback extends DelayCallback {
+  public let slot: Int32;
+  public let tries: Int32;
+
+  public func Call() -> Void {
+    let game = GetGameInstance();
+    let seated = 1;
+    if CBWorldStable(game) {
+      seated = CBAskSeatedCrewOut(game, this.slot);
+    }
+    if seated == 0 {
+      return;
+    }
+    if this.tries >= CBConfig.ArrivalCrewOutTries() {
+      CBLog.Info(n"Spawn", s"\(seated) of a car's crew would not get out.");
+      return;
+    }
+    let ds = GameInstance.GetDelaySystem(game);
+    if IsDefined(ds) {
+      let next = new CBArrivalCrewOutCallback();
+      next.slot = this.slot;
+      next.tries = this.tries + 1;
+      ds.DelayCallback(next, CBConfig.ArrivalDismountPoll(), false);
+    }
+  }
+}
+
+public func CBWatchCrewOut(game: GameInstance, slot: Int32) -> Void {
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(ds) {
+    return;
+  }
+  let watch = new CBArrivalCrewOutCallback();
+  watch.slot = slot;
+  ds.DelayCallback(watch, CBConfig.ArrivalDismountPoll(), false);
+}
+
+// Ask anybody of this car still in a seat to get out, and say how many that was.
+func CBAskSeatedCrewOut(game: GameInstance, slot: Int32) -> Int32 {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return 0;
+  }
+  let seated = 0;
+  let ids = des.GetTaggedIDs(CBCarSlotTag(slot));
+  let i = 0;
+  while i < ArraySize(ids) {
+    let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if CBUnmountAgain(game, puppet) {
+      seated += 1;
+    }
+  }
+  return seated;
 }
 
 // Which car of a convoy a crew member came in, as a tag (0 is the first car).

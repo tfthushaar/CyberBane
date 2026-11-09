@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.6. The "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.7.7. The "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,33 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.7.6
+
+Two reports, both in 1.7.7. Compiled on 2.5 and not yet played; the game functions they use were read
+in the 2.5 scripts and in the public 2.31 copy.
+
+### "They crash somewhere and sit inside the car until I go up to them"
+
+**Status: fixed in 1.7.7** (`Spawn/Spawner.reds`, `Spawn/Arrival.reds`, `Spawn/Hunt.reds`). Three causes.
+
+- **The order out of the car never worked.** `CBUnmountOnce` sent an empty `AIUnmountCommand`. The task
+  that runs that command reads its `mountData` and stays in progress when it has none, so the crew
+  stayed seated, and the game's combat took them out only once V came close. It now sends the
+  `ExitVehicle` AI event the game sends its own passengers, asks up to five more times for anybody
+  still seated, and logs anybody who never gets out.
+- **The speed was 80 m/s.** The game's police send the same order at 20 and stop 20 m short. Now the same.
+- **A car at V kept going to where V had been.** It now brakes once it is within reach of V. A crew
+  whose car parked beside V also knows where V is, instead of having to find V again.
+
+### "Multiple Rivals with the same names"
+
+**Status: fixed in 1.7.7** (`Data/Names.reds`, `Rivals/RivalSystem.reds`). A name was arithmetic on the
+Rival's id, nothing checked whether it was taken, and four first names by three surnames repeats every
+twelve Rivals. Gangs now have 23 first names and 19 surnames, in different prime lengths so the two
+lists do not walk in step, and `CBRivalPickFreeName` refuses a full name anybody on the roster has, or
+a first name somebody else of that gang has. **Names only ever go on the end of a list**: a Rival is
+saved as a position in it. Existing Rivals keep their names.
 
 ## Requests after 1.7.3
 

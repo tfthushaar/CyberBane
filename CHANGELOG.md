@@ -3,6 +3,21 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.7] - 2026-11-09
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Fixed
+- **Crews sat in their cars until you walked up to them.** The order to get out never worked. Now they
+  get out when the car stops and come for you, and if the car pulled up next to you they already
+  know where you are.
+- **Cars drove so fast they crashed into everything.** They were going nearly 290 km/h. They now drive
+  at the speed the game's own police use, and stop a short way off.
+- **Cars drove straight past you.** A car that reaches you now brakes there, rather than carrying on
+  to where you used to be.
+- **Several Rivals had the same name.** There are far more names now, and a new Rival is never given
+  a name somebody on your list already has. Rivals you already have keep the names they have.
+
 ## [1.7.6] - 2026-11-09
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.

@@ -62,6 +62,76 @@ public func CBRivalGenerateName(content: ref<CyberbaneContent>, rival: ref<CBRiv
   }
 }
 
+// A name nobody on the roster has. The pick above is arithmetic on the Rival's id, and nothing ever
+// asked whether the answer was taken: with four first names and three surnames it came round every
+// twelve Rivals, and players met the same person twice.
+//
+// Looks forward through the pool from that pick. First for a name that shares neither the whole name
+// with anybody nor the first name with anybody else of this gang, then, if a long roster has used
+// those up, for one where only the whole name is new. Dead Rivals count: the name on a grave is taken.
+public func CBRivalPickFreeName(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Void {
+  if !IsDefined(sys) || !IsDefined(content) || !IsDefined(rival) {
+    return;
+  }
+  let pool = content.GetFactionNames(rival.faction);
+  if !IsDefined(pool) || ArraySize(pool.firstNames) == 0 || rival.firstName < 0 {
+    return;
+  }
+  let firsts = ArraySize(pool.firstNames);
+  let lasts = ArraySize(pool.lastNames);
+  let startFirst = rival.firstName;
+  let startLast = rival.lastName;
+  let pass = 0;
+  while pass < 2 {
+    let step = 0;
+    while step < CBConfig.RivalNameTries() {
+      rival.firstName = (startFirst + step) % firsts;
+      if lasts > 0 && startLast >= 0 {
+        rival.lastName = (startLast + step) % lasts;
+      }
+      if !CBRivalNameTaken(sys, content, rival, pass == 0) {
+        return;
+      }
+      step += 1;
+    }
+    pass += 1;
+  }
+  rival.firstName = startFirst;
+  rival.lastName = startLast;
+}
+
+func CBRivalNameTaken(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>,
+                      gangFirstNamesToo: Bool) -> Bool {
+  let mine = CBRivalBareName(content, rival);
+  for other in sys.GetRivals() {
+    if IsDefined(other) && other.id != rival.id {
+      if Equals(CBRivalBareName(content, other), mine) {
+        return true;
+      }
+      if gangFirstNamesToo && Equals(other.faction, rival.faction) && other.firstName == rival.firstName {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// The name without the part in quotes.
+func CBRivalBareName(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> String {
+  let pool = content.GetFactionNames(rival.faction);
+  if !IsDefined(pool) {
+    return "";
+  }
+  let name = "";
+  if rival.firstName >= 0 && rival.firstName < ArraySize(pool.firstNames) {
+    name = pool.firstNames[rival.firstName];
+  }
+  if rival.lastName >= 0 && rival.lastName < ArraySize(pool.lastNames) {
+    name = name + " " + pool.lastNames[rival.lastName];
+  }
+  return name;
+}
+
 public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> String {
   if !IsDefined(rival) {
     return "";
@@ -507,6 +577,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
   let content = CBContent(game);
   CBRivalGenerateName(content, r);
+  CBRivalPickFreeName(sys, content, r);
   CBRivalAddTrait(content, r);
   if Equals(source, ECBRivalSource.Spared) {
     CBRivalGiveTrait(r, n"Humiliated");

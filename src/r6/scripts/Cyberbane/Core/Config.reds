@@ -445,9 +445,16 @@ public abstract class CBConfig {
   public static func ChaseDistanceMin() -> Float = 3.0
   public static func ChaseDistanceMax() -> Float = 12.0
   public static func ChaseStartSpeed() -> Float = 10.0
-  public static func ArrivalDriveMaxSpeed() -> Float = 80.0
+  // Metres a second. This was 80, nearly 290 km/h through city traffic, which is why crews arrived by
+  // driving into things. The game's own police send this exact order at 20 and 10, and stop 20 m
+  // short (preventionSystem.script, the drive to the police strategy's destination).
+  public static func ArrivalDriveMaxSpeed() -> Float = 20.0
   public static func ArrivalDriveMinSpeed() -> Float = 10.0
-  public static func ArrivalStopDistance() -> Float = 12.0
+  public static func ArrivalStopDistance() -> Float = 20.0
+  // A car that has reached V but is still rolling is braked, for at most this long.
+  public static func ArrivalBrakeSeconds() -> Float = 4.0
+  // How many times a crew still in their seats is asked again, one poll apart.
+  public static func ArrivalCrewOutTries() -> Int32 = 5
   // How close the car has to get before the crew is let out, how often that is checked, and
   // how many checks before they are unloaded regardless.
   public static func ArrivalDismountDistance() -> Float = 35.0
@@ -1035,6 +1042,8 @@ public abstract class CBConfig {
   public static func RivalAfterEscapeTicks() -> Int32 = 900
   public static func RivalMaxActiveHardCap() -> Int32 = 15
   public static func RivalMaxPerFaction() -> Int32 = 3
+  // How far through a name pool a new Rival looks for a name nobody has.
+  public static func RivalNameTries() -> Int32 = 64
 
   // ---- Collection caps (spec §6.5) -------------------------------------
   public static func CapRumors() -> Int32 = 64

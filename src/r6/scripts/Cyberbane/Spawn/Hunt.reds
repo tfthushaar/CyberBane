@@ -635,6 +635,27 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   return best;
 }
 
+// A car has parked beside V with a crew that was sent to V. Waiting for one of them to spot V all over
+// again is what "they drove up and did nothing" looks like, so they know where V is as they get out,
+// and the hunt tick hands V to each of them once they are on their feet. Not where nobody may follow,
+// on a job, or while the story has the stage. Their own eyes keep it going from there.
+public func CBHuntCrewPulledUp(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let player = GetPlayer(game);
+  if !IsDefined(sys) || !IsDefined(player) || sys.IsInSanctuary() || sys.IsInQuestArea()
+     || sys.GetStoryHold() != CBStoryNone() {
+    return;
+  }
+  let was = sys.GetHuntState();
+  sys.SetHuntLkp(player.GetWorldPosition());
+  sys.SetHuntLastSeenTick(sys.GetTickCount());
+  sys.SetHuntState(CBHuntLocated());
+  sys.SetHuntFromTip(false);
+  sys.SetSpotTicks(0);
+  if was != CBHuntLocated() {
+    CBHuntOnLocated(sys, game);
+  }
+}
+
 // The moment they find V. A Rival says so, once per arrival: the text that used to arrive with
 // them, when there was nothing to find.
 func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
