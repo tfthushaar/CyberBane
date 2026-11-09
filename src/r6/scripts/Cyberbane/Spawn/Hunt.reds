@@ -727,7 +727,7 @@ public func CBDistrictStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   let ds = sys.FindDistrict(id);
   let renown = IsDefined(ds) ? ds.renown : 0.0;
-  let word = CBDistrictRenownWord(sys, id);
+  let word = CBTurfHudWord(sys, game, id) + CBDistrictRenownWord(sys, id);
   if renown < 1.0 {
     return StrUpper(CBClip(label, CBConfig.HudNameMaxChars())) + "   -   " + word;
   }
@@ -1112,6 +1112,7 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
   CBReleaseTag(sys, game, des, player, n"CB_Squad", engaged);
   CBReleaseTag(sys, game, des, player, n"CB_Escort", engaged);
   CBReleaseTag(sys, game, des, player, n"CB_Scout", engaged);
+  CBReleaseTag(sys, game, des, player, n"CB_Patrol", engaged);
   // Anyone handed to the orphan sweep because they were still in view when their encounter
   // ended is still alive and may still be in combat with V, and the sweep only runs on the slow
   // tick. Without this they could hold V in combat in the meantime, which is the 1.5.3 report

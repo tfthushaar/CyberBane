@@ -1132,6 +1132,10 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   let id = puppet.GetEntityID();
   // An apex escort fights as rank and file, so it takes the squad's kit.
+  if des.IsTagged(id, n"CB_Patrol") {
+    CBSetUpPatrol(sys, game, puppet);
+    return;
+  }
   let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort") || des.IsTagged(id, n"CB_Scout");
   let isRival = des.IsTagged(id, n"CB_Rival");
   let isApex = des.IsTagged(id, n"CB_Apex");
@@ -1466,6 +1470,7 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Apex");
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Escort");
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Scout");
+  CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Patrol");
 
   // Cars: only when no car is on its way or being boarded and nobody of ours is in a seat.
   if sys.HasPendingArrival() || sys.HasConvoyLegs() || CBAnyCrewSeated(game, des) {

@@ -86,8 +86,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_rivalLastPosTick: Int32;
   // Who held each district at the last look, by CBDistrictIndex, so a district changing hands is
   // noticed once (Model/Territory.reds). Session only: the first look of a session only learns.
-  private let m_turfHolders: array<CName>;
-  private let m_turfKnown: Bool;
   // Who is on their own streets in the district V is standing in, worked out on the district
   // sample (a settled tick) so every reader - vendor prices included, which are asked for every
   // item on a list - reads the answer instead of working it out again. Session only.
@@ -499,7 +497,8 @@ public class CyberbaneSystem extends ScriptableSystem {
         // ignored it.
         if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival")
            || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort")
-           || des.IsTagged(id, n"CB_Scout") || des.IsTagged(id, n"CB_Lair") {
+           || des.IsTagged(id, n"CB_Scout") || des.IsTagged(id, n"CB_Lair")
+           || des.IsTagged(id, n"CB_Patrol") {
           puppet.cbSetupQueued = true;
           CBScheduleSpawnSetup(this.GetGameInstance(), id, riding);
         }
@@ -953,6 +952,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBHuntTick(this, game);             // the people after you search, find you, lose you
     CBRivalHuntTick(this, game);        // confirms a queued rival actually arrived
     CBWhereaboutsTick(this, game);      // a Rival waiting where they were last seen, and its pin
+    if this.m_tickCount % 5 == 0 {
+      CBTurfPatrolTick(this, game);
+    }
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) && !heavyStreaming {
@@ -1324,23 +1326,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_lastTipAt = at;
   }
 
-  public func GetTurfHolder(index: Int32) -> CName {
-    if index < 0 || index >= ArraySize(this.m_turfHolders) {
-      return n"";
-    }
-    return this.m_turfHolders[index];
-  }
-
-  public func SetTurfHolder(index: Int32, holder: CName) -> Void {
-    if index < 0 || index >= CBDistrictCount() {
-      return;
-    }
-    while ArraySize(this.m_turfHolders) <= index {
-      ArrayPush(this.m_turfHolders, n"");
-    }
-    this.m_turfHolders[index] = holder;
-  }
-
   public func GetTurfHereDistrict() -> CName {
     return this.m_turfHereDistrict;
   }
@@ -1352,19 +1337,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func SetTurfHere(district: CName, gangs: array<CName>) -> Void {
     this.m_turfHereDistrict = district;
     this.m_turfHereGangs = gangs;
-  }
-
-  public func TurfHoldersKnown() -> Bool {
-    return this.m_turfKnown;
-  }
-
-  public func SetTurfHoldersKnown() -> Void {
-    this.m_turfKnown = true;
-  }
-
-  public func ForgetTurfHolders() -> Void {
-    ArrayClear(this.m_turfHolders);
-    this.m_turfKnown = false;
   }
 
   public func NoteRivalLastPos(rivalId: Int32, at: Vector4) -> Void {
@@ -2840,7 +2812,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       svc.DropPlaythroughSightings(this.m_playthroughId);
       svc.DropPlaythroughGangPower(this.m_playthroughId);   // and how hard V had hit each gang
     }
-    this.ForgetTurfHolders();   // the new playthrough's map is learnt afresh, with nothing announced
+    let turfBook = CBTurfBook.Get(this.GetGameInstance());
+    if IsDefined(turfBook) {
+      turfBook.Clear();   // the new playthrough's map is learnt afresh
+    }
     this.m_playthroughId = CBGeneratePlaythroughId();
     let rtNow = CyberbaneRuntime.Get();
     if IsDefined(rtNow) {

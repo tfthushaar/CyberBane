@@ -2261,6 +2261,15 @@ public class CBHud {
           }
           k += 1;
         }
+        // The one written down, once somebody has been: the shares are only who is ahead today.
+        let written = CBTurfHolder(sys, game, district);
+        k = 0;
+        while k < ArraySize(ids) {
+          if Equals(ids[k], written) {
+            top = k;
+          }
+          k += 1;
+        }
         let second = -1;
         k = 0;
         while k < ArraySize(ids) {
@@ -2270,7 +2279,7 @@ public class CBHud {
           k += 1;
         }
         let holder = ids[top];
-        let status = CBHudTurfStatus(content, district, holder, ids, shares, second);
+        let status = CBHudTurfStatus(game, content, district, holder, ids, shares, second);
         let pip = CBHudGrey();
         if IsDefined(score) {
           let posture = score.GetPosture(holder);
@@ -3022,10 +3031,14 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
 }
 
 // What is going on in a district, in as few words as will do, for the right-hand column of TURF.
-func CBHudTurfStatus(content: ref<CyberbaneContent>, district: CName, holder: CName,
+func CBHudTurfStatus(game: GameInstance, content: ref<CyberbaneContent>, district: CName, holder: CName,
                      ids: array<CName>, shares: array<Float>, second: Int32) -> String {
   if !IsDefined(content) {
     return "";
+  }
+  let book = CBTurfBook.Get(game);
+  if IsDefined(book) && NotEquals(book.Challenger(CBDistrictIndex(district)), n"") {
+    return s"\(CBBarFactionLabel(book.Challenger(CBDistrictIndex(district)))) MOVING IN";
   }
   let prof = content.GetFaction(holder);
   let home = IsDefined(prof) && ArrayContains(prof.turf, district);
@@ -3078,7 +3091,7 @@ func CBHudTurfBody(sys: ref<CyberbaneSystem>) -> String {
   if n == 0 {
     return "Every gang is at full strength. Hurt one and its grip on its streets slips; break one and the gang at war with it next door moves in.";
   }
-  return out + "They rebuild while you leave them alone. Break one and the gang at war with it next door moves in.";
+  return out + "They rebuild while you leave them alone, and your work counts double on their own streets. Break one and the gang at war with it next door moves in, and stays until somebody takes it back.";
 }
 
 // A number as a short bar of blocks, for a list where a real widget would be ten more of them.
@@ -3337,7 +3350,11 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
                           if Equals(e.kind, n"TurfTaken") {
                             line = s"\(gangCap) took over the streets.";
                           } else {
-                            line = NameToString(e.kind);
+                            if Equals(e.kind, n"TurfPush") {
+                              line = s"\(gangCap) came back to take their streets.";
+                            } else {
+                              line = NameToString(e.kind);
+                            }
                           }
                         }
                       }

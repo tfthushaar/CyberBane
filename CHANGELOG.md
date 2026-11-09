@@ -3,6 +3,31 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.7.8] - 2026-11-09
+
+Your saved Cyberbane progress carries over, and nothing already stored in your save changed shape.
+
+### Added
+- **Taking a district now means something.** A district changes hands once a gang has been clearly on
+  top of its holder for a few hours, and then it stays taken until somebody takes it back. Your kills
+  count extra on a gang's own streets. Once the old gang has rebuilt it will come back for what it lost.
+- **You can see who runs the place.** The line at the top of the screen says who holds the district
+  you are in or that it is contested, the game's own map lists the new owners, and the Hub's Turf
+  screen shows who is moving in.
+- **Losing ground matters.** People fighting on streets their gang has lost break and run sooner, and
+  the new holders' lookouts, crews and vendors take over.
+- **Turf patrols (experimental, off by default).** In a district that has changed hands, a few of the
+  new owners walk the streets while you are around. Hostile if you are at war with them.
+- **Enemy of my enemy** in Mod Settings: how much a gang warms to you when you kill its enemies.
+
+### Fixed
+- **Dogtown could never change hands**, and nobody from outside could ever take Pacifica. No gang next
+  door was at war with them. The Animals, the Voodoo Boys and Barghest are at war now.
+- **Gangs loved you while you were killing them.** A gang you have hurt in the last two in-game days
+  gets nothing out of you killing its enemies, and a gang you have ever killed members of only warms
+  to you that way as far as just short of Allied.
+- **Districts swapped owners with nothing happening.** The daily drift alone could change who held one.
+
 ## [1.7.7] - 2026-11-09
 
 Your saved Cyberbane progress carries over, and nothing already stored in your save changed shape.

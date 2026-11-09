@@ -30,6 +30,16 @@ public func CBGangRivalsOf(content: ref<CyberbaneContent>, faction: CName) -> ar
   return prof.rivalFactions;
 }
 
+public func CBEnemyOfEnemyShare() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().enemyOfEnemyShare : CBConfig.RivalGangShare();
+}
+
+func CBGangHurtLately(fs: ref<CBFactionState>, now: Float) -> Bool {
+  return fs.lastIncidentAt > 0.0 && now >= fs.lastIncidentAt
+      && (now - fs.lastIncidentAt) < CBConfig.GangGrudgeHours() * CBConfig.SecondsPerHour();
+}
+
 public func CBGangsAreRivals(content: ref<CyberbaneContent>, a: CName, b: CName) -> Bool {
   let rivals = CBGangRivalsOf(content, a);
   let i = 0;
@@ -51,16 +61,24 @@ public func CBCreditRivalGangs(sys: ref<CyberbaneSystem>, game: GameInstance, vi
   }
   let content = CBContent(game);
   let rivals = CBGangRivalsOf(content, victim);
-  let gain = -loss * CBConfig.RivalGangShare();
-  let ceiling = CBConfig.RivalGangCeiling();
+  let gain = -loss * CBEnemyOfEnemyShare();
+  if gain <= 0.0 {
+    return;
+  }
+  let now = CBGameSeconds(game);
   let i = 0;
   while i < ArraySize(rivals) {
     let id = rivals[i];
     i += 1;
     if NotEquals(id, n"") && NotEquals(id, victim) {
       let fs = sys.EnsureFaction(id);
-      if IsDefined(fs) && fs.standing < ceiling {
-        fs.standing = MinF(fs.standing + gain, ceiling);
+      // Whoever V has been killing does not get to be grateful. The credit also stops short of Allied
+      // for a gang V has any blood with: being useful to somebody is not the same as being theirs.
+      if IsDefined(fs) && !CBGangHurtLately(fs, now) {
+        let ceiling = fs.kills > 0 ? CBConfig.RivalGangCeilingBloodied() : CBConfig.RivalGangCeiling();
+        if fs.standing < ceiling {
+          fs.standing = MinF(fs.standing + gain, ceiling);
+        }
       }
     }
   }

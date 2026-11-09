@@ -173,6 +173,9 @@ public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, 
   if sworn {
     chance *= CBConfig.MoraleSwornMult();
   }
+  if CBTurfLostGround(sys, faction) {
+    chance *= CBConfig.MoraleLostGroundMult();
+  }
   return ClampF(chance, 0.0, CBConfig.MoraleBreakMaxChance());
 }
 

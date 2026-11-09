@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.7.7).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.7.8).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -119,16 +119,20 @@ in active development. This page describes what the mod does and how it installs
   backing away from you, vendors on their turf give you better prices, and they warn you when
   their enemies send people after you. Vendors on the turf of a gang that wants you dead charge
   you more.
-- **Turf wars.** Every gang's streets are split between the gangs that work them, and the
-  stronger gang holds more. Each of their people you put down weakens a gang a little; an
-  officer, a boss, one of their Rivals, a whole crew or their apex squad, a lot. They rebuild
-  while you leave them alone. Break a gang and the gang at war with it next door moves in: break
-  the Valentinos and 6th Street walks into Heywood, until the Valentinos are strong enough to
-  take it back. The street texts you when a district changes hands, the History screen keeps it,
-  and the Hub's Turf screen shows who holds each district, how firmly, and who is fighting them
-  for it. Whoever holds a district is the gang whose lookouts watch you there, whose crews know
-  where you are and whose vendors know where you stand with them. Turf wars can be turned off,
-  under Gangs.
+- **Turf wars.** Whatever you do to a gang weakens it, most of all on its own streets. Break one and
+  its enemy next door moves in. A district changes hands once somebody has been clearly on top of the
+  holder for a few hours, and then it stays taken until somebody takes it back. The old gang will try
+  once it has rebuilt, and who you hurt decides how that goes. The line at the top of the screen says
+  who holds the district you are in, the game's map lists the new owners, and the Hub's Turf screen
+  shows every district, who holds it and who is moving in. Prices, lookouts and crews follow whoever
+  holds the streets, and people fighting on ground they have lost break sooner. The gangs the game
+  placed in a district are still there after it falls, so a district that has changed hands reads as
+  streets in dispute. Turf wars can be turned off in Mod Settings.
+- **Turf patrols (experimental).** Off by default, under Gangs. In a district that has changed hands, a
+  few of the new owners walk the streets while you are around, hostile if you are at war with them.
+- **Enemy of my enemy.** Killing a gang's enemies warms it to you, unless you have been killing it
+  too. A gang you have blood with only warms that way to just short of Allied. There is a slider for
+  how much it counts, under Gangs.
 - **Enemies that break, run, and remember.** Wound an enemy badly and it can lose its nerve and
   try to escape. Catch it and that is the end of it; let it get away and it comes back as a named
   Rival with a grudge. Beat one down and walk away without finishing them and they can come back

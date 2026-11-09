@@ -75,7 +75,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-HitSquadsPerDay-Desc", "How many gang crews can be sent after you in one in-game day. 0 stops them coming.");
     this.Text("Cyberbane-Settings-ApexPerDay-Desc", "How many apex squads can be sent after you in one in-game day. 0 stops them coming.");
     this.Text("Cyberbane-Settings-EncounterGap-Desc", "How long the city leaves you alone after a fight before arranging the next of that kind. Rivals, crews and apex squads rest separately.");
-    this.Text("Cyberbane-Settings-TurfWars-Desc", "Hurting a gang weakens it, and a broken gang loses its districts to its enemies next door. Off keeps every gang on its own streets.");
+    this.Text("Cyberbane-Settings-TurfWars-Desc", "Hurting a gang weakens it, most of all on its own streets. A broken gang loses its districts to its enemies next door, and they stay taken until somebody takes them back. Off keeps every gang on its own streets.");
     this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "Every crew a gang sends is led by its apex squad: a heavy, a shooter, a blade and a netrunner. Off sends the crew alone.");
     this.Text("Cyberbane-Settings-ApexArrivalSound-Desc", "Plays the game's own MaxTac descent horn when a gang sends its apex squad.");
     this.Text("Cyberbane-Settings-ApexBossBar-Desc", "The name and health bars at the top of the screen: one for a Rival, one for each apex. The line of text above them is Hunt line on the HUD.");
@@ -192,6 +192,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexArrivalSound", "Apex squad arrival horn");
     this.Text("Cyberbane-Settings-VendettaApexSquad", "Crews bring the apex squad");
     this.Text("Cyberbane-Settings-TurfWars", "Turf wars");
+    this.Text("Cyberbane-Settings-TurfPatrols", "Turf patrols (experimental)");
+    this.Text("Cyberbane-Settings-TurfPatrols-Desc", "Off by default. In a district that has changed hands, a few of the new owners walk the streets while you are around. Hostile if you are at war with them.");
+    this.Text("Cyberbane-Settings-EnemyOfEnemy", "Enemy of my enemy");
+    this.Text("Cyberbane-Settings-EnemyOfEnemy-Desc", "How much a gang warms to you when you kill its enemies, as a share of what the victims' gang loses. Zero means it never does. A gang you have hurt lately gives you nothing.");
     this.Text("Cyberbane-Settings-UnseenDread", "How frightening unseen work is");
     this.Text("Cyberbane-Settings-UnseenDread-Desc", "How much a killing nobody witnessed still adds to how frightening you are. Zero counts only what people saw.");
     this.Text("Cyberbane-Settings-BrutalConduct", "Melee kills cost Conduct");

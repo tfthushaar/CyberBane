@@ -63,12 +63,14 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f = CBMakeFaction(n"Animals", 0.0, 0.15, 0.8, 0.0, true, true, "Cyberbane-Faction-Animals");
   f.affiliations = [n"Animals"];
   f.SetRespect(ECBArchetype.Brawler, 0.6);
+  f.rivalFactions = [n"VoodooBoys", n"Barghest"];
   f.turf = [n"Pacifica"];
   c.AddFaction(f);
 
   f = CBMakeFaction(n"VoodooBoys", 0.0, 0.0, 1.0, 0.0, true, true, "Cyberbane-Faction-VoodooBoys");
   f.affiliations = [n"VoodooBoys"];
   f.SetRespect(ECBArchetype.Netrunner, 0.6);
+  f.rivalFactions = [n"Animals", n"Barghest"];
   f.turf = [n"Pacifica"];
   c.AddFaction(f);
 
@@ -108,7 +110,7 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f.affiliations = [n"Barghest"];
   f.SetRespect(ECBArchetype.Professional, 0.3);
   f.SetRespect(ECBArchetype.Butcher, 0.2);
-  f.rivalFactions = [n"Militech"];
+  f.rivalFactions = [n"Militech", n"Animals", n"VoodooBoys"];
   f.turf = [n"Dogtown"];
   c.AddFaction(f);
 

@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.7.7. The "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.7.8. The "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,38 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.7.7
+
+All in 1.7.8. Compiled on 2.5 and not yet played.
+
+### "I keep becoming allied to gangs I'm killing"
+
+**Status: fixed in 1.7.8** (`Model/GangRivalries.reds`). Per gang a kill already cost twice what it
+earned, but the credit went to every enemy of the victim and ignored what V had done to them. A gang V
+hurt in the last 48 in-game hours now earns nothing, one V has any kills against stops at +45, just
+short of Allied, and `enemyOfEnemyShare` is a slider. A gang V has never hurt can still reach +75,
+which the Friend of the Gang title needs.
+
+### "Does turf do anything? Dogtown is still under Barghest"
+
+**Status: fixed in 1.7.8** (`Model/Territory.reds`, `Model/TurfBook.reds`, `Data/Factions.reds`). Dogtown
+could not flip: its only neighbours were not at war with Barghest. Holders are now written down in
+their own per-save system, a new class so no saved shape changes. Taking a district needs a 1.6 times
+lead for four in-game hours, and it lasts until retaken; home gangs count for 40% on ground they have
+lost. Damage on a gang's own streets counts again there. The old gang hits back every two days or so
+once at 70 strength.
+
+Who is visible on the street cannot change: the game's own gangs come from world data, a script has
+only a crowd density control, and deleting them breaks crash rules 4 and 5. So what shows is the HUD
+line, the game's own map (the record handed to the row, no widget touched), and optional patrols.
+Street clashes between gangs were proposed and declined.
+
+### "Turf patrols"
+
+**Status: in 1.7.8, experimental and off by default** (`Spawn/TurfPatrol.reds`). Two to four of the holder,
+one group at a time, only with 8 places left under the spawn cap, never during an encounter, a job, the
+story, stealth or in a safe area. They go through `CBSpawnGroup`, `CBIssueMove` and `CBDeleteTaggedSafe`.
 
 ## Requests after 1.7.6
 
@@ -97,8 +129,6 @@ first body. The low-health check uses the same sum instead of a coin flip. Defau
 field so the new default reaches everyone. Nowhere to run means they keep fighting. Rerun if they arrive
 with V close, up to three times. A crew member who gets away is taken off the crew (`CBRunnerGotAway`).
 
-The second pass read scheduling, the hunt, Rival encounters, hideouts and the hierarchy too.
-The Hub (`UI/Hud.reds`) has still only had the scripted checks.
 
 ## Requests after 1.7.3
 

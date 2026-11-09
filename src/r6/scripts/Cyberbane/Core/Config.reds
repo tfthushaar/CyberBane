@@ -243,6 +243,8 @@ public abstract class CBConfig {
   public static func MoraleBrutalBonus() -> Float = 0.04
   public static func MoraleSwornMult() -> Float = 0.6
   public static func MoraleBreakMaxChance() -> Float = 0.4
+  // On streets they have just lost, nobody is sure what they are still fighting for.
+  public static func MoraleLostGroundMult() -> Float = 1.4
   // How shaken somebody at a quarter of their health counts as, with nobody having died near them.
   public static func MoraleHurtShock() -> Float = 0.5
   // The run itself. Somewhere this far off, and this much further from V than they already are.
@@ -878,6 +880,10 @@ public abstract class CBConfig {
   // enemy, so Friendly (15) takes a run of work and Allied (50) takes a campaign.
   public static func RivalGangShare() -> Float = 0.5
   public static func RivalGangCeiling() -> Float = 75.0
+  // A gang V has killed members of can like V's enemies' enemies only so far: just short of Allied.
+  public static func RivalGangCeilingBloodied() -> Float = 45.0
+  // And none of it for a while after V last hurt them. Nobody thanks you with their friend's blood on you.
+  public static func GangGrudgeHours() -> Float = 48.0
   // What vendors on a gang's turf do about where V stands with that gang.
   public static func TurfAlliedDiscount() -> Float = 0.08
   public static func TurfFriendlyDiscount() -> Float = 0.04
@@ -1128,6 +1134,32 @@ public abstract class CBConfig {
   public static func TurfDrift() -> Float = 0.2
   // A share of a district at least this large means a gang is on its own streets there.
   public static func TurfPresenceShare() -> Float = 0.2
+  // Damage done on a gang's own streets counts this much again, there, and fades this fast.
+  public static func TurfLocalShare() -> Float = 1.0
+  public static func TurfLocalRecoverPerDay() -> Float = 4.0
+  // To take a district the challenger has to lead the holder by this much, for this long.
+  public static func TurfFlipMargin() -> Float = 1.6
+  public static func TurfFlipHours() -> Float = 4.0
+  // What a home gang is worth on streets somebody else has taken from it.
+  public static func TurfLostGroundMult() -> Float = 0.4
+  // The old gang coming back: how long between tries, how strong it must be, how likely each hour.
+  public static func TurfPushGapDays() -> Float = 2.0
+  public static func TurfPushMinStrength() -> Float = 70.0
+  public static func TurfPushChance() -> Float = 0.15
+  public static func TurfPushDamage() -> Float = 15.0
+  // Patrols (Spawn/TurfPatrol.reds).
+  public static func TurfPatrolMin() -> Int32 = 2
+  public static func TurfPatrolMax() -> Int32 = 4
+  public static func TurfPatrolDistance() -> Float = 55.0
+  public static func TurfPatrolGapTicks() -> Int32 = 420
+  public static func TurfPatrolLifeTicks() -> Int32 = 300
+  public static func TurfPatrolLeaveDistance() -> Float = 110.0
+  public static func TurfPatrolKeepRoom() -> Int32 = 8
+  public static func TurfPatrolWalkTicks() -> Int32 = 35
+  public static func TurfPatrolFirstWalkTick() -> Int32 = 5
+  public static func TurfPatrolWalkCandidates() -> Int32 = 6
+  public static func TurfPatrolWalkMin() -> Float = 12.0
+  public static func TurfPatrolWalkMax() -> Float = 32.0
 
   // ---- Hunting a Rival down (Rivals/Whereabouts.reds) --------------------
   // How likely a tip is on each slow tick (one in-game hour) when one could be given.

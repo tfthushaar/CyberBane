@@ -329,6 +329,21 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TurfPatrols")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfPatrols-Desc")
+  public let turfPatrols: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EnemyOfEnemy")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EnemyOfEnemy-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "1.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let enemyOfEnemyShare: Float = 0.5;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LootDrops")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LootDrops-Desc")
   public let lootDrops: Bool = true;

@@ -95,6 +95,7 @@ public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
   let before = CBGangStrength(sys, faction);
   let after = MaxF(CBConfig.GangStrengthFloor(), before - amount);
   svc.NoteGangPower(pid, faction, after, CBGameSeconds(game));
+  CBTurfNoteLocalLoss(sys, game, faction, amount);
   // Said once, as they cross: the street notices a gang thinning out before the map does.
   if !CBMessagesOn() {
     return;
@@ -173,26 +174,42 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
     return;
   }
   let dIdx = CBDistrictIndex(district);
+  // Somebody from outside holding it makes the home gangs the ones trying to get in.
+  let held = n"";
+  if CBTurfWarsOn() {
+    let book = CBTurfBook.Get(game);
+    if IsDefined(book) {
+      held = book.Holder(dIdx);
+    }
+  }
+  let heldProf = NotEquals(held, n"") ? content.GetFaction(held) : null;
+  let invaded = IsDefined(heldProf) && !ArrayContains(heldProf.turf, district);
   let factions = content.GetFactions();
   let weakestNative = 100.0;
   let natives: array<CName>;
   let i = 0;
   while i < ArraySize(factions) {
     let prof = factions[i];
-    if IsDefined(prof) && prof.isGang && ArrayContains(prof.turf, district) {
-      let s = CBGangStrength(sys, prof.id);
-      ArrayPush(ids, prof.id);
-      ArrayPush(weights, s * s * CBTurfWobble(game, dIdx, i));
-      ArrayPush(natives, prof.id);
-      weakestNative = MinF(weakestNative, s);
+    if IsDefined(prof) && prof.isGang {
+      if ArrayContains(prof.turf, district) {
+        let s = CBGangStrengthIn(sys, prof.id, district);
+        ArrayPush(ids, prof.id);
+        ArrayPush(weights, s * s * CBTurfWobble(game, dIdx, i) * (invaded ? CBConfig.TurfLostGroundMult() : 1.0));
+        ArrayPush(natives, prof.id);
+        weakestNative = MinF(weakestNative, s);
+      } else {
+        if invaded && Equals(prof.id, held) {
+          let sh = CBGangStrengthIn(sys, prof.id, district);
+          ArrayPush(ids, prof.id);
+          ArrayPush(weights, sh * sh * CBTurfWobble(game, dIdx, i));
+        }
+      }
     }
     i += 1;
   }
   if ArraySize(natives) == 0 || !CBTurfWarsOn() || weakestNative >= CBConfig.TurfOpenStrength() {
     return;
   }
-  // The owners are broken. Anybody at war with them whose own streets are next door moves in,
-  // as long as they are the stronger side, and pushes harder the more broken the owners are.
   let def = content.GetDistrict(district);
   if !IsDefined(def) {
     return;
@@ -213,7 +230,6 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
   }
 }
 
-// Are this gang's own streets next door to that district?
 func CBTurfNextDoor(g: ref<CBFactionProfile>, def: ref<CBDistrictDef>) -> Bool {
   for d in g.turf {
     if def.IsAdjacentTo(d) {
@@ -251,9 +267,20 @@ public func CBTurfShares(sys: ref<CyberbaneSystem>, game: GameInstance, district
 
 // Who holds the district: the largest share. n"" when no gang has streets there.
 public func CBTurfHolder(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName) -> CName {
+  let book = CBTurfWarsOn() ? CBTurfBook.Get(game) : null;
+  if IsDefined(book) {
+    let written = book.Holder(CBDistrictIndex(district));
+    if NotEquals(written, n"") {
+      return written;
+    }
+  }
   let ids: array<CName>;
   let shares: array<Float>;
   CBTurfShares(sys, game, district, ids, shares);
+  return CBTurfLeader(ids, shares);
+}
+
+func CBTurfLeader(ids: array<CName>, shares: array<Float>) -> CName {
   let best = n"";
   let bestShare = -1.0;
   let k = 0;
@@ -267,7 +294,74 @@ public func CBTurfHolder(sys: ref<CyberbaneSystem>, game: GameInstance, district
   return best;
 }
 
-// The gangs on their own streets in this district: everybody holding a real share of it.
+func CBTurfShareOf(ids: array<CName>, shares: array<Float>, gang: CName) -> Float {
+  let k = 0;
+  while k < ArraySize(ids) {
+    if Equals(ids[k], gang) {
+      return shares[k];
+    }
+    k += 1;
+  }
+  return 0.0;
+}
+
+// How strong a gang is on these particular streets. City-wide strength, less what V has done here.
+public func CBGangStrengthIn(sys: ref<CyberbaneSystem>, faction: CName, district: CName) -> Float {
+  let s = CBGangStrength(sys, faction);
+  if !IsDefined(sys) || !CBTurfWarsOn() {
+    return s;
+  }
+  let game = sys.GetGameInstance();
+  let book = CBTurfBook.Get(game);
+  if !IsDefined(book) {
+    return s;
+  }
+  return MaxF(CBConfig.GangStrengthFloor(), s - book.LocalLoss(district, faction, CBGameSeconds(game)));
+}
+
+// Hurting a gang on its own streets hurts it there twice: once everywhere, once on that block.
+func CBTurfNoteLocalLoss(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, amount: Float) -> Void {
+  let book = CBTurfBook.Get(game);
+  let content = sys.GetContent();
+  let here = CBEventDistrict(sys, game);
+  let index = CBDistrictIndex(here);
+  if !IsDefined(book) || !IsDefined(content) || index < 0 {
+    return;
+  }
+  let prof = content.GetFaction(faction);
+  if IsDefined(prof) && (ArrayContains(prof.turf, here) || Equals(book.Holder(index), faction)) {
+    book.AddLocalLoss(here, faction, amount * CBConfig.TurfLocalShare(), CBGameSeconds(game));
+  }
+}
+
+// Has this gang lost the district V is standing in?
+public func CBTurfLostGround(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
+  if !IsDefined(sys) || Equals(faction, n"") || !CBTurfWarsOn() {
+    return false;
+  }
+  let book = CBTurfBook.Get(sys.GetGameInstance());
+  let index = CBDistrictIndex(sys.GetCurrentDistrict());
+  return IsDefined(book) && index >= 0 && Equals(book.From(index), faction)
+      && NotEquals(book.Holder(index), faction);
+}
+
+// What the HUD says about the district V is in, or "" if nobody runs it.
+public func CBTurfHudWord(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName) -> String {
+  if !IsDefined(sys) || !CBTurfWarsOn() {
+    return "";
+  }
+  let book = CBTurfBook.Get(game);
+  let index = CBDistrictIndex(district);
+  if !IsDefined(book) || index < 0 {
+    return "";
+  }
+  if NotEquals(book.Challenger(index), n"") {
+    return "CONTESTED - ";
+  }
+  let holder = CBBarFactionLabel(book.Holder(index));
+  return StrLen(holder) > 0 ? "HELD BY " + holder + " - " : "";
+}
+
 public func CBTurfGangsIn(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName) -> array<CName> {
   let out: array<CName>;
   let ids: array<CName>;
@@ -302,27 +396,82 @@ public func CBRefreshTurfHere(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
 // Slow tick: has any district changed hands? The first look of a session only learns who holds
 // what, so loading a save never announces anything.
 public func CBTurfTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  if !IsDefined(sys) || !sys.HasContent() {
+  if !IsDefined(sys) || !sys.HasContent() || !CBTurfWarsOn() {
     return;
   }
-  if !CBTurfWarsOn() {
-    sys.ForgetTurfHolders();
+  let book = CBTurfBook.Get(game);
+  if !IsDefined(book) {
     return;
   }
-  let known = sys.TurfHoldersKnown();
+  let now = CBGameSeconds(game);
   let i = 0;
   while i < CBDistrictCount() {
-    let district = CBDistrictAt(i);
-    let holder = CBTurfHolder(sys, game, district);
-    let before = sys.GetTurfHolder(i);
-    if known && NotEquals(holder, before) && NotEquals(holder, n"") && NotEquals(before, n"") {
-      CBTurfChangedHands(sys, game, district, holder, before);
-    }
-    sys.SetTurfHolder(i, holder);
+    CBTurfTickDistrict(sys, game, book, i, now);
     i += 1;
   }
-  sys.SetTurfHoldersKnown();
   CBRefreshTurfHere(sys, game);
+}
+
+// A district only changes hands when somebody has been clearly on top of the holder for a while, so
+// a bad day or the daily drift cannot do it, and once it has happened it stays happened.
+func CBTurfTickDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBTurfBook>, i: Int32, now: Float) -> Void {
+  let district = CBDistrictAt(i);
+  let ids: array<CName>;
+  let shares: array<Float>;
+  CBTurfShares(sys, game, district, ids, shares);
+  if ArraySize(ids) == 0 {
+    return;
+  }
+  let leader = CBTurfLeader(ids, shares);
+  let held = book.Holder(i);
+  if Equals(held, n"") {
+    book.StartHolding(i, leader, now);
+    return;
+  }
+  if Equals(leader, held)
+     || CBTurfShareOf(ids, shares, leader) < CBTurfShareOf(ids, shares, held) * CBConfig.TurfFlipMargin() {
+    book.ClearChallenge(i);
+  } else {
+    if NotEquals(book.Challenger(i), leader) {
+      book.Challenge(i, leader, now);
+    } else {
+      if (now - book.ChallengeAt(i)) >= CBConfig.TurfFlipHours() * CBConfig.SecondsPerHour() {
+        book.Flip(i, leader, held, now);
+        CBTurfChangedHands(sys, game, district, leader, held);
+        return;
+      }
+    }
+  }
+  CBTurfCounterattack(sys, game, book, i, district, now);
+}
+
+// The gang that lost a district does not forget it. Once it has rebuilt it comes back at the holder,
+// a few days apart, and enough of that is how a district is won back with nobody's help. V can make
+// that faster, or slower, by who V chooses to hurt.
+func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBTurfBook>, i: Int32,
+                         district: CName, now: Float) -> Void {
+  let old = book.From(i);
+  let holder = book.Holder(i);
+  if Equals(old, n"") || Equals(holder, n"") || Equals(old, holder) {
+    return;
+  }
+  let gap = CBConfig.TurfPushGapDays() * CBConfig.SecondsPerDay();
+  if (now - book.Since(i)) < gap || (book.PushAt(i) > 0.0 && (now - book.PushAt(i)) < gap) {
+    return;
+  }
+  if CBGangStrength(sys, old) < CBConfig.TurfPushMinStrength() || RandF() >= CBConfig.TurfPushChance() {
+    return;
+  }
+  book.SetPushAt(i, now);
+  book.AddLocalLoss(district, holder, CBConfig.TurfPushDamage(), now);
+  CBFileLog(sys, n"TurfPush", now, district, old, 0.0);
+  CBLog.Info(n"Model", s"\(NameToString(old)) hit back at \(NameToString(holder)) in \(NameToString(district)).");
+  let place = CBDistrictLabel(district);
+  let o = CBFactionLabel(old);
+  let h = CBFactionLabel(holder);
+  if CBMessagesOn() && StrLen(place) > 0 && StrLen(o) > 0 && StrLen(h) > 0 {
+    CBHearsayFromDistrict(game, district, s"\(CBCapFirst(o)) hit \(h) in \(place) last night. They want it back.", n"");
+  }
 }
 
 func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName,
