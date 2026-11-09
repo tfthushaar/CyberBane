@@ -5,7 +5,12 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [1.7.7] - 2026-11-09
 
-Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+Your saved Cyberbane progress carries over, and nothing already stored in your save changed shape.
+
+### Added
+- **Gangs lie in wait (experimental, off by default).** Turn it on under Gangs in Mod Settings. When a
+  gang with a vendetta against you sends a crew while you are driving, they may park up the road and
+  pull out as you go past. If you take another road they come after you anyway.
 
 ### Fixed
 - **Crews sat in their cars until you walked up to them.** The order to get out never worked. Now they
@@ -15,8 +20,18 @@ Your saved Cyberbane progress carries over, and nothing stored in your save chan
   at the speed the game's own police use, and stop a short way off.
 - **Cars drove straight past you.** A car that reaches you now brakes there, rather than carrying on
   to where you used to be.
-- **Several Rivals had the same name.** There are far more names now, and a new Rival is never given
-  a name somebody on your list already has. Rivals you already have keep the names they have.
+- **Several Rivals had the same name.** There are far more names now, and a name is never used twice
+  in a save. That includes Rivals you have killed, forgotten or lost track of long ago. Rivals you
+  already have keep the names they have.
+- **A Rival's replacement took the same nickname.** "Bloodsworn" picking up where "Bloodsworn" left
+  off is gone: nobody on your list shares a nickname while another is free.
+- **People either ignored you or ran from you.** There was nothing in between. Passers-by now look
+  over at you, flinch and step out of your way, freeze with their hands up if you are right on top of
+  them, and only run if you are truly terrifying and close. Each person reacts a little differently.
+  The Civilian intensity slider moves smoothly through all of that now, and one frightened gang member
+  no longer sends a whole street running.
+- **An apex squad could come twice.** One that arrived by car and was dead within about a minute and a
+  half was counted as never having arrived, and a second one walked in.
 
 ## [1.7.6] - 2026-11-09
 

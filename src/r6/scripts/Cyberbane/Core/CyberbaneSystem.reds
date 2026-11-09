@@ -172,6 +172,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_convoyFaction: CName;     // whose convoy this is
   private let m_convoyCars: Int32;        // cars sent in it so far
   private let m_arrivalChairBase: Int32;  // the apex chair the boarding car's first seat is
+  // Whether the next car sent should try to hide up the road, and whether the one boarding did.
+  private let m_ambushWanted: Bool;
+  private let m_arrivalAmbush: Bool;
   private let m_arrivalCarSlot: Int32;    // which car of its convoy the boarding car is (0 first)
   private let m_topFaction: CName;
   private let m_topRecord: TweakDBID;
@@ -310,6 +313,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // a kill V made was by definition next to V when it happened, and it needs no spatial query.
   private let m_recentKills: Int32;
   private let m_recentKillTick: Int32;
+  private let m_pendingApexCame: Bool;        // somebody took a chair during this drive
   private let m_pendingApexDriving: Bool;     // the apex clock is a drive, not a warning
   private let m_currentDistrict: CName;       // cached district, refreshed only on a stable slow sample (crash safety)
   // When the district line last had something to say, and what it said. Session only: it
@@ -577,7 +581,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       if EntityID.IsDefined(this.m_arrivalCarId) && this.m_arrivalFilled > 0
          && this.m_arrivalFilled < this.m_arrivalSeats {
         CBLog.Info(n"Spawn", s"Boarding stalled at \(this.m_arrivalFilled) of \(this.m_arrivalSeats); sending the car with them.");
-        CBLaunchArrivalCar(this.GetGameInstance(), this.m_arrivalCarId, this.m_arrivalCarSlot);
+        CBSendCarOff(this, this.GetGameInstance(), this.m_arrivalCarId, this.m_arrivalCarSlot);
       } else {
         CBLog.Info(n"Spawn", "A car that was sent never turned up; clearing it.");
       }
@@ -615,6 +619,25 @@ public class CyberbaneSystem extends ScriptableSystem {
   // the car left with a seat its own crew needed.
   // A car of ours is still driving in. Its crew can be out of the world while it is far off, and
   // that is not the same as having been left behind (Spawn/Hunt.reds, CBHuntersLeftBehind).
+  public func SetAmbushWanted(wanted: Bool) -> Void {
+    this.m_ambushWanted = wanted;
+  }
+
+  public func IsAmbushWanted() -> Bool {
+    return this.m_ambushWanted;
+  }
+
+  public func SetArrivalAmbush(ambush: Bool) -> Void {
+    this.m_arrivalAmbush = ambush;
+  }
+
+  // Once only: it belongs to one car.
+  public func TakeArrivalAmbush() -> Bool {
+    let ambush = this.m_arrivalAmbush;
+    this.m_arrivalAmbush = false;
+    return ambush;
+  }
+
   public func NoteCarOnTheWay() -> Void {
     this.m_carWatchTick = this.m_tickCount;
   }
@@ -1581,6 +1604,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     if seat < 0 || seat > 3 || Equals(this.m_musterFaction, n"") {
       return;
     }
+    if this.m_pendingApexDriving && Equals(this.m_pendingApexFaction, this.m_musterFaction) {
+      this.m_pendingApexCame = true;
+    }
     this.m_musterMask = this.m_musterMask | CBApexChairBit(seat);
   }
 
@@ -2414,6 +2440,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_pendingApexTicks = ticks;
     this.m_pendingApexDriving = true;
     this.m_pendingApexStuck = 0;
+    this.m_pendingApexCame = false;
+  }
+
+  // Said once and kept. The muster forgets its chairs as soon as all four are in or all four are
+  // down, which is usually long before the drive clock runs out.
+  public func PendingApexCame() -> Bool {
+    return this.m_pendingApexCame;
   }
 
   public func IsPendingApexDriving() -> Bool {

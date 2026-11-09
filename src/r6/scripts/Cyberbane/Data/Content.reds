@@ -110,6 +110,9 @@ public class CBFactionNames {
   public let faction: CName;
   public let firstNames: array<String>;
   public let lastNames: array<String>;
+  // How long each list was before 1.7.7. See CBRivalNameIsNew.
+  public let oldFirsts: Int32;
+  public let oldLasts: Int32;
 }
 
 // Epithets by Rival source (spec Appendix I). `promotion` is used on rank-up.
@@ -365,6 +368,14 @@ public class CyberbaneContent extends ScriptableService {
   public func AddFactionNames(def: ref<CBFactionNames>) -> Void {
     if IsDefined(def) {
       ArrayPush(this.m_factionNames, def);
+    }
+  }
+
+  public func MarkOldNames(faction: CName, firsts: Int32, lasts: Int32) -> Void {
+    let pool = this.GetFactionNames(faction);
+    if IsDefined(pool) {
+      pool.oldFirsts = firsts;
+      pool.oldLasts = lasts;
     }
   }
 

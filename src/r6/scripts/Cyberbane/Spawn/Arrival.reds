@@ -380,7 +380,10 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   let pos: Vector4;
   let ori: Quaternion;
-  if !CBCarSpawnPoint(game, CBConfig.VehicleArrivalDistance(), pos, ori) {
+  // Up the road from V, if this crew means to wait there and there is somewhere to do it. Anything
+  // else that goes wrong with that is just an ordinary car from behind.
+  let lyingInWait = !nextCar && sys.IsAmbushWanted() && CBAmbushSpot(game, pos, ori);
+  if !lyingInWait && !CBCarSpawnPoint(game, CBConfig.VehicleArrivalDistance(), pos, ori) {
     CBCarRefused("nowhere out of sight with room for a car");
     return false;
   }
@@ -420,6 +423,7 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   sys.SetPendingArrival(crewRecord, crew, squadTag, leadRecord, leadTag);
   sys.SetArrivalChairBase(chairBase);
+  sys.SetArrivalAmbush(lyingInWait);
   // Which car of its convoy this is: the cars already sent. Its crew carry that car's tag, so
   // the car that pulls up lets out its own people and nobody else's (CBDismountArrivalCrew).
   sys.SetArrivalCarSlot(nextCar ? sys.GetConvoyCars() : 0);
@@ -839,7 +843,7 @@ public func CBOnArrivalCrewAttached(sys: ref<CyberbaneSystem>, game: GameInstanc
   puppet.QueueEvent(evt);
 
   if sys.IsArrivalFull() {
-    CBLaunchArrivalCar(game, carId, sys.GetArrivalCarSlot());
+    CBSendCarOff(sys, game, carId, sys.GetArrivalCarSlot());
     sys.ClearPendingArrival();
   }
 }
@@ -875,6 +879,144 @@ public func CBLaunchArrivalCar(game: GameInstance, carId: EntityID, slot: Int32)
     watch.chasing = IsDefined(player.GetMountedVehicle());
   }
   ds.DelayCallback(watch, CBConfig.ArrivalDismountPoll(), false);
+}
+
+// A vendetta crew's alternative to chasing: a parked car somewhere up the road from a V who is
+// driving, pulling out as V comes past. The game's roadblocks are the police's own (spawned and
+// tracked by the prevention system, which crash rule 1 keeps us out of), so this is built from the
+// car arrival, which already does everything else: the seats, the crew, the chase, getting out.
+//
+// The only new thing is the wait. It can only ever end in CBLaunchArrivalCar, by V coming near, by V
+// going somewhere else, or by running out of patience, so a crew can never be left sitting.
+//
+// Experimental, and off unless the player turns it on. This is the only door into it: while the
+// setting is off the answer here is no before anything else is looked at, the wanted flag stays
+// false, CBSpawnVehicleArrival takes its usual spot and CBSendCarOff launches every car as before.
+func CBCrewLiesInWait(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, withApex: Bool) -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().carAmbushes {
+    return false;
+  }
+  if !IsDefined(sys) || !IsDefined(fs) || withApex || !CBVehicleArrivalAllowed(game) {
+    return false;
+  }
+  let score = sys.GetScore();
+  let player = GetPlayer(game);
+  if !IsDefined(score) || !IsDefined(player) || !VehicleComponent.IsDriver(game, player) {
+    return false;
+  }
+  return Equals(score.GetPosture(fs.id), ECBPosture.Vendetta) && RandF() <= CBConfig.AmbushChance();
+}
+
+// Somewhere ahead of a moving V with room for a car, held to the same tests as any other car spot.
+func CBAmbushSpot(game: GameInstance, out pos: Vector4, out ori: Quaternion) -> Bool {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return false;
+  }
+  let vehicle = player.GetMountedVehicle() as VehicleObject;
+  if !IsDefined(vehicle) || AbsF(vehicle.GetCurrentSpeed()) < CBConfig.AmbushMinSpeed() {
+    return false;
+  }
+  let ppos = player.GetWorldPosition();
+  let fwd = vehicle.GetWorldForward();
+  let openAir = CBArrivalOpenAir(game, ppos);
+  let reach: array<Float>;
+  ArrayPush(reach, CBConfig.AmbushDistance());
+  ArrayPush(reach, CBConfig.AmbushDistance() * 0.75);
+  ArrayPush(reach, CBConfig.AmbushDistance() * 1.3);
+  let r = 0;
+  while r < ArraySize(reach) {
+    let centre = new Vector4(ppos.X + fwd.X * reach[r], ppos.Y + fwd.Y * reach[r], ppos.Z, 1.0);
+    r += 1;
+    let pts: array<Vector4>;
+    if CBPursuitPoints(game, centre, fwd, CBConfig.CarPointCandidates(), 8.0, 40.0, pts) {
+      let i = 0;
+      while i < ArraySize(pts) {
+        let p = pts[i];
+        i += 1;
+        let ground: Vector4;
+        let toSpot = Vector4.Normalize2D(new Vector4(p.X - ppos.X, p.Y - ppos.Y, 0.0, 0.0));
+        if Vector4.Dot2D(toSpot, Vector4.Normalize2D(fwd)) >= CBConfig.AmbushAheadCosine()
+           && Vector4.Distance(p, ppos) >= CBConfig.SpawnMinDistance()
+           && AbsF(p.Z - ppos.Z) <= CBConfig.GroundMaxDrop()
+           && CBSettleOnGround(game, p, ground)
+           && CBPointOutOfSight(game, ppos, fwd, ground)
+           && CBCarCanSitAt(game, ground, ppos, openAir, pos, ori)
+           && CBPointReachable(game, ground, ppos) {
+          CBLog.Info(n"Spawn", "A crew is waiting up the road.");
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// Every full car goes through here: straight off, or into hiding first.
+public func CBSendCarOff(sys: ref<CyberbaneSystem>, game: GameInstance, carId: EntityID, slot: Int32) -> Void {
+  if IsDefined(sys) && sys.TakeArrivalAmbush() {
+    let ds = GameInstance.GetDelaySystem(game);
+    if IsDefined(ds) {
+      let watch = new CBAmbushWatchCallback();
+      watch.carId = carId;
+      watch.slot = slot;
+      ds.DelayCallback(watch, CBConfig.AmbushPoll(), false);
+      return;
+    }
+  }
+  CBLaunchArrivalCar(game, carId, slot);
+}
+
+public class CBAmbushWatchCallback extends DelayCallback {
+  public let carId: EntityID;
+  public let slot: Int32;
+  public let polls: Int32;
+  public let waits: Int32;
+
+  public func Call() -> Void {
+    let game = GetGameInstance();
+    if !CBWorldStable(game) {
+      if this.waits < CBConfig.CallbackStableWaits() {
+        this.Again(game, this.polls, this.waits + 1);
+      }
+      return;
+    }
+    let player = GetPlayer(game);
+    if !IsDefined(player) {
+      return;
+    }
+    let car = GameInstance.FindEntityByID(game, this.carId) as VehicleObject;
+    let spring = true;
+    if IsDefined(car) && car.IsAttached() {
+      let dist = Vector4.Distance(car.GetWorldPosition(), player.GetWorldPosition());
+      spring = dist <= CBConfig.AmbushSpringDistance() || dist >= CBConfig.AmbushGiveUpDistance()
+               || this.polls >= CBConfig.AmbushMaxPolls();
+    }
+    if spring {
+      CBLog.Info(n"Spawn", s"The crew in the parked car moves after \(this.polls) checks.");
+      CBLaunchArrivalCar(game, this.carId, this.slot);
+      return;
+    }
+    // Sitting in a parked car is not the same as having been left behind (CBHuntersLeftBehind).
+    let sys = CyberbaneSystem.Get(game);
+    if IsDefined(sys) {
+      sys.NoteCarOnTheWay();
+    }
+    this.Again(game, this.polls + 1, 0);
+  }
+
+  private func Again(game: GameInstance, polls: Int32, waits: Int32) -> Void {
+    let next = new CBAmbushWatchCallback();
+    next.carId = this.carId;
+    next.slot = this.slot;
+    next.polls = polls;
+    next.waits = waits;
+    let ds = GameInstance.GetDelaySystem(game);
+    if IsDefined(ds) {
+      ds.DelayCallback(next, CBConfig.AmbushPoll(), false);
+    }
+  }
 }
 
 // Wait for the car to arrive, then put the crew on the pavement.

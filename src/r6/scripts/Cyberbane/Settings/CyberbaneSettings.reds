@@ -277,6 +277,12 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarsOnFoot-Desc")
   public let carsWhileOnFoot: Bool = true;
 
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarAmbushes")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarAmbushes-Desc")
+  public let carAmbushes: Bool = false;
+
   // How many cars one arrival can come in (Spawn/Arrival.reds, CBSendByCar). A crew too big for
   // one car comes in several, one after another; past this many, the rest walk in.
   @runtimeProperty("ModSettings.mod", "Cyberbane")

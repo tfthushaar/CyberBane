@@ -8,8 +8,8 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
   // Two rules for these lists:
   //   - Only ever add to the end. A Rival is saved as a position in the list, so putting a name
   //     anywhere else, or taking one out, renames every Rival after it in every save.
-  //   - Keep a gang's two lists at different prime lengths. The pick walks both lists in step, so
-  //     two lists of the same length only ever make as many pairs as one of them has names.
+  //   - Keep a gang's two lists at different lengths. A Rival's first guess at a name is arithmetic
+  //     on its number, and two lists of one length only make as many first guesses as one has names.
   // No names of the game's own characters: a stranger called the same as somebody in the story
   // reads as that person.
   let copFirst = ["Marcus", "Dana", "Elliot", "Rosa", "Tyler", "Hal", "June", "Ivan", "Priya", "Owen",
@@ -101,6 +101,41 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
      "Drywell", "Hardpan", "Tumbleweed", "Gila", "Saltflat", "Sandstorm", "Cinder", "Dune", "Jackal", "Vagrant",
      "Arroyo", "Mesquite", "Dry Gulch", "Heatstroke"]));
 
+  // A name is never given out twice in a save, so a gang with one list needs far more than one list
+  // can reasonably hold. These run after the handles above. To add more, add another call after these
+  // four, because a word added to one of these lists moves every name built after it.
+  CBAddCompoundHandles(c, n"Maelstrom",
+    ["Chrome", "Rust", "Null", "Hex", "Bit", "Void", "Slag", "Wire", "Glitch", "Scrap", "Arc", "Fuse"],
+    ["bite", "jaw", "rot", "skull", "tooth", "lung", "spine", "socket", "gut", "vein"]);
+  CBAddCompoundHandles(c, n"Animals",
+    ["Iron", "Bull", "Brick", "Slab", "Hog", "Ox", "Tusk", "Granite", "Hammer", "Thick", "Mule", "Rhino"],
+    ["neck", "jaw", "back", "fist", "shoulder", "knee", "skull", "hide", "gut", "horn"]);
+  CBAddCompoundHandles(c, n"Scavengers",
+    ["Bone", "Scrap", "Gut", "Rag", "Tin", "Rust", "Skin", "Flesh", "Vein", "Marrow", "Needle", "Sinew"],
+    ["saw", "picker", "hook", "cutter", "stitch", "knife", "jar", "thief", "tongs", "peeler"]);
+  CBAddCompoundHandles(c, n"Wraiths",
+    ["Dust", "Sand", "Salt", "Bone", "Sun", "Dry", "Ash", "Thorn", "Flint", "Rattle", "Burn", "Scorch"],
+    ["devil", "wind", "runner", "fang", "snake", "back", "claw", "mouth", "walker", "crow"]);
+
+  // How long each list was before 1.7.7. These numbers never change: they mark the names that may
+  // already have been somebody in a save, before saves kept a record of them.
+  c.MarkOldNames(n"NCPD", 5, 5);
+  c.MarkOldNames(n"Police", 5, 5);
+  c.MarkOldNames(n"Arasaka", 5, 4);
+  c.MarkOldNames(n"Militech", 5, 4);
+  c.MarkOldNames(n"KangTao", 5, 4);
+  c.MarkOldNames(n"Aldecaldos", 5, 4);
+  c.MarkOldNames(n"TygerClaws", 5, 4);
+  c.MarkOldNames(n"Valentinos", 5, 4);
+  c.MarkOldNames(n"SixthStreet", 5, 4);
+  c.MarkOldNames(n"VoodooBoys", 4, 3);
+  c.MarkOldNames(n"Mox", 4, 3);
+  c.MarkOldNames(n"Barghest", 4, 3);
+  c.MarkOldNames(n"Maelstrom", 4, 0);
+  c.MarkOldNames(n"Animals", 3, 0);
+  c.MarkOldNames(n"Scavengers", 3, 0);
+  c.MarkOldNames(n"Wraiths", 3, 0);
+
   // Epithets by Rival source + promotion. Added to at the end only, as above.
   let e = new CBEpithets();
   e.survivor = ["Who Ran", "the Survivor", "Last One Standing", "Still Breathing", "Lucky", "Cockroach",
@@ -115,4 +150,20 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
               "Headhunter", "Pointman", "Sniffer", "Repo"];
   e.promotion = ["Twice-Burned", "the Unbroken", "Scarface"];
   c.SetEpithets(e);
+}
+
+// Every head with every tail, onto the end of a gang's list, leaving out any it already has.
+func CBAddCompoundHandles(c: ref<CyberbaneContent>, faction: CName, heads: array<String>, tails: array<String>) -> Void {
+  let pool = c.GetFactionNames(faction);
+  if !IsDefined(pool) {
+    return;
+  }
+  for head in heads {
+    for tail in tails {
+      let handle = head + tail;
+      if !ArrayContains(pool.firstNames, handle) {
+        ArrayPush(pool.firstNames, handle);
+      }
+    }
+  }
 }

@@ -41,8 +41,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Decay-Desc", "How fast reputation fades when you stop earning it. Zero never fades.");
     this.Text("Cyberbane-Settings-RumorSpread-Desc", "How far word about you carries between districts. Lower keeps your name local.");
     this.Text("Cyberbane-Settings-StreetCredFloor-Desc", "Counts the Street Cred you already have as reputation already earned.");
-    this.Text("Cyberbane-Settings-CivReactions-Desc", "Whether civilians notice you, give way, cower or run.");
-    this.Text("Cyberbane-Settings-CivIntensity-Desc", "How strongly civilians react. Lower this first if the street feels jumpy.");
+    this.Text("Cyberbane-Settings-CivReactions-Desc", "Whether civilians look over, step aside, freeze or run when you come near.");
+    this.Text("Cyberbane-Settings-CivIntensity-Desc", "How strongly civilians react to you. Low: they look over. Middle: they flinch and step aside. High: the people closest to you freeze or run.");
     this.Text("Cyberbane-Settings-MaxReactingCiv-Desc", "How many civilians may react at the same time.");
     this.Text("Cyberbane-Settings-PanicDriving-Desc", "Whether drivers pull away in a hurry when a frightening V is near.");
     this.Text("Cyberbane-Settings-GangReactions-Desc", "Whether gang members read your standing with them and act on it.");
@@ -176,6 +176,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // ---- Settings: compatibility ----------------------------------------
     this.Text("Cyberbane-Settings-TwrCompat", "They Will Remember compatibility");
     this.Text("Cyberbane-Settings-VehicleArrivals", "Arrive by car");
+    this.Text("Cyberbane-Settings-CarAmbushes", "Gangs lie in wait (experimental)");
+    this.Text("Cyberbane-Settings-CarAmbushes-Desc", "Off by default. When a gang with a vendetta against you sends a crew while you are driving, they may wait in a parked car up the road and pull out as you go past. Turn it off and everything goes back to how it was.");
     this.Text("Cyberbane-Settings-LootDrops", "Loot from the people sent after you");
     this.Text("Cyberbane-Settings-Bounties", "Bounties");
     this.Text("Cyberbane-Settings-Pacing", "When they come");

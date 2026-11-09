@@ -20,8 +20,8 @@ otherwise), because installing over the top does not remove files and an old cop
 
 ## Requests after 1.7.6
 
-Two reports, both in 1.7.7. Compiled on 2.5 and not yet played; the game functions they use were read
-in the 2.5 scripts and in the public 2.31 copy.
+Four reports and a bug pass, all in 1.7.7. Compiled on 2.5 and not yet played; the game functions they
+use were read in the 2.5 scripts and in the public 2.31 copy.
 
 ### "They crash somewhere and sit inside the car until I go up to them"
 
@@ -40,10 +40,42 @@ in the 2.5 scripts and in the public 2.31 copy.
 
 **Status: fixed in 1.7.7** (`Data/Names.reds`, `Rivals/RivalSystem.reds`). A name was arithmetic on the
 Rival's id, nothing checked whether it was taken, and four first names by three surnames repeats every
-twelve Rivals. Gangs now have 23 first names and 19 surnames, in different prime lengths so the two
-lists do not walk in step, and `CBRivalPickFreeName` refuses a full name anybody on the roster has, or
-a first name somebody else of that gang has. **Names only ever go on the end of a list**: a Rival is
-saved as a position in it. Existing Rivals keep their names.
+twelve Rivals. Gangs now have 23 first names and 19 surnames, and the gangs that use handles have about
+140 each. **A name is never reused in a save.** The roster alone cannot promise that: it drops the
+oldest of the fallen past 32 and "Forget every rival" empties it. So `Rivals/NameBook.reds` is a
+separate per-save system holding every full name used, which nothing clears. A new class, because a
+new field on `CyberbaneSystem` would wipe saves. Names from before the book are covered without
+knowing them: every pair the old lists could make is never given out again (`CBRivalNameIsNew`,
+`MarkOldNames`). **Names only ever go on the end of a list**: a Rival is saved as a position in it.
+Existing Rivals keep their names. The limit is the size of the lists, 200 to 425 new names per gang;
+past that a name repeats and the log says so. The nicknames are shared the same way across the
+roster, but there are only a dozen or so per kind, so those can repeat once all are in use.
+
+### "They either run away scared or don't mind you at all"
+
+**Status: fixed in 1.7.7** (`Reactions/Crowd.reds`). The two tiers both sent the same thing, a Terror
+stim and a stage-3 SpreadFear, so there was nothing between no reaction and a stampede, and the
+slider only moved the point where one became the other. The game's crowd code has four stages: a look,
+walking away, hands up, running. `CBFearStage` picks one by fear and distance, and the stim goes
+straight from V to that one person. A gang member's fear used to be shouted at 10 m, so one nervous
+ganger on a corner sent every civilian near them running; it is sent to themselves now. New
+thresholds are `CivFear*`, left apart from `CivTier*`, which also price vendors and name V on the Hub.
+
+### "Gangs with a vendetta could set up roadblocks, or hide in their car to ambush"
+
+**Status: the ambush is in 1.7.7, experimental and off by default** (`Spawn/Arrival.reds`,
+`carAmbushes`). The roadblock is not: the game's are spawned and tracked by the prevention system,
+which crash rule 1 keeps us out of. The ambush is an ordinary car arrival that parks ahead of a driving
+V and waits. The wait always ends in the normal launch, when V comes within 45 m, gets 300 m away, or
+after a minute, so a crew cannot be stranded. Vendetta crews without their apex squad only. Off, the
+setting is the first thing tested and every car takes the path it always took.
+
+### Bug pass
+
+The 1.7.6 log has no failed deliveries or refused spawns. Scans found no unformatted strings, unguarded
+divisions, or unbounded saved lists. Two bugs turned up, both fixed: the nickname repeat above, and an
+**apex squad sent twice**. Killed inside the 90-tick drive clock, the squad looked undelivered, because
+the muster forgets its chairs when all four are in or all are down. `PendingApexCame` now remembers.
 
 ## Requests after 1.7.3
 

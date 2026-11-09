@@ -152,7 +152,9 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   let crew = Min(size, Max(0, CBSpawnRoom(game) - apexFuture));
   let spawned = 0;
   if crew > 0 {
+    sys.SetAmbushWanted(CBCrewLiesInWait(sys, game, fs, withApex));
     let byCar = CBSendByCar(sys, game, fs, fs.sampleRecord, crew, n"CB_Squad");
+    sys.SetAmbushWanted(false);
     spawned = byCar;
     if byCar <= 0 {
       spawned = CBSpawnGroup(game, fs.sampleRecord, n"", crew, n"CB_Squad",

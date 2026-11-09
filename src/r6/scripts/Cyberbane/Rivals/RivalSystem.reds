@@ -62,14 +62,14 @@ public func CBRivalGenerateName(content: ref<CyberbaneContent>, rival: ref<CBRiv
   }
 }
 
-// A name nobody on the roster has. The pick above is arithmetic on the Rival's id, and nothing ever
-// asked whether the answer was taken: with four first names and three surnames it came round every
-// twelve Rivals, and players met the same person twice.
+// A name nobody in this save has ever had. The pick above is arithmetic on the Rival's id, and nothing
+// ever asked whether the answer was taken: with four first names and three surnames it came round
+// every twelve Rivals, and players met the same person twice.
 //
-// Looks forward through the pool from that pick. First for a name that shares neither the whole name
-// with anybody nor the first name with anybody else of this gang, then, if a long roster has used
-// those up, for one where only the whole name is new. Dead Rivals count: the name on a grave is taken.
-public func CBRivalPickFreeName(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Void {
+// Looks through every combination the gang's lists can make, starting from that pick, so a name is
+// only refused when it has really been used. First for one whose first name nobody else of this gang
+// on the roster has, then, if a long roster has used those up, for any name that is still new.
+public func CBRivalPickFreeName(game: GameInstance, sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Void {
   if !IsDefined(sys) || !IsDefined(content) || !IsDefined(rival) {
     return;
   }
@@ -77,43 +77,110 @@ public func CBRivalPickFreeName(sys: ref<CyberbaneSystem>, content: ref<Cyberban
   if !IsDefined(pool) || ArraySize(pool.firstNames) == 0 || rival.firstName < 0 {
     return;
   }
+  let book = CBRivalNameBook.Get(game);
+  if !IsDefined(book) {
+    return;
+  }
+  CBRivalRosterIntoBook(book, sys, content);
+
   let firsts = ArraySize(pool.firstNames);
   let lasts = ArraySize(pool.lastNames);
   let startFirst = rival.firstName;
   let startLast = rival.lastName;
+  // A gang of handles has no second list to walk, so its inner loop runs once.
+  let surnames = 1;
+  if lasts > 0 && startLast >= 0 {
+    surnames = lasts;
+  }
   let pass = 0;
   while pass < 2 {
-    let step = 0;
-    while step < CBConfig.RivalNameTries() {
-      rival.firstName = (startFirst + step) % firsts;
-      if lasts > 0 && startLast >= 0 {
-        rival.lastName = (startLast + step) % lasts;
+    let f = 0;
+    while f < firsts {
+      rival.firstName = (startFirst + f) % firsts;
+      if pass == 1 || !CBRivalGangHasFirstName(sys, rival) {
+        let l = 0;
+        while l < surnames {
+          if lasts > 0 && startLast >= 0 {
+            rival.lastName = (startLast + l) % lasts;
+          }
+          if CBRivalNameIsNew(book, content, pool, rival) {
+            book.Remember(StringToName(CBRivalBareName(content, rival)));
+            return;
+          }
+          l += 1;
+        }
       }
-      if !CBRivalNameTaken(sys, content, rival, pass == 0) {
-        return;
-      }
-      step += 1;
+      f += 1;
     }
     pass += 1;
   }
+  // Every name this gang's lists can make has been used. They need to be called something.
   rival.firstName = startFirst;
   rival.lastName = startLast;
+  CBLog.Warn(n"Rivals", s"Every name for \(NameToString(rival.faction)) has been used; one is being repeated.");
 }
 
-func CBRivalNameTaken(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>,
-                      gangFirstNamesToo: Bool) -> Bool {
-  let mine = CBRivalBareName(content, rival);
+// The part in quotes, the same way: nobody on the roster shares it while another is free. There are
+// a dozen or so of these for each way of becoming a Rival, so unlike a name they can run out, and
+// then the first pick stands. An avenger took the same one as the Rival they were avenging.
+func CBRivalPickFreeEpithet(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Void {
+  if !IsDefined(sys) || !IsDefined(content) || !IsDefined(rival) || rival.epithet < 0 {
+    return;
+  }
+  let n = ArraySize(CBEpithetsForSource(content, rival.source));
+  let start = rival.epithet;
+  let step = 0;
+  while step < n {
+    rival.epithet = (start + step) % n;
+    if !CBRivalEpithetTaken(sys, content, rival) {
+      return;
+    }
+    step += 1;
+  }
+  rival.epithet = start;
+}
+
+func CBRivalEpithetTaken(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Bool {
+  let mine = CBRivalEpithet(content, rival);
   for other in sys.GetRivals() {
-    if IsDefined(other) && other.id != rival.id {
-      if Equals(CBRivalBareName(content, other), mine) {
-        return true;
-      }
-      if gangFirstNamesToo && Equals(other.faction, rival.faction) && other.firstName == rival.firstName {
-        return true;
-      }
+    if IsDefined(other) && other.id != rival.id && Equals(CBRivalEpithet(content, other), mine) {
+      return true;
     }
   }
   return false;
+}
+
+// Rivals named before the book existed, and any the book has not seen, are written down while they
+// are still on the roster to be read.
+func CBRivalRosterIntoBook(book: ref<CBRivalNameBook>, sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>) -> Void {
+  for other in sys.GetRivals() {
+    if IsDefined(other) {
+      let name = CBRivalBareName(content, other);
+      if StrLen(name) > 0 {
+        book.Remember(StringToName(name));
+      }
+    }
+  }
+}
+
+func CBRivalGangHasFirstName(sys: ref<CyberbaneSystem>, rival: ref<CBRival>) -> Bool {
+  for other in sys.GetRivals() {
+    if IsDefined(other) && other.id != rival.id && Equals(other.faction, rival.faction)
+       && other.firstName == rival.firstName {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Anything the lists could make before 1.7.7 may have been somebody already, and that somebody may
+// have been forgotten or trimmed off the roster long before the book was there to write them down.
+// Those combinations are simply never handed out again. Everything since is in the book.
+func CBRivalNameIsNew(book: ref<CBRivalNameBook>, content: ref<CyberbaneContent>, pool: ref<CBFactionNames>, rival: ref<CBRival>) -> Bool {
+  if rival.firstName < pool.oldFirsts && (ArraySize(pool.lastNames) == 0 || rival.lastName < pool.oldLasts) {
+    return false;
+  }
+  return !book.Has(StringToName(CBRivalBareName(content, rival)));
 }
 
 // The name without the part in quotes.
@@ -577,7 +644,8 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
   let content = CBContent(game);
   CBRivalGenerateName(content, r);
-  CBRivalPickFreeName(sys, content, r);
+  CBRivalPickFreeName(game, sys, content, r);
+  CBRivalPickFreeEpithet(sys, content, r);
   CBRivalAddTrait(content, r);
   if Equals(source, ECBRivalSource.Spared) {
     CBRivalGiveTrait(r, n"Humiliated");

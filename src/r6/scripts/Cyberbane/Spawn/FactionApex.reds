@@ -20,6 +20,11 @@ public func CBApexName(content: ref<CyberbaneContent>, faction: CName, seed: Int
     let pool = content.GetFactionNames(faction);
     if IsDefined(pool) {
       let n = ArraySize(pool.firstNames);
+      // A handle is a person's whole name, so a gang of handles keeps its heavy on the old ones,
+      // which no new Rival can be given.
+      if ArraySize(pool.lastNames) == 0 && pool.oldFirsts > 0 {
+        n = pool.oldFirsts;
+      }
       if n > 0 {
         return pool.firstNames[CBHashIndex(seed, 17, n)];
       }
@@ -682,7 +687,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     sys.SetPendingApex(faction, 0);   // the drive is over whichever way this goes
     // A chair the car filled counts as delivered even after V has put that member down, which
     // is what a live head count could not tell apart from nobody turning up.
-    let delivered = CBLiveTaggedPresent(game, n"CB_Apex")
+    let delivered = sys.PendingApexCame() || CBLiveTaggedPresent(game, n"CB_Apex")
                  || (Equals(sys.GetApexMusterFaction(), faction) && sys.GetApexMusterMask() != 0)
                  || (Equals(sys.GetAdoptTag(), n"CB_Apex") && sys.GetAdoptTaken() > 0);
     if delivered {

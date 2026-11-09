@@ -94,8 +94,9 @@ in active development. This page describes what the mod does and how it installs
   contact may get in touch about what they heard. If people saw you, your name is in it. If
   nobody did, it arrives as a question about who is doing this.
 - **A city that reads how dangerous you look.** The more frightening you are, the more people
-  back off. Civilians, gang members and even cops can notice you, cower, or flee, and panicked
-  drivers pull away in the street. It is not only your reputation: visible chrome, and how
+  give way. Passers-by look over at you, flinch and step aside, freeze with their hands up when you
+  are right on top of them, and run only if you are truly terrifying and close. Gang members and cops
+  size you up, and panicked drivers pull away in the street. It is not only your reputation: visible chrome, and how
   built-up your level, Street Cred and skills are, all feed into how much the street fears you,
   so a heavily chromed, high-level merc clears a room. Bosses and MaxTac hold their ground.
 - **What you wear hides what you are carrying.** Chrome only frightens people who can see it.
@@ -388,6 +389,10 @@ carrying, a big crew comes in several, and it drives to you. If you are on foot 
 search for you. Get in a car and they chase you in it. Indoors, or with no room for a car, they
 come on foot. **Cars arrive on foot too**, under Gangs, is on by default; turn it off and they only
 drive while you are driving. If cars ever misbehave on your setup, that is the switch to try first.
+
+**Gangs lie in wait (experimental)**, also under Gangs, is off by default. With it on, a gang with a
+vendetta against you may send a crew to wait in a parked car up the road while you are driving, and
+pull out as you go past. Turn it off and arrivals work exactly as they do without it.
 
 ### Playing without the messages
 

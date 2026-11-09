@@ -173,8 +173,18 @@ public abstract class CBConfig {
   public static func CivTierUneasy() -> Float = 32.0
   public static func CivTierAfraid() -> Float = 42.0
   public static func CivTierTerror() -> Float = 68.0
-  public static func CivCowerRadius() -> Float = 8.0    // Afraid tier (spec §9.2)
-  public static func CivFleeRadius() -> Float = 18.0    // Terror tier (spec §9.2)
+  // What a passer-by does, by how frightening V reads to them. Separate from the tiers above,
+  // which also price vendors and name V's standing on the Hub. A V at the start of the game gets
+  // looks; most of a playthrough gets people stepping aside; running is for a legend at close
+  // range, or a slider turned right up. All of them scale with the intensity slider.
+  public static func CivFearGlance() -> Float = 12.0
+  public static func CivFearStartle() -> Float = 30.0
+  public static func CivFearCower() -> Float = 75.0
+  public static func CivFearRun() -> Float = 120.0
+  public static func CivGlanceRadius() -> Float = 12.0
+  public static func CivStartleRadius() -> Float = 7.0
+  public static func CivCowerRadius() -> Float = 3.5
+  public static func CivFleeRadius() -> Float = 6.0
   // How much V's build (level, street cred, skills) adds to how intimidating they look.
   public static func MenaceFearWeight() -> Float = 0.6
   // Ticks (about a second each) before the same civilian can be frightened again. Long enough
@@ -184,10 +194,10 @@ public abstract class CBConfig {
   // How much further obvious chrome gets noticed. At full visible chrome both reaction ranges
   // widen by this fraction, so blades-for-arms reads from across the street. Kept low enough
   // that the widened flee range stays inside NpcEvalRadius.
-  // Radius of the fear stims a frightened bystander gives off. Matched to the game's own:
-  // 10 m for one person's terror, 15 m for the panic passing along a crowd.
+  // How far the terror of somebody breaking in a fight carries. The game's own NPC terror is 10 m.
   public static func FearStimRadius() -> Float = 10.0
-  public static func FearSpreadRadius() -> Float = 15.0
+  // How far somebody running from V startles the people next to them.
+  public static func FearSpreadRadius() -> Float = 6.0
   // What an apex squad landing on you does to everyone watching. The game uses 100 m for a
   // MaxTac AV coming down, and an apex squad is meant to read the same way.
   public static func ApexTerrorRadius() -> Float = 100.0
@@ -442,6 +452,18 @@ public abstract class CBConfig {
   public static func CarMaxSeats() -> Int32 = 4
   // One beat for the mounts to settle before the driver is given orders.
   public static func CarStartDelay() -> Float = 0.3
+  // A vendetta crew waiting up the road for a V who is driving (Spawn/Arrival.reds, CBAmbushSpot).
+  // How often a crew does this instead of chasing, how fast V must be going for "up the road" to
+  // mean anything, how far ahead they park, and how near V comes before they pull out.
+  public static func AmbushChance() -> Float = 0.5
+  public static func AmbushMinSpeed() -> Float = 8.0
+  public static func AmbushDistance() -> Float = 150.0
+  public static func AmbushAheadCosine() -> Float = 0.6
+  public static func AmbushSpringDistance() -> Float = 45.0
+  // V took another road. They stop waiting and come after V like any other car.
+  public static func AmbushGiveUpDistance() -> Float = 300.0
+  public static func AmbushPoll() -> Float = 0.5
+  public static func AmbushMaxPolls() -> Int32 = 120
   public static func ChaseDistanceMin() -> Float = 3.0
   public static func ChaseDistanceMax() -> Float = 12.0
   public static func ChaseStartSpeed() -> Float = 10.0
@@ -1042,8 +1064,6 @@ public abstract class CBConfig {
   public static func RivalAfterEscapeTicks() -> Int32 = 900
   public static func RivalMaxActiveHardCap() -> Int32 = 15
   public static func RivalMaxPerFaction() -> Int32 = 3
-  // How far through a name pool a new Rival looks for a name nobody has.
-  public static func RivalNameTries() -> Int32 = 64
 
   // ---- Collection caps (spec §6.5) -------------------------------------
   public static func CapRumors() -> Int32 = 64

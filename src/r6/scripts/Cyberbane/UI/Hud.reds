@@ -2936,23 +2936,31 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   // Say so before anything else, because a masked player reading "nobody backs off yet" would
   // reasonably conclude the mask had done nothing when it is doing all of it.
   if CBCrowdIgnoresPlayer(GetGameInstance()) {
-    return s"Right now: your face is covered, so nobody can place you and nobody runs. (\(reg.Count()) tracked)";
+    return s"Right now: your face is covered, so nobody can place you and nobody reacts. (\(reg.Count()) tracked)";
   }
   let chromeVisible = score.GetChromeVisible();
   // The crowd's own number, from the crowd's own formula, including the intensity slider the
   // player set. Working it out separately here is what let this screen disagree with the street.
   let eff = CBCrowdFear(score, CBCivIntensity());
   let reach = 1.0 + (chromeVisible / 100.0) * CBConfig.ChromeNoticeRangeBonus();
-  if eff >= CBConfig.CivTierTerror() {
+  if eff >= CBConfig.CivFearRun() {
     let r = RoundF(CBConfig.CivFleeRadius() * reach);
-    return s"Right now: people break and run when you come within \(r) metres. (\(reg.Count()) tracked)";
+    return s"Right now: people run when you come within \(r) metres. (\(reg.Count()) tracked)";
   }
-  if eff >= CBConfig.CivTierAfraid() {
+  if eff >= CBConfig.CivFearCower() {
     let r = RoundF(CBConfig.CivCowerRadius() * reach);
-    return s"Right now: people flinch and give way within \(r) metres. (\(reg.Count()) tracked)";
+    return s"Right now: people freeze with their hands up within \(r) metres, and step aside further out. (\(reg.Count()) tracked)";
   }
-  let need = RoundF(CBConfig.CivTierAfraid() - eff);
-  return s"Right now: nobody backs off yet, about \(need) short. (\(reg.Count()) tracked)";
+  if eff >= CBConfig.CivFearStartle() {
+    let r = RoundF(CBConfig.CivStartleRadius() * reach);
+    return s"Right now: people flinch and step out of your way within \(r) metres. (\(reg.Count()) tracked)";
+  }
+  if eff >= CBConfig.CivFearGlance() {
+    let r = RoundF(CBConfig.CivGlanceRadius() * reach);
+    return s"Right now: people look over at you within \(r) metres. (\(reg.Count()) tracked)";
+  }
+  let need = RoundF(CBConfig.CivFearGlance() - eff);
+  return s"Right now: nobody looks twice yet, about \(need) short. (\(reg.Count()) tracked)";
 }
 
 // Plain-language line: what is driving V's Dread the most (spec §12.1).
