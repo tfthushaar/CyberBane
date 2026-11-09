@@ -19,10 +19,22 @@ Your saved Cyberbane progress carries over, and nothing already stored in your s
 - **Turf patrols (experimental, off by default).** In a district that has changed hands, a few of the
   new owners walk the streets while you are around. Hostile if you are at war with them.
 - **Enemy of my enemy** in Mod Settings: how much a gang warms to you when you kill its enemies.
+- **Titles do something now.** The title you go by gives you a real effect: better bounties, cheaper
+  vendors, hunters that lose you faster, enemies that break sooner, and so on. A few of the big ones
+  cost you something as well. Only the title you go by counts. "Title effects" in Mod Settings turns
+  them off.
+- **The Titles screen tells you everything.** Every title is listed, earned or not. Click one to see
+  exactly what it takes, how far along you are, and what it does.
 
 ### Fixed
-- **Dogtown could never change hands**, and nobody from outside could ever take Pacifica. No gang next
-  door was at war with them. The Animals, the Voodoo Boys and Barghest are at war now.
+- **Nobody from outside could ever take Pacifica.** No gang next door was at war with the ones there.
+  Dogtown stays Barghest's: it is behind a wall, and the Hub says so.
+- **Enemies could come back stronger.** One who streamed out of the world and back in could be given
+  their strength a second time and a full heal.
+- **Too many enemies could run at once.** The limit on a group only counted those who broke from
+  watching a friend die, and Morale intensity could push the odds past their ceiling.
+- **One death could make two new Rivals.**
+- **Different kinds of arrival landed on top of each other**, which cost one of them its car.
 - **Gangs loved you while you were killing them.** A gang you have hurt in the last two in-game days
   gets nothing out of you killing its enemies, and a gang you have ever killed members of only warms
   to you that way as far as just short of Allied.

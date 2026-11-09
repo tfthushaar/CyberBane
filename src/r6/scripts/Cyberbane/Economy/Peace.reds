@@ -160,7 +160,7 @@ public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionI
   if !(Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)) {
     return -1;
   }
-  return CBPeacePrice(fs, posture);
+  return Min(CBConfig.PeaceMaxCost(), RoundF(Cast<Float>(CBPeacePrice(fs, posture)) * sys.WornPerk().peaceMult));
 }
 
 // A gang putting its price to V unprompted, for the once-a-session standing demand

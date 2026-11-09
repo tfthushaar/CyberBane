@@ -235,8 +235,8 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     return;
   }
   let shaken = MaxF(CBConfig.MoraleHurtShock(), puppet.cbMorale > 0.0 ? 1.0 - puppet.cbMorale : 0.0);
-  let chance = intensity * CBBreakChance(sys, puppet, faction, shaken, CBAlliesNear(sys, puppet), false, false);
-  if RandF() < chance {
+  let chance = CBBreakChance(sys, puppet, faction, shaken, CBAlliesNear(sys, puppet), false, false, intensity);
+  if RandF() < chance && CBRoomToBreak(sys, puppet) {
     CBMoraleBreak(sys, game, puppet, faction, chance);
   }
 }

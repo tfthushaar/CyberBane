@@ -66,6 +66,8 @@ public class CBDistrictDef {
   public let id: CName;
   public let adjacency: array<CName>;
   public let displayKey: String;
+  // Nobody from outside can ever take it. Its own gangs can still lose strength.
+  public let sealed: Bool;
 
   public func IsAdjacentTo(other: CName) -> Bool {
     return ArrayContains(this.adjacency, other);
@@ -103,6 +105,25 @@ public class CBTitleDef {
   public let display: String;      // display name (English; localized in the Hub later)
   public let priority: Int32;      // higher wins for the auto active title
   public let hidden: Bool;         // shown as ??? until unlocked
+  // What going by it does (Data/Titles.reds). One title is worn at a time, so these never stack with
+  // each other, and every one of them only moves a number Cyberbane itself owns.
+  public let effect: String;
+  public let priceMod: Float;           // added to vendor prices; negative is cheaper
+  public let gigBonus: Float;           // added to the share of a job's pay given as a bonus
+  public let recognitionAdd: Float;     // added to the chance a stranger knows V
+  public let crewDelta: Int32;          // added to the size of a crew
+  public let bountyMult: Float = 1.0;
+  public let tributeMult: Float = 1.0;
+  public let peaceMult: Float = 1.0;
+  public let crowdMult: Float = 1.0;
+  public let breakMult: Float = 1.0;
+  public let senseMult: Float = 1.0;
+  public let giveUpMult: Float = 1.0;
+  public let renownMult: Float = 1.0;
+  public let standingLossMult: Float = 1.0;
+  public let turfMult: Float = 1.0;
+  public let mercyMult: Float = 1.0;
+  public let lootMult: Float = 1.0;
 }
 
 // Rival name pools (spec Appendix I). Handle-only factions leave lastNames empty.

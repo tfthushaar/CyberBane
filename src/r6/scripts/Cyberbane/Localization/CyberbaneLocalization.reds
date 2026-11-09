@@ -192,6 +192,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexArrivalSound", "Apex squad arrival horn");
     this.Text("Cyberbane-Settings-VendettaApexSquad", "Crews bring the apex squad");
     this.Text("Cyberbane-Settings-TurfWars", "Turf wars");
+    this.Text("Cyberbane-Settings-TitlePerks", "Title effects");
+    this.Text("Cyberbane-Settings-TitlePerks-Desc", "Whether the title you go by does anything. Off makes every title just a name.");
     this.Text("Cyberbane-Settings-TurfPatrols", "Turf patrols (experimental)");
     this.Text("Cyberbane-Settings-TurfPatrols-Desc", "Off by default. In a district that has changed hands, a few of the new owners walk the streets while you are around. Hostile if you are at war with them.");
     this.Text("Cyberbane-Settings-EnemyOfEnemy", "Enemy of my enemy");

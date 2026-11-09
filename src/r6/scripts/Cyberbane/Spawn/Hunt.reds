@@ -65,7 +65,8 @@ func CBHuntTipNear(p: Vector4) -> Vector4 {
 // A search starts: how long they will give it, varied every time, and where V was when it began.
 func CBHuntStartSearch(sys: ref<CyberbaneSystem>) -> Void {
   let j = CBConfig.HuntGiveUpJitter();
-  sys.SetHuntGiveUpTicks(Max(30, CBConfig.HuntGiveUpTicks() + RandRange(-j, j + 1)));
+  let giveUp = Cast<Float>(CBConfig.HuntGiveUpTicks() + RandRange(-j, j + 1)) * sys.WornPerk().giveUpMult;
+  sys.SetHuntGiveUpTicks(Max(30, RoundF(giveUp)));
   sys.SetSearchDistrict(sys.GetCurrentDistrict());
   sys.SetSpotTicks(0);
   // Every searcher is given a fresh point for this search, rather than finishing the walk to
@@ -583,6 +584,9 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
     scale *= CBConfig.DisguiseSenseMult();
   }
   scale *= 1.0 - CBConfig.DifficultySenseStep() * Cast<Float>(CBDifficultyLevel());
+  if IsDefined(sys) {
+    scale *= sys.WornPerk().senseMult;
+  }
   return MaxF(scale, 0.2);
 }
 

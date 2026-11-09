@@ -343,6 +343,12 @@ public class CyberbaneSettings {
   public let enemyOfEnemyShare: Float = 0.5;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TitlePerks")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TitlePerks-Desc")
+  public let titlePerks: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LootDrops")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LootDrops-Desc")

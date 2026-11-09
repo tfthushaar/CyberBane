@@ -247,6 +247,12 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !IsDefined(stats) {
     return;
   }
+  // The flag above is on the puppet, and a body that streams out and back in is a new puppet. If the
+  // bonus is still on it, leave it alone: building it again multiplies it, and refills its health.
+  if IsDefined(sys) && sys.WasBuiltAt(puppet.GetEntityID(),
+                                      stats.GetStatValue(Cast<StatsObjectID>(puppet.GetEntityID()), gamedataStatType.Health)) {
+    return;
+  }
   let scale = CBMenaceScale(sys);
   // How hard the player asked for this to be, as a fraction of a boss-grade build.
   let strength = CBApexStrengthFraction() * ClampF(grade, 0.0, 1.0);
@@ -297,6 +303,9 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   // Logged because the numbers are the thing that keeps being wrong, and a player who reports
   // an unkillable enemy can now send a line that says exactly what was built.
   CBLog.Info(n"Spawn", s"Built at grade \(grade): health x\(hpMult), armour x\(armourMult), damage x\(dmgMult), +\(power) power.");
+  if IsDefined(sys) {
+    sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
+  }
   let pools = GameInstance.GetStatPoolsSystem(game);
   if IsDefined(pools) {
     pools.RequestSettingStatPoolValue(id, gamedataStatPoolType.Health, 100.0, null);

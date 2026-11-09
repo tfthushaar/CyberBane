@@ -129,7 +129,6 @@ public abstract class CBConfig {
   // titles are rows of their own now, every one of them, so this only limits the right-hand column:
   // nine entries of two lines each, with room left for the longer requirements to wrap. (There used
   // to be a limit of eight on the earned list too, which hid every title past the eighth.)
-  public static func HudTitlesLockedShown() -> Int32 = 9
   // How close a story companion has to be for the story to have the stage (Core/StoryHold.reds).
   // Generous, because a companion leading the way or a step behind is still walking with V, and a
   // crew arriving forty metres off is arriving in the middle of their scene.
@@ -293,6 +292,10 @@ public abstract class CBConfig {
   public static func JobPayoutThreshold() -> Int32 = 1500
   // Max fraction added on top of a job payout at the Legend tier.
   public static func GigBonusMaxFraction() -> Float = 0.20
+  // However the slider, the street's opinion and a title add up.
+  public static func GigBonusCeiling() -> Float = 0.75
+  // Enough for every body of ours alive at once, and the ones just gone (CBApplyApexBuild).
+  public static func BuiltRecordCap() -> Int32 = 64
 
   // ---- Tribute (spec §9.8) ---------------------------------------------
   public static func TributeChance() -> Float = 0.25
@@ -717,6 +720,9 @@ public abstract class CBConfig {
   // How long a lane stays busy after sending somebody, to cover the gap between asking for a
   // spawn and it existing. Short, and a hard count rather than a wait on an attach.
   public static func LaneSettleTicks() -> Int32 = 8
+  // Between two different kinds of arrival. Only one car can board at a time, so a second one sent
+  // inside this window lost its car and walked.
+  public static func LaneCrossGapTicks() -> Int32 = 45
 
   // ---- Keeping a chase alive ----
   // How often to remind anybody of ours who has fallen behind, how far behind they have to be

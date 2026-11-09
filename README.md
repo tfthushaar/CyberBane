@@ -127,7 +127,8 @@ in active development. This page describes what the mod does and how it installs
   shows every district, who holds it and who is moving in. Prices, lookouts and crews follow whoever
   holds the streets, and people fighting on ground they have lost break sooner. The gangs the game
   placed in a district are still there after it falls, so a district that has changed hands reads as
-  streets in dispute. Turf wars can be turned off in Mod Settings.
+  streets in dispute. Dogtown is behind a wall and stays Barghest's. Turf wars can be turned off in
+  Mod Settings.
 - **Turf patrols (experimental).** Off by default, under Gangs. In a district that has changed hands, a
   few of the new owners walk the streets while you are around, hostile if you are at war with them.
 - **Enemy of my enemy.** Killing a gang's enemies warms it to you, unless you have been killing it
@@ -255,14 +256,19 @@ in active development. This page describes what the mod does and how it installs
   Saint, or the top title Cyberbane; the street tells you when it starts calling you something
   new. The History screen is the street's file on you, written as plain sentences: the Rivals
   you made and put down, the apex enforcers and bosses people saw you kill, the vendettas sworn,
-  the gangs that came round to you, the peace you bought and the tribute you took.
+  the gangs that came round to you, the peace you bought and the tribute you took.
+- **Titles do something.** The title you go by gives you a real effect, such as better bounties, cheaper
+  vendors or hunters that lose your trail sooner, and a few of the biggest cost you something too. Only
+  the one you go by counts, and automatic goes by your best. The Titles screen lists every title with
+  exactly what it takes, how far along you are, and what it does. "Title effects" in Mod Settings turns
+  them off.
 - **The Hub.** A tab of its own at the top of the game menu, after Journal, built from the game's own
   tabs, buttons and hints so it looks like the screens around it. If you would rather have it in the
   pause menu, there is a setting for that. Click a screen to switch: Standing, Gangs, Turf, The City,
   Rivals, Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
   screen shows what each of the three lanes has on its way and when, as it stood when you paused.
   If something cannot arrive, it says why. Click a gang to see what they are about to do and to pay
-  them off, click a Rival for their file, and click a title to go by it. Standing tells you in plain
+  them off, click a Rival for their file, and click a title to read what it takes and what it does, and to go by it once you have earned it. Standing tells you in plain
   words what Night City is doing about you right now and what it would take to change that.
   Messages live in your phone.
 

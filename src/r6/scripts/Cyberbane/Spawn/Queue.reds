@@ -279,6 +279,18 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
 }
 
+func CBAnotherLaneJustFired(sys: ref<CyberbaneSystem>, lane: Int32) -> Bool {
+  let i = CBLaneRival();
+  while i <= CBLaneApex() {
+    if i != lane && sys.GetLaneFired(i) > 0
+       && (sys.GetTickCount() - sys.GetLaneFired(i)) < CBConfig.LaneCrossGapTicks() {
+      return true;
+    }
+    i += 1;
+  }
+  return false;
+}
+
 func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Void {
   let provokedOnly = false;
   // Their kind is already happening. The clock does not run down during the fight they are
@@ -341,6 +353,9 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   if sys.GetLaneTicks(lane) > 0 || NotEquals(sys.GetLaneTarget(lane), n"") || sys.GetLaneRivalId(lane) > 0 {
     if sys.TickDownLane(lane) > 0 {
       return;
+    }
+    if CBAnotherLaneJustFired(sys, lane) {
+      return;   // still queued, at zero: it goes as soon as the road is clear
     }
     CBLaneFire(sys, game, lane);
     return;
@@ -1052,6 +1067,7 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
   // apex squad's four chairs free when crews bring it. The vendetta slider goes past the ceiling,
   // so the text could promise twenty and eighteen at most could ever turn up; this is the one
   // number both the text and the spawn use, so it is the number that arrives.
+  size += sys.WornPerk().crewDelta;
   let ceiling = CBConfig.MaxLiveSpawns() - (CBCrewApexOn() ? CBConfig.ApexStrikeTeamSize() : 0);
   return Min(size, Max(2, ceiling));
 }

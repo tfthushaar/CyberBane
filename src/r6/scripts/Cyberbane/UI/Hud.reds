@@ -410,7 +410,7 @@ public func CBHudTabBlurb(tab: Int32) -> String {
     case 3: return "Who holds each district, how firmly, and who is fighting them for it.";
     case 4: return "Where in Night City your name carries, district by district.";
     case 5: return "The people who have survived you and are still looking. Click one for their file.";
-    case 6: return "What the street calls you. Click a title to go by it.";
+    case 6: return "What the street calls you and what it gets you. Click any title to read it, or go by one you have earned.";
     case 7: return "The ledger: what you did, where, and who it was.";
     default: return "";
   }
@@ -528,6 +528,9 @@ public class CBHud {
   // What the player has picked on the screens that have something to pick.
   private let m_pickFaction: CName;
   private let m_pickRival: Int32;
+  // The title being read on the Titles screen, once somebody has clicked one.
+  private let m_titlePick: CName;
+  private let m_titlePicked: Bool;
   private let m_purgeArmed: Bool;          // "forget every rival" asks twice
   private let m_payArmed: CName;           // paying a gang off asks twice too: the gang it is armed for
   // A list longer than the page scrolls (ListWindow): which entry is in the top row, how long the
@@ -1662,8 +1665,13 @@ public class CBHud {
       } else {
         if this.m_tab == CBHudTitlesTab() {
           // A value in a field; safe to set at once, paused or not. n"" is automatic.
-          sys.SetActiveTitle(this.m_rowTitle[row]);
-          CBLog.Info(n"UI", s"Title chosen on the Hub: \(NameToString(sys.GetChosenTitle())).");
+          // Any row can be read. Only one V has earned can be gone by.
+          this.m_titlePick = this.m_rowTitle[row];
+          this.m_titlePicked = true;
+          if Equals(this.m_titlePick, n"") || sys.HasTitle(this.m_titlePick) {
+            sys.SetActiveTitle(this.m_titlePick);
+            CBLog.Info(n"UI", s"Title chosen on the Hub: \(NameToString(sys.GetChosenTitle())).");
+          }
         }
       }
     }
@@ -2440,20 +2448,37 @@ public class CBHud {
     this.PlaceRows(CBHudLayoutTitles());
     let content = sys.GetContent();
     let chosen = sys.GetChosenTitle();
-    let unlocked = sys.GetUnlockedTitles();
+    let reading = this.m_titlePicked ? this.m_titlePick : chosen;
+    let earned = sys.GetUnlockedTitles();
     let onAuto = Equals(chosen, n"");
-    let autoLabel = ArraySize(unlocked) > 0 ? "Automatic: " + CBHudActiveTitle(sys) : "Automatic";
-    this.SetRow(0, CBHudLayoutTitles(), onAuto ? CBHudCyan() : CBHudGrey(), ArraySize(unlocked) > 0, onAuto,
+    let autoLabel = ArraySize(earned) > 0 ? "Automatic: " + CBHudActiveTitle(sys) : "Automatic";
+    this.SetRow(0, CBHudLayoutTitles(), onAuto ? CBHudCyan() : CBHudGrey(), true, Equals(reading, n""),
       autoLabel, "", "", "", "", onAuto ? "GOING BY" : "");
     this.m_rowTitle[0] = n"";
-    let i = 0;
-    while i < ArraySize(unlocked) && i + 1 < CBHudRowPool() {
-      let id = unlocked[i];
-      let mine = Equals(id, chosen);
-      this.SetRow(i + 1, CBHudLayoutTitles(), mine ? CBHudCyan() : CBHudAmber(), true, mine,
-        CBTitleDisplayById(sys, content, id), "", "", "", "", mine ? "GOING BY" : "");
-      this.m_rowTitle[i + 1] = id;
-      i += 1;
+    if !IsDefined(content) {
+      return;
+    }
+    // Earned first, then the rest. One row each and the whole list fits the pool, with no scrolling.
+    let row = 1;
+    let pass = 0;
+    while pass < 2 {
+      for def in content.GetTitles() {
+        if IsDefined(def) && Equals(sys.HasTitle(def.id), pass == 0) && row < CBHudRowPool() {
+          let mine = Equals(def.id, chosen);
+          let status = mine ? "GOING BY" : "EARNED";
+          if pass == 1 {
+            status = CBTitleProgress(sys, def.id);
+            if StrLen(status) == 0 {
+              status = "LOCKED";
+            }
+          }
+          this.SetRow(row, CBHudLayoutTitles(), mine ? CBHudCyan() : (pass == 0 ? CBHudAmber() : CBHudGrey()), true,
+            Equals(def.id, reading), CBTitleDisplay(sys, def), "", "", "", "", status);
+          this.m_rowTitle[row] = def.id;
+          row += 1;
+        }
+      }
+      pass += 1;
     }
   }
 
@@ -2524,7 +2549,8 @@ public class CBHud {
               if this.m_tab == CBHudTitlesTab() {
                 this.RenderTitles(sys);
                 let colX = x + CBHudTitleListW() + 60.0;
-                this.SetBody(colX, CBHudContentTop(), w - CBHudTitleListW() - 60.0, CBHudTitles(sys), maxLines);
+                this.SetBody(colX, CBHudContentTop(), w - CBHudTitleListW() - 60.0,
+                             CBHudTitles(sys, this.m_titlePicked ? this.m_titlePick : sys.GetChosenTitle()), maxLines);
               } else {
                 // History is the ledger - everything V has accumulated - so starting over belongs
                 // on it, rather than buried in Mod Settings where a player looking at what they
@@ -3036,6 +3062,10 @@ func CBHudTurfStatus(game: GameInstance, content: ref<CyberbaneContent>, distric
   if !IsDefined(content) {
     return "";
   }
+  let sealedDef = content.GetDistrict(district);
+  if IsDefined(sealedDef) && sealedDef.sealed {
+    return "WALLED OFF";
+  }
   let book = CBTurfBook.Get(game);
   if IsDefined(book) && NotEquals(book.Challenger(CBDistrictIndex(district)), n"") {
     return s"\(CBBarFactionLabel(book.Challenger(CBDistrictIndex(district)))) MOVING IN";
@@ -3189,36 +3219,38 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32)
   }
   return out;
 }
-func CBHudTitles(sys: ref<CyberbaneSystem>) -> String {
+func CBHudTitles(sys: ref<CyberbaneSystem>, id: CName) -> String {
   let content = sys.GetContent();
+  if !IsDefined(content) {
+    return "";
+  }
   let out = "";
-  if Equals(sys.GetChosenTitle(), n"") {
-    out += "On automatic: you go by the best title you have earned.\n\n";
+  let worn = sys.GetActiveTitle();
+  let shown = id;
+  if Equals(id, n"") {
+    out += "AUTOMATIC\n";
+    if Equals(worn, n"") {
+      return out + "You go by the best title you earn. You have not earned one yet. Click any title to see what it takes and what it does.";
+    }
+    out += "You go by the best title you have earned, which is " + CBTitleDisplayById(sys, content, worn) + ".\n";
+    shown = worn;
   } else {
-    out += "Click Automatic to go back to going by the best one you have earned.\n\n";
-  }
-  // The ones you have not got, with what each of them takes.
-  //
-  // A player reported that the titles were the least understandable part of the mod: they arrive
-  // unannounced, and nothing anywhere said what they mean or how to go after one. A list of the
-  // ones you do not have, each with the thing you would have to do, turns the whole system into
-  // something you can aim at. Earned titles are the rows on the left.
-  if IsDefined(content) {
-    let shown = 0;
-    out += "NOT YET\n";
-    for def in content.GetTitles() {
-      if IsDefined(def) && !sys.HasTitle(def.id) && shown < CBConfig.HudTitlesLockedShown() {
-        let need = CBTitleRequirement(sys, def.id);
-        if StrLen(need) > 0 {
-          out += CBTitleDisplayById(sys, content, def.id) + "\n    " + need + "\n";
-          shown += 1;
-        }
-      }
+    out += StrUpper(CBTitleDisplayById(sys, content, id)) + "\n";
+    if sys.HasTitle(id) {
+      out += Equals(id, worn) ? "You go by this.\n" : "Earned.\n";
+    } else {
+      out += "Not earned yet.\n";
     }
-    if shown == 0 {
-      out += "Nothing left. You have all of them.\n";
+    let need = CBTitleRequirement(sys, id);
+    if StrLen(need) > 0 {
+      out += "\nWHAT IT TAKES\n" + need + "\n";
     }
   }
+  let def = content.GetTitle(shown);
+  if IsDefined(def) && StrLen(def.effect) > 0 {
+    out += "\nWHAT IT DOES\n" + def.effect + "\n";
+  }
+  out += CBTitlesDoThings() ? "\nOnly the title you go by has any effect." : "\nTitle effects are switched off in Mod Settings.";
   return out;
 }
 

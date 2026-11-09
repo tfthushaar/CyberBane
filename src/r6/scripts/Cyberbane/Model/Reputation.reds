@@ -110,6 +110,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     dreadMult = s.dreadGainMult;
   }
 
+  renownMult *= sys.WornPerk().renownMult;
   let brutal = CBIsBrutalKill(info.mFinisher, info.mBlade, info.mFists);
   let renownWitness = info.witnessed ? 1.0 : CBConfig.UnwitnessedRenownMult();
   // How frightening unseen work is. Half, by default: the bodies turn up even when nobody saw
@@ -146,7 +147,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     // A gang minds a body far more than somebody who woke up. The same loss used to be taken
     // either way, so there was no reason on this axis to ever hold back.
     let standingLoss = CBStandingDeltaForKill(info.victimClass) * standingWitness
-                     * (info.lethal ? 1.0 : CBConfig.NonLethalStandingShare());
+                     * (info.lethal ? 1.0 : CBConfig.NonLethalStandingShare()) * sys.WornPerk().standingLossMult;
     fs.standing = ClampF(fs.standing + standingLoss, -100.0, 100.0);
     // And their enemies hear about it (Model/GangRivalries.reds).
     CBCreditRivalGangs(sys, GetGameInstance(), info.faction, standingLoss);

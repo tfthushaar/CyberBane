@@ -96,8 +96,8 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
 
     if !npc.cbMoraleBroken && brokenCount < breakCap {
       let allies = ArraySize(nearby) - 1 - brokenCount;
-      let chance = intensity * CBBreakChance(sys, npc, info.faction, 1.0 - npc.cbMorale, allies,
-                                             bossOrOfficer, brutal);
+      let chance = CBBreakChance(sys, npc, info.faction, 1.0 - npc.cbMorale, allies,
+                                 bossOrOfficer, brutal, intensity);
       if RandF() < chance && CBMoraleBreak(sys, game, npc, info.faction, chance) {
         brokenCount += 1;
       }
@@ -131,7 +131,7 @@ func CBMoraleEligible(npc: wref<ScriptedPuppet>) -> Bool {
 // How likely this person is to run, right now. Nothing here is a coin flip on its own: a veteran with
 // friends around them can watch a lot go wrong, and a hurt ganger on their own will not need much.
 public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, faction: CName, shaken: Float,
-                          allies: Int32, leaderDown: Bool, brutal: Bool) -> Float {
+                          allies: Int32, leaderDown: Bool, brutal: Bool, intensity: Float) -> Float {
   if !IsDefined(sys) || !IsDefined(npc) || shaken < CBConfig.MoraleBreakMinShock() {
     return 0.0;
   }
@@ -176,7 +176,46 @@ public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, 
   if CBTurfLostGround(sys, faction) {
     chance *= CBConfig.MoraleLostGroundMult();
   }
-  return ClampF(chance, 0.0, CBConfig.MoraleBreakMaxChance());
+  // The ceiling goes last, over the slider and the title too: applied before them, Morale intensity
+  // at 2.0 turned a 40% ceiling into 80%.
+  return ClampF(chance * intensity * sys.WornPerk().breakMult, 0.0, CBConfig.MoraleBreakMaxChance());
+}
+
+// May one more of this group run? The kill path counts this as it goes; somebody hit down to a quarter
+// of their health arrives here on their own, and without asking, a grenade through a whole crew could
+// send past the "Most of a group" setting.
+public func CBRoomToBreak(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
+  let reg = IsDefined(sys) ? sys.GetRegistry() : null;
+  if !IsDefined(reg) || !IsDefined(npc) {
+    return false;
+  }
+  let share = CBConfig.MoraleMaxBreakFraction();
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    share = rt.GetSettings().maxFleeFraction;
+  }
+  if share <= 0.0 {
+    return false;
+  }
+  let here = npc.GetWorldPosition();
+  let id = npc.GetEntityID();
+  let total = 1;
+  let broken = 0;
+  let all = reg.GetAll();
+  let i = 0;
+  while i < ArraySize(all) {
+    let other = all[i];
+    i += 1;
+    if CBNpcSafe(sys, other) && NotEquals(other.GetEntityID(), id)
+       && Vector4.Distance(here, other.GetWorldPosition()) <= CBConfig.MoraleShockRadius()
+       && CBMoraleEligible(other) {
+      total += 1;
+      if other.cbMoraleBroken {
+        broken += 1;
+      }
+    }
+  }
+  return broken < Max(1, RoundF(share * Cast<Float>(total)));
 }
 
 // How many others who could break are standing near this one.

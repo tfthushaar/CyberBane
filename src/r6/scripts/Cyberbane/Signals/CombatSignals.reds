@@ -105,6 +105,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
   CBUntrackOnMap(game, puppet);   // no marker left hanging over a body
   let sysE = CyberbaneSystem.Get(game);
+  let wasRival = false;
   // One of ours: its body is cleared later, once V has moved well away (CBSweepRemains).
   let desD = GameInstance.GetDynamicEntitySystem();
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
@@ -129,6 +130,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     // Their chair, read before the hierarchy fills it again.
     let slainRole = IsDefined(slain) ? CBRivalRole(sysE, slain) : CBRoleNone();
     if IsDefined(slain) || tagged {
+      wasRival = true;
       if IsDefined(slain) {
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
         // V's kill: the bounty, and what they carried (Spawn/Loot.reds).
@@ -264,7 +266,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
 
   // Avenger Rival (spec §10.2): killing an Officer or Boss can summon an avenger
   // from that faction who hunts V.
-  if info.lethal && NotEquals(info.faction, n"")
+  // A Rival's death has already had its say about who comes next (CBRivalSlain).
+  if info.lethal && !wasRival && NotEquals(info.faction, n"")
      && (info.victimClass == EnumInt(ECBVictimClass.Boss) || info.victimClass == EnumInt(ECBVictimClass.Officer)) {
     let freq = 1.0;
     if IsDefined(rt) && rt.HasSettings() {

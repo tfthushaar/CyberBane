@@ -94,7 +94,7 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
   if !bonusOn {
     return;
   }
-  let frac = CBGigBonusFraction(sys) * mult;
+  let frac = ClampF(CBGigBonusFraction(sys) * mult + sys.WornPerk().gigBonus, 0.0, CBConfig.GigBonusCeiling());
   if frac <= 0.0 {
     return;
   }

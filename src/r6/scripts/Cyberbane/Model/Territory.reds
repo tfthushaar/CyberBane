@@ -93,9 +93,10 @@ public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
     return;
   }
   let before = CBGangStrength(sys, faction);
-  let after = MaxF(CBConfig.GangStrengthFloor(), before - amount);
+  let dealt = amount * sys.WornPerk().turfMult;
+  let after = MaxF(CBConfig.GangStrengthFloor(), before - dealt);
   svc.NoteGangPower(pid, faction, after, CBGameSeconds(game));
-  CBTurfNoteLocalLoss(sys, game, faction, amount);
+  CBTurfNoteLocalLoss(sys, game, faction, dealt);
   // Said once, as they cross: the street notices a gang thinning out before the map does.
   if !CBMessagesOn() {
     return;
@@ -183,7 +184,9 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
     }
   }
   let heldProf = NotEquals(held, n"") ? content.GetFaction(held) : null;
-  let invaded = IsDefined(heldProf) && !ArrayContains(heldProf.turf, district);
+  let def = content.GetDistrict(district);
+  let sealed = IsDefined(def) && def.sealed;
+  let invaded = !sealed && IsDefined(heldProf) && !ArrayContains(heldProf.turf, district);
   let factions = content.GetFactions();
   let weakestNative = 100.0;
   let natives: array<CName>;
@@ -207,11 +210,8 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
     }
     i += 1;
   }
-  if ArraySize(natives) == 0 || !CBTurfWarsOn() || weakestNative >= CBConfig.TurfOpenStrength() {
-    return;
-  }
-  let def = content.GetDistrict(district);
-  if !IsDefined(def) {
+  if ArraySize(natives) == 0 || !CBTurfWarsOn() || weakestNative >= CBConfig.TurfOpenStrength()
+     || !IsDefined(def) || sealed {
     return;
   }
   let openness = 1.0 - weakestNative / CBConfig.TurfOpenStrength();

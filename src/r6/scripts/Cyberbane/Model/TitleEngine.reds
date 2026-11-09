@@ -90,72 +90,185 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if !IsDefined(score) || !IsDefined(stats) {
     return "";
   }
+  let renown = RoundF(score.GetRenown());
   if Equals(id, n"T_LIVING_LEGEND") {
-    return CBReqNum("be known across Night City", RoundF(score.GetRenown()), RoundF(CBConfig.TierLegend()));
-  }
-  if Equals(id, n"T_CHROME_SAINT") {
-    return CBReqNum("carry more chrome than flesh", RoundF(score.GetChrome()), 85);
-  }
-  if Equals(id, n"T_GLITCH") {
-    return "fight as a netrunner, then " + CBReqNum("kill with quickhacks", stats.quickhackKills, 50);
-  }
-  if Equals(id, n"T_PSYCHO_HUNTER") {
-    return CBReqNum("put down cyberpsychos", stats.psychosKilled, 10);
-  }
-  if Equals(id, n"T_PSYCHO_WHISPERER") {
-    return CBReqNum("talk cyberpsychos down instead", stats.psychosPacified, 5);
-  }
-  if Equals(id, n"T_FIST") {
-    return "fight as a brawler, then " + CBReqNum("put down anyone at all", sys.TotalKills(), 100);
-  }
-  if Equals(id, n"T_UNTOUCHABLE") {
-    return CBReqNum("finish fights without being hit", stats.flawless, 10);
-  }
-  if Equals(id, n"T_RED_TIDE") {
-    return CBReqNum("leave a massacre behind you", stats.massacres, 5);
-  }
-  if Equals(id, n"T_MAXTAC_PROBLEM") {
-    return CBReqNum("put down MaxTac officers", CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)), 10);
-  }
-  if Equals(id, n"T_RIVAL_BREAKER") {
-    return CBReqNum("finish rivals for good", stats.rivalsSlain, 5);
-  }
-  if Equals(id, n"T_MERCIFUL") {
-    return CBReqNum("leave people alive", stats.nonLethal, 100)
-         + ", and never kill a civilian";
-  }
-  if Equals(id, n"T_LANDLORD") {
-    return CBReqNum("take tribute from gangs", CBTotalTributes(sys), 5);
-  }
-  if Equals(id, n"T_FACTION_FRIEND") {
-    return "get one gang to genuinely trust you";
-  }
-  if Equals(id, n"T_FACTION_NIGHTMARE") {
-    return "become the thing one gang is most afraid of";
-  }
-  if Equals(id, n"T_BUTCHER_OF") {
-    return "fight as a butcher, then do enough lethal work in one district";
-  }
-  if Equals(id, n"T_GHOST_OF") {
-    return "fight as a ghost, then take enough people down quietly in one district";
-  }
-  if Equals(id, n"T_DISTRICT_PROBLEM") {
-    return "make one district afraid of you";
+    return CBReqNum("Reach this much Renown", renown, RoundF(CBConfig.TierLegend())) + ".";
   }
   if Equals(id, n"T_MERC_FROM") {
-    return "be known well enough that people use your name";
+    return CBReqNum("Reach this much Renown", renown, RoundF(CBConfig.TierLocalName())) + ".";
+  }
+  if Equals(id, n"T_CHROME_SAINT") {
+    return CBReqNum("Installed chrome score, from how much cyberware capacity you use and how good the implants are", RoundF(score.GetChrome()), 85) + ".";
+  }
+  if Equals(id, n"T_GLITCH") {
+    return CBReqStyle(sys, ECBArchetype.Netrunner, "Quickhack kills build it.") + "\n"
+         + CBReqNum("Kill people with quickhacks", stats.quickhackKills, 50) + ".";
+  }
+  if Equals(id, n"T_PSYCHO_HUNTER") {
+    return CBReqNum("Kill cyberpsychos", stats.psychosKilled, 10) + ".";
+  }
+  if Equals(id, n"T_PSYCHO_WHISPERER") {
+    return CBReqNum("Take cyberpsychos down without killing them", stats.psychosPacified, 5) + ".";
+  }
+  if Equals(id, n"T_FIST") {
+    return CBReqStyle(sys, ECBArchetype.Brawler, "Kills with fists and blunt weapons build it.") + "\n"
+         + CBReqNum("Kill anyone, any way", sys.TotalKills(), 100) + ".";
+  }
+  if Equals(id, n"T_UNTOUCHABLE") {
+    return CBReqNum("Win fights of 2 or more kills with your health never under 95%", stats.flawless, 10) + ".";
+  }
+  if Equals(id, n"T_RED_TIDE") {
+    return CBReqNum(s"Massacres: \(CBConfig.MassacreTotalKills()) bodies in one fight, or \(CBConfig.MassacreWindowKills()) within \(RoundF(CBConfig.MassacreWindowSeconds())) seconds", stats.massacres, 5) + ".";
+  }
+  if Equals(id, n"T_MAXTAC_PROBLEM") {
+    return CBReqNum("Kill MaxTac officers", CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)), 10) + ".";
+  }
+  if Equals(id, n"T_RIVAL_BREAKER") {
+    return CBReqNum("Kill Rivals", stats.rivalsSlain, 5) + ".";
+  }
+  if Equals(id, n"T_MERCIFUL") {
+    return CBReqNum("Take people down without killing them", stats.nonLethal, 100) + ".\n"
+         + s"Never kill a civilian. You have killed \(CBKillsByClass(sys, EnumInt(ECBVictimClass.Civilian))).";
+  }
+  if Equals(id, n"T_LANDLORD") {
+    return CBReqNum("Collect tribute from gangs afraid of you", CBTotalTributes(sys), 5) + ".";
+  }
+  if Equals(id, n"T_FACTION_FRIEND") {
+    let friend = "";
+    let best = CBBestStanding(sys, friend);
+    return CBReqNum("Reach this standing with one gang", best, 75) + CBReqBest(friend) + ".";
+  }
+  if Equals(id, n"T_FACTION_NIGHTMARE") {
+    let gang = n"";
+    let most = CBMostKilledGang(sys, gang);
+    return "One gang has to lose 75 people to you and fear you at 85 or more.\n"
+         + (Equals(gang, n"") ? "You have not fought one yet."
+            : CBCapFirst(CBFactionLabel(gang)) + s": \(Min(most, 75))/75 killed, fear \(RoundF(score.GetFactionFear(gang)))/85.");
+  }
+  if Equals(id, n"T_BUTCHER_OF") {
+    let where = "";
+    let best = CBBestDistrict(sys, 0, where);
+    return CBReqStyle(sys, ECBArchetype.Butcher, "Killing people builds it, brutally faster.") + "\n"
+         + CBReqNum("Lethal or brutal kills in one district", best, 50) + CBReqBest(where) + ".";
+  }
+  if Equals(id, n"T_GHOST_OF") {
+    let where = "";
+    let best = CBBestDistrict(sys, 1, where);
+    return CBReqStyle(sys, ECBArchetype.Ghost, "Taking people down unseen builds it.") + "\n"
+         + CBReqNum("Quiet non-lethal takedowns in one district", best, 30) + CBReqBest(where) + ".";
+  }
+  if Equals(id, n"T_DISTRICT_PROBLEM") {
+    let where = "";
+    let best = CBBestDistrict(sys, 2, where);
+    return CBReqNum("Reach this much Dread", RoundF(score.GetDread()), 50) + ".\n"
+         + CBReqNum("Reach this much Renown in one district", best, 80) + CBReqBest(where) + ".";
   }
   if Equals(id, n"T_KONPEKI_GHOST") {
-    return "fight as a ghost, then " + CBReqNum("do work nobody could pin on you",
-                                                stats.unattributed, CBConfig.KonpekiUnattributed());
+    return "Finish The Heist, or do both of these:\n"
+         + CBReqStyle(sys, ECBArchetype.Ghost, "Taking people down unseen builds it.") + "\n"
+         + CBReqNum("Kills nobody saw", stats.unattributed, CBConfig.KonpekiUnattributed()) + ".";
   }
   if Equals(id, n"T_CYBERBANE") {
-    return "the top of the list: be a legend, be feared, finish three rivals, and have three gangs terrified of you";
+    return CBReqNum("Renown", renown, 850) + "\n"
+         + CBReqNum("Dread", RoundF(score.GetDread()), 90) + "\n"
+         + CBReqNum("Rivals killed", stats.rivalsSlain, 3) + "\n"
+         + CBReqNum("Gangs that fear you at 85 or more", CBCountFactionsFeared(sys, score, 85.0), 3);
   }
   return "";
 }
 
-// "put down cyberpsychos (4/10)"
+func CBReqBest(where: String) -> String {
+  return StrLen(where) > 0 ? ", best so far " + where : "";
+}
+
+func CBReqStyle(sys: ref<CyberbaneSystem>, style: ECBArchetype, how: String) -> String {
+  let now = sys.GetPrimaryArchetypeIndex();
+  let yours = now >= 0 ? CBArchetypeName(now) : "not settled yet";
+  return CBArchetypeName(EnumInt(style)) + " must be your main fighting style. " + how + " Yours is " + yours + ".";
+}
+
+func CBBestStanding(sys: ref<CyberbaneSystem>, out who: String) -> Int32 {
+  let best = 0.0;
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) && fs.standing > best {
+      best = fs.standing;
+      who = CBFactionLabel(fs.id);
+    }
+  }
+  return RoundF(best);
+}
+
+func CBMostKilledGang(sys: ref<CyberbaneSystem>, out gang: CName) -> Int32 {
+  let most = 0;
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) && fs.kills > most {
+      most = fs.kills;
+      gang = fs.id;
+    }
+  }
+  return most;
+}
+
+// mode 0: lethal or brutal kills. 1: quiet takedowns. 2: Renown.
+func CBBestDistrict(sys: ref<CyberbaneSystem>, mode: Int32, out where: String) -> Int32 {
+  let best = 0;
+  for ds in sys.GetDistrictStates() {
+    if IsDefined(ds) {
+      let v = mode == 0 ? ds.lethalOrBrutal : (mode == 1 ? ds.quietTakedowns : RoundF(ds.renown));
+      if v > best {
+        best = v;
+        where = CBDistrictLabel(ds.id);
+      }
+    }
+  }
+  return best;
+}
+
+// The short form, for the list. "" means there is no single number to show.
+public func CBTitleProgress(sys: ref<CyberbaneSystem>, id: CName) -> String {
+  let score = sys.GetScore();
+  let stats = sys.GetStats();
+  if !IsDefined(score) || !IsDefined(stats) {
+    return "";
+  }
+  let have = -1;
+  let need = 0;
+  let label = "";
+  if Equals(id, n"T_LIVING_LEGEND") || Equals(id, n"T_CYBERBANE") { have = RoundF(score.GetRenown()); need = 850; }
+  if Equals(id, n"T_MERC_FROM") { have = RoundF(score.GetRenown()); need = RoundF(CBConfig.TierLocalName()); }
+  if Equals(id, n"T_CHROME_SAINT") { have = RoundF(score.GetChrome()); need = 85; }
+  if Equals(id, n"T_GLITCH") { have = stats.quickhackKills; need = 50; }
+  if Equals(id, n"T_PSYCHO_HUNTER") { have = stats.psychosKilled; need = 10; }
+  if Equals(id, n"T_PSYCHO_WHISPERER") { have = stats.psychosPacified; need = 5; }
+  if Equals(id, n"T_FIST") { have = sys.TotalKills(); need = 100; }
+  if Equals(id, n"T_UNTOUCHABLE") { have = stats.flawless; need = 10; }
+  if Equals(id, n"T_RED_TIDE") { have = stats.massacres; need = 5; }
+  if Equals(id, n"T_MAXTAC_PROBLEM") { have = CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)); need = 10; }
+  if Equals(id, n"T_RIVAL_BREAKER") { have = stats.rivalsSlain; need = 5; }
+  if Equals(id, n"T_MERCIFUL") { have = stats.nonLethal; need = 100; }
+  if Equals(id, n"T_LANDLORD") { have = CBTotalTributes(sys); need = 5; }
+  if Equals(id, n"T_KONPEKI_GHOST") { have = stats.unattributed; need = CBConfig.KonpekiUnattributed(); }
+  if Equals(id, n"T_FACTION_FRIEND") { have = CBBestStanding(sys, label); need = 75; }
+  if Equals(id, n"T_BUTCHER_OF") { have = CBBestDistrict(sys, 0, label); need = 50; }
+  if Equals(id, n"T_GHOST_OF") { have = CBBestDistrict(sys, 1, label); need = 30; }
+  if Equals(id, n"T_DISTRICT_PROBLEM") { have = CBBestDistrict(sys, 2, label); need = 80; }
+  if Equals(id, n"T_FACTION_NIGHTMARE") {
+    let gang = n"";
+    have = CBMostKilledGang(sys, gang);
+    need = 75;
+  }
+  if have < 0 {
+    return "";
+  }
+  return s"\(Min(have, need))/\(need)";
+}
+
+// Whether titles do anything at all. The switch a player can reach if an effect is ever the problem.
+public func CBTitlesDoThings() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().titlePerks;
+}
+
 func CBReqNum(what: String, have: Int32, need: Int32) -> String {
   let shown = have > need ? need : have;
   return what + s" (\(shown)/\(need))";

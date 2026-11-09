@@ -64,6 +64,7 @@ public func CBSeedDistricts(c: ref<CyberbaneContent>) -> Void {
 
   d = CBMakeDistrict(n"Dogtown", "Cyberbane-District-Dogtown");
   d.adjacency = [n"Pacifica"];
+  d.sealed = true;   // behind a wall, and Barghest's
   c.AddDistrict(d);
 
   d = CBMakeDistrict(n"Badlands", "Cyberbane-District-Badlands");

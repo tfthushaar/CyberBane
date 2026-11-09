@@ -11,7 +11,8 @@
 public func CBTurfPatrolsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return IsDefined(rt) && rt.IsEnabled() && rt.HasSettings()
-      && rt.GetSettings().turfPatrols && rt.GetSettings().turfWars;
+      && rt.GetSettings().turfPatrols && rt.GetSettings().turfWars
+      && CBHitSquadsOn();   // off with gangs coming after V, and when They Will Remember owns that
 }
 
 // Every few fast ticks.

@@ -176,7 +176,7 @@ public class CBLootDropCallback extends DelayCallback {
     CBLootRoll(this.tier, ids, counts);
     // More for a stronger V: the parts and ammo scale with level, so a late-game fight is still
     // worth winning.
-    let scale = CBLootLevelScale(game);
+    let scale = CBLootLevelScale(game) * sys.WornPerk().lootMult;
     let k = 0;
     while k < ArraySize(counts) {
       counts[k] = Max(1, RoundF(Cast<Float>(counts[k]) * scale));
@@ -260,8 +260,9 @@ func CBBountyPayer(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
   return best;
 }
 
-func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: CName, amount: Int32,
+func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: CName, baseAmount: Int32,
                  line: String) -> Void {
+  let amount = RoundF(Cast<Float>(baseAmount) * sys.WornPerk().bountyMult / 50.0) * 50;
   let rt = CyberbaneRuntime.Get();
   if amount <= 0 || (IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().bounties) {
     return;

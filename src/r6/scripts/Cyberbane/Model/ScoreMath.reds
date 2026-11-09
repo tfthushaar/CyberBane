@@ -192,7 +192,7 @@ public func CBCrowdFear(score: ref<CBScoreEngine>, intensity: Float) -> Float {
   }
   return (MaxF(score.GetDreadCiv(), score.GetChromeVisible())
           + score.GetAura()
-          + score.GetMenace() * CBConfig.MenaceFearWeight()) * intensity;
+          + score.GetMenace() * CBConfig.MenaceFearWeight()) * intensity * score.TitleCrowdMult();
 }
 
 public func CBEffectiveFear(perceivedThreat: Float, courage: Float) -> Float {

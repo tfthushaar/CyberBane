@@ -171,6 +171,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_convoyCars: Int32;        // cars sent in it so far
   private let m_arrivalChairBase: Int32;  // the apex chair the boarding car's first seat is
   // Whether the next car sent should try to hide up the road, and whether the one boarding did.
+  // The title being worn and what it does, until that changes (WornPerk).
+  private let m_wornPerk: ref<CBTitleDef>;
+  private let m_noPerk: ref<CBTitleDef>;
+  // Who has been built to what health (CBApplyApexBuild).
+  private let m_builtIds: array<EntityID>;
+  private let m_builtHealth: array<Float>;
   private let m_ambushWanted: Bool;
   private let m_arrivalAmbush: Bool;
   private let m_arrivalCarSlot: Int32;    // which car of its convoy the boarding car is (0 first)
@@ -2583,6 +2589,57 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func UnlockTitle(id: CName) -> Void {
     if !ArrayContains(this.m_titles, id) {
       ArrayPush(this.m_titles, id);
+      this.m_wornPerk = null;
+    }
+  }
+
+  // What the title being worn does, or nothing at all. Never null, so nobody who asks has to check.
+  public func WornPerk() -> ref<CBTitleDef> {
+    if !IsDefined(this.m_noPerk) {
+      this.m_noPerk = new CBTitleDef();
+    }
+    if !CBTitlesDoThings() {
+      return this.m_noPerk;
+    }
+    if !IsDefined(this.m_wornPerk) {
+      let content = this.GetContent();
+      let def = IsDefined(content) ? content.GetTitle(this.GetActiveTitle()) : null;
+      if !IsDefined(def) {
+        return this.m_noPerk;
+      }
+      this.m_wornPerk = def;
+    }
+    return this.m_wornPerk;
+  }
+
+  // Has this NPC already been built, and is that build still on it? An NPC streamed out and back in
+  // comes back with this mod's flags cleared; asking the stat itself is the only way to tell a body
+  // that still carries the bonus from one that has lost it.
+  public func WasBuiltAt(id: EntityID, health: Float) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_builtIds) {
+      if Equals(this.m_builtIds[i], id) {
+        return AbsF(this.m_builtHealth[i] - health) < 1.0;
+      }
+      i += 1;
+    }
+    return false;
+  }
+
+  public func NoteBuilt(id: EntityID, health: Float) -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_builtIds) {
+      if Equals(this.m_builtIds[i], id) {
+        this.m_builtHealth[i] = health;
+        return;
+      }
+      i += 1;
+    }
+    ArrayPush(this.m_builtIds, id);
+    ArrayPush(this.m_builtHealth, health);
+    while ArraySize(this.m_builtIds) > CBConfig.BuiltRecordCap() {
+      ArrayErase(this.m_builtIds, 0);
+      ArrayErase(this.m_builtHealth, 0);
     }
   }
 
@@ -2595,9 +2652,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func SetActiveTitle(id: CName) -> Void {
     if NotEquals(id, n"") && !ArrayContains(this.m_titles, id) {
       this.m_activeTitle = n"";
+      this.m_wornPerk = null;
       return;
     }
     this.m_activeTitle = id;
+    this.m_wornPerk = null;
   }
 
   // What the player picked, as stored: n"" when they left it on automatic.
@@ -2791,6 +2850,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_deedsDone);
     ArrayClear(this.m_titles);
     this.m_activeTitle = n"";
+    this.m_wornPerk = null;
     this.m_nextRumorId = 0;
     this.m_nextRivalId = 0;
 
@@ -3330,6 +3390,13 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func AddEscapee(e: ref<CBEscapee>) -> Void {
     if !IsDefined(e) {
       return;
+    }
+    // Already being watched. An NPC streamed out and back in has lost its flags, and two records
+    // of one person are two chances at a Rival from somebody who only ran once.
+    for known in this.m_escapees {
+      if IsDefined(known) && Equals(known.entityId, e.entityId) {
+        return;
+      }
     }
     ArrayPush(this.m_escapees, e);
     while ArraySize(this.m_escapees) > CBConfig.EscapeeCap() {

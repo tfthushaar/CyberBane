@@ -33,7 +33,8 @@ which the Friend of the Gang title needs.
 ### "Does turf do anything? Dogtown is still under Barghest"
 
 **Status: fixed in 1.7.8** (`Model/Territory.reds`, `Model/TurfBook.reds`, `Data/Factions.reds`). Dogtown
-could not flip: its only neighbours were not at war with Barghest. Holders are now written down in
+is sealed on purpose and stays Barghest's (`sealed` on the district); Pacifica could not be taken from
+outside because nobody next door was at war with it. Holders are now written down in
 their own per-save system, a new class so no saved shape changes. Taking a district needs a 1.6 times
 lead for four in-game hours, and it lasts until retaken; home gangs count for 40% on ground they have
 lost. Damage on a gang's own streets counts again there. The old gang hits back every two days or so
@@ -49,6 +50,24 @@ Street clashes between gangs were proposed and declined.
 **Status: in 1.7.8, experimental and off by default** (`Spawn/TurfPatrol.reds`). Two to four of the holder,
 one group at a time, only with 8 places left under the spawn cap, never during an encounter, a job, the
 story, stealth or in a safe area. They go through `CBSpawnGroup`, `CBIssueMove` and `CBDeleteTaggedSafe`.
+
+### "Tired of answering how to get a title; can titles actually mean something?"
+
+**Status: in 1.7.8** (`Data/Titles.reds`, `Model/TitleEngine.reds`, `UI/Hud.reds`). The Titles screen lists all
+of them, with the exact conditions, live progress and the effect. The title being worn gives its
+effect. One at a time, so they never stack with each other, and each only moves a number Cyberbane
+already owns and bounds: nothing touches V's stats. `titlePerks` turns them off.
+
+### "Make sure stacking effects from multiple systems doesn't cause unintended behaviour"
+
+**Status: audited in 1.7.8, across everything the mod changes in the game.** Every writer of attitudes, AI
+orders, stims, money, spawns, map pins and messages was listed and checked for two systems acting on
+one thing. Already bounded: all enemy strength goes through one function with a ceiling per stat; prices,
+standing, fear senses, recognition and crew size clamp after every input; spawns share the cap of 18;
+texts share a queue. Fixed: a re-streamed enemy being built twice and healed; the Morale intensity
+slider escaping the break ceiling; the low-health route escaping the group limit; one Rival's death
+creating two successors; duplicate escapee records; lanes firing together and costing a car; patrols
+ignoring the hit-squads switch and They Will Remember.
 
 ## Requests after 1.7.6
 

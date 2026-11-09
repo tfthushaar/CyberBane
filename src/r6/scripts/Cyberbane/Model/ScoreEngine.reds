@@ -135,6 +135,11 @@ public class CBScoreEngine {
   }
 
   // ---- Headline getters -------------------------------------------------
+  public func TitleCrowdMult() -> Float {
+    let sys = this.m_system;
+    return IsDefined(sys) ? sys.WornPerk().crowdMult : 1.0;
+  }
+
   public func GetRenown() -> Float {
     this.Recompute();
     return this.m_renown;
@@ -248,6 +253,7 @@ public class CBScoreEngine {
         }
       }
     }
-    return CBRecognitionChance(this.m_renown, rd, this.m_chromeVisible, this.m_look, this.m_disguise, rf, npcIsNcpdHighHeat, lowProfile);
+    let chance = CBRecognitionChance(this.m_renown, rd, this.m_chromeVisible, this.m_look, this.m_disguise, rf, npcIsNcpdHighHeat, lowProfile);
+    return IsDefined(sys) ? ClampF(chance + sys.WornPerk().recognitionAdd, 0.0, CBConfig.RecognitionCap()) : chance;
   }
 }
