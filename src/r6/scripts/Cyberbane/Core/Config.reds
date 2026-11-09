@@ -227,8 +227,32 @@ public abstract class CBConfig {
   public static func WhisperRumorChance() -> Float = 0.6
 
   // ---- Morale (spec §9.4) ----------------------------------------------
-  public static func MoraleBreakThreshold() -> Float = 0.25
-  public static func MoraleMaxBreakFraction() -> Float = 0.6
+  public static func MoraleMaxBreakFraction() -> Float = 0.35
+  // What goes into the chance of somebody running (Reactions/Morale.reds, CBBreakChance). Nobody
+  // breaks on the first body. How shaken they are carries the most weight, scaled by how much
+  // their gang fears V; being hurt, being alone, and what they just saw add to it; rank and a
+  // sworn vendetta take away. Never more than the ceiling, however bad it gets.
+  public static func MoraleBreakMinShock() -> Float = 0.15
+  public static func MoraleBreakShockWeight() -> Float = 0.5
+  public static func MoraleHurtBelow() -> Float = 50.0
+  public static func MoraleHurtWeight() -> Float = 0.2
+  public static func MoraleAloneBonus() -> Float = 0.1
+  public static func MoraleBackedUpMult() -> Float = 0.75
+  public static func MoraleBackedUpAllies() -> Int32 = 3
+  public static func MoraleLeaderDownBonus() -> Float = 0.08
+  public static func MoraleBrutalBonus() -> Float = 0.04
+  public static func MoraleSwornMult() -> Float = 0.6
+  public static func MoraleBreakMaxChance() -> Float = 0.4
+  // How shaken somebody at a quarter of their health counts as, with nobody having died near them.
+  public static func MoraleHurtShock() -> Float = 0.5
+  // The run itself. Somewhere this far off, and this much further from V than they already are.
+  public static func FleeRunMin() -> Float = 30.0
+  public static func FleeRunMax() -> Float = 60.0
+  public static func FleeMinGain() -> Float = 15.0
+  public static func FleeSpotCandidates() -> Int32 = 8
+  // Reaching the spot with V still close is no reason to come back.
+  public static func FleeReorderTicks() -> Int32 = 8
+  public static func FleeMaxOrders() -> Int32 = 3
   public static func MoraleShockRadius() -> Float = 15.0
 
   // ---- Low-health combat flee / escape -> Rival (spec §10.2) -----------

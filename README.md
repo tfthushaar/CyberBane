@@ -99,6 +99,9 @@ in active development. This page describes what the mod does and how it installs
   size you up, and panicked drivers pull away in the street. It is not only your reputation: visible chrome, and how
   built-up your level, Street Cred and skills are, all feed into how much the street fears you,
   so a heavily chromed, high-level merc clears a room. Bosses and MaxTac hold their ground.
+- **Enemies can lose their nerve.** Hurt, alone, or watching their friends drop, somebody may turn and
+  run. Rank, their gang's fear of you and a sworn vendetta all change the odds, and only part of a group
+  can run at once. Get away from you and they may come back as a Rival.
 - **What you wear hides what you are carrying.** Chrome only frightens people who can see it.
   A coat covers your arms and skin, trousers cover your legs, and anything across your face
   covers your eyes, so the same build reads very differently dressed up or stripped down.

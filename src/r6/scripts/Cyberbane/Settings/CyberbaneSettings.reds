@@ -547,7 +547,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "1.0")
   @runtimeProperty("ModSettings.step", "0.05")
-  public let maxBreakFraction: Float = 0.6;
+  // Renamed from maxBreakFraction so the lower default reaches everybody: Mod Settings keeps
+  // values by field name, and the old one is stored as 0.6 on every install.
+  public let maxFleeFraction: Float = 0.35;
 
   // ---- Economy ----------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -759,7 +761,7 @@ public class CyberbaneSettings {
         this.civIntensity = 0.6;
         this.maxReactingCivilians = 3;
         this.moraleIntensity = 0.6;
-        this.maxBreakFraction = 0.4;
+        this.maxFleeFraction = 0.2;
         this.hostileOnSight = false;
         this.hitSquadFrequencyMult = 0.5;
         this.rivalFrequencyMult = 0.6;
@@ -769,7 +771,7 @@ public class CyberbaneSettings {
         this.civIntensity = 1.5;
         this.maxReactingCivilians = 10;
         this.moraleIntensity = 1.4;
-        this.maxBreakFraction = 0.75;
+        this.maxFleeFraction = 0.5;
         this.hostileOnSight = true;
         this.hitSquadFrequencyMult = 1.6;
         this.rivalFrequencyMult = 1.5;
@@ -779,7 +781,7 @@ public class CyberbaneSettings {
         this.civIntensity = 1.0;
         this.maxReactingCivilians = 6;
         this.moraleIntensity = 1.0;
-        this.maxBreakFraction = 0.6;
+        this.maxFleeFraction = 0.35;
         this.hostileOnSight = true;
         this.hitSquadFrequencyMult = 1.0;
         this.rivalFrequencyMult = 1.0;

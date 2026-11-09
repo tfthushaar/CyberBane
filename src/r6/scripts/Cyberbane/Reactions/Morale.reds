@@ -36,7 +36,7 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
       return;
     }
     intensity = s.moraleIntensity;
-    maxBreak = s.maxBreakFraction;
+    maxBreak = s.maxFleeFraction;
   }
   if intensity <= 0.0 {
     return;
@@ -55,9 +55,7 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
     || info.victimClass == EnumInt(ECBVictimClass.Officer);
   let shock = bossOrOfficer ? 0.35 : 0.10;
 
-  // Vendetta crews are already rattled; their own dropping hits harder.
-  let vendetta = NotEquals(info.faction, n"")
-    && Equals(sys.GetScore().GetPosture(info.faction), ECBPosture.Vendetta);
+  let brutal = CBIsBrutalKill(info.mFinisher, info.mBlade, info.mFists);
 
   let deadPos = info.position;
   let npcs = reg.GetAll();
@@ -84,7 +82,8 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
 
   // +1 for the member that just died: a lone survivor of a pair can still break.
   let total = ArraySize(nearby) + 1;
-  let breakCap = FloorF(maxBreak * Cast<Float>(total));
+  // At least one, unless the setting says none: rounding down meant a pair could never break.
+  let breakCap = maxBreak > 0.0 ? Max(1, RoundF(maxBreak * Cast<Float>(total))) : 0;
 
   let j = 0;
   while j < ArraySize(nearby) {
@@ -93,17 +92,15 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
     if npc.cbMorale <= 0.0 {
       npc.cbMorale = 1.0;   // initialise once per spawn
     }
-    let delta = shock * intensity;
-    if vendetta {
-      delta += 0.10 * intensity;
-    }
-    npc.cbMorale -= delta;
+    npc.cbMorale = MaxF(0.001, npc.cbMorale - shock);
 
-    if !npc.cbMoraleBroken
-       && npc.cbMorale < CBConfig.MoraleBreakThreshold()
-       && brokenCount < breakCap {
-      CBMoraleBreak(sys, game, npc, info.faction);
-      brokenCount += 1;
+    if !npc.cbMoraleBroken && brokenCount < breakCap {
+      let allies = ArraySize(nearby) - 1 - brokenCount;
+      let chance = intensity * CBBreakChance(sys, npc, info.faction, 1.0 - npc.cbMorale, allies,
+                                             bossOrOfficer, brutal);
+      if RandF() < chance && CBMoraleBreak(sys, game, npc, info.faction, chance) {
+        brokenCount += 1;
+      }
     }
   }
 }
@@ -131,21 +128,159 @@ func CBMoraleEligible(npc: wref<ScriptedPuppet>) -> Bool {
   return true;
 }
 
-func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>, faction: CName) -> Void {
+// How likely this person is to run, right now. Nothing here is a coin flip on its own: a veteran with
+// friends around them can watch a lot go wrong, and a hurt ganger on their own will not need much.
+public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, faction: CName, shaken: Float,
+                          allies: Int32, leaderDown: Bool, brutal: Bool) -> Float {
+  if !IsDefined(sys) || !IsDefined(npc) || shaken < CBConfig.MoraleBreakMinShock() {
+    return 0.0;
+  }
+  let nerve = CBNerve(npc);
+  if nerve >= 1.0 {
+    return 0.0;
+  }
+  let score = sys.GetScore();
+  let fear = 0.0;
+  let sworn = false;
+  if IsDefined(score) && NotEquals(faction, n"") {
+    fear = ClampF(score.GetFactionFear(faction) / 100.0, 0.0, 1.0);
+    sworn = Equals(score.GetPosture(faction), ECBPosture.Vendetta);
+  }
+  let chance = ClampF(shaken, 0.0, 1.0) * CBConfig.MoraleBreakShockWeight() * (0.5 + 0.5 * fear);
+
+  let sps = GameInstance.GetStatPoolsSystem(npc.GetGame());
+  if IsDefined(sps) {
+    let hp = sps.GetStatPoolValue(Cast<StatsObjectID>(npc.GetEntityID()), gamedataStatPoolType.Health, true);
+    if hp < CBConfig.MoraleHurtBelow() {
+      chance += (1.0 - hp / CBConfig.MoraleHurtBelow()) * CBConfig.MoraleHurtWeight();
+    }
+  }
+  if allies <= 0 {
+    chance += CBConfig.MoraleAloneBonus();
+  } else {
+    if allies >= CBConfig.MoraleBackedUpAllies() {
+      chance *= CBConfig.MoraleBackedUpMult();
+    }
+  }
+  if leaderDown {
+    chance += CBConfig.MoraleLeaderDownBonus();
+  }
+  if brutal {
+    chance += CBConfig.MoraleBrutalBonus();
+  }
+  // Rank and file are 0.5, so they take this as it stands; an elite takes half of it.
+  chance *= (1.0 - nerve) * 2.0;
+  if sworn {
+    chance *= CBConfig.MoraleSwornMult();
+  }
+  return ClampF(chance, 0.0, CBConfig.MoraleBreakMaxChance());
+}
+
+// How many others who could break are standing near this one.
+public func CBAlliesNear(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Int32 {
+  let count = 0;
+  let reg = IsDefined(sys) ? sys.GetRegistry() : null;
+  if !IsDefined(reg) || !IsDefined(npc) {
+    return 0;
+  }
+  let here = npc.GetWorldPosition();
+  let id = npc.GetEntityID();
+  let all = reg.GetAll();
+  let i = 0;
+  while i < ArraySize(all) && count < CBConfig.MoraleBackedUpAllies() {
+    let other = all[i];
+    i += 1;
+    if CBNpcSafe(sys, other) && NotEquals(other.GetEntityID(), id) && !other.cbMoraleBroken
+       && Vector4.Distance(here, other.GetWorldPosition()) <= CBConfig.MoraleShockRadius()
+       && CBMoraleEligible(other) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+// Somewhere to run to: away from V, a real walk from here. None means they have nowhere to go.
+func CBFleeSpot(game: GameInstance, npc: wref<ScriptedPuppet>, player: ref<GameObject>, out spot: Vector4) -> Bool {
+  let npos = npc.GetWorldPosition();
+  let ppos = player.GetWorldPosition();
+  let toV = Vector4.Normalize2D(new Vector4(ppos.X - npos.X, ppos.Y - npos.Y, 0.0, 0.0));
+  let pts: array<Vector4>;
+  // CBPursuitPoints searches behind the direction it is given, which is away from V here.
+  if !CBPursuitPoints(game, npos, toV, CBConfig.FleeSpotCandidates(), CBConfig.FleeRunMin(),
+                      CBConfig.FleeRunMax(), pts) {
+    return false;
+  }
+  let here = Vector4.Distance(npos, ppos);
+  let i = 0;
+  while i < ArraySize(pts) {
+    let p = pts[i];
+    i += 1;
+    if Vector4.Distance(p, ppos) >= here + CBConfig.FleeMinGain()
+       && AbsF(p.Z - npos.Z) <= CBConfig.GroundMaxDrop()
+       && CBPointReachable(game, npos, p) {
+      spot = p;
+      return true;
+    }
+  }
+  return false;
+}
+
+// Run. A stim cannot do this: the game drops one whose source is its own target, and one from V
+// tells a ganger to panic at V, which is not leaving. A move order can, because with `ignoreInCombat`
+// left false the game keeps it running during a fight (tweakAIConditionChecks, IsCommandActive).
+// They stay hostile on purpose: made neutral, shooting one in the back would be an assault to the
+// police. True when they have somewhere to go and have been told to go there.
+public func CBOrderFlee(game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
+  let player = GetPlayer(game);
+  if !IsDefined(npc) || !IsDefined(player) || !npc.IsAttached() {
+    return false;
+  }
+  // Somebody in a seat belongs to the car, and the car lets them out when it stops.
+  if VehicleComponent.IsMountedToVehicle(game, npc.GetEntityID()) {
+    return false;
+  }
+  let ai = npc.GetAIControllerComponent();
+  let spot: Vector4;
+  if !IsDefined(ai) || !CBFleeSpot(game, npc, player, spot) {
+    return false;
+  }
+  let cmd = new AIMoveToCommand();
+  let dest: AIPositionSpec;
+  let wp: WorldPosition;
+  WorldPosition.SetVector4(wp, spot);
+  AIPositionSpec.SetWorldPosition(dest, wp);
+  cmd.movementTarget = dest;
+  cmd.movementType = moveMovementType.Sprint;
+  cmd.ignoreInCombat = false;
+  cmd.alwaysUseStealth = false;
+  cmd.ignoreNavigation = false;
+  cmd.finishWhenDestinationReached = true;
+  cmd.desiredDistanceFromTarget = 1.0;
+  CBIssueMove(npc, ai, cmd);
+  return true;
+}
+
+// True when they really ran. Nowhere to go is a reason to keep fighting.
+func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>, faction: CName, chance: Float) -> Bool {
+  if !CBOrderFlee(game, npc) {
+    return false;
+  }
   npc.cbMoraleBroken = true;
   let b = npc.GetStimBroadcasterComponent();
   if IsDefined(b) {
     // With a radius, for the same reason the crowd stims needed one: the argument is optional
-    // and leaving it out broadcasts to nobody. This one was missed when the others were fixed.
+    // and leaving it out broadcasts to nobody. This reaches the people around them.
     b.TriggerSingleBroadcast(npc, gamedataStimType.Terror, CBConfig.FearStimRadius());
   }
-  CBLog.Info(n"Reactions", "An enemy broke and ran.");
+  CBLog.Info(n"Reactions", s"An enemy broke and ran (\(RoundF(chance * 100.0))% chance).");
   // Made a Rival here, on the spot, they were a survivor even if V shot them in the back a second
   // later. Same road as anybody else who runs, which also keeps them from counting twice.
   if NotEquals(faction, n"") && !npc.cbLowHealthFled {
     npc.cbLowHealthFled = true;
     CBAddEscapee(sys, game, npc, faction);
   }
+  sys.MarkEscapeeFleeing(npc.GetEntityID());
+  return true;
 }
 
 // Never breaks, never runs: an apex squad member, or a Rival with Hard to Scare.

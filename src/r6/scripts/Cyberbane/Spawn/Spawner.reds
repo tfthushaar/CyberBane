@@ -770,7 +770,7 @@ public func CBLastSpawnBlock() -> Int32 {
 // combat behaviour takes over from there.
 public func CBOrderHunt(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   let player = GetPlayer(game);
-  if !IsDefined(player) || !IsDefined(puppet) {
+  if !IsDefined(player) || !IsDefined(puppet) || puppet.cbMoraleBroken {
     return;
   }
   let ai = puppet.GetAIControllerComponent();

@@ -185,6 +185,9 @@ public class CBEscapee {
   public let lastPos: Vector4;
   public let hasPos: Bool;
   public let wasRival: Bool;
+  // Actually running, under a Cyberbane order (Reactions/Morale.reds), and how often it was renewed.
+  public let fleeing: Bool;
+  public let fleeOrders: Int32;
   // Logged because V put them down without killing them (a knockout / non-lethal takedown)
   // rather than because they ran. Resolved into a Spared Rival if V leaves them breathing.
   public let spared: Bool;

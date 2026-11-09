@@ -470,7 +470,7 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
     // rounds of looking in the wrong place.
     if (sys.GetTickCount() - sys.GetLaneQuietLogged(lane)) > 60 {
       sys.SetLaneQuietLogged(lane, sys.GetTickCount());
-      CBLog.Info(n"Spawn", s"\(CBLaneLabel(lane)) lane is due but nobody qualifies (no gang has been fought yet, or everyone is on cooldown).");
+      CBLog.Info(n"Spawn", s"\(CBLaneLabel(lane)) lane is due but nobody qualifies (no gang has a reason to come yet, or those that do are on cooldown).");
     }
     return;
   }

@@ -54,9 +54,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TributeMult-Desc", "How much that tribute pays.");
     this.Text("Cyberbane-Settings-HitSquads-Desc", "Whether gangs send people after you. This also controls apex squads.");
     this.Text("Cyberbane-Settings-HitSquadFreq-Desc", "How often gangs send people after you.");
-    this.Text("Cyberbane-Settings-Morale-Desc", "Whether wounded enemies lose their nerve, and a squad breaks when one of their own drops.");
+    this.Text("Cyberbane-Settings-Morale-Desc", "Whether enemies can lose their nerve and run. How likely depends on how hurt and alone they are, their rank, what they just saw, and how much their gang fears you.");
     this.Text("Cyberbane-Settings-MoraleIntensity-Desc", "How easily enemies break. Zero means nobody runs.");
-    this.Text("Cyberbane-Settings-MaxBreakFraction-Desc", "The most of one group that may break at once, so a room never routs together.");
+    this.Text("Cyberbane-Settings-MaxBreakFraction-Desc", "The most of one group that may run, so a room never routs together.");
     this.Text("Cyberbane-Settings-VendorPricing-Desc", "Whether your reputation changes what vendors charge you.");
     this.Text("Cyberbane-Settings-MaxDiscount-Desc", "The largest discount your reputation can earn you, as a percentage.");
     this.Text("Cyberbane-Settings-GigBonus-Desc", "Whether fixers pay the famous more on job payouts.");
@@ -148,7 +148,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // ---- Settings: morale -----------------------------------------------
     this.Text("Cyberbane-Settings-Morale", "Combat morale");
     this.Text("Cyberbane-Settings-MoraleIntensity", "Morale intensity");
-    this.Text("Cyberbane-Settings-MaxBreakFraction", "Max fraction that can break");
+    this.Text("Cyberbane-Settings-MaxBreakFraction", "Most of a group that can run");
 
     // ---- Settings: police -----------------------------------------------
 

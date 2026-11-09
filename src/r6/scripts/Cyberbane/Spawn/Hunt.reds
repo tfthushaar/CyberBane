@@ -121,7 +121,7 @@ public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
 // point near where V is thought to be. Used by spawn setup, the car watch and the hunt tick, so a
 // hunter is never handed V's position by some other door.
 public func CBOrderPursue(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
-  if !IsDefined(puppet) {
+  if !IsDefined(puppet) || puppet.cbMoraleBroken {
     return;
   }
   // Every order on foot comes through here. While V is safe there is nowhere to send anybody

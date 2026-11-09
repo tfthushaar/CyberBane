@@ -3344,6 +3344,14 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Wounded runaways pending resolution (spec §10.2).
+  public func MarkEscapeeFleeing(id: EntityID) -> Void {
+    for e in this.m_escapees {
+      if IsDefined(e) && Equals(e.entityId, id) {
+        e.fleeing = true;
+      }
+    }
+  }
+
   public func AddEscapee(e: ref<CBEscapee>) -> Void {
     if !IsDefined(e) {
       return;

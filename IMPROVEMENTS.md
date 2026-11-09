@@ -85,10 +85,20 @@ functions, wrapped methods, the reset list, localization keys, unbounded lists).
 four `Add*Points` now refuse a gain while frozen. And `CBMoraleBreak` made a Rival on the spot, before
 anybody knew if the person got away; it now goes through the escapee path like any other runner.
 
-**Open, deliberately not changed:** an enemy who "breaks" does not itself run. The Terror it broadcasts
-reaches the people around it and, per `IsStimuliEventValid`, not the sender. A direct stim from V would
-make it run, but with up to 60% of a group allowed to break, that changes how every fight plays and
-needs testing in the game first.
+### "Make the enemies who broke flee, and make it depend on various factors"
+
+**Status: done in 1.7.7** (`Reactions/Morale.reds`, `Reactions/CombatFlee.reds`). A broken enemy never ran:
+its Terror reaches the people around it and, per `IsStimuliEventValid`, not the sender. It now gets a
+sprint order to a point away from V with `ignoreInCombat` false, which the game keeps active in a fight.
+They stay hostile, because a neutral NPC shot in the back would be an assault to the police.
+`CBBreakChance` replaces the flat threshold: shock times the gang's fear of V, plus being hurt, being
+alone, a leader dying, a brutal kill; times rank; less for a vendetta; 40% at most, and nothing on the
+first body. The low-health check uses the same sum instead of a coin flip. Default cap 35%, on a renamed
+field so the new default reaches everyone. Nowhere to run means they keep fighting. Rerun if they arrive
+with V close, up to three times. A crew member who gets away is taken off the crew (`CBRunnerGotAway`).
+
+The second pass read scheduling, the hunt, Rival encounters, hideouts and the hierarchy too.
+The Hub (`UI/Hud.reds`) has still only had the scripted checks.
 
 ## Requests after 1.7.3
 

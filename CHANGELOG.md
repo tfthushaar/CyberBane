@@ -8,6 +8,12 @@ This project follows [Semantic Versioning](https://semver.org/).
 Your saved Cyberbane progress carries over, and nothing already stored in your save changed shape.
 
 ### Added
+- **Enemies who lose their nerve now really run.** Before, one who "broke" only panicked the people
+  around them and kept fighting. It also happens less often, and depends on the moment: how hurt they
+  are, how many of their friends have dropped, whether anyone is left beside them, their rank, what
+  they just watched happen to the others, and how much their gang fears you. Elites hold longer, bosses
+  never run, and a gang with a vendetta against you is harder to scare off. A runner with nowhere to go
+  keeps fighting. "Most of a group that can run" is lower by default, 35% instead of 60%.
 - **Gangs lie in wait (experimental, off by default).** Turn it on under Gangs in Mod Settings. When a
   gang with a vendetta against you sends a crew while you are driving, they may park up the road and
   pull out as you go past. If you take another road they come after you anyway.
@@ -37,6 +43,8 @@ Your saved Cyberbane progress carries over, and nothing already stored in your s
   while frozen counts once you turn it off.
 - **Enemies you killed could still become Rivals.** Somebody who broke in a fight could be named a
   survivor on the spot, even if you shot them a second later. Now they have to actually get away.
+- **A runner no longer costs you the win.** If the last of a crew runs off, the crew counts as beaten
+  and the bounty is paid.
 
 ## [1.7.6] - 2026-11-09
 

@@ -229,19 +229,15 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
 
   // Whether they actually break and run. Steadier ranks hold their ground (CBNerve), and an
   // apex squad member or a Rival who is Hard to Scare never does.
-  if intensity <= 0.0 || CBHoldsGround(puppet) || RandF() < CBNerve(puppet) {
+  // When a mod like Much Better AI owns morale, it decides who breaks and runs. Cyberbane still
+  // recorded that this one is hurt, above, so Rivals keep coming from people who got away.
+  if intensity <= 0.0 || CBHoldsGround(puppet) || CBExternalMoraleOwner() {
     return;
   }
-
-  // When a mod like Much Better AI owns morale, it decides who breaks and runs. Cyberbane
-  // still records that this one is running, so Rivals keep coming from people who got away,
-  // but it does not broadcast its own terror on top of theirs (Core/Compat.reds).
-  if !CBExternalMoraleOwner() {
-    let b = puppet.GetStimBroadcasterComponent();
-    if IsDefined(b) {
-      // With a radius, as the crowd and morale broadcasts have (Reactions/Crowd.reds).
-      b.TriggerSingleBroadcast(puppet, gamedataStimType.Terror, CBConfig.FearStimRadius());
-    }
+  let shaken = MaxF(CBConfig.MoraleHurtShock(), puppet.cbMorale > 0.0 ? 1.0 - puppet.cbMorale : 0.0);
+  let chance = intensity * CBBreakChance(sys, puppet, faction, shaken, CBAlliesNear(sys, puppet), false, false);
+  if RandF() < chance {
+    CBMoraleBreak(sys, game, puppet, faction, chance);
   }
 }
 
@@ -346,8 +342,17 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
                && Vector4.Distance(ppos, e.puppet.GetWorldPosition()) > CBConfig.EscapeDistance();
         if gone || far {
           CBHandleEscape(sys, game, e, now);
+          if e.fleeing {
+            CBRunnerGotAway(sys, game, e);
+          }
           sys.RemoveEscapee(e);
         } else {
+          // Reached where they were running to and V is still on them: they keep going.
+          if e.fleeing && !gone && age > 0 && age % CBConfig.FleeReorderTicks() == 0
+             && e.fleeOrders < CBConfig.FleeMaxOrders() {
+            e.fleeOrders += 1;
+            CBOrderFlee(game, e.puppet);
+          }
           if age > CBConfig.EscapeTimeoutTicks() {
             sys.RemoveEscapee(e);
           }
@@ -515,4 +520,29 @@ func CBAddEscapee(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<Scr
   e.wasRival = IsDefined(des)
             && (des.IsTagged(e.entityId, n"CB_Rival") || des.IsTagged(e.entityId, n"CB_Lair"));
   sys.AddEscapee(e);
+}
+
+// One of a crew has run for it and is gone. They count as out of the fight: a crew with one survivor
+// halfway across the district used to be a crew V could never finish, so no "crew beaten", no bounty,
+// and the lane stayed busy. Removed out of sight, or handed to the orphan sweep if V is looking.
+func CBRunnerGotAway(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEscapee>) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || !IsDefined(e) {
+    return;
+  }
+  let id = e.entityId;
+  let squad = des.IsTagged(id, n"CB_Squad");
+  let tag = squad ? n"CB_Squad" : n"CB_Escort";
+  if !squad && !des.IsTagged(id, n"CB_Escort") {
+    return;
+  }
+  if !CBRemoveOne(game, des, id, false, true) {
+    des.UnassignTag(id, tag);
+    des.AssignTag(id, n"CB_Orphan");
+  }
+  if squad && NotEquals(sys.GetActiveSquadFaction(), n"")
+     && CBCountLiveOrSpawningExcept(game, n"CB_Squad", id) == 0
+     && (!sys.ActiveSquadHasApex() || CBCountLiveOrSpawningExcept(game, n"CB_Apex", id) == 0) {
+    CBOnCrewBeaten(sys, game, sys.GetActiveSquadFaction());
+  }
 }
