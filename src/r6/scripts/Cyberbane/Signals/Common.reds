@@ -49,6 +49,27 @@ public func CBPlayerStreetCred(game: GameInstance) -> Float {
   return stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.StreetCred);
 }
 
+// Which life V started from (1.8.3): EnumInt(gamedataLifePath), or -1 when it cannot be read.
+// It is saved with V and can never change inside a playthrough, which is what lets it tell two
+// characters apart (CyberbaneSystem.VerifyPlaythroughOwner). The game's own getter answers
+// Invalid when V's development data is not there yet (playerDevelopmentSystem.script).
+public func CBPlayerLifePath(game: GameInstance) -> Int32 {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return -1;
+  }
+  let pds = CBGetSystem(game, n"PlayerDevelopmentSystem") as PlayerDevelopmentSystem;
+  if !IsDefined(pds) {
+    return -1;
+  }
+  let lp = pds.GetLifePath(player);
+  if Equals(lp, gamedataLifePath.Corporate) || Equals(lp, gamedataLifePath.Nomad)
+     || Equals(lp, gamedataLifePath.StreetKid) {
+    return EnumInt(lp);
+  }
+  return -1;
+}
+
 // Fetch a scriptable system by name, or null when the container is not there.
 //
 // The systems container is null during world transitions (loads, fast travel, Skip Time,

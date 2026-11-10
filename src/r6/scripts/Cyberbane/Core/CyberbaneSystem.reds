@@ -7,7 +7,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_schemaVersion: Int32;          // starts at 1 after first init
   private persistent let m_playthroughId: CName;          // e.g. n"CB_7F3A19C2"
   private persistent let m_bootstrapped: Bool;
-  private persistent let m_installedAt: Float;            // game seconds
+  // Game seconds this playthrough first met Cyberbane (1.8.3; 0 = a save from before that). The
+  // field has been saved since the first release and was never written, so filling it in now does
+  // not change the save's shape. Its copy in the service tells this playthrough's saves from another
+  // character's that ended up with the same id (VerifyPlaythroughOwner). Never renamed: a rename is
+  // a different field to the save, and would wipe it.
+  private persistent let m_installedAt: Float;
 
   // Global accumulators (displayed values are derived, spec §8).
   private persistent let m_renownPoints: Float;
@@ -70,6 +75,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The global service, fetched at session start or on a settled tick and reused, the same way
   // the content cache is (see GetContent). Session only.
   private let m_playService: ref<CyberbaneService>;
+  // The playthrough id this session drew for a save that came back without one (1.8.3). If the
+  // save's own id is restored over it, the two differ and the save is not new. Session only.
+  private let m_mintedId: CName;
   // The forget chosen on the Hub is already on record in the service, and what the record said
   // before it, so "Keep them" can put it back exactly. Session only.
   private let m_purgeNoted: Bool;
@@ -413,6 +421,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !this.m_sessionStarted {
       this.m_sessionStarted = true;
       CBDeleteTaggedSafe(this.GetGameInstance(), n"Cyberbane");
+      // Which character this save is, before anything below trusts its playthrough id (1.8.3).
+      this.VerifyPlaythroughOwner();
+      CBLog.Info(n"Core", s"Loaded playthrough \(NameToString(this.m_playthroughId)), on record since game time \(RoundF(this.m_installedAt)).");
       // What the player has told Cyberbane about this playthrough on any save of it: Rivals they
       // forgot, or that they started over. Read before the ledger, because a forgotten Rival must
       // not be promoted, and a death from before the forget must not make a new one.
@@ -893,6 +904,11 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBSystemNote(game, "reputation wiped. Night City has never heard of you.", 6.0);
       this.GetPhone().Clear();
     }
+    // "This save is another character" (1.8.3). After the reset, which gives the save a new
+    // playthrough of its own anyway; a request made for the old one is then dropped.
+    if IsDefined(rtReset) && rtReset.TakeSeparateRequest(this.m_playthroughId) {
+      this.SeparateOnRequest(game);
+    }
     // Is the player V, in V's own world, and has the story left the stage to Cyberbane?
     // (Core/StoryHold.reds) Worked out before anything that sends, scores or reacts, so every one
     // of them reads the same answer for this tick.
@@ -1281,6 +1297,174 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBLog.Info(n"Rivals", s"Forgot \(one) rival(s) forgotten one at a time on another save of this playthrough.");
     }
     return false;
+  }
+
+  // ---- Which V this save is (1.8.3) --------------------------------------------------------
+
+  // The birth for a playthrough that starts now. Never zero, which means "not stamped".
+  private func NewBirthStamp() -> Float {
+    return MaxF(CBGameSeconds(this.GetGameInstance()), 1.0);
+  }
+
+  // Is this save the character its playthrough id is on record for (CBPlaythroughBirth)?
+  //
+  // Once a session, from StartSession, before anything else reads the service for this playthrough:
+  // the forget and start-over notes and the death ledger all trust the id, so a save carrying
+  // another character's has to have its own before any of them run, or that character's Start over
+  // would wipe this one and their deaths would come after this V. Data only: the service, this
+  // save's own fields and V's lifepath, the same kind of work ApplyPlaythroughNotes does here.
+  private func VerifyPlaythroughOwner() -> Void {
+    let minted = this.m_mintedId;
+    this.m_mintedId = n"";
+    this.WarmPlaythroughService();
+    let svc = this.GetPlayService();
+    if !IsDefined(svc) || !IsNameValid(this.m_playthroughId) {
+      return;
+    }
+    let game = this.GetGameInstance();
+    let lifepath = CBPlayerLifePath(game);
+
+    // The save came back with no Cyberbane state at all: a new playthrough, under the id drawn for
+    // it in Initialize. If that draw had no service to ask and landed on a taken id, draw again.
+    if Equals(this.m_playthroughId, minted) {
+      if svc.IsPlaythroughIdInUse(this.m_playthroughId) {
+        this.m_playthroughId = CBMintPlaythroughId(svc);
+      }
+      this.m_installedAt = this.NewBirthStamp();
+      svc.NoteBirth(this.m_playthroughId, this.m_installedAt, lifepath);
+      CBLog.Info(n"Core", s"Playthrough \(NameToString(this.m_playthroughId)) starts here (lifepath \(lifepath)).");
+      return;
+    }
+
+    let birth = svc.FindBirth(this.m_playthroughId);
+    if this.m_installedAt > 0.0 {
+      // Stamped with its birth (1.8.3 on).
+      if !IsDefined(birth) {
+        // On record nowhere: the service's file was lost, or the record made room for newer ones.
+        // This save's word is all there is.
+        svc.NoteBirth(this.m_playthroughId, this.m_installedAt, lifepath);
+        return;
+      }
+      if birth.bornAt != this.m_installedAt {
+        this.MoveToOwnPlaythrough(svc, lifepath, true, "its playthrough id is on record for a playthrough that started at another time");
+        return;
+      }
+      if birth.lifepath >= 0 && lifepath >= 0 && birth.lifepath != lifepath {
+        this.MoveToOwnPlaythrough(svc, lifepath, true, "its playthrough id is on record for a V with another lifepath");
+        return;
+      }
+      svc.NoteBirthLifepath(this.m_playthroughId, lifepath);
+      return;
+    }
+
+    // A save from before 1.8.3, with no birth of its own.
+    if !IsDefined(birth) {
+      // The first save of this playthrough to load since: its birth is now, and every later save of
+      // it carries that.
+      this.m_installedAt = this.NewBirthStamp();
+      svc.NoteBirth(this.m_playthroughId, this.m_installedAt, lifepath);
+      CBLog.Info(n"Core", s"Playthrough \(NameToString(this.m_playthroughId)) put on record (lifepath \(lifepath)).");
+      return;
+    }
+    if birth.lifepath >= 0 && lifepath >= 0 && birth.lifepath != lifepath {
+      this.MoveToOwnPlaythrough(svc, lifepath, true, "its playthrough id is on record for a V with another lifepath");
+      return;
+    }
+    // Nothing tells it apart from the playthrough on record, and that is what it almost always is:
+    // an older save of the same one. It takes that birth, so its later saves carry it. Two characters
+    // with the same lifepath that already share an id cannot be told apart from here; "This save is
+    // another character" in Mod Settings separates them.
+    this.m_installedAt = birth.bornAt;
+    svc.NoteBirthLifepath(this.m_playthroughId, lifepath);
+  }
+
+  // Put this save on a playthrough of its own (1.8.3), because the id it carries is another
+  // character's. Unlike Start over, nothing it earned is touched and the old id is not retired: the
+  // old id still belongs to somebody, and retiring it would start them over the next time they load.
+  //
+  // Another save of this same character that already split off from the same id is joined rather
+  // than a new playthrough started (CyberbaneService.FindSplit), so a character's saves stay one
+  // playthrough. A new one keeps what the old id's records said at this point in this save's own
+  // time (CopyPlaythroughRecords). Killer Rivals that came from the other character's deaths go
+  // (CBForeignKillers): in this session's first moments nobody is out in the world, so they are taken
+  // off the roster directly; later, from the settled tick, each goes the way the Hub's forget does.
+  //
+  // Returns how many Killer Rivals went.
+  private func MoveToOwnPlaythrough(svc: ref<CyberbaneService>, lifepath: Int32, atSessionStart: Bool, why: String) -> Int32 {
+    let game = this.GetGameInstance();
+    let oldId = this.m_playthroughId;
+    let formerBornAt = this.m_installedAt;
+    let now = CBGameSeconds(game);
+    let foreign = CBForeignKillers(this, svc, oldId, now);
+
+    let joined = false;
+    if IsDefined(svc) {
+      let split = svc.FindSplit(oldId, formerBornAt, lifepath);
+      if IsDefined(split) && IsNameValid(split.playthroughId) && NotEquals(split.playthroughId, oldId) {
+        this.m_playthroughId = split.playthroughId;
+        this.m_installedAt = split.bornAt;
+        joined = true;
+      }
+    }
+    if !joined {
+      let newId = CBMintPlaythroughId(svc);
+      if IsDefined(svc) {
+        svc.CopyPlaythroughRecords(oldId, newId, now);
+      }
+      this.m_playthroughId = newId;
+      this.m_installedAt = this.NewBirthStamp();
+      if IsDefined(svc) {
+        svc.NoteSplit(newId, this.m_installedAt, lifepath, oldId, formerBornAt);
+      }
+    }
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) {
+      rt.SetSessionPlaythrough(this.m_playthroughId);
+    }
+
+    // After the id has changed, so nothing about them is ever noted against the old one, where the
+    // other character would read it.
+    let dropped = 0;
+    let factions: array<CName>;
+    for id in foreign {
+      let r = this.FindRivalById(id);
+      if IsDefined(r) {
+        if atSessionStart {
+          if !ArrayContains(factions, r.faction) {
+            ArrayPush(factions, r.faction);
+          }
+          if this.RemoveRivalById(id) {
+            dropped += 1;
+          }
+        } else {
+          if NotEquals(CBForgetRival(this, game, id), "") {
+            dropped += 1;
+          }
+        }
+      }
+    }
+    for f in factions {
+      CBHierarchyFill(this, f);
+    }
+    let how = joined ? "joined" : "started";
+    CBLog.Info(n"Core", s"This save is another character: \(why). It was on \(NameToString(oldId)) and has \(how) \(NameToString(this.m_playthroughId)). Everything it earned is kept; \(dropped) Killer Rival(s) from the other character's deaths are gone.");
+    return dropped;
+  }
+
+  // "This save is another character", chosen in Mod Settings and carried out on a settled tick
+  // (1.8.3). For two characters that ended up with one id and could not be told apart on load.
+  private func SeparateOnRequest(game: GameInstance) -> Void {
+    let svc = this.GetPlayService();
+    if !IsDefined(svc) || !IsNameValid(this.m_playthroughId) {
+      CBLog.Info(n"Core", "This save is another character: the record of playthroughs cannot be reached right now; nothing was changed.");
+      return;
+    }
+    let dropped = this.MoveToOwnPlaythrough(svc, CBPlayerLifePath(game), false, "chosen in Mod Settings");
+    let note = "this save has its own records now. Nothing another character did follows you here.";
+    if dropped > 0 {
+      note = s"this save has its own records now. \(dropped) Rival(s) from another character's deaths are gone.";
+    }
+    CBSystemNote(game, note, 6.0);
   }
 
   // ---- Hunting a Rival down (Rivals/Whereabouts.reds) -------------------------------------
@@ -3046,7 +3230,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(turfBook) {
       turfBook.Clear();   // the new playthrough's map is learnt afresh
     }
-    this.m_playthroughId = CBGeneratePlaythroughId();
+    // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
+    this.m_playthroughId = CBMintPlaythroughId(svc);
+    this.m_installedAt = this.NewBirthStamp();
+    if IsDefined(svc) {
+      svc.NoteBirth(this.m_playthroughId, this.m_installedAt, CBPlayerLifePath(this.GetGameInstance()));
+    }
     let rtNow = CyberbaneRuntime.Get();
     if IsDefined(rtNow) {
       rtNow.SetSessionPlaythrough(this.m_playthroughId);
@@ -3283,7 +3472,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   // First run in this save line gets a random Playthrough ID (spec §10.8).
   private func EnsurePlaythroughId() -> Void {
     if Equals(this.m_playthroughId, n"") {
-      this.m_playthroughId = CBGeneratePlaythroughId();
+      // One nobody has (1.8.3). The birth is put on record at session start, once the save's own
+      // state is certainly back (VerifyPlaythroughOwner): this can run before it is restored.
+      this.m_playthroughId = CBMintPlaythroughId(CyberbaneService.Get());
+      this.m_mintedId = this.m_playthroughId;
       // Say what this actually means, because the old wording read like routine housekeeping.
       //
       // This only fires when the saved state came back empty, and the usual reason is not a new
@@ -3310,6 +3502,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_deedDreadPoints = MaxF(this.m_deedDreadPoints, 0.0);
     this.m_heatPoints = MaxF(this.m_heatPoints, 0.0);
     this.m_code = ClampF(this.m_code, -100.0, 100.0);
+    this.m_installedAt = MaxF(this.m_installedAt, 0.0);   // 0 = not stamped (VerifyPlaythroughOwner)
 
     let i = 0;
     while i < ArraySize(this.m_archetype) {
@@ -3808,6 +4001,29 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     return this.m_score;
   }
+}
+
+// A playthrough id nobody has (1.8.3).
+//
+// The id alone was what kept two characters' records apart, and a fresh one was never checked
+// against the ones already in use: it is drawn on the first moment of a load, from a random source
+// nothing says is seeded differently on each launch. So every draw now asks the service, which
+// holds every id that has left a record anywhere, and draws again when it is taken. With no
+// service to ask, the draw stands, and session start asks again (VerifyPlaythroughOwner).
+public func CBMintPlaythroughId(svc: ref<CyberbaneService>) -> CName {
+  let id = CBGeneratePlaythroughId();
+  if !IsDefined(svc) {
+    return id;
+  }
+  let tries = 1;
+  while svc.IsPlaythroughIdInUse(id) && tries < CBConfig.PlaythroughIdTries() {
+    id = CBGeneratePlaythroughId();
+    tries += 1;
+  }
+  if tries > 1 {
+    CBLog.Info(n"Core", s"New playthrough id: \(tries - 1) draw(s) were already somebody's; using \(NameToString(id)).");
+  }
+  return id;
 }
 
 // Builds a Playthrough ID of the form n"CB_XXXXXXXX" (8 hex chars).

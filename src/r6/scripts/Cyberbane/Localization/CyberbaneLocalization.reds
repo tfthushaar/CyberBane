@@ -96,7 +96,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising for a bug report.");
     this.Text("Cyberbane-Settings-FreezeReputation-Desc", "Stops your reputation changing. Everything already earned keeps working.");
     this.Text("Cyberbane-Settings-HudScale-Desc", "Size of Cyberbane's own screens and bars, on top of the scaling it already does for your resolution.");
-    this.Text("Cyberbane-Settings-ResetAll-Desc", "Clears everything Cyberbane recorded on this save: scores, factions, districts, Rivals, titles and log. Turn it on and hit Apply; it switches itself off when done. Cannot be undone.");
+    this.Text("Cyberbane-Settings-ResetAll-Desc", "Clears everything Cyberbane recorded on this save: scores, factions, districts, Rivals, titles and log. Turn it on and hit Apply. It stays on in this menu afterwards and does nothing more; to reset again, turn it off, Apply, then on and Apply. Cannot be undone.");
+    this.Text("Cyberbane-Settings-SeparateSave-Desc", "For two characters whose Cyberbane records got mixed up, so one is followed by what the other did. Load the character that should not have them, turn this on and hit Apply: that save gets records of its own and keeps everything it earned, and Rivals made from the other character's deaths go. Use it on each of that character's saves. Like the reset, off and on again to use it again.");
     this.Text("Cyberbane-Settings-SafeZoneSpawns", "Allow spawns in safe areas");
     this.Text("Cyberbane-Settings-QuestAreas", "Stay out of quest areas");
     this.Text("Cyberbane-Settings-QuestAreaRadius", "Quest area size (metres)");
@@ -219,6 +220,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-LogLevel", "Log level");
     this.Text("Cyberbane-Settings-FreezeReputation", "Freeze reputation");
     this.Text("Cyberbane-Settings-ResetAll", "Reset all Cyberbane data");
+    this.Text("Cyberbane-Settings-SeparateSave", "This save is another character");
     this.Text("Cyberbane-Settings-HudScale", "Interface size");
 
     // ---- Core ------------------------------------------------------------

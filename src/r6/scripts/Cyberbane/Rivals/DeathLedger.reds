@@ -75,6 +75,37 @@ public func CBWriteDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance, pl
   }
 }
 
+// The Killer Rivals this save got from deaths in `oldId`'s ledger that were another character's
+// (1.8.3), for a save that turns out not to be the character its id is on record for
+// (CyberbaneSystem.MoveToOwnPlaythrough).
+//
+// Matched exactly to the death that made each one: CBApplyDeathLedger hands CBCreateRival the
+// death's record, place and time, and those stay as they were. Only deaths further ahead of this
+// save's clock than ForeignDeathMarginSeconds count, because this V's own deaths under the shared
+// id look exactly the same, and a V who died and reloaded is behind their death only by however
+// long it was since the last save. A death that made nobody new (it promoted a Rival that already
+// existed) is left alone: nothing in this save was made from it.
+public func CBForeignKillers(sys: ref<CyberbaneSystem>, svc: ref<CyberbaneService>, oldId: CName, now: Float) -> array<Int32> {
+  let ids: array<Int32>;
+  if !IsDefined(sys) || !IsDefined(svc) || !IsNameValid(oldId) {
+    return ids;
+  }
+  let killer = EnumInt(ECBRivalSource.Killer);
+  let ahead = now + CBConfig.ForeignDeathMarginSeconds();
+  for e in svc.GetLedger() {
+    if IsDefined(e) && Equals(e.playthroughId, oldId) && e.killerRivalId < 0 && e.at > ahead
+       && sys.HasAppliedLedgerId(e.id) {
+      for r in sys.GetRivals() {
+        if IsDefined(r) && r.source == killer && r.recordID == e.killerRecordID && r.createdAt == e.at
+           && Equals(r.origin, e.district) && !ArrayContains(ids, r.id) {
+          ArrayPush(ids, r.id);
+        }
+      }
+    }
+  }
+  return ids;
+}
+
 // Applied on session start (spec §10.8 step 2).
 public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
@@ -104,6 +135,9 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
       sys.MarkAppliedLedgerId(entry.id);
     }
     if IsDefined(entry) && Equals(entry.playthroughId, myId) && !sys.HasAppliedLedgerId(entry.id) {
+      // Said in the log, so a Rival that seems to come from nowhere can be traced to the death that
+      // made it, and to the playthrough it was recorded in (1.8.3).
+      CBLog.Info(n"Ledger", s"Applying death id=\(entry.id) of \(NameToString(myId)) from game time \(RoundF(entry.at)) in \(NameToString(entry.district)), killer \(NameToString(entry.killerFaction)).");
       if entry.killerRivalId >= 0 {
         let existing = sys.FindRivalById(entry.killerRivalId);
         if IsDefined(existing) {

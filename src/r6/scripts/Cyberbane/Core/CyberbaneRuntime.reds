@@ -20,6 +20,11 @@ public class CyberbaneRuntime extends ScriptableService {
   // the switch was flipped from the main menu, and it is for the next save to load.
   private let m_resetFor: CName;
   private let m_sessionPlaythrough: CName;
+  // "This save is another character" (1.8.3), parked the same way as a reset and for the same
+  // playthrough rules: it belongs to the playthrough loaded when it was chosen, or with nothing
+  // loaded, to the next save to load.
+  private let m_separateRequested: Bool;
+  private let m_separateFor: CName;
   private let m_ngpDetected: Int32;    // same three states, for New Game Plus
   // Why the last arrival was refused (CBBlock*). Diagnostic only, session-only.
   //
@@ -170,6 +175,26 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_resetFor = n"";
     if IsNameValid(forId) && NotEquals(forId, playthroughId) {
       CBLog.Info(n"Core", s"A reset asked for in playthrough \(NameToString(forId)) was not carried out in \(NameToString(playthroughId)).");
+      return false;
+    }
+    return true;
+  }
+
+  // "This save is another character", chosen in Mod Settings (1.8.3). Same rules as a reset.
+  public func RequestSeparate() -> Void {
+    this.m_separateRequested = true;
+    this.m_separateFor = this.m_sessionPlaythrough;
+  }
+
+  public func TakeSeparateRequest(playthroughId: CName) -> Bool {
+    if !this.m_separateRequested {
+      return false;
+    }
+    let forId = this.m_separateFor;
+    this.m_separateRequested = false;
+    this.m_separateFor = n"";
+    if IsNameValid(forId) && NotEquals(forId, playthroughId) {
+      CBLog.Info(n"Core", s"Separating a save, asked for in playthrough \(NameToString(forId)) was not carried out in \(NameToString(playthroughId)).");
       return false;
     }
     return true;

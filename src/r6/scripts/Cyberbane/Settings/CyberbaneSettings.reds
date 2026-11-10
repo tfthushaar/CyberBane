@@ -716,16 +716,29 @@ public class CyberbaneSettings {
   public let freezeReputation: Bool = false;
 
   // Start over. Turn it on, hit Apply, and everything Cyberbane has recorded on this save is
-  // cleared; the switch turns itself back off once it is done.
+  // cleared.
   //
   // Mod Settings has no button control - the readme's options are bools, numbers, enums and
-  // key bindings - so a switch that performs its action and resets itself is how an action is
-  // offered. The Apply step is the confirmation, which is why this is not asked twice.
+  // key bindings - so a switch is how an action is offered. The Apply step is the confirmation,
+  // which is why this is not asked twice. It acts when it goes from off to on, never because it is
+  // on (SwitchFlipped): Mod Settings keeps the value the player accepted, saves it, and hands it back
+  // on every launch and with every later change to any setting, so this used to ask for a reset
+  // again each time. It stays on in the menu once used; off and on again is another reset.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ResetAll")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ResetAll-Desc")
   public let resetAllData: Bool = false;
+
+  // This save is another character (1.8.3). For two characters whose records ended up under one
+  // playthrough id and could not be told apart when they loaded (same lifepath, both from before
+  // 1.8.3). Gives the loaded save a playthrough of its own and keeps everything it earned. Acts on
+  // the way from off to on, like the reset switch.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SeparateSave")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SeparateSave-Desc")
+  public let separateThisSave: Bool = false;
 
   // Tracks the last preset we expanded, so picking a preset rewrites the intensity /
   // frequency sliders once, while later hand-tweaks to those sliders still stick.
@@ -759,20 +772,45 @@ public class CyberbaneSettings {
       this.ApplyPreset(this.preset);
       this.m_appliedPreset = this.preset;
     }
-    // The reset switch. Hand the request to the runtime and turn the switch off again, so it
-    // reads as the momentary action it is and cannot fire twice. The tick does the work.
-    if this.resetAllData {
-      this.resetAllData = false;
-      let rrt = CyberbaneRuntime.Get();
-      if IsDefined(rrt) {
-        rrt.RequestHardReset();
-      }
-    }
     let rt = CyberbaneRuntime.Get();
+    // The action switches. Each hands its request to the runtime on the way from off to on, and the
+    // tick does the work.
+    let svc = CyberbaneService.Get();
+    if this.SwitchFlipped(svc, this.resetAllData, true) && IsDefined(rt) {
+      rt.RequestHardReset();
+    }
+    if this.SwitchFlipped(svc, this.separateThisSave, false) && IsDefined(rt) {
+      rt.RequestSeparate();
+    }
     if IsDefined(rt) {
       rt.SetEnabled(this.enabled);
       rt.SetLogLevel(this.GetLogLevelInt());
     }
+  }
+
+  // Did this switch just go from off to on (1.8.3)? What it was last seen doing is kept in the
+  // service (CyberbaneService.m_resetSwitch), because the switch's own value comes back on every
+  // launch. A switch found on with nothing on record was turned on before 1.8.3, when it was
+  // already acted on: it is taken as done, never carried out blind. With no service to remember it
+  // in, nothing happens: an action that wipes a save is never taken without knowing it is new.
+  private func SwitchFlipped(svc: ref<CyberbaneService>, on: Bool, isReset: Bool) -> Bool {
+    if !IsDefined(svc) {
+      return false;
+    }
+    let last = isReset ? svc.GetResetSwitch() : svc.GetSeparateSwitch();
+    let next = on ? CBSwitchActed() : CBSwitchOff();
+    let act = on && last == CBSwitchOff();
+    if on && last == CBSwitchUnseen() {
+      CBLog.Info(n"Core", isReset
+        ? "Reset all Cyberbane data was already on from an earlier session; turn it off and on again to use it."
+        : "This save is another character was already on from an earlier session; turn it off and on again to use it.");
+    }
+    if isReset {
+      svc.SetResetSwitch(next);
+    } else {
+      svc.SetSeparateSwitch(next);
+    }
+    return act;
   }
 
   // Subtle / Default / Dramatic scale how loud and how frequent reactions are.
