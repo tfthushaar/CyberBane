@@ -98,7 +98,7 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
     return CBReqNum("Reach this much Renown", renown, RoundF(CBConfig.TierLocalName())) + ".";
   }
   if Equals(id, n"T_CHROME_SAINT") {
-    return CBReqNum("Installed chrome score, from how much cyberware capacity you use and how good the implants are", RoundF(score.GetChrome()), 85) + ".";
+    return CBReqNum("Installed chrome score, from how much of your cyberware capacity or slots you fill and how good the implants are", RoundF(score.GetChrome()), 85) + ".";
   }
   if Equals(id, n"T_GLITCH") {
     return CBReqStyle(sys, ECBArchetype.Netrunner, "Quickhack kills build it.") + "\n"

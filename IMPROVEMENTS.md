@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.8.0. The "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.8.1. The "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,32 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.8.0
+
+### Crash report: "Likely culprit: Cyberbane", OnDeath -> CBOnPuppetDeath -> DropEscapeeByEntity
+
+**Status: fixed in 1.8.1** (`Signals/CombatSignals.reds`). An access violation in the game's code while
+`DropEscapeeByEntity` ran from `ScriptedPuppet.OnDeath`, on a worker thread (faulting thread is not the
+main thread), 39 minutes in. That function is unchanged since 0.1.1 and only walks one array, so the
+array was being changed underneath it: puppet events run on the game's worker threads, several at once,
+and since 1.7.7 more of them write that list (a death can break a nearby enemy and add them). The game's
+own scripts never change a shared system inside a puppet event; they queue it. `OnDeath` now queues
+`CBOnPuppetDeath` with `DelayCallbackNextFrame`, and `OnHit` queues its flee and spared checks the same
+way (one per puppet at a time); the fast tick is already a delay callback, so all of it runs in turn.
+What a hit was is still written onto the puppet at once. Player death stays synchronous: the death
+screen may come before another frame, and the ledger has to be written.
+
+### "Does modded chrome count? Every slot equipped, Chrome Saint 76/85, visible chrome 22"
+
+**Status: fixed in 1.8.1** (`Signals/ChromeSignal.reds`). Chrome read `GetActiveItem` once per area: eleven
+implants at most, whatever the slots, and nothing a Cyberware-EX slot held. And its body term is the
+share of capacity used, which a capacity mod lowers. Now every slot of every area is read (bounded by
+`GetNumberOfSlots(area, true)`, because `GetItemInEquipSlot` does not check), the best implant per area
+sets that area's quality as before, and the body term is the larger of capacity used and slots filled.
+Every slot filled reads as about 90. Modded items count wherever they sit, at their quality. Visible
+chrome is unchanged by design: only arms, eyes, skin and legs show, and covered ones count a quarter.
+The log line now gives installed chrome with slots and capacity.
 
 ## Requests after 1.7.8
 

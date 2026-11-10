@@ -38,11 +38,75 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   return result;
 }
 
+// A death is worked through on the next frame, not here.
+//
+// The game delivers these on its worker threads, several at a time when a grenade takes out a group,
+// and the fast tick runs on another. Handled here, two deaths, or a death and the tick, changed the
+// same lists in Cyberbane's system at once; a player's crash in DropEscapeeByEntity is what that looks
+// like. The game's own scripts never change a shared system from inside a puppet's event: they queue
+// it (QueueRequest, DelayEvent). This queues it on the delay system, which is where the fast tick
+// already runs, so every change to Cyberbane's state from a fight happens one at a time.
 @wrapMethod(ScriptedPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   let result = wrappedMethod(evt);
-  CBOnPuppetDeath(this);
+  CBQueueDeath(this);
   return result;
+}
+
+public class CBDeathCallback extends DelayCallback {
+  public let puppet: wref<ScriptedPuppet>;
+  public let id: EntityID;
+
+  public func Call() -> Void {
+    if IsDefined(this.puppet) {
+      CBOnPuppetDeath(this.puppet);
+      return;
+    }
+    // Gone before the next frame. Nothing about the death can be read any more, but nobody may go
+    // on waiting to see whether it got away.
+    let sys = CyberbaneSystem.Get(GetGameInstance());
+    if IsDefined(sys) {
+      sys.DropEscapeeByEntity(this.id);
+    }
+  }
+}
+
+func CBQueueDeath(puppet: ref<ScriptedPuppet>) -> Void {
+  let ds = GameInstance.GetDelaySystem(puppet.GetGame());
+  if !IsDefined(ds) {
+    return;
+  }
+  let cb = new CBDeathCallback();
+  cb.puppet = puppet;
+  cb.id = puppet.GetEntityID();
+  ds.DelayCallbackNextFrame(cb);
+}
+
+// The part of a hit that touches Cyberbane's shared state, on the next frame for the reason above.
+// What the hit was is written onto the puppet straight away (CBOnPuppetHit), so nothing is lost by
+// waiting. One per puppet at a time: a shotgun's pellets are one follow-up, not eight.
+@addField(ScriptedPuppet)
+public let cbHitQueued: Bool;
+
+public class CBHitFollowUpCallback extends DelayCallback {
+  public let puppet: wref<ScriptedPuppet>;
+
+  public func Call() -> Void {
+    let p = this.puppet;
+    if !IsDefined(p) {
+      return;
+    }
+    p.cbHitQueued = false;
+    let game = p.GetGame();
+    let sys = CyberbaneSystem.Get(game);
+    if !IsDefined(sys) || !p.IsAttached() {
+      return;
+    }
+    // A wounded enemy may lose its nerve and run (spec §10.2).
+    CBCombatFleeCheck(sys, game, p);
+    // Put them down without killing them? That gets remembered too (spec §10.2).
+    CBSparedCheck(sys, game, p);
+  }
 }
 
 // Player death (spec §7.1). For now this records the death; the cross-save Death
@@ -85,13 +149,14 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
     puppet.cbScarMask = CBMaskSet(puppet.cbScarMask, CBScarBitFor(puppet.cbLastAttackType));
     puppet.cbLastMethodMask = CBMethodMaskFor(evt.attackData);
-    // A wounded enemy may lose its nerve and run (spec §10.2).
-    let game = puppet.GetGame();
-    let sys = CyberbaneSystem.Get(game);
-    if IsDefined(sys) {
-      CBCombatFleeCheck(sys, game, puppet);
-      // Put them down without killing them? That gets remembered too (spec §10.2).
-      CBSparedCheck(sys, game, puppet);
+    if !puppet.cbHitQueued {
+      let ds = GameInstance.GetDelaySystem(puppet.GetGame());
+      if IsDefined(ds) {
+        puppet.cbHitQueued = true;
+        let cb = new CBHitFollowUpCallback();
+        cb.puppet = puppet;
+        ds.DelayCallbackNextFrame(cb);
+      }
     }
   }
   // Record the attacker on the target so V's killer is known at death time.

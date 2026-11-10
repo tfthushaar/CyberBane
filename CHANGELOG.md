@@ -3,6 +3,19 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.8.1] - 2026-11-10
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Fixed
+- **A crash when an enemy died, pointing at Cyberbane.** Several deaths at once (a grenade, a busy
+  fight) could change Cyberbane's records at the same moment as each other. Deaths and the hits that
+  matter to Cyberbane are now handled one at a time.
+- **Modded and extra cyberware slots did not count towards your chrome.** Only one implant per body
+  part was read, so a body with every slot filled, or with slots added by mods like Cyberware-EX, read
+  as far less chromed than it was. Every slot counts now, and filling every slot you have counts as
+  fully chromed even if a mod has raised your capacity. This is what Chrome Saint goes by.
+
 ## [1.8.0] - 2026-11-09
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.

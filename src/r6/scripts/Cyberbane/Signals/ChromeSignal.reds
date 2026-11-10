@@ -80,27 +80,55 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   // Its own comment says the caller should pass the sum of visibleScore x tierMult; no caller
   // did, so a rack of legendary chrome scored exactly the same as the common version of the
   // same slots. Quality is read through the item's data rather than guessed from the id.
+  //
+  // Every slot of every area, not the one item GetActiveItem names. Most areas hold two or three
+  // implants, and a mod such as Cyberware-EX adds more, so a fully chromed body used to read as eleven
+  // implants and whatever share of its capacity it used. The best implant in each area still sets that
+  // area's quality, so the scale is what it always was; what is new is that a slot only a mod adds
+  // counts, and so does filling every slot you have.
   let ts = GameInstance.GetTransactionSystem(game);
   let implantSum = 0.0;
   let visibleSum = 0.0;
+  let slots = 0;
+  let filled = 0;
+  // Every one of these areas exists on every V: GetActiveItem, which this read until 1.8.1, indexed
+  // them with no check at all, and so does the game's own code (GetNumberOfSlots(ArmsCW)). The public
+  // test for a missing area, GetEquipAreaIndex, is private on 2.31, and calling it there would stop
+  // every script mod compiling. Reading the slots also stops this from going through GetActiveItem,
+  // which rewrites the area's active index as a side effect of being asked.
   for area in areas {
-    let item = data.GetActiveItem(area);
-    if ItemID.IsValid(item) {
-      let mult = 1.0;
-      if IsDefined(ts) {
-        let idata = ts.GetItemData(player, item);
-        if IsDefined(idata) {
-          mult = CBTierMult(CBQualityTier(RPGManager.GetItemDataQuality(idata)));
+    // Only slots that exist: GetItemInEquipSlot has no bounds check of its own.
+    let count = data.GetNumberOfSlots(area, true);
+    slots += data.GetNumberOfSlots(area);
+    let best = 0.0;
+    let k = 0;
+    while k < count {
+      let item = data.GetItemInEquipSlot(area, k);
+      k += 1;
+      if ItemID.IsValid(item) {
+        filled += 1;
+        let mult = 1.0;
+        if IsDefined(ts) {
+          let idata = ts.GetItemData(player, item);
+          if IsDefined(idata) {
+            mult = CBTierMult(CBQualityTier(RPGManager.GetItemDataQuality(idata)));
+          }
         }
+        best = MaxF(best, mult);
       }
-      implantSum += 3.0 * mult;
+    }
+    if best > 0.0 {
+      implantSum += 3.0 * best;
       // Scaled by what V is wearing over it (Signals/Concealment.reds). Installed chrome is
       // still installed; this is only about what a stranger can see.
-      visibleSum += CBVisibleChromeWeight(area) * mult * CBChromeVisibility(game, area, data);
+      visibleSum += CBVisibleChromeWeight(area) * best * CBChromeVisibility(game, area, data);
     }
   }
+  // How much of V is chrome: the share of capacity used, or the share of slots filled, whichever is
+  // more. A mod that raises capacity cannot make a body with every slot filled read as part flesh.
+  let coverage = slots > 0 ? Cast<Float>(filled) / Cast<Float>(slots) : 0.0;
 
-  let c = CBComputeChrome(usage, implantSum, overalloc);
+  let c = CBComputeChrome(MaxF(usage, coverage), implantSum, overalloc);
   let cVisible = CBComputeChromeVisible(visibleSum, 0.0);
 
   // Report it when it moves. Concealment is the sort of feature that can look like it does
@@ -109,7 +137,7 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let rounded = RoundF(cVisible);
   if rounded != sys.GetLastLoggedChrome() {
     sys.SetLastLoggedChrome(rounded);
-    CBLog.Info(n"Signals", s"Visible chrome \(rounded) (arms covered: \(CBArmsCovered(game, data)), legs: \(CBLegsCovered(game, data)), face: \(CBFaceCovered(game, data))).");
+    CBLog.Info(n"Signals", s"Visible chrome \(rounded) (arms covered: \(CBArmsCovered(game, data)), legs: \(CBLegsCovered(game, data)), face: \(CBFaceCovered(game, data))). Installed \(RoundF(c)): \(filled) of \(slots) slots, \(RoundF(usage * 100.0))% of capacity.");
   }
   sys.GetScore().SetChrome(c, cVisible, overalloc);
 }
