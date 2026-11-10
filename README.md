@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.8.2).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.8.3).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -258,7 +258,8 @@ in active development. This page describes what the mod does and how it installs
   Saint, or the top title Cyberbane; the street tells you when it starts calling you something
   new. The History screen is the street's file on you, written as plain sentences: the Rivals
   you made and put down, the apex enforcers and bosses people saw you kill, the vendettas sworn,
-  the gangs that came round to you, the peace you bought and the tribute you took.
+  the gangs that came round to you, the peace you bought and the tribute you took.
+
 - **Titles do something.** The title you go by gives you a real effect, such as better bounties, cheaper
   vendors or hunters that lose your trail sooner, and a few of the biggest cost you something too. Only
   the one you go by counts, and automatic goes by your best. The Titles screen lists every title with
@@ -435,10 +436,11 @@ the texts; everything off means the first you know about it is when they walk ro
 
 Under Debug there is **Reset all Cyberbane data**. Turn it on, hit Apply, and everything
 Cyberbane has recorded on this save is cleared: Renown, Dread, Conduct, every faction and
-district, your Rivals, your titles, the log and all the tallies. The switch turns itself back
-off once it is done, and it cannot be undone. Every other save of the same playthrough is
-cleared too the next time you load it, so an older save cannot bring it back. A save from a
-different playthrough is never touched, even if you load one before going back to the game.
+district, your Rivals, your titles, the log and all the tallies. It cannot be undone. The switch
+still shows as on afterwards and does nothing more; to reset again, turn it off, hit Apply, then
+turn it on and hit Apply. Every other save of the same playthrough is cleared too the next time
+you load it, so an older save cannot bring it back. A save from a different playthrough is never
+touched, even if you load one before going back to the game.
 
 Your cyberware rating is not part of that, because it is not stored progress. It is read back
 off the chrome you are actually wearing every few seconds, so it returns on its own.
@@ -446,6 +448,22 @@ off the chrome you are actually wearing every few seconds, so it returns on its 
 Use it if a playthrough has ended up somewhere you did not intend, which is easy to do with
 Conduct, and you would rather start the city's opinion of you from nothing than start a new
 save.
+
+### Each character keeps its own record
+
+Every playthrough has its own reputation, Rivals and gang standing, and nothing one character does
+reaches another. A few records live outside your saves on purpose, so that an older save of the same
+playthrough cannot undo them: the deaths that turn your killer into a Rival across a reload, how hard
+you have hit each gang, the Rivals you forgot and a Start over. Cyberbane writes down which V each
+playthrough belongs to, and a save only ever reads its own.
+
+Before 1.8.3 two characters could end up sharing those records. If the two Vs have different
+lifepaths, that sorts itself out once both have been loaded since updating, in either order: each
+gets records of its own (the one you loaded first, the next time you load it), keeps everything you
+earned on it, and loses only Rivals made from the other character's deaths when those deaths are
+well ahead of it in game time. If both have the same lifepath, load the character that should not have the other's records, turn on **This
+save is another character** under Debug and hit Apply. Like the reset, it still shows as on
+afterwards; turn it off and on again to use it on another save.
 
 Three worth knowing about if a playstyle is being treated unfairly:
 

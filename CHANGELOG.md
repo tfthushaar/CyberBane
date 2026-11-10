@@ -3,6 +3,42 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.8.3] - 2026-11-10
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Fixed
+- **Another character's past could follow you into a different save.** Reported as "Right after
+  slaughtering everyone at the Ho-Oh, I ... loaded a different character who hadn't even done The
+  Ride yet. Within 5 minutes I got texts from three different T-Claws telling me they are hunting me
+  down." A few of Cyberbane's records live outside your saves on purpose (the deaths it remembers
+  across a reload, how hard you have hit each gang, the Rivals you forgot, a Start over), and each
+  is tied to one playthrough by a random name. Nothing ever checked that a new playthrough's name was
+  not already taken, so two characters could end up sharing one, and each then read the other's
+  records as its own. That is how one character's deaths at the Ho-Oh can come back as Tyger Claws
+  Rivals for a V who has never been there. Every new playthrough now gets a name nobody has, and Cyberbane writes
+  down which V it belongs to.
+- **Saves already caught up in this sort themselves out**, when the two Vs have different lifepaths.
+  Once both characters have been loaded since updating, in either order, each gets records of its
+  own; the one you loaded first does it the next time you load it. Everything you earned on each save
+  stays. Rivals made from the other character's deaths go when those deaths are well ahead of that
+  save in game time, which covers a new character picking up an older one's past, and nothing the
+  other character does (forgetting their Rivals, starting over) reaches you any more. Saves of the
+  same character all end up together, not one playthrough each.
+- **Reset all Cyberbane data could keep resetting you.** The switch stayed on in Mod Settings after
+  it was used, and Cyberbane read it again every time the game started and every time you applied
+  any setting, so it could wipe the first save you loaded each session. It now acts only when you
+  turn it on. It still shows as on afterwards; turn it off and on again to reset again.
+- **Choosing the Custom preset reset your sliders** to the Default preset's numbers. Custom now leaves
+  them exactly as you set them.
+- **The Hub's real-time estimates could be badly off for a whole session** if you slept or skipped
+  time in the first minute after loading. Cyberbane measures the game clock again after a time skip.
+
+### Added
+- **This save is another character**, in Mod Settings under Debug. For two characters whose records
+  got mixed up before this update and that Cyberbane cannot tell apart on its own (the same
+  lifepath). Load the one that should not have them, turn it on and hit Apply.
+
 ## [1.8.2] - 2026-11-10
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.

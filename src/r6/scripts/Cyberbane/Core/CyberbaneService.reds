@@ -90,6 +90,13 @@ public class CBPlaythroughBirth {
   public persistent let lifepath: Int32;       // EnumInt(gamedataLifePath); -1 = not known yet
   public persistent let splitFrom: CName;      // n"" = not split off from anything
   public persistent let formerBornAt: Float;
+  // Put on record by a save from before 1.8.3, which carries no birth of its own: whichever save of
+  // the id loaded first claimed it, and that may not be the character the records belong to.
+  public persistent let legacyClaim: Bool;
+  // A V with another lifepath turned up on a legacy claim: two characters shared this id before
+  // 1.8.3, and the records under it are both of theirs. Every save on it moves to one of its own,
+  // whichever of the two loaded first (CyberbaneSystem.VerifyPlaythroughOwner).
+  public persistent let disputed: Bool;
 }
 
 public class CyberbaneService extends ScriptableService {
@@ -541,6 +548,23 @@ public class CyberbaneService extends ScriptableService {
     if IsDefined(b) {
       b.splitFrom = fromId;
       b.formerBornAt = formerBornAt;
+    }
+  }
+
+  // A birth claimed by a save from before 1.8.3 (CBPlaythroughBirth.legacyClaim).
+  public func NoteLegacyClaim(id: CName, bornAt: Float, lifepath: Int32) -> Void {
+    this.NoteBirth(id, bornAt, lifepath);
+    let b = this.FindBirth(id);
+    if IsDefined(b) {
+      b.legacyClaim = true;
+    }
+  }
+
+  // Two characters shared this id (CBPlaythroughBirth.disputed).
+  public func MarkDisputed(id: CName) -> Void {
+    let b = this.FindBirth(id);
+    if IsDefined(b) {
+      b.disputed = true;
     }
   }
 

@@ -1342,6 +1342,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
 
     let birth = svc.FindBirth(this.m_playthroughId);
+    let otherV = IsDefined(birth) && birth.lifepath >= 0 && lifepath >= 0 && birth.lifepath != lifepath;
+    let shared = "another character shared its playthrough id before 1.8.3";
     if this.m_installedAt > 0.0 {
       // Stamped with its birth (1.8.3 on).
       if !IsDefined(birth) {
@@ -1350,12 +1352,21 @@ public class CyberbaneSystem extends ScriptableSystem {
         svc.NoteBirth(this.m_playthroughId, this.m_installedAt, lifepath);
         return;
       }
+      if otherV {
+        if birth.legacyClaim {
+          svc.MarkDisputed(this.m_playthroughId);
+        }
+        this.MoveToOwnPlaythrough(svc, lifepath, true, "its playthrough id is on record for a V with another lifepath");
+        return;
+      }
       if birth.bornAt != this.m_installedAt {
         this.MoveToOwnPlaythrough(svc, lifepath, true, "its playthrough id is on record for a playthrough that started at another time");
         return;
       }
-      if birth.lifepath >= 0 && lifepath >= 0 && birth.lifepath != lifepath {
-        this.MoveToOwnPlaythrough(svc, lifepath, true, "its playthrough id is on record for a V with another lifepath");
+      if birth.disputed {
+        // The character that claimed the id first. What is under it is the other one's as well, so
+        // this save moves to a playthrough of its own too, and every save of it follows.
+        this.MoveToOwnPlaythrough(svc, lifepath, true, shared);
         return;
       }
       svc.NoteBirthLifepath(this.m_playthroughId, lifepath);
@@ -1364,22 +1375,33 @@ public class CyberbaneSystem extends ScriptableSystem {
 
     // A save from before 1.8.3, with no birth of its own.
     if !IsDefined(birth) {
-      // The first save of this playthrough to load since: its birth is now, and every later save of
-      // it carries that.
+      // The first save of this id to load since. Its birth is now, and every later save of it
+      // carries that. A claim, not proof: another character may have shared the id, which only
+      // shows when they load (CBPlaythroughBirth.legacyClaim).
       this.m_installedAt = this.NewBirthStamp();
-      svc.NoteBirth(this.m_playthroughId, this.m_installedAt, lifepath);
+      svc.NoteLegacyClaim(this.m_playthroughId, this.m_installedAt, lifepath);
       CBLog.Info(n"Core", s"Playthrough \(NameToString(this.m_playthroughId)) put on record (lifepath \(lifepath)).");
       return;
     }
-    if birth.lifepath >= 0 && lifepath >= 0 && birth.lifepath != lifepath {
+    if otherV {
+      // Two characters on one id. If the one on record only claimed it by loading first, neither can
+      // keep it: the records under it are both of theirs.
+      if birth.legacyClaim {
+        svc.MarkDisputed(this.m_playthroughId);
+      }
       this.MoveToOwnPlaythrough(svc, lifepath, true, "its playthrough id is on record for a V with another lifepath");
       return;
     }
     // Nothing tells it apart from the playthrough on record, and that is what it almost always is:
-    // an older save of the same one. It takes that birth, so its later saves carry it. Two characters
+    // an older save of the same one. It takes that birth, so its later saves carry it, and a split of
+    // this character finds them all under the same birth (CyberbaneService.FindSplit). Two characters
     // with the same lifepath that already share an id cannot be told apart from here; "This save is
     // another character" in Mod Settings separates them.
     this.m_installedAt = birth.bornAt;
+    if birth.disputed {
+      this.MoveToOwnPlaythrough(svc, lifepath, true, shared);
+      return;
+    }
     svc.NoteBirthLifepath(this.m_playthroughId, lifepath);
   }
 
