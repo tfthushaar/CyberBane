@@ -121,7 +121,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_lastLoggedChrome: Int32;
   private let m_clockGame0: Float;
   private let m_clockSim0: Float;
-  private let m_clockTicks: Int32;  // boss bar for whoever is hunting you
+  private let m_clockTicks: Int32;  // the clock check (MeasureClocks): 0 = not started, -1 = done
   private let m_disguiseFaction: CName;       // gang whose colours V is wearing (spec §9.3)
   private let m_disguiseStrength: Float;      // 0..1, how well the disguise reads
   private let m_activeSquadFaction: CName;    // faction of the hit squad currently out (for Hunter on escape)
@@ -863,6 +863,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     let nowGT = CBGameSeconds(game);
     if this.m_lastTickGameTime > 0.0 && (nowGT - this.m_lastTickGameTime) > CBConfig.TimeJumpSettleSeconds() {
       this.m_streamSettleTicks = CBConfig.FloodSettleTicks();
+      // A clock check under way would count the jump as ordinary time passing, and the Hub would
+      // turn every in-game hour into a few real seconds for the rest of the session. Start it over.
+      if this.m_clockTicks > 0 {
+        this.m_clockTicks = 0;
+      }
     }
     this.m_lastTickGameTime = nowGT;
     if this.m_streamSettleTicks > 0 {
@@ -1459,7 +1464,27 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBLog.Info(n"Core", "This save is another character: the record of playthroughs cannot be reached right now; nothing was changed.");
       return;
     }
+    // A forget chosen on the Hub and not carried out yet is already on record against the old id
+    // (RequestRivalPurge, RequestRivalForget). Left there, the other character would carry it out
+    // on their next load, so it moves with this save.
+    let oldId = this.m_playthroughId;
+    let purge = this.m_pendingRivalPurge && this.m_purgeNoted;
+    if purge {
+      this.UnnoteRivalPurge();
+    }
+    for pending in this.m_pendingForgets {
+      svc.UnnoteForgetRival(oldId, pending);
+    }
     let dropped = this.MoveToOwnPlaythrough(svc, CBPlayerLifePath(game), false, "chosen in Mod Settings");
+    if purge {
+      this.NoteRivalPurge();
+    }
+    for pending in this.m_pendingForgets {
+      let pr = this.FindRivalById(pending);
+      if IsDefined(pr) {
+        svc.NoteForgetRival(this.m_playthroughId, pending, pr.recordID);
+      }
+    }
     let note = "this save has its own records now. Nothing another character did follows you here.";
     if dropped > 0 {
       note = s"this save has its own records now. \(dropped) Rival(s) from another character's deaths are gone.";

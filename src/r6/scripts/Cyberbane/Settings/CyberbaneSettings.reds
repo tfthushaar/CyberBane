@@ -816,6 +816,11 @@ public class CyberbaneSettings {
   // Subtle / Default / Dramatic scale how loud and how frequent reactions are.
   private func ApplyPreset(p: ECBPreset) -> Void {
     switch p {
+      // Custom is the player's own numbers. Mod Settings lists every value of the enum, so it can be
+      // picked, and it used to fall through to the default branch and write the Default preset over
+      // exactly the sliders it is meant to keep.
+      case ECBPreset.Custom:
+        break;
       case ECBPreset.Subtle:
         this.civIntensity = 0.6;
         this.maxReactingCivilians = 3;

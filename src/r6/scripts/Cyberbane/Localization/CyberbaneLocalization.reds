@@ -35,7 +35,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-Economy", "Economy");
     this.Text("Cyberbane-Settings-Category-Rivals", "Rivals");
     this.Text("Cyberbane-Settings-Category-SafeAreas", "Safe areas");
-    this.Text("Cyberbane-Settings-Preset-Desc", "Subtle, Default or Dramatic. Sets everything below in one go, overwriting what is there.");
+    this.Text("Cyberbane-Settings-Preset-Desc", "Subtle, Default or Dramatic sets everything below in one go, overwriting what is there. Custom leaves your own numbers as they are.");
     this.Text("Cyberbane-Settings-RenownGain-Desc", "How fast your name spreads.");
     this.Text("Cyberbane-Settings-DreadGain-Desc", "How fast you become frightening. Dread is the score that makes people back off.");
     this.Text("Cyberbane-Settings-Decay-Desc", "How fast reputation fades when you stop earning it. Zero never fades.");
