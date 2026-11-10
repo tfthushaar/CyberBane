@@ -37,15 +37,21 @@ public class CBTurfBook extends ScriptableSystem {
     return container.Get(n"CBTurfBook") as CBTurfBook;
   }
 
+  // Each list is padded on its own, and the three loss lists are kept the same length: every reader
+  // indexes all of them by one position, so one that came back from a save shorter than the others
+  // would be read past its end deep inside a tick (the rule behind CyberbaneSystem.Validate).
   private func Pad() -> Void {
-    while ArraySize(this.m_holders) < CBDistrictCount() {
-      ArrayPush(this.m_holders, n"");
-      ArrayPush(this.m_since, 0.0);
-      ArrayPush(this.m_from, n"");
-      ArrayPush(this.m_challengers, n"");
-      ArrayPush(this.m_challengeAt, 0.0);
-      ArrayPush(this.m_pushAt, 0.0);
-    }
+    let want = CBDistrictCount();
+    while ArraySize(this.m_holders) < want { ArrayPush(this.m_holders, n""); }
+    while ArraySize(this.m_since) < want { ArrayPush(this.m_since, 0.0); }
+    while ArraySize(this.m_from) < want { ArrayPush(this.m_from, n""); }
+    while ArraySize(this.m_challengers) < want { ArrayPush(this.m_challengers, n""); }
+    while ArraySize(this.m_challengeAt) < want { ArrayPush(this.m_challengeAt, 0.0); }
+    while ArraySize(this.m_pushAt) < want { ArrayPush(this.m_pushAt, 0.0); }
+    let losses = Min(ArraySize(this.m_lossKeys), Min(ArraySize(this.m_lossValues), ArraySize(this.m_lossAt)));
+    if ArraySize(this.m_lossKeys) != losses { ArrayResize(this.m_lossKeys, losses); }
+    if ArraySize(this.m_lossValues) != losses { ArrayResize(this.m_lossValues, losses); }
+    if ArraySize(this.m_lossAt) != losses { ArrayResize(this.m_lossAt, losses); }
   }
 
   private func InRange(i: Int32) -> Bool {
@@ -138,6 +144,7 @@ public class CBTurfBook extends ScriptableSystem {
   }
 
   public func LocalLoss(district: CName, faction: CName, now: Float) -> Float {
+    this.Pad();
     let key = this.LossKey(district, faction);
     let k = 0;
     while k < ArraySize(this.m_lossKeys) {
@@ -150,6 +157,7 @@ public class CBTurfBook extends ScriptableSystem {
   }
 
   public func AddLocalLoss(district: CName, faction: CName, amount: Float, now: Float) -> Void {
+    this.Pad();
     let key = this.LossKey(district, faction);
     let k = 0;
     while k < ArraySize(this.m_lossKeys) {

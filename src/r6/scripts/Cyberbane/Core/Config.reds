@@ -1120,6 +1120,16 @@ public abstract class CBConfig {
   // Rivals forgotten one at a time, kept in the service for every save of their playthrough.
   public static func CapForgottenRivals() -> Int32 = 64
   public static func CapGangPower() -> Int32 = 96
+  // Which V each playthrough id belongs to (1.8.3). One per playthrough that has loaded since.
+  public static func CapBirths() -> Int32 = 128
+  // Draws before a new playthrough id gives up looking for one nobody has. Eight hex digits make a
+  // second draw already unlikely; this only bounds the loop.
+  public static func PlaythroughIdTries() -> Int32 = 32
+  // A save found to be another character's drops a Killer Rival it got from the shared death
+  // ledger only when that death is further ahead of the save's own clock than this (1.8.3). A V
+  // who died and reloaded is behind their own death by however long since the last save, which
+  // is minutes with autosaves; another character's deaths are usually days or weeks away.
+  public static func ForeignDeathMarginSeconds() -> Float = 86400.0
 
   // ---- Turf wars (Model/Territory.reds) -----------------------------------
   // What V costs a gang: each of their people put down, an officer or elite, a boss, a Rival of

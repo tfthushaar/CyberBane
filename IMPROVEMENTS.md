@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.8.2. The "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.8.3. The "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,70 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.8.2
+
+### "Should this mod keep separate records on separate playthroughs?"
+
+Reported: "Right after slaughtering everyone at the Ho-Oh, I quit the game, installed this mod, and loaded
+a different character who hadn't even done The Ride yet. Within 5 minutes I got texts from three
+different T-Claws telling me they are hunting me down."
+
+**Status: fixed in 1.8.3** (`Core/CyberbaneService.reds`, `Core/CyberbaneSystem.reds`, `Rivals/DeathLedger.reds`,
+`Settings/CyberbaneSettings.reds`, `Core/CyberbaneRuntime.reds`, `Signals/Common.reds`). Everything in the
+service (the death ledger, gang strength, sightings, forget and start-over notes) is keyed by the
+playthrough id, and every reader filters by it, so the id was the only thing keeping two characters
+apart. `CBGeneratePlaythroughId` was eight `RandRange` draws with no check against ids already in use,
+drawn in `OnAttach` at the first moment of a load, from a source nothing says is seeded differently
+per launch. Two characters on one id read each other's records: `CBApplyDeathLedger` turned the other
+character's deaths into Killer Rivals, two texts each, which matches the report. It also ran the other
+way, and Start over on one retired the shared id and wiped the other on its next load.
+
+- **New ids are unique.** `CBMintPlaythroughId` draws until `IsPlaythroughIdInUse` says no record of any
+  kind holds it (`EnsurePlaythroughId`, `HardReset`).
+- **Each playthrough is put on record** (`CBPlaythroughBirth`: id, birth game time, lifepath) and its saves
+  carry the birth in `m_installedAt`, a saved field that existed and was never written, so no saved shape
+  changed. `VerifyPlaythroughOwner` runs from `StartSession` before the notes and the ledger: a save whose
+  birth or lifepath disagrees with its id's record moves to a playthrough of its own
+  (`MoveToOwnPlaythrough`), joining one already split off for the same character (`FindSplit`), copying the
+  old id's gang strength and sightings that are not ahead of its own clock, and never retiring the old id.
+  Killer Rivals it got from the other character's deaths go (`CBForeignKillers`: exact match on record,
+  place and time, and only for deaths more than a day ahead of the save's clock). Saves from before 1.8.3
+  take the birth on record unless the lifepath differs. The first of them to load only *claims* the id
+  (`legacyClaim`), because in the reported case the contaminated save is the one being played and loads
+  first; a V with another lifepath on a claimed id marks it `disputed`, and every save on a disputed id
+  moves off it, so both characters separate once each has loaded once, in either order.
+- **Same lifepath, both from before 1.8.3, cannot be told apart.** "This save is another character" in Mod
+  Settings does the same split for the loaded save, carried out on a settled tick, and moves any forget
+  still pending on the Hub with it.
+
+**Whether `RandRange` repeats across launches has not been tested.** Start the game, load a save with no
+Cyberbane data and note the id in the log; restart, load another and compare. It no longer matters for
+new ids, but it says whether the report was this or something else. The log now names the playthrough at
+every session start and every death the ledger applies, with its time and place.
+
+### Bug pass after 1.8.2
+
+**Status: in 1.8.3.** Every system was read, starting from the code 1.8.0 to 1.8.2 added, and checked by
+script for erase-in-loop, mutation during `for in`, unguarded settings reads, unguarded divisions,
+unresolved calls, saved entity handles, the reset list and the crash rules (spawns and removals only
+through their guarded paths, no prevention-system calls beyond point tests). Fixed:
+
+- **Reset all Cyberbane data kept firing.** Mod Settings keeps the accepted value, writes it to its file and
+  pushes it to the listener on every launch and with every later change (`ModClass::RegisterListener` and
+  `NotifyListeners` in mod_settings), so setting the field to false in script never reached it: once used,
+  the switch asked for a reset on every launch, applied to the first save loaded, and again whenever any
+  setting was applied. Both action switches now act only on the way from off to on, remembered in the
+  service (`SwitchFlipped`). A switch found on with nothing on record is taken as already done. The
+  per-variable accept callback was not usable: Mod Settings 0.2.21, the last 2.31 build, fires it for every
+  variable on every Apply.
+- **Custom preset** fell through `ApplyPreset` to the Default branch.
+- **The one-shot clock check** counted a Skip Time inside its 60 ticks as ordinary time; it restarts on a jump.
+- **Turf book lists** pad independently and the loss lists are kept the same length.
+
+Checked and left alone: "Friend of a Faction" counts any faction, NCPD included, while its progress line
+says "with one gang". The title's name and the label it takes agree with any faction, so the intent is
+not clear enough to change.
 
 ## Requests after 1.8.1
 

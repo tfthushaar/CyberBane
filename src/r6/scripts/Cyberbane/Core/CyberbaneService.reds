@@ -66,6 +66,39 @@ public class CBGangPower {
   public persistent let at: Float;             // game seconds
 }
 
+// Which V a playthrough id belongs to (1.8.3).
+//
+// Everything this service keeps is tied to a playthrough by its id, and that id was the only thing
+// keeping two characters apart. Nothing ever checked that a new one was not already taken, so two
+// different characters could end up answering to the same id, and then each one read the other's
+// deaths, gang strength and forget notes as its own. A player reported exactly that: a brand-new V
+// texted by three Tyger Claws within minutes of loading, which were another character's deaths at
+// the Ho-Oh, replayed by the death ledger as Killer Rivals.
+//
+// `bornAt` is the game time the playthrough first met Cyberbane. It is written into every save of
+// that playthrough too (CyberbaneSystem.m_installedAt, a saved field that already existed and was
+// never written, so the save keeps its shape), so a save that carries this id but a different
+// birth is another character. `lifepath` is the V it belongs to, which can never change inside a
+// playthrough; it tells saves from before 1.8.3 apart, which carry no birth of their own.
+//
+// A playthrough split off from a shared id remembers where it came from (`splitFrom`, and the birth
+// its saves carried there, `formerBornAt`, 0 for a save from before 1.8.3), so the other saves of
+// the same character join it when they load, rather than each one becoming a playthrough of its own.
+public class CBPlaythroughBirth {
+  public persistent let playthroughId: CName;
+  public persistent let bornAt: Float;         // game seconds; always above zero once written
+  public persistent let lifepath: Int32;       // EnumInt(gamedataLifePath); -1 = not known yet
+  public persistent let splitFrom: CName;      // n"" = not split off from anything
+  public persistent let formerBornAt: Float;
+  // Put on record by a save from before 1.8.3, which carries no birth of its own: whichever save of
+  // the id loaded first claimed it, and that may not be the character the records belong to.
+  public persistent let legacyClaim: Bool;
+  // A V with another lifepath turned up on a legacy claim: two characters shared this id before
+  // 1.8.3, and the records under it are both of theirs. Every save on it moves to one of its own,
+  // whichever of the two loaded first (CyberbaneSystem.VerifyPlaythroughOwner).
+  public persistent let disputed: Bool;
+}
+
 public class CyberbaneService extends ScriptableService {
   private persistent let m_schemaVersion: Int32;
   private persistent let m_nextLedgerId: Int32;
@@ -86,6 +119,17 @@ public class CyberbaneService extends ScriptableService {
   private persistent let m_gangPower: array<ref<CBGangPower>>;
   // Rivals forgotten one at a time (1.8.2). Cap CapForgottenRivals, oldest first.
   private persistent let m_forgottenRivals: array<ref<CBForgottenRival>>;
+  // Which V each playthrough id belongs to (1.8.3). Cap CapBirths, oldest first.
+  private persistent let m_births: array<ref<CBPlaythroughBirth>>;
+  // The two action switches in Mod Settings, as last seen (1.8.3): CBSwitchUnseen, CBSwitchOff, or
+  // CBSwitchActed (on, and already carried out). Mod Settings keeps a switch's accepted value and
+  // writes it to its file, and hands it back on every launch and with every later change to any
+  // setting; turning the field off in script never reached it. So "Reset all Cyberbane data", once
+  // used, asked for another reset each time any setting was applied and on every launch after. A
+  // switch now acts only on the way from off to on, and this is where "off" is remembered, because
+  // it has to outlive the game being closed.
+  private persistent let m_resetSwitch: Int32;
+  private persistent let m_separateSwitch: Int32;
 
   public static func Get() -> ref<CyberbaneService> {
     // The service container is null during world transitions; calling GetService on a null
@@ -406,4 +450,199 @@ public class CyberbaneService extends ScriptableService {
       i -= 1;
     }
   }
+
+  // ---- Which V a playthrough id belongs to (1.8.3) ----------------------------------------
+
+  // Is this id somebody's already? Every kind of record is asked, not only the births: a
+  // playthrough from before 1.8.3 has no birth on record, only its deaths, notes and numbers.
+  // An empty id is never free.
+  public func IsPlaythroughIdInUse(id: CName) -> Bool {
+    if !IsNameValid(id) {
+      return true;
+    }
+    if ArrayContains(this.m_retiredIds, id) {
+      return true;
+    }
+    for e in this.m_ledger {
+      if IsDefined(e) && Equals(e.playthroughId, id) {
+        return true;
+      }
+    }
+    for n in this.m_forgetNotes {
+      if IsDefined(n) && Equals(n.playthroughId, id) {
+        return true;
+      }
+    }
+    for s in this.m_sightings {
+      if IsDefined(s) && Equals(s.playthroughId, id) {
+        return true;
+      }
+    }
+    for p in this.m_gangPower {
+      if IsDefined(p) && Equals(p.playthroughId, id) {
+        return true;
+      }
+    }
+    for f in this.m_forgottenRivals {
+      if IsDefined(f) && Equals(f.playthroughId, id) {
+        return true;
+      }
+    }
+    for b in this.m_births {
+      if IsDefined(b) && Equals(b.playthroughId, id) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public func FindBirth(id: CName) -> ref<CBPlaythroughBirth> {
+    if !IsNameValid(id) {
+      return null;
+    }
+    for b in this.m_births {
+      if IsDefined(b) && Equals(b.playthroughId, id) {
+        return b;
+      }
+    }
+    return null;
+  }
+
+  // Put this playthrough on record as born at `bornAt` to this V, replacing what was there.
+  public func NoteBirth(id: CName, bornAt: Float, lifepath: Int32) -> Void {
+    if !IsNameValid(id) || bornAt <= 0.0 {
+      return;
+    }
+    let b = this.FindBirth(id);
+    if !IsDefined(b) {
+      b = new CBPlaythroughBirth();
+      b.playthroughId = id;
+      ArrayPush(this.m_births, b);
+      while ArraySize(this.m_births) > CBConfig.CapBirths() {
+        ArrayErase(this.m_births, 0);
+      }
+    }
+    b.bornAt = bornAt;
+    b.lifepath = lifepath < 0 ? -1 : lifepath;
+  }
+
+  // A playthrough split off from `fromId` for the saves that carried `formerBornAt` there, for this
+  // V. Those saves are one character, so the next of them to load joins it.
+  public func FindSplit(fromId: CName, formerBornAt: Float, lifepath: Int32) -> ref<CBPlaythroughBirth> {
+    if !IsNameValid(fromId) {
+      return null;
+    }
+    for b in this.m_births {
+      if IsDefined(b) && Equals(b.splitFrom, fromId) && b.formerBornAt == formerBornAt
+         && b.lifepath == lifepath {
+        return b;
+      }
+    }
+    return null;
+  }
+
+  // Put a split-off playthrough on record (FindSplit).
+  public func NoteSplit(id: CName, bornAt: Float, lifepath: Int32, fromId: CName, formerBornAt: Float) -> Void {
+    this.NoteBirth(id, bornAt, lifepath);
+    let b = this.FindBirth(id);
+    if IsDefined(b) {
+      b.splitFrom = fromId;
+      b.formerBornAt = formerBornAt;
+    }
+  }
+
+  // A birth claimed by a save from before 1.8.3 (CBPlaythroughBirth.legacyClaim).
+  public func NoteLegacyClaim(id: CName, bornAt: Float, lifepath: Int32) -> Void {
+    this.NoteBirth(id, bornAt, lifepath);
+    let b = this.FindBirth(id);
+    if IsDefined(b) {
+      b.legacyClaim = true;
+    }
+  }
+
+  // Two characters shared this id (CBPlaythroughBirth.disputed).
+  public func MarkDisputed(id: CName) -> Void {
+    let b = this.FindBirth(id);
+    if IsDefined(b) {
+      b.disputed = true;
+    }
+  }
+
+  // Fill in which V it is, where that could not be read when the birth was written. Never changes
+  // one that is known: that is the thing that tells two characters apart.
+  public func NoteBirthLifepath(id: CName, lifepath: Int32) -> Void {
+    let b = this.FindBirth(id);
+    if IsDefined(b) && b.lifepath < 0 && lifepath >= 0 {
+      b.lifepath = lifepath;
+    }
+  }
+
+  // A save that turned out to be another character keeps, under its new id, what its old id's
+  // records said at this point in its own time, so nothing it already had changes under it: gang
+  // strength that counts for it now (Model/Territory.reds reads a record from more than an hour
+  // ahead as not this save's), and sightings that are not ahead of it (Rivals/Whereabouts.reds
+  // drops those as foreign). Anything ahead of `now` was the other character's. Notes are not
+  // copied: "forget every rival" and "start over" from the other character must never reach it.
+  public func CopyPlaythroughRecords(fromId: CName, toId: CName, now: Float) -> Void {
+    if !IsNameValid(fromId) || !IsNameValid(toId) || Equals(fromId, toId) {
+      return;
+    }
+    // Collected first: NoteGangPower and the sighting cap both change the arrays being read.
+    let powers: array<ref<CBGangPower>>;
+    for p in this.m_gangPower {
+      if IsDefined(p) && Equals(p.playthroughId, fromId) && p.at <= now + CBConfig.SecondsPerHour() {
+        ArrayPush(powers, p);
+      }
+    }
+    let seen: array<ref<CBSighting>>;
+    for s in this.m_sightings {
+      if IsDefined(s) && Equals(s.playthroughId, fromId) && s.seenAt <= now
+         && (s.tippedAt <= 0.0 || s.tippedAt <= now) {
+        ArrayPush(seen, s);
+      }
+    }
+    for p in powers {
+      this.NoteGangPower(toId, p.faction, p.strength, p.at);
+    }
+    for s in seen {
+      let c = new CBSighting();
+      c.playthroughId = toId;
+      c.rivalId = s.rivalId;
+      c.recordID = s.recordID;
+      c.x = s.x;
+      c.y = s.y;
+      c.z = s.z;
+      c.district = s.district;
+      c.seenAt = s.seenAt;
+      c.tippedAt = s.tippedAt;
+      c.tipFaction = s.tipFaction;
+      ArrayPush(this.m_sightings, c);
+    }
+    while ArraySize(this.m_sightings) > CBConfig.CapSightings() {
+      ArrayErase(this.m_sightings, 0);
+    }
+  }
+
+  // ---- The action switches (1.8.3) --------------------------------------------------------
+
+  public func GetResetSwitch() -> Int32 {
+    return this.m_resetSwitch;
+  }
+
+  public func SetResetSwitch(state: Int32) -> Void {
+    this.m_resetSwitch = state;
+  }
+
+  public func GetSeparateSwitch() -> Int32 {
+    return this.m_separateSwitch;
+  }
+
+  public func SetSeparateSwitch(state: Int32) -> Void {
+    this.m_separateSwitch = state;
+  }
 }
+
+// What an action switch was last seen doing (CyberbaneService.m_resetSwitch).
+public func CBSwitchUnseen() -> Int32 = 0
+public func CBSwitchOff() -> Int32 = 1
+public func CBSwitchActed() -> Int32 = 2
