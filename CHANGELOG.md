@@ -33,6 +33,9 @@ Your saved Cyberbane progress carries over, and nothing stored in your save chan
   them exactly as you set them.
 - **The Hub's real-time estimates could be badly off for a whole session** if you slept or skipped
   time in the first minute after loading. Cyberbane measures the game clock again after a time skip.
+- **Starting over could mix up your old Rivals with your new ones.** A Rival you had chosen to forget
+  or pay to find, or one you had knocked out who was still lying nearby, could count against the new
+  playthrough's Rival who was given the same number. Starting over now clears all of that too.
 
 ### Added
 - **This save is another character**, in Mod Settings under Debug. For two characters whose records

@@ -3317,6 +3317,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_apexBountyArmed = false;
     this.m_turfWatchFaction = n"";
     this.m_pendingRivalSweep = false;
+    // Everything 1.8.2 keeps about particular Rivals for the session. Rival ids start again from
+    // zero above, so a forget or a purchase still waiting from the Hub, or a body remembered as an old
+    // Rival's, would otherwise land on whichever new Rival is given that number: a knocked-out Rival
+    // from before the reset, lying in view when it ran and killed afterwards, was credited as the new
+    // playthrough's Rival of the same id.
+    ArrayClear(this.m_pendingForgets);
+    this.m_pendingFind = 0;
+    ArrayClear(this.m_formerBodyIds);
+    ArrayClear(this.m_formerBodyRivals);
     ArrayClear(this.m_crewBeaten);
     ArrayClear(this.m_seenPostureIds);
     ArrayClear(this.m_seenPostureVals);

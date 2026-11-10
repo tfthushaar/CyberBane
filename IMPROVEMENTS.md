@@ -77,6 +77,10 @@ through their guarded paths, no prevention-system calls beyond point tests). Fix
 - **Custom preset** fell through `ApplyPreset` to the Default branch.
 - **The one-shot clock check** counted a Skip Time inside its 60 ticks as ordinary time; it restarts on a jump.
 - **Turf book lists** pad independently and the loss lists are kept the same length.
+- **Start over kept 1.8.2's per-Rival session state** (found after pulling 1.8.3). `HardReset` sets
+  `m_nextRivalId` back to 0, while `m_pendingForgets`, `m_pendingFind` and `m_formerBodyIds` stayed, so a
+  waiting forget or purchase, or a knocked-out pre-reset Rival left in view as an orphan and killed later,
+  could land on the new Rival given the same id. `HardReset` clears all three.
 
 Checked and left alone: "Friend of a Faction" counts any faction, NCPD included, while its progress line
 says "with one gang". The title's name and the label it takes agree with any faction, so the intent is
