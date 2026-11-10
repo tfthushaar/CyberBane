@@ -634,8 +634,13 @@ func CBLairWatch(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   // above clears this on the next tick); taking the body first would leave it nobody to settle.
   // If somebody else did, nothing ever will, so let go of them now and leave the body to the
   // stray sweep, rather than hold the Rival lane on somebody lying in the street.
+  //
+  // And if V did, but the record that settles it is gone - pushed out, or settled without closing
+  // anything because the Rivals switch went off in between - nothing ever will either. That held
+  // the Rival lane, and the marker on the body, for the rest of the session.
   if IsDefined(body) && !CBStillStanding(body) {
-    if !body.cbSparedLogged {
+    if !body.cbSparedLogged || !sys.HasEscapee(body.GetEntityID()) {
+      CBUntrackOnMap(game, body);
       let none: EntityID;
       r.spawnedEntityId = none;
       sys.ClearLair();
@@ -777,4 +782,128 @@ public func CBLairAmbushed(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
     CBHearsayFromStreet(game, s"Word is \(name) never saw it coming.", n"");
   }
   CBLog.Info(n"Rivals", s"Rival \(r.id) ambushed at their place.");
+}
+
+// ---- Buying it (the Hub's Ambush button, 1.8.2) ------------------------------------------------
+//
+// The other way to a lead: instead of waiting for somebody to text it, V pays for it. Everything after
+// the purchase is the system above, untouched - the pin, the waiting Rival, the ambush - so this only
+// has to produce a tipped sighting, which is exactly what CBTipTick produces.
+
+public func CBWhereaboutsPrice(r: ref<CBRival>) -> Int32 {
+  if !IsDefined(r) {
+    return 0;
+  }
+  return CBConfig.WhereaboutsPriceBase() + CBConfig.WhereaboutsPricePerRank() * Max(r.rank, 1);
+}
+
+// Whether a Rival's whereabouts are for sale, and if not, why:
+// 0 for sale, 1 hideouts are switched off, 2 out after V or on their way, 3 V already knows,
+// 4 not somebody still after V.
+public func CBWhereaboutsForSale(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Int32 {
+  if !IsDefined(sys) || !IsDefined(r)
+     || (r.state != EnumInt(ECBRivalState.Active) && r.state != EnumInt(ECBRivalState.Hunting)) {
+    return 4;
+  }
+  if !CBHideoutsOn() {
+    return 1;
+  }
+  if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
+    return 3;
+  }
+  let lead = CBCurrentLead(sys, game);
+  if IsDefined(lead) && lead.rivalId == r.id {
+    return 3;
+  }
+  if !CBTipEligible(sys, game, r) {
+    return 2;
+  }
+  return 0;
+}
+
+// Somewhere near V a Rival could be holed up: standing room the navigation system offers, which no
+// safe area, no job and no quest covers (CBLairPointUsable). Searched from a random bearing, so it is
+// not always the same street.
+func CBWhereaboutsSpot(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, out spot: Vector4) -> Bool {
+  let a = RandRangeF(-3.14159, 3.14159);
+  let dir = new Vector4(CosF(a), SinF(a), 0.0, 0.0);
+  let pts: array<Vector4>;
+  if !CBPursuitPoints(game, player.GetWorldPosition(), dir, CBConfig.WhereaboutsCandidates(),
+                      CBConfig.WhereaboutsMinDistance(), CBConfig.WhereaboutsMaxDistance(), pts) {
+    return false;
+  }
+  let i = 0;
+  while i < ArraySize(pts) {
+    let p = pts[i];
+    i += 1;
+    if CBLairPointUsable(sys, game, p) {
+      spot = p;
+      return true;
+    }
+  }
+  return false;
+}
+
+// Carry out a purchase chosen on the Hub, from the settled tick (CyberbaneSystem.ServiceHubActions).
+// Nothing is paid unless there is a place to sell: where they were last seen, when that still holds,
+// or else somewhere the seller tracks them down near V.
+public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32) -> Bool {
+  if !IsDefined(sys) || !CBWorldStable(game) {
+    return false;
+  }
+  let r = sys.FindRivalById(id);
+  let player = GetPlayer(game);
+  let ts = GameInstance.GetTransactionSystem(game);
+  let svc = sys.GetPlayService();
+  if !IsDefined(r) || !IsDefined(player) || !IsDefined(ts) || !IsDefined(svc) {
+    return false;
+  }
+  let why = CBWhereaboutsForSale(sys, game, r);
+  if why != 0 {
+    CBLog.Info(n"Rivals", s"Whereabouts of rival \(id) not for sale any more (\(why)).");
+    return false;
+  }
+  let price = CBWhereaboutsPrice(r);
+  let money = ItemID.FromTDBID(t"Items.money");
+  if ts.GetItemQuantity(player, money) < price {
+    CBSystemNote(game, s"not enough eddies for that. It costs \(price)eb.", 4.0);
+    return false;
+  }
+  let now = CBGameSeconds(game);
+  let pid = sys.GetPlaythroughId();
+  let s = CBSightingFor(sys, r);
+  // A sighting from a newer branch of this playthrough is not this save's to sell, and one where a
+  // Rival can no longer be put is no place at all.
+  let usable = IsDefined(s) && now >= s.seenAt && CBLairPointUsable(sys, game, CBSightingPos(s));
+  if !usable {
+    let spot: Vector4;
+    if !CBWhereaboutsSpot(sys, game, player, spot) {
+      CBSystemNote(game, "nobody could find them from here. Try again somewhere else.", 5.0);
+      CBLog.Info(n"Rivals", s"Whereabouts of rival \(id): no usable place near V; nothing paid.");
+      return false;
+    }
+    svc.NoteSighting(pid, r.id, r.recordID, spot, sys.GetCurrentDistrict(), now);
+    s = svc.FindSighting(pid, r.id);
+  }
+  if !IsDefined(s) {
+    return false;
+  }
+  ts.RemoveItem(player, money, price);
+  let tipster = CBPickTipster(sys, r.faction);
+  s.tippedAt = now;
+  s.tipFaction = tipster;
+  sys.SetLastTipAt(now);
+  let name = CBRivalDisplayName(sys.GetContent(), r);
+  let line = CBTipLine(name, CBPlacePhrase(s.district), IsNameValid(tipster), CBMapMarkersOn());
+  if IsNameValid(tipster) {
+    CBPhoneFromAlly(game, tipster, line);
+  } else {
+    if IsNameValid(s.district) {
+      CBPhoneFromDistrict(game, s.district, line);
+    } else {
+      CBPhoneFromStreet(game, line);
+    }
+  }
+  CBLog.Info(n"Rivals", s"Bought rival \(id)'s whereabouts for \(price)eb: \(NameToString(s.district)).");
+  return true;
 }

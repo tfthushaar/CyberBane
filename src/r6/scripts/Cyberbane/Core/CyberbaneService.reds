@@ -28,6 +28,16 @@ public class CBForgetNote {
   public persistent let ledgerUpTo: Int32;
 }
 
+// One Rival forgotten on the Hub (1.8.2). Kept here, beside "Forget every rival", for the same reason:
+// it is an instruction about a playthrough, and loading an older save must not bring them back. The
+// record is checked as well as the id, because another branch of the playthrough can have given that
+// id to somebody else.
+public class CBForgottenRival {
+  public persistent let playthroughId: CName;
+  public persistent let rivalId: Int32;
+  public persistent let recordID: TweakDBID;
+}
+
 // Where a Rival was last seen standing, and whether anybody has passed it on to V (1.6.2,
 // Rivals/Whereabouts.reds). Kept here rather than in the save because nothing may be added to a
 // class the save holds without wiping everybody's progress, and because it is street knowledge:
@@ -74,6 +84,8 @@ public class CyberbaneService extends ScriptableService {
   private persistent let m_sightings: array<ref<CBSighting>>;
   // How strong each gang is, per playthrough (Model/Territory.reds). Cap CapGangPower, oldest first.
   private persistent let m_gangPower: array<ref<CBGangPower>>;
+  // Rivals forgotten one at a time (1.8.2). Cap CapForgottenRivals, oldest first.
+  private persistent let m_forgottenRivals: array<ref<CBForgottenRival>>;
 
   public static func Get() -> ref<CyberbaneService> {
     // The service container is null during world transitions; calling GetService on a null
@@ -210,6 +222,44 @@ public class CyberbaneService extends ScriptableService {
       back.rivalUpTo = rivalUpTo;
       back.ledgerUpTo = ledgerUpTo;
       ArrayPush(this.m_forgetNotes, back);
+    }
+  }
+
+  // ---- Rivals forgotten one at a time (1.8.2) ----------------------------------------------
+
+  public func GetForgottenRivals() -> array<ref<CBForgottenRival>> {
+    return this.m_forgottenRivals;
+  }
+
+  public func NoteForgetRival(playthroughId: CName, rivalId: Int32, recordID: TweakDBID) -> Void {
+    if !IsNameValid(playthroughId) || rivalId < 0 {
+      return;
+    }
+    for f in this.m_forgottenRivals {
+      if IsDefined(f) && f.rivalId == rivalId && Equals(f.playthroughId, playthroughId) {
+        f.recordID = recordID;
+        return;
+      }
+    }
+    let n = new CBForgottenRival();
+    n.playthroughId = playthroughId;
+    n.rivalId = rivalId;
+    n.recordID = recordID;
+    ArrayPush(this.m_forgottenRivals, n);
+    while ArraySize(this.m_forgottenRivals) > CBConfig.CapForgottenRivals() {
+      ArrayErase(this.m_forgottenRivals, 0);
+    }
+  }
+
+  // Taken back on the Hub before it was carried out.
+  public func UnnoteForgetRival(playthroughId: CName, rivalId: Int32) -> Void {
+    let i = ArraySize(this.m_forgottenRivals) - 1;
+    while i >= 0 {
+      let f = this.m_forgottenRivals[i];
+      if !IsDefined(f) || (f.rivalId == rivalId && Equals(f.playthroughId, playthroughId)) {
+        ArrayErase(this.m_forgottenRivals, i);
+      }
+      i -= 1;
     }
   }
 

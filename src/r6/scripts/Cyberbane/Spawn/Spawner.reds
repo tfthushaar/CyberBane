@@ -1131,6 +1131,11 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     return;
   }
   let id = puppet.GetEntityID();
+  // Knocked out and streamed back in. Made hostile, told to chase V and marked, they used to be:
+  // a body on the ground with an order it could not carry out and a pin that stayed until it died.
+  if !CBStillStanding(puppet) {
+    return;
+  }
   // An apex escort fights as rank and file, so it takes the squad's kit.
   if des.IsTagged(id, n"CB_Patrol") {
     CBSetUpPatrol(sys, game, puppet);

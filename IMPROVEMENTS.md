@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.8.1. The "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.8.2. The "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,42 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.8.1
+
+### "Knocked a Rival out, ran him over, and now a marker is stuck and no other Rival comes"
+
+**Status: fixed in 1.8.2** (`Rivals/RivalSystem.reds`, `Signals/CombatSignals.reds`, `Spawn/Spawner.reds`,
+`UI/Tracking.reds`, `Rivals/Whereabouts.reds`, `Reactions/CombatFlee.reds`). One gap behind it: an
+encounter can end while the body is still in the world (spared, got away), and the body kept `CB_Rival`.
+When it streamed back in, `CBApplySpawnSetup` could not find whose it was and fell back to the active
+Rival: their name, their build, a chase order and a marker on somebody lying in the street, which nothing
+ever removed. If it died, `CBResolveSlainRival` made the same fallback and could slay the wrong Rival.
+Now `CBCloseRivalEncounter` retires a living body (`CBRetireRivalBody`: off `CB_Rival` and `CB_Lair`, onto
+`CB_Orphan` for the orphan sweep) and remembers whose it was for the session, so a later death still
+slays that Rival (`TakeFormerRivalBody`). Setup and `CBTrackOnMap` skip anybody not `CBStillStanding`.
+The hideout watch no longer waits forever on a knocked-out body whose escapee record has gone, and the
+escapee cap evicts a Rival's mercy last. The escape path now closes through `CBCloseRivalEncounter` too.
+
+### "Loading after dying in a fight hangs at 25%" (since 1.7.7 or 1.7.8, still in 1.8.1)
+
+**Status: probable cause fixed in 1.8.2; not reproduced** (`Core/WorldState.reds`, `Signals/CombatSignals.reds`,
+`Core/CyberbaneSystem.reds`). Nothing found loops: every loop added since 1.7.6 advances, and the name
+lists are at most 437 combinations. What is certain is that `CBWorldStable` never treated V's death as a
+transition. The game marks it (`PlayerStateMachine.Vitals`) three seconds before the death screen, and
+for those seconds cars kept driving at the body, crews were ordered out and lanes stayed free. It now
+stands down while `Vitals` is Dead or Resurrecting (`CBVDown`); the deferred death and hit work waits it
+out. And the death ledger, the one thing a load does only after a death (making the killer a Rival,
+texting), moved from the player-attached callback inside the load to the first settled tick.
+
+### "Let me forget one Rival" and "Let me pay to ambush one"
+
+**Status: added in 1.8.2** (`UI/Hud.reds`, `Rivals/RivalSystem.reds`, `Rivals/Whereabouts.reds`,
+`Core/CyberbaneService.reds`). Two more buttons under the Hub's action button, Rivals only, each asking
+twice. Forgetting one does what `CBPurgeRivals` does for one Rival and is kept in the service
+(`CBForgottenRival`, id and record) so an older save does not bring them back. Ambush sells a tipped
+sighting: where they were seen when that still holds, otherwise a usable spot 95 to 150 m from V. From
+there it is the 1.6.2 lead and hideout, unchanged. Price 1500 + 1000 per rank.
 
 ## Requests after 1.8.0
 

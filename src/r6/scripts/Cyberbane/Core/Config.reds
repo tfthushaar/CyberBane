@@ -1098,6 +1098,9 @@ public abstract class CBConfig {
   // How long a Rival you escaped takes to find you again. Long enough that getting away is a
   // real outcome rather than a pause, which is what makes sparing and escaping worth anything.
   public static func RivalAfterEscapeTicks() -> Int32 = 900
+  // Bodies remembered as a Rival's after their encounter ended (CBCloseRivalEncounter). One Rival is
+  // out at a time, so a handful covers anything V could still walk back to.
+  public static func FormerRivalBodyCap() -> Int32 = 8
   public static func RivalMaxActiveHardCap() -> Int32 = 15
   public static func RivalMaxPerFaction() -> Int32 = 3
 
@@ -1114,6 +1117,8 @@ public abstract class CBConfig {
   public static func CapForgetNotes() -> Int32 = 32
   public static func CapRetiredIds() -> Int32 = 64
   public static func CapSightings() -> Int32 = 48
+  // Rivals forgotten one at a time, kept in the service for every save of their playthrough.
+  public static func CapForgottenRivals() -> Int32 = 64
   public static func CapGangPower() -> Int32 = 96
 
   // ---- Turf wars (Model/Territory.reds) -----------------------------------
@@ -1187,6 +1192,16 @@ public abstract class CBConfig {
   public static func LairMinDistance() -> Float = 10.0
   // Further than this from a waiting Rival who never noticed V, and they are taken back out.
   public static func LairLeaveDistance() -> Float = 160.0
+  // Buying where a Rival is (the Hub's Ambush button, 1.8.2). A rank-one name costs about a mid gig's
+  // pay, a gang's leader a good deal more, and well under the bounty on any of them.
+  public static func WhereaboutsPriceBase() -> Int32 = 1500
+  public static func WhereaboutsPricePerRank() -> Int32 = 1000
+  // When nobody has seen them anywhere usable, the seller tracks them down near V: out past the range
+  // a waiting Rival is put in the world at (LairPlaceDistance), so V walks there, and inside what the
+  // navigation query is good for.
+  public static func WhereaboutsMinDistance() -> Float = 95.0
+  public static func WhereaboutsMaxDistance() -> Float = 150.0
+  public static func WhereaboutsCandidates() -> Int32 = 12
   // Ticks V must have been on foot, out of combat, in a settled world before anybody is placed.
   public static func LairCalmTicks() -> Int32 = 5
   // How far round the place to look for standing room, and how often to try while in range.

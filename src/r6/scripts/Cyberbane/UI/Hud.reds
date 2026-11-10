@@ -216,6 +216,11 @@ public func CBHudActionH() -> Float = 56.0
 // was wider than the button. At 20, with that one reworded, every label the page uses fits, and
 // CBHudFit guards anything added later.
 public func CBHudActionFont() -> Int32 = 20
+// Two more buttons stacked under it, for a screen with more than one thing to do (the Rivals: find
+// one, forget one, forget them all). Three of them end at 844, well clear of the footer at 952, and
+// they stand in the column the prose beside them already leaves free (CBHudActionW).
+public func CBHudExtraActions() -> Int32 = 2
+public func CBHudActionGap() -> Float = 8.0
 
 // Row layouts, as the columns are positioned for them.
 public func CBHudLayoutGangs() -> Int32 = 0
@@ -436,6 +441,10 @@ func CBHudWidgetName(prefix: String, index: Int32) -> CName {
 }
 
 public func CBHudActionName() -> CName = n"cbHubAction"
+// The buttons under it, numbered from 1.
+public func CBHudExtraActionName(k: Int32) -> CName {
+  return CBHudWidgetName("cbHubAction", k);
+}
 public func CBHudSettingsName() -> CName = n"cbHubModSettings"
 // The previous and next screen keys drawn at the two ends of the tab bar.
 public func CBHudPrevName() -> CName = n"cbHubPrevTab"
@@ -517,6 +526,12 @@ public class CBHud {
   private let m_actionFrame: wref<inkImage>;
   private let m_actionText: wref<inkText>;
   private let m_actionOn: Bool;
+  // The buttons under it, index 0 being the second button on the page (CBHudExtraActionName(1)).
+  private let m_extraBox: array<wref<inkCanvas>>;
+  private let m_extraBg: array<wref<inkWidget>>;
+  private let m_extraFrame: array<wref<inkImage>>;
+  private let m_extraText: array<wref<inkText>>;
+  private let m_extraOn: array<Bool>;
   private let m_settingsBox: wref<inkCanvas>;
   private let m_settingsBg: wref<inkRectangle>;
   // Q and E, at the two ends of the tab bar, where the game's own menus put the keys that move
@@ -532,6 +547,8 @@ public class CBHud {
   private let m_titlePick: CName;
   private let m_titlePicked: Bool;
   private let m_purgeArmed: Bool;          // "forget every rival" asks twice
+  private let m_findArmed: Int32;          // buying a Rival's whereabouts asks twice: the Rival it is armed for
+  private let m_forgetArmed: Int32;        // forgetting one Rival asks twice too
   private let m_payArmed: CName;           // paying a gang off asks twice too: the gang it is armed for
   // A list longer than the page scrolls (ListWindow): which entry is in the top row, how long the
   // list is, how many rows it gets, the line saying so, and the stick's latch.
@@ -589,6 +606,8 @@ public class CBHud {
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
     this.m_payArmed = n"";
+    this.m_findArmed = 0;
+    this.m_forgetArmed = 0;
     this.m_listTop = 0;
     this.m_listScrolled = false;
     this.m_hover = n"";
@@ -603,6 +622,8 @@ public class CBHud {
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
     this.m_payArmed = n"";
+    this.m_findArmed = 0;
+    this.m_forgetArmed = 0;
     this.m_hover = n"";
     if IsDefined(this.m_root) {
       this.m_root.SetVisible(false);
@@ -628,6 +649,11 @@ public class CBHud {
       i += 1;
     }
     this.Unhook(this.m_actionBox);
+    i = 0;
+    while i < ArraySize(this.m_extraBox) {
+      this.Unhook(this.m_extraBox[i]);
+      i += 1;
+    }
     this.Unhook(this.m_settingsBox);
     this.Unhook(this.m_prevBox);
     this.Unhook(this.m_nextBox);
@@ -981,6 +1007,10 @@ public class CBHud {
     if Equals(name, CBHudActionName()) {
       return this.m_actionOn;
     }
+    let k = this.ExtraIndex(name);
+    if k >= 0 {
+      return this.m_extraOn[k];
+    }
     if Equals(name, CBHudListUpName()) {
       return this.m_listTop > 0;
     }
@@ -1305,6 +1335,39 @@ public class CBHud {
     this.m_actionBg = actionBg;
     this.m_actionText = actionText;
 
+    // ---- The buttons under it, built the same way ------------------------------------
+    ArrayClear(this.m_extraBox);
+    ArrayClear(this.m_extraBg);
+    ArrayClear(this.m_extraFrame);
+    ArrayClear(this.m_extraText);
+    ArrayClear(this.m_extraOn);
+    let ex = 1;
+    while ex <= CBHudExtraActions() {
+      let ey = CBHudDetailTop() - 4.0 + Cast<Float>(ex) * (CBHudActionH() + CBHudActionGap());
+      let extra = this.NewBox(panel, CBHudExtraActionName(ex), x + w - CBHudActionW(), ey,
+                              CBHudActionW(), CBHudActionH());
+      let extraBg: ref<inkWidget> = this.NewBand(extra, CBHudButtonIdle());
+      let extraFrame: ref<inkImage>;
+      if this.m_inTab {
+        extraBg.SetVisible(false);
+        extraBg = this.NewGameArt(extra, n"cell_bg", CBHudGameButtonBack());
+        extraFrame = this.NewGameArt(extra, n"cell_fg", CBHudLabel());
+      }
+      let extraText = this.NewText(extra, CBHudActionFont(), n"Semibold", CBHudHead());
+      extraText.SetLetterCase(textLetterCase.UpperCase);
+      extraText.SetHorizontalAlignment(textHorizontalAlignment.Center);
+      extraText.SetFitToContent(false);
+      extraText.SetSize(this.PxSize(CBHudActionW(), 30.0));
+      extraText.SetMargin(this.PxAt(0.0, 13.0));
+      extra.SetVisible(false);
+      ArrayPush(this.m_extraBox, extra);
+      ArrayPush(this.m_extraBg, extraBg);
+      ArrayPush(this.m_extraFrame, extraFrame);
+      ArrayPush(this.m_extraText, extraText);
+      ArrayPush(this.m_extraOn, false);
+      ex += 1;
+    }
+
     // ---- Footer: hints on the left, the Mod Settings link on the right -----------
     // The footer is set off by its own dimmer text and the gap above it rather than by a rule
     // across the whole page, for the same reason as the header.
@@ -1353,6 +1416,11 @@ public class CBHud {
       i += 1;
     }
     this.Hook(this.m_actionBox);
+    i = 0;
+    while i < ArraySize(this.m_extraBox) {
+      this.Hook(this.m_extraBox[i]);
+      i += 1;
+    }
     this.Hook(this.m_settingsBox);
     this.Hook(this.m_prevBox);
     this.Hook(this.m_nextBox);
@@ -1432,6 +1500,15 @@ public class CBHud {
       if this.m_actionOn {
         this.Click();
         this.ActionClicked(sys, game);
+      }
+      return true;
+    }
+    let ek = this.ExtraIndex(name);
+    if ek >= 0 {
+      e.Handle();
+      if this.m_extraOn[ek] {
+        this.Click();
+        this.ExtraClicked(sys, game, ek + 1);
       }
       return true;
     }
@@ -1645,6 +1722,8 @@ public class CBHud {
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
     this.m_payArmed = n"";
+    this.m_findArmed = 0;
+    this.m_forgetArmed = 0;
     this.m_listTop = 0;
     this.m_listScrolled = false;
     this.m_hover = n"";
@@ -1662,6 +1741,8 @@ public class CBHud {
         this.m_pickRival = this.m_rowRival[row];
         this.m_purgeArmed = false;
         this.m_resetArmed = false;
+        this.m_findArmed = 0;
+        this.m_forgetArmed = 0;
       } else {
         if this.m_tab == CBHudTitlesTab() {
           // A value in a field; safe to set at once, paused or not. n"" is automatic.
@@ -1715,23 +1796,84 @@ public class CBHud {
         }
       } else {
       if this.m_tab == CBHudRivalsTab() {
-        if sys.IsRivalPurgePending() {
-          sys.RequestRivalPurge(false);
-          this.m_purgeArmed = false;
-          this.m_resetArmed = false;
+        // The first button on the Rivals is the picked one's whereabouts. Money leaves V's pocket,
+        // so it asks first, like a pay-off; a purchase already chosen is taken back in one click.
+        let id = this.m_pickRival;
+        if id > 0 && sys.GetPendingFind() == id {
+          sys.RequestRivalFind(0);
+          this.m_findArmed = 0;
         } else {
-          if this.m_purgeArmed {
-            sys.RequestRivalPurge(true);
-            this.m_purgeArmed = false;
-            this.m_resetArmed = false;
-          } else {
-            this.m_purgeArmed = true;
+          if CBHudCanFind(sys, game, id) {
+            if this.m_findArmed == id {
+              this.m_findArmed = 0;
+              sys.RequestRivalFind(id);
+            } else {
+              this.m_findArmed = id;
+              this.m_forgetArmed = 0;
+              this.m_purgeArmed = false;
+            }
           }
         }
       }
       }
     }
     this.Render(sys, game);
+  }
+
+  // The buttons under the first. Only the Rivals have them: forget this one, and forget them all.
+  // Neither is carried out from here, for the reason given above ActionClicked.
+  private func ExtraClicked(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    if this.m_tab != CBHudRivalsTab() {
+      return;
+    }
+    if slot == 1 {
+      let id = this.m_pickRival;
+      let r = sys.FindRivalById(id);
+      if sys.IsRivalForgetPending(id) {
+        sys.RequestRivalForget(id, false);
+        this.m_forgetArmed = 0;
+      } else {
+        if IsDefined(r) && CBRivalForgettable(sys, r) {
+          if this.m_forgetArmed == id {
+            this.m_forgetArmed = 0;
+            sys.RequestRivalForget(id, true);
+          } else {
+            this.m_forgetArmed = id;
+            this.m_findArmed = 0;
+            this.m_purgeArmed = false;
+          }
+        }
+      }
+    } else {
+      if sys.IsRivalPurgePending() {
+        sys.RequestRivalPurge(false);
+        this.m_purgeArmed = false;
+        this.m_resetArmed = false;
+      } else {
+        if this.m_purgeArmed {
+          sys.RequestRivalPurge(true);
+          this.m_purgeArmed = false;
+          this.m_resetArmed = false;
+        } else {
+          this.m_purgeArmed = true;
+          this.m_findArmed = 0;
+          this.m_forgetArmed = 0;
+        }
+      }
+    }
+    this.Render(sys, game);
+  }
+
+  // Which of the buttons under the first this widget name is, or -1.
+  private func ExtraIndex(name: CName) -> Int32 {
+    let k = 0;
+    while k < ArraySize(this.m_extraBox) && k < ArraySize(this.m_extraOn) {
+      if Equals(name, CBHudExtraActionName(k + 1)) {
+        return k;
+      }
+      k += 1;
+    }
+    return -1;
   }
 
   // ---- Painting --------------------------------------------------------------------------------
@@ -1811,6 +1953,28 @@ public class CBHud {
         this.m_actionText.SetTintColor(this.m_actionOn ? CBHudCyan() : CBHudDim());
       }
     }
+    let pe = 0;
+    while pe < ArraySize(this.m_extraBox) {
+      let on = this.m_extraOn[pe];
+      let hot = on && Equals(this.m_hover, CBHudExtraActionName(pe + 1));
+      if IsDefined(this.m_extraFrame[pe]) {
+        this.m_extraFrame[pe].SetTintColor(hot ? CBHudCyan() : (on ? CBHudLabel() : CBHudDim()));
+        if IsDefined(this.m_extraBg[pe]) {
+          this.m_extraBg[pe].SetTintColor(hot ? CBHudGameButtonHot() : CBHudGameButtonBack());
+        }
+        if IsDefined(this.m_extraText[pe]) {
+          this.m_extraText[pe].SetTintColor(on ? CBHudCyan() : CBHudDim());
+        }
+      } else {
+        if IsDefined(this.m_extraBg[pe]) {
+          this.m_extraBg[pe].SetTintColor(on ? (hot ? CBHudButtonHover() : CBHudButtonIdle()) : CBHudButtonOff());
+        }
+        if IsDefined(this.m_extraText[pe]) {
+          this.m_extraText[pe].SetTintColor(on ? CBHudHead() : CBHudDim());
+        }
+      }
+      pe += 1;
+    }
     if IsDefined(this.m_settingsBg) {
       this.m_settingsBg.SetTintColor(Equals(this.m_hover, CBHudSettingsName()) ? CBHudButtonHover() : CBHudButtonIdle());
     }
@@ -1847,6 +2011,29 @@ public class CBHud {
     }
     if IsDefined(this.m_actionBox) {
       this.m_actionBox.SetVisible(StrLen(label) > 0);
+    }
+  }
+
+  // The same, for the buttons under it, numbered from 1. "" hides one.
+  private func SetExtra(slot: Int32, label: String, enabled: Bool) -> Void {
+    let k = slot - 1;
+    if k < 0 || k >= ArraySize(this.m_extraBox) || k >= ArraySize(this.m_extraOn) {
+      return;
+    }
+    this.m_extraOn[k] = enabled && StrLen(label) > 0;
+    if IsDefined(this.m_extraText[k]) {
+      this.m_extraText[k].SetText(CBHudFit(label, CBHudActionW() - 24.0, CBHudActionFont(), 1, true));
+    }
+    if IsDefined(this.m_extraBox[k]) {
+      this.m_extraBox[k].SetVisible(StrLen(label) > 0);
+    }
+  }
+
+  private func HideExtras() -> Void {
+    let k = 1;
+    while k <= ArraySize(this.m_extraBox) {
+      this.SetExtra(k, "", false);
+      k += 1;
     }
   }
 
@@ -2420,26 +2607,69 @@ public class CBHud {
     this.m_rowRival[row] = r.id;
   }
 
-  // The panel under the Rivals: the file on the one you clicked, and the button that forgets them.
+  // The panel under the Rivals: the file on the one you clicked, and three buttons beside it - buy
+  // where they are, forget them, forget everybody. Each asks twice, and each can be taken back until
+  // the game is unpaused, when it is carried out.
   private func RenderRivalDetail(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let top = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
     let width = CBHudContentW() - CBHudActionW() - 40.0;
     let count = sys.CountActiveRivals();
     if count <= 0 && !sys.IsRivalPurgePending() {
-      this.SetAction("", false);
       this.SetBody(CBHudMarginX(), top, CBHudContentW(), CBHudRivals(sys, game, 0), CBHudMaxLinesFor(this.m_tab));
       return;
     }
     if sys.IsRivalPurgePending() {
-      this.SetAction("Keep them", true);
+      // Where "Forget every rival" was, so taking it back is the same place clicked again.
+      this.SetExtra(2, "Keep them", true);
     } else {
-      if this.m_purgeArmed {
-        this.SetAction(s"Click again: forget all \(count)", true);
+      let id = this.m_pickRival;
+      let r = sys.FindRivalById(id);
+      // 1. Where they are.
+      let pending = sys.GetPendingFind();
+      if pending > 0 && pending == id {
+        this.SetAction("Cancel the payment", true);
       } else {
-        this.SetAction("Forget every rival", true);
+        if pending > 0 {
+          this.SetAction("Buying another location", false);
+        } else {
+          let why = CBWhereaboutsForSale(sys, game, r);
+          let price = CBWhereaboutsPrice(r);
+          if why == 0 {
+            if CBHudEddies(game) >= price {
+              this.SetAction(this.m_findArmed == id ? s"Confirm: pay \(price)eb" : s"Ambush them: \(price)eb", true);
+            } else {
+              this.SetAction("Not enough eddies", false);
+            }
+          } else {
+            if why == 1 {
+              this.SetAction("Hideouts are off", false);
+            } else {
+              if why == 2 {
+                this.SetAction("Out after you now", false);
+              } else {
+                if why == 3 {
+                  this.SetAction("You know where they are", false);
+                }
+              }
+            }
+          }
+        }
       }
+      // 2. Forget them.
+      if sys.IsRivalForgetPending(id) {
+        this.SetExtra(1, "Keep this one", true);
+      } else {
+        if IsDefined(r) && !CBRivalForgettable(sys, r) {
+          this.SetExtra(1, "On their way: wait", false);
+        } else {
+          this.SetExtra(1, this.m_forgetArmed == id ? "Click again to forget" : "Forget this rival", IsDefined(r));
+        }
+      }
+      // 3. Forget everybody.
+      this.SetExtra(2, this.m_purgeArmed ? s"Click again: forget all \(count)" : "Forget every rival", true);
     }
-    this.SetBody(CBHudMarginX(), top, width, CBHudRivals(sys, game, this.m_pickRival), CBHudMaxLinesFor(this.m_tab));
+    this.SetBody(CBHudMarginX(), top, width, CBHudRivals(sys, game, this.m_pickRival, this.m_findArmed, this.m_forgetArmed),
+                 CBHudMaxLinesFor(this.m_tab));
   }
 
   // The titles, as a list you can click. Automatic first, then every one V has earned - all of
@@ -2499,6 +2729,7 @@ public class CBHud {
     this.HideBars();
     this.HideRows();
     this.SetAction("", false);
+    this.HideExtras();
     this.m_listTotal = 0;
     this.m_listRows = 0;
     if IsDefined(this.m_listMore) {
@@ -3161,7 +3392,8 @@ func CBRivalSourceLine(source: Int32) -> String {
   return "remembers you";
 }
 
-func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32) -> String {
+func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32, opt findArmed: Int32,
+                 opt forgetArmed: Int32) -> String {
   if sys.IsRivalPurgePending() {
     return "Every rival is forgotten in the next few seconds of play.\n\nThe ones out looking for you stop, and nobody on this list comes after you again.\nIt sticks: quitting now, or loading an older save of this playthrough, forgets them too.\nClick the button again to keep them after all.";
   }
@@ -3185,14 +3417,9 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32)
       out += ", and next in line";
     }
     out += ".\n";
-    // Somebody told V where they were seen (Rivals/Whereabouts.reds).
-    let lead = CBCurrentLead(sys, game);
-    if IsDefined(lead) && lead.rivalId == r.id {
-      let from = IsNameValid(lead.tipFaction) ? CBFactionLabel(lead.tipFaction) : "the street";
-      let ago = CBHudSince(CBGameSeconds(game), lead.seenAt);
-      let when = StrLen(ago) > 0 ? ", " + ago + " ago" : "";
-      out += s"Word from \(from): seen \(CBPlacePhrase(lead.district))\(when). Go on foot and they may not see you coming.\n";
-    }
+    // What is about to happen to them, or where they are: one line, near the top, so nothing that
+    // matters is what the panel cuts when it runs out of room (CBHudFit).
+    out += CBHudRivalWhere(sys, game, r, findArmed, forgetArmed) + "\n";
     let strong = CBRivalTraitList(content, r, false, 6);
     let weak = CBRivalTraitList(content, r, true, 6);
     if StrLen(strong) > 0 {
@@ -3219,6 +3446,52 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32)
   }
   return out;
 }
+// The whereabouts line in a Rival's file (CBHudRivals).
+func CBHudRivalWhere(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, findArmed: Int32,
+                     forgetArmed: Int32) -> String {
+  if sys.IsRivalForgetPending(r.id) {
+    return "Forgotten as soon as you are back in the game, on this save and every other of this playthrough.";
+  }
+  if forgetArmed == r.id {
+    return "Click again to forget them. Until you go back to the game, you can still keep them.";
+  }
+  let price = CBWhereaboutsPrice(r);
+  if sys.GetPendingFind() == r.id {
+    return s"Paying \(price)eb for where they are. It goes through as soon as you are back in the game.";
+  }
+  if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
+    return "Waiting at their place right now, and not expecting you.";
+  }
+  // Somebody told V where they were seen (Rivals/Whereabouts.reds).
+  let lead = CBCurrentLead(sys, game);
+  if IsDefined(lead) && lead.rivalId == r.id {
+    let from = IsNameValid(lead.tipFaction) ? CBFactionLabel(lead.tipFaction) : "the street";
+    let ago = CBHudSince(CBGameSeconds(game), lead.seenAt);
+    let when = StrLen(ago) > 0 ? ", " + ago + " ago" : "";
+    return s"Word from \(from): seen \(CBPlacePhrase(lead.district))\(when). Go on foot and they may not see you coming.";
+  }
+  let why = CBWhereaboutsForSale(sys, game, r);
+  if why == 0 {
+    if findArmed == r.id {
+      return s"Click again to pay \(price)eb for where they are hiding.";
+    }
+    return s"\(price)eb buys where they are hiding. Go there on foot and catch them unawares. You have \(CBHudEddies(game))eb.";
+  }
+  if why == 1 {
+    return "Turn on Rival hideouts in Mod Settings to buy where they are hiding.";
+  }
+  return "Nobody sells where they are while they are out after you.";
+}
+
+// Whether the whereabouts button may take a click: for sale, affordable, and no other purchase waiting.
+func CBHudCanFind(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32) -> Bool {
+  let r = sys.FindRivalById(id);
+  if !IsDefined(r) || sys.GetPendingFind() > 0 || CBWhereaboutsForSale(sys, game, r) != 0 {
+    return false;
+  }
+  return CBHudEddies(game) >= CBWhereaboutsPrice(r);
+}
+
 func CBHudTitles(sys: ref<CyberbaneSystem>, id: CName) -> String {
   let content = sys.GetContent();
   if !IsDefined(content) {

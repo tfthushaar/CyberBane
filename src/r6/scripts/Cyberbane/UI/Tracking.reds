@@ -130,7 +130,8 @@ public func CBTrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Voi
   if !IsDefined(ms) {
     return;
   }
-  if !puppet.IsAttached() || puppet.IsDead() {
+  // A marker is for somebody up and about. One on a body on the ground outlived every encounter.
+  if !puppet.IsAttached() || !CBStillStanding(puppet) {
     return;
   }
   let look = new GameplayRoleMappinData();

@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.8.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.8.2).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -156,8 +156,10 @@ in active development. This page describes what the mod does and how it installs
   disappears if you turn that filter off. Get there and get out of the car, and
   they are there, somewhere round the place you cannot see from where you stand, not expecting
   anybody: catch them before they react and the street hears about it. Wait too long and they move on. They still
-  come for you on their own schedule as well. **Tips on where Rivals are**, under Rivals, turns
-  this off.
+  come for you on their own schedule as well. You do not have to wait for a tip: click a Rival on
+  the Hub and **Ambush them** buys where they are hiding, for more the higher their rank. If nobody
+  has seen them anywhere useful, the seller tracks them down a few blocks from you. **Tips on where
+  Rivals are**, under Rivals, turns all of this off.
 - **Rivals have traits, and weak spots.** A Tough Rival takes more killing, an Armored one
   shrugs off more of it, a Deadeye finds the gap in your armour, a Quick one dodges, a Pack
   Leader brings two of their own (so does a crew leader, and a lieutenant brings one), a
@@ -348,9 +350,10 @@ its own.
   Then it is Escape, then Cyberbane, and 1 and 3 (LB and RB) change screen.
 - **On the Hub:** click a screen name, or use A and D (LT and RT), to switch screens. A list longer
   than the page scrolls with the Up and Down buttons above it, the mouse wheel or the right stick. On Gangs, click a gang to see more
-  and to pay them off (it asks you to confirm); on Rivals, click a Rival for their file, and use
-  Forget every rival (it asks twice) to clear them; on Titles, click the title you want to go by, or
-  Automatic for your highest one. Paying a gang off and forgetting your Rivals happen in the next few
+  and to pay them off (it asks you to confirm); on Rivals, click a Rival for their file, to buy where
+  they are hiding, or to forget just them, and use Forget every rival to clear the lot (each asks you
+  to confirm); on Titles, click the title you want to go by, or Automatic for your highest one.
+  Paying a gang off, buying a Rival's location and forgetting Rivals happen in the next few
   seconds of play, and can be cancelled until then. On History, Start over (it asks
   twice) clears everything you earned by playing and leaves everything that is read off your build,
   so your chrome and your look are untouched. Forgetting your Rivals and starting over both stick:

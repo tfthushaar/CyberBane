@@ -810,6 +810,16 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   CBUntrackTagged(game, n"CB_Rival");
 
+  // 1b. A body still in the world - lying there breathing, or walking off - is nobody's encounter
+  //     any more, and must stop reading as one. It kept the CB_Rival tag, so when it streamed back
+  //     in it was set up again as the active Rival (CBApplySpawnSetup falls back to them for a body
+  //     it cannot place), given that Rival's name and a fresh marker that nothing ever took down,
+  //     because the body never died and never left. And if it did die, the death handler fell back
+  //     the same way and could put the wrong Rival in the ground. The dead are the death handler's.
+  if IsDefined(body) && !body.IsDead() {
+    CBRetireRivalBody(sys, game, body, rival);
+  }
+
   // 2. The encounter slot, so the lanes know nothing is out and the next one can be queued.
   if IsDefined(rival) {
     if sys.GetActiveRivalId() == rival.id {
@@ -826,6 +836,30 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
     }
   } else {
     sys.SetActiveRivalId(0);
+  }
+}
+
+// The tags that make a body a Rival's come off, and it joins the bodies the orphan sweep clears once
+// V cannot see them (CBSweepOrphans), which is where CBDeleteTaggedSafe has always put one it could
+// not take. Who it belonged to is remembered for the rest of the session, so V finishing them later
+// still finishes that Rival (CBOnPuppetDeath). The same tag calls CBLairPromote moves a body with.
+func CBRetireRivalBody(sys: ref<CyberbaneSystem>, game: GameInstance, body: wref<ScriptedPuppet>, rival: ref<CBRival>) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(sys) || !IsDefined(des) || !IsDefined(body) {
+    return;
+  }
+  let id = body.GetEntityID();
+  if des.IsTagged(id, n"CB_Rival") {
+    des.UnassignTag(id, n"CB_Rival");
+  }
+  if des.IsTagged(id, n"CB_Lair") {
+    des.UnassignTag(id, n"CB_Lair");
+  }
+  if des.IsTagged(id, n"Cyberbane") && !des.IsTagged(id, n"CB_Orphan") {
+    des.AssignTag(id, n"CB_Orphan");
+  }
+  if IsDefined(rival) {
+    sys.NoteFormerRivalBody(id, rival.id);
   }
 }
 
@@ -848,6 +882,62 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   CBDeleteTaggedSafe(game, n"CB_Rival");
   CBLog.Info(n"Rivals", s"Purged \(removed) rivals at the player's request.");
   return removed;
+}
+
+// Can this one be forgotten right now? Not while a car is bringing them: their body arrives as a
+// Rival's and is adopted as one, and with nobody left to adopt it as, it would be a nameless hunter.
+public func CBRivalForgettable(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> Bool {
+  return IsDefined(sys) && IsDefined(r) && sys.GetRivalCarPending() != r.id;
+}
+
+// Forget one Rival (the Hub, 1.8.2). Everything "Forget every rival" does (CBPurgeRivals), for one of
+// them, from the settled tick (CyberbaneSystem.ServiceHubActions). Their place, the pin on it and the
+// waiting body go; one out after V ends the way every encounter does, and the body leaves once V
+// cannot see it; their chair is filled. Returns their name, or "" when there was nobody to forget.
+public func CBForgetRival(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32) -> String {
+  if !IsDefined(sys) {
+    return "";
+  }
+  let r = sys.FindRivalById(id);
+  if !IsDefined(r) {
+    return "";
+  }
+  if !CBRivalForgettable(sys, r) {
+    CBLog.Info(n"Rivals", s"Rival \(id) is on their way in a car; not forgotten.");
+    return "";
+  }
+  let name = CBRivalDisplayName(sys.GetContent(), r);
+  let svc = sys.GetPlayService();
+  if IsDefined(svc) {
+    // Noted when it was chosen; again here in case the menu could not reach the service.
+    svc.NoteForgetRival(sys.GetPlaythroughId(), id, r.recordID);
+    svc.DropSighting(sys.GetPlaythroughId(), id);
+  }
+  if sys.IsLeadPinned() && sys.GetLeadPinRival() == id {
+    CBDropLead(sys, game);
+  }
+  if sys.IsLairActive() && sys.GetLairRivalId() == id {
+    CBLairStandDown(sys, game);
+  }
+  if sys.GetActiveRivalId() == id || EntityID.IsDefined(r.spawnedEntityId) {
+    let body: wref<ScriptedPuppet>;
+    if EntityID.IsDefined(r.spawnedEntityId) {
+      body = GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet;
+    }
+    CBCloseRivalEncounter(sys, game, r, body);
+    // Nobody's at all now, not even a Rival's that was (CBRetireRivalBody).
+    if IsDefined(body) {
+      sys.TakeFormerRivalBody(body.GetEntityID());
+    }
+  }
+  if sys.GetRivalWarned() == id {
+    sys.SetRivalWarned(0);
+  }
+  let faction = r.faction;
+  sys.RemoveRivalById(id);
+  CBHierarchyFill(sys, faction);
+  CBLog.Info(n"Rivals", s"Forgot rival \(id) at the player's request.");
+  return name;
 }
 
 public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: ref<CBRival>, at: Float, district: CName) -> Void {

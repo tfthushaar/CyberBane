@@ -3,6 +3,25 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.8.2] - 2026-11-10
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Added
+- **Ambush a Rival.** Click a Rival on the Hub and pay to find out where they are hiding. A pin goes
+  on your map; go there on foot and catch them before they see you coming. The price goes up with
+  their rank. Needs Rival hideouts turned on in Mod Settings.
+- **Forget one Rival.** Click a Rival and forget just them. It asks you to confirm, and you can take
+  it back until you leave the menu. Forget every rival is still there.
+
+### Fixed
+- **A Rival knocked out and then run over could leave a marker stuck on the map** and stop other
+  Rivals coming for you. A Rival's body no longer carries their marker or their place in line once
+  the fight with them is over, and finishing them off later counts as killing that Rival.
+- **Loading after dying in a fight could hang on the loading screen.** Cyberbane now stops
+  completely the moment you die, and waits until you are back on your feet in a loaded game before
+  doing anything, including making your killer a Rival.
+
 ## [1.8.1] - 2026-11-10
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.

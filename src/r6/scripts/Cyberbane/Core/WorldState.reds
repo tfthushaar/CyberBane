@@ -28,6 +28,13 @@ public func CBWorldStable(game: GameInstance) -> Bool {
   if !IsDefined(player) {
     return false;
   }
+  // V is down. What comes next is a load, or a death alternative standing V back up, and until one of
+  // them does, the world in front of us is about to be thrown away. This gate missed it: for the
+  // seconds between V dying and the death screen, cars were still sent at V's body, crews ordered out
+  // of them and lanes left free to send more, into a world the load was about to tear down.
+  if CBVDown(game) {
+    return false;
+  }
   // Paused - pause menu, photo mode: nothing should tick.
   let ts = GameInstance.GetTimeSystem(game);
   if IsDefined(ts) && ts.IsPausedState() {
@@ -167,4 +174,17 @@ public func CBPlayerPSM(game: GameInstance) -> ref<IBlackboard> {
     return null;
   }
   return player.GetPlayerStateMachineBlackboard();
+}
+
+// V is dead, or being brought back. The game writes it to V's state machine the moment V goes down,
+// three seconds before the death screen (highLevelTransitions.script, DeathEvents), and back to Alive
+// when V is up again (ResurrectEvents, and the respawn on load). The same value the game's own death
+// menu and vision modes read, on 2.31 and 2.5 alike.
+public func CBVDown(game: GameInstance) -> Bool {
+  let psm = CBPlayerPSM(game);
+  if !IsDefined(psm) {
+    return false;
+  }
+  let v = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.Vitals);
+  return v == EnumInt(gamePSMVitals.Dead) || v == EnumInt(gamePSMVitals.Resurrecting);
 }

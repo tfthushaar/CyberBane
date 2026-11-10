@@ -57,6 +57,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
+  private let m_ledgerDue: Bool;              // the death ledger waits for the first settled tick (StartSession)
+  // Rivals forgotten one at a time on the Hub, carried out on the next settled tick (1.8.2).
+  private let m_pendingForgets: array<Int32>;
+  // A Rival whose whereabouts V is buying on the Hub, the same way. 0 = none.
+  private let m_pendingFind: Int32;
+  // Bodies that were still in the world when their Rival's encounter ended, and whose they were
+  // (CBCloseRivalEncounter). Session only: entity ids mean nothing in another session.
+  private let m_formerBodyIds: array<EntityID>;
+  private let m_formerBodyRivals: array<Int32>;
   private let m_pendingRivalPurge: Bool;      // "forget every rival" chosen on the Hub while paused, done on resume
   // The global service, fetched at session start or on a settled tick and reused, the same way
   // the content cache is (see GetContent). Session only.
@@ -410,9 +419,12 @@ public class CyberbaneSystem extends ScriptableSystem {
       let startedOver = this.ApplyPlaythroughNotes();
       // Apply any deaths recorded in the global ledger for this playthrough. Not for one that is
       // about to be started over: the reset would wipe what it made a moment later.
-      if !startedOver {
-        CBApplyDeathLedger(this, this.GetGameInstance());
-      }
+      //
+      // On the first settled tick, not here. This runs from the player-attached callback, in the
+      // middle of the load, and it is the one thing a load does only after V has died: make the
+      // killer a Rival, fill a chair, send two texts. None of it is world work the load needs, and
+      // the crash rules have long said delayed work waits for a settled world.
+      this.m_ledgerDue = !startedOver;
       // And take any story characters off the Rival roster before they can be sent again.
       CBPruneUniqueRivals(this);
       this.RenumberRivalZero();
@@ -423,6 +435,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Nothing asked for on a Hub in another session is carried into this one.
     this.m_pendingPeace = n"";
     this.m_pendingRivalPurge = false;
+    // Forgetting is on record in the service the moment it is chosen, so a load that comes first
+    // still carries it out (ApplyPlaythroughNotes). A purchase is not: nothing was paid yet.
+    ArrayClear(this.m_pendingForgets);
+    this.m_pendingFind = 0;
+    ArrayClear(this.m_formerBodyIds);
+    ArrayClear(this.m_formerBodyRivals);
 
     // Bump the generation so any stale tick chain stops, then start a fresh one.
     this.m_tickGeneration += 1;
@@ -889,6 +907,14 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.ScheduleFastTick();
       return;
     }
+    // A death on record from another save of this playthrough (StartSession). After the check above:
+    // only V's own world has V's killer in it.
+    if this.m_ledgerDue {
+      this.m_ledgerDue = false;
+      CBApplyDeathLedger(this, game);
+      CBPruneUniqueRivals(this);
+    }
+
     // What the player chose on the Hub while the game was paused. Same reasoning again. After the
     // check above on purpose: a payment comes out of the player's pocket, and the player has to be V.
     this.ServiceHubActions(game);
@@ -1236,6 +1262,24 @@ public class CyberbaneSystem extends ScriptableSystem {
         CBLog.Info(n"Rivals", s"Forgot \(removed) rival(s) that were forgotten on a later save of this playthrough.");
       }
     }
+    // And the ones forgotten one at a time (1.8.2). Same rule for new ids: numbered past them.
+    let one = 0;
+    let highest = -1;
+    for f in svc.GetForgottenRivals() {
+      if IsDefined(f) && Equals(f.playthroughId, this.m_playthroughId) {
+        highest = Max(highest, f.rivalId);
+        let gone = this.FindRivalById(f.rivalId);
+        if IsDefined(gone) && gone.recordID == f.recordID && this.RemoveRivalById(f.rivalId) {
+          one += 1;
+        }
+      }
+    }
+    if this.m_nextRivalId <= highest {
+      this.m_nextRivalId = highest + 1;
+    }
+    if one > 0 {
+      CBLog.Info(n"Rivals", s"Forgot \(one) rival(s) forgotten one at a time on another save of this playthrough.");
+    }
     return false;
   }
 
@@ -1372,6 +1416,56 @@ public class CyberbaneSystem extends ScriptableSystem {
     return true;
   }
 
+  // This body was a Rival's when their encounter ended, and it is still in the world.
+  public func NoteFormerRivalBody(body: EntityID, rivalId: Int32) -> Void {
+    if !EntityID.IsDefined(body) || rivalId <= 0 {
+      return;
+    }
+    let k = 0;
+    while k < ArraySize(this.m_formerBodyIds) {
+      if Equals(this.m_formerBodyIds[k], body) {
+        this.m_formerBodyRivals[k] = rivalId;
+        return;
+      }
+      k += 1;
+    }
+    ArrayPush(this.m_formerBodyIds, body);
+    ArrayPush(this.m_formerBodyRivals, rivalId);
+    while ArraySize(this.m_formerBodyIds) > CBConfig.FormerRivalBodyCap() {
+      ArrayErase(this.m_formerBodyIds, 0);
+      ArrayErase(this.m_formerBodyRivals, 0);
+    }
+  }
+
+  // Whose this body was, once: the Rival's id, or 0. Forgotten as it is read.
+  public func TakeFormerRivalBody(body: EntityID) -> Int32 {
+    let k = 0;
+    while k < ArraySize(this.m_formerBodyIds) && k < ArraySize(this.m_formerBodyRivals) {
+      if Equals(this.m_formerBodyIds[k], body) {
+        let id = this.m_formerBodyRivals[k];
+        ArrayErase(this.m_formerBodyIds, k);
+        ArrayErase(this.m_formerBodyRivals, k);
+        return id;
+      }
+      k += 1;
+    }
+    return 0;
+  }
+
+  // Take one Rival off the roster. True when they were on it.
+  public func RemoveRivalById(id: Int32) -> Bool {
+    let i = ArraySize(this.m_rivals) - 1;
+    while i >= 0 {
+      let r = this.m_rivals[i];
+      if IsDefined(r) && r.id == id {
+        ArrayErase(this.m_rivals, i);
+        return true;
+      }
+      i -= 1;
+    }
+    return false;
+  }
+
   // Take every Rival numbered up to `upTo` off the roster. Returns how many went.
   public func RemoveRivalsUpTo(upTo: Int32) -> Int32 {
     let removed = 0;
@@ -1393,6 +1487,47 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_pendingRivalPurge;
   }
 
+  // One Rival forgotten on the Hub (1.8.2). On record in the service the moment it is chosen, like
+  // forgetting all of them, so quitting from the menu cannot lose it; taken back, the record goes too.
+  public func RequestRivalForget(id: Int32, wanted: Bool) -> Void {
+    let svc = this.GetPlayService();
+    if wanted {
+      let r = this.FindRivalById(id);
+      if !IsDefined(r) || ArrayContains(this.m_pendingForgets, id) {
+        return;
+      }
+      ArrayPush(this.m_pendingForgets, id);
+      if IsDefined(svc) {
+        svc.NoteForgetRival(this.m_playthroughId, id, r.recordID);
+      }
+      CBLog.Info(n"UI", s"Forgetting rival \(id) chosen on the Hub.");
+    } else {
+      if ArrayContains(this.m_pendingForgets, id) {
+        ArrayRemove(this.m_pendingForgets, id);
+        if IsDefined(svc) {
+          svc.UnnoteForgetRival(this.m_playthroughId, id);
+        }
+      }
+    }
+  }
+
+  public func IsRivalForgetPending(id: Int32) -> Bool {
+    return id > 0 && ArrayContains(this.m_pendingForgets, id);
+  }
+
+  // Buying where a Rival is (1.8.2). Money moves and the world is searched, so it waits for the tick
+  // like a pay-off does. 0 takes the request back.
+  public func RequestRivalFind(id: Int32) -> Void {
+    this.m_pendingFind = Max(id, 0);
+    if id > 0 {
+      CBLog.Info(n"UI", s"Buying rival \(id)'s whereabouts chosen on the Hub.");
+    }
+  }
+
+  public func GetPendingFind() -> Int32 {
+    return this.m_pendingFind;
+  }
+
   // Carry out what was chosen on the Hub while the game was paused. Called from the settled part
   // of the fast tick, never from the page: paying a gang moves eddies and sends texts, and
   // forgetting the Rivals deletes people from the world, and neither belongs inside a paused menu.
@@ -1408,6 +1543,30 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_purgeNoted = false;
       let removed = CBPurgeRivals(this, game);
       CBSystemNote(game, s"cleared \(removed) rivals.", 4.0);
+    }
+    if ArraySize(this.m_pendingForgets) > 0 {
+      let forgot = 0;
+      let lastName = "";
+      for id in this.m_pendingForgets {
+        let name = CBForgetRival(this, game, id);
+        if StrLen(name) > 0 {
+          forgot += 1;
+          lastName = name;
+        }
+      }
+      ArrayClear(this.m_pendingForgets);
+      if forgot == 1 {
+        CBSystemNote(game, s"forgot \(lastName).", 4.0);
+      } else {
+        if forgot > 1 {
+          CBSystemNote(game, s"forgot \(forgot) rivals.", 4.0);
+        }
+      }
+    }
+    if this.m_pendingFind > 0 {
+      let findId = this.m_pendingFind;
+      this.m_pendingFind = 0;
+      CBBuyRivalWhereabouts(this, game, findId);
     }
     if NotEquals(this.m_pendingPeace, n"") {
       let faction = this.m_pendingPeace;
@@ -3431,16 +3590,27 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayPush(this.m_escapees, e);
     while ArraySize(this.m_escapees) > CBConfig.EscapeeCap() {
       // The oldest runaway goes first: a runaway is only a maybe-Rival, while a spared one is
-      // also takedown credit V has not been given yet (CBSettleMercy).
-      let victim = 0;
+      // also takedown credit V has not been given yet (CBSettleMercy). A Rival put down alive goes
+      // last of all: settling theirs is what ends their encounter (CBHandleSpared), and pushed out
+      // here it was only scored, so a Rival waiting at their place was waited on for good.
+      let victim = -1;
       let k = 0;
-      while k < ArraySize(this.m_escapees) {
+      while k < ArraySize(this.m_escapees) && victim < 0 {
         let cand = this.m_escapees[k];
         if !IsDefined(cand) || !cand.spared {
           victim = k;
-          break;
         }
         k += 1;
+      }
+      k = 0;
+      while k < ArraySize(this.m_escapees) && victim < 0 {
+        if !this.m_escapees[k].wasRival {
+          victim = k;
+        }
+        k += 1;
+      }
+      if victim < 0 {
+        victim = 0;
       }
       let evicted = this.m_escapees[victim];
       ArrayErase(this.m_escapees, victim);
@@ -3457,6 +3627,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
   public func GetEscapees() -> array<ref<CBEscapee>> {
     return this.m_escapees;
+  }
+
+  public func HasEscapee(id: EntityID) -> Bool {
+    for e in this.m_escapees {
+      if IsDefined(e) && Equals(e.entityId, id) {
+        return true;
+      }
+    }
+    return false;
   }
   public func RemoveEscapee(e: ref<CBEscapee>) -> Void {
     ArrayRemove(this.m_escapees, e);

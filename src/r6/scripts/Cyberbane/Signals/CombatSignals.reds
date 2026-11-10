@@ -56,8 +56,29 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 public class CBDeathCallback extends DelayCallback {
   public let puppet: wref<ScriptedPuppet>;
   public let id: EntityID;
+  public let waits: Int32;
 
   public func Call() -> Void {
+    // Somebody died in the seconds V was down. Held until V is up again, which only a death
+    // alternative brings; a load throws the whole world away first, and this with it. Given up on,
+    // only the record goes, which touches nothing in the world.
+    let game = GetGameInstance();
+    if CBVDown(game) {
+      let ds = GameInstance.GetDelaySystem(game);
+      if this.waits < CBConfig.CallbackStableWaits() && IsDefined(ds) {
+        let again = new CBDeathCallback();
+        again.puppet = this.puppet;
+        again.id = this.id;
+        again.waits = this.waits + 1;
+        ds.DelayCallback(again, CBConfig.ConvoyStepDelay(), false);
+        return;
+      }
+      let sysW = CyberbaneSystem.Get(game);
+      if IsDefined(sysW) {
+        sysW.DropEscapeeByEntity(this.id);
+      }
+      return;
+    }
     if IsDefined(this.puppet) {
       CBOnPuppetDeath(this.puppet);
       return;
@@ -99,7 +120,8 @@ public class CBHitFollowUpCallback extends DelayCallback {
     p.cbHitQueued = false;
     let game = p.GetGame();
     let sys = CyberbaneSystem.Get(game);
-    if !IsDefined(sys) || !p.IsAttached() {
+    // Nobody breaks and runs from V, or is spared by V, while V is dead.
+    if !IsDefined(sys) || !p.IsAttached() || CBVDown(game) {
       return;
     }
     // A wounded enemy may lose its nerve and run (spec §10.2).
@@ -192,6 +214,20 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     let tagged = IsDefined(desE) && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival");
     let slain = tagged ? CBResolveSlainRival(sysE, puppet)
                        : CBFindRivalByBody(sysE, puppet.GetEntityID());
+    // Their encounter was already over and the body was still here: put down and left breathing, or
+    // got away, and finished after all - knocked out, then run over. That is the Rival dead, not a
+    // stranger. Their encounter needs no closing and nobody else's body may be swept for it: another
+    // Rival can be out by now.
+    let former = false;
+    if !IsDefined(slain) && !tagged {
+      let formerId = sysE.TakeFormerRivalBody(puppet.GetEntityID());
+      let was = formerId > 0 ? sysE.FindRivalById(formerId) : null;
+      if IsDefined(was) && (was.state == EnumInt(ECBRivalState.Active) || was.state == EnumInt(ECBRivalState.Hunting)
+                            || was.state == EnumInt(ECBRivalState.Debtor)) {
+        slain = was;
+        former = true;
+      }
+    }
     // Their chair, read before the hierarchy fills it again.
     let slainRole = IsDefined(slain) ? CBRivalRole(sysE, slain) : CBRoleNone();
     if IsDefined(slain) || tagged {
@@ -209,14 +245,16 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
           }
         }
       }
-      // Shared with the escape and mercy endings, so all three clear the same things. The
-      // marker is already off this puppet from the top of this function; this clears the
-      // encounter slot and forgets the body.
-      CBCloseRivalEncounter(sysE, game, slain, puppet);
-      // Do not delete the entity from inside its own death handler - the engine is still
-      // tearing this puppet down and destroying it here frees it underneath that work.
-      // Queue the sweep instead; the next settled fast tick clears the tag (crash safety).
-      sysE.RequestRivalSweep();
+      if !former {
+        // Shared with the escape and mercy endings, so all three clear the same things. The
+        // marker is already off this puppet from the top of this function; this clears the
+        // encounter slot and forgets the body.
+        CBCloseRivalEncounter(sysE, game, slain, puppet);
+        // Do not delete the entity from inside its own death handler - the engine is still
+        // tearing this puppet down and destroying it here frees it underneath that work.
+        // Queue the sweep instead; the next settled fast tick clears the tag (crash safety).
+        sysE.RequestRivalSweep();
+      }
     }
     // Putting a gang's apex enforcer down is a trophy worth keeping (spec §9.9). Only counts
     // when V actually had a hand in it.

@@ -483,8 +483,13 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       if toasts && IsDefined(content) {
         CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalGotAwayLine(r), CBHudRed());
       }
+      // The one ending that still cleared its own subset: the active id, but never the body, so the
+      // record went on naming a body that could still be standing, and CBLiveRivalPresent read the
+      // Rival lane as busy until it was swept.
+      CBCloseRivalEncounter(sys, game, r, e.puppet);
+    } else {
+      sys.SetActiveRivalId(0);
     }
-    sys.SetActiveRivalId(0);
     // They got away, so let them be seen getting away.
     CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
     return;
