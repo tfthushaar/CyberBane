@@ -182,14 +182,20 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     if info.victimClass != EnumInt(ECBVictimClass.Civilian) && TDBID.IsValid(info.recordID)
        && !info.victimIsUnique && CBRecordIsPerson(info.recordID)
        && !CBRecordDrawsPolice(info.recordID) {
-      fs.sampleRecord = info.recordID;
+      // Never a netrunner as the crew's template (1.8.5). A crew is copies of this one record, so the
+      // last kill being a netrunner - often, with More Netrunners - sent a whole crew of them, weak in
+      // the open. They are still kept, as the gang's netrunner, and come one to a crew.
+      let netrunner = CBRecordIsNetrunner(info.recordID);
+      if !netrunner {
+        fs.sampleRecord = info.recordID;
+      }
       // And file it under its combat role, for the apex squad (spec §9.9).
       CBCaptureRoleRecord(fs, info.recordID);
       // An elite, officer or boss makes a far better template for the gang's apex enforcer
       // than a rank-and-file ganger (spec §9.9).
-      if info.victimClass == EnumInt(ECBVictimClass.Elite)
+      if !netrunner && (info.victimClass == EnumInt(ECBVictimClass.Elite)
          || info.victimClass == EnumInt(ECBVictimClass.Officer)
-         || info.victimClass == EnumInt(ECBVictimClass.Boss) {
+         || info.victimClass == EnumInt(ECBVictimClass.Boss)) {
         fs.eliteRecord = info.recordID;
       }
     }

@@ -138,16 +138,36 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
 
   // Epithets by Rival source + promotion. Added to at the end only, as above.
   let e = new CBEpithets();
+  // 1.8.5 added the second line of each, at the end, so every Rival who already has one keeps it.
   e.survivor = ["Who Ran", "the Survivor", "Last One Standing", "Still Breathing", "Lucky", "Cockroach",
-                "Nine Lives", "the Getaway", "Not Today", "Long Shot", "Walked Away", "Patched Up", "Bad Penny"];
+                "Nine Lives", "the Getaway", "Not Today", "Long Shot", "Walked Away", "Patched Up", "Bad Penny",
+                "Slippery", "Ghost Step", "Close Call", "Half-Dead", "Stitches", "Second Wind", "Rabbit",
+                "Back Door", "Fire Escape", "Scar Tissue", "Escape Artist", "Near Miss", "Quickstep",
+                "Sewer Rat", "Runaway", "Sixth Life", "Dodger", "Blood Trail", "Hard Case", "Leftover",
+                "Tourniquet", "Gone Ghost"];
   e.spared = ["the Humbled", "Second Chance", "Iron Jaw", "Owes You", "Let Go", "Borrowed Time",
-              "the Mercy Case", "Kneeler", "On Notice", "Grudge", "Turned Loose"];
+              "the Mercy Case", "Kneeler", "On Notice", "Grudge", "Turned Loose",
+              "Pardoned", "the Forgiven", "Bent Knee", "Sore Loser", "Bruised Pride", "Paper Tiger",
+              "Lost Face", "Stood Down", "Grace Period", "Clean Slate", "the Reprieve", "Charity Case",
+              "Spit Blood", "Glass Jaw", "Ground Floor", "Small Mercy", "Paroled", "Bad Memory",
+              "Unfinished", "Proud Again", "Sleepless", "Shoulder Chip"];
   e.killer = ["V-Killer", "the Undertaker", "Flatline", "Gravedigger", "Last Face", "Zero Count",
-              "Toe Tag", "the Closer", "Lights Out", "Body Bag", "Final Word"];
+              "Toe Tag", "the Closer", "Lights Out", "Body Bag", "Final Word",
+              "Executioner", "the Reaper", "Coffin Nail", "Morgue Ticket", "Dead Air", "Endgame",
+              "the Mortician", "Six Feet", "Cold Hands", "Headstone", "Tombstone", "Black Bag",
+              "Last Rites", "Wake Call", "Ashes", "Bone Saw", "Grim", "Hearse", "Requiem", "Coroner",
+              "Eulogy", "Kill Count"];
   e.avenger = ["Bloodsworn", "the Avenger", "Blood Debt", "the Reckoning", "Payback", "Oathbound",
-               "Widowmaker", "Eye for an Eye", "Black Armband", "Settling Up", "Next of Kin", "Vendetta", "Unforgiven"];
+               "Widowmaker", "Eye for an Eye", "Black Armband", "Settling Up", "Next of Kin", "Vendetta", "Unforgiven",
+               "Blood Price", "Scarred Oath", "Hold Fast", "Ember", "the Mourner", "Grudgebound",
+               "Debt Collector", "Red Ledger", "Grave Oath", "Burning Bridge", "Last Wish", "Ironclad",
+               "Tears Dry", "Hell Bent", "No Mercy", "Wildfire", "Tenfold", "Back Pay", "Cold Comfort",
+               "Heartbreak", "Sworn", "Salt Wound"];
   e.hunter = ["the Hound", "Bounty", "Tracker", "Bloodhound", "Long Arm", "the Collector", "Contract",
-              "Headhunter", "Pointman", "Sniffer", "Repo"];
+              "Headhunter", "Pointman", "Sniffer", "Repo",
+              "Trigger", "Scope", "Bird Dog", "Night Owl", "the Ferret", "Lockjaw", "Leash", "Snare",
+              "Steel Trap", "Fetch", "Tailgate", "Shadow", "Crosshair", "Spotter", "Packwolf",
+              "Bounty Board", "Tagger", "Gunsight", "Homing", "Sure Shot", "Posse", "Manhunter"];
   e.promotion = ["Twice-Burned", "the Unbroken", "Scarface"];
   c.SetEpithets(e);
 }

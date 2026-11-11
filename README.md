@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.8.4).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.8.5).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -141,7 +141,9 @@ in active development. This page describes what the mod does and how it installs
   chase you, they climb the ranks on their own while you are busy elsewhere, and every time one
   escapes it returns a rank higher and scarred. Each one is built to the same grade as a member
   of an apex squad, and they keep getting stronger: every escape, every mercy and every time
-  they put you down makes the one who comes back harder than the one who left. Each arrives
+  they put you down makes the one who comes back harder than the one who left. A new Rival is
+  just their name; they earn a nickname by moving up a rank or by putting you down, and no two
+  on a save share one while there are new ones to give. Each arrives
   with a bar at the top of the screen carrying their name, and texts you when they have found
   you. Scan one and the scanner gives that name too, over their class, the way it names an NCPD
   target. Put down the one hunting you and it is finally finished. Anyone who kills you can also
@@ -179,6 +181,13 @@ in active development. This page describes what the mod does and how it installs
   them. The text tells you who is leading them and how many follow. They stay until the fight is
   settled: until you put them down, or get far enough away and stay gone long enough that they
   give up. **Crews bring the apex squad**, under Gangs, sends the crew alone.
+- **They fight like they mean it.** Shooters work from cover and good firing spots and keep firing
+  on the move, snipers find a perch, blades block and parry, heavies keep walking at you, and one
+  of each crew carries grenades to get you out from behind cover. A crew that comes without its
+  apex squad brings a netrunner who hangs back and hacks you with the full range of the game's own
+  hacks, on its own cooldowns, but never the ones that kill outright or take you over. Netrunners
+  from other mods, such as More Netrunners, come along once you have met them. With Much Better AI
+  or New Game Plus installed, they decide how everyone fights instead.
 - **They come for a reason.** A gang that wants you dead sends a crew when it has a reason
   today: you killed their people where somebody saw it, you have been hanging around on their
   streets long enough for a lookout to call it in, you hurt them in the last half a day, or they

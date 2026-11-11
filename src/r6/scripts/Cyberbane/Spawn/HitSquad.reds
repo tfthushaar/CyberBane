@@ -161,6 +161,19 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
                              CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
     }
   }
+  // And their netrunner (1.8.5), hanging back while the rest go in. Not with an apex squad, which
+  // brings its own fourth chair; not for a crew of one or two; never past the live ceiling. One body,
+  // placed the way the crew was (CBSpawnGroup), so it is one of the crew in every count.
+  if spawned >= CBConfig.NetrunnerSeatMinCrew() && !withApex {
+    let netrunner = CBNetrunnerSeatRecord(fs);
+    if TDBID.IsValid(netrunner) && CBSpawnRoom(game) >= 1 {
+      let netBody: EntityID;
+      if CBSpawnGroup(game, netrunner, n"", 1, n"CB_Squad", CBConfig.HitSquadMinSpawnDistance() + 20.0, netBody) > 0 {
+        spawned += 1;
+        CBLog.Info(n"Spawn", s"A netrunner comes with the \(NameToString(fs.id)) crew.");
+      }
+    }
+  }
   if spawned <= 0 && !withApex {
     // Nothing queued, so the cooldown does not start - but the appointment has to be aged or
     // it stands for ever, and a standing appointment keeps the lane busy. That is the Rival
@@ -172,6 +185,9 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
 
   fs.lastHitSquadAt = now;
   sys.SetActiveSquadFaction(fs.id);
+  // Said for this crew either way, not left over from the last one: whether a crew grenadier is
+  // chosen, and when the crew counts as beaten, both read it (Spawn/Spawner.reds, CombatSignals).
+  sys.SetActiveSquadApex(withApex);
   if withApex {
     // One hit squad: the crew is beaten once its apex is down too, and their kills are spent.
     sys.SetActiveSquadApex(true);

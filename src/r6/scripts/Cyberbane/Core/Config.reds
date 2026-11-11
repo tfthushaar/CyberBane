@@ -1119,6 +1119,8 @@ public abstract class CBConfig {
   public static func CapSightings() -> Int32 = 48
   // Pins gathered from every active objective (CBRefreshJobPins). A full journal has a few dozen.
   public static func JobPinCap() -> Int32 = 64
+  // A crew this size or bigger brings a netrunner along (Spawn/HitSquad.reds, 1.8.5).
+  public static func NetrunnerSeatMinCrew() -> Int32 = 3
   // Rivals forgotten one at a time, kept in the service for every save of their playthrough.
   public static func CapForgottenRivals() -> Int32 = 64
   public static func CapGangPower() -> Int32 = 96

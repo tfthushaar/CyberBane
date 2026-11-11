@@ -129,15 +129,32 @@ func CBRivalPickFreeEpithet(sys: ref<CyberbaneSystem>, content: ref<CyberbaneCon
   }
   let n = ArraySize(CBEpithetsForSource(content, rival.source));
   let start = rival.epithet;
-  let step = 0;
-  while step < n {
-    rival.epithet = (start + step) % n;
-    if !CBRivalEpithetTaken(sys, content, rival) {
-      return;
+  // First one nobody on this save has ever had (1.8.5), written down in the same book as the names;
+  // then, once a long playthrough has used those up, one nobody on the roster has now.
+  let book = CBRivalNameBook.Get(sys.GetGameInstance());
+  let pass = IsDefined(book) ? 0 : 1;
+  while pass < 2 {
+    let step = 0;
+    while step < n {
+      rival.epithet = (start + step) % n;
+      if !CBRivalEpithetTaken(sys, content, rival)
+         && (pass == 1 || !book.Has(CBEpithetBookKey(CBRivalEpithet(content, rival)))) {
+        if IsDefined(book) {
+          book.Remember(CBEpithetBookKey(CBRivalEpithet(content, rival)));
+        }
+        return;
+      }
+      step += 1;
     }
-    step += 1;
+    pass += 1;
   }
   rival.epithet = start;
+}
+
+// Nicknames share the name book's list (Rivals/NameBook.reds), marked so they can never be mistaken for
+// a name: the list is data, so the save keeps its shape.
+func CBEpithetBookKey(epithet: String) -> CName {
+  return StringToName("E|" + epithet);
 }
 
 func CBRivalEpithetTaken(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Bool {
@@ -158,6 +175,10 @@ func CBRivalRosterIntoBook(book: ref<CBRivalNameBook>, sys: ref<CyberbaneSystem>
       let name = CBRivalBareName(content, other);
       if StrLen(name) > 0 {
         book.Remember(StringToName(name));
+      }
+      let epithet = CBRivalEpithet(content, other);
+      if StrLen(epithet) > 0 {
+        book.Remember(CBEpithetBookKey(epithet));
       }
     }
   }
@@ -213,6 +234,10 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
 // Full on-screen name, e.g. Kenji "Who Ran" Morita.
 // A last-resort handle so nobody is ever called "Unknown". Keyed off the Rival id, so the
 // same Rival always reads the same way.
+public func CBRivalEarnedNickname(rival: ref<CBRival>) -> Bool {
+  return IsDefined(rival) && (rival.rank >= 2 || rival.killedV > 0);
+}
+
 func CBFallbackHandle(id: Int32) -> String {
   switch CBHashIndex(id, 7, 8) {
     case 0: return "Nomad";
@@ -250,7 +275,10 @@ public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRiva
       }
     }
   }
-  let epithet = CBRivalEpithet(content, rival);
+  // A nickname is earned (1.8.5): by moving up a rank, or by putting V down. A rank one Rival is
+  // just their name, so the ones who have done something stand out, and the same few nicknames are
+  // not on everybody.
+  let epithet = CBRivalEarnedNickname(rival) ? CBRivalEpithet(content, rival) : "";
   let name = first;
   if StrLen(epithet) > 0 {
     name = name + " \"" + epithet + "\"";
@@ -480,6 +508,17 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
       }
       if TDBID.IsValid(fs.roleNetrunnerRecord) && CBRecordUnfitTemplate(fs.roleNetrunnerRecord) {
         fs.roleNetrunnerRecord = TDBID.None(); wiped += 1;
+      }
+      // A netrunner filed as the crew template before 1.8.5 moves to the netrunner's chair, and the
+      // crew is built from a fighter again.
+      if TDBID.IsValid(fs.sampleRecord) && CBRecordIsNetrunner(fs.sampleRecord) {
+        if !TDBID.IsValid(fs.roleNetrunnerRecord) {
+          fs.roleNetrunnerRecord = fs.sampleRecord;
+        }
+        fs.sampleRecord = TDBID.IsValid(fs.roleAssaultRecord) ? fs.roleAssaultRecord : fs.roleBladeRecord;
+      }
+      if TDBID.IsValid(fs.eliteRecord) && CBRecordIsNetrunner(fs.eliteRecord) {
+        fs.eliteRecord = TDBID.None();
       }
       // A gang left with no crew template would stop sending anybody until V next killed one of
       // theirs, so it falls back on its own rank and file.

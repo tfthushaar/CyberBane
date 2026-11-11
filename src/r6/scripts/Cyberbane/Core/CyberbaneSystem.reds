@@ -335,6 +335,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The hit squad out right now came with its gang's apex squad (Spawn/HitSquad.reds). Session only.
   private let m_activeSquadApex: Bool;
   private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
+  private let m_crewGrenadier: Bool;                  // this crew's grenadier is already chosen (1.8.5)
   private let m_huntHoldReason: Int32;        // why no Rival can arrive right now (CBHold*)
   // Kills V has made recently, for Aura. Session-only: it describes the last minute, not the
   // playthrough. Counting V's own kills rather than scanning for nearby corpses is deliberate -
@@ -763,6 +764,16 @@ public class CyberbaneSystem extends ScriptableSystem {
   // into whatever squad the last survivor of the previous one is still anchoring.
   public func ClearSquadAnchor() -> Void {
     this.m_squadAnchor = null;
+    this.m_crewGrenadier = false;
+  }
+
+  // The crew being dispatched has its grenadier now (Spawn/Tactics.reds). True once per crew.
+  public func TakeCrewGrenadier() -> Bool {
+    if this.m_crewGrenadier {
+      return false;
+    }
+    this.m_crewGrenadier = true;
+    return true;
   }
 
   public func GetPendingArrivalFaction() -> CName {

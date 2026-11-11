@@ -246,10 +246,16 @@ func CBApplyCorpKit(npc: ref<NPCPuppet>) -> Void {
 // rather than a fight. What they never had is any idea how to fight somebody who has beaten
 // them before.
 public func CBKitCyberpsycho(npc: ref<NPCPuppet>) -> Void {
-  if !IsDefined(npc) || npc.cbKitted || !CBAiKitOwner() {
+  if !IsDefined(npc) || npc.cbKitted {
     return;
   }
   npc.cbKitted = true;
+  // Every other kit stands down when Much Better AI or New Game Plus owns kitting. This one had the
+  // test the wrong way round and ran only when one of them did, so a returning cyberpsycho got no kit
+  // at all without them and a doubled one with them.
+  if CBAiKitOwner() {
+    return;
+  }
   CBGrantAbility(npc, t"Ability.CanShootWhileMoving");
   CBGrantAbility(npc, t"Ability.CanCatchUp");
   CBGrantAbility(npc, t"Ability.CanUseAntiStun");
@@ -383,6 +389,7 @@ public func CBKitApexSeat(npc: ref<ScriptedPuppet>, seat: Int32) -> Void {
   if CBIsCorpFaction(CBClassifyFaction(npc)) {
     CBApplyCorpKit(asNpc);
   }
+  CBApplyTactics(asNpc, true);   // Spawn/Tactics.reds
 }
 
 // Work out a spawned enforcer's role from what it actually is, and kit it out.
@@ -412,6 +419,7 @@ public func CBKitApexMember(npc: ref<ScriptedPuppet>) -> Void {
   if CBIsCorpFaction(CBClassifyFaction(npc)) {
     CBApplyCorpKit(asNpc);
   }
+  CBApplyTactics(asNpc, true);   // Spawn/Tactics.reds
 }
 
 // The lighter kit, for the rank and file of a hit squad.
@@ -441,6 +449,8 @@ public func CBKitSquadMember(npc: ref<ScriptedPuppet>) -> Void {
     CBGrantAbility(asNpc, t"Ability.CanCatchUp");
     CBGrantAbility(asNpc, t"Ability.CanUseAntiStun");
   }
+  // And how each of them fights, by what they are (Spawn/Tactics.reds).
+  CBApplyTactics(asNpc, false);
 }
 
 // Put the team in one squad, so they fight as a team.

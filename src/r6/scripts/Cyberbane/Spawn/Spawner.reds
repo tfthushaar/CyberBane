@@ -1203,6 +1203,12 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   if isApex || isSquad {
     CBJoinSquadWith(sys, puppet);
   }
+  // The first of a crew who can carry them carries the grenades (Spawn/Tactics.reds). The apex
+  // squad's shooter already does, so a crew that came with its apex has its grenadier there.
+  if isSquad && !isApex && !CBAiKitOwner() && !sys.ActiveSquadHasApex() && CBCanBeGrenadier(puppet as NPCPuppet)
+     && sys.TakeCrewGrenadier() {
+    CBMakeGrenadier(puppet as NPCPuppet);
+  }
   if isRival || isLair {
     // Whose body this is. The body recorded at spawn is the exact answer, and the only one for a
     // Rival waiting at their place, who is nobody's active encounter. For one sent after V the

@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.8.4. The "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.8.5. The "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -19,6 +19,39 @@ deleted: a retired one becomes a stub at the same path** (`tools/check_removed.p
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
 
 ## Requests after 1.8.3
+
+### "Netrunners in the crew, with better hacks, and everyone more tactical"
+
+**Status: in 1.8.5** (`Spawn/Tactics.reds`, new; `Spawn/ApexSquad.reds`, `Spawn/HitSquad.reds`, `Spawn/Spawner.reds`,
+`Model/Reputation.reds`). Combat is the game's AI (every Cyberbane move order is `ignoreInCombat`), which
+picks tactics from abilities, so the work is abilities, applied the way Much Better AI applies them
+(read from the archetype, through the ability's package, skipped when already applied, no hand-to-hand
+ability for machines or cyberpsychos). None of its code; its spacing, aim and netrunner-cadence shaping
+stay its own, and `CBAiKitOwner` stands all of this down when it or New Game Plus is installed.
+- `CBApplyTactics` by fighting style (`CBFightStyleOf`): rifle (PrefersCovers, CanUseShootingSpots,
+  CanShootWhileMoving; elite adds CanPreciseShoot, CanCatchUp), shotgun, sniper (PrefersShootingSpots),
+  blade (CanBlock, CanParry), heavy (CanBlock; elite CanGuardBreak), netrunner. Called from the squad,
+  apex seat and apex member kits.
+- **Hacks without hooks.** The game's `HackActionSelector` already offers every hack, each gated by
+  its ability (`Condition.AbilityCan...QuickHack`) and its own cooldown and tier. `CBGiveNetrunnerHacks`
+  grants seven (Overheat, Blind, Weapon Malfunction, Jam, Locomotion, Cyberware, Overload) to records whose
+  archetype is a netrunner, never Death or the take-over hacks. The alternative Much Better AI uses,
+  wrapping `AISubActionQuickHack_Record_Implementation` and swapping the action, was not needed.
+- **Netrunner seat.** `CBNetrunnerSeatRecord`: the gang's captured `roleNetrunnerRecord` (so More Netrunners
+  records come once met), else the base game's netrunner for Tyger Claws, Maelstrom, Voodoo Boys,
+  Scavengers or Arasaka. One per crew of three or more without its apex squad (`NetrunnerSeatMinCrew`).
+- A netrunner kill no longer becomes `sampleRecord` or `eliteRecord`; `CBPruneUniqueRivals` moves an old
+  one to the netrunner chair.
+- **Grenadier.** The first shooter of a crew without its apex (`TakeCrewGrenadier`, reset with the squad
+  anchor) gets frag and flashbang grenades.
+- `CBKitCyberpsycho` returned when `CBAiKitOwner()` was false: inverted, fixed.
+
+### "Nicknames keep repeating" (decided: earned from rank 2, much more variety)
+
+**Status: in 1.8.5** (`Data/Names.reds`, `Rivals/RivalSystem.reds`). Pools went from 11 to 13 a source to 33
+to 35, appended so stored indices still name the same nickname. `CBRivalEarnedNickname` (rank 2 or more, or
+has killed V) gates the display. `CBRivalPickFreeEpithet` prefers one the save has never used, recorded in the
+name book's list as `E|` entries, so no saved shape changed.
 
 ### "Killed over 320 6th Streets and still no 'ready to send their best' reaction"
 

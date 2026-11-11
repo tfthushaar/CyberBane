@@ -3,6 +3,32 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.8.5] - 2026-11-11
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Changed
+- **Everyone Cyberbane sends fights smarter.** Shooters fight from cover and from good firing spots
+  and keep shooting on the move, snipers find a perch, blades block and parry, heavies keep coming,
+  and one member of each crew carries grenades to get you out from behind cover. Apex squads and
+  Rivals get a little more on top. If Much Better AI or New Game Plus is installed, they handle this
+  instead.
+- **Netrunners come with crews, and hack properly.** A crew of three or more that comes without its
+  apex squad brings a netrunner who hangs back. Netrunners now use the whole range of the game's own
+  hacks on you, from Reboot Optics to Short Circuit, on the game's own cooldowns, instead of only
+  Overheat. Never the ones that kill outright or take you over. Netrunners from other mods, such as
+  More Netrunners, come along too once you have met them.
+- **Nicknames are earned, and there are far more of them.** A new Rival is just their name. They earn
+  a nickname by moving up a rank or by putting you down, and no nickname is used twice on a save
+  while there are new ones left.
+
+### Fixed
+- **A crew could be all netrunners.** A crew is made from the last of that gang you killed, so with
+  More Netrunners installed it was often a whole crew of hackers, useless in the open. Netrunners now
+  come one to a crew.
+- **A cyberpsycho who came back for you got none of their extra fighting skill** unless another AI mod
+  was installed, when they got it twice.
+
 ## [1.8.4] - 2026-11-11
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
