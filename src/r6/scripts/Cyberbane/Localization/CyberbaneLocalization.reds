@@ -101,8 +101,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-SafeZoneSpawns", "Allow spawns in safe areas");
     this.Text("Cyberbane-Settings-QuestAreas", "Stay out of quest areas");
     this.Text("Cyberbane-Settings-QuestAreaRadius", "Quest area size (metres)");
-    this.Text("Cyberbane-Settings-QuestAreas-Desc", "Nobody is sent after you while you are on a tracked job, in a conversation or in a restricted area, and hunters already out do not follow you in. The story's own scenes are protected whatever this is set to.");
-    this.Text("Cyberbane-Settings-QuestAreaRadius-Desc", "How close to the tracked objective counts as being on the job. 80 covers almost every gig site.");
+    this.Text("Cyberbane-Settings-QuestAreas-Desc", "Nobody is sent after you while you are on a job (any active one, tracked or not), in a conversation or in a restricted area, and hunters already out hold back until you leave it, even once they have found you. The story's own scenes are protected whatever this is set to.");
+    this.Text("Cyberbane-Settings-QuestAreaRadius-Desc", "How close to an active objective counts as being on the job. 80 covers almost every gig site.");
     this.Text("Cyberbane-Settings-SafeZoneSpawns-Desc", "Let them turn up inside apartments, bars and clinics. Off by default, because the game disarms you there.");
     this.Text("Cyberbane-Settings-SafeZoneCombat", "Let me fight in safe areas");
     this.Text("Cyberbane-Settings-SafeZoneCombat-Desc", "Keeps your hands free in a safe area so you can fight back. Use it with the setting above.");

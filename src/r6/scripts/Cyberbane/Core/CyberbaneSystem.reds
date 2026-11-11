@@ -62,7 +62,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
-  private let m_ledgerDue: Bool;              // the death ledger waits for the first settled tick (StartSession)
+  private let m_ledgerDue: Bool;
+  // The pins of every active objective that is not the tracked one (CBRefreshJobPins, 1.8.4), and
+  // whether V is on a job: near a pin or in a scene, which unlike the quest area leaves out the
+  // hostile zones (CBComputeOnJob). Session only.
+  private let m_jobPins: array<Vector4>;
+  private let m_onJob: Bool;              // the death ledger waits for the first settled tick (StartSession)
   // Rivals forgotten one at a time on the Hub, carried out on the next settled tick (1.8.2).
   private let m_pendingForgets: array<Int32>;
   // A Rival whose whereabouts V is buying on the Hub, the same way. 0 = none.
@@ -945,13 +950,20 @@ public class CyberbaneSystem extends ScriptableSystem {
     // clinic in well under ten seconds, and the reaction systems read this.
     this.m_inSafeZone = CBPlayerInSafeZone(game);
     this.m_inSanctuary = CBComputeSanctuary(this, game);
+    if this.m_tickCount % 30 == 0 {
+      CBRefreshJobPins(this, game);       // every active objective's pins, not only the tracked one
+    }
     if this.m_tickCount % 3 == 0 {
       CBRefreshQuestPins(this, game);
       this.m_inQuestArea = CBComputeQuestArea(game);
+      this.m_onJob = CBComputeOnJob(game);
     }
     CBSafeZoneArmsTick(this, game);     // keep the weapon lock lifted in safe areas when asked
     if this.m_tickCount % 2 == 0 {
       CBCombatReleaseTick(this, game);  // let go of anyone of ours keeping V in combat from afar
+    }
+    if this.m_tickCount % 5 == 2 {
+      CBCompanionHostilityTick(this, game);   // V's companions and ours, set against each other
     }
     if this.m_tickCount % CBConfig.CutOffPassTicks() == 0 {
       CBCutOffTick(this, game);         // and of anyone who cannot get to V, however close
@@ -2884,6 +2896,20 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func SetQuestPins(pins: array<Vector4>) -> Void {
     this.m_questPins = pins;
+  }
+
+  public func GetJobPins() -> array<Vector4> {
+    return this.m_jobPins;
+  }
+
+  public func SetJobPins(pins: array<Vector4>) -> Void {
+    this.m_jobPins = pins;
+  }
+
+  // On a job: near any active objective's pin, or in a scene (1.8.4). Hunters already out hold back
+  // while this is true, the way they do at a sanctuary (Spawn/Hunt.reds).
+  public func IsOnJob() -> Bool {
+    return this.m_onJob;
   }
 
   // Is this point within `radius` of any of the tracked objective's pins?

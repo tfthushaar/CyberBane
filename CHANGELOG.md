@@ -3,6 +3,21 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.8.4] - 2026-11-11
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Fixed
+- **"Ready to send their best", and then nothing.** The Hub said a gang's apex squad was ready as soon
+  as you had killed enough of them, even when something else was stopping it: crews switched off, They
+  Will Remember handling the gangs, the day's apex squads already sent, or you being on a job. It now
+  says what is holding them back, and the log says it too.
+- **Companions ignored the people Cyberbane sends.** Followers, including Jackie through Night City
+  Allies, fought vanilla gangs but stood by while a Rival or a crew shot at you. They fight them now.
+- **Hunters could walk into the middle of a job.** Only the job you were tracking counted, and anyone
+  who had already found you followed you in. Every active job counts now, and everyone already out
+  holds back until you leave it, as they do at a safe place.
+
 ## [1.8.3] - 2026-11-10
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.

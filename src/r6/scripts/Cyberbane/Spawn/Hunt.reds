@@ -127,7 +127,8 @@ public func CBOrderPursue(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   }
   // Every order on foot comes through here. While V is safe there is nowhere to send anybody
   // (Spawn/Sanctuary.reds), and they are asked again once V is not.
-  if IsDefined(sys) && sys.IsInSanctuary() {
+  // Nor onto a job (1.8.4), even once they have found V.
+  if IsDefined(sys) && (sys.IsInSanctuary() || sys.IsOnJob()) {
     CBCancelMove(puppet);
     puppet.cbSearchGen = 0;
     return;
@@ -408,6 +409,16 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if now % 30 == 0 {
       CBLog.Info(n"Spawn", "You are somewhere safe: they will not follow you in.");
     }
+  } else {
+    // On a job, the same (1.8.4). Search orders already stopped here, but only until somebody had
+    // found V: from then on they chased V into the job, which is how a Valentino hunting V walked
+    // into a Maelstrom building in the middle of a gig. Anybody who can see V still fights.
+    if sys.IsOnJob() {
+      CBSanctuaryHold(sys, game, des, player);
+      if now % 30 == 0 {
+        CBLog.Info(n"Spawn", "You are on a job: they hold back until you leave it.");
+      }
+    }
   }
 
   // Can anybody see or hear V? 2 is certain (already fighting V, or heard it), 1 is a sighting.
@@ -448,7 +459,8 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // only place a hunter is handed V as a target (Spawn/Spawner.reds, CBEngageV), so until somebody
   // has actually found V nobody is tracking V and V is not in combat - the phone, saving and fast
   // travel all work while they are still looking. Not while the story has the stage.
-  if sys.GetHuntState() == CBHuntLocated() && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary() {
+  if sys.GetHuntState() == CBHuntLocated() && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary()
+     && !sys.IsOnJob() {
     CBHuntEngage(sys, game, des, ppos);
   }
 
@@ -508,7 +520,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // no orders at all while the story has the stage, whether or not they had found V: anybody still
   // out is somebody V can see, left alone until they are not (Core/StoryHold.reds).
   if now % every == 0 && !(sys.IsInQuestArea() && sys.GetHuntState() != CBHuntLocated())
-     && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary() {
+     && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary() && !sys.IsOnJob() {
     let done = 0;
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Rival", done);
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Apex", done);
@@ -1219,8 +1231,8 @@ public func CBCutOffTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
      || !CBWorldStable(game) {
     return;
   }
-  // Waiting outside V's door because they were told to is not being stuck.
-  if sys.IsInSanctuary() {
+  // Waiting outside V's door, or outside V's job, because they were told to is not being stuck.
+  if sys.IsInSanctuary() || sys.IsOnJob() {
     return;
   }
   let budget = CBConfig.CutOffPathsPerPass();

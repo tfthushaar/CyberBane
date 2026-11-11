@@ -301,6 +301,9 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   }
   // Nobody can arrive right now (a safe area, a job, a scene): the clock waits with them.
   if CBArrivalsHeld(sys, game) {
+    if lane == CBLaneApex() {
+      CBApexLaneNote(sys, game, "you are on a job, somewhere safe or in a scene");
+    }
     return;
   }
   // And a breather afterwards.
@@ -330,6 +333,9 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // because the setting is the player's instruction and a scheduling bug must not be able to
     // exceed it: whatever the plan says, the count is the ceiling.
     if CBLaneBudgetLeft(sys, game, lane) <= 0 {
+      if lane == CBLaneApex() {
+        CBApexLaneNote(sys, game, "today's apex squads have all been sent");
+      }
       return;
     }
     // The spacing floor still applies on top. At default settings the slots are about an hour
@@ -418,11 +424,18 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
     }
   } else {
     if !CBHitSquadsOn() {
+      if lane == CBLaneApex() {
+        CBApexLaneNote(sys, game, CBTwrActive() ? "They Will Remember sends the gangs' people" : "crews are off in Mod Settings");
+      }
       return;
     }
     for fs in sys.GetFactionStates() {
       // The law is not a gang and does not send crews; it has heat and MaxTac for that.
-      if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) && CBFactionFieldsSquads(fs.id) {
+      // An apex squad is built from the gang's apex records (CBApexRecordFor), which CBApexEligible
+      // already asks for. Demanding the crew template as well kept a gang the Hub called ready out
+      // of the apex lane for good whenever it had no crew template on file.
+      if IsDefined(fs) && CBFactionFieldsSquads(fs.id)
+         && (lane == CBLaneApex() || TDBID.IsValid(fs.sampleRecord)) {
         let posture = score.GetPosture(fs.id);
         let hate = ClampF((-fs.standing / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
         let s = 0.0;
@@ -805,7 +818,10 @@ public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState
     return "";
   }
   if CBApexEligible(sys, fs) {
-    return "ready to send their best";
+    // Ready is only ready if the lane can send them. Everything that stops it is said here, in the
+    // lane's own order, so the Hub never promises a squad that is not coming (CBApexBlocker).
+    let why = CBApexBlocker(sys, sys.GetGameInstance(), fs);
+    return StrLen(why) == 0 ? "ready to send their best" : "their best waits: " + why;
   }
   let since = fs.kills - fs.apexAtKills;
   let toApex = CBConfig.ApexKillThreshold() - since;
@@ -1101,5 +1117,50 @@ public func CBNumberWord(n: Int32) -> String {
     case 7: return "Seven";
     case 8: return "Eight";
     default: return s"\(n)";
+  }
+}
+
+// Why this gang's apex squad is not coming right now, in a few words, or "" when nothing stands in
+// the way but the timetable (1.8.4). The lane's own checks, in the lane's order (CBLaneTick,
+// CBLanePick): "ready to send their best" was shown on the gang's eligibility alone, so a player
+// with 320 kills was told 6th Street was ready while crews were off, They Will Remember had the
+// gangs, the day's squads were spent or V was standing on a job.
+public func CBApexBlocker(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>) -> String {
+  if !IsDefined(sys) || !IsDefined(fs) {
+    return "";
+  }
+  if !CBHitSquadsOn() {
+    return CBTwrActive() ? "They Will Remember sends the gangs" : "crews are off in Mod Settings";
+  }
+  if CBLaneDailyCap(CBLaneApex()) <= 0 {
+    return "apex squads are off in Mod Settings";
+  }
+  let queued = sys.GetLaneTarget(CBLaneApex());
+  if NotEquals(queued, n"") && NotEquals(queued, fs.id) {
+    return "another gang's best goes first";
+  }
+  if CBLaneBusy(sys, game, CBLaneApex()) {
+    return "one squad is already out";
+  }
+  if CBArrivalsHeld(sys, game) {
+    return "until you move on";
+  }
+  if CBLaneBudgetLeft(sys, game, CBLaneApex()) <= 0 {
+    return "none left today";
+  }
+  return "";
+}
+
+// Said in the log, once a minute at most, when the apex lane stands still with a gang ready.
+func CBApexLaneNote(sys: ref<CyberbaneSystem>, game: GameInstance, why: String) -> Void {
+  if !IsDefined(sys) || (sys.GetTickCount() - sys.GetLaneQuietLogged(CBLaneApex())) <= 60 {
+    return;
+  }
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) && CBApexEligible(sys, fs) {
+      sys.SetLaneQuietLogged(CBLaneApex(), sys.GetTickCount());
+      CBLog.Info(n"Spawn", s"Apex squad: \(NameToString(fs.id)) is ready, held because \(why).");
+      return;
+    }
   }
 }

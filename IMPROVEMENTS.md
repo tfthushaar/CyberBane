@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.8.3. The "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.8.4. The "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,39 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.8.3
+
+### "Killed over 320 6th Streets and still no 'ready to send their best' reaction"
+
+**Status: fixed in 1.8.4** (`Spawn/Queue.reds`). `CBApexProgressLine` showed "ready to send their best" on
+`CBApexEligible` alone: hostile, enough kills, a usable apex record. The lane checks far more before it
+sends anyone: `CBHitSquadsOn` (the Hit squads setting and They Will Remember), the apex daily cap and the
+day's budget, a busy lane and `CBArrivalsHeld`. `CBApexBlocker` asks those in the lane's order and the
+Hub shows the first one ("their best waits: none left today"); `CBApexLaneNote` logs it once a minute
+while the lane stands still with a gang ready. Separately, `CBLanePick` required the crew template
+`fs.sampleRecord` even for the apex lane, which builds from `CBApexRecordFor`; that requirement is gone
+for apex. The 6th Street roster records all exist on 2.5. Which blocker that player hit is unknown
+without their log; the new line will say.
+
+### "Night City Allies: Jackie doesn't react when a Rival attacks me"
+
+**Status: fixed in 1.8.4** (`Spawn/Spawner.reds`). The game turns an NPC hostile with
+`SetAttitudeTowardsAgentGroup` (`AIActionHelper.TryChangingAttitudeToHostile`), which covers V's companions;
+`CBMakeHostileToPlayer` set an agent attitude toward V alone. Now it also pairs the NPC with each
+companion (`ScriptedPuppet.IsPlayerCompanion`, found in the NPC registry), both directions, agent to agent.
+The group form is deliberately not used: it changes attitudes between whole groups, which reaches vanilla
+NPCs. `CBCompanionHostilityTick` repeats the pairing every five ticks for a companion recruited mid-fight.
+
+### "A Valentino barged in while I was doing the Rite of Passage gig"
+
+**Status: fixed in 1.8.4** (`Core/SafeAreas.reds`, `Spawn/Hunt.reds`). "On a job" was the tracked objective's
+pins only, and once the hunt had located V the search-order hold lifted, so hunters chased V into the job.
+`CBRefreshJobPins` adds every active objective's pins (journal quests, phases, objectives; read-only, both
+patches) every thirty ticks; `IsOnJob` (a scene or near those pins, without the hostile zones the quest
+area includes) holds everybody out like a sanctuary, located or not, and stops engagement and cut-off
+removal. Why a Valentino was after V at all needs the player's log. Cross-gang hostility was considered
+and declined: it changes what vanilla NPCs do.
 
 ## Requests after 1.8.2
 

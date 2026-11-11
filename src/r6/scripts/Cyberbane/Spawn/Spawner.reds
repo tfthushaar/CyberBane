@@ -1400,6 +1400,10 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
     }
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
   }
+  // And V's companions, who were never told. The game makes an enemy hostile to V's whole group
+  // (AIActionHelper.TryChangingAttitudeToHostile, SetAttitudeTowardsAgentGroup); this was V alone, so
+  // a follower - Jackie through Night City Allies - stood by while a Rival shot at V.
+  CBMakeHostileToCompanions(CyberbaneSystem.Get(game), puppet);
   // Hostile, and nothing more. They are not handed V as a target here.
   //
   // This used to inject V into their target tracker the moment they were set up, so that a
@@ -1519,4 +1523,69 @@ func CBSweepDownedTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dy
 // at the Verbose log level, so the last lines before a crash say what Cyberbane was doing.
 public func CBTrace(what: String) -> Void {
   CBLog.Verbose(n"Trace", what);
+}
+
+// V's companions, by the game's own test (ScriptedPuppet.IsPlayerCompanion), among the NPCs Cyberbane
+// already tracks (every attached NPC, Reactions/NpcRegistry.reds). Settled ones only.
+public func CBPlayerCompanions(sys: ref<CyberbaneSystem>) -> array<wref<ScriptedPuppet>> {
+  let out: array<wref<ScriptedPuppet>>;
+  let reg = IsDefined(sys) ? sys.GetRegistry() : null;
+  if !IsDefined(reg) {
+    return out;
+  }
+  for p in reg.GetAll() {
+    if CBNpcSafe(sys, p) && !p.IsDead() && ScriptedPuppet.IsPlayerCompanion(p) {
+      ArrayPush(out, p);
+    }
+  }
+  return out;
+}
+
+// One of ours and each companion of V's, hostile to each other. Pair by pair, the same call that makes
+// them hostile to V: never the group form, which would set whole groups against each other and turn
+// vanilla NPCs who have nothing to do with this.
+public func CBMakeHostileToCompanions(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(sys) || !CBStillStanding(puppet) || !puppet.IsAttached() {
+    return;
+  }
+  let agent = puppet.GetAttitudeAgent();
+  if !IsDefined(agent) {
+    return;
+  }
+  for c in CBPlayerCompanions(sys) {
+    let cagent = c.GetAttitudeAgent();
+    if IsDefined(cagent) && NotEquals(c.GetEntityID(), puppet.GetEntityID())
+       && NotEquals(agent.GetAttitudeTowards(cagent), EAIAttitude.AIA_Hostile) {
+      CBTrace("attitude: one of ours and V's companion");
+      agent.SetAttitudeTowards(cagent, EAIAttitude.AIA_Hostile);
+      cagent.SetAttitudeTowards(agent, EAIAttitude.AIA_Hostile);
+    }
+  }
+}
+
+// A companion recruited, or streamed in, after ours were set up. Every few settled ticks while any of
+// ours who is hostile to V is standing: pairs not yet set are set. Nothing at all without a companion.
+public func CBCompanionHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  let player = GetPlayer(game);
+  if !IsDefined(sys) || !IsDefined(des) || !IsDefined(player) || !des.IsPopulated(n"Cyberbane") {
+    return;
+  }
+  if ArraySize(CBPlayerCompanions(sys)) == 0 {
+    return;
+  }
+  let pagent = player.GetAttitudeAgent();
+  if !IsDefined(pagent) {
+    return;
+  }
+  let ids = des.GetTaggedIDs(n"Cyberbane");
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if CBStillStanding(p) && CBNpcSafe(sys, p) && IsDefined(p.GetAttitudeAgent())
+       && Equals(p.GetAttitudeAgent().GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
+      CBMakeHostileToCompanions(sys, p);
+    }
+  }
 }

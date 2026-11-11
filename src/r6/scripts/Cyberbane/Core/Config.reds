@@ -1117,6 +1117,8 @@ public abstract class CBConfig {
   public static func CapForgetNotes() -> Int32 = 32
   public static func CapRetiredIds() -> Int32 = 64
   public static func CapSightings() -> Int32 = 48
+  // Pins gathered from every active objective (CBRefreshJobPins). A full journal has a few dozen.
+  public static func JobPinCap() -> Int32 = 64
   // Rivals forgotten one at a time, kept in the service for every save of their playthrough.
   public static func CapForgottenRivals() -> Int32 = 64
   public static func CapGangPower() -> Int32 = 96

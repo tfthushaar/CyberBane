@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.8.3).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.8.4).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -496,6 +496,8 @@ Three worth knowing about if a playstyle is being treated unfairly:
   disable one side's crowd reactions.
 - Night City Alive and other crowd or patrol mods: supported.
 - AMM, romance and companion mods, quest NPCs and unique characters: always left untouched.
+- Companions and followers, the game's own and those from mods such as Night City Allies: they fight
+  the crews, apex squads and Rivals Cyberbane sends, the same as any gang that shoots at you.
 - Safe areas: in places the game itself treats as safe, such as apartments, clinics, bars and
   memorials, Cyberbane's reactions stand down and nobody there responds to you. Nobody is sent
   after you in one either, because the game forces your hands empty in those places and that

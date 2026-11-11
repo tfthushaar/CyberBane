@@ -215,10 +215,73 @@ public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) ->
         }
       }
     }
+    // And every other active objective's, gathered less often (CBRefreshJobPins). The tracked one
+    // alone left a gig V was doing without tracking it - "Rite of Passage" - open to a Valentino
+    // walking in on it.
+    for jp in sys.GetJobPins() {
+      ArrayPush(pins, jp);
+    }
   }
   if IsDefined(sys) {
     sys.SetQuestPins(pins);
   }
+}
+
+// The pins of every active quest and gig objective (1.8.4): active quests, their active phases,
+// their active objectives, and where each objective's pins are. Read-only journal and mappin calls,
+// both on 2.31 and 2.5. Every thirty settled ticks, because a list of every quest is not a thing to
+// walk every three seconds, and capped so a long journal cannot grow it without end.
+public func CBRefreshJobPins(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let pins: array<Vector4>;
+  let rtQ = CyberbaneRuntime.Get();
+  let respect = !IsDefined(rtQ) || !rtQ.HasSettings() || rtQ.GetSettings().respectQuestAreas;
+  let journal = GameInstance.GetJournalManager(game);
+  let ms = GameInstance.GetMappinSystem(game);
+  if IsDefined(sys) && respect && IsDefined(journal) && IsDefined(ms) {
+    let ctx: JournalRequestContext;
+    ctx.stateFilter.active = true;
+    let quests: array<wref<JournalEntry>>;
+    journal.GetQuests(ctx, quests);
+    for q in quests {
+      let phases: array<wref<JournalEntry>>;
+      journal.GetChildren(q, ctx.stateFilter, phases);
+      for ph in phases {
+        let objectives: array<wref<JournalEntry>>;
+        journal.GetChildren(ph, ctx.stateFilter, objectives);
+        for o in objectives {
+          if IsDefined(o as JournalQuestObjectiveBase) && ArraySize(pins) < CBConfig.JobPinCap() {
+            let positions: array<Vector3>;
+            if ms.GetQuestMappinPositionsByObjective(Cast<Uint32>(journal.GetEntryHash(o)), positions) {
+              for p in positions {
+                if ArraySize(pins) < CBConfig.JobPinCap() {
+                  ArrayPush(pins, Vector4.Vector3To4(p));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if IsDefined(sys) {
+    sys.SetJobPins(pins);
+  }
+}
+
+// On a job (1.8.4): in a scene, or near one of the pins above. The quest area without its hostile
+// zones: a gang's territory is not a job, and a fight that moves into one carries on as it always has.
+public func CBComputeOnJob(game: GameInstance) -> Bool {
+  let rtQ = CyberbaneRuntime.Get();
+  if IsDefined(rtQ) && rtQ.HasSettings() && !rtQ.GetSettings().respectQuestAreas {
+    return false;
+  }
+  if CBPlayerInScene(game) {
+    return true;
+  }
+  let sys = CyberbaneSystem.Get(game);
+  let player = GetPlayer(game);
+  return IsDefined(sys) && IsDefined(player)
+      && sys.NearQuestPins(player.GetWorldPosition(), CBQuestAreaRadius());
 }
 
 // Can anybody arrive right now? Not in a safe area (unless allowed), not on a job, not in a scene,
