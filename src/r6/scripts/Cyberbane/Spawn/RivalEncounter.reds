@@ -55,6 +55,15 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     //
     // Losing them now promotes them and buys real time before they find you again.
     CBRivalEscapedByPlayer(sys, game);
+    // And everyone who came with them (1.9.0).
+    for pid in sys.GetPackRivals() {
+      let partner = sys.FindRivalById(pid);
+      if IsDefined(partner) && partner.state == EnumInt(ECBRivalState.Hunting) {
+        CBRivalEscapedByPlayerFor(sys, game, partner);
+        CBCloseRivalEncounter(sys, game, partner, null);
+      }
+    }
+    sys.ClearPack();
     CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
     sys.SetActiveRivalId(0);
   }
@@ -155,8 +164,12 @@ public func CBRivalEscapedByPlayer(sys: ref<CyberbaneSystem>, game: GameInstance
   if !IsDefined(sys) {
     return;
   }
-  let got = sys.FindRivalById(sys.GetActiveRivalId());
-  if !IsDefined(got) {
+  CBRivalEscapedByPlayerFor(sys, game, sys.FindRivalById(sys.GetActiveRivalId()));
+}
+
+// V shook this one off (1.9.0: any Rival, not only the active one, so one who came with them counts).
+public func CBRivalEscapedByPlayerFor(sys: ref<CyberbaneSystem>, game: GameInstance, got: ref<CBRival>) -> Void {
+  if !IsDefined(sys) || !IsDefined(got) {
     return;
   }
   let content = CBContent(game);
@@ -177,6 +190,7 @@ public func CBRivalEscapedByPlayer(sys: ref<CyberbaneSystem>, game: GameInstance
     CBPhoneSendTinted(game, CBRivalDisplayName(content, got), CBRivalLostLine(got), CBHudRed());
   }
   CBLog.Info(n"Rivals", s"Player escaped rival id=\(got.id); promoted to rank \(got.rank).");
+  CBRivalMaybeBreak(sys, game, got);
 }
 
 // Is any Rival actually alive and in the world right now?
@@ -333,6 +347,7 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
             if sys.GetActiveRivalId() == r.id {
               sys.SetActiveRivalId(0);
             }
+            sys.RemovePackRival(r.id);
             r.huntTicks = CBConfig.RivalHuntRetryTicks();
             failedToPlace = true;
           }
@@ -497,6 +512,9 @@ func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
 // What a Rival texts when they have found you. Chosen by how they came to be one, so the one
 // you let go sounds different from the one who put you down.
 func CBRivalArrivalLine(r: ref<CBRival>) -> String {
+  if CBRivalHasTrait(r, n"Broken") {
+    return "Can't stop hearing you. Can't stop. Coming now.";
+  }
   if r.killedV > 0 {
     return "Found you again. You know how this went last time.";
   }
@@ -533,4 +551,59 @@ func CBRivalGotAwayLine(r: ref<CBRival>) -> String {
     return "You left a mark. I will remember it every time I look.";
   }
   return "Close. Not close enough. See you soon.";
+}
+
+// Rivals who come together (1.9.0, experimental, off by default).
+//
+// "More Rivals coordinating a singular ambush would be cool." Now and then the Rival who comes brings
+// one or two others of the same gang who are free to come. Each is a Rival of their own in every way
+// the encounter code knows - their own body on record (spawnedEntityId), their own death, mercy and
+// escape, their own build when they attach - and the Rival lane stays busy until the last of them is
+// down or gone (CBLiveRivalPresent). They walk in a little further back, through the same placement
+// as every arrival (CBSpawnGroup), never past the live ceiling, and their people do not come with them:
+// the one leading brings theirs.
+public func CBRivalTeamUpsOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().rivalTeamUps && CBRivalsOn();
+}
+
+func CBRivalTeamSize() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return 2;
+  }
+  return Clamp(rt.GetSettings().rivalTeamSize, 2, 3);
+}
+
+public func CBRivalBringPartners(sys: ref<CyberbaneSystem>, game: GameInstance, lead: ref<CBRival>, now: Float) -> Void {
+  if !IsDefined(sys) || !IsDefined(lead) || !CBRivalTeamUpsOn() || RandF() >= CBConfig.RivalTeamUpChance() {
+    return;
+  }
+  let content = CBContent(game);
+  let want = CBRivalTeamSize() - 1;
+  let brought = 0;
+  for r in sys.GetRivals() {
+    if brought < want && IsDefined(r) && r.id != lead.id && Equals(r.faction, lead.faction)
+       && r.state == EnumInt(ECBRivalState.Active) && r.huntTicks <= 0 && CBRivalQueueable(sys, r.id)
+       && !CBRecordIsSightingCyberpsycho(r.recordID)
+       && !(sys.IsLairActive() && sys.GetLairRivalId() == r.id)
+       && CBSpawnRoom(game) >= 1 {
+      let body: EntityID;
+      if CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance() + 6.0, body) > 0 {
+        r.spawnedEntityId = body;
+        r.arrivalCheckTicks = CBConfig.RivalArrivalCheckTicks();
+        r.state = EnumInt(ECBRivalState.Hunting);
+        r.lastSeenAt = now;
+        sys.AddPackRival(r.id);
+        brought += 1;
+        if CBToastsOn() && IsDefined(content) {
+          CBPhoneSendTinted(game, CBRivalDisplayName(content, r),
+            s"\(CBRivalDisplayName(content, lead)) is not coming alone.", CBHudRed());
+        }
+      }
+    }
+  }
+  if brought > 0 {
+    CBLog.Info(n"Spawn", s"Rival \(lead.id) brings \(brought) more of \(NameToString(lead.faction))'s Rivals.");
+  }
 }

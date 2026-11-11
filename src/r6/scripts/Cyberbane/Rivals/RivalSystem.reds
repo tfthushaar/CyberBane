@@ -224,6 +224,13 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
   if !IsDefined(rival) {
     return "";
   }
+  // After a break they are known for that, and nothing else (1.9.0).
+  if CBRivalHasTrait(rival, n"Broken") && IsDefined(content) {
+    let e = content.GetEpithets();
+    if IsDefined(e) && ArraySize(e.broken) > 0 {
+      return e.broken[CBHashIndex(rival.id, 9, ArraySize(e.broken))];
+    }
+  }
   let eps = CBEpithetsForSource(content, rival.source);
   if rival.epithet >= 0 && rival.epithet < ArraySize(eps) {
     return eps[rival.epithet];
@@ -235,7 +242,46 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
 // A last-resort handle so nobody is ever called "Unknown". Keyed off the Rival id, so the
 // same Rival always reads the same way.
 public func CBRivalEarnedNickname(rival: ref<CBRival>) -> Bool {
-  return IsDefined(rival) && (rival.rank >= 2 || rival.killedV > 0);
+  return IsDefined(rival) && (rival.rank >= 2 || rival.killedV > 0 || CBRivalHasTrait(rival, n"Broken"));
+}
+
+// Cyberpsychotic breaks (1.9.0).
+//
+// "Rivals who reach a breaking point keep pushing augments to get revenge on you, turning them into a
+// roided-out Cyberpsycho." A Rival at the top of the ladder who loses to V again - gets away hurt, is
+// spared, is shaken off - may break, with a chance that grows with every loss and never passes the
+// ceiling. A break is the Broken trait, which fits a bit the trait mask already had spare, so no save
+// changes shape. What it changes: the cyberpsycho's fighting kit instead of the Rival's own, holding
+// their ground rather than ever breaking and running, a nickname for it, and different words. Not one
+// point of health or armour on top of the build every Rival of that rank already gets, which is capped
+// against stacking (CBApplyApexBuild): hard to put down, never impossible. No MaxTac, no police.
+public func CBPsychoBreaksOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.IsEnabled() {
+    return false;
+  }
+  return !rt.HasSettings() || rt.GetSettings().psychoBreaks;
+}
+
+public func CBRivalMaybeBreak(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
+  if !IsDefined(sys) || !IsDefined(r) || !CBPsychoBreaksOn() || r.rank < 4
+     || CBRivalHasTrait(r, n"Broken") || CBRecordIsSightingCyberpsycho(r.recordID)
+     || CBRecordIsUniqueCharacter(r.recordID)
+     || (r.state != EnumInt(ECBRivalState.Active) && r.state != EnumInt(ECBRivalState.Hunting)) {
+    return false;
+  }
+  let losses = Cast<Float>(r.escapes + r.sparedByV);
+  let chance = ClampF(CBConfig.PsychoBreakBase() + CBConfig.PsychoBreakPerLoss() * losses, 0.0, CBConfig.PsychoBreakMax());
+  if RandF() >= chance {
+    return false;
+  }
+  CBRivalGiveTrait(r, n"Broken");
+  let content = CBContent(game);
+  if CBMessagesOn() && IsDefined(content) {
+    CBHearsayFromStreet(game, s"Word is \(CBRivalDisplayName(content, r)) went back under the knife after you and came out wrong. Cyberpsycho now. Watch yourself.", n"");
+  }
+  CBLog.Info(n"Rivals", s"Rival \(r.id) broke: cyberpsycho (chance \(RoundF(chance * 100.0))%).");
+  return true;
 }
 
 func CBFallbackHandle(id: Int32) -> String {
@@ -332,7 +378,8 @@ public func CBRivalAddTrait(content: ref<CyberbaneContent>, rival: ref<CBRival>)
   }
   let pool: array<CName>;
   for t in content.GetTraits() {
-    if IsDefined(t) && !t.isWeakness && !CBRivalHasTrait(rival, t.id) && CBTraitBit(t.id) >= 0 {
+    if IsDefined(t) && !t.isWeakness && !CBRivalHasTrait(rival, t.id) && CBTraitBit(t.id) >= 0
+       && NotEquals(t.id, n"Broken") {
       ArrayPush(pool, t.id);
     }
   }
@@ -843,11 +890,18 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
     return;
   }
   // 1. The marker. Registered against the puppet, so it outlives the encounter unless it is
-  //    explicitly unregistered - a body that never dies never loses its pin.
+  //    explicitly unregistered - a body that never dies never loses its pin. Their own body, by the
+  //    puppet when the caller has it and by the id on record when not; then any Rival body nobody
+  //    owns. Never every CB_Rival: with Rivals out together that took the markers off the living.
   if IsDefined(body) {
     CBUntrackOnMap(game, body);
   }
-  CBUntrackTagged(game, n"CB_Rival");
+  if IsDefined(rival) && EntityID.IsDefined(rival.spawnedEntityId) {
+    let recorded = GameInstance.FindEntityByID(game, rival.spawnedEntityId) as ScriptedPuppet;
+    if IsDefined(recorded) {
+      CBUntrackOnMap(game, recorded);
+    }
+  }
 
   // 1b. A body still in the world - lying there breathing, or walking off - is nobody's encounter
   //     any more, and must stop reading as one. It kept the CB_Rival tag, so when it streamed back
@@ -868,6 +922,7 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
     // entity that is no longer part of an encounter.
     let none: EntityID;
     rival.spawnedEntityId = none;
+    sys.RemovePackRival(rival.id);   // no longer one of a team that came together (1.9.0)
     // 3. And a cooldown, so they do not walk straight back into the fight they just lost.
     //    Without this the gate clears the moment they go down and they are re-queued at once.
     if rival.huntTicks < CBConfig.RivalAfterEscapeTicks() {
@@ -875,6 +930,68 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
     }
   } else {
     sys.SetActiveRivalId(0);
+  }
+  CBUntrackStrayRivalBodies(sys, game);
+}
+
+// Is this Rival body somebody's encounter right now? Their body on record, or - while a Rival's car
+// is still being adopted (Spawn/Arrival.reds), when the body is not on record yet - any Rival body,
+// so nothing arriving is mistaken for a stray.
+public func CBRivalBodyIsLive(sys: ref<CyberbaneSystem>, id: EntityID) -> Bool {
+  if !IsDefined(sys) {
+    return true;
+  }
+  let owner = CBFindRivalByBody(sys, id);
+  if IsDefined(owner)
+     && (owner.state == EnumInt(ECBRivalState.Active) || owner.state == EnumInt(ECBRivalState.Hunting)) {
+    return true;
+  }
+  if sys.GetRivalCarPending() > 0 {
+    return true;
+  }
+  let active = sys.FindRivalById(sys.GetActiveRivalId());
+  return IsDefined(active) && !EntityID.IsDefined(active.spawnedEntityId);
+}
+
+// Living Rival bodies that are nobody's encounter, removed once V cannot see them (1.9.0). What the
+// deferred sweep after a death and the escape ending used to do to every CB_Rival; anybody still a
+// live Rival's is left alone. One that cannot go now is handed to the orphan sweep, the way
+// CBDeleteTaggedSafe hands one over. The dead are the remains sweep's.
+public func CBSweepStrayRivalBodies(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(sys) || !IsDefined(des) || !des.IsPopulated(n"CB_Rival") {
+    return;
+  }
+  let crewSeated = CBAnyCrewSeated(game, des);
+  let ids = des.GetTaggedIDs(n"CB_Rival");
+  let i = 0;
+  while i < ArraySize(ids) {
+    let id = ids[i];
+    i += 1;
+    let body = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if !CBRivalBodyIsLive(sys, id) && !(IsDefined(body) && body.IsDead())
+       && !CBRemoveOne(game, des, id, crewSeated, true) {
+      des.UnassignTag(id, n"CB_Rival");
+      des.AssignTag(id, n"CB_Orphan");
+    }
+  }
+}
+
+// The markers on the same strays.
+public func CBUntrackStrayRivalBodies(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(sys) || !IsDefined(des) || !des.IsPopulated(n"CB_Rival") {
+    return;
+  }
+  let ids = des.GetTaggedIDs(n"CB_Rival");
+  let i = 0;
+  while i < ArraySize(ids) {
+    let id = ids[i];
+    i += 1;
+    let body = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if IsDefined(body) && !CBRivalBodyIsLive(sys, id) {
+      CBUntrackOnMap(game, body);
+    }
   }
 }
 

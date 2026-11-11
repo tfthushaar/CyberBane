@@ -314,6 +314,14 @@ func CBStoryResetHunt(sys: ref<CyberbaneSystem>) -> Void {
     // Back in the queue, unpromoted, and not straight back out the moment the story lets go.
     r.huntTicks = Max(r.huntTicks, CBConfig.RivalHuntRetryTicks());
   }
+  // So is everyone who came with them (1.9.0).
+  for pid in sys.GetPackRivals() {
+    let partner = sys.FindRivalById(pid);
+    if IsDefined(partner) {
+      partner.huntTicks = Max(partner.huntTicks, CBConfig.RivalHuntRetryTicks());
+    }
+  }
+  sys.ClearPack();
   sys.ClearScout();
   sys.ClearApexMuster();   // nobody of theirs keeps walking in while the story has the stage
   sys.SetHuntState(CBHuntNone());

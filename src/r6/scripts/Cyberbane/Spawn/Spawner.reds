@@ -1221,7 +1221,8 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBMarkRivalBody(puppet, who);
     // A named enemy that never uses cover or chrome is a ganger with a nameplate. A cyberpsycho
     // takes the lighter kit, which adds no armour on top of what they already have.
-    if IsDefined(who) && CBRecordIsSightingCyberpsycho(who.recordID) {
+    // A Rival after a cyberpsychotic break fights like one (1.9.0).
+    if IsDefined(who) && (CBRecordIsSightingCyberpsycho(who.recordID) || CBRivalHasTrait(who, n"Broken")) {
       CBKitCyberpsycho(puppet as NPCPuppet);
     } else {
       CBKitApexMember(puppet);

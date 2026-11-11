@@ -632,6 +632,30 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalHideouts-Desc")
   public let rivalHideouts: Bool = true;
 
+  // Two or three Rivals of one gang coming for V together (1.9.0, Spawn/RivalEncounter.reds).
+  // Experimental: off unless the player turns it on, and with it off nothing about Rivals changes.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalTeamUps")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalTeamUps-Desc")
+  public let rivalTeamUps: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalTeamSize")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalTeamSize-Desc")
+  @runtimeProperty("ModSettings.min", "2")
+  @runtimeProperty("ModSettings.max", "3")
+  @runtimeProperty("ModSettings.step", "1")
+  public let rivalTeamSize: Int32 = 2;
+
+  // A Rival pushed far enough may come back a cyberpsycho (1.9.0, Rivals/RivalSystem.reds).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PsychoBreaks")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PsychoBreaks-Desc")
+  public let psychoBreaks: Bool = true;
+
   // ---- Safe areas -------------------------------------------------------
   // Off by default, and they should stay that way for most players. A Rival arriving inside
   // an apartment is a fight you cannot have: the game forces your hands empty in there, so

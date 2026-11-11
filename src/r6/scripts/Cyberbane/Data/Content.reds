@@ -144,6 +144,7 @@ public class CBEpithets {
   public let avenger: array<String>;
   public let hunter: array<String>;
   public let promotion: array<String>;
+  public let broken: array<String>;   // 1.9.0: a Rival after a cyberpsychotic break
 }
 
 // Rival traits and weaknesses (spec §10.5). Stat effects are applied on spawn by

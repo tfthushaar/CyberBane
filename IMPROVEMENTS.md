@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.8.5. The "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.0. The "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -19,6 +19,32 @@ deleted: a retired one becomes a stub at the same path** (`tools/check_removed.p
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
 
 ## Requests after 1.8.3
+
+### "More Rivals coordinating a singular ambush" (decided: same gang only, experimental)
+
+**Status: in 1.9.0** (`Spawn/RivalEncounter.reds`, `Rivals/RivalSystem.reds`, `Reactions/CombatFlee.reds`,
+`Spawn/Hunt.reds`, `Core/StoryHold.reds`, `UI/BossBar.reds`, `Core/CyberbaneSystem.reds`). `CBRivalBringPartners`
+runs after the lead spawns (`CBLaneFire`): setting on, 35%, up to `rivalTeamSize - 1` partners of the same
+gang who are Active, off cooldown and queueable, each placed with `CBSpawnGroup` and given their own
+`spawnedEntityId`; session list `m_packIds`. Deaths, mercy and a partner's own escape already resolved by
+body. What assumed one Rival, fixed at the source rather than worked around:
+- The deferred sweep after a Rival's death deleted every living `CB_Rival` out of sight, and
+  `CBCloseRivalEncounter` untracked every `CB_Rival`'s marker. Both now touch only bodies no live Rival owns
+  (`CBSweepStrayRivalBodies`, `CBUntrackStrayRivalBodies`, `CBRivalBodyIsLive`, which treats unowned bodies as
+  live while a Rival car is being adopted). With one Rival out, identical.
+- The escape ending took the active Rival and deleted every `CB_Rival`. It now asks the body first (which
+  also stops a Rival fleeing their own hideout from becoming a new Survivor Rival) and sweeps strays only.
+- Shaken off, retired, called back by the story: each loops the pack. The attach-time build and the boss bar
+  ask the body before the active Rival.
+
+### "Cyberpsychotic breaks" (decided: on, a real chance, never unkillable)
+
+**Status: in 1.9.0** (`Rivals/RivalSystem.reds`, `Data/Traits.reds`, `Data/Names.reds`, `Spawn/Spawner.reds`,
+`Reactions/Morale.reds`). `CBRivalMaybeBreak` after an escape, a mercy that left no debt, or being shaken off:
+rank 4 only, chance 8% plus 5% per escape and mercy, at most 45%. The Broken trait is bit 14
+(`CBTraitCount` 15, never rolled by `CBRivalAddTrait`). Effects: `CBKitCyberpsycho` (behaviour only, fixed in
+1.8.5), `CBHoldsGround`, a nickname from `e.broken`, an arrival line. No health or armour beyond the rank's
+capped build.
 
 ### "Netrunners in the crew, with better hacks, and everyone more tactical"
 

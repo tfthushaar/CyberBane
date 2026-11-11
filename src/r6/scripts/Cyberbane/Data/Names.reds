@@ -169,6 +169,9 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
               "Steel Trap", "Fetch", "Tailgate", "Shadow", "Crosshair", "Spotter", "Packwolf",
               "Bounty Board", "Tagger", "Gunsight", "Homing", "Sure Shot", "Posse", "Manhunter"];
   e.promotion = ["Twice-Burned", "the Unbroken", "Scarface"];
+  e.broken = ["Overclocked", "Static", "the Glitch", "Redline", "Feedback", "Short Circuit", "Burnout",
+              "Chrome Fever", "Wired Wrong", "Dead Signal", "Meltdown", "Hardwired", "Overload",
+              "the Malfunction", "White Noise", "Fried", "System Error", "Hollow"];
   c.SetEpithets(e);
 }
 

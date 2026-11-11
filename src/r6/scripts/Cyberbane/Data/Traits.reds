@@ -6,7 +6,7 @@
 
 // Stable bit index per trait id, used by CBRival.traitMask / weaknessMask. These values
 // are part of the persistent schema: never renumber an existing one, only append.
-public func CBTraitCount() -> Int32 = 14
+public func CBTraitCount() -> Int32 = 15
 
 public func CBTraitBit(id: CName) -> Int32 {
   if Equals(id, n"Tough") { return 0; }
@@ -23,6 +23,7 @@ public func CBTraitBit(id: CName) -> Int32 {
   if Equals(id, n"Shaken") { return 11; }
   if Equals(id, n"OldWound") { return 12; }
   if Equals(id, n"Reckless") { return 13; }
+  if Equals(id, n"Broken") { return 14; }   // 1.9.0: a cyberpsychotic break, never rolled at creation
   return -1;
 }
 
@@ -44,4 +45,7 @@ public func CBSeedTraits(c: ref<CyberbaneContent>) -> Void {
   c.AddTrait(CBMakeTrait(n"Shaken",       "Shaken",        true));
   c.AddTrait(CBMakeTrait(n"OldWound",     "Old Wound",     true));
   c.AddTrait(CBMakeTrait(n"Reckless",     "Reckless",      true));
+
+  // Earned, never rolled (CBRivalAddTrait leaves it out): a top-rank Rival who broke (1.9.0).
+  c.AddTrait(CBMakeTrait(n"Broken",       "Cyberpsycho",   false));
 }

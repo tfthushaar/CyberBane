@@ -348,7 +348,8 @@ public func CBHoldsGround(npc: wref<ScriptedPuppet>) -> Bool {
     let sys = CyberbaneSystem.Get(npc.GetGame());
     if IsDefined(sys) {
       let r = CBFindRivalByBody(sys, id);
-      return IsDefined(r) && CBRivalHasTrait(r, n"HardToScare");
+      // A cyberpsycho does not run either (1.9.0).
+      return IsDefined(r) && (CBRivalHasTrait(r, n"HardToScare") || CBRivalHasTrait(r, n"Broken"));
     }
   }
   return false;

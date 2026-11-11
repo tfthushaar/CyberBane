@@ -357,6 +357,16 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
             CBRivalEscapedByPlayer(sys, game);
             CBCloseRivalEncounter(sys, game, r, null);
           }
+          // Everyone who came with them, by the same test (1.9.0).
+          for pid in sys.GetPackRivals() {
+            let partner = sys.FindRivalById(pid);
+            if IsDefined(partner) && partner.state == EnumInt(ECBRivalState.Hunting)
+               && EntityID.IsDefined(partner.spawnedEntityId)
+               && !IsDefined(GameInstance.FindEntityByID(game, partner.spawnedEntityId)) {
+              CBRivalEscapedByPlayerFor(sys, game, partner);
+              CBCloseRivalEncounter(sys, game, partner, null);
+            }
+          }
           CBChaseGiveUp(sys, game, des);
           sys.SetHuntState(CBHuntNone());
           sys.SetHuntFaction(n"");

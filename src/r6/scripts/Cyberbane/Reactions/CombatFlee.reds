@@ -413,6 +413,10 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
         st.rivalsSpared += 1;   // the counter existed and nothing ever incremented it
       }
       let indebted = CBRivalSparedByV(already, content, now, district);
+      // Spared once too often at the top of the ladder, and not grateful for it (1.9.0).
+      if !indebted {
+        CBRivalMaybeBreak(sys, game, already);
+      }
       // Their gang hears that V had one of their names cold and let them walk. Done here
       // rather than inside CBRivalSparedByV, which has no system handle to credit against.
       CBCreditMercy(sys, already.faction, CBConfig.MercyRivalCredit());
@@ -473,8 +477,17 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   let toasts = CBMessagesOn();
 
   // The Rival that was hunting you got away again: it ranks up and comes back meaner.
-  if e.wasRival && sys.GetActiveRivalId() > 0 {
-    let r = sys.FindRivalById(sys.GetActiveRivalId());
+  // Whose body it was, first: with Rivals out together, the one who ran is not always the active one
+  // (1.9.0), and a Rival who ran from their own place was nobody's active encounter at all.
+  let fled: ref<CBRival>;
+  if e.wasRival {
+    fled = CBFindRivalByBody(sys, e.entityId);
+    if !IsDefined(fled) && sys.GetActiveRivalId() > 0 {
+      fled = sys.FindRivalById(sys.GetActiveRivalId());
+    }
+  }
+  if e.wasRival && IsDefined(fled) {
+    let r = fled;
     if IsDefined(r) {
       // Where they were when V last saw them, for whoever passes it on (Rivals/Whereabouts.reds).
       CBNoteEscapeeSeen(sys, game, r, e);
@@ -490,8 +503,10 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     } else {
       sys.SetActiveRivalId(0);
     }
-    // They got away, so let them be seen getting away.
-    CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
+    // They got away, so let them be seen getting away. Their body was handed off when the encounter
+    // closed; this only clears Rival bodies nobody owns, never one of a team still fighting.
+    CBSweepStrayRivalBodies(sys, game);
+    CBRivalMaybeBreak(sys, game, r);
     return;
   }
 

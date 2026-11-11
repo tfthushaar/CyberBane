@@ -580,6 +580,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       return;
     }
     sys.SetLaneLastRival(sys.GetLaneRivalId(lane));
+    CBRivalBringPartners(sys, game, r, now);   // sometimes not alone (1.9.0, experimental)
     CBSpendSlot(sys, game, lane);
     sys.NoteLaneSent(lane, CBGameDay(game));
     sys.SetLaneFired(lane);

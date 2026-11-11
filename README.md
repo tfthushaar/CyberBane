@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.8.5).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.9.0).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -419,6 +419,14 @@ drive while you are driving. If cars ever misbehave on your setup, that is the s
 **Gangs lie in wait (experimental)**, also under Gangs, is off by default. With it on, a gang with a
 vendetta against you may send a crew to wait in a parked car up the road while you are driving, and
 pull out as you go past. Turn it off and arrivals work exactly as they do without it.
+
+**Rivals team up (experimental)**, under Rivals, is off by default. With it on, a Rival who comes for
+you sometimes brings one or two other Rivals of the same gang, each with their own name, bar and fate.
+**Rivals per team-up** sets whether that is two or three. Turn it off and Rivals come one at a time.
+
+**Cyberpsychotic breaks**, under Rivals, is on by default. A Rival at the top rank who keeps losing to
+you, by getting away, being spared or being shaken off, may come back a cyberpsycho: they fight like
+one and never run, but they get no extra health or armour, so they can always be put down.
 
 ### Playing without the messages
 

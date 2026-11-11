@@ -335,7 +335,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The hit squad out right now came with its gang's apex squad (Spawn/HitSquad.reds). Session only.
   private let m_activeSquadApex: Bool;
   private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
-  private let m_crewGrenadier: Bool;                  // this crew's grenadier is already chosen (1.8.5)
+  private let m_crewGrenadier: Bool;
+  // Rivals who came with the active one (1.9.0, Spawn/RivalEncounter.reds). Session only.
+  private let m_packIds: array<Int32>;                  // this crew's grenadier is already chosen (1.8.5)
   private let m_huntHoldReason: Int32;        // why no Rival can arrive right now (CBHold*)
   // Kills V has made recently, for Aura. Session-only: it describes the last minute, not the
   // playthrough. Counting V's own kills rather than scanning for nearby corpses is deliberate -
@@ -458,6 +460,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_pendingFind = 0;
     ArrayClear(this.m_formerBodyIds);
     ArrayClear(this.m_formerBodyRivals);
+    ArrayClear(this.m_packIds);
 
     // Bump the generation so any stale tick chain stops, then start a fresh one.
     this.m_tickGeneration += 1;
@@ -548,7 +551,12 @@ public class CyberbaneSystem extends ScriptableSystem {
 
         // Somebody who runs a crew should take more killing than the rank and file do.
         if des.IsTagged(id, n"CB_Rival") && this.GetActiveRivalId() > 0 {
-          let who = this.FindRivalById(this.GetActiveRivalId());
+          // Whose body this is first, as setup asks (CBApplySpawnSetup): a Rival who came with the
+          // active one is somebody else, with their own build.
+          let who = CBFindRivalByBody(this, id);
+          if !IsDefined(who) {
+            who = this.FindRivalById(this.GetActiveRivalId());
+          }
           if IsDefined(who) {
             // Built to apex grade, scaled by how far up the ladder they have climbed: every
             // escape and every mercy makes the one who comes back harder than the one who
@@ -912,8 +920,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     // is settled, so the engine is no longer mid-teardown on the entity being removed.
     if this.m_pendingRivalSweep {
       this.m_pendingRivalSweep = false;
-      // The living only; the body goes later, and neither goes while V is watching.
-      CBDeleteTaggedSafe(game, n"CB_Rival", true, true);
+      // The living only; the body goes later, and neither goes while V is watching. And only bodies no
+      // Rival out right now owns: with two Rivals out, one going down used to take the other with it.
+      CBSweepStrayRivalBodies(this, game);
     }
 
     // Did the player ask to start over? Same reasoning as the sweep above: this tick is
@@ -1668,6 +1677,26 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     at = this.m_rivalLastPos;
     return true;
+  }
+
+  // The Rivals who came with the one leading (1.9.0). Every way an encounter ends takes its Rival off
+  // this list (CBCloseRivalEncounter).
+  public func AddPackRival(id: Int32) -> Void {
+    if id > 0 && !ArrayContains(this.m_packIds, id) {
+      ArrayPush(this.m_packIds, id);
+    }
+  }
+
+  public func RemovePackRival(id: Int32) -> Void {
+    ArrayRemove(this.m_packIds, id);
+  }
+
+  public func GetPackRivals() -> array<Int32> {
+    return this.m_packIds;
+  }
+
+  public func ClearPack() -> Void {
+    ArrayClear(this.m_packIds);
   }
 
   // This body was a Rival's when their encounter ended, and it is still in the world.
@@ -3363,6 +3392,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_pendingFind = 0;
     ArrayClear(this.m_formerBodyIds);
     ArrayClear(this.m_formerBodyRivals);
+    ArrayClear(this.m_packIds);
     ArrayClear(this.m_crewBeaten);
     ArrayClear(this.m_seenPostureIds);
     ArrayClear(this.m_seenPostureVals);

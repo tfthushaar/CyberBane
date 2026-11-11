@@ -75,7 +75,11 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
   }
   if des.IsTagged(id, n"CB_Rival") {
     label = "RIVAL";
-    let who = sys.FindRivalById(sys.GetActiveRivalId());
+    // Whose body it is, first: a Rival who came with the active one carries their own name (1.9.0).
+    let who = CBFindRivalByBody(sys, id);
+    if !IsDefined(who) {
+      who = sys.FindRivalById(sys.GetActiveRivalId());
+    }
     if IsDefined(who) {
       name = CBRivalDisplayName(sys.GetContent(), who);
     }

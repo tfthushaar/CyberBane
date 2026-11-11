@@ -3,6 +3,27 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] - 2026-11-11
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Added
+- **Rivals team up (experimental).** With it turned on under Rivals, a Rival who comes for you
+  sometimes brings one or two other Rivals of the same gang. Each is a Rival in every way: their own
+  name, their own bar, their own fate when you put them down, spare them or lose them. How many can
+  come together is a setting, two or three. Off by default; with it off, Rivals come one at a time
+  exactly as before.
+- **Cyberpsychotic breaks.** A Rival at the top rank who keeps losing to you may push their chrome
+  too far and come back a cyberpsycho: a new name for it, fighting like one, and they never break and
+  run. Hard to put down, never unkillable: they get no extra health or armour. You will hear about it
+  when it happens. It can be turned off under Rivals.
+
+### Fixed
+- **When one Rival went down, others out at the same time could vanish** the moment you looked away,
+  and lose their map markers. Only bodies that are nobody's fight any more are cleared now.
+- **A Rival who ran from their own hideout could come back as a brand new Rival** instead of the one
+  they were.
+
 ## [1.8.5] - 2026-11-11
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.

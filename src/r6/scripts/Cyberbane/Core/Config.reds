@@ -1121,6 +1121,14 @@ public abstract class CBConfig {
   public static func JobPinCap() -> Int32 = 64
   // A crew this size or bigger brings a netrunner along (Spawn/HitSquad.reds, 1.8.5).
   public static func NetrunnerSeatMinCrew() -> Int32 = 3
+  // Rivals teaming up (1.9.0): how often a Rival who comes brings others of their gang, when the
+  // setting is on. Partners walk in a little further back than the one leading.
+  public static func RivalTeamUpChance() -> Float = 0.35
+  // Cyberpsychotic breaks (1.9.0): only a rank 4 Rival, a chance on each loss to V that grows with
+  // how many there have been, never more than the ceiling.
+  public static func PsychoBreakBase() -> Float = 0.08
+  public static func PsychoBreakPerLoss() -> Float = 0.05
+  public static func PsychoBreakMax() -> Float = 0.45
   // Rivals forgotten one at a time, kept in the service for every save of their playthrough.
   public static func CapForgottenRivals() -> Int32 = 64
   public static func CapGangPower() -> Int32 = 96
