@@ -103,10 +103,13 @@ in active development. This page describes what the mod does and how it installs
   run. Rank, their gang's fear of you and a sworn vendetta all change the odds, and only part of a group
   can run at once. Get away from you and they may come back as a Rival.
 - **What you wear hides what you are carrying.** Chrome only frightens people who can see it.
-  A coat covers your arms and skin, trousers cover your legs, and anything across your face
-  covers your eyes, so the same build reads very differently dressed up or stripped down.
-  Covered chrome still counts for a little, because a coat moves and heavy arms change how you
-  carry yourself.
+  Long sleeves cover your arms and skin, whether a jacket, a coat or a long-sleeved shirt, while a
+  vest, a t-shirt or a tank top leaves them on show. Trousers cover your legs; shorts and skirts do
+  not. A jumpsuit covers both, and anything across your face covers your eyes, so the same build
+  reads very differently dressed up or stripped down. It goes by what people can actually see:
+  your outfit preset when one is on, including a slot it leaves empty or one you have hidden, and
+  clothes put on by outfit mods. Covered chrome still counts for a little, because a coat moves and
+  heavy arms change how you carry yourself.
 - **Gangs with their own values.** Maelstrom cares about chrome, the Animals care about raw
   strength, the Voodoo Boys care about netrunning. The same V gets different treatment from each
   gang depending on your standing and reputation: respect, a warning, or hostility. Masks and hoods
@@ -309,8 +312,9 @@ Install these first, each from its own page and following that mod's instruction
 - Codeware
 - Mod Settings
 
-There are no optional requirements. Cyberbane reads your clothing through the game's own
-equipment slots, so outfit mods are picked up without any integration.
+There are no optional requirements. Cyberbane reads your clothing the way the game draws it,
+outfit presets included, and also picks up whatever an outfit mod puts on V, so outfit mods work
+without any integration.
 
 Cyberbane supports Cyberpunk 2077 v2.5 and v2.31. The same download works on both: install the
 versions of the required frameworks that match your game.

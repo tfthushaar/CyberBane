@@ -5,81 +5,222 @@
 // visible chrome was computed purely from what V had fitted, so a fully chromed merc in a
 // parka read exactly as loud as the same merc in a vest.
 //
-// This reads the slots that are actually filled rather than trying to interpret what a garment
-// looks like. Sleeve length lives in the appearance archives, not in TweakDB, so there is no
-// honest way to ask "does this jacket have sleeves" from script. What can be asked, exactly and
-// cheaply, is whether something is worn over the chest, over the legs, over the face. That is
-// enough to carry the idea: an outer layer covers your arms, trousers cover your legs, a mask
-// covers your face.
+// **What is worn, read the way the game draws it (1.9.0).** Two sources, both always read:
 //
-// Deliberately a partial truth rather than a guess: a sleeveless jacket will conceal arms it
-// would not really conceal.
+//   1. The game's own clothing areas, as drawn. With an outfit preset on, an area shows the preset's
+//      item; an area the preset clears shows nothing, whatever is equipped under it; an area the
+//      preset leaves alone shows what is equipped. With no preset, an area shows what is equipped
+//      unless its hide switch is on. That is the game's rule (EquipmentSystemPlayerData: EquipVisuals,
+//      ClearVisuals, UnequipVisuals), and CBVisibleInArea follows it. The reading before this fell
+//      back to the equipped item whenever the preset's slot was empty, so a preset that showed bare
+//      arms still counted the jacket under it.
+//   2. Anything else of V's clothing that is physically on V (CBAttachedGarments): what an outfit mod
+//      such as EquipmentEx puts in slots of its own, which the game's clothing areas know nothing about.
+//      Asked of the game by item ("is this attached to V anywhere", TransactionSystem.GetItemInSlotByItemID),
+//      so no slot name of any mod is typed here, and an item the game's areas already account for, or
+//      a second copy of a garment already counted, is left out.
 //
-// **How to ask what is worn, which took three goes to get right.** The equipment areas are the
-// obvious route and they are not the whole answer. When a wardrobe set is active the clothing
-// areas are empty - the items live in the set, not in the slots - so `GetActiveItem` honestly
-// reports nothing for a V who is visibly dressed head to foot. That is what the log was saying
-// all along: visible chrome computed correctly from implants, `arms covered: false`, and
-// nothing worn reported at all, on a character wearing a coat, trousers, boots and a mask.
+// **What a garment covers, by what the game says it is.** The garment records answer it. The game tags
+// its own long-sleeved garments LongSleeve (all its shirts, nearly all jackets and coats, a few vests,
+// no t-shirts, tank tops or undershirts), and every base-game torso garment carries style tags, so a
+// tagged one without it has bare arms (CBGarmentSleeves). Its jumpsuits are tagged BodySuit instead and
+// cover arms and legs; so are its dresses, which cover neither, so a suit is BodySuit on a jumpsuit
+// (Price.Jumpsuit, Price.TightJumpsuit). Shorts and skirts are their own kinds of garment to the game
+// (Price.Shorts, Price.Skirt, inherited by every one of them). A whole-body outfit item covers both, as
+// it always did. Checked by script against every base-game garment record. Before
+// this, an outer layer covered the arms and an inner one never did: a vest hid gorilla arms and a
+// long-sleeved shirt did not. A garment with no tags at all - most likely from a mod that set none - is
+// read the old way: an outer layer covers, an inner one does not.
 //
-// The game has its own answer for this and we were not using it. `GetVisualItemInSlot`
-// (equipmentSystem.script:2195) reads the active set's `visualItem` for that area when a set is
-// on, and falls through to `GetActiveItem` when one is not. It is the exact question being
-// asked here, and the game asks it of itself everywhere it needs to know what the player
-// appears to be wearing.
+// Read once a sample (CBReadWorn), and that one reading answers the chrome, the look, the disguise and
+// the mask.
 
-// What is actually on this part of V, whichever way the game is dressing them.
-//
-// Three routes, tried in the order of how much they know:
-//
-//   1. `GetVisualItemInSlot` - the game's own wardrobe-aware read, and the one that was
-//      missing. This is what makes a wardrobe set visible to us at all.
-//   2. `GetActiveItem` on the equipment area, for what the first route declines to handle: it
-//      returns -1 for the Outfit area and for underwear by design.
-//   3. The attachment slot, through the transaction system, as a last resort for anything
-//      hung on the body without going through the equipment areas.
-//
-// Three routes can only ever find coverage that fewer would have missed; none of them can
-// invent any.
-func CBWornItem(game: GameInstance, data: ref<EquipmentSystemPlayerData>,
-                area: gamedataEquipmentArea, slot: TweakDBID) -> ItemID {
-  if IsDefined(data) {
+public class CBWornRead {
+  public let garments: array<ItemID>;   // everything a stranger can see V wearing, one per garment
+  public let arms: Bool;
+  public let legs: Bool;
+  public let face: Bool;
+  public let masked: Bool;
+  public let fromMods: Int32;           // how many of the garments only the attached-clothing read found
+}
+
+func CBClothingAreas() -> array<gamedataEquipmentArea> {
+  let areas: array<gamedataEquipmentArea>;
+  ArrayPush(areas, gamedataEquipmentArea.Head);
+  ArrayPush(areas, gamedataEquipmentArea.Face);
+  ArrayPush(areas, gamedataEquipmentArea.OuterChest);
+  ArrayPush(areas, gamedataEquipmentArea.InnerChest);
+  ArrayPush(areas, gamedataEquipmentArea.Legs);
+  ArrayPush(areas, gamedataEquipmentArea.Feet);
+  ArrayPush(areas, gamedataEquipmentArea.Outfit);
+  return areas;
+}
+
+// One of the game's clothing areas as it is drawn (point 1 above).
+func CBVisibleInArea(data: ref<EquipmentSystemPlayerData>, area: gamedataEquipmentArea) -> ItemID {
+  if !IsDefined(data) {
+    return ItemID.None();
+  }
+  // The Outfit area has no preset slot and no hide switch. IsSlotHidden finds its row with the same
+  // search GetVisualItemInSlot uses, which answers -1 for the Outfit area, and reads that row without
+  // a check: asked about the Outfit area it would read before the start of the game's table.
+  let outfit = Equals(area, gamedataEquipmentArea.Outfit);
+  if !outfit && data.IsVisualSetActive() {
     let visual = data.GetVisualItemInSlot(area);
     if ItemID.IsValid(visual) {
       return visual;
     }
-    let active = data.GetActiveItem(area);
-    if ItemID.IsValid(active) {
-      return active;
+  }
+  if !outfit && data.IsSlotHidden(area) {
+    return ItemID.None();
+  }
+  return data.GetActiveItem(area);
+}
+
+// Is this item one of these? By value, item by item.
+func CBItemListHas(list: array<ItemID>, id: ItemID) -> Bool {
+  for known in list {
+    if Equals(known, id) {
+      return true;
     }
   }
+  return false;
+}
+
+// Is a garment of this record already in the list? The wardrobe draws a preset item on a body with
+// nothing equipped there by attaching a preview copy of it, which is another item of the same record.
+func CBGarmentRecordListed(list: array<ItemID>, id: ItemID) -> Bool {
+  let record = ItemID.GetTDBID(id);
+  for known in list {
+    if ItemID.GetTDBID(known) == record {
+      return true;
+    }
+  }
+  return false;
+}
+
+// V's clothing that is on V and that the game's clothing areas do not account for (point 2 above).
+// `equipped` is what is equipped in those areas, drawn or not: an equipped item a preset hides is still
+// attached, with its look cleared, and must not count as worn.
+func CBAttachedGarments(game: GameInstance, equipped: array<ItemID>, seen: array<ItemID>) -> array<ItemID> {
+  let out: array<ItemID>;
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
-  if IsDefined(player) && IsDefined(ts) && TDBID.IsValid(slot) {
-    return ts.GetActiveItemInSlot(player, slot);
+  if !IsDefined(player) || !IsDefined(ts) {
+    return out;
   }
-  return ItemID.None();
+  let list: array<wref<gameItemData>>;
+  if !ts.GetItemListByTag(player, n"Clothing", list) {
+    return out;
+  }
+  let n = Min(ArraySize(list), CBConfig.WornScanCap());
+  let i = 0;
+  while i < n {
+    let d = list[i];
+    i += 1;
+    if IsDefined(d) {
+      let id = d.GetID();
+      if ItemID.IsValid(id) && !CBItemListHas(equipped, id) && !CBGarmentRecordListed(seen, id)
+         && !CBGarmentRecordListed(out, id) && IsDefined(ts.GetItemInSlotByItemID(player, id)) {
+        ArrayPush(out, id);
+      }
+    }
+  }
+  return out;
 }
 
-func CBWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>,
-            area: gamedataEquipmentArea, slot: TweakDBID) -> Bool {
-  return ItemID.IsValid(CBWornItem(game, data, area, slot));
+// The kind of body this garment is worn on, from its own record: what the game files it under.
+func CBGarmentArea(id: ItemID) -> gamedataEquipmentArea {
+  let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(id));
+  if !IsDefined(rec) || !IsDefined(rec.EquipArea()) {
+    return gamedataEquipmentArea.Invalid;
+  }
+  return rec.EquipArea().Type();
 }
 
-// An outer layer over the chest, which is what hides arms and skin.
-public func CBArmsCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
-  return CBWorn(game, data, gamedataEquipmentArea.OuterChest, t"AttachmentSlots.Chest")
-      || CBWorn(game, data, gamedataEquipmentArea.Outfit, t"AttachmentSlots.Outfit");
+// The words the game tags every one of its own torso garments with, whatever their sleeves.
+func CBGarmentHasStyleTags(rec: ref<Item_Record>) -> Bool {
+  return rec.TagsContains(n"Simple") || rec.TagsContains(n"Stylish") || rec.TagsContains(n"Rich")
+      || rec.TagsContains(n"Poor") || rec.TagsContains(n"Streetwear") || rec.TagsContains(n"Casual")
+      || rec.TagsContains(n"Military") || rec.TagsContains(n"Formal") || rec.TagsContains(n"Punk")
+      || rec.TagsContains(n"Rocker") || rec.TagsContains(n"Biker") || rec.TagsContains(n"Cowboy")
+      || rec.TagsContains(n"Sports") || rec.TagsContains(n"Industrial") || rec.TagsContains(n"Corpo")
+      || rec.TagsContains(n"Tomboy") || rec.TagsContains(n"Samurai");
 }
 
-public func CBLegsCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
-  return CBWorn(game, data, gamedataEquipmentArea.Legs, t"AttachmentSlots.Legs")
-      || CBWorn(game, data, gamedataEquipmentArea.Outfit, t"AttachmentSlots.Outfit");
+// Is this garment of either of these kinds? The game's kinds of garment are carried in the price record
+// each kind sets and every garment of it inherits (Price.Shorts, Price.Jumpsuit, ...).
+func CBGarmentPricedAs(id: ItemID, a: TweakDBID, b: TweakDBID) -> Bool {
+  let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(id));
+  if !IsDefined(rec) {
+    return false;
+  }
+  let k = 0;
+  while k < rec.GetBuyPriceCount() {
+    let price = rec.GetBuyPriceItem(k);
+    k += 1;
+    if IsDefined(price) && (price.GetID() == a || price.GetID() == b) {
+      return true;
+    }
+  }
+  return false;
 }
 
-// Something across the face. Hides eye chrome, and hides who you are.
-public func CBFaceCovered(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> Bool {
-  return CBWorn(game, data, gamedataEquipmentArea.Face, t"AttachmentSlots.Face");
+// One piece from wrist to ankle: a jumpsuit the game tags BodySuit. Its dresses carry the same tag and
+// cover neither arms nor legs.
+func CBGarmentIsSuit(id: ItemID) -> Bool {
+  let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(id));
+  return IsDefined(rec) && rec.TagsContains(n"BodySuit")
+      && CBGarmentPricedAs(id, t"Price.Jumpsuit", t"Price.TightJumpsuit");
+}
+
+// Sleeves, as the game records them: 1 long (LongSleeve, or a suit), 0 bare arms (a garment the game
+// tagged that says neither), -1 unknown (no tags at all).
+func CBGarmentSleeves(id: ItemID) -> Int32 {
+  let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(id));
+  if !IsDefined(rec) {
+    return -1;
+  }
+  if rec.TagsContains(n"LongSleeve") || CBGarmentIsSuit(id) {
+    return 1;
+  }
+  return CBGarmentHasStyleTags(rec) ? 0 : -1;
+}
+
+// Shorts or a skirt: a legs garment that leaves the lower legs on show.
+func CBGarmentLeavesLegsBare(id: ItemID) -> Bool {
+  return CBGarmentPricedAs(id, t"Price.Shorts", t"Price.Skirt");
+}
+
+// Does this garment hide V's arms?
+func CBGarmentCoversArms(id: ItemID, area: gamedataEquipmentArea) -> Bool {
+  // A whole-body outfit item is the whole body.
+  if Equals(area, gamedataEquipmentArea.Outfit) {
+    return true;
+  }
+  let outer = Equals(area, gamedataEquipmentArea.OuterChest);
+  if !outer && !Equals(area, gamedataEquipmentArea.InnerChest) {
+    return false;
+  }
+  let sleeves = CBGarmentSleeves(id);
+  if sleeves == 1 {
+    return true;
+  }
+  if sleeves == 0 {
+    return false;
+  }
+  return outer;   // nothing on record: the old answer, an outer layer covers and an inner one does not
+}
+
+// Does this garment hide V's legs?
+func CBGarmentCoversLegs(id: ItemID, area: gamedataEquipmentArea) -> Bool {
+  if Equals(area, gamedataEquipmentArea.Legs) {
+    return !CBGarmentLeavesLegsBare(id);
+  }
+  if Equals(area, gamedataEquipmentArea.Outfit) {
+    return true;
+  }
+  return CBGarmentIsSuit(id);
 }
 
 // A mask, as opposed to sunglasses.
@@ -102,22 +243,66 @@ func CBItemIsMask(tdbid: TweakDBID) -> Bool {
   return StrContains(id, "Mask") || StrContains(id, "mask");
 }
 
-// Is V's face hidden behind a mask right now? The question the witness system asks.
-public func CBPlayerMasked(game: GameInstance) -> Bool {
+// What V is wearing, both sources, and what it covers. One call per sample.
+public func CBReadWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> ref<CBWornRead> {
+  let worn = new CBWornRead();
+  if !IsDefined(data) {
+    return worn;
+  }
+  let equipped: array<ItemID>;
+  for area in CBClothingAreas() {
+    let active = data.GetActiveItem(area);
+    if ItemID.IsValid(active) {
+      ArrayPush(equipped, active);
+    }
+    let shown = CBVisibleInArea(data, area);
+    if ItemID.IsValid(shown) && !CBGarmentRecordListed(worn.garments, shown) {
+      ArrayPush(worn.garments, shown);
+    }
+  }
+  let extra = CBAttachedGarments(game, equipped, worn.garments);
+  worn.fromMods = ArraySize(extra);
+  for id in extra {
+    ArrayPush(worn.garments, id);
+  }
+  for id in worn.garments {
+    let area = CBGarmentArea(id);
+    if CBGarmentCoversArms(id, area) {
+      worn.arms = true;
+    }
+    if CBGarmentCoversLegs(id, area) {
+      worn.legs = true;
+    }
+    if Equals(area, gamedataEquipmentArea.Face) {
+      worn.face = true;
+      if CBItemIsMask(ItemID.GetTDBID(id)) {
+        worn.masked = true;
+      }
+    }
+  }
+  return worn;
+}
+
+// The reading for V, for callers that have nothing else to hand.
+public func CBReadPlayerWorn(game: GameInstance) -> ref<CBWornRead> {
   let player = GetPlayer(game);
-  if !IsDefined(player) {
-    return false;
-  }
   let es = CBGetSystem(game, n"EquipmentSystem") as EquipmentSystem;
-  if !IsDefined(es) {
-    return false;
+  if !IsDefined(player) || !IsDefined(es) {
+    return new CBWornRead();
   }
-  // Through the same three routes as the coverage checks, so a mask worn as part of a wardrobe
-  // set counts exactly as a mask equipped on its own does. It did not before, which is the
-  // whole of why putting one on changed nothing.
-  let item = CBWornItem(game, es.GetPlayerData(player), gamedataEquipmentArea.Face,
-                        t"AttachmentSlots.Face");
-  return ItemID.IsValid(item) && CBItemIsMask(ItemID.GetTDBID(item));
+  return CBReadWorn(game, es.GetPlayerData(player));
+}
+
+// Is V's face hidden behind a mask right now? The question the witness system asks, on every kill, so
+// it reads the last sample's answer (kept by CBUpdateChrome, every ten ticks and as the Hub opens)
+// rather than reading the whole wardrobe again in the middle of a fight. Before the first sample it
+// reads it there and then.
+public func CBPlayerMasked(game: GameInstance) -> Bool {
+  let sys = CyberbaneSystem.Get(game);
+  if IsDefined(sys) && IsDefined(sys.GetWorn()) {
+    return sys.GetWorn().masked;
+  }
+  return CBReadPlayerWorn(game).masked;
 }
 
 // Does the street have any reason to scatter from this person?
@@ -144,18 +329,20 @@ public func CBCrowdIgnoresPlayer(game: GameInstance) -> Bool {
 public func CBCoveredChromeMult() -> Float = 0.25
 
 // What fraction of this area's visible weight survives being dressed.
-public func CBChromeVisibility(game: GameInstance, area: gamedataEquipmentArea,
-                               data: ref<EquipmentSystemPlayerData>) -> Float {
-  if Equals(area, gamedataEquipmentArea.ArmsCW) && CBArmsCovered(game, data) {
+public func CBChromeVisibility(area: gamedataEquipmentArea, worn: ref<CBWornRead>) -> Float {
+  if !IsDefined(worn) {
+    return 1.0;
+  }
+  if Equals(area, gamedataEquipmentArea.ArmsCW) && worn.arms {
     return CBCoveredChromeMult();
   }
-  if Equals(area, gamedataEquipmentArea.IntegumentarySystemCW) && CBArmsCovered(game, data) {
+  if Equals(area, gamedataEquipmentArea.IntegumentarySystemCW) && worn.arms {
     return CBCoveredChromeMult();   // the skin people can see is mostly arms and chest
   }
-  if Equals(area, gamedataEquipmentArea.LegsCW) && CBLegsCovered(game, data) {
+  if Equals(area, gamedataEquipmentArea.LegsCW) && worn.legs {
     return CBCoveredChromeMult();
   }
-  if Equals(area, gamedataEquipmentArea.EyesCW) && CBFaceCovered(game, data) {
+  if Equals(area, gamedataEquipmentArea.EyesCW) && worn.face {
     return CBCoveredChromeMult();
   }
   return 1.0;
@@ -236,4 +423,14 @@ public func CBLogEquippedTags(game: GameInstance) -> Void {
     j += 1;
   }
   CBLog.Info(n"Signals", s"Clothing check: \(byArea) by equipment area, \(byVisual) by wardrobe visual, \(bySlot) by attachment slot. Masked: \(CBPlayerMasked(game)).");
+  // And what CBReadWorn makes of it all, which is what the chrome, the look and the mask go by, with
+  // each garment's sleeves as the game records them (1 long, 0 bare, -1 not on record).
+  let worn = CBReadWorn(game, data);
+  let k = 0;
+  while k < ArraySize(worn.garments) {
+    let g = worn.garments[k];
+    k += 1;
+    CBLog.Info(n"Signals", s"Seen: \(TDBID.ToStringDEBUG(ItemID.GetTDBID(g))), sleeves \(CBGarmentSleeves(g)), covers arms \(CBGarmentCoversArms(g, CBGarmentArea(g))), legs \(CBGarmentCoversLegs(g, CBGarmentArea(g))).");
+  }
+  CBLog.Info(n"Signals", s"Clothing read: \(ArraySize(worn.garments)) garments seen (\(worn.fromMods) only on V's body); arms covered \(worn.arms), legs \(worn.legs), face \(worn.face), masked \(worn.masked).");
 }

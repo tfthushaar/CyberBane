@@ -87,6 +87,10 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   // area's quality, so the scale is what it always was; what is new is that a slot only a mod adds
   // counts, and so does filling every slot you have.
   let ts = GameInstance.GetTransactionSystem(game);
+  // What V is wearing, from the game's clothing areas as drawn and from anything else on V (an outfit
+  // mod's own slots), read once for this sample and kept for the look and the mask test.
+  let worn = CBReadWorn(game, data);
+  sys.SetWorn(worn);
   let implantSum = 0.0;
   let visibleSum = 0.0;
   let slots = 0;
@@ -121,7 +125,7 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
       implantSum += 3.0 * best;
       // Scaled by what V is wearing over it (Signals/Concealment.reds). Installed chrome is
       // still installed; this is only about what a stranger can see.
-      visibleSum += CBVisibleChromeWeight(area) * best * CBChromeVisibility(game, area, data);
+      visibleSum += CBVisibleChromeWeight(area) * best * CBChromeVisibility(area, worn);
     }
   }
   // How much of V is chrome: the share of capacity used, or the share of slots filled, whichever is
@@ -137,7 +141,7 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let rounded = RoundF(cVisible);
   if rounded != sys.GetLastLoggedChrome() {
     sys.SetLastLoggedChrome(rounded);
-    CBLog.Info(n"Signals", s"Visible chrome \(rounded) (arms covered: \(CBArmsCovered(game, data)), legs: \(CBLegsCovered(game, data)), face: \(CBFaceCovered(game, data))). Installed \(RoundF(c)): \(filled) of \(slots) slots, \(RoundF(usage * 100.0))% of capacity.");
+    CBLog.Info(n"Signals", s"Visible chrome \(rounded) (arms covered: \(worn.arms), legs: \(worn.legs), face: \(worn.face); \(ArraySize(worn.garments)) garments seen, \(worn.fromMods) of them only on V's body). Installed \(RoundF(c)): \(filled) of \(slots) slots, \(RoundF(usage * 100.0))% of capacity.");
   }
   sys.GetScore().SetChrome(c, cVisible, overalloc);
 }

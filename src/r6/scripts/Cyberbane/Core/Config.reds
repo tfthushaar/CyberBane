@@ -1139,6 +1139,9 @@ public abstract class CBConfig {
   public static func RivalTeamUpChance() -> Float = 0.3
   public static func RivalTeamUpChanceLeader() -> Float = 0.2
   public static func RivalTeamSpacing() -> Float = 8.0
+  // How many of V's clothing items the attached-clothing read looks through (Signals/Concealment.reds).
+  // A wardrobe of a few hundred is common; this only bounds a pathological one.
+  public static func WornScanCap() -> Int32 = 600
   // Cyberpsychotic breaks (1.9.0): only a rank 4 Rival, a chance on each loss to V that grows with
   // how many there have been, never more than the ceiling.
   public static func PsychoBreakBase() -> Float = 0.08

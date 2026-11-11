@@ -43,6 +43,14 @@ Your saved Cyberbane progress carries over, and nothing stored in your save chan
   read again a few seconds into play after you closed the menu, and on a busy street not for much
   longer, so the Hub, opened from the same menu you changed clothes in, kept showing the old number.
   They are read again whenever the Hub opens or changes screen, and on busy streets as well.
+- **Sleeves matter now.** A long-sleeved shirt hides arm chrome the way a jacket does, and a vest,
+  t-shirt, tank top or sleeveless jacket leaves it on show (any outer layer used to count, and no
+  shirt ever did). Shorts and skirts leave leg chrome showing, and jumpsuits cover arms and legs.
+  Clothes from mods that do not say what they are keep the old rule.
+- **What you wear is read from what people can see.** Your outfit preset when one is on, including
+  a slot the preset leaves empty or a slot you have hidden (a jacket hidden by your preset no longer
+  hides your arms), and clothes put on by outfit mods in slots of their own, which were not seen at
+  all. The same reading decides how you look, gang-colour disguises and masks.
 - **With They Will Remember, a gang shooting you on sight could show as Neutral** on the Hub. They
   Will Remember keeps its own record of who is hostile; the Gangs screen now shows it next to your
   standing, and says that paying a gang off here changes only your standing.

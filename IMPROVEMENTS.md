@@ -104,7 +104,30 @@ look were sampled every ten settled ticks and never in a menu, and the sample al
 Clothes are changed in the inventory and the Hub is a tab of the same menu, so the meter showed the reading
 from before the change. `CBHudResampleWorn` reads both when the Hub opens and on every change of screen, and
 the ten-tick sample of them no longer waits for streaming (they are V's equipment, not the world; district
-and heat still wait). Still a slot heuristic: a long-sleeved shirt in the inner chest slot does not cover arms.
+and heat still wait).
+
+**Then the reading itself, rebuilt in 1.9.0** (`Signals/Concealment.reds`, `CBReadWorn`, one snapshot a sample kept as
+`m_worn` and shared by chrome, look, disguise and the mask test). Asked "are clothes read from the slots or from the outfit
+presets? I want both":
+- **Presets, by the game's rule.** `CBVisibleInArea`: the preset's item when a preset is on and sets the area; nothing when
+  the preset clears it or the area's hide switch is on (`IsSlotHidden`); otherwise the equipped item. The old reader fell back
+  to the equipped item when the preset's slot was empty, so a jacket the preset hid still covered the arms. `IsSlotHidden` is
+  never asked about the Outfit area, whose row index is -1 in the game's own unchecked table read.
+- **Anything else on V.** `CBAttachedGarments`: V's clothing (`GetItemListByTag(Clothing)`, capped `WornScanCap` 600) that is
+  attached to V anywhere (`GetItemInSlotByItemID`), is not what the clothing areas have equipped (a hidden equipped item stays
+  attached with its look cleared), and is not a second copy of a garment already seen (the wardrobe attaches a preview copy when
+  nothing is equipped under a preset). That is how an outfit mod's own slots are seen with no slot name typed. Not checked
+  against EquipmentEx itself: its source is not on this machine. If it hides vanilla clothing without the game's own hide,
+  a hidden jacket could still count as covering.
+- **Sleeves and legs, from the records.** `LongSleeve` (the game's own tag), or a jumpsuit tagged `BodySuit`
+  (`Price.Jumpsuit`/`Price.TightJumpsuit`; dresses carry `BodySuit` too and cover neither); a garment with the game's style tags
+  and neither has bare arms; one with no tags keeps the old rule (outer covers, inner does not). Shorts and skirts by
+  `Price.Shorts`/`Price.Skirt`. Simulated over every base-game garment record with inheritance (scratchpad `garments.py`):
+  shirts 35/35 and formal jackets 33/33 cover, jackets 158/173, coats 27/33, vests 10/116, t-shirts 2/57, tank tops and
+  undershirts and dresses none; pants cover, shorts and skirts do not; jumpsuits cover arms and legs.
+- The once-a-session clothing log now lists each garment seen with its sleeves and what it covers.
+- **2.31 compiled for the first time on this machine**: `%LOCALAPPDATA%/HotswapPatch231` holds `final-2.31.redscripts`,
+  redscript 0.5.31, Codeware 1.20.6 and Mod Settings 0.2.21 (from the Hotswap work). Cyberbane 1.9.0 compiles clean there.
 
 ### "They Will Remember said Tyger Claws turned hostile; Cyberbane still shows them neutral"
 

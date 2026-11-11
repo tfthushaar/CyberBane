@@ -342,6 +342,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The ticks new Rivals were made on lately, so one fight cannot make a crowd of them
   // (CBRivalOdds, Rivals/RivalSystem.reds). Session only.
   private let m_rivalMadeTicks: array<Int32>;
+  // What V was last seen wearing and what it covers (Signals/Concealment.reds), read once a sample by
+  // CBUpdateChrome and shared by the look, the disguise and the mask test. Session only.
+  private let m_worn: ref<CBWornRead>;
   private let m_huntHoldReason: Int32;        // why no Rival can arrive right now (CBHold*)
   // Kills V has made recently, for Aura. Session-only: it describes the last minute, not the
   // playthrough. Counting V's own kills rather than scanning for nearby corpses is deliberate -
@@ -1742,6 +1745,14 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func ClearPack() -> Void {
     ArrayClear(this.m_packIds);
+  }
+
+  public func GetWorn() -> ref<CBWornRead> {
+    return this.m_worn;
+  }
+
+  public func SetWorn(worn: ref<CBWornRead>) -> Void {
+    this.m_worn = worn;
   }
 
   // A new Rival was just made (CBCreateRival).

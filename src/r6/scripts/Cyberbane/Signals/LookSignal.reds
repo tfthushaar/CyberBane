@@ -28,22 +28,21 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     return;
   }
 
-  let areas = [
-    gamedataEquipmentArea.Head, gamedataEquipmentArea.Face, gamedataEquipmentArea.OuterChest,
-    gamedataEquipmentArea.InnerChest, gamedataEquipmentArea.Legs, gamedataEquipmentArea.Feet,
-    gamedataEquipmentArea.Outfit
-  ];
 
   let lookSum = 0.0;
   let disguiseSum = 0.0;
   let bestFaction = n"";
   let bestFactionDisguise = 0.0;
 
-  // Through the same three routes as Signals/Concealment.reds. This asked the equipment area alone,
-  // which is empty whenever a wardrobe set is on: the trap that file was rewritten for, still here.
-  let noSlot: TweakDBID;
-  for area in areas {
-    let item = CBWornItem(game, data, area, noSlot);
+  // What a stranger sees V wearing, the reading the chrome sample has just made (Signals/Concealment.reds):
+  // the game's clothing areas as drawn, outfit presets and hidden slots included, and anything else on
+  // V's body, such as an outfit mod's own slots. Read here only when nothing has read it yet.
+  let worn = sys.GetWorn();
+  if !IsDefined(worn) {
+    worn = CBReadWorn(game, data);
+    sys.SetWorn(worn);
+  }
+  for item in worn.garments {
     if ItemID.IsValid(item) {
       let tdbid = ItemID.GetTDBID(item);
 
@@ -85,7 +84,7 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   // Those tables are hand-written and will never cover every face item in the game, and a
   // player who covers their face and sees nothing change reasonably concludes the system does
   // not work.
-  if CBFaceCovered(game, data) && CBPlayerMasked(game) {
+  if worn.masked {
     disguiseSum += CBConfig.MaskDisguise();
   }
   score.SetLook(MaxF(lookSum, 0.0), ClampF(disguiseSum, 0.0, 0.85));
