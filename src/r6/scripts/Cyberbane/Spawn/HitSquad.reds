@@ -151,11 +151,13 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   // car cannot be sent for, still comes on foot.
   let crew = Min(size, Max(0, CBSpawnRoom(game) - apexFuture));
   let spawned = 0;
+  let crewFuture = 0;   // crew a car has yet to bring into the world
   if crew > 0 {
     sys.SetAmbushWanted(CBCrewLiesInWait(sys, game, fs, withApex));
     let byCar = CBSendByCar(sys, game, fs, fs.sampleRecord, crew, n"CB_Squad");
     sys.SetAmbushWanted(false);
     spawned = byCar;
+    crewFuture = Max(0, byCar);
     if byCar <= 0 {
       spawned = CBSpawnGroup(game, fs.sampleRecord, n"", crew, n"CB_Squad",
                              CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
@@ -163,10 +165,12 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   }
   // And their netrunner (1.8.5), hanging back while the rest go in. Not with an apex squad, which
   // brings its own fourth chair; not for a crew of one or two; never past the live ceiling. One body,
-  // placed the way the crew was (CBSpawnGroup), so it is one of the crew in every count.
+  // placed the way the crew was (CBSpawnGroup), so it is one of the crew in every count. A crew coming
+  // by car is not in the world until its car is, so its seats are counted here as taken: without that
+  // the netrunner walked into the room the car's last passenger then could not have.
   if spawned >= CBConfig.NetrunnerSeatMinCrew() && !withApex {
     let netrunner = CBNetrunnerSeatRecord(fs);
-    if TDBID.IsValid(netrunner) && CBSpawnRoom(game) >= 1 {
+    if TDBID.IsValid(netrunner) && CBSpawnRoom(game) - crewFuture >= 1 {
       let netBody: EntityID;
       if CBSpawnGroup(game, netrunner, n"", 1, n"CB_Squad", CBConfig.HitSquadMinSpawnDistance() + 20.0, netBody) > 0 {
         spawned += 1;

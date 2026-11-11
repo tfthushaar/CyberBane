@@ -487,7 +487,8 @@ public func CBWhereaboutsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   // Calm: on foot, out of combat, nowhere the story or a job has the stage, a settled world.
   let calm = on && CBWorldStable(game) && !IsDefined(player.GetMountedVehicle()) && !player.IsInCombat()
-             && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSafeZone() && !sys.IsInQuestArea();
+             && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSafeZone() && !sys.IsInQuestArea()
+             && !sys.IsOnJob();
   sys.SetLairCalmTicks(calm ? Min(sys.GetLairCalmTicks() + 1, 1000) : 0);
   if sys.IsLairActive() {
     CBLairWatch(sys, game, player, on);
@@ -504,11 +505,18 @@ public func CBWhereaboutsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
 // Keep note of where the Rival out in the world is standing, while they are standing, so the
 // street can say where they were last seen even once their body has streamed out of reach
 // (CBNoteRivalSeen). One read of a position every other tick, on our own recorded body only.
+// Every Rival of the encounter, the one leading and anybody who came with them (1.9.0): one of a team
+// who got away left no sighting behind, because only the lead's position was ever noted.
 func CBTrackRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  let id = sys.GetActiveRivalId();
-  if id <= 0 {
-    return;
+  if sys.GetActiveRivalId() > 0 {
+    CBTrackOneRivalWhereabouts(sys, game, sys.GetActiveRivalId());
   }
+  for pid in sys.GetPackRivals() {
+    CBTrackOneRivalWhereabouts(sys, game, pid);
+  }
+}
+
+func CBTrackOneRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32) -> Void {
   let r = sys.FindRivalById(id);
   if !IsDefined(r) || !EntityID.IsDefined(r.spawnedEntityId) {
     return;

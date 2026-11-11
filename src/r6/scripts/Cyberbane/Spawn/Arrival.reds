@@ -1088,7 +1088,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
     // Nobody gets out at a job, or into the story: while V is on one, or the story has the stage,
     // they stay in the car (bounded, like the rest).
     let sysD = CyberbaneSystem.Get(game);
-    if IsDefined(sysD) && (sysD.IsInQuestArea() || sysD.GetStoryHold() != CBStoryNone()) {
+    if IsDefined(sysD) && (sysD.IsInQuestArea() || sysD.IsOnJob() || sysD.GetStoryHold() != CBStoryNone()) {
       vDriving = true;
     }
     // There, and still rolling: the order was to where V stood when it was given, and V has moved

@@ -302,7 +302,7 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   // Nobody can arrive right now (a safe area, a job, a scene): the clock waits with them.
   if CBArrivalsHeld(sys, game) {
     if lane == CBLaneApex() {
-      CBApexLaneNote(sys, game, "you are on a job, somewhere safe or in a scene");
+      CBApexLaneNote(sys, game, CBArrivalsHeldWhy(sys, game));
     }
     return;
   }
@@ -484,7 +484,12 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
   // been fighting supplies one instead. It uses the record already sampled from a real enemy
   // of theirs, so the person who turns up is somebody that gang would plausibly send, and it
   // needs nothing the player has not already done: hit a gang once and they can answer.
-  if bestScore <= 0.0 && lane == CBLaneRival() {
+  //
+  // Only for a roster that is really empty. This ran whenever nobody could be picked, and the usual
+  // reason nobody can be picked is that every Rival V has is on their cooldown after their last fight
+  // (RivalAfterEscapeTicks): so a player with five Rivals got a sixth, a stranger who had never met V,
+  // every time the lane came due during that quarter of an hour, until the roster was full of them.
+  if bestScore <= 0.0 && lane == CBLaneRival() && sys.CountActiveRivals() == 0 {
     let seeded = CBSeedRivalFromFactions(sys, game);
     if IsDefined(seeded) {
       bestScore = CBConfig.QueueScoreRival();
@@ -1144,7 +1149,7 @@ public func CBApexBlocker(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref
     return "one squad is already out";
   }
   if CBArrivalsHeld(sys, game) {
-    return "until you move on";
+    return "held while " + CBArrivalsHeldWhy(sys, game);
   }
   if CBLaneBudgetLeft(sys, game, CBLaneApex()) <= 0 {
     return "none left today";

@@ -165,8 +165,9 @@ public class CBThreatBar {
       }
       i += 1;
     }
-    // Full. The stack is sized for an apex squad plus a Rival, which is the most that can be on
-    // you at once, so this only happens if something upstream has gone wrong.
+    // Full. The stack is sized for an apex squad plus a team of three Rivals, which is the most
+    // that can be on you at once (CBConfig.ThreatBarRows), so this only happens if something
+    // upstream has gone wrong.
     if ArraySize(this.m_ids) >= CBConfig.ThreatBarRows() {
       return;
     }

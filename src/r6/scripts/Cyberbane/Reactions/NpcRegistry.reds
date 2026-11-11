@@ -18,6 +18,17 @@ public class CBNpcRegistry {
     if puppet.IsPlayer() {
       return;
     }
+    // Nor anything standing in for V: the photo mode's posed copy, a VR stand-in, the inventory
+    // paperdoll. They are not people in the street, and the photo mode's copy, taken for one, had its
+    // head turned by the crowd reactions. Photo mode is also when its copy attaches, so nothing that
+    // attaches then is registered at all.
+    if puppet.IsReplacer() || puppet.IsVRReplacer() || puppet.IsPaperdoll() {
+      return;
+    }
+    let pms = GameInstance.GetPhotoModeSystem(puppet.GetGame());
+    if IsDefined(pms) && pms.IsPhotoModeActive() {
+      return;
+    }
     // Hard cap so the registry can never grow without bound in dense crowds. If it is
     // full, prune despawned entries first; only skip the add if it is still full.
     if ArraySize(this.m_npcs) >= CBRegistryCap() {

@@ -82,6 +82,13 @@ public class CBReactionDirector {
       }
       return;
     }
+    // Near an objective V is not tracking (1.8.4) the street goes on reacting: the quest area above is
+    // the tracked job's, and every NPC standing at any job site is kept out of the loop below by its
+    // own check. Anybody already turned who is standing at one still goes back to how the game had
+    // them.
+    if sys.IsOnJob() {
+      this.RevertHostileAtJob(game, sys);
+    }
 
     if this.m_whisperCooldownTicks > 0 {
       this.m_whisperCooldownTicks -= 1;
@@ -136,7 +143,11 @@ public class CBReactionDirector {
       // only run it for NPCs actually in range. A dense registry then stays cheap per tick.
       if CBNpcSafe(sys, npc) {
         let dist = Vector4.Distance(ppos, npc.GetWorldPosition());
-        if dist <= CBConfig.NpcEvalRadius() && !CBSentByUs(des, npc) && CBSafetyGate.CanAffect(npc) {
+        // Nobody standing at any job site, tracked or not (1.8.4): turning a gig's people hostile
+        // or sending them running is the story's business. The Safety Gate itself only asks about
+        // the tracked job, so a fight's own consequences - morale, running, mercy - count anywhere.
+        if dist <= CBConfig.NpcEvalRadius() && !CBSentByUs(des, npc) && CBSafetyGate.CanAffect(npc)
+           && !sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
           evaluated += 1;
           let faction = CBClassifyFaction(npc);
 

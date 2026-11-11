@@ -139,9 +139,11 @@ public abstract class CBConfig {
   // Width of the threat bar across the top of the screen.
   // Narrower than it was, because there is a stack of these now rather than one.
   public static func ThreatBarWidth() -> Float = 520.0
-  // An apex squad of four plus a Rival is the most that can be on you at once, since the three
-  // lanes can overlap but never double up on their own kind.
-  public static func ThreatBarRows() -> Int32 = 5
+  // An apex squad of four plus the Rival lane's encounter is the most that can be on you at once,
+  // since the three lanes can overlap but never double up on their own kind. Since 1.9.0 that
+  // encounter can be three Rivals who came together (Rivals team up), so seven: at five, a team that
+  // arrived after an apex squad had its second and third names left off the stack.
+  public static func ThreatBarRows() -> Int32 = 7
   public static func ThreatBarRowStride() -> Float = 34.0
   public static func ThreatBarTopMargin() -> Float = 80.0
   public static func RumorLifetimeDays() -> Float = 3.0
@@ -378,10 +380,12 @@ public abstract class CBConfig {
   public static func LieutenantHealthMult() -> Float = 1.1
 
   // ---- Succession (spec §10.1) ------------------------------------------
-  // Added to the avenger roll per rank of the Rival you just put down, so the higher the
-  // one you killed, the likelier someone steps into the slot. A crew cannot be decapitated
-  // in a single fight.
-  public static func SuccessionChancePerRank() -> Float = 0.12
+  // The chance someone steps into a slain Rival's place: the base plus this per rank of the one
+  // you put down, so a rank 1 is 40% and a rank 4 is 85% before the Rival frequency setting. A crew
+  // cannot be decapitated in a single fight, and killing a small name usually settles it. Until the
+  // 1.9.0 bug pass the base was the officer-kill avenger's 60%, so even a rank 1 came back 72%.
+  public static func SuccessionChanceBase() -> Float = 0.25
+  public static func SuccessionChancePerRank() -> Float = 0.15
 
   // ---- Spawn ground probe (mid-air spawn fix) --------------------------
   // The spawn point is a flat offset behind V, so the floor under it is often not at V's own
@@ -821,20 +825,28 @@ public abstract class CBConfig {
   public static func ApexPowerLevelCeiling() -> Float = 3.0
 
   // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
-  // Rivals only land if they actually happen. Raised so leaving people alive or breaking a
-  // crew produces a nemesis often enough to notice, still bounded by the caps below.
-  public static func RivalChanceSurvivor() -> Float = 0.65
-  public static func RivalChanceSpared() -> Float = 0.75
+  // Rivals only land if they actually happen. Each of these is the base for one way of becoming a
+  // Rival, for an ordinary member of a gang, before CBRivalOdds weighs it: the Rival frequency
+  // setting, how much the person counted for (a lookout 0.5x up to an elite 1.4x), and how many
+  // Rivals the last few minutes already made (RivalBurstTicks: the second in a fight is half as
+  // likely, the third a third). The ceiling is last. So the first person who gets away from V is
+  // still more likely than not to come back, an officer more so, and one fight makes one or two
+  // names rather than a crowd of them.
+  public static func RivalChanceSurvivor() -> Float = 0.6
+  public static func RivalChanceSpared() -> Float = 0.6
+  public static func RivalBurstTicks() -> Int32 = 300
+  public static func RivalOddsCeiling() -> Float = 0.95
   // A spared cyberpsycho is a coin flip, and nothing else about them is left to chance: they
   // come back with their own name, their own health and no multiplier on top of it.
   public static func CyberpsychoRivalChance() -> Float = 0.50
   // How far a gang's opinion of V moves when one of theirs puts V down. Standing is V's
   // footing with them, so beating V costs V footing: they have seen that it can be done.
   public static func DeathStandingDrop() -> Float = 6.0
-  // Used both when you put a Rival down (someone steps into their place) and when you kill
-  // an Officer or Boss, which is rare enough that a high chance reads as "that one mattered"
-  // rather than a flood.
-  public static func RivalChanceAvenger() -> Float = 0.60
+  // Killing an Officer or Boss: somebody of theirs takes it personally. Weighed by rank like the
+  // rest, so an officer is 50% and a boss 60%. It used to be a flat 60% for either, and officers lead
+  // most gang groups, so a fight with three of them made a Rival of nearly every one. A slain Rival's
+  // successor has its own numbers now (SuccessionChanceBase).
+  public static func RivalChanceAvenger() -> Float = 0.40
   public static func RivalChanceHunter() -> Float = 0.50
   // How long a Rival takes to track you down, in fast ticks (roughly seconds). A higher
   // rank has better information and finds you sooner. This replaced a per-slow-tick dice
@@ -1121,9 +1133,12 @@ public abstract class CBConfig {
   public static func JobPinCap() -> Int32 = 64
   // A crew this size or bigger brings a netrunner along (Spawn/HitSquad.reds, 1.8.5).
   public static func NetrunnerSeatMinCrew() -> Int32 = 3
-  // Rivals teaming up (1.9.0): how often a Rival who comes brings others of their gang, when the
-  // setting is on. Partners walk in a little further back than the one leading.
-  public static func RivalTeamUpChance() -> Float = 0.35
+  // Rivals teaming up (1.9.0): how often a Rival who comes brings others of their gang who are free,
+  // when the setting is on; more often for one who holds a chair in the gang's crew or leads a pack.
+  // Each partner walks in RivalTeamSpacing metres further back than the one before.
+  public static func RivalTeamUpChance() -> Float = 0.3
+  public static func RivalTeamUpChanceLeader() -> Float = 0.2
+  public static func RivalTeamSpacing() -> Float = 8.0
   // Cyberpsychotic breaks (1.9.0): only a rank 4 Rival, a chance on each loss to V that grows with
   // how many there have been, never more than the ceiling.
   public static func PsychoBreakBase() -> Float = 0.08

@@ -102,6 +102,66 @@ func CBTwrModulePresent() -> Bool {
   return false;
 }
 
+// They Will Remember's own word on this gang (1.9.0): 1 hostile on sight, 0 not, -1 nobody to ask.
+//
+// "They Will Remember told me Tyger Claws turned hostile, and Cyberbane still shows them neutral."
+// Both were true. They are two records. Cyberbane's standing is earned and spent and is what moves
+// prices and pay-offs; They Will Remember rolls a gang hostile from how many of theirs V has killed,
+// as early as the first one, keeps that in its own save data, and with it installed Cyberbane hands it
+// hostility on sight and the gangs' crews (CBTwrActive). The Hub showed only Cyberbane's record, so a
+// gang shooting V on sight read as neutral. It asks They Will Remember too now.
+//
+// At run time, through Codeware's reflection, so nothing in this build names anything of theirs. A
+// version of theirs without this function answers -1 and the Hub shows what it always did; calling it
+// by name instead would fail every script mod's compile on any install with such a version
+// (`ModuleExists` says a mod is there, never which version). The index is theirs
+// (KillCounts.GetFactionIndex), which their own saved list is kept in, so it cannot move under them.
+public func CBTwrGangHostile(game: GameInstance, faction: CName) -> Int32 {
+  if !CBTwrActive() {
+    return -1;
+  }
+  let index = CBTwrFactionIndex(faction);
+  let container = GameInstance.GetScriptableSystemsContainer(game);
+  if index < 0 || !IsDefined(container) {
+    return -1;
+  }
+  let manager = container.Get(n"TheyWillRemember.Factions.AttitudeManager");
+  let type = Reflection.GetClass(n"TheyWillRemember.Factions.AttitudeManager");
+  if !IsDefined(manager) || !IsDefined(type) {
+    return -1;
+  }
+  let ask = type.GetFunction(n"IsFactionHostileByIndex");
+  if !IsDefined(ask) || ArraySize(ask.GetParameters()) != 1 {
+    return -1;
+  }
+  // Without the call's status flag: it is a script reference, a form this mod has never shipped, and
+  // 2.31's compiler cannot be tried here. A call that fails hands back an empty value, which reads as
+  // not hostile, and the Hub then shows Cyberbane's own standing, as it always did.
+  let args: array<Variant>;
+  ArrayPush(args, ToVariant(index));
+  let answer = ask.Call(manager, args);
+  return FromVariant<Bool>(answer) ? 1 : 0;
+}
+
+// Their numbering of the gangs (They Will Remember 2.7, KillCounts.GetFactionIndex). The ones they do
+// not track - the Mox, the Aldecaldos, MaxTac - have no answer.
+func CBTwrFactionIndex(faction: CName) -> Int32 {
+  if Equals(faction, n"Maelstrom") { return 0; }
+  if Equals(faction, n"TygerClaws") { return 1; }
+  if Equals(faction, n"Animals") { return 2; }
+  if Equals(faction, n"Scavengers") { return 3; }
+  if Equals(faction, n"Valentinos") { return 4; }
+  if Equals(faction, n"VoodooBoys") { return 5; }
+  if Equals(faction, n"SixthStreet") { return 6; }
+  if Equals(faction, n"Arasaka") { return 7; }
+  if Equals(faction, n"Militech") { return 8; }
+  if Equals(faction, n"KangTao") { return 9; }
+  if Equals(faction, n"Wraiths") { return 11; }
+  if Equals(faction, n"Barghest") { return 12; }
+  if Equals(faction, n"NCPD") { return 13; }
+  return -1;
+}
+
 // What will this gang take to call it off?
 //
 // The old price was the body count and nothing else: `1000 + 50 * kills`. That meant a gang at

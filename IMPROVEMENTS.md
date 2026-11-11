@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.0. The "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.0. The "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -18,12 +18,136 @@ loot drops from corpses, and UI as data rather than injected widgets. **No `.red
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
 
+## Requests during 1.9.0
+
+### "Rivals team up doesn't need to be experimental: make it stable and default"
+
+**Status: done in 1.9.0.** The setting is `rivalTeams`, default on; the first build's `rivalTeamUps` was
+renamed on purpose, because Mod Settings keeps a value by field name and anybody who had launched that
+build would have stayed at its stored off. What it took to be stable, each a fault in the first build:
+- **The lead going down orphaned the team.** `CBCloseRivalEncounter` cleared the active id, and about thirty
+  readers ask "the active Rival" one question or another (the escape test, whereabouts, hideout placement,
+  the hunt's text). `CBPackHandOffLead` now gives the encounter to the next partner still out, from every
+  close and from the no-show check in `CBRivalHuntTick`.
+- **Getting away credited the lead alone.** `CBChaseGiveUp` called the lead-only `CBRivalEscapedByPlayer`
+  and then deleted every `CB_Rival`, so partners stayed filed as out after V with their bodies gone. One
+  routine, `CBRivalsShakenOff`, now serves the give-up, the hunt finding nobody left and the stale retire,
+  and hands any standing body off as that Rival's (`CBRetireRivalBody`). `CBRivalEscapedByPlayer` is deleted:
+  it was the half answer of the pair.
+- **Most Rivals could never be partners.** Partners had to be `Active`, and a Rival made from an escape or a
+  mercy is filed `Hunting` from the start. `CBRivalCanJoinTeam` asks whether they are out (body present, car
+  pending, at their place, being bought or forgotten) instead.
+- **The combat release removed a Rival without closing their encounter** (`CBReleaseTag`); it closes it now,
+  as the cut-off always did. A released partner had stayed on the team for good.
+- Partners are picked by the lane's own scoring with some chance in it, placed `RivalTeamSpacing` (8 m) further
+  back each, and the lead texts once who came along. Chance 30%, 50% for a crew leader, lieutenant or Pack Leader.
+- Whereabouts kept one Rival's last position (`m_rivalLastPos*`), so a partner who got away left no sighting;
+  it keeps one per Rival now. The threat bar stack is seven rows (an apex squad and a team of three).
+
+### "Check the chances of Rival creation and see if they feel impactful"
+
+**Status: done in 1.9.0** (`Rivals/RivalSystem.reds`, `CBRivalOdds`, `CBRivalRoll`). Every roll was one flat number:
+a grunt and an elite alike, and a knocked-out room made a Rival from three bodies in four until the per-gang
+cap of three, with a text and a rumour for each. The frequency setting reached two of the five rolls. Now each
+roll is its base, times the setting, times a rank weight (Trash 0.5, Weak 0.7, Normal 1.0, Rare 1.1, Officer
+1.25, Elite 1.4, Boss 1.5), divided by one plus the Rivals made in the last `RivalBurstTicks` (300), ceiling
+last. Bases: got away 0.6, spared 0.6, lost a crew 0.5, officer or boss killed 0.4. Succession on a slain Rival
+is 0.25 + 0.15 per rank (rank 1 40%, rank 4 85%); it was the officer avenger's 0.6 plus 0.12 a rank, so killing
+a rank 1 was answered 72% of the time. Every roll is logged with its odds. Killer Rivals and an empty roster's
+first name are not rolls. **The Rival lane also made strangers**: `CBSeedRivalFromFactions` ran whenever nobody
+could be picked, which mostly meant everybody was on their cooldown, so the roster filled with Hunter Rivals V
+had never met. It runs only for an empty roster now.
+
+### "Check the queue system is working and looks good"
+
+**Status: checked and improved in 1.9.0** (`Spawn/Queue.reds`, `Spawn/Schedule.reds`, `UI/Hud.reds`). The lanes,
+timetable and budgets work as documented. What did not look right: a lane's clock does not run while arrivals
+are held, and the Hub showed the frozen countdown with no reason, or "due, nobody qualifies" when nobody was
+being picked because V was on a job. `CBArrivalsHeldWhy` gives the words, in `CBArrivalsHeld`'s order, to the
+lane line, the apex blocker and the apex log note. The Rival line says when every Rival is lying low; a team
+says how many are together. The Rivals screen lists whoever is out first and marks a Rival on their cooldown
+"lying low" rather than "waiting their turn".
+
+### "Make sure the new systems don't affect the old ones negatively"
+
+**Status: three regressions from 1.8.4 found and fixed in 1.9.0.** 1.8.4 put every active objective's pins
+into the tracked objective's list, so everything that asked "is V at the job" started answering for every gig
+and quest marker on the map. Now there are two questions: `IsInQuestArea` (the tracked objective's pins,
+`NearTrackedPins`, a scene, a hostile zone) and `IsOnJob` (any objective). Arrivals, spawn placement, hunters,
+crews leaving their car, patrols and hideouts hold for both; the rest went back to the tracked job.
+- **The Safety Gate** refused everybody within 60 m of any objective, which switched off morale, running and
+  mercy there: no Rivals, no Conduct. It asks about the tracked job again; the Director has its own per-NPC
+  check against every job site, and still reverts anybody it turned who stands at one.
+- **The Director** stood down entirely within 80 m of any objective: no crowd fear, no whispers.
+- **The job hold** used the sanctuary's: every hunter in combat who lost sight of V for a moment forgot V. On a
+  job only somebody farther than the combat-release distance does. Runners keep their flee order in either hold.
+
+### "Photo mode outside my apartment: V's head moves on its own after 10-20 seconds"
+
+**Status: fixed in 1.9.0** (`Core/WorldState.reds`, `Reactions/NpcRegistry.reds`, `Reactions/SafetyGate.reds`).
+`CBWorldStable` said photo mode was covered by `TimeSystem.IsPausedState`; it never was. The game freezes the
+world for photo mode with a time dilation of its own (PSM `TimeDilation` Photomode), and the paused state's
+setter is `testonly`. The fast tick ignores time dilation, so Cyberbane went on working through every photo.
+The posed copy of V attaches when photo mode starts and is typed only as a `gamePuppet` in
+`PhotoModePlayerEntityComponent`; taken into the registry, the Director's stage 0 fear (`CBGlanceAt`, the
+reaction component's own look-at, queued on its owner) turned its head toward V's real position. Outside safe
+areas only, because the Director returns in them; after a delay, because of the registry's warm-up. Fixed at
+the gate: `PhotoModeSystem.IsPhotoModeActive` (what `GameObject.IsPhotoModeBlocked` asks; present on 2.31),
+plus no replacer, VR replacer or paperdoll in the registry or past the Safety Gate, and nothing registered
+while photo mode is on. Not reproduced here; the symptom, the safe-area exception and the delay all match.
+
+### "Cover up, it says, but my visible chrome does not change with clothing"
+
+**Status: fixed in 1.9.0** (`UI/Hud.reds`, `Core/CyberbaneSystem.reds`). The saturation trap was closed in 1.6
+(scale 3.4, worst case 98), and concealment reads the wardrobe correctly. What was left was timing: chrome and
+look were sampled every ten settled ticks and never in a menu, and the sample also waited out heavy streaming.
+Clothes are changed in the inventory and the Hub is a tab of the same menu, so the meter showed the reading
+from before the change. `CBHudResampleWorn` reads both when the Hub opens and on every change of screen, and
+the ten-tick sample of them no longer waits for streaming (they are V's equipment, not the world; district
+and heat still wait). Still a slot heuristic: a long-sleeved shirt in the inner chest slot does not cover arms.
+
+### "They Will Remember said Tyger Claws turned hostile; Cyberbane still shows them neutral"
+
+**Status: fixed in 1.9.0** (`Economy/Peace.reds`, `UI/Hud.reds`). Two records, both correct: They Will Remember
+rolls a gang hostile from its kill count (`AttitudeManager.CheckAndSetFactionHostileByIndex`, as early as the
+first kill) and keeps it in its own save data; Cyberbane's standing is its own and, in compat mode, no longer
+drives hostility on sight or crews. `CBTwrGangHostile` asks `IsFactionHostileByIndex` at run time through
+Codeware's reflection, so the build names nothing of theirs and a version without the function reads as "not
+hostile". Index by their `KillCounts.GetFactionIndex`. The Gangs screen sorts and colours a TWR-hostile gang as
+hostile, writes "TWR: Hostile", and the detail panel says a pay-off here changes only Cyberbane's standing.
+Cyberbane's posture itself is left alone on purpose: following TWR would have made the pay-off take money and
+change nothing. Reflection API checked in Codeware 1.20.3 as well as the current one; compiled with TWR 2.7.2.
+
+### "Running around very dense groups of enemies can make the game stutter" (unconfirmed)
+
+**Status: the likeliest cost removed in 1.9.0** (`Reactions/CombatFlee.reds`). Every hit on every enemy queued a
+follow-up that ran the whole Safety Gate (workspot query, safe-area query, interior test, pin scan) before the
+cheap tests that reject nearly everyone (above a quarter health; not down), and ran it twice, for fleeing and
+for mercy. Reordered; the conditions are all conjunctive, so the outcome is unchanged. The mercy sweep spent
+its ten a second on anybody hurt and still standing; it now counts only the downed, which also means it reaches
+people lying further down the list in a big fight. If stutter is still reported, ask whether it happens with
+Cyberbane switched off in Mod Settings, and for a Verbose log around it.
+
+### Bug pass, 1.9.0
+
+- A crew's netrunner walked into the room a car-borne crew's last member needed (`crewFuture` in `CBSpawnHitSquad`).
+- An escort or scout could take a crew's grenadier slot; it is `CB_Squad` only.
+- Companion hostility looked the companions up once for each of ours; once a pass now.
+- Two cyberpsychos could share a nickname: `CBRivalPickBrokenEpithet`, stored past `CBBrokenEpithetBase` (1000)
+  in the same field, checked against the roster and the name book.
+- The attach-time Rival build waited for an active Rival; it asks the body first and builds a partner when there
+  is none for a moment.
+- The Hub's Ambush button kept the last Rival's label when a Rival's whereabouts were not for sale (reason 4).
+- "Forget every rival" left the team list behind.
+- The team-up setting's description was defined three times; two field comments had slid onto the wrong fields.
+
 ## Requests after 1.8.3
 
-### "More Rivals coordinating a singular ambush" (decided: same gang only, experimental)
+### "More Rivals coordinating a singular ambush" (decided: same gang only; on by default since the 1.9.0 bug pass)
 
 **Status: in 1.9.0** (`Spawn/RivalEncounter.reds`, `Rivals/RivalSystem.reds`, `Reactions/CombatFlee.reds`,
-`Spawn/Hunt.reds`, `Core/StoryHold.reds`, `UI/BossBar.reds`, `Core/CyberbaneSystem.reds`). `CBRivalBringPartners`
+`Spawn/Hunt.reds`, `Core/StoryHold.reds`, `UI/BossBar.reds`, `Core/CyberbaneSystem.reds`). The first build is
+described here; "Requests during 1.9.0" above has what changed before release. `CBRivalBringPartners`
 runs after the lead spawns (`CBLaneFire`): setting on, 35%, up to `rivalTeamSize - 1` partners of the same
 gang who are Active, off cooldown and queueable, each placed with `CBSpawnGroup` and given their own
 `spawnedEntityId`; session list `m_packIds`. Deaths, mercy and a partner's own escape already resolved by
@@ -108,7 +232,9 @@ pins only, and once the hunt had located V the search-order hold lifted, so hunt
 patches) every thirty ticks; `IsOnJob` (a scene or near those pins, without the hostile zones the quest
 area includes) holds everybody out like a sanctuary, located or not, and stops engagement and cut-off
 removal. Why a Valentino was after V at all needs the player's log. Cross-gang hostility was considered
-and declined: it changes what vanilla NPCs do.
+and declined: it changes what vanilla NPCs do. **Corrected in 1.9.0:** the job pins went into the tracked
+objective's list, which widened the quest area, the Safety Gate and the Director's stand-down to every
+objective, and the job hold forgot V mid-fight; see "Make sure the new systems don't affect the old ones".
 
 ## Requests after 1.8.2
 

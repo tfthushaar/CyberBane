@@ -70,31 +70,44 @@ func CBForgetV(npc: ref<ScriptedPuppet>, player: ref<PlayerPuppet>) -> Void {
   tracker.ResetRecentlyDroppedThreat();
 }
 
-// Once a tick while V is safe, for everybody of ours.
+// Once a tick while V is safe, for everybody of ours. Also while V is on a job (Spawn/Hunt.reds,
+// 1.8.4), more gently: `onJob`.
+//
+// A job is not a front door. It is any active objective within the quest-area radius, which on a
+// busy journal covers a good part of the street, and V is often fighting right there. So on a job
+// nobody is sent anywhere and nobody is handed V, as at home, but somebody already fighting V close by
+// keeps fighting when V ducks behind cover: only somebody further off than the combat-release distance
+// who has lost sight of V lets V go. Applied the sanctuary's way, every hunter in a street fight forgot
+// V every time V broke line of sight, because some gig's marker was within eighty metres.
 public func CBSanctuaryHold(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
-                            player: ref<PlayerPuppet>) -> Void {
-  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Rival");
-  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Apex");
-  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Squad");
-  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Escort");
-  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Scout");
-  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Orphan");
+                            player: ref<PlayerPuppet>, opt onJob: Bool) -> Void {
+  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Rival", onJob);
+  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Apex", onJob);
+  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Squad", onJob);
+  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Escort", onJob);
+  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Scout", onJob);
+  CBSanctuaryHoldTag(sys, game, des, player, n"CB_Orphan", onJob);
 }
 
 func CBSanctuaryHoldTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
-                        player: ref<PlayerPuppet>, tag: CName) -> Void {
+                        player: ref<PlayerPuppet>, tag: CName, onJob: Bool) -> Void {
+  let ppos = player.GetWorldPosition();
   let ids = des.GetTaggedIDs(tag);
   let i = 0;
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
     // Somebody still in a car is the car's, and it lets them out when it stops (CBOrderPursue then
-    // gives them nothing to do).
-    if CBStillStanding(p) && CBNpcSafe(sys, p) && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID()) {
+    // gives them nothing to do). Somebody who broke and is running is running away from V, not
+    // after V: their order is the flee (CBOrderFlee), and taking it back left them standing in the
+    // open, never far enough away to count as got away, until the rally turned them round.
+    if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken
+       && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID()) {
       CBCancelMove(p);
       p.cbSearchGen = 0;
       // Somebody who can still see V has not lost V: a fight in a doorway goes on being a fight.
-      if CBNpcInCombat(p) && !CBWitnessCanSee(p, player) {
+      if CBNpcInCombat(p) && !CBWitnessCanSee(p, player)
+         && (!onJob || Vector4.Distance(p.GetWorldPosition(), ppos) > CBConfig.CombatReleaseDistance()) {
         CBForgetV(p, player);
       }
     }

@@ -224,10 +224,15 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
   if !IsDefined(rival) {
     return "";
   }
-  // After a break they are known for that, and nothing else (1.9.0).
+  // After a break they are known for that, and nothing else (1.9.0). The one picked when they broke
+  // (CBRivalPickBrokenEpithet), stored past CBBrokenEpithetBase in the same field.
   if CBRivalHasTrait(rival, n"Broken") && IsDefined(content) {
     let e = content.GetEpithets();
     if IsDefined(e) && ArraySize(e.broken) > 0 {
+      let picked = rival.epithet - CBBrokenEpithetBase();
+      if picked >= 0 && picked < ArraySize(e.broken) {
+        return e.broken[picked];
+      }
       return e.broken[CBHashIndex(rival.id, 9, ArraySize(e.broken))];
     }
   }
@@ -275,13 +280,59 @@ public func CBRivalMaybeBreak(sys: ref<CyberbaneSystem>, game: GameInstance, r: 
   if RandF() >= chance {
     return false;
   }
-  CBRivalGiveTrait(r, n"Broken");
   let content = CBContent(game);
+  CBRivalPickBrokenEpithet(sys, content, r);
+  CBRivalGiveTrait(r, n"Broken");
   if CBMessagesOn() && IsDefined(content) {
     CBHearsayFromStreet(game, s"Word is \(CBRivalDisplayName(content, r)) went back under the knife after you and came out wrong. Cyberpsycho now. Watch yourself.", n"");
   }
   CBLog.Info(n"Rivals", s"Rival \(r.id) broke: cyberpsycho (chance \(RoundF(chance * 100.0))%).");
   return true;
+}
+
+// A Rival's nickname after a break lives in the same field as the one they had (`epithet`), past this
+// number, so no save changes shape and a value below it still reads as the old pool.
+public func CBBrokenEpithetBase() -> Int32 = 1000
+
+// One nobody else has: not another cyberpsycho on the roster, and not one this save has used before
+// (the name book, as every nickname is since 1.8.5). Picked as they break. The first build hashed the
+// id instead, so two who broke could carry the same one, which nicknames never do.
+func CBRivalPickBrokenEpithet(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, r: ref<CBRival>) -> Void {
+  if !IsDefined(sys) || !IsDefined(content) || !IsDefined(r) {
+    return;
+  }
+  let e = content.GetEpithets();
+  if !IsDefined(e) || ArraySize(e.broken) == 0 {
+    return;
+  }
+  let n = ArraySize(e.broken);
+  let start = CBHashIndex(r.id, 9, n);
+  let book = CBRivalNameBook.Get(sys.GetGameInstance());
+  let pass = IsDefined(book) ? 0 : 1;
+  while pass < 2 {
+    let step = 0;
+    while step < n {
+      let idx = (start + step) % n;
+      let word = e.broken[idx];
+      let taken = false;
+      for other in sys.GetRivals() {
+        if IsDefined(other) && other.id != r.id && CBRivalHasTrait(other, n"Broken")
+           && Equals(CBRivalEpithet(content, other), word) {
+          taken = true;
+        }
+      }
+      if !taken && (pass == 1 || !book.Has(CBEpithetBookKey(word))) {
+        r.epithet = CBBrokenEpithetBase() + idx;
+        if IsDefined(book) {
+          book.Remember(CBEpithetBookKey(word));
+        }
+        return;
+      }
+      step += 1;
+    }
+    pass += 1;
+  }
+  r.epithet = CBBrokenEpithetBase() + start;
 }
 
 func CBFallbackHandle(id: Int32) -> String {
@@ -677,6 +728,65 @@ func CBCyberpsychoMayReturn(recordID: TweakDBID, source: ECBRivalSource) -> Bool
   return RandF() < CBConfig.CyberpsychoRivalChance();
 }
 
+// ---- How likely somebody is to come back as a Rival (the 1.9.0 bug pass) ----------------------
+//
+// Every way of becoming a Rival rolled one flat number, whoever the person was and however many had
+// just been made. Two things followed. A grunt who ran was as likely to swear revenge as the officer
+// leading them, so a name meant nothing about who it was. And one fight could make a crowd: a room put
+// to sleep turned a Rival out of three bodies in four until the gang's limit stopped it, with a text and
+// a rumour for each, so the roster filled in a minute and the next new name was nobody in particular.
+// The Rival frequency setting also reached only two of the five rolls.
+//
+// Now one function answers for every roll: the base for that way of becoming one, times the frequency
+// setting, times how much the person counted for (CBRivalRarityWeight), divided by one more than the
+// number of Rivals already made in the last few minutes, so the second name a fight makes is half as
+// likely and the third a third. The ceiling goes last. A death (the Killer) is not a roll and is not
+// touched, and neither is the empty roster's first name (CBSeedRivalFromFactions).
+public func CBRivalRarityWeight(recordID: TweakDBID) -> Float {
+  let rec = TweakDBInterface.GetCharacterRecord(recordID);
+  if !IsDefined(rec) {
+    return 1.0;
+  }
+  let rarity = rec.Rarity();
+  if !IsDefined(rarity) {
+    return 1.0;
+  }
+  let t = rarity.Type();
+  if Equals(t, gamedataNPCRarity.Trash) { return 0.5; }
+  if Equals(t, gamedataNPCRarity.Weak) { return 0.7; }
+  if Equals(t, gamedataNPCRarity.Rare) { return 1.1; }
+  if Equals(t, gamedataNPCRarity.Officer) { return 1.25; }
+  if Equals(t, gamedataNPCRarity.Elite) { return 1.4; }
+  if Equals(t, gamedataNPCRarity.Boss) { return 1.5; }
+  if Equals(t, gamedataNPCRarity.MaxTac) { return 0.0; }
+  return 1.0;
+}
+
+public func CBRivalOdds(sys: ref<CyberbaneSystem>, base: Float, recordID: TweakDBID, byRank: Bool) -> Float {
+  let odds = base;
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    odds *= rt.GetSettings().rivalFrequencyMult;
+  }
+  if byRank {
+    odds *= CBRivalRarityWeight(recordID);
+  }
+  if IsDefined(sys) {
+    odds = odds / (1.0 + Cast<Float>(sys.RecentRivalsMade(CBConfig.RivalBurstTicks())));
+  }
+  return ClampF(odds, 0.0, CBConfig.RivalOddsCeiling());
+}
+
+// Roll it, and say what the odds were: "harder to make Rivals" has been reported before, and the
+// log is the only place the number can be read.
+public func CBRivalRoll(sys: ref<CyberbaneSystem>, what: String, base: Float, recordID: TweakDBID, byRank: Bool) -> Bool {
+  let odds = CBRivalOdds(sys, base, recordID, byRank);
+  let hit = RandF() < odds;
+  let outcome = hit ? "a Rival" : "not this time";
+  CBLog.Info(n"Rivals", s"Rival roll, \(what): \(RoundF(odds * 100.0))%, \(outcome).");
+  return hit;
+}
+
 public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName,
     recordID: TweakDBID, appearance: CName, source: ECBRivalSource, origin: CName, at: Float) -> ref<CBRival> {
   if !IsDefined(sys) {
@@ -749,6 +859,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   }
 
   sys.AddRival(r);
+  sys.NoteRivalMade();   // so the next roll in the same fight is less likely (CBRivalOdds)
   // A new name in a crew may be the only one left standing in it (spec §10.1).
   CBHierarchyFill(sys, faction);
 
@@ -915,7 +1026,8 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
 
   // 2. The encounter slot, so the lanes know nothing is out and the next one can be queued.
   if IsDefined(rival) {
-    if sys.GetActiveRivalId() == rival.id {
+    let wasLead = sys.GetActiveRivalId() == rival.id;
+    if wasLead {
       sys.SetActiveRivalId(0);
     }
     // Forget which body was theirs. Keeping it would leave CBFindRivalByBody matching an
@@ -928,8 +1040,15 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
     if rival.huntTicks < CBConfig.RivalAfterEscapeTicks() {
       rival.huntTicks = CBConfig.RivalAfterEscapeTicks();
     }
+    // 4. Whoever came with them carries the encounter on (Spawn/RivalEncounter.reds). Thirty-odd
+    //    readers ask "the active Rival" one question or another; with the lead down and nobody
+    //    active, a partner still fighting V was nobody's encounter to any of them.
+    if wasLead {
+      CBPackHandOffLead(sys);
+    }
   } else {
     sys.SetActiveRivalId(0);
+    CBPackHandOffLead(sys);
   }
   CBUntrackStrayRivalBodies(sys, game);
 }
@@ -1035,6 +1154,7 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   CBLairStandDown(sys, game);
   let removed = sys.ClearRivals();
   sys.SetActiveRivalId(0);
+  sys.ClearPack();
   CBDeleteTaggedSafe(game, n"CB_Rival");
   CBLog.Info(n"Rivals", s"Purged \(removed) rivals at the player's request.");
   return removed;
@@ -1130,13 +1250,13 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   // one you put down, the likelier that is - so a faction cannot be decapitated in one
   // fight. The successor inherits the slain one's standing, one rung down, rather than
   // restarting at the bottom (spec §10.1).
-  let freq = 1.0;
-  if IsDefined(rt) && rt.HasSettings() {
-    freq = rt.GetSettings().rivalFrequencyMult;
-  }
-  let succeedChance = CBConfig.RivalChanceAvenger()
+  //
+  // How likely rests on how high they stood. It started at sixty percent for anybody, so putting down
+  // a rank one Rival was nearly always answered by another rank one Rival and killing one settled
+  // nothing; now a small name usually ends with them, and a big one usually does not.
+  let succeedChance = CBConfig.SuccessionChanceBase()
     + Cast<Float>(rival.rank) * CBConfig.SuccessionChancePerRank();
-  if RandF() < ClampF(succeedChance * freq, 0.0, 0.9) {
+  if CBRivalRoll(sys, "succession", succeedChance, rival.recordID, false) {
     let avenger = CBCreateRival(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger, district, at);
     if IsDefined(avenger) {
       // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1,

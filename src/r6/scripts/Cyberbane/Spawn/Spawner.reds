@@ -1204,9 +1204,10 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBJoinSquadWith(sys, puppet);
   }
   // The first of a crew who can carry them carries the grenades (Spawn/Tactics.reds). The apex
-  // squad's shooter already does, so a crew that came with its apex has its grenadier there.
-  if isSquad && !isApex && !CBAiKitOwner() && !sys.ActiveSquadHasApex() && CBCanBeGrenadier(puppet as NPCPuppet)
-     && sys.TakeCrewGrenadier() {
+  // squad's shooter already does, so a crew that came with its apex has its grenadier there. The crew
+  // only: a Rival's escort or a scout attaching after the crew was sent took the one slot this crew had.
+  if des.IsTagged(id, n"CB_Squad") && !isApex && !CBAiKitOwner() && !sys.ActiveSquadHasApex()
+     && CBCanBeGrenadier(puppet as NPCPuppet) && sys.TakeCrewGrenadier() {
     CBMakeGrenadier(puppet as NPCPuppet);
   }
   if isRival || isLair {
@@ -1279,10 +1280,11 @@ func CBNearestForTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
 // You lost them. Clear the encounter out and let it count.
 func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>) -> Void {
   sys.SetChaseAwayTicks(0);
-  // A Rival you shook takes it personally and comes back harder; the rest simply lose you.
-  if CBLiveRivalPresent(sys, game) {
-    CBRivalEscapedByPlayer(sys, game);
-  }
+  // A Rival you shook takes it personally and comes back harder; the rest simply lose you. Every
+  // Rival of the encounter, not only the one leading it: with a team out (1.9.0) this credited the
+  // lead alone and left the others filed as out after V, with bodies about to be removed below.
+  CBRivalsShakenOff(sys, game, false);
+  sys.ClearPack();
   // A gang crew or apex squad V ran from. Running costs a little standing with them, and lying
   // low works: they leave V alone for a while (the same cooldown a crew starts when it is sent).
   let ranFrom = sys.GetHuntFaction();
@@ -1335,15 +1337,16 @@ func CBCrewSurvivorTakesItPersonally(sys: ref<CyberbaneSystem>, game: GameInstan
   if !IsDefined(sys) || !IsDefined(des) || Equals(faction, n"") || !CBRivalsOn() {
     return;
   }
-  if RandF() >= CBConfig.RivalChanceHunter() {
-    return;
-  }
   let ids = des.GetTaggedIDs(n"CB_Squad");
   let i = 0;
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
+      // The first one standing is the one asked, weighed like every other roll (CBRivalOdds).
+      if !CBRivalRoll(sys, "lost a crew", CBConfig.RivalChanceHunter(), p.GetRecordID(), true) {
+        return;
+      }
       let nr = CBCreateRival(sys, game, faction, p.GetRecordID(), n"", ECBRivalSource.Hunter,
                              CBEventDistrict(sys, game), CBGameSeconds(game));
       if IsDefined(nr) {
@@ -1552,6 +1555,15 @@ public func CBPlayerCompanions(sys: ref<CyberbaneSystem>) -> array<wref<Scripted
 // them hostile to V: never the group form, which would set whole groups against each other and turn
 // vanilla NPCs who have nothing to do with this.
 public func CBMakeHostileToCompanions(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  CBMakeHostileToTheseCompanions(sys, puppet, CBPlayerCompanions(sys));
+}
+
+// The same, against a list the caller already has (the tick asks once for everybody).
+public func CBMakeHostileToTheseCompanions(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>,
+                                           companions: array<wref<ScriptedPuppet>>) -> Void {
   if !IsDefined(sys) || !CBStillStanding(puppet) || !puppet.IsAttached() {
     return;
   }
@@ -1559,26 +1571,31 @@ public func CBMakeHostileToCompanions(sys: ref<CyberbaneSystem>, puppet: ref<Scr
   if !IsDefined(agent) {
     return;
   }
-  for c in CBPlayerCompanions(sys) {
-    let cagent = c.GetAttitudeAgent();
-    if IsDefined(cagent) && NotEquals(c.GetEntityID(), puppet.GetEntityID())
-       && NotEquals(agent.GetAttitudeTowards(cagent), EAIAttitude.AIA_Hostile) {
-      CBTrace("attitude: one of ours and V's companion");
-      agent.SetAttitudeTowards(cagent, EAIAttitude.AIA_Hostile);
-      cagent.SetAttitudeTowards(agent, EAIAttitude.AIA_Hostile);
+  for c in companions {
+    if IsDefined(c) && c.IsAttached() {
+      let cagent = c.GetAttitudeAgent();
+      if IsDefined(cagent) && NotEquals(c.GetEntityID(), puppet.GetEntityID())
+         && NotEquals(agent.GetAttitudeTowards(cagent), EAIAttitude.AIA_Hostile) {
+        CBTrace("attitude: one of ours and V's companion");
+        agent.SetAttitudeTowards(cagent, EAIAttitude.AIA_Hostile);
+        cagent.SetAttitudeTowards(agent, EAIAttitude.AIA_Hostile);
+      }
     }
   }
 }
 
 // A companion recruited, or streamed in, after ours were set up. Every few settled ticks while any of
 // ours who is hostile to V is standing: pairs not yet set are set. Nothing at all without a companion.
+// The companions are looked for once a pass, not once for each of ours: the registry is every NPC
+// near V, up to two hundred of them.
 public func CBCompanionHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   let player = GetPlayer(game);
   if !IsDefined(sys) || !IsDefined(des) || !IsDefined(player) || !des.IsPopulated(n"Cyberbane") {
     return;
   }
-  if ArraySize(CBPlayerCompanions(sys)) == 0 {
+  let companions = CBPlayerCompanions(sys);
+  if ArraySize(companions) == 0 {
     return;
   }
   let pagent = player.GetAttitudeAgent();
@@ -1592,7 +1609,7 @@ public func CBCompanionHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstan
     i += 1;
     if CBStillStanding(p) && CBNpcSafe(sys, p) && IsDefined(p.GetAttitudeAgent())
        && Equals(p.GetAttitudeAgent().GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
-      CBMakeHostileToCompanions(sys, p);
+      CBMakeHostileToTheseCompanions(sys, p, companions);
     }
   }
 }

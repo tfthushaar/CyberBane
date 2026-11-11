@@ -148,7 +148,14 @@ in active development. This page describes what the mod does and how it installs
   you. Scan one and the scanner gives that name too, over their class, the way it names an NCPD
   target. Put down the one hunting you and it is finally finished. Anyone who kills you can also
   come back, wearing the face they had when they did it, and dropping a crew's member can bring
-  a gang-mate gunning for you.
+  a gang-mate gunning for you. Who comes back depends on who they were: an officer or an elite is
+  likelier to take it personally than a lookout, and one fight makes a name or two, so each new
+  Rival is somebody you remember. Kill a small-time Rival and that is usually the end of it; kill a
+  big one and somebody usually steps into their place.
+- **Rivals team up.** Now and then a Rival who comes for you brings other Rivals of the same gang,
+  more often when the one leading runs a crew. Each fights, falls, runs or is spared on their own,
+  each has their own bar and marker, and if the one leading goes down the rest carry on. Get away
+  from them and every one of them counts it.
 - **You can go after them too.** A Rival who walks away from you alive gets seen somewhere
   afterwards. Now and then a gang at war with theirs, or somebody on the street, texts you where,
   and a pin goes on your map and minimap: Cyberbane's own mark, a gold bounty-hunt glyph that
@@ -279,7 +286,9 @@ in active development. This page describes what the mod does and how it installs
   pause menu, there is a setting for that. Click a screen to switch: Standing, Gangs, Turf, The City,
   Rivals, Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
   screen shows what each of the three lanes has on its way and when, as it stood when you paused.
-  If something cannot arrive, it says why. Click a gang to see what they are about to do and to pay
+  If something cannot arrive, it says why, including when the clock is waiting for you to leave a job
+  or somewhere safe. The Rivals screen puts whoever is out after you at the top and shows who is lying
+  low after their last fight. Click a gang to see what they are about to do and to pay
   them off, click a Rival for their file, and click a title to read what it takes and what it does, and to go by it once you have earned it. Standing tells you in plain
   words what Night City is doing about you right now and what it would take to change that.
   Messages live in your phone.
@@ -420,9 +429,9 @@ drive while you are driving. If cars ever misbehave on your setup, that is the s
 vendetta against you may send a crew to wait in a parked car up the road while you are driving, and
 pull out as you go past. Turn it off and arrivals work exactly as they do without it.
 
-**Rivals team up (experimental)**, under Rivals, is off by default. With it on, a Rival who comes for
-you sometimes brings one or two other Rivals of the same gang, each with their own name, bar and fate.
-**Rivals per team-up** sets whether that is two or three. Turn it off and Rivals come one at a time.
+**Rivals team up**, under Rivals, is on by default. A Rival who comes for you sometimes brings one or
+two other Rivals of the same gang, each with their own name, bar and fate. **Rivals per team-up** sets
+whether that is two or three. Turn it off and Rivals always come one at a time.
 
 **Cyberpsychotic breaks**, under Rivals, is on by default. A Rival at the top rank who keeps losing to
 you, by getting away, being spared or being shaken off, may come back a cyberpsycho: they fight like
@@ -498,7 +507,11 @@ Three worth knowing about if a playstyle is being treated unfairly:
 - They Will Remember: supported, detected exactly and automatically. Cyberbane backs off the
   systems that overlap (hostility on sight, hit squads, faction-colour disguises), keeping the
   rest. Night City Remembers is treated the same way, since it replaces They Will Remember. You
-  can force the compatibility mode on or off yourself in Mod Settings.
+  can force the compatibility mode on or off yourself in Mod Settings. The two keep separate
+  records: They Will Remember decides which gangs shoot on sight, and Cyberbane keeps your standing,
+  which is what prices and paying a gang off work from. When They Will Remember has a gang hostile,
+  the Hub's Gangs screen shows it beside your standing, so a gang that attacks you on sight never
+  reads as simply neutral.
 - Phone Extension and mods built on it: work alongside. Cyberbane's phone contacts use names of
   their own, so both can add contacts to the phone at once.
 - Street Sense: supported, detected automatically, no setup. It owns crowds noticing and

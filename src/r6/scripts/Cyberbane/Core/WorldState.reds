@@ -35,9 +35,20 @@ public func CBWorldStable(game: GameInstance) -> Bool {
   if CBVDown(game) {
     return false;
   }
-  // Paused - pause menu, photo mode: nothing should tick.
+  // Paused: nothing should tick.
   let ts = GameInstance.GetTimeSystem(game);
   if IsDefined(ts) && ts.IsPausedState() {
+    return false;
+  }
+  // Photo mode. This comment used to say the pause test above covered it, and it never did: the
+  // game freezes the world for photo mode with a time dilation of its own (PlayerStateMachine
+  // .TimeDilation is Photomode) and never sets the paused state, whose setter is test-only. So the
+  // fast tick, which ignores time dilation, went on working a frozen world through every photo,
+  // and outside a safe area the crowd reactions took the photo mode's posed copy of V for a passer-by
+  // and gave it a worried look at V: the head that turned on its own ten or twenty seconds in. The
+  // game's own question, the one GameObject.IsPhotoModeBlocked asks, on both patches.
+  let pms = GameInstance.GetPhotoModeSystem(game);
+  if IsDefined(pms) && pms.IsPhotoModeActive() {
     return false;
   }
   // The blackboard system itself is gone mid-transition, and dereferencing it then is the

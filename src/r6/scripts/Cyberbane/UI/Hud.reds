@@ -611,6 +611,7 @@ public class CBHud {
     this.m_listTop = 0;
     this.m_listScrolled = false;
     this.m_hover = n"";
+    CBHudResampleWorn(sys, game);
     this.Render(sys, game);
     return true;
   }
@@ -1719,6 +1720,7 @@ public class CBHud {
   private func SelectTab(sys: ref<CyberbaneSystem>, game: GameInstance, tab: Int32) -> Void {
     this.m_tab = CBHudClampTab(tab);
     sys.SetHubTab(this.m_tab);
+    CBHudResampleWorn(sys, game);
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
     this.m_payArmed = n"";
@@ -2267,17 +2269,28 @@ public class CBHud {
     // the tenth, and there are sixteen.
     let states = sys.GetFactionStates();
     let order: array<ref<CBFactionState>>;
+    let orderTwr: array<Bool>;
+    // They Will Remember's verdict on each, asked once a draw (CBTwrGangHostile): a gang it has
+    // hostile on sight sorts and reads as hostile whatever Cyberbane's own standing says.
+    let twrHostile: array<Bool>;
+    let t = 0;
+    while t < ArraySize(states) {
+      ArrayPush(twrHostile, IsDefined(states[t]) && CBTwrGangHostile(sys.GetGameInstance(), states[t].id) == 1);
+      t += 1;
+    }
     let sweep = 0;
     while sweep < 2 {
       let i = 0;
       while i < ArraySize(states) {
         let fs = states[i];
+        let twr = twrHostile[i];
         i += 1;
         if IsDefined(fs) {
           let posture = score.GetPosture(fs.id);
-          let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
+          let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) || twr;
           if (sweep == 0 && hostile) || (sweep == 1 && !hostile) {
             ArrayPush(order, fs);
+            ArrayPush(orderTwr, twr);
           }
         }
       }
@@ -2301,17 +2314,23 @@ public class CBHud {
     while row < CBHudListRows() && top + row < ArraySize(order) {
       let shownFs = order[top + row];
       this.RenderFactionRow(sys, score, shownFs, score.GetPosture(shownFs.id), row,
-                            Equals(shownFs.id, this.m_pickFaction));
+                            Equals(shownFs.id, this.m_pickFaction), orderTwr[top + row]);
       row += 1;
     }
   }
 
   private func RenderFactionRow(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, fs: ref<CBFactionState>,
-                                posture: ECBPosture, row: Int32, picked: Bool) -> Void {
+                                posture: ECBPosture, row: Int32, picked: Bool, twrHostile: Bool) -> Void {
     let pip = CBHudGrey();
     if Equals(posture, ECBPosture.Vendetta) { pip = CBHudRed(); }
     if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
     if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) { pip = CBHudGreen(); }
+    // Hostile on sight by They Will Remember's record, while Cyberbane's own standing is milder.
+    let postureText = CBPostureName(posture);
+    if twrHostile && !Equals(posture, ECBPosture.Hostile) && !Equals(posture, ECBPosture.Vendetta) {
+      pip = CBHudAmber();
+      postureText = "TWR: Hostile";
+    }
     let right = CBHudGangStatus(sys, fs);
     if Equals(sys.GetPendingPeace(), fs.id) {
       right = "PAYING OFF";
@@ -2321,7 +2340,7 @@ public class CBHud {
     let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), fs.id));
     this.SetRow(row, CBHudLayoutGangs(), pip, true, picked,
       CBFactionLabel(fs.id),
-      CBPostureName(posture),
+      postureText,
       s"fear \(RoundF(score.GetFactionFear(fs.id)))",
       StrLen(enemy) > 0 ? "at war: " + enemy : "",
       s"\(fs.kills) down",
@@ -2350,6 +2369,12 @@ public class CBHud {
     let posture = score.GetPosture(id);
     let gang = CBFactionLabel(id);
     let out = StrUpper(gang) + "   " + CBPostureName(posture) + "\n";
+    // Two records, said as two (CBTwrGangHostile): They Will Remember's is who shoots on sight, and a
+    // pay-off here changes Cyberbane's alone.
+    if CBTwrGangHostile(game, id) == 1 {
+      out += "They Will Remember has them hostile on sight: their people attack you when they know you.\n"
+           + "That is its own record, kept apart from your standing here, and paying them off here does not change it.\n";
+    }
     let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), id));
     if StrLen(enemy) > 0 {
       out += "At war with " + enemy + ". Hurting " + enemy + " is how this gang comes to like you.\n";
@@ -2521,15 +2546,24 @@ public class CBHud {
     } else {
       queuedId = 0;
     }
-    let i = 0;
-    while i < ArraySize(rivals) {
-      let r = rivals[i];
-      i += 1;
-      // Skipping the pinned one by id rather than by `continue`, which redscript does not have.
-      if IsDefined(r) && r.id != queuedId
-         && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
-        ArrayPush(order, r);
+    // Then whoever is out there right now, the one leading and anybody with them (1.9.0), then the
+    // rest. In roster order a team's second and third names could sit below the fold while they shot
+    // at V.
+    let game = sys.GetGameInstance();
+    let pass = 0;
+    while pass < 2 {
+      let i = 0;
+      while i < ArraySize(rivals) {
+        let r = rivals[i];
+        i += 1;
+        // Skipping the pinned one by id rather than by `continue`, which redscript does not have.
+        if IsDefined(r) && r.id != queuedId
+           && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting))
+           && Equals(pass == 0, CBRivalBodyPresent(game, r)) {
+          ArrayPush(order, r);
+        }
       }
+      pass += 1;
     }
     // The one that was picked is gone (put down, forgotten), or nobody was: the top of the list,
     // which is whoever is next, rather than an empty panel. Scrolled out of view is still picked.
@@ -2583,6 +2617,11 @@ public class CBHud {
         } else {
           if StrLen(this.m_holdLabel) > 0 {
             rightCol = this.m_holdLabel;
+          }
+          // On their cooldown after the last fight (RivalAfterEscapeTicks): nobody picks them until it
+          // runs out, which "waiting their turn" did not say.
+          if r.huntTicks > 0 {
+            rightCol = "lying low";
           }
           let lead = CBCurrentLead(sys, sys.GetGameInstance());
           if IsDefined(lead) && lead.rivalId == r.id {
@@ -2649,6 +2688,10 @@ public class CBHud {
               } else {
                 if why == 3 {
                   this.SetAction("You know where they are", false);
+                } else {
+                  // Not after V any more (4): nothing to buy. Left unset, the button kept the last
+                  // Rival's label and stayed clickable.
+                  this.SetAction("", false);
                 }
               }
             }
@@ -3048,8 +3091,18 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   // Already here. Their lane is held until that encounter is over, which is the honest thing
   // to say rather than counting down to a turn that cannot start.
   if CBLaneBusy(sys, game, lane) {
+    // Rivals who came together say so (1.9.0).
+    if lane == CBLaneRival() {
+      let together = CBRivalsOutTogether(sys, game);
+      if together > 1 {
+        return label + "   here now, " + CBNumberWord(together) + " of them together";
+      }
+    }
     return label + "   here now";
   }
+  // A lane's clock does not run while nobody can arrive (CBLaneTick), so a countdown shown then stood
+  // still with nothing to say why: the stuck clock this screen was built to never show.
+  let held = CBArrivalsHeldWhy(sys, game);
   // Nothing queued. Say whether that is because the day's allowance is spent, rather than
   // leaving "nobody" to mean both "none due" and "none left", which look identical and are
   // the sort of silence that reads as the mod being broken.
@@ -3083,13 +3136,24 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
       // own clock and has nothing to do with who is on the books. Saying "nobody qualifies"
       // then is simply untrue, and it sent a player hunting for a bug in a Rival list that was
       // eleven names long and working perfectly.
+      // Nor does anybody get picked while arrivals are held, so "nobody qualifies" was untrue then too.
+      if StrLen(held) > 0 {
+        return label + "   due, waiting: " + held + CBHudBudgetTail(sys, game, lane);
+      }
       let rest = CBLaneRestLeft(sys, lane);
       if rest > 0 {
         return label + "   breather, " + CBTimeText(rest) + CBHudBudgetTail(sys, game, lane);
       }
+      // Every Rival V has is lying low after their last fight, which is a reason, not nobody.
+      if lane == CBLaneRival() && sys.CountActiveRivals() > 0 && CBRivalsAllLyingLow(sys) {
+        return label + "   due, every Rival is lying low" + CBHudBudgetTail(sys, game, lane);
+      }
       return label + "   due, nobody qualifies yet" + CBHudBudgetTail(sys, game, lane);
     }
     return label + "   next " + (CBShowCountdowns() ? "in " + CBHudRealFromGameHours(hrs) : "later today") + CBHudBudgetTail(sys, game, lane);
+  }
+  if StrLen(held) > 0 {
+    return label + "   " + who + "  waiting: " + held + CBHudBudgetTail(sys, game, lane);
   }
   let ticks = sys.GetLaneTicks(lane);
   if ticks <= 0 {
@@ -3099,6 +3163,16 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
                            : label + "   " + who + "  any moment" + tail;
   }
   return label + "   " + who + "  " + CBTimeText(ticks) + CBHudBudgetTail(sys, game, lane);
+}
+
+// Is every Rival who could come on their cooldown after their last fight?
+func CBRivalsAllLyingLow(sys: ref<CyberbaneSystem>) -> Bool {
+  for r in sys.GetRivals() {
+    if IsDefined(r) && r.huntTicks <= 0 && CBRivalQueueable(sys, r.id) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // In-game hours as the real time they will actually take, using the clock rate measured at the
@@ -3227,6 +3301,27 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   }
   let need = RoundF(CBConfig.CivFearGlance() - eff);
   return s"Right now: nobody looks twice yet, about \(need) short. (\(reg.Count()) tracked)";
+}
+
+// What V is wearing, read again as the Hub opens and on every change of screen.
+//
+// "It tells me to cover up my chrome, but the number does not change whatever I wear." Visible chrome
+// and the look are sampled every ten seconds of settled play (CyberbaneSystem fast tick), and never
+// inside a menu, which is where clothes are changed. The Hub is a tab of that same menu, so a player who
+// put a coat on in the inventory and went straight to the Hub was shown the reading from before the
+// coat, every time; it only moved ten seconds after they closed the menu, and later still on a busy
+// street, when the sample waits for the streaming to settle. Both reads are equipment and stat data
+// only, the same data the inventory screen reads while it is open.
+func CBHudResampleWorn(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) || !IsDefined(GetPlayer(game)) {
+    return;
+  }
+  CBUpdateChrome(sys, game);
+  CBUpdateLook(sys, game);
+  let score = sys.GetScore();
+  if IsDefined(score) {
+    score.MarkDirty();
+  }
 }
 
 // Plain-language line: what is driving V's Dread the most (spec §12.1).

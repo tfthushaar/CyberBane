@@ -8,21 +8,72 @@ This project follows [Semantic Versioning](https://semver.org/).
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
 
 ### Added
-- **Rivals team up (experimental).** With it turned on under Rivals, a Rival who comes for you
-  sometimes brings one or two other Rivals of the same gang. Each is a Rival in every way: their own
-  name, their own bar, their own fate when you put them down, spare them or lose them. How many can
-  come together is a setting, two or three. Off by default; with it off, Rivals come one at a time
-  exactly as before.
+- **Rivals team up.** A Rival who comes for you sometimes brings one or two other Rivals of the same
+  gang, more often when the one leading holds a chair in the gang's crew or leads a pack. Each is a
+  Rival in every way: their own name, their own bar, their own fate when you put them down, spare them
+  or lose them. If the one leading goes down, the others carry the fight on; get away from them and
+  every one of them counts it. The one leading texts you who came along. How many can come together
+  is a setting, two or three. On by default, under Rivals; turn it off and Rivals always come one at a
+  time.
 - **Cyberpsychotic breaks.** A Rival at the top rank who keeps losing to you may push their chrome
-  too far and come back a cyberpsycho: a new name for it, fighting like one, and they never break and
-  run. Hard to put down, never unkillable: they get no extra health or armour. You will hear about it
-  when it happens. It can be turned off under Rivals.
+  too far and come back a cyberpsycho: a new name for it that nobody else on your save has, fighting
+  like one, and they never break and run. Hard to put down, never unkillable: they get no extra health
+  or armour. You will hear about it when it happens. It can be turned off under Rivals.
+
+### Changed
+- **Who becomes a Rival depends on who they were.** An officer or an elite who gets away or is spared
+  is likelier to come back than a lookout, and one fight makes a name or two: each Rival made in the
+  last few minutes makes the next less likely, so a room you knock out no longer fills your Rival list
+  at once. The Rival frequency setting now applies to every way of becoming a Rival, mercy and a crew
+  you lost included.
+- **Killing a Rival settles more.** Somebody stepping into a slain Rival's place now depends on how high
+  they stood: usually not for a rank one Rival, usually for a rank four.
+- **Killing an officer brings an avenger less often** than killing a boss.
+- **The Hub says why a clock is standing still.** A lane that is waiting for you to leave a job, a safe
+  area or a scene says so, instead of showing a countdown that does not move. When every Rival is
+  lying low after their last fight, the Rival line says that. Rivals out after you are listed first,
+  a team shows how many are together, and a Rival on their cooldown reads "lying low".
 
 ### Fixed
+- **V's head turned on its own in photo mode** outside safe areas, ten or twenty seconds in. Cyberbane
+  never noticed photo mode, kept running while the world was frozen, and its crowd reactions took
+  the posed copy of V for a passer-by and gave it a worried look. Cyberbane now stops for photo mode
+  entirely and never treats a stand-in for V as somebody in the street.
+- **Covering your chrome did not seem to change anything.** Visible chrome and your look were only
+  read again a few seconds into play after you closed the menu, and on a busy street not for much
+  longer, so the Hub, opened from the same menu you changed clothes in, kept showing the old number.
+  They are read again whenever the Hub opens or changes screen, and on busy streets as well.
+- **With They Will Remember, a gang shooting you on sight could show as Neutral** on the Hub. They
+  Will Remember keeps its own record of who is hostile; the Gangs screen now shows it next to your
+  standing, and says that paying a gang off here changes only your standing.
+- **Less stutter in big fights.** Every hit on every enemy was checked against the safe-area and
+  scene systems before the quick checks that rule almost everyone out, twice a hit. The quick checks
+  come first now. The once-a-second check for people you knocked down also spent its time on enemies
+  still standing, and could miss the ones lying further back in a big fight.
 - **When one Rival went down, others out at the same time could vanish** the moment you looked away,
   and lose their map markers. Only bodies that are nobody's fight any more are cleared now.
 - **A Rival who ran from their own hideout could come back as a brand new Rival** instead of the one
   they were.
+- **Fights near any gig or quest marker stopped counting** (since 1.8.4). Within sixty metres of any
+  active objective, tracked or not, wounded enemies never ran, knockouts never became Spared Rivals or
+  earned Conduct, and morale never broke. That protection is for the job you are tracking again; Cyberbane
+  still keeps its own people off every job site.
+- **The street went quiet near any gig marker** (since 1.8.4). Crowds stopped reacting to you and you
+  stopped overhearing anything within eighty metres of any active objective. They react again; people
+  standing at a job site are still left alone.
+- **Hunters forgot you mid-fight near a job** (since 1.8.4). Anybody already fighting you lost track of
+  you whenever you broke line of sight if any objective was nearby. Only those far off who cannot see
+  you let you go now. And somebody who broke and ran was stopped in their tracks and could not get away.
+- **The Rival lane made strangers.** When every Rival you had was lying low after their last fight, the
+  lane made a new Rival nobody had met, again and again, until your list was full. That only happens
+  now when you have no Rivals at all.
+- **A Rival let go for keeping you in combat from far away** stayed on the books as out after you.
+- **A crew's netrunner could take the seat of the crew's last member** when the crew came by car.
+- **A Rival's escort or a scout could take a crew's grenades.**
+- **The Hub's Ambush button could keep the previous Rival's price** and stay clickable.
+- **The bars at the top of the screen ran out** when a team of Rivals arrived during an apex squad, so
+  the last names had none.
+- The Rivals team up setting's description was listed three times.
 
 ## [1.8.5] - 2026-11-11
 

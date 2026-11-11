@@ -13,6 +13,10 @@ public abstract class CBSafetyGate {
     if puppet.IsPlayer() {
       return false;
     }
+    // A stand-in for V (photo mode's copy, VR, the paperdoll) is never somebody to react to V.
+    if puppet.IsReplacer() || puppet.IsVRReplacer() || puppet.IsPaperdoll() {
+      return false;
+    }
     // Not fully in the world: just streamed in, or on its way out. Every reaction that passes this
     // gate goes on to call into the NPC's components, which is only safe on an attached entity.
     if !puppet.IsAttached() {
@@ -36,8 +40,14 @@ public abstract class CBSafetyGate {
     }
     // Standing at the job V is tracking: part of somebody else's story, whoever they are. This
     // covers crowd fear, morale, fleeing and hostility on sight alike, wherever V is.
+    //
+    // The tracked job's pins, not every active objective's. 1.8.4 put every objective's pins in one
+    // list, and through this gate that stopped morale, fleeing and mercy for anybody within sixty
+    // metres of any gig or quest marker on the map: a fight beside one made no Rivals and earned no
+    // Conduct. The Director, which turns world NPCs hostile or scared, keeps its own check against
+    // every job site (Reactions/Director.reds).
     let sysGate = CyberbaneSystem.Get(puppet.GetGame());
-    if IsDefined(sysGate) && sysGate.NearQuestPins(puppet.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
+    if IsDefined(sysGate) && sysGate.NearTrackedPins(puppet.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
       return false;
     }
     if puppet.IsPlayerCompanion() {

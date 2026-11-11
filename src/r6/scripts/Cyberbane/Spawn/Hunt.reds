@@ -351,21 +351,10 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         // a Rival among them stayed "hunting" with a body nobody could reach. V got away from
         // them, so it ends the way getting away does.
         if !sys.CarRecentlyOnTheWay() && CBHuntersLeftBehind(sys, game, des) {
-          let r = sys.FindRivalById(sys.GetActiveRivalId());
-          if IsDefined(r) && r.state == EnumInt(ECBRivalState.Hunting) && EntityID.IsDefined(r.spawnedEntityId)
-             && !IsDefined(GameInstance.FindEntityByID(game, r.spawnedEntityId)) && !sys.IsLairActive() {
-            CBRivalEscapedByPlayer(sys, game);
-            CBCloseRivalEncounter(sys, game, r, null);
-          }
-          // Everyone who came with them, by the same test (1.9.0).
-          for pid in sys.GetPackRivals() {
-            let partner = sys.FindRivalById(pid);
-            if IsDefined(partner) && partner.state == EnumInt(ECBRivalState.Hunting)
-               && EntityID.IsDefined(partner.spawnedEntityId)
-               && !IsDefined(GameInstance.FindEntityByID(game, partner.spawnedEntityId)) {
-              CBRivalEscapedByPlayerFor(sys, game, partner);
-              CBCloseRivalEncounter(sys, game, partner, null);
-            }
+          // Every Rival of the encounter whose body has left the world, the one leading and anyone
+          // who came with them (Spawn/RivalEncounter.reds).
+          if !sys.IsLairActive() {
+            CBRivalsShakenOff(sys, game, true);
           }
           CBChaseGiveUp(sys, game, des);
           sys.SetHuntState(CBHuntNone());
@@ -424,7 +413,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // found V: from then on they chased V into the job, which is how a Valentino hunting V walked
     // into a Maelstrom building in the middle of a gig. Anybody who can see V still fights.
     if sys.IsOnJob() {
-      CBSanctuaryHold(sys, game, des, player);
+      CBSanctuaryHold(sys, game, des, player, true);
       if now % 30 == 0 {
         CBLog.Info(n"Spawn", "You are on a job: they hold back until you leave it.");
       }
@@ -489,7 +478,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let leftArea = driving && NotEquals(sys.GetSearchDistrict(), n"")
                    && NotEquals(sys.GetCurrentDistrict(), sys.GetSearchDistrict());
     // A job counts as somewhere safe for this: they lose interest faster, and they do not follow.
-    if sys.IsInSafeZone() || sys.IsInSanctuary() || sys.IsInQuestArea() || leftArea {
+    if sys.IsInSafeZone() || sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || leftArea {
       sys.SetHuntLastSeenTick(sys.GetHuntLastSeenTick() - 1);
     }
     let unseen = now - sys.GetHuntLastSeenTick();
@@ -667,7 +656,7 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
 // on a job, or while the story has the stage. Their own eyes keep it going from there.
 public func CBHuntCrewPulledUp(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let player = GetPlayer(game);
-  if !IsDefined(sys) || !IsDefined(player) || sys.IsInSanctuary() || sys.IsInQuestArea()
+  if !IsDefined(sys) || !IsDefined(player) || sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob()
      || sys.GetStoryHold() != CBStoryNone() {
     return;
   }
@@ -1200,9 +1189,22 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
         p.cbOutOfFightTicks += 2;
         if p.cbOutOfFightTicks >= CBConfig.CombatReleaseTicks() {
           CBLog.Info(n"Spawn", "One of ours was keeping you in combat from too far away; letting them go.");
+          // A Rival's encounter ends with them, as the cut-off ends it (CBCutOffOne): not an escape,
+          // V did nothing to shake them. Removed with the record still naming the body, they stayed
+          // filed as out after V, and one who had come with others stayed on the team for good.
+          if Equals(tag, n"CB_Rival") {
+            let r = CBFindRivalByBody(sys, p.GetEntityID());
+            if IsDefined(r) {
+              CBCloseRivalEncounter(sys, game, r, p);
+            }
+          }
           if !CBRemoveOne(game, des, p.GetEntityID(), crewSeated) {
-            des.UnassignTag(p.GetEntityID(), tag);
-            des.AssignTag(p.GetEntityID(), n"CB_Orphan");
+            if des.IsTagged(p.GetEntityID(), tag) {
+              des.UnassignTag(p.GetEntityID(), tag);
+            }
+            if !des.IsTagged(p.GetEntityID(), n"CB_Orphan") {
+              des.AssignTag(p.GetEntityID(), n"CB_Orphan");
+            }
           }
         }
       } else {

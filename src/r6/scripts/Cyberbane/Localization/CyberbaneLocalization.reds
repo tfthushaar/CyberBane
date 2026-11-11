@@ -65,13 +65,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MaxRivals-Desc", "How many Rivals you carry at once. At the limit nobody new takes against you, and the ones you have close in faster.");
     this.Text("Cyberbane-Settings-DeathsRemembered-Desc", "Whether whoever kills you can come back as a Rival.");
     this.Text("Cyberbane-Settings-RivalHideouts-Desc", "Gangs and the street sometimes text you where a Rival was last seen. Go there on foot and they may be waiting, not expecting you.");
-    this.Text("Cyberbane-Settings-RivalTeamUps-Desc", "Experimental. Now and then, a Rival who comes for you brings one or two other Rivals of the same gang. Off, Rivals come one at a time as they always have.");
-    this.Text("Cyberbane-Settings-RivalTeamSize-Desc", "How many Rivals one team-up can be, counting the one leading it.");
-    this.Text("Cyberbane-Settings-PsychoBreaks-Desc", "A top-rank Rival who keeps losing to you may push their chrome too far and come back a cyberpsycho: relentless, harder to put down, but never unkillable.");
-    this.Text("Cyberbane-Settings-RivalTeamUps-Desc", "Experimental. Now and then, a Rival who comes for you brings one or two other Rivals of the same gang. Off, Rivals come one at a time as they always have.");
-    this.Text("Cyberbane-Settings-RivalTeamSize-Desc", "How many Rivals one team-up can be, counting the one leading it.");
-    this.Text("Cyberbane-Settings-PsychoBreaks-Desc", "A top-rank Rival who keeps losing to you may push their chrome too far and come back a cyberpsycho: relentless, harder to put down, but never unkillable.");
-    this.Text("Cyberbane-Settings-RivalTeamUps-Desc", "Experimental. Now and then, a Rival who comes for you brings one or two other Rivals of the same gang. Off, Rivals come one at a time as they always have.");
+    this.Text("Cyberbane-Settings-RivalTeamUps-Desc", "Now and then, a Rival who comes for you brings other Rivals of the same gang, more often when the one leading runs a crew. Each fights, falls, runs or is spared on their own. Off, Rivals always come one at a time.");
     this.Text("Cyberbane-Settings-RivalTeamSize-Desc", "How many Rivals one team-up can be, counting the one leading it.");
     this.Text("Cyberbane-Settings-PsychoBreaks-Desc", "A top-rank Rival who keeps losing to you may push their chrome too far and come back a cyberpsycho: relentless, harder to put down, but never unkillable.");
     this.Text("Cyberbane-Settings-RivalFreq-Desc", "How often Rivals turn up, and how quickly they track you down.");
@@ -173,7 +167,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MaxRivals", "Max active Rivals");
     this.Text("Cyberbane-Settings-DeathsRemembered", "Night City remembers your deaths");
     this.Text("Cyberbane-Settings-RivalHideouts", "Tips on where Rivals are");
-    this.Text("Cyberbane-Settings-RivalTeamUps", "Rivals team up (experimental)");
+    this.Text("Cyberbane-Settings-RivalTeamUps", "Rivals team up");
     this.Text("Cyberbane-Settings-RivalTeamSize", "Rivals per team-up");
     this.Text("Cyberbane-Settings-PsychoBreaks", "Cyberpsychotic breaks");
     this.Text("Cyberbane-Settings-RivalFreq", "Rival frequency");

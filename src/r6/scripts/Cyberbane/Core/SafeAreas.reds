@@ -180,10 +180,12 @@ public func CBComputeQuestArea(game: GameInstance) -> Bool {
   if CBPlayerInScene(game) || CBPlayerInHostileZone(game) {
     return true;
   }
+  // The tracked objective's pins only. Every other active objective is IsOnJob (CBComputeOnJob),
+  // which holds arrivals and hunters; this one also stills the street (Reactions/Director.reds).
   let sys = CyberbaneSystem.Get(game);
   let player = GetPlayer(game);
   return IsDefined(sys) && IsDefined(player)
-      && sys.NearQuestPins(player.GetWorldPosition(), CBQuestAreaRadius());
+      && sys.NearTrackedPins(player.GetWorldPosition(), CBQuestAreaRadius());
 }
 
 // The player's chosen size of a quest area, in metres.
@@ -201,6 +203,7 @@ public func CBQuestAreaRadius() -> Float {
 // Empty when "Stay out of quest areas" is off or nothing is tracked.
 public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let pins: array<Vector4>;
+  let trackedPins: array<Vector4>;
   let rtQ = CyberbaneRuntime.Get();
   let respect = !IsDefined(rtQ) || !rtQ.HasSettings() || rtQ.GetSettings().respectQuestAreas;
   let journal = GameInstance.GetJournalManager(game);
@@ -212,18 +215,21 @@ public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) ->
       if ms.GetQuestMappinPositionsByObjective(Cast<Uint32>(journal.GetEntryHash(tracked)), positions) {
         for p in positions {
           ArrayPush(pins, Vector4.Vector3To4(p));
+          ArrayPush(trackedPins, Vector4.Vector3To4(p));
         }
       }
     }
     // And every other active objective's, gathered less often (CBRefreshJobPins). The tracked one
     // alone left a gig V was doing without tracking it - "Rite of Passage" - open to a Valentino
-    // walking in on it.
+    // walking in on it. These keep everybody of ours off the job sites; whether V is at the tracked
+    // job is asked of the tracked pins alone (CBComputeQuestArea).
     for jp in sys.GetJobPins() {
       ArrayPush(pins, jp);
     }
   }
   if IsDefined(sys) {
     sys.SetQuestPins(pins);
+    sys.SetTrackedPins(trackedPins);
   }
 }
 
@@ -292,8 +298,32 @@ public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Boo
   if !IsDefined(sys) {
     return true;
   }
-  return sys.IsInSanctuary() || sys.IsInQuestArea() || CBPlayerInScene(game)
+  return sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game)
       || sys.GetStoryHold() != CBStoryNone();
+}
+
+// Why, in a few words, or "" when nothing is held. The same questions as above, so the Hub can never
+// show a countdown standing still without saying what it is waiting for.
+public func CBArrivalsHeldWhy(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
+  if !IsDefined(sys) {
+    return "";
+  }
+  if sys.GetStoryHold() != CBStoryNone() {
+    return "the story has the stage";
+  }
+  if sys.IsInSanctuary() {
+    return "you are somewhere safe";
+  }
+  if CBPlayerInScene(game) {
+    return "you are in a scene";
+  }
+  if sys.IsOnJob() {
+    return "you are on a job";
+  }
+  if sys.IsInQuestArea() {
+    return CBPlayerInHostileZone(game) ? "you are on somebody else's turf" : "you are on a job";
+  }
+  return "";
 }
 
 // Mid-scene: a cutscene, a locked conversation, a braindance.
@@ -399,7 +429,7 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   }
   // 3. On a job, or in a restricted or dangerous zone, when V asked Cyberbane to stay out of them -
   //    the quest-area switch's own question, which the safe-area opt-in has nothing to do with.
-  if CBPlayerInQuestArea(game) {
+  if CBPlayerInQuestArea(game) || (IsDefined(sysQ) && sysQ.IsOnJob()) {
     CBNoteSpawnBlock(CBBlockQuestArea());
     return true;
   }

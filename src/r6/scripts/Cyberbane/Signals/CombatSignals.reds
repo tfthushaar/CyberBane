@@ -372,11 +372,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // A Rival's death has already had its say about who comes next (CBRivalSlain).
   if info.lethal && !wasRival && NotEquals(info.faction, n"")
      && (info.victimClass == EnumInt(ECBVictimClass.Boss) || info.victimClass == EnumInt(ECBVictimClass.Officer)) {
-    let freq = 1.0;
-    if IsDefined(rt) && rt.HasSettings() {
-      freq = rt.GetSettings().rivalFrequencyMult;
-    }
-    if RandF() < CBConfig.RivalChanceAvenger() * freq {
+    if CBRivalRoll(sys, "avenger", CBConfig.RivalChanceAvenger(), info.recordID, true) {
       CBCreateRival(sys, game, info.faction, info.recordID, n"", ECBRivalSource.Avenger, info.district, info.at);
     }
   }

@@ -50,12 +50,15 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   if sys.IsInSafeZone() {
     return;   // not in a safe area (spec §16)
   }
-  // CanAffect already rules out dead, quest, companion, vendor and in-scene puppets.
-  if !CBSafetyGate.CanAffect(puppet) {
+  // Down, but still breathing - that is what makes it mercy rather than a kill. Asked before the
+  // Safety Gate, which queries the workspot and safe-area systems: this runs for every hit on every
+  // enemy, and from the sweep every second for everyone V has hurt, and almost nobody it is asked
+  // about is down. In a dense fight those queries, twice a hit, were frames' worth of work for nothing.
+  if !ScriptedPuppet.IsDefeated(puppet) && !puppet.IsIncapacitated() {
     return;
   }
-  // Down, but still breathing - that is what makes it mercy rather than a kill.
-  if !ScriptedPuppet.IsDefeated(puppet) && !puppet.IsIncapacitated() {
+  // CanAffect rules out dead, quest, companion, vendor and in-scene puppets.
+  if !CBSafetyGate.CanAffect(puppet) {
     return;
   }
   let faction = CBClassifyFaction(puppet);
@@ -195,21 +198,9 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   if sys.IsInSafeZone() {
     return;   // not in a safe area (spec §16)
   }
-  // Bosses and MaxTac never run; the Safety Gate protects quest/companion/scene NPCs.
-  // Rivals can run - that is the whole point.
-  if !CBSafetyGate.CanAffect(puppet) || puppet.IsBoss() {
-    return;
-  }
-  // Knocked out by this very hit, or already down: that is CBSparedCheck's business. Read as a
-  // quarter of their health, they were logged as a runner and even given an order to run.
-  if !CBStillStanding(puppet) {
-    return;
-  }
-  let faction = CBClassifyFaction(puppet);
-  if Equals(faction, n"MaxTac") {
-    return;
-  }
-
+  // How hurt, first: one stat read, and it turns away nearly every hit. The Safety Gate below queries
+  // the workspot and safe-area systems, and asked first it ran for every hit on every enemy in the
+  // fight, which a dense one makes many a frame.
   let sps = GameInstance.GetStatPoolsSystem(game);
   if !IsDefined(sps) {
     return;
@@ -219,6 +210,20 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   // "25 hit points left" and nearly nobody survived to that, which is why wounded enemies never ran.
   let hp = sps.GetStatPoolValue(Cast<StatsObjectID>(puppet.GetEntityID()), gamedataStatPoolType.Health, true);
   if hp > CBConfig.FleeHealthThreshold() {
+    return;
+  }
+  // Knocked out by this very hit, or already down: that is CBSparedCheck's business. Read as a
+  // quarter of their health, they were logged as a runner and even given an order to run.
+  if !CBStillStanding(puppet) {
+    return;
+  }
+  // Bosses and MaxTac never run; the Safety Gate protects quest/companion/scene NPCs.
+  // Rivals can run - that is the whole point.
+  if !CBSafetyGate.CanAffect(puppet) || puppet.IsBoss() {
+    return;
+  }
+  let faction = CBClassifyFaction(puppet);
+  if Equals(faction, n"MaxTac") {
     return;
   }
 
@@ -278,8 +283,12 @@ public func CBSparedSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   while i < ArraySize(npcs) && looked < CBConfig.SparedSweepPerTick() {
     let npc = npcs[i];
     i += 1;
-    // cbSparedLogged keeps this to one look per enemy; CBSparedCheck sets it when it logs.
-    if CBNpcSafe(sys, npc) && npc.cbDamagedByPlayer && !npc.cbSparedLogged {
+    // cbSparedLogged keeps this to one look per enemy; CBSparedCheck sets it when it logs. Only the
+    // ones actually down count against the budget: it was spent on everybody V had hurt who was still
+    // on their feet and fighting, the first ten of them every second, so in a big fight the sweep
+    // never reached anybody lying further down the list, who is who it is for.
+    if CBNpcSafe(sys, npc) && npc.cbDamagedByPlayer && !npc.cbSparedLogged
+       && (ScriptedPuppet.IsDefeated(npc) || npc.IsIncapacitated()) {
       looked += 1;
       CBSparedCheck(sys, game, npc);
     }
@@ -453,8 +462,9 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
 
   // A cyberpsycho carries their own fifty-fifty inside CBCreateRival. Letting the generic roll
   // run first as well would compound the two and turn a coin flip into three chances in eight.
-  if !CBRecordIsSightingCyberpsycho(e.record) && RandF() > CBConfig.RivalChanceSpared() {
-    return;   // not everyone you spare makes it personal
+  if !CBRecordIsSightingCyberpsycho(e.record)
+     && !CBRivalRoll(sys, "spared", CBConfig.RivalChanceSpared(), e.record, true) {
+    return;   // not everyone you spare makes it personal (Rivals/RivalSystem.reds, CBRivalOdds)
   }
   let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now);
   if IsDefined(nr) {
@@ -514,11 +524,8 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   // a morale break has. There was no roll here because this door was all but shut (see the health
   // check in CBCombatFleeCheck), and now that it opens at a quarter health, everybody V walked away
   // from wounded would otherwise come back with a name.
-  let survivorOdds = CBConfig.RivalChanceSurvivor();
-  if IsDefined(rt) && rt.HasSettings() {
-    survivorOdds *= rt.GetSettings().rivalFrequencyMult;
-  }
-  if RandF() >= survivorOdds {
+  if Equals(e.faction, n"") || !TDBID.IsValid(e.record)
+     || !CBRivalRoll(sys, "got away", CBConfig.RivalChanceSurvivor(), e.record, true) {
     return;
   }
   if NotEquals(e.faction, n"") && TDBID.IsValid(e.record) {

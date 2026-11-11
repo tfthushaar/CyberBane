@@ -62,12 +62,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
-  private let m_ledgerDue: Bool;
+  private let m_ledgerDue: Bool;              // the death ledger waits for the first settled tick (StartSession)
   // The pins of every active objective that is not the tracked one (CBRefreshJobPins, 1.8.4), and
   // whether V is on a job: near a pin or in a scene, which unlike the quest area leaves out the
   // hostile zones (CBComputeOnJob). Session only.
   private let m_jobPins: array<Vector4>;
-  private let m_onJob: Bool;              // the death ledger waits for the first settled tick (StartSession)
+  private let m_onJob: Bool;
   // Rivals forgotten one at a time on the Hub, carried out on the next settled tick (1.8.2).
   private let m_pendingForgets: array<Int32>;
   // A Rival whose whereabouts V is buying on the Hub, the same way. 0 = none.
@@ -103,9 +103,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Where the Rival out in the world was last standing, and on which tick (Rivals/Whereabouts.reds).
   // A Rival V outruns is a long way off by the time the hunt gives up, and often already streamed
   // out, so their body cannot be asked where they are; this can. Session only.
-  private let m_rivalLastPosId: Int32;
-  private let m_rivalLastPos: Vector4;
-  private let m_rivalLastPosTick: Int32;
+  // One entry per Rival out, so a team (1.9.0) is not one slot overwritten by whoever was noted last.
+  private let m_rivalLastPosIds: array<Int32>;
+  private let m_rivalLastPoses: array<Vector4>;
+  private let m_rivalLastPosTicks: array<Int32>;
   // Who held each district at the last look, by CBDistrictIndex, so a district changing hands is
   // noticed once (Model/Territory.reds). Session only: the first look of a session only learns.
   // Who is on their own streets in the district V is standing in, worked out on the district
@@ -335,9 +336,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The hit squad out right now came with its gang's apex squad (Spawn/HitSquad.reds). Session only.
   private let m_activeSquadApex: Bool;
   private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
-  private let m_crewGrenadier: Bool;
+  private let m_crewGrenadier: Bool;                    // this crew's grenadier is already chosen (1.8.5)
   // Rivals who came with the active one (1.9.0, Spawn/RivalEncounter.reds). Session only.
-  private let m_packIds: array<Int32>;                  // this crew's grenadier is already chosen (1.8.5)
+  private let m_packIds: array<Int32>;
+  // The ticks new Rivals were made on lately, so one fight cannot make a crowd of them
+  // (CBRivalOdds, Rivals/RivalSystem.reds). Session only.
+  private let m_rivalMadeTicks: array<Int32>;
   private let m_huntHoldReason: Int32;        // why no Rival can arrive right now (CBHold*)
   // Kills V has made recently, for Aura. Session-only: it describes the last minute, not the
   // playthrough. Counting V's own kills rather than scanning for nearby corpses is deliberate -
@@ -364,7 +368,13 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
   private let m_storyHold: Int32;             // why the story has the stage right now, CBStory* (Core/StoryHold.reds; not persisted)
   private let m_storyRestrictTicks: Int32;    // settled ticks in a row a story restriction has been on V (not persisted)
-  private let m_questPins: array<Vector4>;    // the tracked objective's map pins, refreshed every 3 ticks
+  // Every active objective's map pins, the tracked one's included, refreshed every 3 ticks: the job
+  // sites nobody of ours is placed at or sent to (NearQuestPins). And the tracked objective's alone,
+  // for whether V is at the job (CBComputeQuestArea, NearTrackedPins): 1.8.4 put every objective's
+  // pins into the one list, and that turned the quest area on around every gig on the map, which took
+  // the whole street's reactions to V away near any of them.
+  private let m_questPins: array<Vector4>;
+  private let m_trackedPins: array<Vector4>;
   private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
   private let m_inSanctuary: Bool;            // V is somewhere nobody of ours may follow (Spawn/Sanctuary.reds)
   private let m_inSafeZone: Bool;             // player is in a game-tagged safe area: reactions stand down (spec §16)
@@ -550,11 +560,12 @@ public class CyberbaneSystem extends ScriptableSystem {
         }
 
         // Somebody who runs a crew should take more killing than the rank and file do.
-        if des.IsTagged(id, n"CB_Rival") && this.GetActiveRivalId() > 0 {
+        if des.IsTagged(id, n"CB_Rival") {
           // Whose body this is first, as setup asks (CBApplySpawnSetup): a Rival who came with the
-          // active one is somebody else, with their own build.
+          // active one is somebody else, with their own build, and still has it once the one who
+          // led them in is down and nobody is the active Rival for a moment.
           let who = CBFindRivalByBody(this, id);
-          if !IsDefined(who) {
+          if !IsDefined(who) && this.GetActiveRivalId() > 0 {
             who = this.FindRivalById(this.GetActiveRivalId());
           }
           if IsDefined(who) {
@@ -992,10 +1003,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
     // Prevention-system district/heat queries never fire mid-stream. The director reads the
     // cached district rather than querying every tick.
-    if this.m_tickCount % 10 == 0 && !heavyStreaming {
-      CBRefreshLiveInputs(this, game);
+    // What V has fitted and is wearing is read whatever the streaming is doing: it is V's own
+    // equipment and stats and nothing in the world, and on a busy street, where streaming is heavy
+    // for minutes at a time, it stood still, so putting a coat on changed nothing that could be seen.
+    if this.m_tickCount % 10 == 0 {
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
+    }
+    if this.m_tickCount % 10 == 0 && !heavyStreaming {
+      CBRefreshLiveInputs(this, game);
       CBUpdateMenace(this, game);
       // Changing district is a thing that happens to the player - walking across a boundary,
       // stepping off a fast travel - so it is worth one message from whoever works the new
@@ -1664,19 +1680,48 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   public func NoteRivalLastPos(rivalId: Int32, at: Vector4) -> Void {
-    this.m_rivalLastPosId = rivalId;
-    this.m_rivalLastPos = at;
-    this.m_rivalLastPosTick = this.m_tickCount;
+    if rivalId <= 0 {
+      return;
+    }
+    let n = Min(ArraySize(this.m_rivalLastPosIds), Min(ArraySize(this.m_rivalLastPoses), ArraySize(this.m_rivalLastPosTicks)));
+    let k = 0;
+    while k < n {
+      if this.m_rivalLastPosIds[k] == rivalId {
+        this.m_rivalLastPoses[k] = at;
+        this.m_rivalLastPosTicks[k] = this.m_tickCount;
+        return;
+      }
+      k += 1;
+    }
+    // A handful at most are ever out at once; the oldest note goes first.
+    if n >= 8 {
+      ArrayErase(this.m_rivalLastPosIds, 0);
+      ArrayErase(this.m_rivalLastPoses, 0);
+      ArrayErase(this.m_rivalLastPosTicks, 0);
+    }
+    ArrayPush(this.m_rivalLastPosIds, rivalId);
+    ArrayPush(this.m_rivalLastPoses, at);
+    ArrayPush(this.m_rivalLastPosTicks, this.m_tickCount);
   }
 
   // Where this Rival was last seen standing, if it was recently enough to still be true.
   public func RivalLastPos(rivalId: Int32, maxAgeTicks: Int32, out at: Vector4) -> Bool {
-    if rivalId <= 0 || this.m_rivalLastPosId != rivalId
-       || (this.m_tickCount - this.m_rivalLastPosTick) > maxAgeTicks {
+    if rivalId <= 0 {
       return false;
     }
-    at = this.m_rivalLastPos;
-    return true;
+    let n = Min(ArraySize(this.m_rivalLastPosIds), Min(ArraySize(this.m_rivalLastPoses), ArraySize(this.m_rivalLastPosTicks)));
+    let k = 0;
+    while k < n {
+      if this.m_rivalLastPosIds[k] == rivalId {
+        if (this.m_tickCount - this.m_rivalLastPosTicks[k]) > maxAgeTicks {
+          return false;
+        }
+        at = this.m_rivalLastPoses[k];
+        return true;
+      }
+      k += 1;
+    }
+    return false;
   }
 
   // The Rivals who came with the one leading (1.9.0). Every way an encounter ends takes its Rival off
@@ -1697,6 +1742,25 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func ClearPack() -> Void {
     ArrayClear(this.m_packIds);
+  }
+
+  // A new Rival was just made (CBCreateRival).
+  public func NoteRivalMade() -> Void {
+    ArrayPush(this.m_rivalMadeTicks, this.m_tickCount);
+    while ArraySize(this.m_rivalMadeTicks) > 16 {
+      ArrayErase(this.m_rivalMadeTicks, 0);
+    }
+  }
+
+  // How many new Rivals were made in the last `window` ticks.
+  public func RecentRivalsMade(window: Int32) -> Int32 {
+    let n = 0;
+    for t in this.m_rivalMadeTicks {
+      if this.m_tickCount - t < window {
+        n += 1;
+      }
+    }
+    return n;
   }
 
   // This body was a Rival's when their encounter ended, and it is still in the world.
@@ -2929,7 +2993,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_inSanctuary;
   }
 
-  // On a job, in a scene, or in a restricted or dangerous zone, when "Stay out of quest areas" is on.
+  // At the tracked job, in a scene, or in a restricted or dangerous zone, when "Stay out of quest
+  // areas" is on. Near some other active objective is IsOnJob, which holds arrivals and hunters but
+  // not the street's reactions.
   public func IsInQuestArea() -> Bool {
     return this.m_inQuestArea;
   }
@@ -2952,7 +3018,23 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_onJob;
   }
 
-  // Is this point within `radius` of any of the tracked objective's pins?
+  public func SetTrackedPins(pins: array<Vector4>) -> Void {
+    this.m_trackedPins = pins;
+  }
+
+  // Is this point within `radius` of the tracked objective's pins?
+  public func NearTrackedPins(at: Vector4, radius: Float) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_trackedPins) {
+      if Vector4.Distance(this.m_trackedPins[i], at) <= radius {
+        return true;
+      }
+      i += 1;
+    }
+    return false;
+  }
+
+  // Is this point within `radius` of any active objective's pins (1.8.4: tracked or not)?
   public func NearQuestPins(at: Vector4, radius: Float) -> Bool {
     let i = 0;
     while i < ArraySize(this.m_questPins) {

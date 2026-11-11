@@ -32,10 +32,10 @@ public func CBTurfPatrolTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
   }
   let now = sys.GetTickCount();
   let here = sys.GetCurrentDistrict();
-  let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsInSanctuary()
+  let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || sys.IsInSanctuary()
           || sys.IsInSafeZone() || CBStealthEncounterNearby(sys, game);
   if sys.IsInSanctuary() {
-    CBSanctuaryHoldTag(sys, game, des, player, n"CB_Patrol");
+    CBSanctuaryHoldTag(sys, game, des, player, n"CB_Patrol", false);
   }
   if out {
     if busy || NotEquals(here, book.patrolDistrict)

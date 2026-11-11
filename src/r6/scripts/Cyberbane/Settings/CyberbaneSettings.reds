@@ -632,13 +632,15 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalHideouts-Desc")
   public let rivalHideouts: Bool = true;
 
-  // Two or three Rivals of one gang coming for V together (1.9.0, Spawn/RivalEncounter.reds).
-  // Experimental: off unless the player turns it on, and with it off nothing about Rivals changes.
+  // Two or three Rivals of one gang coming for V together (1.9.0, Spawn/RivalEncounter.reds). On by
+  // default. Named `rivalTeams`, not the `rivalTeamUps` the first 1.9.0 build had while it was an
+  // experiment that shipped off: Mod Settings keeps a value by its field's name, so under the old name
+  // anybody who had launched that build would have stayed off and never seen the new default.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalTeamUps")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalTeamUps-Desc")
-  public let rivalTeamUps: Bool = false;
+  public let rivalTeams: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
