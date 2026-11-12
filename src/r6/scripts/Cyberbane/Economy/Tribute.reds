@@ -44,7 +44,8 @@ public func CBTributeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   for fs in sys.GetFactionStates() {
     let prof = content.GetFaction(fs.id);
     // Feared, not yet at war, and known to the gang; corps and cops never pay (spec §9.8).
-    let eligible = IsDefined(prof) && prof.isGang
+    // Nor a faction switched off in Mod Settings (1.9.1).
+    let eligible = IsDefined(prof) && prof.isGang && CBFactionOn(fs.id)
       && fs.standing >= -60.0 && fs.standing <= 40.0
       && fs.renown >= CBConfig.TributeRenownThreshold()
       && score.GetFactionFear(fs.id) >= CBConfig.TributeFearThreshold()

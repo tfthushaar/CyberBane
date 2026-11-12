@@ -72,6 +72,15 @@ public class CBThreatBar {
   }
 
   private func Build(win: wref<inkCompoundWidget>) -> Void {
+    // The line and bars an earlier session left on the HUD layer, first (1.9.1). The layer outlives
+    // a load, and a line that was up when V died stayed up through every reload after it, with
+    // nothing left that could take it down: a hunt that "persists longer than intended", over and
+    // over, from somebody dying and reloading the same fight. Ours are not built yet, so everything
+    // of these names on the layer is a stray.
+    let strays = CBHideStrayHudWidgets(win, n"cyberbaneHuntStatus", n"cyberbaneThreatRow");
+    if strays > 0 {
+      CBLog.Info(n"UI", s"Took \(strays) hunt lines and bars left over from an earlier session off the screen.");
+    }
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
     let width = CBConfig.ThreatBarWidth();
     let stride = CBConfig.ThreatBarRowStride();
@@ -195,6 +204,22 @@ public class CBThreatBar {
     this.DropBars();
   }
 
+  // The line and the bars off the screen, keeping who is on the stack (1.9.1). While V is down the
+  // tick stands still, and whatever was drawn would freeze there; a death alternative standing V
+  // back up gets the bars back on the next settled tick, a load starts clean.
+  public func Conceal() -> Void {
+    if IsDefined(this.m_status) {
+      this.m_status.SetVisible(false);
+    }
+    let i = 0;
+    while i < ArraySize(this.m_rows) {
+      if IsDefined(this.m_rows[i].root) {
+        this.m_rows[i].root.SetVisible(false);
+      }
+      i += 1;
+    }
+  }
+
   // The bars only, leaving the hunt line alone. The two have separate switches.
   private func DropBars() -> Void {
     ArrayClear(this.m_targets);
@@ -233,6 +258,12 @@ public class CBThreatBar {
     // jobs rather than two widgets, which is what keeps the screen quiet (Spawn/Hunt.reds).
     if modOn && StrLen(line) == 0 {
       line = CBDistrictStatusLine(sys, game);
+    }
+    // Built on the first settled tick of a session even with nothing to show, because building is
+    // what takes a stray line from an earlier session off the screen (Build). With both lines
+    // switched off nothing here was ever built, and a stray stayed up for good.
+    if !this.m_built {
+      this.EnsureBuilt();
     }
     if StrLen(line) > 0 || IsDefined(this.m_status) {
       if this.EnsureBuilt() && IsDefined(this.m_status) {
@@ -310,6 +341,32 @@ public class CBThreatBar {
       r += 1;
     }
   }
+}
+
+// Hide every visible child of the HUD layer with either name (1.9.1). Returns how many.
+//
+// Cyberbane's HUD widgets are its own, built from script straight onto the layer, and the layer
+// outlives a load while the session that built them does not. The new session builds its own set,
+// and the old one stays where it was, showing whatever it showed when the load began. Only names
+// Cyberbane gives its own widgets are touched, and only their visibility: nothing is removed, the way
+// HubTab clears the stats screen, so no widget is ever taken out from under anything still holding it.
+public func CBHideStrayHudWidgets(win: wref<inkCompoundWidget>, a: CName, b: CName) -> Int32 {
+  if !IsDefined(win) {
+    return 0;
+  }
+  let hidden = 0;
+  let count = win.GetNumChildren();
+  let i = 0;
+  while i < count {
+    let child = win.GetWidgetByIndex(i);
+    if IsDefined(child) && child.IsVisible()
+       && (Equals(child.GetName(), a) || Equals(child.GetName(), b)) {
+      child.SetVisible(false);
+      hidden += 1;
+    }
+    i += 1;
+  }
+  return hidden;
 }
 
 // Does the player want this at all?

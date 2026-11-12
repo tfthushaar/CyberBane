@@ -721,6 +721,102 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Toasts-Desc")
   public let toasts: Bool = true;
 
+  // ---- Factions (1.9.1) ---------------------------------------------------
+  // One switch per faction Cyberbane keeps a book on. Off and Cyberbane leaves that faction alone
+  // entirely: its people never turn on V on sight because of Cyberbane, it sends nobody, makes no
+  // Rivals, pays no tribute or bounties and never texts. What V does to them still counts towards
+  // V's reputation, and their standing is still kept, so switching them back on picks up where it
+  // was. Read through CBFactionOn (Data/Factions.reds).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-TygerClaws")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionTygerClaws: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Maelstrom")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionMaelstrom: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Valentinos")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionValentinos: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-SixthStreet")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionSixthStreet: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Animals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionAnimals: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-VoodooBoys")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionVoodooBoys: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Scavengers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionScavengers: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Mox")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionMox: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Wraiths")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionWraiths: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Aldecaldos")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionAldecaldos: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Barghest")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionBarghest: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Arasaka")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionArasaka: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Militech")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionMilitech: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-KangTao")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionKangTao: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-NCPD")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-NCPD-Desc")
+  public let factionNCPD: Bool = true;
+
   // ---- Compatibility ----------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Compat")
@@ -881,5 +977,26 @@ public class CyberbaneSettings {
 
   public func GetLogLevelInt() -> Int32 {
     return EnumInt(this.logLevel);
+  }
+
+  // The Factions switches (1.9.1). MaxTac and anybody filed as Police go with the NCPD's. A faction
+  // with no switch of its own is on.
+  public func FactionOn(id: CName) -> Bool {
+    if Equals(id, n"TygerClaws") { return this.factionTygerClaws; }
+    if Equals(id, n"Maelstrom") { return this.factionMaelstrom; }
+    if Equals(id, n"Valentinos") { return this.factionValentinos; }
+    if Equals(id, n"SixthStreet") { return this.factionSixthStreet; }
+    if Equals(id, n"Animals") { return this.factionAnimals; }
+    if Equals(id, n"VoodooBoys") { return this.factionVoodooBoys; }
+    if Equals(id, n"Scavengers") { return this.factionScavengers; }
+    if Equals(id, n"Mox") { return this.factionMox; }
+    if Equals(id, n"Wraiths") { return this.factionWraiths; }
+    if Equals(id, n"Aldecaldos") { return this.factionAldecaldos; }
+    if Equals(id, n"Barghest") { return this.factionBarghest; }
+    if Equals(id, n"Arasaka") { return this.factionArasaka; }
+    if Equals(id, n"Militech") { return this.factionMilitech; }
+    if Equals(id, n"KangTao") { return this.factionKangTao; }
+    if Equals(id, n"NCPD") || Equals(id, n"Police") || Equals(id, n"MaxTac") { return this.factionNCPD; }
+    return true;
   }
 }

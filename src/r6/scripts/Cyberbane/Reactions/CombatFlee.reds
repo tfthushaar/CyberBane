@@ -287,7 +287,9 @@ public func CBSparedSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
     // ones actually down count against the budget: it was spent on everybody V had hurt who was still
     // on their feet and fighting, the first ten of them every second, so in a big fight the sweep
     // never reached anybody lying further down the list, who is who it is for.
-    if CBNpcSafe(sys, npc) && npc.cbDamagedByPlayer && !npc.cbSparedLogged
+    // Our own two fields first (1.9.1): they rule out nearly everybody on a street, and asking the
+    // engine whether each passer-by was still attached, every second, was most of what this cost.
+    if IsDefined(npc) && npc.cbDamagedByPlayer && !npc.cbSparedLogged && CBNpcSafe(sys, npc)
        && (ScriptedPuppet.IsDefeated(npc) || npc.IsIncapacitated()) {
       looked += 1;
       CBSparedCheck(sys, game, npc);
@@ -466,15 +468,8 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
      && !CBRivalRoll(sys, "spared", CBConfig.RivalChanceSpared(), e.record, true) {
     return;   // not everyone you spare makes it personal (Rivals/RivalSystem.reds, CBRivalOdds)
   }
-  let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now);
-  if IsDefined(nr) {
-    nr.scarMask = e.scarMask;   // they remember how it went
-    CBNoteEscapeeSeen(sys, game, nr, e);
-    nr.state = EnumInt(ECBRivalState.Hunting);
-    if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"\(CBRivalDisplayName(content, nr)) walked away from you breathing. They will not forget it.", n"");
-    }
-  }
+  // Made once the fight is over, not with them still lying at V's feet (Rivals/Births.reds, 1.9.1).
+  CBRivalAfterFight(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now, e, 0, "");
 }
 
 func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEscapee>, now: Float) -> Void {
@@ -528,19 +523,8 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
      || !CBRivalRoll(sys, "got away", CBConfig.RivalChanceSurvivor(), e.record, true) {
     return;
   }
-  if NotEquals(e.faction, n"") && TDBID.IsValid(e.record) {
-    let nr = CBCreateRival(sys, game, e.faction, e.record, n"", ECBRivalSource.Survivor, district, now);
-    if IsDefined(nr) {
-      nr.scarMask = e.scarMask;
-      CBNoteEscapeeSeen(sys, game, nr, e);
-    }
-    if IsDefined(nr) {
-      nr.state = EnumInt(ECBRivalState.Hunting);
-      if toasts {
-        CBHearsayFromStreet(game, s"\(CBRivalDisplayName(content, nr)) got clear of you. You have not seen the last of them.", n"");
-      }
-    }
-  }
+  // Made once the fight is over (Rivals/Births.reds, 1.9.1).
+  CBRivalAfterFight(sys, game, e.faction, e.record, n"", ECBRivalSource.Survivor, district, now, e, 0, "");
 }
 
 // Somebody who has turned to run. Whether they turn into a Rival is settled once they have really got

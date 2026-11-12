@@ -347,7 +347,10 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   // At most one gang states its price per pass; see the note further down.
   let demanded = false;
   for fs in sys.GetFactionStates() {
-    if IsDefined(fs) && NotEquals(fs.id, n"") {
+    // A faction switched off in Mod Settings is left exactly as it was (1.9.1). Its posture reads
+    // Neutral while it is off, and watching that would end its vendetta on the way out and swear it
+    // again, with a text and a line in the file, the moment it was switched back on.
+    if IsDefined(fs) && NotEquals(fs.id, n"") && CBFactionOn(fs.id) {
       let posture = score.GetPosture(fs.id);
       // Coming round to V. The postures run Allied, Friendly, Neutral, Hostile, Vendetta, so a
       // smaller number is a better one; the first look of a session only records where they

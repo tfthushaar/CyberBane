@@ -2269,13 +2269,14 @@ public class CBHud {
     // the tenth, and there are sixteen.
     let states = sys.GetFactionStates();
     let order: array<ref<CBFactionState>>;
-    let orderTwr: array<Bool>;
-    // They Will Remember's verdict on each, asked once a draw (CBTwrGangHostile): a gang it has
-    // hostile on sight sorts and reads as hostile whatever Cyberbane's own standing says.
-    let twrHostile: array<Bool>;
+    let orderTwr: array<Int32>;
+    // Hostile on sight by somebody else's hand, asked once a draw (CBForeignHostile): They Will
+    // Remember's own verdict, or their people seen hostile to V without Cyberbane having done it. A gang
+    // either says is hostile sorts and reads as hostile whatever Cyberbane's own standing says.
+    let twrHostile: array<Int32>;
     let t = 0;
     while t < ArraySize(states) {
-      ArrayPush(twrHostile, IsDefined(states[t]) && CBTwrGangHostile(sys.GetGameInstance(), states[t].id) == 1);
+      ArrayPush(twrHostile, IsDefined(states[t]) ? CBForeignHostile(sys, sys.GetGameInstance(), states[t].id) : 0);
       t += 1;
     }
     let sweep = 0;
@@ -2287,7 +2288,7 @@ public class CBHud {
         i += 1;
         if IsDefined(fs) {
           let posture = score.GetPosture(fs.id);
-          let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) || twr;
+          let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) || twr > 0;
           if (sweep == 0 && hostile) || (sweep == 1 && !hostile) {
             ArrayPush(order, fs);
             ArrayPush(orderTwr, twr);
@@ -2320,16 +2321,26 @@ public class CBHud {
   }
 
   private func RenderFactionRow(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, fs: ref<CBFactionState>,
-                                posture: ECBPosture, row: Int32, picked: Bool, twrHostile: Bool) -> Void {
+                                posture: ECBPosture, row: Int32, picked: Bool, twrHostile: Int32) -> Void {
     let pip = CBHudGrey();
     if Equals(posture, ECBPosture.Vendetta) { pip = CBHudRed(); }
     if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
     if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) { pip = CBHudGreen(); }
-    // Hostile on sight by They Will Remember's record, while Cyberbane's own standing is milder.
     let postureText = CBPostureName(posture);
-    if twrHostile && !Equals(posture, ECBPosture.Hostile) && !Equals(posture, ECBPosture.Vendetta) {
+    // Switched off under Factions in Mod Settings (1.9.1): Cyberbane has no posture for them at all.
+    let off = !CBFactionOn(fs.id);
+    if off {
+      postureText = "Off";
+    }
+    // Hostile on sight by somebody else's hand (CBForeignHostile), while Cyberbane's own posture is
+    // milder: They Will Remember's record, or seen in the street and not Cyberbane's doing.
+    if twrHostile > 0 && !Equals(posture, ECBPosture.Hostile) && !Equals(posture, ECBPosture.Vendetta) {
       pip = CBHudAmber();
-      postureText = "TWR: Hostile";
+      if off {
+        postureText = "Off: hostile";
+      } else {
+        postureText = twrHostile == 2 ? "TWR: Hostile" : "Seen hostile";
+      }
     }
     let right = CBHudGangStatus(sys, fs);
     if Equals(sys.GetPendingPeace(), fs.id) {
@@ -2368,12 +2379,23 @@ public class CBHud {
     }
     let posture = score.GetPosture(id);
     let gang = CBFactionLabel(id);
-    let out = StrUpper(gang) + "   " + CBPostureName(posture) + "\n";
-    // Two records, said as two (CBTwrGangHostile): They Will Remember's is who shoots on sight, and a
-    // pay-off here changes Cyberbane's alone.
-    if CBTwrGangHostile(game, id) == 1 {
+    let isOn = CBFactionOn(id);
+    let out = StrUpper(gang) + "   " + (isOn ? CBPostureName(posture) : "OFF") + "\n";
+    if !isOn {
+      out += "Switched off under Factions in Mod Settings. Cyberbane leaves them alone: nobody of theirs\n"
+           + "turns on you because of Cyberbane, they send nobody, and your standing is kept for later.\n";
+    }
+    // Two records, said as two (CBForeignHostile): somebody else's is who shoots on sight, and a pay-off
+    // or the switch above changes Cyberbane's alone.
+    let foreign = CBForeignHostile(sys, game, id);
+    if foreign == 2 {
       out += "They Will Remember has them hostile on sight: their people attack you when they know you.\n"
-           + "That is its own record, kept apart from your standing here, and paying them off here does not change it.\n";
+           + "That is its own record, kept apart from your standing here, and nothing here changes it.\n";
+    } else {
+      if foreign == 1 {
+        out += "Their people have been hostile to you on sight, and Cyberbane did not make them so:\n"
+             + "They Will Remember, another mod or the game has them that way. Nothing here changes it.\n";
+      }
     }
     let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), id));
     if StrLen(enemy) > 0 {
@@ -2689,9 +2711,13 @@ public class CBHud {
                 if why == 3 {
                   this.SetAction("You know where they are", false);
                 } else {
-                  // Not after V any more (4): nothing to buy. Left unset, the button kept the last
-                  // Rival's label and stayed clickable.
-                  this.SetAction("", false);
+                  if why == 5 {
+                    this.SetAction("Their faction is off", false);
+                  } else {
+                    // Not after V any more (4): nothing to buy. Left unset, the button kept the last
+                    // Rival's label and stayed clickable.
+                    this.SetAction("", false);
+                  }
                 }
               }
             }
@@ -2903,6 +2929,9 @@ func CBHudCanPayOff(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNam
 
 // Why there is no price on this gang, in the same terms CBPeaceQuote decides it.
 func CBHudWhyNoPeace(game: GameInstance, id: CName, posture: ECBPosture) -> String {
+  if !CBFactionOn(id) {
+    return "Switched off under Factions in Mod Settings: Cyberbane leaves them alone, so there is nothing to pay them for.";
+  }
   let content = CBContent(game);
   if IsDefined(content) {
     let prof = content.GetFaction(id);
@@ -3574,6 +3603,9 @@ func CBHudRivalWhere(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiv
   }
   if why == 1 {
     return "Turn on Rival hideouts in Mod Settings to buy where they are hiding.";
+  }
+  if why == 5 {
+    return "Their faction is switched off under Factions in Mod Settings. Nobody of theirs is sent after you or found for you.";
   }
   return "Nobody sells where they are while they are out after you.";
 }

@@ -49,6 +49,15 @@ public abstract class CBConfig {
   // a busy street actually reacts instead of one or two people noticing you.
   public static func NpcEvalRadius() -> Float = 35.0           // metres
   public static func NpcEvalPerTick() -> Int32 = 16
+  // The most NPCs whose position the Director reads in one tick, carrying on round the registry from
+  // where the last tick stopped; and how many ticks somebody who failed its checks (sitting, selling,
+  // at a job, one of ours) is passed over before being asked again (1.9.1). A registry of two hundred
+  // is gone round about every four seconds; anybody who passes is always checked afresh.
+  public static func NpcLookPerTick() -> Int32 = 48
+  public static func NpcGateRetryTicks() -> Int32 = 5
+  // How often the Director hands back anybody it turned on V whose faction has since been switched
+  // off in Mod Settings (Reactions/Director.reds, RevertNotFielding, 1.9.1), in settled ticks.
+  public static func SwitchedOffRevertTicks() -> Int32 = 5
   public static func MaxSpawnedNpcs() -> Int32 = 8
   public static func PerNpcCooldownSeconds() -> Float = 30.0
   // Upper bound on the attitude-revert list (NPCs Cyberbane turned hostile). Only live
@@ -133,6 +142,9 @@ public abstract class CBConfig {
   // Generous, because a companion leading the way or a step behind is still walking with V, and a
   // crew arriving forty metres off is arriving in the middle of their scene.
   public static func StoryCompanionRadius() -> Float = 40.0
+  // The pass that looks for a story companion walks the whole registry; once every this many settled
+  // ticks is enough (1.9.1).
+  public static func StoryCompanionScanTicks() -> Int32 = 3
   // Settled fast ticks (about seconds) a story restriction has to hold before anybody is called
   // back. The game puts some of the same restrictions on V for a moment in ordinary play.
   public static func StoryRestrictionSettleTicks() -> Int32 = 3
@@ -578,6 +590,9 @@ public abstract class CBConfig {
   // Messages waiting for a settled tick. More than this in one go is a burst, and the newest
   // are the ones worth a notification; the rest are still filed in their threads.
   public static func PhonePendingCap() -> Int32 = 6
+  // In Phone mode, how long waiting messages hold their notification for a phone to attach after a
+  // load or a fast travel, in real seconds (1.9.1). Past this they stay in their threads unannounced.
+  public static func PhoneAttachWaitSeconds() -> Float = 45.0
   // Word getting around (CBPhone.Hearsay). Defaults for the two settings, used before Mod
   // Settings is up.
   public static func WordTravelMinutesDefault() -> Int32 = 30
@@ -836,6 +851,17 @@ public abstract class CBConfig {
   public static func RivalChanceSpared() -> Float = 0.6
   public static func RivalBurstTicks() -> Int32 = 300
   public static func RivalOddsCeiling() -> Float = 0.95
+  // A Rival a fight makes is made once V has been out of combat this many settled ticks (about
+  // seconds), chosen afresh for each (Rivals/Births.reds, 1.9.1). And how many may wait at once.
+  public static func RivalBirthCalmMin() -> Int32 = 30
+  public static func RivalBirthCalmMax() -> Int32 = 60
+  public static func RivalBirthQueueCap() -> Int32 = 6
+  // Hostile to V and not by Cyberbane (Reactions/Director.reds, NoteForeignHostility, 1.9.1): how
+  // often one NPC's attitude is read, how long a sighting stops the faction being read again, and how
+  // long the Gangs screen goes on saying so, all in settled ticks (about seconds).
+  public static func ForeignHostileReadTicks() -> Int32 = 10
+  public static func ForeignHostileFreshTicks() -> Int32 = 60
+  public static func ForeignHostileShowTicks() -> Int32 = 1800
   // A spared cyberpsycho is a coin flip, and nothing else about them is left to chance: they
   // come back with their own name, their own health and no multiplier on top of it.
   public static func CyberpsychoRivalChance() -> Float = 0.50

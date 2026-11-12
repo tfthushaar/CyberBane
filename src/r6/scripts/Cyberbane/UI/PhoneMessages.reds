@@ -181,6 +181,9 @@ public class CBPhone {
   private let m_lastNotifyAt: Float;
   private let m_lastNotifyBody: String;
   private let m_lastNotifyThread: Int32;
+  // In Phone mode, when the waiting messages started waiting for a phone to hand them to (sim
+  // seconds; 0 = not waiting). See Deliver.
+  private let m_phoneWaitSince: Float;
   private let m_pendThread: array<Int32>;
   private let m_pendBody: array<String>;
   private let m_pendAccent: array<HDRColor>;
@@ -247,6 +250,15 @@ public class CBPhone {
   }
 
   private func Build(win: wref<inkCompoundWidget>) -> Void {
+    // Cards left behind by an earlier session, first (1.9.1). The HUD layer outlives a load, and so
+    // does everything drawn on it: a card that was on screen when V died stayed there through the
+    // reload, frozen where it was, with nothing left that knew it existed. "A Rival is hunting me
+    // message that is stuck and won't go", from a player on the phone who never had cards at all.
+    // Ours are not built yet, so every card and subtitle line of this name on the layer is a stray.
+    let strays = CBHideStrayHudWidgets(win, n"cyberbanePhoneCard", n"cyberbaneOverheard");
+    if strays > 0 {
+      CBLog.Info(n"UI", s"Took \(strays) message cards left over from an earlier session off the screen.");
+    }
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
     let width = CBConfig.PhoneCardWidth();
     let height = CBConfig.PhoneCardHeight();
@@ -742,8 +754,41 @@ public class CBPhone {
     this.m_phoneCtrl = ctrl;
   }
 
+  // A phone on its way out lets go of itself, and only of itself (1.9.1). Clearing whatever was held
+  // meant that when a load or a fast travel tore the old phone down after the new one had already
+  // attached, the new one was forgotten, and every text for the rest of the session fell back to a
+  // card on the screen - with "Where messages go" set to Phone.
+  public func ReleasePhoneController(ctrl: ref<NewHudPhoneGameController>) -> Void {
+    if this.m_phoneCtrl == ctrl {
+      this.m_phoneCtrl = null;
+    }
+  }
+
   public func SetOpenDialog(dialog: ref<MessengerDialogViewController>) -> Void {
     this.m_openDialog = dialog;
+  }
+
+  // The same for the messenger panel.
+  public func ReleaseOpenDialog(dialog: ref<MessengerDialogViewController>) -> Void {
+    if this.m_openDialog == dialog {
+      this.m_openDialog = null;
+    }
+  }
+
+  // Everything of ours off the screen, without forgetting any of it (1.9.1). Called while V is down:
+  // the tick stands still then, so whatever was showing would otherwise freeze there, and if a load
+  // follows, stay there. The next settled tick draws whatever is still due.
+  public func Conceal() -> Void {
+    if IsDefined(this.m_subRoot) {
+      this.m_subRoot.SetVisible(false);
+    }
+    let i = 0;
+    while i < ArraySize(this.m_rows) {
+      if IsDefined(this.m_rows[i].root) {
+        this.m_rows[i].root.SetVisible(false);
+      }
+      i += 1;
+    }
   }
 
   // ---- Drawing ------------------------------------------------------------
@@ -757,6 +802,12 @@ public class CBPhone {
     this.m_game = game;
     this.ReleaseWord(game);   // before Deliver, so a story let out this tick is shown this tick
     this.Deliver(game);
+    // Built on the first settled tick of a session whether or not a card is ever shown, because
+    // building is what clears away the cards an earlier session left on the HUD layer (Build). In
+    // Phone mode no card is ever shown, and the strays stayed for good.
+    if !this.m_built {
+      this.EnsureBuilt();
+    }
     if ArraySize(this.m_sender) == 0 && this.m_subLeft <= 0.0 {
       return;
     }
@@ -875,14 +926,39 @@ public class CBPhone {
       }
     }
     if ArraySize(this.m_pendBody) == 0 {
+      this.m_phoneWaitSince = 0.0;
       return;
     }
-    let usePhone = CBRealPhoneOn() && IsDefined(this.m_phoneCtrl);
+    let phoneMode = CBRealPhoneOn();
+    let usePhone = phoneMode && IsDefined(this.m_phoneCtrl);
     let sound = CBPhoneSoundOn();
     // Real seconds, for the two guards below. The simulation clock is the one the cards age on,
     // so the phone and the cards agree about what "a moment ago" means.
     let tsNow = GameInstance.GetTimeSystem(game);
     let nowReal = IsDefined(tsNow) ? EngineTime.ToFloat(tsNow.GetSimTime()) : 0.0;
+    // Phone mode and no phone to hand them to yet: they wait for one (1.9.1).
+    //
+    // They used to fall back to a card. The phone attaches a moment after a load, and the first
+    // settled tick after dying and reloading is exactly when the death ledger has news, so a player
+    // who had chosen the phone, and nothing but the phone, saw one card on the left and then the rest
+    // as texts. Every one of these is already filed in its thread (Send), so nothing is lost by
+    // waiting; if no phone turns up at all, the notifications are let go and the lines stay in the
+    // threads. Cards mode is the way out for a phone that never works.
+    if phoneMode && !usePhone {
+      if this.m_phoneWaitSince <= 0.0 || nowReal < this.m_phoneWaitSince {
+        this.m_phoneWaitSince = MaxF(nowReal, 0.001);
+      }
+      if nowReal - this.m_phoneWaitSince < CBConfig.PhoneAttachWaitSeconds() {
+        return;
+      }
+      CBLog.Info(n"UI", s"No phone to announce \(ArraySize(this.m_pendBody)) messages on; they are in their threads.");
+      this.m_phoneWaitSince = 0.0;
+      ArrayClear(this.m_pendThread);
+      ArrayClear(this.m_pendBody);
+      ArrayClear(this.m_pendAccent);
+      return;
+    }
+    this.m_phoneWaitSince = 0.0;
     let k = 0;
     while k < ArraySize(this.m_pendBody) {
       let thread = this.m_pendThread[k];
@@ -927,7 +1003,9 @@ public class CBPhone {
           this.m_phoneCtrl.CBDeliverThread(hash, sender, body, sound);
         }
       } else {
-        if announce {
+        // Cards are Cards mode's. In Phone mode a message with no thread to open (more senders this
+        // session than the phone keeps) is not turned into a card either.
+        if announce && !phoneMode {
           this.ShowCard(game, sender, body, this.m_pendAccent[k], sound);
         }
       }

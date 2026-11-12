@@ -41,6 +41,12 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
        && (byBody.state == EnumInt(ECBRivalState.Active) || byBody.state == EnumInt(ECBRivalState.Hunting)) {
       who = byBody;
     }
+    // Not a Rival's body, but the same face as a Killer Rival already out (1.9.1): the game's own NPC
+    // who killed V once has killed V again. Without this a death alternative such as Fenix Rebirth,
+    // which carries V on without a reload, made a second Rival of them with a name of their own.
+    if !IsDefined(who) {
+      who = CBKillerRivalLike(sys, faction, killerRecordID, killerLook);
+    }
   } else {
     for r in sys.GetRivals() {
       if IsDefined(r) && r.recordID == killerRecordID
@@ -51,8 +57,9 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
   }
   let isNew = false;
   if !IsDefined(who) {
+    // Quiet: "put you down. They will be looking for you." below is this death's one message.
     who = CBCreateRival(sys, game, faction, killerRecordID, killerLook, ECBRivalSource.Killer,
-                        district, now);
+                        district, now, true);
     isNew = true;
   }
   if !IsDefined(who) {

@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.9.0).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.9.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -140,7 +140,9 @@ in active development. This page describes what the mod does and how it installs
 - **Enemies that break, run, and remember.** Wound an enemy badly and it can lose its nerve and
   try to escape. Catch it and that is the end of it; let it get away and it comes back as a named
   Rival with a grudge. Beat one down and walk away without finishing them and they can come back
-  too, taking the mercy personally. Rivals are a full nemesis system: they hunt you down and
+  too, taking the mercy personally. A fight's new Rivals are named once it is over, half a minute
+  to a minute after you are out of combat, never while they are still lying at your feet; finish
+  one off before then and they never come back. Rivals are a full nemesis system: they hunt you down and
   chase you, they climb the ranks on their own while you are busy elsewhere, and every time one
   escapes it returns a rank higher and scarred. Each one is built to the same grade as a member
   of an apex squad, and they keep getting stronger: every escape, every mercy and every time
@@ -441,11 +443,33 @@ whether that is two or three. Turn it off and Rivals always come one at a time.
 you, by getting away, being spared or being shaken off, may come back a cyberpsycho: they fight like
 one and never run, but they get no extra health or armour, so they can always be put down.
 
+### Switching a faction off
+
+Under **Factions** there is a switch for every gang, corporation and the police. Turn one off and
+Cyberbane leaves them alone entirely: nobody of theirs turns on you on sight or warns you off because
+of Cyberbane, they send no crews, apex squads, scouts or patrols, they make no Rivals (their Rivals
+stay on your list but are never sent and never found for you), pay no tribute or bounties, and never
+text you. What you do to them still counts towards your reputation and their standing is still
+kept, so switching them back on picks up where it was. Anybody of theirs Cyberbane had already set
+on you goes back to how the game had them once they are out of the fight. The Gangs screen shows a
+switched-off faction as Off.
+
+Cyberbane never turns the police on you on sight whatever that switch says: the law has heat and
+stars for that. A faction switch only covers what Cyberbane does. Wanted levels, the game's own
+hostile areas and hostility set by another mod, such as They Will Remember (which tracks the NCPD and
+the Barghest as well as the gangs), are theirs. The Gangs screen tells you when a faction is hostile
+to you by somebody else's hand: **TWR: Hostile** when They Will Remember says so, **Seen hostile**
+when their people have been hostile to you on sight and Cyberbane did not make them so.
+
 ### Playing without the messages
 
 If you like the mechanics but would rather not be told what is coming, set **Where messages go**
 to **Off**. Nothing is put in your phone, no cards, no notices, no overheard lines and no message
 tone. The **Show messages** switch does the same thing, so either one is enough.
+
+With messages on **Phone**, nothing of Cyberbane's is drawn on the screen as a card or a notice,
+including straight after a load, when anything that arrives waits for the phone. Lines overheard on
+the street follow **Whispers** under Interface.
 
 None of it changes the way the mod plays. Gangs still send crews, apex squads still come, Rivals
 still hunt you, loot and bounties still arrive with the game's own notices, and the Hub still
@@ -514,8 +538,10 @@ Three worth knowing about if a playstyle is being treated unfairly:
   can force the compatibility mode on or off yourself in Mod Settings. The two keep separate
   records: They Will Remember decides which gangs shoot on sight, and Cyberbane keeps your standing,
   which is what prices and paying a gang off work from. When They Will Remember has a gang hostile,
-  the Hub's Gangs screen shows it beside your standing, so a gang that attacks you on sight never
-  reads as simply neutral.
+  the Hub's Gangs screen shows it beside your standing, whichever way the compatibility mode is set,
+  and when their people are seen attacking you on sight without Cyberbane having made them so it
+  says that too, so a gang that attacks you on sight never reads as simply neutral. Switching a
+  faction off under Factions stops what Cyberbane does about them, not what They Will Remember does.
 - Phone Extension and mods built on it: work alongside. Cyberbane's phone contacts use names of
   their own, so both can add contacts to the phone at once.
 - Street Sense: supported, detected automatically, no setup. It owns crowds noticing and

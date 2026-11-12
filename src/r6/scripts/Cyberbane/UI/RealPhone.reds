@@ -307,12 +307,13 @@ protected cb func OnPlayerAttach(playerPuppet: ref<GameObject>) -> Bool {
 }
 
 // And let go of it the moment the HUD tears it down. Texts never go to a controller that is on
-// its way out: until the next one attaches they show as cards instead (CBPhone.Deliver).
+// its way out: until the next one attaches they wait for it (CBPhone.Deliver). Only this phone is
+// let go of: the old one is often torn down after the new one has attached (1.9.1).
 @wrapMethod(NewHudPhoneGameController)
 protected cb func OnUninitialize() -> Bool {
   let store = CBPhoneStore();
   if IsDefined(store) {
-    store.SetPhoneController(null);
+    store.ReleasePhoneController(this);
   }
   return wrappedMethod();
 }
@@ -321,7 +322,7 @@ protected cb func OnUninitialize() -> Bool {
 protected cb func OnPlayerDetach(playerPuppet: ref<GameObject>) -> Bool {
   let store = CBPhoneStore();
   if IsDefined(store) {
-    store.SetPhoneController(null);
+    store.ReleasePhoneController(this);
   }
   return wrappedMethod(playerPuppet);
 }
@@ -655,7 +656,7 @@ protected cb func OnUninitialize() -> Bool {
   this.cbChoiceCount = 0;
   let store = CBPhoneStore();
   if IsDefined(store) {
-    store.SetOpenDialog(null);
+    store.ReleaseOpenDialog(this);
   }
   return wrappedMethod();
 }

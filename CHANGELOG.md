@@ -3,6 +3,70 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.9.1] - 2026-11-12
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Added
+- **Switch a faction off.** A new Factions page in Mod Settings has a switch for every gang, every
+  corporation and the police. Off, and Cyberbane leaves them alone entirely: nobody of theirs turns on
+  you on sight or warns you off because of Cyberbane, they send nobody after you, make no Rivals, pay
+  no tribute or bounties and never text you. Their Rivals stay on your list without being sent or
+  found for you. What you do to them still counts towards your reputation and their standing is kept,
+  so switching them back on picks up where it was. Anybody of theirs Cyberbane had already set on you
+  goes back to how the game had them once they are out of the fight, and the Gangs screen shows the
+  faction as Off.
+- **The Gangs screen says when somebody else has a gang hostile to you.** Cyberbane now notices when a
+  faction's people are hostile to you on sight and it did not make them so, and the Gangs screen shows
+  **Seen hostile**, with a line in the detail panel saying it is They Will Remember, another mod or the
+  game, and that nothing on the Hub changes it. It is how to tell whose doing it is when people start
+  getting suspicious of you and then open fire.
+
+### Changed
+- **A fight's new Rivals are named once it is over.** Somebody you left breathing, somebody who got
+  clear, a gang-mate who takes an officer's death personally, and whoever steps into a slain Rival's
+  place used to be made, and text you, on the spot, so you could be told someone "has your name now"
+  while they lay knocked out at your feet. They are now made half a minute to a minute after you are
+  out of combat, chosen afresh for each, and the wait starts again if the shooting does. Finish one off
+  before then and they never come back. The odds are rolled as before.
+- **A death is one message.** A killer becoming a Rival used to send "has your name now" as well as
+  the line about putting you down. It sends the one line.
+
+### Fixed
+- **Every cop could turn on you on sight with no stars showing.** Kill enough police and the NCPD went
+  to Vendetta, and Cyberbane's hostility on sight then drew every officer who recognised you, though
+  Cyberbane is meant to leave the law to heat and stars. It never turns the police on you now, and any
+  officer it already had turned goes back to normal once out of the fight.
+- **Dying and reloading the same fight over and over piled up Rivals and texts.** Every try left a
+  death behind, and each reload of the save before the fight applied all of them: the same killer
+  became two or three Rivals with different names, each one texting "has your name now", more with
+  every reload. A death by somebody who looks exactly like a Killer Rival you already have now promotes
+  that Rival instead. With a death alternative such as Fenix Rebirth the same face no longer becomes a
+  second Rival either.
+- **Cards and lines stuck on the screen.** A card, the hunt line or a bar that was showing when V died
+  stayed on screen through the reload and every load after it, with nothing left that could take it
+  down, even with cards and the hunt line switched off. Anything left over from an earlier session is
+  cleared as the next one starts, and nothing of Cyberbane's stays on screen while V is down.
+- **Cards showed up with messages set to Phone.** The phone attaches a moment after a load, and
+  anything that arrived first, such as the texts after dying and reloading, was shown as a card
+  instead. And when a load tore the old phone down after the new one was ready, the new one was
+  forgotten and every text that session became a card. Messages now wait for the phone, nothing in
+  Phone mode is ever drawn as a card, and a phone only ever lets go of itself.
+- **"Asking around about you" was sometimes an overheard line** with messages set to Phone. It is a
+  text unless Whispers is on.
+- **They Will Remember's verdict was only asked for in compatibility mode.** With the compatibility
+  setting on Off, the Gangs screen never asked They Will Remember and showed your standing alone. It
+  asks whenever They Will Remember is installed, and the log says once whether the question worked.
+- **Lower frame cost on crowded streets.** The crowd reactions went through the same handful of people
+  at the front of their list every second and re-ran the whole safety check, a workspot query and a
+  safe-area query included, on everybody sitting, leaning or selling nearby, again and again. They now
+  go round the whole street a part at a time, read at most 48 people a second, and pass over anybody
+  who failed the check a moment ago; anybody who passes is still checked afresh. Every passer-by who
+  streamed in also paid for a dozen engine reads to find out it was not one of Cyberbane's own, a full
+  list of people was walked once per arrival, the check for people you knocked down asked the engine
+  about everybody, and the story-companion check read every position every second. Each now does the
+  cheap test first or runs less often.
+
 ## [1.9.0] - 2026-11-11
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.

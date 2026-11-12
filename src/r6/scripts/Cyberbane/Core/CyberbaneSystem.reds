@@ -342,6 +342,17 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The ticks new Rivals were made on lately, so one fight cannot make a crowd of them
   // (CBRivalOdds, Rivals/RivalSystem.reds). Session only.
   private let m_rivalMadeTicks: array<Int32>;
+  // Rivals a fight has made who wait until it is over (Rivals/Births.reds, 1.9.1), and how many
+  // settled ticks V has been out of combat. Session only, like the escapees they come from.
+  private let m_births: array<ref<CBPendingBirth>>;
+  private let m_calmTicks: Int32;
+  // Factions whose people were seen hostile to V without Cyberbane having made them so, and the tick
+  // it was last seen (Reactions/Director.reds, NoteForeignHostility, 1.9.1). Session only.
+  private let m_seenHostileIds: array<CName>;
+  private let m_seenHostileTicks: array<Int32>;
+  // Ticks the story-companion pass was last run on, and what it found (CBStoryCompanionWithV, 1.9.1).
+  private let m_companionScanTick: Int32;
+  private let m_companionScanFound: Bool;
   // What V was last seen wearing and what it covers (Signals/Concealment.reds), read once a sample by
   // CBUpdateChrome and shared by the look, the disguise and the mask test. Session only.
   private let m_worn: ref<CBWornRead>;
@@ -527,13 +538,22 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_registry.Add(puppet);
       puppet.cbSeenTick = this.m_tickCount;   // leave it alone until its components are ready
 
+      // Only Cyberbane's own spawns need anything more, and every one of them carries the Cyberbane
+      // tag (Spawn/Spawner.reds, Spawn/Arrival.reds). Asked first (1.9.1): this runs for every person
+      // who streams in, and on a crowded street that is a constant flow. Each one used to pay for the
+      // whole world-stable check below - a dozen engine reads, a workspot query among them - and up to
+      // eight tag lookups, to find out it was a passer-by. The same tag test the car above has always
+      // made before its own stable check, so it is no new kind of call from here.
+      let des = GameInstance.GetDynamicEntitySystem();
+      if !IsDefined(des) || !des.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
+        return;
+      }
       // Everything below queries the dynamic entity system and writes attitude and stats on a
       // freshly attached puppet, which is the part that is genuinely unsafe mid-stream.
       if !CBWorldStable(this.GetGameInstance()) {
         return;
       }
       // Our own spawned hostiles (hit squads, Rival encounters) start aggressive toward V.
-      let des = GameInstance.GetDynamicEntitySystem();
       if IsDefined(des) {
         let id = puppet.GetEntityID();
         // Crew first: they belong in a seat, not running at V on foot from where the car is.
@@ -868,6 +888,14 @@ public class CyberbaneSystem extends ScriptableSystem {
       if this.m_streamSettleTicks < CBConfig.StreamSettleTicks() {
         this.m_streamSettleTicks = CBConfig.StreamSettleTicks();
       }
+      // V is down (1.9.1): take Cyberbane's line, bars and cards off the screen. The tick stands still
+      // until V is up or the load comes, so whatever they showed froze there, and the HUD layer keeps
+      // it through the load. Visibility only, on Cyberbane's own widgets: no world query, nothing
+      // forgotten, and the next settled tick draws whatever is still true.
+      if CBVDown(game) {
+        this.GetThreatBar().Conceal();
+        this.GetPhone().Conceal();
+      }
       this.ScheduleFastTick();
       return;
     }
@@ -894,6 +922,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     let attached = this.m_attachCount;
     this.m_attachCount = 0;
     let heavyStreaming = attached >= CBConfig.FloodAttachThreshold();
+    if IsDefined(this.m_registry) {
+      this.m_registry.ArmPrune();   // one prune from a full registry's next add, at most (1.9.1)
+    }
 
     // A large jump in the in-game clock since the last processed tick means a time skip just
     // happened (Skip Time, fast travel, a ripperdoc install) - each kicks off a streaming flood
@@ -1040,6 +1071,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBEncounterTick(this, game);
     CBSparedSweep(this, game);          // mercy the hit hook did not see (spec §10.2)
     CBProcessEscapees(this, game);
+    CBRivalBirthTick(this, game);       // and the Rivals a fight made, once it is over (1.9.1)
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
     CBProcessPendingSquad(this, game);  // and a vendetta squad arrives when its timer runs out
     this.AgePendingArrival();           // forget a car that was sent and never arrived
@@ -1745,6 +1777,99 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func ClearPack() -> Void {
     ArrayClear(this.m_packIds);
+  }
+
+  // ---- Rivals waiting for the fight to be over (Rivals/Births.reds) ----
+  public func CountPendingBirths() -> Int32 {
+    return ArraySize(this.m_births);
+  }
+
+  public func PeekPendingBirth(i: Int32) -> ref<CBPendingBirth> {
+    if i < 0 || i >= ArraySize(this.m_births) {
+      return null;
+    }
+    return this.m_births[i];
+  }
+
+  public func TakePendingBirth(i: Int32) -> ref<CBPendingBirth> {
+    if i < 0 || i >= ArraySize(this.m_births) {
+      return null;
+    }
+    let b = this.m_births[i];
+    ArrayErase(this.m_births, i);
+    return b;
+  }
+
+  public func AddPendingBirth(b: ref<CBPendingBirth>) -> Void {
+    if IsDefined(b) {
+      ArrayPush(this.m_births, b);
+    }
+  }
+
+  public func ClearPendingBirths() -> Void {
+    ArrayClear(this.m_births);
+  }
+
+  public func GetCalmTicks() -> Int32 {
+    return this.m_calmTicks;
+  }
+
+  public func SetCalmTicks(n: Int32) -> Void {
+    this.m_calmTicks = n;
+  }
+
+  // ---- Hostile, and not by Cyberbane (Reactions/Director.reds, NoteForeignHostility) ----
+  // Returns true the first time this session, so the log says it once.
+  public func NoteSeenHostile(faction: CName) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_seenHostileIds) {
+      if Equals(this.m_seenHostileIds[i], faction) {
+        this.m_seenHostileTicks[i] = Max(this.m_tickCount, 1);
+        return false;
+      }
+      i += 1;
+    }
+    ArrayPush(this.m_seenHostileIds, faction);
+    ArrayPush(this.m_seenHostileTicks, Max(this.m_tickCount, 1));
+    return true;
+  }
+
+  // Seen within `window` ticks.
+  private func SeenHostileWithin(faction: CName, window: Int32) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_seenHostileIds) {
+      if Equals(this.m_seenHostileIds[i], faction) {
+        return this.m_tickCount - this.m_seenHostileTicks[i] <= window;
+      }
+      i += 1;
+    }
+    return false;
+  }
+
+  // Seen in the last minute: no need to look again yet.
+  public func SeenHostileFresh(faction: CName) -> Bool {
+    return this.SeenHostileWithin(faction, CBConfig.ForeignHostileFreshTicks());
+  }
+
+  // Seen recently enough for the Gangs screen to say so.
+  public func SeenHostileRecently(faction: CName) -> Bool {
+    return this.SeenHostileWithin(faction, CBConfig.ForeignHostileShowTicks());
+  }
+
+  // The story-companion pass, at most once every `window` ticks (CBStoryCompanionWithV, 1.9.1). True,
+  // with the last answer in `found`, while it is too soon to look again.
+  public func TakeCompanionScan(window: Int32, out found: Bool) -> Bool {
+    let age = this.m_tickCount - this.m_companionScanTick;
+    if this.m_companionScanTick > 0 && age >= 0 && age < window {
+      found = this.m_companionScanFound;
+      return true;
+    }
+    return false;
+  }
+
+  public func NoteCompanionScan(found: Bool) -> Void {
+    this.m_companionScanTick = Max(this.m_tickCount, 1);
+    this.m_companionScanFound = found;
   }
 
   public func GetWorn() -> ref<CBWornRead> {
@@ -3486,6 +3611,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_formerBodyIds);
     ArrayClear(this.m_formerBodyRivals);
     ArrayClear(this.m_packIds);
+    ArrayClear(this.m_births);   // a Rival the old playthrough earned is not the new one's (1.9.1)
     ArrayClear(this.m_crewBeaten);
     ArrayClear(this.m_seenPostureIds);
     ArrayClear(this.m_seenPostureVals);
