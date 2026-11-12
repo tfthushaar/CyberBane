@@ -632,7 +632,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalHideouts-Desc")
   public let rivalHideouts: Bool = true;
 
-  // How strong a Rival is (1.9.1, Spawn/FactionApex.reds, CBRivalStrengthFraction). Rivals are built with
+  // How strong a Rival is (1.9.2, Spawn/FactionApex.reds, CBRivalStrengthFraction). Rivals are built with
   // the apex build, and the apex slider used to set both. Same scale and default as Apex strength.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")

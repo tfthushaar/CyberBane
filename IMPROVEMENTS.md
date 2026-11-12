@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.1. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.2. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -22,12 +22,13 @@ otherwise), because installing over the top does not remove files and an old cop
 
 ### "Where is the setting to buff Rivals? I only found the setting to buff Apex enemies"
 
-**Status: added in 1.9.1** (`Settings/CyberbaneSettings.reds` `rivalStrength`, `Spawn/FactionApex.reds`). There was none of
+**Status: added in 1.9.2** (`Settings/CyberbaneSettings.reds` `rivalStrength`, `Spawn/FactionApex.reds`). There was none of
 its own: Rivals are built by `CBApplyApexBuild`, the same build as an apex squad, at their ladder grade (`CBRivalGrade`), and
 that build read `apexStrength` for everybody, so the apex slider under Gangs silently set Rivals too. Now the build takes the
 slider as an argument: `CBApexStrengthFraction` (apex squads) and `CBRivalStrengthFraction` (Rivals), both through
 `CBStrengthFraction` for New Game Plus and difficulty. "Rival strength" under Rivals, 20 to 100, default 55 like the apex
-slider, so a Rival is as strong as before until it is moved. The apex description now says it is apex squads only.
+slider: a Rival is as strong as before unless the player had moved Apex strength, in which case their Rivals go back
+to 55 until Rival strength is set to match (said in the changelog). The apex description now says it is apex squads only.
 
 One player, one message, seven points; a clean reinstall of 1.9.0 through Vortex before the last three.
 Nothing here compiled on this machine (no game install, no redscript); every call added is one the mod

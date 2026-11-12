@@ -60,10 +60,10 @@ public func CBApexStrengthFraction() -> Float {
   return CBStrengthFraction(pct);
 }
 
-// The same for Rivals, from their own slider (1.9.1, under Rivals). Rivals have always been built with
+// The same for Rivals, from their own slider (1.9.2, under Rivals). Rivals have always been built with
 // the apex build, and until this they were scaled by the apex squad's slider too: "Where is the setting
 // to buff Rivals? I only found the one for apex enemies." It was that one, and nothing said so. The two
-// defaults are the same, so a Rival is as strong as before until the slider is moved.
+// defaults are the same; a player who had moved the apex slider has Rivals at 55 until this one matches.
 public func CBRivalStrengthFraction() -> Float {
   let rt = CyberbaneRuntime.Get();
   let pct = CBConfig.ApexStrengthDefault();

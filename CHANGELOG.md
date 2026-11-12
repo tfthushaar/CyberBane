@@ -3,6 +3,16 @@
 All notable changes to Cyberbane are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.9.2] - 2026-11-12
+
+Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
+
+### Added
+- **Rival strength.** Rivals have their own strength slider under Rivals in Mod Settings. They were
+  scaled by Apex strength, under Gangs, without anything saying so; that slider now sets the gangs'
+  apex squads alone. Rival strength starts at 55, the default for both. If you had moved Apex
+  strength, set Rival strength to the same number to keep your Rivals as they were.
+
 ## [1.9.1] - 2026-11-12
 
 Your saved Cyberbane progress carries over, and nothing stored in your save changed shape.
@@ -21,9 +31,6 @@ Your saved Cyberbane progress carries over, and nothing stored in your save chan
   **Seen hostile**, with a line in the detail panel saying it is They Will Remember, another mod or the
   game, and that nothing on the Hub changes it. It is how to tell whose doing it is when people start
   getting suspicious of you and then open fire.
-- **Rival strength.** Rivals have their own strength slider under Rivals in Mod Settings. They were
-  scaled by Apex strength, under Gangs, without anything saying so; that slider now sets the gangs'
-  apex squads alone. Both start at the same value, so nothing changes until you move one.
 
 ### Changed
 - **A fight's new Rivals are named once it is over.** Somebody you left breathing, somebody who got
