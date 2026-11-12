@@ -186,17 +186,25 @@ public func CBStoryCompanionWithV(sys: ref<CyberbaneSystem>, game: GameInstance)
   if !IsDefined(player) || !IsDefined(reg) {
     return false;
   }
+  // Every few ticks, not every tick (1.9.1). This walks the whole registry - two hundred people on a
+  // busy street - reading each one's position, every second. A companion who has just joined is noticed
+  // a moment later, which only means nobody is sent for a moment longer than they would have been.
+  let found = false;
+  if sys.TakeCompanionScan(CBConfig.StoryCompanionScanTicks(), found) {
+    return found;
+  }
   let des = GameInstance.GetDynamicEntitySystem();
   let ppos = player.GetWorldPosition();
   let reach = CBConfig.StoryCompanionRadius();
   for p in reg.GetAll() {
-    if CBNpcSafe(sys, p) && !p.IsDead()
+    if !found && CBNpcSafe(sys, p) && !p.IsDead()
        && Vector4.Distance(p.GetWorldPosition(), ppos) <= reach
        && p.IsPlayerCompanion() && CBIsStoryCompanion(p, des) {
-      return true;
+      found = true;
     }
   }
-  return false;
+  sys.NoteCompanionScan(found);
+  return found;
 }
 
 // Whose companion is this: the story's, or one somebody chose?

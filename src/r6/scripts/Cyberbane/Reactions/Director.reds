@@ -20,6 +20,15 @@ public let cbHostileByCyberbane: Bool;
 @addField(ScriptedPuppet)
 public let cbGangWarned: Bool;
 
+// The tick this NPC's attitude towards V was last read for NoteForeignHostility (1.9.1).
+@addField(ScriptedPuppet)
+public let cbAttitudeReadTick: Int32;
+
+// The tick this NPC last failed the Director's checks (the Safety Gate, a job site, one of ours), so it
+// is passed over for a few ticks rather than asked again every second (1.9.1). 0 = never failed.
+@addField(ScriptedPuppet)
+public let cbGateFailTick: Int32;
+
 func CBWarningsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().warnings;
@@ -43,6 +52,8 @@ public class CBReactionDirector {
   private let m_streetSense: Int32;
   // NPCs whose attitude Cyberbane overrode, tracked so the kill switch can revert them.
   private let m_hostileNpcs: array<wref<ScriptedPuppet>>;
+  // Where in the registry the last tick's walk stopped (1.9.1), so the next one carries on from there.
+  private let m_cursor: Int32;
 
   public func Tick(game: GameInstance) -> Void {
     let sys = CyberbaneSystem.Get(game);
@@ -93,6 +104,11 @@ public class CBReactionDirector {
     if this.m_whisperCooldownTicks > 0 {
       this.m_whisperCooldownTicks -= 1;
     }
+    // Anybody Cyberbane turned on V whose faction it may not turn any more (1.9.1): switched off in
+    // Mod Settings since, or the law. Every few ticks, from a list of at most MaxTrackedHostiles.
+    if sys.GetTickCount() % CBConfig.SwitchedOffRevertTicks() == 0 {
+      this.RevertNotFielding(game);
+    }
 
     let player = GetPlayer(game);
     if !IsDefined(player) {
@@ -133,21 +149,49 @@ public class CBReactionDirector {
 
     let des = GameInstance.GetDynamicEntitySystem();
     let npcs = reg.GetAll();
+    let count = ArraySize(npcs);
     let evaluated = 0;
-    let i = 0;
-    while i < ArraySize(npcs) && evaluated < CBConfig.NpcEvalPerTick() {
-      let npc = npcs[i];
-      i += 1;
+    // Round the registry, from where the last tick stopped, and only so far each tick (1.9.1).
+    //
+    // "The mod lowers my fps a bit in high density regions." The walk started from the first NPC
+    // every tick and went on until sixteen had passed every check, so on a crowded street it read the
+    // position of every NPC ahead of those sixteen, every second, and ran the whole Safety Gate - a
+    // workspot query, a safe-area query, a pin scan - on every one in range who failed it: everybody
+    // sitting, leaning, selling or queueing, again and again, and in a crowd that is most of them. And
+    // the same sixteen at the front were the only ones the street ever had react. Now the walk carries
+    // on where it stopped, reads at most NpcLookPerTick positions, and passes over anybody who failed
+    // the checks a moment ago (NpcGateRetryTicks). Anybody who passes is always checked afresh.
+    let start = this.m_cursor;
+    if start < 0 || start >= count {
+      start = 0;
+    }
+    let looked = 0;
+    let tick = sys.GetTickCount();
+    let k = 0;
+    while k < count && evaluated < CBConfig.NpcEvalPerTick() && looked < CBConfig.NpcLookPerTick() {
+      let npc = npcs[(start + k) % count];
+      k += 1;
       // Only touch an NPC that is attached and past its warm-up ticks (crash safety during
       // streaming). Cheap distance gate first: the Safety Gate queries the workspot system, so
       // only run it for NPCs actually in range. A dense registry then stays cheap per tick.
-      if CBNpcSafe(sys, npc) {
+      let resting = false;
+      if IsDefined(npc) && npc.cbGateFailTick > 0 {
+        let failedAgo = tick - npc.cbGateFailTick;
+        resting = failedAgo >= 0 && failedAgo < CBConfig.NpcGateRetryTicks();
+      }
+      if !resting && CBNpcSafe(sys, npc) {
+        looked += 1;
         let dist = Vector4.Distance(ppos, npc.GetWorldPosition());
         // Nobody standing at any job site, tracked or not (1.8.4): turning a gig's people hostile
         // or sending them running is the story's business. The Safety Gate itself only asks about
         // the tracked job, so a fight's own consequences - morale, running, mercy - count anywhere.
-        if dist <= CBConfig.NpcEvalRadius() && !CBSentByUs(des, npc) && CBSafetyGate.CanAffect(npc)
-           && !sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
+        let passes = false;
+        if dist <= CBConfig.NpcEvalRadius() {
+          passes = !CBSentByUs(des, npc) && CBSafetyGate.CanAffect(npc)
+                && !sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.QuestSpawnClearance());
+          npc.cbGateFailTick = passes ? 0 : Max(tick, 1);
+        }
+        if passes {
           evaluated += 1;
           let faction = CBClassifyFaction(npc);
 
@@ -175,6 +219,13 @@ public class CBReactionDirector {
           if !npc.IsCrowd() && gangOn && hostileOnSight && recognized {
             turnedHostile = this.TryGangHostile(score, player, npc, faction);
           }
+          // Somebody of a gang hostile to V who Cyberbane did not turn (1.9.1), read now and then.
+          if !playerInCombat && !turnedHostile && !npc.IsCrowd() && NotEquals(faction, n"")
+             && !npc.cbHostileByCyberbane
+             && (sys.GetTickCount() - npc.cbAttitudeReadTick) >= CBConfig.ForeignHostileReadTicks() {
+            npc.cbAttitudeReadTick = sys.GetTickCount();
+            this.NoteForeignHostility(sys, score, player, npc, faction);
+          }
           if !turnedHostile && civOn && civReacted < maxCiv {
             if CBFearReact(game, score, npc, dist, civIntensity, faction, sys.GetTickCount(),
                            sys.GetContent()) {
@@ -187,6 +238,7 @@ public class CBReactionDirector {
         }
       }
     }
+    this.m_cursor = count > 0 ? (start + k) % count : 0;
   }
 
   // Vendetta gangs attack a recognized V on sight (spec §9.3). Tracked for revert.
@@ -194,6 +246,14 @@ public class CBReactionDirector {
   // knows not to let it flee from fear instead.
   private func TryGangHostile(score: ref<CBScoreEngine>, player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName) -> Bool {
     if Equals(faction, n"") {
+      return false;
+    }
+    // Never the law, and never a faction switched off in Mod Settings (1.9.1). The NCPD has heat and
+    // stars, and CBFactionFieldsSquads has always said Cyberbane bolts no second escalation onto them,
+    // but this path never asked it: a V who had killed enough cops to put the NCPD at Vendetta was
+    // drawn on by every officer who recognised them, with no stars showing. "Almost every cop will
+    // slowly get sus of me and eventually combat."
+    if !CBFactionFieldsSquads(faction) {
       return false;
     }
     if CBTwrActive() {
@@ -241,6 +301,47 @@ public class CBReactionDirector {
     npc.cbHostileByCyberbane = true;
     this.TrackHostile(npc);
     return true;
+  }
+
+  // Their people are hostile to V, and not because of Cyberbane (1.9.1).
+  //
+  // "They Will Remember says the Tyger Claws are hostile for my kills, but Cyberbane says neutral."
+  // And: "almost every cop and Barghest will slowly get sus of me and eventually combat. I can't tell
+  // what is causing this." Cyberbane's standing is its own book, and with They Will Remember installed
+  // it does not turn anybody on V at all; but the Gangs screen could only say what Cyberbane thought,
+  // so a gang shooting V on sight read as neutral and nobody could tell whose doing it was. The 1.9.0
+  // answer asked They Will Remember through reflection, which depends on how that mod is built inside.
+  // This asks the world: somebody of theirs, out of combat, out of any hostile zone and away from any
+  // job (the Director stands down in all of those), whose attitude to V is already hostile though
+  // Cyberbane never touched it. That is "hostile on sight", by whoever's hand - They Will Remember,
+  // another mod or the game - and the Gangs screen says so.
+  //
+  // The police are hostile to anybody with stars, so they are not read while V has any.
+  private func NoteForeignHostility(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>,
+                                    player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName) -> Void {
+    if sys.SeenHostileFresh(faction) {
+      return;   // already seen this minute; one look is enough
+    }
+    // Asked here as well as through the quest area, which leaves hostile zones out when "Stay out of
+    // quest areas" is switched off: everybody in a gang's own compound is hostile to an intruder.
+    if CBPlayerInHostileZone(player.GetGame()) {
+      return;
+    }
+    if (Equals(faction, n"NCPD") || Equals(faction, n"MaxTac") || Equals(faction, n"Police"))
+       && IsDefined(score) && score.GetHeatStage() > 0 {
+      return;
+    }
+    let agent = npc.GetAttitudeAgent();
+    let pagent = player.GetAttitudeAgent();
+    if !IsDefined(agent) || !IsDefined(pagent) {
+      return;
+    }
+    if !Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) || CBNpcInCombat(npc) {
+      return;
+    }
+    if sys.NoteSeenHostile(faction) {
+      CBLog.Info(n"Model", s"\(NameToString(faction)): their people are hostile to you, and not by Cyberbane's doing (They Will Remember, another mod or the game).");
+    }
   }
 
   // The revert list only has to cover NPCs that still exist, so drop the ones that have
@@ -312,6 +413,35 @@ public class CBReactionDirector {
     }
   }
 
+  // Back to how the game had them: everybody Cyberbane turned on V whose faction does not go to war
+  // with V any more (CBFactionFieldsSquads) - switched off under Factions since, or the police - and who
+  // is not in the middle of a fight. Without this, switching a gang off left whoever it had already set
+  // on V hostile until they streamed out (1.9.1).
+  private func RevertNotFielding(game: GameInstance) -> Void {
+    if ArraySize(this.m_hostileNpcs) == 0 {
+      return;
+    }
+    let player = GetPlayer(game);
+    if !IsDefined(player) {
+      return;
+    }
+    let pagent = player.GetAttitudeAgent();
+    if !IsDefined(pagent) {
+      return;
+    }
+    for npc in this.m_hostileNpcs {
+      if IsDefined(npc) && npc.IsAttached() && !npc.IsDead() && npc.cbHostileByCyberbane
+         && !CBNpcInCombat(npc) && !CBFactionFieldsSquads(CBClassifyFaction(npc)) {
+        let agent = npc.GetAttitudeAgent();
+        if IsDefined(agent) {
+          CBTrace("attitude: world NPC back to neutral, their faction is off");
+          agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+        }
+        npc.cbHostileByCyberbane = false;
+      }
+    }
+  }
+
   private func RevertAllHostile(game: GameInstance) -> Void {
     let player = GetPlayer(game);
     let pagent: ref<AttitudeAgent>;
@@ -333,6 +463,11 @@ public class CBReactionDirector {
   private func TryWhisper(game: GameInstance, sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dread: Float, dist: Float, faction: CName) -> Void {
     if this.m_whisperCooldownTicks > 0 || npc.cbWhispered || dist > CBConfig.WhisperRadius() {
       return;
+    }
+    // A faction switched off in Mod Settings talks like anybody else on the street (1.9.1): no grudge,
+    // no lost boss, no warning in their voice.
+    if !CBFactionOn(faction) {
+      faction = n"";
     }
 
     let mood = n"fear";

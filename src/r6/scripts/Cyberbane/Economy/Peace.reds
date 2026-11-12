@@ -63,8 +63,10 @@ func CBDetectTwr() -> Bool {
   if IsDefined(rt) {
     rt.SetTwrDetected(found);
   }
+  // What is detected, not what is done about it: the compatibility setting decides that, and this is
+  // also asked with it on Off (CBTwrGangHostile, 1.9.1).
   if found {
-    CBLog.Info(n"Core", "They Will Remember detected; standing down the systems that overlap (hostility on sight, hit squads, faction disguises).");
+    CBLog.Info(n"Core", "They Will Remember detected. With its compatibility setting on Auto, Cyberbane leaves it hostility on sight, hit squads and faction disguises.");
   } else {
     CBLog.Info(n"Core", "They Will Remember not detected; Cyberbane is running its own hostility, hit squad and disguise systems.");
   }
@@ -116,8 +118,13 @@ func CBTwrModulePresent() -> Bool {
 // by name instead would fail every script mod's compile on any install with such a version
 // (`ModuleExists` says a mod is there, never which version). The index is theirs
 // (KillCounts.GetFactionIndex), which their own saved list is kept in, so it cannot move under them.
+//
+// Asked whenever They Will Remember is installed (1.9.1), not only while Cyberbane stands down for it.
+// "Still neutral" was reported again on 1.9.0: with the compatibility setting on Off, so that both mods
+// run their own hostility, this answered -1 without asking, and the Hub showed Cyberbane's record alone.
+// What it found is said once a launch in the log, so a report says which step it got to.
 public func CBTwrGangHostile(game: GameInstance, faction: CName) -> Int32 {
-  if !CBTwrActive() {
+  if !CBDetectTwr() {
     return -1;
   }
   let index = CBTwrFactionIndex(faction);
@@ -127,11 +134,17 @@ public func CBTwrGangHostile(game: GameInstance, faction: CName) -> Int32 {
   }
   let manager = container.Get(n"TheyWillRemember.Factions.AttitudeManager");
   let type = Reflection.GetClass(n"TheyWillRemember.Factions.AttitudeManager");
-  if !IsDefined(manager) || !IsDefined(type) {
+  if !IsDefined(type) {
+    CBTwrProbeNote("its attitude class is not in this build");
+    return -1;
+  }
+  if !IsDefined(manager) {
+    CBTwrProbeNote("its attitude system is not running");
     return -1;
   }
   let ask = type.GetFunction(n"IsFactionHostileByIndex");
   if !IsDefined(ask) || ArraySize(ask.GetParameters()) != 1 {
+    CBTwrProbeNote("it has no IsFactionHostileByIndex taking one argument");
     return -1;
   }
   // Without the call's status flag: it is a script reference, a form this mod has never shipped, and
@@ -140,7 +153,37 @@ public func CBTwrGangHostile(game: GameInstance, faction: CName) -> Int32 {
   let args: array<Variant>;
   ArrayPush(args, ToVariant(index));
   let answer = ask.Call(manager, args);
+  CBTwrProbeNote("");
   return FromVariant<Bool>(answer) ? 1 : 0;
+}
+
+// Once a launch, how asking They Will Remember went. Empty means it answered.
+func CBTwrProbeNote(why: String) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || rt.GetTwrProbeLogged() {
+    return;
+  }
+  rt.SetTwrProbeLogged(true);
+  if StrLen(why) == 0 {
+    CBLog.Info(n"Core", "They Will Remember answers the Gangs screen when it asks who is hostile on sight.");
+  } else {
+    CBLog.Info(n"Core", s"They Will Remember could not be asked who is hostile on sight: \(why). The Gangs screen goes by what it sees of their people instead.");
+  }
+}
+
+// Is this faction hostile to V on sight by somebody else's hand (1.9.1)? 2: They Will Remember says
+// so. 1: their people have been seen hostile to V lately, and not by Cyberbane's doing
+// (Reactions/Director.reds, NoteForeignHostility) - They Will Remember, another mod or the game.
+// 0: nothing says so. The Gangs screen shows this beside Cyberbane's own posture, and it is the one
+// thing that tells a player whether the people shooting at them are Cyberbane's doing at all.
+public func CBForeignHostile(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Int32 {
+  if CBTwrGangHostile(game, faction) == 1 {
+    return 2;
+  }
+  if IsDefined(sys) && sys.SeenHostileRecently(faction) {
+    return 1;
+  }
+  return 0;
 }
 
 // Their numbering of the gangs (They Will Remember 2.7, KillCounts.GetFactionIndex). The ones they do

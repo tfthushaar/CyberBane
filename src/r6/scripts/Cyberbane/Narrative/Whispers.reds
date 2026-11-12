@@ -231,6 +231,12 @@ func CBWhisperPick4(a: String, b: String, c: String, d: String) -> String {
   return d;
 }
 
+// The Whispers switch, for anything else that would put an overheard line on the screen (1.9.1).
+public func CBWhispersOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().whispers;
+}
+
 public func CBShowWhisper(sys: ref<CyberbaneSystem>, game: GameInstance,
                           faction: CName, mood: CName, topic: CName) -> Void {
   // A whisper is something said near V, not something sent to V, so it is a line of subtitle

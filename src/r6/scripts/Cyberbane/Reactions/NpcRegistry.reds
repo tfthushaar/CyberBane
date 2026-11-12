@@ -10,6 +10,8 @@ public func CBRegistryCap() -> Int32 = 200
 
 public class CBNpcRegistry {
   private let m_npcs: array<wref<ScriptedPuppet>>;
+  // Whether Add may prune once more before the next tick's own prune (1.9.1).
+  private let m_addPruneArmed: Bool;
 
   public func Add(puppet: ref<ScriptedPuppet>) -> Void {
     if !IsDefined(puppet) {
@@ -31,8 +33,15 @@ public class CBNpcRegistry {
     }
     // Hard cap so the registry can never grow without bound in dense crowds. If it is
     // full, prune despawned entries first; only skip the add if it is still full.
+    //
+    // Once between ticks, not on every add (1.9.1). Full is where a crowded street lives, and every
+    // person streaming in then walked all two hundred entries asking each whether it was still
+    // attached, to find, nearly always, that it was. The tick prunes every second anyway.
     if ArraySize(this.m_npcs) >= CBRegistryCap() {
-      this.Prune();
+      if this.m_addPruneArmed {
+        this.m_addPruneArmed = false;
+        this.PruneNow();
+      }
       if ArraySize(this.m_npcs) >= CBRegistryCap() {
         return;
       }
@@ -41,8 +50,19 @@ public class CBNpcRegistry {
   }
 
   // Drop weak refs that have gone undefined or detached (despawned / streamed out), so the
-  // registry only ever yields NPCs that are still attached to the world.
+  // registry only ever yields NPCs that are still attached to the world. Called once a tick.
   public func Prune() -> Void {
+    this.PruneNow();
+    this.m_addPruneArmed = true;
+  }
+
+  // Let Add prune once more. The fast tick calls this every second, including the busy ones on which
+  // the Director (and its prune) is skipped, so a full registry still makes room while the world streams.
+  public func ArmPrune() -> Void {
+    this.m_addPruneArmed = true;
+  }
+
+  private func PruneNow() -> Void {
     let i = 0;
     while i < ArraySize(this.m_npcs) {
       if !IsDefined(this.m_npcs[i]) || !this.m_npcs[i].IsAttached() {

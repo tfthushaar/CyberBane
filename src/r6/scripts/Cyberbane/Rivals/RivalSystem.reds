@@ -787,9 +787,19 @@ public func CBRivalRoll(sys: ref<CyberbaneSystem>, what: String, base: Float, re
   return hit;
 }
 
+// `quiet` leaves out the "has your name now" text, for a caller that sends its own line about the same
+// moment (a death). `counted` says the roll already counted this Rival towards the burst damping in
+// CBRivalOdds, as a birth held until the fight is over does (Rivals/Births.reds), so it is not counted
+// twice. Both 1.9.1.
 public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName,
-    recordID: TweakDBID, appearance: CName, source: ECBRivalSource, origin: CName, at: Float) -> ref<CBRival> {
+    recordID: TweakDBID, appearance: CName, source: ECBRivalSource, origin: CName, at: Float,
+    opt quiet: Bool, opt counted: Bool) -> ref<CBRival> {
   if !IsDefined(sys) {
+    return null;
+  }
+  // A faction the player switched off under Factions in Mod Settings keeps no Rivals (1.9.1).
+  if !CBFactionOn(faction) {
+    CBLog.Info(n"Rivals", s"No new Rival from \(NameToString(faction)): switched off in Mod Settings.");
     return null;
   }
   // One gate, here, because eight different places create Rivals and several hand over a
@@ -859,12 +869,14 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   }
 
   sys.AddRival(r);
-  sys.NoteRivalMade();   // so the next roll in the same fight is less likely (CBRivalOdds)
+  if !counted {
+    sys.NoteRivalMade();   // so the next roll in the same fight is less likely (CBRivalOdds)
+  }
   // A new name in a crew may be the only one left standing in it (spec §10.1).
   CBHierarchyFill(sys, faction);
 
   CBLogRival(sys, n"RivalCreated", at, origin, faction, Cast<Float>(r.id), r.id);
-  if CBMessagesOn() {
+  if CBMessagesOn() && !quiet {
     CBPhoneFromGang(game, faction, CBRivalDisplayName(content, r) + " has your name now. That is on you.");
   }
   CBLog.Info(n"Rivals", s"Rival created id=\(r.id) faction=\(NameToString(faction)).");
@@ -1155,6 +1167,7 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   let removed = sys.ClearRivals();
   sys.SetActiveRivalId(0);
   sys.ClearPack();
+  sys.ClearPendingBirths();   // nor anybody still waiting for a fight to be over (1.9.1)
   CBDeleteTaggedSafe(game, n"CB_Rival");
   CBLog.Info(n"Rivals", s"Purged \(removed) rivals at the player's request.");
   return removed;
@@ -1257,16 +1270,11 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   let succeedChance = CBConfig.SuccessionChanceBase()
     + Cast<Float>(rival.rank) * CBConfig.SuccessionChancePerRank();
   if CBRivalRoll(sys, "succession", succeedChance, rival.recordID, false) {
-    let avenger = CBCreateRival(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger, district, at);
-    if IsDefined(avenger) {
-      // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1,
-      // which is what made every nemesis you killed a clean reset.
-      avenger.rank = Max(1, rival.rank - 1);
-      if CBMessagesOn() {
-        CBHearsayFromGang(game, rival.faction, CBRivalDisplayName(content, avenger)
-          + " picks up where " + CBRivalDisplayName(content, rival) + " left off.", n"");
-      }
-    }
+    // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1, which is
+    // what made every nemesis you killed a clean reset. Made once the fight is over, with the street
+    // saying who picked up where they left off (Rivals/Births.reds, 1.9.1).
+    CBRivalAfterFight(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger,
+                      district, at, null, Max(1, rival.rank - 1), CBRivalDisplayName(content, rival));
   }
 
   CBEvaluateTitles(sys, game);

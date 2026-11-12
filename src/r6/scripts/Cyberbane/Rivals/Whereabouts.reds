@@ -244,6 +244,10 @@ func CBTipEligible(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   if r.id == sys.GetActiveRivalId() || r.id == sys.GetRivalWarned() || r.id == sys.GetRivalCarPending() {
     return false;
   }
+  // Nobody tips V off about a faction switched off in Mod Settings (1.9.1): a tip ends in a fight.
+  if !CBFactionOn(r.faction) {
+    return false;
+  }
   if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
     return false;
   }
@@ -812,6 +816,10 @@ public func CBWhereaboutsForSale(sys: ref<CyberbaneSystem>, game: GameInstance, 
   if !IsDefined(sys) || !IsDefined(r)
      || (r.state != EnumInt(ECBRivalState.Active) && r.state != EnumInt(ECBRivalState.Hunting)) {
     return 4;
+  }
+  // Their faction is switched off in Mod Settings (1.9.1).
+  if !CBFactionOn(r.faction) {
+    return 5;
   }
   if !CBHideoutsOn() {
     return 1;

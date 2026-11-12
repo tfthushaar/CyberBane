@@ -187,7 +187,14 @@ public class CBScoreEngine {
     return 0.0;
   }
 
+  // A faction switched off under Factions in Mod Settings has no posture towards V: Neutral, whatever
+  // its standing says (1.9.1, CBFactionOn). Every reaction keyed off posture - hostility on sight, the
+  // warning, whispers, crews, apex squads, ambushes, patrols, a pay-off - stands down with it from here.
+  // The standing itself is untouched and is what comes back when the faction is switched on again.
   public func GetPosture(factionId: CName) -> ECBPosture {
+    if !CBFactionOn(factionId) {
+      return ECBPosture.Neutral;
+    }
     return CBPostureFromStanding(this.GetStanding(factionId));
   }
 

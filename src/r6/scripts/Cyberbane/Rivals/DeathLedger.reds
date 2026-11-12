@@ -106,6 +106,26 @@ public func CBForeignKillers(sys: ref<CyberbaneSystem>, svc: ref<CyberbaneServic
   return ids;
 }
 
+// A Killer Rival still out after V who looks exactly like this: the same gang, the same record and the
+// same appearance (1.9.1). Two of them would wear the same face, which nobody could tell apart, so a
+// second death by that face is the same person getting better at it. An appearance nobody wrote down
+// only matches another nobody wrote down.
+public func CBKillerRivalLike(sys: ref<CyberbaneSystem>, faction: CName, record: TweakDBID,
+                              look: CName) -> ref<CBRival> {
+  if !IsDefined(sys) || Equals(faction, n"") || !TDBID.IsValid(record) {
+    return null;
+  }
+  let killer = EnumInt(ECBRivalSource.Killer);
+  for r in sys.GetRivals() {
+    if IsDefined(r) && r.source == killer && r.recordID == record && Equals(r.faction, faction)
+       && Equals(r.appearance, look)
+       && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+      return r;
+    }
+  }
+  return null;
+}
+
 // Applied on session start (spec §10.8 step 2).
 public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
@@ -145,12 +165,28 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
         }
       } else {
         if NotEquals(entry.killerFaction, n"") && entry.killerRecordID != TDBID.None() {
-          let created = CBCreateRival(sys, game, entry.killerFaction, entry.killerRecordID, entry.killerAppearance, ECBRivalSource.Killer, entry.district, entry.at);
-          if IsDefined(created) {
-            CBRivalKilledV(created, content, entry.at, entry.district);
-            if CBMessagesOn() {
-              CBPhoneFromGang(game, entry.killerFaction,
-                CBRivalDisplayName(content, created) + " put you in the ground once. Remember that next time.");
+          // The same face as a Killer Rival this save already has: the same person, again (1.9.1).
+          //
+          // Dying to one fight and reloading the save before it, over and over, leaves a death in
+          // the ledger for every try, and none of them is in that save's applied list, so each load
+          // applied every one: the second load made the killer a Rival, the third made two Rivals of
+          // them with two names, and every one of them texted "has your name now". The body that
+          // killed V each time was the game's own NPC, never the Rival's, so the ledger had no id to
+          // match them by. What it does have is how they looked.
+          let again = CBKillerRivalLike(sys, entry.killerFaction, entry.killerRecordID, entry.killerAppearance);
+          if IsDefined(again) {
+            CBRivalKilledV(again, content, entry.at, entry.district);
+            CBLog.Info(n"Ledger", s"Death id=\(entry.id) was by the same face as rival \(again.id); promoted them rather than making another.");
+          } else {
+            // Quiet: the line below is the one message this death is worth. CBCreateRival's own
+            // "has your name now" on top of it made two texts out of one event.
+            let created = CBCreateRival(sys, game, entry.killerFaction, entry.killerRecordID, entry.killerAppearance, ECBRivalSource.Killer, entry.district, entry.at, true);
+            if IsDefined(created) {
+              CBRivalKilledV(created, content, entry.at, entry.district);
+              if CBMessagesOn() {
+                CBPhoneFromGang(game, entry.killerFaction,
+                  CBRivalDisplayName(content, created) + " put you in the ground once. Remember that next time.");
+              }
             }
           }
         }

@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.0. The "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.1. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,106 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.9.0
+
+One player, one message, seven points; a clean reinstall of 1.9.0 through Vortex before the last three.
+Nothing here compiled on this machine (no game install, no redscript); every call added is one the mod
+already makes elsewhere, and the repo audits pass.
+
+### "Options to turn off certain factions like NCPD and Barghest; almost every cop and Barghest slowly gets sus of me and eventually fights"
+
+**Status: added and fixed in 1.9.1** (`Settings/CyberbaneSettings.reds`, `Data/Factions.reds`, `Model/ScoreEngine.reds`,
+`Reactions/Director.reds`). Two things, either of which matches "slowly gets sus, then combat" (an NPC hostile to
+V out of combat runs the game's own detection meter):
+- **A real bug for the police.** `CBFactionFieldsSquads` has said since 1.7 that the law gets no second escalation,
+  and the Director's `TryGangHostile` never asked it, so NCPD at Vendetta (enough dead cops) turned every officer who
+  recognised V hostile, no stars. It asks now, and `RevertNotFielding` hands back anybody already turned whose faction
+  no longer fields squads, once they are out of combat.
+- **They Will Remember does it too.** Its own faction index (`CBTwrFactionIndex`) has NCPD at 13 and Barghest at 12;
+  it rolls them hostile from kill counts, and with it detected and compat on Auto, Cyberbane turns nobody on sight at
+  all. So for this player it may well be TWR. The Gangs screen now says which (next entry), and the settings
+  descriptions say a switch covers Cyberbane's own doing only.
+- **The switches.** A Factions page, fifteen Bools (`factionTygerClaws`..`factionNCPD`, NCPD covering MaxTac and
+  Police), read through `CBFactionOn`. Off: `GetPosture` reads Neutral (hostility on sight, the warning, whispers'
+  mood, crews, apex, ambushes, patrols, pay-off all key off posture); `CBFactionFieldsSquads` is false (every crew,
+  apex, scout, lookout, patrol, provocation, bounty and gang text already asks it); `CBCreateRival` refuses;
+  `CBRivalQueueable` and `CBTipEligible` leave their Rivals out (Hub ambush reason 5); no tribute; `CBVendettaWatch`
+  skips them, so switching back on does not re-swear a vendetta. Standing is untouched. Not touched: fear reactions
+  (a cop still flinches from a frightening V like anybody does), turf, kills counting towards reputation.
+
+### "XYZ is on to you persists longer than intended when I keep reloading the same save after dying"
+
+**Status: fixed in 1.9.1** (`Rivals/DeathLedger.reds`, `API/CyberbaneAPI.reds`, `UI/ThreatBar.reds`). The line is
+`CBCreateRival`'s "has your name now. That is on you." Two causes:
+- **The ledger replayed every try.** None of the deaths after a save is in that save's applied list, so the Nth reload
+  applied N-1 deaths; the killer was the game's NPC each time, not a Rival's body, so `killerRivalId` was -1 and each
+  made a new Rival (up to the per-gang cap of three, with three names, three texts). `CBKillerRivalLike` matches a
+  Killer Rival by faction, record and appearance (two would wear the same face) and promotes them instead. The same
+  match in `CBPromoteKiller` for death alternatives. Killer creations are `quiet`: one text per death.
+- **The HUD layer outlives a load** (inferred from the reports below, not tested): a line or bar showing when V died
+  stayed on screen through every reload. See the next entry.
+
+### "Phone only, but cards and notices for the same message pop up, mostly after dying and reloading; a 'Rival is hunting me' card is stuck"
+
+**Status: fixed in 1.9.1** (`UI/PhoneMessages.reds`, `UI/RealPhone.reds`, `UI/ThreatBar.reds`, `Core/CyberbaneSystem.reds`).
+- **Fallback to cards.** `Deliver` showed a card whenever `m_phoneCtrl` was null, and it is null for a moment after
+  every load, which is exactly when the death ledger has news (first settled tick). One card, then the rest filed
+  silently as `tooSoon` - "a card and then a few texts". Phone mode now holds the notifications up to
+  `PhoneAttachWaitSeconds` (45) for a phone, then lets them go; they are in their threads either way. No card in Phone
+  mode ever, including a message with no thread.
+- **The phone forgotten for a session.** `OnUninitialize` and `OnPlayerDetach` set the controller to null whoever held
+  it; an old phone torn down after the new one attached left none. `ReleasePhoneController(this)` and
+  `ReleaseOpenDialog(this)` clear only their own.
+- **Stray widgets.** Cards, the hunt line and bars are built straight onto `inkHUDLayer`'s window; a new session builds
+  a new set and nothing touched the old one. "Stuck, with cards and lines turned off" can only be a widget no session
+  owns. `CBHideStrayHudWidgets` hides every visible child carrying one of our four names before a session builds its
+  own, and both now build on their first settled tick even with nothing to show (in Phone mode the cards never built,
+  so strays were never swept). Hidden, not removed, the way HubTab clears the stats screen. And while `CBVDown`, the
+  tick conceals both (visibility only), so nothing frozen at death is on screen to be carried over.
+- `CBTrackingNotice` put four in ten "asking around" notices up as an overheard subtitle in Phone mode; only with
+  Whispers on now (`CBWhispersOn`).
+
+### "They Will Remember says Tyger Claws are hostile; Cyberbane still says neutral" (again, on 1.9.0)
+
+**Status: fixed in 1.9.1, root cause not confirmed** (`Economy/Peace.reds`, `Reactions/Director.reds`, `UI/Hud.reds`).
+1.9.0's read went through `CBTwrActive`, so with compat on Off it never asked. It asks whenever TWR is detected now,
+and `CBTwrProbeNote` logs once which step failed if it does (class missing, system not running, function missing).
+Codeware's `GetFunction` matches the short name (RedLib `GetFunction` compares `shortName` and `fullName`), so the
+lookup itself is sound; TWR's own side could not be checked (not on GitHub). Independent of TWR's internals,
+`NoteForeignHostility` reads the attitude of the people the Director already evaluates: of a faction, out of combat,
+not crowd, not turned by us, V out of combat and out of any hostile zone, police skipped while V has heat. Hostile is
+noted for the session (`SeenHostileRecently`, 30 minutes), and `CBForeignHostile` gives the Gangs screen 2 (TWR says
+so) or 1 (seen): "TWR: Hostile", "Seen hostile", "Off: hostile", with an explanation in the detail panel.
+
+### "Long sleeves disguise works as intended"
+
+Nothing to do.
+
+### "Make a Rival 30-60 s after the fight ends; I was told a Rival had my name as he lay there knocked out"
+
+**Status: done in 1.9.1** (`Rivals/Births.reds`, new). Spared, got away, the officer's avenger and succession roll on
+the spot as before and count towards the burst damping at once (`NoteRivalMade`; `CBCreateRival`'s new `counted`
+skips the second count), then wait in a session-only queue until V has been out of combat `RivalBirthCalmMin`..`Max`
+(30-60) settled ticks, picked per Rival; combat resets the wait. At birth a body still in the world and dead means no
+Rival. Cap six waiting; a seventh makes the oldest at once. A load drops the queue. The hit squad survivor (end of a
+chase) and Killer Rivals (death ends the session) are not held.
+
+### "The mod lowers my fps a bit in high-density regions"
+
+**Status: cheaper in 1.9.1, not measured** (`Reactions/Director.reds`, `Core/CyberbaneSystem.reds`,
+`Reactions/NpcRegistry.reds`, `Reactions/CombatFlee.reds`, `Core/StoryHold.reds`). What scaled with the crowd:
+- The Director walked the registry from index 0 until sixteen passed, reading every position ahead of them and running
+  the whole Safety Gate (workspot query, safe-area query, pin scans) on every in-range NPC who failed it, every tick.
+  Now a cursor, at most `NpcLookPerTick` (48) positions a tick, and a failure is passed over for `NpcGateRetryTicks`
+  (5); a pass is always re-checked, so what may be touched is decided as freshly as before. It also stops the same
+  sixteen at the front being the only people who ever reacted.
+- `OnCBEntityAttached` ran `CBWorldStable` and up to eight tag lookups for every person streaming in; the `Cyberbane`
+  tag (on every spawn of ours, never unassigned) is asked first, as the car branch always did.
+- `CBNpcRegistry.Add` pruned all 200 entries on every attach once full; once a tick now (`ArmPrune` from the tick, so
+  heavy-streaming ticks that skip the Director still make room).
+- `CBSparedSweep` asks our own two fields before `IsAttached`; the story-companion pass runs every third tick.
+If it is still reported: Verbose log around it, and whether it goes with Cyberbane switched off in Mod Settings.
 
 ## Requests during 1.9.0
 

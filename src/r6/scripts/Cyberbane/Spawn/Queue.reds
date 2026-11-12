@@ -276,6 +276,12 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
   if !IsDefined(r) || !TDBID.IsValid(r.recordID) || !CBRecordIsPerson(r.recordID) {
     return false;
   }
+  // A faction switched off in Mod Settings sends nobody, its Rivals included (1.9.1). They stay on the
+  // roster, and come again once it is switched back on. The picker, the lane's re-check and the team-up
+  // all ask this.
+  if !CBFactionOn(r.faction) {
+    return false;
+  }
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
 }
 
@@ -1045,7 +1051,10 @@ public func CBTrackingNotice(sys: ref<CyberbaneSystem>, game: GameInstance, lane
       }
     }
   }
-  if RandF() < 0.6 || NotEquals(CBMessageDelivery(), ECBMessageDelivery.Phone) {
+  // Overheard only with Whispers on, and only now and then (1.9.1). Overheard is a line drawn on the
+  // screen, so a player who set messages to go to the phone and switched the overheard lines off
+  // still had four in ten of these put up as a subtitle.
+  if !CBWhispersOn() || RandF() < 0.6 || NotEquals(CBMessageDelivery(), ECBMessageDelivery.Phone) {
     let district = sys.GetCurrentDistrict();
     if NotEquals(district, n"") {
       CBPhoneFromDistrict(game, district, line);

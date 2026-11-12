@@ -112,6 +112,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-UI", "Interface");
     this.Text("Cyberbane-Settings-HubPauseMenu", "Hub in the pause menu");
     this.Text("Cyberbane-Settings-HubPauseMenu-Desc", "The Hub has its own tab at the top of the game menu, next to Inventory and Character. Turn this on to have it in the pause menu instead.");
+    this.Text("Cyberbane-Settings-Category-Factions", "Factions");
     this.Text("Cyberbane-Settings-Category-Compat", "Compatibility");
     this.Text("Cyberbane-Settings-Category-Debug", "Debug");
 
@@ -148,6 +149,25 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TributeMult", "Tribute amount");
     this.Text("Cyberbane-Settings-HitSquads", "Hit squads");
     this.Text("Cyberbane-Settings-HitSquadFreq", "Hit squad frequency");
+
+    // ---- Settings: factions (1.9.1) -------------------------------------
+    this.Text("Cyberbane-Settings-FactionOn-TygerClaws", "Tyger Claws");
+    this.Text("Cyberbane-Settings-FactionOn-Maelstrom", "Maelstrom");
+    this.Text("Cyberbane-Settings-FactionOn-Valentinos", "Valentinos");
+    this.Text("Cyberbane-Settings-FactionOn-SixthStreet", "6th Street");
+    this.Text("Cyberbane-Settings-FactionOn-Animals", "Animals");
+    this.Text("Cyberbane-Settings-FactionOn-VoodooBoys", "Voodoo Boys");
+    this.Text("Cyberbane-Settings-FactionOn-Scavengers", "Scavengers");
+    this.Text("Cyberbane-Settings-FactionOn-Mox", "The Mox");
+    this.Text("Cyberbane-Settings-FactionOn-Wraiths", "Wraiths");
+    this.Text("Cyberbane-Settings-FactionOn-Aldecaldos", "Aldecaldos");
+    this.Text("Cyberbane-Settings-FactionOn-Barghest", "Barghest");
+    this.Text("Cyberbane-Settings-FactionOn-Arasaka", "Arasaka");
+    this.Text("Cyberbane-Settings-FactionOn-Militech", "Militech");
+    this.Text("Cyberbane-Settings-FactionOn-KangTao", "Kang Tao");
+    this.Text("Cyberbane-Settings-FactionOn-NCPD", "NCPD and MaxTac");
+    this.Text("Cyberbane-Settings-FactionOn-Desc", "On: Cyberbane keeps a book on them and they act on it. Off: Cyberbane leaves them alone entirely. They never turn on you on sight because of Cyberbane, send nobody after you, make no Rivals and never text you. What you do to them still counts towards your reputation. Hostility set by the game or by another mod, such as They Will Remember, is not Cyberbane's to switch off.");
+    this.Text("Cyberbane-Settings-FactionOn-NCPD-Desc", "On: the police read your standing with them. Off: Cyberbane leaves the police alone entirely. Cyberbane never turns a cop on you on sight either way: the law has heat and stars for that. Wanted levels, and hostility set by another mod such as They Will Remember, are not Cyberbane's to switch off.");
 
     // ---- Settings: morale -----------------------------------------------
     this.Text("Cyberbane-Settings-Morale", "Combat morale");

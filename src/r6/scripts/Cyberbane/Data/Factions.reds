@@ -19,10 +19,37 @@
 //
 // Corps stay in. Arasaka and Militech sending a squad after V is intended, and they are not
 // the law.
+//
+// Nor does a faction the player has switched off under Factions in Mod Settings (1.9.1). This is the
+// test every crew, apex squad, scout, lookout, patrol, provocation, bounty and gang text already asks,
+// so the switch reaches all of them from here.
 public func CBFactionFieldsSquads(faction: CName) -> Bool {
   return NotEquals(faction, n"NCPD")
       && NotEquals(faction, n"Police")
-      && NotEquals(faction, n"MaxTac");
+      && NotEquals(faction, n"MaxTac")
+      && CBFactionOn(faction);
+}
+
+// Does Cyberbane treat this faction as having an opinion of V at all (1.9.1)?
+//
+// "Is there an option to turn off the Barghest and NCPD as gangs entirely? I'm infamous in NC and
+// almost every cop and Barghest will slowly get sus of me and eventually combat." One switch per
+// faction, under Factions in Mod Settings. Off, and Cyberbane leaves that faction alone: no posture
+// towards V (CBScoreEngine.GetPosture reads Neutral), so nobody of theirs is turned on V on sight or
+// warns V off, no crews or apex squads (CBFactionFieldsSquads), no Rivals made or sent, no tribute, no
+// texts. Kills still count towards V's reputation and their standing is still kept, so switching them
+// back on picks up where it was. Hostility the game or another mod sets is theirs, not this switch's.
+//
+// Read per NPC by the Director, so it is a settings read and a few name comparisons, nothing more.
+public func CBFactionOn(faction: CName) -> Bool {
+  if Equals(faction, n"") {
+    return true;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return true;
+  }
+  return rt.GetSettings().FactionOn(faction);
 }
 
 public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {

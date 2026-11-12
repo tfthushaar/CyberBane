@@ -13,6 +13,7 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_settings: ref<CyberbaneSettings>;
   private let m_rewardDepth: Int32;    // nesting depth of the reward hook (see GigBonus)
   private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
+  private let m_twrProbeLogged: Bool;  // how asking They Will Remember went has been logged (1.9.1)
   private let m_resetRequested: Bool;  // the player asked for a hard reset (see CyberbaneSettings)
   // Which playthrough that reset is for, and which one is loaded now. This service outlives every
   // save, so a request parked here used to survive a Load Game from the pause menu and wipe
@@ -98,6 +99,14 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetTwrDetected(present: Bool) -> Void {
     this.m_twrDetected = present ? 1 : 2;
+  }
+
+  public func GetTwrProbeLogged() -> Bool {
+    return this.m_twrProbeLogged;
+  }
+
+  public func SetTwrProbeLogged(v: Bool) -> Void {
+    this.m_twrProbeLogged = v;
   }
 
   // New Game Plus rebuilds every NPC in the game to be harder. Stacking Cyberbane's own apex

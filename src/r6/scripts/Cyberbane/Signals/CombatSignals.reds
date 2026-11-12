@@ -373,7 +373,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if info.lethal && !wasRival && NotEquals(info.faction, n"")
      && (info.victimClass == EnumInt(ECBVictimClass.Boss) || info.victimClass == EnumInt(ECBVictimClass.Officer)) {
     if CBRivalRoll(sys, "avenger", CBConfig.RivalChanceAvenger(), info.recordID, true) {
-      CBCreateRival(sys, game, info.faction, info.recordID, n"", ECBRivalSource.Avenger, info.district, info.at);
+      // Once the fight is over (Rivals/Births.reds, 1.9.1).
+      CBRivalAfterFight(sys, game, info.faction, info.recordID, n"", ECBRivalSource.Avenger,
+                        info.district, info.at, null, 0, "");
     }
   }
 }
