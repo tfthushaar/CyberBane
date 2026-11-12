@@ -85,7 +85,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-VendettaSquads-Desc", "A gang at vendetta simply comes for you rather than rolling dice. The Hub shows how long until they arrive.");
     this.Text("Cyberbane-Settings-VendettaSquadSize-Desc", "How many a vendetta sends at full menace. Lower it if the frame rate dips when a crew arrives.");
     this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Rivals, crews and apex squads drive to you whenever a car can be sent, and give chase if you are driving. If a car cannot get through, they come on foot.");
-    this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous an apex is, as a percentage of a full boss build. 100 matches the game's own set piece enforcers; 55 is hard but fair. Your menace and the game's difficulty scale it further.");
+    this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous a gang's apex squad is, as a percentage of a full boss build. 100 matches the game's own set piece enforcers; 55 is hard but fair. Your menace and the game's difficulty scale it further. Rivals have their own slider, under Rivals.");
+    this.Text("Cyberbane-Settings-RivalStrength-Desc", "How dangerous a Rival is, as a percentage of a full boss build. A new Rival gets part of it and grows into the rest with every escape, mercy and kill, and running a crew adds a little. 55 is hard but fair. Your menace and the game's difficulty scale it further.");
     this.Text("Cyberbane-Settings-LootDrops-Desc", "Anyone Cyberbane sends who you put down leaves you something, straight into your inventory. The higher they ranked, the better it is.");
     this.Text("Cyberbane-Settings-Pacing-Desc", "Timetable sends trouble inside daily windows. Unpredictable: any minute might be the one. Reactive: only when you give a gang a reason. The per-day limits apply in every mode.");
     this.Text("Cyberbane-Settings-Scouts-Desc", "A gang that cannot find you sends one scout ahead of the crew. Deal with the scout, or stay out of sight, and the crew never comes.");
@@ -214,6 +215,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-DistrictLine", "District line");
     this.Text("Cyberbane-Settings-DistrictLineSeconds", "District line, seconds");
     this.Text("Cyberbane-Settings-ApexStrength", "Apex strength");
+    this.Text("Cyberbane-Settings-RivalStrength", "Rival strength");
     this.Text("Cyberbane-Settings-ApexTraits", "Apex traits");
     this.Text("Cyberbane-Settings-ApexBossBar", "Rival and apex bars");
     this.Text("Cyberbane-Settings-ApexArrivalSound", "Apex squad arrival horn");

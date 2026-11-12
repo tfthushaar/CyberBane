@@ -57,6 +57,25 @@ public func CBApexStrengthFraction() -> Float {
   if IsDefined(rt) && rt.HasSettings() {
     pct = rt.GetSettings().apexStrength;
   }
+  return CBStrengthFraction(pct);
+}
+
+// The same for Rivals, from their own slider (1.9.1, under Rivals). Rivals have always been built with
+// the apex build, and until this they were scaled by the apex squad's slider too: "Where is the setting
+// to buff Rivals? I only found the one for apex enemies." It was that one, and nothing said so. The two
+// defaults are the same, so a Rival is as strong as before until the slider is moved.
+public func CBRivalStrengthFraction() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  let pct = CBConfig.ApexStrengthDefault();
+  if IsDefined(rt) && rt.HasSettings() {
+    pct = rt.GetSettings().rivalStrength;
+  }
+  return CBStrengthFraction(pct);
+}
+
+// A strength slider's percentage as a fraction of the full build, with New Game Plus and the game's
+// difficulty taken into account the same way for both.
+func CBStrengthFraction(pct: Int32) -> Float {
   let frac = ClampF(Cast<Float>(pct) / 100.0, 0.1, 1.0);
   if CBNgpActive() {
     frac *= CBConfig.ApexNgpStepDown();
@@ -208,7 +227,7 @@ public func CBMenaceScale(sys: ref<CyberbaneSystem>) -> Float {
 // less for a Rival working their way up.
 public func CBApplyApexGradeBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
                                  puppet: ref<ScriptedPuppet>, grade: Float) -> Void {
-  CBApplyApexBuild(sys, game, puppet, grade, 1.0);
+  CBApplyApexBuild(sys, game, puppet, grade, CBApexStrengthFraction(), 1.0);
 }
 
 // The one place anything is ever done to a spawned enemy's stats.
@@ -228,8 +247,10 @@ public func CBApplyApexGradeBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
 // `traitHealth`, `traitArmour`, `traitDamage` and `traitCrit` are a Rival's own traits and
 // weaknesses (CBRivalTraitTerms): fractions added to, or taken off, the same terms the random
 // traits use, so they are clamped by the same ceilings and can never stack past them.
+// `slider` is the player's strength setting for this kind of enemy as a fraction (CBApexStrengthFraction,
+// CBRivalStrengthFraction).
 public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
-                             puppet: ref<ScriptedPuppet>, grade: Float, roleHealthMult: Float,
+                             puppet: ref<ScriptedPuppet>, grade: Float, slider: Float, roleHealthMult: Float,
                              opt traitHealth: Float, opt traitArmour: Float,
                              opt traitDamage: Float, opt traitCrit: Float) -> Void {
   // Stat modifiers go only on somebody fully in the world and alive.
@@ -255,7 +276,7 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   let scale = CBMenaceScale(sys);
   // How hard the player asked for this to be, as a fraction of a boss-grade build.
-  let strength = CBApexStrengthFraction() * ClampF(grade, 0.0, 1.0);
+  let strength = slider * ClampF(grade, 0.0, 1.0);
 
   let tHealth = 0.0;
   let tArmour = 0.0;
@@ -394,7 +415,7 @@ public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
   let td = 0.0;
   let tc = 0.0;
   CBRivalTraitTerms(r, th, ta, td, tc);
-  CBApplyApexBuild(sys, game, puppet, CBRivalGrade(r), roleMult, th, ta, td, tc);
+  CBApplyApexBuild(sys, game, puppet, CBRivalGrade(r), CBRivalStrengthFraction(), roleMult, th, ta, td, tc);
 }
 
 // What a Rival's traits and weaknesses do to their build.

@@ -146,7 +146,8 @@ in active development. This page describes what the mod does and how it installs
   chase you, they climb the ranks on their own while you are busy elsewhere, and every time one
   escapes it returns a rank higher and scarred. Each one is built to the same grade as a member
   of an apex squad, and they keep getting stronger: every escape, every mercy and every time
-  they put you down makes the one who comes back harder than the one who left. A new Rival is
+  they put you down makes the one who comes back harder than the one who left. How strong they
+  get is its own slider, **Rival strength**, under Rivals, apart from the apex squads'. A new Rival is
   just their name; they earn a nickname by moving up a rank or by putting you down, and no two
   on a save share one while there are new ones to give. Each arrives
   with a bar at the top of the screen carrying their name, and texts you when they have found
@@ -260,8 +261,9 @@ in active development. This page describes what the mod does and how it installs
   gang, the way a MaxTac drop reads as a heavy, a blade, a netrunner and a shooter, so you can
   always tell who you are fighting and whose people they are. Like MaxTac, they hold their
   ground: an apex squad never breaks and runs.
-  You get a warning first, and a countdown. How dangerous they are is a slider, from a hard fight
-  up to the game's own set-piece enforcers, and your own build scales it on top. On Hard and
+  You get a warning first, and a countdown. How dangerous they are is a slider, **Apex strength**
+  under Gangs, from a hard fight up to the game's own set-piece enforcers, and your own build
+  scales it on top. On Hard and
   Very Hard, where the game already makes every enemy hit harder, Cyberbane adds less. Each one
   carries two traits of its own, so no two fight the same way. No story character is ever used,
   so nothing gets spoiled and you never meet a duplicate of someone you already killed. It

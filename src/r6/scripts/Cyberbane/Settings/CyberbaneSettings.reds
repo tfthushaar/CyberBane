@@ -632,6 +632,17 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalHideouts-Desc")
   public let rivalHideouts: Bool = true;
 
+  // How strong a Rival is (1.9.1, Spawn/FactionApex.reds, CBRivalStrengthFraction). Rivals are built with
+  // the apex build, and the apex slider used to set both. Same scale and default as Apex strength.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalStrength")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalStrength-Desc")
+  @runtimeProperty("ModSettings.min", "20")
+  @runtimeProperty("ModSettings.max", "100")
+  @runtimeProperty("ModSettings.step", "5")
+  public let rivalStrength: Int32 = 55;
+
   // Two or three Rivals of one gang coming for V together (1.9.0, Spawn/RivalEncounter.reds). On by
   // default. Named `rivalTeams`, not the `rivalTeamUps` the first 1.9.0 build had while it was an
   // experiment that shipped off: Mod Settings keeps a value by its field's name, so under the old name

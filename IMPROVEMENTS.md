@@ -20,6 +20,15 @@ otherwise), because installing over the top does not remove files and an old cop
 
 ## Requests after 1.9.0
 
+### "Where is the setting to buff Rivals? I only found the setting to buff Apex enemies"
+
+**Status: added in 1.9.1** (`Settings/CyberbaneSettings.reds` `rivalStrength`, `Spawn/FactionApex.reds`). There was none of
+its own: Rivals are built by `CBApplyApexBuild`, the same build as an apex squad, at their ladder grade (`CBRivalGrade`), and
+that build read `apexStrength` for everybody, so the apex slider under Gangs silently set Rivals too. Now the build takes the
+slider as an argument: `CBApexStrengthFraction` (apex squads) and `CBRivalStrengthFraction` (Rivals), both through
+`CBStrengthFraction` for New Game Plus and difficulty. "Rival strength" under Rivals, 20 to 100, default 55 like the apex
+slider, so a Rival is as strong as before until it is moved. The apex description now says it is apex squads only.
+
 One player, one message, seven points; a clean reinstall of 1.9.0 through Vortex before the last three.
 Nothing here compiled on this machine (no game install, no redscript); every call added is one the mod
 already makes elsewhere, and the repo audits pass.
