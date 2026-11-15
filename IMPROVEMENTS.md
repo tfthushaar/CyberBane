@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.2. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.3. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,60 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.9.2
+
+### "At the 'Last seen here' icon, is it chance-based whether a Rival shows up?"
+
+**Status: answered and improved in 1.9.3** (`Rivals/Whereabouts.reds`). There is no dice roll. They are
+placed once V is within 85 m on foot, settled for five seconds, off any job, with nobody else hunting V,
+at a spot V cannot see. Any of those failing left the place empty with no word. A third ring of spots
+(32 m) was added, and after about twenty seconds at the pin V is told which condition is missing
+(`CBLairHintTick`), once per Rival.
+
+### "Stealth non-lethal takedown at the place, ANOTHER spawns a few seconds after, again and again"
+
+**Status: fixed in 1.9.3** (`CBLairWatch`, `CBLairGiveUp`, `CBLairBodyAround`). During the takedown the
+body is down before the mercy path has logged it; the place let go of it at once and left the tip live,
+so the next pass placed a second body of the same Rival. A body V put down now gets 20 ticks to be
+logged, letting go ends the lead and cools the Rival, and nobody is placed while a living body is there.
+
+### "An option to disable the clothing and mask detection"
+
+**Status: added in 1.9.3** (`clothingCounts`, `CBClothingCounts`, read once in `CBReadWorn`).
+
+### Street Sense report (settings in another menu, hostile gangs, jaded crowds, turf maps)
+
+**Status: partly answered in 1.9.3.** Detection only looks in the Mod Settings list, and no module name
+could be verified without the mod, so the readme now says to turn Overheard lines off by hand; `turfOnMap`
+stops Cyberbane changing the map's gang list. Its hostility shows on the Gangs screen as "Seen hostile"
+(1.9.1). Its crowd changes are its own and are left alone.
+
+### Bug and improvement pass, 1.9.3
+
+Read in full: Core, Data, Model, Signals, Reactions, `Spawn/RivalEncounter.reds`, `Rivals/Whereabouts.reds`.
+**Not re-read in this pass:** `Rivals/RivalSystem.reds`, `Spawn/` (Queue, Hunt, Spawner, Arrival, FactionApex,
+ApexSquad, HitSquad, Schedule, Tactics, Loot, Sanctuary, TurfPatrol), `Economy/`, `Narrative/`, `UI/`, `API/`.
+Found and fixed, beyond the reports above:
+
+- **Look was always zero.** `CBUpdateLook` matched item visual tags against nine names that do not exist
+  in the game's data. Clothing `tags` do exist (style and faction, 1653 records); Look and gang-colour
+  disguises are built from those now (`CBGarmentLookScore`, `CBGarmentGang`).
+- **Masks needed Cyber Engine Tweaks.** `TDBID.ToStringDEBUG` only returns names when something has
+  loaded the string table. Masks and balaclavas are told by `Price.Mask` / `Price.Balaclava`.
+  Other logic still using record names as a fallback only: `CBRecordIsMaxTac`, `CBRecordIsPerson`,
+  `CBRecordIsUniqueCharacter`.
+- **Dread could not reach its top.** With Look dead and "terrifying deeds" fed only by the Heist and unseen
+  kills, Dread stopped in the sixties; Cyberbane (90), a Faction's Nightmare (fear 85) and tribute (fear 75)
+  were out of reach. `CBTerrorDeed` feeds deeds; thresholds are 80 / 75 / 65.
+- **Mercy lost standing** (recorded under "Requests after 1.7.2"): `NonLethalStandingShare` 0.25 to 0.1.
+- Cyberpsychos by tag and quest affiliation; morale shock for the victim's own side only; witness scan
+  counts people in range; civilian kills feed Aura; non-lethal fists build Brawler; `HardReset` clears
+  the Rival last-position table; faction cached per body; Aura every two ticks.
+
+Still open: backing a gang in a turf war, favours over the phone, unseen massacres told as seen
+(`CBEncounterResolve`), more deed facts (only `q005_done` is wired), Codeware typed targets for
+`Entity/Attached` (needs an in-game check that `EntityTarget.Type` matches subclasses).
 
 ## Requests after 1.9.0
 
@@ -872,7 +926,7 @@ starting points, and none of them has been decided.
 
 ### "More explicit or active ways to become friendly with a gang besides fighting their enemies"
 
-**Status: open, not built.**
+**Status: partly built in 1.9.3: the mercy loss is fixed and keeping the peace on their streets is in (`CBKeepThePeaceTick`). Favours over the phone are not built.**
 
 What V can do today, at the default numbers. Friendly starts at 15 standing and Allied at 50.
 

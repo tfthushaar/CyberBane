@@ -3,6 +3,47 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 1.9.3 (15 November 2026)
+
+**New**
+- **Clothes and masks count** switch under Reputation. Turn it off to wear anything you like: nothing
+  you have on is read, so no outfit or mask changes how people recognise or react to you, and all your
+  chrome shows.
+- **Keeping the peace.** Time spent on a gang's streets without causing them trouble slowly warms them
+  to you, as far as Friendly. It does nothing for a gang that already wants you dead.
+- **Gang and corporate gear works as a disguise for every faction** that has clothing of its own in the
+  game, fifteen in all. The more of their gear you wear, the slower they are to place you. Before, only
+  nomad clothing and one Wraiths vest counted.
+- **What you wear changes how dangerous you look.** Military, punk and biker gear and a covered face
+  read as trouble. Suits and expensive clothes read as money.
+- **Turf on the map** switch under Gangs, for when another mod draws its own territory on the map.
+- If you go to a Rival's "last seen" pin and nobody is there, you are now told why.
+
+**Changes**
+- Leaving a gang's people alive now earns their goodwill as the Hub says. It used to cost you a little
+  standing every time.
+- Massacres, boss kills, MaxTac kills, beaten apex squads and dead Rivals now add to your Dread, and
+  fade while you lie low.
+- The Cyberbane title, a Faction's Nightmare and tribute asked for more Dread than could be earned.
+  They can be reached now.
+- Knockouts with fists or blunt weapons count towards the Brawler style and Fist of Night City.
+- Balaclavas count as masks.
+- Drawing a weapon or starting a fight changes how people read you within two seconds, down from ten.
+- A Rival waits at their place more reliably on open ground.
+
+**Fixes**
+- Knocking out a Rival at their "last seen" place made another copy of them appear, again and again.
+- Masks only worked with Cyber Engine Tweaks installed.
+- Five cyberpsychos were scored as gang bosses and did not count for Psycho Hunter or Psycho Whisperer.
+- An enemy's death could frighten bystanders from other factions into running, and one of them could
+  come back as a Rival of the wrong gang.
+- On crowded streets a kill in front of people could count as unseen.
+- Unconscious people counted as witnesses.
+- Killing civilians did not make you look dangerous on the spot.
+- Knocking people out with your fists counted towards Butcher titles.
+- After Start over, the first new Rival could be "last seen" where an old one had been.
+- A little less work on busy streets.
+
 ## 1.9.2 (12 November 2026)
 
 **New**

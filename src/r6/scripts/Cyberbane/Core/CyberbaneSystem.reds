@@ -94,6 +94,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_lairRivalId: Int32;           // who
   private let m_lairCalmTicks: Int32;         // ticks V has been on foot, out of combat, settled
   private let m_lairPlacedTick: Int32;        // when they were placed, to give up on a no-show
+  private let m_lairMisses: Int32;            // tries in a row nobody could be put at the place with V there
+  private let m_lairHinted: Int32;            // the Rival whose empty place V has been told about
   private let m_leadPinned: Bool;             // a pin is on the map for somebody's place
   private let m_leadPinRival: Int32;          // whose
   private let m_leadPinId: NewMappinID;
@@ -506,7 +508,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     //
     // Only puppets matter here, because they are what the gated queries actually touch.
     let attachedEntity = event.GetEntity();
-    if IsDefined(attachedEntity as ScriptedPuppet) {
+    let puppet = attachedEntity as ScriptedPuppet;
+    if IsDefined(puppet) {
       this.m_attachCount += 1;
     }
     // Something the city sent on our behalf. Claiming it here is what makes it ours for every
@@ -516,7 +519,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     // A car we sent. Its seat count is only readable now it exists, so this is where the crew
     // is queued (see Arrival.reds).
-    let car = event.GetEntity() as VehicleObject;
+    // This fires for every door, prop and vending machine that streams in. Anything that is
+    // neither a person nor a car is done here, with one cast each (1.9.3).
+    let car = attachedEntity as VehicleObject;
     if IsDefined(car) {
       let desCar = GameInstance.GetDynamicEntitySystem();
       if IsDefined(desCar) && desCar.IsTagged(car.GetEntityID(), n"CB_Car")
@@ -524,7 +529,6 @@ public class CyberbaneSystem extends ScriptableSystem {
         CBScheduleConvoyBoard(this.GetGameInstance(), car.GetEntityID());   // a moment later
       }
     }
-    let puppet = event.GetEntity() as ScriptedPuppet;
     if IsDefined(puppet) {
       // Registering is always safe and must always happen. Add() stores a weak reference and
       // checks IsPlayer; cbSeenTick is a plain field write. Neither reads a native component,
@@ -1043,6 +1047,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_tickCount % 10 == 0 {
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
+    }
+    // How V looks right now: a weapon out, a fight, fresh bodies. Every other second (1.9.3); at
+    // every tenth, drawing a gun on a street took up to ten seconds to register with anybody.
+    if this.m_tickCount % 2 == 0 {
+      CBUpdateAura(this, game);
     }
     if this.m_tickCount % 10 == 0 && !heavyStreaming {
       CBRefreshLiveInputs(this, game);
@@ -1624,6 +1633,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func GetLairCalmTicks() -> Int32 {
     return this.m_lairCalmTicks;
   }
+
+  public func GetLairMisses() -> Int32 { return this.m_lairMisses; }
+  public func SetLairMisses(n: Int32) -> Void { this.m_lairMisses = n; }
+  public func GetLairHinted() -> Int32 { return this.m_lairHinted; }
+  public func SetLairHinted(id: Int32) -> Void { this.m_lairHinted = id; }
 
   public func SetLairCalmTicks(ticks: Int32) -> Void {
     this.m_lairCalmTicks = ticks;
@@ -3244,6 +3258,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     let game = this.GetGameInstance();
     CBApplyDecay(this, elapsedDays);
+    CBKeepThePeaceTick(this, game);   // an hour on a gang's streets with no trouble (1.9.3)
     CBTributeTick(this, game);
     CBSweepOrphans(game);   // whatever was left in a car seat or mid-spawn goes now it can
     CBSweepRemains(this, game);   // our dead and our spent cars, once V is far from them
@@ -3611,6 +3626,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_formerBodyIds);
     ArrayClear(this.m_formerBodyRivals);
     ArrayClear(this.m_packIds);
+    // Keyed by Rival id as well, and ids start again at 1 (1.9.3): the new first Rival was being
+    // "last seen" where the old one had been.
+    ArrayClear(this.m_rivalLastPosIds);
+    ArrayClear(this.m_rivalLastPoses);
+    ArrayClear(this.m_rivalLastPosTicks);
+    this.m_lairHinted = 0;
+    this.m_lairMisses = 0;
     ArrayClear(this.m_births);   // a Rival the old playthrough earned is not the new one's (1.9.1)
     ArrayClear(this.m_crewBeaten);
     ArrayClear(this.m_seenPostureIds);

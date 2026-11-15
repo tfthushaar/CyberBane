@@ -502,7 +502,7 @@ public func CBWhereaboutsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
     CBSweepStrayLairBodies(sys, game, player.GetWorldPosition());
   }
   if on && tick % CBConfig.LairTryEveryTicks() == 0 {
-    CBLairTryPlace(sys, game, player);
+    CBLairHintTick(sys, game, player, CBLairTryPlace(sys, game, player));
   }
 }
 
@@ -532,14 +532,90 @@ func CBTrackOneRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance, i
   }
 }
 
-// Put them there, if everything says it is safe to.
-func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>) -> Void {
-  if sys.GetLairCalmTicks() < CBConfig.LairCalmTicks() {
+// When the body at the place was last seen down, so one V put down gets time to be logged as a
+// mercy before the place lets go of it (CBLairWatch, 1.9.3).
+@addField(ScriptedPuppet)
+public let cbLairDownTick: Int32;
+
+// The place lets go of somebody lying there whom nothing is going to settle. They were found, so
+// the tip is spent: the sighting and its pin go, the body stops being a Rival's (V finishing them
+// later still counts, CBRetireRivalBody), and they lie low as after any other meeting.
+func CBLairGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, body: ref<ScriptedPuppet>) -> Void {
+  CBUntrackOnMap(game, body);
+  CBRetireRivalBody(sys, game, body, r);
+  let none: EntityID;
+  r.spawnedEntityId = none;
+  r.huntTicks = Max(r.huntTicks, CBConfig.RivalAfterEscapeTicks());
+  sys.ClearLair();
+  if sys.IsLeadPinned() && sys.GetLeadPinRival() == r.id {
+    CBDropLead(sys, game);
+  }
+  let svc = sys.GetPlayService();
+  if IsDefined(svc) {
+    svc.DropSighting(sys.GetPlaythroughId(), r.id);
+  }
+  CBLog.Info(n"Rivals", s"Rival \(r.id) was left lying at their place; the lead is spent.");
+}
+
+// Is anybody still breathing at a Rival's place? One body at a time: nobody new is put there while
+// somebody is (1.9.3).
+func CBLairBodyAround(game: GameInstance, des: ref<DynamicEntitySystem>) -> Bool {
+  if !IsDefined(des) || !des.IsPopulated(n"CB_Lair") {
+    return false;
+  }
+  let ids = des.GetTaggedIDs(n"CB_Lair");
+  let i = 0;
+  while i < ArraySize(ids) {
+    let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    i += 1;
+    if IsDefined(p) && !p.IsDead() {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Why nobody could be put at the place this pass (CBLairTryPlace), for the hint V gets when the
+// place stays empty: 0 nothing to say, 1 V is not settled on foot, 2 somebody else is after V,
+// 3 nowhere out of V's sight.
+public func CBLairMissNone() -> Int32 = 0
+public func CBLairMissNotCalm() -> Int32 = 1
+public func CBLairMissBusy() -> Int32 = 2
+public func CBLairMissNoSpot() -> Int32 = 3
+
+// V is standing at the pin and nobody is there. Said once per Rival, after a fair wait, with the
+// reason, because an empty place with no word read as a coin toss ("is it chance-based?").
+func CBLairHintTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, miss: Int32) -> Void {
+  let lead = CBCurrentLead(sys, game);
+  if miss == CBLairMissNone() || !IsDefined(lead)
+     || Vector4.Distance(player.GetWorldPosition(), CBSightingPos(lead)) > CBConfig.LairHintDistance() {
+    sys.SetLairMisses(0);
     return;
   }
+  let misses = sys.GetLairMisses() + 1;
+  sys.SetLairMisses(misses);
+  if misses != CBConfig.LairHintTries() || sys.GetLairHinted() == lead.rivalId {
+    return;
+  }
+  sys.SetLairHinted(lead.rivalId);
+  let line = "nobody at the place yet. They only show while you cannot see the spot: back off a little and look away.";
+  if miss == CBLairMissNotCalm() {
+    line = "nobody at the place yet. Come on foot, out of a fight and off any job, and give it a moment.";
+  }
+  if miss == CBLairMissBusy() {
+    line = "nobody at the place yet. They will not show while somebody else is after you.";
+  }
+  CBSystemNote(game, line, 6.0);
+}
+
+// Put them there, if everything says it is safe to.
+func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>) -> Int32 {
   let lead = CBCurrentLead(sys, game);
   if !IsDefined(lead) {
-    return;
+    return CBLairMissNone();
+  }
+  if sys.GetLairCalmTicks() < CBConfig.LairCalmTicks() {
+    return CBLairMissNotCalm();
   }
   let center = CBSightingPos(lead);
   let ppos = player.GetWorldPosition();
@@ -549,24 +625,24 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
   // wandered back out past 30 m looking for them - into whatever V had just turned away from.
   // How close a spot may be to V is now a test on the spot, below.
   if Vector4.Distance(ppos, center) > CBConfig.LairPlaceDistance() {
-    return;
+    return CBLairMissNone();
   }
   let r = CBSightingRival(sys, lead);
   if !IsDefined(r) || !CBTipEligible(sys, game, r) || !TDBID.IsValid(r.recordID) || !CBRecordIsPerson(r.recordID) {
-    return;
+    return CBLairMissNone();
   }
   // Nobody else of ours out or coming, no live encounter, room under the ceiling, and the story
   // not about to want the stage. The same gates an arrival has, plus "nothing else going on".
   if sys.GetActiveRivalId() > 0 || CBHuntersOut(sys, game) || CBHuntPending(sys)
      || CBStoryHoldNow(game) || !CBWorldStable(game) {
-    return;
+    return CBLairMissBusy();
   }
   if CBSpawnRoom(game) <= 0 {
-    return;
+    return CBLairMissBusy();
   }
   let des = GameInstance.GetDynamicEntitySystem();
-  if !IsDefined(des) {
-    return;
+  if !IsDefined(des) || CBLairBodyAround(game, des) {
+    return CBLairMissNone();
   }
   let fwd = player.GetWorldForward();
   let inner = CBConfig.LairSearchRadius();
@@ -578,8 +654,9 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
   // turns while the body streams in (CBPointHiddenFrom); the walk-in test let a point merely
   // behind V through. The cheap rays go before the path query. The first spot that passes is
   // used; none passing means not this time, and the next try is three seconds off.
+  // A third ring further out (1.9.3): on an open lot both nearer rings can be in plain view.
   let k = 0;
-  while k < 13 {
+  while k < 19 {
     let px = center.X;
     let py = center.Y;
     if k > 0 && k <= 6 {
@@ -587,10 +664,15 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
       px = center.X + CosF(angIn) * inner;
       py = center.Y + SinF(angIn) * inner;
     }
-    if k > 6 {
+    if k > 6 && k <= 12 {
       let angOut = Cast<Float>(k - 7) * 1.0472 + 0.5236;
       px = center.X + CosF(angOut) * outer;
       py = center.Y + SinF(angOut) * outer;
+    }
+    if k > 12 {
+      let angFar = Cast<Float>(k - 13) * 1.0472 + 0.2618;
+      px = center.X + CosF(angFar) * CBConfig.LairFarSearchRadius();
+      py = center.Y + SinF(angFar) * CBConfig.LairFarSearchRadius();
     }
     k += 1;
     let snapped: Vector4;
@@ -621,9 +703,10 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
         sys.SetLair(r.id);
         CBLog.Info(n"Rivals", s"Rival \(r.id) is waiting at their place.");
       }
-      return;
+      return CBLairMissNone();
     }
   }
+  return CBLairMissNoSpot();
 }
 
 // Somebody is waiting. Has the fight started, has V gone, or is it over?
@@ -650,13 +733,25 @@ func CBLairWatch(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   // And if V did, but the record that settles it is gone - pushed out, or settled without closing
   // anything because the Rivals switch went off in between - nothing ever will either. That held
   // the Rival lane, and the marker on the body, for the rest of the session.
+  //
+  // 1.9.3: letting go used to leave the tip standing. A takedown is a scene of its own, so for its
+  // first seconds the body is down and the mercy path has not logged it yet; this let go at once,
+  // and with the lead still live the next pass put a second body of the same Rival at the place.
+  // A player knocked one out, then the next, then the next. So a body V put down is given time to
+  // be logged, and letting go now ends the lead too (CBLairGiveUp).
   if IsDefined(body) && !CBStillStanding(body) {
-    if !body.cbSparedLogged || !sys.HasEscapee(body.GetEntityID()) {
-      CBUntrackOnMap(game, body);
-      let none: EntityID;
-      r.spawnedEntityId = none;
-      sys.ClearLair();
+    if body.cbSparedLogged && sys.HasEscapee(body.GetEntityID()) {
+      return;   // the mercy path has it
     }
+    let tick = sys.GetTickCount();
+    if body.cbLairDownTick == 0 {
+      body.cbLairDownTick = Max(tick, 1);
+    }
+    if body.cbDamagedByPlayer && !body.cbSparedLogged
+       && (tick - body.cbLairDownTick) < CBConfig.LairDownWaitTicks() {
+      return;
+    }
+    CBLairGiveUp(sys, game, r, body);
     return;
   }
   if IsDefined(body) && CBNpcSafe(sys, body) && (CBNpcInCombat(body) || body.cbDamagedByPlayer) {

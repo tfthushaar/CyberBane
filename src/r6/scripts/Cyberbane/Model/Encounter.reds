@@ -141,6 +141,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     }
     sys.AddRenownPoints(10.0 * renownMult);
     sys.AddKillDreadPoints(10.0 * dreadMult);
+    CBTerrorDeed(sys, CBConfig.TerrorMassacre());
     if toasts {
       CBHearsayFromStreet(game, "Heard what you left behind. People are going to be repeating that one.", n"Massacre");
     }
@@ -176,4 +177,21 @@ func CBMaxKillsInWindow(ticks: array<Int32>, window: Int32) -> Int32 {
     i += 1;
   }
   return best;
+}
+
+// Something people will be frightened by for a while: a massacre, a boss, MaxTac, a gang's best, a
+// Rival put in the ground (1.9.3). "Terrifying deeds" is a fifth of Dread, and until now the only
+// things that fed it were the Heist and killing nobody saw, so for most players it stood near zero
+// and the top of the Dread scale, with the titles and tribute that hang off it, could not be reached.
+// It fades while V lies low like the rest (Model/Decay.reds).
+public func CBTerrorDeed(sys: ref<CyberbaneSystem>, points: Float) -> Void {
+  if !IsDefined(sys) || points <= 0.0 {
+    return;
+  }
+  let mult = 1.0;
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    mult = rt.GetSettings().dreadGainMult;
+  }
+  sys.AddDeedDreadPoints(points * mult);
 }

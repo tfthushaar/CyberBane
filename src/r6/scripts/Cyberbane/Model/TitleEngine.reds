@@ -41,7 +41,9 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   if Equals(id, n"T_PSYCHO_HUNTER") { return stats.psychosKilled >= 10; }
   if Equals(id, n"T_PSYCHO_WHISPERER") { return stats.psychosPacified >= 5; }
   if Equals(id, n"T_FIST") {
-    return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Brawler) && sys.TotalKills() >= 100;
+    // Knockouts count (1.9.3): the Fist of Night City may well never have killed anybody.
+    return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Brawler)
+        && sys.TotalKills() + stats.nonLethal >= 100;
   }
   if Equals(id, n"T_UNTOUCHABLE") { return stats.flawless >= 10; }
   if Equals(id, n"T_RED_TIDE") { return stats.massacres >= 5; }
@@ -111,8 +113,8 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
     return CBReqNum("Take cyberpsychos down without killing them", stats.psychosPacified, 5) + ".";
   }
   if Equals(id, n"T_FIST") {
-    return CBReqStyle(sys, ECBArchetype.Brawler, "Kills with fists and blunt weapons build it.") + "\n"
-         + CBReqNum("Kill anyone, any way", sys.TotalKills(), 100) + ".";
+    return CBReqStyle(sys, ECBArchetype.Brawler, "Fists and blunt weapons build it, knockouts included.") + "\n"
+         + CBReqNum("Put people down, dead or breathing", sys.TotalKills() + stats.nonLethal, 100) + ".";
   }
   if Equals(id, n"T_UNTOUCHABLE") {
     return CBReqNum("Win fights of 2 or more kills with your health never under 95%", stats.flawless, 10) + ".";
@@ -141,9 +143,10 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if Equals(id, n"T_FACTION_NIGHTMARE") {
     let gang = n"";
     let most = CBMostKilledGang(sys, gang);
-    return "One gang has to lose 75 people to you and fear you at 85 or more.\n"
+    let fearNeed = RoundF(CBConfig.TitleFearNeeded());
+    return s"One gang has to lose 75 people to you and fear you at \(fearNeed) or more.\n"
          + (Equals(gang, n"") ? "You have not fought one yet."
-            : CBCapFirst(CBFactionLabel(gang)) + s": \(Min(most, 75))/75 killed, fear \(RoundF(score.GetFactionFear(gang)))/85.");
+            : CBCapFirst(CBFactionLabel(gang)) + s": \(Min(most, 75))/75 killed, fear \(RoundF(score.GetFactionFear(gang)))/\(fearNeed).");
   }
   if Equals(id, n"T_BUTCHER_OF") {
     let where = "";
@@ -170,9 +173,9 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
   }
   if Equals(id, n"T_CYBERBANE") {
     return CBReqNum("Renown", renown, 850) + "\n"
-         + CBReqNum("Dread", RoundF(score.GetDread()), 90) + "\n"
+         + CBReqNum("Dread", RoundF(score.GetDread()), RoundF(CBConfig.TitleDreadNeeded())) + "\n"
          + CBReqNum("Rivals killed", stats.rivalsSlain, 3) + "\n"
-         + CBReqNum("Gangs that fear you at 85 or more", CBCountFactionsFeared(sys, score, 85.0), 3);
+         + CBReqNum(s"Gangs that fear you at \(RoundF(CBConfig.TitleFearNeeded())) or more", CBCountFactionsFeared(sys, score, CBConfig.TitleFearNeeded()), 3);
   }
   return "";
 }
@@ -240,7 +243,7 @@ public func CBTitleProgress(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if Equals(id, n"T_GLITCH") { have = stats.quickhackKills; need = 50; }
   if Equals(id, n"T_PSYCHO_HUNTER") { have = stats.psychosKilled; need = 10; }
   if Equals(id, n"T_PSYCHO_WHISPERER") { have = stats.psychosPacified; need = 5; }
-  if Equals(id, n"T_FIST") { have = sys.TotalKills(); need = 100; }
+  if Equals(id, n"T_FIST") { have = sys.TotalKills() + stats.nonLethal; need = 100; }
   if Equals(id, n"T_UNTOUCHABLE") { have = stats.flawless; need = 10; }
   if Equals(id, n"T_RED_TIDE") { have = stats.massacres; need = 5; }
   if Equals(id, n"T_MAXTAC_PROBLEM") { have = CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)); need = 10; }
@@ -302,7 +305,7 @@ func CBAnyFactionStandingAtLeast(sys: ref<CyberbaneSystem>, threshold: Float) ->
 
 func CBAnyFactionNightmare(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>) -> Bool {
   for fs in sys.GetFactionStates() {
-    if fs.kills >= 75 && score.GetFactionFear(fs.id) >= 85.0 {
+    if fs.kills >= 75 && score.GetFactionFear(fs.id) >= CBConfig.TitleFearNeeded() {
       return true;
     }
   }
@@ -353,7 +356,7 @@ func CBCyberbaneCondition(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>) 
   let stats = sys.GetStats();
   let rivalsSlain = IsDefined(stats) ? stats.rivalsSlain : 0;
   return score.GetRenown() >= 850.0
-      && score.GetDread() >= 90.0
+      && score.GetDread() >= CBConfig.TitleDreadNeeded()
       && rivalsSlain >= 3
-      && CBCountFactionsFeared(sys, score, 85.0) >= 3;
+      && CBCountFactionsFeared(sys, score, CBConfig.TitleFearNeeded()) >= 3;
 }

@@ -49,7 +49,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-HostileOnSight-Desc", "Whether a gang at vendetta draws the moment they recognise you.");
     this.Text("Cyberbane-Settings-Warnings-Desc", "Whether a hostile gang gives you one spoken warning before turning on you.");
     this.Text("Cyberbane-Settings-CyberpsychoRivals-Desc", "A cyberpsycho you take alive may come back as a rival, with their own name and strength.");
-    this.Text("Cyberbane-Settings-FactionDisguises-Desc", "Whether wearing a gang's own gear makes that gang slower to place you: nomad clothing with the Aldecaldos, the Wraiths vest with the Wraiths.");
+    this.Text("Cyberbane-Settings-FactionDisguises-Desc", "Whether wearing a gang's or a corporation's own gear makes them slower to place you. The more of it you wear, the better it works.");
+    this.Text("Cyberbane-Settings-ClothingCounts", "Clothes and masks count");
+    this.Text("Cyberbane-Settings-ClothingCounts-Desc", "On: clothes cover chrome, a mask hides who you are, a gang's gear fools that gang, and what you wear changes how dangerous you look. Off: wear anything, nothing you have on is read and all your chrome shows.");
+    this.Text("Cyberbane-Settings-TurfOnMap", "Turf on the map");
+    this.Text("Cyberbane-Settings-TurfOnMap-Desc", "Whether the game's map lists the gang that has taken a district. Turn off if another mod draws its own territory on the map.");
     this.Text("Cyberbane-Settings-Tribute-Desc", "Whether a gang that fears you sends eddies to stay on your good side.");
     this.Text("Cyberbane-Settings-TributeMult-Desc", "How much that tribute pays.");
     this.Text("Cyberbane-Settings-HitSquads-Desc", "Whether gangs send people after you. This also controls apex squads.");

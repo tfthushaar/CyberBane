@@ -18,6 +18,10 @@ func CBMapGangInstead(game: GameInstance, hovered: gamedataDistrict, listed: ref
   if !IsDefined(listed) || !CBTurfWarsOn() {
     return null;
   }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().turfOnMap {
+    return null;   // another mod has the map (1.9.3)
+  }
   let sys = CyberbaneSystem.Get(game);
   let book = CBTurfBook.Get(game);
   let record = MappinUtils.GetDistrictRecord(hovered);

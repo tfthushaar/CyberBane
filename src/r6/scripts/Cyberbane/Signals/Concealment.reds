@@ -235,18 +235,35 @@ func CBGarmentCoversLegs(id: ItemID, area: gamedataEquipmentArea) -> Bool {
 //
 // Same class of heuristic as the cyberpsycho check, with the same honest failure: a mask from
 // another mod named something else will not count, which simply leaves the old behaviour.
-func CBItemIsMask(tdbid: TweakDBID) -> Bool {
-  let id = TDBID.ToStringDEBUG(tdbid);
-  if StrLen(id) == 0 {
+//
+// 1.9.3: the record does keep it, in what the thing costs. Every mask descends from a base that is
+// priced as Price.Mask and every balaclava from one priced as Price.Balaclava, the same way jumpsuits
+// and shorts are told apart above. A record's name can only be read with Cyber Engine Tweaks
+// installed, so on any other install no mask ever counted; and a balaclava sits on the head, which
+// was never looked at. The name stays as the fallback for a mask another mod prices its own way.
+func CBItemIsMask(id: ItemID) -> Bool {
+  if CBGarmentPricedAs(id, t"Price.Mask", t"Price.Balaclava") {
+    return true;
+  }
+  if !Equals(CBGarmentArea(id), gamedataEquipmentArea.Face) {
     return false;
   }
-  return StrContains(id, "Mask") || StrContains(id, "mask");
+  let name = TDBID.ToStringDEBUG(ItemID.GetTDBID(id));
+  return StrLen(name) > 0 && (StrContains(name, "Mask") || StrContains(name, "mask"));
+}
+
+// Do V's clothes count at all? A player asked to dress for looks alone. Off, nothing V wears is
+// read: no chrome is covered, no mask hides who V is, no gang's colours fool anybody and no outfit
+// makes V look more or less dangerous (1.9.3).
+public func CBClothingCounts() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().clothingCounts;
 }
 
 // What V is wearing, both sources, and what it covers. One call per sample.
 public func CBReadWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> ref<CBWornRead> {
   let worn = new CBWornRead();
-  if !IsDefined(data) {
+  if !IsDefined(data) || !CBClothingCounts() {
     return worn;
   }
   let equipped: array<ItemID>;
@@ -275,9 +292,10 @@ public func CBReadWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>)
     }
     if Equals(area, gamedataEquipmentArea.Face) {
       worn.face = true;
-      if CBItemIsMask(ItemID.GetTDBID(id)) {
-        worn.masked = true;
-      }
+    }
+    if CBItemIsMask(id) {
+      worn.face = true;
+      worn.masked = true;
     }
   }
   return worn;

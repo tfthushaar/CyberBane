@@ -141,6 +141,11 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   CBAccrueArchetypeForKill(sys, info, brutal);
   sys.RefreshPrimaryArchetype();
 
+  // Aura counts a body as a body, whoever it belonged to. This sat inside the faction branch below
+  // until 1.9.3, so a civilian or anybody with no gang never made V look dangerous on the spot,
+  // which is backwards.
+  sys.NoteRecentKill();
+
   // Faction effects.
   if NotEquals(info.faction, n"") {
     let fs = sys.EnsureFaction(info.faction);
@@ -158,10 +163,8 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     fs.renown = ClampF(fs.renown + CBFactionRenownForKill(info.victimClass, brutal) * standingWitness, 0.0, 100.0);
     fs.renownPeak = MaxF(fs.renownPeak, fs.renown);
     fs.kills += 1;
-    if brutal { fs.brutalKills += 1; }
-    // Aura counts a body as a body. Sitting inside the record-capture branch below would have
-    // meant civilian kills never made V look dangerous, which is backwards.
-    sys.NoteRecentKill();
+    // Somebody knocked out with a fist was not butchered (1.9.3): only a body counts here.
+    if brutal && info.lethal { fs.brutalKills += 1; }
     if info.victimClass == EnumInt(ECBVictimClass.Officer) { fs.officersKilled += 1; }
     if info.victimClass == EnumInt(ECBVictimClass.Boss) { fs.bossesKilled += 1; }
     // And it thins their numbers on the street (Model/Territory.reds).
@@ -218,7 +221,7 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   if NotEquals(info.district, n"") {
     let ds = sys.EnsureDistrict(info.district);
     ds.kills += 1;
-    if info.lethal || brutal { ds.lethalOrBrutal += 1; }
+    if info.lethal { ds.lethalOrBrutal += 1; }   // a knockout is neither (1.9.3)
     if info.stealth && !info.lethal { ds.quietTakedowns += 1; }
     ds.lastIncidentAt = info.at;
   }
@@ -316,7 +319,15 @@ func CBAccrueArchetypeForKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, 
       sys.AddArchetype(EnumInt(ECBArchetype.Brawler), 1.0);
     }
   } else {
-    sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 1.5);
+    // Putting somebody to sleep with fists or a club in a stand-up fight is a brawler's work. It all
+    // went to Ghost until 1.9.3, so somebody who never killed and never hid could not be a Brawler.
+    let hands = info.mFists || info.mBlunt;
+    if hands {
+      sys.AddArchetype(EnumInt(ECBArchetype.Brawler), 1.5);
+    }
+    if !hands || info.stealth {
+      sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 1.5);
+    }
     if info.stealth {
       sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 1.0);
     }

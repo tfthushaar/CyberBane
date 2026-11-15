@@ -43,8 +43,8 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
   }
 
   let reg = sys.GetRegistry();
-  if !IsDefined(reg) {
-    return;
+  if !IsDefined(reg) || Equals(info.faction, n"") {
+    return;   // nobody's side to shake
   }
   if sys.IsInSafeZone() {
     return;   // not in a safe area (spec §16)
@@ -70,8 +70,11 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
     i += 1;
     // Cheap distance gate before the heavier eligibility check (Safety Gate workspot query);
     // CBNpcSafe keeps us off streaming-out / not-yet-ready NPCs (crash safety).
+    // Their own side only (1.9.3). Everybody within reach was shaken, whoever they were with, and
+    // one who broke was filed under the dead one's gang: a cop standing by could come back as a
+    // Tyger Claw Rival.
     if CBNpcSafe(sys, npc) && Vector4.Distance(deadPos, npc.GetWorldPosition()) <= CBConfig.MoraleShockRadius() {
-      if CBMoraleEligible(npc) {
+      if Equals(CBClassifyFaction(npc), info.faction) && CBMoraleEligible(npc) {
         ArrayPush(nearby, npc);
         if npc.cbMoraleBroken {
           brokenCount += 1;

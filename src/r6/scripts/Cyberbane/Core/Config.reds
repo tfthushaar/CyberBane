@@ -111,6 +111,17 @@ public abstract class CBConfig {
   public static func LayingLowMult() -> Float = 2.0
   public static func HeatCurveScale() -> Float = 150.0
   public static func UnwitnessedDreadMult() -> Float = 0.5
+  // What the frightening things V does add to the "terrifying deeds" part of Dread, in the same
+  // points a deed's own dread is counted in (Model/Encounter.reds, CBTerrorDeed, 1.9.3).
+  public static func TerrorMassacre() -> Float = 30.0
+  public static func TerrorBoss() -> Float = 20.0
+  public static func TerrorMaxTac() -> Float = 12.0
+  public static func TerrorApexSquad() -> Float = 25.0
+  public static func TerrorRival() -> Float = 10.0
+  // Keeping the peace (Model/GangRivalries.reds, 1.9.3): standing a gang gives V for each in-game
+  // hour spent on its streets with no trouble between them for this long.
+  public static func PeaceKeptPerHour() -> Float = 0.3
+  public static func PeaceKeptQuietHours() -> Float = 24.0
 
   // ---- Archetypes (spec §8.3) ------------------------------------------
   public static func ArchetypeDecayPerDay() -> Float = 0.995
@@ -314,7 +325,13 @@ public abstract class CBConfig {
   // ---- Tribute (spec §9.8) ---------------------------------------------
   public static func TributeChance() -> Float = 0.25
   public static func TributeCooldownDays() -> Float = 7.0
-  public static func TributeFearThreshold() -> Float = 75.0
+  // 75 until 1.9.3. A gang's fear is Dread scaled by how well it knows V, and Dread itself could
+  // not get past the sixties, so outside the Scavs nobody ever paid.
+  public static func TributeFearThreshold() -> Float = 65.0
+  // What the two hardest titles ask (Model/TitleEngine.reds). They asked for Dread 90 and a gang's
+  // fear at 85, which the sums could not produce for any gang but the Scavs (1.9.3).
+  public static func TitleDreadNeeded() -> Float = 80.0
+  public static func TitleFearNeeded() -> Float = 75.0
   public static func TributeRenownThreshold() -> Float = 50.0
 
   // ---- Hit squads (spec §9.9) ------------------------------------------
@@ -908,7 +925,12 @@ public abstract class CBConfig {
   //
   // What a gang minds about one of theirs being put down, when they are still breathing. The
   // same hit as a kill was being taken either way, which made mercy pointless.
-  public static func NonLethalStandingShare() -> Float = 0.25
+  //
+  // A quarter until 1.9.3, which against the credit below still came out as a loss for every
+  // knockout (a ganger -0.1, an officer -1.1), on the road the Hub tells players to take. At a
+  // tenth, leaving a ganger breathing earns a little, an elite breaks even, and putting their
+  // officers and bosses on the floor still costs.
+  public static func NonLethalStandingShare() -> Float = 0.1
   // The share of a kill's Dread that putting somebody down alive adds (Model/Reputation.reds).
   public static func NonLethalDreadShare() -> Float = 0.25
   // What each one of theirs V leaves alive is worth to them, and how far that alone can carry.
@@ -1275,6 +1297,13 @@ public abstract class CBConfig {
   public static func LairSearchRadius() -> Float = 12.0
   public static func LairOuterSearchRadius() -> Float = 22.0
   public static func LairTryEveryTicks() -> Int32 = 3
+  // 1.9.3. How long somebody V put down at their place is given to be logged as a mercy before the
+  // place lets go of them; a third ring of spots to try; and when V, standing this close to the pin
+  // with nobody placed for this many tries, is told why.
+  public static func LairDownWaitTicks() -> Int32 = 20
+  public static func LairFarSearchRadius() -> Float = 32.0
+  public static func LairHintDistance() -> Float = 45.0
+  public static func LairHintTries() -> Int32 = 7
   // Extra renown for putting a Rival down before they ever knew V was there, as a fraction of
   // what the kill itself pays.
   public static func LairAmbushRenownShare() -> Float = 0.5

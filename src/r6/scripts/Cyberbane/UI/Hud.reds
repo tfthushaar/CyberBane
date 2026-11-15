@@ -3394,9 +3394,10 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
     return "No gang has formed an opinion of you yet.\n\nWork in their territory and that changes quickly.";
   }
   let out = "Hostile gangs send crews. Vendetta means they also shoot on sight. Hostile and sworn gangs are listed first.\n\n";
-  out += "To be thought well of: hurt the gang they are at war with, or put their people down\n";
-  out += "without killing them and let their names walk. Friendly gangs cut their prices on\n";
-  out += "their own turf and warn you when their enemies come for you.\n\n";
+  out += "To be thought well of: hurt the gang they are at war with, put their people down\n";
+  out += "without killing them, let their names walk, or spend time on their streets without\n";
+  out += "trouble. Friendly gangs cut their prices on their own turf and warn you when their\n";
+  out += "enemies come for you.\n\n";
   out += "Click a gang to see more about them, and to pay off one that wants you dead.";
   return out;
 }

@@ -235,6 +235,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionDisguises-Desc")
   public let factionDisguises: Bool = true;
 
+  // Whether anything V wears is read at all (Signals/Concealment.reds, CBClothingCounts, 1.9.3).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ClothingCounts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClothingCounts-Desc")
+  public let clothingCounts: Bool = true;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Tribute")
@@ -326,6 +333,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TurfWars")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfWars-Desc")
   public let turfWars: Bool = true;
+
+  // Whether the game's own map lists a district's new holder (UI/TurfMap.reds). For players whose
+  // other mods draw their own territory on the map (1.9.3).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TurfOnMap")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfOnMap-Desc")
+  public let turfOnMap: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

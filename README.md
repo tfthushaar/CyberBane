@@ -419,6 +419,8 @@ Gangs warm to you for three reasons, and only the first involves anybody else's 
 - **Restraint.** Putting their people down without killing them costs their opinion far less
   than a body does, and each one you leave breathing earns a little goodwill. On its own this
   gets you tolerated, not adopted.
+- **Keeping the peace.** Spend time on a gang's streets without giving them trouble and they
+  slowly warm to you, as far as Friendly. A gang that already wants you dead is not moved by it.
 - **Mercy with a name.** Let one of their Rivals walk and the gang hears about it.
 
 Friendly gangs cut their prices on their own turf and warn you when their enemies send people
@@ -546,8 +548,12 @@ Three worth knowing about if a playstyle is being treated unfairly:
   faction off under Factions stops what Cyberbane does about them, not what They Will Remember does.
 - Phone Extension and mods built on it: work alongside. Cyberbane's phone contacts use names of
   their own, so both can add contacts to the phone at once.
-- Street Sense: supported, detected automatically, no setup. It owns crowds noticing and
-  greeting you, so Cyberbane stands its own overheard lines down and keeps everything else.
+- Street Sense: supported. It owns crowds noticing and greeting you, so Cyberbane stands its own
+  overheard lines down when it finds Street Sense in the Mod Settings list. If your copy keeps its
+  settings elsewhere it is not found: turn **Overheard lines** off under Interface yourself, and
+  **Turf on the map** off under Gangs if the two maps disagree.
+- Dressing for looks: turn **Clothes and masks count** off under Reputation and nothing you wear
+  affects how anyone reads you.
 - Much Better AI: supported, detected automatically, no setup. Its Nerve system owns morale,
   so Cyberbane stands down its own morale break and terror push rather than panicking the same
   enemy twice, and it also owns equipping enemies, so Cyberbane leaves its own ability kits off

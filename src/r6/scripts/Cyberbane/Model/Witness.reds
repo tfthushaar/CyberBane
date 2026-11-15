@@ -52,12 +52,14 @@ public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: Ent
     let npc = npcs[i];
     i += 1;
     // CBNpcSafe is the same gate the Director uses: attached, and past its warm-up ticks.
-    if CBNpcSafe(sys, npc) {
+    // Only somebody in range counts against the scan cap (1.9.3). Everybody did, in the registry's
+    // own order, so on a crowded street the first forty could all be a block away and the people
+    // standing beside V were never asked. And somebody lying unconscious saw nothing.
+    if CBNpcSafe(sys, npc) && Vector4.Distance(at, npc.GetWorldPosition()) <= radius {
       scanned += 1;
       if NotEquals(npc.GetEntityID(), victim)
-         && !npc.IsDead()
+         && CBStillStanding(npc)
          && !ScriptedPuppet.IsPlayerCompanion(npc)
-         && Vector4.Distance(at, npc.GetWorldPosition()) <= radius
          && CBWitnessCanSee(npc, player) {
         seen += 1;
       }

@@ -207,3 +207,27 @@ public func CBTurfPriceModifier(sys: ref<CyberbaneSystem>) -> Float {
   // the vendor is choosing whose good side to stay on.
   return best < 0.0 ? best : worst;
 }
+
+// Keeping the peace on a gang's streets (1.9.3).
+//
+// Asked for by players: a way to be thought well of that is not somebody's body. Each in-game hour
+// V spends in a district, every gang with streets there that has had no trouble from V for a day
+// warms a little, as far as mercy alone can carry (MercyCeiling), which is past Friendly and well
+// short of Allied. A gang that already wants V dead is not won over by V standing around. Read off
+// what is already saved (lastIncidentAt), so nothing new is stored.
+public func CBKeepThePeaceTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) || CBReputationFrozen() || sys.IsInSafeZone() {
+    return;
+  }
+  let now = CBGameSeconds(game);
+  let quiet = CBConfig.PeaceKeptQuietHours() * CBConfig.SecondsPerHour();
+  for id in CBTurfGangsHere(sys) {
+    if NotEquals(id, n"") && CBFactionFieldsSquads(id) {
+      let fs = sys.EnsureFaction(id);
+      if IsDefined(fs) && fs.standing > CBConfig.PostureHostile() && fs.standing < CBConfig.MercyCeiling()
+         && (fs.lastIncidentAt <= 0.0 || (now >= fs.lastIncidentAt && (now - fs.lastIncidentAt) >= quiet)) {
+        fs.standing = MinF(CBConfig.MercyCeiling(), fs.standing + CBConfig.PeaceKeptPerHour());
+      }
+    }
+  }
+}

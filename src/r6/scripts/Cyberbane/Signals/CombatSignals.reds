@@ -234,6 +234,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       wasRival = true;
       if IsDefined(slain) {
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
+        if puppet.cbDamagedByPlayer {
+          CBTerrorDeed(sysE, CBConfig.TerrorRival());
+        }
         // V's kill: the bounty, and what they carried (Spawn/Loot.reds).
         if puppet.cbDamagedByPlayer {
           CBPayRivalBounty(sysE, game, slain, slainRole);
@@ -267,6 +270,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       // The last of the squad: their enemies pay for it.
       if CBCountLiveOrSpawningExcept(game, n"CB_Apex", puppet.GetEntityID()) == 0 {
         CBPayApexBounty(sysE, game);
+        CBTerrorDeed(sysE, CBConfig.TerrorApexSquad());
         // Their best, all four, put down: the gang feels it (Model/Territory.reds).
         CBWeakenGang(sysE, game, CBClassifyFaction(puppet), CBConfig.GangLossApexSquad());
       }
@@ -354,7 +358,11 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   }
 
   // Boss kills spread across districts as rumors (spec §8.5).
+  if info.lethal && info.victimClass == EnumInt(ECBVictimClass.MaxTac) {
+    CBTerrorDeed(sys, CBConfig.TerrorMaxTac());
+  }
   if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Boss) {
+    CBTerrorDeed(sys, CBConfig.TerrorBoss());
     CBCreateRumor(sys, game, n"BossKill", 15.0, info.district, info.faction, info.witnessed);
     if info.witnessed {
       CBFileLog(sys, n"BossKill", info.at, info.district, info.faction, 0.0);
@@ -381,17 +389,36 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
 }
 
 // Map the victim's affiliation to a Cyberbane faction id (n"" if unmapped).
+// Whose this body is, worked out once per body (1.9.3). It was worked out again for the same person
+// on every pass of the Director, every hit and every death: a record read, a walk of sixteen
+// factions and, for the police, a string test.
+@addField(ScriptedPuppet)
+public let cbFactionKnown: Bool;
+
+@addField(ScriptedPuppet)
+public let cbFaction: CName;
+
 func CBClassifyFaction(puppet: ref<ScriptedPuppet>) -> CName {
+  if puppet.cbFactionKnown {
+    return puppet.cbFaction;
+  }
+  let content = CBContent(puppet.GetGame());
+  if !IsDefined(content) {
+    return n"";   // not known yet, and not remembered
+  }
+  let faction = CBClassifyFactionNow(puppet, content);
+  puppet.cbFaction = faction;
+  puppet.cbFactionKnown = true;
+  return faction;
+}
+
+func CBClassifyFactionNow(puppet: ref<ScriptedPuppet>, content: ref<CyberbaneContent>) -> CName {
   let rec = puppet.GetRecord();
   if !IsDefined(rec) {
     return n"";
   }
   let aff = rec.Affiliation();
   if !IsDefined(aff) {
-    return n"";
-  }
-  let content = CBContent(puppet.GetGame());
-  if !IsDefined(content) {
     return n"";
   }
   let faction = content.FactionForAffiliation(aff.EnumName());
@@ -429,7 +456,17 @@ func CBRecordIsMaxTac(rec: wref<Character_Record>, id: TweakDBID) -> Bool {
 // This is a best-effort heuristic, not a guarantee. If the id string is unavailable the
 // check simply never matches, which is exactly how the mod behaved before it existed - a
 // cyberpsycho then scores as an ordinary ganger. It has no other failure mode.
+//
+// 1.9.3: the record says so itself. Every cyberpsycho sighting carries the Cyberpsycho tag and the
+// MinorActivity quest affiliation (CBRecordIsSightingCyberpsycho), which needs no name. The name
+// was the only test, and it missed five of the seventeen (ma_bls_ina_se1_22_psycho, ma_wat_nid_22_monk
+// and others), who scored as gang bosses and never counted for Psycho Hunter or Psycho Whisperer;
+// and a record's name can only be read at all with Cyber Engine Tweaks installed. Kept as the
+// fallback for anything another mod adds.
 func CBIsCyberpsycho(puppet: ref<ScriptedPuppet>) -> Bool {
+  if CBRecordIsSightingCyberpsycho(puppet.GetRecordID()) {
+    return true;
+  }
   let id = TDBID.ToStringDEBUG(puppet.GetRecordID());
   if Equals(id, "") {
     return false;
@@ -449,7 +486,8 @@ func CBClassifyVictim(puppet: ref<ScriptedPuppet>, faction: CName) -> Int32 {
   if Equals(faction, n"NCPD") {
     return EnumInt(ECBVictimClass.Cop);
   }
-  if puppet.IsCrowd() {
+  // Somebody with no gang whom the game itself reacts to as a civilian is one, crowd or not (1.9.3).
+  if puppet.IsCrowd() || (Equals(faction, n"") && puppet.IsCharacterCivilian()) {
     return EnumInt(ECBVictimClass.Civilian);
   }
   if Equals(faction, n"Arasaka") || Equals(faction, n"Militech") || Equals(faction, n"KangTao") {
