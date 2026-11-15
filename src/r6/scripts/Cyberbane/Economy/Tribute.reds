@@ -59,7 +59,11 @@ public func CBTributeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
 func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<GameObject>, score: ref<CBScoreEngine>, fs: ref<CBFactionState>, tributeMult: Float, now: Float) -> Void {
   // round50(500 + 2500 × (F_f − 75)/25) × tributeMult  (spec §9.8).
   let ff = score.GetFactionFear(fs.id);
-  let raw = (500.0 + 2500.0 * (ff - 75.0) / 25.0) * tributeMult * sys.WornPerk().tributeMult;
+  // From the threshold up, whatever the threshold is (1.9.3): the 75 written in here no longer
+  // matched it, and a gang just afraid enough to pay would have paid less than nothing.
+  let floorFear = CBConfig.TributeFearThreshold();
+  let span = MaxF(100.0 - floorFear, 1.0);
+  let raw = (500.0 + 2500.0 * ClampF((ff - floorFear) / span, 0.0, 1.0)) * tributeMult * sys.WornPerk().tributeMult;
   let amount = RoundF(raw / 50.0) * 50;
   if amount <= 0 {
     return;

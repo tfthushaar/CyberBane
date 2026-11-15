@@ -63,6 +63,20 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
       let rec = TweakDBInterface.GetItemRecord(tdbid);
       if IsDefined(rec) {
         lookSum += CBGarmentLookScore(rec);
+        // Tags another mod has registered (CyberbaneAPI.RegisterLookTag), on either list.
+        let extra = content.GetLookTags();
+        if ArraySize(extra) > 0 {
+          let shown = rec.VisualTags();
+          for lt in extra {
+            if IsDefined(lt) && (rec.TagsContains(lt.tag) || ArrayContains(shown, lt.tag)) {
+              lookSum += lt.score;
+              disguiseSum += lt.disguise;
+              if NotEquals(lt.factionTag, n"") {
+                ArrayPush(gangsWorn, lt.factionTag);
+              }
+            }
+          }
+        }
         if !IsDefined(li) || Equals(li.factionTag, n"") {
           let gang = CBGarmentGang(rec);
           if NotEquals(gang, n"") {

@@ -48,9 +48,10 @@ stops Cyberbane changing the map's gang list. Its hostility shows on the Gangs s
 
 ### Bug and improvement pass, 1.9.3
 
-Read in full: Core, Data, Model, Signals, Reactions, `Spawn/RivalEncounter.reds`, `Rivals/Whereabouts.reds`.
-**Not re-read in this pass:** `Rivals/RivalSystem.reds`, `Spawn/` (Queue, Hunt, Spawner, Arrival, FactionApex,
-ApexSquad, HitSquad, Schedule, Tactics, Loot, Sanctuary, TurfPatrol), `Economy/`, `Narrative/`, `UI/`, `API/`.
+Done in two passes. Read line by line: Core, Data, Model, Signals, Reactions, Rivals, Spawn, Economy,
+Narrative, API, Settings, and `UI/` PhoneMessages, ThreatBar, Tracking, BossBar, Notify, ScannerName.
+**Skimmed only** (logic and every array index checked, widget layout not read line by line): `UI/Hud.reds`,
+`UI/RealPhone.reds`, `UI/RivalPin.reds`, `UI/HubTab.reds`, `UI/PauseMenuEntry.reds`.
 Found and fixed, beyond the reports above:
 
 - **Look was always zero.** `CBUpdateLook` matched item visual tags against nine names that do not exist
@@ -67,6 +68,20 @@ Found and fixed, beyond the reports above:
 - Cyberpsychos by tag and quest affiliation; morale shock for the victim's own side only; witness scan
   counts people in range; civilian kills feed Aura; non-lethal fists build Brawler; `HardReset` clears
   the Rival last-position table; faction cached per body; Aura every two ticks.
+
+Second pass:
+
+- **Any car of ours attaching was boarded** (`CBOnArrivalCarAttached`). A spent car streaming back in while an
+  arrival was pending took the crew, and the real car then started boarding again with a second crew. The
+  arrival now remembers the car it asked for (`m_arrivalWantedCar`) and boards it once.
+- **Cut off without being tested** (`CBCutOffOne`). With no path tests left in a pass the anchor was still
+  set, so the next pass counted a hunter standing still towards removal without ever asking for a route.
+- **Tribute amount** hardcoded the old 75 floor; it is worked from `TributeFearThreshold` now.
+- `CyberbaneAPI.RegisterLookTag` still works after the Look rebuild (matched against item tags and visual
+  tags); the nine dead seed tags are gone from `Data/Looks.reds`.
+
+Noted and left: `fs.kills` counts knockouts as well as bodies (apex threshold, peace price, a Faction's
+Nightmare), which reads as intended; `CBWriteDeathLedger` runs inside the player's death event.
 
 Still open: backing a gang in a turf war, favours over the phone, unseen massacres told as seen
 (`CBEncounterResolve`), more deed facts (only `q005_done` is wired), Codeware typed targets for

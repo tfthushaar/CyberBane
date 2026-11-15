@@ -1293,7 +1293,11 @@ func CBCutOffOne(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynamic
     p.cbCutOffAnchor = at;
     p.cbCutOffAnchored = true;
     if left <= 0 {
-      return left;   // nobody left to ask about this pass; nothing learned either way
+      // Nothing learned either way, so nothing is remembered either (1.9.3). The anchor stayed
+      // set, and the next pass took that to mean the route had been asked about and refused: one
+      // who stood still was counted towards removal without ever being tested.
+      p.cbCutOffAnchored = false;
+      return left;
     }
     left -= 1;
     if CBPointReachable(game, at, player.GetWorldPosition()) {

@@ -317,6 +317,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_arrivalCrew: Int32;           // how many were asked for
   private let m_arrivalTag: CName;            // squad tag the crew inherits
   private let m_arrivalCarId: EntityID;       // the car, once it exists
+  private let m_arrivalWantedCar: EntityID;   // the car this arrival asked for (CBOnArrivalCarAttached)
   private let m_arrivalSeats: Int32;          // seats being filled
   private let m_arrivalFilled: Int32;         // seats filled so far
   // The car's own seat slots, driver first, read from its record (CBVehicleSeatNames). Mounting
@@ -773,6 +774,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_arrivalCarId;
   }
 
+  public func GetArrivalWantedCar() -> EntityID {
+    return this.m_arrivalWantedCar;
+  }
+
+  public func SetArrivalWantedCar(id: EntityID) -> Void {
+    this.m_arrivalWantedCar = id;
+  }
+
   // Hand out the next seat, or -1 when the car is full.
   public func TakeArrivalSeat() -> Int32 {
     if this.m_arrivalFilled >= this.m_arrivalSeats {
@@ -844,6 +853,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_arrivalAge = 0;
     let noCar: EntityID;   // a default EntityID is the undefined one; there is no None()
     this.m_arrivalCarId = noCar;
+    this.m_arrivalWantedCar = noCar;
     this.m_arrivalSeats = 0;
     this.m_arrivalFilled = 0;
     ArrayClear(this.m_arrivalSeatNames);

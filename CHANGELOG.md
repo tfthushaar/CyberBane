@@ -42,6 +42,8 @@ the next unless a version says otherwise.
 - Killing civilians did not make you look dangerous on the spot.
 - Knocking people out with your fists counted towards Butcher titles.
 - After Start over, the first new Rival could be "last seen" where an old one had been.
+- A gang's old car left nearby could take the crew meant for a new one, or a second crew could turn up.
+- A hunter waiting out of your sight could be removed as if they were stuck.
 - A little less work on busy streets.
 
 ## 1.9.2 (12 November 2026)

@@ -3377,7 +3377,7 @@ func CBHudDreadReason(sys: ref<CyberbaneSystem>) -> String {
   if k > best { best = k; bestLabel = "your body count"; bestHint = "It fades while you lie low."; }
   if c > best { best = c; bestLabel = "all that chrome"; bestHint = "Long sleeves, trousers and a mask hide most of it."; }
   if l > best { best = l; bestLabel = "the way you carry yourself"; bestHint = "Dress down and it eases."; }
-  if x > best { best = x; bestLabel = "the jobs you have pulled"; bestHint = "The stories fade while you lie low."; }
+  if x > best { best = x; bestLabel = "the things you have done"; bestHint = "The stories fade while you lie low."; }
   if h > best { best = h; bestLabel = "the heat you draw from the law"; bestHint = "Stay off the NCPD's radar and it cools."; }
 
   if best <= 0.0 {

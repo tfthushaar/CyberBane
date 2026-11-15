@@ -32,15 +32,10 @@ public func CBSeedLooks(c: ref<CyberbaneContent>) -> Void {
   CBGangClothes(c, t"Items.SQ021_Wraiths_Vest", n"Wraiths");
 
   // tag, score, disguise, factionTag
-  c.AddLookTag(CBMakeLookTag(n"FaceMask",          12.0, 0.25, n""));
-  c.AddLookTag(CBMakeLookTag(n"Hood",               2.0, 0.10, n""));
-  c.AddLookTag(CBMakeLookTag(n"Sunglasses",         2.0, 0.05, n""));
-  c.AddLookTag(CBMakeLookTag(n"MilitaryOuterwear",  8.0, 0.0,  n""));
-  c.AddLookTag(CBMakeLookTag(n"AggressiveMotif",    6.0, 0.0,  n""));
-  c.AddLookTag(CBMakeLookTag(n"GangStyle",          5.0, 0.0,  n""));
-  c.AddLookTag(CBMakeLookTag(n"NetrunnerSuit",      6.0, 0.0,  n""));
-  c.AddLookTag(CBMakeLookTag(n"FormalCorpoSuit",   -5.0, 0.0,  n""));
-  c.AddLookTag(CBMakeLookTag(n"CasualStreet",       0.0, 0.0,  n""));
+  // Nine tags used to be seeded here (FaceMask, Hood, MilitaryOuterwear and so on). None of them
+  // is a tag any item in the game carries, so they matched nothing. What clothing does carry is
+  // read in Signals/LookSignal.reds (CBGarmentLookScore, CBGarmentGang); this list is now only
+  // what other mods add through CyberbaneAPI.RegisterLookTag (1.9.3).
 
   // Character-customization options (spec §7.4), resolved in S-10.
   c.AddCustomization(CBMakeCustomization(n"FaceChrome",  10.0));

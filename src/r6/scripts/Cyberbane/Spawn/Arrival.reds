@@ -422,6 +422,7 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
     sys.ClearConvoy();
   }
   sys.SetPendingArrival(crewRecord, crew, squadTag, leadRecord, leadTag);
+  sys.SetArrivalWantedCar(carId);
   sys.SetArrivalChairBase(chairBase);
   sys.SetArrivalAmbush(lyingInWait);
   // Which car of its convoy this is: the cars already sent. Its crew carry that car's tag, so
@@ -646,6 +647,12 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     return;
   }
   if !sys.HasPendingArrival() {
+    return;
+  }
+  // Only the car this arrival asked for, and only the first time it attaches (1.9.3). Any car of
+  // ours attaching while an arrival was pending was boarded: a spent one streaming back in took the
+  // crew, and the real one attaching after it started boarding again with a second crew.
+  if !Equals(car.GetEntityID(), sys.GetArrivalWantedCar()) || EntityID.IsDefined(sys.GetArrivalCarId()) {
     return;
   }
   let des = GameInstance.GetDynamicEntitySystem();
