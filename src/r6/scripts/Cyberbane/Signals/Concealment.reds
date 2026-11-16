@@ -200,7 +200,8 @@ func CBGarmentCoversArms(id: ItemID, area: gamedataEquipmentArea) -> Bool {
   }
   let outer = Equals(area, gamedataEquipmentArea.OuterChest);
   if !outer && !Equals(area, gamedataEquipmentArea.InnerChest) {
-    return false;
+    // Sleeves an outfit mod files somewhere else still cover arms (1.9.4).
+    return CBGarmentSleeves(id) == 1;
   }
   let sleeves = CBGarmentSleeves(id);
   if sleeves == 1 {
@@ -264,6 +265,12 @@ public func CBClothingCounts() -> Bool {
 public func CBReadWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> ref<CBWornRead> {
   let worn = new CBWornRead();
   if !IsDefined(data) || !CBClothingCounts() {
+    return worn;
+  }
+  // Equipment-EX wearing an outfit (1.9.4): what people see is that outfit, nothing else.
+  let eqexSlots: array<TweakDBID>;
+  if CBEqExOutfitSlots(game, eqexSlots) {
+    CBReadEqExOutfit(game, worn, eqexSlots);
     return worn;
   }
   let equipped: array<ItemID>;
@@ -451,4 +458,123 @@ public func CBLogEquippedTags(game: GameInstance) -> Void {
     CBLog.Info(n"Signals", s"Seen: \(TDBID.ToStringDEBUG(ItemID.GetTDBID(g))), sleeves \(CBGarmentSleeves(g)), covers arms \(CBGarmentCoversArms(g, CBGarmentArea(g))), legs \(CBGarmentCoversLegs(g, CBGarmentArea(g))).");
   }
   CBLog.Info(n"Signals", s"Clothing read: \(ArraySize(worn.garments)) garments seen (\(worn.fromMods) only on V's body); arms covered \(worn.arms), legs \(worn.legs), face \(worn.face), masked \(worn.masked).");
+}
+
+// ---- Equipment-EX (1.9.4) ---------------------------------------------------------------------
+//
+// "I added layers with Equipment-EX that cover my arms, face and feet, and the score is still high."
+// Equipment-EX blanks V's own clothing slots and shows its outfit as copies of the garments in slots
+// of its own (OutfitSlots.*), so Cyberbane went on reading the clothes underneath. Asked through
+// Codeware reflection, as They Will Remember is, so nothing here needs Equipment-EX to be installed.
+
+// The outfit slots Equipment-EX has filled, when it is wearing an outfit at all.
+public func CBEqExOutfitSlots(game: GameInstance, out slots: array<TweakDBID>) -> Bool {
+  let container = GameInstance.GetScriptableSystemsContainer(game);
+  let type = Reflection.GetClass(n"EquipmentEx.OutfitSystem");
+  if !IsDefined(container) || !IsDefined(type) {
+    return false;
+  }
+  let outfits = container.Get(n"EquipmentEx.OutfitSystem");
+  if !IsDefined(outfits) {
+    return false;
+  }
+  let isActive = type.GetFunction(n"IsActive");
+  let used = type.GetFunction(n"GetUsedSlots");
+  if !IsDefined(isActive) || !IsDefined(used) || ArraySize(isActive.GetParameters()) != 0
+     || ArraySize(used.GetParameters()) != 0 {
+    return false;
+  }
+  let none: array<Variant>;
+  if !FromVariant<Bool>(isActive.Call(outfits, none)) {
+    return false;
+  }
+  slots = FromVariant<array<TweakDBID>>(used.Call(outfits, none));
+  return true;
+}
+
+// What an Equipment-EX outfit covers, slot by slot. A garment keeps its own rules (long sleeves,
+// trousers, a mask); the small layers it adds for hands, wrists, elbows, shoulders, thighs, knees and
+// ankles cover a limb once two of its parts are covered.
+func CBReadEqExOutfit(game: GameInstance, worn: ref<CBWornRead>, slots: array<TweakDBID>) -> Void {
+  let player = GetPlayer(game);
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !IsDefined(player) || !IsDefined(ts) {
+    return;
+  }
+  let armParts = 0;
+  let legParts = 0;
+  let armSeen: array<Int32>;
+  let legSeen: array<Int32>;
+  for slot in slots {
+    let obj = ts.GetItemInSlot(player, slot);
+    if IsDefined(obj) {
+      let id = obj.GetItemID();
+      if ItemID.IsValid(id) && !CBGarmentRecordListed(worn.garments, id) {
+        ArrayPush(worn.garments, id);
+        worn.fromMods += 1;
+      }
+      let area = CBGarmentArea(id);
+      if CBGarmentCoversArms(id, area) {
+        worn.arms = true;
+      }
+      if CBGarmentCoversLegs(id, area) {
+        worn.legs = true;
+      }
+      if CBItemIsMask(id) || slot == t"OutfitSlots.Mask" || slot == t"OutfitSlots.Balaclava" {
+        worn.face = true;
+        worn.masked = true;
+      }
+      if slot == t"OutfitSlots.Glasses" || slot == t"OutfitSlots.Eyes" || slot == t"OutfitSlots.EyeLeft"
+         || slot == t"OutfitSlots.EyeRight" || Equals(area, gamedataEquipmentArea.Face) {
+        worn.face = true;
+      }
+      let arm = CBEqExArmPart(slot);
+      if arm >= 0 && !ArrayContains(armSeen, arm) {
+        ArrayPush(armSeen, arm);
+        armParts += 1;
+      }
+      let leg = CBEqExLegPart(slot);
+      if leg >= 0 && !ArrayContains(legSeen, leg) {
+        ArrayPush(legSeen, leg);
+        legParts += 1;
+      }
+    }
+  }
+  if armParts >= 2 {
+    worn.arms = true;
+  }
+  if legParts >= 2 {
+    worn.legs = true;
+  }
+}
+
+// Which part of the arm an outfit slot covers: 0 hands, 1 wrists, 2 elbows, 3 shoulders; -1 none.
+func CBEqExArmPart(slot: TweakDBID) -> Int32 {
+  if slot == t"OutfitSlots.Hands" || slot == t"OutfitSlots.HandLeft" || slot == t"OutfitSlots.HandRight" {
+    return 0;
+  }
+  if slot == t"OutfitSlots.WristLeft" || slot == t"OutfitSlots.WristRight" {
+    return 1;
+  }
+  if slot == t"OutfitSlots.ElbowLeft" || slot == t"OutfitSlots.ElbowRight" {
+    return 2;
+  }
+  if slot == t"OutfitSlots.ShoulderLeft" || slot == t"OutfitSlots.ShoulderRight" {
+    return 3;
+  }
+  return -1;
+}
+
+// And of the leg: 0 thighs, 1 knees, 2 ankles; -1 none.
+func CBEqExLegPart(slot: TweakDBID) -> Int32 {
+  if slot == t"OutfitSlots.ThighLeft" || slot == t"OutfitSlots.ThighRight" {
+    return 0;
+  }
+  if slot == t"OutfitSlots.KneeLeft" || slot == t"OutfitSlots.KneeRight" {
+    return 1;
+  }
+  if slot == t"OutfitSlots.AnkleLeft" || slot == t"OutfitSlots.AnkleRight" {
+    return 2;
+  }
+  return -1;
 }

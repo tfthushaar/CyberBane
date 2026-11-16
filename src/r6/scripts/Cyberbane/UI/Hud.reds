@@ -2247,7 +2247,7 @@ public class CBHud {
 
     this.SetBar(2, "Visible chrome", s"\(RoundF(chrome))",
       chrome / 100.0, CBHudAmber(),
-      "What a stranger clocks from across the street. Arms read loudest.");
+      CBHudWornLine(sys));
 
     this.SetBipolarBar(3, "Conduct", s"\(RoundF(code))   \(CBCodeLabel(code))",
       code, code < 0.0 ? CBHudRed() : CBHudGreen(),
@@ -2289,6 +2289,9 @@ public class CBHud {
         if IsDefined(fs) {
           let posture = score.GetPosture(fs.id);
           let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) || twr > 0;
+          if CBTwrOwnsHostility(fs.id) && CBTwrGangHostile(sys.GetGameInstance(), fs.id) == 0 {
+            hostile = false;   // They Will Remember decides, and it says not
+          }
           if (sweep == 0 && hostile) || (sweep == 1 && !hostile) {
             ArrayPush(order, fs);
             ArrayPush(orderTwr, twr);
@@ -2340,6 +2343,19 @@ public class CBHud {
         postureText = "Off: hostile";
       } else {
         postureText = twrHostile == 2 ? "TWR: Hostile" : "Seen hostile";
+      }
+    }
+    // They Will Remember decides who is hostile (1.9.4): its answer is the one shown, both ways.
+    if !off && CBTwrOwnsHostility(fs.id) {
+      let says = CBTwrGangHostile(sys.GetGameInstance(), fs.id);
+      if says == 1 {
+        pip = CBHudAmber();
+        postureText = "Hostile (TWR)";
+      } else {
+        if says == 0 && (Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)) {
+          pip = CBHudGrey();
+          postureText = "Not hostile (TWR)";
+        }
       }
     }
     let right = CBHudGangStatus(sys, fs);
@@ -2600,12 +2616,80 @@ public class CBHud {
     if !pickedOn {
       this.m_pickRival = ArraySize(order) > 0 ? order[0].id : 0;
     }
-    let top = this.ListWindow(ArraySize(order), CBHudListRows());
+    // Drawn as a hierarchy (1.9.4): each gang's line, then its leader, its lieutenants and the rest, in
+    // the order of `order` for the gangs, so whoever is coming or already here is at the top.
+    let gangs: array<CName>;
+    for o in order {
+      if !ArrayContains(gangs, o.faction) {
+        ArrayPush(gangs, o.faction);
+      }
+    }
+    let entries: array<ref<CBRival>>;
+    let heads: array<CName>;
+    let nobody: ref<CBRival>;
+    for g in gangs {
+      ArrayPush(entries, nobody);
+      ArrayPush(heads, g);
+      let members: array<ref<CBRival>>;
+      for o in order {
+        if Equals(o.faction, g) {
+          ArrayPush(members, o);
+        }
+      }
+      while ArraySize(members) > 0 {
+        let best = 0;
+        let m = 1;
+        while m < ArraySize(members) {
+          if CBHudRivalStanding(sys, members[m]) > CBHudRivalStanding(sys, members[best]) {
+            best = m;
+          }
+          m += 1;
+        }
+        ArrayPush(entries, members[best]);
+        ArrayPush(heads, g);
+        ArrayErase(members, best);
+      }
+    }
+    let top = this.ListWindow(ArraySize(entries), CBHudListRows());
     let row = 0;
-    while row < CBHudListRows() && top + row < ArraySize(order) {
-      this.RenderRivalRow(sys, content, order[top + row], row);
+    while row < CBHudListRows() && top + row < ArraySize(entries) {
+      let e = entries[top + row];
+      if IsDefined(e) {
+        this.RenderRivalRow(sys, content, e, row);
+      } else {
+        this.RenderGangHead(sys, heads[top + row], order, row);
+      }
       row += 1;
     }
+  }
+
+  // A gang's line on the Rivals screen: who they are, where V stands with them, how strong they still
+  // are, and how many of theirs are after V.
+  private func RenderGangHead(sys: ref<CyberbaneSystem>, faction: CName, order: array<ref<CBRival>>, row: Int32) -> Void {
+    let n = 0;
+    for o in order {
+      if Equals(o.faction, faction) {
+        n += 1;
+      }
+    }
+    let score = sys.GetScore();
+    let posture = IsDefined(score) ? score.GetPosture(faction) : ECBPosture.Neutral;
+    let pip = CBHudGrey();
+    if Equals(posture, ECBPosture.Vendetta) { pip = CBHudRed(); }
+    if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
+    let label = CBBarFactionLabel(faction);
+    if StrLen(label) == 0 {
+      label = StrUpper(NameToString(faction));
+    }
+    let strength = CBTurfWarsOn() ? CBGangStrengthWord(CBGangStrength(sys, faction)) : "";
+    this.SetRow(row, CBHudLayoutWide(), pip, false, false,
+      label,
+      CBPostureName(posture),
+      "",
+      strength,
+      "",
+      n == 1 ? "1 after you" : s"\(n) after you");
+    this.m_rowRival[row] = 0;
   }
 
   // One Rival's line. Pulled out of the loop so the Rival who is actually on their way can be
@@ -2658,8 +2742,10 @@ public class CBHud {
     if StrLen(marks) == 0 {
       marks = CBScarLabel(r.scarMask);
     }
+    // Under their gang's line (RenderGangHead): the leader one step in, everybody else two.
+    let indent = CBRivalRole(sys, r) == CBRoleLeader() ? "   " : "      ";
     this.SetRow(row, CBHudLayoutWide(), hunting ? CBHudRed() : CBHudAmber(), true, r.id == this.m_pickRival,
-      IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival",
+      indent + (IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival"),
       gang,
       role,
       marks,
@@ -3933,4 +4019,40 @@ func CBRivalTraitList(content: ref<CyberbaneContent>, r: ref<CBRival>, weaknesse
     }
   }
   return out;
+}
+
+// What V's clothes are doing, under the chrome bar (1.9.4): what they cover, a mask, and whose gear
+// fools whom. "Is there a way to know which clothes affect the gangs?" This is it.
+func CBHudWornLine(sys: ref<CyberbaneSystem>) -> String {
+  if !CBClothingCounts() {
+    return "Clothes are not read (Mod Settings), so all your chrome shows.";
+  }
+  let worn = sys.GetWorn();
+  if !IsDefined(worn) {
+    return "What a stranger clocks from across the street. Arms read loudest.";
+  }
+  let parts = "";
+  if worn.arms { parts = "arms"; }
+  if worn.legs { parts = StrLen(parts) > 0 ? parts + ", legs" : "legs"; }
+  if worn.face { parts = StrLen(parts) > 0 ? parts + ", eyes" : "eyes"; }
+  let line = StrLen(parts) > 0 ? "Covered: " + parts + "." : "Nothing you wear covers your chrome.";
+  if worn.masked {
+    line += " Masked: nobody can place you.";
+  }
+  if CBTwrActive() {
+    return line + " Gang disguises: They Will Remember.";
+  }
+  let gang = CBFactionLabel(sys.GetDisguiseFaction());
+  if StrLen(gang) > 0 {
+    line += " In " + gang + " gear: slower to place you.";
+  }
+  return line;
+}
+
+// Where a Rival sits in their gang, for the hierarchy on the Rivals screen: the leader, then the
+// lieutenants, then everybody else by rank and how often they have met V.
+func CBHudRivalStanding(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> Int32 {
+  let role = CBRivalRole(sys, r);
+  let place = role == CBRoleLeader() ? 2000 : (role == CBRoleLieutenant() ? 1000 : 0);
+  return place + r.rank * 100 + Min(r.encounters, 99);
 }

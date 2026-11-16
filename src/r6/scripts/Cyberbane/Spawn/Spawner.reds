@@ -1166,6 +1166,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   // records we spawn from are sampled at runtime and cannot be edited.
   CBGrantAbility(puppet as NPCPuppet, t"Ability.IsAggressive");
   CBMakeHostileToPlayer(game, puppet);
+  CBDisarmGodMode(game, puppet);
   // Hostile is not the same as coming for you. Anybody in a car is excepted: the car travels.
   // Where they go is the hunt's business: toward where V was last known, until somebody finds V
   // (Spawn/Hunt.reds).
@@ -1612,4 +1613,39 @@ public func CBCompanionHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstan
       CBMakeHostileToTheseCompanions(sys, p, companions);
     }
   }
+}
+
+// Nobody Cyberbane sends is unkillable (1.9.4).
+//
+// Records the game marks Immortal or Invulnerable are refused as Rivals and templates now
+// (CBRecordIsUniqueCharacter), but saves already hold some, and another mod can add the mark too. The
+// game keeps it as god mode on the entity, by source; every source is taken off our own spawns here,
+// once they are set up, so what turns up can always be put down by the gun V is carrying.
+func CBDisarmGodMode(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  let gms = GameInstance.GetGodModeSystem(game);
+  if !IsDefined(gms) || !IsDefined(puppet) {
+    return;
+  }
+  let id = puppet.GetEntityID();
+  let removed = CBDropGodMode(gms, id, gameGodModeType.Invulnerable) + CBDropGodMode(gms, id, gameGodModeType.Immortal);
+  if removed > 0 {
+    CBLog.Info(n"Spawn", s"One of ours came from a record the game will not let die; took that off (\(removed)).");
+  }
+}
+
+func CBDropGodMode(gms: ref<GodModeSystem>, id: EntityID, kind: gameGodModeType) -> Int32 {
+  if !gms.HasGodMode(id, kind) {
+    return 0;
+  }
+  let n = 0;
+  let sources = gms.GetGodModeSources(id, kind);
+  let i = 0;
+  while i < ArraySize(sources) {
+    CBTrace("stats: god mode off one of ours");
+    if gms.RemoveGodMode(id, kind, sources[i]) {
+      n += 1;
+    }
+    i += 1;
+  }
+  return n;
 }

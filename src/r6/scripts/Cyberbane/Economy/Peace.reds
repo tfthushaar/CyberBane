@@ -202,6 +202,7 @@ func CBTwrFactionIndex(faction: CName) -> Int32 {
   if Equals(faction, n"Wraiths") { return 11; }
   if Equals(faction, n"Barghest") { return 12; }
   if Equals(faction, n"NCPD") { return 13; }
+  if Equals(faction, n"Aldecaldos") { return 14; }   // They Will Remember 3.0 tracks them too
   return -1;
 }
 
@@ -244,6 +245,10 @@ public func CBPeacePrice(fs: ref<CBFactionState>, posture: ECBPosture) -> Int32 
 // this on a reply button and CBBrokerPeace charges it, so the two can never disagree.
 public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionId: CName) -> Int32 {
   if !IsDefined(sys) || Equals(factionId, n"") {
+    return -1;
+  }
+  // Paying Cyberbane does nothing about a hostility They Will Remember keeps (1.9.4).
+  if CBTwrOwnsHostility(factionId) {
     return -1;
   }
   let content = CBContent(game);
@@ -354,4 +359,15 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 // covers "Where messages go: Off" everywhere at once without touching how anything plays.
 func CBToastsOn() -> Bool {
   return CBMessagesOn();
+}
+
+// Does They Will Remember decide whether this faction is hostile to V? (1.9.4)
+//
+// "It would be good to hand control to They Will Remember, or let Cyberbane take over, because
+// currently they don't line up." With compatibility on (Auto, and TWR found, or On), TWR is the one
+// voice on hostile or not for every faction it tracks: the Gangs screen says what TWR says, and
+// Cyberbane stops texting vendettas and price demands for those gangs, which TWR would ignore.
+// Compatibility Off hands it all to Cyberbane; TWR's own hostility is then switched off in TWR.
+public func CBTwrOwnsHostility(faction: CName) -> Bool {
+  return CBTwrActive() && CBDetectTwr() && CBTwrFactionIndex(faction) >= 0;
 }

@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.3. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.4. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,37 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.9.3
+
+### "Invincible bosses that take no weapon damage; I run them over with a car and they eventually die"
+
+**Status: fixed in 1.9.4** (`CBRecordIsUniqueCharacter`, `CBDisarmGodMode` in `Spawn/Spawner.reds`). 418 character
+records carry an `Immortal` or `Invulnerable` tag (street-story extras, quest walk-ons, some with no quest
+affiliation), which the engine turns into god mode; the damage system then drops every weapon hit
+(`ProcessDamage`, `invulnerable`) but not the ragdoll a car makes. Those records are refused as Rivals and
+templates, retired from saves on load, and every god-mode source is removed from our spawns at setup.
+
+### "Equipment-EX layers cover arms, face and feet, and my cyberware score is still high"
+
+**Status: fixed in 1.9.4** (`CBEqExOutfitSlots`, `CBReadEqExOutfit` in `Signals/Concealment.reds`), from the 1.3.1
+source. With an outfit on, Equipment-EX clears V's base visuals and attaches preview copies to `OutfitSlots.*`;
+the base read went on seeing the clothes underneath. Its `OutfitSystem.IsActive`/`GetUsedSlots` are asked by
+reflection and the outfit is read slot by slot; two parts of an arm or leg cover that limb.
+
+### "Hand control to They Will Remember or let Cyberbane take over; they don't line up"
+
+**Status: done in 1.9.4** (`CBTwrOwnsHostility` in `Economy/Peace.reds`). Compatibility on: TWR's
+`IsFactionHostileByIndex` is the answer shown on the Gangs screen both ways, and Cyberbane's vendetta texts and
+pay-offs stop for TWR's factions. Off: Cyberbane decides (TWR's own hostility has to be switched off in TWR).
+Checked against TWR 3.0.1: same class and method; index 14 (Aldecaldos) added.
+
+### "Which clothes affect the gangs?" and "an org chart of the gangs, like Shadow of Mordor"
+
+**Status: done in 1.9.4** (`UI/Hud.reds`). The chrome bar's caption on Standing says what is covered, masked, and
+whose gear V is in (`CBHudWornLine`). The Rivals screen is grouped by gang: a gang line (posture, strength, how
+many are after V), then leader, lieutenants and the rest, indented (`RenderGangHead`, `CBHudRivalStanding`). A
+drawn tree with lines would need widgets the Hub does not build; this keeps to its rows.
 
 ## Requests after 1.9.2
 

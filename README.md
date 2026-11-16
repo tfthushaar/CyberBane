@@ -294,8 +294,11 @@ in active development. This page describes what the mod does and how it installs
   Rivals, Titles and History. Your scores are meters, gangs and rivals are colour-coded rows, and the first
   screen shows what each of the three lanes has on its way and when, as it stood when you paused.
   If something cannot arrive, it says why, including when the clock is waiting for you to leave a job
-  or somewhere safe. The Rivals screen puts whoever is out after you at the top and shows who is lying
-  low after their last fight. Click a gang to see what they are about to do and to pay
+  or somewhere safe. The Rivals screen is laid out gang by gang, like an org chart: each gang's line
+  with how strong it still is, then its leader, its lieutenants and the rest beneath it. The gang of
+  whoever is out after you comes first, and it shows who is lying low after their last fight. Under the
+  chrome meter, Standing says what your clothes cover, whether you are masked, and whose gear you are
+  wearing. Click a gang to see what they are about to do and to pay
   them off, click a Rival for their file, and click a title to read what it takes and what it does, and to go by it once you have earned it. Standing tells you in plain
   words what Night City is doing about you right now and what it would take to change that.
   Messages live in your phone.
@@ -536,16 +539,17 @@ Three worth knowing about if a playstyle is being treated unfairly:
 
 ## Compatibility
 
-- They Will Remember: supported, detected exactly and automatically. Cyberbane backs off the
-  systems that overlap (hostility on sight, hit squads, faction-colour disguises), keeping the
-  rest. Night City Remembers is treated the same way, since it replaces They Will Remember. You
-  can force the compatibility mode on or off yourself in Mod Settings. The two keep separate
-  records: They Will Remember decides which gangs shoot on sight, and Cyberbane keeps your standing,
-  which is what prices and paying a gang off work from. When They Will Remember has a gang hostile,
-  the Hub's Gangs screen shows it beside your standing, whichever way the compatibility mode is set,
-  and when their people are seen attacking you on sight without Cyberbane having made them so it
-  says that too, so a gang that attacks you on sight never reads as simply neutral. Switching a
-  faction off under Factions stops what Cyberbane does about them, not what They Will Remember does.
+- They Will Remember: supported, detected automatically. With compatibility on (Auto or On), They
+  Will Remember decides who is hostile to you and Cyberbane follows it: hostility on sight, crews
+  and gang disguises are left to it, the Gangs screen shows its answer (**Hostile (TWR)** or **Not
+  hostile (TWR)**), and Cyberbane stops sending vendetta texts and pay-off offers for the gangs it
+  tracks. Set compatibility to Off to let Cyberbane decide instead, and turn hostility off in They
+  Will Remember's own settings so the two do not disagree. Night City Remembers is treated the same
+  way. Switching a faction off under Factions stops what Cyberbane does about them, not what They
+  Will Remember does.
+- Equipment-EX: supported. When it is wearing an outfit, Cyberbane reads that outfit, its extra
+  layers included: two layers on an arm (hands, wrists, elbows, shoulders) or a leg (thighs, knees,
+  ankles) cover that limb's chrome.
 - Phone Extension and mods built on it: work alongside. Cyberbane's phone contacts use names of
   their own, so both can add contacts to the phone at once.
 - Street Sense: supported. It owns crowds noticing and greeting you, so Cyberbane stands its own

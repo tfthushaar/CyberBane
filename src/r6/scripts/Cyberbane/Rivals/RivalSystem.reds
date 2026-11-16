@@ -463,6 +463,13 @@ public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
     if rec.TagsContains(n"Cyberpsycho") || rec.TagsContains(n"Boss") {
       return true;
     }
+    // Written by the game not to die (1.9.4). Street-story extras, quest walk-ons and the like carry
+    // an Immortal or Invulnerable tag, and the engine makes anybody spawned from such a record shrug
+    // off every bullet. Filed as a Rival or a gang's template, that was an enemy only a car could kill:
+    // the ragdoll a car makes is the one hit the game does not check.
+    if rec.TagsContains(n"Immortal") || rec.TagsContains(n"Invulnerable") {
+      return true;
+    }
     let rarity = rec.Rarity();
     if IsDefined(rarity) {
       let t = rarity.Type();

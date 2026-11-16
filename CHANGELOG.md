@@ -3,6 +3,29 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 1.9.4 (16 November 2026)
+
+**New**
+- **The Rivals screen is a gang hierarchy.** Each gang has its own line with how strong it still is,
+  and beneath it the leader, the lieutenants and everyone else, so you can see at a glance who runs
+  what and where your Rivals stand.
+- **See what your clothes are doing.** Under the chrome meter, the Standing screen now says what your
+  clothes cover, whether you are masked, and whose gang gear you are wearing.
+- **Equipment-EX support.** Outfits and their extra layers now count. Two layers on an arm (hands,
+  wrists, elbows, shoulders) or a leg (thighs, knees, ankles) cover that limb's chrome.
+
+**Changes**
+- **They Will Remember decides who is hostile** when compatibility is on. The Gangs screen shows its
+  answer, and Cyberbane no longer sends vendetta texts or pay-off offers that They Will Remember would
+  ignore. Set compatibility to Off to let Cyberbane decide instead.
+- They Will Remember 3.0's Aldecaldos are now read too.
+
+**Fixes**
+- Some Rivals and apex squads could not be hurt by any weapon and could only be killed by running
+  them over. They were built from characters the game marks as unkillable. Those are no longer used,
+  and anyone already in your save can be killed normally.
+- With Equipment-EX, your chrome score read the clothes underneath your outfit.
+
 ## 1.9.3 (15 November 2026)
 
 **New**
