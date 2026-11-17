@@ -82,6 +82,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pendingFindPrice: Int32;
   private let m_pendingFindTipster: CName;
   private let m_pendingFindSender: String;
+  // A Rival called out from the Hub (Rivals/RivalLife.reds, 1.9.9); 0 none.
+  private let m_pendingWord: Int32;
   // Safe passage bought in the street (Reactions/TalkTopics.reds): the gang, and until when (game seconds).
   // Session only: a few hours that a load does not bring back.
   private let m_tollFaction: array<CName>;
@@ -2083,6 +2085,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_pendingFind;
   }
 
+  public func RequestSendWord(id: Int32) -> Void {
+    this.m_pendingWord = Max(id, 0);
+  }
+
+  public func GetPendingWord() -> Int32 {
+    return this.m_pendingWord;
+  }
+
   // A lead agreed by text (UI/RealPhone.reds): bought at that price on the next settled tick.
   public func RequestRivalDeal(id: Int32, price: Int32, tipster: CName, sender: String) -> Void {
     this.m_pendingFind = Max(id, 0);
@@ -2156,6 +2166,11 @@ public class CyberbaneSystem extends ScriptableSystem {
           CBBuyRivalWhereabouts(this, game, findId);
         }
       }
+    }
+    if this.m_pendingWord > 0 {
+      let wordId = this.m_pendingWord;
+      this.m_pendingWord = 0;
+      CBSendWord(this, game, this.FindRivalById(wordId), false);
     }
     if NotEquals(this.m_pendingPeace, n"") {
       let faction = this.m_pendingPeace;
@@ -4292,6 +4307,15 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
   public func GetEscapees() -> array<ref<CBEscapee>> {
     return this.m_escapees;
+  }
+
+  public func FindEscapee(id: EntityID) -> ref<CBEscapee> {
+    for e in this.m_escapees {
+      if IsDefined(e) && Equals(e.entityId, id) {
+        return e;
+      }
+    }
+    return null;
   }
 
   public func HasEscapee(id: EntityID) -> Bool {

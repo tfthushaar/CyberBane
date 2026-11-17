@@ -197,6 +197,12 @@ public class CBEscapee {
   // saw it, where, how) and held here until it is settled that V really left them breathing.
   // Null when V was not the one who put them down. Session only, like the rest of this.
   public let mercy: ref<CBKillInfo>;
+  // A Rival put down alive (1.9.9): told that it is V's choice, how long V has stood with empty hands,
+  // whether V decided in words where they lie, and whether that was exile.
+  public let announced: Bool;
+  public let holsterTicks: Int32;
+  public let mercyChosen: Bool;
+  public let exiled: Bool;
   // Put down while being a cyberpsycho: settling it counts one talked down.
   public let psycho: Bool;
 }

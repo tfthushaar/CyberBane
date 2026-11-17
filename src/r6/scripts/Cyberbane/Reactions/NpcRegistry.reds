@@ -56,6 +56,25 @@ public class CBNpcRegistry {
     this.m_addPruneArmed = true;
   }
 
+  // On a crowded street the registry fills with people far off, and newcomers beside V never got in
+  // (1.9.9): the people a conversation, the crowd's fear and everything else are about. Once it is most
+  // of the way full, whoever is farther than `radius` from V goes.
+  public func PruneFar(center: Vector4, radius: Float) -> Void {
+    if ArraySize(this.m_npcs) < (CBRegistryCap() * 4) / 5 {
+      return;
+    }
+    let r2 = radius * radius;
+    let i = 0;
+    while i < ArraySize(this.m_npcs) {
+      let p = this.m_npcs[i];
+      if !IsDefined(p) || !p.IsAttached() || Vector4.DistanceSquared(center, p.GetWorldPosition()) > r2 {
+        ArrayErase(this.m_npcs, i);
+      } else {
+        i += 1;
+      }
+    }
+  }
+
   // Let Add prune once more. The fast tick calls this every second, including the busy ones on which
   // the Director (and its prune) is skipped, so a full registry still makes room while the world streams.
   public func ArmPrune() -> Void {

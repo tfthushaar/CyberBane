@@ -119,6 +119,11 @@ in active development. This page describes what the mod does and how it installs
   lieutenants and leaders die outright to one thing (a blade, something heavy, a bare fist, a quickhack or
   explosives). A Rival you spare twice may become your informant and text you tips, and a ganger you have
   frightened enough can be turned. The game's talk icon marks people nearby who know where a Rival is.
+- **Rivals have a life.** Each has a catchphrase and is introduced by their people when they find you.
+  Mercy is your choice: holster or walk off to spare one you put down, finish them, or talk to them where
+  they lie (spare them, make them give up another Rival, or run them out of Night City). The one who takes
+  a dead Rival's place may be family, and says so. Call a Rival out from the Hub, or be called out: they
+  wait at a place they name, with their people around them.
 - **The street gets word back to you.** When a rumour about you reaches somewhere new, a
   contact may get in touch about what they heard. If people saw you, your name is in it. If
   nobody did, it arrives as a question about who is doing this.

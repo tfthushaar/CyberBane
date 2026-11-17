@@ -1234,8 +1234,8 @@ public abstract class CBConfig {
   // far they may drift and how long V may glance away before it goes, and how long before the same
   // person can be spoken to again (fast ticks, about a second each).
   public static func TalkTickSeconds() -> Float = 0.2
-  public static func TalkRange() -> Float = 2.6
-  public static func TalkKeepRange() -> Float = 4.5
+  public static func TalkRange() -> Float = 3.5
+  public static func TalkKeepRange() -> Float = 5.5
   public static func TalkDwell() -> Float = 0.6
   public static func TalkLookGrace() -> Float = 2.0
   // After a conversation, before the same person can be spoken to again (1.9.6: it used to follow every
@@ -1259,6 +1259,19 @@ public abstract class CBConfig {
   public static func InformantSetupChance() -> Float = 0.15
   public static func FlawMinRank() -> Int32 = 3
   public static func FlawChance() -> Float = 0.4
+  // Rivals with a life (Rivals/RivalLife.reds, 1.9.9): the mercy choice's empty-handed moment and its
+  // shortest wait (fast ticks), exile's odds, a successor being family, a Rival calling V out instead of
+  // coming, what finishing a called-out Rival pays, and what each fallen bodyguard costs the Rival.
+  // Once the NPC registry is most of the way full, people farther than this from V make room (1.9.9).
+  public static func RegistryKeepRadius() -> Float = 120.0
+  public static func MercyHolsterTicks() -> Int32 = 3
+  public static func MercyMinTicks() -> Int32 = 4
+  public static func ExileBase() -> Float = 0.6
+  public static func KinChance() -> Float = 0.5
+  public static func CallOutChance() -> Float = 0.25
+  public static func WordKeptRenownShare() -> Float = 0.5
+  public static func WordKeptFear() -> Float = 3.0
+  public static func GuardNerveLoss() -> Float = 15.0
   // A conversation holds while its person is within keep range and inside this cone in front of V (cos of
   // about 60 degrees), the crosshair wherever it likes (CBTalkFacing).
   public static func TalkKeepDot() -> Float = 0.5

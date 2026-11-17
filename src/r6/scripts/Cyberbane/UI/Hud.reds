@@ -219,7 +219,7 @@ public func CBHudActionFont() -> Int32 = 20
 // Two more buttons stacked under it, for a screen with more than one thing to do (the Rivals: find
 // one, forget one, forget them all). Three of them end at 844, well clear of the footer at 952, and
 // they stand in the column the prose beside them already leaves free (CBHudActionW).
-public func CBHudExtraActions() -> Int32 = 2
+public func CBHudExtraActions() -> Int32 = 3
 public func CBHudActionGap() -> Float = 8.0
 
 // Row layouts, as the columns are positioned for them.
@@ -1847,6 +1847,13 @@ public class CBHud {
         }
       }
     } else {
+      if slot == 2 {
+        if this.m_pickRival > 0 {
+          sys.RequestSendWord(this.m_pickRival);
+        }
+        this.Render(sys, game);
+        return;
+      }
       if sys.IsRivalPurgePending() {
         sys.RequestRivalPurge(false);
         this.m_purgeArmed = false;
@@ -2785,7 +2792,7 @@ public class CBHud {
     }
     if sys.IsRivalPurgePending() {
       // Where "Forget every rival" was, so taking it back is the same place clicked again.
-      this.SetExtra(2, "Keep them", true);
+      this.SetExtra(3, "Keep them", true);
     } else {
       let id = this.m_pickRival;
       let r = sys.FindRivalById(id);
@@ -2842,8 +2849,23 @@ public class CBHud {
           this.SetExtra(1, this.m_forgetArmed == id ? "Click again to forget" : "Forget this rival", IsDefined(r));
         }
       }
-      // 3. Forget everybody.
-      this.SetExtra(2, this.m_purgeArmed ? s"Click again: forget all \(count)" : "Forget every rival", true);
+      // 3. Call them out (1.9.9).
+      let bookH = CBIntelBook.Get(game);
+      if !CBSendWordOn() || !IsDefined(r) {
+        this.SetExtra(2, "", false);
+      } else {
+        if IsDefined(bookH) && bookH.WordSent(r.id) {
+          this.SetExtra(2, "Word sent", false);
+        } else {
+          if sys.GetPendingWord() == r.id {
+            this.SetExtra(2, "Sending word", false);
+          } else {
+            this.SetExtra(2, "Send word", CBWhereaboutsForSale(sys, game, r) == 0);
+          }
+        }
+      }
+      // 4. Forget everybody.
+      this.SetExtra(3, this.m_purgeArmed ? s"Click again: forget all \(count)" : "Forget every rival", true);
     }
     this.SetBody(CBHudMarginX(), top, width, CBHudRivals(sys, game, this.m_pickRival, this.m_findArmed, this.m_forgetArmed),
                  CBHudMaxLinesFor(this.m_tab));
@@ -3673,6 +3695,15 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
         out += "Their people may know a fatal flaw. Squeeze one, scan one, or ask around.\n";
       }
     }
+    // What the street says about them, their line, and their family (1.9.9).
+    out += "On the street: " + CBRivalStreetStatus(sys, game, r) + "\n";
+    out += "Says: \"" + CBRivalCatchphrase(r) + "\"\n";
+    let kinBook = CBIntelBook.Get(game);
+    let kinOf = IsDefined(kinBook) ? kinBook.KinOf(r.id) : 0;
+    let kinDead = kinOf > 0 ? sys.FindRivalById(kinOf) : null;
+    if IsDefined(kinDead) {
+      out += "Family of " + CBRivalDisplayName(content, kinDead) + ", whom you killed.\n";
+    }
     let scars = CBScarLabel(r.scarMask);
     if StrLen(scars) > 0 {
       out += "Carries your mark: " + scars + ".\n";
@@ -3932,6 +3963,18 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"TalkToll") {
     return StrLen(gang) > 0 ? s"You paid \(gang) \(RoundF(e.value))eb to walk their streets in peace for a few hours."
                             : s"You paid \(RoundF(e.value))eb for safe passage.";
+  }
+  if Equals(e.kind, n"WordSent") {
+    return "You called out a Rival. They named a place.";
+  }
+  if Equals(e.kind, n"CalledOut") {
+    return "A Rival called you out and named a place.";
+  }
+  if Equals(e.kind, n"RivalExiled") {
+    return "You ran a Rival out of Night City.";
+  }
+  if Equals(e.kind, n"KinSworn") {
+    return "Family of a Rival you killed swore to finish what they started.";
   }
   if Equals(e.kind, n"Squeezed") {
     return s"You made \(who) talk.";

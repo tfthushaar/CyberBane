@@ -195,6 +195,7 @@ public class CBTalkTarget {
   public let first: Bool;        // the first time V has said this to them
   public let safe: Bool;         // a safe place (V in one, or they are indoors in one): words only (1.9.5)
   public let atWork: Bool;       // at a workspot: never a move order, the game walks them off (1.9.5)
+  public let rivalId: Int32;     // a Rival V has put down, talked to where they lie (1.9.9); 0 otherwise
 }
 
 // What they say back.
@@ -524,7 +525,7 @@ public class CBStreetTalk {
     // it goes (OnFrame), and this is the tick's own check. 1.9.7 gave up on anybody the game kept wiping it
     // for; played, the list stayed visible with the keeper even when it was wiped every frame (168 times in
     // one conversation), and the give-up only shut out people standing chatting together. Counted for the log.
-    if !CBTalkHubShown(game) {
+    if !this.Shown(game) {
       this.Push(game);
       this.m_wipes += 1;
     }
@@ -553,7 +554,7 @@ public class CBStreetTalk {
     }
     // Waiting for an answer, nothing is up on purpose; the chain only keeps going.
     if (this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen())
-       && !CBTalkHubShown(game) && !CBGameDialogueUp(game) {
+       && !this.Shown(game) && !CBGameDialogueUp(game) {
       this.Push(game);
       this.m_wipes += 1;
     }
@@ -731,10 +732,24 @@ public class CBStreetTalk {
     }
   }
 
+  // "Talk" alone is the game's small interaction prompt (1.9.9), the one a door or a pickup shows; the
+  // lines are the dialogue list. The game holds back Q (a grenade, a left-hand cyberware) and the
+  // D-pad while any dialogue list is on screen (upperBodyTransitions.script, AreChoiceHubsActive), and
+  // "Talk" as a list, up whenever V looked at somebody, held them back on every street.
   private func Push(game: GameInstance) -> Void {
-    if IsDefined(this.m_target) {
-      CBTalkPushHub(game, CBTalkTitle(this.m_target), this.m_lines, this.m_index);
+    if !IsDefined(this.m_target) {
+      return;
     }
+    if this.m_stage == CBTalkStageOffered() {
+      CBTalkPushOffer(game, CBTalkTitle(this.m_target));
+      return;
+    }
+    CBTalkClearOffer(game);
+    CBTalkPushHub(game, CBTalkTitle(this.m_target), this.m_lines, this.m_index);
+  }
+
+  private func Shown(game: GameInstance) -> Bool {
+    return this.m_stage == CBTalkStageOffered() ? CBTalkOfferShown(game) : CBTalkHubShown(game);
   }
 
   // V says it. The words go up at once; the answer and everything it does come after a beat.
@@ -903,6 +918,9 @@ public class CBStreetTalk {
     if choice == CBTalkActTurn() {
       return CBIntelTurn(sys, game, t);
     }
+    if choice == CBTalkActSpare() || choice == CBTalkActCollect() || choice == CBTalkActExile() {
+      return CBRivalMercyAnswer(sys, game, player, t, choice);
+    }
     if choice == CBTalkActDealLean() {
       this.m_menu = CBTalkMenuMain();
       return CBTalkDealLean(sys, game, player, t, this.m_dealRival);
@@ -964,6 +982,7 @@ public class CBStreetTalk {
     let wasOn = this.m_stage != CBTalkStageIdle();
     if this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen() {
       CBTalkClearHub(game);
+      CBTalkClearOffer(game);
     }
     if wasOn && this.m_exchanges > 0 && IsDefined(this.m_target) && IsDefined(this.m_target.npc) {
       let sys = CyberbaneSystem.Get(game);
@@ -1051,8 +1070,9 @@ public class CBStreetTalk {
   // reason, at most every few seconds. Only for somebody in talking range, so it never fills the log.
   private func NoteWhyNot(game: GameInstance, dt: Float, npc: ref<ScriptedPuppet>, why: String) -> Void {
     let player = GetPlayer(game);
+    // Within the keep range (1.9.8): somebody a step too far was refused with nothing in the log.
     if !IsDefined(npc) || !IsDefined(player) || StrLen(why) == 0
-       || Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > CBConfig.TalkRange() {
+       || Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > CBConfig.TalkKeepRange() {
       this.m_whyFor = 0.0;
       return;
     }
@@ -1079,9 +1099,18 @@ public class CBStreetTalk {
     let targeting = GameInstance.GetTargetingSystem(game);
     if IsDefined(targeting) {
       let hit = targeting.GetLookAtObject(player, true, true) as ScriptedPuppet;
+      if !IsDefined(hit) {
+        hit = targeting.GetLookAtObject(player, false, false) as ScriptedPuppet;
+      }
       if IsDefined(hit) && !hit.IsPlayer() && Vector4.Distance(ppos, hit.GetWorldPosition()) <= CBConfig.TalkKeepRange() {
         return hit;
       }
+    }
+    // The registry can miss somebody who streamed in beside V on a crowded street; the game's own
+    // targeting query does not (1.9.9: "I was in their face and nothing came up", and nothing logged).
+    let near = CBTalkFacingNear(game, player, null);
+    if IsDefined(near) {
+      return near;
     }
     let sys = CyberbaneSystem.Get(game);
     let reg = IsDefined(sys) ? sys.GetRegistry() : null;
@@ -1130,6 +1159,12 @@ public class CBStreetTalk {
             bestDot = dot;
           }
         }
+      }
+    }
+    if !IsDefined(best) {
+      let near = CBTalkFacingNear(game, player, skip);
+      if IsDefined(near) && StrLen(CBTalkWhyNot(sys, game, player, near, CBConfig.TalkRange())) == 0 {
+        best = near;
       }
     }
     return best;
@@ -1208,7 +1243,7 @@ public class CBStreetTalk {
     if Equals(name, n"ChoiceApply") || Equals(name, n"Choice1") {
       // Only a list V can see can be answered (1.9.7). F pressed at somebody whose list the game had
       // wiped said a line V never saw.
-      if pressed && CBTalkHubShown(this.m_game) {
+      if pressed && this.Shown(this.m_game) {
         if this.m_stage == CBTalkStageOffered() {
           this.m_wantOpen = true;
         } else {
@@ -1291,6 +1326,44 @@ public class CBStreetTalk {
   }
 }
 
+// The person nearest V's line of sight in talking range, by the game's own targeting query (the one its
+// melee and leap use: TSQ_NPC, gameObject.script GetEntitiesAroundObject), other than `skip`.
+func CBTalkFacingNear(game: GameInstance, player: ref<PlayerPuppet>, skip: ref<ScriptedPuppet>) -> ref<ScriptedPuppet> {
+  let targeting = GameInstance.GetTargetingSystem(game);
+  if !IsDefined(targeting) {
+    return null;
+  }
+  let q: TargetSearchQuery;
+  q.testedSet = TargetingSet.Complete;
+  q.searchFilter = TSF_NPC();
+  q.maxDistance = CBConfig.TalkRange();
+  q.filterObjectByDistance = true;
+  q.includeSecondaryTargets = false;
+  q.ignoreInstigator = true;
+  let parts: array<TS_TargetPartInfo>;
+  targeting.GetTargetParts(player, q, parts);
+  let ppos = player.GetWorldPosition();
+  let fwd = Vector4.Normalize2D(player.GetWorldForward());
+  let best: ref<ScriptedPuppet>;
+  let bestDot = CBConfig.TalkFacingDot();
+  for part in parts {
+    let comp = TS_TargetPartInfo.GetComponent(part);
+    let p = IsDefined(comp) ? comp.GetEntity() as ScriptedPuppet : null;
+    if IsDefined(p) && !p.IsPlayer() && !p.IsDead() && (!IsDefined(skip) || !Equals(p.GetEntityID(), skip.GetEntityID())) {
+      let pos = p.GetWorldPosition();
+      if AbsF(pos.Z - ppos.Z) <= 1.5 {
+        let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
+        let dot = fwd.X * dir.X + fwd.Y * dir.Y;
+        if dot >= bestDot {
+          best = p;
+          bestDot = dot;
+        }
+      }
+    }
+  }
+  return best;
+}
+
 // Is this person still close and in front of V? Wide enough that a conversation survives V's eyes moving
 // across the group, narrow enough that turning away ends it.
 func CBTalkFacing(player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>) -> Bool {
@@ -1360,8 +1433,12 @@ public func CBTalkWhyHostile() -> String = "they are hostile to V"
 // `talking`, V is already in a conversation with them, and the wait between conversations does not apply.
 public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
                          npc: wref<ScriptedPuppet>, range: Float, opt talking: Bool) -> String {
-  if !IsDefined(npc) || !IsDefined(player) || !npc.IsAttached() || npc.IsDead() || ScriptedPuppet.IsDefeated(npc)
-     || !CBStillStanding(npc) {
+  if !IsDefined(npc) || !IsDefined(player) || !npc.IsAttached() || npc.IsDead() {
+    return "they are down or gone";
+  }
+  // A Rival V has put down can be talked to where they lie (Rivals/RivalLife.reds, 1.9.9).
+  let mercy = npc.cbMercyOpen;
+  if !mercy && (ScriptedPuppet.IsDefeated(npc) || !CBStillStanding(npc)) {
     return "they are down or gone";
   }
   if !npc.IsHuman() || npc.IsMechanical() {
@@ -1387,6 +1464,9 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   if !CBSafetyGate.CanTalkTo(npc) {
     return CBTalkGateReason(sys, npc);
   }
+  if mercy {
+    return Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) <= range ? "" : "too far";
+  }
   if CBSentByUs(GameInstance.GetDynamicEntitySystem(), npc) {
     return "one of Cyberbane's own (a crew, a Rival or a hunter)";
   }
@@ -1404,9 +1484,13 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   if Equals(CBClassifyFaction(npc), n"MaxTac") {
     return "MaxTac";
   }
+  // Hostile to V by the game's say (its gangs' own compounds, another mod) and not fighting: words are
+  // still possible outside a compound (1.9.8), and the conversation ends the moment a fight starts. In a
+  // gang's compound the game's rules stand.
   let agent = npc.GetAttitudeAgent();
   let pagent = player.GetAttitudeAgent();
-  if IsDefined(agent) && IsDefined(pagent) && Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
+  if IsDefined(agent) && IsDefined(pagent) && Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile)
+     && CBPlayerInHostileZone(game) {
     return CBTalkWhyHostile();
   }
   return "";
@@ -1521,11 +1605,28 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
       }
     }
   }
+  // Hostile to V by the game's own say, and not afraid: hostile, whatever Cyberbane's standing says.
+  let agentR = npc.GetAttitudeAgent();
+  let pagentR = GetPlayer(game).GetAttitudeAgent();
+  if gang && t.mood != CBTalkAfraid() && IsDefined(agentR) && IsDefined(pagentR)
+     && Equals(agentR.GetAttitudeTowards(pagentR), EAIAttitude.AIA_Hostile) {
+    t.mood = CBTalkHostile();
+  }
   if gang || t.cop {
     t.speaker = CBFactionMemberWord(t.cop ? n"NCPD" : faction);
   }
   if StrLen(t.speaker) == 0 {
     t.speaker = gang ? "Ganger" : "Passer-by";
+  }
+  // A Rival V has put down: who they are, and afraid (Rivals/RivalLife.reds).
+  if npc.cbMercyOpen {
+    let fallen = CBFindRivalByBody(sys, npc.GetEntityID());
+    if IsDefined(fallen) {
+      t.rivalId = fallen.id;
+      t.mood = CBTalkAfraid();
+      t.speaker = CBRivalDisplayName(sys.GetContent(), fallen);
+      return t;
+    }
   }
   // One of their own V could make them give up.
   if gang && t.mood != CBTalkFriendly() {
@@ -1568,7 +1669,7 @@ public func CBNativePromptUp(game: GameInstance) -> Bool {
     }
   }
   let prompt = FromVariant<InteractionChoiceHubData>(bb.GetVariant(defs.InteractionChoiceHub));
-  if prompt.active {
+  if prompt.active && prompt.id != CBConfig.TalkHubId() {
     return true;
   }
   let loot = FromVariant<LootData>(bb.GetVariant(defs.LootData));
@@ -1661,6 +1762,65 @@ public func CBTalkSelect(game: GameInstance, index: Int32) -> Void {
   }
 }
 
+// "Talk", as the game shows "Open" on a door: its interaction prompt, with the talk icon.
+public func CBTalkPushOffer(game: GameInstance, title: String) -> Void {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  let defs = GetAllBlackboardDefs().UIInteractions;
+  let bb = IsDefined(bbs) ? bbs.Get(defs) : null;
+  if !IsDefined(bb) {
+    return;
+  }
+  let c: InteractionChoiceData;
+  c.inputAction = n"Choice1";
+  c.localizedName = "Talk";
+  let icon = TweakDBInterface.GetChoiceCaptionIconPartRecord(t"ChoiceCaptionParts.TalkIcon");
+  if IsDefined(icon) {
+    InteractionChoiceCaption.AddPartFromRecord(c.captionParts, icon);
+  }
+  let hub: InteractionChoiceHubData;
+  hub.id = CBConfig.TalkHubId();
+  hub.active = true;
+  hub.title = title;
+  ArrayPush(hub.choices, c);
+  bb.SetVariant(defs.InteractionChoiceHub, ToVariant(hub), true);
+  let vis: VisualizersInfo;
+  vis.activeVisId = hub.id;
+  ArrayPush(vis.visIds, hub.id);
+  bb.SetVariant(defs.VisualizersInfo, ToVariant(vis), true);
+}
+
+public func CBTalkOfferShown(game: GameInstance) -> Bool {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  let defs = GetAllBlackboardDefs().UIInteractions;
+  let bb = IsDefined(bbs) ? bbs.Get(defs) : null;
+  if !IsDefined(bb) {
+    return false;
+  }
+  let hub = FromVariant<InteractionChoiceHubData>(bb.GetVariant(defs.InteractionChoiceHub));
+  return hub.active && hub.id == CBConfig.TalkHubId();
+}
+
+// Down, only if it is still Cyberbane's.
+public func CBTalkClearOffer(game: GameInstance) -> Void {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  let defs = GetAllBlackboardDefs().UIInteractions;
+  let bb = IsDefined(bbs) ? bbs.Get(defs) : null;
+  if !IsDefined(bb) {
+    return;
+  }
+  let hub = FromVariant<InteractionChoiceHubData>(bb.GetVariant(defs.InteractionChoiceHub));
+  if hub.id == CBConfig.TalkHubId() {
+    let none: InteractionChoiceHubData;
+    bb.SetVariant(defs.InteractionChoiceHub, ToVariant(none), true);
+  }
+  let vis = FromVariant<VisualizersInfo>(bb.GetVariant(defs.VisualizersInfo));
+  if vis.activeVisId == CBConfig.TalkHubId() {
+    let novis: VisualizersInfo;
+    novis.activeVisId = -1;
+    bb.SetVariant(defs.VisualizersInfo, ToVariant(novis), true);
+  }
+}
+
 // Down again, only if what is up is still Cyberbane's: anything of the game's that replaced it stays.
 public func CBTalkClearHub(game: GameInstance) -> Void {
   let bbs = GameInstance.GetBlackboardSystem(game);
@@ -1705,6 +1865,9 @@ public func CBTalkTitle(t: ref<CBTalkTarget>) -> String {
 // what it does and how it is shown (1.9.6): an icon, dimmed once said to this person, the Rival question
 // highlighted. After the first exchange the list comes back with a way to leave it there.
 public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, followUp: Bool) -> array<ref<CBTalkLine>> {
+  if t.rivalId > 0 {
+    return CBRivalMercyLines(sys, game, t);
+  }
   let out: array<ref<CBTalkLine>>;
   let gang = NotEquals(t.faction, n"") && !t.cop;
   let m = t.mood;

@@ -3,6 +3,43 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 1.9.9 (17 November 2026)
+
+**New: Rivals with a life**
+- **Mercy is your choice.** A Rival you put down alive is no longer spared just because the fight ended.
+  Put your weapon away or walk off and they are spared; finish them and they die. You can also talk to them
+  where they lie: **[Spare]** them, **[Collect]** (they give up another Rival to save their skin), or
+  **[Exile]** (they leave Night City for good, if they are scared enough; the proud refuse and hate you
+  for asking).
+- **Every Rival has a catchphrase.** They say it when they arrive, in their texts, and it is on their page.
+- **The announcement.** When a Rival's people find you, one of them names the Rival in the subtitles, and
+  the Rival answers with their line.
+- **Kin.** The one who steps into a slain Rival's place is sometimes family: the same surname, geared
+  against how you killed their relative, and they tell you so. Their page says whose family they are.
+- **Calling out.** **Send word** on a Rival's page on the Hub: they name a place near you and wait there
+  with their people. Now and then a Rival calls you out instead of coming for you. Finishing it at the place
+  they named pays more renown and makes their gang fear you more.
+- **Bodyguards.** Lieutenants and leaders waiting at their place have one or two of their people with
+  them, one more if they are expecting you. Every one you drop first costs the Rival some of their nerve
+  (and health), and they say so.
+- **Crews in their colours.** Tyger Claws, Valentinos, Maelstrom, 6th Street and Voodoo Boys arrive in
+  their own gang-painted cars, and a lone Tyger Claw may come on a Kusanagi bike.
+- A Rival's page says where they are the way the street would: out looking for you, licking their wounds,
+  gone quiet, owing you, run out of town.
+
+**Fixes**
+- **Q works again.** The game refuses grenades and left-hand cyberware (Q) whenever a choice list is on
+  screen, and since 1.9.6 a **Talk** choice list came up whenever you looked at somebody up close. Talk is
+  now the game's small interaction prompt (the one a door shows), which leaves Q alone; the full list only
+  comes up once you press F.
+- **Gangers right in front of you can be talked to.** On a crowded street Cyberbane's list of nearby people
+  filled up with people far away, so somebody who had just come into view beside you was never found, and
+  nothing was logged. The list now makes room for the people near you, and the game's own targeting is
+  asked as well. Talking range is longer (3.5 m), and gangers the game itself has made hostile can be
+  talked to outside their own compound, until a fight starts.
+
+**Settings** (Rivals): **Mercy is your choice** and **Calling out**, both on.
+
 ## 1.9.8 (17 November 2026)
 
 **New: the street talks**

@@ -277,6 +277,18 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFlaws-Desc")
   public let rivalFlaws: Bool = true;
 
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MercyChoice")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MercyChoice-Desc")
+  public let mercyChoice: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SendWord")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SendWord-Desc")
+  public let sendWord: Bool = true;
+
   // ---- Gangs ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

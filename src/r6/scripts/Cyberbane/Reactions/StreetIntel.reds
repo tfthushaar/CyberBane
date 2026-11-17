@@ -32,6 +32,11 @@ public class CBIntelBook extends ScriptableSystem {
   private persistent let m_infTips: array<Int32>;
   private persistent let m_infNextAt: array<Float>;
   private persistent let m_infSetup: array<Bool>;
+  // Rivals waiting for V at a place they named (Rivals/RivalLife.reds, 1.9.9), and kin: a Rival and the
+  // slain Rival they are family of.
+  private persistent let m_word: array<Int32>;
+  private persistent let m_kinRival: array<Int32>;
+  private persistent let m_kinOf: array<Int32>;
 
   public static func Get(game: GameInstance) -> ref<CBIntelBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -85,8 +90,39 @@ public class CBIntelBook extends ScriptableSystem {
     ArrayErase(this.m_infSetup, i);
   }
 
+  public func SendWord(id: Int32) -> Void {
+    if id > 0 && !ArrayContains(this.m_word, id) {
+      ArrayPush(this.m_word, id);
+    }
+  }
+
+  public func WordSent(id: Int32) -> Bool {
+    return ArrayContains(this.m_word, id);
+  }
+
+  public func ClearWord(id: Int32) -> Void {
+    ArrayRemove(this.m_word, id);
+  }
+
+  public func AddKin(id: Int32, of: Int32) -> Void {
+    if ArraySize(this.m_kinRival) >= 32 {
+      ArrayErase(this.m_kinRival, 0);
+      ArrayErase(this.m_kinOf, 0);
+    }
+    ArrayPush(this.m_kinRival, id);
+    ArrayPush(this.m_kinOf, of);
+  }
+
+  public func KinOf(id: Int32) -> Int32 {
+    let i = ArrayFindFirst(this.m_kinRival, id);
+    return i >= 0 ? this.m_kinOf[i] : 0;
+  }
+
   // Starting over: nothing learnt, nobody owes V.
   public func Clear() -> Void {
+    ArrayClear(this.m_word);
+    ArrayClear(this.m_kinRival);
+    ArrayClear(this.m_kinOf);
     ArrayClear(this.m_flawKnown);
     ArrayClear(this.m_infRival);
     ArrayClear(this.m_infFaction);
@@ -226,12 +262,12 @@ public class CBIntel {
 }
 
 // One of this gang's Rivals with a flaw V does not know yet (any Rival, for somebody of no gang).
-func CBIntelFlawRival(sys: ref<CyberbaneSystem>, book: ref<CBIntelBook>, faction: CName) -> ref<CBRival> {
+func CBIntelFlawRival(sys: ref<CyberbaneSystem>, book: ref<CBIntelBook>, faction: CName, exclude: Int32) -> ref<CBRival> {
   if !IsDefined(book) || !CBFlawsOn() {
     return null;
   }
   for r in sys.GetRivals() {
-    if IsDefined(r) && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting))
+    if IsDefined(r) && r.id != exclude && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting))
        && (Equals(faction, n"") || Equals(r.faction, faction)) && CBRivalFlaw(r) > 0 && !book.KnowsFlaw(r.id) {
       return r;
     }
@@ -264,12 +300,12 @@ func CBIntelComingLine(sys: ref<CyberbaneSystem>, faction: CName) -> String {
 // What somebody of this gang gives up, done (a flaw learnt, a lead marked), for the caller to put in words.
 // A flaw or a lead, whichever there is (a coin between them when both are); otherwise who is coming.
 public func CBIntelGive(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, faction: CName,
-                        opt noComing: Bool) -> ref<CBIntel> {
+                        opt noComing: Bool, opt exclude: Int32) -> ref<CBIntel> {
   let out = new CBIntel();
   let content = sys.GetContent();
   let book = CBIntelBook.Get(game);
-  let flawRival = CBIntelFlawRival(sys, book, faction);
-  let lead = CBTalkRivalForFaction(sys, game, faction);
+  let flawRival = CBIntelFlawRival(sys, book, faction, exclude);
+  let lead = CBTalkRivalForFaction(sys, game, faction, exclude);
   let tally = CBTalkTallyFor(sys, game, faction);
   if IsDefined(lead) && (!IsDefined(tally) || tally.leaks >= CBConfig.TalkLeaksPerDay()) {
     lead = null;
@@ -336,20 +372,20 @@ func CBIntelWritten(i: ref<CBIntel>) -> String {
 
 // The Rival someone of this gang could give up: one of their own, then one of a gang at war with theirs;
 // for somebody of no gang, anybody's. Whereabouts the Hub could sell, so the two never disagree.
-public func CBTalkRivalForFaction(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> ref<CBRival> {
+public func CBTalkRivalForFaction(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, opt exclude: Int32) -> ref<CBRival> {
   if !IsDefined(sys) || !CBHideoutsOn() {
     return null;
   }
   let enemies: array<CName>;
   if NotEquals(faction, n"") {
     let own = CBTalkLeadFor(sys, game, faction);
-    if IsDefined(own) {
+    if IsDefined(own) && own.id != exclude {
       return own;
     }
     enemies = CBGangRivalsOf(sys.GetContent(), faction);
   }
   for r in sys.GetRivals() {
-    if IsDefined(r) && CBWhereaboutsForSale(sys, game, r) == 0 && (Equals(faction, n"") || ArrayContains(enemies, r.faction)) {
+    if IsDefined(r) && r.id != exclude && CBWhereaboutsForSale(sys, game, r) == 0 && (Equals(faction, n"") || ArrayContains(enemies, r.faction)) {
       return r;
     }
   }
@@ -476,6 +512,55 @@ public class CBStreetIntel {
   private let m_bubbleOwner: array<wref<ScriptedPuppet>>;
   private let m_bubblePin: array<NewMappinID>;
   private let m_informIn: Float;
+  // A Rival's people at their place (Rivals/RivalLife.reds, CBLairGuards), and which have fallen.
+  private let m_guardIds: array<EntityID>;
+  private let m_guardDown: array<Bool>;
+  private let m_guardRival: Int32;
+  private let m_guardIn: Float;
+
+  public func NoteGuard(id: EntityID, rivalId: Int32) -> Void {
+    ArrayPush(this.m_guardIds, id);
+    ArrayPush(this.m_guardDown, false);
+    this.m_guardRival = rivalId;
+  }
+
+  public func ClearGuards() -> Void {
+    ArrayClear(this.m_guardIds);
+    ArrayClear(this.m_guardDown);
+    this.m_guardRival = 0;
+  }
+
+  // Each of a Rival's people who falls while the Rival is still up costs the Rival some nerve (health),
+  // and the Rival says so.
+  private func Guards(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    if this.m_guardRival == 0 {
+      return;
+    }
+    let r = sys.FindRivalById(this.m_guardRival);
+    let body = IsDefined(r) ? GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet : null;
+    if !IsDefined(body) || body.IsDead() || !CBStillStanding(body) {
+      this.ClearGuards();
+      return;
+    }
+    let i = 0;
+    while i < ArraySize(this.m_guardIds) {
+      if !this.m_guardDown[i] {
+        let g = GameInstance.FindEntityByID(game, this.m_guardIds[i]) as ScriptedPuppet;
+        if IsDefined(g) && (g.IsDead() || !CBStillStanding(g)) {
+          this.m_guardDown[i] = true;
+          let pools = GameInstance.GetStatPoolsSystem(game);
+          let sid = Cast<StatsObjectID>(body.GetEntityID());
+          if IsDefined(pools) {
+            let cur = pools.GetStatPoolValue(sid, gamedataStatPoolType.Health, true);
+            pools.RequestSettingStatPoolValue(sid, gamedataStatPoolType.Health, MaxF(cur - CBConfig.GuardNerveLoss(), 10.0), GetPlayer(game));
+          }
+          CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), r),
+                     CBWhisperPick3("You'll pay for that!", "No! Get them, get them!", "That's it. Now it's personal."), 3.0);
+        }
+      }
+      i += 1;
+    }
+  }
 
   public func NoteGrab(npc: ref<ScriptedPuppet>) -> Void {
     this.m_grab = npc;
@@ -515,6 +600,11 @@ public class CBStreetIntel {
     if this.m_informIn <= 0.0 {
       this.m_informIn = 5.0;
       this.Informants(sys, game, player);
+    }
+    this.m_guardIn -= dt;
+    if this.m_guardIn <= 0.0 {
+      this.m_guardIn = 1.0;
+      this.Guards(sys, game);
     }
   }
 
@@ -627,41 +717,46 @@ public class CBStreetIntel {
     let ppos = player.GetWorldPosition();
     let fwd = Vector4.Normalize2D(player.GetWorldForward());
     let des = GameInstance.GetDynamicEntitySystem();
-    let sys = CyberbaneSystem.Get(game);
-    let reg = IsDefined(sys) ? sys.GetRegistry() : null;
-    let candidates: array<ref<ScriptedPuppet>>;
     let targeting = GameInstance.GetTargetingSystem(game);
     if IsDefined(targeting) {
       let hit = targeting.GetLookAtObject(player, true, true) as ScriptedPuppet;
-      if IsDefined(hit) {
-        ArrayPush(candidates, hit);
+      if this.LyingHere(hit, ppos, fwd, des) {
+        return hit;
       }
     }
+    let sys = CyberbaneSystem.Get(game);
+    let reg = IsDefined(sys) ? sys.GetRegistry() : null;
     if IsDefined(reg) {
-      for q in reg.GetAll() {
-        ArrayPush(candidates, q);
-      }
-    }
-    for p in candidates {
-      if IsDefined(p) && p.IsAttached() && !p.IsPlayer() && !p.cbIntelGiven && p.IsHuman() {
-        let pos = p.GetWorldPosition();
-        let d = Vector4.Distance(ppos, pos);
-        if d <= CBConfig.DownedTalkRange() {
-          let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
-          if fwd.X * dir.X + fwd.Y * dir.Y >= 0.6 {
-            let faction = CBClassifyFaction(p);
-            let gang = NotEquals(faction, n"") && !Equals(faction, n"NCPD") && !Equals(faction, n"MaxTac") && CBFactionOn(faction);
-            if gang && !p.IsDead() && ScriptedPuppet.IsDefeated(p) && CBSafetyGate.CanTalkTo(p) {
-              return p;
-            }
-            if gang && p.IsDead() && IsDefined(des) && des.IsTagged(p.GetEntityID(), n"CB_Rival") {
-              return p;
-            }
-          }
+      for p in reg.GetAll() {
+        if this.LyingHere(p, ppos, fwd, des) {
+          return p;
         }
       }
     }
     return null;
+  }
+
+  // Cheapest tests first: our own flag, then distance, then the angle, then the engine's questions.
+  private func LyingHere(p: ref<ScriptedPuppet>, ppos: Vector4, fwd: Vector4, des: ref<DynamicEntitySystem>) -> Bool {
+    if !IsDefined(p) || p.cbIntelGiven || !p.IsAttached() || p.IsPlayer() {
+      return false;
+    }
+    let pos = p.GetWorldPosition();
+    if Vector4.Distance(ppos, pos) > CBConfig.DownedTalkRange() {
+      return false;
+    }
+    let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
+    if fwd.X * dir.X + fwd.Y * dir.Y < 0.6 || !p.IsHuman() {
+      return false;
+    }
+    let faction = CBClassifyFaction(p);
+    if Equals(faction, n"") || Equals(faction, n"NCPD") || Equals(faction, n"MaxTac") || !CBFactionOn(faction) {
+      return false;
+    }
+    if p.IsDead() {
+      return IsDefined(des) && des.IsTagged(p.GetEntityID(), n"CB_Rival");
+    }
+    return ScriptedPuppet.IsDefeated(p) && CBSafetyGate.CanTalkTo(p);
   }
 
   // A full scan, once per person: now and then their files say something.
@@ -716,19 +811,32 @@ public class CBStreetIntel {
     if !IsDefined(reg) {
       return;
     }
+    // Whether a gang has word of a Rival is asked once per gang a pass, and at most six people are put
+    // through the full talk checks: a dense street has dozens of gangers in the registry.
+    let asked: array<CName>;
+    let answers: array<Bool>;
+    let checks = 0;
     for p in reg.GetAll() {
-      if ArraySize(this.m_bubbleOwner) >= 2 {
+      if ArraySize(this.m_bubbleOwner) >= 2 || checks >= 6 {
         return;
       }
-      if IsDefined(p) && p.IsAttached() && !p.IsPlayer() && !p.IsCrowd() && p.cbTalkTimes == 0 && !this.HasBubble(p)
-         && Vector4.Distance(ppos, p.GetWorldPosition()) <= 25.0 {
+      if IsDefined(p) && p.cbTalkTimes == 0 && !p.IsCrowd() && p.IsAttached() && !p.IsPlayer()
+         && Vector4.Distance(ppos, p.GetWorldPosition()) <= 25.0 && !this.HasBubble(p) {
         let faction = CBClassifyFaction(p);
-        if NotEquals(faction, n"") && !Equals(faction, n"NCPD") && !Equals(faction, n"MaxTac")
-           && IsDefined(CBTalkRivalForFaction(sys, game, faction))
-           && StrLen(CBTalkWhyNot(sys, game, player, p, 25.0, true)) == 0 {
-          let tally = CBTalkTallyFor(sys, game, faction);
-          if IsDefined(tally) && tally.leaks < CBConfig.TalkLeaksPerDay() {
-            this.AddBubble(ms, p);
+        if NotEquals(faction, n"") && !Equals(faction, n"NCPD") && !Equals(faction, n"MaxTac") {
+          let k = ArrayFindFirst(asked, faction);
+          if k < 0 {
+            let tally = CBTalkTallyFor(sys, game, faction);
+            ArrayPush(asked, faction);
+            ArrayPush(answers, IsDefined(tally) && tally.leaks < CBConfig.TalkLeaksPerDay()
+                               && IsDefined(CBTalkRivalForFaction(sys, game, faction)));
+            k = ArraySize(asked) - 1;
+          }
+          if answers[k] {
+            checks += 1;
+            if StrLen(CBTalkWhyNot(sys, game, player, p, 25.0, true)) == 0 {
+              this.AddBubble(ms, p);
+            }
           }
         }
       }

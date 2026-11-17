@@ -1280,10 +1280,14 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
     // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1, which is
     // what made every nemesis you killed a clean reset. Made once the fight is over, with the street
     // saying who picked up where they left off (Rivals/Births.reds, 1.9.1).
+    // Sometimes the one who picks it up is family (Rivals/RivalLife.reds, 1.9.9).
+    let kin = RandF() < CBConfig.KinChance() ? rival.id : 0;
     CBRivalAfterFight(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger,
-                      district, at, null, Max(1, rival.rank - 1), CBRivalDisplayName(content, rival));
+                      district, at, null, Max(1, rival.rank - 1), CBRivalDisplayName(content, rival), kin);
   }
 
+  // Called out, and finished at the place they named (Rivals/RivalLife.reds, 1.9.9).
+  CBWordKept(sys, game, rival);
   CBEvaluateTitles(sys, game);
 }
 

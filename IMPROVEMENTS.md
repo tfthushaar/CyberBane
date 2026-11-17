@@ -209,6 +209,11 @@ only the ideas that are feasible within Cyberbane's rules, easiest first. Each s
 Cyberbane already has, and how ours would be built.
 
 **Built in 1.9.6:** items 1 (texts wait during a conversation) and 2 (the re-arm watch).
+**Built in 1.9.9:** items 5 (catchphrases), 6 (the street's word on a Rival), 10 (mercy as a choice, with
+talking to a downed Rival), 11 (kin, as the successor), 12 (send word, and the call-out), 14 (the announcement,
+as words: the crew is not made neutral for it, because the re-arm watch and the game's combat state would fight
+it), 15 (bodyguards at the lair, costing the Rival health as they fall) and 17 in part (gang-painted cars, the
+Claws bike, the call-out; the marksman on high ground is left out: script cannot find high ground reliably).
 **Built in 1.9.8:** items 3 (intel from a scan), 7 (the squeeze), 8 (the downed talk; a Rival's body), 9 (the
 informant, from the Debtor) and 13 (fatal flaws, killed from the hit's next-frame follow-up). See
 `Reactions/StreetIntel.reds`.

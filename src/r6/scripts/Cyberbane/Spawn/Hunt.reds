@@ -680,8 +680,10 @@ func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     sys.SetRivalSpottedTexted(r.id);
     let content = CBContent(game);
     if IsDefined(content) {
-      CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r), CBHudRed());
+      CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r) + " " + CBRivalCatchphrase(r), CBHudRed());
     }
+    // And their people say who they are (Rivals/RivalLife.reds, 1.9.9).
+    CBRivalAnnounce(sys, game, r);
   }
 }
 

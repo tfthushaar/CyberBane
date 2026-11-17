@@ -702,6 +702,8 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
         r.state = EnumInt(ECBRivalState.Active);
         sys.SetLair(r.id);
         CBLog.Info(n"Rivals", s"Rival \(r.id) is waiting at their place.");
+        // Their people with them (Rivals/RivalLife.reds, 1.9.9).
+        CBLairGuards(sys, game, des, r, at);
       }
       return CBLairMissNone();
     }
@@ -811,8 +813,13 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
     svc.DropSighting(sys.GetPlaythroughId(), r.id);
   }
   let line = "So somebody sold me out. Fine. Come and get it.";
+  let bookW = CBIntelBook.Get(game);
+  if IsDefined(bookW) && bookW.WordSent(r.id) {
+    line = "You came. Good. " + CBRivalCatchphrase(r);
+  } else {
   if r.killedV > 0 {
     line = "Came to finish it yourself? Good. Saves me the trip.";
+  }
   }
   CBPhoneSendTinted(game, CBRivalDisplayName(sys.GetContent(), r), line, CBHudRed());
   CBLog.Info(n"Rivals", s"Rival \(r.id) was found at their place; the fight is on.");

@@ -130,7 +130,42 @@ public func CBArrivalVehicle(factionId: CName, needed: Int32, roll: Int32, out s
       }
     }
   }
+  // Their own colours first (1.9.9): the game has gang-painted versions of these cars, and a lone Tyger
+  // Claw comes on a Claws Kusanagi. A record this patch lacks seats nobody and is passed over.
+  let painted: array<TweakDBID>;
+  if Equals(factionId, n"TygerClaws") {
+    if needed <= 1 {
+      ArrayPush(painted, t"Vehicle.v_sportbike1_yaiba_kusanagi_tyger");
+    }
+    ArrayPush(painted, t"Vehicle.cs_savable_mizutani_shion_tyger");
+    ArrayPush(painted, t"Vehicle.cs_savable_archer_quartz_tyger");
+    ArrayPush(painted, t"Vehicle.cs_savable_villefort_columbus_tyger");
+  }
+  if Equals(factionId, n"Valentinos") {
+    ArrayPush(painted, t"Vehicle.cs_savable_villefort_alvarado_valentinos");
+    ArrayPush(painted, t"Vehicle.cs_savable_thorton_colby_valentinos");
+    ArrayPush(painted, t"Vehicle.cs_savable_chevalier_thrax_valentino");
+    ArrayPush(painted, t"Vehicle.cs_savable_thorton_mackinaw_valentinos");
+  }
+  if Equals(factionId, n"Maelstrom") {
+    ArrayPush(painted, t"Vehicle.cs_savable_thorton_galena_maelstrom");
+    ArrayPush(painted, t"Vehicle.cs_savable_chevalier_thrax_maelstrom");
+  }
+  if Equals(factionId, n"SixthStreet") {
+    ArrayPush(painted, t"Vehicle.cs_savable_thorton_mackinaw_sixth_street");
+    ArrayPush(painted, t"Vehicle.cs_savable_villefort_columbus_sixth_street");
+    ArrayPush(painted, t"Vehicle.cs_savable_archer_hella_sixth_street");
+  }
+  if Equals(factionId, n"VoodooBoys") {
+    ArrayPush(painted, t"Vehicle.cs_savable_mahir_voodoo_boys");
+    ArrayPush(painted, t"Vehicle.cs_savable_thorton_galena_voodoo_boys");
+  }
   let pool: array<TweakDBID>;
+  let pc = 0;
+  while pc < ArraySize(painted) {
+    ArrayPush(pool, painted[(pc + Max(roll, 0)) % ArraySize(painted)]);
+    pc += 1;
+  }
   let n = ArraySize(own);
   let j = 0;
   while j < n {

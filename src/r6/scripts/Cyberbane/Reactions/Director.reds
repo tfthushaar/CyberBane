@@ -84,6 +84,10 @@ public class CBReactionDirector {
       return;
     }
     reg.Prune();
+    let pruneFrom = GetPlayer(game);
+    if IsDefined(pruneFrom) {
+      reg.PruneFar(pruneFrom.GetWorldPosition(), CBConfig.RegistryKeepRadius());
+    }
 
     // Somewhere the game calls a safe area - an apartment, a clinic, a bar, a memorial.
     // Nobody there reacts to V, however frightening V is (spec §16).

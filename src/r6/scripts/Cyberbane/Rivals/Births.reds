@@ -33,13 +33,14 @@ public class CBPendingBirth {
   public let inheritRank: Int32;     // a successor's rank; 0 starts them at the bottom
   public let predecessor: String;    // the slain Rival a successor picks up from
   public let calmNeeded: Int32;      // settled ticks out of combat before they are made
+  public let kinOf: Int32;           // the slain Rival a successor is family of (1.9.9); 0 none
 }
 
 // Hold a Rival until the fight is over. The roll has already been made and won.
 public func CBRivalAfterFight(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName,
                               record: TweakDBID, appearance: CName, source: ECBRivalSource,
                               origin: CName, at: Float, escapee: ref<CBEscapee>,
-                              inheritRank: Int32, predecessor: String) -> Void {
+                              inheritRank: Int32, predecessor: String, opt kinOf: Int32) -> Void {
   if !IsDefined(sys) || Equals(faction, n"") || !TDBID.IsValid(record) {
     return;
   }
@@ -53,6 +54,7 @@ public func CBRivalAfterFight(sys: ref<CyberbaneSystem>, game: GameInstance, fac
   b.escapee = escapee;
   b.inheritRank = inheritRank;
   b.predecessor = predecessor;
+  b.kinOf = kinOf;
   b.calmNeeded = RandRange(CBConfig.RivalBirthCalmMin(), CBConfig.RivalBirthCalmMax() + 1);
   // Counted now, so the rest of this fight's rolls are weighed against it (CBRivalOdds).
   sys.NoteRivalMade();
@@ -129,10 +131,25 @@ func CBRivalBirth(sys: ref<CyberbaneSystem>, game: GameInstance, b: ref<CBPendin
   if b.inheritRank > 1 {
     r.rank = Min(b.inheritRank, 4);
   }
+  // Family (1.9.9): the slain Rival's surname, geared against what killed them, and they say why.
+  let dead = b.kinOf > 0 ? sys.FindRivalById(b.kinOf) : null;
+  if IsDefined(dead) {
+    r.lastName = dead.lastName;
+    CBRivalGiveTrait(r, CBKinTrait(dead.scarMask));
+    let book = CBIntelBook.Get(game);
+    if IsDefined(book) {
+      book.AddKin(r.id, dead.id);
+    }
+    CBFileLog(sys, n"KinSworn", CBGameSeconds(game), b.origin, b.faction, Cast<Float>(r.id));
+  }
   if !CBMessagesOn() {
     return;
   }
   let name = CBRivalDisplayName(CBContent(game), r);
+  if IsDefined(dead) {
+    CBPhoneSendTinted(game, name, s"You put \(b.predecessor) in the ground. Family doesn't forget. I know how you fight now.", CBHudRed());
+    return;
+  }
   if spared {
     CBHearsayFromStreet(game, s"\(name) walked away from you breathing. They will not forget it.", n"");
   } else {

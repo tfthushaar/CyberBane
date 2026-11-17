@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.8. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.9. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,25 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests during 1.9.8 and 1.9.9
+
+### "I can't use Q to activate my Heywood Hurricane" and "I was right in those gangers' faces and still couldn't talk"
+
+**Status: done in 1.9.9** (`Reactions/StreetTalk.reds`, `Reactions/NpcRegistry.reds`).
+- Q: the player state machine refuses combat gadgets and left-hand cyberware while `DialogChoiceHubs` holds any
+  hub (`upperBodyTransitions.script`, `AreChoiceHubsActive`). Since 1.9.6 "Talk" was a one-line dialogue hub, up
+  whenever V looked at somebody close, so Q was refused all over the city. "Talk" is now the game's interaction
+  prompt (`InteractionChoiceHub` + `VisualizersInfo`, `CBTalkPushOffer`), which the state machine never reads;
+  the dialogue hub only goes up once V presses F. The item itself is not in the game's data, so it is another
+  mod's; Cyberbane was what blocked the key.
+- The gangers: nothing in the log for them, so nobody was ever found in front of V. The registry (cap 200) only
+  pruned despawned people, so on a crowded street it was full of people far off and newcomers beside V were not
+  added; when the look-at also missed (crouched or busy people often are not under the crosshair the way it
+  wants), there was nobody. Now: `PruneFar` drops people beyond `RegistryKeepRadius` once the registry is 80%
+  full, the look-at is tried a second way, and `CBTalkFacingNear` asks the game's targeting (`GetTargetParts`,
+  `TSF_NPC`). `TalkRange` 3.5 m, `TalkKeepRange` 5.5 m, refusals logged within the keep range, and game-hostile
+  gangers outside a compound can be talked to.
 
 ## Requests after 1.9.7
 

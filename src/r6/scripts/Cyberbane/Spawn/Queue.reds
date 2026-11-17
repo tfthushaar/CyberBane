@@ -566,6 +566,10 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     let r = sys.FindRivalById(sys.GetLaneRivalId(lane));
     // They tell you first, and you get a little time. The lane's clock runs again for the
     // warning, and the arrival is the next time it reaches zero.
+    // Now and then they name a place instead of coming (Rivals/RivalLife.reds, 1.9.9).
+    if IsDefined(r) && sys.GetRivalWarned() != r.id && CBRivalMayCallOut(sys, game, r) {
+      return;
+    }
     if IsDefined(r) && sys.GetRivalWarned() != r.id {
       sys.SetRivalWarned(r.id);
       sys.SetLaneTicks(lane, CBWarningTicks(CBConfig.RivalWarningTicks()));

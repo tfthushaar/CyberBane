@@ -340,12 +340,35 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
         // A Rival's encounter is closed by this resolution, and holding it open for as long as V
         // stays near the body would leave the Rival lane reading as free (CBLiveRivalPresent asks
         // for somebody standing) - the re-queued, "teleporting" Rival. They keep the old timing.
+        let ready = age >= CBConfig.SparedResolveTicks();
         if e.wasRival {
-          leftThem = leftThem || !player.IsInCombat()
-                  || (!gone && distance > CBConfig.EscapeDistance());
+          if CBMercyChoiceOn() {
+            // V's choice (1.9.9): told once; spared when V stands with empty hands for a moment out of
+            // the fight, walks away, or says so where they lie. Killing them is the other answer, and
+            // the death handler has that. Being out of combat alone no longer spares anybody.
+            if !gone && !e.announced && IsDefined(player) && !player.IsInCombat() {
+              e.announced = true;
+              e.puppet.cbMercyOpen = true;
+              let fallen = CBFindRivalByBody(sys, e.entityId);
+              if IsDefined(fallen) {
+                CBSystemNote(game, s"\(CBRivalDisplayName(sys.GetContent(), fallen)) is down. Finish them, or put your weapon away or walk off to spare them. Or talk to them.", 8.0);
+              }
+            }
+            let empty = IsDefined(player) && !player.IsInCombat() && !IsDefined(GameObject.GetActiveWeapon(player));
+            e.holsterTicks = empty ? e.holsterTicks + 1 : 0;
+            leftThem = leftThem || e.holsterTicks >= CBConfig.MercyHolsterTicks() || e.mercyChosen
+                    || (!gone && distance > CBConfig.EscapeDistance());
+            ready = e.mercyChosen || age >= CBConfig.MercyMinTicks();
+          } else {
+            leftThem = leftThem || !player.IsInCombat()
+                    || (!gone && distance > CBConfig.EscapeDistance());
+          }
         }
         let backstop = e.wasRival && age >= CBConfig.SparedResolveMaxTicks();
-        if gone || (age >= CBConfig.SparedResolveTicks() && leftThem) || backstop {
+        if gone || (ready && leftThem) || backstop {
+          if !gone && IsDefined(e.puppet) {
+            e.puppet.cbMercyOpen = false;
+          }
           // Gone is gone, not dead: one that streamed out was still breathing when last seen.
           // Only a body still in the world can say it died, and CBNpcSafe has just said it is.
           CBSettleMercy(sys, e, gone || !e.puppet.IsDead());
@@ -422,6 +445,17 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       let st = sys.GetStats();
       if IsDefined(st) {
         st.rivalsSpared += 1;   // the counter existed and nothing ever incremented it
+      }
+      // Told to leave Night City where they lay, and they went (Rivals/RivalLife.reds, 1.9.9).
+      if e.exiled {
+        already.state = EnumInt(ECBRivalState.Retired);
+        CBCloseRivalEncounter(sys, game, already, e.puppet);
+        CBFileLog(sys, n"RivalExiled", now, district, already.faction, Cast<Float>(already.id));
+        if CBMessagesOn() {
+          CBHearsayFromStreet(game, s"\(CBRivalDisplayName(content, already)) left Night City in the back of a truck. Nobody expects them back.", n"");
+        }
+        CBLog.Info(n"Rivals", s"Rival \(already.id) was run out of Night City.");
+        return;
       }
       let indebted = CBRivalSparedByV(already, content, now, district);
       // Spared once too often at the top of the ladder, and not grateful for it (1.9.0).
