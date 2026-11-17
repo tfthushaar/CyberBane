@@ -158,6 +158,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-HubPauseMenu", "Hub in the pause menu");
     this.Text("Cyberbane-Settings-HubPauseMenu-Desc", "The Hub has its own tab at the top of the game menu, next to Inventory and Character. Turn this on to have it in the pause menu instead.");
     this.Text("Cyberbane-Settings-Category-Factions", "Factions");
+    this.Text("Cyberbane-Settings-Category-GangView", "How gangs see you");
     this.Text("Cyberbane-Settings-Category-Advanced", "Advanced");
 
     // ---- Settings: general ----------------------------------------------
@@ -211,6 +212,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-FactionOn-KangTao", "Kang Tao");
     this.Text("Cyberbane-Settings-FactionOn-NCPD", "NCPD and MaxTac");
     this.Text("Cyberbane-Settings-FactionOn-Desc", "On: Cyberbane keeps a book on them and they act on it. Off: Cyberbane leaves them alone entirely. They never turn on you on sight because of Cyberbane, send nobody after you, make no Rivals and never text you. What you do to them still counts towards your reputation. Hostility set by the game or by another mod, such as They Will Remember, is not Cyberbane's to switch off.");
+    this.Text("Cyberbane-Settings-GangViewAll", "All gangs");
+    this.Text("Cyberbane-Settings-GangViewAll-Desc", "How every gang treats you. Earned in play is whatever you have earned with them. Choose anything else and every gang acts that way, whatever you do. Vendetta: their people attack you on sight and send crews after you. Hostile: they send crews when you give them a reason. A gang only sends crews once it knows your name. Neutral: they leave you be. Friendly and Allied: lower prices on their turf, and a warning when their enemies come for you. Set a gang below to give it its own. What you earn keeps counting and comes back with Earned in play. Applies to every save.");
+    this.Text("Cyberbane-Settings-GangView-Desc", "How this gang treats you. Same as All gangs follows the first setting on this page. Earned in play is whatever you have earned with them. Choose anything else and they act that way, whatever you do. What you earn keeps counting and comes back with Earned in play.");
     this.Text("Cyberbane-Settings-FactionOn-NCPD-Desc", "On: the police read your standing with them. Off: Cyberbane leaves the police alone entirely. Cyberbane never turns a cop on you on sight either way: the law has heat and stars for that. Wanted levels, and hostility set by another mod such as They Will Remember, are not Cyberbane's to switch off.");
 
     // ---- Settings: morale -----------------------------------------------

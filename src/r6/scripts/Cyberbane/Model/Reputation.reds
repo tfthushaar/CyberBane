@@ -363,14 +363,24 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     // again, with a text and a line in the file, the moment it was switched back on.
     if IsDefined(fs) && NotEquals(fs.id, n"") && CBFactionOn(fs.id) {
       let posture = score.GetPosture(fs.id);
+      // Set by the player under How gangs see you (2.1.0), or just moved there or back: the player's doing,
+      // not the gang's. The posture is kept as it is, with nothing announced, filed or texted: setting every
+      // gang to Vendetta sent eleven "you are dead to us" texts at once, and setting them back sent a
+      // "they've warmed to you" for every gang V had earned that with.
+      let view = CBGangView(fs.id);
+      let viewBefore = sys.SwapSeenView(fs.id, view);
+      let quiet = view != 0 || (viewBefore >= 0 && viewBefore != view);
       // Coming round to V. The postures run Allied, Friendly, Neutral, Hostile, Vendetta, so a
       // smaller number is a better one; the first look of a session only records where they
       // are, so a load does not replay every friendship V already had.
       let before = sys.SwapSeenPosture(fs.id, EnumInt(posture));
-      if before >= 0 && EnumInt(posture) < before && EnumInt(posture) <= EnumInt(ECBPosture.Friendly) {
+      if !quiet && before >= 0 && EnumInt(posture) < before && EnumInt(posture) <= EnumInt(ECBPosture.Friendly) {
         CBAnnounceWarming(sys, game, fs.id, Equals(posture, ECBPosture.Allied));
       }
       let sworn = Equals(posture, ECBPosture.Vendetta);
+      if sworn && fs.vendettaSince <= 0.0 && quiet {
+        fs.vendettaSince = MaxF(now, 1.0);
+      }
       if sworn && fs.vendettaSince <= 0.0 {
         fs.vendettaSince = MaxF(now, 1.0);
         CBFileLog(sys, n"Vendetta", now, CBEventDistrict(sys, game), fs.id, 0.0);

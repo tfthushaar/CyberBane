@@ -1319,6 +1319,8 @@ public abstract class CBConfig {
   public static func TalkFacingDot() -> Float = 0.9
   // The same reason for no prompt is logged at most this often (seconds).
   public static func TalkWhyLogSeconds() -> Float = 8.0
+  // How long after telling V why somebody will not talk before another is told (StreetTalk Explain, 2.1.0).
+  public static func TalkExplainGapSeconds() -> Float = 30.0
   // Cyberbane's hub id on the UIInteractions blackboard: far from the small numbers the game's own use.
   public static func TalkHubId() -> Int32 = 1128415301
   // The exchange: V's line, a beat, then theirs.

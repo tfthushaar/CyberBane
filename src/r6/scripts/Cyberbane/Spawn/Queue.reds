@@ -459,7 +459,7 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
       if IsDefined(fs) && CBFactionFieldsSquads(fs.id)
          && (lane == CBLaneApex() || TDBID.IsValid(fs.sampleRecord)) {
         let posture = score.GetPosture(fs.id);
-        let hate = ClampF((-fs.standing / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
+        let hate = ClampF((-CBActingStanding(fs.id, fs.standing) / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
         let s = 0.0;
         if lane == CBLaneApex() {
           if CBApexEligible(sys, fs) {
@@ -559,7 +559,7 @@ func CBLaneTicksFor(sys: ref<CyberbaneSystem>, lane: Int32, faction: CName, riva
       ticks = CBJitter(CBConfig.ApexQueueTicks(), CBConfig.QueueJitterFraction());
     } else {
       let fs = sys.FindFaction(faction);
-      let hate = IsDefined(fs) ? ClampF((-fs.standing / 100.0) * (fs.renown / 100.0), 0.0, 1.0) : 0.0;
+      let hate = IsDefined(fs) ? ClampF((-CBActingStanding(fs.id, fs.standing) / 100.0) * (fs.renown / 100.0), 0.0, 1.0) : 0.0;
       let span = Cast<Float>(CBConfig.HostileSquadTicksMax() - CBConfig.HostileSquadTicksMin());
       ticks = CBJitter(CBConfig.HostileSquadTicksMax() - FloorF(span * hate), CBConfig.QueueJitterFraction());
     }
@@ -1117,7 +1117,7 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
   if !IsDefined(sys) || !IsDefined(fs) {
     return 3;
   }
-  let size = 3 + FloorF(-fs.standing / 35.0);
+  let size = 3 + FloorF(-CBActingStanding(fs.id, fs.standing) / 35.0);
   if size > 6 {
     size = 6;
   }

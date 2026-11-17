@@ -169,22 +169,25 @@ public class CBScoreEngine {
   }
 
   // ---- Faction-derived values -------------------------------------------
+  // The standing the gang acts on: what V earned, or the stance set by hand under How gangs see you in
+  // Mod Settings (CBActingStanding, 2.1.0). Posture is worked out from this, so everything keyed off it
+  // follows the setting too.
   public func GetStanding(factionId: CName) -> Float {
     let sys = this.m_system;
     if IsDefined(sys) {
       let st = sys.FindFaction(factionId);
       if IsDefined(st) {
-        return st.standing;
+        return CBActingStanding(factionId, st.standing);
       }
     }
     let content = this.Content();
     if IsDefined(content) {
       let prof = content.GetFaction(factionId);
       if IsDefined(prof) {
-        return prof.baselineStanding;
+        return CBActingStanding(factionId, prof.baselineStanding);
       }
     }
-    return 0.0;
+    return CBActingStanding(factionId, 0.0);
   }
 
   // A faction switched off under Factions in Mod Settings has no posture towards V: Neutral, whatever

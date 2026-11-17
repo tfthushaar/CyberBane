@@ -2337,6 +2337,10 @@ public class CBHud {
     if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
     if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) { pip = CBHudGreen(); }
     let postureText = CBPostureName(posture);
+    // Set by hand under How gangs see you in Mod Settings (2.1.0).
+    if CBGangViewSet(fs.id) {
+      postureText = postureText + " (set)";
+    }
     // Switched off under Factions in Mod Settings (1.9.1): Cyberbane has no posture for them at all.
     let off = !CBFactionOn(fs.id);
     if off {
@@ -2407,6 +2411,12 @@ public class CBHud {
     if !isOn {
       out += "Switched off under Factions in Mod Settings. Cyberbane leaves them alone: nobody of theirs\n"
            + "turns on you because of Cyberbane, they send nobody, and your standing is kept for later.\n";
+    } else {
+      // Set by hand (2.1.0): what they do, and what V has earned with them underneath.
+      if CBGangViewSet(id) {
+        out += "Set to " + CBPostureName(posture) + " under How gangs see you in Mod Settings. What you have\n"
+             + "earned with them is " + CBPostureName(CBPostureFromStanding(fs.standing)) + ", and that comes back with Earned in play.\n";
+      }
     }
     // Two records, said as two (CBForeignHostile): somebody else's is who shoots on sight, and a pay-off
     // or the switch above changes Cyberbane's alone.
@@ -3061,6 +3071,9 @@ func CBHudCanPayOff(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNam
 func CBHudWhyNoPeace(game: GameInstance, id: CName, posture: ECBPosture) -> String {
   if !CBFactionOn(id) {
     return "Switched off under Factions in Mod Settings: Cyberbane leaves them alone, so there is nothing to pay them for.";
+  }
+  if CBGangViewSet(id) {
+    return "How they treat you is set under How gangs see you in Mod Settings, so money changes nothing. Set them to Earned in play to deal.";
   }
   let content = CBContent(game);
   if IsDefined(content) {

@@ -95,6 +95,20 @@ public func CBSetUpAlly(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
   life.TurnOnEnemy(sys, game, puppet);
 }
 
+// Taken out of what they were there for by V (2.1.0): put down, broken and running, or giving up after V hurt
+// them, or sent on their way by V's words (CBTalkSendOff). The one rule for a favour's lookout and the people at
+// a sit-down. Somebody else putting them down is not V doing it. Words count from 2.1.0, when the street's own
+// people became people V can talk to: a lookout V threatens off the corner has been run off.
+func CBTakenOutByV(p: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(p) {
+    return false;
+  }
+  if p.cbTalkSentTick > 0 {
+    return true;
+  }
+  return p.cbDamagedByPlayer && (p.IsDead() || !CBStillStanding(p) || p.cbMoraleBroken || p.cbSurrendered);
+}
+
 public func CBStreetLifeFor(game: GameInstance) -> ref<CBStreetLife> {
   let sys = CyberbaneSystem.Get(game);
   let talk = IsDefined(sys) ? sys.GetStreetTalk() : null;
@@ -239,7 +253,9 @@ public class CBStreetLife {
         this.Robbed(sys, game);
       }
       let age = now - this.m_bagTick;
-      if age == 4 {
+      // Their round, and again after V has stopped one of them for a word (2.1.0): the conversation's hold
+      // took the place of the walk (CBTalkHold).
+      if age == 4 || (age > 4 && CBTalkWalkOnDue(game, des, n"CB_Bagman")) {
         CBPatrolWalk(sys, game, des, player, n"CB_Bagman");
       }
       let near = IsDefined(p) && Vector4.Distance(p.GetWorldPosition(), player.GetWorldPosition()) <= CBConfig.TurfPatrolLeaveDistance();
@@ -358,11 +374,9 @@ public class CBStreetLife {
     }
     let done = false;
     if this.m_favKind == 1 {
-      // Run off by V: put down, or broken and running or giving up, after V hurt them. Somebody else
-      // putting the lookout down is not V doing the favour, which is the rule the bagman and the
-      // sit-down already keep.
+      // Run off by V (CBTakenOutByV). Somebody else putting the lookout down is not V doing the favour.
       let p = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
-      done = IsDefined(p) && p.cbDamagedByPlayer && (p.IsDead() || !CBStillStanding(p) || p.cbMoraleBroken);
+      done = CBTakenOutByV(p);
     } else {
       done = this.m_favLeaned;
     }
@@ -428,9 +442,11 @@ public class CBStreetLife {
       }
       if this.m_meetSpawned {
         let down = 0;
+        // Taken out of the meeting by V (CBTakenOutByV): put down, broken or giving up after V hurt them, or
+        // talked off. Until 2.1.0 only the downed counted, so two sent running made the crash impossible.
         for id in this.m_meetIds {
           let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
-          if IsDefined(p) && p.cbDamagedByPlayer && (p.IsDead() || !CBStillStanding(p)) {
+          if CBTakenOutByV(p) {
             down += 1;
           }
         }

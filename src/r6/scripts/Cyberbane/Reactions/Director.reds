@@ -59,6 +59,27 @@ func CBSentByUs(des: ref<DynamicEntitySystem>, npc: wref<ScriptedPuppet>) -> Boo
   return IsDefined(des) && des.IsTagged(npc.GetEntityID(), n"Cyberbane");
 }
 
+// One of Cyberbane's people who is here for V: a crew, an apex squad, a Rival and their people, a scout, a
+// convoy. The street's own (a bagman and their lookout, a favour's lookout, the people at a sit-down) and a
+// turf patrol are Cyberbane's too, but they are a gang's people going about the gang's business, and to V
+// they are anybody else on the street (2.1.0). Talk asked CBSentByUs, so none of them could be spoken to: a
+// player found a Voodoo Boy who would not talk while the civilian beside him would.
+func CBSentAfterV(des: ref<DynamicEntitySystem>, npc: wref<ScriptedPuppet>) -> Bool {
+  if !CBSentByUs(des, npc) {
+    return false;
+  }
+  let id = npc.GetEntityID();
+  if des.IsTagged(id, n"CB_Patrol") {
+    return false;
+  }
+  for tag in CBStreetTags() {
+    if des.IsTagged(id, tag) {
+      return false;
+    }
+  }
+  return true;
+}
+
 public class CBReactionDirector {
   private let m_whisperCooldownTicks: Int32;
   // Street Sense detection, resolved once and kept: 0 unknown, 1 present, 2 absent. The

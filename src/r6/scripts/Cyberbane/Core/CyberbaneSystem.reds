@@ -229,6 +229,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   // once (Model/Reputation.reds, CBVendettaWatch). Session only.
   private let m_seenPostureIds: array<CName>;
   private let m_seenPostureVals: array<Int32>;
+  // The How gangs see you setting each gang had when last looked at (2.1.0), so a posture that moved because
+  // the player changed it is not announced as the gang's own doing. Session only.
+  private let m_seenViewIds: array<CName>;
+  private let m_seenViewVals: array<Int32>;
   // Which hostile gangs have restated their price this session, so each one does it once
   // (Model/Reputation.reds, CBVendettaWatch). Session only, like the phone threads it re-opens.
   private let m_peaceOfferedIds: array<CName>;
@@ -2564,6 +2568,22 @@ public class CyberbaneSystem extends ScriptableSystem {
     return -1;
   }
 
+  // The same for the How gangs see you setting (CBGangView): what it was at the last look, -1 the first time.
+  public func SwapSeenView(id: CName, now: Int32) -> Int32 {
+    let i = 0;
+    while i < ArraySize(this.m_seenViewIds) && i < ArraySize(this.m_seenViewVals) {
+      if Equals(this.m_seenViewIds[i], id) {
+        let before = this.m_seenViewVals[i];
+        this.m_seenViewVals[i] = now;
+        return before;
+      }
+      i += 1;
+    }
+    ArrayPush(this.m_seenViewIds, id);
+    ArrayPush(this.m_seenViewVals, now);
+    return -1;
+  }
+
   // Has this gang already put its price to V this session? Marks them either way, so the caller
   // gets true exactly once per gang per session.
   public func NotePeaceOffered(id: CName) -> Bool {
@@ -3697,6 +3717,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_crewBeaten);
     ArrayClear(this.m_seenPostureIds);
     ArrayClear(this.m_seenPostureVals);
+    ArrayClear(this.m_seenViewIds);
+    ArrayClear(this.m_seenViewVals);
     ArrayClear(this.m_peaceOfferedIds);
     this.GetThreatBar().Hide();
 

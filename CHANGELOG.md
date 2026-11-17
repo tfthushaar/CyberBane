@@ -3,6 +3,47 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.1.0 (18 November 2026)
+
+**New: How gangs see you.** A new page in Mod Settings, asked for by a player running an Arasaka roleplay
+with friends. Set how every gang treats you with **All gangs**, or any one of them on its own: **Allied**,
+**Friendly**, **Neutral**, **Hostile** or **Vendetta**. **Earned in play**, the default, is whatever you have
+earned with them. A gang set to Vendetta attacks you on sight and, once it knows your name, sends crews after
+you. One set to Friendly or Allied gives you better prices on its turf and warns you when its enemies come for
+you. Everything the gang does follows the setting: whether it sends crews and how many, tribute, bounties, and
+how its people talk to you. What you earn keeps counting underneath and comes back when you set them to Earned
+in play. The Hub marks a gang set this way and says what you have earned with them. A gang set by hand can't
+be paid off, because money would change nothing. Like every Mod Settings option, it applies to every save.
+With They Will Remember deciding who is hostile, it still does.
+
+**Talk**
+- **The street's own people can be talked to.** A bagman and their lookout, the people at a sit-down, a
+  favour's lookout and the turf patrols were treated like a crew sent to kill you, so walking up to one of them
+  gave you nothing. In Pacifica that was often a Voodoo Boy. They talk like anybody else on the street now.
+  Only the people actually sent after you don't: crews, apex squads, Rivals and their people, scouts.
+- **One answer at a time.** F is also the game's own talk key, and on many people it played one of their stock
+  lines, in their voice and with their subtitle, whenever you opened the list or picked a line. The game's talk
+  is switched off while you talk to somebody through Cyberbane, and a passer-by's greetings and idle chatter go
+  quiet too. People in the middle of a scripted scene with each other still finish it.
+- **Subtitles go away on time.** A line from grabbing somebody, a downed ganger, a Rival's announcement or a
+  surrender stayed at the bottom of the screen until another Cyberbane line replaced it, and could swallow the
+  next answer in a conversation.
+- **When somebody won't talk, you're told why**, if it isn't something you can see: they're part of a job,
+  they belong to a story, or they're here for you. Once per person, and never with messages set to Off.
+- **The person you're talking to stays put**, a bagman or a patrol out walking included, and walks on when
+  you're done.
+- **Words count.** Threatening a favour's lookout off the corner runs them off, and talking people out of a
+  sit-down counts towards crashing it.
+
+**Fixes**
+- **A crew member who surrenders stays where they stand.** Their orders to come for you kept running.
+- **Your death is worked through a moment later.** Making your killer a Rival, the death count and the line in
+  your History all ran inside the game's own death event, alongside Cyberbane's tick, and the Rival list could
+  be changed by both at once. The death still goes on record at once, so a reload still makes them a Rival.
+- Talk's note about why somebody won't talk, and its log line, no longer go quiet for a while after a load.
+
+Your progress carries over.
+
 ## 2.0.0 (17 November 2026)
 
 **Cyberbane 2.0 in one paragraph.** Since 1.9.5, Night City talks back. Walk up to anybody and talk: a real

@@ -49,6 +49,8 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_eqexProbe: ref<CBEqExProbe>;
   // Whether V has been told to put a weapon away to talk to people (Reactions/StreetTalk.reds, 1.9.5).
   private let m_talkHolsterHinted: Bool;
+  private let m_subGen: array<Int32>;
+  private let m_subUp: array<Int32>;
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -105,6 +107,40 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetTwrDetected(present: Bool) -> Void {
     this.m_twrDetected = present ? 1 : 2;
+  }
+
+  // Cyberbane's subtitle lines (UI/PhoneMessages.reds, CBShowGameSubtitle, 2.1.0): which of a channel's two
+  // ids is up, and a count per id so a take-down timer only takes down the line it was set for.
+  public func SubtitleGenBump(id: Int32) -> Int32 {
+    this.PadSubtitles();
+    this.m_subGen[id] = this.m_subGen[id] + 1;
+    return this.m_subGen[id];
+  }
+
+  public func SubtitleGen(id: Int32) -> Int32 {
+    this.PadSubtitles();
+    return id >= 0 && id < ArraySize(this.m_subGen) ? this.m_subGen[id] : 0;
+  }
+
+  public func SubtitleUp(channel: Int32) -> Int32 {
+    this.PadSubtitles();
+    return channel >= 0 && channel < ArraySize(this.m_subUp) ? this.m_subUp[channel] : channel;
+  }
+
+  public func SetSubtitleUp(channel: Int32, id: Int32) -> Void {
+    this.PadSubtitles();
+    if channel >= 0 && channel < ArraySize(this.m_subUp) {
+      this.m_subUp[channel] = id;
+    }
+  }
+
+  private func PadSubtitles() -> Void {
+    while ArraySize(this.m_subGen) < CBSubtitleIdCount() {
+      ArrayPush(this.m_subGen, 0);
+    }
+    while ArraySize(this.m_subUp) < CBSubtitleIdCount() {
+      ArrayPush(this.m_subUp, ArraySize(this.m_subUp));
+    }
   }
 
   public func GetTalkHolsterHinted() -> Bool {

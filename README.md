@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.0.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.1.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -91,6 +91,8 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
 **Advanced** at the bottom.
 
 - **Fewer interruptions:** set **Where messages go** to Off. Nothing about how the mod plays changes.
+- **Set how the gangs see you:** **How gangs see you** puts every gang, or any one of them, at Allied,
+  Friendly, Neutral, Hostile or Vendetta, whatever you have done. **Earned in play** puts it back.
 - **Leave a gang alone:** switch it off under **Factions**. Cyberbane stops reacting for that gang
   and keeps your standing for later. The NCPD can be switched off the same way.
 - **How often you are hunted:** **How often they come** sets how many Rivals, crews and apex squads

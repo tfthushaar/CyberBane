@@ -144,7 +144,10 @@ func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
+    // Nobody V is talking to, nobody holding their hands up, and nobody V's words sent off (2.1.0, when the
+    // street's people and patrols became people V can talk to): a walk order would take the place of each.
     if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p)
+       && !p.cbTalkPartner && !p.cbSurrendered && !p.cbTalkSent
        && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID())
        && CBPointReachable(game, p.GetWorldPosition(), spot) {
       let ai = p.GetAIControllerComponent();

@@ -228,7 +228,7 @@ public func CBPeacePrice(fs: ref<CBFactionState>, posture: ECBPosture) -> Int32 
   let cost = Cast<Float>(CBConfig.PeaceBaseCost())
            + Cast<Float>(CBConfig.PeacePerKill()) * Cast<Float>(fs.kills);
   // Standing runs to -100 at its worst. Only the hostile part of it is charged for.
-  let hate = ClampF(-fs.standing / 100.0, 0.0, 1.0);
+  let hate = ClampF(-CBActingStanding(fs.id, fs.standing) / 100.0, 0.0, 1.0);
   cost += Cast<Float>(CBConfig.PeacePerHate()) * hate;
   if Equals(posture, ECBPosture.Vendetta) {
     cost *= CBConfig.PeaceVendettaMult();
@@ -249,6 +249,11 @@ public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionI
   }
   // Paying Cyberbane does nothing about a hostility They Will Remember keeps (1.9.4).
   if CBTwrOwnsHostility(factionId) {
+    return -1;
+  }
+  // Nor about a stance set by hand under How gangs see you (2.1.0): the setting decides how they treat V,
+  // so a pay-off would take the money and change nothing. The Hub says why (CBHudWhyNoPeace).
+  if CBGangViewSet(factionId) {
     return -1;
   }
   let content = CBContent(game);

@@ -52,6 +52,57 @@ public func CBFactionOn(faction: CName) -> Bool {
   return rt.GetSettings().FactionOn(faction);
 }
 
+// How a gang treats V by hand, under How gangs see you in Mod Settings (2.1.0): 0 as earned in play, else
+// 1 Allied, 2 Friendly, 3 Neutral, 4 Hostile, 5 Vendetta. Only gangs have one.
+public func CBGangView(faction: CName) -> Int32 {
+  if Equals(faction, n"") {
+    return 0;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return 0;
+  }
+  return rt.GetSettings().GangView(faction);
+}
+
+public func CBGangViewSet(faction: CName) -> Bool {
+  return CBGangView(faction) != 0;
+}
+
+// The standing a gang acts on (2.1.0). The one question for what a gang does about V: its posture
+// (CBScoreEngine.GetStanding and GetPosture), who sends crews and how many (Spawn/Queue.reds), tribute, and
+// the price of peace. A player asked to set how the gangs see V by hand, and a stance only on the posture
+// would have argued with all of those: a gang set to Vendetta with V in its good books was never picked to
+// send anybody, because who sends is weighed by how far below zero the standing is.
+//
+// Set by hand, the standing V earned is kept when it already lies in the stance chosen (a gang that already
+// hates V keeps all of it, and sends the bigger crews that go with it), and is otherwise the middle of that
+// stance. What V earns is never written over: it keeps counting, and is what comes back on Earned in play.
+// What earns standing (rewards, decay, titles) reads the earned figure, CBFactionState.standing, directly.
+public func CBActingStanding(faction: CName, earned: Float) -> Float {
+  let view = CBGangView(faction);
+  if view == 0 {
+    return earned;
+  }
+  let allied = CBConfig.PostureAllied();
+  let friendly = CBConfig.PostureFriendly();
+  let hostile = CBConfig.PostureHostile();
+  let vendetta = CBConfig.PostureVendetta();
+  if view == 1 {
+    return earned >= allied ? earned : (allied + 100.0) / 2.0;
+  }
+  if view == 2 {
+    return earned >= friendly && earned < allied ? earned : (friendly + allied) / 2.0;
+  }
+  if view == 3 {
+    return earned > hostile && earned < friendly ? earned : 0.0;
+  }
+  if view == 4 {
+    return earned > vendetta && earned <= hostile ? earned : (vendetta + hostile) / 2.0;
+  }
+  return earned <= vendetta ? earned : (vendetta - 100.0) / 2.0;
+}
+
 public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   let f: ref<CBFactionProfile>;
 

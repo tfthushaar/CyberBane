@@ -278,8 +278,8 @@ public class CBPhone {
     // taking them down is safe whether or not anything is showing.
     CBHideGameSubtitle(this.m_game, 0);
     CBHideGameSubtitle(this.m_game, 1);
-    CBHideGameSubtitle(this.m_game, 2);
-    CBHideGameSubtitle(this.m_game, 3);
+    CBHideGameSubtitle(this.m_game, 2);   // and 4
+    CBHideGameSubtitle(this.m_game, 3);   // and 5
     this.m_subNativeSlot = -1;
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
     let width = CBConfig.PhoneCardWidth();
@@ -1284,6 +1284,12 @@ public func CBGameSubtitlesOn(game: GameInstance) -> Bool {
 // Cyberbane's subtitle line ids: 0 and 1 for what V overhears, taken in turn, 2 for V's own line in a
 // street exchange and 3 for the answer (Reactions/StreetTalk.reds). Fixed, so a line left over from
 // another session can always be taken down; far from anything the game hashes for its own lines.
+//
+// 2 and 3 are channels with two ids each from 2.1.0 (4 is 2's other, 5 is 3's), taken in turn the way the
+// overheard lines always were: the game's controller skips a line whose id it is still showing, so a line
+// left up in 3 swallowed the next answer, which never appeared.
+public func CBSubtitleIdCount() -> Int32 = 6
+
 func CBSubtitleLineId(slot: Int32) -> CRUID {
   if slot == 1 {
     return CreateCRUID(7310582093516161002ul);
@@ -1294,7 +1300,32 @@ func CBSubtitleLineId(slot: Int32) -> CRUID {
   if slot == 3 {
     return CreateCRUID(7310582093516161004ul);
   }
+  if slot == 4 {
+    return CreateCRUID(7310582093516161005ul);
+  }
+  if slot == 5 {
+    return CreateCRUID(7310582093516161006ul);
+  }
   return CreateCRUID(7310582093516161001ul);
+}
+
+// A line's own take-down. The game draws a subtitle until it is told to take it down: the duration it is
+// given only paces the text as it types out (baseSubtitlesControllers.script, SubtitlesGameController,
+// RemoveLine on HideDialogLine). Every line used to rely on whoever showed it to take it down again, and only
+// street talk's own two did, so a line from a grab, a downed ganger, a Rival's announcement or a surrender
+// stayed at the bottom of the screen until another of ours replaced it. Now every line takes itself down,
+// and only itself: a newer line under the same id carries a newer count.
+public class CBSubtitleHideCallback extends DelayCallback {
+  public let game: GameInstance;
+  public let id: Int32;
+  public let gen: Int32;
+
+  public func Call() -> Void {
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) && rt.SubtitleGen(this.id) == this.gen {
+      CBHideSubtitleId(this.game, this.id);
+    }
+  }
 }
 
 public func CBShowGameSubtitle(game: GameInstance, slot: Int32, speaker: String, text: String,
@@ -1308,8 +1339,18 @@ public func CBShowGameSubtitle(game: GameInstance, slot: Int32, speaker: String,
   if !IsDefined(bb) {
     return false;
   }
+  // V's line and the answer each go up under whichever of their channel's two ids is not up now, and the one
+  // that is comes down (see CBSubtitleLineId).
+  let id = slot;
+  let rt = CyberbaneRuntime.Get();
+  if (slot == 2 || slot == 3) && IsDefined(rt) {
+    let up = rt.SubtitleUp(slot);
+    id = up == slot ? slot + 2 : slot;
+    CBHideSubtitleId(game, up);
+    rt.SetSubtitleUp(slot, id);
+  }
   let line: scnDialogLineData;
-  line.id = CBSubtitleLineId(slot);
+  line.id = CBSubtitleLineId(id);
   line.text = text;
   line.type = scnDialogLineType.Regular;
   line.speaker = player;
@@ -1319,10 +1360,26 @@ public func CBShowGameSubtitle(game: GameInstance, slot: Int32, speaker: String,
   let lines: array<scnDialogLineData>;
   ArrayPush(lines, line);
   bb.SetVariant(GetAllBlackboardDefs().UIGameData.ShowDialogLine, ToVariant(lines), true);
+  let ds = GameInstance.GetDelaySystem(game);
+  if IsDefined(rt) && IsDefined(ds) {
+    let cb = new CBSubtitleHideCallback();
+    cb.game = game;
+    cb.id = id;
+    cb.gen = rt.SubtitleGenBump(id);
+    ds.DelayCallback(cb, MaxF(seconds, 0.5), false);
+  }
   return true;
 }
 
+// Down, for one of the slots the callers name: a channel's both ids (2 and 3), or the one id (0 and 1).
 public func CBHideGameSubtitle(game: GameInstance, slot: Int32) -> Void {
+  CBHideSubtitleId(game, slot);
+  if slot == 2 || slot == 3 {
+    CBHideSubtitleId(game, slot + 2);
+  }
+}
+
+func CBHideSubtitleId(game: GameInstance, slot: Int32) -> Void {
   let bbs = GameInstance.GetBlackboardSystem(game);
   if !IsDefined(bbs) {
     return;

@@ -101,6 +101,30 @@ enum ECBLogLevel {
   Verbose = 2,
 }
 
+// How a gang treats V (2.1.0, "How gangs see you"). A player asked for it, for a group playing Arasaka
+// corpos: every gang with a vendetta against them, set by hand. Earned is what V earned in play; any other
+// value is the stance the gang takes whatever V does (Data/Factions.reds, CBActingStanding). Each gang's
+// own setting can follow the page's first one (AllGangs) or say for itself. The values read as their
+// names in the menu, so they are single words; the two that are not get a label (displayValues).
+enum ECBGangViewAll {
+  Earned = 0,
+  Allied = 1,
+  Friendly = 2,
+  Neutral = 3,
+  Hostile = 4,
+  Vendetta = 5,
+}
+
+enum ECBGangView {
+  AllGangs = 0,
+  Earned = 1,
+  Allied = 2,
+  Friendly = 3,
+  Neutral = 4,
+  Hostile = 5,
+  Vendetta = 6,
+}
+
 public class CyberbaneSettings {
   // ---- General -----------------------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1085,24 +1109,138 @@ public class CyberbaneSettings {
   public let factionNCPD: Bool = true;
 
 
+  // ---- How gangs see you (2.1.0) -----------------------------------------------------------------
+  // Set by hand how the gangs treat V. The first one sets every gang; each gang below it can follow that
+  // or say for itself. Read through CBGangView (Data/Factions.reds); acted on in one place,
+  // CBActingStanding, so everything a gang does about V goes by it. The standing V earns in play keeps
+  // counting underneath and is what comes back on Earned in play. Mod Settings keeps one set of values for
+  // every save, like every other setting here.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangViewAll")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangViewAll-Desc")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let gangViewAll: ECBGangViewAll = ECBGangViewAll.Earned;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-TygerClaws")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewTygerClaws: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Maelstrom")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewMaelstrom: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Valentinos")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewValentinos: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-SixthStreet")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewSixthStreet: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Animals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewAnimals: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-VoodooBoys")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewVoodooBoys: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Scavengers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewScavengers: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Mox")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewMox: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Wraiths")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewWraiths: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Aldecaldos")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewAldecaldos: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Barghest")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewBarghest: ECBGangView = ECBGangView.AllGangs;
+
+
   // ---- Advanced ----------------------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
-  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.category.order", "14")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TwrCompat")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TwrCompat-Desc")
   public let twrCompat: ECBTwrCompat = ECBTwrCompat.Auto;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
-  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.category.order", "14")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LogLevel")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LogLevel-Desc")
   public let logLevel: ECBLogLevel = ECBLogLevel.Info;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
-  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.category.order", "14")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FreezeReputation")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FreezeReputation-Desc")
   public let freezeReputation: Bool = false;
@@ -1118,7 +1256,7 @@ public class CyberbaneSettings {
   // again each time. It stays on in the menu once used; off and on again is another reset.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
-  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.category.order", "14")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ResetAll")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ResetAll-Desc")
   public let resetAllData: Bool = false;
@@ -1129,7 +1267,7 @@ public class CyberbaneSettings {
   // the way from off to on, like the reset switch.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
-  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.category.order", "14")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SeparateSave")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SeparateSave-Desc")
   public let separateThisSave: Bool = false;
@@ -1270,5 +1408,30 @@ public class CyberbaneSettings {
     if Equals(id, n"KangTao") { return this.factionKangTao; }
     if Equals(id, n"NCPD") || Equals(id, n"Police") || Equals(id, n"MaxTac") { return this.factionNCPD; }
     return true;
+  }
+
+  // How this gang treats V by hand (How gangs see you): 0 as earned, else 1 Allied, 2 Friendly, 3 Neutral,
+  // 4 Hostile, 5 Vendetta, the order of ECBGangViewAll. Gangs only: anybody else is as earned.
+  public func GangView(id: CName) -> Int32 {
+    let own = ECBGangView.Earned;
+    let gang = false;
+    if Equals(id, n"TygerClaws") { own = this.viewTygerClaws; gang = true; }
+    if Equals(id, n"Maelstrom") { own = this.viewMaelstrom; gang = true; }
+    if Equals(id, n"Valentinos") { own = this.viewValentinos; gang = true; }
+    if Equals(id, n"SixthStreet") { own = this.viewSixthStreet; gang = true; }
+    if Equals(id, n"Animals") { own = this.viewAnimals; gang = true; }
+    if Equals(id, n"VoodooBoys") { own = this.viewVoodooBoys; gang = true; }
+    if Equals(id, n"Scavengers") { own = this.viewScavengers; gang = true; }
+    if Equals(id, n"Mox") { own = this.viewMox; gang = true; }
+    if Equals(id, n"Wraiths") { own = this.viewWraiths; gang = true; }
+    if Equals(id, n"Aldecaldos") { own = this.viewAldecaldos; gang = true; }
+    if Equals(id, n"Barghest") { own = this.viewBarghest; gang = true; }
+    if !gang {
+      return 0;
+    }
+    if Equals(own, ECBGangView.AllGangs) {
+      return EnumInt(this.gangViewAll);
+    }
+    return EnumInt(own) - 1;
   }
 }

@@ -152,11 +152,19 @@ func CBOnPlayerDeath(player: ref<PlayerPuppet>) -> Void {
   if !IsDefined(sys) {
     return;
   }
-  let stats = sys.GetStats();
-  if IsDefined(stats) {
-    stats.deaths += 1;
+  // Into the ledger now; the count, V's file and the killer's promotion on the next frame, the way an
+  // NPC's death is handled (CBQueueDeath above, and the note on CBWriteDeathLedger).
+  let entry = CBWriteDeathLedger(sys, player.GetGame(), player);
+  let ds = GameInstance.GetDelaySystem(player.GetGame());
+  if IsDefined(ds) {
+    let cb = new CBPlayerDeathCallback();
+    cb.entry = entry;
+    let killer = player.cbLastAttacker;
+    if IsDefined(killer) {
+      cb.killerBody = killer.GetEntityID();
+    }
+    ds.DelayCallbackNextFrame(cb);
   }
-  CBWriteDeathLedger(sys, player.GetGame(), player);
   CBLog.Info(n"Signals", "Player died; Death Ledger updated.");
 }
 
