@@ -49,6 +49,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_score: ref<CBScoreEngine>;
   private let m_registry: ref<CBNpcRegistry>;
   private let m_director: ref<CBReactionDirector>;
+  // Talking to people in the street (Reactions/StreetTalk.reds, 1.9.5). Session only.
+  private let m_talk: ref<CBStreetTalk>;
   private let m_sessionStarted: Bool;
   private let m_tickGeneration: Int32;
   private let m_playerAttachCbId: Uint32;
@@ -63,6 +65,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
   private let m_ledgerDue: Bool;              // the death ledger waits for the first settled tick (StartSession)
+  // V's equipment is read for the first time on the first settled tick too, never from inside the load
+  // (1.9.5). Until then nothing reads what V has fitted or is wearing (WornReady).
+  private let m_wornDue: Bool;
+  private let m_wornReady: Bool;
   // The pins of every active objective that is not the tracked one (CBRefreshJobPins, 1.8.4), and
   // whether V is on a job: near a pin or in a scene, which unlike the quest area leaves out the
   // hostile zones (CBComputeOnJob). Session only.
@@ -452,6 +458,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !IsDefined(this.m_director) {
       this.m_director = new CBReactionDirector();
     }
+    if !IsDefined(this.m_talk) {
+      this.m_talk = new CBStreetTalk();
+    }
     this.EnsureCallbacks();
     if !this.m_sessionStarted {
       this.m_sessionStarted = true;
@@ -475,8 +484,19 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBPruneUniqueRivals(this);
       this.RenumberRivalZero();
     }
-    // Seed chrome once up front so it is current before the first slow refresh.
-    CBUpdateChrome(this, this.GetGameInstance());
+    // V's chrome and clothes are read on the first settled tick, not here (1.9.5).
+    //
+    // This used to seed the chrome reading on the spot, and it is the one read that reaches into V's
+    // attachment slots. This runs from the player-attached callback, in the middle of the load, while
+    // an outfit mod is still rebuilding what V wears: Equipment-EX clears its leftover preview copies
+    // when the save is restored and puts the outfit back on a frame later. Reading the slots in that
+    // window met garments that had not finished loading, and with an Equipment-EX outfit on, the game
+    // crashed on the load, most often the reload after V died (reported on 1.9.4, the log ending on a
+    // line of ours). The death ledger was moved off this callback for the same reason; the chrome
+    // reading now waits for the same settled tick, and nothing reads V's equipment until it has run.
+    this.m_wornReady = false;
+    this.m_wornDue = true;
+    this.m_worn = null;
 
     // Nothing asked for on a Hub in another session is carried into this one.
     this.m_pendingPeace = n"";
@@ -492,6 +512,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Bump the generation so any stale tick chain stops, then start a fresh one.
     this.m_tickGeneration += 1;
     this.ScheduleFastTick();
+    // And street talk's own, faster one (1.9.5). It stands still until the first settled tick.
+    this.m_talk.Start(this.GetGameInstance());
   }
 
   private cb func OnCBEntityAttached(event: ref<EntityLifecycleEvent>) -> Void {
@@ -1018,6 +1040,14 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_ledgerDue = false;
       CBApplyDeathLedger(this, game);
       CBPruneUniqueRivals(this);
+    }
+    // And the first look at what V has fitted and is wearing, now that the load is over and V's own
+    // body is the one in the world (StartSession, 1.9.5).
+    if this.m_wornDue {
+      this.m_wornDue = false;
+      this.m_wornReady = true;
+      CBUpdateChrome(this, game);
+      CBUpdateLook(this, game);
     }
 
     // What the player chose on the Hub while the game was paused. Same reasoning again. After the
@@ -1894,6 +1924,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func NoteCompanionScan(found: Bool) -> Void {
     this.m_companionScanTick = Max(this.m_tickCount, 1);
     this.m_companionScanFound = found;
+  }
+
+  // May V's equipment be read yet? Not between a session starting and its first settled tick (1.9.5).
+  public func WornReady() -> Bool {
+    return this.m_wornReady;
   }
 
   public func GetWorn() -> ref<CBWornRead> {
@@ -3291,6 +3326,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_registry;
   }
 
+  public func GetDirector() -> ref<CBReactionDirector> {
+    return this.m_director;
+  }
+
+  public func GetStreetTalk() -> ref<CBStreetTalk> {
+    return this.m_talk;
+  }
+
   // ---- Titles (spec §12.1, Appendix G) ----------------------------------
   public func HasTitle(id: CName) -> Bool {
     return ArrayContains(this.m_titles, id);
@@ -3581,6 +3624,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       svc.Retire(this.m_playthroughId);
       svc.DropPlaythroughSightings(this.m_playthroughId);
       svc.DropPlaythroughGangPower(this.m_playthroughId);   // and how hard V had hit each gang
+      svc.DropPlaythroughTalk(this.m_playthroughId);        // and what V said to whom today (1.9.5)
     }
     let turfBook = CBTurfBook.Get(this.GetGameInstance());
     if IsDefined(turfBook) {

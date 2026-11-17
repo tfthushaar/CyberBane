@@ -24,7 +24,7 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.9.1).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (1.9.5).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
 
 ## What it does
@@ -86,10 +86,22 @@ in active development. This page describes what the mod does and how it installs
   later as a rival, under their own name, having learned how you fight. They are no tougher
   than they were the first time; they are just better at it. Kill them instead and that is the
   end of it.
-- **You overhear the city talking about you.** People near you say things about you, shown as
-  a line of subtitle near the bottom of the screen. Lines change with the gang, the district and
-  the title you are carrying, and when a story about something you did has actually travelled to
+- **You overhear the city talking about you.** People near you say things about you, in the game's
+  own subtitles. What they say comes from everything Cyberbane knows about you: the way you work,
+  how you treat people, the chrome they can see, your mask, your heat, how well this district knows
+  you and what you are doing right now. Somebody of a gang talks about what is between you and their
+  gang: the bodies, the people of theirs you let walk, the Rival hunting you, who runs their crew now,
+  and whether you have broken them. When a story about something you did has actually travelled to
   where you are standing, that is what people are talking about.
+- **You can talk to them.** Walk up to somebody and look at them with your hands empty, and the
+  game's own choice prompt comes up: Greet, Dismiss, Antagonize or Intimidate. Scroll and press F,
+  the same as the game's own choices. They answer according to what they know of you and how much
+  they and their gang fear and respect you, and the prompt tells you how they take you. Greeting a
+  gang's people warms that gang a little at a time, and to a frightened member of a gang at war with
+  you it reads as mercy. Antagonizing starts something. Intimidating somebody afraid enough makes them
+  give up where one of their gang's Rivals is hiding, pay you to leave, or just leave, and it makes
+  their whole gang fear you more: a way to be feared without a body. It works on gangers, civilians
+  and the police, who only ever answer in words. Street talk in Mod Settings turns it off.
 - **The street gets word back to you.** When a rumour about you reaches somewhere new, a
   contact may get in touch about what they heard. If people saw you, your name is in it. If
   nobody did, it arrives as a question about who is doing this.
@@ -115,6 +127,12 @@ in active development. This page describes what the mod does and how it installs
   gang depending on your standing and reputation: respect, a warning, or hostility. Masks and hoods
   make you harder to place, and a gang's own gear makes that gang slower to recognize you: nomad
   clothing with the Aldecaldos and the Wraiths vest with the Wraiths, the only gang clothes V can wear.
+- **Fear can beat a grudge.** A gang with a vendetta does not send every one of its people at you.
+  Each of them weighs their own nerve, and the friends around them, against how much their gang fears
+  you. The brave come for you; the frightened hold back and can be talked to. The more a gang fears
+  you, the more of them hold back, and a gang you have broken is afraid of you whatever its grudge:
+  its people break sooner and it will settle for half its price. A gang's file on the Hub says
+  roughly how many of its people hold back.
 - **Gangs at war with each other.** The Valentinos and 6th Street, the Tyger Claws and the Mox,
   the Aldecaldos and the Wraiths, Arasaka and Militech, and everybody against the Scavs. Hurt a
   gang and the gangs that hate it warm to you, by how much it hurt and by whether anybody saw it
@@ -372,6 +390,10 @@ To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vo
 
 The Hub is a tab of the game's own menu, so it uses that menu's controls. Cyberbane adds no keys of
 its own.
+
+- **Talking to people:** the game's own choice keys. Look at somebody up close with your hands empty,
+  scroll (D-pad up and down) to pick a line, and press F (A) to say it. Walk away or look away and the
+  prompt goes.
 
 - **The game menu, then Cyberbane:** the last tab in the row across the top, after Journal. Escape
   closes the menu as usual. With the game's radial hub turned on, it is in the row beside Character

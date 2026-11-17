@@ -178,11 +178,18 @@ public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, 
   }
   // Rank and file are 0.5, so they take this as it stands; an elite takes half of it.
   chance *= (1.0 - nerve) * 2.0;
-  if sworn {
+  // A gang V has broken does not hold together for a vendetta (1.9.5). Sworn people stand firmer, until
+  // there are hardly any of them left: then the oath is what they break first.
+  let broken = CBGangBroken(sys, faction);
+  if sworn && !broken {
     chance *= CBConfig.MoraleSwornMult();
   }
-  if CBTurfLostGround(sys, faction) {
-    chance *= CBConfig.MoraleLostGroundMult();
+  if broken {
+    chance *= CBConfig.MoraleBrokenGangMult();
+  } else {
+    if CBTurfLostGround(sys, faction) {
+      chance *= CBConfig.MoraleLostGroundMult();
+    }
   }
   // The ceiling goes last, over the slider and the title too: applied before them, Morale intensity
   // at 2.0 turned a 40% ceiling into 80%.
@@ -356,4 +363,99 @@ public func CBHoldsGround(npc: wref<ScriptedPuppet>) -> Bool {
     }
   }
   return false;
+}
+
+// ---- Holding back on the street (1.9.5) ---------------------------------------------------------------
+//
+// Fear and hatred are two different things, and a gang V has been killing has plenty of both. Until
+// 1.9.5 hatred decided alone: once a gang's standing reached vendetta, every one of its people V walked
+// past was turned on V, however frightened of V they were. So the more of a gang V had killed - the very
+// thing that makes a gang afraid - the less V could do with it but fight, and a gang V had broken kept
+// throwing its last few people at V one at a time.
+//
+// Each of them decides for themselves now, once, the first time it matters: how much their gang fears V
+// (CBScoreEngine.GetFactionFear, the same number crews, tribute and morale read), how much more if V has
+// broken the gang or taken its ground, against their own nerve (CBNerve: rank, and the gang's own
+// courage) and the friends standing near them. Somebody who holds back does not draw on V. Somebody who
+// does not is coming for V, exactly as before. Bosses, apex squads and anybody who never runs never hold
+// back. Nothing here touches the NPC: it is a number, cached on them.
+
+public func CBHoldBackChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, faction: CName) -> Float {
+  if !IsDefined(sys) || !IsDefined(npc) || Equals(faction, n"") || npc.IsBoss() || CBHoldsGround(npc) {
+    return 0.0;
+  }
+  let backers = CBSameGangNear(sys, npc, faction, CBConfig.HoldBackBackerRadius(), CBConfig.HoldBackMaxBackers());
+  return CBHoldBackOdds(sys, faction, CBNerve(npc), backers);
+}
+
+// The sum itself, for one nerve and so many friends: the roll above, and the Hub's estimate for a
+// ganger of theirs standing with one friend (CBHoldBackTypical).
+public func CBHoldBackOdds(sys: ref<CyberbaneSystem>, faction: CName, nerve: Float, backers: Int32) -> Float {
+  let score = IsDefined(sys) ? sys.GetScore() : null;
+  if !IsDefined(score) || nerve >= 1.0 {
+    return 0.0;
+  }
+  let fear = ClampF(score.GetFactionFear(faction) / 100.0, 0.0, 1.0);
+  if CBGangBroken(sys, faction) {
+    fear += CBConfig.BrokenGangFear();
+  } else {
+    if CBTurfLostGround(sys, faction) {
+      fear += CBConfig.LostGroundFear();
+    }
+  }
+  let chance = (fear - nerve * CBConfig.HoldBackNerveWeight()) * CBConfig.HoldBackScale()
+             - Cast<Float>(backers) * CBConfig.HoldBackPerBacker();
+  return ClampF(chance * sys.WornPerk().breakMult, 0.0, CBConfig.HoldBackMax());
+}
+
+// What the Hub says: the odds for one of their rank and file standing with one friend.
+public func CBHoldBackTypical(sys: ref<CyberbaneSystem>, faction: CName) -> Float {
+  let nerve = 1.0 - CBConfig.FleeChance();
+  let content = IsDefined(sys) ? sys.GetContent() : null;
+  if IsDefined(content) {
+    let prof = content.GetFaction(faction);
+    if IsDefined(prof) {
+      nerve += prof.courageMod;
+    }
+  }
+  return CBHoldBackOdds(sys, faction, ClampF(nerve, 0.0, 1.0), 1);
+}
+
+// Rolled once per person and kept, so the same ganger does not hold back one second and draw the next.
+public func CBHoldsBackFromV(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, faction: CName) -> Bool {
+  if !IsDefined(npc) {
+    return false;
+  }
+  if npc.cbHoldState == 0 {
+    npc.cbHoldState = RandF() < CBHoldBackChance(sys, npc, faction) ? 1 : 2;
+    if npc.cbHoldState == 1 {
+      CBLog.Verbose(n"Reactions", s"One of \(NameToString(faction)) holds back from V out of fear.");
+    }
+  }
+  return npc.cbHoldState == 1;
+}
+
+// How many of this gang are standing within `radius` of this one, up to `cap`. Out of a fight, so the
+// test is who they are with, not who could break.
+public func CBSameGangNear(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, faction: CName,
+                           radius: Float, cap: Int32) -> Int32 {
+  let reg = IsDefined(sys) ? sys.GetRegistry() : null;
+  if !IsDefined(reg) || !IsDefined(npc) {
+    return 0;
+  }
+  let here = npc.GetWorldPosition();
+  let id = npc.GetEntityID();
+  let count = 0;
+  let all = reg.GetAll();
+  let i = 0;
+  while i < ArraySize(all) && count < cap {
+    let other = all[i];
+    i += 1;
+    if CBNpcSafe(sys, other) && NotEquals(other.GetEntityID(), id) && !other.IsDead()
+       && Vector4.Distance(here, other.GetWorldPosition()) <= radius
+       && Equals(CBClassifyFaction(other), faction) {
+      count += 1;
+    }
+  }
+  return count;
 }

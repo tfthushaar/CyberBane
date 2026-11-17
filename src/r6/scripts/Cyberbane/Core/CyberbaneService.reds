@@ -66,6 +66,24 @@ public class CBGangPower {
   public persistent let at: Float;             // game seconds
 }
 
+// What V has said to one gang's people on one in-game day (1.9.5, Reactions/StreetTalk.reds). Talking to
+// people moves standing, fear and conduct a little at a time, and this is what keeps it a little: each
+// kind of change has a ceiling a day per gang (n"" is everybody with no gang), so a crowd cannot be
+// farmed by greeting it over and over, and loading a save does not hand the day's allowance back. Here
+// rather than in the save for the reason CBSighting is: nothing may be added to a class the save holds.
+public class CBTalkTally {
+  public persistent let playthroughId: CName;
+  public persistent let faction: CName;
+  public persistent let day: Int32;            // whole in-game days
+  public persistent let warmth: Float;         // standing gained by greeting their people
+  public persistent let slight: Float;         // standing lost by brushing them off or provoking them
+  public persistent let fear: Float;           // how much more they fear V from being leaned on
+  public persistent let conduct: Float;        // conduct moved, either way, by how V spoke to them
+  public persistent let taxes: Int32;          // shake-downs
+  public persistent let leaks: Int32;          // somebody of theirs gave up one of their Rivals
+  public persistent let tips: Int32;           // a friend of V's passed on word about their enemies
+}
+
 // Which V a playthrough id belongs to (1.8.3).
 //
 // Everything this service keeps is tied to a playthrough by its id, and that id was the only thing
@@ -121,6 +139,8 @@ public class CyberbaneService extends ScriptableService {
   private persistent let m_forgottenRivals: array<ref<CBForgottenRival>>;
   // Which V each playthrough id belongs to (1.8.3). Cap CapBirths, oldest first.
   private persistent let m_births: array<ref<CBPlaythroughBirth>>;
+  // What V has said to each gang's people today (1.9.5). Cap CapTalkTallies, oldest first.
+  private persistent let m_talkTallies: array<ref<CBTalkTally>>;
   // The two action switches in Mod Settings, as last seen (1.8.3): CBSwitchUnseen, CBSwitchOff, or
   // CBSwitchActed (on, and already carried out). Mod Settings keeps a switch's accepted value and
   // writes it to its file, and hands it back on every launch and with every later change to any
@@ -427,6 +447,52 @@ public class CyberbaneService extends ScriptableService {
     }
     p.strength = strength;
     p.at = at;
+  }
+
+  // Today's record of what V has said to this gang's people, made on first use (1.9.5). A record of an
+  // earlier day for the same gang is reused for today, so the list holds one per gang and playthrough.
+  public func TalkTally(playthroughId: CName, faction: CName, day: Int32) -> ref<CBTalkTally> {
+    if !IsNameValid(playthroughId) {
+      return null;
+    }
+    let i = 0;
+    while i < ArraySize(this.m_talkTallies) {
+      let t = this.m_talkTallies[i];
+      if IsDefined(t) && Equals(t.playthroughId, playthroughId) && Equals(t.faction, faction) {
+        if t.day != day {
+          t.day = day;
+          t.warmth = 0.0;
+          t.slight = 0.0;
+          t.fear = 0.0;
+          t.conduct = 0.0;
+          t.taxes = 0;
+          t.leaks = 0;
+          t.tips = 0;
+        }
+        return t;
+      }
+      i += 1;
+    }
+    let made = new CBTalkTally();
+    made.playthroughId = playthroughId;
+    made.faction = faction;
+    made.day = day;
+    ArrayPush(this.m_talkTallies, made);
+    while ArraySize(this.m_talkTallies) > CBConfig.CapTalkTallies() {
+      ArrayErase(this.m_talkTallies, 0);
+    }
+    return made;
+  }
+
+  public func DropPlaythroughTalk(playthroughId: CName) -> Void {
+    let i = ArraySize(this.m_talkTallies) - 1;
+    while i >= 0 {
+      let t = this.m_talkTallies[i];
+      if !IsDefined(t) || Equals(t.playthroughId, playthroughId) {
+        ArrayErase(this.m_talkTallies, i);
+      }
+      i -= 1;
+    }
   }
 
   public func DropPlaythroughGangPower(playthroughId: CName) -> Void {

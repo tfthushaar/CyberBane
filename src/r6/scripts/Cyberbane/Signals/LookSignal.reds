@@ -10,7 +10,8 @@
 // entries with CyberbaneAPI.RegisterLookTag / RegisterLookItem. Fully reversible.
 
 public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  if !IsDefined(sys) {
+  // Same wait as the chrome reading (1.9.5).
+  if !IsDefined(sys) || !sys.WornReady() {
     return;
   }
   let score = sys.GetScore();

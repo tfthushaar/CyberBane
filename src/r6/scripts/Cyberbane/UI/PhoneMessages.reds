@@ -217,9 +217,16 @@ public class CBPhone {
   private let m_openDialog: wref<MessengerDialogViewController>;
 
   // Something V overheard on the street. Not a text: nobody sent it, V was standing near the
-  // person who said it. It is drawn as a line of subtitle at the bottom of the screen, the way
-  // the game shows speech, and it never goes into the phone. One at a time; a newer line
-  // replaces an older one, which is how overheard speech works.
+  // person who said it. It is a line of the game's own subtitles (1.9.5), and it never goes into
+  // the phone. One at a time; a newer line replaces an older one, which is how overheard speech works.
+  //
+  // Until 1.9.5 it was a line of Cyberbane's own, drawn on the HUD layer well above where the game
+  // puts its subtitles so the two never overlapped: it read as text floating in the middle of the
+  // screen, in a font and size of its own. It now goes through the game's subtitle system, the way a
+  // line of dialogue does, so it is where subtitles are, looks like them and follows the player's own
+  // subtitle settings (size, background). With the game's subtitles switched off there is nothing to
+  // follow, so Cyberbane's own line is drawn instead, in the same place.
+  private let m_subNativeSlot: Int32 = -1;   // which of our two subtitle ids is on screen; -1 none
   private let m_subRoot: ref<inkCanvas>;
   private let m_subSpeaker: ref<inkText>;
   private let m_subLine: ref<inkText>;
@@ -259,6 +266,13 @@ public class CBPhone {
     if strays > 0 {
       CBLog.Info(n"UI", s"Took \(strays) message cards left over from an earlier session off the screen.");
     }
+    // And a subtitle line of ours an earlier session may have left up (1.9.5). The ids are fixed, so
+    // taking them down is safe whether or not anything is showing.
+    CBHideGameSubtitle(this.m_game, 0);
+    CBHideGameSubtitle(this.m_game, 1);
+    CBHideGameSubtitle(this.m_game, 2);
+    CBHideGameSubtitle(this.m_game, 3);
+    this.m_subNativeSlot = -1;
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
     let width = CBConfig.PhoneCardWidth();
     let height = CBConfig.PhoneCardHeight();
@@ -343,8 +357,8 @@ public class CBPhone {
     this.m_built = true;
   }
 
-  // The subtitle line: a speaker label over the words, centred near the bottom of the screen,
-  // above where the game draws its own subtitles so the two never sit on top of each other.
+  // Cyberbane's own subtitle line, for when the game's subtitles are switched off (1.9.5): a speaker
+  // label over the words, centred where the game draws its subtitles.
   private func BuildOverheard(win: wref<inkCompoundWidget>, font: String, scale: Float) -> Void {
     let width = CBConfig.OverheardWidth();
     let root = new inkCanvas();
@@ -782,6 +796,7 @@ public class CBPhone {
     if IsDefined(this.m_subRoot) {
       this.m_subRoot.SetVisible(false);
     }
+    this.HideNativeLine();
     let i = 0;
     while i < ArraySize(this.m_rows) {
       if IsDefined(this.m_rows[i].root) {
@@ -891,17 +906,27 @@ public class CBPhone {
     }
   }
 
-  // Age the subtitle line and fade it in and out.
+  // Age the subtitle line and fade it in and out. A line of the game's own subtitles fades by itself;
+  // it only has to be taken down when its time is up.
   private func TickOverheard(dt: Float, hubOpen: Bool) -> Void {
-    if !IsDefined(this.m_subRoot) {
-      return;
-    }
     if this.m_subLeft <= 0.0 {
-      this.m_subRoot.SetVisible(false);
+      this.HideNativeLine();
+      if IsDefined(this.m_subRoot) {
+        this.m_subRoot.SetVisible(false);
+      }
       return;
     }
     this.m_subLeft -= dt;
     this.m_subShown += dt;
+    if this.m_subLeft <= 0.0 {
+      this.HideNativeLine();
+    }
+    if this.m_subNativeSlot >= 0 || !IsDefined(this.m_subRoot) {
+      if IsDefined(this.m_subRoot) {
+        this.m_subRoot.SetVisible(false);
+      }
+      return;
+    }
     if IsDefined(this.m_subSpeaker) {
       this.m_subSpeaker.SetText(this.m_subNewSpeaker);
     }
@@ -914,12 +939,37 @@ public class CBPhone {
     this.m_subRoot.SetVisible(!hubOpen && this.m_subLeft > 0.0);
   }
 
+  // Put the newest overheard line up: in the game's subtitles when they are on, otherwise in ours.
+  // Two ids taken in turn, so the line going up never shares an id with the one coming down; the
+  // game's controller skips a line whose id it is still showing.
+  private func ShowOverheardLine(game: GameInstance) -> Void {
+    let previous = this.m_subNativeSlot;
+    this.m_subNativeSlot = -1;
+    if CBGameSubtitlesOn(game) {
+      let slot = previous == 0 ? 1 : 0;
+      if CBShowGameSubtitle(game, slot, this.m_subNewSpeaker, this.m_subNewLine, this.m_subLeft) {
+        this.m_subNativeSlot = slot;
+      }
+    }
+    if previous >= 0 {
+      CBHideGameSubtitle(game, previous);
+    }
+  }
+
+  private func HideNativeLine() -> Void {
+    if this.m_subNativeSlot >= 0 {
+      CBHideGameSubtitle(this.m_game, this.m_subNativeSlot);
+      this.m_subNativeSlot = -1;
+    }
+  }
+
   // Hand everything waiting to whichever surface is in use. Runs on a settled tick only.
   private func Deliver(game: GameInstance) -> Void {
     if this.m_subDirty {
       this.m_subDirty = false;
       this.m_subLeft = CBOverheardSeconds();
       this.m_subShown = 0.0;
+      this.ShowOverheardLine(game);
       let tsSub = GameInstance.GetTimeSystem(game);
       if IsDefined(tsSub) && ArraySize(this.m_sender) == 0 {
         this.m_lastSimTime = EngineTime.ToFloat(tsSub.GetSimTime());
@@ -1087,6 +1137,7 @@ public class CBPhone {
     ArrayClear(this.m_pendAccent);
     this.m_subLeft = 0.0;
     this.m_subDirty = false;
+    this.HideNativeLine();
     if IsDefined(this.m_subRoot) {
       this.m_subRoot.SetVisible(false);
     }
@@ -1132,6 +1183,80 @@ public func CBPhoneHoldSeconds() -> Float {
 }
 
 // How long an overheard line stays. Shorter than a card: it is one sentence somebody said.
+// ---- The game's own subtitles (1.9.5) -------------------------------------
+//
+// The game draws subtitles from lines put on the UIGameData blackboard (ShowDialogLine) and takes
+// them down by id (HideDialogLine): baseSubtitlesControllers.script, SubtitlesGameController. A line
+// of type Regular is drawn by the bottom-of-screen controller as long as it names somebody saying it
+// (IsMainDialogLine), and it shows the speaker name it is given. V is named as the one it is heard
+// by: the person who said it may be gone by the time the line goes up, and a line whose speaker is
+// gone is not drawn. Nothing here touches the controller or its widgets.
+
+// Is the player showing the game's subtitles? The same setting the subtitles controller reads.
+public func CBGameSubtitlesOn(game: GameInstance) -> Bool {
+  let settings = GameInstance.GetSettingsSystem(game);
+  if !IsDefined(settings) || !settings.HasVar(n"/accessibility/subtitles", n"Cinematic") {
+    return true;
+  }
+  let cinematic = settings.GetVar(n"/accessibility/subtitles", n"Cinematic") as ConfigVarBool;
+  return !IsDefined(cinematic) || cinematic.GetValue();
+}
+
+// Cyberbane's subtitle line ids: 0 and 1 for what V overhears, taken in turn, 2 for V's own line in a
+// street exchange and 3 for the answer (Reactions/StreetTalk.reds). Fixed, so a line left over from
+// another session can always be taken down; far from anything the game hashes for its own lines.
+func CBSubtitleLineId(slot: Int32) -> CRUID {
+  if slot == 1 {
+    return CreateCRUID(7310582093516161002ul);
+  }
+  if slot == 2 {
+    return CreateCRUID(7310582093516161003ul);
+  }
+  if slot == 3 {
+    return CreateCRUID(7310582093516161004ul);
+  }
+  return CreateCRUID(7310582093516161001ul);
+}
+
+public func CBShowGameSubtitle(game: GameInstance, slot: Int32, speaker: String, text: String,
+                               seconds: Float) -> Bool {
+  let player = GetPlayer(game);
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(player) || !IsDefined(bbs) || StrLen(text) == 0 {
+    return false;
+  }
+  let bb = bbs.Get(GetAllBlackboardDefs().UIGameData);
+  if !IsDefined(bb) {
+    return false;
+  }
+  let line: scnDialogLineData;
+  line.id = CBSubtitleLineId(slot);
+  line.text = text;
+  line.type = scnDialogLineType.Regular;
+  line.speaker = player;
+  line.speakerName = speaker;
+  line.isPersistent = false;
+  line.duration = seconds;
+  let lines: array<scnDialogLineData>;
+  ArrayPush(lines, line);
+  bb.SetVariant(GetAllBlackboardDefs().UIGameData.ShowDialogLine, ToVariant(lines), true);
+  return true;
+}
+
+public func CBHideGameSubtitle(game: GameInstance, slot: Int32) -> Void {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(bbs) {
+    return;
+  }
+  let bb = bbs.Get(GetAllBlackboardDefs().UIGameData);
+  if !IsDefined(bb) {
+    return;
+  }
+  let ids: array<CRUID>;
+  ArrayPush(ids, CBSubtitleLineId(slot));
+  bb.SetVariant(GetAllBlackboardDefs().UIGameData.HideDialogLine, ToVariant(ids), true);
+}
+
 public func CBOverheardSeconds() -> Float {
   return MaxF(CBConfig.OverheardSeconds() * CBMessageHold(), CBConfig.OverheardFloor());
 }

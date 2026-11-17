@@ -268,7 +268,18 @@ public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionI
   if !(Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)) {
     return -1;
   }
-  return Min(CBConfig.PeaceMaxCost(), RoundF(Cast<Float>(CBPeacePrice(fs, posture)) * sys.WornPerk().peaceMult));
+  // A gang V has broken is in no position to hold out for its price (1.9.5).
+  let broken = CBGangBroken(sys, factionId) ? CBConfig.PeaceBrokenShare() : 1.0;
+  return Min(CBConfig.PeaceMaxCost(), RoundF(Cast<Float>(CBPeacePrice(fs, posture)) * sys.WornPerk().peaceMult * broken));
+}
+
+// What a broken gang says when it names its price (1.9.5): less a demand than asking to stop.
+public func CBPeaceBrokenLine(cost: Int32) -> String {
+  switch RandRange(0, 3) {
+    case 0: return s"There's hardly any of us left. \(cost)eb and it's over. Please.";
+    case 1: return s"You made your point. \(cost)eb and nobody of ours comes near you again.";
+    default: return s"We're done. Take \(cost)eb and let us be.";
+  }
 }
 
 // A gang putting its price to V unprompted, for the once-a-session standing demand
