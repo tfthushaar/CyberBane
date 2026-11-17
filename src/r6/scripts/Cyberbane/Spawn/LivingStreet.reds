@@ -36,6 +36,45 @@ public func CBStreetLifeOn(flag: CName) -> Bool {
   return false;
 }
 
+// How many of each gang come to a sit-down (People per gang at a sit-down): five each, ten in all.
+public func CBSitDownPerGang() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() {
+    return 5;
+  }
+  return Clamp(rt.GetSettings().sitDownSize, 1, 8);
+}
+
+// How many of each gang's people there are its best (Apex fighters per gang at a sit-down): one per chair
+// of its apex squad, so four at most, and never more than came.
+public func CBSitDownApexPerGang() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  let n = 2;
+  if IsDefined(rt) && rt.HasSettings() {
+    n = rt.GetSettings().sitDownApex;
+  }
+  return Clamp(n, 0, Min(4, CBSitDownPerGang()));
+}
+
+// One of a gang's best at a sit-down: spawned from the record of their apex squad's chair and carrying that
+// chair's tag (CBApexRoleTag), but never CB_Apex, which is the apex squad itself, with its muster, its bounty
+// and its one-at-a-time lane.
+public func CBIsMeetApex(des: ref<DynamicEntitySystem>, id: EntityID) -> Bool {
+  return IsDefined(des) && des.IsTagged(id, n"CB_Meet") && CBTaggedApexSeat(des, id) >= 0;
+}
+
+// Built and kitted as a member of the gang's apex squad is (Spawn/Spawner.reds, the CB_Apex setup): the same
+// build under the apex strength slider, the same chair's kit. What they are to V is the street's call, made
+// by CBSetUpStreet first like everybody else at the sit-down. No boss bar: up to eight of them, standing
+// about before anybody is fighting, would fill the screen with bars for people who may never draw.
+public func CBSetUpMeetApex(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, seat: Int32) -> Void {
+  if !IsDefined(puppet) || !puppet.IsAttached() || puppet.IsDead() {
+    return;
+  }
+  CBApplyApexBuff(sys, game, puppet);
+  CBKitApexSeat(puppet, seat);
+}
+
 public func CBTalkActFavour() -> Int32 = 30
 
 @addField(ScriptedPuppet)
@@ -525,33 +564,66 @@ public class CBStreetLife {
     this.m_meetPinned = true;
   }
 
-  // Two of each, out of V's sight round the place.
+  // The setting's number of each gang (People per gang at a sit-down), out of V's sight round the place.
+  // Two each was the only size before this setting. Placed on rings round the middle: the first ring holds
+  // eight, and a bigger meeting stands further out. Short of room for all of
+  // them under MaxLiveSpawns, as many as fit are asked for, in pairs so neither gang outnumbers the other,
+  // and never fewer than one each: a sit-down V was told about still happens when the street is busy.
   private func PlaceMeet(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>) -> Bool {
     let fa = sys.FindFaction(this.m_meetA);
     let fb = sys.FindFaction(this.m_meetB);
-    if !IsDefined(fa) || !IsDefined(fb) || !TDBID.IsValid(fa.sampleRecord) || !TDBID.IsValid(fb.sampleRecord) || CBSpawnRoom(game) < 4 {
+    let want = Min(2 * CBSitDownPerGang(), CBSpawnRoom(game));
+    want -= want % 2;
+    if !IsDefined(fa) || !IsDefined(fb) || !TDBID.IsValid(fa.sampleRecord) || !TDBID.IsValid(fb.sampleRecord) || want < 2 {
       return false;
     }
     let ppos = player.GetWorldPosition();
     let fwd = player.GetWorldForward();
-    let k = 0;
-    while k < 8 && ArraySize(this.m_meetIds) < 4 {
-      let ang = Cast<Float>(k) * 0.7854;
-      k += 1;
-      let snapped: Vector4;
-      let at: Vector4;
-      if CBNavSnap(game, this.m_meetAt.X + CosF(ang) * 2.2, this.m_meetAt.Y + SinF(ang) * 2.2, this.m_meetAt.Z, snapped)
-         && CBSettleOnGround(game, snapped, at) && CBPointHiddenFrom(game, ppos, fwd, at) {
-        // Facing the middle, the way people meeting stand.
-        let facing = Quaternion.BuildFromDirectionVector(new Vector4(-CosF(ang), -SinF(ang), 0.0, 0.0));
-        let rec = ArraySize(this.m_meetIds) % 2 == 0 ? fa.sampleRecord : fb.sampleRecord;
-        let id: EntityID;
-        if CBCreateSpawn(des, rec, n"", at, facing, n"CB_Meet", id) {
-          ArrayPush(this.m_meetIds, id);
+    let ring = 0;
+    while ring < 3 && ArraySize(this.m_meetIds) < want {
+      let radius = 2.2 + Cast<Float>(ring) * 1.6;
+      let slots = 8 + ring * 4;
+      // Each ring turned half a step against the one inside it, so nobody stands right behind somebody.
+      let turn = Cast<Float>(ring) * 3.14159 / Cast<Float>(slots);
+      let k = 0;
+      while k < slots && ArraySize(this.m_meetIds) < want {
+        let ang = turn + Cast<Float>(k) * 6.28318 / Cast<Float>(slots);
+        k += 1;
+        let snapped: Vector4;
+        let at: Vector4;
+        if CBNavSnap(game, this.m_meetAt.X + CosF(ang) * radius, this.m_meetAt.Y + SinF(ang) * radius, this.m_meetAt.Z, snapped)
+           && CBSettleOnGround(game, snapped, at) && CBPointHiddenFrom(game, ppos, fwd, at) {
+          // Facing the middle, the way people meeting stand.
+          let facing = Quaternion.BuildFromDirectionVector(new Vector4(-CosF(ang), -SinF(ang), 0.0, 0.0));
+          // The two gangs take turns, and each gang's first few are its best, one per chair of its apex
+          // squad: they come first, so they stand nearest the middle, with their people round them. A gang
+          // with nobody for a chair (no roster, or nobody this install has) sends one of its rank and file.
+          let n = ArraySize(this.m_meetIds);
+          let side = n % 2 == 0 ? fa : fb;
+          let chair = n / 2;
+          let rec = side.sampleRecord;
+          let role = n"";
+          if chair < CBSitDownApexPerGang() {
+            let best = CBApexRosterRecord(side.id, chair);
+            if TDBID.IsValid(best) {
+              rec = best;
+              role = CBApexRoleTag(chair);
+            }
+          }
+          let id: EntityID;
+          if CBCreateSpawn(des, rec, n"", at, facing, n"CB_Meet", id, role) {
+            ArrayPush(this.m_meetIds, id);
+          }
         }
       }
+      ring += 1;
     }
-    return ArraySize(this.m_meetIds) >= 2;
+    let placed = ArraySize(this.m_meetIds);
+    // Said once, when the sit-down is in place: a try that placed nobody is tried again next tick.
+    if placed >= 2 && placed < 2 * CBSitDownPerGang() {
+      CBLog.Info(n"Street", s"A sit-down placed \(placed) of \(2 * CBSitDownPerGang()) people.");
+    }
+    return placed >= 2;
   }
 
   private func Crashed(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {

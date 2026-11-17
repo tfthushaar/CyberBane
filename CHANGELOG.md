@@ -3,6 +3,24 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## Unreleased
+
+**A living street**
+- **Sit-downs are a real fight now.** Ten people instead of four: five from each gang, and two of each five are
+  the gang's best, as tough and as well equipped as its apex squad, standing nearest the middle with their
+  people round them. They stand their ground rather than running, and drop apex loot. Two new settings under
+  Mod Settings > A living street: **People per gang at a sit-down** (1 to 8, default 5) and **Apex fighters
+  per gang at a sit-down** (0 to 4, default 2). If too many of Cyberbane's people are already out, fewer turn
+  up, the same number from each gang. You still crash it by taking out all but one, and the people there still
+  leave you alone unless you start it or their gang is at war with you.
+- **Sit-downs and bagmen come more often.** A sit-down was something you might hear about once every two hours
+  of play or more; now it's closer to once an hour. A bagman comes out about every 40 minutes instead of every
+  hour. Both still only happen when a gang holds the district you're in.
+
+**Gangs**
+- **Tribute arrives sooner.** A gang that fears you enough to pay took about four in-game days to actually
+  do it; now it's about two. Still at most once a week per gang.
+
 ## 2.1.0 (18 November 2026)
 
 **New: How gangs see you.** A new page in Mod Settings, asked for by a player running an Arasaka roleplay

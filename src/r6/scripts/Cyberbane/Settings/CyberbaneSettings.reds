@@ -708,6 +708,30 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SitDowns-Desc")
   public let sitDowns: Bool = true;
 
+  // How many of each gang turn up to a sit-down (Spawn/LivingStreet.reds, CBSitDownPerGang). Two
+  // gangs, so the meeting is twice this: ten by default. Two each was the only size before this.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SitDownSize")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SitDownSize-Desc")
+  @runtimeProperty("ModSettings.min", "1")
+  @runtimeProperty("ModSettings.max", "8")
+  @runtimeProperty("ModSettings.step", "1")
+  public let sitDownSize: Int32 = 5;
+
+  // How many of those are the gang's best, built like its apex squad (CBSitDownApexPerGang). The
+  // rest are its rank and file.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SitDownApex")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SitDownApex-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "4")
+  @runtimeProperty("ModSettings.step", "1")
+  public let sitDownApex: Int32 = 2;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
   @runtimeProperty("ModSettings.category.order", "8")

@@ -1171,6 +1171,10 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   // The street's own people (Spawn/LivingStreet.reds, 2.0.0): no hunting orders for any of them.
   if des.IsTagged(id, n"CB_Bagman") || des.IsTagged(id, n"CB_Meet") {
     CBSetUpStreet(sys, game, puppet, false);
+    // A gang's best at a sit-down: built like its apex squad (Spawn/LivingStreet.reds).
+    if CBIsMeetApex(des, id) {
+      CBSetUpMeetApex(sys, game, puppet, CBTaggedApexSeat(des, id));
+    }
     return;
   }
   if des.IsTagged(id, n"CB_Favour") {
