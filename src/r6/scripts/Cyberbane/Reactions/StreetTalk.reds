@@ -9,7 +9,7 @@
 // ---- What it is for --------------------------------------------------------------------------------
 //
 // It is the other half of the reputation: the city reacting to V was all one way. And it gives V the
-// ways to change a gang's mind that do not go through a body, which players asked for (IMPROVEMENTS,
+// ways to change a gang's mind that do not go through a body, which players asked for (PLAYER_REQUESTS.md,
 // "more explicit ways to become friendly with a gang"):
 //
 //   Greet       warms a gang a little at a time, up to the edge of Friendly, as keeping the peace does.
