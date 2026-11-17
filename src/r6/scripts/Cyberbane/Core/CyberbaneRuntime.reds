@@ -47,6 +47,8 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_lastMessageAt: Float;
   // Equipment-EX's outfit functions, looked up once a launch (Signals/Concealment.reds, 1.9.5).
   private let m_eqexProbe: ref<CBEqExProbe>;
+  // Whether V has been told to put a weapon away to talk to people (Reactions/StreetTalk.reds, 1.9.5).
+  private let m_talkHolsterHinted: Bool;
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -103,6 +105,14 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetTwrDetected(present: Bool) -> Void {
     this.m_twrDetected = present ? 1 : 2;
+  }
+
+  public func GetTalkHolsterHinted() -> Bool {
+    return this.m_talkHolsterHinted;
+  }
+
+  public func SetTalkHolsterHinted(on: Bool) -> Void {
+    this.m_talkHolsterHinted = on;
   }
 
   public func GetEqExProbe() -> ref<CBEqExProbe> {

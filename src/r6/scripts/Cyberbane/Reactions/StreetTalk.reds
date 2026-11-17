@@ -68,6 +68,11 @@ public let cbTalkDone: Int32;
 @addField(ScriptedPuppet)
 public let cbTalkSent: Bool;
 
+// The settled tick V last had the prompt up on this person, or was waiting on their answer (1.9.5). The
+// Director does not turn somebody on V mid-conversation (Reactions/Director.reds, TryGangHostile).
+@addField(ScriptedPuppet)
+public let cbTalkHeldTick: Int32;
+
 // The four choices, in the order they are shown.
 public func CBTalkGreet() -> Int32 = 0
 public func CBTalkDismiss() -> Int32 = 1
@@ -177,6 +182,12 @@ public class CBStreetTalk {
   // Keeping one notch of the wheel to one step (see Scroll).
   // After V reached for a weapon with the prompt up, how long before it may come up again (seconds).
   private let m_quietLeft: Float;
+  // Why the prompt did not come up for the person V is facing, as last logged, and how long V has faced
+  // them without it (1.9.5): one line in the log per reason, so a report can say exactly what stopped it.
+  private let m_whyLogged: String;
+  private let m_whyFor: Float;
+  private let m_whyLogAt: Float;
+  private let m_reassertLogged: Bool;
   private let m_lastScrollAt: Float;
   private let m_lastScrollStep: Int32;
   private let m_lastScrollByWeapon: Bool;
@@ -243,8 +254,14 @@ public class CBStreetTalk {
         }
       }
     }
-    if !this.Allowed(sys, game, player) {
+    let notNow = this.AllowedWhyNot(sys, game, player);
+    if StrLen(notNow) > 0 {
       this.StandDown(game);
+      // Said in the log when V is facing somebody; not looked for at all while talk is off, the world
+      // is loading or V is driving.
+      if CBStreetTalkOn() && CBWorldStable(game) && !VehicleComponent.IsMountedToVehicle(game, player.GetEntityID()) {
+        this.NoteWhyNot(game, dt, this.LookedAt(game, player), notNow);
+      }
       return;
     }
     // Once a session, on its first settled tick: the hands lock is a state-machine setting, and one
@@ -261,12 +278,25 @@ public class CBStreetTalk {
       this.StopListening();
     }
     let npc = this.LookedAt(game, player);
+    if this.m_hasPending && IsDefined(this.m_pendingTarget) && IsDefined(this.m_pendingTarget.npc) {
+      this.m_pendingTarget.npc.cbTalkHeldTick = Max(sys.GetTickCount(), 1);
+    }
     if this.m_shown {
       let same = IsDefined(npc) && IsDefined(this.m_target) && Equals(npc.GetEntityID(), this.m_target.id);
       let held = IsDefined(this.m_target) && CBTalkEligible(sys, game, player, this.m_target.npc, CBConfig.TalkKeepRange());
       if !held || CBNativePromptUp(game) {
         this.Close(game);
         return;
+      }
+      this.m_target.npc.cbTalkHeldTick = Max(sys.GetTickCount(), 1);
+      // Still on screen? Something of the game's may have written over the hub without a hub of its own
+      // (CBNativePromptUp would have closed ours for one of those). Put it back, and say so once.
+      if !CBTalkHubShown(game) {
+        CBTalkPushHub(game, CBTalkTitle(this.m_target), this.m_lines, this.m_index);
+        if !this.m_reassertLogged {
+          this.m_reassertLogged = true;
+          CBLog.Info(n"Talk", "The talk prompt was taken off the screen by the game; putting it back.");
+        }
       }
       // A glance away is not walking off: a moment's grace before the prompt goes.
       this.m_lostFor = same ? 0.0 : this.m_lostFor + dt;
@@ -276,18 +306,47 @@ public class CBStreetTalk {
       return;
     }
     // Nothing up: is V settling on somebody?
-    if this.m_hasPending || this.m_quietLeft > 0.0 || !IsDefined(npc) || IsDefined(GameObject.GetActiveWeapon(player))
-       || !CBTalkEligible(sys, game, player, npc, CBConfig.TalkRange()) || CBNativePromptUp(game) {
+    // A weapon in hand keeps the prompt away (the wheel would switch guns instead of lines), and
+    // nothing said so (1.9.5): a player standing face to face with somebody, pistols out, had no way to
+    // know why nothing came up. The same look, held a little longer, now says it once a launch.
+    let armed = IsDefined(GameObject.GetActiveWeapon(player));
+    let why = "";
+    if this.m_hasPending {
+      why = "waiting on their answer";
+    } else {
+      if this.m_quietLeft > 0.0 {
+        why = "you reached for a weapon a moment ago";
+      } else {
+        if IsDefined(npc) {
+          why = CBTalkWhyNot(sys, game, player, npc, CBConfig.TalkRange());
+          if StrLen(why) == 0 && CBNativePromptUp(game) {
+            why = "one of the game's own prompts is up";
+          }
+        }
+      }
+    }
+    if !IsDefined(npc) || StrLen(why) > 0 {
       this.m_candidate = null;
       this.m_dwell = 0.0;
+      this.NoteWhyNot(game, dt, npc, why);
       return;
     }
+    this.m_whyFor = 0.0;
     let cand = this.m_candidate;
     if IsDefined(cand) && Equals(cand.GetEntityID(), npc.GetEntityID()) {
       this.m_dwell += dt;
     } else {
       this.m_candidate = npc;
       this.m_dwell = 0.0;
+    }
+    if armed {
+      this.NoteWhyNot(game, dt, npc, "a weapon is in V's hands");
+      let rt = CyberbaneRuntime.Get();
+      if this.m_dwell >= CBConfig.TalkArmedHintDwell() && IsDefined(rt) && !rt.GetTalkHolsterHinted() {
+        rt.SetTalkHolsterHinted(true);
+        CBSystemNote(game, "put your weapon away to talk to people. Look at somebody up close with empty hands and the choices come up.", 7.0);
+      }
+      return;
     }
     if this.m_dwell >= CBConfig.TalkDwell() {
       this.Open(sys, game, player, npc);
@@ -296,29 +355,103 @@ public class CBStreetTalk {
 
   // Everything that has to be true for anybody to be talked to at all.
   private func Allowed(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>) -> Bool {
-    if !CBStreetTalkOn() || !CBWorldStable(game) || CBPlayerInScene(game) {
-      return false;
+    return StrLen(this.AllowedWhyNot(sys, game, player)) == 0;
+  }
+
+  // The same, as the first reason it fails ("" when it does not), for the log.
+  private func AllowedWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>) -> String {
+    if !CBStreetTalkOn() {
+      return "Talk to people is off in Mod Settings, or Cyberbane is off";
     }
-    if sys.GetStoryHold() != CBStoryNone() || sys.IsInSafeZone() || sys.IsInQuestArea() || !sys.WornReady() {
-      return false;
+    if !CBWorldStable(game) {
+      return "the world is loading, paused or in photo mode";
     }
-    if player.IsInCombat() || VehicleComponent.IsMountedToVehicle(game, player.GetEntityID()) {
-      return false;
+    if CBPlayerInScene(game) {
+      return "V is in a scene";
+    }
+    if sys.GetStoryHold() != CBStoryNone() {
+      return "the story has the stage";
+    }
+    if sys.IsInSafeZone() {
+      return "V is in a safe area";
+    }
+    if sys.IsInQuestArea() {
+      return "V is at the tracked job, or in a restricted or dangerous zone";
+    }
+    if !sys.WornReady() {
+      return "the session has only just started";
+    }
+    if player.IsInCombat() {
+      return "V is in combat";
+    }
+    if VehicleComponent.IsMountedToVehicle(game, player.GetEntityID()) {
+      return "V is in a vehicle";
     }
     // Nobody sneaks up on somebody to say hello (1.9.5). Crouched behind a ganger for a takedown, the
     // prompt came up instead, and V's hands were held while it was up.
     if CBPlayerSneaking(game) {
-      return false;
+      return "V is crouched";
     }
-    return true;
+    return "";
   }
 
+  // V has been facing somebody close for a moment and the prompt did not come up: say why, once per
+  // reason, at most every few seconds. Only for somebody in talking range, so it never fills the log.
+  private func NoteWhyNot(game: GameInstance, dt: Float, npc: ref<ScriptedPuppet>, why: String) -> Void {
+    let player = GetPlayer(game);
+    if !IsDefined(npc) || !IsDefined(player) || StrLen(why) == 0
+       || Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > CBConfig.TalkRange() {
+      this.m_whyFor = 0.0;
+      return;
+    }
+    this.m_whyFor += dt;
+    if this.m_whyFor < CBConfig.TalkDwell() * 2.0 {
+      return;
+    }
+    let ts = GameInstance.GetTimeSystem(game);
+    let now = IsDefined(ts) ? EngineTime.ToFloat(ts.GetSimTime()) : 0.0;
+    if Equals(why, this.m_whyLogged) && now - this.m_whyLogAt < CBConfig.TalkWhyLogSeconds() {
+      return;
+    }
+    this.m_whyLogged = why;
+    this.m_whyLogAt = now;
+    CBLog.Info(n"Talk", s"No prompt for the person in front of V: \(why).");
+  }
+
+  // Who V is facing, up close. The game's own look-at first; then, when that hands back nobody (it
+  // misses people whose bodies the crosshair is not exactly on, and passers-by the targeting skips),
+  // the nearest person in talking range within a narrow cone in front of V, from Cyberbane's registry.
   private func LookedAt(game: GameInstance, player: ref<PlayerPuppet>) -> ref<ScriptedPuppet> {
+    let ppos = player.GetWorldPosition();
     let targeting = GameInstance.GetTargetingSystem(game);
-    if !IsDefined(targeting) {
+    if IsDefined(targeting) {
+      let hit = targeting.GetLookAtObject(player, true, true) as ScriptedPuppet;
+      if IsDefined(hit) && !hit.IsPlayer() && Vector4.Distance(ppos, hit.GetWorldPosition()) <= CBConfig.TalkKeepRange() {
+        return hit;
+      }
+    }
+    let sys = CyberbaneSystem.Get(game);
+    let reg = IsDefined(sys) ? sys.GetRegistry() : null;
+    if !IsDefined(reg) {
       return null;
     }
-    return targeting.GetLookAtObject(player, true, true) as ScriptedPuppet;
+    let fwd = Vector4.Normalize2D(player.GetWorldForward());
+    let best: ref<ScriptedPuppet>;
+    let bestDist = CBConfig.TalkRange();
+    for p in reg.GetAll() {
+      if IsDefined(p) && p.IsAttached() && !p.IsPlayer() && !p.IsDead() {
+        let pos = p.GetWorldPosition();
+        let d = Vector4.Distance(ppos, pos);
+        if d <= bestDist && AbsF(pos.Z - ppos.Z) <= 1.5 {
+          let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
+          if fwd.X * dir.X + fwd.Y * dir.Y >= CBConfig.TalkFacingDot() {
+            best = p;
+            bestDist = d;
+          }
+        }
+      }
+    }
+    return best;
   }
 
   private func Open(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, npc: ref<ScriptedPuppet>) -> Void {
@@ -334,6 +467,8 @@ public class CBStreetTalk {
     this.m_candidate = null;
     CBTalkPushHub(game, CBTalkTitle(t), this.m_lines, this.m_index);
     this.m_shown = true;
+    this.m_whyFor = 0.0;
+    CBLog.Info(n"Talk", s"Prompt up: \(CBTalkTitle(t)).");
     this.Listen(player);
     // Hands stay empty while V talks, so the wheel picks a line instead of drawing a gun.
     if !this.m_handsHeld {
@@ -599,40 +734,98 @@ public func CBPlayerSneaking(game: GameInstance) -> Bool {
 
 public func CBTalkEligible(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
                            npc: wref<ScriptedPuppet>, range: Float) -> Bool {
+  return StrLen(CBTalkWhyNot(sys, game, player, npc, range)) == 0;
+}
+
+// The first reason this person cannot be talked to, "" when they can (1.9.5: the log says which).
+public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
+                         npc: wref<ScriptedPuppet>, range: Float) -> String {
   if !IsDefined(npc) || !IsDefined(player) || !npc.IsAttached() || npc.IsDead() || ScriptedPuppet.IsDefeated(npc)
      || !CBStillStanding(npc) {
-    return false;
+    return "they are down or gone";
   }
-  if !npc.IsHuman() || npc.IsMechanical() || npc.cbMoraleBroken || npc.cbTalkSent {
-    return false;
+  if !npc.IsHuman() || npc.IsMechanical() {
+    return "not a person";
+  }
+  if npc.cbMoraleBroken || npc.cbTalkSent {
+    return "they are running from V";
   }
   if Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > range {
-    return false;
+    return "too far";
   }
   if npc.cbTalkTick > 0 && (sys.GetTickCount() - npc.cbTalkTick) < CBConfig.TalkCooldownTicks() {
-    return false;
+    return "V spoke to them a moment ago";
   }
-  if !CBNpcSafe(sys, npc) || !CBSafetyGate.CanAffect(npc) {
-    return false;
+  if !CBNpcSafe(sys, npc) {
+    return "they have only just appeared";
   }
-  if CBSentByUs(GameInstance.GetDynamicEntitySystem(), npc) || CBNpcInCombat(npc) {
-    return false;
+  if !CBSafetyGate.CanAffect(npc) {
+    return CBTalkGateReason(sys, npc);
   }
-  if sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
-    return false;
+  if CBSentByUs(GameInstance.GetDynamicEntitySystem(), npc) {
+    return "one of Cyberbane's own (a crew, a Rival or a hunter)";
+  }
+  if CBNpcInCombat(npc) {
+    return "they are in a fight";
+  }
+  // Somebody standing at a job of V's: a gig's target, a contact. Close to the marker only (1.9.5): sixty
+  // metres round every active objective on the map left whole streets with nobody to talk to.
+  if sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.TalkJobClearance()) {
+    return "they are at one of V's jobs";
   }
   if VehicleComponent.IsMountedToVehicle(game, npc.GetEntityID()) {
-    return false;
+    return "they are in a vehicle";
   }
   if Equals(CBClassifyFaction(npc), n"MaxTac") {
-    return false;
+    return "MaxTac";
   }
   let agent = npc.GetAttitudeAgent();
   let pagent = player.GetAttitudeAgent();
   if IsDefined(agent) && IsDefined(pagent) && Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
+    return "they are hostile to V";
+  }
+  return "";
+}
+
+// Which of the Safety Gate's rules keeps this person out of it, in words. For the log only.
+func CBTalkGateReason(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> String {
+  if npc.IsQuest() || npc.cbAuthoredState == 1 {
+    return "part of a story or a job (a quest character)";
+  }
+  if npc.IsVendor() {
+    return "a vendor";
+  }
+  if npc.IsPlayerCompanion() {
+    return "V's companion";
+  }
+  let ws = GameInstance.GetWorkspotSystem(npc.GetGame());
+  if IsDefined(ws) && ws.IsActorInWorkspot(npc) {
+    return "busy (sitting, leaning, working or in a scene)";
+  }
+  if IsDefined(sys) && sys.NearTrackedPins(npc.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
+    return "near the job V is tracking";
+  }
+  return "the game protects them here (indoors in a safe place)";
+}
+
+// Is Cyberbane's hub what the game's dialog list is showing?
+public func CBTalkHubShown(game: GameInstance) -> Bool {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(bbs) {
     return false;
   }
-  return true;
+  let defs = GetAllBlackboardDefs().UIInteractions;
+  let bb = bbs.Get(defs);
+  if !IsDefined(bb) {
+    return false;
+  }
+  let hubs = FromVariant<DialogChoiceHubs>(bb.GetVariant(defs.DialogChoiceHubs));
+  for hub in hubs.choiceHubs {
+    if hub.id == CBConfig.TalkHubId() {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Who they are to V, read once as the prompt goes up.
@@ -1035,6 +1228,9 @@ func CBTalkSendOff(game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
     return false;
   }
   npc.cbTalkSent = true;
+  // Whoever V has sent packing holds back from V from now on (1.9.5): a vendetta ganger talked down
+  // in their warning was otherwise turned on V by the Director a second later, mid-retreat.
+  npc.cbHoldState = 1;
   return CBOrderFlee(game, npc);
 }
 
@@ -1280,6 +1476,7 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   // It worked. What they give up depends on what they have.
   CBTalkFear(sys, game, t.faction, CBConfig.TalkLeanFear());
   CBTalkSlight(sys, game, t.faction, CBConfig.TalkLeanCost());
+  npc.cbHoldState = 1;   // leaned on and folded: they will not draw on V after this (1.9.5)
   let told = CBTalkInform(sys, game, player, t);
   if StrLen(told) > 0 {
     CBTalkSendOff(game, npc);

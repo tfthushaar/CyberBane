@@ -25,6 +25,10 @@ public let cbHostileTick: Int32;
 @addField(ScriptedPuppet)
 public let cbGangWarned: Bool;
 
+// The settled tick this NPC warned V (1.9.5), so the warning is a beat V can use, not a formality.
+@addField(ScriptedPuppet)
+public let cbGangWarnTick: Int32;
+
 // The tick this NPC's attitude towards V was last read for NoteForeignHostility (1.9.1).
 @addField(ScriptedPuppet)
 public let cbAttitudeReadTick: Int32;
@@ -213,7 +217,7 @@ public class CBReactionDirector {
           // looks and flee (spec §9.2), capped per tick.
           let turnedHostile = false;
           if !npc.IsCrowd() && gangOn && hostileOnSight && recognized {
-            turnedHostile = this.TryGangHostile(score, player, npc, faction);
+            turnedHostile = this.TryGangHostile(score, player, npc, faction, tick);
           }
           // Somebody of a gang hostile to V who Cyberbane did not turn (1.9.1), read now and then.
           if !playerInCombat && !turnedHostile && !npc.IsCrowd() && NotEquals(faction, n"")
@@ -241,7 +245,8 @@ public class CBReactionDirector {
   // Vendetta gangs attack a recognized V on sight (spec §9.3). Tracked for revert.
   // Returns true when this NPC is engaging V (hostile or being warned), so the Director
   // knows not to let it flee from fear instead.
-  private func TryGangHostile(score: ref<CBScoreEngine>, player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName) -> Bool {
+  private func TryGangHostile(score: ref<CBScoreEngine>, player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName,
+                              tick: Int32) -> Bool {
     if Equals(faction, n"") {
       return false;
     }
@@ -276,6 +281,7 @@ public class CBReactionDirector {
     // to hostile lands on the next evaluation, which reads as a beat of hesitation.
     if CBWarningsOn() && !npc.cbGangWarned {
       npc.cbGangWarned = true;
+      npc.cbGangWarnTick = Max(tick, 1);
       // One warning, not one per head.
       //
       // The flag above is per NPC, which is right for deciding who has had their warning, and
@@ -291,6 +297,17 @@ public class CBReactionDirector {
         CBShowWhisper(CyberbaneSystem.Get(player.GetGame()), player.GetGame(),
                       faction, n"hate", n"warning");
       }
+      return true;
+    }
+    // And then they wait a few seconds before drawing (1.9.5). The flip used to land on the very next
+    // look, about a second after the warning, so there was no time to do anything about it: walk off,
+    // or walk up and talk them down (Reactions/StreetTalk.reds). Somebody V leans on until they back
+    // down holds back from then on (cbHoldState, CBHoldsBackFromV above), and is never turned.
+    if CBWarningsOn() && npc.cbGangWarnTick > 0 && tick - npc.cbGangWarnTick < CBConfig.GangWarnGraceTicks() {
+      return true;
+    }
+    // Never mid-conversation: V has the prompt up on them, or is waiting on their answer.
+    if npc.cbTalkHeldTick > 0 && tick - npc.cbTalkHeldTick <= 2 {
       return true;
     }
     let agent = npc.GetAttitudeAgent();

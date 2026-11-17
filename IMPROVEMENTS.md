@@ -118,6 +118,22 @@ Hub's click and scroll logic again. Found and fixed:
 - **A broken gang's people threatened V** (`CBWhisperGang`): the hunter, blood and leader lines are left out when
   `CBStreetRead.broken`.
 - **The phone pay-off reply** (`CBRealPhoneReply`) said "Xeb. Call it off." before finding out V could not pay.
+- **"I'm standing this close to an NPC, how do I interact with them? A ganger just turned hostile."** (in-game, pistols
+  drawn). Two causes. The prompt needs empty hands and nothing said so: looking at somebody talkable with a weapon in
+  hand for `TalkArmedHintDwell` now says it once a launch (`CyberbaneRuntime.m_talkHolsterHinted`). And a vendetta
+  gang's warning flipped to hostile on the very next evaluation, about a second later, where §9.3 promised V a
+  beat: `TryGangHostile` now waits `GangWarnGraceTicks` after the warning (`cbGangWarnTick`), and anybody V sends off
+  or leans on until they fold gets `cbHoldState = 1` (`CBTalkSendOff`, `CBTalkOnIntimidate`), so the Director never
+  turns them afterwards. Before, a ganger intimidated during the warning was turned on V mid-retreat.
+  Then, "no weapons drawn, I still couldn't interact; gangers don't give enough time; civilians, nothing pops up".
+  Not reproduced here (the log carried no reason), so three changes at the likely causes and one to find out:
+  `CBTalkEligible` refused anyone within `QuestSpawnClearance` (60 m) of *any* active objective's pin (the Director's
+  job-site rule), now `TalkJobClearance` (20 m); `LookedAt` falls back from `GetLookAtObject` to the nearest person in
+  a `TalkFacingDot` cone in talking range from the registry; the warning grace is 10 ticks and the Director never
+  flips somebody V has the prompt up on or is waiting on (`cbTalkHeldTick`). And every refusal now has words:
+  `CBTalkWhyNot`, `AllowedWhyNot`, `CBTalkGateReason`, logged at Info as "No prompt for the person in front of V: ..."
+  once per reason (`TalkWhyLogSeconds`), with "Prompt up: ..." when it opens and a line if the game wipes the hub
+  (it is put back, `CBTalkHubShown`). The next report will name the cause.
 
 ### Not built, and why
 

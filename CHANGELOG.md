@@ -57,6 +57,16 @@ the next unless a version says otherwise.
   stayed empty until you looked away.
 - The talk prompt no longer comes up while you are crouched or sneaking, so it never gets in the way of
   a takedown.
+- **A gang's warning gives you time.** When one of a gang at war with you warns you off, they now wait
+  about ten seconds before drawing: long enough to walk away, or to walk up and talk them down. They
+  never draw while you are talking to them, and anyone you intimidate into backing off, or send
+  packing, stays backed off.
+- **The talk prompt comes up for many more people.** It now finds the person in front of you even when
+  the crosshair isn't exactly on them, and it works near job markers: it used to refuse anyone within
+  60 metres of any active job on the map, which left whole streets with nobody to talk to.
+- Look at somebody up close with a weapon in your hands and Cyberbane tells you, once, to put it away
+  to talk to them.
+- If the prompt doesn't come up for someone, Cyberbane's log now says why (for bug reports).
 - Somebody you pick a fight with in the street calms down once the fight is over, unless their gang is
   at war with you.
 - **Overheard lines use the game's own subtitles**, in the usual place and following your subtitle

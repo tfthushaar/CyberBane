@@ -61,6 +61,9 @@ public abstract class CBConfig {
   // How long somebody Cyberbane turned on V stays turned, out of a fight, once their gang has no vendetta
   // left against V (RevertNotFielding, 1.9.5): a pay-off, a cooled grudge, a street fight V picked.
   public static func HostileCoolTicks() -> Int32 = 30
+  // How long a gang's warning stands before they draw (Reactions/Director.reds, 1.9.5): long enough to
+  // walk away, or to walk up and talk them down.
+  public static func GangWarnGraceTicks() -> Int32 = 10
   public static func MaxSpawnedNpcs() -> Int32 = 8
   public static func PerNpcCooldownSeconds() -> Float = 30.0
   // Upper bound on the attitude-revert list (NPCs Cyberbane turned hostile). Only live
@@ -1235,6 +1238,14 @@ public abstract class CBConfig {
   public static func TalkCooldownTicks() -> Int32 = 45
   // How long the prompt keeps away after V reaches for a weapon with it up.
   public static func TalkQuietAfterReach() -> Float = 4.0
+  // How long V has to look at somebody with a weapon in hand before being told to put it away (once a launch).
+  public static func TalkArmedHintDwell() -> Float = 1.2
+  // How far round a job's marker people are left out of street talk (CBTalkWhyNot), and the cone in front
+  // of V somebody has to be in when the game's look-at finds nobody (cos of about 25 degrees).
+  public static func TalkJobClearance() -> Float = 20.0
+  public static func TalkFacingDot() -> Float = 0.9
+  // The same reason for no prompt is logged at most this often (seconds).
+  public static func TalkWhyLogSeconds() -> Float = 8.0
   // Cyberbane's hub id on the UIInteractions blackboard: far from the small numbers the game's own use.
   public static func TalkHubId() -> Int32 = 1128415301
   // The exchange: V's line, a beat, then theirs.
