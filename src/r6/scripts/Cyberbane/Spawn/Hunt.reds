@@ -125,6 +125,12 @@ public func CBOrderPursue(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   if !IsDefined(puppet) || puppet.cbMoraleBroken {
     return;
   }
+  // Nor anybody whose encounter is over (CB_Orphan): called off, let go, or kept back from a removal. The
+  // car watch orders whoever came in a car by the car's own tag, which an orphan still wears.
+  let des = GameInstance.GetDynamicEntitySystem();
+  if IsDefined(des) && des.IsTagged(puppet.GetEntityID(), n"CB_Orphan") {
+    return;
+  }
   // Every order on foot comes through here. While V is safe there is nowhere to send anybody
   // (Spawn/Sanctuary.reds), and they are asked again once V is not.
   // Nor onto a job (1.8.4), even once they have found V.
@@ -1025,15 +1031,7 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     return;
   }
   if !CBStillStanding(scout) {
-    // Put down before they could call it in. The crew never hears, and the gang cools off.
-    sys.ClearScout();
-    let fs = sys.FindFaction(faction);
-    if IsDefined(fs) {
-      fs.lastHitSquadAt = CBGameSeconds(game);
-    }
-    if CBToastsOn() {
-      CBHearsayFromGangFinal(game, faction, "Our guy stopped answering. We will find you another way.", n"");
-    }
+    CBScoutSilenced(sys, game, faction);
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout went down before calling it in.");
     return;
   }
@@ -1054,6 +1052,19 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     sys.SetHuntLkp(player.GetWorldPosition());
     sys.SetHuntLastSeenTick(sys.GetTickCount());
     CBScoutCallIn(sys, game, faction, true);
+  }
+}
+
+// The scout is out of it before they could call it in: put down, or gave up (Spawn/LivingStreet.reds). The
+// crew never hears, and the gang cools off.
+func CBScoutSilenced(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
+  sys.ClearScout();
+  let fs = sys.FindFaction(faction);
+  if IsDefined(fs) {
+    fs.lastHitSquadAt = CBGameSeconds(game);
+  }
+  if CBToastsOn() {
+    CBHearsayFromGangFinal(game, faction, "Our guy stopped answering. We will find you another way.", n"");
   }
 }
 
@@ -1130,12 +1141,28 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
   CBReleaseTag(sys, game, des, player, n"CB_Escort", engaged);
   CBReleaseTag(sys, game, des, player, n"CB_Scout", engaged);
   CBReleaseTag(sys, game, des, player, n"CB_Patrol", engaged);
+  // The street's own people (2.0.0) hold V in combat the same way once V has fought them and left.
+  // Only the ones fighting V: the two sides of a sit-down can be fighting each other, which holds
+  // nobody in combat but themselves.
+  for tag in CBStreetTags() {
+    CBReleaseTag(sys, game, des, player, tag, engaged, true);
+  }
   // Anyone handed to the orphan sweep because they were still in view when their encounter
   // ended is still alive and may still be in combat with V, and the sweep only runs on the slow
   // tick. Without this they could hold V in combat in the meantime, which is the 1.5.3 report
   // arriving by a new road. Their encounter is over, so a fight still going on near V is not
   // theirs and does not hold them.
   CBReleaseTag(sys, game, des, player, n"CB_Orphan", false);
+}
+
+// The street's own people (Spawn/LivingStreet.reds, 2.0.0): a bagman and their lookout, a favour's
+// lookout, the people at a sit-down. Nobody sends them after V, but any of them can end up fighting V,
+// so every rule about somebody of ours fighting V reaches them too (the 1.7.8 rule): the combat release
+// above, the sanctuary hold (CBStreetLife.Tick) and the re-arm watch (Spawn/Spawner.reds). The downed
+// sweep leaves them to whatever they belong to, which clears them when it ends. Not the help (CB_Ally),
+// who fight beside V. One list, so a new kind joins every rule at once.
+public func CBStreetTags() -> array<CName> {
+  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet"];
 }
 
 // Is anybody of ours still in the fight with V: close, or able to see V?
@@ -1171,8 +1198,9 @@ func CBTagEngagedNear(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dy
 }
 
 func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
-                  player: ref<PlayerPuppet>, tag: CName, engaged: Bool) -> Void {
+                  player: ref<PlayerPuppet>, tag: CName, engaged: Bool, opt againstVOnly: Bool) -> Void {
   let ppos = player.GetWorldPosition();
+  let pagent = player.GetAttitudeAgent();
   let crewSeated = CBAnyCrewSeated(game, des);
   let ids = des.GetTaggedIDs(tag);
   let i = 0;
@@ -1187,7 +1215,9 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
       // clock was already nearly full, and they went a second after losing sight of V.
       let closing = p.cbReleaseAway > 0.0 && away < p.cbReleaseAway - CBConfig.CombatReleaseClosing();
       p.cbReleaseAway = away;
-      if !engaged && !closing && CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) && CBOutOfView(game, p.GetWorldPosition()) {
+      let againstV = !againstVOnly || (IsDefined(pagent) && IsDefined(p.GetAttitudeAgent())
+                     && Equals(p.GetAttitudeAgent().GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile));
+      if !engaged && !closing && againstV && CBNpcInCombat(p) && far && !CBWitnessCanSee(p, player) && CBOutOfView(game, p.GetWorldPosition()) {
         p.cbOutOfFightTicks += 2;
         if p.cbOutOfFightTicks >= CBConfig.CombatReleaseTicks() {
           CBLog.Info(n"Spawn", "One of ours was keeping you in combat from too far away; letting them go.");

@@ -41,8 +41,16 @@ public func CBPanicDrivingTick(sys: ref<CyberbaneSystem>, game: GameInstance, ti
   if !IsDefined(player) || !player.IsInCombat() {
     return;
   }
+  // With the radius the game gives a shot of V's own (weaponTransitions.script, vehicleComponent.script:
+  // GetGunshotRange, which the district sets). Left out, the argument is optional and the broadcast reached
+  // nobody (the note on Reactions/Morale.reds says the same of the fear stims), so no driver ever panicked.
+  // The district has not said yet straight after a load: the game's gunshot stimulus radius stands in.
   let b = player.GetStimBroadcasterComponent();
   if IsDefined(b) {
-    b.TriggerSingleBroadcast(player, gamedataStimType.Gunshot);
+    let radius = player.GetGunshotRange();
+    if radius <= 0.0 {
+      radius = CBConfig.PanicStimRadius();
+    }
+    b.TriggerSingleBroadcast(player, gamedataStimType.Gunshot, radius);
   }
 }

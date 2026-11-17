@@ -453,6 +453,7 @@ func CBLeadExpiryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       CBDropLead(sys, game);
     }
     svc.DropSighting(pid, gone[i]);
+    CBWithdrawWord(game, gone[i]);   // they waited, and nobody came
     i += 1;
   }
   let k = 0;
@@ -554,6 +555,7 @@ func CBLairGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   if IsDefined(svc) {
     svc.DropSighting(sys.GetPlaythroughId(), r.id);
   }
+  CBWithdrawWord(game, r.id);
   CBLog.Info(n"Rivals", s"Rival \(r.id) was left lying at their place; the lead is spent.");
 }
 

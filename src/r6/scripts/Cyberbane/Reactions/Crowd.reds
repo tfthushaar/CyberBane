@@ -77,8 +77,10 @@ public func CBFearStage(fear: Float, dist: Float, reach: Float) -> Int32 {
 }
 
 // Returns true when a reaction that counts against the Director's per-tick cap fired. `dist` is
-// V's distance to the NPC, already measured by the Director loop.
-public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dist: Float, intensity: Float, faction: CName, tick: Int32, content: ref<CyberbaneContent>) -> Bool {
+// V's distance to the NPC, already measured by the Director loop, and `masked` and `player` are read
+// once a tick there too (CBCrowdIgnoresPlayer is the same question as CBPlayerMasked).
+public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dist: Float, intensity: Float, faction: CName, tick: Int32, content: ref<CyberbaneContent>,
+                        masked: Bool, player: ref<PlayerPuppet>) -> Bool {
   if !IsDefined(npc) || intensity <= 0.0 || !IsDefined(score) {
     return false;
   }
@@ -87,7 +89,7 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
     return false;
   }
   // Behind a mask you are nobody, and nobody frightens anybody.
-  if CBCrowdIgnoresPlayer(game) {
+  if masked {
     return false;
   }
   // A gang that likes V does not run from V. Fear is for the people who are not sure which side
@@ -131,7 +133,6 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
      && stage <= npc.cbCrowdLastFear {
     return false;
   }
-  let player = GetPlayer(game);
   if !IsDefined(player) {
     return false;
   }

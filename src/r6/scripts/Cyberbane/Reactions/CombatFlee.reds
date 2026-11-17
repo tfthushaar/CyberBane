@@ -599,9 +599,17 @@ func CBRunnerGotAway(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsc
     des.UnassignTag(id, tag);
     des.AssignTag(id, n"CB_Orphan");
   }
-  if squad && NotEquals(sys.GetActiveSquadFaction(), n"")
-     && CBCountLiveOrSpawningExcept(game, n"CB_Squad", id) == 0
-     && (!sys.ActiveSquadHasApex() || CBCountLiveOrSpawningExcept(game, n"CB_Apex", id) == 0) {
+  if squad {
+    CBCrewBeatenIfLast(sys, game, id);
+  }
+}
+
+// One of a crew has left the fight without being put down (ran clear, or gave up: Spawn/LivingStreet.reds).
+// If nobody of the crew is left standing but them, the crew is beaten.
+func CBCrewBeatenIfLast(sys: ref<CyberbaneSystem>, game: GameInstance, gone: EntityID) -> Void {
+  if NotEquals(sys.GetActiveSquadFaction(), n"")
+     && CBCountLiveOrSpawningExcept(game, n"CB_Squad", gone) == 0
+     && (!sys.ActiveSquadHasApex() || CBCountLiveOrSpawningExcept(game, n"CB_Apex", gone) == 0) {
     CBOnCrewBeaten(sys, game, sys.GetActiveSquadFaction());
   }
 }

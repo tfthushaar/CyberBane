@@ -212,6 +212,17 @@ public func CBRivalMayCallOut(sys: ref<CyberbaneSystem>, game: GameInstance, r: 
   return CBSendWord(sys, game, r, true);
 }
 
+// The meeting is off without V finishing it there: their encounter ended some other way, the lead ran
+// out, they were left lying at the place, or V forgot them. The word was only ever cleared by a kill, so
+// one that came to nothing stood for good: "Waiting for you at their place" in their file, an extra guard
+// whenever they were next put somewhere, and the called-out bonus paid for killing them anywhere later.
+public func CBWithdrawWord(game: GameInstance, rivalId: Int32) -> Void {
+  let book = CBIntelBook.Get(game);
+  if IsDefined(book) && rivalId > 0 {
+    book.ClearWord(rivalId);
+  }
+}
+
 // Finished it at the place they named: the street hears it, and it pays more.
 public func CBWordKept(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Void {
   let book = CBIntelBook.Get(game);

@@ -399,7 +399,7 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   // One car boarding at a time, whichever way it is coming. A second car while the first is
   // still loading its crew would take the seats meant for the first one. A convoy's later cars
   // come through here too, one after another (CBConvoyTick); anything else waits for the convoy.
-  if sys.HasPendingArrival() || sys.IsAdoptionOpen() {
+  if sys.HasPendingArrival() {
     if !nextCar {
       CBCarRefused("another car is still boarding");
     }
@@ -465,7 +465,7 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   sys.SetArrivalCarSlot(nextCar ? sys.GetConvoyCars() : 0);
   // What this car can really carry, so whoever it cannot seat walks in now (CBSendByCar)
   // instead of after the top-up has waited for seats that were never there.
-  sys.NoteCarPath(false, Min(crew, carSeats), nextCar);
+  sys.NoteCarPath(Min(crew, carSeats), nextCar);
   CBLog.Info(n"Spawn", "A car is on its way.");
   return true;
 }
@@ -538,7 +538,7 @@ public func CBSendByCar(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<C
 // instead (CBApexMusterTick), so this is never armed for one.
 func CBArmCrewTopUp(sys: ref<CyberbaneSystem>, faction: CName, record: TweakDBID, tag: CName,
                     wanted: Int32) -> Void {
-  let wait = sys.IsLastCarCity() ? CBConfig.AdoptionWindowTicks() + 3 : CBConfig.ArrivalStaleTicks() + 3;
+  let wait = CBConfig.ArrivalStaleTicks() + 3;
   sys.ArmCarTopUp(faction, record, tag, wanted, wait);
 }
 
@@ -561,7 +561,7 @@ public func CBConvoyTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   if !IsDefined(sys) || !sys.HasConvoyLegs() {
     return;
   }
-  if sys.HasPendingArrival() || sys.IsAdoptionOpen() {
+  if sys.HasPendingArrival() {
     return;   // the car before is still boarding
   }
   // A load, a fast travel, the world still streaming: not a missed car, just not now.
@@ -655,12 +655,7 @@ public func CBProcessCarTopUp(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   let tag = sys.GetTopUpTag();
   let wanted = sys.GetTopUpWanted();
-  let delivered = 0;
-  if sys.IsLastCarCity() {
-    delivered = Equals(sys.GetAdoptTag(), tag) ? sys.GetAdoptTaken() : 0;
-  } else {
-    delivered = sys.GetConvoyCreated();
-  }
+  let delivered = sys.GetConvoyCreated();
   let fs = sys.FindFaction(sys.GetTopUpFaction());
   let record = sys.GetTopUpRecord();
   sys.ClearTopUp();

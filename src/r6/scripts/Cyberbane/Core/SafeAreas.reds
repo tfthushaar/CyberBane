@@ -534,8 +534,10 @@ public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     return;
   }
   let rt = CyberbaneRuntime.Get();
-  let want = IsDefined(rt) && rt.IsEnabled() && rt.HasSettings() && rt.GetSettings().allowSafeZoneCombat
-             && sys.IsInSafeZone() && !CBPlayerInScene(game);
+  let setting = IsDefined(rt) && rt.IsEnabled() && rt.HasSettings() && rt.GetSettings().allowSafeZoneCombat;
+  // The place only, asked only when it matters (CBPlayerInGameSafeArea).
+  let inArea = (setting || sys.IsSafeArmsApplied()) && CBPlayerInGameSafeArea(game);
+  let want = setting && inArea && !CBPlayerInScene(game);
   if want {
     // Not while street talk is holding V's hands (1.9.5): talk now works in safe areas, and lifting
     // the lock under an open prompt would let the wheel draw a gun instead of picking a line.
@@ -551,11 +553,25 @@ public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   }
   if sys.IsSafeArmsApplied() {
     // Lifted by us and no longer wanted: put the game's own lock back if V is still inside.
-    if sys.IsInSafeZone() {
+    if inArea {
       CBQueueZoneArmsLock(player, true);
     }
     sys.SetSafeArmsApplied(false);
   }
+}
+
+// Is V in a safe area the game itself locks V's hands in: the place, not a NoCombat tag a scene has put on
+// V. The lock (ForceEmptyHandsByZone) is set on entering a safe zone and cleared on leaving one
+// (player.script, OnEnterSafeZone and OnExitSafeZone), so only the place may say when it is lifted or put
+// back. IsInSafeZone also says yes for the tag, and putting the lock back on that answer locked V's hands
+// outside any safe area, with no zone to leave that would ever lift it.
+public func CBPlayerInGameSafeArea(game: GameInstance) -> Bool {
+  let sam = GameInstance.GetSafeAreaManager(game);
+  let player = GetPlayer(game);
+  if IsDefined(sam) && IsDefined(player) {
+    return sam.IsPointInSafeArea(player.GetWorldPosition());
+  }
+  return CBPlayerZone(game) == EnumInt(gamePSMZones.Safe);
 }
 
 func CBQueueZoneArmsLock(player: ref<PlayerPuppet>, locked: Bool) -> Void {

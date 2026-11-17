@@ -5,8 +5,8 @@
 // resolves once V has been out of combat for EncounterEndTimeout ticks (~seconds).
 // Runtime object; not persisted. Tick timing uses the system's ~1 Hz tick counter.
 //
-// Flawless needs V's HP-loss fraction (player-damage tracking, S-01) and is held
-// until that lands; Massacre and BossDown are active now.
+// Flawless is judged on the lowest health V fell to over the whole fight, from the moment V is in
+// combat rather than from the first kill (CBEncounterTick); Massacre and BossDown on what went down.
 
 public class CBEncounter {
   public let active: Bool;
@@ -22,6 +22,11 @@ public class CBEncounter {
   // Lowest health V dropped to during this fight, as a stat-pool percentage. -1.0 means
   // nothing has been sampled yet.
   public let playerHpMin: Float;
+  // The same, for the part of a fight before V's first kill, when no encounter is open yet. The
+  // fight starts when V is in combat, not when somebody first goes down, so this is carried into the
+  // encounter when it opens. Forgotten once V is out of combat with nobody down.
+  public let preHpMin: Float;
+  public let preSampled: Bool;
 }
 
 // How much health V may lose and still call a fight flawless.
@@ -56,7 +61,10 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     enc.bodies = 0;
     enc.civilianKills = 0;
     enc.bossDown = false;
-    enc.playerHpMin = -1.0;
+    // Whatever V took before this first kill counts: a fight V was shot to half health in and
+    // healed back up before anybody went down was being called flawless.
+    enc.playerHpMin = enc.preSampled ? enc.preHpMin : -1.0;
+    enc.preSampled = false;
     ArrayClear(enc.killTicks);
   }
   if recount {
@@ -86,10 +94,24 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
 
 public func CBEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let enc = sys.GetEncounter();
+  let player = GetPlayer(game);
   if !IsDefined(enc) || !enc.active {
+    // No encounter yet: V may still be in the fight that opens one. Its health is watched from
+    // the moment V is in combat, and forgotten again once V is out of it with nobody down.
+    if IsDefined(player) && player.IsInCombat() {
+      let pre = sys.EnsureEncounter();
+      let hpPre = CBSamplePlayerHp(game, player);
+      if hpPre >= 0.0 && (!pre.preSampled || hpPre < pre.preHpMin) {
+        pre.preHpMin = hpPre;
+        pre.preSampled = true;
+      }
+    } else {
+      if IsDefined(enc) {
+        enc.preSampled = false;
+      }
+    }
     return;
   }
-  let player = GetPlayer(game);
   // Flawless needs to know whether V was ever hurt. Sampling the health pool on the tick
   // gives that without hooking the player's damage path, which is the hottest path in the
   // game and the last place this mod should be adding a wrapper.

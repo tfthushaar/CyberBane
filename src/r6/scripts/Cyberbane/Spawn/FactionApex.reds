@@ -652,8 +652,11 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         // The kills are spent in CBProcessPendingApex, and only once someone has actually
         // arrived. Spending them here meant a spawn that failed for any reason quietly cost
         // the player twenty bodies and they simply never saw an apex.
-        if NotEquals(sys.GetApexAnnounced(), fs.id) {
-          sys.SetApexAnnounced(fs.id);
+        // This squad, not this gang: the kills already paid for say which squad it is, and they
+        // move once it has been sent. Keyed to the gang alone, a gang's second apex squad of a
+        // session was never announced.
+        if !sys.IsApexAnnounced(fs.id, fs.apexAtKills) {
+          sys.SetApexAnnounced(fs.id, fs.apexAtKills);
         } else {
           return;   // already told them about this one
         }
@@ -709,17 +712,16 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   // report, and it got worse in 1.4.1: before that the chase request could not succeed at all,
   // so the walk-in below always ran and an apex always arrived on foot.
   //
-  // Two ways to be sure they came. Somebody wearing the tag is standing in the world, or the
-  // adoption counter says seats were filled, which still reads as delivered after the player
-  // has killed them. Neither is true means nobody came, so they walk in instead.
+  // Ways to be sure they came: somebody wearing the tag is standing in the world, or a chair was
+  // filled, which still reads as delivered after the player has killed them. None is true means
+  // nobody came, so they walk in instead.
   let carFailed = false;
   if sys.IsPendingApexDriving() {
     sys.SetPendingApex(faction, 0);   // the drive is over whichever way this goes
     // A chair the car filled counts as delivered even after V has put that member down, which
     // is what a live head count could not tell apart from nobody turning up.
     let delivered = sys.PendingApexCame() || CBLiveTaggedPresent(game, n"CB_Apex")
-                 || (Equals(sys.GetApexMusterFaction(), faction) && sys.GetApexMusterMask() != 0)
-                 || (Equals(sys.GetAdoptTag(), n"CB_Apex") && sys.GetAdoptTaken() > 0);
+                 || (Equals(sys.GetApexMusterFaction(), faction) && sys.GetApexMusterMask() != 0);
     if delivered {
       // Arrived. Whoever the car could not seat is walked in by the muster, chair by chair
       // (CBApexMusterTick), so the squad is four without replacing anybody V already killed.
@@ -735,20 +737,15 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     sys.SetPendingApex(n"", 0);   // nothing to send; do not sit on a dead appointment
     return;
   }
-  // They may have been paid off, or come round to V, while their best were on their way - the
-  // same question the crew asks before it sets off (CBProcessPendingSquad). The apex never asked
-  // it, so a gang V had just bought peace from could still send its four.
-  let score = sys.GetScore();
-  if IsDefined(score) {
-    let nowPosture = score.GetPosture(fs.id);
-    if NotEquals(nowPosture, ECBPosture.Vendetta) && NotEquals(nowPosture, ECBPosture.Hostile) {
-      sys.SetPendingApex(n"", 0);
-      if Equals(sys.GetApexMusterFaction(), fs.id) {
-        sys.ClearApexMuster();
-      }
-      CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) called off.");
-      return;
+  // They may have been paid off, or come round to V, while their best were on their way, or been
+  // switched off since - the same question the crew asks before it sets off (CBGangMaySend).
+  if !CBGangMaySend(sys, fs.id) {
+    sys.SetPendingApex(n"", 0);
+    if Equals(sys.GetApexMusterFaction(), fs.id) {
+      sys.ClearApexMuster();
     }
+    CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) called off.");
+    return;
   }
   let record = CBApexRecordFor(fs);
   if !TDBID.IsValid(record) {

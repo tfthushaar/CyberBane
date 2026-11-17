@@ -101,7 +101,7 @@ public func CBMessageDelivery() -> ECBMessageDelivery {
 // Whether Cyberbane says anything on screen at all.
 //
 // Two settings can silence it and they mean the same thing, so they are answered in one place:
-// the Toasts switch under Interface, and Off on "Where messages go". The second exists because
+// the Toasts switch under Messages and HUD, and Off on "Where messages go". The second exists because
 // it is the one a player actually opens when they want quiet - "Toasts" is not a word anybody
 // goes looking for. Either one off means every surface is off: no phone thread filed, no card
 // drawn, no notice, no overheard line, and no message tone.
@@ -1209,6 +1209,12 @@ public class CBPhone {
     ArrayClear(this.m_pendThread);
     ArrayClear(this.m_pendBody);
     ArrayClear(this.m_pendAccent);
+    // What was last announced belonged to threads that are gone. Kept, the first text after a start
+    // over could be taken for a repeat of it (the threads start again at 0) and never ring.
+    this.m_lastNotifyAt = 0.0;
+    this.m_lastNotifyBody = "";
+    this.m_lastNotifyThread = 0;
+    this.m_phoneWaitSince = 0.0;
     this.m_subLeft = 0.0;
     this.m_subDirty = false;
     this.HideNativeLine();

@@ -180,21 +180,14 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Last tick each lane was still busy. Subtracting it from now gives how long since that
   // lane's encounter actually ended, which is what the gap between encounters is measured
   // from - the end of the last fight, not the moment the last one was sent.
-  // A short window after asking the city to send a chase car, during which entities matching
-  // what was asked for are claimed as ours (Spawn/VanillaChase.reds). The prevention system
-  // returns a ticket and no way to ask what it spawned, so this is how they are found.
-  private let m_adoptFaction: CName;
-  private let m_adoptRecord: TweakDBID;
-  private let m_adoptVehicle: TweakDBID;
-  private let m_adoptTag: CName;
-  private let m_adoptLeft: Int32;
-  private let m_adoptTaken: Int32;       // seats actually filled by this arrival
   private let m_apexSeat: Int32;         // rotates 0..3 so a squad is always four roles
-  private let m_adoptUntilTick: Int32;
+  // V's buy-price modifier as last worked out, and on which tick (VendorBuyModifier).
+  private let m_vendorMod: Float;
+  private let m_vendorModTick: Int32;
+  private let m_vendorModValid: Bool;
   private let m_chaseAwayTicks: Int32;   // consecutive ticks V has been clear of every hunter
   // What the last car was expected to deliver, so anybody it did not deliver walks in instead
   // (Spawn/HitSquad.reds, CBProcessCarTopUp). Session only, like every other arrival field.
-  private let m_carPathCity: Bool;       // true: the city's chase; false: Cyberbane's own convoy
   private let m_carSeats: Int32;         // how many seats that request could fill
   private let m_convoyCreated: Int32;    // crew (not apex) the convoy has put in the world so far
   // The rest of a group waiting for the next car (Spawn/Arrival.reds, CBConvoyTick). One car
@@ -228,8 +221,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_topTag: CName;
   private let m_topWanted: Int32;
   private let m_topTicks: Int32;
-  // Whether Cyberbane has asked the road network for chase strategies (Spawn/VanillaChase.reds).
-  private let m_chasePrimed: Bool;
   // A Rival whose current arrival is by car, and one whose last car never delivered them and so
   // walks in next time.
   private let m_rivalCarPending: Int32;
@@ -328,6 +319,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_laneSquadFired: Int32;
   private let m_laneApexFired: Int32;
   private let m_apexAnnounced: CName;   // gang already told about, so it is said once
+  private let m_apexAnnouncedAt: Int32; // and which of its squads: its apexAtKills when announced
   private let m_pendingApexStuck: Int32;     // same, for the apex appointment
   private let m_arrivalRecord: TweakDBID;     // which ganger to put in the seats
   private let m_arrivalCrew: Int32;           // how many were asked for
@@ -512,10 +504,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_pendingPeace = n"";
     this.m_pendingRivalPurge = false;
     // Forgetting is on record in the service the moment it is chosen, so a load that comes first
-    // still carries it out (ApplyPlaythroughNotes). A purchase is not: nothing was paid yet.
+    // still carries it out (ApplyPlaythroughNotes). A purchase is not: nothing was paid yet, and no word
+    // was sent either.
     ArrayClear(this.m_pendingForgets);
     this.m_pendingFind = 0;
     this.m_pendingFindPrice = 0;
+    this.m_pendingWord = 0;
     ArrayClear(this.m_tollFaction);
     ArrayClear(this.m_tollUntil);
     ArrayClear(this.m_formerBodyIds);
@@ -596,13 +590,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       // Our own spawned hostiles (hit squads, Rival encounters) start aggressive toward V.
       if IsDefined(des) {
         let id = puppet.GetEntityID();
-        // Crew first: they belong in a seat, not running at V on foot from where the car is.
-        let riding = des.IsTagged(id, n"CB_Crew");
-        if riding {
-          puppet.cbSetupQueued = true;
-          CBScheduleConvoyMount(this.GetGameInstance(), id);   // a moment later
-        }
-        // Everything else about one of ours - turning it hostile, telling it to come, its
+        // Everything about one of ours - a crew member's seat, turning it hostile, telling it to come, its
         // buffs, its kit, its squad and its health bar - is deferred rather than done here.
         //
         // This is why spawned enemies stood around doing nothing until V walked into them.
@@ -614,13 +602,10 @@ public class CyberbaneSystem extends ScriptableSystem {
         // in the street. The mod already had the rule for this and was not following it:
         // CBNpcSafe holds every other reader off for NpcReadyTicks after attach, and this path
         // ignored it.
-        if des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Rival")
-           || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Escort")
-           || des.IsTagged(id, n"CB_Scout") || des.IsTagged(id, n"CB_Lair")
-           || des.IsTagged(id, n"CB_Patrol") {
-          puppet.cbSetupQueued = true;
-          CBScheduleSpawnSetup(this.GetGameInstance(), id, riding);
-        }
+        //
+        // One door for every one of ours, the same one the missed-setup sweep uses: the setup
+        // decides by tag what each needs (Spawn/Spawner.reds, CBQueueSpawnSetup).
+        CBQueueSpawnSetup(this.GetGameInstance(), des, puppet);
 
         // Somebody who runs a crew should take more killing than the rank and file do.
         if des.IsTagged(id, n"CB_Rival") {
@@ -1225,6 +1210,17 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetTickCount() -> Int32 {
     return this.m_tickCount;
+  }
+
+  // What a shop adds to or takes off V's prices (Signals/VendorSignals.reds), worked out once a tick. A
+  // shop asks for the price of every item it lists, and nothing it depends on changes inside a tick.
+  public func VendorBuyModifier() -> Float {
+    if !this.m_vendorModValid || this.m_vendorModTick != this.m_tickCount {
+      this.m_vendorMod = CBVendorBuyModifier(this);
+      this.m_vendorModTick = this.m_tickCount;
+      this.m_vendorModValid = true;
+    }
+    return this.m_vendorMod;
   }
 
   // ---- When the story has the stage (Core/StoryHold.reds) -----------------------------------
@@ -2248,12 +2244,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     return total;
   }
 
-  public func GetApexAnnounced() -> CName {
-    return this.m_apexAnnounced;
+  // Which apex squad V was last told about: the gang, and the kills it had paid for when it was announced.
+  public func IsApexAnnounced(faction: CName, atKills: Int32) -> Bool {
+    return Equals(this.m_apexAnnounced, faction) && this.m_apexAnnouncedAt == atKills;
   }
 
-  public func SetApexAnnounced(faction: CName) -> Void {
+  public func SetApexAnnounced(faction: CName, atKills: Int32) -> Void {
     this.m_apexAnnounced = faction;
+    this.m_apexAnnouncedAt = atKills;
   }
 
   // ---- Who is next, per lane (spec §9.9) ---------------------------------
@@ -2272,32 +2270,6 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetLaneRivalId(lane: Int32) -> Int32 {
     return lane == CBLaneRival() ? this.m_laneRivalId : 0;
-  }
-
-  // ---- Adopting what the city spawns for us ----
-  public func OpenAdoption(faction: CName, crewRecord: TweakDBID, vehicle: TweakDBID, tag: CName, count: Int32) -> Void {
-    this.m_adoptFaction = faction;
-    this.m_adoptRecord = crewRecord;
-    this.m_adoptVehicle = vehicle;
-    this.m_adoptTag = tag;
-    this.m_adoptLeft = count;
-    this.m_adoptTaken = 0;
-    this.m_adoptUntilTick = this.m_tickCount + CBConfig.AdoptionWindowTicks();
-  }
-
-  // Shut it again. Needed because the window has to be opened before the request is made -
-  // the spawn can attach in the same frame - so a refused request leaves a window standing
-  // that would adopt the next unrelated ganger of that kind to stream in.
-  public func CloseAdoption() -> Void {
-    this.m_adoptLeft = 0;
-    this.m_adoptUntilTick = 0;
-  }
-
-  // How many of the seats this arrival opened were actually filled. The question "did the car
-  // ever deliver anybody" has no other honest answer: requesting one only ever meant the
-  // request was accepted.
-  public func GetAdoptTaken() -> Int32 {
-    return this.m_adoptTaken;
   }
 
   // The next seat in an apex squad, as a role index that cycles 0..3.
@@ -2389,48 +2361,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_activeSquadApex;
   }
 
-  public func IsAdoptionOpen() -> Bool {
-    return this.m_adoptLeft > 0 && this.m_tickCount <= this.m_adoptUntilTick;
-  }
-
-  public func GetAdoptFaction() -> CName {
-    return this.m_adoptFaction;
-  }
-
-  public func GetAdoptRecord() -> TweakDBID {
-    return this.m_adoptRecord;
-  }
-
-  public func GetAdoptVehicle() -> TweakDBID {
-    return this.m_adoptVehicle;
-  }
-
-  public func GetAdoptTag() -> CName {
-    return this.m_adoptTag;
-  }
-
-  // Claim one seat, or -1 when there are none left.
-  public func TakeAdoptionSlot() -> Int32 {
-    if this.m_adoptLeft <= 0 {
-      return -1;
-    }
-    this.m_adoptLeft -= 1;
-    this.m_adoptTaken += 1;
-    return this.m_adoptLeft;
-  }
-
   // ---- What a car was meant to bring ----
   // `nextCar`: another car of a convoy already under way, which keeps its running count.
-  public func NoteCarPath(city: Bool, seats: Int32, opt nextCar: Bool) -> Void {
-    this.m_carPathCity = city;
+  public func NoteCarPath(seats: Int32, opt nextCar: Bool) -> Void {
     this.m_carSeats = seats;
     if !nextCar {
       this.m_convoyCreated = 0;
     }
-  }
-
-  public func IsLastCarCity() -> Bool {
-    return this.m_carPathCity;
   }
 
   public func GetLastCarSeats() -> Int32 {
@@ -2609,14 +2546,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_topTag = n"";
     this.m_topWanted = 0;
     this.m_topTicks = 0;
-  }
-
-  public func IsChasePrimed() -> Bool {
-    return this.m_chasePrimed;
-  }
-
-  public func SetChasePrimed(v: Bool) -> Void {
-    this.m_chasePrimed = v;
   }
 
   // Record a gang's posture; returns the one recorded before, or -1 the first time this session.
@@ -3635,12 +3564,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     let game = this.GetGameInstance();
 
     // Anything Cyberbane put in the world goes first, along with its markers, so the reset
-    // cannot leave an orphaned hunter or a pin behind.
-    CBUntrackTagged(game, n"CB_Rival");
-    CBUntrackTagged(game, n"CB_Squad");
-    CBUntrackTagged(game, n"CB_Apex");
-    CBUntrackTagged(game, n"CB_Escort");
-    CBUntrackTagged(game, n"CB_Lair");
+    // cannot leave an orphaned hunter or a pin behind. Every marker on the system's list, not those of
+    // five tags: a scout's, a patrol's, the street's and a favour's mark on a passer-by stayed up.
+    CBUntrackAllMarkers(this, game);
+    // And whatever the street had going: a favour, a sit-down and its pin, anybody held with their hands up.
+    if IsDefined(this.m_talk) {
+      this.m_talk.GetLife().Reset(game);
+    }
     // The pin on somebody's place is the map's, not an NPC's, so it is taken down by hand.
     CBDropLead(this, game);
     this.m_lairActive = false;
@@ -3713,7 +3643,8 @@ public class CyberbaneSystem extends ScriptableSystem {
 
     // Live encounters and everything queued behind them.
     this.m_activeRivalId = 0;
-    this.m_activeSquadFaction = n"";
+    this.SetActiveSquadFaction(n"");   // and the crew's apex with it
+    this.ClearSquadAnchor();
     this.m_encounter = null;
     ArrayClear(this.m_escapees);
     this.ClearPendingArrival();
@@ -3737,6 +3668,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_laneLastSquadFaction = n"";
     this.m_laneLastApexFaction = n"";
     this.m_apexAnnounced = n"";
+    this.m_apexAnnouncedAt = 0;
     this.m_apexBountyArmed = false;
     this.m_turfWatchFaction = n"";
     this.m_pendingRivalSweep = false;
@@ -3744,10 +3676,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     // zero above, so a forget or a purchase still waiting from the Hub, or a body remembered as an old
     // Rival's, would otherwise land on whichever new Rival is given that number: a knocked-out Rival
     // from before the reset, lying in view when it ran and killed afterwards, was credited as the new
-    // playthrough's Rival of the same id.
+    // playthrough's Rival of the same id. Word sent to an old Rival likewise (1.9.9).
     ArrayClear(this.m_pendingForgets);
     this.m_pendingFind = 0;
     this.m_pendingFindPrice = 0;
+    this.m_pendingWord = 0;
     ArrayClear(this.m_tollFaction);
     ArrayClear(this.m_tollUntil);
     ArrayClear(this.m_formerBodyIds);

@@ -79,19 +79,13 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
     return;
   }
   let score = sys.GetScore();
-  // They may have been paid off, or simply calmed down, while the crew was on its way.
-  //
-  // This used to insist on Vendetta specifically, which was correct while only a vendetta could
-  // schedule a crew. Now that an ordinary hostile gang schedules one too, that test would have
-  // cancelled every hostile squad the moment its timer ran out - the new feature quietly
-  // cancelling itself. It checks for "still wants you dead" instead.
-  if IsDefined(score) {
-    let nowPosture = score.GetPosture(fs.id);
-    if NotEquals(nowPosture, ECBPosture.Vendetta) && NotEquals(nowPosture, ECBPosture.Hostile) {
-      sys.ClearPendingSquad();
-      CBLog.Info(n"Spawn", s"Squad from \(NameToString(fs.id)) called off.");
-      return;
-    }
+  // They may have been paid off, or simply calmed down, while the crew was on its way, or the
+  // player may have switched them or crews off (CBGangMaySend). "Still wants you dead" rather than
+  // Vendetta alone, since an ordinary hostile gang schedules a crew too.
+  if !CBGangMaySend(sys, fs.id) {
+    sys.ClearPendingSquad();
+    CBLog.Info(n"Spawn", s"Squad from \(NameToString(fs.id)) called off.");
+    return;
   }
   let infamous = IsDefined(score) && EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.Infamous);
   // Only a crew that actually set off ends the appointment. This cleared it whatever happened,

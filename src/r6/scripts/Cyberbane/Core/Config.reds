@@ -41,8 +41,6 @@ public abstract class CBConfig {
   // street streams people in constantly, so this has to sit well above a crowd and below a
   // load: at 25, counting every entity type, it was tripped more or less permanently.
   public static func FloodAttachThreshold() -> Int32 = 60
-  // Recovery for an attach spike. Shorter than FloodSettleTicks, which is for loads.
-  public static func AttachSettleTicks() -> Int32 = 6
 
   // ---- Reaction director (spec §9.1, §18) ------------------------------
   // Wide enough to contain the chrome-widened flee range below, and enough NPCs per tick that
@@ -67,21 +65,15 @@ public abstract class CBConfig {
   // How long a gang's warning stands before they draw (Reactions/Director.reds, 1.9.5): long enough to
   // walk away, or to walk up and talk them down.
   public static func GangWarnGraceTicks() -> Int32 = 10
-  public static func MaxSpawnedNpcs() -> Int32 = 8
-  public static func PerNpcCooldownSeconds() -> Float = 30.0
   // Upper bound on the attitude-revert list (NPCs Cyberbane turned hostile). Only live
   // NPCs ever need reverting, so this just keeps the list from growing all session.
   public static func MaxTrackedHostiles() -> Int32 = 64
 
   // ---- Encounter tracker (spec §7.1.3) ---------------------------------
   public static func EncounterEndTimeout() -> Float = 20.0     // real seconds
-  public static func EncounterMaxRange() -> Float = 150.0      // metres
   public static func MassacreWindowKills() -> Int32 = 6
   public static func MassacreWindowSeconds() -> Float = 30.0
   public static func MassacreTotalKills() -> Int32 = 10
-  public static func FlawlessMinKills() -> Int32 = 4
-  public static func FlawlessHpFraction() -> Float = 0.05
-  public static func WitnessCrowdRadius() -> Float = 25.0      // metres
 
   // ---- Renown (spec §8.1) ----------------------------------------------
   public static func RenownCurveScale() -> Float = 2500.0
@@ -133,7 +125,6 @@ public abstract class CBConfig {
   public static func PeaceKeptQuietHours() -> Float = 24.0
 
   // ---- Archetypes (spec §8.3) ------------------------------------------
-  public static func ArchetypeDecayPerDay() -> Float = 0.995
   public static func ArchetypeMinTotal() -> Float = 30.0
   public static func ArchetypeHysteresis() -> Float = 1.25
 
@@ -194,8 +185,6 @@ public abstract class CBConfig {
 
   // ---- Recognition (spec §8.7) -----------------------------------------
   public static func RecognitionCap() -> Float = 0.95
-  public static func RecognitionCacheSeconds() -> Float = 600.0   // 10 real minutes
-  public static func RecognitionCacheMax() -> Int32 = 256
 
   // ---- Civilians (spec §9.2) -------------------------------------------
   // Reaction tiers. These sat at 60/80, which a mid-game V almost never reached, so the city
@@ -229,6 +218,9 @@ public abstract class CBConfig {
   // that the widened flee range stays inside NpcEvalRadius.
   // How far the terror of somebody breaking in a fight carries. The game's own NPC terror is 10 m.
   public static func FearStimRadius() -> Float = 10.0
+  // How far panic driving's gunshot carries when the district has not given V a gunshot range yet:
+  // the game's own gunshot stimulus radius (stimpresets.tweak, GunshotStimuli).
+  public static func PanicStimRadius() -> Float = 30.0
   // How far somebody running from V startles the people next to them.
   public static func FearSpreadRadius() -> Float = 6.0
   // What an apex squad landing on you does to everyone watching. The game uses 100 m for a
@@ -251,7 +243,6 @@ public abstract class CBConfig {
   // ---- Whispers (spec §9.10) -------------------------------------------
   // Overheard lines are the clearest sign the city has an opinion of you, so they come a little
   // more often and from a little further out.
-  public static func WhisperCooldownSeconds() -> Float = 18.0
   public static func WhisperRadius() -> Float = 13.0
   public static func WhisperChance() -> Float = 0.45
   // How often a plain whisper gives way to one about a story that has actually reached this
@@ -361,12 +352,10 @@ public abstract class CBConfig {
   public static func TributeRenownThreshold() -> Float = 50.0
 
   // ---- Hit squads (spec §9.9) ------------------------------------------
-  public static func HitSquadBaseChance() -> Float = 0.04
   public static func HitSquadFactionCooldownDays() -> Float = 2.0
   // Further out than an ambush, out of sight, and they have to come and find V (Spawn/Hunt.reds).
   // These were 42 to 50 m, which is behind you rather than coming for you.
   public static func HitSquadMinSpawnDistance() -> Float = 85.0
-  public static func HitSquadDespawnDistance() -> Float = 300.0
   // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
   // Close enough that V meets them before driving off. At 35 m a Rival could spawn behind
   // you, lose you to a vehicle, and be despawned before either of you noticed.
@@ -652,16 +641,6 @@ public abstract class CBConfig {
   // journal paths, spread over the whole Int32 range; a block of 64 at a fixed odd value is
   // vanishingly unlikely to meet one, and every check also confirms the thread exists.
   public static func PhoneHashBase() -> Int32 = 1128415233
-  // Asking the road network for chase strategies (Spawn/VanillaChase.reds): start this many
-  // ticks before a lane is due, and re-send this often while a car may be needed.
-  public static func ChasePrimeLeadTicks() -> Int32 = 30
-  public static func ChasePrimeRefreshTicks() -> Int32 = 8
-  // A chase spawn range for when the heat table in use has none.
-  public static func ChaseSpawnRangeMin() -> Float = 60.0
-  public static func ChaseSpawnRangeMax() -> Float = 160.0
-  // Checks a crew member the city carried gets before they are told to come on foot anyway,
-  // if they turn out not to be in a car at all.
-  public static func CrewWatchSettleTries() -> Int32 = 2
   // Overheard lines: a line of the game's own subtitles (UI/PhoneMessages.reds, 1.9.5). With the game's
   // subtitles switched off, Cyberbane's own line is drawn where they would be.
   public static func OverheardSeconds() -> Float = 5.5
@@ -738,10 +717,6 @@ public abstract class CBConfig {
   public static func MessageMinSeconds() -> Float = 5.0
 
   // ---- Vendetta hit squads ----
-  // Fast ticks between a gang deciding and the crew turning up. Long enough to read the Hub
-  // and get somewhere defensible, short enough that a vendetta is felt.
-  public static func VendettaSquadTicks() -> Int32 = 150
-  public static func VendettaSquadMinTicks() -> Int32 = 45
   // Smallest share of the full crew that turns out, before menace scales it up.
   public static func VendettaSquadFloorFraction() -> Float = 0.6
   public static func VendettaSquadSizeDefault() -> Int32 = 20
@@ -788,20 +763,16 @@ public abstract class CBConfig {
   public static func LaneCrossGapTicks() -> Int32 = 45
 
   // ---- Keeping a chase alive ----
-  // How often to remind anybody of ours who has fallen behind, how far behind they have to be
-  // before it is worth doing, and how far is far enough that they have genuinely lost you.
+  // How often to remind anybody of ours who has fallen behind, and how far behind they have to be
+  // before it is worth doing.
   public static func ChaseRefreshEveryTicks() -> Int32 = 6
   public static func ChaseRefreshMinDistance() -> Float = 18.0
-  public static func ChaseRefreshMaxDistance() -> Float = 160.0
   // Cap per pass, so a twenty-strong crew never turns one tick into twenty AI commands.
   public static func ChaseRefreshPerPass() -> Int32 = 8
   // Get this far from every one of them, and stay there this long, and they lose you. Roughly
   // what the police in this game give you, and the reason a chase is a chase and not a leash.
   public static func ChaseLoseDistance() -> Float = 120.0
   public static func ChaseLoseTicks() -> Int32 = 22
-  // How long after asking the city for a chase car we keep claiming matching arrivals. Short,
-  // so an unrelated member of the same gang streaming in is not mistaken for one of ours.
-  public static func AdoptionWindowTicks() -> Int32 = 20
   // How long an ordinary hostile gang takes to put a crew together, at its slowest and its
   // fastest. Scaled between the two by how much they hate you and how well they know you.
   // The warning window once a lane picks somebody. Short on purpose: the long wait between
@@ -1177,11 +1148,6 @@ public abstract class CBConfig {
   // only way out is to put the existing ones down. They close in at this fraction of the
   // normal wait until you have cleared some room.
   public static func RivalCapHurryMult() -> Float = 0.45
-  public static func RivalEncounterBaseChance() -> Float = 0.25
-  public static func RivalEncounterChancePerRank() -> Float = 0.07
-  // Minimum in-game hours between Rival encounters, so one can actually catch up with you
-  // during a session without turning into an ambush every few minutes.
-  public static func RivalEncounterCooldownHours() -> Float = 0.6
   // How long a Rival you escaped takes to find you again. Long enough that getting away is a
   // real outcome rather than a pause, which is what makes sparing and escaping worth anything.
   public static func RivalAfterEscapeTicks() -> Int32 = 900
@@ -1195,7 +1161,6 @@ public abstract class CBConfig {
   public static func CapRumors() -> Int32 = 64
   public static func CapLog() -> Int32 = 200
   public static func CapArchivedRivals() -> Int32 = 32
-  public static func CapRivalHistory() -> Int32 = 10
   public static func CapAppliedLedgerIds() -> Int32 = 100
   public static func CapLedgerTotal() -> Int32 = 100
   public static func CapLedgerPerPlaythrough() -> Int32 = 30
@@ -1523,7 +1488,4 @@ public abstract class CBConfig {
   // Kill timestamps kept per encounter. Only the massacre window is ever read back, so
   // this is comfortably more than the rule needs.
   public static func CapEncounterKillTicks() -> Int32 = 64
-
-  // ---- Fault isolation (spec §16.5) ------------------------------------
-  public static func ModuleErrorLimit() -> Int32 = 5
 }

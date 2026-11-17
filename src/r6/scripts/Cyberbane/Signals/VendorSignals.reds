@@ -24,7 +24,8 @@ public final static func GetBuyPrice(owner: wref<GameObject>, itemID: ItemID) ->
   if !IsDefined(sys) {
     return base;
   }
-  let m = CBVendorBuyModifier(sys);
+  // Once a tick, not once an item: a shop asks for the price of everything it lists (VendorBuyModifier).
+  let m = sys.VendorBuyModifier();
   return RoundF(Cast<Float>(base) * (1.0 + m));
 }
 

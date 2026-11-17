@@ -61,21 +61,7 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
     sys.SetActiveRivalId(0);
   }
-
-  // One Rival encounter at a time, counting only a Rival still able to hunt. Same reasoning
-  // as the busy test further down: a body, or somebody unconscious, is not an encounter.
-  if des.IsPopulated(n"CB_Rival") && CBLiveRivalPresent(sys, game) {
-    return;
-  }
-  // Leave a gap between encounters so a Rival catching up stays an event, not an ambush loop.
-  if IsDefined(cd) && cd.lastRivalEncounterAt > 0.0
-     && (now - cd.lastRivalEncounterAt) < CBConfig.SecondsPerHour() * CBConfig.RivalEncounterCooldownHours() {
-    return;
-  }
-  if !IsDefined(player) || player.IsInCombat() {
-    return;
-  }
-
+  // Who comes next, and when, is the Rival lane's (Spawn/Queue.reds).
 }
 
 // How many Rivals you are allowed to be carrying at once.
@@ -409,7 +395,7 @@ func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
     CBCarRefused(refused);
     return false;
   }
-  if sys.HasPendingArrival() || sys.IsAdoptionOpen() || sys.GetTopUpWanted() > 0 {
+  if sys.HasPendingArrival() || sys.GetTopUpWanted() > 0 {
     CBCarRefused("another car is still on its way");
     return false;
   }

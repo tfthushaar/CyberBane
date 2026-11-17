@@ -157,6 +157,13 @@ public class CBStreetLife {
       return;
     }
     let now = sys.GetTickCount();
+    // V got somewhere safe: whoever of the street's people is fighting V loses V at the door, the way the
+    // people sent after V do (Spawn/Sanctuary.reds). The hunt holds only its own, and patrols hold theirs.
+    if sys.IsInSanctuary() {
+      for tag in CBStreetTags() {
+        CBSanctuaryHoldTag(sys, game, des, player, tag, false, true);
+      }
+    }
     let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || sys.IsInSanctuary()
             || sys.IsInSafeZone() || CBPlayerInScene(game);
     this.WhileOut(sys, game, player, busy);
@@ -165,6 +172,32 @@ public class CBStreetLife {
     this.SitDown(sys, game, des, player, busy);
     this.Surrenders(sys, game, player, now);
     this.Claim(sys, game, des, player, now, busy);
+  }
+
+  // Start over (CyberbaneSystem.HardReset): whatever the street had going belonged to the old playthrough.
+  // The people themselves go with everything else of ours; this lets go of what they were part of - the
+  // favour and its marker, the sit-down and its pin - and of anybody still held with their hands up.
+  public func Reset(game: GameInstance) -> Void {
+    this.m_bagFaction = n"";
+    this.m_bagDone = false;
+    this.FavourEnd(game);
+    this.m_favLeaned = false;
+    this.EndMeet(game);
+    let i = 0;
+    while i < ArraySize(this.m_gaveUp) {
+      let p = this.m_gaveUp[i];
+      if IsDefined(p) && p.IsAttached() && !p.IsDead() {
+        CBTalkReleaseHold(p);
+        CBOrderFlee(game, p);
+        p.cbSurrendered = false;
+      }
+      i += 1;
+    }
+    ArrayClear(this.m_gaveUp);
+    ArrayClear(this.m_gaveUpTick);
+    this.m_allyOut = false;
+    this.m_allyEnemy = n"";
+    this.m_allyCalm = 0;
   }
 
   // ---- While you were out ---------------------------------------------------------------------------------
@@ -325,8 +358,11 @@ public class CBStreetLife {
     }
     let done = false;
     if this.m_favKind == 1 {
+      // Run off by V: put down, or broken and running or giving up, after V hurt them. Somebody else
+      // putting the lookout down is not V doing the favour, which is the rule the bagman and the
+      // sit-down already keep.
       let p = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
-      done = IsDefined(p) && (p.IsDead() || !CBStillStanding(p));
+      done = IsDefined(p) && p.cbDamagedByPlayer && (p.IsDead() || !CBStillStanding(p) || p.cbMoraleBroken);
     } else {
       done = this.m_favLeaned;
     }
@@ -383,6 +419,7 @@ public class CBStreetLife {
     let nowT = sys.GetTickCount();
     let now = CBGameSeconds(game);
     if NotEquals(this.m_meetA, n"") {
+      this.KeepMeetPin(game);
       let ppos = player.GetWorldPosition();
       let dist = Vector4.Distance(ppos, this.m_meetAt);
       // Their time has come and V is on the way in, not yet looking: put them there.
@@ -437,22 +474,39 @@ public class CBStreetLife {
     this.m_meetFrom = now + RandRangeF(1.0, 2.0) * 3600.0;
     this.m_meetSpawned = false;
     ArrayClear(this.m_meetIds);
-    let ms = GameInstance.GetMappinSystem(game);
-    if IsDefined(ms) && CBMapMarkersOn() {
-      let data: MappinData;
-      data.mappinType = t"Mappins.DefaultStaticMappin";
-      data.variant = gamedataMappinVariant.ApartmentVariant;
-      data.active = true;
-      data.visibleThroughWalls = true;
-      data.debugCaption = CBRivalPinCaption(CBCapFirst(CBFactionLabel(a)) + " and " + CBFactionLabel(b));
-      this.m_meetPin = ms.RegisterMappin(data, spot);
-      this.m_meetPinned = true;
-    }
+    this.KeepMeetPin(game);
     if CBMessagesOn() {
       CBHearsayFromDistrict(game, sys.GetCurrentDistrict(),
         s"\(CBCapFirst(CBFactionLabel(a))) and \(CBFactionLabel(b)) are sitting down near here around \(CBClockWord(this.m_meetFrom)). Crash it, and they both feel it.", n"");
     }
     CBLog.Info(n"Street", s"A sit-down between \(NameToString(a)) and \(NameToString(b)) is set.");
+  }
+
+  // The pin on the place, in step with the map markers setting, the way the pin on a Rival's place is
+  // (Rivals/Whereabouts.reds, CBLeadPinTick). It was only ever put up when the sit-down was set, so
+  // switching markers off left it on the map, and switching them on never put it up.
+  private func KeepMeetPin(game: GameInstance) -> Void {
+    let want = CBMapMarkersOn();
+    if Equals(want, this.m_meetPinned) {
+      return;
+    }
+    let ms = GameInstance.GetMappinSystem(game);
+    if !IsDefined(ms) {
+      return;
+    }
+    if !want {
+      ms.UnregisterMappin(this.m_meetPin);
+      this.m_meetPinned = false;
+      return;
+    }
+    let data: MappinData;
+    data.mappinType = t"Mappins.DefaultStaticMappin";
+    data.variant = gamedataMappinVariant.ApartmentVariant;
+    data.active = true;
+    data.visibleThroughWalls = true;
+    data.debugCaption = CBRivalPinCaption(CBCapFirst(CBFactionLabel(this.m_meetA)) + " and " + CBFactionLabel(this.m_meetB));
+    this.m_meetPin = ms.RegisterMappin(data, this.m_meetAt);
+    this.m_meetPinned = true;
   }
 
   // Two of each, out of V's sight round the place.
@@ -526,6 +580,13 @@ public class CBStreetLife {
        || RandF() >= CBConfig.SurrenderShare() || ArraySize(this.m_gaveUp) >= 4 {
       return false;
     }
+    // Never a Rival. A Rival who runs has an ending of their own (Reactions/CombatFlee.reds); one with
+    // their hands up had none, and stood there with their encounter open for good.
+    let des = GameInstance.GetDynamicEntitySystem();
+    let nid = npc.GetEntityID();
+    if IsDefined(des) && (des.IsTagged(nid, n"CB_Rival") || des.IsTagged(nid, n"CB_Lair")) {
+      return false;
+    }
     let agent = npc.GetAttitudeAgent();
     let pagent = player.GetAttitudeAgent();
     if !IsDefined(agent) || !IsDefined(pagent) {
@@ -539,9 +600,43 @@ public class CBStreetLife {
     npc.cbSurrendered = true;
     ArrayPush(this.m_gaveUp, npc);
     ArrayPush(this.m_gaveUpTick, sys.GetTickCount());
+    this.HandOffSurrendered(sys, game, des, npc);
     CBIntelSay(game, 3, CBIntelSpeaker(CBClassifyFaction(npc)), CBWhisperPick3("Okay! Okay! I'm done!", "Don't shoot! I give up!", "Enough! It's over, I'm out!"), 3.5);
     CBLog.Info(n"Street", "An enemy gave up instead of running.");
     return true;
+  }
+
+  // One of ours with their hands up is out of the fight, as one who ran clear is (Reactions/CombatFlee.reds,
+  // CBRunnerGotAway). Their encounter lets go of them: a crew whose last one standing had given up was never
+  // beaten, its lane stayed busy, and the hunt ended by telling V that V had run. Left where they stand, not
+  // removed, because V is looking at them; the orphan sweep takes them once nobody is.
+  private func HandOffSurrendered(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                                  npc: wref<ScriptedPuppet>) -> Void {
+    if !IsDefined(des) || !IsDefined(npc) {
+      return;
+    }
+    let id = npc.GetEntityID();
+    let wasSquad = des.IsTagged(id, n"CB_Squad");
+    let handed = false;
+    let tags: array<CName> = [n"CB_Squad", n"CB_Escort", n"CB_Scout", n"CB_Apex"];
+    for tag in tags {
+      if des.IsTagged(id, tag) {
+        des.UnassignTag(id, tag);
+        handed = true;
+      }
+    }
+    if !handed {
+      return;
+    }
+    if !des.IsTagged(id, n"CB_Orphan") {
+      des.AssignTag(id, n"CB_Orphan");
+    }
+    if EntityID.IsDefined(sys.GetScoutId()) && Equals(id, sys.GetScoutId()) {
+      CBScoutSilenced(sys, game, sys.GetScoutFaction());
+    }
+    if wasSquad {
+      CBCrewBeatenIfLast(sys, game, id);
+    }
   }
 
   private func Surrenders(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, now: Int32) -> Void {
@@ -554,6 +649,8 @@ public class CBStreetLife {
         if !gone {
           CBTalkReleaseHold(p);
           CBOrderFlee(game, p);
+          // Let go is let go: shot later, it is somebody running off, not somebody with their hands up.
+          p.cbSurrendered = false;
         }
         ArrayErase(this.m_gaveUp, i);
         ArrayErase(this.m_gaveUpTick, i);
@@ -624,7 +721,8 @@ public class CBStreetLife {
       if IsDefined(r) && NotEquals(r.faction, enemy) && r.rank >= 2 && TDBID.IsValid(r.recordID)
          && (r.killedV > 0 || r.escapes > 0 || r.sparedByV > 0) && CBFactionFieldsSquads(r.faction)
          && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Dormant))
-         && r.id != sys.GetActiveRivalId() && CBSpawnRoom(game) >= 2 {
+         && r.id != sys.GetActiveRivalId() && r.id != sys.GetLaneRivalId(CBLaneRival())
+         && !CBRivalBodyPresent(game, r) && CBSpawnRoom(game) >= 2 {
         let body: EntityID;
         if CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Ally", 30.0, body) > 0 {
           let fs = sys.FindFaction(r.faction);
@@ -632,6 +730,9 @@ public class CBStreetLife {
             let second: EntityID;
             CBSpawnGroup(game, fs.sampleRecord, n"", 1, n"CB_Ally", 32.0, second);
           }
+          // On their cooldown while they are out helping, as after any fight of theirs: the Rival lane
+          // picking them meanwhile put a second of them in the street, after V.
+          r.huntTicks = Max(r.huntTicks, CBConfig.RivalAfterEscapeTicks());
           this.m_allyOut = true;
           this.m_allyEnemy = enemy;
           this.m_allyCalm = 0;

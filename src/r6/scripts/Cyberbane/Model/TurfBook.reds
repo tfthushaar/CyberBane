@@ -27,6 +27,13 @@ public class CBTurfBook extends ScriptableSystem {
   public let patrolDistrict: CName;
   public let patrolTick: Int32;
   public let patrolNext: Int32;
+  // Padded since the lists last came back from a save or were cleared. Every read goes through
+  // InRange, many of them a tick, and the lists only ever change length on a load or a start over.
+  private let m_padded: Bool;
+
+  private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
+    this.m_padded = false;
+  }
 
   public static func Get(game: GameInstance) -> ref<CBTurfBook> {
     // The systems container can be null during world transitions; never deref it then.
@@ -41,6 +48,10 @@ public class CBTurfBook extends ScriptableSystem {
   // indexes all of them by one position, so one that came back from a save shorter than the others
   // would be read past its end deep inside a tick (the rule behind CyberbaneSystem.Validate).
   private func Pad() -> Void {
+    if this.m_padded {
+      return;
+    }
+    this.m_padded = true;
     let want = CBDistrictCount();
     while ArraySize(this.m_holders) < want { ArrayPush(this.m_holders, n""); }
     while ArraySize(this.m_since) < want { ArrayPush(this.m_since, 0.0); }
@@ -175,6 +186,7 @@ public class CBTurfBook extends ScriptableSystem {
 
   // Starting over: the new playthrough's map is learnt afresh.
   public func Clear() -> Void {
+    this.m_padded = false;
     ArrayClear(this.m_holders);
     ArrayClear(this.m_since);
     ArrayClear(this.m_from);

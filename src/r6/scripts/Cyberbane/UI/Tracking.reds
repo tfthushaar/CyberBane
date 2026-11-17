@@ -243,6 +243,30 @@ public func CBUntrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> V
   }
 }
 
+// Every marker Cyberbane has put on anybody, off, from the system's own list of them (NoteMarker): so
+// none is missed whatever tag its owner wears now, or if they wear none - a favour's mark is on a
+// passer-by (Spawn/LivingStreet.reds), and a body handed to the orphan sweep keeps its pin. Used when
+// markers are switched off and on a start over, which each took them off by tag and left those behind.
+// Last first, one entry at a time, so the list can never shift under the walk.
+public func CBUntrackAllMarkers(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let ms = GameInstance.GetMappinSystem(game);
+  if !IsDefined(sys) || !IsDefined(ms) {
+    return;
+  }
+  let guard = sys.MarkerCount();
+  while sys.MarkerCount() > 0 && guard > 0 {
+    guard -= 1;
+    let last = sys.MarkerCount() - 1;
+    let p = GameInstance.FindEntityByID(game, sys.MarkerOwner(last)) as ScriptedPuppet;
+    ms.UnregisterMappin(sys.MarkerPin(last));
+    sys.DropMarkerAt(last);
+    if IsDefined(p) {
+      p.cbMapped = false;
+      p.cbMapData = null;
+    }
+  }
+}
+
 // Clear the markers off everyone wearing one of our tags. Harmless on tags that were never
 // marked, since each puppet checks its own flag.
 //
@@ -292,7 +316,7 @@ public func CBMarkerCombatTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   // Switched off with people out: their markers go now, not when they next happen to be swept.
   let on = CBMapMarkersOn();
   if !on {
-    CBUntrackTagged(game, n"Cyberbane");
+    CBUntrackAllMarkers(sys, game);
     return;
   }
   CBMarkerFightTag(game, des, n"CB_Rival");

@@ -44,6 +44,9 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     worn = CBReadWorn(game, data);
     sys.SetWorn(worn);
   }
+  // Tags another mod has registered (CyberbaneAPI.RegisterLookTag): one copy of the list for the whole
+  // outfit, rather than one per garment.
+  let extra = content.GetLookTags();
   for item in worn.garments {
     if ItemID.IsValid(item) {
       let tdbid = ItemID.GetTDBID(item);
@@ -64,8 +67,7 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
       let rec = TweakDBInterface.GetItemRecord(tdbid);
       if IsDefined(rec) {
         lookSum += CBGarmentLookScore(rec);
-        // Tags another mod has registered (CyberbaneAPI.RegisterLookTag), on either list.
-        let extra = content.GetLookTags();
+        // Tags another mod has registered, on either list.
         if ArraySize(extra) > 0 {
           let shown = rec.VisualTags();
           for lt in extra {

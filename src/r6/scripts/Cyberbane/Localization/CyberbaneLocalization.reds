@@ -28,8 +28,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   protected func DefineTexts() -> Void {
     // ---- Settings: categories -------------------------------------------
     this.Text("Cyberbane-Settings-Category-General", "General");
-    this.Text("Cyberbane-Settings-Category-Reputation", "Reputation");
-    this.Text("Cyberbane-Settings-Category-Civilians", "Civilians");
+    this.Text("Cyberbane-Settings-Category-Pacing", "How often they come");
+    this.Text("Cyberbane-Settings-Category-Crews", "Crews and apex squads");
+    this.Text("Cyberbane-Settings-Category-Reputation", "Reputation and money");
+    this.Text("Cyberbane-Settings-Category-Civilians", "Crowds and morale");
     this.Text("Cyberbane-Settings-Category-Talk", "Street talk");
     this.Text("Cyberbane-Settings-StreetTalk", "Talk to people");
     this.Text("Cyberbane-Settings-StreetTalk-Desc", "Look at somebody up close with your hands empty and the game's own choice prompt comes up: Greet, Dismiss, Antagonize or Intimidate. Scroll and press F to choose. How they answer, and what it does to your standing, depends on whether they know you, how much they and their gang fear and respect you, and how you work.");
@@ -71,10 +73,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ClaimHelp", "Nobody kills you but me (experimental)");
     this.Text("Cyberbane-Settings-ClaimHelp-Desc", "When one gang has you badly outnumbered, a Rival with a claim on you may turn up and fight at your side, then walk off with a promise of next time. Once a day at most.");
     this.Text("Cyberbane-Settings-Category-Gangs", "Gangs");
-    this.Text("Cyberbane-Settings-Category-Morale", "Morale");
-    this.Text("Cyberbane-Settings-Category-Economy", "Economy");
     this.Text("Cyberbane-Settings-Category-Rivals", "Rivals");
-    this.Text("Cyberbane-Settings-Category-SafeAreas", "Safe areas");
+    this.Text("Cyberbane-Settings-Category-SafeAreas", "Safe areas and jobs");
     this.Text("Cyberbane-Settings-Preset-Desc", "Subtle, Default or Dramatic sets everything below in one go, overwriting what is there. Custom leaves your own numbers as they are.");
     this.Text("Cyberbane-Settings-RenownGain-Desc", "How fast your name spreads.");
     this.Text("Cyberbane-Settings-DreadGain-Desc", "How fast you become frightening. Dread is the score that makes people back off.");
@@ -116,7 +116,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines.");
     this.Text("Cyberbane-Settings-CarsOnFoot-Desc", "Lets gangs, Rivals and apex squads drive to you while you are on foot, pull up and get out. Off, they only drive while you are driving and otherwise walk in out of sight. Turning it off takes effect at once.");
-    this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all: phone, cards, notices and overheard lines. Off changes nothing about the way the mod plays. The line and bars at the top of the screen have their own settings, under Interface.");
+    this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all: phone, cards, notices and overheard lines. Off changes nothing about the way the mod plays. The hunt line at the top of the screen has its own setting under General, and the Rival and apex bars theirs under Messages and HUD.");
     this.Text("Cyberbane-Settings-MessageHold-Desc", "How long on-screen messages stay up, as a percentage. Never less than five seconds.");
     this.Text("Cyberbane-Settings-RivalsPerDay-Desc", "How many Rivals can catch up with you in one in-game day, counted separately from crews and apex squads. 0 stops them coming.");
     this.Text("Cyberbane-Settings-HitSquadsPerDay-Desc", "How many gang crews can be sent after you in one in-game day. 0 stops them coming.");
@@ -154,12 +154,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-SafeZoneSpawns-Desc", "Let them turn up inside apartments, bars and clinics. Off by default, because the game disarms you there.");
     this.Text("Cyberbane-Settings-SafeZoneCombat", "Let me fight in safe areas");
     this.Text("Cyberbane-Settings-SafeZoneCombat-Desc", "Keeps your hands free in a safe area so you can fight back. Use it with the setting above.");
-    this.Text("Cyberbane-Settings-Category-UI", "Interface");
+    this.Text("Cyberbane-Settings-Category-UI", "Messages and HUD");
     this.Text("Cyberbane-Settings-HubPauseMenu", "Hub in the pause menu");
     this.Text("Cyberbane-Settings-HubPauseMenu-Desc", "The Hub has its own tab at the top of the game menu, next to Inventory and Character. Turn this on to have it in the pause menu instead.");
     this.Text("Cyberbane-Settings-Category-Factions", "Factions");
-    this.Text("Cyberbane-Settings-Category-Compat", "Compatibility");
-    this.Text("Cyberbane-Settings-Category-Debug", "Debug");
+    this.Text("Cyberbane-Settings-Category-Advanced", "Advanced");
 
     // ---- Settings: general ----------------------------------------------
     this.Text("Cyberbane-Settings-Enabled", "Enabled");

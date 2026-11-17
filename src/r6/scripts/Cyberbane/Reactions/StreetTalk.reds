@@ -95,6 +95,19 @@ public let cbTalkPartner: Bool;
 @addField(ScriptedPuppet)
 public let cbTalkHold: ref<AIHoldPositionCommand>;
 
+// Somebody a favour asked V to lean on (Spawn/LivingStreet.reds): squaring up to them or threatening them
+// both count, as the favour says. Only Intimidate counted, so a favour done by starting something with the
+// one who owed never paid.
+func CBTalkNoteLeaned(game: GameInstance, npc: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(npc) || !npc.cbFavourMark {
+    return;
+  }
+  let life = CBStreetLifeFor(game);
+  if IsDefined(life) {
+    life.NoteLeaned(npc);
+  }
+}
+
 // Keep somebody where they are while V talks to them: the game's own hold-position order (aiCommand.script,
 // AIHoldPositionCommand, what the police's arrest flow uses), one order, never on somebody Cyberbane has
 // already given one (Spawn/Spawner.reds, cbMoveCmd).
@@ -469,7 +482,13 @@ public class CBStreetTalk {
       // Said in the log when V is facing somebody; not looked for at all while talk is off, the world
       // is loading or V is driving.
       if CBStreetTalkOn() && CBWorldStable(game) && !VehicleComponent.IsMountedToVehicle(game, player.GetEntityID()) {
-        this.NoteWhyNot(game, dt, this.LookedAt(game, player), notNow);
+        // Nor in a fight, where nobody expects a prompt and the look-up (the targeting system, then the
+        // registry) would run five times a second for a line nobody needs.
+        let facing: ref<ScriptedPuppet>;
+        if !player.IsInCombat() {
+          facing = this.LookedAt(game, player);
+        }
+        this.NoteWhyNot(game, dt, facing, notNow);
       }
       return;
     }
@@ -822,16 +841,11 @@ public class CBStreetTalk {
       } else {
         if choice == CBTalkAntagonize() {
           a = CBTalkOnAntagonize(sys, game, player, t);
+          CBTalkNoteLeaned(game, npc);
         } else {
           if choice == CBTalkIntimidate() {
             a = CBTalkOnIntimidate(sys, game, player, t);
-            // Somebody a favour asked V to lean on (Spawn/LivingStreet.reds).
-            if npc.cbFavourMark {
-              let lifeF = CBStreetLifeFor(game);
-              if IsDefined(lifeF) {
-                lifeF.NoteLeaned(npc);
-              }
-            }
+            CBTalkNoteLeaned(game, npc);
           } else {
             a = this.AnswerTopic(sys, game, player, t, choice, again);
           }

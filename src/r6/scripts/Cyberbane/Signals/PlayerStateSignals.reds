@@ -10,7 +10,8 @@ public func CBRefreshLiveInputs(sys: ref<CyberbaneSystem>, game: GameInstance) -
   }
   sys.GetScore().SetStreetCred(CBPlayerStreetCred(game));
   CBUpdateHeat(sys, game);
-  CBUpdateAura(sys, game);
+  // Not the aura: the fast tick reads it every other tick on its own (CyberbaneSystem), and this runs on
+  // one of those same ticks, so it was being worked out twice in a row.
 }
 
 // Aura (spec 8.6): how dangerous V looks at this moment.

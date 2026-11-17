@@ -53,7 +53,22 @@ public class CBIntelBook extends ScriptableSystem {
     }
   }
 
+  // The five informant arrays are saved, and read back by index. A save that holds them at different
+  // lengths (cut short, or written by a build that pushed to one and not another) put every read past
+  // the shortest one out of bounds, which is a crash, not an error. So the count is the shortest of them
+  // (the SlotCount model), every read is checked, and anything past the shortest is trimmed before the
+  // arrays are changed, so they stay in step from then on.
+  private func AlignInformants() -> Void {
+    let n = this.InformantCount();
+    if ArraySize(this.m_infRival) > n { ArrayResize(this.m_infRival, n); }
+    if ArraySize(this.m_infFaction) > n { ArrayResize(this.m_infFaction, n); }
+    if ArraySize(this.m_infTips) > n { ArrayResize(this.m_infTips, n); }
+    if ArraySize(this.m_infNextAt) > n { ArrayResize(this.m_infNextAt, n); }
+    if ArraySize(this.m_infSetup) > n { ArrayResize(this.m_infSetup, n); }
+  }
+
   public func AddInformant(rivalId: Int32, faction: CName, tips: Int32, firstAt: Float, setup: Bool) -> Void {
+    this.AlignInformants();
     if rivalId > 0 && ArrayContains(this.m_infRival, rivalId) {
       return;
     }
@@ -67,20 +82,27 @@ public class CBIntelBook extends ScriptableSystem {
     ArrayPush(this.m_infSetup, setup);
   }
 
-  public func InformantCount() -> Int32 { return ArraySize(this.m_infRival); }
-  public func InformantRival(i: Int32) -> Int32 { return this.m_infRival[i]; }
-  public func InformantFaction(i: Int32) -> CName { return this.m_infFaction[i]; }
-  public func InformantTips(i: Int32) -> Int32 { return this.m_infTips[i]; }
-  public func InformantDue(i: Int32) -> Float { return this.m_infNextAt[i]; }
-  public func InformantSetup(i: Int32) -> Bool { return this.m_infSetup[i]; }
+  public func InformantCount() -> Int32 {
+    return Min(Min(Min(ArraySize(this.m_infRival), ArraySize(this.m_infFaction)), Min(ArraySize(this.m_infTips), ArraySize(this.m_infNextAt))),
+               ArraySize(this.m_infSetup));
+  }
+  public func InformantRival(i: Int32) -> Int32 { return i >= 0 && i < this.InformantCount() ? this.m_infRival[i] : 0; }
+  public func InformantFaction(i: Int32) -> CName { return i >= 0 && i < this.InformantCount() ? this.m_infFaction[i] : n""; }
+  public func InformantTips(i: Int32) -> Int32 { return i >= 0 && i < this.InformantCount() ? this.m_infTips[i] : 0; }
+  public func InformantDue(i: Int32) -> Float { return i >= 0 && i < this.InformantCount() ? this.m_infNextAt[i] : 0.0; }
+  public func InformantSetup(i: Int32) -> Bool { return i >= 0 && i < this.InformantCount() && this.m_infSetup[i]; }
 
   public func SpendTip(i: Int32, nextAt: Float) -> Void {
+    if i < 0 || i >= this.InformantCount() {
+      return;
+    }
     this.m_infTips[i] -= 1;
     this.m_infNextAt[i] = nextAt;
   }
 
   public func RemoveInformant(i: Int32) -> Void {
-    if i < 0 || i >= ArraySize(this.m_infRival) {
+    this.AlignInformants();
+    if i < 0 || i >= this.InformantCount() {
       return;
     }
     ArrayErase(this.m_infRival, i);
@@ -104,7 +126,15 @@ public class CBIntelBook extends ScriptableSystem {
     ArrayRemove(this.m_word, id);
   }
 
+  public func ClearWords() -> Void {
+    ArrayClear(this.m_word);
+  }
+
   public func AddKin(id: Int32, of: Int32) -> Void {
+    // In step first, for the reason given above AlignInformants.
+    let n = Min(ArraySize(this.m_kinRival), ArraySize(this.m_kinOf));
+    if ArraySize(this.m_kinRival) > n { ArrayResize(this.m_kinRival, n); }
+    if ArraySize(this.m_kinOf) > n { ArrayResize(this.m_kinOf, n); }
     if ArraySize(this.m_kinRival) >= 32 {
       ArrayErase(this.m_kinRival, 0);
       ArrayErase(this.m_kinOf, 0);
@@ -115,7 +145,7 @@ public class CBIntelBook extends ScriptableSystem {
 
   public func KinOf(id: Int32) -> Int32 {
     let i = ArrayFindFirst(this.m_kinRival, id);
-    return i >= 0 ? this.m_kinOf[i] : 0;
+    return i >= 0 && i < ArraySize(this.m_kinOf) ? this.m_kinOf[i] : 0;
   }
 
   // Starting over: nothing learnt, nobody owes V.
@@ -889,6 +919,14 @@ public class CBStreetIntel {
     let now = CBGameSeconds(game);
     let k = book.InformantCount() - 1;
     while k >= 0 {
+      // A Rival who owed V and is no longer anybody to text from: put down since, run out of the city,
+      // or forgotten. They went on texting tips under their own name from the grave.
+      let owed = book.InformantRival(k);
+      let who = owed > 0 ? sys.FindRivalById(owed) : null;
+      if owed > 0 && (!IsDefined(who) || who.state == EnumInt(ECBRivalState.Slain) || who.state == EnumInt(ECBRivalState.Retired)) {
+        book.RemoveInformant(k);
+        return;   // one change a pass, so the walk never runs on past the end
+      }
       if now >= book.InformantDue(k) {
         this.InformantTip(sys, game, player, book, k, now);
         return;   // one text a pass
@@ -905,7 +943,9 @@ public class CBStreetIntel {
     let last = book.InformantTips(k) <= 1;
     // A spared Rival tells on the others, of any gang; a turned ganger on their own.
     let about = rivalId > 0 ? n"" : faction;
-    if last && book.InformantSetup(k) && CBFactionFieldsSquads(faction) && Equals(sys.GetPendingSquadFaction(), n"") {
+    // The set-up sends a crew, so only from a gang that may still send one (CBGangMaySend): not one V
+    // has bought peace from, come round to V, or switched off. Otherwise the last tip is a real one.
+    if last && book.InformantSetup(k) && CBGangMaySend(sys, faction) && Equals(sys.GetPendingSquadFaction(), n"") {
       let fake = CBDistrictAt(RandRange(0, CBDistrictCount()));
       CBPhoneSendTinted(game, sender, s"Last one, then we're square. Somebody you want is waiting \(CBPlacePhrase(fake)). Go now.", CBHudCyan());
       CBHuntBegin(sys, game, faction);

@@ -30,9 +30,64 @@ Settings. Your progress carries over from 1.9.5 and later.
 - **Nobody kills you but me** (experimental, off): when one gang has you badly outnumbered, a Rival with a
   claim on you may turn up and fight on your side, then walk off with a promise of next time.
 
+**Mod Settings, reorganised.** The first page, **General**, now holds the five things most people change:
+Cyberbane on or off, the preset, where messages go, the hunt line and map markers. After it come **How often
+they come**, **Rivals**, **Crews and apex squads**, **Gangs**, **Crowds and morale**, **Street talk**, **A
+living street**, **Reputation and money**, **Messages and HUD**, **Safe areas and jobs**, **Factions**, and
+**Advanced** at the bottom for compatibility, logging and the reset switches. The old Gangs page, thirty
+options long, is now three. Every setting you changed is kept.
+
+**Fixes**
+- **Paying a gang off calls off everything they had coming.** Before, a car already on the road still
+  delivered its crew, the next cars of a convoy still came, whoever a car came up short still walked in,
+  their scout kept looking for you, and the crew already out kept hunting you. Now all of it stops. Their
+  people who are not fighting you stand down and leave once you can't see them; anybody mid-fight finishes
+  that fight. A gang's Rivals are personal and keep coming.
+- **Safe passage works on everyone.** After paying a gang's toll, their people who had already been turned
+  on you kept shooting on sight. They now stand down once they are out of the fight.
+- **A crew or apex squad already counting down is called off** if their gang cools down, is switched off
+  under Factions, or crews are switched off. Only Rivals were checked before. An informant's last-tip
+  set-up follows the same rule.
+- **A gang's second apex squad in a session gets its warning text.** Only the first one did.
+- **Flawless counts all of the fight.** Damage you took before your first kill (and healed) used to be
+  ignored.
+- **Panic driving works.** The gunshot stim it sends to drivers had no range, so it reached nobody. It now
+  uses the game's own gunshot range.
+- **Your hands no longer stay locked outside a safe area.** With **Fight in safe areas** on, a scene that
+  quieted things outside a real safe area could leave the safe-area weapon lock on with nothing to lift it.
+- **Send word is cleared when the meeting comes to nothing**: the Rival got away, the lead ran out, you
+  left them lying at their place, or you forgot them. Their page said "Waiting for you" for good, they got
+  an extra bodyguard every time, and killing them anywhere later paid the called-out bonus. A Rival waiting
+  at their place is also no longer sent after you in the meantime.
+- **Informants stop texting when they are gone.** A Rival who owed you kept sending tips after you killed
+  them or ran them out of the city.
+- **The street's people follow the rules everyone else does.** A bagman's lookout, a favour's lookout or
+  the people at a sit-down who are fighting you lose you at your front door, and they no longer keep you in
+  combat from far away. They are also set up the moment they appear, a few seconds sooner than before.
+- **Favours.** Running off a rival gang's lookout only counts if you did it (down, running or giving up
+  after you hurt them). Leaning on somebody who owes the gang counts with **Antagonize** as well as
+  **Intimidate**, as the favour says.
+- **The sit-down pin follows Map markers**, both ways, like every other pin.
+- **Surrender** (experimental): a crew member with their hands up counts as out of the fight, so a crew can
+  be beaten that way, and their scout goes quiet. Rivals never surrender; they run, as before. Somebody you
+  let go no longer counts as "shot with their hands up" if you shoot them later.
+- **Nobody kills you but me** (experimental): the Rival who comes to help can no longer be sent after you
+  at the same time.
+- **Start over clears everything on the map and the street**: every Cyberbane marker (a scout's, a
+  patrol's, a favour's mark on a passer-by), the favour itself, the sit-down and its pin, and anybody held
+  with their hands up. A Send word chosen just before can't land on a new Rival, and the first text after
+  starting over always rings.
+- **Switching map markers off takes every Cyberbane marker off**, the favour's mark on a passer-by included.
+- **Phone:** answering a thread that holds both a gang's offer and a Rival lead carries out the answer you
+  picked. While another purchase was going through, "Pay to call it off" could buy the lead instead.
+- A save whose informant records came back damaged can no longer crash the street-intel tick.
+
 **Changes**
 - Finding the person you look at is cheaper: the game's targeting is asked only when nothing else finds
   anybody, at most twice a second, and never in a fight.
+- Shops, the crowd, the turf map and the phone's Messages list do less work: a shop works out its prices
+  once instead of once per item, and the crowd checks whether your face is covered once a second instead
+  of once per person.
 - **Informants** and **Fatal flaws** moved to the Rivals section of Mod Settings. A new section, **A living
   street**, holds the new switches.
 

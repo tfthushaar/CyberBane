@@ -1116,16 +1116,33 @@ public func CBRescueMissedSetup(game: GameInstance) -> Void {
     let id = ids[i];
     i += 1;
     let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
-    if IsDefined(p) && p.IsAttached() && !p.cbSetupQueued && !p.IsDead() {
-      p.cbSetupQueued = true;
-      let riding = des.IsTagged(id, n"CB_Crew");
-      if riding {
-        CBScheduleConvoyMount(game, id);
-      }
-      CBScheduleSpawnSetup(game, id, riding);
+    if IsDefined(p) && p.IsAttached() && CBQueueSpawnSetup(game, des, p) {
       CBLog.Info(n"Spawn", "One of ours attached while the world was busy; setting them up now.");
     }
   }
+}
+
+// Hand one of ours to the setup above, once: from the attach event (CyberbaneSystem), or from the sweep
+// above when the event stood down. Every Cyberbane-tagged puppet goes, and the setup decides by tag what
+// each one needs (CBApplySpawnSetup). The attach event used to ask about one list of tags while the setup
+// answered for a longer one, so the street's own people (2.0.0) were only ever set up by the sweep, a few
+// ticks late and logged as having attached while the world was busy.
+public func CBQueueSpawnSetup(game: GameInstance, des: ref<DynamicEntitySystem>, p: ref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(des) || !IsDefined(p) || p.cbSetupQueued || p.IsDead() {
+    return false;
+  }
+  let id = p.GetEntityID();
+  if !des.IsTagged(id, n"Cyberbane") {
+    return false;
+  }
+  p.cbSetupQueued = true;
+  // Crew first: they belong in a seat, not running at V on foot from where the car is.
+  let riding = des.IsTagged(id, n"CB_Crew");
+  if riding {
+    CBScheduleConvoyMount(game, id);   // a moment later
+  }
+  CBScheduleSpawnSetup(game, id, riding);
+  return true;
 }
 
 // Everything that makes one of ours behave like one of ours.
@@ -1139,6 +1156,11 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   // Knocked out and streamed back in. Made hostile, told to chase V and marked, they used to be:
   // a body on the ground with an order it could not carry out and a pin that stayed until it died.
   if !CBStillStanding(puppet) {
+    return;
+  }
+  // An ended encounter's body (CB_Orphan) is nobody's to set up: it keeps whatever tag it was left
+  // with when it could not be removed, and setting it up again made it hostile and sent it after V.
+  if des.IsTagged(id, n"CB_Orphan") {
     return;
   }
   // An apex escort fights as rank and file, so it takes the squad's kit.
@@ -1477,13 +1499,18 @@ public func CBRearmTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     return;
   }
   let tick = sys.GetTickCount();
+  // The street's own people too (2.0.0): only the ones set hostile on purpose carry cbArmTick (a favour's
+  // lookout, a gang at war with V), so the rest are left as they are.
   let tags: array<CName> = [n"CB_Squad", n"CB_Escort", n"CB_Apex", n"CB_Rival", n"CB_Scout", n"CB_Lair"];
+  for streetTag in CBStreetTags() {
+    ArrayPush(tags, streetTag);
+  }
   for tag in tags {
     let ids = des.GetTaggedIDs(tag);
     for id in ids {
       let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
       if IsDefined(p) && p.cbArmTick > 0 && tick - p.cbArmTick <= CBConfig.RearmWatchTicks()
-         && p.IsAttached() && CBStillStanding(p) && !p.cbMoraleBroken {
+         && p.IsAttached() && CBStillStanding(p) && !p.cbMoraleBroken && !p.cbSurrendered {
         let agent = p.GetAttitudeAgent();
         if IsDefined(agent) && NotEquals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
           CBTrace("attitude: one of ours came up neutral; hostile again");
@@ -1557,6 +1584,9 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Escort");
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Scout");
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Patrol");
+  // Not the street's own people (CBStreetTags): each of those is cleared, down or standing, by whatever
+  // they were part of when it ends (Spawn/LivingStreet.reds), and one knocked out early has to stay
+  // counted until then: a sit-down is crashed by how many of its people are down.
 
   // Cars: only when no car is on its way or being boarded and nobody of ours is in a seat.
   if sys.HasPendingArrival() || sys.HasConvoyLegs() || CBAnyCrewSeated(game, des) {

@@ -327,27 +327,8 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   fs.vendettaSince = 0.0;
   fs.lastPeaceAt = CBGameSeconds(game);
 
-  // Whatever they already had on its way is called off. Without this the Hub went on
-  // counting down a crew from a gang the player had just paid, and the apex warning stood.
-  if Equals(sys.GetPendingSquadFaction(), factionId) {
-    sys.ClearPendingSquad();
-  }
-  if Equals(sys.GetPendingApexFaction(), factionId) {
-    sys.SetPendingApex(n"", 0);
-  }
-  // And anything of theirs still only in the queue: a crew or an apex squad the lanes have
-  // picked from this gang and not yet sent. Until 1.6.3 those stayed queued, and an apex squad
-  // in particular was sent anyway when its turn came, because nothing on its way checked whether
-  // the gang still wanted V dead. Nobody of theirs walks in to finish a squad either.
-  if Equals(sys.GetLaneTarget(CBLaneSquad()), factionId) {
-    sys.ClearLane(CBLaneSquad());
-  }
-  if Equals(sys.GetLaneTarget(CBLaneApex()), factionId) {
-    sys.ClearLane(CBLaneApex());
-  }
-  if Equals(sys.GetApexMusterFaction(), factionId) {
-    sys.ClearApexMuster();
-  }
+  // Whatever they already had on its way, or out looking for V, is called off (CBCallOffGang).
+  CBCallOffGang(sys, game, factionId);
 
   let deal = new CBPeaceDeal();
   deal.faction = factionId;
@@ -362,6 +343,115 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   }
   CBLog.Info(n"Economy", s"Peace brokered with \(NameToString(factionId)) for \(cost).");
   return true;
+}
+
+// Everything a gang has on its way to V, or out looking for V, called off: the moment V buys peace from
+// them (CBBrokerPeace, from the Hub, the phone or the API).
+//
+// A pay-off used to clear only what was still queued or counting down. A car already on the road still
+// delivered its crew, the next car of a convoy still came, whoever a car came up short of still walked in,
+// a scout went on looking for V, and the crew already out kept hunting V, hostile, until V killed them or
+// lost them. Losing them then counted as V running from a gang V had just paid.
+//
+// Their Rivals are not the gang's to call off: a grudge with a name is personal (Rivals/), and so are the
+// people who came with one. Anybody of theirs already fighting V finishes that fight, as the Director never
+// flips anybody mid-swing; they are only no longer hunting. The rest stand down: their order taken back,
+// neutral to V, unmarked, and handed to the orphan sweep, which takes them once V cannot see them go.
+public func CBCallOffGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Int32 {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(sys) || !IsDefined(des) || Equals(faction, n"") {
+    return 0;
+  }
+  // Who is theirs among people not in the world yet, read before any of it is cleared: one crew is out
+  // at a time, its apex with it, one apex squad musters at a time, and one scout is out.
+  let crewIsTheirs = Equals(sys.GetActiveSquadFaction(), faction);
+  let apexIsTheirs = (crewIsTheirs && sys.ActiveSquadHasApex()) || Equals(sys.GetApexMusterFaction(), faction);
+  let scoutIsTheirs = Equals(sys.GetScoutFaction(), faction);
+  // Queued and counting down. Until 1.6.3 a queued apex squad was sent anyway when its turn came.
+  if Equals(sys.GetPendingSquadFaction(), faction) {
+    sys.ClearPendingSquad();
+  }
+  if Equals(sys.GetPendingApexFaction(), faction) {
+    sys.SetPendingApex(n"", 0);
+  }
+  if Equals(sys.GetLaneTarget(CBLaneSquad()), faction) {
+    sys.ClearLane(CBLaneSquad());
+  }
+  if Equals(sys.GetLaneTarget(CBLaneApex()), faction) {
+    sys.ClearLane(CBLaneApex());
+  }
+  // On the road: the muster still walking an apex squad in, the scout, the next cars of a convoy and
+  // whoever a car came up short of (only ever a gang's crew or apex squad: Spawn/Arrival.reds,
+  // CBSendByCar), and the car on its way now unless it is bringing one of their Rivals.
+  if Equals(sys.GetApexMusterFaction(), faction) {
+    sys.ClearApexMuster();
+  }
+  if scoutIsTheirs {
+    sys.ClearScout();
+  }
+  if Equals(sys.GetConvoyFaction(), faction) {
+    sys.ClearConvoy();
+  }
+  if Equals(sys.GetTopUpFaction(), faction) {
+    sys.ClearTopUp();
+  }
+  if sys.HasPendingArrival() && Equals(sys.GetPendingArrivalFaction(), faction)
+     && NotEquals(sys.GetPendingArrivalLeadTag(), n"CB_Rival") && NotEquals(sys.GetPendingArrivalTag(), n"CB_Rival") {
+    sys.ClearPendingArrival();
+  }
+  // Escorts come with an apex squad or with a Rival, and a Rival's are left with them.
+  let rivalOut = false;
+  for r in sys.GetRivals() {
+    if IsDefined(r) && Equals(r.faction, faction) && (CBRivalBodyPresent(game, r) || sys.GetRivalCarPending() == r.id) {
+      rivalOut = true;
+    }
+  }
+  let tags: array<CName> = [n"CB_Squad", n"CB_Apex", n"CB_Scout"];
+  if !rivalOut {
+    ArrayPush(tags, n"CB_Escort");
+  }
+  let player = GetPlayer(game);
+  let pagent = IsDefined(player) ? player.GetAttitudeAgent() : null;
+  let called = 0;
+  for tag in tags {
+    let ids = des.GetTaggedIDs(tag);
+    for id in ids {
+      let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+      let theirs = false;
+      if IsDefined(p) {
+        theirs = Equals(CBClassifyFaction(p), faction);
+      } else {
+        // Not in the world yet, so nothing to ask: who sent their kind tells.
+        theirs = (Equals(tag, n"CB_Squad") && crewIsTheirs) || (Equals(tag, n"CB_Apex") && apexIsTheirs)
+              || (Equals(tag, n"CB_Scout") && scoutIsTheirs);
+      }
+      if theirs && !(IsDefined(p) && p.IsDead()) {
+        if IsDefined(p) && p.IsAttached() && CBStillStanding(p) && !CBNpcInCombat(p) {
+          CBCancelMove(p);
+          let agent = p.GetAttitudeAgent();
+          if IsDefined(agent) && IsDefined(pagent) {
+            CBTrace("attitude: one of ours called off; neutral to V");
+            agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+          }
+          CBUntrackOnMap(game, p);
+        }
+        des.UnassignTag(id, tag);
+        if !des.IsTagged(id, n"CB_Orphan") {
+          des.AssignTag(id, n"CB_Orphan");
+        }
+        called += 1;
+      }
+    }
+  }
+  // Their crew is over. Not beaten, so nothing is paid for it: it was bought off.
+  if crewIsTheirs {
+    sys.SetActiveSquadFaction(n"");
+    sys.ClearSquadAnchor();
+  }
+  if called > 0 {
+    CBLog.Info(n"Economy", s"\(NameToString(faction)) called off \(called) of theirs.");
+  }
+  return called;
 }
 
 // Whether there is any point composing a message. Every caller of this guards a message and

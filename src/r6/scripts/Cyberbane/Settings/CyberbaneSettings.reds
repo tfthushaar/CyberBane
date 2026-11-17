@@ -102,284 +102,281 @@ enum ECBLogLevel {
 }
 
 public class CyberbaneSettings {
-  // ---- General ----------------------------------------------------------
+  // ---- General -----------------------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
+  @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Enabled")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Enabled-Desc")
   public let enabled: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
+  @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Preset")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Preset-Desc")
   public let preset: ECBPreset = ECBPreset.Default;
 
-
-
-  // ---- Reputation -------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RenownGain")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RenownGain-Desc")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
+  @runtimeProperty("ModSettings.category.order", "1")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageDelivery")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageDelivery-Desc")
+  public let messageDelivery: ECBMessageDelivery = ECBMessageDelivery.Phone;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
+  @runtimeProperty("ModSettings.category.order", "1")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
+  public let hudLine: ECBHudLine = ECBHudLine.Everything;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
+  @runtimeProperty("ModSettings.category.order", "1")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MapMarkers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MapMarkers-Desc")
+  public let mapMarkers: ECBMarkerScope = ECBMarkerScope.Everyone;
+
+
+  // ---- How often they come -----------------------------------------------------------------------
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Pacing")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Pacing-Desc")
+  public let pacing: ECBPacing = ECBPacing.Timetable;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EncounterGap")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EncounterGap-Desc")
+  @runtimeProperty("ModSettings.min", "2")
+  @runtimeProperty("ModSettings.max", "30")
+  @runtimeProperty("ModSettings.step", "1")
+  public let encounterGapMinutes: Int32 = 10;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalsPerDay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalsPerDay-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "20")
+  @runtimeProperty("ModSettings.step", "1")
+  public let rivalsPerDay: Int32 = 8;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquadsPerDay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquadsPerDay-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "20")
+  @runtimeProperty("ModSettings.step", "1")
+  public let hitSquadsPerDay: Int32 = 5;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexPerDay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexPerDay-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "20")
+  @runtimeProperty("ModSettings.step", "1")
+  public let apexSquadsPerDay: Int32 = 4;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalFreq")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFreq-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
-  public let renownGainMult: Float = 1.0;
+  public let rivalFrequencyMult: Float = 1.0;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DreadGain")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DreadGain-Desc")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquadFreq")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquadFreq-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "3.0")
   @runtimeProperty("ModSettings.step", "0.05")
-  public let dreadGainMult: Float = 1.0;
+  public let hitSquadFrequencyMult: Float = 1.0;
+
+
+  // ---- Rivals ------------------------------------------------------------------------------------
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Rivals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Rivals-Desc")
+  public let rivals: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-UnseenDread")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-UnseenDread-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "1.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let unseenDreadMult: Float = 0.5;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-BrutalConduct")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-BrutalConduct-Desc")
-  public let brutalConduct: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Decay")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Decay-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "3.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let decayMult: Float = 1.0;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RumorSpread")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RumorSpread-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "3.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let rumorSpreadMult: Float = 1.0;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetCredFloor")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetCredFloor-Desc")
-  public let streetCredFloor: Bool = true;
-
-  // bootstrapFromHistory was removed in 1.0 along with its settings entry. Nothing ever read
-  // it, and the thing it promised - your existing Street Cred counting as reputation you had
-  // already earned - is what the Street Cred floor setting above actually does.
-
-  // ---- Civilians --------------------------------------------------------
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CivReactions")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CivReactions-Desc")
-  public let civReactions: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CivIntensity")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CivIntensity-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "2.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let civIntensity: Float = 1.0;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxReactingCiv")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxReactingCiv-Desc")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxRivals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxRivals-Desc")
   @runtimeProperty("ModSettings.min", "0")
   @runtimeProperty("ModSettings.max", "15")
   @runtimeProperty("ModSettings.step", "1")
-  public let maxReactingCivilians: Int32 = 6;
+  public let maxRivals: Int32 = 8;
 
+  // How strong a Rival is (1.9.2, Spawn/FactionApex.reds, CBRivalStrengthFraction). Rivals are built with
+  // the apex build, and the apex slider used to set both. Same scale and default as Apex strength.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PanicDriving")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PanicDriving-Desc")
-  public let panicDriving: Bool = true;
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalStrength")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalStrength-Desc")
+  @runtimeProperty("ModSettings.min", "20")
+  @runtimeProperty("ModSettings.max", "100")
+  @runtimeProperty("ModSettings.step", "5")
+  public let rivalStrength: Int32 = 55;
 
-  // ---- Street talk (Reactions/StreetTalk.reds, 1.9.5) --------------------
+  // Two or three Rivals of one gang coming for V together (1.9.0, Spawn/RivalEncounter.reds). On by
+  // default. Named `rivalTeams`, not the `rivalTeamUps` the first 1.9.0 build had while it was an
+  // experiment that shipped off: Mod Settings keeps a value by its field's name, so under the old name
+  // anybody who had launched that build would have stayed off and never seen the new default.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetTalk")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetTalk-Desc")
-  public let streetTalk: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkShakedowns")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkShakedowns-Desc")
-  public let talkShakedowns: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkFirst")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkFirst-Desc")
-  public let talkFirst: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkStopWalkers")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkStopWalkers-Desc")
-  public let talkStopWalkers: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkLiars")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkLiars-Desc")
-  public let talkLiars: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkHaggle")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkHaggle-Desc")
-  public let talkHaggle: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkPhoneDeals")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkPhoneDeals-Desc")
-  public let talkPhoneDeals: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetIntel")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetIntel-Desc")
-  public let streetIntel: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkBubbles")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkBubbles-Desc")
-  public let talkBubbles: Bool = true;
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalTeamUps")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalTeamUps-Desc")
+  public let rivalTeams: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Informants")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Informants-Desc")
-  public let informants: Bool = true;
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalTeamSize")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalTeamSize-Desc")
+  @runtimeProperty("ModSettings.min", "2")
+  @runtimeProperty("ModSettings.max", "3")
+  @runtimeProperty("ModSettings.step", "1")
+  public let rivalTeamSize: Int32 = 2;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalFlaws")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFlaws-Desc")
-  public let rivalFlaws: Bool = true;
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DeathsRemembered")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DeathsRemembered-Desc")
+  public let deathsRemembered: Bool = true;
+
+  // Tips on where a Rival was last seen, and the Rival waiting there (Rivals/Whereabouts.reds).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalHideouts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalHideouts-Desc")
+  public let rivalHideouts: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SendWord")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SendWord-Desc")
+  public let sendWord: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MercyChoice")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MercyChoice-Desc")
   public let mercyChoice: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SendWord")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SendWord-Desc")
-  public let sendWord: Bool = true;
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Informants")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Informants-Desc")
+  public let informants: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Bagmen")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Bagmen-Desc")
-  public let bagmen: Bool = true;
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalFlaws")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFlaws-Desc")
+  public let rivalFlaws: Bool = true;
+
+  // A Rival pushed far enough may come back a cyberpsycho (1.9.0, Rivals/RivalSystem.reds).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PsychoBreaks")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PsychoBreaks-Desc")
+  public let psychoBreaks: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Favours")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Favours-Desc")
-  public let favours: Bool = true;
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CyberpsychoRivals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CyberpsychoRivals-Desc")
+  public let cyberpsychoRivals: Bool = true;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SitDowns")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SitDowns-Desc")
-  public let sitDowns: Bool = true;
 
+  // ---- Crews and apex squads ---------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WhileOut")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WhileOut-Desc")
-  public let whileOut: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Surrender")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Surrender-Desc")
-  public let surrender: Bool = false;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ClaimHelp")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClaimHelp-Desc")
-  public let claimHelp: Bool = false;
-
-  // ---- Gangs ------------------------------------------------------------
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangReactions")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangReactions-Desc")
-  public let gangReactions: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HostileOnSight")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HostileOnSight-Desc")
-  public let hostileOnSight: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Warnings")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Warnings-Desc")
-  public let warnings: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionDisguises")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionDisguises-Desc")
-  public let factionDisguises: Bool = true;
-
-  // Whether anything V wears is read at all (Signals/Concealment.reds, CBClothingCounts, 1.9.3).
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ClothingCounts")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClothingCounts-Desc")
-  public let clothingCounts: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Tribute")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Tribute-Desc")
-  public let tribute: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TributeMult")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TributeMult-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "3.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let tributeMult: Float = 1.0;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquads")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquads-Desc")
   public let hitSquads: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquads")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquads-Desc")
+  public let vendettaSquads: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquadSize")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquadSize-Desc")
+  @runtimeProperty("ModSettings.min", "6")
+  @runtimeProperty("ModSettings.max", "24")
+  @runtimeProperty("ModSettings.step", "1")
+  public let vendettaSquadSize: Int32 = 20;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Scouts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Scouts-Desc")
+  public let scouts: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaApexSquad")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaApexSquad-Desc")
+  public let vendettaApexSquad: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexStrength")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexStrength-Desc")
+  @runtimeProperty("ModSettings.min", "20")
+  @runtimeProperty("ModSettings.max", "100")
+  @runtimeProperty("ModSettings.step", "5")
+  public let apexStrength: Int32 = 55;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexTraits")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexTraits-Desc")
+  public let apexTraits: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VehicleArrivals")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VehicleArrivals-Desc")
   public let vehicleArrivals: Bool = true;
@@ -394,21 +391,17 @@ public class CyberbaneSettings {
   // Renamed from carArrivalsOnFoot so the new default reaches installs that never touched it:
   // Mod Settings keeps values by field name, and the old one was stored as off for everybody.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarsOnFoot")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarsOnFoot-Desc")
   public let carsWhileOnFoot: Bool = true;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarAmbushes")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarAmbushes-Desc")
-  public let carAmbushes: Bool = false;
-
   // How many cars one arrival can come in (Spawn/Arrival.reds, CBSendByCar). A crew too big for
   // one car comes in several, one after another; past this many, the rest walk in.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarsPerArrival")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarsPerArrival-Desc")
   @runtimeProperty("ModSettings.min", "1")
@@ -417,34 +410,76 @@ public class CyberbaneSettings {
   public let carsPerArrival: Int32 = 4;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarAmbushes")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarAmbushes-Desc")
+  public let carAmbushes: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Bounties")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Bounties-Desc")
+  public let bounties: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "4")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LootDrops")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LootDrops-Desc")
+  public let lootDrops: Bool = true;
+
+
+  // ---- Gangs -------------------------------------------------------------------------------------
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexStrength")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexStrength-Desc")
-  @runtimeProperty("ModSettings.min", "20")
-  @runtimeProperty("ModSettings.max", "100")
-  @runtimeProperty("ModSettings.step", "5")
-  public let apexStrength: Int32 = 55;
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangReactions")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangReactions-Desc")
+  public let gangReactions: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexTraits")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexTraits-Desc")
-  public let apexTraits: Bool = true;
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HostileOnSight")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HostileOnSight-Desc")
+  public let hostileOnSight: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexArrivalSound")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexArrivalSound-Desc")
-  public let apexArrivalSound: Bool = true;
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Warnings")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Warnings-Desc")
+  public let warnings: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaApexSquad")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaApexSquad-Desc")
-  public let vendettaApexSquad: Bool = true;
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionDisguises")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionDisguises-Desc")
+  public let factionDisguises: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Tribute")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Tribute-Desc")
+  public let tribute: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TributeMult")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TributeMult-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "3.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let tributeMult: Float = 1.0;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TurfWars")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfWars-Desc")
   public let turfWars: Bool = true;
@@ -453,18 +488,21 @@ public class CyberbaneSettings {
   // other mods draw their own territory on the map (1.9.3).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TurfOnMap")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfOnMap-Desc")
   public let turfOnMap: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TurfPatrols")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfPatrols-Desc")
   public let turfPatrols: Bool = false;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EnemyOfEnemy")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EnemyOfEnemy-Desc")
   @runtimeProperty("ModSettings.min", "0.0")
@@ -472,103 +510,331 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "0.05")
   public let enemyOfEnemyShare: Float = 0.5;
 
+
+  // ---- Crowds and morale -------------------------------------------------------------------------
+  // bootstrapFromHistory was removed in 1.0 along with its settings entry. Nothing ever read
+  // it, and the thing it promised - your existing Street Cred counting as reputation you had
+  // already earned - is what the Street Cred floor setting above actually does.
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CivReactions")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CivReactions-Desc")
+  public let civReactions: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CivIntensity")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CivIntensity-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "2.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let civIntensity: Float = 1.0;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxReactingCiv")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxReactingCiv-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "15")
+  @runtimeProperty("ModSettings.step", "1")
+  public let maxReactingCivilians: Int32 = 6;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PanicDriving")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PanicDriving-Desc")
+  public let panicDriving: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Morale")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Morale-Desc")
+  public let morale: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MoraleIntensity")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MoraleIntensity-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "2.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let moraleIntensity: Float = 1.0;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxBreakFraction")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxBreakFraction-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "1.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  // Renamed from maxBreakFraction so the lower default reaches everybody: Mod Settings keeps
+  // values by field name, and the old one is stored as 0.6 on every install.
+  public let maxFleeFraction: Float = 0.35;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Whispers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Whispers-Desc")
+  public let whispers: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WhisperCooldown")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WhisperCooldown-Desc")
+  @runtimeProperty("ModSettings.min", "5")
+  @runtimeProperty("ModSettings.max", "120")
+  @runtimeProperty("ModSettings.step", "1")
+  public let whisperCooldown: Int32 = 25;
+
+
+  // ---- Street talk -------------------------------------------------------------------------------
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetTalk")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetTalk-Desc")
+  public let streetTalk: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkFirst")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkFirst-Desc")
+  public let talkFirst: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkStopWalkers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkStopWalkers-Desc")
+  public let talkStopWalkers: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkShakedowns")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkShakedowns-Desc")
+  public let talkShakedowns: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkLiars")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkLiars-Desc")
+  public let talkLiars: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkHaggle")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkHaggle-Desc")
+  public let talkHaggle: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkPhoneDeals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkPhoneDeals-Desc")
+  public let talkPhoneDeals: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetIntel")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetIntel-Desc")
+  public let streetIntel: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkBubbles")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkBubbles-Desc")
+  public let talkBubbles: Bool = true;
+
+
+  // ---- A living street ---------------------------------------------------------------------------
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Bagmen")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Bagmen-Desc")
+  public let bagmen: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Favours")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Favours-Desc")
+  public let favours: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SitDowns")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SitDowns-Desc")
+  public let sitDowns: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WhileOut")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WhileOut-Desc")
+  public let whileOut: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Surrender")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Surrender-Desc")
+  public let surrender: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ClaimHelp")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClaimHelp-Desc")
+  public let claimHelp: Bool = false;
+
+
+  // ---- Reputation and money ----------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RenownGain")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RenownGain-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "3.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let renownGainMult: Float = 1.0;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DreadGain")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DreadGain-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "3.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let dreadGainMult: Float = 1.0;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-UnseenDread")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-UnseenDread-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "1.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let unseenDreadMult: Float = 0.5;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Decay")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Decay-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "3.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let decayMult: Float = 1.0;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RumorSpread")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RumorSpread-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "3.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let rumorSpreadMult: Float = 1.0;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-BrutalConduct")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-BrutalConduct-Desc")
+  public let brutalConduct: Bool = true;
+
+  // Whether anything V wears is read at all (Signals/Concealment.reds, CBClothingCounts, 1.9.3).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ClothingCounts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClothingCounts-Desc")
+  public let clothingCounts: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetCredFloor")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetCredFloor-Desc")
+  public let streetCredFloor: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TitlePerks")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TitlePerks-Desc")
   public let titlePerks: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LootDrops")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LootDrops-Desc")
-  public let lootDrops: Bool = true;
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendorPricing")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendorPricing-Desc")
+  public let vendorPricing: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Bounties")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Bounties-Desc")
-  public let bounties: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Pacing")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Pacing-Desc")
-  public let pacing: ECBPacing = ECBPacing.Timetable;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Scouts")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Scouts-Desc")
-  public let scouts: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EncounterGap")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EncounterGap-Desc")
-  @runtimeProperty("ModSettings.min", "2")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxDiscount")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxDiscount-Desc")
+  @runtimeProperty("ModSettings.min", "0")
   @runtimeProperty("ModSettings.max", "30")
   @runtimeProperty("ModSettings.step", "1")
-  public let encounterGapMinutes: Int32 = 10;
+  public let maxDiscount: Int32 = 20;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalsPerDay")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalsPerDay-Desc")
-  @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "20")
-  @runtimeProperty("ModSettings.step", "1")
-  public let rivalsPerDay: Int32 = 8;
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GigBonus")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GigBonus-Desc")
+  public let gigBonus: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquadsPerDay")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquadsPerDay-Desc")
-  @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "20")
-  @runtimeProperty("ModSettings.step", "1")
-  public let hitSquadsPerDay: Int32 = 5;
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GigBonusMult")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GigBonusMult-Desc")
+  @runtimeProperty("ModSettings.min", "0.0")
+  @runtimeProperty("ModSettings.max", "3.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let gigBonusMult: Float = 1.0;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexPerDay")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexPerDay-Desc")
-  @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "20")
-  @runtimeProperty("ModSettings.step", "1")
-  public let apexSquadsPerDay: Int32 = 4;
 
-  // The Hub is a tab of the game's menu (UI/HubTab.reds) unless the player would rather have it in
-  // the pause menu, where it lived until 1.7.3.
+  // ---- Messages and HUD --------------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubPauseMenu")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubPauseMenu-Desc")
-  public let hubInPauseMenu: Bool = false;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudScale")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudScale-Desc")
-  @runtimeProperty("ModSettings.min", "50")
-  @runtimeProperty("ModSettings.max", "150")
-  @runtimeProperty("ModSettings.step", "5")
-  public let hudScale: Int32 = 100;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageHold")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageHold-Desc")
-  @runtimeProperty("ModSettings.min", "100")
-  @runtimeProperty("ModSettings.max", "400")
-  @runtimeProperty("ModSettings.step", "25")
-  public let messageHold: Int32 = 175;
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Toasts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Toasts-Desc")
+  public let toasts: Bool = true;
 
   // How long word of what V did takes to reach V's phone, in in-game minutes (UI/PhoneMessages.reds,
   // CBPhone.Hearsay). Somebody passing on a body, a dead Rival, a payout or a crew changing hands
   // has to have heard about it first. 0 is the old behaviour: as it happens.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "10")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WordTravel")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WordTravel-Desc")
   @runtimeProperty("ModSettings.min", "0")
@@ -579,6 +845,7 @@ public class CyberbaneSettings {
   // The least time between two pieces of word arriving, in real seconds.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "10")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-InboxGap")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-InboxGap-Desc")
   @runtimeProperty("ModSettings.min", "0")
@@ -588,33 +855,41 @@ public class CyberbaneSettings {
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageDelivery")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageDelivery-Desc")
-  public let messageDelivery: ECBMessageDelivery = ECBMessageDelivery.Phone;
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageHold")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageHold-Desc")
+  @runtimeProperty("ModSettings.min", "100")
+  @runtimeProperty("ModSettings.max", "400")
+  @runtimeProperty("ModSettings.step", "25")
+  public let messageHold: Int32 = 175;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PhoneSound")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PhoneSound-Desc")
+  public let phoneSound: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "10")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ShowCountdowns")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ShowCountdowns-Desc")
   public let showCountdowns: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
-  public let hudLine: ECBHudLine = ECBHudLine.Everything;
 
   // The district line borrows the hunt line's widget (Spawn/Hunt.reds), so the setting above
   // still hides the whole line; this governs the district half of it. Briefly by default rather
   // than Always, because a line that never changes is one a player stops reading.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "10")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DistrictLine")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DistrictLine-Desc")
   public let districtLine: ECBDistrictLine = ECBDistrictLine.Briefly;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "10")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DistrictLineSeconds")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DistrictLineSeconds-Desc")
   @runtimeProperty("ModSettings.min", "3")
@@ -629,195 +904,49 @@ public class CyberbaneSettings {
   // where it is listed and what it is called have changed.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "10")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexBossBar")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexBossBar-Desc")
   public let apexBossBar: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PhoneSound")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PhoneSound-Desc")
-  public let phoneSound: Bool = true;
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexArrivalSound")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexArrivalSound-Desc")
+  public let apexArrivalSound: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MapMarkers")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MapMarkers-Desc")
-  public let mapMarkers: ECBMarkerScope = ECBMarkerScope.Everyone;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CyberpsychoRivals")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CyberpsychoRivals-Desc")
-  public let cyberpsychoRivals: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquads")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquads-Desc")
-  public let vendettaSquads: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendettaSquadSize")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendettaSquadSize-Desc")
-  @runtimeProperty("ModSettings.min", "6")
-  @runtimeProperty("ModSettings.max", "24")
-  @runtimeProperty("ModSettings.step", "1")
-  public let vendettaSquadSize: Int32 = 20;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquadFreq")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquadFreq-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "3.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let hitSquadFrequencyMult: Float = 1.0;
-
-  // ---- Morale -----------------------------------------------------------
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Morale")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Morale")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Morale-Desc")
-  public let morale: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Morale")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MoraleIntensity")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MoraleIntensity-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "2.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let moraleIntensity: Float = 1.0;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Morale")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxBreakFraction")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxBreakFraction-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "1.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  // Renamed from maxBreakFraction so the lower default reaches everybody: Mod Settings keeps
-  // values by field name, and the old one is stored as 0.6 on every install.
-  public let maxFleeFraction: Float = 0.35;
-
-  // ---- Economy ----------------------------------------------------------
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-VendorPricing")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VendorPricing-Desc")
-  public let vendorPricing: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxDiscount")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxDiscount-Desc")
-  @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "30")
-  @runtimeProperty("ModSettings.step", "1")
-  public let maxDiscount: Int32 = 20;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GigBonus")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GigBonus-Desc")
-  public let gigBonus: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Economy")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GigBonusMult")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GigBonusMult-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "3.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let gigBonusMult: Float = 1.0;
-
-  // ---- Rivals -----------------------------------------------------------
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Rivals")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Rivals-Desc")
-  public let rivals: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MaxRivals")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MaxRivals-Desc")
-  @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "15")
-  @runtimeProperty("ModSettings.step", "1")
-  public let maxRivals: Int32 = 8;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DeathsRemembered")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DeathsRemembered-Desc")
-  public let deathsRemembered: Bool = true;
-
-  // Tips on where a Rival was last seen, and the Rival waiting there (Rivals/Whereabouts.reds).
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalHideouts")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalHideouts-Desc")
-  public let rivalHideouts: Bool = true;
-
-  // How strong a Rival is (1.9.2, Spawn/FactionApex.reds, CBRivalStrengthFraction). Rivals are built with
-  // the apex build, and the apex slider used to set both. Same scale and default as Apex strength.
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalStrength")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalStrength-Desc")
-  @runtimeProperty("ModSettings.min", "20")
-  @runtimeProperty("ModSettings.max", "100")
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudScale")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudScale-Desc")
+  @runtimeProperty("ModSettings.min", "50")
+  @runtimeProperty("ModSettings.max", "150")
   @runtimeProperty("ModSettings.step", "5")
-  public let rivalStrength: Int32 = 55;
+  public let hudScale: Int32 = 100;
 
-  // Two or three Rivals of one gang coming for V together (1.9.0, Spawn/RivalEncounter.reds). On by
-  // default. Named `rivalTeams`, not the `rivalTeamUps` the first 1.9.0 build had while it was an
-  // experiment that shipped off: Mod Settings keeps a value by its field's name, so under the old name
-  // anybody who had launched that build would have stayed off and never seen the new default.
+  // The Hub is a tab of the game's menu (UI/HubTab.reds) unless the player would rather have it in
+  // the pause menu, where it lived until 1.7.3.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalTeamUps")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalTeamUps-Desc")
-  public let rivalTeams: Bool = true;
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubPauseMenu")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubPauseMenu-Desc")
+  public let hubInPauseMenu: Bool = false;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalTeamSize")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalTeamSize-Desc")
-  @runtimeProperty("ModSettings.min", "2")
-  @runtimeProperty("ModSettings.max", "3")
-  @runtimeProperty("ModSettings.step", "1")
-  public let rivalTeamSize: Int32 = 2;
 
-  // A Rival pushed far enough may come back a cyberpsycho (1.9.0, Rivals/RivalSystem.reds).
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PsychoBreaks")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PsychoBreaks-Desc")
-  public let psychoBreaks: Bool = true;
-
-  // ---- Safe areas -------------------------------------------------------
-  // Off by default, and they should stay that way for most players. A Rival arriving inside
-  // an apartment is a fight you cannot have: the game forces your hands empty in there, so
-  // you get attacked and cannot draw. These two exist for people who have decided they want
-  // that fight anyway, and they are only sensible together.
+  // ---- Safe areas and jobs -----------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SafeZoneSpawns")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SafeZoneSpawns-Desc")
-  public let allowSafeZoneSpawns: Bool = false;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
+  @runtimeProperty("ModSettings.category.order", "11")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-QuestAreas")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-QuestAreas-Desc")
   public let respectQuestAreas: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
+  @runtimeProperty("ModSettings.category.order", "11")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-QuestAreaRadius")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-QuestAreaRadius-Desc")
   @runtimeProperty("ModSettings.min", "40")
@@ -825,44 +954,26 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "10")
   public let questAreaRadius: Int32 = 80;
 
+  // Off by default, and they should stay that way for most players. A Rival arriving inside
+  // an apartment is a fight you cannot have: the game forces your hands empty in there, so
+  // you get attacked and cannot draw. These two exist for people who have decided they want
+  // that fight anyway, and they are only sensible together.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
+  @runtimeProperty("ModSettings.category.order", "11")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SafeZoneSpawns")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SafeZoneSpawns-Desc")
+  public let allowSafeZoneSpawns: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
+  @runtimeProperty("ModSettings.category.order", "11")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SafeZoneCombat")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SafeZoneCombat-Desc")
   public let allowSafeZoneCombat: Bool = false;
 
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalFreq")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFreq-Desc")
-  @runtimeProperty("ModSettings.min", "0.0")
-  @runtimeProperty("ModSettings.max", "3.0")
-  @runtimeProperty("ModSettings.step", "0.05")
-  public let rivalFrequencyMult: Float = 1.0;
 
-  // ---- UI ---------------------------------------------------------------
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Whispers")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Whispers-Desc")
-  public let whispers: Bool = true;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WhisperCooldown")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WhisperCooldown-Desc")
-  @runtimeProperty("ModSettings.min", "5")
-  @runtimeProperty("ModSettings.max", "120")
-  @runtimeProperty("ModSettings.step", "1")
-  public let whisperCooldown: Int32 = 25;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Toasts")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Toasts-Desc")
-  public let toasts: Bool = true;
-
-  // ---- Factions (1.9.1) ---------------------------------------------------
+  // ---- Factions ----------------------------------------------------------------------------------
   // One switch per faction Cyberbane keeps a book on. Off and Cyberbane leaves that faction alone
   // entirely: its people never turn on V on sight because of Cyberbane, it sends nobody, makes no
   // Rivals, pays no tribute or bounties and never texts. What V does to them still counts towards
@@ -870,110 +981,128 @@ public class CyberbaneSettings {
   // was. Read through CBFactionOn (Data/Factions.reds).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-TygerClaws")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionTygerClaws: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Maelstrom")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionMaelstrom: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Valentinos")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionValentinos: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-SixthStreet")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionSixthStreet: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Animals")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionAnimals: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-VoodooBoys")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionVoodooBoys: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Scavengers")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionScavengers: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Mox")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionMox: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Wraiths")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionWraiths: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Aldecaldos")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionAldecaldos: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Barghest")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionBarghest: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Arasaka")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionArasaka: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Militech")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionMilitech: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-KangTao")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionKangTao: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-NCPD")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-NCPD-Desc")
   public let factionNCPD: Bool = true;
 
-  // ---- Compatibility ----------------------------------------------------
+
+  // ---- Advanced ----------------------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Compat")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
+  @runtimeProperty("ModSettings.category.order", "13")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TwrCompat")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TwrCompat-Desc")
   public let twrCompat: ECBTwrCompat = ECBTwrCompat.Auto;
 
-  // ---- Debug ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
+  @runtimeProperty("ModSettings.category.order", "13")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LogLevel")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LogLevel-Desc")
   public let logLevel: ECBLogLevel = ECBLogLevel.Info;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
+  @runtimeProperty("ModSettings.category.order", "13")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FreezeReputation")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FreezeReputation-Desc")
   public let freezeReputation: Bool = false;
@@ -988,7 +1117,8 @@ public class CyberbaneSettings {
   // on every launch and with every later change to any setting, so this used to ask for a reset
   // again each time. It stays on in the menu once used; off and on again is another reset.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
+  @runtimeProperty("ModSettings.category.order", "13")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ResetAll")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ResetAll-Desc")
   public let resetAllData: Bool = false;
@@ -998,7 +1128,8 @@ public class CyberbaneSettings {
   // 1.8.3). Gives the loaded save a playthrough of its own and keeps everything it earned. Acts on
   // the way from off to on, like the reset switch.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Debug")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
+  @runtimeProperty("ModSettings.category.order", "13")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SeparateSave")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SeparateSave-Desc")
   public let separateThisSave: Bool = false;

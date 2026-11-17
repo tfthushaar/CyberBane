@@ -114,8 +114,9 @@ public func CBRealPhoneContacts(includeRead: Bool) -> array<ref<IScriptable>> {
   let i = 0;
   while i < store.ThreadCount() {
     let hash = CBPhoneThreadHash(i);
-    let canReply = ArraySize(CBRealPhoneChoices(hash)) > 0;
-    if store.ThreadSize(i) > 0 && (includeRead || store.ThreadUnread(i) > 0 || canReply) {
+    // Whether V can answer is only asked when it decides anything: it prices a pay-off and a lead,
+    // and the row is filled with it again just below (CBRealPhoneFill).
+    if store.ThreadSize(i) > 0 && (includeRead || store.ThreadUnread(i) > 0 || ArraySize(CBRealPhoneChoices(hash)) > 0) {
       let c = new ContactData();
       c.id = "cyberbane_thread_" + IntToString(i);
       c.contactId = c.id;
@@ -159,6 +160,39 @@ public func CBRealPhoneThreadMine(hash: Int32) -> array<Bool> {
   return store.ThreadMine(CBPhoneThreadOf(hash), CBConfig.PhoneThreadShown());
 }
 
+// What a thread can be answered about right now: nothing, a Rival's whereabouts on offer (1.9.7), or a
+// gang's price to call it off. The rows shown and the reply carried out both ask this, so they can never
+// disagree. They did: with a lead on the thread and another purchase already going through, the rows
+// fell through to the gang's offer while the reply still went by the lead, and "Pay Xeb to call it off"
+// bought the lead instead. Anything no longer on offer is cleared from the thread on the way.
+public func CBPhoneAnswerNone() -> Int32 = 0
+public func CBPhoneAnswerLead() -> Int32 = 1
+public func CBPhoneAnswerOffer() -> Int32 = 2
+
+func CBRealPhoneAnswerKind(sys: ref<CyberbaneSystem>, game: GameInstance, store: ref<CBPhone>, thread: Int32) -> Int32 {
+  let lead = store.ThreadLead(thread);
+  if lead > 0 {
+    let r = sys.FindRivalById(lead);
+    if !IsDefined(r) || CBWhereaboutsForSale(sys, game, r) != 0 {
+      store.ClearLead(thread);
+    } else {
+      // Kept, but not answerable while another purchase goes through; anything else on the thread is.
+      if sys.GetPendingFind() <= 0 {
+        return CBPhoneAnswerLead();
+      }
+    }
+  }
+  let faction = store.ThreadOffer(thread);
+  if Equals(faction, n"") {
+    return CBPhoneAnswerNone();
+  }
+  if CBPeaceQuote(sys, game, faction) < 0 {
+    store.ClearOffer(thread);
+    return CBPhoneAnswerNone();
+  }
+  return CBPhoneAnswerOffer();
+}
+
 // The answers V can send in this thread right now, as the reply rows show them. Worked out
 // fresh every time from the gang's current standing and price, so a stale offer never shows:
 // once they are no longer hostile, or the price has moved, the rows say so or disappear.
@@ -174,34 +208,19 @@ public func CBRealPhoneChoices(hash: Int32) -> array<String> {
   }
   let store = sys.GetPhone();
   let thread = CBPhoneThreadOf(hash);
-  // A Rival's whereabouts on offer (1.9.7), while they are still for sale.
-  let lead = store.ThreadLead(thread);
-  if lead > 0 {
-    let r = sys.FindRivalById(lead);
-    if !IsDefined(r) || CBWhereaboutsForSale(sys, game, r) != 0 || sys.GetPendingFind() > 0 {
-      if !IsDefined(r) || CBWhereaboutsForSale(sys, game, r) != 0 {
-        store.ClearLead(thread);
-      }
-    } else {
-      ArrayPush(out, s"Deal: \(store.ThreadLeadPrice(thread))eb");
-      if !store.ThreadLeadHaggled(thread) && CBTalkHaggleOn() {
-        ArrayPush(out, "Too much");
-      }
-      ArrayPush(out, "Forget it");
-      return out;
+  let kind = CBRealPhoneAnswerKind(sys, game, store, thread);
+  if kind == CBPhoneAnswerLead() {
+    ArrayPush(out, s"Deal: \(store.ThreadLeadPrice(thread))eb");
+    if !store.ThreadLeadHaggled(thread) && CBTalkHaggleOn() {
+      ArrayPush(out, "Too much");
     }
-  }
-  let faction = store.ThreadOffer(thread);
-  if Equals(faction, n"") {
+    ArrayPush(out, "Forget it");
     return out;
   }
-  let cost = CBPeaceQuote(sys, game, faction);
-  if cost < 0 {
-    store.ClearOffer(thread);
-    return out;
+  if kind == CBPhoneAnswerOffer() {
+    ArrayPush(out, s"Pay \(CBPeaceQuote(sys, game, store.ThreadOffer(thread)))eb to call it off");
+    ArrayPush(out, "Not paying");
   }
-  ArrayPush(out, s"Pay \(cost)eb to call it off");
-  ArrayPush(out, "Not paying");
   return out;
 }
 
@@ -219,8 +238,12 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   }
   let store = sys.GetPhone();
   let thread = CBPhoneThreadOf(hash);
-  if store.ThreadLead(thread) > 0 {
+  let kind = CBRealPhoneAnswerKind(sys, game, store, thread);
+  if kind == CBPhoneAnswerLead() {
     CBRealPhoneLeadReply(sys, game, store, thread, choice, ArraySize(choices));
+    return;
+  }
+  if kind != CBPhoneAnswerOffer() {
     return;
   }
   let faction = store.ThreadOffer(thread);

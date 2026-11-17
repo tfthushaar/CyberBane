@@ -166,6 +166,9 @@ public class CBReactionDirector {
     let ppos = player.GetWorldPosition();
     let score = sys.GetScore();
     let dread = score.GetDread();
+    // Whether V's face is covered, asked once a tick rather than once for every person looked at: the
+    // fear and the whispers below both turn on it, and it cannot change inside the walk.
+    let masked = CBPlayerMasked(game);
     let district = sys.GetCurrentDistrict();   // cached; kept off the hot path (crash safety)
 
     let des = GameInstance.GetDynamicEntitySystem();
@@ -237,12 +240,12 @@ public class CBReactionDirector {
           let inTalk = npc.cbTalkHeldTick > 0 && tick - npc.cbTalkHeldTick <= 2;
           if !turnedHostile && civOn && civReacted < maxCiv && !inTalk {
             if CBFearReact(game, score, npc, dist, civIntensity, faction, sys.GetTickCount(),
-                           sys.GetContent()) {
+                           sys.GetContent(), masked, player) {
               civReacted += 1;
             }
           }
           // Behind a mask V is somebody nobody can place, and people talk about that too (1.9.5).
-          if whispersOn && !playerInCombat && !talking && (recognized || CBPlayerMasked(game)) {
+          if whispersOn && !playerInCombat && !talking && (recognized || masked) {
             this.TryWhisper(game, sys, score, npc, dread, dist, faction, recognized);
           }
         }
@@ -499,6 +502,10 @@ public class CBReactionDirector {
   // a posture that does not shoot on sight. Only once their fight is over and HostileCoolTicks have
   // passed since they were turned. Before this, a gang V had just paid off went on shooting V on sight
   // through every one of its people Cyberbane had already turned, until they streamed out.
+  //
+  // And anybody whose gang V has bought safe passage from (Reactions/TalkTopics.reds, the toll): the toll
+  // only kept the next of them from being turned, so the ones already turned went on shooting on sight
+  // through the hours V had paid for.
   private func RevertNotFielding(game: GameInstance, sys: ref<CyberbaneSystem>) -> Void {
     if ArraySize(this.m_hostileNpcs) == 0 {
       return;
@@ -513,13 +520,16 @@ public class CBReactionDirector {
     if !IsDefined(pagent) {
       return;
     }
+    let now = CBGameSeconds(game);
     for npc in this.m_hostileNpcs {
       if IsDefined(npc) && npc.IsAttached() && !npc.IsDead() && npc.cbHostileByCyberbane
          && !CBNpcInCombat(npc) {
         let faction = CBClassifyFaction(npc);
         let off = !CBFactionFieldsSquads(faction);
-        let cooled = !off && IsDefined(score) && !Equals(score.GetPosture(faction), ECBPosture.Vendetta)
-                     && tick - npc.cbHostileTick >= CBConfig.HostileCoolTicks();
+        let quiet = tick - npc.cbHostileTick >= CBConfig.HostileCoolTicks();
+        let cooled = !off && quiet
+                     && (IsDefined(score) && !Equals(score.GetPosture(faction), ECBPosture.Vendetta)
+                         || IsDefined(sys) && sys.TollActive(faction, now));
         if off || cooled {
           let agent = npc.GetAttitudeAgent();
           if IsDefined(agent) {

@@ -1045,6 +1045,9 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
 
   // 2. The encounter slot, so the lanes know nothing is out and the next one can be queued.
   if IsDefined(rival) {
+    // Any word sent for a meeting is spent with the encounter. A kill has paid it out already
+    // (CBRivalSlain runs before this); every other ending means the meeting came to nothing.
+    CBWithdrawWord(game, rival.id);
     let wasLead = sys.GetActiveRivalId() == rival.id;
     if wasLead {
       sys.SetActiveRivalId(0);
@@ -1171,6 +1174,10 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   }
   CBDropLead(sys, game);
   CBLairStandDown(sys, game);
+  let bookP = CBIntelBook.Get(game);
+  if IsDefined(bookP) {
+    bookP.ClearWords();   // nobody is waiting anywhere for V now
+  }
   let removed = sys.ClearRivals();
   sys.SetActiveRivalId(0);
   sys.ClearPack();
@@ -1209,6 +1216,7 @@ public func CBForgetRival(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int
     svc.NoteForgetRival(sys.GetPlaythroughId(), id, r.recordID);
     svc.DropSighting(sys.GetPlaythroughId(), id);
   }
+  CBWithdrawWord(game, id);
   if sys.IsLeadPinned() && sys.GetLeadPinRival() == id {
     CBDropLead(sys, game);
   }

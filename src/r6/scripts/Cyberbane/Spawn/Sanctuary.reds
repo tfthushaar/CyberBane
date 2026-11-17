@@ -89,8 +89,10 @@ public func CBSanctuaryHold(sys: ref<CyberbaneSystem>, game: GameInstance, des: 
   CBSanctuaryHoldTag(sys, game, des, player, n"CB_Orphan", onJob);
 }
 
+// `fightersOnly` is for the street's own people (2.0.0, CBStreetLife.Tick): nobody sent them after V, so
+// a bagman walking his round is left to walk it, and only somebody already fighting V is held.
 func CBSanctuaryHoldTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
-                        player: ref<PlayerPuppet>, tag: CName, onJob: Bool) -> Void {
+                        player: ref<PlayerPuppet>, tag: CName, onJob: Bool, opt fightersOnly: Bool) -> Void {
   let ppos = player.GetWorldPosition();
   let ids = des.GetTaggedIDs(tag);
   let i = 0;
@@ -101,7 +103,7 @@ func CBSanctuaryHoldTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<
     // gives them nothing to do). Somebody who broke and is running is running away from V, not
     // after V: their order is the flee (CBOrderFlee), and taking it back left them standing in the
     // open, never far enough away to count as got away, until the rally turned them round.
-    if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken
+    if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && (!fightersOnly || CBNpcInCombat(p))
        && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID()) {
       CBCancelMove(p);
       p.cbSearchGen = 0;

@@ -282,6 +282,12 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
   if !CBFactionOn(r.faction) {
     return false;
   }
+  // Waiting for V at a place they named (Rivals/RivalLife.reds, send word): they go to nobody. Sending
+  // word took them off the lane once, and the next pick put them straight back on it.
+  let book = CBIntelBook.Get(sys.GetGameInstance());
+  if IsDefined(book) && book.WordSent(r.id) {
+    return false;
+  }
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
 }
 
@@ -362,6 +368,15 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     sys.ClearLane(lane);
     return;
   }
+  // And the gang a crew or apex lane is holding, the same way: switched off, crews switched off, or no
+  // longer hostile since it was picked. Only the Rival lane asked, so a gang that had cooled, or that the
+  // player had switched off, went on counting down and was sent when its turn came.
+  let laneGang = sys.GetLaneTarget(lane);
+  if NotEquals(laneGang, n"") && !CBGangMaySend(sys, laneGang) {
+    CBLog.Info(n"Spawn", s"\(CBLaneLabel(lane)) lane let go of \(NameToString(laneGang)): they no longer send anybody.");
+    sys.ClearLane(lane);
+    return;
+  }
   if sys.GetLaneTicks(lane) > 0 || NotEquals(sys.GetLaneTarget(lane), n"") || sys.GetLaneRivalId(lane) > 0 {
     if sys.TickDownLane(lane) > 0 {
       return;
@@ -401,8 +416,9 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
       // you escape one, so somebody you just shook cannot be picked again straight away.
       // Without honouring it here, escaping would have gone back to meaning nothing, which is
       // the bug that hollowed out the nemesis loop in the first place.
-      if IsDefined(r) && TDBID.IsValid(r.recordID) && r.huntTicks <= 0
-         && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+      // And the one test the lane's re-check asks (CBRivalQueueable), so nobody is picked who would be
+      // let go again on the next tick.
+      if IsDefined(r) && r.huntTicks <= 0 && CBRivalQueueable(sys, r.id) {
         let s = CBConfig.QueueScoreRival()
               + Cast<Float>(r.rank) * 8.0
               + Cast<Float>(r.escapes) * 4.0
@@ -808,6 +824,23 @@ public func CBApexRecordFor(fs: ref<CBFactionState>) -> TweakDBID {
 
 // Has this gang earned the right to send its best? One test for the lane, the warning text and
 // the Hub, so none of them can promise an apex squad another will not send.
+// May this gang still send anybody after V at all: crews on, the gang fielding people (not the law, not
+// switched off), and still hostile. Asked of whatever a gang already has queued or counting down - a lane
+// holding them, a crew or apex squad warned and on the clock, an informant's set-up - so nothing goes out
+// for a gang that has since been paid off, come round to V, or been switched off. Picking (CBLanePick,
+// CBApexEligible) asks more than this; this is what must still hold once they have been picked.
+public func CBGangMaySend(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
+  if !IsDefined(sys) || Equals(faction, n"") || !CBHitSquadsOn() || !CBFactionFieldsSquads(faction) {
+    return false;
+  }
+  let score = sys.GetScore();
+  if !IsDefined(score) {
+    return false;
+  }
+  let posture = score.GetPosture(faction);
+  return Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
+}
+
 public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> Bool {
   if !IsDefined(sys) || !IsDefined(fs) || !CBFactionFieldsSquads(fs.id)
      || !TDBID.IsValid(CBApexRecordFor(fs)) {
