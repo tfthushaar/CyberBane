@@ -134,6 +134,17 @@ Hub's click and scroll logic again. Found and fixed:
   `CBTalkWhyNot`, `AllowedWhyNot`, `CBTalkGateReason`, logged at Info as "No prompt for the person in front of V: ..."
   once per reason (`TalkWhyLogSeconds`), with "Prompt up: ..." when it opens and a line if the game wipes the hub
   (it is put back, `CBTalkHubShown`). The next report will name the cause.
+  It did: the prompt opened ("Prompt up: Aldecaldo - knows you"), and the refusals were "busy (sitting, leaning,
+  working or in a scene)" and "V is at the tracked job, or in a restricted or dangerous zone". Both were rules of
+  other systems borrowed whole. The Safety Gate is now one rule set at two strengths (`CBSafetyGate.Check`):
+  `CanAffect` as before, `CanTalkTo` without the workspot and safe-interior rules and with the tracked job at
+  `TalkTrackedClearance` (30 m); what talk then does is held to them per person (`CBTalkTarget.atWork`: no move
+  order, a fear stim lets the game walk them off, S-03; `.safe`: no fight, no flight, no scare). `AllowedWhyNot`
+  no longer refuses in a safe area, near a job or in a hostile zone, only under the NoCombat status. And the other
+  systems stop working against it: the Director skips crowd fear for whoever V is settling on or talking to
+  (`cbTalkHeldTick`, set during the dwell), holds its overheard lines while `CBStreetTalk.Busy()`, and a warned
+  ganger lets an empty-handed V within `TalkApproachHold` (8 m) come up, for up to twice the warning;
+  `CBSafeZoneArmsTick` leaves the hands lock alone while talk holds it.
 
 ### Not built, and why
 

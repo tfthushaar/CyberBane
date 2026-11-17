@@ -62,8 +62,11 @@ the next unless a version says otherwise.
   never draw while you are talking to them, and anyone you intimidate into backing off, or send
   packing, stays backed off.
 - **The talk prompt comes up for many more people.** It now finds the person in front of you even when
-  the crosshair isn't exactly on them, and it works near job markers: it used to refuse anyone within
-  60 metres of any active job on the map, which left whole streets with nobody to talk to.
+  the crosshair isn't exactly on them, and it works on people sitting, leaning, smoking or chatting, in
+  gang territory, near your jobs (only a job's own people are left out), and in bars and other safe
+  places, where it stays words: nobody runs off or picks a fight. The crowd no longer scatters from the
+  person you're walking up to, overheard chatter waits while you talk, and a ganger who has warned you
+  lets you walk up to them with empty hands.
 - Look at somebody up close with a weapon in your hands and Cyberbane tells you, once, to put it away
   to talk to them.
 - If the prompt doesn't come up for someone, Cyberbane's log now says why (for bug reports).

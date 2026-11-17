@@ -110,6 +110,8 @@ public class CBTalkTarget {
   public let leadId: Int32;      // a Rival of their gang whose hiding place they could give up; 0 none
   public let leadName: String;
   public let first: Bool;        // the first time V has said this to them
+  public let safe: Bool;         // a safe place (V in one, or they are indoors in one): words only (1.9.5)
+  public let atWork: Bool;       // at a workspot: never a move order, the game walks them off (1.9.5)
 }
 
 // What they say back.
@@ -222,6 +224,16 @@ public class CBStreetTalk {
 
   public func IsShown() -> Bool {
     return this.m_shown;
+  }
+
+  // Mid-exchange: the prompt is up, an answer is coming, or a line of it is still on screen. The street's
+  // overheard lines wait (Reactions/Director.reds), so they do not talk over it (1.9.5).
+  public func Busy() -> Bool {
+    return this.m_shown || this.m_hasPending || this.m_vLineLeft > 0.0 || this.m_replyLeft > 0.0;
+  }
+
+  public func HoldsHands() -> Bool {
+    return this.m_handsHeld;
   }
 
   public func OnTick(game: GameInstance, generation: Int32) -> Void {
@@ -339,6 +351,9 @@ public class CBStreetTalk {
       this.m_candidate = npc;
       this.m_dwell = 0.0;
     }
+    // Whoever V is settling on is left alone meanwhile (1.9.5): the crowd reactions sent a frightened
+    // passer-by running, and a warned ganger drew, in the moment before the prompt came up.
+    npc.cbTalkHeldTick = Max(sys.GetTickCount(), 1);
     if armed {
       this.NoteWhyNot(game, dt, npc, "a weapon is in V's hands");
       let rt = CyberbaneRuntime.Get();
@@ -372,11 +387,13 @@ public class CBStreetTalk {
     if sys.GetStoryHold() != CBStoryNone() {
       return "the story has the stage";
     }
-    if sys.IsInSafeZone() {
-      return "V is in a safe area";
-    }
-    if sys.IsInQuestArea() {
-      return "V is at the tracked job, or in a restricted or dangerous zone";
+    // A safe area, a job nearby and a gang's own turf used to switch talk off outright (1.9.5): the
+    // Director's rules for when it may turn or scatter people, borrowed whole. Talk is words, so each
+    // person is judged instead (CBTalkWhyNot: the job's own people, the hostile, the story's), and in a
+    // safe place the words are all that happens (CBTalkTarget.safe). Only a moment the story has
+    // quieted (the NoCombat status) still says no.
+    if CBPlayerNoCombatTag(game) {
+      return "the story has quieted things here";
     }
     if !sys.WornReady() {
       return "the session has only just started";
@@ -759,7 +776,7 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   if !CBNpcSafe(sys, npc) {
     return "they have only just appeared";
   }
-  if !CBSafetyGate.CanAffect(npc) {
+  if !CBSafetyGate.CanTalkTo(npc) {
     return CBTalkGateReason(sys, npc);
   }
   if CBSentByUs(GameInstance.GetDynamicEntitySystem(), npc) {
@@ -798,14 +815,10 @@ func CBTalkGateReason(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> S
   if npc.IsPlayerCompanion() {
     return "V's companion";
   }
-  let ws = GameInstance.GetWorkspotSystem(npc.GetGame());
-  if IsDefined(ws) && ws.IsActorInWorkspot(npc) {
-    return "busy (sitting, leaning, working or in a scene)";
+  if IsDefined(sys) && sys.NearTrackedPins(npc.GetWorldPosition(), CBConfig.TalkTrackedClearance()) {
+    return "at the job V is tracking";
   }
-  if IsDefined(sys) && sys.NearTrackedPins(npc.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
-    return "near the job V is tracking";
-  }
-  return "the game protects them here (indoors in a safe place)";
+  return "the game protects them (a stand-in, or not fully in the world)";
 }
 
 // Is Cyberbane's hub what the game's dialog list is showing?
@@ -844,6 +857,9 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
   }
   t.faction = faction;
   t.recognized = CBRecognizes(sys, score, npc, faction, sys.GetCurrentDistrict());
+  t.safe = sys.IsInSafeZone() || CBNpcInSafeInterior(npc);
+  let ws = GameInstance.GetWorkspotSystem(game);
+  t.atWork = IsDefined(ws) && ws.IsActorInWorkspot(npc);
   t.nerve = CBNerve(npc);
   let gang = NotEquals(faction, n"") && !t.cop;
   if gang {
@@ -1222,8 +1238,11 @@ func CBTalkNerveGap(t: ref<CBTalkTarget>) -> Float {
   return t.fear - t.nerve * CBConfig.HoldBackNerveWeight() - Cast<Float>(t.backers) * CBConfig.HoldBackPerBacker();
 }
 
-// Sent on their way: one move order, never more (Reactions/Morale.reds, CBOrderFlee).
-func CBTalkSendOff(game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
+// Sent on their way: one move order, never more (Reactions/Morale.reds, CBOrderFlee). Somebody at a workspot
+// is never given one (S-03): the fear stim lets the game take them out of it its own way. In a safe place
+// they stay where they are; the words did it.
+func CBTalkSendOff(game: GameInstance, t: ref<CBTalkTarget>) -> Bool {
+  let npc = IsDefined(t) ? t.npc : null;
   if !IsDefined(npc) || npc.cbTalkSent {
     return false;
   }
@@ -1231,14 +1250,22 @@ func CBTalkSendOff(game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
   // Whoever V has sent packing holds back from V from now on (1.9.5): a vendetta ganger talked down
   // in their warning was otherwise turned on V by the Director a second later, mid-retreat.
   npc.cbHoldState = 1;
+  if t.safe {
+    return false;
+  }
+  if t.atWork {
+    CBTalkScare(GetPlayer(game), t, 1);
+    return true;
+  }
   return CBOrderFlee(game, npc);
 }
 
 // A civilian frightened by V, the way the crowd reactions frighten them (Reactions/Crowd.reds): the one
 // stim the game lets a sender choose the stage of, from V, and it stops with them.
-func CBTalkScare(player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, stage: Int32) -> Void {
-  if !IsDefined(player) || !IsDefined(npc) || !npc.IsAttached() {
-    return;
+func CBTalkScare(player: ref<PlayerPuppet>, t: ref<CBTalkTarget>, stage: Int32) -> Void {
+  let npc = IsDefined(t) ? t.npc : null;
+  if !IsDefined(player) || !IsDefined(npc) || !npc.IsAttached() || t.safe {
+    return;   // nobody is sent screaming out of a bar
   }
   let data: stimInvestigateData;
   data.fearPhase = stage;
@@ -1248,6 +1275,9 @@ func CBTalkScare(player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, stage: In
 // Picking a fight: the Director turns them, so it is tracked and reverted like every attitude Cyberbane
 // sets, and the gangs at war with theirs hear about it.
 func CBTalkFight(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> Bool {
+  if t.safe {
+    return false;   // not in here: the answer is words ("Not here. Not now. But soon.")
+  }
   let director = sys.GetDirector();
   if !IsDefined(director) || !director.TurnHostileFromTalk(player, t.npc, t.faction) {
     return false;
@@ -1357,9 +1387,9 @@ func CBTalkOnDismiss(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
   if t.mood == CBTalkAfraid() {
     if gang {
       CBTalkFear(sys, game, t.faction, CBConfig.TalkDismissFear());
-      CBTalkSendOff(game, t.npc);
+      CBTalkSendOff(game, t);
     } else {
-      CBTalkScare(player, t.npc, 1);
+      CBTalkScare(player, t, 1);
     }
     return CBTalkSay(CBWhisperPick3("Going. I'm going.", "Sorry. Sorry.", "You got it."), n"fear_beg");
   }
@@ -1394,7 +1424,7 @@ func CBTalkOnAntagonize(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   if !gang {
     CBTalkConduct(sys, game, n"", -CBConfig.TalkCivAntagonizeConduct());
     if t.mood == CBTalkAfraid() || RandF() < t.fear {
-      CBTalkScare(player, t.npc, t.fear >= CBConfig.TalkCivAfraid() ? 3 : 2);
+      CBTalkScare(player, t, t.fear >= CBConfig.TalkCivAfraid() ? 3 : 2);
       return CBTalkSay(CBWhisperPick3("Leave me alone!", "I don't want trouble!", "Psycho!"), n"fear_beg");
     }
     return CBTalkSay(CBWhisperPick3("The hell's your problem?", "Get out of my face.", "Real tough. Go bother someone else."), n"bump");
@@ -1417,7 +1447,7 @@ func CBTalkOnAntagonize(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
     }
     CBTalkFear(sys, game, t.faction, CBConfig.TalkFoldFear());
     CBTalkConduct(sys, game, t.faction, -CBConfig.TalkBullyConduct());
-    CBTalkSendOff(game, t.npc);
+    CBTalkSendOff(game, t);
     return CBTalkSay(CBWhisperPick3("Okay, okay! Forget it!", "Not worth it. Not worth it.", "Whatever you say."), n"fear_beg");
   }
   if gap < -CBConfig.TalkFoldGap() && CBTalkFight(sys, game, player, t) {
@@ -1446,7 +1476,7 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   chance = ClampF(chance * sys.WornPerk().breakMult, CBConfig.TalkIntimidateMin(), CBConfig.TalkIntimidateMax());
   if !gang {
     if !immovable && RandF() < chance {
-      CBTalkScare(player, npc, 3);
+      CBTalkScare(player, t, 3);
       CBTalkConduct(sys, game, n"", -CBConfig.TalkCivIntimidateConduct());
       if !CBReputationFrozen() {
         let tally = CBTalkTallyFor(sys, game, n"");
@@ -1479,14 +1509,14 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   npc.cbHoldState = 1;   // leaned on and folded: they will not draw on V after this (1.9.5)
   let told = CBTalkInform(sys, game, player, t);
   if StrLen(told) > 0 {
-    CBTalkSendOff(game, npc);
+    CBTalkSendOff(game, t);
     return CBTalkSay(told, n"fear_beg");
   }
   let paid = CBTalkShakedown(sys, game, player, t);
   if paid > 0 {
     return CBTalkSay(CBWhisperPick3(s"Here. \(paid). Take it and go.", s"\(paid) eddies. That's all I got, I swear.", s"Fine! \(paid). We're square, right?"), n"fear_beg");
   }
-  CBTalkSendOff(game, npc);
+  CBTalkSendOff(game, t);
   return CBTalkSay(CBWhisperPick3("Alright, alright! I'm gone.", "I'm leaving. Look, I'm leaving.", "Didn't mean anything by it!"), n"fear_beg");
 }
 

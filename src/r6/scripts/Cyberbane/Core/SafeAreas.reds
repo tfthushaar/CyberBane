@@ -537,6 +537,12 @@ public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   let want = IsDefined(rt) && rt.IsEnabled() && rt.HasSettings() && rt.GetSettings().allowSafeZoneCombat
              && sys.IsInSafeZone() && !CBPlayerInScene(game);
   if want {
+    // Not while street talk is holding V's hands (1.9.5): talk now works in safe areas, and lifting
+    // the lock under an open prompt would let the wheel draw a gun instead of picking a line.
+    let talk = sys.GetStreetTalk();
+    if IsDefined(talk) && talk.HoldsHands() {
+      return;
+    }
     if !sys.IsSafeArmsApplied() || sys.GetTickCount() % 4 == 0 {
       CBQueueZoneArmsLock(player, false);
       sys.SetSafeArmsApplied(true);

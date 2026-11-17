@@ -397,8 +397,9 @@ its own.
   scroll (D-pad up and down) to pick a line, and press F (A) to say it. Walk away or look away and the
   prompt goes; reach for a weapon and it goes at once. It never comes up while you are crouched. When
   a ganger of a gang at war with you warns you off, you have about ten seconds to walk away or talk
-  them down, and they won't draw while you are talking. It won't come up for anyone at one of your
-  jobs, anyone busy (sitting, leaning, working), vendors, or story characters.
+  them down, and they won't draw while you are talking. It works on people sitting, leaning or
+  working too, and in bars and other safe places, where it stays words: nobody runs off or picks a
+  fight. It won't come up for vendors, story characters or the people at one of your jobs.
 
 - **The game menu, then Cyberbane:** the last tab in the row across the top, after Journal. Escape
   closes the menu as usual. With the game's radial hub turned on, it is in the row beside Character

@@ -7,6 +7,19 @@
 
 public abstract class CBSafetyGate {
   public static func CanAffect(puppet: ref<ScriptedPuppet>) -> Bool {
+    return CBSafetyGate.Check(puppet, true, true, CBConfig.QuestSpawnClearance());
+  }
+
+  // Street talk (Reactions/StreetTalk.reds, 1.9.5). Words move nobody, so the two rules that exist to keep
+  // Cyberbane from moving or startling people are left out: somebody at a workspot (sitting, leaning,
+  // smoking, chatting) and somebody indoors in a safe place can be spoken to. What V's words then do to
+  // them is held to the same rules there (CBTalkTarget.atWork, .safe). The tracked job keeps a radius of
+  // its own: its people, not the whole neighbourhood.
+  public static func CanTalkTo(puppet: ref<ScriptedPuppet>) -> Bool {
+    return CBSafetyGate.Check(puppet, false, false, CBConfig.TalkTrackedClearance());
+  }
+
+  public static func Check(puppet: ref<ScriptedPuppet>, workspots: Bool, interiors: Bool, trackedRadius: Float) -> Bool {
     if !IsDefined(puppet) {
       return false;
     }
@@ -47,7 +60,7 @@ public abstract class CBSafetyGate {
     // Conduct. The Director, which turns world NPCs hostile or scared, keeps its own check against
     // every job site (Reactions/Director.reds).
     let sysGate = CyberbaneSystem.Get(puppet.GetGame());
-    if IsDefined(sysGate) && sysGate.NearTrackedPins(puppet.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
+    if IsDefined(sysGate) && sysGate.NearTrackedPins(puppet.GetWorldPosition(), trackedRadius) {
       return false;
     }
     if puppet.IsPlayerCompanion() {
@@ -59,14 +72,14 @@ public abstract class CBSafetyGate {
     // NPCs driving a workspot are usually in a scripted beat (scenes, sitting,
     // leaning, performances). Safe default: leave them be (spec §16, S-13).
     let ws = GameInstance.GetWorkspotSystem(puppet.GetGame());
-    if IsDefined(ws) && ws.IsActorInWorkspot(puppet) {
+    if workspots && IsDefined(ws) && ws.IsActorInWorkspot(puppet) {
       return false;
     }
     // Somewhere the game protects, and indoors with it. This is the game's own test, and
     // it is per NPC rather than per player: people inside a bar are left alone while the
     // crowd on the pavement outside still reacts. An outdoor safe area, a memorial say,
     // does not silence the people standing in it (spec §16).
-    if CBNpcInSafeInterior(puppet) {
+    if interiors && CBNpcInSafeInterior(puppet) {
       return false;
     }
     // TODO S-13: unique exclusion list, AMM-spawned, braindance, active-quest-area

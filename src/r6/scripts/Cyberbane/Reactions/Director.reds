@@ -156,6 +156,9 @@ public class CBReactionDirector {
     }
     let civReacted = 0;
     let playerInCombat = player.IsInCombat();
+    // An exchange V is having (Reactions/StreetTalk.reds) is not talked over by the street (1.9.5).
+    let talkSys = sys.GetStreetTalk();
+    let talking = IsDefined(talkSys) && talkSys.Busy();
     let ppos = player.GetWorldPosition();
     let score = sys.GetScore();
     let dread = score.GetDread();
@@ -217,7 +220,7 @@ public class CBReactionDirector {
           // looks and flee (spec §9.2), capped per tick.
           let turnedHostile = false;
           if !npc.IsCrowd() && gangOn && hostileOnSight && recognized {
-            turnedHostile = this.TryGangHostile(score, player, npc, faction, tick);
+            turnedHostile = this.TryGangHostile(score, player, npc, faction, tick, dist);
           }
           // Somebody of a gang hostile to V who Cyberbane did not turn (1.9.1), read now and then.
           if !playerInCombat && !turnedHostile && !npc.IsCrowd() && NotEquals(faction, n"")
@@ -226,14 +229,16 @@ public class CBReactionDirector {
             npc.cbAttitudeReadTick = sys.GetTickCount();
             this.NoteForeignHostility(sys, score, player, npc, faction);
           }
-          if !turnedHostile && civOn && civReacted < maxCiv {
+          // Never whoever V is talking to or settling on (1.9.5).
+          let inTalk = npc.cbTalkHeldTick > 0 && tick - npc.cbTalkHeldTick <= 2;
+          if !turnedHostile && civOn && civReacted < maxCiv && !inTalk {
             if CBFearReact(game, score, npc, dist, civIntensity, faction, sys.GetTickCount(),
                            sys.GetContent()) {
               civReacted += 1;
             }
           }
           // Behind a mask V is somebody nobody can place, and people talk about that too (1.9.5).
-          if whispersOn && !playerInCombat && (recognized || CBPlayerMasked(game)) {
+          if whispersOn && !playerInCombat && !talking && (recognized || CBPlayerMasked(game)) {
             this.TryWhisper(game, sys, score, npc, dread, dist, faction, recognized);
           }
         }
@@ -246,7 +251,7 @@ public class CBReactionDirector {
   // Returns true when this NPC is engaging V (hostile or being warned), so the Director
   // knows not to let it flee from fear instead.
   private func TryGangHostile(score: ref<CBScoreEngine>, player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName,
-                              tick: Int32) -> Bool {
+                              tick: Int32, dist: Float) -> Bool {
     if Equals(faction, n"") {
       return false;
     }
@@ -308,6 +313,13 @@ public class CBReactionDirector {
     }
     // Never mid-conversation: V has the prompt up on them, or is waiting on their answer.
     if npc.cbTalkHeldTick > 0 && tick - npc.cbTalkHeldTick <= 2 {
+      return true;
+    }
+    // And they let V walk up with empty hands, a while longer (1.9.5): a V coming to talk is not a V
+    // coming to fight. Twice the warning at most, so standing beside them is not a way to stall for ever.
+    if CBWarningsOn() && npc.cbGangWarnTick > 0 && dist <= CBConfig.TalkApproachHold()
+       && !IsDefined(GameObject.GetActiveWeapon(player))
+       && tick - npc.cbGangWarnTick < CBConfig.GangWarnGraceTicks() * 2 {
       return true;
     }
     let agent = npc.GetAttitudeAgent();

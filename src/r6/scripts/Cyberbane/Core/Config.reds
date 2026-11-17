@@ -1243,6 +1243,11 @@ public abstract class CBConfig {
   // How far round a job's marker people are left out of street talk (CBTalkWhyNot), and the cone in front
   // of V somebody has to be in when the game's look-at finds nobody (cos of about 25 degrees).
   public static func TalkJobClearance() -> Float = 20.0
+  // The job V is tracking keeps a little more: its people, not the neighbourhood (CBSafetyGate.CanTalkTo).
+  public static func TalkTrackedClearance() -> Float = 30.0
+  // How close an empty-handed V can walk up to a ganger who has warned V before they draw, while V does
+  // (Reactions/Director.reds, TryGangHostile).
+  public static func TalkApproachHold() -> Float = 8.0
   public static func TalkFacingDot() -> Float = 0.9
   // The same reason for no prompt is logged at most this often (seconds).
   public static func TalkWhyLogSeconds() -> Float = 8.0
