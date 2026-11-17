@@ -266,13 +266,13 @@ public class CyberbaneSettings {
   public let talkBubbles: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Informants")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Informants-Desc")
   public let informants: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalFlaws")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFlaws-Desc")
   public let rivalFlaws: Bool = true;
@@ -288,6 +288,42 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SendWord")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SendWord-Desc")
   public let sendWord: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Bagmen")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Bagmen-Desc")
+  public let bagmen: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Favours")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Favours-Desc")
+  public let favours: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SitDowns")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SitDowns-Desc")
+  public let sitDowns: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WhileOut")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WhileOut-Desc")
+  public let whileOut: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Surrender")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Surrender-Desc")
+  public let surrender: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ClaimHelp")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClaimHelp-Desc")
+  public let claimHelp: Bool = false;
 
   // ---- Gangs ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")

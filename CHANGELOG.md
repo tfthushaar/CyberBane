@@ -3,6 +3,39 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.0.0 (17 November 2026)
+
+**Cyberbane 2.0 in one paragraph.** Since 1.9.5, Night City talks back. Walk up to anybody and talk: a real
+conversation, with questions that have real answers, deals, and a price for a Rival's hiding place you can
+haggle over. Make the street talk the hard way: grab a ganger, crouch over the downed, scan them, turn
+them into informants, and learn a Rival's fatal flaw. Rivals have a life: catchphrases, an introduction
+from their crew, family who come after you, a call-out to a place they name, bodyguards, and mercy that is
+your decision. And the street does things on its own: bagmen carrying the take, favours for the gangs that
+like you, and sit-downs between gangs at war that you can crash. Everything new has its own switch in Mod
+Settings. Your progress carries over from 1.9.5 and later.
+
+**New in 2.0.0: a living street**
+- **Bagmen.** Now and then a gang's bagman walks the week's take across its turf near you, with one
+  lookout, and is marked on your map. Put the bagman down and the eddies are yours; the gang loses strength
+  and won't like you for it.
+- **Favours.** Ask a ganger who doesn't hate you **"Need anything done?"** You get a small job: run off a
+  rival gang's lookout a couple of streets over, or lean on somebody who owes them (both marked). Do it and
+  they pay, warm to you, and sometimes pass on where a Rival is lying low.
+- **Sit-downs.** Word reaches you that two gangs at war are meeting at a place and an hour, with a pin. Get
+  there in time and crash it: both gangs lose strength and fear you more. Leave it, and the street tells you
+  they made their deal.
+- **While you were out.** A little after you load, one line about the latest thing that changed the street.
+- **Surrender** (experimental, off): some beaten gangers give up instead of running. Walk away and they
+  leave; grab them and they talk; shoot them and the street hears about it.
+- **Nobody kills you but me** (experimental, off): when one gang has you badly outnumbered, a Rival with a
+  claim on you may turn up and fight on your side, then walk off with a promise of next time.
+
+**Changes**
+- Finding the person you look at is cheaper: the game's targeting is asked only when nothing else finds
+  anybody, at most twice a second, and never in a fight.
+- **Informants** and **Fatal flaws** moved to the Rivals section of Mod Settings. A new section, **A living
+  street**, holds the new switches.
+
 ## 1.9.9 (17 November 2026)
 
 **New: Rivals with a life**

@@ -193,6 +193,18 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
 func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
   CBUntrackOnMap(game, puppet);   // no marker left hanging over a body
+  // Shot with their hands up (Spawn/LivingStreet.reds, experimental surrender).
+  if puppet.cbSurrendered && puppet.cbDamagedByPlayer {
+    puppet.cbSurrendered = false;
+    let sysS = CyberbaneSystem.Get(game);
+    if IsDefined(sysS) {
+      sysS.AddCode(-CBConfig.SurrenderShotCode());
+      CBFileLog(sysS, n"ShotSurrendered", CBGameSeconds(game), CBEventDistrict(sysS, game), CBClassifyFaction(puppet), 0.0);
+      if CBMessagesOn() {
+        CBHearsayFromStreet(game, "You shot somebody with their hands up. People saw.", n"");
+      }
+    }
+  }
   let sysE = CyberbaneSystem.Get(game);
   let wasRival = false;
   // One of ours: its body is cleared later, once V has moved well away (CBSweepRemains).

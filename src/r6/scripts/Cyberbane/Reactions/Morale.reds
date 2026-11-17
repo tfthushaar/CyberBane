@@ -319,6 +319,12 @@ public func CBOrderFlee(game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
 
 // True when they really ran. Nowhere to go is a reason to keep fighting.
 func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>, faction: CName, chance: Float) -> Bool {
+  // Some give up instead (Spawn/LivingStreet.reds, experimental).
+  let life = CBStreetLifeFor(game);
+  if IsDefined(life) && life.TrySurrender(sys, game, npc) {
+    npc.cbMoraleBroken = true;
+    return true;
+  }
   if !CBOrderFlee(game, npc) {
     CBLog.Verbose(n"Reactions", "An enemy would have broken, but had nowhere to run.");
     return false;

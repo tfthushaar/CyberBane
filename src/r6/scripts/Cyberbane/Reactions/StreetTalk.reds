@@ -358,14 +358,25 @@ public class CBStreetTalk {
   private let m_whyFor: Float;
   private let m_whyLogAt: Float;
 
+  // When the targeting query may next be asked (LookedAt).
+  private let m_queryIn: Float;
   // The street's other ways of talking (Reactions/StreetIntel.reds, 1.9.8), on this tick.
   private let m_intel: ref<CBStreetIntel>;
+  // The street's own events (Spawn/LivingStreet.reds, 2.0.0), ticked with the fast tick.
+  private let m_life: ref<CBStreetLife>;
 
   // Keeping one notch of the wheel to one step (see Scroll).
   private let m_lastScrollAt: Float;
   private let m_lastScrollStep: Int32;
   private let m_lastScrollByWeapon: Bool;
   private let m_choiceScrollSeen: Bool;
+
+  public func GetLife() -> ref<CBStreetLife> {
+    if !IsDefined(this.m_life) {
+      this.m_life = new CBStreetLife();
+    }
+    return this.m_life;
+  }
 
   public func GetIntel() -> ref<CBStreetIntel> {
     if !IsDefined(this.m_intel) {
@@ -475,7 +486,7 @@ public class CBStreetTalk {
     if this.m_stage == CBTalkStageIdle() {
       this.StopListening();
     }
-    let npc = this.LookedAt(game, player);
+    let npc = this.LookedAt(game, player, true);
     if this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen() {
       this.Keep(sys, game, player, npc, dt, tick);
       return;
@@ -667,7 +678,7 @@ public class CBStreetTalk {
     // Played in 1.9.7, the traffic stop alone did not hold them ("too far" on every passer-by), so they are
     // also given the game's hold-position order for the length of the conversation (CBTalkHold).
     npc.cbTalkPartner = true;
-    if CBTalkStopWalkersOn() && !t.atWork {
+    if CBTalkStopWalkersOn() && !t.atWork && t.rivalId == 0 {
       if npc.IsCrowd() {
         let crowd = npc.GetCrowdMemberComponent();
         if IsDefined(crowd) && crowd.IsInCrowd() && crowd.CheckIsMoving() {
@@ -814,6 +825,13 @@ public class CBStreetTalk {
         } else {
           if choice == CBTalkIntimidate() {
             a = CBTalkOnIntimidate(sys, game, player, t);
+            // Somebody a favour asked V to lean on (Spawn/LivingStreet.reds).
+            if npc.cbFavourMark {
+              let lifeF = CBStreetLifeFor(game);
+              if IsDefined(lifeF) {
+                lifeF.NoteLeaned(npc);
+              }
+            }
           } else {
             a = this.AnswerTopic(sys, game, player, t, choice, again);
           }
@@ -917,6 +935,10 @@ public class CBStreetTalk {
     }
     if choice == CBTalkActTurn() {
       return CBIntelTurn(sys, game, t);
+    }
+    if choice == CBTalkActFavour() {
+      let life = CBStreetLifeFor(game);
+      return IsDefined(life) ? life.OfferFavour(sys, game, player, t) : CBTalkSay("Not now.", n"");
     }
     if choice == CBTalkActSpare() || choice == CBTalkActCollect() || choice == CBTalkActExile() {
       return CBRivalMercyAnswer(sys, game, player, t, choice);
@@ -1094,7 +1116,7 @@ public class CBStreetTalk {
   // people whose bodies the crosshair is not exactly on, and passers-by the targeting skips), the person
   // in talking range closest to the line of V's sight, from Cyberbane's registry. By angle, not distance
   // (1.9.6): the nearest of a group is often not the one V is looking at.
-  private func LookedAt(game: GameInstance, player: ref<PlayerPuppet>) -> ref<ScriptedPuppet> {
+  private func LookedAt(game: GameInstance, player: ref<PlayerPuppet>, opt query: Bool) -> ref<ScriptedPuppet> {
     let ppos = player.GetWorldPosition();
     let targeting = GameInstance.GetTargetingSystem(game);
     if IsDefined(targeting) {
@@ -1105,12 +1127,6 @@ public class CBStreetTalk {
       if IsDefined(hit) && !hit.IsPlayer() && Vector4.Distance(ppos, hit.GetWorldPosition()) <= CBConfig.TalkKeepRange() {
         return hit;
       }
-    }
-    // The registry can miss somebody who streamed in beside V on a crowded street; the game's own
-    // targeting query does not (1.9.9: "I was in their face and nothing came up", and nothing logged).
-    let near = CBTalkFacingNear(game, player, null);
-    if IsDefined(near) {
-      return near;
     }
     let sys = CyberbaneSystem.Get(game);
     let reg = IsDefined(sys) ? sys.GetRegistry() : null;
@@ -1131,6 +1147,16 @@ public class CBStreetTalk {
             bestDot = dot;
           }
         }
+      }
+    }
+    // The registry can miss somebody who streamed in beside V on a crowded street; the game's own
+    // targeting query does not (1.9.9: "I was in their face and nothing came up", and nothing logged).
+    // The dearest of the three, so last, at most twice a second, and never in a fight.
+    if !IsDefined(best) && query && !player.IsInCombat() {
+      this.m_queryIn -= CBConfig.TalkTickSeconds();
+      if this.m_queryIn <= 0.0 {
+        this.m_queryIn = 0.5;
+        best = CBTalkFacingNear(game, player, null);
       }
     }
     return best;
@@ -1797,7 +1823,12 @@ public func CBTalkOfferShown(game: GameInstance) -> Bool {
     return false;
   }
   let hub = FromVariant<InteractionChoiceHubData>(bb.GetVariant(defs.InteractionChoiceHub));
-  return hub.active && hub.id == CBConfig.TalkHubId();
+  if !hub.active || hub.id != CBConfig.TalkHubId() {
+    return false;
+  }
+  // The prompt widget shows the hub VisualizersInfo names; something else named there hides ours.
+  let vis = FromVariant<VisualizersInfo>(bb.GetVariant(defs.VisualizersInfo));
+  return vis.activeVisId == CBConfig.TalkHubId() || vis.activeVisId == -1;
 }
 
 // Down, only if it is still Cyberbane's.
@@ -1915,6 +1946,12 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   if gang && CBInformantsOn() && IsDefined(t.npc) && (t.npc.cbHoldState == 1 || m == CBTalkAfraid())
      && !CBMaskHas(done, CBTalkActTurn()) {
     ArrayPush(out, CBTalkMakeLine("[Intimidate] You work for me now.", CBTalkActTurn(), t"ChoiceCaptionParts.GrappleIcon"));
+  }
+  // A favour (Spawn/LivingStreet.reds, 2.0.0): a gang that does not hate V may have a small job.
+  let lifeC = CBStreetLifeFor(game);
+  if gang && (m == CBTalkFriendly() || m == CBTalkWary()) && CBStreetLifeOn(n"favours") && IsDefined(lifeC)
+     && !lifeC.FavourOpen() && !CBMaskHas(done, CBTalkActFavour()) {
+    ArrayPush(out, CBTalkMakeLine("[Ask] Need anything done?", CBTalkActFavour(), t"ChoiceCaptionParts.GangWatchIcon"));
   }
   // Business (1.9.7): what a gang at war with V will sell. Only when there is something to sell.
   if gang && CBTalkHasBusiness(sys, game, t) {

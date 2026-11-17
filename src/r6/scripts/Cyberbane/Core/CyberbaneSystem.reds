@@ -1165,6 +1165,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_tickCount % 5 == 0 {
       CBTurfPatrolTick(this, game);
     }
+    // Bagmen, favours, sit-downs and the rest of the street's own life (Spawn/LivingStreet.reds, 2.0.0).
+    if IsDefined(this.m_talk) && !heavyStreaming {
+      this.m_talk.GetLife().Tick(this, game);
+    }
     CBPanicDrivingTick(this, game, this.m_tickCount);
     this.CheckSlowTick(game);
     if IsDefined(this.m_director) && !heavyStreaming {

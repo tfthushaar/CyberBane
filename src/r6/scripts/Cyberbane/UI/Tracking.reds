@@ -92,8 +92,13 @@ func CBWorthMarking(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Bool {
     return false;
   }
   let id = puppet.GetEntityID();
+  // Somebody a favour is about, and a bagman or a favour's lookout (Spawn/LivingStreet.reds, 2.0.0).
+  if puppet.cbFavourMark {
+    return true;
+  }
   // A Rival waiting at their place is a Rival (Rivals/Whereabouts.reds).
-  return des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Lair");
+  return des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Apex") || des.IsTagged(id, n"CB_Lair")
+      || des.IsTagged(id, n"CB_Bagman") || des.IsTagged(id, n"CB_Favour");
 }
 
 // The icon. The person glyph if the part we want is not on this install, because a pin whose

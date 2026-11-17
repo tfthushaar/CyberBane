@@ -126,7 +126,8 @@ public func CBSetUpPatrol(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
 }
 
 // Somewhere on the block, at a walk. The same spot for the group, so it reads as a group.
-func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>) -> Void {
+func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>, opt tag: CName) -> Void {
+  let walkers = IsNameValid(tag) ? tag : n"CB_Patrol";
   let ppos = player.GetWorldPosition();
   let pts: array<Vector4>;
   if !CBPursuitPoints(game, ppos, player.GetWorldForward(), CBConfig.TurfPatrolWalkCandidates(),
@@ -138,7 +139,7 @@ func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
   if CBPointIsSafeArea(game, spot) || sys.NearQuestPins(spot, CBConfig.QuestSpawnClearance()) {
     return;
   }
-  let ids = des.GetTaggedIDs(n"CB_Patrol");
+  let ids = des.GetTaggedIDs(walkers);
   let i = 0;
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;

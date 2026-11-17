@@ -1272,6 +1272,29 @@ public abstract class CBConfig {
   public static func WordKeptRenownShare() -> Float = 0.5
   public static func WordKeptFear() -> Float = 3.0
   public static func GuardNerveLoss() -> Float = 15.0
+  // A living street (Spawn/LivingStreet.reds, 2.0.0). Ticks are fast ticks (seconds).
+  public static func WhileOutDelayTicks() -> Int32 = 20
+  public static func BagmanGapTicks() -> Int32 = 1200
+  public static func BagmanChance() -> Float = 0.35
+  public static func BagmanLifeTicks() -> Int32 = 300
+  public static func BagmanTakeBase() -> Int32 = 600
+  public static func BagmanGangLoss() -> Float = 3.0
+  public static func BagmanStandingLoss() -> Float = 4.0
+  public static func FavourDistance() -> Float = 55.0
+  public static func FavourLifeTicks() -> Int32 = 600
+  public static func FavourPay() -> Int32 = 700
+  public static func FavourWarmth() -> Float = 2.0
+  public static func FavourTipChance() -> Float = 0.35
+  public static func MeetGapTicks() -> Int32 = 2400
+  public static func MeetChance() -> Float = 0.3
+  public static func MeetSpawnDistance() -> Float = 90.0
+  public static func MeetWindowSeconds() -> Float = 5400.0
+  public static func MeetGangLoss() -> Float = 4.0
+  public static func MeetRenown() -> Float = 30.0
+  public static func SurrenderShare() -> Float = 0.35
+  public static func SurrenderShotCode() -> Float = 2.0
+  public static func ClaimOutnumbered() -> Int32 = 5
+  public static func ClaimCalmTicks() -> Int32 = 15
   // A conversation holds while its person is within keep range and inside this cone in front of V (cos of
   // about 60 degrees), the crosshair wherever it likes (CBTalkFacing).
   public static func TalkKeepDot() -> Float = 0.5

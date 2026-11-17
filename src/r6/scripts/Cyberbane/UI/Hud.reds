@@ -3964,6 +3964,18 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
     return StrLen(gang) > 0 ? s"You paid \(gang) \(RoundF(e.value))eb to walk their streets in peace for a few hours."
                             : s"You paid \(RoundF(e.value))eb for safe passage.";
   }
+  if Equals(e.kind, n"BagmanRobbed") {
+    return StrLen(gang) > 0 ? s"You robbed \(gang)' bagman of \(RoundF(e.value))eb." : s"You robbed a bagman of \(RoundF(e.value))eb.";
+  }
+  if Equals(e.kind, n"Favour") {
+    return StrLen(gang) > 0 ? s"You did \(gang) a favour, for \(RoundF(e.value))eb." : "You did somebody a favour.";
+  }
+  if Equals(e.kind, n"MeetCrashed") {
+    return "You crashed a sit-down between two gangs.";
+  }
+  if Equals(e.kind, n"ShotSurrendered") {
+    return "You shot somebody who had given up.";
+  }
   if Equals(e.kind, n"WordSent") {
     return "You called out a Rival. They named a place.";
   }

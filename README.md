@@ -24,8 +24,23 @@ city is doing about you right now.
 
 **Download:** [CyberBane on Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Status: released (1.9.5).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
+**Status: released (2.0.0).** Built for Cyberpunk 2077 v2.5 and v2.31, from one download, and
 in active development. This page describes what the mod does and how it installs.
+
+### New in 2.0
+
+- **Talk to anybody.** Look at somebody up close with empty hands and **Talk** comes up. Ask what's going
+  on, who runs the street, whether anyone is coming for you; buy a Rival's hiding place and haggle over it;
+  pay a gang at war with you for safe passage or to call off a crew. People stop to talk, remember you, and
+  some of them lie.
+- **Make the street talk.** Grab a ganger and hold on, crouch over one you put down, or scan one, and they
+  give up a Rival's hiding place, who is coming, or a Rival's **fatal flaw**. Turn gangers into informants;
+  a Rival you spare twice may owe you tips.
+- **Rivals with a life.** Catchphrases, their crew naming them when they find you, family who take their
+  place, calling them out (or being called out) to a place with their bodyguards, and **mercy as your
+  choice**, including talking to a beaten Rival where they lie.
+- **A living street.** Bagmen to rob, favours for friendly gangs, and sit-downs between gangs at war to
+  crash.
 
 ## What it does
 
