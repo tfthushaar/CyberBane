@@ -1,195 +1,193 @@
 # Cyberbane improvements
 
-Research for changes not built yet. Each section says what it would take, what stands in the way, and
-what is recommended. Player requests, and what was done about each, are in
-[PLAYER_REQUESTS.md](PLAYER_REQUESTS.md) (this file's name until 1.9.5).
+Research for changes not built yet, ranked by how feasible each is: the surest and smallest first. Nothing
+here is implemented. Player requests, and what was done about each, are in
+[PLAYER_REQUESTS.md](PLAYER_REQUESTS.md).
+
+Every item has to fit the crash rules (summarised in PLAYER_REQUESTS.md): no police system, one AI order per
+NPC, no entity work inside attach events or on hit/death threads, UI as data rather than injected widgets,
+no loot put on bodies, no runtime appearance changes, scripts only (no archives, no TweakDB records).
+Ideas taken from other mods are taken as ideas: nothing of their code, numbers or text is copied, and each
+is redesigned around what Cyberbane already has.
 
 ---
 
-## Voicing the street: a voice for every subtitle
+## 1. Talking to gangers: what goes wrong, and the fixes
 
-**Goal.** Every line Cyberbane puts in the game's subtitles is heard as well as read: what V overhears
-from the crowd (`Narrative/Whispers.reds`), what people answer when V talks to them, and V's own line in
-that exchange (`Reactions/StreetTalk.reds`). Texts on the phone stay texts.
+**The report (1.9.5, 17 November):** "So many times I tried to talk to gangers with no weapons drawn while
+they were just standing around and it didn't work. I could talk with NPCs fine, but gangers I could only
+speak to once."
 
-**Short answer.** It is possible without touching the game's files, with one optional framework
-(Audioware) and audio Cyberbane would ship as a separate download. What it cannot have is lip sync, and
-the lines that name somebody or something (a gang, a district, a Rival, a sum of eddies) need work before
-they can be voiced. The voices themselves have to be synthetic voices nobody owns, never copies of the
-game's cast. Recommended: build it in phases, starting with groundwork that changes nothing players see.
+**What the log shows** (`[Cyberbane][Talk]` lines, CET `gamelog.log`, sessions of 17 November):
 
-### 1. What there is to voice
-
-Counted from the source (1.9.5): about **263 spoken lines**.
-
-| Where | Fixed lines | Lines with a name or number in them |
+| Line | Count | What it means |
 |---|---|---|
-| Overheard lines (`Whispers.reds`) | 105 | 66 |
-| Street talk, V's choices and the answers (`StreetTalk.reds`) | 83 | 9 |
+| `Prompt up: Tyger Claw - knows you` | 11 in 42 s, no answer between them | The prompt kept opening and closing on its own. Nobody got to choose a line. |
+| `V spoke to them a moment ago` | 7 | The 45 s lockout per person after any answer (`TalkCooldownTicks`). This is "I could only speak once". |
+| `V is in combat` | 19 | Talk is off in combat, and Cyberbane's own crews and hunters keep V in combat from a distance. |
+| `they are running from V` | 2 | Somebody V sent off can never be spoken to again (`cbTalkSent`, no exit). |
+| `TygerClaws: their people are hostile to you, and not by Cyberbane's doing` | 1 | The game itself turned the gang hostile (their turf or an earlier fight), so nobody of theirs can talk. |
 
-What goes into the templated ones: a district or place phrase (about 14 lines), a gang's name (10), V's
-title (8), the district V is in (5), the gang's leader or the Rival hunting V (5), a Rival's name and
-hideout (the informant and tip lines), and eddie amounts (the shake-down answers).
+**Why the prompt flickered on gangers and not on passers-by.** Gangers stand in groups, shoulder to shoulder.
+Once the prompt is up, it stays only while `LookedAt` keeps returning the same person, with 0.8 s of grace
+(`TalkLookGrace`). The game's look-at follows the crosshair from body to body, and when it returns nobody,
+the fallback takes the **nearest** person in the cone, often the man beside the one V chose. The target
+"changes", the grace runs out, the prompt closes, the next man is settled on, and it opens again. Nothing in
+the log says so because a prompt closing is never logged, only one failing to open.
 
-Two things already in the code matter here:
+**Fixes, most certain first:**
 
-- Subtitles go through the game's own subtitle system (`CBShowGameSubtitle`, `UIGameData.ShowDialogLine`),
-  named for the speaker but owned by V, because the person who said a line can be gone when it shows.
-  A voice has to come from the actual person, so the code that picks a line has to keep hold of who said
-  it (today `CBShowWhisper` is given a faction, not the NPC).
-- Street talk already plays one of the game's own barks on the person answering (`GameObject.PlayVoiceOver`
-  with `greeting`, `fear_beg` or `bump`) next to Cyberbane's subtitle. What V hears and what V reads are
-  two different sentences, and with the game's overhead chatter subtitles on, the game may show its own
-  line as well (`chattersControllers.script` draws `OverHead` lines). Once a real voice exists, that bark
-  should go.
+1. **Log why a prompt closes** ("Prompt down: looked away / walked off / they turned / a game prompt came
+   up"), the same way refusals are logged. Small. Makes every later report exact.
+2. **A sticky target.** Once the prompt is up on somebody, it stays on them while V is within keep range and
+   they are inside a wide cone (about 45 degrees), whoever else the crosshair crosses. The fallback picks by
+   the smallest angle from the crosshair, not the shortest distance, and the grace grows to about 2 s. Small.
+3. **A conversation, not a single exchange.** After an answer the prompt comes back on the same person for a
+   few seconds with follow-ups that fit what was said (after a greeting: "How's business?", "Seen any of
+   [enemy gang] around?", "Who runs this block?"; after a threat: "Walk away", "Last chance"). The per-person
+   lockout applies to the *effects* (standing, fear, tips: they already have daily ceilings in `CBTalkTally`),
+   not to talking. Only somebody sent off, or a finished conversation, ends it. Medium.
+4. **Say no out loud.** When V settles on a ganger who will not talk (their gang is hostile through the game
+   or at Vendetta, they are in a fight, they are at a job), they answer with one line in the game's subtitles
+   ("Keep walking.", "Not talking to you, merc.") instead of nothing. Then a refusal reads as the ganger's
+   choice, not a broken feature. Small.
+5. **Release lingering combat sooner.** Talk is off in combat, and the log shows combat dragging on. Our
+   release (`CBCombatReleaseTick`, `CBCutOffTick`) already lets go of crew who cannot reach V. A stricter
+   rule for crew far off, not moving and not seeing V for half a minute (sent home, the fight over for V)
+   would give V the street back faster. Small to medium.
+6. **An exit for `cbTalkSent`.** Somebody sent packing is talkable again after a while (a few minutes), or
+   once they have stopped running. Every state needs an exit (crash-rule note from 1.8.0). Small.
 
-### 2. What the game itself offers (checked in its scripts, `tools/redmod/scripts`)
+---
 
-- **`GameObject.PlayVoiceOver(npc, context)`** sends `SoundPlayVo` and the NPC says a line of their own
-  voice set for that context: their real voice, lip-synced, in 3D, under the dialogue volume. The game's
-  scripts use contexts such as `fear_beg`, `fear_run`, `pedestrian_hit`, `bump`, `enemy_warning`,
-  `danger`, `battlecry_01`, `stlh_curious_grunt`. **The words cannot be chosen**: the voice set picks a
-  line, and nothing tells a script which line or what it said. Good for a tone (a frightened yelp, a
-  grunt), never for a sentence of Cyberbane's.
-- **`AudioSystem.Play(event, entityID, emitter)`** plays Wwise events. Dialogue is not made of Wwise
-  events: voice lines are `.wem` files under `localization/<lang>/vo`, keyed by string id and played by the
-  scene system. There is no script call that plays a dialogue line by its id outside a scene.
-- **Scenes** play lines with voice and lip sync, but a scene is an authored asset run by the quest system,
-  not something a script can put together at runtime.
-- **Who is speaking** can be read: `gamePuppet.GetResolvedGenderName()` answers `Female` or `Male` for NPCs
-  as well as V (the game uses it in `equipmentSystem.script` and the photo mode). `Character_Record.VoiceTag()`
-  names a voice only for story characters; generic NPCs have none in TweakDB. Faction is already known
-  (`CBClassifyFaction`). Gender plus faction is enough to choose a voice and keep it for that person.
+## 2. Gangers who reply and haggle over a Rival's whereabouts
 
-### 3. What mods can add
+Today a lead is bought on the Hub at a fixed price (`CBWhereaboutsPrice`: base plus so much a rank), paid at
+once, and a gang at war with the Rival's texts it (`CBPickTipster`, `CBTipLine`). Nobody answers back. Two
+places a deal could be struck instead, both feasible:
 
-- **Audioware** (cyb3rpsych0s1s; Nexus and GitHub) is the established way to add new audio. It runs a
-  second audio engine beside the game's and plays files declared in a `.yml` manifest: `.wav`, `.ogg`,
-  `.mp3` or `.flac`, in sections `sfx`, `onos`, `voices` and `music`. Voices can be split by locale and by
-  `fem`/`male`, and they play on the game's **dialogue volume**. The redscript side is
-  `GameInstance.GetAudioSystemExt(game)`: `Play(name, entityID, emitterName, scnDialogLineType, settings)`,
-  and for sound that comes from a person, `RegisterEmitter(entityID, tag)` then
-  `PlayOnEmitter(name, entityID, tag)`. Emitters can be any entity (NPCs, not V) and are dropped
-  automatically when the entity dies or streams out. It needs Codeware (1.11.1 or later) and TweakXL
-  (1.10.2 or later). The latest release when this was written is 1.11.0 (28 October 2026); 1.10.0 is the
-  one that moved it to patch 2.5. It is a native plugin, so each release works on one game patch:
-  players on 2.31 would need the last release before 1.10.0, and anything Cyberbane calls has to exist in
-  both. Its repository carries no licence file, which does not matter for depending on it (players install
-  it themselves) but would for copying any of it.
-  Its limits, all from its documentation:
-  - **Every file is declared at startup.** Sound banks are built when the game launches and a sound can
-    only be played by its declared name. Nothing plays a file from a path, or a file made after launch.
-  - **No lip sync.** "Creating custom lipsync animation is not possible yet." The engine only lip-syncs a
-    line with a `.wem` behind it. The documented workaround reuses an existing animation of matching
-    length through a `.lipmap`, which is only practical for a handful of hand-made lines.
-  - Its own subtitles come from the manifest (fixed text, registered through Codeware localization), not
-    from text supplied at runtime. Cyberbane keeps its own subtitle path and only asks Audioware for sound.
-  - All its audio pauses in menus and is stopped on every save load; it follows time dilation.
-- **REDmod audio** (`customSounds.json`) adds or replaces Wwise events, but needs REDmod deployment and has
-  no notion of genders or voices. Audioware supersedes it for this.
-- **WolvenKit's sound tool** imports `.wav` into `.wem` to replace existing lines. It cannot add a line the
-  game does not already play.
+**In the street (medium).** Street talk gains one line on gangers: "[Ask] Heard anything about [Rival]?",
+offered when a Rival of theirs, or of a gang at war with theirs, has whereabouts for sale
+(`CBWhereaboutsForSale`). The answer comes from who this ganger is, rolled once per person and kept on the
+puppet the way `cbHoldState` is:
 
-### 4. Where the voices would come from
+- **Their gang and the Rival's.** One of the Rival's own people sells dear or refuses (and may warn the
+  Rival, who then comes for V); one of a gang at war with the Rival's is glad to sell.
+- **A temperament:** loyal (won't say), greedy (names a price), scared (gives it cheap, or for nothing when
+  afraid enough), a liar (rare; sells a place where nobody waits, and the street later tells V they were
+  played). The roll leans on V's standing with them and their gang's fear of V.
+- **The price** starts from `CBWhereaboutsPrice` and moves: cheaper for a friendly gang or a frightened
+  ganger, dearer for the Rival's own people and the greedy.
 
-| Option | Exact words | Effort | Risk |
-|---|---|---|---|
-| A. The game's own barks (`PlayVoiceOver`) | No | None, already used | Words never match |
-| B. Synthetic voices made ahead of time and shipped as audio | Yes, for every line written down | A build pipeline, 40-80 MB download | Templated lines need work (section 5) |
-| C. Speech made in the game as each line comes up | Yes, every line, names and numbers included | A native RED4ext plugin with a speech engine and its own playback | New native code to maintain for 2.5 and 2.31, CPU spikes, 100-300 MB of model, a new kind of crash |
+The next prompt is the deal: **Pay [price]**, **Haggle** (an odds roll on fear against nerve, the same sum
+intimidation uses: success knocks the price down, failure raises it or ends the talk), **Lean on them**
+(the existing intimidate path, `CBTalkInform`) or **Forget it**. Paying goes through the same code as the
+Hub purchase (`CBRivalHideout`, `CBMarkLeadTold`), so the pin, the waiting Rival and the ambush are
+untouched. Street talk already shows any number of lines, so the deal is one more step in its state machine.
 
-Nobody has published option C for Cyberpunk 2077. The AI-conversation mods that exist (Convai's NPC mod,
-Generative Texting) run through cloud services, which Cyberbane will not do: it would send a player's game
-to somebody else's server.
+**On the phone (medium).** The Hub's "find them" sends a text to the tipster instead of paying at once.
+They name a price in their gang's voice, and the reply rows (`CBRealPhoneChoices`, which already carries the
+pay-off offer) give **Deal**, **Too much** and **Forget it**. Too much brings a counter-offer or a refusal,
+by their posture to V. Each round is one text, so it takes a little time, which suits a phone deal.
 
-**Whose voices.** Never a copy of the game's cast or of any real person. The xVASynth voice models made for
-Cyberpunk 2077 are trained on the game's actors and are out. CD Projekt's fan content guideline asks for
-permission from everybody concerned; a voice actor's likeness is theirs. Use voices made to be used: speech
-models whose licence allows redistributing what they generate (Kokoro's weights are Apache-2.0; Piper's
-engine is MIT but each voice carries the licence of the recordings it was trained on, and many are
-non-commercial), and check every voice's model card. Nexus Mods requires mods that use AI to say so and
-explain how, so the voice pack's page must, and Cyberbane's own page should mention it.
+---
 
-**Cast.** Enough that a street does not sound like one person: four women's and four men's voices to
-start, chosen per NPC from a hash of their entity id so the same person keeps the same voice, then flavour
-by background (street and gang, corporate, nomad, police) if more voices are added. Processed to sit in the
-world: 48 kHz, trimmed, loudness matched to the game's dialogue, no reverb baked in (Audioware's reverb mix
-and the emitter's position do that).
+## 3. What can be borrowed from Stay Dead (Night City Nemesis, 0.1.6)
 
-**V.** Stays unvoiced. A synthetic V would clash with the voice V has in every scene, and V's actors are not
-to be copied. V's line keeps its subtitle, as now.
+Read from its scripts (72,000 lines of redscript, a CET part, Audioware sounds, TweakXL records and
+archives). It is a Shadow of War-style nemesis system with a lot of overlap with Cyberbane. Listed here are
+only the ideas that are feasible within Cyberbane's rules, easiest first. Each says what it does, what
+Cyberbane already has, and how ours would be built.
 
-### 5. The lines with names in them
+### Small
 
-A pre-made voice can only say what was written down. For the 75 templated lines:
+1. **Texts and overheard lines wait while a choice list is up.** Stay Dead holds its pop-ups while dialogue
+   choices are on screen, in scenes and in menus. Cyberbane's phone and subtitle delivery (`CBPhone.Update`,
+   `Deliver`) does not check for the game's dialogue choices or its own talk prompt. Hold both while any
+   `DialogChoiceHubs` entry is up (`CBNativePromptUp` already reads it) or V is in a scene.
+2. **A spawned crew re-armed if it comes up neutral.** Stay Dead found crews spawned hostile that later read
+   neutral, and re-checks every one of its men once a second for their first 30 s, setting hostility again
+   if it has slipped. Cyberbane sets hostility once at setup. The same short watch over our tagged crews
+   (attitude only, no AI order) is cheap insurance.
+3. **Intel from a scan.** A completed scan of a ganger (a wrap of `ScriptedPuppet.OnScanningEvent`, which
+   only observes) has a chance to turn up one thing about a Rival of their gang: a weakness V did not know,
+   or a lead. Once per ganger. Uses the traits Cyberbane already gives Rivals.
+4. **"While you were out".** One line in the game's subtitles a little after a load, once V is really in the
+   game: the most important thing that happened since (a Rival promoted, a gang broken, turf taken), from
+   the History log Cyberbane already keeps. Never on the loading screen.
+5. **A catchphrase per Rival.** Each Rival gets one line of their own, picked at birth from their gang's
+   pool, and says it when they arrive, when they get away and in their texts. The same face, the same words:
+   cheap, and it makes a Rival a person.
+6. **Rival status as the street says it.** The Rivals screen says why a Rival has not come back the way the
+   street would ("licking their wounds; back in about two days", "waiting for you in Kabuki"), never naming
+   the rules. Cyberbane has the data (`CBRivalSourceLine`, lying low, the lair); only the wording changes.
 
-1. **Write a voiced version without the name.** "They put a boss of the Tyger Claws in the ground in
-   Japantown" becomes "They put one of their bosses in the ground", and with voices on, the subtitle shows
-   the voiced sentence, so what is heard and read always match. The specifics stay in the Hub and the texts.
-   This covers most of them.
-2. **Pre-make the few that are worth it per value.** A gang's name is one of 16 and a district one of 8, so
-   the ten gang lines are 160 clips per voice: feasible, and generated, not recorded.
-3. **Never splice.** Joining a clip of a name into a sentence breaks the speech's rhythm and sounds like a
-   tannoy announcement.
-4. **Amounts and Rival names** (shake-downs, informants, tips) get a voiced sentence that does not say them
-   ("Here. Take it and go."; "I'll tell you where they are. Just go."), with the exact sum or name in the
-   subtitle line that follows it or on the map pin.
+### Medium
 
-### 6. Fitting it into the game
+7. **Squeeze a ganger in a grapple.** V grabs a ganger (the game's own grab) and holds them for about three
+   seconds, and they talk: a Rival's hideout, a weakness, who is coming next. The game's grapple state is
+   `GrappleStandEvents` (`locomotionTakedown.script`, present on 2.5 and 2.31); wrapping its `OnEnter` and
+   `OnExit` only observes, and the hold time is counted on our tick, never in the callback. The vanilla hold
+   lasts long enough for every rank (`SetGrappleDuration`). The temperaments of section 2 apply: the loyal
+   say nothing, the greedy name a price that V pays by holding on, the scared talk at once. A line in the
+   subtitles shows the seconds left. A takedown before the end, or aiming (a human shield), ends it
+   unsaid. No new key and no prompt: holding them is the question. This is the most natural ganger
+   interaction available, because it is a move players already make. Leads go through `CBMarkLeadTold`.
+8. **Make the downed talk.** V crouches over a defeated ganger (alive on the floor) and looks at them for a
+   few seconds; they give one thing up. And a Rival's body can carry a lead about another of their gang (V
+   crouches over it). Built on the look-at Cyberbane already uses and the defeated state it already tracks.
+9. **The informant.** Cyberbane's Debtor (a Rival spared twice) retires after one redemption tip. Instead,
+   somebody spared who is grateful texts V two or three tips over the next days (where a leader holds court,
+   a weakness of another Rival, who is about to come), then "we're square". A small chance, higher if V later
+   kills somebody close to them, that the last tip is a set-up: the place is an ambush. All through the
+   existing tip and lair code.
+10. **Mercy is a choice.** When V defeats a Rival (down, alive), V has about ten seconds: put the weapon away
+    for three seconds or walk off and they are spared; finish them and they die. Nothing happens by
+    accident (a Rival dropped from a rooftop by a quickhack has not been "spared"). Cyberbane's sparing
+    pipeline (`CBSparedCheck`, escapees, `CBRivalSparedByV`) stays; only the decision becomes V's.
+11. **Kin who swear revenge.** When V kills a Rival in front of witnesses (`CBCountWitnesses`), a relative
+    may swear revenge: a new Rival born a few in-game hours later ("Sister of [name]"), the delay longer the
+    farther the news has to travel, with the trait that counters what killed their kin (Cyberbane's traits)
+    and a grief text. One pending avenger per gang. Built on `CBRivalAfterFight` and the Rival births.
+12. **Send word.** A line on a Rival's Hub page: V sends a threat, with optional terms ("the same way as last
+    time", "in front of their crew"). The Rival answers by text, prepares (more guards, armour, a car to run
+    to), and waits at a place on the map: the lair machinery Cyberbane already has (`Rivals/Whereabouts.reds`).
+    Keeping the terms pays more (bounty, street renown, the gang's fear). Medium, because the preparation
+    touches spawning.
+13. **Fatal flaws.** A rare, high-rank Rival carries one hidden weakness tied to something V already does: a
+    headshot from a precision rifle, a blunt takedown, a burn, a toxin, a Short Circuit. Meeting it kills
+    them outright. Learned through intel (items 3, 7, 8, 9). The hit is read in the existing hit hook and the
+    kill is queued to the next frame (crash rule: no entity work on the hit thread). Uses Cyberbane's trait
+    data.
+14. **The announcement.** Before a Rival's crew opens fire, they hold a beat: the crew stays neutral, one of
+    them steps out and names the Rival in the subtitles in two to four short parts (what they survived, what
+    they did to V, their catchphrase), and the fight starts when it is said, when V hurts one of them, or when
+    V walks up. Attitude changes and subtitles only, plus at most one move order per man.
 
-- **Placed on the speaker.** `RegisterEmitter` on the NPC at the moment the line plays (never inside an
-  attach event: crash rule 3), `PlayOnEmitter`, and the subtitle as now. Distance and direction come free.
-- **One voice at a time.** A queue: a new overheard line waits for the last to finish, and street talk
-  pre-empts the crowd (the Director already holds its lines while `CBStreetTalk.Busy()`).
-- **Never over the story.** Nothing plays in a scene (`CBPlayerInScene`), during a phone or holo call, while
-  V is down, or with the world unsettled (`CBWorldStable`); combat starting stops what is playing.
-- **Timing from the audio.** The subtitle stays up for the clip's length plus a beat, read from a generated
-  table of durations, instead of today's fixed seconds.
-- **Optional, and safe without it.** Audioware's script functions do not exist without Audioware, and a
-  missing symbol stops every redscript mod a player has. So Cyberbane calls `AudioSystemExt` through
-  Codeware reflection, as it already does for Equipment-EX and They Will Remember, and the voice pack is
-  audio files plus an Audioware manifest, with no scripts of its own. Without Audioware or without the
-  pack, everything stays exactly as it is now.
-- **Settings.** "Voices" on/off under Street talk, and a volume trim, which Audioware applies per play.
+### Larger
 
-### 7. Groundwork first
-
-The lines are written inline today, as arguments to `CBWhisperPick3("...", "...", "...")`. To give each
-one a sound it needs an identity:
-
-- Move every spoken line into a data table (`Data/Lines.reds`): an id, the text, the voiced variant if
-  the text has a name in it, and its topic. The code picks an id; the subtitle and the sound both come from
-  that entry.
-- A build script (`tools/voice_lines.py`) reads the table and writes the list to generate, the Audioware
-  manifest and the table of clip lengths. The audio itself is made outside the game, from that list.
-- This step changes nothing a player sees and can ship on its own.
-
-### 8. Recommended order
-
-1. **Groundwork** (section 7). No audio yet.
-2. **Voice pack, first cut**: option B, eight voices, the overheard lines and the street talk answers,
-   placed on the speaker, through Audioware by reflection, as a separate optional download.
-3. **More voices and backgrounds**, and the gang and district variants of the templated lines.
-4. **Only if wanted, much later**: option C, speech made in the game, for every line exactly as written.
-   It is the only route to fully dynamic voiced lines, and the most expensive one to keep working.
-
-### 9. Still to find out before building
-
-- **Audioware on 2.31.** Which pre-1.10.0 release is the last for 2.31, and whether `AudioSystemExt`,
-  `RegisterEmitter` and `PlayOnEmitter` have the same shape there. The exact signatures are in its
-  `crates/audioware/reds/Ext.reds`; read that, not the examples, before writing the reflection calls.
-- Whether registering an emitter on a crowd NPC for one line and leaving it is cheap and safe over hours of
-  play, or whether it should be unregistered after each line.
-- Whether the game shows its own overhead subtitle for the barks street talk plays today (section 1), which
-  would mean two lines on screen for one answer.
-- Whether a "talking" facial animation can be triggered on the speaker (the game's facial reactions,
-  `TriggerFearFacial` and its kin in `reactionComponent.script`) so a voiced line is not said by a still
-  face. Real lip sync stays out of reach.
-- Size: about 263 lines x 8 voices at around 25 KB each (Ogg, roughly 2.5 seconds) is about 50 MB, more with
-  gang and district variants.
-
-**Sources.** The game's scripts in `tools/redmod/scripts` (`gameObject.script`, `audioSystem.script`,
-`baseSubtitlesControllers.script`, `chattersControllers.script`, `reactionComponent.script`,
-`puppet.script`, `tweakDBRecords.script`); the Audioware book (cyb3rpsych0s1s.github.io/audioware) and the
-RED modding wiki's sound guides; CD Projekt RED's fan content guideline; press coverage of Nexus Mods' AI
-disclosure rules; the Convai and Generative Texting mod pages.
+15. **Bodyguards that matter.** A gang leader's lieutenants stand as their guards at the lair (Cyberbane's
+    hierarchy already ranks them). Kill them first and the leader is weaker for the fight; a guard's death in
+    front of the leader sets off a reaction (shaken and quicker to break, enraged for a while, or vowing to
+    come for V afterwards).
+16. **Bagmen.** Now and then on a gang's turf, a named bagman walks the week's take past V with a lookout,
+    spawned out of sight and walking a route that comes near V. Rob or drop them and the eddies go to V's
+    inventory (never into the body: crash rule 6); the gang and the lieutenant whose money it was take the
+    loss (turf strength, standing). Uses Cyberbane's spawner and its out-of-sight placement.
+17. **More ways to arrive.** Rivals and crews already come on foot and by car. Add: two bikes for the Tyger
+    Claws, a marksman of theirs on high ground covering the Rival's approach, and the call-out (the Rival
+    texts a place, turns up there a minute or two later and waits). Each is a new arrival style in
+    `Spawn/Arrival.reds`.
+18. **Surrender.** A beaten ganger sometimes gives up instead of running: they stop fighting (attitude
+    neutral, their threats cleared, one hold-position order, the game's own fear animation), hands empty.
+    V answers: walk away or holster and they go; squeeze them (item 7) and they talk; shoot them and the
+    street hears that V killed someone with their hands up (Conduct, fear, witnesses). Stay Dead gets the pose
+    from its own animation archive, which Cyberbane will not ship, so ours is script-only and plainer. Larger
+    and less certain: it depends on how a ganger's AI takes the hold order mid-fight.
+19. **"Nobody kills V but me".** When V is outnumbered by somebody else's people, a Rival with a claim on V
+    may roll in with their crew and fight on V's side, then walk off with a promise of "tomorrow", and keep it.
+    Cyberbane already sets its people against V's companions (`CBCompanionHostilityTick`), the same kind of
+    attitude work. Larger: a truce that ends if V shoots them.
+20. **Gang events with a time and a place.** A lieutenant executes a prisoner at a marked spot at a set hour,
+    or a gang's leaders hold a sit-down. V hears of it (a text, a pin) and can stop it, crash it, or let it
+    happen, with turf and standing following. Built on the lair pins and spawns. The largest item here.
