@@ -3,6 +3,14 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## Unreleased
+
+**A living street**
+- **Choose how big a sit-down is.** New in Mod Settings > A living street: **People per gang at a sit-down**,
+  from 1 to 6 (default 2, the size every sit-down has been until now). Two gangs meet, so a sit-down has twice
+  that many people. A bigger one stands in wider rings round the place. If too many of Cyberbane's people are
+  already out, fewer turn up, the same number from each gang. You still crash it by taking out all but one.
+
 ## 2.1.0 (18 November 2026)
 
 **New: How gangs see you.** A new page in Mod Settings, asked for by a player running an Arasaka roleplay

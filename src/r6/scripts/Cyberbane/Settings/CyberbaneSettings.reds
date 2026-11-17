@@ -708,6 +708,18 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SitDowns-Desc")
   public let sitDowns: Bool = true;
 
+  // How many of each gang turn up to a sit-down (Spawn/LivingStreet.reds, CBSitDownPerGang). Two
+  // gangs, so the meeting is twice this. Two each was the only size until a player asked for more.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SitDownSize")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SitDownSize-Desc")
+  @runtimeProperty("ModSettings.min", "1")
+  @runtimeProperty("ModSettings.max", "6")
+  @runtimeProperty("ModSettings.step", "1")
+  public let sitDownSize: Int32 = 2;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
   @runtimeProperty("ModSettings.category.order", "8")

@@ -66,6 +66,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Favours-Desc", "Ask a ganger who doesn't hate you whether they need anything done: run off a rival gang's lookout, or lean on somebody who owes them. They pay, warm to you, and sometimes pass on a lead.");
     this.Text("Cyberbane-Settings-SitDowns", "Sit-downs");
     this.Text("Cyberbane-Settings-SitDowns-Desc", "Word reaches you that two gangs at war are meeting at a place and an hour. Crash it and both gangs lose strength and fear you more.");
+    this.Text("Cyberbane-Settings-SitDownSize", "People per gang at a sit-down");
+    this.Text("Cyberbane-Settings-SitDownSize-Desc", "How many of each gang turn up to a sit-down. Two gangs meet, so the sit-down has twice this many people. If too many of Cyberbane's people are already out, fewer turn up.");
     this.Text("Cyberbane-Settings-WhileOut", "While you were out");
     this.Text("Cyberbane-Settings-WhileOut-Desc", "A little after you load, one line about the latest thing that changed the street.");
     this.Text("Cyberbane-Settings-Surrender", "Surrender (experimental)");
