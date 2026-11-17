@@ -225,6 +225,9 @@ public func CBEncounterQueueTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     return;
   }
   CBRivalCooldownTick(sys);
+  if sys.GetTickCount() % 5 == 0 {
+    CBEnsureHuntingGangs(sys);
+  }
   CBLaneTick(sys, game, CBLaneRival());
   CBLaneTick(sys, game, CBLaneSquad());
   CBLaneTick(sys, game, CBLaneApex());
@@ -469,7 +472,9 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
           let offCooldown = fs.lastHitSquadAt <= 0.0 || (now - fs.lastHitSquadAt) >= factionCooldown;
           // A crew needs a reason to come today, not only a grudge (CBCrewReason).
           let reason = CBCrewReason(sys, fs, posture, ArrayContains(turf, fs.id), now);
-          if offCooldown && fs.renown >= CBConfig.HitSquadMinRenown() && reason >= 0.0
+          // Knowing V well enough to send people is a given for a gang set by hand to come for V (2.1.0).
+          let knowsV = fs.renown >= CBConfig.HitSquadMinRenown() || CBGangViewHunts(fs.id);
+          if offCooldown && knowsV && reason >= 0.0
              && (!provokedOnly || Equals(fs.id, sys.GetProvoked())) {
             if Equals(posture, ECBPosture.Vendetta) {
               s = CBConfig.QueueScoreVendetta() + hate * 30.0 + reason;
@@ -854,12 +859,37 @@ public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -
   if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
     return false;   // a gang V is square with does not send its best
   }
+  // Set by hand to Vendetta (How gangs see you, 2.1.0): their best come on their own, within How often they come.
+  // The kills that earn an apex squad are how Earned in play, and a Hostile set by hand, decide it.
+  if CBGangViewVendetta(fs.id) {
+    return true;
+  }
   let since = fs.kills - fs.apexAtKills;
   if since < CBConfig.ApexKillThreshold() {
     return false;
   }
   return sys.CrewBeaten(fs.id)
       || since >= CBConfig.ApexKillThreshold() * CBConfig.ApexMassacreMultiplier();
+}
+
+// Every gang set by hand to come for V has what it takes to send people (How gangs see you, 2.1.0). A gang V has
+// never crossed has no record on the books at all (only a kill or a pay-off files one), so the lanes, which go
+// through the gangs on the books, never looked at it; and none of its people on file to build a crew from. Its
+// record is opened, and its crew template is its own rank and file, the same fallback the session start gives any
+// gang left without one (Rivals/RivalSystem.reds, CBPruneUniqueRivals). Gangs on Earned in play are not touched.
+public func CBEnsureHuntingGangs(sys: ref<CyberbaneSystem>) -> Void {
+  let content = IsDefined(sys) ? sys.GetContent() : null;
+  if !IsDefined(content) {
+    return;
+  }
+  for prof in content.GetFactions() {
+    if IsDefined(prof) && prof.isGang && CBFactionFieldsSquads(prof.id) && CBGangViewHunts(prof.id) {
+      let fs = sys.EnsureFaction(prof.id);
+      if IsDefined(fs) && !TDBID.IsValid(fs.sampleRecord) {
+        fs.sampleRecord = CBApexRosterRecord(fs.id, 1);
+      }
+    }
+  }
 }
 
 // What the Hub says about this gang's apex squad when nothing is on its way.

@@ -69,6 +69,20 @@ public func CBGangViewSet(faction: CName) -> Bool {
   return CBGangView(faction) != 0;
 }
 
+// Set by hand to come for V: Hostile or Vendetta (2.1.0). A stance chosen in Mod Settings is the gang knowing
+// exactly who V is, which is what the player asked for ("everyone having a Vendetta against us"): their people
+// know V's face (CBRecognizes), and they send crews without first having to hear of V (CBLanePick,
+// CBEnsureHuntingGangs). Earned in play asks none of this and goes by what V has done, as it always has.
+public func CBGangViewHunts(faction: CName) -> Bool {
+  let view = CBGangView(faction);
+  return view == 4 || view == 5;
+}
+
+// Set by hand to Vendetta: their best come on their own too, inside How often they come (CBApexEligible).
+public func CBGangViewVendetta(faction: CName) -> Bool {
+  return CBGangView(faction) == 5;
+}
+
 // The standing a gang acts on (2.1.0). The one question for what a gang does about V: its posture
 // (CBScoreEngine.GetStanding and GetPosture), who sends crews and how many (Spawn/Queue.reds), tribute, and
 // the price of peace. A player asked to set how the gangs see V by hand, and a stance only on the posture

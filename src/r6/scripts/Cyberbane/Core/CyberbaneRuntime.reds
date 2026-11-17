@@ -113,6 +113,9 @@ public class CyberbaneRuntime extends ScriptableService {
   // ids is up, and a count per id so a take-down timer only takes down the line it was set for.
   public func SubtitleGenBump(id: Int32) -> Int32 {
     this.PadSubtitles();
+    if id < 0 || id >= ArraySize(this.m_subGen) {
+      return 0;
+    }
     this.m_subGen[id] = this.m_subGen[id] + 1;
     return this.m_subGen[id];
   }

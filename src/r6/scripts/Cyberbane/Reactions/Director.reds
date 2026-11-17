@@ -672,6 +672,13 @@ public func CBRecognizes(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, n
   if !IsDefined(sys) || !IsDefined(score) || !IsDefined(npc) {
     return false;
   }
+  // Set by hand to come for V (How gangs see you, 2.1.0): they know V's face, unless it is covered or V is
+  // wearing their colours well. Asked fresh each time and never rolled or counted, so Earned in play rolls as it
+  // always has.
+  if CBGangViewHunts(faction) && !CBPlayerMasked(sys.GetGameInstance())
+     && !(Equals(faction, sys.GetDisguiseFaction()) && sys.GetDisguiseStrength() >= 0.5) {
+    return true;
+  }
   if npc.cbRecoState == 0 {
     let p = score.RecognitionChance(district, faction, false, false);
     // Wearing this gang's colours makes them slower to place you (spec §9.3).

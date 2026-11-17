@@ -8,10 +8,13 @@ the next unless a version says otherwise.
 **New: How gangs see you.** A new page in Mod Settings, asked for by a player running an Arasaka roleplay
 with friends. Set how every gang treats you with **All gangs**, or any one of them on its own: **Allied**,
 **Friendly**, **Neutral**, **Hostile** or **Vendetta**. **Earned in play**, the default, is whatever you have
-earned with them. A gang set to Vendetta attacks you on sight and, once it knows your name, sends crews after
-you. One set to Friendly or Allied gives you better prices on its turf and warns you when its enemies come for
-you. Everything the gang does follows the setting: whether it sends crews and how many, tribute, bounties, and
-how its people talk to you. What you earn keeps counting underneath and comes back when you set them to Earned
+earned with them. A gang set to Vendetta knows your face: every one of its people attacks you on sight, and it
+sends crews and its apex squads after you, whether or not you have crossed it before. One set to Hostile knows
+who you are and sends crews when you give it a reason. A mask or their colours still hides you, and **How often
+they come** still sets how many come each day. One set to Friendly or Allied gives you better prices on its turf
+and warns you when its enemies come for you. Everything the gang does follows the setting: whether it sends
+crews and how many, tribute, bounties, and how its people talk to you. Left on Earned in play, nothing about how
+gangs behave changes. What you earn keeps counting underneath and comes back when you set them to Earned
 in play. The Hub marks a gang set this way and says what you have earned with them. A gang set by hand can't
 be paid off, because money would change nothing. Like every Mod Settings option, it applies to every save.
 With They Will Remember deciding who is hostile, it still does.
