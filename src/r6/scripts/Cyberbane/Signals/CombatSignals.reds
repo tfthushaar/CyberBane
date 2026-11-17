@@ -297,6 +297,11 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         CBWeakenGang(sysE, game, CBClassifyFaction(puppet), CBConfig.GangLossApexSquad());
       }
     }
+    // A gang's best at a sit-down carries what its apex squad does. Not counted as an apex kill, and no
+    // bounty: that is for the apex squad itself.
+    if IsDefined(desE) && puppet.cbDamagedByPlayer && CBIsMeetApex(desE, puppet.GetEntityID()) {
+      CBScheduleLoot(sysE, game, puppet, CBLootTierApex(), CBConfig.LootIconicChanceApex());
+    }
     // Crew and escorts carry a little.
     if IsDefined(desE) && puppet.cbDamagedByPlayer
        && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desE.IsTagged(puppet.GetEntityID(), n"CB_Escort")

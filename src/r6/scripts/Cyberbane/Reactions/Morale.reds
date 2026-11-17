@@ -357,7 +357,8 @@ public func CBHoldsGround(npc: wref<ScriptedPuppet>) -> Bool {
     return false;
   }
   let id = npc.GetEntityID();
-  if des.IsTagged(id, n"CB_Apex") {
+  // A gang's best at a sit-down is built like its apex squad, and stands like it (Spawn/LivingStreet.reds).
+  if des.IsTagged(id, n"CB_Apex") || CBIsMeetApex(des, id) {
     return true;
   }
   if des.IsTagged(id, n"CB_Rival") {
