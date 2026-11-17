@@ -3,7 +3,7 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
-## Unreleased
+## 2.2.0 (18 November 2026)
 
 **A living street**
 - **Sit-downs are a real fight now.** Ten people instead of four: five from each gang, and two of each five are
@@ -20,6 +20,8 @@ the next unless a version says otherwise.
 **Gangs**
 - **Tribute arrives sooner.** A gang that fears you enough to pay took about four in-game days to actually
   do it; now it's about two. Still at most once a week per gang.
+
+Your progress carries over.
 
 ## 2.1.0 (18 November 2026)
 
