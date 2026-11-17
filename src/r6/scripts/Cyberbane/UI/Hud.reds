@@ -2420,7 +2420,7 @@ public class CBHud {
     out += s"\(fs.kills) of theirs down. They fear you at \(RoundF(score.GetFactionFear(id))) of 100.\n";
     // Fear against hatred, on their streets (Reactions/Morale.reds, 1.9.5).
     if isOn && CBGangBroken(sys, id) {
-      out += "They are broken. Their people fear you whatever their grudge, and they would settle for less.\n";
+      out += "They are broken. Their people fear you whatever their grudge, they only send anyone when you have just hurt them, and they would settle for less.\n";
     } else {
       if isOn && Equals(posture, ECBPosture.Vendetta) && foreign != 2 {
         let held = RoundF(CBHoldBackTypical(sys, id) * 10.0);

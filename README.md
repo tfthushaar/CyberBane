@@ -125,13 +125,15 @@ in active development. This page describes what the mod does and how it installs
 - **Gangs with their own values.** Maelstrom cares about chrome, the Animals care about raw
   strength, the Voodoo Boys care about netrunning. The same V gets different treatment from each
   gang depending on your standing and reputation: respect, a warning, or hostility. Masks and hoods
-  make you harder to place, and a gang's own gear makes that gang slower to recognize you: nomad
-  clothing with the Aldecaldos and the Wraiths vest with the Wraiths, the only gang clothes V can wear.
+  make you harder to place, and a gang's own gear makes that gang slower to recognize you. Any
+  clothing the game marks as a gang's counts, whichever gang it is, and the Standing screen tells you
+  whose gear you have on.
 - **Fear can beat a grudge.** A gang with a vendetta does not send every one of its people at you.
   Each of them weighs their own nerve, and the friends around them, against how much their gang fears
   you. The brave come for you; the frightened hold back and can be talked to. The more a gang fears
   you, the more of them hold back, and a gang you have broken is afraid of you whatever its grudge:
-  its people break sooner and it will settle for half its price. A gang's file on the Hub says
+  its people break sooner, it only sends anyone when you have just hurt it, and it will settle for
+  half its price. A gang you have bled sends smaller crews. A gang's file on the Hub says
   roughly how many of its people hold back.
 - **Gangs at war with each other.** The Valentinos and 6th Street, the Tyger Claws and the Mox,
   the Aldecaldos and the Wraiths, Arasaka and Militech, and everybody against the Scavs. Hurt a
@@ -393,7 +395,7 @@ its own.
 
 - **Talking to people:** the game's own choice keys. Look at somebody up close with your hands empty,
   scroll (D-pad up and down) to pick a line, and press F (A) to say it. Walk away or look away and the
-  prompt goes.
+  prompt goes; reach for a weapon and it goes at once. It never comes up while you are crouched.
 
 - **The game menu, then Cyberbane:** the last tab in the row across the top, after Journal. Escape
   closes the menu as usual. With the game's radial hub turned on, it is in the row beside Character

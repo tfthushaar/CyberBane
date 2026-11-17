@@ -206,7 +206,13 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   let cost = CBPeaceQuote(sys, game, faction);
   store.ClearOffer(thread);
   if choice == 0 {
-    store.Reply(game, thread, s"\(cost)eb. Call it off.");
+    // V only says the money is coming when it is (1.9.5). "Xeb. Call it off." went out first either way,
+    // and the gang then answered that V did not have it.
+    let player = GetPlayer(game);
+    let ts = GameInstance.GetTransactionSystem(game);
+    let enough = IsDefined(player) && IsDefined(ts)
+                 && ts.GetItemQuantity(player, ItemID.FromTDBID(t"Items.money")) >= cost;
+    store.Reply(game, thread, enough ? s"\(cost)eb. Call it off." : "I don't have that on me.");
     // Pays, clears the vendetta and anything on its way, and has the gang confirm it. If V
     // cannot cover it, the gang says so and the offer stays open.
     CBBrokerPeace(sys, game, faction);

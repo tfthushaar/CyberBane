@@ -47,8 +47,18 @@ the next unless a version says otherwise.
   their crew now, and whether you have broken them. The street moves from one subject to another
   rather than repeating itself, and speakers are named by their gang ("Tyger Claw", "Valentino").
   People who can't see your face behind a mask talk about the stranger in the mask.
+- **A broken gang stops sending crews for an old grudge.** It only sends people when you have just
+  hurt it or provoked it, and a gang you have bled sends fewer of them: the weaker it is on the Turf
+  screen, the smaller the crew, down to about three in five of a full one.
 
 **Changes**
+- **Reaching for a weapon closes the talk prompt.** Press a weapon key, the weapon wheel, quick melee
+  or a grenade and the prompt goes at once, and it stays away for a few seconds. Before, your hands
+  stayed empty until you looked away.
+- The talk prompt no longer comes up while you are crouched or sneaking, so it never gets in the way of
+  a takedown.
+- Somebody you pick a fight with in the street calms down once the fight is over, unless their gang is
+  at war with you.
 - **Overheard lines use the game's own subtitles**, in the usual place and following your subtitle
   settings. If you have the game's subtitles switched off, Cyberbane draws its own line in the same
   spot.
@@ -62,6 +72,13 @@ the next unless a version says otherwise.
   loading. Now nothing reads V's chrome or clothes until the load is over, the same rule the death
   ledger already follows. Outfit slots are read from the game's slot records rather than from the
   garments themselves, so a garment Equipment-EX is still swapping can't be reached at all.
+- **A gang you paid off kept shooting at you on sight.** Everyone of theirs Cyberbane had already set
+  on you stayed hostile until they left the area. Once their fight is over they now stand down, and
+  the same goes for a gang whose vendetta has cooled on its own.
+- Paying a gang off by text when you couldn't afford it had V promise the money anyway.
+- With the NCPD switched off under Factions, police officers were talked to as passers-by.
+- The people of a gang you have broken no longer threaten you in the same breath as begging you to
+  stop.
 
 ## 1.9.4 (16 November 2026)
 

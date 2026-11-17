@@ -91,6 +91,34 @@ lying low, fame in this district, a broken local gang, what V is doing right now
 blood, the mercy, the tribute, the Rival hunting V and who runs their crew. Each topic offers lines when it is true,
 weighted (`CBLineBag`), and the last topic sits the next line out. Speakers are named by their gang.
 
+### Bug pass on 1.9.5
+
+Upstream 1.9.5 did not compile: two field defaults were negative (`StreetTalk.m_pending = -1`,
+`CBPhone.m_subNativeSlot = -1`; redscript rejects them as `INVALID_CONSTANT`). `m_pending` now has its own
+`m_hasPending` flag, and `m_subNativeSlot` is set to -1 in `Build`. Then every script was gone over again: the new
+code line by line (StreetTalk, StreetRead, Whispers, the Director and Morale changes, the play service tallies, the
+Equipment-EX probe, the subtitle path against `baseSubtitlesControllers.script`), and Reactions, Model, Economy,
+Narrative, Signals, Spawn/Queue and Schedule, the fast tick, the phone, the map pin, the Hub tab and pause entry and the
+Hub's click and scroll logic again. Found and fixed:
+
+- **A paid-off gang went on shooting V on sight** (`CBReactionDirector.RevertNotFielding`). Hostility on sight was only
+  ever put back for a faction switched off, at a job or for the story; paying a gang off, or its vendetta cooling,
+  left everybody Cyberbane had turned hostile until they streamed out. Anybody turned whose gang is no longer at
+  Vendetta is put back once out of combat and `HostileCoolTicks` after being turned (`cbHostileTick`, set in
+  `TrackHostile`). This also ends a street fight picked through talk at a posture that does not shoot on sight.
+- **A broken gang still sent a crew a day** (`CBCrewReason`, `CBCrewSizeFor`). Vendetta and turf alone no longer give a
+  broken gang a reason; provocation and fresh trouble still do. Crew size scales with `CBGangStrength`, down to
+  `CrewStrengthFloorShare` of it at no strength (about three in five at the floor of 15).
+- **Talk held V's hands with no way out but looking away** (`CBStreetTalk.Listen`/`OnInput`). The weapon keys
+  (`SwitchItem`, `WeaponSlot1-4`, `WeaponWheel`, `QuickMelee`, `UseCombatGadget`) now close the prompt and keep it
+  away for `TalkQuietAfterReach`. The prompt is also refused while V is crouched or in the game's stealth state
+  (`CBPlayerSneaking`): crouched behind a ganger for a takedown, it came up instead.
+- **A cop with the NCPD switched off was a passer-by** (`CBTalkRead`): `cop` is read from the classification before the
+  faction switch blanks it.
+- **A broken gang's people threatened V** (`CBWhisperGang`): the hunter, blood and leader lines are left out when
+  `CBStreetRead.broken`.
+- **The phone pay-off reply** (`CBRealPhoneReply`) said "Xeb. Call it off." before finding out V could not pay.
+
 ### Not built, and why
 
 - **Choice keys other than F and the wheel.** Only `Choice1`/`ChoiceApply` and the scroll actions are known to be bound

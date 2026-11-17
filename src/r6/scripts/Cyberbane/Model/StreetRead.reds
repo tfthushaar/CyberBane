@@ -44,6 +44,7 @@ public class CBStreetRead {
   public let spared: Int32;
   public let tributes: Int32;
   public let strength: Float;
+  public let broken: Bool;            // V has broken their gang (CBGangBroken)
   public let hunter: String;          // a Rival of theirs out after V right now
   public let leader: String;          // whoever runs their crew, from V's Rivals
   public let rivalsAlive: Int32;
@@ -105,6 +106,7 @@ public func CBReadStreet(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
   r.fear = score.GetFactionFear(faction);
   r.respect = score.GetFactionRespect(faction);
   r.strength = CBGangStrength(sys, faction);
+  r.broken = CBGangBroken(sys, faction);
   let fs = sys.FindFaction(faction);
   if IsDefined(fs) {
     r.kills = fs.kills;

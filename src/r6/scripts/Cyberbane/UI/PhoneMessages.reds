@@ -226,7 +226,9 @@ public class CBPhone {
   // line of dialogue does, so it is where subtitles are, looks like them and follows the player's own
   // subtitle settings (size, background). With the game's subtitles switched off there is nothing to
   // follow, so Cyberbane's own line is drawn instead, in the same place.
-  private let m_subNativeSlot: Int32 = -1;   // which of our two subtitle ids is on screen; -1 none
+  // Which of our two subtitle ids is on screen; -1 none. Build sets -1: a field default cannot be
+  // negative in redscript, and before Build a 0 here only ever hides an id that is ours anyway.
+  private let m_subNativeSlot: Int32;
   private let m_subRoot: ref<inkCanvas>;
   private let m_subSpeaker: ref<inkText>;
   private let m_subLine: ref<inkText>;
@@ -1182,7 +1184,6 @@ public func CBPhoneHoldSeconds() -> Float {
   return MaxF(CBConfig.PhoneHoldSeconds() * CBMessageHold(), CBConfig.PhoneHoldFloor());
 }
 
-// How long an overheard line stays. Shorter than a card: it is one sentence somebody said.
 // ---- The game's own subtitles (1.9.5) -------------------------------------
 //
 // The game draws subtitles from lines put on the UIGameData blackboard (ShowDialogLine) and takes
@@ -1257,6 +1258,7 @@ public func CBHideGameSubtitle(game: GameInstance, slot: Int32) -> Void {
   bb.SetVariant(GetAllBlackboardDefs().UIGameData.HideDialogLine, ToVariant(ids), true);
 }
 
+// How long an overheard line stays. Shorter than a card: it is one sentence somebody said.
 public func CBOverheardSeconds() -> Float {
   return MaxF(CBConfig.OverheardSeconds() * CBMessageHold(), CBConfig.OverheardFloor());
 }

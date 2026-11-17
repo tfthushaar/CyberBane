@@ -164,7 +164,9 @@ public class CBStreetTalk {
   private let m_dwell: Float;
 
   // A choice made, waiting for the answer.
-  private let m_pending: Int32 = -1;
+  // Field defaults cannot be negative in redscript, so whether a choice is waiting is its own flag.
+  private let m_pending: Int32;
+  private let m_hasPending: Bool;
   private let m_pendingTarget: ref<CBTalkTarget>;
   private let m_pendingIn: Float;
 
@@ -173,6 +175,8 @@ public class CBStreetTalk {
   private let m_replyLeft: Float;
 
   // Keeping one notch of the wheel to one step (see Scroll).
+  // After V reached for a weapon with the prompt up, how long before it may come up again (seconds).
+  private let m_quietLeft: Float;
   private let m_lastScrollAt: Float;
   private let m_lastScrollStep: Int32;
   private let m_lastScrollByWeapon: Bool;
@@ -185,11 +189,12 @@ public class CBStreetTalk {
     this.m_target = null;
     this.m_candidate = null;
     this.m_dwell = 0.0;
-    this.m_pending = -1;
+    this.m_hasPending = false;
     this.m_pendingTarget = null;
     this.m_handsHeld = false;
     this.m_handsChecked = false;
     this.m_listening = null;
+    this.m_quietLeft = 0.0;
     this.Schedule(game);
   }
 
@@ -216,6 +221,9 @@ public class CBStreetTalk {
     this.Schedule(game);
     let dt = CBConfig.TalkTickSeconds();
     this.AgeLines(game, dt);
+    if this.m_quietLeft > 0.0 {
+      this.m_quietLeft -= dt;
+    }
     let sys = CyberbaneSystem.Get(game);
     let player = GetPlayer(game);
     if !IsDefined(sys) || !IsDefined(player) {
@@ -223,12 +231,12 @@ public class CBStreetTalk {
       return;
     }
     // An answer that is due. Only with the world settled; otherwise the moment has passed.
-    if this.m_pending >= 0 {
+    if this.m_hasPending {
       this.m_pendingIn -= dt;
       if this.m_pendingIn <= 0.0 {
         let choice = this.m_pending;
         let target = this.m_pendingTarget;
-        this.m_pending = -1;
+        this.m_hasPending = false;
         this.m_pendingTarget = null;
         if CBWorldStable(game) && CBStreetTalkOn() {
           this.Answer(sys, game, player, target, choice);
@@ -268,7 +276,7 @@ public class CBStreetTalk {
       return;
     }
     // Nothing up: is V settling on somebody?
-    if this.m_pending >= 0 || !IsDefined(npc) || IsDefined(GameObject.GetActiveWeapon(player))
+    if this.m_hasPending || this.m_quietLeft > 0.0 || !IsDefined(npc) || IsDefined(GameObject.GetActiveWeapon(player))
        || !CBTalkEligible(sys, game, player, npc, CBConfig.TalkRange()) || CBNativePromptUp(game) {
       this.m_candidate = null;
       this.m_dwell = 0.0;
@@ -295,6 +303,11 @@ public class CBStreetTalk {
       return false;
     }
     if player.IsInCombat() || VehicleComponent.IsMountedToVehicle(game, player.GetEntityID()) {
+      return false;
+    }
+    // Nobody sneaks up on somebody to say hello (1.9.5). Crouched behind a ganger for a takedown, the
+    // prompt came up instead, and V's hands were held while it was up.
+    if CBPlayerSneaking(game) {
       return false;
     }
     return true;
@@ -379,6 +392,16 @@ public class CBStreetTalk {
     player.RegisterInputListener(this.m_input, n"Choice1");
     player.RegisterInputListener(this.m_input, n"NextWeapon");
     player.RegisterInputListener(this.m_input, n"PreviousWeapon");
+    // Reaching for a weapon closes the prompt (1.9.5). V's hands are held while it is up, so the scroll
+    // wheel picks a line instead of a gun; a weapon key used to do nothing at all until V looked away.
+    player.RegisterInputListener(this.m_input, n"SwitchItem");
+    player.RegisterInputListener(this.m_input, n"WeaponSlot1");
+    player.RegisterInputListener(this.m_input, n"WeaponSlot2");
+    player.RegisterInputListener(this.m_input, n"WeaponSlot3");
+    player.RegisterInputListener(this.m_input, n"WeaponSlot4");
+    player.RegisterInputListener(this.m_input, n"WeaponWheel");
+    player.RegisterInputListener(this.m_input, n"QuickMelee");
+    player.RegisterInputListener(this.m_input, n"UseCombatGadget");
     this.m_listening = player;
   }
 
@@ -399,6 +422,13 @@ public class CBStreetTalk {
     let name = ListenerAction.GetName(action);
     let kind = ListenerAction.GetType(action);
     let pressed = Equals(kind, gameinputActionType.BUTTON_PRESSED);
+    if CBTalkReachKey(name) {
+      if pressed || Equals(kind, gameinputActionType.BUTTON_HOLD_COMPLETE) {
+        this.Close(this.m_game);
+        this.m_quietLeft = CBConfig.TalkQuietAfterReach();
+      }
+      return;
+    }
     if Equals(name, n"ChoiceApply") || Equals(name, n"Choice1") {
       if pressed {
         this.Choose();
@@ -464,6 +494,7 @@ public class CBStreetTalk {
       return;
     }
     this.m_pending = this.m_index;
+    this.m_hasPending = true;
     this.m_pendingTarget = this.m_target;
     this.m_pendingIn = CBConfig.TalkAnswerDelay();
     if CBGameSubtitlesOn(this.m_game)
@@ -546,6 +577,24 @@ public class CBStreetTalk {
   }
 }
 
+// A key V reaches for a weapon or a gadget with (CBStreetTalk.Listen).
+func CBTalkReachKey(name: CName) -> Bool {
+  return Equals(name, n"SwitchItem") || Equals(name, n"WeaponSlot1") || Equals(name, n"WeaponSlot2")
+      || Equals(name, n"WeaponSlot3") || Equals(name, n"WeaponSlot4") || Equals(name, n"WeaponWheel")
+      || Equals(name, n"QuickMelee") || Equals(name, n"UseCombatGadget");
+}
+
+// Is V creeping about? Crouched, or in the stealth state the game puts V in when there are hostiles about
+// who have not found V yet.
+public func CBPlayerSneaking(game: GameInstance) -> Bool {
+  let psm = CBPlayerPSM(game);
+  if IsDefined(psm)
+     && psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.Locomotion) == EnumInt(gamePSMLocomotionStates.Crouch) {
+    return true;
+  }
+  return CBPlayerInStealthState(game);
+}
+
 // ---- Who can be talked to ------------------------------------------------------------------------------
 
 public func CBTalkEligible(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
@@ -596,11 +645,11 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
   t.npc = npc;
   t.id = npc.GetEntityID();
   let faction = CBClassifyFaction(npc);
+  t.cop = Equals(faction, n"NCPD");
   if !CBFactionOn(faction) {
     faction = n"";
   }
   t.faction = faction;
-  t.cop = Equals(faction, n"NCPD");
   t.recognized = CBRecognizes(sys, score, npc, faction, sys.GetCurrentDistrict());
   t.nerve = CBNerve(npc);
   let gang = NotEquals(faction, n"") && !t.cop;
@@ -654,7 +703,7 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
     }
   }
   if gang || t.cop {
-    t.speaker = CBFactionMemberWord(faction);
+    t.speaker = CBFactionMemberWord(t.cop ? n"NCPD" : faction);
   }
   if StrLen(t.speaker) == 0 {
     t.speaker = gang ? "Ganger" : "Passer-by";

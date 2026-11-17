@@ -444,7 +444,7 @@ func CBWhisperPlace(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> 
   // A district whose gang V has bled dry, from somebody who lives there.
   if Equals(st.faction, n"") && NotEquals(st.turfHolder, n"") {
     let sys = CyberbaneSystem.Get(GetGameInstance());
-    if IsDefined(sys) && CBGangBroken(sys, st.turfHolder) {
+    if CBGangBroken(sys, st.turfHolder) {
       let holder = CBFactionLabel(st.turfHolder);
       if StrLen(holder) > 0 {
         bag.Add(n"turf", 2.0, CBWhisperPick2(
@@ -460,7 +460,7 @@ func CBWhisperGang(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName, gang
   if Equals(st.faction, n"") {
     return;
   }
-  if StrLen(st.hunter) > 0 && !Equals(st.posture, ECBPosture.Allied) && !Equals(st.posture, ECBPosture.Friendly) {
+  if StrLen(st.hunter) > 0 && !st.broken && !Equals(st.posture, ECBPosture.Allied) && !Equals(st.posture, ECBPosture.Friendly) {
     bag.Add(n"hunter", 3.0, CBWhisperPick3(
       st.hunter + "'s coming for you. Everybody on the block knows it.",
       "Enjoy the walk. " + st.hunter + " has plans for you.",
@@ -478,7 +478,8 @@ func CBWhisperGang(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName, gang
         "Good with the crew, that one. Leave it.",
         "Heard they've been doing us favours. Nod, don't stare."));
     } else {
-      if Equals(st.posture, ECBPosture.Hostile) || Equals(st.posture, ECBPosture.Vendetta) {
+      // A broken gang's people have no threats left in them (1.9.5); CBWhisperBroken speaks for them.
+      if !st.broken && (Equals(st.posture, ECBPosture.Hostile) || Equals(st.posture, ECBPosture.Vendetta)) {
         if st.kills >= 20 {
           bag.Add(n"blood", 2.5, CBWhisperPick3(
             "That one's put more of " + gang + " in the ground than the cops ever did.",

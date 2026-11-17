@@ -761,14 +761,20 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   }
   let bonus = 0.0;
   let reason = false;
-  if Equals(posture, ECBPosture.Vendetta) {
+  // A gang V has broken (1.9.5) has nobody to spare for a standing grudge or for V walking its streets:
+  // it sends people when V has just hurt it or provoked it, and otherwise keeps its head down. Its
+  // people said as much ("there's hardly any of us left") while it went on sending a crew a day.
+  let broken = CBGangBroken(sys, fs.id);
+  if Equals(posture, ECBPosture.Vendetta) && !broken {
     reason = true;
   }
   if Equals(fs.id, sys.GetProvoked()) {
     reason = true;
   }
   if onTheirTurf {
-    reason = true;
+    if !broken {
+      reason = true;
+    }
     bonus += CBConfig.QueueTurfBonus();
   }
   let window = CBConfig.CrewReasonHours() * CBConfig.SecondsPerHour();
@@ -1091,6 +1097,13 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
     if scaled > size {
       size = scaled;
     }
+  }
+  // A gang V has bled sends fewer of its people (1.9.5): from the whole crew at full strength down to
+  // about three in five of it at the floor. Strength is 100 whenever turf wars are off.
+  let strength = ClampF(CBGangStrength(sys, fs.id), 0.0, 100.0);
+  if strength < 100.0 {
+    size = Max(2, RoundF(Cast<Float>(size) * (CBConfig.CrewStrengthFloorShare()
+                                                + (1.0 - CBConfig.CrewStrengthFloorShare()) * strength / 100.0)));
   }
   // Harder difficulty means harder fights, not instant deaths: a little smaller.
   size = Max(2, size - CBConfig.DifficultyCrewTrim() * CBDifficultyLevel());

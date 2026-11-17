@@ -58,6 +58,9 @@ public abstract class CBConfig {
   // How often the Director hands back anybody it turned on V whose faction has since been switched
   // off in Mod Settings (Reactions/Director.reds, RevertNotFielding, 1.9.1), in settled ticks.
   public static func SwitchedOffRevertTicks() -> Int32 = 5
+  // How long somebody Cyberbane turned on V stays turned, out of a fight, once their gang has no vendetta
+  // left against V (RevertNotFielding, 1.9.5): a pay-off, a cooled grudge, a street fight V picked.
+  public static func HostileCoolTicks() -> Int32 = 30
   public static func MaxSpawnedNpcs() -> Int32 = 8
   public static func PerNpcCooldownSeconds() -> Float = 30.0
   // Upper bound on the attitude-revert list (NPCs Cyberbane turned hostile). Only live
@@ -1230,6 +1233,8 @@ public abstract class CBConfig {
   public static func TalkDwell() -> Float = 0.6
   public static func TalkLookGrace() -> Float = 0.8
   public static func TalkCooldownTicks() -> Int32 = 45
+  // How long the prompt keeps away after V reaches for a weapon with it up.
+  public static func TalkQuietAfterReach() -> Float = 4.0
   // Cyberbane's hub id on the UIInteractions blackboard: far from the small numbers the game's own use.
   public static func TalkHubId() -> Int32 = 1128415301
   // The exchange: V's line, a beat, then theirs.
@@ -1311,6 +1316,9 @@ public abstract class CBConfig {
   // The words the street uses, and the texts that go with crossing them.
   public static func GangBleedingStrength() -> Float = 50.0
   public static func GangBrokenStrength() -> Float = 30.0
+  // What share of its usual crew a gang at no strength at all would send (Spawn/Queue.reds,
+  // CBCrewSizeFor, 1.9.5); in between it scales with strength, so at the floor (15) about three in five.
+  public static func CrewStrengthFloorShare() -> Float = 0.5
   // Below this, a gang's districts are open to a gang at war with them from next door, and the push
   // such a gang makes, against a native's strength squared.
   public static func TurfOpenStrength() -> Float = 55.0

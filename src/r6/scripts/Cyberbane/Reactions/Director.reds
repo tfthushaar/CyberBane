@@ -16,6 +16,11 @@ public let cbWhispered: Bool;
 @addField(ScriptedPuppet)
 public let cbHostileByCyberbane: Bool;
 
+// The settled tick Cyberbane turned this NPC on V (TrackHostile, 1.9.5), so a grudge that has since
+// cooled can put them back once their fight is over.
+@addField(ScriptedPuppet)
+public let cbHostileTick: Int32;
+
 // Set true once a Vendetta gang member has given V a spoken warning (spec §9.3).
 @addField(ScriptedPuppet)
 public let cbGangWarned: Bool;
@@ -112,7 +117,7 @@ public class CBReactionDirector {
     // Anybody Cyberbane turned on V whose faction it may not turn any more (1.9.1): switched off in
     // Mod Settings since, or the law. Every few ticks, from a list of at most MaxTrackedHostiles.
     if sys.GetTickCount() % CBConfig.SwitchedOffRevertTicks() == 0 {
-      this.RevertNotFielding(game);
+      this.RevertNotFielding(game, sys);
     }
 
     let player = GetPlayer(game);
@@ -387,6 +392,10 @@ public class CBReactionDirector {
       }
     }
     ArrayPush(this.m_hostileNpcs, npc);
+    let sys = IsDefined(npc) ? CyberbaneSystem.Get(npc.GetGame()) : null;
+    if IsDefined(npc) && IsDefined(sys) {
+      npc.cbHostileTick = Max(sys.GetTickCount(), 1);
+    }
   }
 
   private func RevertHostileAtJob(game: GameInstance, sys: ref<CyberbaneSystem>) -> Void {
@@ -441,10 +450,18 @@ public class CBReactionDirector {
   // with V any more (CBFactionFieldsSquads) - switched off under Factions since, or the police - and who
   // is not in the middle of a fight. Without this, switching a gang off left whoever it had already set
   // on V hostile until they streamed out (1.9.1).
-  private func RevertNotFielding(game: GameInstance) -> Void {
+  //
+  // And anybody whose gang no longer has a vendetta against V (1.9.5): paid off on the phone or the Hub,
+  // or cooled down on its own, or somebody V picked a fight with to their face (TurnHostileFromTalk) at
+  // a posture that does not shoot on sight. Only once their fight is over and HostileCoolTicks have
+  // passed since they were turned. Before this, a gang V had just paid off went on shooting V on sight
+  // through every one of its people Cyberbane had already turned, until they streamed out.
+  private func RevertNotFielding(game: GameInstance, sys: ref<CyberbaneSystem>) -> Void {
     if ArraySize(this.m_hostileNpcs) == 0 {
       return;
     }
+    let score = IsDefined(sys) ? sys.GetScore() : null;
+    let tick = IsDefined(sys) ? sys.GetTickCount() : 0;
     let player = GetPlayer(game);
     if !IsDefined(player) {
       return;
@@ -455,13 +472,19 @@ public class CBReactionDirector {
     }
     for npc in this.m_hostileNpcs {
       if IsDefined(npc) && npc.IsAttached() && !npc.IsDead() && npc.cbHostileByCyberbane
-         && !CBNpcInCombat(npc) && !CBFactionFieldsSquads(CBClassifyFaction(npc)) {
-        let agent = npc.GetAttitudeAgent();
-        if IsDefined(agent) {
-          CBTrace("attitude: world NPC back to neutral, their faction is off");
-          agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+         && !CBNpcInCombat(npc) {
+        let faction = CBClassifyFaction(npc);
+        let off = !CBFactionFieldsSquads(faction);
+        let cooled = !off && IsDefined(score) && !Equals(score.GetPosture(faction), ECBPosture.Vendetta)
+                     && tick - npc.cbHostileTick >= CBConfig.HostileCoolTicks();
+        if off || cooled {
+          let agent = npc.GetAttitudeAgent();
+          if IsDefined(agent) {
+            CBTrace("attitude: world NPC back to neutral, no grudge left");
+            agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+          }
+          npc.cbHostileByCyberbane = false;
         }
-        npc.cbHostileByCyberbane = false;
       }
     }
   }
