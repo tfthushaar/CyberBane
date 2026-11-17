@@ -92,7 +92,99 @@ by their posture to V. Each round is one text, so it takes a little time, which 
 
 ---
 
-## 3. What can be borrowed from Stay Dead (Night City Nemesis, 0.1.6)
+## 3. Talking the way the game does it
+
+**How the game handles a story character** (read from its scripts, `tools/redmod/scripts`):
+
+- **The bubble over their head** is a map pin attached to the person (`MappinSystem.RegisterMappinWithObject`
+  on their role-pin slot) with the variant `ConversationVariant` or `SpeechVariant`, both drawn with the
+  game's `talk` icon (`mappinUtils.script`). It says, from a distance, "this one has something for you".
+  Cyberbane already hangs pins on people the same way, for the markers over its crews (`UI/Tracking.reds`).
+- **Two steps.** Close up, one interaction comes up ("Talk", F). Pressing it hands over to a scene, which
+  puts up the choice list and turns the person to face V.
+- **The choice list carries more than text.** Each line (`ListChoiceData`) can have:
+  - **icons**, from records the game already has (`ChoiceCaptionParts.TalkIcon`, `PayIcon`, `HandshakeIcon`,
+    `GiveTakeIcon`, `GrappleIcon`, `IllegalIcon`, `BountyHuntIcon`, the lifepath icons `LifepathStreetKid`,
+    `LifepathNomad`, `LifepathCorpo`, and `Solo`, `Netrunner`, `Techie`, `Cool`, `Reflexes`), added with
+    `InteractionChoiceCaption.AddPartFromRecordID`. No new game data needed;
+  - a **tag** in brackets, which Cyberbane already uses ("[Greet]");
+  - a **line type** (`ChoiceTypeWrapper.SetType`): `QuestImportant` (highlighted: this moves something
+    forward), `AlreadyRead` (dimmed: said before), `Inactive` and `CheckFailed` (greyed: the option exists but
+    V cannot take it), `Illegal` (a crime). Doors and terminals set these from script, so they are open to
+    us too.
+  - The boxed attribute check with its numbers ("Body 9") and the payment box are made natively by the scene
+    system (`InteractionChoiceCaptionBluelinePart` cannot be filled from a script). An icon plus the tag
+    "Body 9", greyed when V is short, reads almost the same. Timed choices need a native timer and are out.
+
+**What to take from it, easiest first:**
+
+1. **Icons and line types on our lines.** A talk icon on greetings, the pay icon on anything that costs, a
+   handshake on deals, the grapple icon on leaning on someone, the illegal type on a shake-down, the
+   quest-important highlight on lines that lead somewhere (asking about a Rival), dimmed lines for what V
+   already said to this person, greyed lines for what V cannot afford. Data only, set where the hub is built
+   (`CBTalkPushHub`). Small.
+2. **Talk first, then the list.** When V settles on somebody, one line comes up: "[Talk]" with the talk icon.
+   F opens the full list, the way the game's own "Talk" works. Fewer prompts popping up while V walks
+   through a crowd, and V's hands are only held once V has chosen to talk. Small.
+3. **They look at V the whole time.** The look-at reaction Cyberbane already sends (`CBGlanceAt`, three
+   seconds) is renewed while the prompt is up and while an answer is due, so the person keeps facing V the way
+   a scene makes them. For somebody walking past, talking range follows them a little further, so a
+   conversation does not end because they took two more steps. Small.
+4. **Lines for this V.** The game shows lifepath and attribute lines to the players who qualify, and greyed
+   lines to the ones who do not. Ours can too: a **[Street Kid]** line gangers warm to (cheaper tips, a
+   warmer greeting), a **[Nomad]** line with the Aldecaldos and the Wraiths, a **[Corpo]** line with corporate
+   security, a **[Body]** threat that does not fail on rank-and-file when V's Body is high enough, a
+   **[Cool]** bluff, a netrunner's threat only when V has the Intelligence for it. Lifepath comes from
+   `PlayerDevelopmentSystem.GetLifePath`, attributes from the stats system. Small to medium.
+5. **The talk bubble.** The game's own `talk` pin over people who really have something for V: a ganger with
+   word of a Rival (section 2), an informant (section 5, item 9), a friendly gang's lookout with a tip or a job
+   (section 4), somebody of a broken gang ready to deal. At most two at a time near V, taken away when used,
+   when they stream out or when V moves on, registered on a settled tick (never in an attach event). It uses
+   the call the markers already use. V then knows who is worth talking to instead of trying everybody.
+   Medium.
+
+## 4. Making talk worth doing
+
+A conversation should leave V with something: information V can act on, a deal, a change in how a gang
+treats V, or a consequence. And V should be told what it did. Easiest first:
+
+1. **Say what it did.** When an exchange moves something (standing, fear, a lead, Conduct), the History
+   records it in a line, and the gang's page on the Hub says what V has done with its people today ("You
+   greeted their people today", "You leaned on two of them"). The daily ceilings already exist
+   (`CBTalkTally`); this just shows them. Small.
+2. **Questions with real answers.** New lines, answered from what Cyberbane already knows:
+   - "Anyone looking for me?" The next crew or Rival in the queue, said the street's way ("Maelstrom have been
+     asking about you. Tonight, I'd say."). A warning V can use. (The lanes and their timers, `Spawn/Queue.reds`.)
+   - "Who runs these streets?" The turf holder, how strong they are, whether it is contested
+     (`Model/Territory.reds`).
+   - "What's the word?" The loudest rumour that has reached this district (the rumour engine).
+   - "Where's [Rival]?" A lead, with the haggling of section 2.
+   Small to medium, because the answers already exist.
+3. **Deals.** Buying a lead (section 2). Paying a hostile gang's people a toll to be left alone on their
+   streets for a few hours (they hold back, the way the frightened already do: `cbHoldState`). Paying to have
+   a crew that is on its way called off (the pay-off's lane clearing, for one crew only). Asking a friendly
+   gang's lookout to warn V when a crew comes (the warnings friendly gangs already send). Medium.
+4. **Turning someone.** Lean on a ganger hard enough and a new line appears: "You work for me now." If they
+   take it they become an informant and text V a tip later (section 5, item 9); if they do not, they warn
+   their gang and a crew comes sooner. Medium.
+5. **Talking to a Rival who is not fighting.** A Rival met in the street who owes V, who is holding back
+   from fear, or who is a Debtor gets lines of their own: "Call it even" (the Debtor retires), "You owe me:
+   where's [another Rival]?" (a lead), "Get out of Night City" (if afraid enough, they leave the roster). A
+   conversation with a named enemy is the most memorable kind there is. Medium.
+6. **Being remembered.** Within the session the same person remembers V ("You again? Make it quick."), and
+   somebody V greeted or helped is easier next time. From the per-person talk fields already kept. Small.
+7. **Civilians worth stopping.** A fan (V well known, the person friendly) gives a small gift once a day:
+   eddies or a consumable, straight to V's inventory. A frightened passer-by points V at the local gang ("The
+   Claws hang out by the noodle stand. Please, just go."). Small to medium.
+8. **Favours.** "Need anything done?" to a friendly or neutral ganger gives a small street job built from
+   Cyberbane's own pieces: run off a rival gang's lookout two streets away (somebody spawned there with a pin),
+   lean on a named civilian who owes them, carry word to a Rival. The reward is standing above the greeting
+   ceiling, eddies, sometimes a lead. This is the "befriend a gang without a body" request given real
+   content. Larger.
+
+Left out: anything that changes the police's heat (the police system is off limits), timed choices, voices.
+
+## 5. What can be borrowed from Stay Dead (Night City Nemesis, 0.1.6)
 
 Read from its scripts (72,000 lines of redscript, a CET part, Audioware sounds, TweakXL records and
 archives). It is a Shadow of War-style nemesis system with a lot of overlap with Cyberbane. Listed here are
