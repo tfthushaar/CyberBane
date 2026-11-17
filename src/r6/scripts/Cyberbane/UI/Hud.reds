@@ -3662,6 +3662,17 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
     if StrLen(weak) > 0 {
       out += "Weak spots: " + weak + ".\n";
     }
+    // A fatal flaw (Reactions/StreetIntel.reds): named once the street has told V; hinted at for a Rival
+    // senior enough to have one, which is a reason to go and ask.
+    let flaw = CBRivalFlaw(r);
+    let intelBook = CBIntelBook.Get(game);
+    if flaw > 0 && IsDefined(intelBook) && intelBook.KnowsFlaw(r.id) {
+      out += "Fatal flaw: " + CBFlawWord(flaw) + " kills them outright.\n";
+    } else {
+      if CBFlawsOn() && r.rank >= CBConfig.FlawMinRank() {
+        out += "Their people may know a fatal flaw. Squeeze one, scan one, or ask around.\n";
+      }
+    }
     let scars = CBScarLabel(r.scarMask);
     if StrLen(scars) > 0 {
       out += "Carries your mark: " + scars + ".\n";
@@ -3921,6 +3932,23 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"TalkToll") {
     return StrLen(gang) > 0 ? s"You paid \(gang) \(RoundF(e.value))eb to walk their streets in peace for a few hours."
                             : s"You paid \(RoundF(e.value))eb for safe passage.";
+  }
+  if Equals(e.kind, n"Squeezed") {
+    return s"You made \(who) talk.";
+  }
+  if Equals(e.kind, n"FlawLearned") {
+    let r = sys.FindRivalById(RoundF(e.value));
+    let name = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "a Rival";
+    return s"You learnt \(name)'s fatal flaw.";
+  }
+  if Equals(e.kind, n"FlawKill") {
+    return "A Rival died of the fatal flaw you found.";
+  }
+  if Equals(e.kind, n"Turned") {
+    return s"You turned \(who) into an informant.";
+  }
+  if Equals(e.kind, n"InformantTip") {
+    return "An informant of yours texted a tip.";
   }
   if Equals(e.kind, n"TalkCallOff") {
     return s"You paid \(who) \(RoundF(e.value))eb to call off the crew coming for you.";

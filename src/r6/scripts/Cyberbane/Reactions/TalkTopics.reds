@@ -36,6 +36,7 @@ public func CBTalkActDealForget() -> Int32 = 22
 public func CBTalkActBusiness() -> Int32 = 23
 public func CBTalkActDealToll() -> Int32 = 24
 public func CBTalkActDealCallOff() -> Int32 = 25
+public func CBTalkActTurn() -> Int32 = 26
 
 // Which list is up.
 public func CBTalkMenuMain() -> Int32 = 0
@@ -124,15 +125,6 @@ public func CBTalkQuestionLines(sys: ref<CyberbaneSystem>, game: GameInstance, t
   let c = CBTalkMakeLine("[Ask] Anyone looking for me?", CBTalkActAskComing(), t"ChoiceCaptionParts.ReinforcementIcon");
   c.said = CBMaskHas(done, CBTalkActAskComing());
   ArrayPush(out, c);
-  let r = CBTalkRivalFor(sys, game, t);
-  if IsDefined(r) && !t.cop {
-    let name = CBRivalDisplayName(sys.GetContent(), r);
-    let text = NotEquals(t.faction, n"") ? "[Ask] Heard anything about " + name + "?" : "[Ask] Seen " + name + " around?";
-    let rl = CBTalkMakeLine(text, CBTalkActAskRival(), t"ChoiceCaptionParts.BountyHuntIcon");
-    rl.said = CBMaskHas(done, CBTalkActAskRival());
-    rl.important = !rl.said;
-    ArrayPush(out, rl);
-  }
   ArrayPush(out, CBTalkMakeLine("[Back] Something else.", CBTalkActMenuBack(), TDBID.None()));
   return out;
 }
@@ -663,6 +655,26 @@ public class CBTalkLiarCallback extends DelayCallback {
   }
 }
 
+// What somebody who knows where a Rival is lying low lets drop on hello. "" when they have nothing to sell,
+// already sold it today, or are loyal to the Rival.
+public func CBTalkTipHint(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> String {
+  if t.cop || !IsDefined(t.npc) || CBMaskHas(t.npc.cbTalkDone, CBTalkActAskRival()) {
+    return "";
+  }
+  let r = CBTalkRivalFor(sys, game, t);
+  if !IsDefined(r) || (Equals(r.faction, t.faction) && CBTalkTemper(t.npc) == CBTalkTemperLoyal()) {
+    return "";
+  }
+  let tally = CBTalkTallyFor(sys, game, t.faction);
+  if !IsDefined(tally) || tally.leaks >= CBConfig.TalkLeaksPerDay() {
+    return "";
+  }
+  let name = CBRivalDisplayName(sys.GetContent(), r);
+  return CBWhisperPick3(s"Heard you're after \(name). I might know where they're lying low. For a price.",
+                        s"You're the one looking for \(name), right? I know a thing or two. Costs, though.",
+                        s"Word is you want \(name). I could help with that, if you make it worth my while.");
+}
+
 // [Pay]: only what V can cover, taken once the lead is good.
 public func CBTalkDealPay(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
                           t: ref<CBTalkTarget>, rivalId: Int32, price: Int32) -> ref<CBTalkAnswer> {
@@ -686,13 +698,15 @@ public func CBTalkDealPay(sys: ref<CyberbaneSystem>, game: GameInstance, player:
 public class CBTalkHaggle {
   public let answer: ref<CBTalkAnswer>;
   public let price: Int32;
+  public let walked: Bool;   // pushed too far: the deal is off
 }
 
-public func CBTalkDealHaggle(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, price: Int32) -> ref<CBTalkHaggle> {
+// `round` 0 is the first push; the second (1.9.8) is harder, and failing it may end the deal.
+public func CBTalkDealHaggle(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, price: Int32, round: Int32) -> ref<CBTalkHaggle> {
   let h = new CBTalkHaggle();
   h.price = price;
   let temper = CBTalkTemper(t.npc);
-  let chance = CBTalkNerveGap(t) + CBConfig.TalkHaggleBase();
+  let chance = CBTalkNerveGap(t) + CBConfig.TalkHaggleBase() - 0.15 * Cast<Float>(round);
   if t.mood == CBTalkFriendly() {
     chance += 0.2;
   }
@@ -711,6 +725,11 @@ public func CBTalkDealHaggle(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
     h.price = Max(100, RoundF(Cast<Float>(price) * CBConfig.TalkHaggleCut() / 50.0) * 50);
     let p = h.price;
     h.answer = CBTalkSay(CBWhisperPick3(s"Fine. \(p). Don't push it.", s"Alright, alright. \(p).", s"\(p). Final offer."), n"");
+    return h;
+  }
+  if round > 0 && RandF() < 0.4 {
+    h.walked = true;
+    h.answer = CBTalkSay(CBWhisperPick2("Forget it. Deal's off.", "You know what? Find out yourself."), n"");
     return h;
   }
   if temper == CBTalkTemperGreedy() {

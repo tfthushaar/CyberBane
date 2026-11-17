@@ -82,13 +82,74 @@ public let cbTalkSentTick: Int32;
 @addField(ScriptedPuppet)
 public let cbTalkRefused: Bool;
 
-// Somebody the game's own conversation system keeps taking the prompt away from (1.9.7): left alone.
-@addField(ScriptedPuppet)
-public let cbTalkWiped: Bool;
-
 // A passer-by V stopped in their tracks to talk to, to be sent on their way again after (1.9.7).
 @addField(ScriptedPuppet)
 public let cbTalkStopped: Bool;
+
+// Whoever V is in a conversation with (1.9.8): they do not take fright from the street around them, and
+// the game's own voice lines for them wait, so nothing talks over the conversation.
+@addField(ScriptedPuppet)
+public let cbTalkPartner: Bool;
+
+// The hold-position order that keeps them standing while V talks (1.9.8), cancelled when it is over.
+@addField(ScriptedPuppet)
+public let cbTalkHold: ref<AIHoldPositionCommand>;
+
+// Keep somebody where they are while V talks to them: the game's own hold-position order (aiCommand.script,
+// AIHoldPositionCommand, what the police's arrest flow uses), one order, never on somebody Cyberbane has
+// already given one (Spawn/Spawner.reds, cbMoveCmd).
+func CBTalkHold(npc: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(npc) || IsDefined(npc.cbMoveCmd) || IsDefined(npc.cbTalkHold) || !npc.IsAttached() {
+    return;
+  }
+  let ai = npc.GetAIControllerComponent();
+  if !IsDefined(ai) {
+    return;
+  }
+  let cmd = new AIHoldPositionCommand();
+  cmd.duration = CBConfig.TalkHoldSeconds();
+  npc.cbTalkHold = cmd;
+  ai.SendCommand(cmd);
+}
+
+func CBTalkReleaseHold(npc: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(npc) || !IsDefined(npc.cbTalkHold) {
+    return;
+  }
+  let ai = npc.GetAIControllerComponent();
+  if IsDefined(ai) && npc.IsAttached() {
+    ai.CancelCommand(npc.cbTalkHold);
+  }
+  npc.cbTalkHold = null;
+}
+
+// The game's voice lines for the person V is talking to wait until it is over (1.9.8): a greeting, a
+// mutter or a frightened plea in their own voice, with its own subtitle, talked over every answer.
+@wrapMethod(GameObject)
+public static func PlayVoiceOver(self: ref<GameObject>, voName: CName, debugInitialContext: CName, opt delay: Float,
+                                 opt answeringEntityID: EntityID, opt canPlayInVehicle: Bool) -> DelayID {
+  let p = self as ScriptedPuppet;
+  if IsDefined(p) && p.cbTalkPartner && NotEquals(debugInitialContext, n"Scripts:CBStreetTalk") {
+    let none: DelayID;
+    return none;
+  }
+  return wrappedMethod(self, voName, debugInitialContext, delay, answeringEntityID, canPlayInVehicle);
+}
+
+// Nor do they take fright from what the street around them does while V talks to them (1.9.8): somebody
+// bolting past, a scream, the fear the crowd passes on (SpreadFear, Terror, Scream). Everybody else still
+// feels it. A real fight still reaches them, and ends the conversation anyway.
+@wrapMethod(ReactionManagerComponent)
+protected cb func OnEventReceived(stimEvent: ref<StimuliEvent>) -> Bool {
+  let owner = this.GetOwner() as ScriptedPuppet;
+  if IsDefined(owner) && owner.cbTalkPartner && IsDefined(stimEvent) {
+    let kind = stimEvent.GetStimType();
+    if Equals(kind, gamedataStimType.SpreadFear) || Equals(kind, gamedataStimType.Terror) || Equals(kind, gamedataStimType.Scream) {
+      return false;
+    }
+  }
+  return wrappedMethod(stimEvent);
+}
 
 // The settled tick V last had the prompt up on this person, or was waiting on their answer (1.9.5). The
 // Director does not turn somebody on V mid-conversation (Reactions/Director.reds, TryGangHostile).
@@ -265,13 +326,11 @@ public class CBStreetTalk {
   private let m_menu: Int32;
   private let m_dealRival: Int32;
   private let m_dealPrice: Int32;
-  private let m_dealHaggled: Bool;
+  private let m_dealHaggles: Int32;
   private let m_dealKind: Int32;
   // Keeping the list on screen (OnFrame): the chain's token, and how often the game wiped it.
   private let m_frameGen: Int32;
   private let m_wipes: Int32;
-  private let m_wipesSinceTick: Int32;
-  private let m_wipeTicks: Int32;
 
   // What the keys asked for, carried out on the next tick, never inside the key callback.
   private let m_wantOpen: Bool;
@@ -298,11 +357,21 @@ public class CBStreetTalk {
   private let m_whyFor: Float;
   private let m_whyLogAt: Float;
 
+  // The street's other ways of talking (Reactions/StreetIntel.reds, 1.9.8), on this tick.
+  private let m_intel: ref<CBStreetIntel>;
+
   // Keeping one notch of the wheel to one step (see Scroll).
   private let m_lastScrollAt: Float;
   private let m_lastScrollStep: Int32;
   private let m_lastScrollByWeapon: Bool;
   private let m_choiceScrollSeen: Bool;
+
+  public func GetIntel() -> ref<CBStreetIntel> {
+    if !IsDefined(this.m_intel) {
+      this.m_intel = new CBStreetIntel();
+    }
+    return this.m_intel;
+  }
 
   public func Start(game: GameInstance) -> Void {
     this.m_game = game;
@@ -318,6 +387,8 @@ public class CBStreetTalk {
     this.m_handsChecked = false;
     this.m_listening = null;
     this.m_quietLeft = 0.0;
+    // Talk bubbles from before a load are the old world's (Reactions/StreetIntel.reds).
+    this.GetIntel().ClearBubbles(game);
     this.Schedule(game);
   }
 
@@ -364,6 +435,7 @@ public class CBStreetTalk {
       return;
     }
     let tick = Max(sys.GetTickCount(), 1);
+    this.GetIntel().Tick(sys, game, player, dt);
     // A line said: the answer comes after a beat, only with the world settled.
     if this.m_stage == CBTalkStageWaiting() {
       if IsDefined(this.m_target) && IsDefined(this.m_target.npc) {
@@ -448,25 +520,13 @@ public class CBStreetTalk {
       }
     }
     // Still on screen? Something of the game's may write over the hub without a hub of its own
-    // (CBNativePromptUp would have ended ours for one of those): the frame keeper puts it back. When the
-    // game goes on wiping it several times a tick, tick after tick, it is running a conversation system of
-    // its own for this person, and nobody can see ours (1.9.7: "Hey, choom" said to somebody whose lines
-    // never showed). Give them up, and do not offer them again.
+    // (CBNativePromptUp would have ended ours for one of those): the frame keeper puts it back the frame
+    // it goes (OnFrame), and this is the tick's own check. 1.9.7 gave up on anybody the game kept wiping it
+    // for; played, the list stayed visible with the keeper even when it was wiped every frame (168 times in
+    // one conversation), and the give-up only shut out people standing chatting together. Counted for the log.
     if !CBTalkHubShown(game) {
       this.Push(game);
       this.m_wipes += 1;
-      this.m_wipesSinceTick += 1;
-    }
-    if this.m_wipesSinceTick >= 2 {
-      this.m_wipeTicks += 1;
-    } else {
-      this.m_wipeTicks = 0;
-    }
-    this.m_wipesSinceTick = 0;
-    if this.m_wipeTicks >= CBConfig.TalkWipeGiveUpTicks() {
-      t.npc.cbTalkWiped = true;
-      this.End(game, "the game keeps taking the prompt off the screen for them");
-      return;
     }
     // They keep their eyes on V, the way a scene turns the game's own characters to face V.
     this.m_glanceIn -= dt;
@@ -496,7 +556,6 @@ public class CBStreetTalk {
        && !CBTalkHubShown(game) && !CBGameDialogueUp(game) {
       this.Push(game);
       this.m_wipes += 1;
-      this.m_wipesSinceTick += 1;
     }
     this.NextFrame(game);
   }
@@ -527,6 +586,16 @@ public class CBStreetTalk {
         if StrLen(why) == 0 && CBNativePromptUp(game) {
           why = "one of the game's own prompts is up";
         }
+      }
+    }
+    // Whoever the game's look-at hands back may be somebody who cannot talk right now (V just spoke to them,
+    // say) while the person beside them can (1.9.8): "I can't talk to more than one of them" was the look-at
+    // sticking to the last one. The cooldown was always per person; the next one in view is taken instead.
+    if StrLen(why) > 0 && this.m_quietLeft <= 0.0 {
+      let other = this.NextTalkable(sys, game, player, npc);
+      if IsDefined(other) {
+        npc = other;
+        why = CBNativePromptUp(game) ? "one of the game's own prompts is up" : "";
       }
     }
     if !IsDefined(npc) || StrLen(why) > 0 {
@@ -584,8 +653,6 @@ public class CBStreetTalk {
     this.m_dealPrice = 0;
     this.m_dealKind = CBTalkDealLead();
     this.m_wipes = 0;
-    this.m_wipesSinceTick = 0;
-    this.m_wipeTicks = 0;
     this.m_frameGen += 1;
     CBTalkTemper(npc);
     this.Listen(player);
@@ -596,12 +663,18 @@ public class CBStreetTalk {
     // A passer-by stops to talk (1.9.7), with the call the game itself uses to stop a pedestrian
     // (reactionComponent.script, the crowd's CallPolice reaction); they walk on when it is over. Before
     // this they kept walking and were out of range before V had chosen a line.
-    if npc.IsCrowd() && CBTalkStopWalkersOn() {
-      let crowd = npc.GetCrowdMemberComponent();
-      if IsDefined(crowd) && crowd.IsInCrowd() && crowd.CheckIsMoving() {
-        crowd.TryStopTrafficMovement();
-        npc.cbTalkStopped = true;
+    // Played in 1.9.7, the traffic stop alone did not hold them ("too far" on every passer-by), so they are
+    // also given the game's hold-position order for the length of the conversation (CBTalkHold).
+    npc.cbTalkPartner = true;
+    if CBTalkStopWalkersOn() && !t.atWork {
+      if npc.IsCrowd() {
+        let crowd = npc.GetCrowdMemberComponent();
+        if IsDefined(crowd) && crowd.IsInCrowd() && crowd.CheckIsMoving() {
+          crowd.TryStopTrafficMovement();
+          npc.cbTalkStopped = true;
+        }
       }
+      CBTalkHold(npc);
     }
     this.NextFrame(game);
     if CBTalkFirstOn() {
@@ -635,7 +708,7 @@ public class CBStreetTalk {
       this.m_lines = CBTalkQuestionLines(sys, game, t);
     } else {
       if this.m_menu == CBTalkMenuDeal() {
-        this.m_lines = CBTalkDealLines(game, t, this.m_dealPrice, this.m_dealHaggled, this.m_dealKind);
+        this.m_lines = CBTalkDealLines(game, t, this.m_dealPrice, this.m_dealHaggles >= CBConfig.TalkHaggleRounds(), this.m_dealKind);
       } else {
         if this.m_menu == CBTalkMenuBusiness() {
           this.m_lines = CBTalkBusinessLines(sys, game, t);
@@ -732,6 +805,14 @@ public class CBStreetTalk {
         }
       }
     }
+    // Somebody who knows where a Rival is lying low says so when V first says hello (1.9.8), so the price
+    // is something V hears about rather than has to go looking for.
+    if choice == CBTalkGreet() && t.first && IsDefined(a) && t.mood != CBTalkHostile() && !npc.cbTalkSent {
+      let hint = CBTalkTipHint(sys, game, t);
+      if StrLen(hint) > 0 {
+        a.line += " " + hint;
+      }
+    }
     // In the game's subtitles; with those switched off, on Cyberbane's own line, so the answer is
     // never lost (UI/PhoneMessages.reds, CBOverheard).
     if IsDefined(a) && StrLen(a.line) > 0 {
@@ -743,9 +824,8 @@ public class CBStreetTalk {
         CBOverheard(game, t.speaker, a.line);
       }
     }
-    if IsDefined(a) && NotEquals(a.vo, n"") && npc.IsAttached() {
-      GameObject.PlayVoiceOver(npc, a.vo, n"Scripts:CBStreetTalk");
-    }
+    // No voice line of the game's under the answer (1.9.8): a random line in their voice, with its own
+    // subtitle, never matched what the answer said.
     let reactions = npc.GetStimReactionComponent();
     if IsDefined(reactions) && npc.IsAttached() && !npc.cbTalkSent {
       reactions.CBGlanceAt(player);
@@ -812,10 +892,16 @@ public class CBStreetTalk {
       return pay;
     }
     if choice == CBTalkActDealHaggle() {
-      let h = CBTalkDealHaggle(sys, game, t, this.m_dealPrice);
+      let h = CBTalkDealHaggle(sys, game, t, this.m_dealPrice, this.m_dealHaggles);
       this.m_dealPrice = h.price;
-      this.m_dealHaggled = true;
+      this.m_dealHaggles += 1;
+      if h.walked {
+        this.m_menu = CBTalkMenuMain();
+      }
       return h.answer;
+    }
+    if choice == CBTalkActTurn() {
+      return CBIntelTurn(sys, game, t);
     }
     if choice == CBTalkActDealLean() {
       this.m_menu = CBTalkMenuMain();
@@ -835,7 +921,7 @@ public class CBStreetTalk {
       this.m_dealKind = kind;
       this.m_dealRival = o.rivalId;
       this.m_dealPrice = o.price;
-      this.m_dealHaggled = !CBTalkHaggleOn();
+      this.m_dealHaggles = CBTalkHaggleOn() ? 0 : CBConfig.TalkHaggleRounds();
     }
     return o.answer;
   }
@@ -883,6 +969,11 @@ public class CBStreetTalk {
       let sys = CyberbaneSystem.Get(game);
       this.m_target.npc.cbTalkTick = IsDefined(sys) ? Max(sys.GetTickCount(), 1) : 1;
       this.m_target.npc.cbTalkTimes += 1;
+    }
+    // Their own voice and their own fears again, and the hold let go.
+    if IsDefined(this.m_target) && IsDefined(this.m_target.npc) {
+      this.m_target.npc.cbTalkPartner = false;
+      CBTalkReleaseHold(this.m_target.npc);
     }
     // A passer-by V stopped walks on.
     if IsDefined(this.m_target) && IsDefined(this.m_target.npc) && this.m_target.npc.cbTalkStopped {
@@ -1007,6 +1098,34 @@ public class CBStreetTalk {
           let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
           let dot = fwd.X * dir.X + fwd.Y * dir.Y;
           if dot >= bestDot {
+            best = p;
+            bestDot = dot;
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  // The person in talking range nearest V's line of sight who can be talked to now, other than `skip`.
+  private func NextTalkable(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
+                            skip: ref<ScriptedPuppet>) -> ref<ScriptedPuppet> {
+    let reg = sys.GetRegistry();
+    if !IsDefined(reg) {
+      return null;
+    }
+    let ppos = player.GetWorldPosition();
+    let fwd = Vector4.Normalize2D(player.GetWorldForward());
+    let best: ref<ScriptedPuppet>;
+    let bestDot = CBConfig.TalkNextDot();
+    for p in reg.GetAll() {
+      if IsDefined(p) && p.IsAttached() && !p.IsPlayer() && !p.IsDead()
+         && (!IsDefined(skip) || !Equals(p.GetEntityID(), skip.GetEntityID())) {
+        let pos = p.GetWorldPosition();
+        if Vector4.Distance(ppos, pos) <= CBConfig.TalkRange() && AbsF(pos.Z - ppos.Z) <= 1.5 {
+          let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
+          let dot = fwd.X * dir.X + fwd.Y * dir.Y;
+          if dot >= bestDot && StrLen(CBTalkWhyNot(sys, game, player, p, CBConfig.TalkRange())) == 0 {
             best = p;
             bestDot = dot;
           }
@@ -1248,9 +1367,6 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   if !npc.IsHuman() || npc.IsMechanical() {
     return "not a person";
   }
-  if npc.cbTalkWiped {
-    return "the game runs its own conversation for them";
-  }
   // Somebody V sent on their way can be spoken to again a few minutes later (1.9.6); before that they
   // stayed out of reach until they streamed out.
   if npc.cbTalkSent && npc.cbTalkSentTick > 0 && sys.GetTickCount() - npc.cbTalkSentTick >= CBConfig.TalkSentRestTicks() {
@@ -1349,7 +1465,9 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
   }
   t.faction = faction;
   t.recognized = CBRecognizes(sys, score, npc, faction, sys.GetCurrentDistrict());
-  t.safe = sys.IsInSafeZone() || CBNpcInSafeInterior(npc);
+  // Near the job V is tracking it is words only (1.9.8), the way it is in a safe place: thirty metres round it
+  // used to keep everybody out of reach, which on a busy street was everybody.
+  t.safe = sys.IsInSafeZone() || CBNpcInSafeInterior(npc) || sys.NearTrackedPins(npc.GetWorldPosition(), CBConfig.TalkWordsOnlyNearJob());
   let ws = GameInstance.GetWorkspotSystem(game);
   t.atWork = IsDefined(ws) && ws.IsActorInWorkspot(npc);
   t.nerve = CBNerve(npc);
@@ -1620,6 +1738,21 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   let ask = CBTalkMakeLine(t.cop ? "[Ask] Quick question, officer." : "[Ask] Got a minute?", CBTalkActMenuAsk(),
                            t"ChoiceCaptionParts.ClueIcon");
   ArrayPush(out, ask);
+  // A Rival's hiding place for a price, right there on the first list when they have it (1.9.8): it was a
+  // question under [Ask], and played, nobody found it.
+  let tipRival = t.cop ? null : CBTalkRivalFor(sys, game, t);
+  if IsDefined(tipRival) {
+    let tl = CBTalkMakeLine("[Ambush tip] Where's " + CBRivalDisplayName(sys.GetContent(), tipRival) + " lying low? I'll pay.",
+                            CBTalkActAskRival(), t"ChoiceCaptionParts.BountyHuntIcon");
+    tl.said = CBMaskHas(done, CBTalkActAskRival());
+    tl.important = !tl.said;
+    ArrayPush(out, tl);
+  }
+  // Turning them (1.9.8): somebody of a gang frightened enough of V may agree to pass V word.
+  if gang && CBInformantsOn() && IsDefined(t.npc) && (t.npc.cbHoldState == 1 || m == CBTalkAfraid())
+     && !CBMaskHas(done, CBTalkActTurn()) {
+    ArrayPush(out, CBTalkMakeLine("[Intimidate] You work for me now.", CBTalkActTurn(), t"ChoiceCaptionParts.GrappleIcon"));
+  }
   // Business (1.9.7): what a gang at war with V will sell. Only when there is something to sell.
   if gang && CBTalkHasBusiness(sys, game, t) {
     ArrayPush(out, CBTalkMakeLine("[Deal] Let's talk business.", CBTalkActBusiness(), t"ChoiceCaptionParts.PayIcon"));
@@ -1852,6 +1985,8 @@ func CBTalkSendOff(game: GameInstance, t: ref<CBTalkTarget>) -> Bool {
   // Whoever V has sent packing holds back from V from now on (1.9.5): a vendetta ganger talked down
   // in their warning was otherwise turned on V by the Director a second later, mid-retreat.
   npc.cbHoldState = 1;
+  npc.cbTalkPartner = false;
+  CBTalkReleaseHold(npc);
   if t.safe {
     return false;
   }

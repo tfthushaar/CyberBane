@@ -45,6 +45,14 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TalkHaggle-Desc", "When somebody names a price, in the street or by text, you can tell them it is too much, once. They may come down, stand firm, or ask for more. Off, the price is the price.");
     this.Text("Cyberbane-Settings-TalkPhoneDeals", "Leads are a deal by text");
     this.Text("Cyberbane-Settings-TalkPhoneDeals-Desc", "Asking around for a Rival on the Hub puts the word out, and somebody texts you a price you answer in the thread. Off, the Hub's button pays and hands you the place at once. Needs messages going to the phone.");
+    this.Text("Cyberbane-Settings-StreetIntel", "Make people talk");
+    this.Text("Cyberbane-Settings-StreetIntel-Desc", "Hold a ganger in a grab for a few seconds, crouch over one you put down, or scan one, and they may give up a Rival's hiding place, a Rival's fatal flaw, or who is coming for you. A Rival's body can carry word of another.");
+    this.Text("Cyberbane-Settings-TalkBubbles", "Show who has something to say");
+    this.Text("Cyberbane-Settings-TalkBubbles-Desc", "The game's talk icon over up to two people nearby who know where a Rival is lying low.");
+    this.Text("Cyberbane-Settings-Informants", "Informants");
+    this.Text("Cyberbane-Settings-Informants-Desc", "A Rival you spare twice may owe you, and a ganger you frighten enough can be turned. Either texts you a few tips over the next days. Now and then the last one is a set-up.");
+    this.Text("Cyberbane-Settings-RivalFlaws", "Fatal flaws");
+    this.Text("Cyberbane-Settings-RivalFlaws-Desc", "Some senior Rivals have one fatal flaw: a blade, something heavy, a bare fist, a quickhack or explosives kills them outright. Their people can tell you which.");
     this.Text("Cyberbane-Settings-Category-Gangs", "Gangs");
     this.Text("Cyberbane-Settings-Category-Morale", "Morale");
     this.Text("Cyberbane-Settings-Category-Economy", "Economy");

@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.7. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.8. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,32 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.9.7
+
+### "NPCs run away because they fear me even mid-conversation", "their vanilla voiced lines overlap our conversation", "let them put a price on an ambush tip and let it be negotiable", "can't talk to NPCs standing chatting together", and "speaking to one puts the others on a cooldown"
+
+**Status: done in 1.9.8** (`Reactions/StreetTalk.reds`, `Reactions/TalkTopics.reds`).
+- Running: when anybody near bolts, Cyberbane's crowd fear passes a SpreadFear stim to the people around them
+  (`CBFearReact`, stage 3), and the game's reaction system sent the talk partner running too. The partner
+  (`cbTalkPartner`, from Begin to End) now drops SpreadFear, Terror and Scream stims
+  (`ReactionManagerComponent.OnEventReceived`), and walkers get the game's hold-position order for the
+  conversation (`CBTalkHold`; `CBIssueMove` cancels it first, so one order at a time). The 1.9.7 log showed
+  every passer-by ending "too far": the traffic stop alone did not hold them.
+- Voices: Cyberbane itself played a random vanilla line (`GameObject.PlayVoiceOver`, "greeting" etc.) under each
+  answer, with its own subtitle; gone. The game's own lines for the partner are held (`PlayVoiceOver` wrapped:
+  nothing plays for `cbTalkPartner` except Cyberbane's context).
+- The tip: it already existed under [Ask] and nobody found it. "[Ambush tip]" is now on the first list when the
+  person has word of a Rival, they mention it on hello (`CBTalkTipHint`), and a price can be pushed back on twice
+  (`TalkHaggleRounds`); the second push may end the deal.
+- Chatting pairs: the 1.9.7 give-up (`cbTalkWiped`) shut out anybody the game kept wiping the list for, and the
+  log showed the list staying visible with the frame keeper even when wiped every frame (168 times in one
+  conversation). The give-up is gone. The 30 m talk clearance round the tracked job (a marker was on screen in
+  the report) is 10 m, and words only within 30 m.
+- The cooldown: always per person (`cbTalkTick` on the puppet), so the guess was not right. What blocked the
+  others was the look-at: it kept handing back the person just spoken to ("V spoke to them a moment ago" right
+  after each conversation in the 1.9.6 log), and nobody else was tried. `NextTalkable` now takes the next person
+  in view who can talk, and the per-person rest is 3 s.
 
 ## Requests after 1.9.6
 

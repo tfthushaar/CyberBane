@@ -128,6 +128,8 @@ public class CBHitFollowUpCallback extends DelayCallback {
     CBCombatFleeCheck(sys, game, p);
     // Put them down without killing them? That gets remembered too (spec §10.2).
     CBSparedCheck(sys, game, p);
+    // A Rival's fatal flaw, met (Reactions/StreetIntel.reds, 1.9.8).
+    CBFlawCheck(sys, game, p);
   }
 }
 

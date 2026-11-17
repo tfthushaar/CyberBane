@@ -427,6 +427,9 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       // Spared once too often at the top of the ladder, and not grateful for it (1.9.0).
       if !indebted {
         CBRivalMaybeBreak(sys, game, already);
+      } else {
+        // Grateful instead: they owe V, and pay it back in tips (Reactions/StreetIntel.reds, 1.9.8).
+        CBIntelDebtor(sys, game, already);
       }
       // Their gang hears that V had one of their names cold and let them walk. Done here
       // rather than inside CBRivalSparedByV, which has no system handle to credit against.

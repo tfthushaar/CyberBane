@@ -102,6 +102,7 @@ by their posture to V. Each round is one text, so it takes a little time, which 
 ## 3. Talking the way the game does it
 
 **Built in 1.9.6:** items 1, 2 and 3 (icons and line types, "Talk" first, eyes on V and a longer keep range).
+**Built in 1.9.8:** item 5 (the talk bubble, at most two near V).
 **Built in 1.9.7:** item 4 (lifepath lines with the game's lifepath icons; Body and Cool shown in the threat, the
 parley and haggling; a price V cannot cover greyed and unselectable).
 
@@ -158,7 +159,7 @@ parley and haggling; a price V cannot cover greyed and unselectable).
 
 **Built in 1.9.6:** item 1 (the History lines and the gang page's "today" line).
 **Built in 1.9.7:** items 2 (the questions), 3 (leads, the toll and the crew called off; the lookout left out because
-allies already warn V), 6 (being remembered) and 7 (a fan's drink, as eddies; "who runs these streets" points V at
+allies already warn V), 4 in 1.9.8 (turning a ganger), 6 (being remembered) and 7 (a fan's drink, as eddies; "who runs these streets" points V at
 the local gang).
 
 A conversation should leave V with something: information V can act on, a deal, a change in how a gang
@@ -208,6 +209,9 @@ only the ideas that are feasible within Cyberbane's rules, easiest first. Each s
 Cyberbane already has, and how ours would be built.
 
 **Built in 1.9.6:** items 1 (texts wait during a conversation) and 2 (the re-arm watch).
+**Built in 1.9.8:** items 3 (intel from a scan), 7 (the squeeze), 8 (the downed talk; a Rival's body), 9 (the
+informant, from the Debtor) and 13 (fatal flaws, killed from the hit's next-frame follow-up). See
+`Reactions/StreetIntel.reds`.
 
 ### Small
 

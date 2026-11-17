@@ -112,7 +112,13 @@ in active development. This page describes what the mod does and how it installs
   then somebody sells you a story. A gang at war with you will sell safe passage for a few hours, or
   call off a crew already on its way, under **[Deal] Let's talk business**. Street Kids, Nomads and
   Corpos get lines of their own, high Body and Cool show in what you say, people remember you, and a
-  fan may stand you a drink. Passers-by stop walking while you talk to them.
+  fan may stand you a drink. Passers-by stop walking while you talk to them, the person you are talking to
+  doesn't run when the street panics, and their own voice lines wait until you are done.
+- **Make people talk.** Grab a ganger and hold on for a few seconds, crouch over one you put down, or scan
+  one, and they may give up a Rival's hiding place, who is coming for you, or a Rival's fatal flaw: some
+  lieutenants and leaders die outright to one thing (a blade, something heavy, a bare fist, a quickhack or
+  explosives). A Rival you spare twice may become your informant and text you tips, and a ganger you have
+  frightened enough can be turned. The game's talk icon marks people nearby who know where a Rival is.
 - **The street gets word back to you.** When a rumour about you reaches somewhere new, a
   contact may get in touch about what they heard. If people saw you, your name is in it. If
   nobody did, it arrives as a question about who is doing this.

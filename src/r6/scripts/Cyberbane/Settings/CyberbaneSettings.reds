@@ -253,6 +253,30 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkPhoneDeals-Desc")
   public let talkPhoneDeals: Bool = true;
 
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetIntel")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetIntel-Desc")
+  public let streetIntel: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkBubbles")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkBubbles-Desc")
+  public let talkBubbles: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Informants")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Informants-Desc")
+  public let informants: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalFlaws")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFlaws-Desc")
+  public let rivalFlaws: Bool = true;
+
   // ---- Gangs ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

@@ -1240,7 +1240,25 @@ public abstract class CBConfig {
   public static func TalkLookGrace() -> Float = 2.0
   // After a conversation, before the same person can be spoken to again (1.9.6: it used to follow every
   // single exchange, for 45).
-  public static func TalkCooldownTicks() -> Int32 = 8
+  public static func TalkCooldownTicks() -> Int32 = 3
+  // How far to the side of V's line of sight the next talkable person may be when the one in front cannot talk.
+  public static func TalkNextDot() -> Float = 0.8
+  // The hold-position order's length (seconds); cancelled when the conversation ends.
+  public static func TalkHoldSeconds() -> Float = 90.0
+  // Within this of the job V is tracking, talk is words only.
+  public static func TalkWordsOnlyNearJob() -> Float = 30.0
+  // How many times V can push back on one price.
+  public static func TalkHaggleRounds() -> Int32 = 2
+  // The street talks (Reactions/StreetIntel.reds): how long a grip takes, crouching over the downed, a scan's
+  // odds, turning a ganger, an informant's set-up, and the Rivals who carry a fatal flaw.
+  public static func SqueezeSeconds() -> Float = 3.5
+  public static func DownedTalkSeconds() -> Float = 2.0
+  public static func DownedTalkRange() -> Float = 2.5
+  public static func IntelScanChance() -> Float = 0.35
+  public static func TurnBase() -> Float = 0.25
+  public static func InformantSetupChance() -> Float = 0.15
+  public static func FlawMinRank() -> Int32 = 3
+  public static func FlawChance() -> Float = 0.4
   // A conversation holds while its person is within keep range and inside this cone in front of V (cos of
   // about 60 degrees), the crosshair wherever it likes (CBTalkFacing).
   public static func TalkKeepDot() -> Float = 0.5
@@ -1248,8 +1266,6 @@ public abstract class CBConfig {
   // conversation can run to, and how long somebody V sent off stays out of reach (settled ticks).
   public static func TalkGlanceEvery() -> Float = 2.5
   public static func TalkMaxExchanges() -> Int32 = 12
-  // Ticks in a row the game may wipe the list several times before the person is given up (1.9.7).
-  public static func TalkWipeGiveUpTicks() -> Int32 = 3
   // What a lead costs in the street (Reactions/TalkTopics.reds): the Hub's price times these, for one of the
   // Rival's own gang, of a gang at war with theirs, and of no gang.
   public static func TalkPriceOwnGang() -> Float = 1.8
@@ -1286,9 +1302,9 @@ public abstract class CBConfig {
   public static func TalkArmedHintDwell() -> Float = 1.2
   // How far round a job's marker people are left out of street talk (CBTalkWhyNot), and the cone in front
   // of V somebody has to be in when the game's look-at finds nobody (cos of about 25 degrees).
-  public static func TalkJobClearance() -> Float = 20.0
+  public static func TalkJobClearance() -> Float = 8.0
   // The job V is tracking keeps a little more: its people, not the neighbourhood (CBSafetyGate.CanTalkTo).
-  public static func TalkTrackedClearance() -> Float = 30.0
+  public static func TalkTrackedClearance() -> Float = 10.0
   // The parley (Reactions/Director.reds, TryGangHostile; Reactions/StreetTalk.reds, CBTalkOnGreet): how
   // close an empty-handed V may be to a ganger who has warned V, and for how long after the warning
   // (settled ticks), before they draw; and the odds of talking them down, from the nerve gap like

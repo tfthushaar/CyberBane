@@ -3677,6 +3677,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(turfBook) {
       turfBook.Clear();   // the new playthrough's map is learnt afresh
     }
+    let intelBook = CBIntelBook.Get(this.GetGameInstance());
+    if IsDefined(intelBook) {
+      intelBook.Clear();  // and nothing is known about its Rivals, and nobody owes V (1.9.8)
+    }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);
     this.m_installedAt = this.NewBirthStamp();

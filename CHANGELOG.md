@@ -3,6 +3,42 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 1.9.8 (17 November 2026)
+
+**New: the street talks**
+- **Make them talk.** Grab a ganger and hold on. After a few seconds they give something up: where a
+  Rival is lying low, a Rival's fatal flaw, or who is coming for you. The loyal say nothing, the greedy hold
+  out longer, the scared crack fast. Aim your gun (using them as a shield) or let go and they say nothing.
+- **The downed talk too.** Crouch over a ganger you put down alive and look at them for a moment. A
+  Rival's body may carry a phone with word of another Rival.
+- **Scans.** A full scan of a ganger now and then turns up the same thing in their messages. Once per
+  person.
+- **Fatal flaws.** Some lieutenants and leaders have one fatal flaw: a blade, something heavy, a bare
+  fist, a quickhack or explosives kills them outright. Their people can tell you which. A Rival's page on
+  the Hub names it once you know, and tells you when one might have a flaw worth asking about.
+- **Informants.** A Rival you spare twice may now owe you instead of just disappearing. They text you two
+  or three tips over the next days, then call it square. A ganger you have frightened enough can be turned
+  with **"You work for me now."** If they agree they text you tips too; if not, they tell their own. Now
+  and then an informant's last tip is a set-up.
+- **Who has something to say.** The game's talk icon appears over up to two people nearby who know where
+  a Rival is lying low.
+
+**Changes**
+- **The person you are talking to stays put.** They don't run when someone near them panics, and the
+  game's own voice lines for them wait until you are done, so nothing talks over your conversation.
+  Passers-by are now properly held in place while you talk.
+- **Ambush tips are right there.** When someone knows where a Rival is lying low, **[Ambush tip]** is on
+  the first list, and they often mention it when you say hello. You can now push back on a price twice,
+  but the second time they may walk away from the deal.
+- **Talk to the next person straight away.** Right after a conversation, the prompt goes to whoever else
+  you look at. It used to stay stuck on the person you had just spoken to.
+- People standing chatting with each other, or leaning at a spot of their own, can be talked to again.
+- Near the job you are tracking, talk now works but stays words only (nobody fights or runs). It used to
+  be switched off for 30 metres around the job.
+
+**Settings** (Street talk): **Make people talk**, **Show who has something to say**, **Informants** and
+**Fatal flaws**, all on.
+
 ## 1.9.7 (17 November 2026)
 
 If you are coming from 1.9.5, read 1.9.6 below as well: this version builds on it.
