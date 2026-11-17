@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.5. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.7. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,27 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.9.6
+
+### "NPCs keep walking away before I choose an option", "speaking to them doesn't seem worth it", and "I pressed F in front of a ganger and said 'Hey, choom', but nothing popped up"
+
+**Status: done in 1.9.7** (`Reactions/StreetTalk.reds`, `Reactions/TalkTopics.reds`, `UI/RealPhone.reds`).
+The log for the ganger showed "Talk offered" and "Prompt up", then "The talk prompt was taken off the screen by the
+game": for somebody in a workspot the game's own interaction manager writes `DialogChoiceHubs` over ours, and the
+dialog widget reads that blackboard through a delayed listener, so a list put back on the next tick was never seen,
+while F still said the line. The list is now kept by a per-frame keeper (`OnFrame`, `CBTalkFrameCallback`) that puts
+it back the frame it is wiped, F only acts while `CBTalkHubShown`, and somebody the game goes on wiping it for for
+`TalkWipeGiveUpTicks` ticks is given up (`cbTalkWiped`, said in the log) rather than half-working. A passer-by is
+stopped with the call the game uses for its own crowd reactions (`CrowdMemberComponent.TryStopTrafficMovement`) and
+sent walking again at the end (`ChangeMoveType('walk')`), behind "Passers-by stop to talk".
+
+Worth doing: Phase 2 of the plan. Questions answered from the lanes, the turf and the rumours; a Rival's hiding place
+bought in the street at a price moved by gang ties, standing, fear and a per-person temperament (loyal, greedy,
+chatty, a rare liar), with pay, haggle, lean and forget; safe passage (`CyberbaneSystem.TollActive`, read by the
+Director's hostile-on-sight) and a crew called off for a gang at war with V; the Hub's purchase as a deal by text
+(`CBOfferRivalLead`, Deal / Too much / Forget it); lifepath, Body and Cool lines; being remembered; a fan's drink.
+Not built: a lookout who warns V of a crew, because allies already text that warning (`CBAllyTipOff`).
 
 ## Requests after 1.9.5
 

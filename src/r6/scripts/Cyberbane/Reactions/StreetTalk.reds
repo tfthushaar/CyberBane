@@ -30,6 +30,12 @@
 // no longer turns every one of its people on V, only the ones who are not too afraid to. The rest are
 // the people V can talk to.
 //
+// Since 1.9.6 it is a conversation: "Talk" first, then the lines, then their answer, then more lines,
+// until V leaves it or it has gone on long enough. Since 1.9.7 there is more to say than these four:
+// questions, a Rival's whereabouts for a price, a toll and a crew called off, the lines only this V has
+// (Reactions/TalkTopics.reds). A passer-by stops to talk, and the list is put back the moment anything
+// of the game's wipes it (OnFrame).
+//
 // ---- How it fits into the game (read against the 2.5 scripts) --------------------------------------
 //
 // The prompt. dialogWidgetGameController draws whatever is on the UIInteractions blackboard's
@@ -75,6 +81,14 @@ public let cbTalkSentTick: Int32;
 // Whether they have already told V they will not talk (1.9.6). Once per person.
 @addField(ScriptedPuppet)
 public let cbTalkRefused: Bool;
+
+// Somebody the game's own conversation system keeps taking the prompt away from (1.9.7): left alone.
+@addField(ScriptedPuppet)
+public let cbTalkWiped: Bool;
+
+// A passer-by V stopped in their tracks to talk to, to be sent on their way again after (1.9.7).
+@addField(ScriptedPuppet)
+public let cbTalkStopped: Bool;
 
 // The settled tick V last had the prompt up on this person, or was waiting on their answer (1.9.5). The
 // Director does not turn somebody on V mid-conversation (Reactions/Director.reds, TryGangHostile).
@@ -143,6 +157,24 @@ public class CBTalkInput extends IScriptable {
 
 // Its own tick, a few times a second: the prompt has to follow where V is looking. A generation token,
 // as the fast tick has, so a chain from an earlier session stops.
+// Every frame while a conversation is on screen (1.9.7): the game's own conversation system can wipe the
+// list between two of the talk's ticks, and a list that is wiped and put back five times a second is a
+// list nobody sees.
+public class CBTalkFrameCallback extends DelayCallback {
+  public let game: GameInstance;
+  public let generation: Int32;
+
+  public func Call() -> Void {
+    let sys = CyberbaneSystem.Get(this.game);
+    if IsDefined(sys) {
+      let talk = sys.GetStreetTalk();
+      if IsDefined(talk) {
+        talk.OnFrame(this.game, this.generation);
+      }
+    }
+  }
+}
+
 public class CBTalkTickCallback extends DelayCallback {
   public let game: GameInstance;
   public let generation: Int32;
@@ -201,6 +233,11 @@ func CBTalkMakeLine(text: String, act: Int32, icon: TweakDBID) -> ref<CBTalkLine
   return l;
 }
 
+public func CBTalkStopWalkersOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().talkStopWalkers;
+}
+
 public func CBTalkFirstOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().talkFirst;
@@ -223,6 +260,18 @@ public class CBStreetTalk {
   private let m_handsHeld: Bool;
   // Whether this session has made sure the lock is off (see OnTick).
   private let m_handsChecked: Bool;
+
+  // Which list is up (1.9.7: the main lines, the questions, a deal) and the deal on the table.
+  private let m_menu: Int32;
+  private let m_dealRival: Int32;
+  private let m_dealPrice: Int32;
+  private let m_dealHaggled: Bool;
+  private let m_dealKind: Int32;
+  // Keeping the list on screen (OnFrame): the chain's token, and how often the game wiped it.
+  private let m_frameGen: Int32;
+  private let m_wipes: Int32;
+  private let m_wipesSinceTick: Int32;
+  private let m_wipeTicks: Int32;
 
   // What the keys asked for, carried out on the next tick, never inside the key callback.
   private let m_wantOpen: Bool;
@@ -248,7 +297,6 @@ public class CBStreetTalk {
   private let m_whyLogged: String;
   private let m_whyFor: Float;
   private let m_whyLogAt: Float;
-  private let m_reassertLogged: Bool;
 
   // Keeping one notch of the wheel to one step (see Scroll).
   private let m_lastScrollAt: Float;
@@ -399,14 +447,26 @@ public class CBStreetTalk {
         return;
       }
     }
-    // Still on screen? Something of the game's may have written over the hub without a hub of its own
-    // (CBNativePromptUp would have ended ours for one of those). Put it back, and say so once.
+    // Still on screen? Something of the game's may write over the hub without a hub of its own
+    // (CBNativePromptUp would have ended ours for one of those): the frame keeper puts it back. When the
+    // game goes on wiping it several times a tick, tick after tick, it is running a conversation system of
+    // its own for this person, and nobody can see ours (1.9.7: "Hey, choom" said to somebody whose lines
+    // never showed). Give them up, and do not offer them again.
     if !CBTalkHubShown(game) {
       this.Push(game);
-      if !this.m_reassertLogged {
-        this.m_reassertLogged = true;
-        CBLog.Info(n"Talk", "The talk prompt was taken off the screen by the game; putting it back.");
-      }
+      this.m_wipes += 1;
+      this.m_wipesSinceTick += 1;
+    }
+    if this.m_wipesSinceTick >= 2 {
+      this.m_wipeTicks += 1;
+    } else {
+      this.m_wipeTicks = 0;
+    }
+    this.m_wipesSinceTick = 0;
+    if this.m_wipeTicks >= CBConfig.TalkWipeGiveUpTicks() {
+      t.npc.cbTalkWiped = true;
+      this.End(game, "the game keeps taking the prompt off the screen for them");
+      return;
     }
     // They keep their eyes on V, the way a scene turns the game's own characters to face V.
     this.m_glanceIn -= dt;
@@ -424,6 +484,32 @@ public class CBStreetTalk {
     if this.m_lostFor > CBConfig.TalkLookGrace() {
       this.End(game, "V looked away");
     }
+  }
+
+  // Every frame while the list is up: put it back the moment something wipes it.
+  public func OnFrame(game: GameInstance, generation: Int32) -> Void {
+    if generation != this.m_frameGen || this.m_stage == CBTalkStageIdle() {
+      return;
+    }
+    // Waiting for an answer, nothing is up on purpose; the chain only keeps going.
+    if (this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen())
+       && !CBTalkHubShown(game) && !CBGameDialogueUp(game) {
+      this.Push(game);
+      this.m_wipes += 1;
+      this.m_wipesSinceTick += 1;
+    }
+    this.NextFrame(game);
+  }
+
+  private func NextFrame(game: GameInstance) -> Void {
+    let ds = GameInstance.GetDelaySystem(game);
+    if !IsDefined(ds) {
+      return;
+    }
+    let cb = new CBTalkFrameCallback();
+    cb.game = game;
+    cb.generation = this.m_frameGen;
+    ds.DelayCallbackNextFrame(cb);
   }
 
   // Nothing up: is V settling on somebody?
@@ -493,11 +579,31 @@ public class CBStreetTalk {
     this.m_whyFor = 0.0;
     this.m_wantOpen = false;
     this.m_wantSay = false;
+    this.m_menu = CBTalkMenuMain();
+    this.m_dealRival = 0;
+    this.m_dealPrice = 0;
+    this.m_dealKind = CBTalkDealLead();
+    this.m_wipes = 0;
+    this.m_wipesSinceTick = 0;
+    this.m_wipeTicks = 0;
+    this.m_frameGen += 1;
+    CBTalkTemper(npc);
     this.Listen(player);
     let reactions = npc.GetStimReactionComponent();
     if IsDefined(reactions) {
       reactions.CBGlanceAt(player);
     }
+    // A passer-by stops to talk (1.9.7), with the call the game itself uses to stop a pedestrian
+    // (reactionComponent.script, the crowd's CallPolice reaction); they walk on when it is over. Before
+    // this they kept walking and were out of range before V had chosen a line.
+    if npc.IsCrowd() && CBTalkStopWalkersOn() {
+      let crowd = npc.GetCrowdMemberComponent();
+      if IsDefined(crowd) && crowd.IsInCrowd() && crowd.CheckIsMoving() {
+        crowd.TryStopTrafficMovement();
+        npc.cbTalkStopped = true;
+      }
+    }
+    this.NextFrame(game);
     if CBTalkFirstOn() {
       ArrayClear(this.m_lines);
       ArrayPush(this.m_lines, CBTalkMakeLine("Talk", CBTalkActTalk(), t"ChoiceCaptionParts.TalkIcon"));
@@ -525,7 +631,19 @@ public class CBStreetTalk {
         t = fresh;
       }
     }
-    this.m_lines = CBTalkChoices(sys, t, this.m_exchanges > 0);
+    if this.m_menu == CBTalkMenuAsk() {
+      this.m_lines = CBTalkQuestionLines(sys, game, t);
+    } else {
+      if this.m_menu == CBTalkMenuDeal() {
+        this.m_lines = CBTalkDealLines(game, t, this.m_dealPrice, this.m_dealHaggled, this.m_dealKind);
+      } else {
+        if this.m_menu == CBTalkMenuBusiness() {
+          this.m_lines = CBTalkBusinessLines(sys, game, t);
+        } else {
+          this.m_lines = CBTalkChoices(sys, game, t, this.m_exchanges > 0);
+        }
+      }
+    }
     this.m_index = 0;
     this.m_stage = CBTalkStageOpen();
     this.m_lostFor = 0.0;
@@ -552,12 +670,26 @@ public class CBStreetTalk {
       return;
     }
     let line = this.m_lines[index];
+    // A greyed line (a price V cannot cover) cannot be chosen, as in the game's own lists.
+    if line.inactive {
+      return;
+    }
     if CBGameSubtitlesOn(game)
        && CBShowGameSubtitle(game, 2, "V", CBTalkWords(line.text), CBConfig.TalkLineSeconds()) {
       this.m_vLineLeft = CBConfig.TalkLineSeconds();
     }
     if line.act == CBTalkActLeave() {
       this.End(game, "V left it there");
+      return;
+    }
+    // Back to the main lines: no answer needed.
+    if line.act == CBTalkActMenuBack() {
+      this.m_menu = CBTalkMenuMain();
+      let sys = CyberbaneSystem.Get(game);
+      let player = GetPlayer(game);
+      if IsDefined(sys) && IsDefined(player) {
+        this.OpenLines(sys, game, player);
+      }
       return;
     }
     CBTalkClearHub(game);
@@ -581,6 +713,7 @@ public class CBStreetTalk {
     }
     t.first = !CBMaskHas(npc.cbTalkDone, choice);
     npc.cbTalkDone = CBMaskSet(npc.cbTalkDone, choice);
+    let again = !t.first;
     let a: ref<CBTalkAnswer>;
     if choice == CBTalkGreet() {
       a = CBTalkOnGreet(sys, game, player, t);
@@ -591,7 +724,11 @@ public class CBStreetTalk {
         if choice == CBTalkAntagonize() {
           a = CBTalkOnAntagonize(sys, game, player, t);
         } else {
-          a = CBTalkOnIntimidate(sys, game, player, t);
+          if choice == CBTalkIntimidate() {
+            a = CBTalkOnIntimidate(sys, game, player, t);
+          } else {
+            a = this.AnswerTopic(sys, game, player, t, choice, again);
+          }
         }
       }
     }
@@ -623,6 +760,84 @@ public class CBStreetTalk {
       return;
     }
     this.OpenLines(sys, game, player);
+  }
+
+  // The questions and the deal (Reactions/TalkTopics.reds); this keeps which list comes next.
+  private func AnswerTopic(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
+                           t: ref<CBTalkTarget>, choice: Int32, again: Bool) -> ref<CBTalkAnswer> {
+    if choice == CBTalkActMenuAsk() {
+      this.m_menu = CBTalkMenuAsk();
+      return CBTalkAnswerMenuAsk(t);
+    }
+    if choice == CBTalkActAskWord() {
+      return CBTalkAnswerWord(sys, game, t, again);
+    }
+    if choice == CBTalkActAskTurf() {
+      return CBTalkAnswerTurf(sys, game, t, again);
+    }
+    if choice == CBTalkActAskComing() {
+      return CBTalkAnswerComing(sys, game, t, again);
+    }
+    if choice == CBTalkActAskRival() {
+      return this.Offer(CBTalkAskRival(sys, game, player, t, again), CBTalkDealLead());
+    }
+    if choice == CBTalkActBusiness() {
+      this.m_menu = CBTalkMenuBusiness();
+      return CBTalkAnswerBusiness(t);
+    }
+    if choice == CBTalkActDealToll() {
+      return this.Offer(CBTalkAskToll(sys, game, t), CBTalkDealToll());
+    }
+    if choice == CBTalkActDealCallOff() {
+      return this.Offer(CBTalkAskCallOff(sys, game, t), CBTalkDealCallOff());
+    }
+    if choice == CBTalkActLifepath() {
+      return CBTalkAnswerLifepath(sys, game, t);
+    }
+    if choice == CBTalkActDealPay() {
+      let paid = CBTalkMoney(game) >= this.m_dealPrice;
+      let pay: ref<CBTalkAnswer>;
+      if this.m_dealKind == CBTalkDealToll() {
+        pay = CBTalkDealPayToll(sys, game, player, t, this.m_dealPrice);
+      } else {
+        if this.m_dealKind == CBTalkDealCallOff() {
+          pay = CBTalkDealPayCallOff(sys, game, player, t, this.m_dealPrice);
+        } else {
+          pay = CBTalkDealPay(sys, game, player, t, this.m_dealRival, this.m_dealPrice);
+        }
+      }
+      if paid {
+        this.m_menu = CBTalkMenuMain();
+      }
+      return pay;
+    }
+    if choice == CBTalkActDealHaggle() {
+      let h = CBTalkDealHaggle(sys, game, t, this.m_dealPrice);
+      this.m_dealPrice = h.price;
+      this.m_dealHaggled = true;
+      return h.answer;
+    }
+    if choice == CBTalkActDealLean() {
+      this.m_menu = CBTalkMenuMain();
+      return CBTalkDealLean(sys, game, player, t, this.m_dealRival);
+    }
+    if choice == CBTalkActDealForget() {
+      this.m_menu = CBTalkMenuMain();
+      return CBTalkSay(CBWhisperPick2("Your loss.", "Suit yourself."), n"");
+    }
+    return null;
+  }
+
+  // A price named: the deal goes up as the next list.
+  private func Offer(o: ref<CBTalkOffer>, kind: Int32) -> ref<CBTalkAnswer> {
+    if o.price > 0 {
+      this.m_menu = CBTalkMenuDeal();
+      this.m_dealKind = kind;
+      this.m_dealRival = o.rivalId;
+      this.m_dealPrice = o.price;
+      this.m_dealHaggled = !CBTalkHaggleOn();
+    }
+    return o.answer;
   }
 
   // A ganger or a cop who is hostile to V and will not talk says so (1.9.6). Once per person.
@@ -667,10 +882,24 @@ public class CBStreetTalk {
     if wasOn && this.m_exchanges > 0 && IsDefined(this.m_target) && IsDefined(this.m_target.npc) {
       let sys = CyberbaneSystem.Get(game);
       this.m_target.npc.cbTalkTick = IsDefined(sys) ? Max(sys.GetTickCount(), 1) : 1;
+      this.m_target.npc.cbTalkTimes += 1;
+    }
+    // A passer-by V stopped walks on.
+    if IsDefined(this.m_target) && IsDefined(this.m_target.npc) && this.m_target.npc.cbTalkStopped {
+      this.m_target.npc.cbTalkStopped = false;
+      let crowd = this.m_target.npc.GetCrowdMemberComponent();
+      if IsDefined(crowd) && this.m_target.npc.IsAttached() {
+        crowd.ChangeMoveType(n"walk");
+      }
     }
     if wasOn {
-      CBLog.Info(n"Talk", s"Prompt down: \(why).");
+      if this.m_wipes > 0 {
+        CBLog.Info(n"Talk", s"Prompt down: \(why) (the game took the prompt off the screen \(this.m_wipes) times).");
+      } else {
+        CBLog.Info(n"Talk", s"Prompt down: \(why).");
+      }
     }
+    this.m_frameGen += 1;
     this.m_stage = CBTalkStageIdle();
     this.m_target = null;
     ArrayClear(this.m_lines);
@@ -858,7 +1087,9 @@ public class CBStreetTalk {
       return;
     }
     if Equals(name, n"ChoiceApply") || Equals(name, n"Choice1") {
-      if pressed {
+      // Only a list V can see can be answered (1.9.7). F pressed at somebody whose list the game had
+      // wiped said a line V never saw.
+      if pressed && CBTalkHubShown(this.m_game) {
         if this.m_stage == CBTalkStageOffered() {
           this.m_wantOpen = true;
         } else {
@@ -1016,6 +1247,9 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   }
   if !npc.IsHuman() || npc.IsMechanical() {
     return "not a person";
+  }
+  if npc.cbTalkWiped {
+    return "the game runs its own conversation for them";
   }
   // Somebody V sent on their way can be spoken to again a few minutes later (1.9.6); before that they
   // stayed out of reach until they streamed out.
@@ -1352,7 +1586,7 @@ public func CBTalkTitle(t: ref<CBTalkTarget>) -> String {
 // What V can say, as "[Tag] words": the game shows the tag the way it shows its own. Each line carries
 // what it does and how it is shown (1.9.6): an icon, dimmed once said to this person, the Rival question
 // highlighted. After the first exchange the list comes back with a way to leave it there.
-public func CBTalkChoices(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>, followUp: Bool) -> array<ref<CBTalkLine>> {
+public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, followUp: Bool) -> array<ref<CBTalkLine>> {
   let out: array<ref<CBTalkLine>>;
   let gang = NotEquals(t.faction, n"") && !t.cop;
   let m = t.mood;
@@ -1366,7 +1600,11 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>, follo
       greet = "[Greet] Easy. I'm just saying hi.";
     } else {
       if m == CBTalkHostile() {
-        greet = gang ? "[Parley] Easy. I'm not here to fight." : "[Greet] Relax. Not here for trouble.";
+        if gang && CBTalkStat(game, gamedataStatType.Cool) >= CBConfig.TalkAttributeCheck() {
+          greet = "[Cool] Easy. Nobody needs to bleed today.";
+        } else {
+          greet = gang ? "[Parley] Easy. I'm not here to fight." : "[Greet] Relax. Not here for trouble.";
+        }
       } else {
         greet = t.cop ? "[Greet] Evening, officer." : "[Greet] Hey, choom.";
       }
@@ -1378,6 +1616,19 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>, follo
   g.important = parley && !CBMaskHas(done, CBTalkGreet());
   g.said = CBMaskHas(done, CBTalkGreet());
   ArrayPush(out, g);
+  // Questions (1.9.7): the list of what they might know.
+  let ask = CBTalkMakeLine(t.cop ? "[Ask] Quick question, officer." : "[Ask] Got a minute?", CBTalkActMenuAsk(),
+                           t"ChoiceCaptionParts.ClueIcon");
+  ArrayPush(out, ask);
+  // Business (1.9.7): what a gang at war with V will sell. Only when there is something to sell.
+  if gang && CBTalkHasBusiness(sys, game, t) {
+    ArrayPush(out, CBTalkMakeLine("[Deal] Let's talk business.", CBTalkActBusiness(), t"ChoiceCaptionParts.PayIcon"));
+  }
+  // The line only this V has with them.
+  let life = CBTalkLifepathLine(game, t);
+  if IsDefined(life) {
+    ArrayPush(out, life);
+  }
   // Dismiss.
   let dismiss = "";
   if m == CBTalkFriendly() {
@@ -1389,9 +1640,12 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>, follo
       dismiss = m == CBTalkHostile() ? "[Dismiss] Out of my way." : "[Dismiss] Not now.";
     }
   }
-  let d = CBTalkMakeLine(dismiss, CBTalkDismiss(), t"ChoiceCaptionParts.BackOutIcon");
-  d.said = CBMaskHas(done, CBTalkDismiss());
-  ArrayPush(out, d);
+  // In a follow-up, Leave (below) ends it without the brush-off.
+  if !followUp {
+    let d = CBTalkMakeLine(dismiss, CBTalkDismiss(), t"ChoiceCaptionParts.BackOutIcon");
+    d.said = CBMaskHas(done, CBTalkDismiss());
+    ArrayPush(out, d);
+  }
   // Antagonize.
   let antagonize = "";
   if t.cop {
@@ -1424,7 +1678,9 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>, follo
       intimidate = "[Intimidate] Where's " + t.leadName + " hiding? Talk.";
       asks = true;
     } else {
-      intimidate = "[Intimidate] " + CBTalkThreat(sys.GetPrimaryArchetypeIndex());
+      // V's Body shows in the threat, the way the game shows an attribute line (1.9.7).
+      let body = CBTalkStat(game, gamedataStatType.Strength) >= CBConfig.TalkAttributeCheck();
+      intimidate = (body ? "[Body] " : "[Intimidate] ") + CBTalkThreat(sys.GetPrimaryArchetypeIndex());
     }
   }
   let it = CBTalkMakeLine(intimidate, CBTalkIntimidate(),
@@ -1652,11 +1908,24 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
       CBTalkConduct(sys, game, n"", CBConfig.TalkGreetConduct());
     }
     if t.mood == CBTalkFriendly() {
+      // A fan may stand V a drink (1.9.7).
+      if first {
+        let gift = CBTalkFanGift(sys, game, player);
+        if gift > 0 {
+          return CBTalkSay(CBWhisperPick3(s"No way. It's you. Here, drinks are on me. \(gift)eb.",
+                                          s"Wait till I tell everyone. Take this, \(gift)eb, for the stories.",
+                                          s"You're the real thing. Here, \(gift)eb. Don't argue."), n"greeting");
+        }
+      }
       let title = CBWhisperTitle(sys);
       if StrLen(title) > 0 {
         return CBTalkSay(CBWhisperPick3("No way. " + title + ", saying hi to me?", "Wait till I tell everyone. " + title + "!", "Hey! Big fan. Seriously."), n"greeting");
       }
       return CBTalkSay(CBWhisperPick3("Hey! Good to see you around.", "Evening. Stay safe out there.", "Heard good things about you."), n"greeting");
+    }
+    // They remember V while they are around (1.9.7).
+    if IsDefined(t.npc) && t.npc.cbTalkTimes > 0 {
+      return CBTalkSay(CBWhisperPick3("You again?", "Back already? What now?", "We just talked."), n"");
     }
     return CBTalkSay(CBWhisperPick4("Hey.", "Evening.", "Uh. Hi.", "Do I know you?"), n"greeting");
   }
@@ -1693,7 +1962,8 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
     // good (they hold back from V, as the frightened do, CBHoldsBackFromV); not, and they are as they were,
     // which for a gang at war with V means the fight starts once the talk is over.
     if first && !CBReputationFrozen() {
-      let chance = ClampF(CBTalkNerveGap(t) * CBConfig.ParleyScale() + CBConfig.ParleyBase(),
+      let cool = CBTalkStat(game, gamedataStatType.Cool) >= CBConfig.TalkAttributeCheck() ? CBConfig.TalkAttributeBonus() : 0.0;
+      let chance = ClampF(CBTalkNerveGap(t) * CBConfig.ParleyScale() + CBConfig.ParleyBase() + cool,
                           CBConfig.ParleyMin(), CBConfig.ParleyMax());
       if RandF() < chance * sys.WornPerk().breakMult {
         let calmed = CBTalkParleyCrew(sys, t);
@@ -1706,6 +1976,9 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
   }
   if first {
     CBTalkWarm(sys, game, t.faction, CBConfig.TalkGreetWarmth(), CBConfig.MercyCeiling());
+  }
+  if IsDefined(t.npc) && t.npc.cbTalkTimes > 0 {
+    return CBTalkSay(CBWhisperPick3("Back again? What is it now?", "You again. Make it quick.", "Thought we were done."), n"");
   }
   return CBTalkSay(CBWhisperPick3("Hey. You're all right, I guess.", "Choom.", "Evening. Keep it friendly."), n"greeting");
 }
@@ -1831,6 +2104,10 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   let chance = CBTalkNerveGap(t) * CBConfig.TalkIntimidateScale() + CBConfig.TalkIntimidateBase();
   if t.mood == CBTalkAfraid() {
     chance += CBConfig.TalkAfraidBonus();
+  }
+  // A V built like a wall does not have to raise their voice (1.9.7).
+  if CBTalkStat(game, gamedataStatType.Strength) >= CBConfig.TalkAttributeCheck() {
+    chance += CBConfig.TalkAttributeBonus();
   }
   chance = ClampF(chance * sys.WornPerk().breakMult, CBConfig.TalkIntimidateMin(), CBConfig.TalkIntimidateMax());
   if !gang {

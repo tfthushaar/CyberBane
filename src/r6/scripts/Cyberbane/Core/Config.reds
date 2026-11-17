@@ -1247,7 +1247,38 @@ public abstract class CBConfig {
   // How often the person is asked to look at V again while they talk (seconds), how many lines one
   // conversation can run to, and how long somebody V sent off stays out of reach (settled ticks).
   public static func TalkGlanceEvery() -> Float = 2.5
-  public static func TalkMaxExchanges() -> Int32 = 6
+  public static func TalkMaxExchanges() -> Int32 = 12
+  // Ticks in a row the game may wipe the list several times before the person is given up (1.9.7).
+  public static func TalkWipeGiveUpTicks() -> Int32 = 3
+  // What a lead costs in the street (Reactions/TalkTopics.reds): the Hub's price times these, for one of the
+  // Rival's own gang, of a gang at war with theirs, and of no gang.
+  public static func TalkPriceOwnGang() -> Float = 1.8
+  public static func TalkPriceEnemyGang() -> Float = 0.75
+  public static func TalkPriceCivilian() -> Float = 0.5
+  // How often a loyal ganger asked about one of their own warns them, haggling's odds and what it takes off.
+  public static func TalkLoyalWarnChance() -> Float = 0.35
+  public static func TalkHaggleBase() -> Float = 0.35
+  public static func TalkHaggleCut() -> Float = 0.65
+  // V's Body or Cool at or above this shows in a line and helps it (the game's attributes run 3 to 20).
+  public static func TalkAttributeCheck() -> Float = 12.0
+  public static func TalkAttributeBonus() -> Float = 0.25
+  public static func TalkLifepathWarmth() -> Float = 1.0
+  // A fan's drink: how often, how many a day across the street, and how much.
+  public static func TalkFanGiftChance() -> Float = 0.45
+  public static func TalkFanGiftsPerDay() -> Int32 = 2
+  public static func TalkFanGiftBase() -> Float = 40.0
+  public static func TalkFanGiftPerRenown() -> Float = 1.5
+  // Safe passage and calling off a crew, as shares of what the gang's pay-off would cost (Economy/Peace.reds),
+  // with a floor; how long passage lasts (game hours).
+  public static func TalkTollShare() -> Float = 0.25
+  public static func TalkTollMin() -> Float = 150.0
+  public static func TalkTollHours() -> Float = 4.0
+  public static func TalkCallOffShare() -> Float = 0.4
+  public static func TalkCallOffMin() -> Float = 250.0
+  // How long after a liar's story the street says so (real seconds).
+  public static func TalkLiarRevealSeconds() -> Float = 150.0
+  // The odds a seller texting a lead comes down when V says it is too much, before their standing and V's Cool.
+  public static func PhoneLeadHaggleBase() -> Float = 0.4
   public static func TalkSentRestTicks() -> Int32 = 180
   // How long the prompt keeps away after V reaches for a weapon with it up.
   public static func TalkQuietAfterReach() -> Float = 4.0
@@ -1288,7 +1319,7 @@ public abstract class CBConfig {
   public static func TalkFearPerDay() -> Float = 4.0
   public static func TalkConductPerDay() -> Float = 3.0
   public static func TalkTaxesPerDay() -> Int32 = 1
-  public static func TalkLeaksPerDay() -> Int32 = 1
+  public static func TalkLeaksPerDay() -> Int32 = 2
   public static func TalkTipsPerDay() -> Int32 = 1
   // Greet.
   public static func TalkGreetWarmth() -> Float = 0.6

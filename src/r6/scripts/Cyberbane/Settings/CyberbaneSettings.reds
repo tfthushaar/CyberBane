@@ -229,6 +229,30 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkFirst-Desc")
   public let talkFirst: Bool = true;
 
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkStopWalkers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkStopWalkers-Desc")
+  public let talkStopWalkers: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkLiars")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkLiars-Desc")
+  public let talkLiars: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkHaggle")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkHaggle-Desc")
+  public let talkHaggle: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkPhoneDeals")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkPhoneDeals-Desc")
+  public let talkPhoneDeals: Bool = true;
+
   // ---- Gangs ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

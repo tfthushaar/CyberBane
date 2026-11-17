@@ -174,6 +174,23 @@ public func CBRealPhoneChoices(hash: Int32) -> array<String> {
   }
   let store = sys.GetPhone();
   let thread = CBPhoneThreadOf(hash);
+  // A Rival's whereabouts on offer (1.9.7), while they are still for sale.
+  let lead = store.ThreadLead(thread);
+  if lead > 0 {
+    let r = sys.FindRivalById(lead);
+    if !IsDefined(r) || CBWhereaboutsForSale(sys, game, r) != 0 || sys.GetPendingFind() > 0 {
+      if !IsDefined(r) || CBWhereaboutsForSale(sys, game, r) != 0 {
+        store.ClearLead(thread);
+      }
+    } else {
+      ArrayPush(out, s"Deal: \(store.ThreadLeadPrice(thread))eb");
+      if !store.ThreadLeadHaggled(thread) && CBTalkHaggleOn() {
+        ArrayPush(out, "Too much");
+      }
+      ArrayPush(out, "Forget it");
+      return out;
+    }
+  }
   let faction = store.ThreadOffer(thread);
   if Equals(faction, n"") {
     return out;
@@ -202,6 +219,10 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   }
   let store = sys.GetPhone();
   let thread = CBPhoneThreadOf(hash);
+  if store.ThreadLead(thread) > 0 {
+    CBRealPhoneLeadReply(sys, game, store, thread, choice, ArraySize(choices));
+    return;
+  }
   let faction = store.ThreadOffer(thread);
   let cost = CBPeaceQuote(sys, game, faction);
   store.ClearOffer(thread);
@@ -220,6 +241,57 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
     store.Reply(game, thread, "Not paying. Send whoever you want.");
     CBPhoneFromGangFinal(game, faction, "Then we will be seeing you.");
   }
+}
+
+// V answered a lead offered by text (1.9.7): the deal, pushing back on the price once, or walking away.
+func CBRealPhoneLeadReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: ref<CBPhone>, thread: Int32,
+                          choice: Int32, count: Int32) -> Void {
+  let id = store.ThreadLead(thread);
+  let price = store.ThreadLeadPrice(thread);
+  let tipster = store.ThreadLeadTipster(thread);
+  let sender = store.ThreadName(thread);
+  if choice == 0 {
+    if CBTalkMoney(game) < price {
+      store.Reply(game, thread, "I don't have that on me.");
+      CBPhoneSendTinted(game, sender, "Then get it. The offer won't wait forever.", CBHudCyan());
+      return;
+    }
+    store.Reply(game, thread, s"Deal. \(price)eb.");
+    store.ClearLead(thread);
+    sys.RequestRivalDeal(id, price, tipster, sender);
+    return;
+  }
+  if choice == count - 1 {
+    store.ClearLead(thread);
+    store.Reply(game, thread, "Forget it.");
+    CBPhoneSendTinted(game, sender, CBWhisperPick2("Your loss.", "Suit yourself. Offer's gone."), CBHudCyan());
+    return;
+  }
+  // Too much: a gang that likes V comes down more readily, and V's Cool helps.
+  store.Reply(game, thread, CBWhisperPick2("Too much.", "For that? Come on."));
+  let chance = CBConfig.PhoneLeadHaggleBase();
+  let score = sys.GetScore();
+  if IsNameValid(tipster) && IsDefined(score) {
+    let posture = score.GetPosture(tipster);
+    if Equals(posture, ECBPosture.Allied) {
+      chance += 0.25;
+    } else {
+      if Equals(posture, ECBPosture.Friendly) {
+        chance += 0.15;
+      }
+    }
+  }
+  if CBTalkStat(game, gamedataStatType.Cool) >= CBConfig.TalkAttributeCheck() {
+    chance += 0.15;
+  }
+  if RandF() < chance {
+    let lower = Max(100, RoundF(Cast<Float>(price) * CBConfig.TalkHaggleCut() / 50.0) * 50);
+    store.SetLeadPrice(thread, lower);
+    CBPhoneSendTinted(game, sender, CBWhisperPick2(s"Fine. \(lower)eb. Last offer.", s"\(lower)eb, because I like you. Don't tell anyone."), CBHudCyan());
+    return;
+  }
+  store.SetLeadPrice(thread, price);
+  CBPhoneSendTinted(game, sender, CBWhisperPick2("Price is the price. Take it or don't.", s"\(price)eb. Not a cent less."), CBHudCyan());
 }
 
 public func CBRealPhoneThreadBodies(hash: Int32) -> array<String> {

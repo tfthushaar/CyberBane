@@ -3,6 +3,61 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 1.9.7 (17 November 2026)
+
+If you are coming from 1.9.5, read 1.9.6 below as well: this version builds on it.
+
+**New**
+- **Questions worth asking.** **[Ask] Got a minute?** opens questions, and the answers come from what is
+  really going on:
+  - **What's the word on the street?** The loudest story in this district, or who is pushing in on it.
+  - **Who runs these streets?** The gang that holds the district, whether it is bleeding or broken, who
+    wants it, and how that gang feels about you.
+  - **Anyone looking for me?** Whether a crew is on its way to you or being put together, and from which
+    gang, or which Rival is out looking for you. A ganger asked about their own people's plans may not
+    tell you.
+- **Buy a Rival's hiding place in the street.** Ask **"Heard anything about [Rival]?"** A ganger of a gang
+  at war with the Rival's sells cheap. One of the Rival's own people sells dear, refuses, or may warn the
+  Rival that you are asking. Somebody frightened enough, or a fan, just tells you. Otherwise they name a
+  price and you can **pay**, **haggle**, **lean on them** or **walk away**. What they ask depends on how
+  they feel about you, how afraid they are and what kind of person they are: some are greedy, some are
+  chatty, some are loyal to the bone.
+- **Some people lie.** Now and then somebody sells you a story instead of a hiding place, and a while
+  later the street lets you know. You can turn liars off.
+- **Business with a gang at war with you.** **[Deal] Let's talk business** comes up when there is
+  something to buy:
+  - **Safe passage.** Pay, and that gang's people on the street leave you alone for four hours.
+  - **Call off the crew.** If a crew of theirs is on its way to you, or being put together, pay one of
+    them and the crew turns around. The grudge itself stays.
+- **Deals by text.** On the Rivals page of the Hub, **Ask around** puts the word out, and somebody texts you
+  a price for the Rival's hiding place. Answer in the thread: **Deal**, **Too much** (once) or **Forget it**.
+  A gang that likes you comes down more readily. With this turned off, the button pays and hands you the
+  place at once, as before.
+- **Lines for who you are.** A Street Kid, a Nomad or a Corpo has a line of their own with the people
+  who would care, marked with the game's lifepath icon. A V with high Body shows it in their threats,
+  which work more often; high Cool shows in the parley and in haggling, which go your way more often.
+- **They remember you.** Talk to somebody again and they know it: "You again?"
+- **Fans.** Somebody who knows your name and likes it may stand you a drink, a few eddies, twice a day at
+  most.
+- Your History records what you bought, the drinks, the safe passage and the crews you called off.
+
+**Changes**
+- **People stop to talk.** A passer-by you start talking to stops walking, and walks on when you are done.
+  They used to keep walking and were out of reach before you had chosen a line. You can turn this off.
+- **Conversations last longer:** up to twelve exchanges.
+- **Up to two leads a day from each gang's people**, up from one.
+- A price you can't afford is greyed out and can't be chosen.
+
+**Fixes**
+- **The list of lines no longer disappears for some people.** For somebody standing at a spot of their
+  own (leaning on a wall, sitting, working), the game kept wiping the list off the screen, so the prompt
+  never showed and pressing F said a line you never saw. The list is now put back the moment it is
+  wiped, F only works while you can see the list, and anybody the game will not stop wiping it for is
+  left alone instead of half-working.
+
+**Settings** (Street talk): **Passers-by stop to talk**, **Some people lie**, **Haggling** and **Leads are a
+deal by text**, all on.
+
 ## 1.9.6 (17 November 2026)
 
 **New**

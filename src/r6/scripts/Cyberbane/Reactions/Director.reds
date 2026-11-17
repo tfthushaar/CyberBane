@@ -272,6 +272,12 @@ public class CBReactionDirector {
     if npc.cbHostileByCyberbane {
       return true;
     }
+    // Safe passage bought from one of theirs (Reactions/TalkTopics.reds, 1.9.7): their street people let V
+    // walk for a few hours.
+    let tollSys = CyberbaneSystem.Get(player.GetGame());
+    if IsDefined(tollSys) && tollSys.TollActive(faction, CBGameSeconds(player.GetGame())) {
+      return false;
+    }
     // Afraid of V more than they hate V (1.9.5). A vendetta used to turn every one of a gang's people
     // V walked past, so the more of them V had killed - which is what makes a gang afraid - the fewer
     // of them V could ever do anything with but fight, and nobody of a gang V had broken was ever

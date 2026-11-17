@@ -105,6 +105,14 @@ in active development. This page describes what the mod does and how it installs
   give up where one of their gang's Rivals is hiding, pay you to leave, or just leave, and it makes
   their whole gang fear you more: a way to be feared without a body. It works on gangers, civilians
   and the police, who only ever answer in words. Street talk in Mod Settings turns it off.
+- **People know things, and some of it is for sale.** **[Ask] Got a minute?** opens questions with real
+  answers: the word on the street, who runs it and how strong they are, and whether a crew is coming
+  for you. Ask about a Rival and you get their hiding place for a price you can pay, haggle over, lean
+  on them for, or walk away from; the Rival's own people sell dear, refuse, or warn them, and now and
+  then somebody sells you a story. A gang at war with you will sell safe passage for a few hours, or
+  call off a crew already on its way, under **[Deal] Let's talk business**. Street Kids, Nomads and
+  Corpos get lines of their own, high Body and Cool show in what you say, people remember you, and a
+  fan may stand you a drink. Passers-by stop walking while you talk to them.
 - **The street gets word back to you.** When a rumour about you reaches somewhere new, a
   contact may get in touch about what they heard. If people saw you, your name is in it. If
   nobody did, it arrives as a question about who is doing this.
@@ -195,8 +203,11 @@ in active development. This page describes what the mod does and how it installs
   they are there, somewhere round the place you cannot see from where you stand, not expecting
   anybody: catch them before they react and the street hears about it. Wait too long and they move on. They still
   come for you on their own schedule as well. You do not have to wait for a tip: click a Rival on
-  the Hub and **Ambush them** buys where they are hiding, for more the higher their rank. If nobody
-  has seen them anywhere useful, the seller tracks them down a few blocks from you. **Tips on where
+  the Hub and **Ask around**, and somebody texts you a price for where they are hiding, more the
+  higher their rank. Answer in the thread: take it, tell them it is too much (once), or walk away.
+  With **Leads are a deal by text** off, or messages not going to the phone, the button is **Ambush
+  them** and buys it outright. If nobody has seen them anywhere useful, the seller tracks them down a
+  few blocks from you. You can also ask people in the street. **Tips on where
   Rivals are**, under Rivals, turns all of this off.
 - **Rivals have traits, and weak spots.** A Tough Rival takes more killing, an Armored one
   shrugs off more of it, a Deadeye finds the gap in your armour, a Quick one dodges, a Pack
@@ -398,7 +409,8 @@ its own.
 
 - **Talking to people:** the game's own choice keys. Look at somebody up close with your hands empty
   and press F (A) on Talk; scroll (D-pad up and down) to pick a line and press F (A) to say it. Walk
-  away or look away and the conversation ends; reach for a weapon and it ends at once. It never comes up while you are crouched. When
+  away or look away and the conversation ends; reach for a weapon and it ends at once. A greyed line
+  is a price you can't cover. It never comes up while you are crouched. When
   a ganger of a gang at war with you warns you off, walk towards them with empty hands and they hold
   their fire for half a minute to hear you out, and they won't draw while you are talking. It works on people sitting, leaning or
   working too, and in bars and other safe places, where it stays words: nobody runs off or picks a

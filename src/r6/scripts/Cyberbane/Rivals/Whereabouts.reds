@@ -994,7 +994,8 @@ public func CBMarkLeadTold(sys: ref<CyberbaneSystem>, s: ref<CBSighting>, tipste
 // Carry out a purchase chosen on the Hub, from the settled tick (CyberbaneSystem.ServiceHubActions).
 // Nothing is paid unless there is a place to sell: where they were last seen, when that still holds,
 // or else somewhere the seller tracks them down near V.
-public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32) -> Bool {
+public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32,
+                                  opt agreedPrice: Int32, opt dealTipster: CName, opt dealSender: String) -> Bool {
   if !IsDefined(sys) || !CBWorldStable(game) {
     return false;
   }
@@ -1010,7 +1011,7 @@ public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBLog.Info(n"Rivals", s"Whereabouts of rival \(id) not for sale any more (\(why)).");
     return false;
   }
-  let price = CBWhereaboutsPrice(r);
+  let price = agreedPrice > 0 ? agreedPrice : CBWhereaboutsPrice(r);
   let money = ItemID.FromTDBID(t"Items.money");
   if ts.GetItemQuantity(player, money) < price {
     CBSystemNote(game, s"not enough eddies for that. It costs \(price)eb.", 4.0);
@@ -1023,19 +1024,86 @@ public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance,
     return false;
   }
   ts.RemoveItem(player, money, price);
-  let tipster = CBPickTipster(sys, r.faction);
+  let tipster = agreedPrice > 0 ? dealTipster : CBPickTipster(sys, r.faction);
   CBMarkLeadTold(sys, s, tipster, CBGameSeconds(game));
   let name = CBRivalDisplayName(sys.GetContent(), r);
   let line = CBTipLine(name, CBPlacePhrase(s.district), IsNameValid(tipster), CBMapMarkersOn());
-  if IsNameValid(tipster) {
-    CBPhoneFromAlly(game, tipster, line);
+  // A deal made by text is answered in the same thread it was made in.
+  if agreedPrice > 0 && StrLen(dealSender) > 0 {
+    CBPhoneSendTinted(game, dealSender, line, CBHudCyan());
   } else {
-    if IsNameValid(s.district) {
-      CBPhoneFromDistrict(game, s.district, line);
+    if IsNameValid(tipster) {
+      CBPhoneFromAlly(game, tipster, line);
     } else {
-      CBPhoneFromStreet(game, line);
+      if IsNameValid(s.district) {
+        CBPhoneFromDistrict(game, s.district, line);
+      } else {
+        CBPhoneFromStreet(game, line);
+      }
     }
   }
   CBLog.Info(n"Rivals", s"Bought rival \(id)'s whereabouts for \(price)eb: \(NameToString(s.district)).");
+  return true;
+}
+
+// ---- A lead as a deal by text (1.9.7) ----
+//
+// "Find them" on the Hub used to take the money and hand over the place in one go. With phone deals on,
+// it puts the word out instead: whoever would sell it (the tipster CBPickTipster picks, or the broker for
+// this part of town) texts V a price, and V answers in the thread: deal, too much, or forget it
+// (UI/RealPhone.reds). The money and the place still go through CBBuyRivalWhereabouts.
+
+public func CBPhoneDealsReady() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  let on = !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().talkPhoneDeals;
+  return on && CBRealPhoneOn() && CBToastsOn();
+}
+
+// What the seller asks: the Hub's price, less from a gang that likes V, a little more from one that does
+// not care, and never quite the same twice.
+public func CBPhoneLeadPrice(sys: ref<CyberbaneSystem>, r: ref<CBRival>, tipster: CName) -> Int32 {
+  let price = Cast<Float>(CBWhereaboutsPrice(r));
+  let score = sys.GetScore();
+  if IsNameValid(tipster) && IsDefined(score) {
+    let posture = score.GetPosture(tipster);
+    if Equals(posture, ECBPosture.Allied) {
+      price *= 0.8;
+    } else {
+      if Equals(posture, ECBPosture.Friendly) {
+        price *= 0.9;
+      } else {
+        price *= 1.1;
+      }
+    }
+  }
+  price *= RandRangeF(0.9, 1.15);
+  return Max(100, RoundF(price / 50.0) * 50);
+}
+
+public func CBOfferRivalLead(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32) -> Bool {
+  let r = sys.FindRivalById(id);
+  if !IsDefined(r) || CBWhereaboutsForSale(sys, game, r) != 0 {
+    return false;
+  }
+  let tipster = CBPickTipster(sys, r.faction);
+  let sender = "";
+  if IsNameValid(tipster) {
+    sender = CBPhoneGangSender(tipster);
+  } else {
+    sender = NotEquals(sys.GetCurrentDistrict(), n"") ? CBPhoneDistrictSender(sys.GetCurrentDistrict()) : CBPhoneStreetSender(RandRange(0, 4));
+  }
+  let price = CBPhoneLeadPrice(sys, r, tipster);
+  let name = CBRivalDisplayName(sys.GetContent(), r);
+  let line = "";
+  switch RandRange(0, 3) {
+    case 0: line = s"Heard you're asking after \(name). I know where they sleep. \(price)eb and it's yours."; break;
+    case 1: line = s"\(name)? We know where. \(price)eb, and you didn't get it from us."; break;
+    default: line = s"Word is you want \(name). \(price)eb buys you an address."; break;
+  }
+  CBPhoneSendTinted(game, sender, line, CBHudCyan());
+  if !sys.GetPhone().OfferLead(sender, r.id, price, tipster) {
+    return false;
+  }
+  CBLog.Info(n"Rivals", s"Put the word out for rival \(id); offered for \(price)eb by text.");
   return true;
 }

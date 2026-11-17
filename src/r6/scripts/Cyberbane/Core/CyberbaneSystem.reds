@@ -78,6 +78,14 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pendingForgets: array<Int32>;
   // A Rival whose whereabouts V is buying on the Hub, the same way. 0 = none.
   private let m_pendingFind: Int32;
+  // A lead agreed by text (1.9.7): the price and who sold it. 0 when the Hub's request is a fresh one.
+  private let m_pendingFindPrice: Int32;
+  private let m_pendingFindTipster: CName;
+  private let m_pendingFindSender: String;
+  // Safe passage bought in the street (Reactions/TalkTopics.reds): the gang, and until when (game seconds).
+  // Session only: a few hours that a load does not bring back.
+  private let m_tollFaction: array<CName>;
+  private let m_tollUntil: array<Float>;
   // Bodies that were still in the world when their Rival's encounter ended, and whose they were
   // (CBCloseRivalEncounter). Session only: entity ids mean nothing in another session.
   private let m_formerBodyIds: array<EntityID>;
@@ -505,6 +513,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     // still carries it out (ApplyPlaythroughNotes). A purchase is not: nothing was paid yet.
     ArrayClear(this.m_pendingForgets);
     this.m_pendingFind = 0;
+    this.m_pendingFindPrice = 0;
+    ArrayClear(this.m_tollFaction);
+    ArrayClear(this.m_tollUntil);
     ArrayClear(this.m_formerBodyIds);
     ArrayClear(this.m_formerBodyRivals);
     ArrayClear(this.m_packIds);
@@ -2062,6 +2073,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // like a pay-off does. 0 takes the request back.
   public func RequestRivalFind(id: Int32) -> Void {
     this.m_pendingFind = Max(id, 0);
+    this.m_pendingFindPrice = 0;
     if id > 0 {
       CBLog.Info(n"UI", s"Buying rival \(id)'s whereabouts chosen on the Hub.");
     }
@@ -2069,6 +2081,30 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetPendingFind() -> Int32 {
     return this.m_pendingFind;
+  }
+
+  // A lead agreed by text (UI/RealPhone.reds): bought at that price on the next settled tick.
+  public func RequestRivalDeal(id: Int32, price: Int32, tipster: CName, sender: String) -> Void {
+    this.m_pendingFind = Max(id, 0);
+    this.m_pendingFindPrice = price;
+    this.m_pendingFindTipster = tipster;
+    this.m_pendingFindSender = sender;
+    CBLog.Info(n"UI", s"A deal for rival \(id)'s whereabouts agreed by text at \(price)eb.");
+  }
+
+  public func AddToll(faction: CName, until: Float) -> Void {
+    let i = ArrayFindFirst(this.m_tollFaction, faction);
+    if i >= 0 {
+      this.m_tollUntil[i] = MaxF(this.m_tollUntil[i], until);
+      return;
+    }
+    ArrayPush(this.m_tollFaction, faction);
+    ArrayPush(this.m_tollUntil, until);
+  }
+
+  public func TollActive(faction: CName, now: Float) -> Bool {
+    let i = ArrayFindFirst(this.m_tollFaction, faction);
+    return i >= 0 && now < this.m_tollUntil[i];
   }
 
   // Carry out what was chosen on the Hub while the game was paused. Called from the settled part
@@ -2108,8 +2144,18 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     if this.m_pendingFind > 0 {
       let findId = this.m_pendingFind;
+      let agreed = this.m_pendingFindPrice;
       this.m_pendingFind = 0;
-      CBBuyRivalWhereabouts(this, game, findId);
+      this.m_pendingFindPrice = 0;
+      // Agreed by text: bought at that price. Chosen on the Hub: a tipster texts a price to haggle over
+      // (1.9.7), or, with phone deals off or no phone to text, it is bought outright as before.
+      if agreed > 0 {
+        CBBuyRivalWhereabouts(this, game, findId, agreed, this.m_pendingFindTipster, this.m_pendingFindSender);
+      } else {
+        if !CBPhoneDealsReady() || !CBOfferRivalLead(this, game, findId) {
+          CBBuyRivalWhereabouts(this, game, findId);
+        }
+      }
     }
     if NotEquals(this.m_pendingPeace, n"") {
       let faction = this.m_pendingPeace;
@@ -3678,6 +3724,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     // playthrough's Rival of the same id.
     ArrayClear(this.m_pendingForgets);
     this.m_pendingFind = 0;
+    this.m_pendingFindPrice = 0;
+    ArrayClear(this.m_tollFaction);
+    ArrayClear(this.m_tollUntil);
     ArrayClear(this.m_formerBodyIds);
     ArrayClear(this.m_formerBodyRivals);
     ArrayClear(this.m_packIds);

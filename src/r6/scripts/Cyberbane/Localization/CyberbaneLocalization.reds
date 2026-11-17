@@ -37,6 +37,14 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TalkShakedowns-Desc", "Whether a ganger you intimidate may pay you to go away, once a day per gang. It costs you Conduct. Off, they only give up a Rival's hiding place or leave.");
     this.Text("Cyberbane-Settings-TalkFirst", "Ask first");
     this.Text("Cyberbane-Settings-TalkFirst-Desc", "On: looking at somebody up close brings up a single Talk prompt, and F opens the lines, the way the game's own conversations start. Off: the lines come up straight away.");
+    this.Text("Cyberbane-Settings-TalkStopWalkers", "Passers-by stop to talk");
+    this.Text("Cyberbane-Settings-TalkStopWalkers-Desc", "Somebody walking past stops when you start talking to them, and walks on when you are done. Off, they keep walking and the conversation ends when they are out of reach.");
+    this.Text("Cyberbane-Settings-TalkLiars", "Some people lie");
+    this.Text("Cyberbane-Settings-TalkLiars-Desc", "Now and then somebody sells you a story instead of a Rival's hiding place. The street lets you know afterwards. Off, everybody who tells you something tells the truth.");
+    this.Text("Cyberbane-Settings-TalkHaggle", "Haggling");
+    this.Text("Cyberbane-Settings-TalkHaggle-Desc", "When somebody names a price, in the street or by text, you can tell them it is too much, once. They may come down, stand firm, or ask for more. Off, the price is the price.");
+    this.Text("Cyberbane-Settings-TalkPhoneDeals", "Leads are a deal by text");
+    this.Text("Cyberbane-Settings-TalkPhoneDeals-Desc", "Asking around for a Rival on the Hub puts the word out, and somebody texts you a price you answer in the thread. Off, the Hub's button pays and hands you the place at once. Needs messages going to the phone.");
     this.Text("Cyberbane-Settings-Category-Gangs", "Gangs");
     this.Text("Cyberbane-Settings-Category-Morale", "Morale");
     this.Text("Cyberbane-Settings-Category-Economy", "Economy");

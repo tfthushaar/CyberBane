@@ -2801,7 +2801,11 @@ public class CBHud {
           let price = CBWhereaboutsPrice(r);
           if why == 0 {
             if CBHudEddies(game) >= price {
-              this.SetAction(this.m_findArmed == id ? s"Confirm: pay \(price)eb" : s"Ambush them: \(price)eb", true);
+              if CBPhoneDealsReady() {
+                this.SetAction(this.m_findArmed == id ? "Confirm: put the word out" : s"Ask around: about \(price)eb", true);
+              } else {
+                this.SetAction(this.m_findArmed == id ? s"Confirm: pay \(price)eb" : s"Ambush them: \(price)eb", true);
+              }
             } else {
               this.SetAction("Not enough eddies", false);
             }
@@ -3687,6 +3691,9 @@ func CBHudRivalWhere(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiv
   }
   let price = CBWhereaboutsPrice(r);
   if sys.GetPendingFind() == r.id {
+    if CBPhoneDealsReady() {
+      return "Putting the word out. Somebody texts you a price as soon as you are back in the game.";
+    }
     return s"Paying \(price)eb for where they are. It goes through as soon as you are back in the game.";
   }
   if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
@@ -3702,6 +3709,12 @@ func CBHudRivalWhere(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiv
   }
   let why = CBWhereaboutsForSale(sys, game, r);
   if why == 0 {
+    if CBPhoneDealsReady() {
+      if findArmed == r.id {
+        return "Click again to put the word out for where they are hiding.";
+      }
+      return s"Put the word out and somebody texts you a price for where they are hiding, about \(price)eb. Answer in the thread: take it, push back once, or walk away. Then go there on foot and catch them unawares. You have \(CBHudEddies(game))eb.";
+    }
     if findArmed == r.id {
       return s"Click again to pay \(price)eb for where they are hiding.";
     }
@@ -3898,6 +3911,19 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   }
   if Equals(e.kind, n"TalkFear") {
     return StrLen(gang) > 0 ? s"Leaning on their people made \(gang) fear you more." : "Leaning on people made the street fear you more.";
+  }
+  if Equals(e.kind, n"TalkBought") {
+    return s"You paid \(who) \(RoundF(e.value))eb for where a Rival was hiding.";
+  }
+  if Equals(e.kind, n"TalkFan") {
+    return s"A fan stood you a drink: \(RoundF(e.value))eb.";
+  }
+  if Equals(e.kind, n"TalkToll") {
+    return StrLen(gang) > 0 ? s"You paid \(gang) \(RoundF(e.value))eb to walk their streets in peace for a few hours."
+                            : s"You paid \(RoundF(e.value))eb for safe passage.";
+  }
+  if Equals(e.kind, n"TalkCallOff") {
+    return s"You paid \(who) \(RoundF(e.value))eb to call off the crew coming for you.";
   }
   return NameToString(e.kind);
 }

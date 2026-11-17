@@ -166,6 +166,12 @@ public class CBPhone {
   // The gang whose offer V can answer in this thread, or n"" when there is nothing to answer.
   // Only ever a gang V can actually buy off, and re-checked every time the thread is drawn.
   private let m_thOffer: array<CName>;
+  // A Rival's whereabouts offered for sale in this thread (1.9.7): the Rival (0 none), the price, the gang
+  // selling (n"" for a broker), and whether V has already pushed back on the price once.
+  private let m_thLead: array<Int32>;
+  private let m_thLeadPrice: array<Int32>;
+  private let m_thLeadTipster: array<CName>;
+  private let m_thLeadHaggled: array<Bool>;
   // Every message, oldest first, each tagged with the thread it belongs to, and whether V
   // sent it (a reply) or received it.
   private let m_msgThread: array<Int32>;
@@ -621,6 +627,54 @@ public class CBPhone {
     }
   }
 
+  // One lead on offer at a time: a new one replaces any other.
+  public func OfferLead(sender: String, rivalId: Int32, price: Int32, tipster: CName) -> Bool {
+    let thread = this.ThreadFor(sender);
+    if thread < 0 {
+      return false;
+    }
+    let i = 0;
+    while i < ArraySize(this.m_thLead) {
+      this.m_thLead[i] = 0;
+      i += 1;
+    }
+    this.m_thLead[thread] = rivalId;
+    this.m_thLeadPrice[thread] = price;
+    this.m_thLeadTipster[thread] = tipster;
+    this.m_thLeadHaggled[thread] = false;
+    return true;
+  }
+
+  public func ThreadLead(i: Int32) -> Int32 {
+    return i >= 0 && i < ArraySize(this.m_thLead) ? this.m_thLead[i] : 0;
+  }
+
+  public func ThreadLeadPrice(i: Int32) -> Int32 {
+    return i >= 0 && i < ArraySize(this.m_thLeadPrice) ? this.m_thLeadPrice[i] : 0;
+  }
+
+  public func ThreadLeadTipster(i: Int32) -> CName {
+    return i >= 0 && i < ArraySize(this.m_thLeadTipster) ? this.m_thLeadTipster[i] : n"";
+  }
+
+  public func ThreadLeadHaggled(i: Int32) -> Bool {
+    return i >= 0 && i < ArraySize(this.m_thLeadHaggled) && this.m_thLeadHaggled[i];
+  }
+
+  // The seller's answer to "too much": the price they stand on now, haggled once.
+  public func SetLeadPrice(i: Int32, price: Int32) -> Void {
+    if i >= 0 && i < ArraySize(this.m_thLeadPrice) {
+      this.m_thLeadPrice[i] = price;
+      this.m_thLeadHaggled[i] = true;
+    }
+  }
+
+  public func ClearLead(i: Int32) -> Void {
+    if i >= 0 && i < ArraySize(this.m_thLead) {
+      this.m_thLead[i] = 0;
+    }
+  }
+
   public func SetFocusedThread(hash: Int32) -> Void {
     this.m_focusedHash = hash;
   }
@@ -643,6 +697,10 @@ public class CBPhone {
     ArrayPush(this.m_thUnread, 0);
     ArrayPush(this.m_thTime, empty);
     ArrayPush(this.m_thOffer, n"");
+    ArrayPush(this.m_thLead, 0);
+    ArrayPush(this.m_thLeadPrice, 0);
+    ArrayPush(this.m_thLeadTipster, n"");
+    ArrayPush(this.m_thLeadHaggled, false);
     ArrayPush(this.m_thLastBody, "");
     ArrayPush(this.m_thLastAt, 0.0);
     return ArraySize(this.m_thName) - 1;
@@ -1129,6 +1187,10 @@ public class CBPhone {
     ArrayClear(this.m_thUnread);
     ArrayClear(this.m_thTime);
     ArrayClear(this.m_thOffer);
+    ArrayClear(this.m_thLead);
+    ArrayClear(this.m_thLeadPrice);
+    ArrayClear(this.m_thLeadTipster);
+    ArrayClear(this.m_thLeadHaggled);
     ArrayClear(this.m_thLastBody);
     ArrayClear(this.m_thLastAt);
     ArrayClear(this.m_hsSender);

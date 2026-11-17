@@ -66,6 +66,9 @@ the log says so because a prompt closing is never logged, only one failing to op
 
 ## 2. Gangers who reply and haggle over a Rival's whereabouts
 
+**Built in 1.9.7:** both: the street (ask, a price by temperament and standing, pay, haggle, lean, forget, the loyal
+who warn, the rare liar) and the phone (the Hub's button puts the word out; Deal / Too much / Forget it in the thread).
+
 Today a lead is bought on the Hub at a fixed price (`CBWhereaboutsPrice`: base plus so much a rank), paid at
 once, and a gang at war with the Rival's texts it (`CBPickTipster`, `CBTipLine`). Nobody answers back. Two
 places a deal could be struck instead, both feasible:
@@ -99,6 +102,8 @@ by their posture to V. Each round is one text, so it takes a little time, which 
 ## 3. Talking the way the game does it
 
 **Built in 1.9.6:** items 1, 2 and 3 (icons and line types, "Talk" first, eyes on V and a longer keep range).
+**Built in 1.9.7:** item 4 (lifepath lines with the game's lifepath icons; Body and Cool shown in the threat, the
+parley and haggling; a price V cannot cover greyed and unselectable).
 
 **How the game handles a story character** (read from its scripts, `tools/redmod/scripts`):
 
@@ -152,6 +157,9 @@ by their posture to V. Each round is one text, so it takes a little time, which 
 ## 4. Making talk worth doing
 
 **Built in 1.9.6:** item 1 (the History lines and the gang page's "today" line).
+**Built in 1.9.7:** items 2 (the questions), 3 (leads, the toll and the crew called off; the lookout left out because
+allies already warn V), 6 (being remembered) and 7 (a fan's drink, as eddies; "who runs these streets" points V at
+the local gang).
 
 A conversation should leave V with something: information V can act on, a deal, a change in how a gang
 treats V, or a consequence. And V should be told what it did. Easiest first:
