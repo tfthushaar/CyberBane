@@ -484,6 +484,16 @@ public class CyberbaneService extends ScriptableService {
     return made;
   }
 
+  // Today's record for this gang if there is one, without making it (1.9.6): the Hub only reads.
+  public func FindTalkTally(playthroughId: CName, faction: CName, day: Int32) -> ref<CBTalkTally> {
+    for t in this.m_talkTallies {
+      if IsDefined(t) && Equals(t.playthroughId, playthroughId) && Equals(t.faction, faction) && t.day == day {
+        return t;
+      }
+    }
+    return null;
+  }
+
   public func DropPlaythroughTalk(playthroughId: CName) -> Void {
     let i = ArraySize(this.m_talkTallies) - 1;
     while i >= 0 {

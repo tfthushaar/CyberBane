@@ -1070,6 +1070,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBSafeZoneArmsTick(this, game);     // keep the weapon lock lifted in safe areas when asked
     if this.m_tickCount % 2 == 0 {
       CBCombatReleaseTick(this, game);  // let go of anyone of ours keeping V in combat from afar
+      CBRearmTick(this, game);          // and set hostile again anyone of ours who came up neutral (1.9.6)
     }
     if this.m_tickCount % 5 == 2 {
       CBCompanionHostilityTick(this, game);   // V's companions and ours, set against each other

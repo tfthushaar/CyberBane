@@ -2431,6 +2431,11 @@ public class CBHud {
         }
       }
     }
+    // What talking to their people has done today (Reactions/StreetTalk.reds, 1.9.6).
+    let talked = CBHudTalkToday(sys, id);
+    if StrLen(talked) > 0 {
+      out += talked + "\n";
+    }
     let status = CBHudGangStatus(sys, fs);
     if StrLen(status) > 0 {
       out += "Right now: " + StrLower(status) + ".\n";
@@ -3831,6 +3836,48 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   return out;
 }
 
+// What talking to this gang's people has done today, in one line ("" for nothing yet).
+func CBHudTalkToday(sys: ref<CyberbaneSystem>, faction: CName) -> String {
+  let svc = IsDefined(sys) ? sys.GetPlayService() : null;
+  if !IsDefined(svc) {
+    return "";
+  }
+  let day = FloorF(CBGameSeconds(sys.GetGameInstance()) / CBConfig.SecondsPerDay());
+  let t = svc.FindTalkTally(sys.GetPlaythroughId(), faction, day);
+  if !IsDefined(t) {
+    return "";
+  }
+  let parts: array<String>;
+  if t.warmth > 0.05 {
+    ArrayPush(parts, "warmed to you");
+  }
+  if t.slight >= 0.05 {
+    ArrayPush(parts, "took offence");
+  }
+  if t.fear > 0.05 {
+    ArrayPush(parts, "fear you more");
+  }
+  if t.leaks > 0 {
+    ArrayPush(parts, "gave up a Rival");
+  }
+  if t.taxes > 0 {
+    ArrayPush(parts, "paid you off");
+  }
+  if ArraySize(parts) == 0 {
+    return "";
+  }
+  let line = "Today, from talking to their people: they ";
+  let i = 0;
+  while i < ArraySize(parts) {
+    if i > 0 {
+      line += i == ArraySize(parts) - 1 ? " and " : ", ";
+    }
+    line += parts[i];
+    i += 1;
+  }
+  return line + ".";
+}
+
 // What street talk put in the file (Reactions/StreetTalk.reds, 1.9.5), and the entry's own name for
 // anything this file does not know how to say.
 func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: String) -> String {
@@ -3842,6 +3889,15 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   }
   if Equals(e.kind, n"ShakeDown") {
     return s"You shook down \(who) for \(RoundF(e.value))eb.";
+  }
+  if Equals(e.kind, n"TalkWarm") {
+    return StrLen(gang) > 0 ? s"Talking to their people warmed \(gang) to you." : "Talking to people warmed them to you.";
+  }
+  if Equals(e.kind, n"TalkSlight") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) took offence at how you spoke to their people." : "People took offence at how you spoke to them.";
+  }
+  if Equals(e.kind, n"TalkFear") {
+    return StrLen(gang) > 0 ? s"Leaning on their people made \(gang) fear you more." : "Leaning on people made the street fear you more.";
   }
   return NameToString(e.kind);
 }

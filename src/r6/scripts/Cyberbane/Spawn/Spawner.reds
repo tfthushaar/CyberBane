@@ -1411,6 +1411,9 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
     }
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
   }
+  // Watched for a while in case it slips (CBRearmTick, 1.9.6).
+  let sysArm = CyberbaneSystem.Get(game);
+  puppet.cbArmTick = IsDefined(sysArm) ? Max(sysArm.GetTickCount(), 1) : 1;
   // And V's companions, who were never told. The game makes an enemy hostile to V's whole group
   // (AIActionHelper.TryChangingAttitudeToHostile, SetAttitudeTowardsAgentGroup); this was V alone, so
   // a follower - Jackie through Night City Allies - stood by while a Rival shot at V.
@@ -1430,6 +1433,51 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
   // of them has eyes on V, or hears V fighting, everybody close is told where V is. Until then they
   // search, and if they walk into V's line of sight the game's own perception starts the fight,
   // because they are hostile and aggressive.
+}
+
+// ---- Re-armed if they come up neutral (1.9.6) --------------------------------------------------------
+//
+// Another nemesis mod (Stay Dead) measured its spawned squads alive but neutral to V: hostility was set once,
+// at spawn, and had slipped by the time they mattered, for reasons it could not pin down. Cyberbane also sets
+// hostility once (CBMakeHostileToPlayer), so for the first RearmWatchTicks after that every one of ours is
+// looked at, and set hostile again if it reads anything else. Attitude only: no AI order, nobody who is down
+// or running, and nothing for the patrols, which are neutral on purpose and never pass through here.
+@addField(ScriptedPuppet)
+public let cbArmTick: Int32;
+
+@addField(ScriptedPuppet)
+public let cbArmLogged: Bool;
+
+public func CBRearmTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  let player = GetPlayer(game);
+  if !IsDefined(sys) || !IsDefined(des) || !IsDefined(player) || !CBWorldStable(game) {
+    return;
+  }
+  let pagent = player.GetAttitudeAgent();
+  if !IsDefined(pagent) {
+    return;
+  }
+  let tick = sys.GetTickCount();
+  let tags: array<CName> = [n"CB_Squad", n"CB_Escort", n"CB_Apex", n"CB_Rival", n"CB_Scout", n"CB_Lair"];
+  for tag in tags {
+    let ids = des.GetTaggedIDs(tag);
+    for id in ids {
+      let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+      if IsDefined(p) && p.cbArmTick > 0 && tick - p.cbArmTick <= CBConfig.RearmWatchTicks()
+         && p.IsAttached() && CBStillStanding(p) && !p.cbMoraleBroken {
+        let agent = p.GetAttitudeAgent();
+        if IsDefined(agent) && NotEquals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
+          CBTrace("attitude: one of ours came up neutral; hostile again");
+          agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
+          if !p.cbArmLogged {
+            p.cbArmLogged = true;
+            CBLog.Info(n"Spawn", "One of ours came up neutral to you after being set up; set hostile again.");
+          }
+        }
+      }
+    }
+  }
 }
 
 // One of ours is told exactly where V is, which starts the fight. Only ever from the hunt, once V

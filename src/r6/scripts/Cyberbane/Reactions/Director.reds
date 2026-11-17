@@ -315,11 +315,15 @@ public class CBReactionDirector {
     if npc.cbTalkHeldTick > 0 && tick - npc.cbTalkHeldTick <= 2 {
       return true;
     }
-    // And they let V walk up with empty hands, a while longer (1.9.5): a V coming to talk is not a V
-    // coming to fight. Twice the warning at most, so standing beside them is not a way to stall for ever.
-    if CBWarningsOn() && npc.cbGangWarnTick > 0 && dist <= CBConfig.TalkApproachHold()
+    // The parley (1.9.6). A gang that shoots V on sight made talking to its people impossible: they drew
+    // before V could reach them. After the warning, a V with empty hands, coming their way or standing
+    // within ParleyRange, gets the benefit of the doubt for up to ParleyMaxTicks: time to walk up and talk.
+    // A weapon in V's hands, or lingering past it, and they draw. What V says decides the rest
+    // (Reactions/StreetTalk.reds, the [Parley] line): talked down, they and their crew back off for good;
+    // not, and the fight starts the moment the talk is over.
+    if CBWarningsOn() && npc.cbGangWarnTick > 0 && dist <= CBConfig.ParleyRange()
        && !IsDefined(GameObject.GetActiveWeapon(player))
-       && tick - npc.cbGangWarnTick < CBConfig.GangWarnGraceTicks() * 2 {
+       && tick - npc.cbGangWarnTick < CBConfig.ParleyMaxTicks() {
       return true;
     }
     let agent = npc.GetAttitudeAgent();

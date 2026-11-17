@@ -35,6 +35,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-StreetTalk-Desc", "Look at somebody up close with your hands empty and the game's own choice prompt comes up: Greet, Dismiss, Antagonize or Intimidate. Scroll and press F to choose. How they answer, and what it does to your standing, depends on whether they know you, how much they and their gang fear and respect you, and how you work.");
     this.Text("Cyberbane-Settings-TalkShakedowns", "Shake-downs pay");
     this.Text("Cyberbane-Settings-TalkShakedowns-Desc", "Whether a ganger you intimidate may pay you to go away, once a day per gang. It costs you Conduct. Off, they only give up a Rival's hiding place or leave.");
+    this.Text("Cyberbane-Settings-TalkFirst", "Ask first");
+    this.Text("Cyberbane-Settings-TalkFirst-Desc", "On: looking at somebody up close brings up a single Talk prompt, and F opens the lines, the way the game's own conversations start. Off: the lines come up straight away.");
     this.Text("Cyberbane-Settings-Category-Gangs", "Gangs");
     this.Text("Cyberbane-Settings-Category-Morale", "Morale");
     this.Text("Cyberbane-Settings-Category-Economy", "Economy");

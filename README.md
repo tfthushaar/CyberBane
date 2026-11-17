@@ -93,9 +93,12 @@ in active development. This page describes what the mod does and how it installs
   gang: the bodies, the people of theirs you let walk, the Rival hunting you, who runs their crew now,
   and whether you have broken them. When a story about something you did has actually travelled to
   where you are standing, that is what people are talking about.
-- **You can talk to them.** Walk up to somebody and look at them with your hands empty, and the
-  game's own choice prompt comes up: Greet, Dismiss, Antagonize or Intimidate. Scroll and press F,
-  the same as the game's own choices. They answer according to what they know of you and how much
+- **You can talk to them.** Walk up to somebody and look at them with your hands empty, and a Talk
+  prompt comes up, the way the game's own conversations start. Press F for the lines: Greet,
+  Dismiss, Antagonize or Intimidate, each with the game's own icons. Scroll and press F, the same as
+  the game's own choices, and the conversation goes on, line by line, until you leave or walk off.
+  A gang at war with you lets you walk up with empty hands after its warning: **[Parley]** can talk
+  them and their crew down, or start the fight. They answer according to what they know of you and how much
   they and their gang fear and respect you, and the prompt tells you how they take you. Greeting a
   gang's people warms that gang a little at a time, and to a frightened member of a gang at war with
   you it reads as mercy. Antagonizing starts something. Intimidating somebody afraid enough makes them
@@ -393,11 +396,11 @@ To uninstall, remove the `r6\scripts\Cyberbane` folder, or disable the mod in Vo
 The Hub is a tab of the game's own menu, so it uses that menu's controls. Cyberbane adds no keys of
 its own.
 
-- **Talking to people:** the game's own choice keys. Look at somebody up close with your hands empty,
-  scroll (D-pad up and down) to pick a line, and press F (A) to say it. Walk away or look away and the
-  prompt goes; reach for a weapon and it goes at once. It never comes up while you are crouched. When
-  a ganger of a gang at war with you warns you off, you have about ten seconds to walk away or talk
-  them down, and they won't draw while you are talking. It works on people sitting, leaning or
+- **Talking to people:** the game's own choice keys. Look at somebody up close with your hands empty
+  and press F (A) on Talk; scroll (D-pad up and down) to pick a line and press F (A) to say it. Walk
+  away or look away and the conversation ends; reach for a weapon and it ends at once. It never comes up while you are crouched. When
+  a ganger of a gang at war with you warns you off, walk towards them with empty hands and they hold
+  their fire for half a minute to hear you out, and they won't draw while you are talking. It works on people sitting, leaning or
   working too, and in bars and other safe places, where it stays words: nobody runs off or picks a
   fight. It won't come up for vendors, story characters or the people at one of your jobs.
 

@@ -967,7 +967,14 @@ public class CBPhone {
 
   // Hand everything waiting to whichever surface is in use. Runs on a settled tick only.
   private func Deliver(game: GameInstance) -> Void {
-    if this.m_subDirty {
+    // Nothing talks over a conversation (1.9.6). While one of the game's dialogues is on screen, or a
+    // scene is playing, the overheard line and the texts wait; while V is talking to somebody through
+    // street talk, the texts wait. Waiting loses nothing: every text is already filed in its thread.
+    let gameTalk = CBGameDialogueUp(game) || CBPlayerInScene(game);
+    let sysTalk = CyberbaneSystem.Get(game);
+    let talk = IsDefined(sysTalk) ? sysTalk.GetStreetTalk() : null;
+    let ourTalk = IsDefined(talk) && talk.Busy();
+    if this.m_subDirty && !gameTalk {
       this.m_subDirty = false;
       this.m_subLeft = CBOverheardSeconds();
       this.m_subShown = 0.0;
@@ -979,6 +986,9 @@ public class CBPhone {
     }
     if ArraySize(this.m_pendBody) == 0 {
       this.m_phoneWaitSince = 0.0;
+      return;
+    }
+    if gameTalk || ourTalk {
       return;
     }
     let phoneMode = CBRealPhoneOn();

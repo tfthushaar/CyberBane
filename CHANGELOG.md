@@ -3,6 +3,36 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 1.9.6 (17 November 2026)
+
+**New**
+- **Talking is a conversation.** Look at somebody up close and a **Talk** prompt comes up, the way the
+  game's own conversations start; press F and the lines appear. Say something, hear the answer, and the
+  lines come back for more, with what you have already said dimmed, until you leave, walk off or look
+  away.
+- **The parley.** A gang at war with you no longer has to mean a fight on sight. After their warning,
+  walk up with your hands empty and they wait to hear you out. Talk them down with **[Parley]** and they
+  and the crew standing with them back off for good. Fail, and the fight starts when the talk is over.
+- **The lines look like the game's own:** an icon on each, the question about a Rival highlighted, the
+  ones you have already said dimmed.
+- **See what talking did.** Your History records when a gang warmed to you, took offence or came to
+  fear you more because of how you spoke to their people, and each gang's page says what talking did
+  today.
+
+**Changes**
+- The prompt stays on the person you chose, even in a group. It used to jump to the man beside them,
+  close and open again, so you never got to say anything.
+- The 45-second wait after every exchange is gone. A short wait now only follows the end of a
+  conversation.
+- Somebody you sent packing can be talked to again a few minutes later.
+- A ganger who will not talk to you says so.
+- Texts and overheard lines wait while a conversation is on screen, yours or the game's.
+- New setting under Street talk: **Ask first**. Off brings the lines up straight away, as before.
+
+**Fixes**
+- The people Cyberbane sends after you are checked for their first half minute and set hostile again if
+  they somehow come up neutral.
+
 ## 1.9.5 (17 November 2026)
 
 **New**

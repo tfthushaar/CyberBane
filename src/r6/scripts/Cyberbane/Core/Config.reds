@@ -61,6 +61,9 @@ public abstract class CBConfig {
   // How long somebody Cyberbane turned on V stays turned, out of a fight, once their gang has no vendetta
   // left against V (RevertNotFielding, 1.9.5): a pay-off, a cooled grudge, a street fight V picked.
   public static func HostileCoolTicks() -> Int32 = 30
+  // How long after being set up one of ours is watched for having slipped to neutral (Spawn/Spawner.reds,
+  // CBRearmTick, 1.9.6), in settled ticks.
+  public static func RearmWatchTicks() -> Int32 = 30
   // How long a gang's warning stands before they draw (Reactions/Director.reds, 1.9.5): long enough to
   // walk away, or to walk up and talk them down.
   public static func GangWarnGraceTicks() -> Int32 = 10
@@ -1232,10 +1235,20 @@ public abstract class CBConfig {
   // person can be spoken to again (fast ticks, about a second each).
   public static func TalkTickSeconds() -> Float = 0.2
   public static func TalkRange() -> Float = 2.6
-  public static func TalkKeepRange() -> Float = 3.6
+  public static func TalkKeepRange() -> Float = 4.5
   public static func TalkDwell() -> Float = 0.6
-  public static func TalkLookGrace() -> Float = 0.8
-  public static func TalkCooldownTicks() -> Int32 = 45
+  public static func TalkLookGrace() -> Float = 2.0
+  // After a conversation, before the same person can be spoken to again (1.9.6: it used to follow every
+  // single exchange, for 45).
+  public static func TalkCooldownTicks() -> Int32 = 8
+  // A conversation holds while its person is within keep range and inside this cone in front of V (cos of
+  // about 60 degrees), the crosshair wherever it likes (CBTalkFacing).
+  public static func TalkKeepDot() -> Float = 0.5
+  // How often the person is asked to look at V again while they talk (seconds), how many lines one
+  // conversation can run to, and how long somebody V sent off stays out of reach (settled ticks).
+  public static func TalkGlanceEvery() -> Float = 2.5
+  public static func TalkMaxExchanges() -> Int32 = 6
+  public static func TalkSentRestTicks() -> Int32 = 180
   // How long the prompt keeps away after V reaches for a weapon with it up.
   public static func TalkQuietAfterReach() -> Float = 4.0
   // How long V has to look at somebody with a weapon in hand before being told to put it away (once a launch).
@@ -1245,9 +1258,16 @@ public abstract class CBConfig {
   public static func TalkJobClearance() -> Float = 20.0
   // The job V is tracking keeps a little more: its people, not the neighbourhood (CBSafetyGate.CanTalkTo).
   public static func TalkTrackedClearance() -> Float = 30.0
-  // How close an empty-handed V can walk up to a ganger who has warned V before they draw, while V does
-  // (Reactions/Director.reds, TryGangHostile).
-  public static func TalkApproachHold() -> Float = 8.0
+  // The parley (Reactions/Director.reds, TryGangHostile; Reactions/StreetTalk.reds, CBTalkOnGreet): how
+  // close an empty-handed V may be to a ganger who has warned V, and for how long after the warning
+  // (settled ticks), before they draw; and the odds of talking them down, from the nerve gap like
+  // intimidation, held between the two bounds.
+  public static func ParleyRange() -> Float = 20.0
+  public static func ParleyMaxTicks() -> Int32 = 30
+  public static func ParleyBase() -> Float = 0.4
+  public static func ParleyScale() -> Float = 1.2
+  public static func ParleyMin() -> Float = 0.1
+  public static func ParleyMax() -> Float = 0.85
   public static func TalkFacingDot() -> Float = 0.9
   // The same reason for no prompt is logged at most this often (seconds).
   public static func TalkWhyLogSeconds() -> Float = 8.0

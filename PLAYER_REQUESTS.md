@@ -18,6 +18,23 @@ loot drops from corpses, and UI as data rather than injected widgets. **No `.red
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
 
+## Requests after 1.9.5
+
+### "Gangers just standing around: no weapons drawn, it didn't work; I could talk with NPCs fine, but gangers only once", and "if gangers are hostile on sight, a conversation is impossible"
+
+**Status: done in 1.9.6** (`Reactions/StreetTalk.reds`, the conversation; `Reactions/Director.reds`, the parley).
+The `[Cyberbane][Talk]` log showed the prompt opening eleven times in 42 s on Tyger Claws with no answer between
+(the look-at sliding between men standing together, 0.8 s of grace, the nearest-person fallback), the 45 s lockout
+after every exchange, and gang hostility that came before V could reach anybody. Street talk is now a small state
+machine (`CBTalkStage*`: Talk offered, lines open, answer waiting): a single "Talk" first, the lines on F, follow-ups
+until V leaves (`CBTalkActLeave`) or `TalkMaxExchanges`, the lockout only after a conversation ends. The target stays
+while within `TalkKeepRange` and the `TalkKeepDot` cone (`CBTalkFacing`); the fallback picks by angle. Every close is
+logged ("Prompt down: ..."). Lines carry the game's icons and choice types (`CBTalkLine`, `CBTalkPushHub`). A
+vendetta ganger who has warned V holds fire while an empty-handed V is within `ParleyRange`, for up to
+`ParleyMaxTicks`; the `[Parley]` line, once per person, talks them and their crew down (`CBTalkParleyCrew`: they hold
+back for good) or not. Hostile-on-sight that belongs to the game (its hostile zones) or to They Will Remember is
+left alone: those are the story's and that mod's to decide.
+
 ## Requests after 1.9.4
 
 ### "Reloading a checkpoint after dying crashes; gamelog.log ends on '[Cyber'. Does the Equipment-EX part not use the death ledger?" and "a similar crash after updating and opening the Wardrobe"

@@ -223,6 +223,12 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkShakedowns-Desc")
   public let talkShakedowns: Bool = true;
 
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkFirst")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkFirst-Desc")
+  public let talkFirst: Bool = true;
+
   // ---- Gangs ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

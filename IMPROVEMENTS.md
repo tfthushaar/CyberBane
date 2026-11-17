@@ -14,6 +14,10 @@ is redesigned around what Cyberbane already has.
 
 ## 1. Talking to gangers: what goes wrong, and the fixes
 
+**Built in 1.9.6:** items 1, 2, 3, 4 and 6, plus the parley (a vendetta ganger lets an empty-handed V walk up
+and talk; `[Parley]` can talk them and their crew down). Item 5 needed no change: Cyberbane's combat release
+already lets go of its own people who are far off, out of sight and not closing in (`CBCombatReleaseTick`).
+
 **The report (1.9.5, 17 November):** "So many times I tried to talk to gangers with no weapons drawn while
 they were just standing around and it didn't work. I could talk with NPCs fine, but gangers I could only
 speak to once."
@@ -94,6 +98,8 @@ by their posture to V. Each round is one text, so it takes a little time, which 
 
 ## 3. Talking the way the game does it
 
+**Built in 1.9.6:** items 1, 2 and 3 (icons and line types, "Talk" first, eyes on V and a longer keep range).
+
 **How the game handles a story character** (read from its scripts, `tools/redmod/scripts`):
 
 - **The bubble over their head** is a map pin attached to the person (`MappinSystem.RegisterMappinWithObject`
@@ -145,6 +151,8 @@ by their posture to V. Each round is one text, so it takes a little time, which 
 
 ## 4. Making talk worth doing
 
+**Built in 1.9.6:** item 1 (the History lines and the gang page's "today" line).
+
 A conversation should leave V with something: information V can act on, a deal, a change in how a gang
 treats V, or a consequence. And V should be told what it did. Easiest first:
 
@@ -190,6 +198,8 @@ Read from its scripts (72,000 lines of redscript, a CET part, Audioware sounds, 
 archives). It is a Shadow of War-style nemesis system with a lot of overlap with Cyberbane. Listed here are
 only the ideas that are feasible within Cyberbane's rules, easiest first. Each says what it does, what
 Cyberbane already has, and how ours would be built.
+
+**Built in 1.9.6:** items 1 (texts wait during a conversation) and 2 (the re-arm watch).
 
 ### Small
 
