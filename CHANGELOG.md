@@ -10,6 +10,13 @@ the next unless a version says otherwise.
   from 1 to 6 (default 2, the size every sit-down has been until now). Two gangs meet, so a sit-down has twice
   that many people. A bigger one stands in wider rings round the place. If too many of Cyberbane's people are
   already out, fewer turn up, the same number from each gang. You still crash it by taking out all but one.
+- **Sit-downs and bagmen come more often.** A sit-down was something you might hear about once every two hours
+  of play or more; now it's closer to once an hour. A bagman comes out about every 40 minutes instead of every
+  hour. Both still only happen when a gang holds the district you're in.
+
+**Gangs**
+- **Tribute arrives sooner.** A gang that fears you enough to pay took about four in-game days to actually
+  do it; now it's about two. Still at most once a week per gang.
 
 ## 2.1.0 (18 November 2026)
 

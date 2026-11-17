@@ -340,7 +340,10 @@ public abstract class CBConfig {
   public static func BuiltRecordCap() -> Int32 = 64
 
   // ---- Tribute (spec §9.8) ---------------------------------------------
-  public static func TributeChance() -> Float = 0.25
+  // Rolled once an in-game day per gang that qualifies. A quarter left a gang that qualified about four
+  // in-game days (some twelve hours of play) before it paid; a half is about two. The week between
+  // payments still holds.
+  public static func TributeChance() -> Float = 0.5
   public static func TributeCooldownDays() -> Float = 7.0
   // 75 until 1.9.3. A gang's fear is Dread scaled by how well it knows V, and Dread itself could
   // not get past the sixties, so outside the Scavs nobody ever paid.
@@ -1240,7 +1243,8 @@ public abstract class CBConfig {
   // A living street (Spawn/LivingStreet.reds, 2.0.0). Ticks are fast ticks (seconds).
   public static func WhileOutDelayTicks() -> Int32 = 20
   public static func BagmanGapTicks() -> Int32 = 1200
-  public static func BagmanChance() -> Float = 0.35
+  // A roll about every twenty minutes of free roaming. At 0.35 a bagman came about once an hour of play.
+  public static func BagmanChance() -> Float = 0.5
   public static func BagmanLifeTicks() -> Int32 = 300
   public static func BagmanTakeBase() -> Int32 = 600
   public static func BagmanGangLoss() -> Float = 3.0
@@ -1250,8 +1254,10 @@ public abstract class CBConfig {
   public static func FavourPay() -> Int32 = 700
   public static func FavourWarmth() -> Float = 2.0
   public static func FavourTipChance() -> Float = 0.35
-  public static func MeetGapTicks() -> Int32 = 2400
-  public static func MeetChance() -> Float = 0.3
+  // A roll about every half hour of free roaming. Forty minutes at 0.3 was a sit-down every two hours or
+  // more of play, before asking for a gang at war with the one holding the district.
+  public static func MeetGapTicks() -> Int32 = 1800
+  public static func MeetChance() -> Float = 0.5
   public static func MeetSpawnDistance() -> Float = 90.0
   public static func MeetWindowSeconds() -> Float = 5400.0
   public static func MeetGangLoss() -> Float = 4.0
