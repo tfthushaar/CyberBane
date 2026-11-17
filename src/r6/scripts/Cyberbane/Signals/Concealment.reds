@@ -16,7 +16,7 @@
 //      arms still counted the jacket under it.
 //   2. Anything else of V's clothing that is physically on V (CBAttachedGarments): what an outfit mod
 //      such as EquipmentEx puts in slots of its own, which the game's clothing areas know nothing about.
-//      Asked of the game by item ("is this attached to V anywhere", TransactionSystem.GetItemInSlotByItemID),
+//      Asked of the game by item ("is this attached to V anywhere", TransactionSystem.HasItemInAnySlot),
 //      so no slot name of any mod is typed here, and an item the game's areas already account for, or
 //      a second copy of a garment already counted, is left out.
 //
@@ -120,8 +120,11 @@ func CBAttachedGarments(game: GameInstance, equipped: array<ItemID>, seen: array
     i += 1;
     if IsDefined(d) {
       let id = d.GetID();
+      // A yes or no from the slots' own bookkeeping (1.9.5). GetItemInSlotByItemID answered the same
+      // question by handing back the garment's spawned object, which for a copy an outfit mod is putting
+      // on or taking off can be half made or on its way out; nothing here needs the object.
       if ItemID.IsValid(id) && !CBItemListHas(equipped, id) && !CBGarmentRecordListed(seen, id)
-         && !CBGarmentRecordListed(out, id) && IsDefined(ts.GetItemInSlotByItemID(player, id)) {
+         && !CBGarmentRecordListed(out, id) && ts.HasItemInAnySlot(player, id) {
         ArrayPush(out, id);
       }
     }
@@ -263,6 +266,15 @@ public func CBClothingCounts() -> Bool {
 
 // What V is wearing, both sources, and what it covers. One call per sample.
 public func CBReadWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>) -> ref<CBWornRead> {
+  // Never while a load is still putting V back together (CyberbaneSystem.WornReady, 1.9.5): the last
+  // reading, if there is one, and otherwise nothing worn.
+  let sys = CyberbaneSystem.Get(game);
+  if !IsDefined(sys) || !sys.WornReady() {
+    if IsDefined(sys) && IsDefined(sys.GetWorn()) {
+      return sys.GetWorn();
+    }
+    return new CBWornRead();
+  }
   let worn = new CBWornRead();
   if !IsDefined(data) || !CBClothingCounts() {
     return worn;
@@ -326,6 +338,10 @@ public func CBPlayerMasked(game: GameInstance) -> Bool {
   let sys = CyberbaneSystem.Get(game);
   if IsDefined(sys) && IsDefined(sys.GetWorn()) {
     return sys.GetWorn().masked;
+  }
+  // Before the session's first settled tick nothing has been read and nothing may be (1.9.5).
+  if !IsDefined(sys) || !sys.WornReady() {
+    return false;
   }
   return CBReadPlayerWorn(game).masked;
 }
@@ -466,29 +482,77 @@ public func CBLogEquippedTags(game: GameInstance) -> Void {
 // Equipment-EX blanks V's own clothing slots and shows its outfit as copies of the garments in slots
 // of its own (OutfitSlots.*), so Cyberbane went on reading the clothes underneath. Asked through
 // Codeware reflection, as They Will Remember is, so nothing here needs Equipment-EX to be installed.
+//
+// 1.9.5: read as data, never as objects. 1.9.4 asked the transaction system for the object in each
+// outfit slot (GetItemInSlot) and read the garment off it. Those objects are the copies Equipment-EX
+// spawns, and it clears and respawns them on every load and while its wardrobe changes an outfit, so an
+// object asked for at the wrong moment was half made or already gone, and the game crashed reading it.
+// Which garment a slot holds is in the slot's own bookkeeping the moment it is put there
+// (GetActiveItemInSlot, an item id), and that is all a garment's sleeves, trousers and mask are read
+// from. The reflection lookups are made once a launch and their return types checked, so a value is only
+// ever taken out as the type it really is (CBEqExProbe).
+
+// What Equipment-EX's outfit system offers, looked up once a launch. The functions belong to its class,
+// not to a session, so they stay good across loads; the system itself is fetched fresh on every read.
+public class CBEqExProbe {
+  public let state: Int32;   // 0 not looked yet, 1 usable, 2 absent or not the shape this reads
+  public let isActive: ref<ReflectionMemberFunc>;
+  public let usedSlots: ref<ReflectionMemberFunc>;
+
+  public func Resolve() -> Bool {
+    if this.state == 0 {
+      this.state = 2;
+      let type = Reflection.GetClass(n"EquipmentEx.OutfitSystem");
+      if IsDefined(type) {
+        let active = type.GetFunction(n"IsActive");
+        let used = type.GetFunction(n"GetUsedSlots");
+        if IsDefined(active) && IsDefined(used)
+           && ArraySize(active.GetParameters()) == 0 && ArraySize(used.GetParameters()) == 0
+           && CBReflectReturns(active, n"Bool") && CBReflectReturns(used, n"array:TweakDBID") {
+          this.isActive = active;
+          this.usedSlots = used;
+          this.state = 1;
+          CBLog.Info(n"Signals", "Equipment-EX found: its outfits are read as what V is wearing.");
+        }
+      }
+    }
+    return this.state == 1;
+  }
+}
+
+// Does this function hand back exactly this type? Checked before any value it returns is taken out of
+// its Variant, so a version of somebody else's mod that changed a signature reads as absent, not wrong.
+func CBReflectReturns(fn: ref<ReflectionFunc>, typeName: CName) -> Bool {
+  if !IsDefined(fn) {
+    return false;
+  }
+  let ret = fn.GetReturnType();
+  return IsDefined(ret) && Equals(ret.GetName(), typeName);
+}
 
 // The outfit slots Equipment-EX has filled, when it is wearing an outfit at all.
 public func CBEqExOutfitSlots(game: GameInstance, out slots: array<TweakDBID>) -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) {
+    return false;
+  }
+  let probe = rt.GetEqExProbe();
+  if !probe.Resolve() {
+    return false;
+  }
   let container = GameInstance.GetScriptableSystemsContainer(game);
-  let type = Reflection.GetClass(n"EquipmentEx.OutfitSystem");
-  if !IsDefined(container) || !IsDefined(type) {
+  if !IsDefined(container) {
     return false;
   }
   let outfits = container.Get(n"EquipmentEx.OutfitSystem");
   if !IsDefined(outfits) {
     return false;
   }
-  let isActive = type.GetFunction(n"IsActive");
-  let used = type.GetFunction(n"GetUsedSlots");
-  if !IsDefined(isActive) || !IsDefined(used) || ArraySize(isActive.GetParameters()) != 0
-     || ArraySize(used.GetParameters()) != 0 {
-    return false;
-  }
   let none: array<Variant>;
-  if !FromVariant<Bool>(isActive.Call(outfits, none)) {
+  if !FromVariant<Bool>(probe.isActive.Call(outfits, none)) {
     return false;
   }
-  slots = FromVariant<array<TweakDBID>>(used.Call(outfits, none));
+  slots = FromVariant<array<TweakDBID>>(probe.usedSlots.Call(outfits, none));
   return true;
 }
 
@@ -506,10 +570,10 @@ func CBReadEqExOutfit(game: GameInstance, worn: ref<CBWornRead>, slots: array<Tw
   let armSeen: array<Int32>;
   let legSeen: array<Int32>;
   for slot in slots {
-    let obj = ts.GetItemInSlot(player, slot);
-    if IsDefined(obj) {
-      let id = obj.GetItemID();
-      if ItemID.IsValid(id) && !CBGarmentRecordListed(worn.garments, id) {
+    // The garment the slot holds, by id (see the note above): its record is all that is read.
+    let id = ts.GetActiveItemInSlot(player, slot);
+    if ItemID.IsValid(id) {
+      if !CBGarmentRecordListed(worn.garments, id) {
         ArrayPush(worn.garments, id);
         worn.fromMods += 1;
       }

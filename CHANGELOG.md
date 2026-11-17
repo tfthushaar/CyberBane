@@ -3,6 +3,66 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 1.9.5 (17 November 2026)
+
+**New**
+- **Talk to people.** Walk up to somebody and look at them with your hands empty, and the game's own
+  choice prompt comes up: **Greet**, **Dismiss**, **Antagonize** or **Intimidate**. Scroll (the D-pad
+  on a controller) and press F (A) to choose, the same as the game's own choices. You say your line,
+  they answer in the game's subtitles, and what happens depends on what they know about you: whether
+  they recognise you, how much they and their gang fear and respect you, where you stand with their
+  gang, whether you have broken it, and how you work. The prompt's title tells you how they take you:
+  friendly, wary, afraid of you or hostile. It works on gangers, civilians and the police (the police
+  only ever answer in words).
+  - **Greet** warms a gang a little at a time, up to Friendly, and a gang that already likes you up to
+    just short of Allied. A friend may tell you where one of their enemies' Rivals is hiding. A
+    frightened member of a gang at war with you takes it as mercy, which gives you a way out of a
+    vendetta that costs no eddies.
+  - **Dismiss** ends it. Friends don't like being brushed off too often, and frightened people leave.
+  - **Antagonize** starts something. Frightened people back down or run, bolder ones talk back, and
+    anyone with the nerve, or from a gang already against you, fights. The gangs at war with theirs
+    like hearing about it.
+  - **Intimidate** works on fear. Somebody afraid enough gives up where one of their own gang's Rivals
+    is hiding (the same lead the Hub sells, with a pin on your map), pays you to leave, or simply
+    leaves. It fails on the brave and on anyone with friends at their back, and you lose face. Leaning
+    on a gang's people makes the whole gang fear you more, so you can make a gang afraid without
+    killing anyone. The prompt says whose name you are after when there is one to get.
+  - How much talking can change in a day is limited for each gang, and reloading doesn't reset it.
+    Shakedowns can be turned off.
+  - **Talk to people** and **Shakedowns pay** are under Street talk in Mod Settings.
+- **Fear can beat a grudge.** A gang with a vendetta no longer sends every one of its people at you.
+  Each one weighs their own nerve, and the friends around them, against how much their gang fears you.
+  The brave still warn you and attack. The frightened hold back, keep an eye on you, mutter, and can
+  be talked to. The more a gang fears you, the more of its people hold back. A gang's file on the Hub
+  tells you roughly how many of its people will.
+- **Broken gangs are afraid.** Once you have broken a gang (its strength on the Turf screen has fallen
+  to "broken"), its people fear you whatever their grudge. Their vendetta stops stiffening them in a
+  fight, so they break and run sooner, and they will call it off for half their usual price, in a very
+  different tone.
+- **What the crowd says is about you.** Overheard lines now come from everything Cyberbane knows: how
+  you work (butcher, ghost, professional, chromed, netrunner, brawler), how you treat people, the
+  chrome people can see, your mask, NCPD heat, whether you are lying low, how well this district knows
+  you, and what you are doing right now. A gang member's lines draw on what is between you and their
+  gang: the bodies, the people of theirs you let walk, the tribute, the Rival hunting you, who runs
+  their crew now, and whether you have broken them. The street moves from one subject to another
+  rather than repeating itself, and speakers are named by their gang ("Tyger Claw", "Valentino").
+  People who can't see your face behind a mask talk about the stranger in the mask.
+
+**Changes**
+- **Overheard lines use the game's own subtitles**, in the usual place and following your subtitle
+  settings. If you have the game's subtitles switched off, Cyberbane draws its own line in the same
+  spot.
+- Your History now records the times you leaned on somebody until they gave up a Rival, and the
+  shakedowns.
+
+**Fixes**
+- **The game could crash when loading a save, most often when reloading after V died, or while
+  changing outfits with Equipment-EX.** Cyberbane read V's clothes in the middle of the load, while
+  Equipment-EX was still putting the outfit back on, and could reach a garment that had not finished
+  loading. Now nothing reads V's chrome or clothes until the load is over, the same rule the death
+  ledger already follows. Outfit slots are read from the game's slot records rather than from the
+  garments themselves, so a garment Equipment-EX is still swapping can't be reached at all.
+
 ## 1.9.4 (16 November 2026)
 
 **New**

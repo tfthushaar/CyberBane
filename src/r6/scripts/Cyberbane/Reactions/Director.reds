@@ -24,6 +24,11 @@ public let cbGangWarned: Bool;
 @addField(ScriptedPuppet)
 public let cbAttitudeReadTick: Int32;
 
+// Whether this NPC is too afraid of V to act on their gang's vendetta (1.9.5): 0 not decided yet, 1 holds
+// back, 2 stands and fights. Decided once, the first time it matters (CBHoldBackChance).
+@addField(ScriptedPuppet)
+public let cbHoldState: Int32;
+
 // The tick this NPC last failed the Director's checks (the Safety Gate, a job site, one of ours), so it
 // is passed over for a few ticks rather than asked again every second (1.9.1). 0 = never failed.
 @addField(ScriptedPuppet)
@@ -196,21 +201,7 @@ public class CBReactionDirector {
           let faction = CBClassifyFaction(npc);
 
           // Recognition, rolled once per spawn and cached on the puppet (spec §8.7).
-          if npc.cbRecoState == 0 {
-            let p = score.RecognitionChance(district, faction, false, false);
-            // Wearing this gang's colours makes them slower to place you (spec §9.3).
-            if NotEquals(faction, n"") && Equals(faction, sys.GetDisguiseFaction()) {
-              p *= (1.0 - sys.GetDisguiseStrength());
-            }
-            npc.cbRecoState = RandF() <= p ? 1 : 2;
-            if npc.cbRecoState == 1 {
-              let st = sys.GetStats();
-              if IsDefined(st) {
-                st.timesRecognized += 1;
-              }
-            }
-          }
-          let recognized = npc.cbRecoState == 1;
+          let recognized = CBRecognizes(sys, score, npc, faction, district);
 
           // Vendetta gangs that recognise V attack on sight (spec §9.3); that overrides
           // any fear. Everyone else - civilians, gangers, cops - can read how dangerous V
@@ -232,8 +223,9 @@ public class CBReactionDirector {
               civReacted += 1;
             }
           }
-          if whispersOn && !playerInCombat && recognized {
-            this.TryWhisper(game, sys, score, npc, dread, dist, faction);
+          // Behind a mask V is somebody nobody can place, and people talk about that too (1.9.5).
+          if whispersOn && !playerInCombat && (recognized || CBPlayerMasked(game)) {
+            this.TryWhisper(game, sys, score, npc, dread, dist, faction, recognized);
           }
         }
       }
@@ -262,9 +254,18 @@ public class CBReactionDirector {
     if !Equals(score.GetPosture(faction), ECBPosture.Vendetta) {
       return false;   // not at war with you - they can still be scared off
     }
-    // From here it is a Vendetta gang member: it is coming for you, not running.
     if npc.cbHostileByCyberbane {
       return true;
+    }
+    // Afraid of V more than they hate V (1.9.5). A vendetta used to turn every one of a gang's people
+    // V walked past, so the more of them V had killed - which is what makes a gang afraid - the fewer
+    // of them V could ever do anything with but fight, and nobody of a gang V had broken was ever
+    // anything but a target. Each of them weighs it now, once: their own nerve, the friends standing
+    // with them, against how much their gang fears V and whether V has broken it. Whoever holds back
+    // does not draw on V: they watch V, they mutter, and V can walk up and talk to them
+    // (Reactions/StreetTalk.reds). Whoever does not is coming for V, as before.
+    if CBHoldsBackFromV(CyberbaneSystem.Get(player.GetGame()), npc, faction) {
+      return false;
     }
     // They give you one warning before they open fire (spec §9.3), if enabled. The flip
     // to hostile lands on the next evaluation, which reads as a beat of hesitation.
@@ -342,6 +343,29 @@ public class CBReactionDirector {
     if sys.NoteSeenHostile(faction) {
       CBLog.Info(n"Model", s"\(NameToString(faction)): their people are hostile to you, and not by Cyberbane's doing (They Will Remember, another mod or the game).");
     }
+  }
+
+  // Somebody V has just picked a fight with to their face (Reactions/StreetTalk.reds, 1.9.5). The same
+  // attitude change hostility on sight makes, tracked the same way, so every revert above - a job, the
+  // story, a faction switched off, the kill switch - puts them back too. Never the law, never somebody
+  // the game made V's friend.
+  public func TurnHostileFromTalk(player: ref<PlayerPuppet>, npc: wref<ScriptedPuppet>, faction: CName) -> Bool {
+    if !IsDefined(player) || !IsDefined(npc) || !npc.IsAttached() || npc.IsDead()
+       || !CBFactionFieldsSquads(faction) || CBTwrActive() {
+      return false;
+    }
+    let agent = npc.GetAttitudeAgent();
+    let pagent = player.GetAttitudeAgent();
+    if !IsDefined(agent) || !IsDefined(pagent)
+       || Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Friendly) {
+      return false;
+    }
+    CBTrace("attitude: world NPC hostile after V picked a fight");
+    agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
+    npc.cbHostileByCyberbane = true;
+    npc.cbHoldState = 2;
+    this.TrackHostile(npc);
+    return true;
   }
 
   // The revert list only has to cover NPCs that still exist, so drop the ones that have
@@ -460,7 +484,7 @@ public class CBReactionDirector {
     ArrayClear(this.m_hostileNpcs);
   }
 
-  private func TryWhisper(game: GameInstance, sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dread: Float, dist: Float, faction: CName) -> Void {
+  private func TryWhisper(game: GameInstance, sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>, dread: Float, dist: Float, faction: CName, recognized: Bool) -> Void {
     if this.m_whisperCooldownTicks > 0 || npc.cbWhispered || dist > CBConfig.WhisperRadius() {
       return;
     }
@@ -508,9 +532,22 @@ public class CBReactionDirector {
       }
     }
 
+    // Somebody of a gang V has broken, or who is holding back from V out of fear, is afraid out loud,
+    // whatever their gang's grudge (1.9.5).
+    if NotEquals(faction, n"") && (npc.cbHoldState == 1 || CBGangBroken(sys, faction))
+       && (Equals(mood, n"hate") || Equals(mood, n"fear")) {
+      mood = CBGangBroken(sys, faction) ? n"broken" : n"fear";
+      topic = n"";
+    }
+    // Nobody can say who V is: no grudge and no story, only somebody they cannot place.
+    if !recognized {
+      mood = n"fear";
+      topic = n"";
+    }
+
     // A generic fearful whisper needs V to be at least mildly notable; topical
     // whispers (boss / MaxTac) are always eligible.
-    if Equals(topic, n"") && Equals(mood, n"fear") && dread < CBConfig.CivTierNotice() {
+    if Equals(topic, n"") && Equals(mood, n"fear") && dread < CBConfig.CivTierNotice() && recognized {
       return;
     }
     if RandF() > CBConfig.WhisperChance() {
@@ -529,6 +566,30 @@ public class CBReactionDirector {
     }
     return 25;
   }
+}
+
+// Does this person know who V is? Rolled once per spawn and kept on the puppet (spec §8.7), so the
+// Director and street talk (Reactions/StreetTalk.reds, 1.9.5) always agree about the same face.
+public func CBRecognizes(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, npc: wref<ScriptedPuppet>,
+                         faction: CName, district: CName) -> Bool {
+  if !IsDefined(sys) || !IsDefined(score) || !IsDefined(npc) {
+    return false;
+  }
+  if npc.cbRecoState == 0 {
+    let p = score.RecognitionChance(district, faction, false, false);
+    // Wearing this gang's colours makes them slower to place you (spec §9.3).
+    if NotEquals(faction, n"") && Equals(faction, sys.GetDisguiseFaction()) {
+      p *= (1.0 - sys.GetDisguiseStrength());
+    }
+    npc.cbRecoState = RandF() <= p ? 1 : 2;
+    if npc.cbRecoState == 1 {
+      let st = sys.GetStats();
+      if IsDefined(st) {
+        st.timesRecognized += 1;
+      }
+    }
+  }
+  return npc.cbRecoState == 1;
 }
 
 // Fast-tick driver (spec §5.5). Carries a generation token so stale tick chains

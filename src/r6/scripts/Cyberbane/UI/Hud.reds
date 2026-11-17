@@ -2418,6 +2418,19 @@ public class CBHud {
       out += "At war with " + enemy + ". Hurting " + enemy + " is how this gang comes to like you.\n";
     }
     out += s"\(fs.kills) of theirs down. They fear you at \(RoundF(score.GetFactionFear(id))) of 100.\n";
+    // Fear against hatred, on their streets (Reactions/Morale.reds, 1.9.5).
+    if isOn && CBGangBroken(sys, id) {
+      out += "They are broken. Their people fear you whatever their grudge, and they would settle for less.\n";
+    } else {
+      if isOn && Equals(posture, ECBPosture.Vendetta) && foreign != 2 {
+        let held = RoundF(CBHoldBackTypical(sys, id) * 10.0);
+        if held > 0 {
+          out += s"About \(held) in 10 of their people are too afraid of you to act on it. Those you can talk to.\n";
+        } else {
+          out += "None of them are afraid enough of you to hold back.\n";
+        }
+      }
+    }
     let status = CBHudGangStatus(sys, fs);
     if StrLen(status) > 0 {
       out += "Right now: " + StrLower(status) + ".\n";
@@ -3479,11 +3492,12 @@ func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
   if ArraySize(states) == 0 {
     return "No gang has formed an opinion of you yet.\n\nWork in their territory and that changes quickly.";
   }
-  let out = "Hostile gangs send crews. Vendetta means they also shoot on sight. Hostile and sworn gangs are listed first.\n\n";
+  let out = "Hostile gangs send crews. Vendetta means their people shoot on sight, all but the ones too afraid of you to. Hostile and sworn gangs are listed first.\n\n";
   out += "To be thought well of: hurt the gang they are at war with, put their people down\n";
-  out += "without killing them, let their names walk, or spend time on their streets without\n";
-  out += "trouble. Friendly gangs cut their prices on their own turf and warn you when their\n";
-  out += "enemies come for you.\n\n";
+  out += "without killing them, let their names walk, spend time on their streets without\n";
+  out += "trouble, or walk up to their people and greet them. Friendly gangs cut their prices on\n";
+  out += "their own turf and warn you when their enemies come for you. To be feared without a\n";
+  out += "body: intimidate their people. Somebody afraid enough gives up one of their Rivals.\n\n";
   out += "Click a gang to see more about them, and to pay off one that wants you dead.";
   return out;
 }
@@ -3817,6 +3831,21 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   return out;
 }
 
+// What street talk put in the file (Reactions/StreetTalk.reds, 1.9.5), and the entry's own name for
+// anything this file does not know how to say.
+func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: String) -> String {
+  let who = StrLen(gang) > 0 ? "one of " + gang : "somebody";
+  if Equals(e.kind, n"Informant") {
+    let r = sys.FindRivalById(RoundF(e.value));
+    let name = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "one of their own";
+    return s"You leaned on \(who) until they gave up \(name).";
+  }
+  if Equals(e.kind, n"ShakeDown") {
+    return s"You shook down \(who) for \(RoundF(e.value))eb.";
+  }
+  return NameToString(e.kind);
+}
+
 // One entry as a sentence. This printed the entry's internal name and its raw number, so the
 // file read "RivalCreated (CityCenter) 12", where 12 was a Rival's id.
 func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> String {
@@ -3872,7 +3901,7 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
                             if Equals(e.kind, n"TurfPush") {
                               line = s"\(gangCap) came back to take their streets.";
                             } else {
-                              line = NameToString(e.kind);
+                              line = CBHudTalkLogLine(sys, e, gang);
                             }
                           }
                         }

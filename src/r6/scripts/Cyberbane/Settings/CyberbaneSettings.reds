@@ -210,6 +210,19 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PanicDriving-Desc")
   public let panicDriving: Bool = true;
 
+  // ---- Street talk (Reactions/StreetTalk.reds, 1.9.5) --------------------
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetTalk")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetTalk-Desc")
+  public let streetTalk: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkShakedowns")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkShakedowns-Desc")
+  public let talkShakedowns: Bool = true;
+
   // ---- Gangs ------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

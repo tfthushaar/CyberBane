@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 1.9.4. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
+The released version is 1.9.5. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
 everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
 description of today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
@@ -17,6 +17,86 @@ an NPC that has left the world, behaviour-only ability kits, no runtime appearan
 loot drops from corpses, and UI as data rather than injected widgets. **No `.reds` file is ever
 deleted: a retired one becomes a stub at the same path** (`tools/check_removed.ps1` fails the build
 otherwise), because installing over the top does not remove files and an old copy keeps compiling.
+
+## Requests after 1.9.4
+
+### "Reloading a checkpoint after dying crashes; gamelog.log ends on '[Cyber'. Does the Equipment-EX part not use the death ledger?" and "a similar crash after updating and opening the Wardrobe"
+
+**Status: fixed in 1.9.5, at the source** (`CyberbaneSystem.StartSession`, `WornReady`; `Signals/Concealment.reds`).
+The crash report is an access violation reading 0xFFFFFFFFFFFFFFFF during a loaded session, with no stack. The
+reporter was right about the ledger: it had been moved off the player-attached callback to the first settled tick
+because that callback runs in the middle of the load, and the chrome reading had not. `StartSession` seeded
+`CBUpdateChrome` there, which reads V's attachment slots, and 1.9.4 added the Equipment-EX reader to it: with an
+outfit on, it asked `TransactionSystem.GetItemInSlot` for the object in every `OutfitSlots.*` slot and read the
+garment off it. Equipment-EX clears its leftover preview copies on restore (`CleanUpPreviewItems`) and puts the outfit
+back a frame later (`DelayedRestoreCallback`), and its wardrobe swaps copies the same way, so the reader met objects
+half made or on their way out.
+
+Two fixes, both at the cause rather than around it:
+
+- Nothing reads V's equipment until the session's first settled tick (`m_wornDue`/`m_wornReady`, gated in
+  `CBUpdateChrome`, `CBUpdateLook`, `CBReadWorn` and `CBPlayerMasked`), the same tick the ledger waits for.
+- No garment object is handed out at all. Equipment-EX slots are read with `GetActiveItemInSlot` (an item id from the
+  slot's own bookkeeping), and the generic attached-clothing check asks `HasItemInAnySlot` (a yes or no) instead of
+  `GetItemInSlotByItemID`. The reflection lookups are made once a launch (`CBEqExProbe`) and their return types are
+  checked before any value comes out of its Variant.
+
+### "The crowd's subtitles sit in the middle of the screen; put them where Cyberpunk's subtitles are"
+
+**Status: done in 1.9.5** (`UI/PhoneMessages.reds`, `CBShowGameSubtitle`). Overheard lines are lines of the game's own
+subtitles: put on the `UIGameData.ShowDialogLine` blackboard as `scnDialogLineData` (type Regular, V named as the
+owner, the speaker's name given) and taken down by id with `HideDialogLine`, which is what
+`SubtitlesGameController` draws from. They follow the player's subtitle size and background. With the game's
+subtitles switched off (`/accessibility/subtitles` Cinematic) Cyberbane draws its own line, moved to the same place.
+
+### "Greet, dismiss, antagonize and intimidate interactions with NPCs", "the options that pop up when you get close to an NPC and you select with F", "let us interact with gangers too"
+
+**Status: built in 1.9.5** (`Reactions/StreetTalk.reds`). The game's own choice prompt, written as data to the
+`UIInteractions` blackboard (`DialogChoiceHubs`, `ActiveChoiceHubID`, `SelectedIndex`) only while nothing of the
+game's is up, and taken down only if it is still Cyberbane's. The keys are the game's choice keys, registered on the
+player while the prompt is up (`ChoiceScrollUp/Down`, `ChoiceApply`/`Choice1`). The mouse wheel also draws a weapon
+from empty hands (`upperBodyTransitions.script`, `CheckSwitchInput`), so while the prompt is up V's hands are held with
+the game's safe-area lock (`ForceEmptyHandsByZone`, `CBQueueZoneArmsLock`), let go the moment it goes and never inside a
+safe area. What each choice does to standing, fear and conduct, and what an intimidated ganger gives up, is in the
+file's header and in `CBTalkOn*`. Daily ceilings per gang live in the play service (`CBTalkTally`), outside the save.
+
+This also answers "More explicit or active ways to become friendly with a gang" (1.7.0 section) with something that is
+not fighting: greeting their people.
+
+### "To intimidate a ganger their gang must fear us, but killing them makes them hostile on sight, so we never get to talk"
+
+**Status: redesigned in 1.9.5** (`Reactions/Morale.reds`, `CBHoldBackChance`; `Reactions/Director.reds`). The paradox was
+real: hostility on sight was decided by the gang's standing alone, so the bodies that make a gang afraid were the same
+bodies that turned all its people on V. Fear and hatred are now separate. Each person of a vendetta gang decides once
+whether to act on it: their own nerve (`CBNerve`) and the friends standing with them against the gang's fear of V
+(`GetFactionFear`), more if V has broken the gang or taken its ground. At fear 0.8 a lone ganger holds back four times
+in five; at 0.5, one in three; under 0.3, never. Those who hold back do not draw, talk in fear, and can be talked to.
+Those who do not still warn and attack. Bosses, apex squads and the Hard to Scare never hold back.
+
+Intimidation also raises the gang's fear of V, and fear is not only bodies: `CBFactionFear` already starts from V's
+Dread at large and V's chrome. So the path is fear first, from whatever V has done anywhere, and talk after.
+
+### "A gang that is breaking should fear us even with a vendetta"
+
+**Status: done in 1.9.5** (`CBGangBroken`). Under `GangBrokenStrength` a gang's people fear V whatever their grudge
+(their hold-back roll gains `BrokenGangFear`, their lines are afraid), their vendetta no longer makes them break less in
+a fight (`MoraleBrokenGangMult` in place of `MoraleSwornMult`), and their peace price is halved (`PeaceBrokenShare`)
+with a line of its own. The gang's file on the Hub says so.
+
+### "Make what the crowd says more relevant to what you are in Cyberbane, with dynamically changing dialogue"
+
+**Status: done in 1.9.5** (`Model/StreetRead.reds`, `Narrative/Whispers.reds`). One read of what the street knows about
+V (`CBReadStreet`) feeds every line: style, conduct, mercy, unseen work, visible and covered chrome, the mask, heat,
+lying low, fame in this district, a broken local gang, what V is doing right now, and, from somebody with a gang, the
+blood, the mercy, the tribute, the Rival hunting V and who runs their crew. Each topic offers lines when it is true,
+weighted (`CBLineBag`), and the last topic sits the next line out. Speakers are named by their gang.
+
+### Not built, and why
+
+- **Choice keys other than F and the wheel.** Only `Choice1`/`ChoiceApply` and the scroll actions are known to be bound
+  everywhere; the game's scripts never name `Choice2` to `Choice4`, so dedicated keys per line could not be promised.
+- **A voiced V.** Street talk shows V's line as a subtitle. V's own voice lines are scene audio with no event a script
+  can play by name.
 
 ## Requests after 1.9.3
 

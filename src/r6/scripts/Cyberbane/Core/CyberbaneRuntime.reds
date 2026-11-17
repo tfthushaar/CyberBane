@@ -37,12 +37,16 @@ public class CyberbaneRuntime extends ScriptableService {
   // Which whisper line was used last, so the next one is never the same. Session only: it is
   // about what you just heard, and nothing about it is worth carrying into a save.
   private let m_lastWhisperIdx: Int32;
+  // What the last overheard line was about, so the next one is about something else (1.9.5).
+  private let m_lastWhisperTopic: CName;
   // How many game seconds pass per real second, measured once a session. About 8.1 by default;
   // a mod like CP Chronology that slows the world clock brings it near 1. Measured rather than
   // assumed precisely because it is not a constant across setups.
   private let m_clockRatio: Float = 1.0;
   // Sim time of the last on-screen message, so two never land on top of each other.
   private let m_lastMessageAt: Float;
+  // Equipment-EX's outfit functions, looked up once a launch (Signals/Concealment.reds, 1.9.5).
+  private let m_eqexProbe: ref<CBEqExProbe>;
 
   public static func Get() -> ref<CyberbaneRuntime> {
     // The service container is null during world transitions (sleep, fast travel, Skip Time,
@@ -101,6 +105,13 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_twrDetected = present ? 1 : 2;
   }
 
+  public func GetEqExProbe() -> ref<CBEqExProbe> {
+    if !IsDefined(this.m_eqexProbe) {
+      this.m_eqexProbe = new CBEqExProbe();
+    }
+    return this.m_eqexProbe;
+  }
+
   public func GetTwrProbeLogged() -> Bool {
     return this.m_twrProbeLogged;
   }
@@ -144,6 +155,14 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetLastWhisperIndex(idx: Int32) -> Void {
     this.m_lastWhisperIdx = idx;
+  }
+
+  public func GetLastWhisperTopic() -> CName {
+    return this.m_lastWhisperTopic;
+  }
+
+  public func SetLastWhisperTopic(topic: CName) -> Void {
+    this.m_lastWhisperTopic = topic;
   }
 
   public func GetLastSpawnBlock() -> Int32 {

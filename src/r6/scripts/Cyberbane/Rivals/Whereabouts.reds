@@ -955,6 +955,42 @@ func CBWhereaboutsSpot(sys: ref<CyberbaneSystem>, game: GameInstance, player: re
   return false;
 }
 
+// Where a Rival is holed up, ready to be told to V: where they were last seen, when that still holds,
+// or else somewhere near V they are tracked down to (CBWhereaboutsSpot). Null when there is nowhere they
+// could be put. Shared by a purchase on the Hub and by an informant V leans on in the street
+// (Reactions/StreetTalk.reds, 1.9.5), so the two can never disagree about where somebody is.
+public func CBRivalHideout(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
+                           r: ref<CBRival>) -> ref<CBSighting> {
+  let svc = sys.GetPlayService();
+  if !IsDefined(svc) || !IsDefined(r) || !IsDefined(player) {
+    return null;
+  }
+  let now = CBGameSeconds(game);
+  let s = CBSightingFor(sys, r);
+  // A sighting from a newer branch of this playthrough is not this save's to tell, and one where a
+  // Rival can no longer be put is no place at all.
+  let usable = IsDefined(s) && now >= s.seenAt && CBLairPointUsable(sys, game, CBSightingPos(s));
+  if !usable {
+    let spot: Vector4;
+    if !CBWhereaboutsSpot(sys, game, player, spot) {
+      return null;
+    }
+    svc.NoteSighting(sys.GetPlaythroughId(), r.id, r.recordID, spot, sys.GetCurrentDistrict(), now);
+    s = svc.FindSighting(sys.GetPlaythroughId(), r.id);
+  }
+  return s;
+}
+
+// V has been told. The lead, the pin and the Hub's file all follow from this (CBCurrentLead).
+public func CBMarkLeadTold(sys: ref<CyberbaneSystem>, s: ref<CBSighting>, tipster: CName, now: Float) -> Void {
+  if !IsDefined(sys) || !IsDefined(s) {
+    return;
+  }
+  s.tippedAt = now;
+  s.tipFaction = tipster;
+  sys.SetLastTipAt(now);
+}
+
 // Carry out a purchase chosen on the Hub, from the settled tick (CyberbaneSystem.ServiceHubActions).
 // Nothing is paid unless there is a place to sell: where they were last seen, when that still holds,
 // or else somewhere the seller tracks them down near V.
@@ -980,30 +1016,15 @@ public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBSystemNote(game, s"not enough eddies for that. It costs \(price)eb.", 4.0);
     return false;
   }
-  let now = CBGameSeconds(game);
-  let pid = sys.GetPlaythroughId();
-  let s = CBSightingFor(sys, r);
-  // A sighting from a newer branch of this playthrough is not this save's to sell, and one where a
-  // Rival can no longer be put is no place at all.
-  let usable = IsDefined(s) && now >= s.seenAt && CBLairPointUsable(sys, game, CBSightingPos(s));
-  if !usable {
-    let spot: Vector4;
-    if !CBWhereaboutsSpot(sys, game, player, spot) {
-      CBSystemNote(game, "nobody could find them from here. Try again somewhere else.", 5.0);
-      CBLog.Info(n"Rivals", s"Whereabouts of rival \(id): no usable place near V; nothing paid.");
-      return false;
-    }
-    svc.NoteSighting(pid, r.id, r.recordID, spot, sys.GetCurrentDistrict(), now);
-    s = svc.FindSighting(pid, r.id);
-  }
+  let s = CBRivalHideout(sys, game, player, r);
   if !IsDefined(s) {
+    CBSystemNote(game, "nobody could find them from here. Try again somewhere else.", 5.0);
+    CBLog.Info(n"Rivals", s"Whereabouts of rival \(id): no usable place near V; nothing paid.");
     return false;
   }
   ts.RemoveItem(player, money, price);
   let tipster = CBPickTipster(sys, r.faction);
-  s.tippedAt = now;
-  s.tipFaction = tipster;
-  sys.SetLastTipAt(now);
+  CBMarkLeadTold(sys, s, tipster, CBGameSeconds(game));
   let name = CBRivalDisplayName(sys.GetContent(), r);
   let line = CBTipLine(name, CBPlacePhrase(s.district), IsNameValid(tipster), CBMapMarkersOn());
   if IsNameValid(tipster) {

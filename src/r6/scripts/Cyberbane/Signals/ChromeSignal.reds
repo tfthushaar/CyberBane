@@ -42,7 +42,9 @@ public func CBQualityTier(q: gamedataQuality) -> Int32 {
 }
 
 public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  if !IsDefined(sys) {
+  // Not before the session's first settled tick: the load may still be putting V's implants and clothes
+  // back on (CyberbaneSystem.StartSession, 1.9.5).
+  if !IsDefined(sys) || !sys.WornReady() {
     return;
   }
   let player = GetPlayer(game);

@@ -403,7 +403,7 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
          && (sworn || Equals(posture, ECBPosture.Hostile)) {
         let quote = CBPeaceQuote(sys, game, fs.id);
         if quote >= 0 && sys.NotePeaceOffered(fs.id) {
-          CBPhoneFromGang(game, fs.id, CBPeaceDemandLine(quote, sworn));
+          CBPhoneFromGang(game, fs.id, CBGangBroken(sys, fs.id) ? CBPeaceBrokenLine(quote) : CBPeaceDemandLine(quote, sworn));
           demanded = true;
           CBLog.Info(n"Model", s"\(NameToString(fs.id)) put its price to you: \(quote)eb.");
         }

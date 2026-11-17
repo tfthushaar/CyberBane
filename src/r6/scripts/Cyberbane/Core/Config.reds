@@ -269,6 +269,23 @@ public abstract class CBConfig {
   public static func MoraleBreakMaxChance() -> Float = 0.4
   // On streets they have just lost, nobody is sure what they are still fighting for.
   public static func MoraleLostGroundMult() -> Float = 1.4
+  // A gang V has broken (Model/Territory.reds, GangBrokenStrength) breaks sooner still, and its vendetta no
+  // longer stiffens it (1.9.5).
+  public static func MoraleBrokenGangMult() -> Float = 1.8
+  // What a broken gang asks to call off its grudge, as a share of its usual price (Economy/Peace.reds).
+  public static func PeaceBrokenShare() -> Float = 0.5
+  // Holding back from V on the street (Reactions/Morale.reds, CBHoldBackChance, 1.9.5). Fear is the gang's
+  // fear of V as 0..1; a broken gang adds BrokenGangFear, one that has lost ground LostGroundFear. A rank-
+  // and-file nerve of 0.5 takes 0.3 off; every friend within the radius takes off HoldBackPerBacker.
+  // At fear 0.8 a ganger alone holds back four times in five; at 0.5, one in three; under 0.3, never.
+  public static func BrokenGangFear() -> Float = 0.35
+  public static func LostGroundFear() -> Float = 0.10
+  public static func HoldBackNerveWeight() -> Float = 0.6
+  public static func HoldBackScale() -> Float = 1.6
+  public static func HoldBackPerBacker() -> Float = 0.12
+  public static func HoldBackBackerRadius() -> Float = 12.0
+  public static func HoldBackMaxBackers() -> Int32 = 4
+  public static func HoldBackMax() -> Float = 0.9
   // How shaken somebody at a quarter of their health counts as, with nobody having died near them.
   public static func MoraleHurtShock() -> Float = 0.5
   // The run itself. Somewhere this far off, and this much further from V than they already are.
@@ -636,11 +653,12 @@ public abstract class CBConfig {
   // Checks a crew member the city carried gets before they are told to come on foot anyway,
   // if they turn out not to be in a car at all.
   public static func CrewWatchSettleTries() -> Int32 = 2
-  // Overheard lines: a subtitle near the bottom of the screen, above the game's own subtitles.
+  // Overheard lines: a line of the game's own subtitles (UI/PhoneMessages.reds, 1.9.5). With the game's
+  // subtitles switched off, Cyberbane's own line is drawn where they would be.
   public static func OverheardSeconds() -> Float = 5.5
   public static func OverheardFloor() -> Float = 3.5
   public static func OverheardWidth() -> Float = 1100.0
-  public static func OverheardBottom() -> Float = 250.0
+  public static func OverheardBottom() -> Float = 120.0
 
   // ---- Keeping an arrival out of frame ---------------------------------
   //
@@ -1200,6 +1218,74 @@ public abstract class CBConfig {
   public static func CapGangPower() -> Int32 = 96
   // Which V each playthrough id belongs to (1.8.3). One per playthrough that has loaded since.
   public static func CapBirths() -> Int32 = 128
+  public static func CapTalkTallies() -> Int32 = 120
+
+  // ---- Street talk (Reactions/StreetTalk.reds, 1.9.5) ----
+  // The prompt: how often it is looked at, how close and for how long V has to look at somebody, how
+  // far they may drift and how long V may glance away before it goes, and how long before the same
+  // person can be spoken to again (fast ticks, about a second each).
+  public static func TalkTickSeconds() -> Float = 0.2
+  public static func TalkRange() -> Float = 2.6
+  public static func TalkKeepRange() -> Float = 3.6
+  public static func TalkDwell() -> Float = 0.6
+  public static func TalkLookGrace() -> Float = 0.8
+  public static func TalkCooldownTicks() -> Int32 = 45
+  // Cyberbane's hub id on the UIInteractions blackboard: far from the small numbers the game's own use.
+  public static func TalkHubId() -> Int32 = 1128415301
+  // The exchange: V's line, a beat, then theirs.
+  public static func TalkAnswerDelay() -> Float = 1.2
+  public static func TalkLineSeconds() -> Float = 2.4
+  public static func TalkReplySeconds() -> Float = 4.0
+  // Who is afraid: a ganger whose fear of V beats their nerve by this much, a civilian this afraid. A
+  // civilian who knows V and V is this well known (or keeps a code) is glad to meet V.
+  public static func TalkAfraidMargin() -> Float = 0.2
+  public static func TalkCivAfraid() -> Float = 0.45
+  public static func TalkCivFanRenown() -> Float = 40.0
+  // What a day of talking to one gang's people can move, at most.
+  public static func TalkWarmthPerDay() -> Float = 3.0
+  public static func TalkSlightPerDay() -> Float = 8.0
+  public static func TalkFearPerDay() -> Float = 4.0
+  public static func TalkConductPerDay() -> Float = 3.0
+  public static func TalkTaxesPerDay() -> Int32 = 1
+  public static func TalkLeaksPerDay() -> Int32 = 1
+  public static func TalkTipsPerDay() -> Int32 = 1
+  // Greet.
+  public static func TalkGreetWarmth() -> Float = 0.6
+  public static func TalkGreetMercy() -> Float = 0.5
+  public static func TalkGreetConduct() -> Float = 0.2
+  public static func TalkTipChance() -> Float = 0.35
+  // Dismiss.
+  public static func TalkDismissFear() -> Float = 0.3
+  public static func TalkDismissFriendCost() -> Float = 0.4
+  // Antagonize. A ganger folds when their nerve gap is above TalkFoldGap and fights when it is below
+  // minus that; one already afraid snaps now and then.
+  public static func TalkFoldGap() -> Float = 0.15
+  public static func TalkSnapChance() -> Float = 0.2
+  public static func TalkFoldFear() -> Float = 0.5
+  public static func TalkBullyConduct() -> Float = 0.5
+  public static func TalkCivAntagonizeConduct() -> Float = 1.0
+  public static func TalkInsultCost() -> Float = 1.5
+  public static func TalkInsultFriendCost() -> Float = 2.0
+  public static func TalkFightCost() -> Float = 3.0
+  public static func TalkCopCost() -> Float = 1.0
+  // Intimidate: the odds are the nerve gap scaled, plus a base, held between the two bounds.
+  public static func TalkIntimidateScale() -> Float = 1.4
+  public static func TalkIntimidateBase() -> Float = 0.45
+  public static func TalkAfraidBonus() -> Float = 0.15
+  public static func TalkIntimidateMin() -> Float = 0.05
+  public static func TalkIntimidateMax() -> Float = 0.95
+  public static func TalkLeanFear() -> Float = 1.0
+  public static func TalkLeanCost() -> Float = 0.5
+  public static func TalkLeanOnFriendCost() -> Float = 3.0
+  public static func TalkLostFace() -> Float = 0.8
+  public static func TalkCallBluffFight() -> Float = 0.4
+  public static func TalkCivIntimidateConduct() -> Float = 1.0
+  public static func TalkCivDread() -> Float = 0.4
+  // Street tax: base plus so much a level, a little either way, never more than the cap.
+  public static func TalkTaxBase() -> Float = 25.0
+  public static func TalkTaxPerLevel() -> Float = 4.0
+  public static func TalkTaxMax() -> Int32 = 260
+  public static func TalkShakedownConduct() -> Float = 1.5
   // Draws before a new playthrough id gives up looking for one nobody has. Eight hex digits make a
   // second draw already unlikely; this only bounds the loop.
   public static func PlaythroughIdTries() -> Int32 = 32
