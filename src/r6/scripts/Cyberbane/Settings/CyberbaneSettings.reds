@@ -365,6 +365,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.min", "6")
   @runtimeProperty("ModSettings.max", "24")
   @runtimeProperty("ModSettings.step", "1")
+  @runtimeProperty("ModSettings.dependency", "vendettaSquads")
   public let vendettaSquadSize: Int32 = 20;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -419,6 +420,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "4")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarsOnFoot")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarsOnFoot-Desc")
+  @runtimeProperty("ModSettings.dependency", "vehicleArrivals")
   public let carsWhileOnFoot: Bool = true;
 
   // How many cars one arrival can come in (Spawn/Arrival.reds, CBSendByCar). A crew too big for
@@ -431,6 +433,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.min", "1")
   @runtimeProperty("ModSettings.max", "5")
   @runtimeProperty("ModSettings.step", "1")
+  @runtimeProperty("ModSettings.dependency", "vehicleArrivals")
   public let carsPerArrival: Int32 = 4;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -474,6 +477,20 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangCodes")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangCodes-Desc")
+  public let gangCodes: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangsAdapt")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangsAdapt-Desc")
+  public let gangsAdapt: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Warnings")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Warnings-Desc")
   public let warnings: Bool = true;
@@ -504,7 +521,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Surrender")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Surrender-Desc")
-  public let surrender: Bool = false;
+  // A new name (2.3.2) so the new default, on, reaches everybody: Mod Settings keeps values by field name, and the
+  // old `surrender` was stored as off on every install from when it was experimental.
+  public let gangsSurrender: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")

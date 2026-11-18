@@ -242,8 +242,37 @@ func CBHuntRadius(sys: ref<CyberbaneSystem>) -> Float {
 // minimap and vanished from the scanner after a couple of seconds. Every point is now a floor
 // with navmesh on it that this hunter has a path to, the same tests a spawn point has to pass.
 // False when there is none; the hunter is then left where they are and asked again shortly.
+// An apex squad that has lost V searches as one ([U4], 2.3.2): the first of them to pick a spot names it for the
+// squad, and the rest search round the same spot, a few metres apart, until it goes stale. Everybody else picks
+// their own, as before.
 public func CBHuntPickSearchPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>,
                                   out point: Vector4) -> Bool {
+  let des = GameInstance.GetDynamicEntitySystem();
+  let apex = IsDefined(des) && IsDefined(puppet) && des.IsTagged(puppet.GetEntityID(), n"CB_Apex");
+  if apex {
+    let since = sys.GetTickCount() - sys.GetApexSearchTick();
+    if sys.GetApexSearchTick() > 0 && since >= 0 && since < CBConfig.ApexSearchShareTicks() {
+      let shared = sys.GetApexSearchPoint();
+      let near: Vector4;
+      let spread = CBConfig.ApexSearchSpread();
+      if CBHuntStandAt(game, shared.X + RandRangeF(-spread, spread), shared.Y + RandRangeF(-spread, spread), shared.Z, near)
+         && CBPointReachable(game, puppet.GetWorldPosition(), near) {
+        point = near;
+        return true;
+      }
+    }
+  }
+  if !CBHuntPickOwnPoint(sys, game, puppet, point) {
+    return false;
+  }
+  if apex {
+    sys.SetApexSearch(point, Max(sys.GetTickCount(), 1));
+  }
+  return true;
+}
+
+func CBHuntPickOwnPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>,
+                        out point: Vector4) -> Bool {
   let center = CBHuntSearchCenter(sys);
   let r = CBHuntRadius(sys);
   let from = puppet.GetWorldPosition();
@@ -598,6 +627,10 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
   }
   // And the rain (Model/Moment.reds, 2.3.1).
   scale *= CBRainSightMult(game);
+  // A gang that has learnt V works unseen keeps its eyes open (Model/Ledger.reds, 2.3.2).
+  if IsDefined(sys) {
+    scale *= CBAdaptSense(game, sys.GetHuntFaction());
+  }
   if IsDefined(sys) && NotEquals(sys.GetHuntFaction(), n"")
      && Equals(sys.GetDisguiseFaction(), sys.GetHuntFaction()) {
     scale *= CBConfig.DisguiseSenseMult();
@@ -647,6 +680,12 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
       }
       // Heard it.
       if loud && d <= CBConfig.HuntHearDistance() * sense {
+        return 2;
+      }
+      // An apex squad's netrunner reaches further, and tells the rest exactly where V is ([U4], 2.3.2).
+      let role: ECBApexRole;
+      if Equals(tag, n"CB_Apex") && CBApexSeatRole(p, role) && Equals(role, ECBApexRole.Netrunner)
+         && d <= CBConfig.HuntSpotDistance() * sense * CBConfig.ApexNetrunnerReach() && CBWitnessCanSee(p, player) {
         return 2;
       }
       // Close, and nothing in the way.
@@ -910,13 +949,23 @@ public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     // How many, in their own words, from the same numbers the spawn uses - and who leads them.
     let fs = sys.FindFaction(faction);
     let coming = CBCrewComingLine(sys, game, fs);
-    if vendetta {
-      CBPhoneFromGang(game, faction, s"Everybody we have is coming for you. Somebody saw you in \(where). \(coming)");
+    // In their own voice (Narrative/GangVoice.reds); the plain words when a gang has none.
+    let own = CBGangCrewText(faction, where, coming, vendetta, onTheirTurf);
+    // The Voodoo Boys come through the Net before anybody walks over (Data/GangCodes.reds).
+    if Equals(faction, n"VoodooBoys") && CBGangCodesOn() {
+      CBSystemNote(game, "your optics flicker. Somebody is tracing you through the Net.", 4.0);
+    }
+    if StrLen(own) > 0 {
+      CBPhoneFromGang(game, faction, own);
     } else {
-      if onTheirTurf {
-        CBPhoneFromGang(game, faction, s"You are on our streets in \(where). \(coming)");
+      if vendetta {
+        CBPhoneFromGang(game, faction, s"Everybody we have is coming for you. Somebody saw you in \(where). \(coming)");
       } else {
-        CBPhoneFromGang(game, faction, s"\(coming) We hear you are in \(where).");
+        if onTheirTurf {
+          CBPhoneFromGang(game, faction, s"You are on our streets in \(where). \(coming)");
+        } else {
+          CBPhoneFromGang(game, faction, s"\(coming) We hear you are in \(where).");
+        }
       }
     }
   }
@@ -929,7 +978,10 @@ public func CBApexOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   let fs = sys.FindFaction(faction);
   if CBToastsOn() && IsDefined(fs) {
     let name = CBApexName(CBContent(game), faction, fs.apexAtKills);
-    CBPhoneFromGang(game, faction, s"\(name) and three of ours are on the road. Last we heard you were in \(CBHuntWhereLine(sys, game)).");
+    // Their best remember how it went last time ([U4], 2.3.2).
+    let beaten = CBApexTimesBeaten(sys, faction);
+    let record = beaten == 1 ? " You beat our best once. That was luck." : (beaten > 1 ? s" You've beaten our best \(beaten) times. Not this one." : "");
+    CBPhoneFromGang(game, faction, s"\(name) and three of ours are on the road. Last we heard you were in \(CBHuntWhereLine(sys, game)).\(record)");
   }
   CBAllyTipOff(sys, game, faction);
   CBWatcherTipOff(sys, game, "Four of " + CBFactionLabel(faction) + "'s best");
@@ -1074,7 +1126,8 @@ func CBScoutSilenced(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNa
     fs.lastHitSquadAt = CBGameSeconds(game);
   }
   if CBToastsOn() {
-    CBHearsayFromGangFinal(game, faction, "Our guy stopped answering. We will find you another way.", n"");
+    let lost = CBGangScoutLostLine(faction);
+    CBHearsayFromGangFinal(game, faction, StrLen(lost) > 0 ? lost : "Our guy stopped answering. We will find you another way.", n"");
   }
 }
 
@@ -1370,3 +1423,18 @@ public let cbOutOfFightTicks: Int32;
 // How far off they were last pass, to tell somebody coming back from somebody stuck.
 @addField(ScriptedPuppet)
 public let cbReleaseAway: Float;
+
+// How many of this gang's apex squads V has beaten, from the History ([U4], 2.3.2). Counted from what is kept, so a
+// very long playthrough may count only the recent ones.
+public func CBApexTimesBeaten(sys: ref<CyberbaneSystem>, faction: CName) -> Int32 {
+  if !IsDefined(sys) || Equals(faction, n"") {
+    return 0;
+  }
+  let n = 0;
+  for e in sys.GetLog() {
+    if IsDefined(e) && Equals(e.kind, n"ApexBeaten") && Equals(e.faction, faction) {
+      n += 1;
+    }
+  }
+  return n;
+}

@@ -46,6 +46,8 @@ public class CBKillInfo {
   public let mFinisher: Bool;
   // The weapon in V's hands at the last hit (2.3.1), for the gun the street comes to know (Model/StreetBook.reds).
   public let weaponRecord: TweakDBID;
+  // The one who led a crew ([U2], 2.3.2): their fall shakes the rest like an officer's (Reactions/Morale.reds).
+  public let sergeant: Bool;
 }
 
 // How much of a kill's dread survives nobody having seen it.
@@ -148,21 +150,31 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
   // which is backwards.
   sys.NoteRecentKill();
 
+  // A district's own people, and whoever guards them (Data/GangCodes.reds).
+  CBGuardiansHear(sys, GetGameInstance(), info);
+
   // Faction effects.
   if NotEquals(info.faction, n"") {
     let fs = sys.EnsureFaction(info.faction);
     // A gang minds a body far more than somebody who woke up. The same loss used to be taken
     // either way, so there was no reason on this axis to ever hold back.
     let standingLoss = CBStandingDeltaForKill(info.victimClass) * standingWitness
-                     * (info.lethal ? 1.0 : CBConfig.NonLethalStandingShare()) * sys.WornPerk().standingLossMult;
+                     * (info.lethal ? 1.0 : CBConfig.NonLethalStandingShare()) * sys.WornPerk().standingLossMult
+                     * CBCodeGrudge(info.faction, info);   // how this gang takes it (Data/GangCodes.reds)
     fs.standing = ClampF(fs.standing + standingLoss, -100.0, 100.0);
     // And their enemies hear about it (Model/GangRivalries.reds).
     CBCreditRivalGangs(sys, GetGameInstance(), info.faction, standingLoss);
+    // The Scavengers are everybody's enemy: every other gang is glad (Data/GangCodes.reds).
+    if info.lethal && info.witnessed && CBCodeEverybodysEnemy(info.faction) {
+      CBCreditEverybody(sys, info.faction);
+    }
     // Killing a hostile gang's people where somebody sees it is what sends their next crew.
     // When only people off the street saw it, one of them has to carry it to the gang first (Reactions/Witnesses.reds).
     if info.lethal && info.witnessed && !CBWitnessCarries(sys, GetGameInstance(), info) {
       CBProvoke(sys, GetGameInstance(), info.faction);
     }
+    // How V fights, in their ledger (Model/Ledger.reds).
+    CBLedgerNote(sys, GetGameInstance(), info);
     fs.renown = ClampF(fs.renown + CBFactionRenownForKill(info.victimClass, brutal) * standingWitness, 0.0, 100.0);
     fs.renownPeak = MaxF(fs.renownPeak, fs.renown);
     fs.kills += 1;
@@ -421,6 +433,36 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
           CBLog.Info(n"Model", s"\(NameToString(fs.id)) put its price to you: \(quote)eb.");
         }
       }
+    }
+  }
+}
+
+// A Scavenger down where people saw it: a little standing with every other gang, under the mercy ceiling, the way
+// a favour is (Data/GangCodes.reds).
+public func CBCreditEverybody(sys: ref<CyberbaneSystem>, except: CName) -> Void {
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) && NotEquals(fs.id, except) && CBFactionFieldsSquads(fs.id) && fs.standing < CBConfig.MercyCeiling() {
+      fs.standing = MinF(CBConfig.MercyCeiling(), fs.standing + CBConfig.ScavengerFavour());
+    }
+  }
+}
+
+// One of a district's ordinary people killed where it was seen: the gangs who guard that district's people take
+// it as done to them (6th Street in Santo Domingo, the Mox in Westbrook; Data/GangCodes.reds).
+public func CBGuardiansHear(sys: ref<CyberbaneSystem>, game: GameInstance, info: ref<CBKillInfo>) -> Void {
+  if !IsDefined(info) || !info.lethal || !info.witnessed || NotEquals(info.faction, n"")
+     || info.victimClass != EnumInt(ECBVictimClass.Civilian) || CBReputationFrozen() {
+    return;
+  }
+  let guards: array<CName> = [n"SixthStreet", n"Mox"];
+  for g in guards {
+    if CBCodeGuards(g, info.district) && CBFactionFieldsSquads(g) {
+      let fs = sys.EnsureFaction(g);
+      fs.standing = ClampF(fs.standing - CBConfig.GuardCivilianLoss(), -100.0, 100.0);
+      fs.lastIncidentAt = info.at;
+      CBProvoke(sys, game, g);
+      CBFileLog(sys, n"GuardedHurt", info.at, info.district, g, 0.0);
+      CBLog.Info(n"Model", s"\(NameToString(g)) look after the people here, and saw that.");
     }
   }
 }

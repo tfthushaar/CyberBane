@@ -153,8 +153,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     spawned = byCar;
     crewFuture = Max(0, byCar);
     if byCar <= 0 {
-      spawned = CBSpawnGroup(game, fs.sampleRecord, n"", crew, n"CB_Squad",
-                             CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
+      spawned = CBSpawnMixedCrew(game, fs, crew, CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
     }
   }
   // And their netrunner (1.8.5), hanging back while the rest go in. Not with an apex squad, which
@@ -210,4 +209,65 @@ public func CBSpawnBlockWhy() -> String {
     why = "no reason recorded";
   }
   return why;
+}
+
+// A crew that isn't five of one person ([U1], 2.3.2). Each seat from whoever of theirs V has met in that role (the
+// records the apex roster already captures as V fights them, CBCaptureRoleRecord): a heavy once there are four, a
+// blade once there are three, and the rest shooters, half of them the gang's own last-seen face. A seat whose record
+// is not a fit person to spawn falls back to that face. One CBSpawnGroup per record, under the same live ceiling.
+// The car path still seats one record (CBSendByCar takes one); whoever walks in is mixed.
+public func CBSpawnMixedCrew(game: GameInstance, fs: ref<CBFactionState>, crew: Int32, dist: Float, out last: EntityID) -> Int32 {
+  let base = fs.sampleRecord;
+  if crew <= 0 || !TDBID.IsValid(base) {
+    return 0;
+  }
+  let heavy = crew >= 4 ? CBCrewSeat(fs.roleTankRecord, base) : base;
+  let blade = crew >= 3 ? CBCrewSeat(fs.roleBladeRecord, base) : base;
+  let shooter = CBCrewSeat(fs.roleAssaultRecord, base);
+  let records: array<TweakDBID>;
+  let counts: array<Int32>;
+  let left = crew;
+  if heavy != base {
+    ArrayPush(records, heavy);
+    ArrayPush(counts, 1);
+    left -= 1;
+  }
+  if blade != base && left > 1 {
+    ArrayPush(records, blade);
+    ArrayPush(counts, 1);
+    left -= 1;
+  }
+  let shooters = shooter != base ? left / 2 : 0;
+  if shooters > 0 {
+    ArrayPush(records, shooter);
+    ArrayPush(counts, shooters);
+    left -= shooters;
+  }
+  if left > 0 {
+    ArrayPush(records, base);
+    ArrayPush(counts, left);
+  }
+  let spawned = 0;
+  let i = 0;
+  while i < ArraySize(records) && i < ArraySize(counts) {
+    let body: EntityID;
+    let n = CBSpawnGroup(game, records[i], n"", counts[i], n"CB_Squad", dist, body);
+    if n > 0 {
+      spawned += n;
+      last = body;
+    }
+    i += 1;
+  }
+  if ArraySize(records) > 1 {
+    CBLog.Info(n"Spawn", s"A mixed crew: \(ArraySize(records)) kinds of people in \(spawned).");
+  }
+  return spawned;
+}
+
+// A captured role record if it is a fit person to put in a crew, otherwise the gang's own face.
+func CBCrewSeat(record: TweakDBID, fallback: TweakDBID) -> TweakDBID {
+  if !TDBID.IsValid(record) || !CBRecordIsPerson(record) || CBRecordUnfitTemplate(record) {
+    return fallback;
+  }
+  return record;
 }

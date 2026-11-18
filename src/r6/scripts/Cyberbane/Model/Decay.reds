@@ -66,6 +66,7 @@ public func CBApplyDecay(sys: ref<CyberbaneSystem>, elapsedDays: Float) -> Void 
     }
     let rate = fs.standing > -70.0 ? 1.0 : 0.25;
     if fs.standing < baseline {
+      rate *= CBCodeForgive(fs.id);   // some gangs remember longer (Data/GangCodes.reds)
       fs.standing = MinF(baseline, fs.standing + rate * f);
     } else {
       if fs.standing > baseline {

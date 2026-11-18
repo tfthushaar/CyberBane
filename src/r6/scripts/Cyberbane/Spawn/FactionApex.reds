@@ -287,6 +287,11 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   CBRollApexTraits(scale, strength, tHealth, tArmour, tDamage, tCritChance, tCritDamage, tPower);
   tHealth += traitHealth;
   tArmour += traitArmour;
+  // What they know about this fight (2.3.2, [U3]): how strong their gang is now, how dangerous the district, their
+  // code, and what they have prepared for how V fights. Terms on the same fractions, under the same ceilings.
+  let gangOf = CBClassifyFaction(puppet);
+  tHealth += CBFightReadHealth(sys, game, gangOf);
+  tArmour += CBAdaptArmour(game, gangOf);
   tDamage += traitDamage;
   tCritChance += traitCrit;
   tCritDamage += traitCrit * 2.5;
@@ -321,9 +326,74 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   CBAddFlat(stats, id, gamedataStatType.CritChance, critChance);
   CBAddFlat(stats, id, gamedataStatType.CritDamage, critDamage);
   CBAddFlat(stats, id, gamedataStatType.PowerLevel, power);
+  CBAddFlat(stats, id, gamedataStatType.HackingResistance, CBAdaptIce(game, gangOf));
   // Logged because the numbers are the thing that keeps being wrong, and a player who reports
   // an unkillable enemy can now send a line that says exactly what was built.
   CBLog.Info(n"Spawn", s"Built at grade \(grade): health x\(hpMult), armour x\(armourMult), damage x\(dmgMult), +\(power) power.");
+  if IsDefined(sys) {
+    sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
+  }
+  let pools = GameInstance.GetStatPoolsSystem(game);
+  if IsDefined(pools) {
+    pools.RequestSettingStatPoolValue(id, gamedataStatPoolType.Health, 100.0, null);
+  }
+}
+
+// The fight, read for the build ([U3], 2.3.2): a gang at full strength holds nothing back and a bled one has less
+// to send; a dangerous district puts tougher people on its streets; a gang's code may make its people tougher;
+// and what they have prepared for V. A fraction of health, bounded both ways.
+public func CBFightReadHealth(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> Float {
+  if Equals(gang, n"") {
+    return 0.0;
+  }
+  let t = CBCodeToughness(gang) + CBAdaptHealth(game, gang);
+  if IsDefined(sys) && CBTurfWarsOn() {
+    t += (ClampF(CBGangStrength(sys, gang), 0.0, 100.0) - 100.0) / 100.0 * CBConfig.BuildStrengthWeight();
+  }
+  if IsDefined(sys) {
+    t += CBDistrictDanger(sys.GetCurrentDistrict());
+  }
+  return ClampF(t, -CBConfig.BuildReadFloor(), CBConfig.BuildReadCeiling());
+}
+
+// How dangerous a district's streets are, as a fraction of health on the people sent there.
+public func CBDistrictDanger(district: CName) -> Float {
+  switch CBDistrictIndex(district) {
+    case 6: return 0.1;    // Dogtown
+    case 5: return 0.05;   // Pacifica
+    case 7: return 0.05;   // the Badlands
+    default: return 0.0;
+  }
+}
+
+// A crew member's build (2.3.2). Crews were never built at all, and still are not by V's menace: only what their
+// gang's code and preparation add (the Animals' toughness, Barghest's, plate against a V who shoots, ICE against a
+// V who hacks). Nothing when none of that applies, so a gang with no code and nothing to prepare for sends what it
+// always sent. Once per body, like the apex build, and never on top of it.
+public func CBApplyCrewBuild(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(puppet) || !puppet.IsAttached() || puppet.IsDead() || puppet.cbBuffed {
+    return;
+  }
+  let gang = CBClassifyFaction(puppet);
+  let health = ClampF(CBCodeToughness(gang) + CBAdaptHealth(game, gang), 0.0, CBConfig.CrewBuildHealthCeiling());
+  let armour = ClampF(CBAdaptArmour(game, gang), 0.0, CBConfig.CrewBuildArmourCeiling());
+  let ice = CBAdaptIce(game, gang);
+  if health <= 0.0 && armour <= 0.0 && ice <= 0.0 {
+    return;
+  }
+  let stats = GameInstance.GetStatsSystem(game);
+  if !IsDefined(stats) {
+    return;
+  }
+  let id = Cast<StatsObjectID>(puppet.GetEntityID());
+  if IsDefined(sys) && sys.WasBuiltAt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health)) {
+    return;
+  }
+  puppet.cbBuffed = true;
+  CBAddMult(stats, id, gamedataStatType.Health, 1.0 + health);
+  CBAddMult(stats, id, gamedataStatType.Armor, 1.0 + armour);
+  CBAddFlat(stats, id, gamedataStatType.HackingResistance, ice);
+  CBLog.Info(n"Spawn", s"Crew built by their code and preparation: health x\(1.0 + health), armour x\(1.0 + armour), +\(ice) ICE.");
   if IsDefined(sys) {
     sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
   }

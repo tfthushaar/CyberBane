@@ -52,7 +52,8 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
 
   // Losing the group's officer or boss is a far harder blow than a rank-and-file death.
   let bossOrOfficer = info.victimClass == EnumInt(ECBVictimClass.Boss)
-    || info.victimClass == EnumInt(ECBVictimClass.Officer);
+    || info.victimClass == EnumInt(ECBVictimClass.Officer)
+    || info.sergeant;   // a crew's sergeant ([U2], 2.3.2)
   let shock = bossOrOfficer ? 0.35 : 0.10;
 
   let brutal = CBIsBrutalKill(info.mFinisher, info.mBlade, info.mFists);
@@ -193,7 +194,7 @@ public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, 
   }
   // The ceiling goes last, over the slider and the title too: applied before them, Morale intensity
   // at 2.0 turned a 40% ceiling into 80%.
-  return ClampF(chance * intensity * sys.WornPerk().breakMult, 0.0, CBConfig.MoraleBreakMaxChance());
+  return ClampF(chance * intensity * sys.WornPerk().breakMult * CBCodeNerve(faction), 0.0, CBConfig.MoraleBreakMaxChance());
 }
 
 // May one more of this group run? The kill path counts this as it goes; somebody hit down to a quarter
@@ -422,7 +423,7 @@ public func CBHoldBackOdds(sys: ref<CyberbaneSystem>, faction: CName, nerve: Flo
   }
   let chance = (fear - nerve * CBConfig.HoldBackNerveWeight()) * CBConfig.HoldBackScale()
              - Cast<Float>(backers) * CBConfig.HoldBackPerBacker();
-  return ClampF(chance * sys.WornPerk().breakMult, 0.0, CBConfig.HoldBackMax());
+  return ClampF(chance * sys.WornPerk().breakMult * CBCodeNerve(faction), 0.0, CBConfig.HoldBackMax());
 }
 
 // What the Hub says: the odds for one of their rank and file standing with one friend.

@@ -3,6 +3,56 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.3.2 (18 November 2026)
+
+**A code for each gang**
+- **Every gang lives by its own code.** The Valentinos make more of mercy than anyone, and shooting one of
+  theirs with their hands up costs you double; their fallen Rivals' families come after you more often. The
+  Tyger Claws are business: their price for peace is the lowest, and an insult costs more. Maelstrom can tell
+  the chrome under your jacket. 6th Street guard the people of Santo Domingo, and the Mox guard Jig-Jig Street:
+  kill a local there where people can see and they come for you. The Animals respect fists and despise a gun,
+  their crews are tougher, and they barely feel fear. The Voodoo Boys trace you through the Net first and send
+  few people. The Mox send small crews and never their best. Kill Scavengers and every other gang is glad; they
+  run rather than come back as Rivals. The Aldecaldos are one family and remember a harm twice as long.
+  Barghest never break or surrender, and their grudge stays in Dogtown.
+- **6th Street and Barghest fight like soldiers**, the way corporate crews already did.
+- **The Hub tells you each gang's code**, under their price: what they respect from the start, and what they
+  never forgive, how they fight and how to make peace as you find each out.
+- **Each gang talks like itself.** Street warnings, the texts saying a crew is coming, refusing to talk, losing
+  a scout, giving up: all in the gang's own voice.
+
+**Gangs adapt to how you fight**
+- Keep shooting a gang's people and their crews come in armour; keep fighting up close or with explosives and
+  they come tougher; keep hacking them and they run fresh ICE; keep taking them out unseen and their hunters
+  keep their eyes open. They text you when they change. It fades when you change how you fight. How they look
+  never changes.
+
+**Crews and apex squads**
+- **Crews aren't clones any more.** A crew on foot mixes the people of that gang you've met: a heavy, a blade,
+  shooters, sometimes a netrunner, instead of five copies of one person.
+- **Every crew has a sergeant.** Your scanner says who. Put them down and the rest are far more likely to break.
+- **Apex squads work as a team.** Their netrunner spots you from twice as far and tells the rest where you are;
+  a squad that loses you searches together; and their warning text remembers how many of their squads you've
+  beaten.
+- **Enemies read the fight.** Apex fighters and Rivals are built a little weaker when their gang is bleeding,
+  a little tougher in Dogtown, Pacifica and the Badlands, and by their gang's code, always within the same
+  limits as before.
+
+**Surrender is on for everyone**
+- Beaten gangers can give up, hands up, and your scanner shows HANDS UP. How often depends on the gang.
+  Let them walk and their gang thinks better of you; grab them and they talk; shoot them and the street hears.
+  It's on by default now (a new setting, **Gangers surrender**, so it reaches every install).
+
+**Mod Settings**
+- New under **Gangs**: **Gang codes** and **Gangs adapt to how you fight**, both on. **Gangers surrender** is
+  there too. Car and Vendetta-crew-size options hide while their switch is off.
+
+**Fixes**
+- The History screen now has proper sentences for everything 2.3.1 added (witnesses paid off, keeping watch,
+  wannabes).
+
+Your progress carries over.
+
 ## 2.3.1 (18 November 2026)
 
 **The street reads you**

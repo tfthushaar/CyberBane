@@ -173,6 +173,11 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
       "You don't survive MaxTac. That one did.");
   }
   if Equals(topic, n"warning") {
+    // In their own voice, most of the time (Narrative/GangVoice.reds).
+    let own = CBGangWarnLine(st.faction);
+    if StrLen(own) > 0 && RandF() < CBConfig.GangVoiceShare() {
+      return own;
+    }
     if st.kills >= 20 {
       return CBPick3(
         "You've put enough of us in the ground. Walk away, or you're next.",

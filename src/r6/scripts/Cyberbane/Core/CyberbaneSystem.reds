@@ -359,6 +359,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_activeSquadApex: Bool;
   private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
   private let m_crewGrenadier: Bool;                    // this crew's grenadier is already chosen (1.8.5)
+  private let m_crewSergeant: Bool;                     // and its sergeant (2.3.2)
+  private let m_apexSearchAt: Vector4;                  // where an apex squad that lost V is searching ([U4], 2.3.2)
+  private let m_apexSearchTick: Int32;
   // Rivals who came with the active one (1.9.0, Spawn/RivalEncounter.reds). Session only.
   private let m_packIds: array<Int32>;
   // The ticks new Rivals were made on lately, so one fight cannot make a crowd of them
@@ -851,6 +854,29 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func ClearSquadAnchor() -> Void {
     this.m_squadAnchor = null;
     this.m_crewGrenadier = false;
+    this.m_crewSergeant = false;
+  }
+
+  public func GetApexSearchPoint() -> Vector4 {
+    return this.m_apexSearchAt;
+  }
+
+  public func GetApexSearchTick() -> Int32 {
+    return this.m_apexSearchTick;
+  }
+
+  public func SetApexSearch(at: Vector4, tick: Int32) -> Void {
+    this.m_apexSearchAt = at;
+    this.m_apexSearchTick = tick;
+  }
+
+  // The crew being dispatched has its sergeant now ([U2], 2.3.2). True once per crew.
+  public func TakeCrewSergeant() -> Bool {
+    if this.m_crewSergeant {
+      return false;
+    }
+    this.m_crewSergeant = true;
+    return true;
   }
 
   // The crew being dispatched has its grenadier now (Spawn/Tactics.reds). True once per crew.
@@ -3360,6 +3386,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(streetBook) {
       streetBook.Age(CBGameSeconds(game));   // places their district has forgotten (2.3.1)
     }
+    CBLedgerFade(game, elapsedDays);         // how V fights, fading (Model/Ledger.reds, 2.3.2)
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
@@ -3683,6 +3710,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     let streetBook = CBStreetBook.Get(this.GetGameInstance());
     if IsDefined(streetBook) {
       streetBook.Clear(); // no place remembers, and nobody knows V's car or gun (2.3.1)
+    }
+    let ledger = CBLedgerBook.Get(this.GetGameInstance());
+    if IsDefined(ledger) {
+      ledger.Clear();     // and no gang knows how V fights (2.3.2)
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);

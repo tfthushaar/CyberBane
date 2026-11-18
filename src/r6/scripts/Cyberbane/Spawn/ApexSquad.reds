@@ -444,7 +444,9 @@ public func CBKitSquadMember(npc: ref<ScriptedPuppet>) -> Void {
   // advance while firing, they keep pace, and they do not fold to a stun-lock. Not the full
   // set, because a crew is not an apex squad and the difference between the two should still
   // be worth something.
-  if CBIsCorpFaction(CBClassifyFaction(npc)) {
+  // So are 6th Street's veterans and Barghest's army, by their code (Data/GangCodes.reds, 2.3.2).
+  let side = CBClassifyFaction(npc);
+  if CBIsCorpFaction(side) || CBCodeSoldiers(side) {
     CBGrantAbility(asNpc, t"Ability.CanShootWhileMoving");
     CBGrantAbility(asNpc, t"Ability.CanCatchUp");
     CBGrantAbility(asNpc, t"Ability.CanUseAntiStun");

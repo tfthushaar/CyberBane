@@ -115,7 +115,8 @@ public func CBCreditMercy(sys: ref<CyberbaneSystem>, faction: CName, amount: Flo
   if !IsDefined(fs) || fs.standing >= CBConfig.MercyCeiling() {
     return;
   }
-  fs.standing = ClampF(fs.standing + amount * sys.WornPerk().mercyMult, -100.0, CBConfig.MercyCeiling());
+  // Some gangs make more of mercy than others (Data/GangCodes.reds).
+  fs.standing = ClampF(fs.standing + amount * sys.WornPerk().mercyMult * CBCodeMercy(faction), -100.0, CBConfig.MercyCeiling());
 }
 
 // A gang has just come round to V. Called from the posture watch, once per crossing.

@@ -24,14 +24,14 @@ public func CBStreetLifeOn(flag: CName) -> Bool {
     return false;
   }
   if !rt.HasSettings() {
-    return !Equals(flag, n"surrender") && !Equals(flag, n"claimHelp");
+    return !Equals(flag, n"claimHelp");   // surrender is on by default from 2.3.2
   }
   let s = rt.GetSettings();
   if Equals(flag, n"bagmen") { return s.bagmen; }
   if Equals(flag, n"favours") { return s.favours; }
   if Equals(flag, n"sitDowns") { return s.sitDowns; }
   if Equals(flag, n"whileOut") { return s.whileOut; }
-  if Equals(flag, n"surrender") { return s.surrender; }
+  if Equals(flag, n"surrender") { return s.gangsSurrender; }
   if Equals(flag, n"claimHelp") { return s.claimHelp; }
   return false;
 }
@@ -667,7 +667,7 @@ public class CBStreetLife {
   public func TrySurrender(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
     let player = GetPlayer(game);
     if !CBStreetLifeOn(n"surrender") || !IsDefined(npc) || !IsDefined(player) || npc.IsCrowd() || npc.IsBoss()
-       || RandF() >= CBConfig.SurrenderShare() || ArraySize(this.m_gaveUp) >= 4 {
+       || RandF() >= CBConfig.SurrenderShare() * CBCodeSurrender(CBClassifyFaction(npc)) || ArraySize(this.m_gaveUp) >= 4 {
       return false;
     }
     // Never a Rival. A Rival who runs has an ending of their own (Reactions/CombatFlee.reds); one with
@@ -688,10 +688,11 @@ public class CBStreetLife {
     StimBroadcasterComponent.SendStimDirectly(player, gamedataStimType.SpreadFear, npc, data);
     CBTalkHold(npc);
     npc.cbSurrendered = true;
+    npc.SetScannerDirty(true);   // the scanner says so (UI/ScannerName.reds)
     ArrayPush(this.m_gaveUp, npc);
     ArrayPush(this.m_gaveUpTick, sys.GetTickCount());
     this.HandOffSurrendered(sys, game, des, npc);
-    CBIntelSay(game, 3, CBIntelSpeaker(CBClassifyFaction(npc)), CBPick3("Okay! Okay! I'm done!", "Don't shoot! I give up!", "Enough! It's over, I'm out!"), 3.5);
+    CBIntelSay(game, 3, CBIntelSpeaker(CBClassifyFaction(npc)), CBGangSurrenderLine(CBClassifyFaction(npc)), 3.5);
     CBLog.Info(n"Street", "An enemy gave up instead of running.");
     return true;
   }
@@ -741,6 +742,16 @@ public class CBStreetLife {
           CBOrderFlee(game, p);
           // Let go is let go: shot later, it is somebody running off, not somebody with their hands up.
           p.cbSurrendered = false;
+          p.SetScannerDirty(true);
+          // Let go with their life (2.3.2): their gang hears that V let one walk, the way a mercy is heard, and
+          // V's name for restraint grows. Not for somebody V grabbed and questioned, who was let go already.
+          if !p.cbIntelGiven {
+            let gave = CBClassifyFaction(p);
+            CBCreditMercy(sys, gave, CBConfig.SurrenderLetGoStanding());
+            sys.AddCode(CBConfig.SurrenderLetGoCode());
+            CBFileLog(sys, n"LetGo", CBGameSeconds(game), CBEventDistrict(sys, game), gave, 0.0);
+            CBLog.Info(n"Street", "V let somebody with their hands up walk.");
+          }
         }
         ArrayErase(this.m_gaveUp, i);
         ArrayErase(this.m_gaveUpTick, i);

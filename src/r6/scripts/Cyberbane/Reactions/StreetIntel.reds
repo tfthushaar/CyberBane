@@ -449,7 +449,7 @@ public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
                                     "Fine. I'll keep my ears open. Now get away from me before somebody sees."), n"");
   }
   // They tell their own instead.
-  CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost() * 0.5);
+  CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost() * CBCodeInsult(t.faction) * 0.5);
   let lead = CBTalkLeadFor(sys, game, t.faction);
   if IsDefined(lead) && lead.state != EnumInt(ECBRivalState.Hunting) {
     lead.state = EnumInt(ECBRivalState.Hunting);

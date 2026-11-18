@@ -809,6 +809,11 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     CBLog.Info(n"Rivals", s"No new Rival from \(NameToString(faction)): switched off in Mod Settings.");
     return null;
   }
+  // Nor a gang whose people run rather than come back (the Scavengers, Data/GangCodes.reds).
+  if CBCodeEverybodysEnemy(faction) {
+    CBLog.Info(n"Rivals", s"No new Rival from \(NameToString(faction)): they run, and do not come back.");
+    return null;
+  }
   // One gate, here, because eight different places create Rivals and several hand over a
   // record straight off a puppet. Guarding each of them would mean missing one. The single
   // exception is a spared cyberpsycho, on a coin flip; see CBCyberpsychoMayReturn.
@@ -1289,7 +1294,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
     // what made every nemesis you killed a clean reset. Made once the fight is over, with the street
     // saying who picked up where they left off (Rivals/Births.reds, 1.9.1).
     // Sometimes the one who picks it up is family (Rivals/RivalLife.reds, 1.9.9).
-    let kin = RandF() < CBConfig.KinChance() ? rival.id : 0;
+    let kin = RandF() < ClampF(CBConfig.KinChance() * CBCodeKin(rival.faction), 0.0, 0.9) ? rival.id : 0;
     CBRivalAfterFight(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger,
                       district, at, null, Max(1, rival.rank - 1), CBRivalDisplayName(content, rival), kin);
   }

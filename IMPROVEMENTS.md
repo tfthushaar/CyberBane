@@ -36,58 +36,22 @@ probe on 2.31 and 2.5 before anything is built on it.
 By impact for the effort, most first:
 
 1. **Voices for the moments** (79). The people Cyberbane moves finally sound like it, in their own voices.
-2. **Gangs that adapt to how V fights** (40). Every gang feels like it is learning.
-3. **A code for each gang** (10 to 21). Answers the oldest complaint about the game's gangs: they are the same
-   gang in different colours.
+2. *(Built in 2.3.2: gangs that adapt, and a code for each gang.)*
+3. **What is left of the codes** (11, 18, 20): the Claws' protection and assassin, the Wraiths' road, the corps.
 4. **The facedown** (53). A Cyberpunk-canon moment before every Rival fight.
 5. **A price on V's head, and the hunters' ladder** (39). A second nemesis line with a goal of its own.
 6. **Funerals** (22). Closes the loop on every Rival V kills, and feeds kin.
 7. **Back a gang, and the war chest** (33, 34). A side to take and a strategy in the turf war.
 8. **Run with a crew** (65). The payoff for being liked.
 9. **Panic in the dark** (80). Stealth play gets the terror loud play already has.
-10. **The screamsheet** (81). Everything above, visible in one place.
-
----
-
-## 2. A code for each gang
-
-Today the gangs differ in numbers and colours. Each gets a code: what they respect, what they never forgive, how
-they fight and how they make peace, shown on the Hub so it can be played. Every one runs on existing systems
-(standing, fear, `Spawn/Tactics.reds`, `Reactions/Morale.reds`, the lanes), as a table per faction in
-`Data/Factions.reds`. *(The gang critique in the sources; the gangs' lore)*
-
-10. **Valentinos: honour and family.** Mercy and a fair fight earn more standing with them than with anyone;
-    killing one who surrendered, or attacking a funeral or a sit-down, is never forgotten (a double grudge).
-    Every crew of theirs calls V out before shooting, not only a Rival's. Kin come more often. **S to M**
-11. **Tyger Claws: business and face.** Paying them off costs less, insulting them in talk costs more. They
-    extort: working Japantown draws a weekly protection demand by text, and a crew if V ignores it. When they
-    want V dead they send one assassin with a blade at night, not a crowd. **M**
-12. **Maelstrom: chrome is everything.** They respect visible chrome and see through covered chrome more easily
-    than anyone; their crews come for V's implants ("We want those arms, choom"). A low-humanity V is one of
-    theirs (item 76). **S to M**
-13. **6th Street: the neighbourhood watch.** Veterans guarding "their" streets: hurting civilians in Santo
-    Domingo or Arroyo brings them down on V with no grudge of their own, and protecting locals earns their
-    respect. They fight like soldiers: suppression and flanking, as Cyberbane's corps already do. **M**
-14. **Animals: strength.** They respect fists and blunt takedowns and despise a V who only shoots. They issue
-    the wannabe challenges (built in 2.3.1, `Spawn/Wannabe.reds`) more often than anyone. Their crews are juiced: more health, fewer guns, more melee, and fear
-    barely touches them, except fear of V's Body. **S to M**
-15. **Voodoo Boys: information.** They trade in data. Their hunts open with a remote hack (V's HUD glitches, a
-    netrunner tracing V) before anyone walks over, they rarely come in person, and their leads cost a hack's
-    worth of Intelligence rather than eddies. **M**
-16. **Mox: they protect their own.** Hurting other gangs is no business of theirs; hurting the people of
-    Jig-Jig Street is. Small crews, never an apex squad. Driving off the Claws who lean on them wins them over.
-    **S**
-17. **Scavengers: everybody's enemy.** Killing Scavs earns a little standing with every gang and the street.
-    They make no Rivals (they run), but they go for V when V is hurt, for parts. **S**
-18. **Wraiths and Aldecaldos: the Badlands.** Wraiths ambush V's car on Badlands roads (the car ambush, out
-    there). The Aldecaldos are one family: a Nomad V starts known to them, a harm to one is remembered longer,
-    and a favour is repaid in car parts and eddies. **M**
-19. **Barghest: an army.** Soldiers and drones rather than gangers, a grudge that stays in Dogtown, and they
-    neither break nor surrender. Numbers in Morale. **S**
+11. **Tyger Claws: protection and the assassin.** (The rest of their code, a cheap peace and a dear insult, is
+    built.) Working Japantown draws a weekly protection demand by text, and a crew if V ignores it; when they
+    want V dead they send one assassin with a blade at night, not a crowd. Fits with 2.4.0's tribute and peace
+    by text ([U6]) and 2.4.1's hunts. **M**
+18. **Wraiths: the road.** (The Aldecaldos' family code is built.) Wraiths ambush V's car on Badlands roads:
+    the car ambush, out there, with [E2] in 2.4.1. **S**
 20. **The corporations: money, not grudges.** Arasaka, Militech and Kang Tao send no gangers. They post a
     contract on V and hire solos (item 39), and they can be bought off at a corporate price. **M**
-21. **What they respect.** A page per gang on the Hub: what they respect, what they never forgive, how to make
-    peace with them, filled in as V finds each out. **S**
 
 ## 3. Gang life: events with a time and a place
 
@@ -152,13 +116,6 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
     the ladder (a Hub page); at the top V is the most dangerous merc in Night City. The bounty ends when V pays
     it, or kills whoever posted it. A hunter V beats and leaves alive can become a Rival. **L** *(Assassin's
     Creed Odyssey's mercenaries; New Vegas's hit squads)*
-40. **Gangs that adapt to how V fights.** Cyberbane already counts how V hurts people (for Rival scars). Count it
-    per gang, and as one method dominates, that gang's crews prepare: more armour against a headshot V; scans
-    and a netrunner's ping against a V who sneaks; hack resistance against quickhacks; shotguns and blades
-    against melee; snipers and flankers against long range; bikes and cars against a V who drives through
-    them; spreading out against grenades; sharper eyes at night against a night stalker. The gang says so
-    ("They're bringing ICE for you, merc"), and it fades when V changes. Through the existing stat build and
-    record choice; nothing about how they look changes. **M to L** *(Metal Gear Solid V's revenge system)*
 41. **Lie low on purpose.** Staying off a gang's turf, out of fights, or in a safe place cools that gang faster,
     and the Hub says each gang's heat in words. Changing clothes out of sight or leaving the district gives an
     extra chance the trail goes cold. **S** *(old backlog 4 and 12)*

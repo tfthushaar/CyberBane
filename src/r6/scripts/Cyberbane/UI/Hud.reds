@@ -2457,11 +2457,6 @@ public class CBHud {
     if StrLen(status) > 0 {
       out += "Right now: " + StrLower(status) + ".\n";
     }
-    // What the street knows V by (Model/StreetBook.reds, 2.3.1).
-    let knownBy = CBKnownByLine(game);
-    if StrLen(knownBy) > 0 {
-      out += knownBy + "\n";
-    }
     out += "\n";
     let quote = CBPeaceQuote(sys, game, id);
     let money = CBHudEddies(game);
@@ -2486,6 +2481,16 @@ public class CBHud {
         out += CBHudWhyNoPeace(game, id, posture);
         this.SetAction("", false);
       }
+    }
+    // Below the price, so the page can only ever lose these to its line limit, never the price: what the street
+    // knows V by (Model/StreetBook.reds, 2.3.1), and their code as V has learnt it (Data/GangCodes.reds, 2.3.2).
+    let knownBy = CBKnownByLine(game);
+    if StrLen(knownBy) > 0 {
+      out += "\n" + knownBy;
+    }
+    let code = CBCodeLines(sys, id);
+    if StrLen(code) > 0 {
+      out += "\n" + code;
     }
     this.SetBody(CBHudMarginX(), top, width, out, CBHudMaxLinesFor(this.m_tab));
   }
@@ -4031,6 +4036,35 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   }
   if Equals(e.kind, n"TalkCallOff") {
     return s"You paid \(who) \(RoundF(e.value))eb to call off the crew coming for you.";
+  }
+  // 2.3.1: the street.
+  if Equals(e.kind, n"WitnessHushed") {
+    return "You paid a witness to forget what they saw.";
+  }
+  if Equals(e.kind, n"KeepWatch") {
+    return s"You paid somebody \(RoundF(e.value))eb to keep watch for you.";
+  }
+  if Equals(e.kind, n"WannabeBeaten") {
+    return "A kid squared up to you for a name. You put them down.";
+  }
+  if Equals(e.kind, n"WannabeLost") {
+    return "A kid squared up to you for a name, and won.";
+  }
+  if Equals(e.kind, n"WannabeWalked") {
+    return "A kid squared up to you for a name. You walked away.";
+  }
+  if Equals(e.kind, n"WannabeShot") {
+    return "You shot a kid who came at you with their fists.";
+  }
+  // 2.3.2: the codes.
+  if Equals(e.kind, n"GuardedHurt") {
+    return StrLen(gang) > 0 ? s"You hurt people \(gang) look after." : "You hurt people somebody looks after.";
+  }
+  if Equals(e.kind, n"LetGo") {
+    return StrLen(gang) > 0 ? s"You let one of \(gang) walk with their hands up." : "You let somebody walk with their hands up.";
+  }
+  if Equals(e.kind, n"ApexBeaten") {
+    return StrLen(gang) > 0 ? s"You beat \(CBPossessive(gang)) apex squad, all four." : "You beat an apex squad, all four.";
   }
   return NameToString(e.kind);
 }

@@ -689,6 +689,10 @@ public func CBRecognizes(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, n
   if npc.cbRecoState == 0 {
     // Harder to make out a face at night and in the rain (Model/Moment.reds, 2.3.1).
     let p = score.RecognitionChance(district, faction, false, false) * CBSightMult(sys.GetGameInstance());
+    // Maelstrom can tell what is under a jacket (Data/GangCodes.reds).
+    if score.GetChrome() >= CBConfig.ChromeUnderClothes() {
+      p += CBCodeSeesChrome(faction);
+    }
     // Wearing this gang's colours makes them slower to place you (spec §9.3).
     if NotEquals(faction, n"") && Equals(faction, sys.GetDisguiseFaction()) {
       p *= (1.0 - sys.GetDisguiseStrength());
@@ -717,6 +721,9 @@ public func CBBossesSeeThroughOn() -> Bool {
 // Whether they are somebody who would look closer: an officer, an elite or a boss, read once and kept.
 @addField(ScriptedPuppet)
 public let cbEnforcer: Int32;        // 0 unread, 1 yes, 2 no
+// The one who leads a crew ([U2], 2.3.2; Spawn/Spawner.reds).
+@addField(ScriptedPuppet)
+public let cbSergeant: Bool;
 @addField(ScriptedPuppet)
 public let cbLookSince: Float;       // game seconds V has been close and covered, 0 when not
 

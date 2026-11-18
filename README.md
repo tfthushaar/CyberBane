@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.3.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.3.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -57,6 +57,9 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   through a disguise.
 - **Wannabes** square up to you for a name, fists only, and the street hears how it went.
 - **Pay the street** to keep watch for you, or to forget what they saw.
+- **A code for each gang.** Every gang respects, forgives and fights in its own way, talks like itself, and
+  adapts to how you fight it. The Hub tells you each code as you learn it.
+- **Crews with a sergeant**, mixed from the people you've met, and apex squads that hunt you as a team.
 
 ## Requirements
 

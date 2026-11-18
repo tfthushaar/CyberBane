@@ -1116,7 +1116,10 @@ public class CBStreetTalk {
       line = CBPick2("Move along.", "Not now. Keep walking.");
     } else {
       if NotEquals(faction, n"") && NotEquals(faction, n"MaxTac") {
-        line = CBPick3("Keep walking, merc.", "Not talking to you. Move.", "Wrong street to stop on.");
+        line = CBGangRefuseLine(faction);
+        if StrLen(line) == 0 {
+          line = CBPick3("Keep walking, merc.", "Not talking to you. Move.", "Wrong street to stop on.");
+        }
       }
     }
     if StrLen(line) == 0 {
@@ -2626,7 +2629,7 @@ func CBTalkOnAntagonize(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   if gap < -CBConfig.TalkFoldGap() && CBTalkFight(sys, game, player, t) {
     return CBTalkSay(CBPick3("Alright. Let's dance.", "You picked the wrong one.", "Say that to my face. Oh wait."), n"");
   }
-  CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost());
+  CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost() * CBCodeInsult(t.faction));
   return CBTalkSay(CBPick3("Keep running your mouth, see what happens.", "Big talk. Walk away.", "Another word and you're bleeding."), n"bump");
 }
 
@@ -2673,7 +2676,7 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   if immovable || RandF() >= chance {
     // Lost face. And somebody with the nerve, or the grudge, takes it further.
     CBTalkFear(sys, game, t.faction, -CBConfig.TalkLostFace());
-    CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost() * 0.5);
+    CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost() * CBCodeInsult(t.faction) * 0.5);
     if (t.mood == CBTalkHostile() || CBTalkNerveGap(t) < -CBConfig.TalkFoldGap()) && RandF() < CBConfig.TalkCallBluffFight()
        && CBTalkFight(sys, game, player, t) {
       return CBTalkSay(CBPick2("Let's see you back that up.", "Wrong one to push."), n"");

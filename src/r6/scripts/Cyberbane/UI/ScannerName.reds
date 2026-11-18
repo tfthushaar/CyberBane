@@ -49,6 +49,16 @@ public let cbIsRivalBody: Bool;
 public const func CompileScannerChunks() -> Bool {
   let compiled = wrappedMethod();
   let rival = CBScannerRival(this);
+  // Somebody with a note of their own (2.3.2): their hands up. Their name stays the game's; the note goes beside it.
+  let note = IsDefined(rival) ? "" : CBScannerNote(this);
+  if StrLen(note) > 0 {
+    let forcedN: TweakDBID;
+    let psN = this.GetPS();
+    if IsDefined(psN) {
+      forcedN = psN.GetForcedScannerPreset();
+    }
+    CBScannerShowNote(this, note, forcedN);
+  }
   if IsDefined(rival) {
     // A quest can force a different scanner preset on an NPC, and the game honours it before the
     // record's own. Read here because GetPS is protected and this is the one place it is in
@@ -104,6 +114,59 @@ public func CBScannerRival(npc: ref<NPCPuppet>) -> ref<CBRival> {
     return null;
   }
   return r;
+}
+
+// What the scanner says beside somebody's own name, or "" for nothing: one with their hands up (2.3.2).
+public func CBScannerNote(npc: ref<NPCPuppet>) -> String {
+  if !IsDefined(npc) {
+    return "";
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && !rt.IsEnabled() {
+    return "";
+  }
+  if npc.cbSurrendered {
+    return "HANDS UP";
+  }
+  if npc.cbSergeant && !npc.IsDead() {
+    return "CREW SERGEANT";
+  }
+  return "";
+}
+
+// The name chunk again, the game's way: their own name from their record, the note as the line under it.
+public func CBScannerShowNote(npc: ref<NPCPuppet>, note: String, forcedPreset: TweakDBID) -> Void {
+  let rec = TweakDBInterface.GetCharacterRecord(npc.GetRecordID());
+  if !IsDefined(rec) {
+    return;
+  }
+  let showName = false;
+  if TDBID.IsValid(forcedPreset) {
+    let forced = TweakDBInterface.GetScannerModuleVisibilityPresetRecord(forcedPreset);
+    showName = IsDefined(forced) && forced.ShoulShowName();
+  } else {
+    let own = rec.ScannerModulePreset();
+    showName = IsDefined(own) && own.ShoulShowName();
+  }
+  if !showName {
+    return;
+  }
+  let name = GetLocalizedTextByKey(rec.DisplayName());
+  if StrLen(name) == 0 {
+    return;
+  }
+  let bbs = GameInstance.GetBlackboardSystem(npc.GetGame());
+  let bb = IsDefined(bbs) ? bbs.Get(GetAllBlackboardDefs().UI_ScannerModules) : null;
+  if !IsDefined(bb) {
+    return;
+  }
+  let chunk = new ScannerName();
+  chunk.SetArchetype(true);
+  let params = new inkTextParams();
+  params.AddLocalizedString("TEXT_PRIMARY", name);
+  params.AddLocalizedString("TEXT_SECONDARY", note);
+  chunk.SetTextParams(params);
+  bb.SetVariant(GetAllBlackboardDefs().UI_ScannerModules.ScannerName, ToVariant(chunk));
 }
 
 // Write the name chunk again, the game's way, with the Rival's name in it.

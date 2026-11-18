@@ -1248,7 +1248,14 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   // where they are; the setting turns the lot off for anyone who would rather hunt.
   CBTrackOnMap(game, puppet);
   if isSquad {
+    // One of a crew leads it ([U2], 2.3.2): the first of them to arrive, never an escort or a scout, never one who
+    // came with an apex squad (the squad leads then). The scanner names them, and their fall shakes the rest.
+    if des.IsTagged(id, n"CB_Squad") && !sys.ActiveSquadHasApex() && !puppet.cbSergeant && sys.TakeCrewSergeant() {
+      puppet.cbSergeant = true;   // a field, not a tag: they are CB_Squad, which every list already covers
+      puppet.SetScannerDirty(true);
+    }
     CBKitSquadMember(puppet);
+    CBApplyCrewBuild(sys, game, puppet);   // their code and what they have prepared for V (2.3.2)
   }
   if isApex || isSquad {
     CBJoinSquadWith(sys, puppet);

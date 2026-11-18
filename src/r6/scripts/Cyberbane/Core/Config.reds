@@ -305,6 +305,42 @@ public abstract class CBConfig {
   // massacre, a boss) has an even chance of being recorded and reaching every district at once.
   public static func BraindanceMinMagnitude() -> Float = 8.0
   public static func BraindanceChance() -> Float = 0.5
+  // Gang codes (Data/GangCodes.reds, 2.3.2): what every other gang gives for a Scavenger down, what a guarding gang
+  // takes for one of its district's people, the base of the extra grudge for shooting somebody with their hands up,
+  // and how much chrome Maelstrom can tell is under clothes.
+  public static func ScavengerFavour() -> Float = 0.5
+  public static func GuardCivilianLoss() -> Float = 4.0
+  public static func SurrenderShotStanding() -> Float = 5.0
+  public static func ChromeUnderClothes() -> Float = 50.0
+  // Surrender, let go (Spawn/LivingStreet.reds, 2.3.2): standing with their gang (as a mercy, times its code) and Code.
+  public static func SurrenderLetGoStanding() -> Float = 2.0
+  public static func SurrenderLetGoCode() -> Float = 0.5
+  // Each gang's voice (Narrative/GangVoice.reds, 2.3.2): how often a street warning is in their own words.
+  public static func GangVoiceShare() -> Float = 0.7
+  // Gangs adapt (Model/Ledger.reds, 2.3.2): a way of fighting dominates at ten weight (a body is 1, somebody left
+  // breathing 0.6) and over 55% of it; the ledger keeps 80% a day. Prepared, a gang's people get 20% armour, 15%
+  // health or 3 ICE, and its hunters see 25% further.
+  public static func AdaptMinWeight() -> Float = 10.0
+  public static func AdaptShare() -> Float = 0.55
+  public static func AdaptLiveWeight() -> Float = 0.6
+  public static func AdaptDailyKeep() -> Float = 0.8
+  public static func AdaptArmour() -> Float = 0.2
+  public static func AdaptHealth() -> Float = 0.15
+  public static func AdaptIce() -> Float = 3.0
+  public static func AdaptSense() -> Float = 1.25
+  // The fight read into a build ([U3]): a bled gang's people up to 12% weaker, and the terms together kept within
+  // 15% weaker and 40% tougher. A crew member's build never goes past 40% health or 30% armour.
+  public static func BuildStrengthWeight() -> Float = 0.12
+  public static func BuildReadFloor() -> Float = 0.15
+  public static func BuildReadCeiling() -> Float = 0.4
+  public static func CrewBuildHealthCeiling() -> Float = 0.4
+  public static func CrewBuildArmourCeiling() -> Float = 0.3
+  // An apex squad's netrunner spots V from twice as far as the rest, and locates V for the squad ([U4], 2.3.2).
+  public static func ApexNetrunnerReach() -> Float = 2.0
+  // An apex squad searching as one: the spot the first of them chose holds for 20 seconds, and the rest search
+  // within 6 m of it.
+  public static func ApexSearchShareTicks() -> Int32 = 20
+  public static func ApexSearchSpread() -> Float = 6.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

@@ -72,8 +72,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-SitDownApex-Desc", "How many of each gang's people at a sit-down are its best, as tough and as well equipped as its apex squad: a heavy, a shooter, a blade and a netrunner, in that order. They stand their ground and drop apex loot. The rest are rank and file. Never more than the people per gang.");
     this.Text("Cyberbane-Settings-WhileOut", "While you were out");
     this.Text("Cyberbane-Settings-WhileOut-Desc", "A little after you load, one line about the latest thing that changed the street.");
-    this.Text("Cyberbane-Settings-Surrender", "Surrender (experimental)");
-    this.Text("Cyberbane-Settings-Surrender-Desc", "Some beaten gangers give up instead of running: hands up, not fighting. Walk away and they leave; grab them and they talk; shoot them and the street hears about it.");
+    this.Text("Cyberbane-Settings-Surrender", "Gangers surrender");
+    this.Text("Cyberbane-Settings-Surrender-Desc", "Some beaten gangers give up instead of running: hands up, not fighting, and your scanner says so. The Mox and the Scavengers give up often, Barghest never. Let them go and their gang thinks better of you; grab them and they talk; shoot them and the street hears about it, and their gang takes it hard.");
     this.Text("Cyberbane-Settings-ClaimHelp", "Nobody kills you but me (experimental)");
     this.Text("Cyberbane-Settings-ClaimHelp-Desc", "When one gang has you badly outnumbered, a Rival with a claim on you may turn up and fight at your side, then walk off with a promise of next time. Once a day at most.");
     this.Text("Cyberbane-Settings-Category-Gangs", "Gangs");
@@ -186,6 +186,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-KnownByCarAndGun-Desc", "Keep turning up to fights in the same car, or keep using the same gun, and the gangs come to know it. Once they do, a mask will not hide you in that car or with that gun in your hands. The Hub's gang page says what they know.");
     this.Text("Cyberbane-Settings-BossesSeeThrough", "Bosses see through disguises");
     this.Text("Cyberbane-Settings-BossesSeeThrough-Desc", "A gang's officers and elites take a closer look. Stay near one for a few seconds with a mask or their colours on and they may see who you are.");
+    this.Text("Cyberbane-Settings-GangCodes", "Gang codes");
+    this.Text("Cyberbane-Settings-GangCodes-Desc", "Each gang lives by its own code: what it respects, what it never forgives, how it fights and how it makes peace. The Valentinos value mercy and never forget a shot surrender, the Claws are business, the Animals respect fists, Barghest never break, the Mox protect Jig-Jig Street and never send their best, killing Scavengers pleases everybody. The Hub's gang page tells you each gang's code as you learn it. Off, every gang behaves alike.");
+    this.Text("Cyberbane-Settings-GangsAdapt", "Gangs adapt to how you fight");
+    this.Text("Cyberbane-Settings-GangsAdapt-Desc", "Each gang notices how you hurt its people. Keep shooting them and they come in armour; keep fighting up close and they come tougher; keep hacking them and they run fresh ICE; keep taking them quietly and their hunters keep their eyes open. They text you when they change, and it fades when you change how you fight. How they look never changes.");
     this.Text("Cyberbane-Settings-LifepathHeadStart", "A head start from your lifepath");
     this.Text("Cyberbane-Settings-LifepathHeadStart-Desc", "When Cyberbane starts a playthrough (a new game, or Start over) your past counts: a Nomad starts known and liked by the Aldecaldos and disliked by the Wraiths, a Street Kid known to the Valentinos and Heywood, a Corpo known to Arasaka and not kindly. A playthrough Cyberbane already knows is never changed.");
 

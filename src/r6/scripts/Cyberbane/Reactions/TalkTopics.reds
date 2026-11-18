@@ -784,7 +784,7 @@ public func CBTalkAnswerLifepath(sys: ref<CyberbaneSystem>, game: GameInstance, 
   let lp = CBPlayerLifePath(game);
   let f = t.faction;
   if lp == EnumInt(gamedataLifePath.Nomad) && Equals(f, n"Wraiths") {
-    CBTalkSlight(sys, game, f, CBConfig.TalkInsultCost() * 0.5);
+    CBTalkSlight(sys, game, f, CBConfig.TalkInsultCost() * CBCodeInsult(f) * 0.5);
     return CBTalkSay(CBPick2("A nomad. Should've guessed from the smell.", "Your clan isn't welcome here, nomad."), n"bump");
   }
   CBTalkWarm(sys, game, f, CBConfig.TalkLifepathWarmth(), CBConfig.PostureAllied() - 1.0);

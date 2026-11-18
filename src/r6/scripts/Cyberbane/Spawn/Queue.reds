@@ -789,6 +789,10 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   if CBGangAvoidsHere(sys, sys.GetGameInstance(), fs.id) {
     return -1.0;
   }
+  // A grudge that stays in one district (Barghest's, in Dogtown; Data/GangCodes.reds).
+  if !CBCodeAtHome(sys, fs.id) {
+    return -1.0;
+  }
   let bonus = 0.0;
   let reason = false;
   // A gang V has broken (1.9.5) has nobody to spare for a standing grudge or for V walking its streets:
@@ -868,6 +872,10 @@ public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -
   // The kills that earn an apex squad are how Earned in play, and a Hostile set by hand, decide it.
   if CBGangViewVendetta(fs.id) {
     return true;
+  }
+  // A gang whose code never sends its best (the Mox), or whose grudge stays at home (Data/GangCodes.reds).
+  if !CBCodeSendsApex(fs.id) || !CBCodeAtHome(sys, fs.id) {
+    return false;
   }
   let since = fs.kills - fs.apexAtKills;
   if since < CBConfig.ApexKillThreshold() {
@@ -1180,6 +1188,8 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
   }
   // Harder difficulty means harder fights, not instant deaths: a little smaller.
   size = Max(2, size - CBConfig.DifficultyCrewTrim() * CBDifficultyLevel());
+  // How many this gang sends at all (Data/GangCodes.reds): the Mox and the Voodoo Boys few, Barghest more.
+  size = Max(2, RoundF(Cast<Float>(size) * CBCodeCrew(fs.id)));
   // Never more than can actually be in the world at once (CBSpawnGroup's ceiling), leaving the
   // apex squad's four chairs free when crews bring it. The vendetta slider goes past the ceiling,
   // so the text could promise twenty and eighteen at most could ever turn up; this is the one

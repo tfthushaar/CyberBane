@@ -216,6 +216,13 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     let sysS = CyberbaneSystem.Get(game);
     if IsDefined(sysS) {
       sysS.AddCode(-CBConfig.SurrenderShotCode());
+      // What their gang takes on top of the kill, by its code (the Valentinos never forget it).
+      let gaveUp = CBClassifyFaction(puppet);
+      let extra = CBConfig.SurrenderShotStanding() * (CBCodeShotHands(gaveUp) - 1.0);
+      if extra > 0.0 && NotEquals(gaveUp, n"") && !CBReputationFrozen() {
+        let fsS = sysS.EnsureFaction(gaveUp);
+        fsS.standing = ClampF(fsS.standing - extra, -100.0, 100.0);
+      }
       CBFileLog(sysS, n"ShotSurrendered", CBGameSeconds(game), CBEventDistrict(sysS, game), CBClassifyFaction(puppet), 0.0);
       if CBMessagesOn() {
         CBHearsayFromStreet(game, "You shot somebody with their hands up. People saw.", n"");
@@ -300,6 +307,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       CBScheduleLoot(sysE, game, puppet, CBLootTierApex(), CBConfig.LootIconicChanceApex());
       // The last of the squad: their enemies pay for it.
       if CBCountLiveOrSpawningExcept(game, n"CB_Apex", puppet.GetEntityID()) == 0 {
+        CBFileLog(sysE, n"ApexBeaten", CBGameSeconds(game), CBEventDistrict(sysE, game), CBClassifyFaction(puppet), 0.0);
         CBPayApexBounty(sysE, game);
         CBTerrorDeed(sysE, CBConfig.TerrorApexSquad());
         // Their best, all four, put down: the gang feels it (Model/Territory.reds).
@@ -705,5 +713,6 @@ public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
   info.at = CBGameSeconds(game);
   CBSetMethodFlags(info, puppet.cbLastMethodMask);
   info.weaponRecord = puppet.cbLastWeaponRecord;
+  info.sergeant = puppet.cbSergeant;
   return info;
 }
