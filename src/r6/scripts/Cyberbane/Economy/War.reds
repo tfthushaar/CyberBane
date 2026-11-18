@@ -447,9 +447,11 @@ public func CBWarTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref
 }
 
 // The gang at war with this one that has people near V, for the lie.
+// Any gang at war with theirs that fields people (2.5.0): it asked for a record, so a gang V had never crossed could not
+// be lied about, and the war's own enemies were often exactly those.
 func CBWarIncitable(sys: ref<CyberbaneSystem>, gang: CName) -> CName {
   for g in CBGangRivalsOf(sys.GetContent(), gang) {
-    if CBFactionFieldsSquads(g) && CBFactionOn(g) && IsDefined(sys.FindFaction(g)) {
+    if CBFactionFieldsSquads(g) && CBFactionOn(g) {
       return g;
     }
   }

@@ -197,16 +197,16 @@ public func CBAllyTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, play
 func CBWatchMyBack(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let score = sys.GetScore();
   let fs = sys.FindFaction(t.faction);
+  let base = CBGangTemplate(sys, t.faction);   // their own people even if V has never fought one of them (2.5.0)
   // Never on top of a Rival who came to help ("Nobody kills you but me" shares the CB_Ally tag and its clean-up).
-  if !IsDefined(fs) || !TDBID.IsValid(fs.sampleRecord) || CBSpawnRoom(game) < 3 || CBArrivalsHeld(sys, game)
-     || CBLiveTaggedPresent(game, n"CB_Ally") {
+  if !TDBID.IsValid(base) || CBSpawnRoom(game) < 3 || CBArrivalsHeld(sys, game) || CBLiveTaggedPresent(game, n"CB_Ally") {
     return CBTalkSay(CBPick2("Not now. Everybody's busy.", "Can't spare anybody right now."), n"");
   }
   let count = IsDefined(score) && Equals(score.GetPosture(t.faction), ECBPosture.Allied) ? CBConfig.CrewAllied() : CBConfig.CrewFriendly();
   let records: array<TweakDBID>;
-  ArrayPush(records, CBCrewSeat(fs.roleAssaultRecord, fs.sampleRecord));
-  ArrayPush(records, CBCrewSeat(fs.roleTankRecord, fs.sampleRecord));
-  ArrayPush(records, fs.sampleRecord);
+  ArrayPush(records, IsDefined(fs) ? CBCrewSeat(fs.roleAssaultRecord, base) : CBApexRosterRecord(t.faction, 1));
+  ArrayPush(records, IsDefined(fs) ? CBCrewSeat(fs.roleTankRecord, base) : CBApexRosterRecord(t.faction, 0));
+  ArrayPush(records, base);
   let sent = 0;
   let k = 0;
   while k < count && k < ArraySize(records) {
@@ -702,7 +702,7 @@ func CBParleyTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     return;
   }
   let faction = sys.GetActiveSquadFaction();
-  if Equals(faction, n"") || player.IsInCombat() || tick % 2 != 0
+  if Equals(faction, n"") || tick % 2 != 0
      || (war.parleyDoneTick > 0 && tick - war.parleyDoneTick < CBConfig.ParleyGapTicks()) {
     return;
   }
@@ -710,15 +710,33 @@ func CBParleyTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   if !IsDefined(des) {
     return;
   }
+  // Before the shooting starts, asked as that (2.5.0): nobody of the crew hit by V, and V not hit by the crew. It was
+  // asked as "neither side in combat", and a crew sent hostile is in combat the moment it sees V, well before the
+  // sergeant is in talking range, so the parley all but never opened. Opening it calms them (CBParleyOpen).
+  if CBParleyShotsFired(sys, game, des, player) {
+    return;
+  }
   for id in des.GetTaggedIDs(n"CB_Squad") {
     let s = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
-    if CBNpcSafe(sys, s) && s.cbSergeant && CBStillStanding(s) && !CBNpcInCombat(s) && !s.cbDamagedByPlayer
+    if CBNpcSafe(sys, s) && s.cbSergeant && CBStillStanding(s) && !s.cbDamagedByPlayer
        && !des.IsTagged(id, n"CB_Bounty") && !VehicleComponent.IsMountedToVehicle(game, s.GetEntityID())
        && Vector4.Distance(s.GetWorldPosition(), player.GetWorldPosition()) <= CBConfig.SergeantParleyRange() {
       CBParleyOpen(sys, game, war, des, s, faction);
       return;
     }
   }
+}
+
+// Has the fight with this crew begun: V hurt one of them, or the last to hurt V is one of them.
+func CBParleyShotsFired(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>) -> Bool {
+  for id in des.GetTaggedIDs(n"CB_Squad") {
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if IsDefined(p) && p.cbDamagedByPlayer && !des.IsTagged(id, n"CB_Bounty") {
+      return true;
+    }
+  }
+  let by = player.cbLastAttacker;
+  return IsDefined(by) && by.IsAttached() && !by.IsDead() && des.IsTagged(by.GetEntityID(), n"CB_Squad");
 }
 
 func CBParleyOpen(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>, des: ref<DynamicEntitySystem>,
@@ -731,8 +749,8 @@ func CBParleyOpen(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   ArrayClear(war.parleyCrew);
   for id in des.GetTaggedIDs(n"CB_Squad") {
     let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
-    // Nobody in a car seat is held or ordered (crash rule 4).
-    if CBNpcSafe(sys, p) && CBStillStanding(p) && !CBNpcInCombat(p) && !VehicleComponent.IsMountedToVehicle(game, id)
+    // Nobody in a car seat is held or ordered (crash rule 4). Those already in combat are held too: nobody has fired yet.
+    if CBNpcSafe(sys, p) && CBStillStanding(p) && !VehicleComponent.IsMountedToVehicle(game, id)
        && Vector4.Distance(p.GetWorldPosition(), s.GetWorldPosition()) <= CBConfig.FacedownEscortRange() {
       ArrayPush(war.parleyCrew, id);
       CBFacedownCalm(game, p);

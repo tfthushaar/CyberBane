@@ -554,14 +554,17 @@ public abstract class CBConfig {
   // draw gives V 3 seconds of their bad aim. Staring down: 30%, up to 35 more for Cool, up to 25 more for renown, 8
   // less a rank above one; won, the Rival's aim is 0.6 for 20 s; lost, theirs is 1.25. Just you and me: 45%, 30 more
   // for the Valentinos and the Animals. Call it even: 30%, 25 more each time V spared them. Humiliation: 10 fear, half
-  // quit. Feuds: a set one lands 18 game hours later with a 3 point edge; otherwise 8% a day. Trophies from rank two.
+  // quit. Feuds: a set one lands 18 game hours later with a 3 point edge; otherwise 20% a day. Trophies from rank two.
   // Bonds: 35% each Rival, once; vengeance brings them within 5 minutes; a spare puts the other in V's debt 35% of the
-  // time. Back from the dead: 5% a day, 14 days after. Ended up: 15% a day, 20 days after. Taunts: every 25 s or so
+  // time. Back from the dead: 15% a day, 5 days after. Ended up: 25% a day, 7 days after. (2.5.0: feuds were 8%, a
+  // return 5% after 14 days and an ending heard 15% after 20, waits long enough that nobody saw them.) Taunts: every 25 s or so
   // in a fight within 40 m, half the time. A place with meaning: within 600 m of V.
   public static func RivalImplantsMax() -> Int32 = 4
   public static func FacedownRange() -> Float = 24.0
   public static func FacedownEscortRange() -> Float = 40.0
   public static func FacedownTicks() -> Int32 = 15
+  // A Rival owed a facedown walks up calm for at most this long before it is a fight anyway (2.5.0).
+  public static func FacedownWaitTicks() -> Int32 = 75
   public static func FacedownDropSeconds() -> Float = 3.0
   public static func StareBase() -> Float = 0.3
   public static func StareCool() -> Float = 0.35
@@ -579,15 +582,15 @@ public abstract class CBConfig {
   public static func HumiliateQuitChance() -> Float = 0.5
   public static func FeudDelayHours() -> Float = 18.0
   public static func FeudSetOnEdge() -> Int32 = 3
-  public static func FeudChancePerDay() -> Float = 0.08
+  public static func FeudChancePerDay() -> Float = 0.2
   public static func TrophyMinRank() -> Int32 = 2
   public static func BondChance() -> Float = 0.35
   public static func BondVengeanceTicks() -> Int32 = 300
   public static func BondDebtChance() -> Float = 0.35
-  public static func ReturnChancePerDay() -> Float = 0.05
-  public static func ReturnDays() -> Float = 14.0
-  public static func EndedUpDays() -> Float = 20.0
-  public static func EndedUpChancePerDay() -> Float = 0.15
+  public static func ReturnChancePerDay() -> Float = 0.15
+  public static func ReturnDays() -> Float = 5.0
+  public static func EndedUpDays() -> Float = 7.0
+  public static func EndedUpChancePerDay() -> Float = 0.25
   public static func TauntTicks() -> Int32 = 25
   public static func TauntRange() -> Float = 40.0
   public static func TauntChance() -> Float = 0.5

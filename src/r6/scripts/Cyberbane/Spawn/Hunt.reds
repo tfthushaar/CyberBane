@@ -603,6 +603,7 @@ func CBHuntEngageTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
     // one of the things 1.5.0 found taking the game down. The car watch lets them out.
     // Nor anybody held for a facedown, or standing back from a fight one on one (Rivals/RivalMoments.reds, 2.4.4).
     if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p) && !p.cbFacedownHeld
+       && !p.cbFacedownWait   // nor anybody walking up calm for one (2.5.0)
        && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID())
        && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.HuntEngageDistance() {
       CBEngageV(game, p);

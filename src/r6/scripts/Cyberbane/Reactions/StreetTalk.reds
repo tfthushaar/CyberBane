@@ -994,7 +994,10 @@ public class CBStreetTalk {
     // they lie (Rivals/RivalLife.reds): picking them as the one V talks to already allows it (CBTalkWhyNot), and this
     // did not, so every mercy answer, Spare, Exile, Humiliate, Set on and the crew's Recruit, ended the conversation
     // before it was given (2.5.0).
-    let downAtFeet = IsDefined(npc) && npc.cbMercyOpen;
+    // Nor somebody held to talk, a Rival in a facedown or a crew's sergeant at a parley: they may still read as in
+    // combat for a moment after they stood down, and the answer to the line V chose was lost to it (2.5.0).
+    // And somebody with their hands up (Spawn/LivingStreet.reds, a ransom's talk): given up mid-fight, they read as in it.
+    let downAtFeet = IsDefined(npc) && (npc.cbMercyOpen || npc.cbFacedownOpen || npc.cbSurrendered);
     if !IsDefined(npc) || !npc.IsAttached() || npc.IsDead()
        || (!downAtFeet && (ScriptedPuppet.IsDefeated(npc) || CBNpcInCombat(npc))) {
       this.End(game, "they are gone");

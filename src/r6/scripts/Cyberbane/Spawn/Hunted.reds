@@ -396,7 +396,7 @@ public func CBScoutRecord(fs: ref<CBFactionState>) -> TweakDBID {
       return net;
     }
   }
-  return fs.sampleRecord;
+  return TDBID.IsValid(fs.sampleRecord) ? fs.sampleRecord : CBApexRosterRecord(fs.id, 1);
 }
 
 // How far a gang's scout sees, as a share: a Voodoo Boys netrunner pings from further off.

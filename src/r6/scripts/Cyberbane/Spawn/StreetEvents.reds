@@ -286,8 +286,10 @@ public class CBEventEngine {
         if Equals(a, war.InciteA()) { b = war.InciteB(); }
         if Equals(a, war.InciteB()) { b = war.InciteA(); }
       }
+      // Any gang at war with theirs that can field people, whether or not V has crossed it (2.5.0): asking for its
+      // record left a district whose holder's enemies V had never fought without sit-downs or fights at all.
       for g in CBGangRivalsOf(sys.GetContent(), a) {
-        if Equals(b, n"") && CBFactionFieldsSquads(g) && CBFactionOn(g) && IsDefined(sys.FindFaction(g)) {
+        if Equals(b, n"") && CBFactionFieldsSquads(g) && CBFactionOn(g) {
           b = g;
         }
       }
@@ -432,15 +434,19 @@ public class CBEventEngine {
                      ev: ref<CBStreetEvent>) -> Bool {
     let sides = ev.Sides();
     let lone = ev.Lone();
-    let fa = sys.FindFaction(ev.a);
-    let fb = sides == 2 ? sys.FindFaction(ev.b) : fa;
+    // Each side's people from the gang itself (Data/ApexRoster.reds, CBGangTemplate), so an event planned for a gang V
+    // has never fought takes place: it was announced, then never put in the world, for want of a record (2.5.0).
+    let gangA = ev.a;
+    let gangB = sides == 2 ? ev.b : ev.a;
+    let recA = CBGangTemplate(sys, gangA);
+    let recB = CBGangTemplate(sys, gangB);
     let perSide = Equals(ev.kind, CBEvAmbush()) ? Max(ev.size, 2) : CBEventPerSide(ev.kind);
     let full = lone > 0 ? lone + perSide : sides * perSide;
     let want = Min(full, CBSpawnRoom(game));
     if lone == 0 {
       want -= want % sides;
     }
-    if !IsDefined(fa) || !IsDefined(fb) || !TDBID.IsValid(fa.sampleRecord) || !TDBID.IsValid(fb.sampleRecord) || want < 2 {
+    if !TDBID.IsValid(recA) || !TDBID.IsValid(recB) || want < 2 {
       return false;
     }
     let apexPerSide = CBEventApexPerSide(ev.kind);
@@ -463,12 +469,12 @@ public class CBEventEngine {
            && CBSettleOnGround(game, snapped, at) && CBPointHiddenFrom(game, ppos, fwd, at) {
           let facing = Quaternion.BuildFromDirectionVector(new Vector4(-CosF(ang), -SinF(ang), 0.0, 0.0));
           let n = ArraySize(ev.ids);
-          let side = ev.SideOf(n) == 0 ? fa : fb;
+          let sideGang = ev.SideOf(n) == 0 ? gangA : gangB;
           let chair = lone > 0 ? (n < lone ? apexPerSide : n - lone) : n / sides;
-          let rec = side.sampleRecord;
+          let rec = ev.SideOf(n) == 0 ? recA : recB;
           let role = n"";
           if chair < apexPerSide {
-            let best = CBApexRosterRecord(side.id, chair);
+            let best = CBApexRosterRecord(sideGang, chair);
             if TDBID.IsValid(best) {
               rec = best;
               role = CBApexRoleTag(chair);
@@ -542,11 +548,15 @@ public func CBEventApexPerSide(kind: CName) -> Int32 {
 func CBDealPartner(sys: ref<CyberbaneSystem>, a: CName) -> CName {
   let content = sys.GetContent();
   let fit: array<CName>;
-  for fs in sys.GetFactionStates() {
-    if IsDefined(fs) && NotEquals(fs.id, a) && CBFactionFieldsSquads(fs.id) && CBFactionOn(fs.id)
-       && !CBIsCorpFaction(fs.id) && TDBID.IsValid(fs.sampleRecord)
-       && !CBGangsAreRivals(content, a, fs.id) && !CBGangsAreRivals(content, fs.id, a) {
-      ArrayPush(fit, fs.id);
+  if !IsDefined(content) {
+    return n"";
+  }
+  // Every gang in the city, not only those V has crossed (2.5.0): the deal's buyers were only ever gangs V had killed.
+  for prof in content.GetFactions() {
+    if IsDefined(prof) && prof.isGang && NotEquals(prof.id, a) && CBFactionFieldsSquads(prof.id) && CBFactionOn(prof.id)
+       && !CBIsCorpFaction(prof.id) && TDBID.IsValid(CBGangTemplate(sys, prof.id))
+       && !CBGangsAreRivals(content, a, prof.id) && !CBGangsAreRivals(content, prof.id, a) {
+      ArrayPush(fit, prof.id);
     }
   }
   return ArraySize(fit) > 0 ? fit[RandRange(0, ArraySize(fit))] : n"";

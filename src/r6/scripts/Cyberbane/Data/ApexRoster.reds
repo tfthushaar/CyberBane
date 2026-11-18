@@ -126,6 +126,18 @@ public func CBApexRosterList(faction: CName, chair: Int32) -> array<TweakDBID> {
 // One record for this chair of this gang: any of the ones listed that this install really has and
 // that is fit to send, chosen at random so the same four faces do not turn up every time. Invalid
 // when the gang has none, and the caller falls back to whoever V has actually fought.
+// The people a gang sends (2.5.0): the ones V has fought when V has fought any (CBFactionState.sampleRecord, filed from
+// V's kills), else its own rank and file from the roster. Asked by everything that puts a gang's people in the world,
+// because the template is only ever filed from a kill: a gang V had never crossed, most often a friendly one, had
+// nobody to lend, no lookout for a favour, no bagman on its streets and no partners for a truce's crew.
+public func CBGangTemplate(sys: ref<CyberbaneSystem>, faction: CName) -> TweakDBID {
+  let fs = IsDefined(sys) && IsNameValid(faction) ? sys.FindFaction(faction) : null;
+  if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
+    return fs.sampleRecord;
+  }
+  return CBApexRosterRecord(faction, 1);
+}
+
 // `pick`: the same choice every time for the same number (a bounty hunter, a solo on offer), else a random one.
 public func CBApexRosterRecord(faction: CName, chair: Int32, opt pick: Int32) -> TweakDBID {
   let listed = CBApexRosterList(faction, chair);

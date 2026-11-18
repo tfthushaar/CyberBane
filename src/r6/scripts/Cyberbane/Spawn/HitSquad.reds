@@ -200,10 +200,10 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
 
   // A common enemy (Economy/War.reds, 2.4.0): the gang they have a truce with sends a couple of its own along.
   let partner = CBTrucePartner(game, fs.id);
-  let partnerFs = sys.FindFaction(partner);
-  if IsDefined(partnerFs) && TDBID.IsValid(partnerFs.sampleRecord) && CBSpawnRoom(game) > 0 {
+  let partnerRecord = IsNameValid(partner) ? CBGangTemplate(sys, partner) : TDBID.None();
+  if TDBID.IsValid(partnerRecord) && CBSpawnRoom(game) > 0 {
     let joinBody: EntityID;
-    let joined = CBSpawnGroup(game, partnerFs.sampleRecord, n"", CBConfig.TruceJoin(), n"CB_Squad",
+    let joined = CBSpawnGroup(game, partnerRecord, n"", CBConfig.TruceJoin(), n"CB_Squad",
                               CBConfig.HitSquadMinSpawnDistance() + 16.0, joinBody);
     if joined > 0 {
       spawned += joined;

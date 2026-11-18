@@ -1021,9 +1021,8 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
     }
     if comes {
       let record = m.record;
-      let fs = NotEquals(m.faction, n"") ? sys.FindFaction(m.faction) : null;
-      if (!TDBID.IsValid(record) || !CBRecordIsPerson(record)) && IsDefined(fs) {
-        record = fs.sampleRecord;
+      if (!TDBID.IsValid(record) || !CBRecordIsPerson(record)) && NotEquals(m.faction, n"") {
+        record = CBGangTemplate(sys, m.faction);
       }
       let body: EntityID;
       if TDBID.IsValid(record) && CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.MyCrewSpawnDistance(), body) > 0 {

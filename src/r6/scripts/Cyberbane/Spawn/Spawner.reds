@@ -1257,7 +1257,15 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   // RPGManager path the role kits already use, rather than by copying the record, because the
   // records we spawn from are sampled at runtime and cannot be edited.
   CBGrantAbility(puppet as NPCPuppet, t"Ability.IsAggressive");
-  CBMakeHostileToPlayer(game, puppet);
+  // A Rival owed a facedown, and the people with them, walk up calm (Rivals/RivalMoments.reds, [53], 2.5.0). Sent in
+  // hostile, they saw V from forty metres and the fight was on before the facedown's twenty-four, so it all but never
+  // opened. Hostile the moment V hits one of them, or once it cannot happen (CBFacedownWaitTick).
+  if (isRival || des.IsTagged(id, n"CB_Escort")) && !isLair && CBFacedownAwaits(sys, game) {
+    puppet.cbFacedownWait = true;
+    puppet.cbFacedownWaitTick = Max(sys.GetTickCount(), 1);
+  } else {
+    CBMakeHostileToPlayer(game, puppet);
+  }
   CBDisarmGodMode(game, puppet);
   // Hostile is not the same as coming for you. Anybody in a car is excepted: the car travels.
   // Where they go is the hunt's business: toward where V was last known, until somebody finds V
@@ -1579,7 +1587,8 @@ public func CBRearmTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     for id in ids {
       let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
       if IsDefined(p) && p.cbArmTick > 0 && tick - p.cbArmTick <= CBConfig.RearmWatchTicks()
-         && p.IsAttached() && CBStillStanding(p) && !p.cbMoraleBroken && !p.cbSurrendered && !p.cbFacedownHeld {
+         && p.IsAttached() && CBStillStanding(p) && !p.cbMoraleBroken && !p.cbSurrendered && !p.cbFacedownHeld
+         && !p.cbFacedownWait {
         let agent = p.GetAttitudeAgent();
         if IsDefined(agent) && NotEquals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
           CBTrace("attitude: one of ours came up neutral; hostile again");

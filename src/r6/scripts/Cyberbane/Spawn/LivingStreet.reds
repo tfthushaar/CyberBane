@@ -307,13 +307,13 @@ public class CBStreetLife {
       return;
     }
     let holder = CBTurfHolder(sys, game, sys.GetCurrentDistrict());
-    let fs = sys.FindFaction(holder);
-    if Equals(holder, n"") || !IsDefined(fs) || !CBFactionFieldsSquads(holder) || !TDBID.IsValid(fs.sampleRecord)
+    let bagRecord = CBGangTemplate(sys, holder);   // a gang V has never fought has bagmen too (2.5.0)
+    if Equals(holder, n"") || !CBFactionFieldsSquads(holder) || !TDBID.IsValid(bagRecord)
        || CBSpawnRoom(game) < 2 + CBConfig.TurfPatrolKeepRoom() {
       return;
     }
     let body: EntityID;
-    if CBSpawnGroup(game, fs.sampleRecord, n"", 2, n"CB_Bagman", CBConfig.TurfPatrolDistance(), body) > 0 {
+    if CBSpawnGroup(game, bagRecord, n"", 2, n"CB_Bagman", CBConfig.TurfPatrolDistance(), body) > 0 {
       this.m_bagFaction = holder;
       this.m_bagBody = body;
       this.m_bagTick = now;
@@ -356,11 +356,11 @@ public class CBStreetLife {
     // A lookout of a gang at war with theirs, first.
     let enemies = CBGangRivalsOf(sys.GetContent(), t.faction);
     for g in enemies {
-      let fs = sys.FindFaction(g);
-      if IsDefined(fs) && CBFactionOn(g) && CBFactionFieldsSquads(g) && TDBID.IsValid(fs.sampleRecord) && RandF() < 0.6
+      let lookout = CBGangTemplate(sys, g);   // whether or not V has fought them (2.5.0)
+      if CBFactionOn(g) && CBFactionFieldsSquads(g) && TDBID.IsValid(lookout) && RandF() < 0.6
          && CBSpawnRoom(game) > CBConfig.TurfPatrolKeepRoom() {
         let body: EntityID;
-        if CBSpawnGroup(game, fs.sampleRecord, n"", 1, n"CB_Favour", CBConfig.FavourDistance(), body) > 0 {
+        if CBSpawnGroup(game, lookout, n"", 1, n"CB_Favour", CBConfig.FavourDistance(), body) > 0 {
           this.m_favFaction = t.faction;
           this.m_favKind = 1;
           this.m_favBody = body;
@@ -649,10 +649,10 @@ public class CBStreetLife {
          && !CBRivalBodyPresent(game, r) && CBSpawnRoom(game) >= 2 {
         let body: EntityID;
         if CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Ally", 30.0, body) > 0 {
-          let fs = sys.FindFaction(r.faction);
-          if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
+          let withThem = CBGangTemplate(sys, r.faction);
+          if TDBID.IsValid(withThem) {
             let second: EntityID;
-            CBSpawnGroup(game, fs.sampleRecord, n"", 1, n"CB_Ally", 32.0, second);
+            CBSpawnGroup(game, withThem, n"", 1, n"CB_Ally", 32.0, second);
           }
           // On their cooldown while they are out helping, as after any fight of theirs: the Rival lane
           // picking them meanwhile put a second of them in the street, after V.

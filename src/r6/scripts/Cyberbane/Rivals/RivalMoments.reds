@@ -304,8 +304,67 @@ public func CBRivalMomentsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   CBRivalTauntTick(sys, game, book, player);
 }
 
+// The facedown is owed: the active Rival has not had one this time, and nothing else is calling the shots.
+public func CBFacedownAwaits(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  if !CBFacedownOn() || !IsDefined(sys) {
+    return false;
+  }
+  let book = CBRivalBook.Get(game);
+  let r = sys.FindRivalById(sys.GetActiveRivalId());
+  if !IsDefined(book) || !IsDefined(r) || book.fdState != 0 || NotEquals(sys.GetApexMusterFaction(), n"") {
+    return false;
+  }
+  return r.id * 64 + Min(r.encounters, 63) != book.fdDoneKey;
+}
+
+// Those walking up calm (CBFacedownAwaits) turn hostile when the facedown is not going to happen: V hit one of them,
+// it has been too long, or the switch went off. Returns true when it let them go.
+func CBFacedownWaitTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>) -> Bool {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return false;
+  }
+  let tick = sys.GetTickCount();
+  let tags: array<CName> = [n"CB_Rival", n"CB_Escort"];
+  let waiting = 0;
+  let over = !CBFacedownOn() || book.fdState != 0;
+  for tag in tags {
+    for id in des.GetTaggedIDs(tag) {
+      let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+      if IsDefined(p) && p.cbFacedownWait {
+        waiting += 1;
+        if p.cbDamagedByPlayer || tick - p.cbFacedownWaitTick > CBConfig.FacedownWaitTicks() {
+          over = true;
+        }
+      }
+    }
+  }
+  if waiting == 0 || !over || book.fdState != 0 {
+    return false;
+  }
+  for tag in tags {
+    for id in des.GetTaggedIDs(tag) {
+      let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+      if IsDefined(p) && p.cbFacedownWait {
+        p.cbFacedownWait = false;
+        CBFacedownHostile(sys, game, p);
+      }
+    }
+  }
+  // Not this encounter, then: the facedown does not open later on people already fighting.
+  let r = sys.FindRivalById(sys.GetActiveRivalId());
+  if IsDefined(r) {
+    book.fdDoneKey = r.id * 64 + Min(r.encounters, 63);
+  }
+  CBLog.Info(n"Rivals", "A Rival who came for a facedown did not get one; they and theirs are hostile now.");
+  return true;
+}
+
 func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, player: ref<PlayerPuppet>) -> Void {
   let tick = sys.GetTickCount();
+  if book.fdState == 0 && sys.GetActiveRivalId() > 0 && CBFacedownWaitTick(sys, game, book) {
+    return;
+  }
   if book.fdState != 0 {
     let r = sys.FindRivalById(book.fdRival);
     let body = GameInstance.FindEntityByID(game, book.fdBody) as ScriptedPuppet;
@@ -415,6 +474,12 @@ func CBFacedownOpener(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRi
 }
 
 // Somebody stops where they are and holds off V for a moment: their attitude to V alone, and one hold order.
+// Walking up calm for a facedown (Spawn/Spawner.reds, CBApplySpawnSetup), and since when (2.5.0).
+@addField(ScriptedPuppet)
+public let cbFacedownWait: Bool;
+@addField(ScriptedPuppet)
+public let cbFacedownWaitTick: Int32;
+
 func CBFacedownCalm(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
   let player = GetPlayer(game);
   if !IsDefined(p) || !IsDefined(player) {
@@ -429,6 +494,7 @@ func CBFacedownCalm(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
   // And V's companions, or they open fire on people holding still (2.5.0). Hostile again with V (CBFacedownHostile).
   CBCalmTowardCompanions(CyberbaneSystem.Get(game), p);
   p.cbFacedownHeld = true;
+  p.cbFacedownWait = false;
   CBCancelMove(p);
   CBTalkHold(p);
 }
@@ -439,6 +505,7 @@ func CBFacedownHostile(sys: ref<CyberbaneSystem>, game: GameInstance, p: ref<Scr
     return;
   }
   p.cbFacedownHeld = false;
+  p.cbFacedownWait = false;
   CBTalkReleaseHold(p);
   CBMakeHostileToPlayer(game, p);
   CBOrderPursue(sys, game, p);
