@@ -597,6 +597,53 @@ public class CBStreetIntel {
     }
   }
 
+  // A Rival's people at their place walk a short beat round it, now and then, one order each (2.4.4, [U10]). Only
+  // while nobody is fighting: a guard who has seen V is the fight's.
+  private let m_guardBeatTick: Int32;
+
+  private func GuardBeat(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    let tick = sys.GetTickCount();
+    if this.m_guardRival == 0 || tick - this.m_guardBeatTick < CBConfig.GuardBeatTicks() {
+      return;
+    }
+    this.m_guardBeatTick = tick;
+    let r = sys.FindRivalById(this.m_guardRival);
+    let body = IsDefined(r) ? GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet : null;
+    if !CBNpcSafe(sys, body) || CBNpcInCombat(body) {
+      return;
+    }
+    let anchor = body.GetWorldPosition();
+    let i = 0;
+    while i < ArraySize(this.m_guardIds) {
+      let g = GameInstance.FindEntityByID(game, this.m_guardIds[i]) as ScriptedPuppet;
+      i += 1;
+      if CBNpcSafe(sys, g) && CBStillStanding(g) && !CBNpcInCombat(g) && !g.cbTalkPartner && !g.cbMoraleBroken {
+        let ang = RandRangeF(0.0, 6.28318);
+        let reach = RandRangeF(CBConfig.GuardBeatMin(), CBConfig.GuardBeatMax());
+        let spot: Vector4;
+        if CBNavSnap(game, anchor.X + CosF(ang) * reach, anchor.Y + SinF(ang) * reach, anchor.Z, spot)
+           && CBPointReachable(game, g.GetWorldPosition(), spot) && !CBPointIsSafeArea(game, spot) {
+          let ai = g.GetAIControllerComponent();
+          if IsDefined(ai) {
+            let cmd = new AIMoveToCommand();
+            let dest: AIPositionSpec;
+            let wp: WorldPosition;
+            WorldPosition.SetVector4(wp, spot);
+            AIPositionSpec.SetWorldPosition(dest, wp);
+            cmd.movementTarget = dest;
+            cmd.movementType = moveMovementType.Walk;
+            cmd.ignoreInCombat = true;
+            cmd.alwaysUseStealth = false;
+            cmd.ignoreNavigation = false;
+            cmd.finishWhenDestinationReached = true;
+            cmd.desiredDistanceFromTarget = 1.5;
+            CBIssueMove(g, ai, cmd);
+          }
+        }
+      }
+    }
+  }
+
   public func NoteGrab(npc: ref<ScriptedPuppet>) -> Void {
     this.m_grab = npc;
     this.m_grabFor = 0.0;
@@ -640,6 +687,7 @@ public class CBStreetIntel {
     if this.m_guardIn <= 0.0 {
       this.m_guardIn = 1.0;
       this.Guards(sys, game);
+      this.GuardBeat(sys, game);
     }
   }
 

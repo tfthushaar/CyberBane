@@ -180,7 +180,13 @@ public func CBSendWord(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   if !IsDefined(r) || !IsDefined(book) || !IsDefined(player) || !CBSendWordOn() || CBWhereaboutsForSale(sys, game, r) != 0 {
     return false;
   }
-  let s = CBRivalHideout(sys, game, player, r);
+  // Calling V out, they name somewhere that matters if they can (2.4.4, [62]).
+  let why = "";
+  let s = calledOut ? CBRivalMeaningfulPlace(sys, game, player, r, why) : null;
+  if !IsDefined(s) {
+    why = "";
+    s = CBRivalHideout(sys, game, player, r);
+  }
   if !IsDefined(s) {
     if !calledOut {
       CBSystemNote(game, "nowhere near here they would agree to meet. Try somewhere else.", 5.0);
@@ -196,7 +202,8 @@ public func CBSendWord(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   let name = CBRivalDisplayName(sys.GetContent(), r);
   let place = CBPlacePhrase(s.district);
   let pin = CBMapMarkersOn() ? " It's on your map." : "";
-  let line = calledOut ? s"You and me. \(CBCapFirst(place)). I'll be waiting.\(pin) \(CBRivalCatchphrase(r))"
+  let meant = StrLen(why) > 0 ? " " + why : "";
+  let line = calledOut ? s"You and me. \(CBCapFirst(place)).\(meant) I'll be waiting.\(pin) \(CBRivalCatchphrase(r))"
                        : s"Got your message. \(CBCapFirst(place)). Come and try.\(pin) \(CBRivalCatchphrase(r))";
   CBPhoneSendTinted(game, name, line, CBHudRed());
   CBFileLog(sys, calledOut ? n"CalledOut" : n"WordSent", now, CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
@@ -310,6 +317,15 @@ public func CBRivalMercyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
     ArrayPush(out, c);
   }
   ArrayPush(out, CBTalkMakeLine("[Exile] Leave Night City. Tonight. Don't come back.", CBTalkActExile(), t"ChoiceCaptionParts.BackOutIcon"));
+  // A fourth way to leave them (2.4.4, [55]), and a fifth: set them on somebody of a gang at war with theirs ([57]).
+  ArrayPush(out, CBTalkMakeLine("[Humiliate] Look at you. Crawling. Everybody's going to hear about this.", CBTalkActHumiliate(), TDBID.None()));
+  let r = sys.FindRivalById(t.rivalId);
+  let target = CBFeudTargetFor(sys, game, r);
+  if IsDefined(target) {
+    let so = CBTalkMakeLine("[Set on] " + CBRivalDisplayName(sys.GetContent(), target) + " is the one you want. I know where they sleep.",
+                            CBTalkActSetOn(), t"ChoiceCaptionParts.BountyHuntIcon");
+    ArrayPush(out, so);
+  }
   ArrayPush(out, CBTalkMakeLine("[Leave] Think about it.", CBTalkActLeave(), TDBID.None()));
   return out;
 }
@@ -343,6 +359,12 @@ public func CBRivalMercyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pl
     return CBTalkSay(CBPick2("This is my city. I'll crawl back if I have to.", "Run? From you? Never."), n"");
   }
   e.mercyChosen = true;
+  if choice == CBTalkActHumiliate() {
+    return CBTalkSay(CBRivalHumiliate(sys, game, r, e), n"");
+  }
+  if choice == CBTalkActSetOn() {
+    return CBTalkSay(CBRivalSetOn(sys, game, r), n"");
+  }
   if choice == CBTalkActCollect() {
     let i = CBIntelGive(sys, game, player, n"", true, r.id);
     if i.kind == CBIntelNone() {

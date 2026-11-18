@@ -584,6 +584,7 @@ public func CBLairMissNone() -> Int32 = 0
 public func CBLairMissNotCalm() -> Int32 = 1
 public func CBLairMissBusy() -> Int32 = 2
 public func CBLairMissNoSpot() -> Int32 = 3
+public func CBLairMissDaytime() -> Int32 = 4   // they keep hours, and are out by day (2.4.4, [U10])
 
 // V is standing at the pin and nobody is there. Said once per Rival, after a fair wait, with the
 // reason, because an empty place with no word read as a coin toss ("is it chance-based?").
@@ -606,6 +607,9 @@ func CBLairHintTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
   }
   if miss == CBLairMissBusy() {
     line = "nobody at the place yet. They will not show while somebody else is after you.";
+  }
+  if miss == CBLairMissDaytime() {
+    line = "nobody home. They keep hours: out by day, back here after dark.";
   }
   CBSystemNote(game, line, 6.0);
 }
@@ -632,6 +636,10 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
   let r = CBSightingRival(sys, lead);
   if !IsDefined(r) || !CBTipEligible(sys, game, r) || !TDBID.IsValid(r.recordID) || !CBRecordIsPerson(r.recordID) {
     return CBLairMissNone();
+  }
+  // Somebody with a chair keeps hours: home by night, out by day, unless they named the place for V (2.4.4, [U10]).
+  if CBRivalKeepsHours(game, r) && !CBIsNight(game) {
+    return CBLairMissDaytime();
   }
   // Nobody else of ours out or coming, no live encounter, room under the ceiling, and the story
   // not about to want the stage. The same gates an arrival has, plus "nothing else going on".

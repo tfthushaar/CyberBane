@@ -63,7 +63,7 @@ func CBOnTakedownNoise(owner: wref<GameObject>, t: ETakedownActionType) -> Void 
   // killing them by hand - is detectable after all, and only here. By the time the puppet
   // dies the action type is gone.
   if CBIsLethalTakedown(t) {
-    puppet.cbLastMethodMask = CBMaskSet(puppet.cbLastMethodMask, CBMethodFinisher());
+    puppet.cbLastMethodMask = CBMethodAdd(puppet.cbLastMethodMask, CBMethodFinisher());
   }
 }
 

@@ -38,7 +38,7 @@ By impact for the effort, most first:
 1. **Voices for the moments** (79). The people Cyberbane moves finally sound like it, in their own voices.
 2. *(Built in 2.3.2: gangs that adapt, and a code for each gang.)*
 3. *(Built in 2.4.3: the corporations, who hire killers.)*
-4. **The facedown** (53). A Cyberpunk-canon moment before every Rival fight.
+4. *(Built in 2.4.4: the facedown, and the rest of the Rivals' stories.)*
 5. *(Built in 2.4.3: a price on V's head, and the hunters' ladder.)*
 6. *(Built in 2.3.3: funerals and the rest of gang life's gatherings, deals and rackets.)*
 7. *(Built in 2.4.0: back a gang, the war chest, and the rest of the turf war.)*
@@ -59,39 +59,11 @@ Built in 2.4.0 (`Economy/War.reds`, `Model/WarBook.reds`): every idea that was h
     when the HUD line changes, played on the player as the apex horn already is. **S** *(old backlog 8)*
 ## 6. Rivals
 
-53. **The facedown.** When V and a Rival meet face to face (the announcement's beat), V chooses:
-    **[Stare them down]** (Cool and renown against their rank and nerve), **[Draw]** or **[Walk away]**. Win and
-    some of their people break and run, and the Rival fights shaken; lose and their crew is emboldened; walk away
-    and they let V go once, and the street hears of it. **M** *(Cyberpunk RED's Facedown; Ghost of Tsushima's
-    standoff)*
-54. **Just you and me.** A fourth choice at the facedown: their crew holds back (the hold state talk already
-    uses) and the Rival fights alone, until V breaks the terms (a gun in a fistfight, a grenade). Valentinos and
-    Animals accept more often. **M**
-55. **Humiliation.** A fourth line at mercy: **[Humiliate]**. They lose rank and their nickname turns mocking;
-    they either quit the gang or come back obsessed (a Rival who hates V, sometimes a cyberpsychotic break). The
-    gang fears V more. **S to M** *(Shadow of War's shaming)*
-56. **Back from the dead.** Rarely, a Rival V killed comes back weeks later, rebuilt by a back-alley ripperdoc:
-    heavier chrome, a new nickname, a line about it. Never one V finished with a fatal flaw or a finisher, so a
-    death V made sure of stays a death. **S to M** *(Shadow of Mordor)*
-57. **Rivals at war with each other.** Rivals of gangs at war hunt each other between V's encounters, and one
-    can kill the other off screen (in the History; the winner climbs). V can arrange it by passing one the
-    other's hiding place, from a **[Collect]**. **M**
-58. **Bonds beyond kin.** Each Rival gets one bond on their page: a mentor, a protégé, a lover, a partner. Killing
-    one moves the other (vengeance, fear or quitting); sparing one puts the other in V's debt. Kin and bodyguards,
-    generalised. **M** *(Watch Dogs: Legion's relationships)*
+Built in 2.4.4 (`Rivals/RivalMoments.reds`, `Rivals/RivalBook.reds`), except a Rival of your own, which is
+the first member of the crew in 2.5.0.
+
 59. **A Rival of your own.** A Rival spared twice and frightened enough can be made V's: they stop hunting, text
     intel (as the Debtor does) and can be called by text once a day to come and fight beside V. **M**
-60. **Trophies.** Killing a named Rival gives V something of theirs: the weapon from their record, into V's
-    inventory, named in the History. The bigger the Rival, the better the trophy. **S to M** *(old backlog 17)*
-61. **Where they ended up.** A Rival who retired or was run out of town is not gone for good: months later a
-    text from them, a small job, a warning, or an invitation to finish it. **S**
-62. **Places with meaning.** A Rival who calls V out picks somewhere that matters: where V first beat them, where
-    their kin died. Positions are already kept for leads and the call-out. **S**
-63. **Last words.** A dying Rival says something of their own, from their history with V. **S**
-64. **A Rival on their feet.** A Rival met in the street who is not fighting (a Debtor, one holding back from
-    fear) gets lines of their own: **[Call it even]**, **[Where's (another Rival)?]**, **[Get out of Night
-    City]**. The one part of "talking to a Rival" left out of 1.9.9. **M**
-
 ## 7. Talk
 
 65. **Run with a crew.** With a gang Friendly or better, **[Watch my back]** on one of its people: one to three of

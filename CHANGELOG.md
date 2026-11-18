@@ -3,6 +3,54 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.4.4 (18 November 2026)
+
+**Rivals with a story**
+- **The facedown.** When a Rival gets close before anybody has fired, everyone stops. Walk up and talk to them: stare
+  them down (your Cool and your name against their rank: win and some of their people run, lose and they're bolder),
+  draw first, walk away (they let you, once, and the street hears), or ask for a fight one on one, where their
+  people stand back until you break the terms with a grenade, a hack or a shot at them.
+- **Talk them out of it.** A Rival who owes you their life or is afraid of you can also be asked to call it even, to
+  tell you where another Rival is, or to get out of Night City.
+- **Humiliation.** A fourth way to leave a Rival where they lie: they lose a rank, the street gives them a mocking
+  name, and they either quit the gang or come back obsessed with you. Their gang fears you more.
+- **Back from the dead.** Rarely, a Rival you killed comes back weeks later, rebuilt with more chrome and a new name.
+  Never one you finished with a finisher or their fatal flaw.
+- **Rivals at war, and bonds.** Rivals of gangs at war hunt each other between your fights, and one can kill the other
+  off screen. Spare a Rival and you can set them on one of their enemies. Two Rivals of a gang can be bound, as mentor
+  and protégé, lovers or partners: kill one and the other answers it, spare one and the other may owe you.
+- **Trophies.** Kill a named Rival and the weapon they carried is yours.
+- **Where they ended up.** A Rival who left Night City may get in touch weeks later: a tip, a warning, or an invitation
+  to finish it.
+- **Places with meaning.** A Rival calling you out names the place you first beat them, or where their family fell.
+- **Their own words.** Last words when they die, taunts mid-fight about the scars you gave them, and texts that
+  remember the escapes and the family.
+- **Rival chrome.** Every climb can come with an implant that answers how you hurt them: subdermal armour for the shot
+  one, dermal plating for the cut one, a firewall for the hacked one, reinforced tendons for the one who outran you.
+  It shows on their page and in the scanner, and the street hears about the ripperdoc visit.
+- **They fight like who they are.** Survivors keep their distance, Killers push, Avengers close in, Hunters see through
+  smoke and camo.
+- **Places that are lived in.** A Rival's people walk a beat round their place, and lieutenants and leaders keep hours:
+  out by day, home after dark, unless they named the place for you.
+- **Nobody kills you but me, now on for everyone.** Outnumbered by one gang, a Rival of another with a claim on you can
+  turn up at your side, announcing it, and leaves promising to finish it with you later.
+- **The Rivals tree.** The Hub's Rivals page can show each gang as a tree: the leader, the three lieutenants, the rest
+  of their Rivals, the fallen, the bonds between them, and your nemesis.
+
+**Fixes**
+- **How you fight is read right again.** Since 1.3 Cyberbane misread the weapon behind every kill: a blade counted as
+  blunt and a quickhack as fists, and gunfire, quickhacks, explosives and finishers never counted at all. Everything
+  that cares how you fight now sees it: each gang's code, how gangs adapt to you, your fighting style and titles,
+  brutal conduct, and a kid you shoot in a fistfight.
+
+**Mod Settings**
+- A new heading, **Rivals and you**, after Rivals: **The facedown**, **Nobody kills you but me** (on, a new setting, so
+  it reaches everybody), **Back from the dead**, **Rivals at war, and their bonds** and **Trophies**, with Send word,
+  the mercy choice and informants moved there. Under Rivals: **Rivals get chrome**. All on. The headings after Rivals
+  moved down one place; your values are kept.
+
+Your progress carries over.
+
 ## 2.4.3 (18 November 2026)
 
 **A price on your head**

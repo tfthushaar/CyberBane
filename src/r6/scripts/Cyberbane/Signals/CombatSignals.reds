@@ -286,6 +286,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         sysE.SetRivalDeathByV(false);
         // A price they put up dies with them, and a leader a corporation wanted gone is paid for (Spawn/Bounty.reds).
         CBBountyPosterSlain(sysE, game, slain, slainRole == CBRoleLeader(), puppet.cbDamagedByPlayer);
+        // Last words, a trophy, a bond answered, and how it ended (Rivals/RivalMoments.reds, 2.4.4).
+        CBRivalFell(sysE, game, puppet, slain, puppet.cbDamagedByPlayer);
         CBOweFuneral(game, slain.faction);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());
@@ -637,6 +639,19 @@ public func CBMethodExplosive() -> Int32 = 32
 // somebody rather than what they were holding. It rides alongside one of the five above.
 public func CBMethodFinisher() -> Int32 = 64
 
+// The methods above are bit values, not bit positions, so they are tested and added with these and never with
+// CBMaskHas/CBMaskSet (which take a position). From 1.3.2 to 2.4.3 every reader asked CBMaskHas, which turned 1 into
+// 2, 8 into 256 and 32 and 64 into nothing: a blade kill read as blunt, a hack as fists, and gunfire, quickhacks,
+// explosives and finishers never read at all. Everything that scores how V fights (the gang codes, the ledger, the
+// archetypes, the wannabe shot with a gun) was reading that.
+public func CBMethodHas(mask: Int32, method: Int32) -> Bool {
+  return method != 0 && (mask & method) != 0;
+}
+
+public func CBMethodAdd(mask: Int32, method: Int32) -> Int32 {
+  return mask | method;
+}
+
 // What this blow actually was.
 //
 // The old version read the attack type and nothing else, so `Melee` became "blade" whether V
@@ -676,13 +691,13 @@ func CBMethodMaskFor(ad: ref<AttackData>) -> Int32 {
 }
 
 func CBSetMethodFlags(info: ref<CBKillInfo>, mask: Int32) -> Void {
-  info.mBlade = CBMaskHas(mask, CBMethodBlade());
-  info.mBlunt = CBMaskHas(mask, CBMethodBlunt());
-  info.mFists = CBMaskHas(mask, CBMethodFists());
-  info.mFirearm = CBMaskHas(mask, CBMethodFirearm());
-  info.mQuickhack = CBMaskHas(mask, CBMethodQuickhack());
-  info.mExplosive = CBMaskHas(mask, CBMethodExplosive());
-  info.mFinisher = CBMaskHas(mask, CBMethodFinisher());
+  info.mBlade = CBMethodHas(mask, CBMethodBlade());
+  info.mBlunt = CBMethodHas(mask, CBMethodBlunt());
+  info.mFists = CBMethodHas(mask, CBMethodFists());
+  info.mFirearm = CBMethodHas(mask, CBMethodFirearm());
+  info.mQuickhack = CBMethodHas(mask, CBMethodQuickhack());
+  info.mExplosive = CBMethodHas(mask, CBMethodExplosive());
+  info.mFinisher = CBMethodHas(mask, CBMethodFinisher());
 }
 
 // One classified incident, lethal or not.

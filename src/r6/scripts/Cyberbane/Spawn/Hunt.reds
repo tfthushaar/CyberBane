@@ -126,7 +126,7 @@ public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
 // point near where V is thought to be. Used by spawn setup, the car watch and the hunt tick, so a
 // hunter is never handed V's position by some other door.
 public func CBOrderPursue(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
-  if !IsDefined(puppet) || puppet.cbMoraleBroken {
+  if !IsDefined(puppet) || puppet.cbMoraleBroken || puppet.cbFacedownHeld {
     return;
   }
   // Nor anybody whose encounter is over (CB_Orphan): called off, let go, or kept back from a removal. The
@@ -590,7 +590,8 @@ func CBHuntEngageTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
     i += 1;
     // Somebody still in a car gets out first: a fight started from a seat, in a moving car, is
     // one of the things 1.5.0 found taking the game down. The car watch lets them out.
-    if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p)
+    // Nor anybody held for a facedown, or standing back from a fight one on one (Rivals/RivalMoments.reds, 2.4.4).
+    if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p) && !p.cbFacedownHeld
        && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID())
        && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.HuntEngageDistance() {
       CBEngageV(game, p);
@@ -738,7 +739,10 @@ func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     sys.SetRivalSpottedTexted(r.id);
     let content = CBContent(game);
     if IsDefined(content) {
-      CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r) + " " + CBRivalCatchphrase(r), CBHudRed());
+      // What they remember of V goes with it (Rivals/RivalMoments.reds, [L4], 2.4.4).
+      let remembers = CBRivalRemembers(game, r);
+      CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r) + " " + (StrLen(remembers) > 0 ? remembers + " " : "")
+                        + CBRivalCatchphrase(r), CBHudRed());
     }
     // And their people say who they are (Rivals/RivalLife.reds, 1.9.9).
     CBRivalAnnounce(sys, game, r);

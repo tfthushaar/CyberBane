@@ -202,7 +202,7 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
   book.wannabeStage = CBWannabeDone();
   let now = CBGameSeconds(game);
   // Shot a kid who came with bare hands: the street calls that what it is.
-  let shot = IsDefined(p) && p.IsDead() && CBMaskHas(p.cbLastMethodMask, CBMethodFirearm());
+  let shot = IsDefined(p) && p.IsDead() && CBMethodHas(p.cbLastMethodMask, CBMethodFirearm());
   if shot {
     sys.AddCode(-CBConfig.WannabeShotCode());
     CBFileLog(sys, n"WannabeShot", now, CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);

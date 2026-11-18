@@ -64,6 +64,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   private let m_hubWeb: Bool;                 // the Factions page as the web of gangs, this session (2.4.3)
+  private let m_hubTree: Bool;                // the Rivals page as each gang's tree, this session (2.4.4)
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
   private let m_ledgerDue: Bool;              // the death ledger waits for the first settled tick (StartSession)
   // V's equipment is read for the first time on the first settled tick too, never from inside the load
@@ -1215,6 +1216,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBHuntedTick(this, game);           // haunts, and the trail going cold (2.4.1)
     CBHuntGrowsTick(this, game);        // trackers and open season (2.4.2)
     CBBountyTick(this, game);           // the price on V's head and the hunters' ladder (2.4.3)
+    CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts (2.4.4)
     if !heavyStreaming {
       CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
     }
@@ -1400,6 +1402,14 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func SetHubWeb(on: Bool) -> Void {
     this.m_hubWeb = on;
+  }
+
+  public func HubTree() -> Bool {
+    return this.m_hubTree;
+  }
+
+  public func SetHubTree(on: Bool) -> Void {
+    this.m_hubTree = on;
   }
 
   // A pay-off chosen on the Hub. n"" takes the request back. Carried out on resume.
@@ -3437,6 +3447,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBOpenSeasonRoll(this, game, elapsedDays);   // a gang at the top of its anger may declare it (2.4.2)
     CBBountyRoll(this, game, elapsedDays);       // somebody may put a price on V's head (2.4.3)
     CBCorpInterestRoll(this, game, elapsedDays); // and a Legend gets a corporation's attention
+    CBRivalLivesDaily(this, game, elapsedDays);  // bonds, feuds, returns, letters, chrome (2.4.4)
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
@@ -3776,6 +3787,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     let hunt = CBHuntBook.Get(this.GetGameInstance());
     if IsDefined(hunt) {
       hunt.Clear();       // and nobody knows where V spends time (2.4.1)
+    }
+    let rivalBook = CBRivalBook.Get(game);
+    if IsDefined(rivalBook) {
+      rivalBook.Clear();  // and no Rival has a bond, an ending or a place (2.4.4)
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);

@@ -1,7 +1,7 @@
 # Cyberbane plan: the road to 2.5.0
 
-Status: **Building on to 2.5.0 (2026-11-18). Done: 2.3.1 to 2.4.3, all released, with a bug pass over every system
-inside 2.4.2. Next: 2.4.4, the Rivals, and on to a crew of my own in 2.5.0; I play it all at the end.** I wrote this on
+Status: **Building on to 2.5.0 (2026-11-18). Done: 2.3.1 to 2.4.4, all released, with a bug pass over every system
+inside 2.4.2. Next: 2.4.5, talk and allies, and on to a crew of my own in 2.5.0; I play it all at the end.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
@@ -28,15 +28,15 @@ rehearsal from the release before; none played yet):
 | 2.4.0 | 06854fe | War chest and manpower [34] [35], back a gang [33], set gangs on each other [70], a common enemy [36], V's own streets [37], peace with terms and the Claws' protection [U6] [11], turf patrols made sturdy (still experimental) [U5] [E3]; `CBWarBook` |
 | 2.4.1 | 9fde2de | A fair first volley [44], lie low [41], the metro said [42], haunts [46] and hunters using what they know [U8], scouts worth catching with the bribe [U7] [68], lookouts in the crowd [50]; `CBHuntBook`; a Being hunted heading. [45] and [89] were found already built |
 | 2.4.2 | ba60842, cb2eacb | Trackers [49], open season [48], lying in wait made default [E2] with V's road [47] and the Wraiths' road [18], the Claws' assassin [11]; then the fixes from player reports (Talk on F, nobody stopping until I talk to them, They Will Remember's hostility and disguises followed, its panel kept off the Hub) and from the bug pass over every file (apex squads at full health, freeze reputation freezing everything, gang chairs, street events, skills in V's menace) |
-| 2.4.3 | (this release) | A price on V's head and the hunters' ladder [39], the corporations hire killers [20], corporate interest [88]; rival gangers clash on contested streets [N1]; the web of gangs on the Hub [H1]. [N2] dropped (the game's own gunfire already does it). A fix: Rivals came no more with crews off, with They Will Remember, or after peace with their gang |
+| 2.4.3 | 37687a2 | A price on V's head and the hunters' ladder [39], the corporations hire killers [20], corporate interest [88]; rival gangers clash on contested streets [N1]; the web of gangs on the Hub [H1]. [N2] dropped (the game's own gunfire already does it). A fix: Rivals came no more with crews off, with They Will Remember, or after peace with their gang |
+| 2.4.4 | (this release) | The facedown [53] [54] and a Rival on their feet [64], humiliation [55], back from the dead [56], Rivals at war [57] and bonds [58], trophies [60], where they ended up [61], places with meaning [62], last words [63], Rival chrome [U9], places lived in [U10], tactics by kind [U11], Rivals' lines [L4], "Nobody kills you but me" made default [E4], the Rivals tree [H2]; `CBRivalBook`. A fix: how V fights was misread from 1.3.2 on |
 
-**In progress:** 2.4.4, the Rivals.
+**In progress:** 2.4.5, talk and allies.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
 | Version | What | Items |
 |---|---|---|
-| 2.4.4 | Rivals | [53]-[64], [U9]-[U11], [L4], [E4]; [H2] the Rivals tree in the Hub (was 2.4.2) |
 | 2.4.5 | Talk and allies | [65]-[67], [69], [U12], the sergeant's parley from [U2] (was 2.4.3) |
 | 2.4.6 | Telling it | [79]-[85], [87], [90]-[92], [U13]-[U15], [L5] (was 2.4.4) |
 | 2.5.0 | A crew of my own, and the final form | [C1]-[C10] (below); the comprehensive pass, optimisation, [U16], [L6], every default confirmed |
@@ -45,7 +45,7 @@ rehearsal from the release before; none played yet):
 (I do not have Wannabe Edgerunner or Dark Future installed, so there was nothing to probe); tribute haggled by text (folded into [U13]);
 [U1]'s car seats keep one record. Each is noted in its release's section and in IMPROVEMENTS.md.
 
-**Next:** 2.4.4, the Rivals, then the rest of the road to 2.5.0, built straight through; I play the whole of it at the
+**Next:** 2.4.5, talk and allies, then the rest of the road to 2.5.0, built straight through; I play the whole of it at the
 end instead of stopping after 2.4.2. The bug pass over every system came first, with the 2.5.0 pass's method, and what
 it found went out inside 2.4.2. [H1] the web went out in 2.4.3 and draws the 2.4.0 systems (wars, truces, backing,
 standing), so it will help me check them when I play.
@@ -199,7 +199,7 @@ first release that uses it.
 | **2.4.1** | 5 Being hunted, first part | [41], [42], [44], [46], [50]; [U7], [U8]; [68]; `CBHuntBook` | M | done |
 | **2.4.2** | 5 Being hunted, second part | [47]-[49]; [E2]; [11], [18] | M | done |
 | **2.4.3** | 5 Being hunted, third part, and the war in the street | [39], [88], [20]; [N1], [N2]; [H1] and the drawing kit | L | done |
-| **2.4.4** | 6 Rivals | [53]-[64]; [U9]-[U11]; [L4]; [E4]; [H2]; `CBRivalBook` | M-L | left |
+| **2.4.4** | 6 Rivals | [53]-[64]; [U9]-[U11]; [L4]; [E4]; [H2]; `CBRivalBook` | M-L | done |
 | **2.4.5** | 7 Talk and allies | [65]-[67], [69]; [U12]; [U2]'s parley | M-L | left |
 | **2.4.6** | 8 Telling it | [79]-[85], [87], [90]-[92]; [U13]-[U15]; [L5]; voices, mod events | M | left |
 | **2.5.0** | 9 A crew of my own, then the final form | [C1]-[C10]; `CBCrewBook`; the comprehensive bug pass, optimisation, [U16], [L6], every default confirmed, settings and README for good | L | left |
@@ -756,6 +756,20 @@ The facedown and a Rival's life around V. Uses the announcement, the mercy lines
 **Seams.** Chrome is derived from the Rival's existing fields and applied in `CBRivalTraitTerms` and
 `CBKitRivalTraits`; the facedown uses the talk hold state; trophies use the loot path; places use Whereabouts and
 `CBPatrolWalk`; the street hears through the rumour engine; everything shows on the Rival page and the scanner.
+
+**Built in 2.4.4.** Everything above, in `Rivals/RivalMoments.reds` and a new save book, `CBRivalBook` (a bond, how a
+Rival's story ended and when, a trophy taken, a return, a humiliation, chrome already heard of, the place that matters,
+one feud I set going). The facedown opens when the Rival is within 24 m and nobody has fired: the Rival and their
+people are set neutral to V through their own attitude agents, held with the talk's own hold, and kept out of the
+hunt's orders and engagement; talk to the Rival to choose. Let go, they stand down the way a crew called off does, so
+the hunt never counts it as me running. Chrome is derived from what the Rival already has (rank, escapes, mercies,
+kills, scars), so nothing new is saved on `CBRival`; it adds terms under the build's ceilings and the game's own
+behaviour abilities, never cyberware effects. The trophy is the weapon the game itself works out the Rival carries
+(`AIActionTransactionSystem.CalculateEquipmentItems`). "Nobody kills you but me" is a new setting, `nobodyButMe`, so
+the new default reaches everybody. Two parts are not built: a guard who escapes moving the Rival to a second place,
+and a ripperdoc visit as a place to catch them; both need the leads to be moved and planted, which the whereabouts
+system cannot do safely yet. And a fix found on the way: from 1.3.2 the weapon behind every kill was misread (the
+method values were tested as bit positions), so gunfire, quickhacks, explosives and finishers never counted.
 
 **Done when:** each facedown outcome has been played; a Rival comes back from the dead
 only when allowed; a trophy arrives in the inventory and never on a body. A Rival who escaped a gunfight comes back armoured, and it shows on their page, in the scanner and in the street's word; guards walk their beat.

@@ -219,12 +219,18 @@ public func CBScannerShowRivalName(npc: ref<NPCPuppet>, r: ref<CBRival>, forcedP
       archetype = kind.LocalizedName();
     }
   }
+  // And what they carry in them (Rivals/RivalMoments.reds, [U9], 2.4.4), beside their class.
+  let chrome = CBRivalChromeShort(r);
   let chunk = new ScannerName();
-  if IsNameValid(archetype) {
+  if IsNameValid(archetype) || StrLen(chrome) > 0 {
     chunk.SetArchetype(true);
     let params = new inkTextParams();
     params.AddLocalizedString("TEXT_PRIMARY", name);
-    params.AddLocalizedString("TEXT_SECONDARY", NameToString(archetype));
+    let under = IsNameValid(archetype) ? GetLocalizedText(NameToString(archetype)) : "";
+    if StrLen(chrome) > 0 {
+      under = StrLen(under) > 0 ? under + "  /  " + chrome : chrome;
+    }
+    params.AddString("TEXT_SECONDARY", under);
     chunk.SetTextParams(params);
   } else {
     chunk.Set(name);

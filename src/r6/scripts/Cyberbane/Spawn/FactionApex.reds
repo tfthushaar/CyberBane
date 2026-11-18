@@ -518,6 +518,8 @@ public func CBRivalTraitTerms(r: ref<CBRival>, out health: Float, out armour: Fl
   if CBRivalHasTrait(r, n"OldWound") { health -= step; }
   if CBRivalHasTrait(r, n"Reckless") { armour -= step; damage += step * 0.4; }
   if CBRivalHasTrait(r, n"Shaken") { damage -= step * 0.6; }
+  // Their chrome (Rivals/RivalMoments.reds, [U9], 2.4.4): on the same terms, under the same ceilings.
+  CBRivalImplantTerms(r, health, armour, damage, crit);
 }
 
 // The traits that are about how they fight rather than how much they can take.
@@ -534,6 +536,8 @@ public func CBKitRivalTraits(npc: ref<NPCPuppet>, r: ref<CBRival>) -> Void {
   if CBRivalHasTrait(r, n"ChromedOut") {
     CBGrantAbility(npc, t"Ability.HasSubdermalArmorHigh");
   }
+  // And what their chrome and their kind of Rival bring ([U9] [U11], 2.4.4).
+  CBKitRivalImplants(npc, r);
 }
 
 // The sound of something you do not want arriving.

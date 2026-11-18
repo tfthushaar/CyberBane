@@ -602,6 +602,11 @@ public class CBHud {
   private let m_webToggleBg: wref<inkRectangle>;
   private let m_webToggleText: wref<inkText>;
   private let m_webShown: Bool;
+  // The Rivals tree ([H2], 2.4.4) draws with the same pool: which gang it shows, whether it is up, and the Rival in
+  // each place (0 for none).
+  private let m_treeShown: Bool;
+  private let m_treeGang: CName;
+  private let m_treeSlotRival: array<Int32>;
 
   public func IsOpen() -> Bool {
     return this.m_open && this.m_built;
@@ -1056,10 +1061,10 @@ public class CBHud {
       return this.m_actionOn;
     }
     if Equals(name, CBHudWebToggleName()) {
-      return this.m_tab == CBHudFactionsTab();
+      return this.m_tab == CBHudFactionsTab() || this.m_tab == CBHudRivalsTab();
     }
     if this.WebIndex(name) >= 0 {
-      return this.m_webShown;
+      return this.m_webShown || this.m_treeShown;
     }
     let k = this.ExtraIndex(name);
     if k >= 0 {
@@ -1595,6 +1600,11 @@ public class CBHud {
         this.m_payArmed = n"";
         this.Render(sys, game);
       }
+      if this.m_tab == CBHudRivalsTab() {
+        this.Click();
+        sys.SetHubTree(!sys.HubTree());
+        this.Render(sys, game);
+      }
       return true;
     }
     let wi = this.WebIndex(name);
@@ -1603,6 +1613,10 @@ public class CBHud {
       if this.m_webShown {
         this.Click();
         this.WebPick(sys, game, wi);
+      }
+      if this.m_treeShown {
+        this.Click();
+        this.TreePick(sys, game, wi);
       }
       return true;
     }
@@ -1760,6 +1774,11 @@ public class CBHud {
     if this.m_webShown && step != 0 {
       let from = CBWebSlotOf(this.m_pickFaction);
       this.WebPick(sys, game, CBWebNextSlot(from, step > 0 ? 1 : -1));
+      return true;
+    }
+    // On the Rivals tree they go from gang to gang.
+    if this.m_treeShown && step != 0 {
+      this.TreeStep(sys, game, step > 0 ? 1 : -1);
       return true;
     }
     if this.m_listTotal <= this.m_listRows {
@@ -3179,6 +3198,306 @@ public class CBHud {
     this.Render(sys, game);
   }
 
+  // One box of the pool, moved and sized: the web and the tree place them differently.
+  private func PlaceWebBox(s: Int32, x: Float, y: Float, w: Float, h: Float, show: Bool) -> Void {
+    if s < 0 || s >= ArraySize(this.m_webBox) || !IsDefined(this.m_webBox[s]) {
+      return;
+    }
+    this.m_webBox[s].SetMargin(this.PxAt(x, y));
+    this.m_webBox[s].SetSize(this.PxSize(w, h));
+    this.m_webBox[s].SetVisible(show);
+    if IsDefined(this.m_webBoxEdge[s]) {
+      this.m_webBoxEdge[s].SetSize(this.PxSize(5.0, h));
+    }
+    if IsDefined(this.m_webBarMen[s]) {
+      this.m_webBarMen[s].SetMargin(this.PxAt(12.0, h - 6.0));
+    }
+    if IsDefined(this.m_webBarChest[s]) {
+      this.m_webBarChest[s].SetMargin(this.PxAt(w / 2.0 + 4.0, h - 6.0));
+    }
+  }
+
+  // ---- The Rivals tree ([H2], 2.4.4) -------------------------------------------------------------------------------
+
+  // The gangs that have Rivals to draw, in roster order.
+  private func TreeGangs(sys: ref<CyberbaneSystem>) -> array<CName> {
+    let out: array<CName>;
+    for r in sys.GetRivals() {
+      if IsDefined(r) && !ArrayContains(out, r.faction) && NotEquals(r.faction, n"") {
+        ArrayPush(out, r.faction);
+      }
+    }
+    return out;
+  }
+
+  private func TreeStep(sys: ref<CyberbaneSystem>, game: GameInstance, step: Int32) -> Void {
+    let gangs = this.TreeGangs(sys);
+    let n = ArraySize(gangs);
+    if n == 0 {
+      return;
+    }
+    let at = ArrayFindFirst(gangs, this.m_treeGang);
+    at = at < 0 ? 0 : ((at + step) % n + n) % n;
+    this.m_treeGang = gangs[at];
+    this.m_pickRival = 0;
+    this.Render(sys, game);
+  }
+
+  private func TreePick(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    if slot == 0 {
+      this.TreeStep(sys, game, 1);   // V's marker in the corner: the next gang
+      return;
+    }
+    let id = slot < ArraySize(this.m_treeSlotRival) ? this.m_treeSlotRival[slot] : 0;
+    if id > 0 {
+      this.m_pickRival = this.m_pickRival == id ? 0 : id;
+      this.m_findArmed = 0;
+      this.m_forgetArmed = 0;
+      this.m_purgeArmed = false;
+      this.Render(sys, game);
+    }
+  }
+
+  // One Rival in one place of the tree. `empty` names who steps up next when the place has nobody.
+  private func TreeBox(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32, r: ref<CBRival>, empty: String,
+                       x: Float, y: Float, w: Float, h: Float, fallen: Bool) -> Void {
+    if slot < 0 || slot >= ArraySize(this.m_webBox) {
+      return;
+    }
+    this.PlaceWebBox(slot, x, y, w, h, true);
+    while ArraySize(this.m_treeSlotRival) < ArraySize(this.m_webBox) {
+      ArrayPush(this.m_treeSlotRival, 0);
+    }
+    this.m_treeSlotRival[slot] = IsDefined(r) ? r.id : 0;
+    let tint = CBHudGrey();
+    let name = "EMPTY";
+    let line = StrLen(empty) > 0 ? "NEXT: " + StrUpper(empty) : "NOBODY TO STEP UP";
+    let lead = "";
+    if IsDefined(r) {
+      name = CBRivalDisplayName(sys.GetContent(), r);
+      let hunting = r.id == sys.GetActiveRivalId() || r.state == EnumInt(ECBRivalState.Hunting);
+      tint = fallen ? CBHudDim() : (hunting ? CBHudRed() : (r.state == EnumInt(ECBRivalState.Debtor) ? CBHudCyan() : CBHudAmber()));
+      if fallen {
+        let book = CBRivalBook.Get(game);
+        let how = IsDefined(book) ? book.Ending(r.id) : CBEndingNone();
+        if r.state == EnumInt(ECBRivalState.Retired) {
+          line = "LEFT NIGHT CITY";
+        } else {
+          line = how == CBEndingNotByV() ? "KILLED, NOT BY YOU" : "DEAD BY YOUR HAND";
+        }
+      } else {
+        line = s"RANK \(r.rank)  " + StrUpper(hunting ? "hunting you" : CBRivalStateName(r.state));
+        let chrome = CBRivalChromeCount(r);
+        lead = s"Met \(r.encounters), escaped \(r.escapes), spared \(r.sparedByV)";
+        if chrome > 0 {
+          lead += s", chrome \(chrome)";
+        }
+      }
+    }
+    if IsDefined(this.m_webBoxEdge[slot]) {
+      this.m_webBoxEdge[slot].SetTintColor(tint);
+      this.m_webBoxEdge[slot].SetVisible(true);
+    }
+    if IsDefined(this.m_webBoxName[slot]) {
+      this.m_webBoxName[slot].SetText(CBHudTrim(name, w > 160.0 ? 22 : 16));
+    }
+    if IsDefined(this.m_webBoxLine[slot]) {
+      this.m_webBoxLine[slot].SetText(CBHudTrim(line, w > 160.0 ? 26 : 20));
+      this.m_webBoxLine[slot].SetTintColor(tint);
+    }
+    if IsDefined(this.m_webBoxLead[slot]) {
+      this.m_webBoxLead[slot].SetText(CBHudTrim(lead, 30));
+      this.m_webBoxLead[slot].SetVisible(StrLen(lead) > 0 && w > 160.0);
+    }
+    if IsDefined(this.m_webBarMen[slot]) {
+      this.m_webBarMen[slot].SetVisible(false);
+    }
+    if IsDefined(this.m_webBarChest[slot]) {
+      this.m_webBarChest[slot].SetVisible(false);
+    }
+    let dim = this.m_pickRival > 0 && IsDefined(r) && r.id != this.m_pickRival;
+    this.m_webBox[slot].SetOpacity(fallen ? 0.5 : (dim ? 0.6 : 1.0));
+  }
+
+  private func TreeLine(k: Int32, x1: Float, y1: Float, x2: Float, y2: Float, thick: Float) -> Int32 {
+    this.PlaceLine(k, x1, y1, x2, y2, thick, CBHudGrey(), 0.9);
+    return k + 1;
+  }
+
+  // The middle of a drawn place of the tree, by slot, in the web's design units.
+  private func TreeCx(slot: Int32) -> Float {
+    if slot == 1 {
+      return 660.0;
+    }
+    if slot >= 2 && slot <= 4 {
+      return 340.0 + Cast<Float>(slot - 2) * 320.0;
+    }
+    return 120.0 + Cast<Float>(slot - 5) * 262.0;
+  }
+
+  private func TreeCy(slot: Int32) -> Float {
+    if slot == 1 {
+      return 38.0;
+    }
+    return slot <= 4 ? 156.0 : 274.0;
+  }
+
+  // A gang's leader, their three lieutenants, the rest of their Rivals as the bench, and the fallen, top down: the
+  // hierarchy that already exists (CBFactionState leader and lieutenants), with an empty chair naming who steps up
+  // next (the order CBHierarchyFill uses). Bonds between two of them in cyan, and V's nemesis tied to V in the corner.
+  private func RenderTree(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    if !IsDefined(this.m_webRoot) {
+      return;
+    }
+    let gangs = this.TreeGangs(sys);
+    if !ArrayContains(gangs, this.m_treeGang) {
+      let picked = sys.FindRivalById(this.m_pickRival);
+      if IsDefined(picked) && ArrayContains(gangs, picked.faction) {
+        this.m_treeGang = picked.faction;
+      } else {
+        this.m_treeGang = ArraySize(gangs) > 0 ? gangs[0] : n"";
+      }
+    }
+    this.m_treeShown = true;
+    this.m_webRoot.SetVisible(true);
+    let s = 0;
+    while s < ArraySize(this.m_webBox) {
+      this.PlaceWebBox(s, 0.0, 0.0, CBWebSlotW(s), CBWebSlotH(s), false);
+      if s < ArraySize(this.m_treeSlotRival) {
+        this.m_treeSlotRival[s] = 0;
+      }
+      s += 1;
+    }
+    let lines = 0;
+    let words = 0;
+    let gang = this.m_treeGang;
+    let fs = sys.FindFaction(gang);
+    let book = CBRivalBook.Get(game);
+    // V, in the corner: click for the next gang.
+    this.PlaceWebBox(0, 1190.0, 0.0, CBWebVW(), CBWebVH(), true);
+    if ArraySize(this.m_webBoxName) > 0 && ArraySize(this.m_webBoxLine) > 0 {
+      if IsDefined(this.m_webBoxName[0]) {
+        this.m_webBoxName[0].SetText("V");
+      }
+      if IsDefined(this.m_webBoxLine[0]) {
+        this.m_webBoxLine[0].SetText(ArraySize(gangs) > 1 ? "NEXT GANG" : "YOU");
+      }
+    }
+    if Equals(gang, n"") || !IsDefined(fs) {
+      this.PlaceWord(words, 660.0, 200.0, "No Rivals yet", CBHudGrey(), 1.0);
+      words += 1;
+    } else {
+      let label = StrUpper(CBFactionLabel(gang));
+      if ArraySize(gangs) > 1 {
+        label += s"  (\(ArrayFindFirst(gangs, gang) + 1) OF \(ArraySize(gangs)))";
+      }
+      this.PlaceWord(words, 140.0, 12.0, label, CBHudHead(), 1.0);
+      words += 1;
+      let leader = fs.leaderRivalId > 0 ? sys.FindRivalById(fs.leaderRivalId) : null;
+      if IsDefined(leader) && !CBRivalStillAround(leader) {
+        leader = null;
+      }
+      let nextUp = CBBestCandidate(sys, fs);
+      let nextLt = CBBestLieutenant(sys, fs);
+      this.TreeBox(sys, game, 1, leader, IsDefined(nextUp) ? CBRivalDisplayName(sys.GetContent(), nextUp) : "",
+                   560.0, 0.0, 200.0, 76.0, false);
+      let ltIds: array<Int32> = [fs.lt1RivalId, fs.lt2RivalId, fs.lt3RivalId];
+      let k = 0;
+      while k < 3 {
+        let lt = ltIds[k] > 0 ? sys.FindRivalById(ltIds[k]) : null;
+        if IsDefined(lt) && !CBRivalStillAround(lt) {
+          lt = null;
+        }
+        this.TreeBox(sys, game, 2 + k, lt, IsDefined(nextLt) ? CBRivalDisplayName(sys.GetContent(), nextLt) : "",
+                     240.0 + Cast<Float>(k) * 320.0, 118.0, 200.0, 76.0, false);
+        k += 1;
+      }
+      // The chair lines: down from the leader, along, and down to each lieutenant.
+      lines = this.TreeLine(lines, 660.0, 76.0, 660.0, 97.0, 3.0);
+      lines = this.TreeLine(lines, 340.0, 97.0, 980.0, 97.0, 3.0);
+      k = 0;
+      while k < 3 {
+        let cx = 340.0 + Cast<Float>(k) * 320.0;
+        lines = this.TreeLine(lines, cx, 97.0, cx, 118.0, 3.0);
+        k += 1;
+      }
+      // The bench, and the fallen.
+      let bench = 0;
+      let fallen = 0;
+      for r in sys.GetRivals() {
+        if IsDefined(r) && Equals(r.faction, gang) && r.id != fs.leaderRivalId && r.id != fs.lt1RivalId
+           && r.id != fs.lt2RivalId && r.id != fs.lt3RivalId {
+          if CBRivalStillAround(r) || r.state == EnumInt(ECBRivalState.Debtor) || r.state == EnumInt(ECBRivalState.Dormant) {
+            if bench < 5 {
+              this.TreeBox(sys, game, 5 + bench, r, "", 20.0 + Cast<Float>(bench) * 262.0, 236.0, 200.0, 76.0, false);
+              bench += 1;
+            }
+          } else {
+            if fallen < 4 && (r.state == EnumInt(ECBRivalState.Slain) || r.state == EnumInt(ECBRivalState.Retired)) {
+              this.TreeBox(sys, game, 12 + fallen, r, "", 100.0 + Cast<Float>(fallen) * 300.0, 384.0, 150.0, 40.0, true);
+              fallen += 1;
+            }
+          }
+        }
+      }
+      if bench > 0 {
+        lines = this.TreeLine(lines, 660.0, 194.0, 660.0, 215.0, 2.0);
+        lines = this.TreeLine(lines, 120.0, 215.0, 120.0 + Cast<Float>(Max(bench - 1, 0)) * 262.0, 215.0, 2.0);
+        k = 0;
+        while k < bench {
+          let bx = 120.0 + Cast<Float>(k) * 262.0;
+          lines = this.TreeLine(lines, bx, 215.0, bx, 236.0, 2.0);
+          k += 1;
+        }
+      }
+      if fallen > 0 {
+        this.PlaceWord(words, 50.0, 372.0, "THE FALLEN", CBHudDim(), 1.0);
+        words += 1;
+      }
+      // Bonds between two of those drawn, and V's nemesis (the one V has met most) tied to V.
+      let nemesis = 0;
+      let most = 0;
+      let a = 1;
+      while a < 10 {
+        let ra = a < ArraySize(this.m_treeSlotRival) ? this.m_treeSlotRival[a] : 0;
+        let rr = ra > 0 ? sys.FindRivalById(ra) : null;
+        if IsDefined(rr) && rr.encounters > most {
+          most = rr.encounters;
+          nemesis = a;
+        }
+        if ra > 0 && IsDefined(book) {
+          let with = book.BondWith(ra);
+          let b = a + 1;
+          while b < 10 {
+            if b < ArraySize(this.m_treeSlotRival) && with > 0 && this.m_treeSlotRival[b] == with && lines < CBWebLinePool() {
+              this.PlaceLine(lines, this.TreeCx(a), this.TreeCy(a), this.TreeCx(b), this.TreeCy(b), 3.0, CBHudCyan(), 0.9);
+              lines += 1;
+            }
+            b += 1;
+          }
+        }
+        a += 1;
+      }
+      if nemesis > 0 && most >= 2 && lines < CBWebLinePool() {
+        this.PlaceLine(lines, this.TreeCx(nemesis), this.TreeCy(nemesis), 1250.0, 30.0, 3.0, CBHudRed(), 0.9);
+        lines += 1;
+      }
+    }
+    while lines < ArraySize(this.m_webLine) {
+      if IsDefined(this.m_webLine[lines]) {
+        this.m_webLine[lines].SetVisible(false);
+      }
+      lines += 1;
+    }
+    while words < ArraySize(this.m_webWord) {
+      if IsDefined(this.m_webWord[words]) {
+        this.m_webWord[words].SetVisible(false);
+      }
+      words += 1;
+    }
+    this.PaintWeb();
+  }
+
   private func HideWeb() -> Void {
     this.m_webShown = false;
     if IsDefined(this.m_webRoot) {
@@ -3224,6 +3543,17 @@ public class CBHud {
     }
     this.m_webShown = true;
     this.m_webRoot.SetVisible(true);
+    // Every box back in its own place: the tree moves them.
+    let place = 0;
+    while place < ArraySize(this.m_webBox) {
+      this.PlaceWebBox(place, CBWebSlotX(place), CBWebSlotY(place), CBWebSlotW(place), CBWebSlotH(place), true);
+      if place < ArraySize(this.m_webBarMen) && IsDefined(this.m_webBarMen[place]) {
+        this.m_webBarMen[place].SetVisible(CBWebSlotIsGang(place));
+        this.m_webBarChest[place].SetVisible(CBWebSlotIsGang(place));
+        this.m_webBoxLead[place].SetVisible(CBWebSlotIsGang(place));
+      }
+      place += 1;
+    }
     let pick = this.m_pickFaction;
     let pickSlot = CBWebSlotOf(pick);
     let lines = 0;
@@ -3375,11 +3705,16 @@ public class CBHud {
     this.HideBars();
     this.HideRows();
     this.HideWeb();
+    this.m_treeShown = false;
     if IsDefined(this.m_webToggle) {
-      this.m_webToggle.SetVisible(this.m_tab == CBHudFactionsTab());
+      this.m_webToggle.SetVisible(this.m_tab == CBHudFactionsTab() || this.m_tab == CBHudRivalsTab());
     }
     if IsDefined(this.m_webToggleText) {
-      this.m_webToggleText.SetText(sys.HubWeb() ? "Show as a list" : "Show as a web");
+      if this.m_tab == CBHudRivalsTab() {
+        this.m_webToggleText.SetText(sys.HubTree() ? "Show as a list" : "Show as a tree");
+      } else {
+        this.m_webToggleText.SetText(sys.HubWeb() ? "Show as a list" : "Show as a web");
+      }
     }
     this.SetAction("", false);
     this.HideExtras();
@@ -3449,7 +3784,12 @@ public class CBHud {
               if StrLen(blocked) > 0 && sys.GetHuntHoldReason() == CBHoldNoRoom() {
                 this.m_holdLabel = blocked;
               }
-              this.RenderRivals(sys);
+              // The Rivals as a list, or as each gang's tree ([H2], 2.4.4); the file below is the same either way.
+              if sys.HubTree() {
+                this.RenderTree(sys, game);
+              } else {
+                this.RenderRivals(sys);
+              }
               this.RenderRivalDetail(sys, game);
             } else {
               if this.m_tab == CBHudTitlesTab() {
@@ -4239,6 +4579,17 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
     if StrLen(scars) > 0 {
       out += "Carries your mark: " + scars + ".\n";
     }
+    // Their chrome and their bond (Rivals/RivalMoments.reds, 2.4.4).
+    let chrome = CBRivalChromeWords(r);
+    if StrLen(chrome) > 0 {
+      out += "Chrome: " + chrome + ".\n";
+    }
+    let rivalBook = CBRivalBook.Get(game);
+    let bondId = IsDefined(rivalBook) ? rivalBook.BondWith(r.id) : 0;
+    let bonded = bondId > 0 ? sys.FindRivalById(bondId) : null;
+    if IsDefined(bonded) {
+      out += CBCapFirst(CBBondWord(rivalBook.BondKind(r.id))) + " " + CBRivalDisplayName(content, bonded) + ".\n";
+    }
     out += "\n";
   }
   // A held arrival used to keep resetting its clock to a few seconds and never come, which read as
@@ -4592,6 +4943,26 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   }
   if Equals(e.kind, n"CorpOffer") {
     return StrLen(gang) > 0 ? s"A corporation offered you \(RoundF(e.value))eb for the head of \(gang)." : "A corporation offered you a contract.";
+  }
+  // 2.4.4: the Rivals' moments.
+  if Equals(e.kind, n"StaredDown") || Equals(e.kind, n"FacedownWalked") || Equals(e.kind, n"DuelWon")
+     || Equals(e.kind, n"CalledEven") || Equals(e.kind, n"Humiliated") || Equals(e.kind, n"Trophy")
+     || Equals(e.kind, n"RivalReturned") || Equals(e.kind, n"BondVengeance") || Equals(e.kind, n"RivalEndedUp")
+     || Equals(e.kind, n"UnderTheKnife") || Equals(e.kind, n"FeudSet") || Equals(e.kind, n"RivalFeud") {
+    let rv = sys.FindRivalById(RoundF(e.value));
+    let rn = IsDefined(rv) ? CBRivalDisplayName(sys.GetContent(), rv) : "a Rival";
+    if Equals(e.kind, n"StaredDown") { return s"You stared down \(rn), and their people ran."; }
+    if Equals(e.kind, n"FacedownWalked") { return s"\(CBCapFirst(rn)) let you walk away, once."; }
+    if Equals(e.kind, n"DuelWon") { return s"You beat \(rn) one on one while their people watched."; }
+    if Equals(e.kind, n"CalledEven") { return s"You and \(rn) called it even."; }
+    if Equals(e.kind, n"Humiliated") { return s"You humiliated \(rn) where they lay."; }
+    if Equals(e.kind, n"Trophy") { return s"You took a trophy off \(rn)."; }
+    if Equals(e.kind, n"RivalReturned") { return s"\(CBCapFirst(rn)) came back from the dead."; }
+    if Equals(e.kind, n"BondVengeance") { return s"\(CBCapFirst(rn)) swore vengeance for somebody you killed."; }
+    if Equals(e.kind, n"RivalEndedUp") { return s"\(CBCapFirst(rn)), long gone from Night City, got in touch."; }
+    if Equals(e.kind, n"UnderTheKnife") { return s"\(CBCapFirst(rn)) went under the knife for you."; }
+    if Equals(e.kind, n"FeudSet") { return s"You set a Rival on \(rn)."; }
+    return s"One Rival killed another: \(rn) is gone.";
   }
   if Equals(e.kind, n"StreetClash") {
     return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) won a fight with their enemies in the street." : "Two gangs fought in the street.";

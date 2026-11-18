@@ -546,6 +546,53 @@ public abstract class CBConfig {
   public static func ClashGain() -> Float = 2.0
   // The Hub's web of gangs ([H1], UI/HubWeb.reds): a peace paid in the last three game days is said on V's line.
   public static func WebPeaceDays() -> Float = 3.0
+  // The Rivals' moments (Rivals/RivalMoments.reds, 2.4.4). Chrome: one implant a climb, up to four. The facedown opens
+  // with a Rival 24 m off (or closer) before anybody fires, holds their people within 40 m, and lasts 15 seconds; a
+  // draw gives V 3 seconds of their bad aim. Staring down: 30%, up to 35 more for Cool, up to 25 more for renown, 8
+  // less a rank above one; won, the Rival's aim is 0.6 for 20 s; lost, theirs is 1.25. Just you and me: 45%, 30 more
+  // for the Valentinos and the Animals. Call it even: 30%, 25 more each time V spared them. Humiliation: 10 fear, half
+  // quit. Feuds: a set one lands 18 game hours later with a 3 point edge; otherwise 8% a day. Trophies from rank two.
+  // Bonds: 35% each Rival, once; vengeance brings them within 5 minutes; a spare puts the other in V's debt 35% of the
+  // time. Back from the dead: 5% a day, 14 days after. Ended up: 15% a day, 20 days after. Taunts: every 25 s or so
+  // in a fight within 40 m, half the time. A place with meaning: within 600 m of V.
+  public static func RivalImplantsMax() -> Int32 = 4
+  public static func FacedownRange() -> Float = 24.0
+  public static func FacedownEscortRange() -> Float = 40.0
+  public static func FacedownTicks() -> Int32 = 15
+  public static func FacedownDropSeconds() -> Float = 3.0
+  public static func StareBase() -> Float = 0.3
+  public static func StareCool() -> Float = 0.35
+  public static func StareRenown() -> Float = 0.25
+  public static func StareRank() -> Float = 0.08
+  public static func StareShakenAim() -> Float = 0.6
+  public static func StareBoldAim() -> Float = 1.25
+  public static func StareSeconds() -> Float = 20.0
+  public static func StareFear() -> Float = 6.0
+  public static func DuelBase() -> Float = 0.45
+  public static func DuelGangBonus() -> Float = 0.3
+  public static func DuelFear() -> Float = 8.0
+  public static func CallEvenBase() -> Float = 0.3
+  public static func HumiliateFear() -> Float = 10.0
+  public static func HumiliateQuitChance() -> Float = 0.5
+  public static func FeudDelayHours() -> Float = 18.0
+  public static func FeudSetOnEdge() -> Int32 = 3
+  public static func FeudChancePerDay() -> Float = 0.08
+  public static func TrophyMinRank() -> Int32 = 2
+  public static func BondChance() -> Float = 0.35
+  public static func BondVengeanceTicks() -> Int32 = 300
+  public static func BondDebtChance() -> Float = 0.35
+  public static func ReturnChancePerDay() -> Float = 0.05
+  public static func ReturnDays() -> Float = 14.0
+  public static func EndedUpDays() -> Float = 20.0
+  public static func EndedUpChancePerDay() -> Float = 0.15
+  public static func TauntTicks() -> Int32 = 25
+  public static func TauntRange() -> Float = 40.0
+  public static func TauntChance() -> Float = 0.5
+  public static func MeaningMaxDistance() -> Float = 600.0
+  // Guards at a Rival's place walk somewhere 4 to 10 m round them every 20 seconds or so ([U10]).
+  public static func GuardBeatTicks() -> Int32 = 20
+  public static func GuardBeatMin() -> Float = 4.0
+  public static func GuardBeatMax() -> Float = 10.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

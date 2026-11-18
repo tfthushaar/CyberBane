@@ -452,6 +452,10 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
         CBHierarchyFill(sys, already.faction);   // their chair is somebody else's now (2.4.2)
         CBCloseRivalEncounter(sys, game, already, e.puppet);
         CBFileLog(sys, n"RivalExiled", now, district, already.faction, Cast<Float>(already.id));
+        let exiledBook = CBRivalBook.Get(game);
+        if IsDefined(exiledBook) {
+          exiledBook.SetEnding(already.id, CBEndingRetired(), now);   // for where they end up (2.4.4, [61])
+        }
         if CBMessagesOn() {
           CBHearsayFromStreet(game, s"\(CBRivalDisplayName(content, already)) left Night City in the back of a truck. Nobody expects them back.", n"");
         }
@@ -459,6 +463,8 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
         return;
       }
       let indebted = CBRivalSparedByV(already, content, now, district);
+      // Where V first beat them, and a bond's debt (Rivals/RivalMoments.reds, 2.4.4).
+      CBRivalSparedMoment(sys, game, already, e.puppet);
       // Spared once too often at the top of the ladder, and not grateful for it (1.9.0).
       if !indebted {
         CBRivalMaybeBreak(sys, game, already);

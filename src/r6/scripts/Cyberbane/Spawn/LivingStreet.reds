@@ -24,7 +24,7 @@ public func CBStreetLifeOn(flag: CName) -> Bool {
     return false;
   }
   if !rt.HasSettings() {
-    return !Equals(flag, n"claimHelp");   // surrender is on by default from 2.3.2
+    return true;   // surrender is on by default from 2.3.2, and "Nobody kills you but me" from 2.4.4
   }
   let s = rt.GetSettings();
   if Equals(flag, n"bagmen") { return s.bagmen; }
@@ -32,7 +32,8 @@ public func CBStreetLifeOn(flag: CName) -> Bool {
   if Equals(flag, n"sitDowns") { return s.sitDowns; }
   if Equals(flag, n"whileOut") { return s.whileOut; }
   if Equals(flag, n"surrender") { return s.gangsSurrender; }
-  if Equals(flag, n"claimHelp") { return s.claimHelp; }
+  // A new field in 2.4.4 so its new default, on, reaches every install: the old claimHelp was stored off on all of them.
+  if Equals(flag, n"claimHelp") { return s.nobodyButMe && CBRivalsOn(); }
   return false;
 }
 
@@ -194,6 +195,7 @@ public class CBStreetLife {
   private let m_allyEnemy: CName;
   private let m_allyCalm: Int32;
   private let m_allyDay: Int32;
+  private let m_allyRival: Int32;   // who came ([E4], 2.4.4), for their parting words
 
   public func Tick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let player = GetPlayer(game);
@@ -577,6 +579,14 @@ public class CBStreetLife {
     if this.m_allyOut {
       this.m_allyCalm = player.IsInCombat() ? 0 : this.m_allyCalm + 1;
       if this.m_allyCalm == CBConfig.ClaimCalmTicks() {
+        // They leave with a line that sets up their next fight with V, and they will come for it ([E4], 2.4.4).
+        let ally = sys.FindRivalById(this.m_allyRival);
+        if IsDefined(ally) && CBMessagesOn() {
+          CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), ally), CBPick3("We're square for today. Next time it's you and me.",
+            "Don't thank me. Nobody else gets to kill you. That's mine.", "Enjoy it. The next fight's ours, and I won't be on your side."), 4.0);
+          ally.huntTicks = Max(ally.huntTicks, CBConfig.RivalAfterEscapeTicks());
+          CBRivalGiveTrait(ally, n"GrudgeBearer");
+        }
         for id in des.GetTaggedIDs(n"CB_Ally") {
           let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
           if IsDefined(p) && CBStillStanding(p) {
@@ -645,10 +655,13 @@ public class CBStreetLife {
           // picking them meanwhile put a second of them in the street, after V.
           r.huntTicks = Max(r.huntTicks, CBConfig.RivalAfterEscapeTicks());
           this.m_allyOut = true;
+          this.m_allyRival = r.id;
           this.m_allyEnemy = enemy;
           this.m_allyCalm = 0;
           this.m_allyDay = CBGameDay(game);
           CBPhoneSendTinted(game, CBRivalDisplayName(sys.GetContent(), r), "Nobody kills you but me. Keep your head down.", CBHudRed());
+          // And they say so as they arrive, in the street ([E4], 2.4.4).
+          CBAnnounceLater(game, CBRivalDisplayName(sys.GetContent(), r), CBPick2("Nobody kills this one but me!", "Back off! This merc's mine!"), 2.5);
           CBLog.Info(n"Street", s"Rival \(r.id) came to help V against \(NameToString(enemy)).");
           return;
         }

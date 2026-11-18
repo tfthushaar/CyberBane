@@ -236,6 +236,13 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
       return e.broken[CBHashIndex(rival.id, 9, ArraySize(e.broken))];
     }
   }
+  // Back from the dead, or humiliated (Rivals/RivalMoments.reds, 2.4.4): known for that now.
+  if CBRivalReturned(rival) {
+    return CBReturnedEpithet(rival);
+  }
+  if CBRivalWasHumiliated(rival) {
+    return CBHumiliatedEpithet(rival);
+  }
   let eps = CBEpithetsForSource(content, rival.source);
   if rival.epithet >= 0 && rival.epithet < ArraySize(eps) {
     return eps[rival.epithet];
@@ -952,7 +959,10 @@ public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>
     rival.state = EnumInt(ECBRivalState.Debtor);
     return true;
   }
-  CBPromoteRival(rival, content, at);
+  // Humiliated (2.4.4, [55]): they lost a rank for it, and being spared again is no climb.
+  if !CBRivalWasHumiliated(rival) {
+    CBPromoteRival(rival, content, at);
+  }
   return false;
 }
 
@@ -1191,6 +1201,10 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   if IsDefined(bookP) {
     bookP.ClearWords();   // nobody is waiting anywhere for V now
   }
+  let rivalBook = CBRivalBook.Get(game);
+  if IsDefined(rivalBook) {
+    rivalBook.Clear();    // and no bond, ending or place is kept for anybody (2.4.4)
+  }
   let removed = sys.ClearRivals();
   sys.SetActiveRivalId(0);
   sys.ClearPack();
@@ -1230,6 +1244,7 @@ public func CBForgetRival(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int
     svc.DropSighting(sys.GetPlaythroughId(), id);
   }
   CBWithdrawWord(game, id);
+  CBRivalBookForget(game, id);   // their bond, ending and places (Rivals/RivalBook.reds, 2.4.4)
   if sys.IsLeadPinned() && sys.GetLeadPinRival() == id {
     CBDropLead(sys, game);
   }
