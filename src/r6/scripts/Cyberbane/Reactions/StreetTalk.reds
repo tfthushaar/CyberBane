@@ -1079,6 +1079,9 @@ public class CBStreetTalk {
     if choice == CBTalkActSpare() || choice == CBTalkActCollect() || choice == CBTalkActExile() {
       return CBRivalMercyAnswer(sys, game, player, t, choice);
     }
+    if choice == CBTalkActBack() || choice == CBTalkActIncite() || choice == CBTalkActProtection() || choice == CBTalkActTerms() {
+      return CBWarTalkAnswer(sys, game, player, t, choice);
+    }
     if choice == CBTalkActRespects() {
       return CBEventTalkAnswer(sys, game, t);
     }
@@ -2160,6 +2163,10 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   if gang && (m == CBTalkFriendly() || m == CBTalkWary()) && CBStreetLifeOn(n"favours") && IsDefined(lifeC)
      && !lifeC.FavourOpen() && !CBMaskHas(done, CBTalkActFavour()) {
     ArrayPush(out, CBTalkMakeLine("[Ask] Need anything done?", CBTalkActFavour(), t"ChoiceCaptionParts.GangWatchIcon"));
+  }
+  // The war (Economy/War.reds, 2.4.0): backing a gang, a lie, protection money, terms.
+  for wl in CBWarTalkLines(sys, game, t) {
+    ArrayPush(out, wl);
   }
   // A funeral's mourners (Spawn/StreetEvents.reds, 2.3.3).
   for el in CBEventTalkLines(game, t) {

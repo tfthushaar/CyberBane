@@ -194,6 +194,16 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Gatherings-Desc", "Gangs gather near you at a set time, and the street tells you where and when: a funeral after you kill a Rival or a boss of theirs, a celebration after they take a district, an initiation, a recruiting drive. Crash one and they feel it (a funeral is never forgiven); let it happen and they come out stronger. At a funeral you can pay your respects instead.");
     this.Text("Cyberbane-Settings-DealsAndRackets", "Arms deals and rackets");
     this.Text("Cyberbane-Settings-DealsAndRackets-Desc", "A gang buying guns from another, or collecting its take, near you at a set time. Crash a deal and the crate is yours; hit a racket and the cash is. Leave them be and the gang grows stronger.");
+    this.Text("Cyberbane-Settings-WarChest", "War chests and manpower");
+    this.Text("Cyberbane-Settings-WarChest-Desc", "Every gang has money and people. Its streets earn it eddies; crews, apex squads, tribute and bounties cost it. Rob its bagmen and hit its rackets and it sends fewer people; massacre its crews and its ranks empty for days. The Hub's gang page says if a gang is flush, counting every eddie, or broke.");
+    this.Text("Cyberbane-Settings-BackAGang", "Back a gang");
+    this.Text("Cyberbane-Settings-BackAGang-Desc", "Tell one of a gang that likes you that their war is yours. Hurting their enemies where they fight counts double with them, and every week they pay you a cut for each district they hold. Their enemies like you less. You can change sides once a week.");
+    this.Text("Cyberbane-Settings-CommonEnemy", "A common enemy");
+    this.Text("Cyberbane-Settings-CommonEnemy-Desc", "Rarely, two gangs at war that both fear and hate you call a truce for a day and send their crews together. Only once you're Infamous.");
+    this.Text("Cyberbane-Settings-OwnStreets", "Your own streets");
+    this.Text("Cyberbane-Settings-OwnStreets-Desc", "The endgame of the turf war: as a Legend, a district where your name is everything and every gang is broken becomes yours. No crews come there, and the gangs passing through pay you every week.");
+    this.Text("Cyberbane-Settings-TalkIncite", "Set gangs on each other");
+    this.Text("Cyberbane-Settings-TalkIncite-Desc", "In street talk, tell a ganger their enemies are planning a hit on them. Believed, both gangs lose a little ground and the next street fight near you is between them. Not believed, they take offence.");
     this.Text("Cyberbane-Settings-GangFights", "Fights between gangs");
     this.Text("Cyberbane-Settings-GangFights-Desc", "Gangs at war settle things near you, and the street tells you where and when: an execution of a rival's man, a street fight that decides who holds the ground, a hunt for somebody who crossed them. Step in, pick a side, or let it play out. They come up less often than gatherings.");
     this.Text("Cyberbane-Settings-PowerStruggles", "Power struggles");
@@ -313,7 +323,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TitlePerks", "Title effects");
     this.Text("Cyberbane-Settings-TitlePerks-Desc", "Whether the title you go by does anything. Off makes every title just a name.");
     this.Text("Cyberbane-Settings-TurfPatrols", "Turf patrols (experimental)");
-    this.Text("Cyberbane-Settings-TurfPatrols-Desc", "Off by default. In a district that has changed hands, a few of the new owners walk the streets while you are around. Hostile if you are at war with them.");
+    this.Text("Cyberbane-Settings-TurfPatrols-Desc", "Off by default. In a district that has changed hands, a few of the new owners walk a beat round their corner while you are around: mixed people, paid out of their war chest. If you are at war with them and they recognise you they attack; hurt one and they all turn on you. A beat walked without trouble tightens their hold on the street.");
     this.Text("Cyberbane-Settings-EnemyOfEnemy", "Enemy of my enemy");
     this.Text("Cyberbane-Settings-EnemyOfEnemy-Desc", "How much a gang warms to you when you kill its enemies, as a share of what the victims' gang loses. Zero means it never does. A gang you have hurt lately gives you nothing.");
     this.Text("Cyberbane-Settings-UnseenDread", "How frightening unseen work is");

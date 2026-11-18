@@ -219,6 +219,10 @@ public func CBRealPhoneChoices(hash: Int32) -> array<String> {
   }
   if kind == CBPhoneAnswerOffer() {
     ArrayPush(out, s"Pay \(CBPeaceQuote(sys, game, store.ThreadOffer(thread)))eb to call it off");
+    // Pushing back on the price, once a day (Economy/War.reds, 2.4.0).
+    if CBPeaceCanHaggle(game, store.ThreadOffer(thread)) {
+      ArrayPush(out, "Too much");
+    }
     ArrayPush(out, "Not paying");
   }
   return out;
@@ -248,6 +252,16 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   }
   let faction = store.ThreadOffer(thread);
   let cost = CBPeaceQuote(sys, game, faction);
+  // "Too much" (the middle row, when there is one): the offer stays, at whatever price they come back with.
+  if choice == 1 && ArraySize(choices) == 3 {
+    store.Reply(game, thread, CBPick2("Too much.", "For that? Come on."));
+    if CBPeaceHaggle(sys, game, faction) {
+      CBPhoneFromGang(game, faction, s"Fine. \(CBPeaceQuote(sys, game, faction))eb, and that's the last time we move.");
+    } else {
+      CBPhoneFromGang(game, faction, s"The price is \(cost)eb. Take it or don't.");
+    }
+    return;
+  }
   store.ClearOffer(thread);
   if choice == 0 {
     // V only says the money is coming when it is (1.9.5). "Xeb. Call it off." went out first either way,

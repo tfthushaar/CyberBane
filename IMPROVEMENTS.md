@@ -41,13 +41,11 @@ By impact for the effort, most first:
 4. **The facedown** (53). A Cyberpunk-canon moment before every Rival fight.
 5. **A price on V's head, and the hunters' ladder** (39). A second nemesis line with a goal of its own.
 6. *(Built in 2.3.3: funerals and the rest of gang life's gatherings, deals and rackets.)*
-7. **Back a gang, and the war chest** (33, 34). A side to take and a strategy in the turf war.
+7. *(Built in 2.4.0: back a gang, the war chest, and the rest of the turf war.)*
 8. **Run with a crew** (65). The payoff for being liked.
 9. **Panic in the dark** (80). Stealth play gets the terror loud play already has.
-11. **Tyger Claws: protection and the assassin.** (The rest of their code, a cheap peace and a dear insult, is
-    built.) Working Japantown draws a weekly protection demand by text, and a crew if V ignores it; when they
-    want V dead they send one assassin with a blade at night, not a crowd. Fits with 2.4.0's tribute and peace
-    by text ([U6]) and 2.4.1's hunts. **M**
+11. **Tyger Claws: the assassin.** (Their code and their protection money are built.) When they want V dead they
+    send one assassin with a blade at night, not a crowd. Fits with 2.4.1's hunts. **S to M**
 18. **Wraiths: the road.** (The Aldecaldos' family code is built.) Wraiths ambush V's car on Badlands roads:
     the car ambush, out there, with [E2] in 2.4.1. **S**
 20. **The corporations: money, not grudges.** Arasaka, Militech and Kang Tao send no gangers. They post a
@@ -59,22 +57,7 @@ Built in 2.3.3 and 2.3.4 (`Spawn/StreetEvents.reds`): every idea that was here.
 
 ## 4. Turf and war
 
-33. **Back a gang.** Pick one gang on the Turf screen. What V does to its enemies in a district counts double for
-    it there, its gains are V's news, and holding a district for it pays V a weekly cut (the tribute path) and
-    raises standing. The half of "be part of the turf wars" still missing in PLAYER_REQUESTS.md. **S to M**
-    *(San Andreas)*
-34. **The war chest.** Each gang has money. Bagmen, rackets and tribute fill it; crews, apex squads and the
-    eddies it pays out empty it. Robbing bagmen and hitting rackets slows how often it can send people, and the
-    Hub says it in words ("flush", "counting every eddie", "broke"). **M** *(Mafia III)*
-35. **Manpower.** A massacre empties a gang's ranks for a while: its crews come smaller and greener, it hires
-    outsiders in its colours, or it sends nobody, and it fills back up over days. Strength already falls; this
-    makes it show in who turns up. **S to M**
-36. **A common enemy.** When V is a terror to two gangs at war with each other, they call a truce against V for a
-    while: their people stop fighting each other and a joint crew comes. Rare, and a big moment when it happens.
-    **M**
-37. **V's own streets.** At legendary standing, a district where V has broken every gang and nobody holds it
-    becomes V's: no crews are sent there, the street greets V, and a gang passing through pays V for the
-    privilege. The endgame of the turf war. **L** *(San Andreas; Saints Row)*
+Built in 2.4.0 (`Economy/War.reds`, `Model/WarBook.reds`): every idea that was here.
 
 ## 5. Being hunted
 
@@ -163,9 +146,6 @@ Built in 2.3.3 and 2.3.4 (`Spawn/StreetEvents.reds`): every idea that was here.
     to Pacifica", "Tell them I'm dead". A Cool check against how well the gang knows V. Success sends the next
     scout or crew to the wrong place, or cools the gang for a while; failure, or a liar's temper, sells V out and
     they come sooner. **M** *(Crusader Kings' schemes)*
-70. **Set gangs on each other.** Tell a ganger their enemies are planning a hit on them. Success raises the chance
-    of a front-line clash (item 30) between those gangs, and a little turf moves. **M**
-
 ## 8. Who V is
 
 76. **Humanity.** *(Not built in 2.3.1: Wannabe Edgerunner was not installed to probe its API, and the rule is to drop rather than guess.)* With Wannabe Edgerunner installed, read through its API: low humanity frightens crowds and

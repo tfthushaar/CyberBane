@@ -76,8 +76,15 @@ public func CBCreditRivalGangs(sys: ref<CyberbaneSystem>, game: GameInstance, vi
       // for a gang V has any blood with: being useful to somebody is not the same as being theirs.
       if IsDefined(fs) && !CBGangHurtLately(fs, now) {
         let ceiling = fs.kills > 0 ? CBConfig.RivalGangCeilingBloodied() : CBConfig.RivalGangCeiling();
+        let got = gain;
+        // The gang V backs, where it is on the streets: V's work counts double, and can take it all the way
+        // (Economy/War.reds, [33]).
+        if CBBackedHere(sys, game, id) {
+          got = gain * 2.0;
+          ceiling = 100.0;
+        }
         if fs.standing < ceiling {
-          fs.standing = MinF(fs.standing + gain, ceiling);
+          fs.standing = MinF(fs.standing + got, ceiling);
         }
       }
     }

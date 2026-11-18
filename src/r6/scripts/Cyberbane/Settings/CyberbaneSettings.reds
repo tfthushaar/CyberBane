@@ -574,6 +574,37 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")
   @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WarChest")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WarChest-Desc")
+  @runtimeProperty("ModSettings.dependency", "turfWars")
+  public let warChest: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-BackAGang")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-BackAGang-Desc")
+  @runtimeProperty("ModSettings.dependency", "turfWars")
+  public let backAGang: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CommonEnemy")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CommonEnemy-Desc")
+  public let commonEnemy: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")
+  @runtimeProperty("ModSettings.category.order", "6")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-OwnStreets")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-OwnStreets-Desc")
+  @runtimeProperty("ModSettings.dependency", "turfWars")
+  public let ownStreets: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")
+  @runtimeProperty("ModSettings.category.order", "6")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TurfPatrols")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfPatrols-Desc")
   @runtimeProperty("ModSettings.dependency", "turfWars")
@@ -786,6 +817,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PayTheStreet-Desc")
   @runtimeProperty("ModSettings.dependency", "streetTalk")
   public let payTheStreet: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "9")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkIncite")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkIncite-Desc")
+  @runtimeProperty("ModSettings.dependency", "streetTalk")
+  public let talkIncite: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")

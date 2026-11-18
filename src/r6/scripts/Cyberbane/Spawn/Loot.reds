@@ -274,6 +274,7 @@ func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: C
   }
   ts.GiveItem(player, ItemID.FromTDBID(t"Items.money"), amount);
   let payer = CBBountyPayer(sys, game, victimFaction);
+  CBWarSpend(game, payer, Cast<Float>(amount));   // out of whoever pays (Economy/War.reds, 2.4.0)
   if CBToastsOn() {
     if NotEquals(payer, n"") {
       CBPhoneFromAlly(game, payer, line + s" \(amount)eb, from us.");

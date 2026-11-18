@@ -73,6 +73,7 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
   if IsDefined(ts) {
     ts.GiveItem(player, ItemID.FromTDBID(t"Items.money"), amount);
   }
+  CBWarSpend(game, fs.id, Cast<Float>(amount));   // out of their chest (Economy/War.reds, 2.4.0)
 
   if !CBReputationFrozen() {
     fs.standing = ClampF(fs.standing + 5.0, -100.0, 100.0);

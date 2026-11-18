@@ -181,6 +181,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
     if enc.bodies > 0 {
       CBRememberPlace(sys, game, n"Massacre", enc.lastBodyGang, CBEventDistrict(sys, game), enc.lastBodyAt);
+      CBWarLoseMen(game, enc.lastBodyGang, CBConfig.WarMenMassacre());   // their ranks empty for a while (2.4.0)
     }
     CBFileLog(sys, n"Massacre", CBGameSeconds(game), CBEventDistrict(sys, game), n"", Cast<Float>(enc.bodies));
     CBLog.Info(n"Model", s"Massacre resolved (\(enc.bodies) bodies).");

@@ -175,6 +175,10 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     }
     // How V fights, in their ledger (Model/Ledger.reds).
     CBLedgerNote(sys, GetGameInstance(), info);
+    // And their ranks thin (Economy/War.reds, 2.4.0).
+    if info.lethal {
+      CBWarLoseMen(GetGameInstance(), info.faction, CBConfig.WarMenPerKill());
+    }
     fs.renown = ClampF(fs.renown + CBFactionRenownForKill(info.victimClass, brutal) * standingWitness, 0.0, 100.0);
     fs.renownPeak = MaxF(fs.renownPeak, fs.renown);
     fs.kills += 1;

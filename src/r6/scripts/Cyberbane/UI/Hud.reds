@@ -2454,8 +2454,10 @@ public class CBHud {
       out += talked + "\n";
     }
     let status = CBHudGangStatus(sys, fs);
-    if StrLen(status) > 0 {
-      out += "Right now: " + StrLower(status) + ".\n";
+    let war = CBWarWords(game, id);   // their chest, their ranks, backed by V, a truce (Economy/War.reds, 2.4.0)
+    if StrLen(status) > 0 || StrLen(war) > 0 {
+      let both = StrLen(status) > 0 && StrLen(war) > 0 ? StrLower(status) + "; " + war : StrLower(status) + war;
+      out += "Right now: " + both + ".\n";
     }
     out += "\n";
     let quote = CBPeaceQuote(sys, game, id);
@@ -4062,6 +4064,34 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   }
   if Equals(e.kind, n"LetGo") {
     return StrLen(gang) > 0 ? s"You let one of \(gang) walk with their hands up." : "You let somebody walk with their hands up.";
+  }
+  // 2.4.0: the war.
+  if Equals(e.kind, n"WeeklyCut") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) paid you your cut: \(RoundF(e.value))eb." : s"You were paid your cut: \(RoundF(e.value))eb.";
+  }
+  if Equals(e.kind, n"Backed") {
+    return StrLen(gang) > 0 ? s"You threw in with \(gang)." : "You picked a side in the war.";
+  }
+  if Equals(e.kind, n"Incited") {
+    return StrLen(gang) > 0 ? s"You set \(gang) on their enemies with a lie." : "You set two gangs on each other with a lie.";
+  }
+  if Equals(e.kind, n"Truce") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) made a truce with their enemies, against you." : "Two gangs made a truce against you.";
+  }
+  if Equals(e.kind, n"OwnStreet") {
+    return "A district became yours.";
+  }
+  if Equals(e.kind, n"OwnToll") {
+    return s"The gangs paid their way through your streets: \(RoundF(e.value))eb.";
+  }
+  if Equals(e.kind, n"PeaceFavour") {
+    return StrLen(gang) > 0 ? s"You did \(gang) a favour, and they called it off." : "A favour bought you peace.";
+  }
+  if Equals(e.kind, n"ProtectionPaid") {
+    return s"You paid the Claws \(RoundF(e.value))eb for protection.";
+  }
+  if Equals(e.kind, n"ProtectionRefused") {
+    return "You didn't pay the Claws' protection.";
   }
   // 2.3.4: the fights.
   if Equals(e.kind, n"Executed") {

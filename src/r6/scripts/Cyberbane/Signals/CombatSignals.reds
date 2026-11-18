@@ -131,6 +131,8 @@ public class CBHitFollowUpCallback extends DelayCallback {
     }
     // V is fresh from a fight (Model/Moment.reds).
     sys.NoteFight(CBGameSeconds(game));
+    // One of a turf patrol: the rest turn on V together (Spawn/TurfPatrol.reds, 2.4.0).
+    CBPatrolTurn(sys, game, p);
     // A wounded enemy may lose its nerve and run (spec §10.2).
     CBCombatFleeCheck(sys, game, p);
     // Put them down without killing them? That gets remembered too (spec §10.2).

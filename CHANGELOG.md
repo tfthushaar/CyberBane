@@ -3,6 +3,40 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.4.0 (18 November 2026)
+
+**Turf, money and war**
+- **Every gang has a war chest and manpower.** Its streets earn it money every day; crews, apex squads, tribute
+  and bounties cost it. Rob its bagmen, hit its rackets and crash its deals, and it sends fewer people, or none
+  when it can't pay at all. Massacre its crews and its ranks empty for days. The Hub's gang page says whether a
+  gang is flush, counting every eddie, or broke, and when its ranks are thin.
+- **Back a gang.** Tell one of a gang that likes you "your war is my war". Hurting their enemies where they fight
+  counts double with them (all the way to Allied), and every week they pay you a cut for each district they hold.
+  Their enemies like you less. You can switch sides once a week.
+- **Set gangs on each other.** Lie to a ganger that their enemies are planning a hit. If they believe you, both
+  gangs lose a little ground and the next street fight near you is between them.
+- **A common enemy.** Rarely, once you're Infamous, two gangs at war that both fear and hate you call a truce for
+  a day: they stop fighting each other and their crews come for you together.
+- **Your own streets.** As a Legend, a district where your name is everything and every gang is broken becomes
+  yours: no crews come there, the street talks about it, and the gangs passing through pay you every week.
+- **Peace with terms.** A gang's price can be haggled down once a day from its phone thread ("Too much"). Or ask
+  one of their people what it would take: break up whatever their enemies have going next near you, and they
+  call it off for nothing.
+- **The Tyger Claws want protection money** if you spend time working Japantown: pay any Claw on the street
+  within two days, or they come collecting.
+
+**Turf patrols (still experimental, off by default)**
+- Sturdier: they walk a beat round the corner they hold instead of following you, come as mixed people, are
+  paid for out of their war chest, only attack if they actually recognise you (a mask or their colours works),
+  all turn on you together if you hurt one, walk off before they go, never turn up on top of a gang gathering,
+  and a beat walked without trouble tightens their gang's hold on the street.
+
+**Mod Settings**
+- New under **Turf**: **War chests and manpower**, **Back a gang**, **A common enemy**, **Your own streets**.
+  Under **Street talk**: **Set gangs on each other**. All on.
+
+Your progress carries over.
+
 ## 2.3.4 (18 November 2026)
 
 **Fights between gangs**

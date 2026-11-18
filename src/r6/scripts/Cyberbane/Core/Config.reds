@@ -381,6 +381,56 @@ public abstract class CBConfig {
   public static func StruggleDays() -> Float = 2.0
   public static func StruggleBackStanding() -> Float = 15.0
   public static func StruggleBothLoss() -> Float = 12.0
+  // The war chest and manpower (Economy/War.reds, 2.4.0). A gang starts with 6000eb (up to 20000), earns 300 a day
+  // plus 400 for each district it holds; a crew member costs it 150 and an apex squad 1500. Under 1000 it is broke
+  // (crews at 60%), over 12000 flush (110%). A robbed bagman or a hit racket costs it twice the take; a deal is worth
+  // 2000 to it. Ranks refill 20 a day; a body takes 1, a massacre 30; under 10 they send nobody.
+  public static func WarChestStart() -> Float = 6000.0
+  public static func WarChestMax() -> Float = 20000.0
+  public static func WarIncomeBase() -> Float = 300.0
+  public static func WarIncomePerDistrict() -> Float = 400.0
+  public static func WarCrewCost() -> Float = 150.0
+  public static func WarApexCost() -> Float = 1500.0
+  public static func WarChestBroke() -> Float = 1000.0
+  public static func WarChestFlush() -> Float = 12000.0
+  public static func WarBrokeCrew() -> Float = 0.6
+  public static func WarFlushCrew() -> Float = 1.1
+  public static func BagmanChestShare() -> Float = 2.0
+  public static func WarDealValue() -> Float = 2000.0
+  public static func WarMenPerDay() -> Float = 20.0
+  public static func WarMenPerKill() -> Float = 1.0
+  public static func WarMenMassacre() -> Float = 30.0
+  public static func WarMenFloor() -> Float = 10.0
+  // Backing a gang: 300eb a week for each district it holds; its enemies think 5 less of V.
+  public static func BackedCutPerDistrict() -> Int32 = 300
+  public static func BackedEnemyStanding() -> Float = 5.0
+  // The lie: an even chance, Cool helps; believed, both lose 2 strength and a street fight between them is next.
+  public static func InciteBase() -> Float = 0.5
+  public static func InciteLoss() -> Float = 2.0
+  // A common enemy: at Infamous, between two gangs at war that both fear V at 60 or more and are at odds with V,
+  // a 15% chance a day of a day's truce; two of the other gang come with each crew.
+  public static func TruceChancePerDay() -> Float = 0.15
+  public static func TruceDays() -> Float = 1.0
+  public static func TruceFear() -> Float = 60.0
+  public static func TruceJoin() -> Int32 = 2
+  // V's own streets: at Legend, district renown 75 and every gang there broken; 1000eb a week each.
+  public static func OwnStreetsRenown() -> Float = 75.0
+  public static func OwnStreetsToll() -> Int32 = 1000
+  // Peace by text: haggled down a quarter at 35% plus fear/200; a favour has two days.
+  public static func PeaceHaggleBase() -> Float = 0.35
+  public static func PeaceHaggleCut() -> Float = 0.25
+  public static func FavourDays() -> Float = 2.0
+  // The Claws' protection: after ten game minutes of Westbrook in a week (8 game seconds a tick), 400eb plus 0.3 per
+  // point of renown, two days to pay; paid, 3 standing; unpaid, 8 off and a crew.
+  public static func ProtectionSeenSeconds() -> Float = 600.0
+  public static func ProtectionSeenPerTick() -> Float = 8.0
+  public static func ProtectionBase() -> Float = 400.0
+  public static func ProtectionPerRenown() -> Float = 0.3
+  public static func ProtectionDays() -> Float = 2.0
+  public static func ProtectionPaidStanding() -> Float = 3.0
+  public static func ProtectionUnpaidStanding() -> Float = 8.0
+  // A turf patrol that walks its beat without trouble adds 2 to its gang's strength.
+  public static func PatrolGrip() -> Float = 2.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

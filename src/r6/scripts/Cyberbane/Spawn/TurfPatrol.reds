@@ -38,21 +38,29 @@ public func CBTurfPatrolTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     CBSanctuaryHoldTag(sys, game, des, player, n"CB_Patrol", false);
   }
   if out {
-    if busy || NotEquals(here, book.patrolDistrict)
-       || (now - book.patrolTick) >= CBConfig.TurfPatrolLifeTicks()
+    let lived = (now - book.patrolTick) >= CBConfig.TurfPatrolLifeTicks();
+    if busy || NotEquals(here, book.patrolDistrict) || lived
        || CBHuntersOut(sys, game) || CBHuntPending(sys)
        || !CBPatrolNear(game, des, player.GetWorldPosition()) {
+      // A beat walked without trouble tightens their hold on the street (2.4.0).
+      if lived && !book.patrolTurned {
+        CBBolsterGang(sys, game, CBTurfHolder(sys, game, book.patrolDistrict), CBConfig.PatrolGrip());
+      }
+      CBPatrolWalkOff(game, des);
       CBDeleteTaggedSafe(game, n"CB_Patrol", true, true);
       CBLog.Info(n"Spawn", "A turf patrol has moved on.");
       return;
     }
     if (now - book.patrolTick) % CBConfig.TurfPatrolWalkTicks() == CBConfig.TurfPatrolFirstWalkTick() {
-      CBPatrolWalk(sys, game, des, player);
+      CBPatrolWalk(sys, game, des, player, n"CB_Patrol", book.patrolAnchor);
     }
     return;
   }
+  // Never on top of a gang-life event (Spawn/StreetEvents.reds): one thing of the street's at a time near V.
+  let life = CBStreetLifeFor(game);
+  let eventOn = IsDefined(life) && IsDefined(life.Events().Live());
   if busy || now < book.patrolNext || player.IsInCombat() || IsDefined(player.GetMountedVehicle())
-     || CBPlayerIndoors(game) || CBHuntersOut(sys, game) || CBHuntPending(sys) {
+     || CBPlayerIndoors(game) || CBHuntersOut(sys, game) || CBHuntPending(sys) || eventOn {
     return;
   }
   let index = CBDistrictIndex(here);
@@ -71,10 +79,14 @@ public func CBTurfPatrolTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     return;
   }
   book.patrolNext = now + CBJitter(CBConfig.TurfPatrolGapTicks(), CBConfig.QueueJitterFraction());
+  // Mixed people, the way a crew is (2.4.0, [U1]); and the patrol is paid for out of their chest.
   let body: EntityID;
-  if CBSpawnGroup(game, record, n"", size, n"CB_Patrol", CBConfig.TurfPatrolDistance(), body) > 0 {
+  if CBSpawnMixedCrew(game, fs, size, CBConfig.TurfPatrolDistance(), body, n"CB_Patrol") > 0 {
     book.patrolDistrict = here;
     book.patrolTick = now;
+    book.patrolAnchor = player.GetWorldPosition();
+    book.patrolTurned = false;
+    CBWarSpend(game, holder, CBConfig.WarCrewCost() * Cast<Float>(size));
     CBLog.Info(n"Spawn", s"\(NameToString(holder)) have a patrol out in \(NameToString(here)).");
   }
 }
@@ -105,7 +117,9 @@ public func CBSetUpPatrol(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   let score = sys.GetScore();
   let faction = CBClassifyFaction(puppet);
   let posture = IsDefined(score) ? score.GetPosture(faction) : ECBPosture.Neutral;
-  if Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) {
+  // At odds with V, and they place V: a mask or their colours walks past them, as it does past anybody (2.4.0).
+  let knows = IsDefined(score) && CBRecognizes(sys, score, puppet, faction, sys.GetCurrentDistrict());
+  if (Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)) && knows {
     // The flag the game's own attitude change checks for; a ganger made from a crowd record has none.
     CBGrantAbility(puppet as NPCPuppet, t"Ability.IsAggressive");
     CBMakeHostileToPlayer(game, puppet);
@@ -126,11 +140,15 @@ public func CBSetUpPatrol(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
 }
 
 // Somewhere on the block, at a walk. The same spot for the group, so it reads as a group.
-func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>, opt tag: CName) -> Void {
+func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>, opt tag: CName,
+                  opt around: Vector4) -> Void {
   let walkers = IsNameValid(tag) ? tag : n"CB_Patrol";
-  let ppos = player.GetWorldPosition();
+  // Round their own corner when they have one (a patrol, 2.4.0), rather than wherever V happens to be.
+  let anchored = around.W > 0.0;
+  let ppos = anchored ? around : player.GetWorldPosition();
+  let fwd = anchored ? new Vector4(CosF(RandRangeF(0.0, 6.28318)), SinF(RandRangeF(0.0, 6.28318)), 0.0, 0.0) : player.GetWorldForward();
   let pts: array<Vector4>;
-  if !CBPursuitPoints(game, ppos, player.GetWorldForward(), CBConfig.TurfPatrolWalkCandidates(),
+  if !CBPursuitPoints(game, ppos, fwd, CBConfig.TurfPatrolWalkCandidates(),
                       CBConfig.TurfPatrolWalkMin(), CBConfig.TurfPatrolWalkMax(), pts) {
     return;
   }
@@ -168,4 +186,33 @@ func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
       }
     }
   }
+}
+
+// Before they go, the ones still on their feet walk off, away from V; whoever V can still see is left to the orphan
+// sweep by CBDeleteTaggedSafe, already walking (2.4.0).
+func CBPatrolWalkOff(game: GameInstance, des: ref<DynamicEntitySystem>) -> Void {
+  for id in des.GetTaggedIDs(n"CB_Patrol") {
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if CBStillStanding(p) && p.IsAttached() && !CBNpcInCombat(p) && !p.cbTalkPartner {
+      CBOrderFlee(game, p);
+    }
+  }
+}
+
+// V hurt one of them: they all turn on V together (2.4.0). From the hit follow-up, a frame after the hit, never in it.
+public func CBPatrolTurn(sys: ref<CyberbaneSystem>, game: GameInstance, hurt: ref<ScriptedPuppet>) -> Void {
+  let des = GameInstance.GetDynamicEntitySystem();
+  let book = CBTurfBook.Get(game);
+  if !IsDefined(des) || !IsDefined(book) || !IsDefined(hurt) || !des.IsTagged(hurt.GetEntityID(), n"CB_Patrol") || book.patrolTurned {
+    return;
+  }
+  book.patrolTurned = true;
+  for id in des.GetTaggedIDs(n"CB_Patrol") {
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if CBStillStanding(p) && CBNpcSafe(sys, p) {
+      CBGrantAbility(p as NPCPuppet, t"Ability.IsAggressive");
+      CBMakeHostileToPlayer(game, p);
+    }
+  }
+  CBLog.Info(n"Spawn", "V hurt one of a turf patrol; the rest turn on V.");
 }

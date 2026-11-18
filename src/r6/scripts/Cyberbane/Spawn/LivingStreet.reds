@@ -327,6 +327,7 @@ public class CBStreetLife {
   private func Robbed(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let take = CBConfig.BagmanTakeBase() + RandRange(0, CBConfig.BagmanTakeBase() + 1);
     CBStreetGiveMoney(game, take);
+    CBWarSpend(game, this.m_bagFaction, Cast<Float>(take) * CBConfig.BagmanChestShare());   // the week's take (2.4.0)
     CBWeakenGang(sys, game, this.m_bagFaction, CBConfig.BagmanGangLoss());
     CBTalkSlight(sys, game, this.m_bagFaction, CBConfig.BagmanStandingLoss());
     let now = CBGameSeconds(game);

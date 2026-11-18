@@ -197,6 +197,11 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBWhisperBroken(bag, st, gang);
     mood = n"fear";
   }
+  // V's own streets (Economy/War.reds, [37]).
+  if CBOwnDistrict(game, st.district) && !st.masked {
+    bag.Add(n"own", 3.0, CBLineOf(["These are their streets now. Nobody argues.", "Gangs pay to walk through here now. Pay them, I mean.",
+                                    "That's who runs this place. Not the Claws, not anybody. Them."]));
+  }
   // Something coming near here (Spawn/StreetEvents.reds, [32]).
   let coming = CBEventWhisper(game);
   if StrLen(coming) > 0 {

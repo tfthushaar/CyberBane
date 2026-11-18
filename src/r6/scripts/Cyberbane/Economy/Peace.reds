@@ -276,7 +276,7 @@ public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionI
   // A gang V has broken is in no position to hold out for its price (1.9.5).
   let broken = CBGangBroken(sys, factionId) ? CBConfig.PeaceBrokenShare() : 1.0;
   return Min(CBConfig.PeaceMaxCost(), RoundF(Cast<Float>(CBPeacePrice(fs, posture)) * sys.WornPerk().peaceMult * broken
-                                            * CBCodePeace(factionId)));
+                                            * CBCodePeace(factionId) * (1.0 - CBPeaceCut(game, factionId))));
 }
 
 // What a broken gang says when it names its price (1.9.5): less a demand than asking to stop.

@@ -180,6 +180,20 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     return false;
   }
 
+  // A common enemy (Economy/War.reds, 2.4.0): the gang they have a truce with sends a couple of its own along.
+  let partner = CBTrucePartner(game, fs.id);
+  let partnerFs = sys.FindFaction(partner);
+  if IsDefined(partnerFs) && TDBID.IsValid(partnerFs.sampleRecord) && CBSpawnRoom(game) > 0 {
+    let joinBody: EntityID;
+    let joined = CBSpawnGroup(game, partnerFs.sampleRecord, n"", CBConfig.TruceJoin(), n"CB_Squad",
+                              CBConfig.HitSquadMinSpawnDistance() + 16.0, joinBody);
+    if joined > 0 {
+      spawned += joined;
+      CBLog.Info(n"Spawn", s"\(joined) of \(NameToString(partner)) came along with the \(NameToString(fs.id)) crew.");
+    }
+  }
+  // Paid for out of their chest (Economy/War.reds, 2.4.0).
+  CBWarSpend(game, fs.id, CBConfig.WarCrewCost() * Cast<Float>(Max(spawned, 0)) + (withApex ? CBConfig.WarApexCost() : 0.0));
   fs.lastHitSquadAt = now;
   sys.SetActiveSquadFaction(fs.id);
   // Said for this crew either way, not left over from the last one: whether a crew grenadier is
@@ -216,7 +230,9 @@ public func CBSpawnBlockWhy() -> String {
 // blade once there are three, and the rest shooters, half of them the gang's own last-seen face. A seat whose record
 // is not a fit person to spawn falls back to that face. One CBSpawnGroup per record, under the same live ceiling.
 // The car path still seats one record (CBSendByCar takes one); whoever walks in is mixed.
-public func CBSpawnMixedCrew(game: GameInstance, fs: ref<CBFactionState>, crew: Int32, dist: Float, out last: EntityID) -> Int32 {
+public func CBSpawnMixedCrew(game: GameInstance, fs: ref<CBFactionState>, crew: Int32, dist: Float, out last: EntityID,
+                             opt tag: CName) -> Int32 {
+  let wear = IsNameValid(tag) ? tag : n"CB_Squad";
   let base = fs.sampleRecord;
   if crew <= 0 || !TDBID.IsValid(base) {
     return 0;
@@ -251,7 +267,7 @@ public func CBSpawnMixedCrew(game: GameInstance, fs: ref<CBFactionState>, crew: 
   let i = 0;
   while i < ArraySize(records) && i < ArraySize(counts) {
     let body: EntityID;
-    let n = CBSpawnGroup(game, records[i], n"", counts[i], n"CB_Squad", dist, body);
+    let n = CBSpawnGroup(game, records[i], n"", counts[i], wear, dist, body);
     if n > 0 {
       spawned += n;
       last = body;

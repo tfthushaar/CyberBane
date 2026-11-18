@@ -196,6 +196,11 @@ public class CBEventEngine {
       ArrayPush(kinds, CBEvRacket());
     }
     // The fights come at a gentler pace than the rest: in the draw half the time.
+    // Two gangs V set on each other meet in the street first (Economy/War.reds, [70]).
+    let war = CBWarBook.Get(GetGameInstance());
+    if CBGangFightsOn() && IsDefined(war) && now < war.InciteUntil() {
+      return CBEvFrontLine();
+    }
     if CBGangFightsOn() && RandF() < CBConfig.GangFightShare() {
       ArrayPush(kinds, CBEvExecution());
       ArrayPush(kinds, CBEvFrontLine());
@@ -221,12 +226,22 @@ public class CBEventEngine {
       return false;
     }
     if Equals(kind, CBEvSitDown()) || CBIsFightKind(kind) {
+      // The pair V set on each other, when the holder here is one of them.
+      let war = CBWarBook.Get(game);
+      if Equals(kind, CBEvFrontLine()) && IsDefined(war) && CBGameSeconds(game) < war.InciteUntil() {
+        if Equals(a, war.InciteA()) { b = war.InciteB(); }
+        if Equals(a, war.InciteB()) { b = war.InciteA(); }
+      }
       for g in CBGangRivalsOf(sys.GetContent(), a) {
         if Equals(b, n"") && CBFactionFieldsSquads(g) && CBFactionOn(g) && IsDefined(sys.FindFaction(g)) {
           b = g;
         }
       }
       if Equals(b, n"") {
+        return false;
+      }
+      // Two gangs in a truce against V do not fight each other (Economy/War.reds, [36]).
+      if CBIsFightKind(kind) && Equals(CBTrucePartner(game, a), b) {
         return false;
       }
     }
@@ -548,6 +563,7 @@ public func CBEventWhisper(game: GameInstance) -> String {
 
 // V broke it up.
 public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
+  CBWarEventCrashed(sys, game, ev);   // a favour asked for peace (Economy/War.reds, 2.4.0)
   let now = CBGameSeconds(game);
   let where = CBEventDistrict(sys, game);
   let a = CBFactionLabel(ev.a);
@@ -586,6 +602,7 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
   }
   if Equals(ev.kind, CBEvArmsDeal()) {
     CBWeakenGang(sys, game, ev.b, CBConfig.MeetGangLoss() * 0.5);
+    CBWarSpend(game, ev.a, CBConfig.WarDealValue());
     let crate = ArraySize(ev.ids) > 0 ? GameInstance.FindEntityByID(game, ev.ids[0]) as ScriptedPuppet : null;
     if IsDefined(crate) {
       CBScheduleLoot(sys, game, crate, CBLootTierApex(), CBConfig.LootIconicChanceApex());
@@ -597,6 +614,7 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
   if Equals(ev.kind, CBEvRacket()) {
     let take = CBConfig.RacketTakeBase() + RandRange(0, CBConfig.RacketTakeBase() + 1);
     CBStreetGiveMoney(game, take);
+    CBWarSpend(game, ev.a, Cast<Float>(take) * CBConfig.BagmanChestShare());
     CBTalkSlight(sys, game, ev.a, CBConfig.BagmanStandingLoss());
     CBFileLog(sys, n"RacketHit", now, where, ev.a, Cast<Float>(take));
     CBSystemNote(game, s"you took their take: \(take)eb.", 5.0);
@@ -635,6 +653,10 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
   CBBolsterGang(sys, game, ev.a, CBEventBolster(ev.kind));
   if Equals(ev.kind, CBEvArmsDeal()) {
     CBBolsterGang(sys, game, ev.b, CBEventBolster(ev.kind) * 0.5);
+    CBWarEarn(game, ev.b, CBConfig.WarDealValue());
+  }
+  if Equals(ev.kind, CBEvRacket()) {
+    CBWarEarn(game, ev.a, Cast<Float>(CBConfig.RacketTakeBase()) * 3.0);
   }
   CBEventSay(game, CBLineOf([s"\(CBCapFirst(a)) got their \(CBEventNoun(ev.kind)) done. They're stronger for it.",
                              s"Nobody stopped \(CBPossessive(a)) \(CBEventNoun(ev.kind)). There are more of them on the street now."]));
