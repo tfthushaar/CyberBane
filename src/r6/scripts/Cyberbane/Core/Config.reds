@@ -653,6 +653,55 @@ public abstract class CBConfig {
   public static func CredOpenSeason() -> Int32 = 250
   public static func CredHunterPerPlace() -> Int32 = 15
   public static func CredLadderTop() -> Int32 = 400
+  // A crew of V's own (Reactions/Crew.reds, 2.5.0). Five on the roster, three out at once, always leaving four places
+  // under the live ceiling for whoever is after V; each can be called once an hour, and they arrive 24 m out. Home a
+  // minute after the fight, after 4 seconds in a car, or past 120 m. One set to turn does it 10 seconds into the fight
+  // and runs 35 seconds after that. Loyalty starts at 80 owed, 65 lent, 60 paid, 35 frightened; restless under 40;
+  // below 25 a call can go wrong (35 when the hunters are their old gang), 25% plus 3 a point under, at most 85%. Come
+  // on their own: 70 and up. A win is 3, standing over one who went down 5, leaving them lying 10, a dead friend 6, a
+  // fair cut 5 (8 for a solo); fear wears 3 a day, an unpaid cut 4 (8 for a solo), and 2 for each of their old gang V
+  // kills, at most 10 a day. Hurt for a day. The cut: 250 a week, 600 for a solo, 100 more a rank. A solo costs 1000 and
+  // 400 a renown tier to sign, offered 15% of days from Known Merc. A Rival says yes 80% of the time, before traits.
+  // Five renown points for each who joins. The last twelve who left are remembered.
+  public static func MyCrewRoster() -> Int32 = 5
+  public static func MyCrewOut() -> Int32 = 3
+  public static func MyCrewSpawnReserve() -> Int32 = 4
+  public static func MyCrewCallSeconds() -> Float = 3600.0
+  public static func MyCrewSpawnDistance() -> Float = 24.0
+  public static func MyCrewQuietTicks() -> Int32 = 60
+  public static func MyCrewDriveTicks() -> Int32 = 4
+  public static func MyCrewLeaveDistance() -> Float = 120.0
+  public static func MyCrewStayedDistance() -> Float = 35.0
+  public static func MyCrewTurnTicks() -> Int32 = 10
+  public static func MyCrewTurnFightTicks() -> Int32 = 35
+  public static func MyCrewLoyaltyOwed() -> Int32 = 80
+  public static func MyCrewLoyaltyLent() -> Int32 = 65
+  public static func MyCrewLoyaltyPaid() -> Int32 = 60
+  public static func MyCrewLoyaltyFrightened() -> Int32 = 35
+  public static func MyCrewRestless() -> Int32 = 40
+  public static func MyCrewBetrayLine() -> Int32 = 25
+  public static func MyCrewOldGangLine() -> Int32 = 10
+  public static func MyCrewOwnLoyalty() -> Int32 = 70
+  public static func MyCrewWinLoyalty() -> Int32 = 3
+  public static func MyCrewStayedLoyalty() -> Int32 = 5
+  public static func MyCrewLeftLyingLoyalty() -> Int32 = 10
+  public static func MyCrewDiedLoyalty() -> Int32 = 6
+  public static func MyCrewFairCut() -> Int32 = 5
+  public static func MyCrewFairCutPaid() -> Int32 = 8
+  public static func MyCrewFearDrift() -> Int32 = 3
+  public static func MyCrewUnpaidDrift() -> Int32 = 4
+  public static func MyCrewUnpaidDriftPaid() -> Int32 = 8
+  public static func MyCrewOldGangHurt() -> Int32 = 2
+  public static func MyCrewHurtDays() -> Float = 1.0
+  public static func MyCrewCutBase() -> Int32 = 250
+  public static func MyCrewCutPaid() -> Int32 = 600
+  public static func MyCrewCutPerRank() -> Int32 = 100
+  public static func MyCrewMercBase() -> Int32 = 1000
+  public static func MyCrewMercPerTier() -> Int32 = 400
+  public static func MyCrewOfferChance() -> Float = 0.15
+  public static func MyCrewRecruitBase() -> Float = 0.8
+  public static func MyCrewRenown() -> Float = 5.0
+  public static func MyCrewPastKept() -> Int32 = 12
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

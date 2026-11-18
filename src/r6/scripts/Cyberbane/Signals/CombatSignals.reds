@@ -242,6 +242,18 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
     sysE.NoteDeadOurs(puppet.GetEntityID());
   }
+  // One of V's own crew (Reactions/Crew.reds, 2.5.0): theirs to handle, and never a kill of their old gang's. One who
+  // turned on V goes on through the rest, as anybody does (a Rival's death, if they became one).
+  if IsDefined(sysE) && IsDefined(desD)
+     && (desD.IsTagged(puppet.GetEntityID(), n"CB_Own") || desD.IsTagged(puppet.GetEntityID(), n"CB_Turned")) {
+    if CBCrewBodyDied(sysE, game, puppet) {
+      return;
+    }
+  }
+  // Somebody who killed one of V's crew, killed by V.
+  if IsDefined(sysE) && puppet.cbKilledCrew > 0 && puppet.cbDamagedByPlayer {
+    CBCrewAvenged(sysE, game, puppet.cbKilledCrew);
+  }
   // One of the hunters' ladder (Spawn/Bounty.reds, 2.4.3).
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Bounty") {
     CBBountyHunterDied(sysE, game, puppet);
@@ -294,6 +306,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         CBBountyPosterSlain(sysE, game, slain, slainRole == CBRoleLeader(), puppet.cbDamagedByPlayer);
         // Last words, a trophy, a bond answered, and how it ended (Rivals/RivalMoments.reds, 2.4.4).
         CBRivalFell(sysE, game, puppet, slain, puppet.cbDamagedByPlayer);
+        CBCrewRivalFell(sysE, game, slain, puppet.cbDamagedByPlayer);   // one who killed V's own, answered (2.5.0)
         CBOweFuneral(game, slain.faction);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());

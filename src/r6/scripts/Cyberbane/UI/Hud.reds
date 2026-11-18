@@ -4531,6 +4531,9 @@ func CBRivalSourceLine(source: Int32) -> String {
   if source == EnumInt(ECBRivalSource.Hunter) {
     return "lost you after coming for your head";
   }
+  if source == EnumInt(ECBRivalSource.Betrayer) {
+    return "ran with your crew, then turned on you";
+  }
   return "remembers you";
 }
 
@@ -4981,6 +4984,11 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"InformantLost") { return "An informant of yours was run down by their own gang."; }
   if Equals(e.kind, n"ParleyPaid") { return StrLen(gang) > 0 ? s"You paid a crew of \(gang) to say they never found you." : "You paid off a crew."; }
   if Equals(e.kind, n"ParleyScared") { return StrLen(gang) > 0 ? s"You talked a crew of \(gang) into walking away." : "You talked a crew down."; }
+  // 2.5.0: a crew of V's own (Reactions/Crew.reds).
+  let crewLine = CBCrewHistoryLine(sys, e);
+  if StrLen(crewLine) > 0 {
+    return crewLine;
+  }
   // 2.4.4: the Rivals' moments.
   if Equals(e.kind, n"StaredDown") || Equals(e.kind, n"FacedownWalked") || Equals(e.kind, n"DuelWon")
      || Equals(e.kind, n"CalledEven") || Equals(e.kind, n"Humiliated") || Equals(e.kind, n"Trophy")

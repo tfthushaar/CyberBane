@@ -41,7 +41,8 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
   let p = player.GetWorldPosition();
   // Where V spends time, they know where to start (Spawn/Hunted.reds, [U8]).
   let rough = CBHuntTipNear(p);
-  let near = Equals(faction, CBTrackerGang(game)) ? CBConfig.TrackedTipMult() : CBHauntTipMult(sys, game);
+  let near = Equals(faction, CBTrackerGang(game)) || CBBetrayerKnowsHaunts(sys, faction) ? CBConfig.TrackedTipMult()
+                                                                                          : CBHauntTipMult(sys, game);
   let tip = new Vector4(p.X + (rough.X - p.X) * near, p.Y + (rough.Y - p.Y) * near, rough.Z, 1.0);
   // A lie V had the street carry (Reactions/Allies.reds, [69], 2.4.5): they start looking somewhere else entirely.
   if CBTakeLie(game, faction) {

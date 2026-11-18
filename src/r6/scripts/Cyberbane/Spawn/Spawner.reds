@@ -1202,6 +1202,15 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBSetUpStreet(sys, game, puppet, false);
     return;
   }
+  // One of V's own crew (Reactions/Crew.reds, 2.5.0): kitted for their seat, on the game's own follower role.
+  if des.IsTagged(id, n"CB_Own") {
+    CBSetUpCrewMember(sys, game, puppet);
+    return;
+  }
+  // One who turned on V is set up by the turn itself, never again here.
+  if des.IsTagged(id, n"CB_Turned") {
+    return;
+  }
   // One of a friendly gang's people riding with V (Reactions/Allies.reds, 2.4.5): the game's own follower role.
   if des.IsTagged(id, n"CB_Follower") {
     CBSetUpFollower(sys, game, puppet);
@@ -1430,6 +1439,10 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
 func CBCrewSurvivorTakesItPersonally(sys: ref<CyberbaneSystem>, game: GameInstance,
                                      des: ref<DynamicEntitySystem>, faction: CName) -> Void {
   if !IsDefined(sys) || !IsDefined(des) || Equals(faction, n"") || !CBRivalsOn() {
+    return;
+  }
+  // Somebody who killed one of V's own is the one who comes back (Reactions/Crew.reds, 2.5.0).
+  if CBCrewKillerGotAway(sys, game, des, faction) {
     return;
   }
   let ids = des.GetTaggedIDs(n"CB_Squad");

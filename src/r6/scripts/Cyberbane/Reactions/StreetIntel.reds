@@ -446,6 +446,11 @@ public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
     chance += 0.1;
   }
   if temper != CBTalkTemperLoyal() && RandF() < ClampF(chance, 0.05, 0.8) {
+    // Frightened enough, they join V instead of informing (Reactions/Crew.reds, [C2], 2.5.0).
+    let joined = CBCrewFrightenedJoins(sys, game, t);
+    if IsDefined(joined) {
+      return joined;
+    }
     let now = CBGameSeconds(game);
     book.AddInformant(0, t.faction, 2, now + RandRangeF(3.0, 6.0) * 3600.0, RandF() < CBConfig.InformantSetupChance());
     CBFileLog(sys, n"Turned", now, CBEventDistrict(sys, game), t.faction, 0.0);

@@ -197,6 +197,11 @@ public func CBKitRivalImplants(npc: ref<NPCPuppet>, r: ref<CBRival>) -> Void {
     CBGrantAbility(npc, t"Ability.CanSeeThroughOpticalCamos");
     CBGrantAbility(npc, t"Ability.CanSeeThroughSmoke");
   }
+  // One of V's own who turned has fought beside V and knows how V moves (Reactions/Crew.reds, 2.5.0).
+  if r.source == EnumInt(ECBRivalSource.Betrayer) {
+    CBGrantAbility(npc, t"Ability.CanCatchUp");
+    CBGrantAbility(npc, t"Ability.CanSeeThroughSmoke");
+  }
 }
 
 // For the scanner, under their name: what they are carrying in them, briefly.

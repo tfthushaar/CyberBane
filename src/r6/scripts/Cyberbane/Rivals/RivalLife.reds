@@ -40,6 +40,10 @@ public func CBRivalCatchphrase(r: ref<CBRival>) -> String {
   if CBRivalHasTrait(r, n"Broken") {
     return CBRivalPhrase(r, "The voices know your name.", "Can't stop. Won't stop. Hear it?", "Everything's so loud. You first.");
   }
+  if r.source == EnumInt(ECBRivalSource.Betrayer) {
+    return CBRivalPhrase(r, "I watched your back. I know where it's soft.", "You never paid me what I was worth.",
+                         "I learned everything from you. Including this.");
+  }
   if r.source == EnumInt(ECBRivalSource.Avenger) {
     return CBRivalPhrase(r, "Blood pays for blood.", "I carry them with me. Every step.", "You took one of ours. I'm taking you.");
   }
@@ -328,6 +332,11 @@ public func CBRivalMercyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
                             CBTalkActSetOn(), t"ChoiceCaptionParts.BountyHuntIcon");
     ArrayPush(out, so);
   }
+  // [C1] Work for V (Reactions/Crew.reds, 2.5.0): a Rival V has spared before.
+  let recruit = CBCrewRecruitLine(sys, game, r);
+  if IsDefined(recruit) {
+    ArrayPush(out, recruit);
+  }
   ArrayPush(out, CBTalkMakeLine("[Leave] Think about it.", CBTalkActLeave(), TDBID.None()));
   return out;
 }
@@ -361,6 +370,9 @@ public func CBRivalMercyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pl
     return CBTalkSay(CBPick2("This is my city. I'll crawl back if I have to.", "Run? From you? Never."), n"");
   }
   e.mercyChosen = true;
+  if choice == CBTalkActRecruit() {
+    return CBCrewRecruitAnswer(sys, game, r, e);
+  }
   if choice == CBTalkActHumiliate() {
     return CBTalkSay(CBRivalHumiliate(sys, game, r, e), n"");
   }

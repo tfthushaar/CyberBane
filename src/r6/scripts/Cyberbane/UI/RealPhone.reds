@@ -223,6 +223,12 @@ public func CBPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
     }
     ArrayPush(out, CBPhoneRowTaunt());
   }
+  // V's crew (Reactions/Crew.reds, 2.5.0).
+  if kind >= CBPhoneAnswerCrew() {
+    for crewRow in CBCrewPhoneRows(sys, game, kind) {
+      ArrayPush(out, crewRow);
+    }
+  }
   return out;
 }
 
@@ -241,7 +247,10 @@ func CBRealPhoneAnswerKind(sys: ref<CyberbaneSystem>, game: GameInstance, store:
   }
   let faction = store.ThreadOffer(thread);
   if Equals(faction, n"") {
-    return IsDefined(CBPhoneThreadRival(sys, store, thread)) ? CBPhoneAnswerRival() : CBPhoneAnswerNone();
+    if IsDefined(CBPhoneThreadRival(sys, store, thread)) {
+      return CBPhoneAnswerRival();
+    }
+    return CBCrewPhoneKind(sys, game, store, thread);   // the crew's own thread, a Debtor's, a solo on offer (2.5.0)
   }
   if CBPeaceQuote(sys, game, faction) < 0 {
     store.ClearOffer(thread);
@@ -285,6 +294,7 @@ public func CBRealPhoneChoices(hash: Int32) -> array<String> {
     if row == CBPhoneRowComeOn() { ArrayPush(out, "Come and find me"); }
     if row == CBPhoneRowNamePlace() { ArrayPush(out, "Name the place"); }
     if row == CBPhoneRowTaunt() { ArrayPush(out, "You'll lose again"); }
+    if row >= CBPhoneRowCallCrew() { ArrayPush(out, CBCrewPhoneRowText(sys, game, row)); }
   }
   return out;
 }
@@ -312,6 +322,10 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   let row = choice < ArraySize(rows) ? rows[choice] : -1;
   if kind == CBPhoneAnswerRival() {
     CBPhoneRivalReply(sys, game, store, thread, row);
+    return;
+  }
+  if kind >= CBPhoneAnswerCrew() {
+    CBCrewPhoneReply(sys, game, store, thread, row);
     return;
   }
   if kind != CBPhoneAnswerOffer() {

@@ -131,6 +131,13 @@ public func CBAllyTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: re
   if gang && friendly && CBRunWithCrewOn() && ArraySize(war.crewIds) == 0 && war.crewDay != CBGameDay(game) + 1 {
     ArrayPush(out, CBTalkMakeLine("[Watch my back] Some of yours could ride with me for a while.", CBTalkActWatchBack(), t"ChoiceCaptionParts.ReinforcementIcon"));
   }
+  // [C4] One of theirs on V's crew for good (Reactions/Crew.reds, 2.5.0).
+  if gang {
+    let lend = CBCrewLendLine(sys, game, t);
+    if IsDefined(lend) {
+      ArrayPush(out, lend);
+    }
+  }
   // [66] One of theirs: join when offered, leave when in.
   if gang && CBOneOfTheirsOn() {
     if Equals(war.OneOfTheirs(), t.faction) {

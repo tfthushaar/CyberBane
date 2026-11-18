@@ -185,6 +185,8 @@ public class CBEscapee {
   public let lastPos: Vector4;
   public let hasPos: Bool;
   public let wasRival: Bool;
+  // Asked to work for V where they lay, and said yes (Reactions/Crew.reds, 2.5.0).
+  public let recruited: Bool;
   // Actually running, under a Cyberbane order (Reactions/Morale.reds), and how often it was renewed.
   public let fleeing: Bool;
   public let fleeOrders: Int32;

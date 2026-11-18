@@ -446,6 +446,12 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       if IsDefined(st) {
         st.rivalsSpared += 1;   // the counter existed and nothing ever incremented it
       }
+      // Asked to work for V where they lay, and said yes (Reactions/Crew.reds, [C1], 2.5.0): off the board, on the crew.
+      if e.recruited {
+        CBCrewTakeRival(sys, game, already, e);
+        CBCreditMercy(sys, already.faction, CBConfig.MercyRivalCredit());
+        return;
+      }
       // Told to leave Night City where they lay, and they went (Rivals/RivalLife.reds, 1.9.9).
       if e.exiled {
         already.state = EnumInt(ECBRivalState.Retired);

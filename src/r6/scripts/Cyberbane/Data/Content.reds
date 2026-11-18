@@ -143,6 +143,7 @@ public class CBEpithets {
   public let killer: array<String>;
   public let avenger: array<String>;
   public let hunter: array<String>;
+  public let betrayer: array<String>;   // 2.5.0: one of V's own crew who turned
   public let promotion: array<String>;
   public let broken: array<String>;   // 1.9.0: a Rival after a cyberpsychotic break
 }

@@ -1218,6 +1218,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBBountyTick(this, game);           // the price on V's head and the hunters' ladder (2.4.3)
     CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts (2.4.4)
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
+    CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
     if !heavyStreaming {
       CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
     }
@@ -3450,6 +3451,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBCorpInterestRoll(this, game, elapsedDays); // and a Legend gets a corporation's attention
     CBRivalLivesDaily(this, game, elapsedDays);  // bonds, feuds, returns, letters, chrome (2.4.4)
     CBAlliesDaily(this, game, elapsedDays);      // one of theirs: the offer and the week's duty (2.4.5)
+    CBCrewDaily(this, game);                     // V's crew: loyalty, the cut, a solo on offer (2.5.0)
     CBInformantsDaily(this, game, elapsedDays);  // an informant's gang may find out (2.4.5)
     CBMorningBriefTick(this, game);              // a broker's text at dawn (2.4.6)
     CBRivalProgressionTick(this, game);
@@ -3795,6 +3797,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     let rivalBook = CBRivalBook.Get(game);
     if IsDefined(rivalBook) {
       rivalBook.Clear();  // and no Rival has a bond, an ending or a place (2.4.4)
+    }
+    let crewBook = CBCrewBook.Get(game);
+    if IsDefined(crewBook) {
+      crewBook.Clear();   // and nobody works for V (2.5.0)
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);
@@ -4193,7 +4199,8 @@ public class CyberbaneSystem extends ScriptableSystem {
         ArrayErase(this.m_rivals, i);
       } else {
         r.rank = Clamp(r.rank, 1, 4);
-        if r.source < 0 || r.source > EnumInt(ECBRivalSource.Hunter) {
+        // Betrayer (2.5.0) is the top value now: a save that has one keeps it.
+        if r.source < 0 || r.source > EnumInt(ECBRivalSource.Betrayer) {
           r.source = EnumInt(ECBRivalSource.Survivor);
         }
         if r.state < 0 || r.state > EnumInt(ECBRivalState.Debtor) {

@@ -34,6 +34,7 @@ public func CBEpithetsForSource(content: ref<CyberbaneContent>, source: Int32) -
   if source == EnumInt(ECBRivalSource.Killer) { return e.killer; }
   if source == EnumInt(ECBRivalSource.Avenger) { return e.avenger; }
   if source == EnumInt(ECBRivalSource.Hunter) { return e.hunter; }
+  if source == EnumInt(ECBRivalSource.Betrayer) { return ArraySize(e.betrayer) > 0 ? e.betrayer : e.survivor; }
   return empty;
 }
 

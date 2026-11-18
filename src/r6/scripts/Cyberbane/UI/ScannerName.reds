@@ -58,7 +58,11 @@ public const func CompileScannerChunks() -> Bool {
     if IsDefined(psN) {
       forcedN = psN.GetForcedScannerPreset();
     }
-    CBScannerShowNote(this, note, forcedN, CBBountyScannerName(this));
+    let named = CBBountyScannerName(this);
+    if StrLen(named) == 0 {
+      named = CBCrewScannerName(this);   // one of V's own crew (Reactions/Crew.reds, 2.5.0)
+    }
+    CBScannerShowNote(this, note, forcedN, named);
   }
   if IsDefined(rival) {
     // A quest can force a different scanner preset on an NPC, and the game honours it before the
@@ -134,6 +138,11 @@ public func CBScannerNote(npc: ref<NPCPuppet>) -> String {
   }
   if NotEquals(npc.cbLookoutFor, n"") && !npc.IsDead() {
     return "LOOKOUT: " + StrUpper(CBFactionLabel(npc.cbLookoutFor));
+  }
+  // V's own crew, and whoever killed one of them (Reactions/Crew.reds, 2.5.0).
+  let crew = CBCrewScannerNote(npc);
+  if StrLen(crew) > 0 {
+    return crew;
   }
   let bounty = CBBountyScannerNote(npc);
   if StrLen(bounty) > 0 {

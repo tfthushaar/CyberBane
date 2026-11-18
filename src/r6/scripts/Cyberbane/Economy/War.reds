@@ -244,6 +244,11 @@ func CBWarOwnStreets(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
       i += 1;
     }
     let toll = CBConfig.OwnStreetsToll() * n;
+    // V's crew keeps an eye on them while V is away (Reactions/Crew.reds, [C9], 2.5.0): a quarter more comes in.
+    let crew = CBCrewBook.Get(game);
+    if CBMyCrewOn() && IsDefined(crew) && crew.Count() >= 2 {
+      toll = RoundF(Cast<Float>(toll) * 1.25);
+    }
     CBStreetGiveMoney(game, toll);
     CBFileLog(sys, n"OwnToll", now, CBEventDistrict(sys, game), n"", Cast<Float>(toll));
     CBEventSay(game, s"The gangs paid their way through your streets this week: \(toll)eb.");

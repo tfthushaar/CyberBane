@@ -168,6 +168,9 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
               "Trigger", "Scope", "Bird Dog", "Night Owl", "the Ferret", "Lockjaw", "Leash", "Snare",
               "Steel Trap", "Fetch", "Tailgate", "Shadow", "Crosshair", "Spotter", "Packwolf",
               "Bounty Board", "Tagger", "Gunsight", "Homing", "Sure Shot", "Posse", "Manhunter"];
+  e.betrayer = ["Turncoat", "Two Faces", "the Snake", "Backstab", "Sellout", "the Viper", "Double-Cross", "Forked Tongue",
+                "Smiles", "Old Friend", "Tripwire", "Payday", "Cutthroat", "Brother", "Silver Tongue", "Last Job",
+                "the Rat", "Inside Man", "Handshake", "Open Door"];
   e.promotion = ["Twice-Burned", "the Unbroken", "Scarface"];
   e.broken = ["Overclocked", "Static", "the Glitch", "Redline", "Feedback", "Short Circuit", "Burnout",
               "Chrome Fever", "Wired Wrong", "Dead Signal", "Meltdown", "Hardwired", "Overload",

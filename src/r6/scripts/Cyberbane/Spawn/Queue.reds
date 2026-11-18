@@ -1224,6 +1224,7 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
   if infamous {
     size += 1;
   }
+  size += CBCrewAnswerSize(sys, fs.id);   // a crew of V's own is answered with a bigger one (Reactions/Crew.reds, 2.5.0)
   let score = sys.GetScore();
   let posture = IsDefined(score) ? score.GetPosture(fs.id) : ECBPosture.Neutral;
   if Equals(posture, ECBPosture.Vendetta) && CBVendettaSquadsOn() {

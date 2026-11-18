@@ -1104,7 +1104,7 @@ public class CBStreetTalk {
       return IsDefined(life) ? life.OfferFavour(sys, game, player, t) : CBTalkSay("Not now.", n"");
     }
     if choice == CBTalkActSpare() || choice == CBTalkActCollect() || choice == CBTalkActExile()
-       || choice == CBTalkActHumiliate() || choice == CBTalkActSetOn() {
+       || choice == CBTalkActHumiliate() || choice == CBTalkActSetOn() || choice == CBTalkActRecruit() {
       return CBRivalMercyAnswer(sys, game, player, t, choice);
     }
     if CBTalkActIsFacedown(choice) {
@@ -1112,6 +1112,9 @@ public class CBStreetTalk {
     }
     if CBTalkActIsAlly(choice) {
       return CBAllyTalkAnswer(sys, game, player, t, choice);
+    }
+    if choice == CBTalkActLendOne() {
+      return CBCrewLendAnswer(sys, game, t);   // Reactions/Crew.reds, [C4], 2.5.0
     }
     if CBTalkActIsParley(choice) {
       return CBParleyAnswer(sys, game, player, t, choice);

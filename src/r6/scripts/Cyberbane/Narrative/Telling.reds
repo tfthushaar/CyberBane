@@ -397,6 +397,9 @@ func CBRivalSourceStory(r: ref<CBRival>) -> String {
   if r.source == EnumInt(ECBRivalSource.Avenger) {
     return s"You killed somebody of theirs in \(CBDistrictLabel(r.origin)), and they swore on it.";
   }
+  if r.source == EnumInt(ECBRivalSource.Betrayer) {
+    return s"They ran with your crew, and turned on you in \(CBDistrictLabel(r.origin)). They know where you sleep.";
+  }
   return s"They came after you for the money, out of \(CBDistrictLabel(r.origin)).";
 }
 

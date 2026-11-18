@@ -52,6 +52,7 @@ enum ECBRivalSource {
   Killer = 2,
   Avenger = 3,
   Hunter = 4,
+  Betrayer = 5,   // one of V's own crew who turned (Reactions/Crew.reds, 2.5.0)
 }
 
 enum ECBRivalState {
