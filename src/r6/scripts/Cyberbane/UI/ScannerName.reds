@@ -135,7 +135,25 @@ public func CBScannerNote(npc: ref<NPCPuppet>) -> String {
   if NotEquals(npc.cbLookoutFor, n"") && !npc.IsDead() {
     return "LOOKOUT: " + StrUpper(CBFactionLabel(npc.cbLookoutFor));
   }
-  return CBBountyScannerNote(npc);
+  let bounty = CBBountyScannerNote(npc);
+  if StrLen(bounty) > 0 {
+    return bounty;
+  }
+  // A scout's job (2.4.6, [U14]).
+  let sys = CyberbaneSystem.Get(npc.GetGame());
+  if IsDefined(sys) && CBIsScoutBody(sys, npc) && !npc.IsDead() {
+    return "SCOUT: " + StrUpper(CBFactionLabel(CBClassifyFaction(npc)));
+  }
+  // How their gang sees V, beside their class (2.4.6, [U14]).
+  let stance = CBScannerStance(npc);
+  if StrLen(stance) > 0 {
+    let rec = TweakDBInterface.GetCharacterRecord(npc.GetRecordID());
+    let data = IsDefined(rec) ? rec.ArchetypeData() : null;
+    let kind = IsDefined(data) ? data.Type() : null;
+    let cls = IsDefined(kind) && !rec.SkipDisplayArchetype() ? GetLocalizedText(NameToString(kind.LocalizedName())) : "";
+    return StrLen(cls) > 0 ? cls + "  /  " + stance : stance;
+  }
+  return "";
 }
 
 // The name chunk again, the game's way: their own name from their record (or the one given), the note as the line

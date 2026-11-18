@@ -3,6 +3,38 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.4.6 (18 November 2026)
+
+**Telling it**
+- **The street talks like it knows you.** What Cyberbane's people say now draws on what the street knows: your name
+  on the street, where you are, the hour and the weather, what you did to them and how often. Bounty hunters, Rivals at
+  a facedown, gangs clashing, a borrowed crew, a sergeant calling a halt and the rest all speak to the moment.
+- **Voices.** A Rival's people call it out in their own game voices when they find you, a ganger who gives up begs in
+  theirs, and a crew's sergeant shouts the halt.
+- **Panic in the dark.** Pick off a crew without being seen and the rest grow afraid: they call out for whoever
+  stopped answering, by name, and after the second one somebody may run.
+- **The screamsheet and the legend.** The Hub's History page opens on the day's headlines in the tabloids' voice, and
+  a button tells your story the way the street would.
+- **A Rival's story.** Each Rival's page tells how they came to be yours, every meeting, escape and mercy, and where
+  they were last seen.
+- **The morning brief.** At dawn a broker texts you what happened overnight, who is after you, and what is coming.
+- **Street Cred follows the legend.** Killing a Rival, surviving open season, beating a bounty hunter and reaching the
+  top of the hunters' ladder give a little of the game's own Street Cred.
+- **Answer back by text.** On a gang's thread you can now stall them, threaten them or insult them, as well as pay or
+  refuse. On a Rival's thread you can tell them to come and find you, have them name a place, or taunt them.
+- **The scanner tells the story.** It shows a scout's job, and how a ganger's people see you.
+- **New titles.** Number One, Warlord, Open Season Survivor, Party Crasher, Trophy Hunter and Made.
+- **Presets with a shape.** Alongside Subtle, Default and Dramatic: Nemesis (Rivals first), TurfWar (gangs and their
+  streets first) and QuietLife (the street and talk, hardly anybody hunting you).
+- **For other mods.** Cyberbane now announces its moments (a Rival slain, a hunt started, a price posted, a new place on
+  the ladder, a street event) through the game's callback system.
+
+**Mod Settings**
+- Under **Messages and HUD**: **Voices for the moments** and **Morning brief**. Under **Crews and apex squads**:
+  **Panic in the dark**. Under **Reputation and money**: **Street Cred follows the legend**. All on. Three new presets.
+
+Your progress carries over.
+
 ## 2.4.5 (18 November 2026)
 
 **Talk and allies**

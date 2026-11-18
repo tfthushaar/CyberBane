@@ -376,13 +376,37 @@ func CBFacedownOpen(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
   }
   body.cbFacedownOpen = true;
   let name = CBRivalDisplayName(sys.GetContent(), r);
-  CBIntelSay(game, 3, name, CBRivalPhrase(r, "So. Here we are. You and me.", "Don't reach for it yet. Look at me first.",
-                                             "Everybody stop. I want to see this one's face."), 4.0);
+  CBIntelSay(game, 3, name, CBFacedownOpener(sys, game, r), 4.0);
   if CBToastsOn() && !book.fdHinted {
     book.fdHinted = true;
     CBSystemNote(game, s"\(name) wants a look at you first. Talk to them to face them down, or draw.", 5.0);
   }
   CBLog.Info(n"Rivals", s"Facedown with Rival \(r.id), \(ArraySize(book.fdEscorts)) of their people holding.");
+}
+
+// The first thing they say, from what they have been through with V.
+func CBFacedownOpener(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> String {
+  let you = CBYou(sys, game);
+  let intel = CBIntelBook.Get(game);
+  if IsDefined(intel) && intel.KinOf(r.id) > 0 {
+    let dead = sys.FindRivalById(intel.KinOf(r.id));
+    let who = IsDefined(dead) ? CBRivalDisplayName(sys.GetContent(), dead) : "my family";
+    return s"Everybody stop. I want to look at the one who killed \(who) before I do this.";
+  }
+  if r.killedV > 0 {
+    return s"Again, \(you)? You remember how this ended last time. Look at me first.";
+  }
+  if r.sparedByV > 0 {
+    return "You let me walk once. Hold it, everybody. I want to see if that was mercy or a mistake.";
+  }
+  if r.escapes > 0 {
+    return s"Nobody move. Last time I ran from \(you). Not today. Today we talk first.";
+  }
+  if r.encounters == 0 {
+    return s"So you're \(you). Don't reach for it yet. I want a look at you first.";
+  }
+  return CBRivalPhrase(r, s"\(CBCapFirst(CBHere(sys))), you and me. Hands where I can see them.", "Don't reach for it yet. Look at me first.",
+                       "Everybody stop. I want to see this one's face.");
 }
 
 // Somebody stops where they are and holds off V for a moment: their attitude to V alone, and one hold order.
@@ -812,8 +836,10 @@ public func CBRivalFell(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
   }
   if byV {
     CBRivalTrophy(sys, game, book, puppet, r);
+    CBGiveStreetCred(game, CBConfig.CredRivalBase() + CBConfig.CredRivalPerRank() * r.rank);   // [87], 2.4.6
   }
   CBBondOnDeath(sys, game, book, r);
+  CBEmit(n"Cyberbane/RivalSlain", r.faction, Cast<Float>(r.rank));   // [91], 2.4.6
 }
 
 // The weapon their record carries, the way the game itself works out what an NPC holds.

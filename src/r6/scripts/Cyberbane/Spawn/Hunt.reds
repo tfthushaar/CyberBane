@@ -58,6 +58,12 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
     sys.SetHuntFromTip(true);
     sys.SetHuntTipWord(p, sys.GetTickCount());
     CBHuntStartSearch(sys);
+    // A new hunt: nobody has been picked off unseen yet, and other mods can hear it started (2.4.6).
+    let huntBook = CBHuntBook.Get(game);
+    if IsDefined(huntBook) {
+      huntBook.darkKills = 0;
+    }
+    CBEmit(n"Cyberbane/HuntStarted", faction, 0.0);
   }
   sys.SetHuntFaction(faction);
 }

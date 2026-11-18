@@ -245,6 +245,12 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // One of the hunters' ladder (Spawn/Bounty.reds, 2.4.3).
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Bounty") {
     CBBountyHunterDied(sysE, game, puppet);
+  } else {
+    // One of a crew picked off by V with nobody seeing V (Narrative/Telling.reds, [80], 2.4.6).
+    if IsDefined(sysE) && IsDefined(desD) && puppet.cbDamagedByPlayer
+       && (desD.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desD.IsTagged(puppet.GetEntityID(), n"CB_Escort")) {
+      CBPanicInDark(sysE, game, puppet);
+    }
   }
   // Still waiting at their place when they went down: they never got into the fight at all
   // (Rivals/Whereabouts.reds). Read before anything below can change the body's tags.

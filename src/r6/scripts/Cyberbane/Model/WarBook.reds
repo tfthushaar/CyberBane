@@ -79,6 +79,8 @@ public class CBWarBook extends ScriptableSystem {
   public let parleyDoneTick: Int32;
   public let parleyCrew: array<EntityID>;
   public let greetTick: Int32;
+  public let phoneStalled: CName;          // a gang V stalled by text, for the crew already counting down (2.4.6)
+  public let phoneThreatDay: Int32;        // the game day + 1 V last threatened anybody by text
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.m_trimmed = false;

@@ -10,6 +10,9 @@ enum ECBPreset {
   Default = 1,
   Dramatic = 2,
   Custom = 3,
+  Nemesis = 4,     // 2.4.6, [90]: Rivals first
+  TurfWar = 5,     // gangs and districts first
+  QuietLife = 6,   // the street and talk, hardly anybody hunting
 }
 
 enum ECBPronouns {
@@ -450,6 +453,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FairVolley")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FairVolley-Desc")
   public let fairVolley: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PanicInDark")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PanicInDark-Desc")
+  public let panicInDark: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Hunted")
@@ -1195,6 +1205,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LifepathHeadStart-Desc")
   public let lifepathHeadStart: Bool = true;
 
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetCredFollows")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetCredFollows-Desc")
+  public let streetCredFollows: Bool = true;
+
 
   // ---- Messages and HUD --------------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1308,6 +1325,21 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "14")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubPauseMenu")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubPauseMenu-Desc")
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "14")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Voices")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Voices-Desc")
+  public let voices: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "14")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MorningBrief")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MorningBrief-Desc")
+  public let morningBrief: Bool = true;
+
   public let hubInPauseMenu: Bool = false;
 
 
@@ -1713,6 +1745,38 @@ public class CyberbaneSettings {
         this.hitSquadFrequencyMult = 0.5;
         this.rivalFrequencyMult = 0.6;
         this.tributeMult = 0.75;
+        break;
+      case ECBPreset.Nemesis:
+        this.civIntensity = 1.0;
+        this.maxReactingCivilians = 6;
+        this.moraleIntensity = 1.0;
+        this.maxFleeFraction = 0.35;
+        this.hostileOnSight = true;
+        this.hitSquadFrequencyMult = 0.6;
+        this.rivalFrequencyMult = 1.7;
+        this.tributeMult = 1.0;
+        break;
+      case ECBPreset.TurfWar:
+        this.civIntensity = 1.1;
+        this.maxReactingCivilians = 6;
+        this.moraleIntensity = 1.2;
+        this.maxFleeFraction = 0.4;
+        this.hostileOnSight = true;
+        this.hitSquadFrequencyMult = 1.4;
+        this.rivalFrequencyMult = 0.6;
+        this.tributeMult = 1.25;
+        this.gangLifeOften = 1.5;
+        break;
+      case ECBPreset.QuietLife:
+        this.civIntensity = 1.0;
+        this.maxReactingCivilians = 6;
+        this.moraleIntensity = 0.8;
+        this.maxFleeFraction = 0.35;
+        this.hostileOnSight = false;
+        this.hitSquadFrequencyMult = 0.25;
+        this.rivalFrequencyMult = 0.3;
+        this.tributeMult = 1.0;
+        this.gangLifeOften = 1.0;
         break;
       case ECBPreset.Dramatic:
         this.civIntensity = 1.5;

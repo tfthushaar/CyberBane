@@ -68,6 +68,7 @@ func CBOpenSeasonEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
       mult = rt.GetSettings().renownGainMult;
     }
     sys.AddRenownPoints(CBConfig.OpenSeasonRenown() * mult);
+    CBGiveStreetCred(game, CBConfig.CredOpenSeason());   // [87], 2.4.6
     CBFileLog(sys, n"OpenSeasonSurvived", now, CBEventDistrict(sys, game), gang, 0.0);
     CBEventSay(game, s"You survived \(CBPossessive(CBFactionLabel(gang))) open season. A whole day of their best, and you're still standing. They're scared now.");
     return;

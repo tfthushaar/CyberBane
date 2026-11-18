@@ -220,7 +220,11 @@ func CBWatchMyBack(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWar
   war.crewLeaving = false;
   war.crewDay = CBGameDay(game) + 1;   // stored one up, so day zero still counts as used
   CBFileLog(sys, n"CrewLent", now, CBEventDistrict(sys, game), t.faction, Cast<Float>(sent));
-  return CBTalkSay(sent == 1 ? "One of ours is on the way. Keep them breathing." : s"\(sent) of ours are on the way. Bring them back in one piece.", n"");
+  let here = CBHere(sys);
+  let you = CBYou(sys, game);
+  return CBTalkSay(sent == 1 ? s"One of ours is on the way to \(here). Keep them breathing, \(you)."
+                             : CBLineOf([s"\(sent) of ours are on their way to \(here). Bring them back in one piece.",
+                                         s"For you, \(you)? \(sent) of ours. They'll stick with you for an hour. Don't waste them."]), n"");
 }
 
 func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>, player: ref<PlayerPuppet>) -> Void {
@@ -360,7 +364,9 @@ public func CBAlliesDaily(sys: ref<CyberbaneSystem>, game: GameInstance, days: F
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) && CBFactionFieldsSquads(fs.id) && !CBIsCorpFaction(fs.id) && Equals(score.GetPosture(fs.id), ECBPosture.Allied) {
       war.joinOffer = fs.id;
-      CBPhoneFromAlly(game, fs.id, "You've done right by us, more than once. Want to be one of ours? Say so to any of us on the street.");
+      let st = CBReadStreet(sys, game, fs.id);
+      let deed = IsDefined(st) && st.kills > 0 ? "You've bled for us" : "You've done right by us";
+      CBPhoneFromAlly(game, fs.id, s"\(deed), \(CBYou(sys, game)), more than once. Want to be one of ours? Say so to any of us on the street.");
       return;
     }
   }
@@ -399,7 +405,7 @@ func CBGangDuty(sys: ref<CyberbaneSystem>, game: GameInstance, mine: CName, now:
     if IsDefined(efs) && CBFactionFieldsSquads(e) {
       CBFileLog(sys, n"DutyAsked", now, CBEventDistrict(sys, game), e, Cast<Float>(efs.kills));
       if CBMessagesOn() {
-        CBPhoneFromAlly(game, mine, s"Family business: put down five of \(CBFactionLabel(e)) this week. We'll know.");
+        CBPhoneFromAlly(game, mine, s"Family business, \(CBYou(sys, game)): \(CBFactionLabel(e)) are getting comfortable. Put down five of them this week. We'll know.");
       }
       return;
     }
@@ -446,7 +452,8 @@ func CBRansomAsk(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBo
   war.ransomAmount = amount;
   war.ransomTick = sys.GetTickCount();
   if CBMessagesOn() {
-    CBPhoneFromGang(game, t.faction, s"We hear you've got one of ours. \(amount)eb, you say? We'll see.");
+    CBPhoneFromGang(game, t.faction, CBLineOf([s"We hear you've got one of ours in \(CBHere(sys)). \(amount)eb, you say? We'll see.",
+                                               s"\(amount) for one of ours. You've got some nerve, \(CBYou(sys, game)). Give us a minute."]));
   }
   return CBTalkSay(CBPick2("They'll pay. They'd better pay.", "You think they care enough to pay? ...They'd better."), n"");
 }
@@ -550,7 +557,9 @@ func CBSpreadLie(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
       fs.lastIncidentAt = MinF(fs.lastIncidentAt, now - CBConfig.CrewReasonHours() * CBConfig.SecondsPerHour());
     }
     CBFileLog(sys, n"LieSpread", now, CBEventDistrict(sys, game), gang, 0.0);
-    return CBTalkSay(CBPick2("Left town, got it. That's what I'll say.", "Sure. You were never here. Heading out, they'll hear."), n"");
+    let away = CBLieDistrictLabel(sys);
+    return CBTalkSay(CBLineOf([s"Gone to \(away). Got it. That's what \(CBFactionLabel(gang)) will hear.",
+                               s"Sure. You were never in \(CBHere(sys)). Left for \(away), I'll tell them."]), n"");
   }
   CBProvoke(sys, game, gang);
   CBFileLog(sys, n"LieSold", now, CBEventDistrict(sys, game), gang, 0.0);
@@ -692,7 +701,11 @@ func CBParleyOpen(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     }
   }
   s.cbFacedownOpen = true;
-  CBIntelSay(game, 3, "Crew sergeant", CBPick2("Hold it! Nobody shoot. Let's hear what this one's got to say.", "Easy. Talk first. Then we'll see."), 3.5);
+  CBSayVoiced(sys, s, n"enemy_warning");
+  let crewSize = ArraySize(war.parleyCrew);
+  CBIntelSay(game, 3, "Crew sergeant", CBLineOf([s"Hold it! Nobody shoot. \(crewSize) of us, one of \(CBYou(sys, game)). Let's hear what you've got to say.",
+                                                 s"Easy. \(CBCapFirst(CBFactionLabel(faction))) talk first. Then we'll see.",
+                                                 "Hold your fire! I want to hear this before we start."]), 3.5);
   CBLog.Info(n"Talk", s"A crew sergeant of \(NameToString(faction)) stops to talk.");
 }
 

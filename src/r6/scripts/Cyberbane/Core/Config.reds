@@ -634,6 +634,25 @@ public abstract class CBConfig {
   // One of theirs counts as wearing their colours at 0.8 (a good disguise); a lie sends the hunt's tip 4 times as far.
   public static func OneOfTheirsColours() -> Float = 0.8
   public static func LieTipMult() -> Float = 4.0
+  // Telling it (Narrative/Telling.reds, 2.4.6). Panic in the dark: crew within 40 m hear it; from the second unseen
+  // kill somebody may run, 25% more each one. The brief covers the last 12 game hours. Phone: stalling holds a crew 5
+  // more minutes; an insult is 5 standing and 2 renown in the district; "come and find me" brings a Rival within a
+  // minute; a taunt shakes a Rival 40% of the time. Street Cred: 60 and 40 a rank for a Rival, 250 for surviving open
+  // season, 15 a place for a hunter and 400 for the top of the ladder.
+  public static func PanicRange() -> Float = 40.0
+  public static func PanicRunAfter() -> Int32 = 2
+  public static func PanicBreakChance() -> Float = 0.25
+  public static func BriefHours() -> Float = 12.0
+  public static func PhoneStallTicks() -> Int32 = 300
+  public static func PhoneInsultStanding() -> Float = 5.0
+  public static func PhoneInsultRenown() -> Float = 2.0
+  public static func PhoneComeOnTicks() -> Int32 = 60
+  public static func PhoneTauntShake() -> Float = 0.4
+  public static func CredRivalBase() -> Int32 = 60
+  public static func CredRivalPerRank() -> Int32 = 40
+  public static func CredOpenSeason() -> Int32 = 250
+  public static func CredHunterPerPlace() -> Int32 = 15
+  public static func CredLadderTop() -> Int32 = 400
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

@@ -37,6 +37,13 @@ public func CBSeedTitles(c: ref<CyberbaneContent>) -> Void {
   c.AddTitle(CBMakeTitle(n"T_KONPEKI_GHOST",     "Konpeki Ghost",             35, false));
   c.AddTitle(CBMakeTitle(n"T_LANDLORD",          "Feared Landlord",           30, true));
   c.AddTitle(CBMakeTitle(n"T_MERC_FROM",         "The Merc from the District", 20, false));
+  // 2.4.6 ([U15]): the ladder, the war, gang life, trophies and the gang V belongs to (Narrative/Telling.reds).
+  c.AddTitle(CBMakeTitle(n"T_NUMBER_ONE",        "Number One",                70, true));
+  c.AddTitle(CBMakeTitle(n"T_WARLORD",           "Warlord",                   65, true));
+  c.AddTitle(CBMakeTitle(n"T_SEASON_SURVIVOR",   "Open Season Survivor",      45, true));
+  c.AddTitle(CBMakeTitle(n"T_PARTY_CRASHER",     "Party Crasher",             38, false));
+  c.AddTitle(CBMakeTitle(n"T_TROPHY_HUNTER",     "Trophy Hunter",             38, false));
+  c.AddTitle(CBMakeTitle(n"T_MADE",              "Made",                      36, false));
   CBSeedTitlePerks(c);
 }
 
@@ -54,6 +61,20 @@ func CBPerkOf(c: ref<CyberbaneContent>, id: CName, effect: String) -> ref<CBTitl
 // What each title gets you while you go by it. Mostly good; the big ones cost something. The text is
 // what the player reads, so a number changed here has to be changed in the sentence too.
 func CBSeedTitlePerks(c: ref<CyberbaneContent>) -> Void {
+  // 2.4.6 ([U15]).
+  let n1 = CBPerkOf(c, n"T_NUMBER_ONE", "Bounties pay 25% more, and people read you as 10% more frightening.");
+  n1.bountyMult = 1.25;
+  n1.crowdMult = 1.1;
+  let wl = CBPerkOf(c, n"T_WARLORD", "Enemies are 15% more likely to break.");
+  wl.breakMult = 1.15;
+  let ss = CBPerkOf(c, n"T_SEASON_SURVIVOR", "Enemies are 10% more likely to break.");
+  ss.breakMult = 1.1;
+  let pc = CBPerkOf(c, n"T_PARTY_CRASHER", "Bounties pay 10% more.");
+  pc.bountyMult = 1.1;
+  let th = CBPerkOf(c, n"T_TROPHY_HUNTER", "Bounties pay 15% more.");
+  th.bountyMult = 1.15;
+  let md = CBPerkOf(c, n"T_MADE", "People read you as 10% more frightening.");
+  md.crowdMult = 1.1;
   let t = CBPerkOf(c, n"T_CYBERBANE", "Enemies are 25% more likely to break and people read you as 15% more frightening. Bounties pay 25% more. Crews send one extra.");
   t.breakMult = 1.25;
   t.crowdMult = 1.15;

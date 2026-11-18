@@ -500,6 +500,7 @@ public class CBStreetLife {
     StimBroadcasterComponent.SendStimDirectly(player, gamedataStimType.SpreadFear, npc, data);
     CBTalkHold(npc);
     npc.cbSurrendered = true;
+    CBSayVoiced(sys, npc, n"fear_beg");   // in their own voice (Narrative/Telling.reds, [79], 2.4.6)
     npc.SetScannerDirty(true);   // the scanner says so (UI/ScannerName.reds)
     ArrayPush(this.m_gaveUp, npc);
     ArrayPush(this.m_gaveUpTick, sys.GetTickCount());

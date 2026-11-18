@@ -79,6 +79,14 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-Gangs", "Gangs");
     this.Text("Cyberbane-Settings-Category-Rivals", "Rivals");
     this.Text("Cyberbane-Settings-Category-RivalsYou", "Rivals and you");
+    this.Text("Cyberbane-Settings-Voices", "Voices for the moments");
+    this.Text("Cyberbane-Settings-Voices-Desc", "People speak in their own game voices at Cyberbane's moments: a Rival's people as they find you, somebody giving up, a crew's sergeant calling a halt. Only the game's own voice lines. Off, and those moments are subtitles alone.");
+    this.Text("Cyberbane-Settings-MorningBrief", "Morning brief");
+    this.Text("Cyberbane-Settings-MorningBrief-Desc", "At dawn each in-game day a broker texts you: what happened overnight, who is after you, and what is coming. Quiet when messages are off.");
+    this.Text("Cyberbane-Settings-PanicInDark", "Panic in the dark");
+    this.Text("Cyberbane-Settings-PanicInDark-Desc", "Pick off a crew without being seen and the rest grow afraid: they call out for whoever stopped answering, and after the second, somebody may run. Off, and a crew keeps its nerve however quietly you work.");
+    this.Text("Cyberbane-Settings-StreetCredFollows", "Street Cred follows the legend");
+    this.Text("Cyberbane-Settings-StreetCredFollows-Desc", "The biggest things you do (a Rival killed, open season survived, a bounty hunter beaten, the top of the hunters' ladder) give a little of the game's own Street Cred, so its vendors and gigs follow your name. Off, and Cyberbane leaves Street Cred to the game.");
     this.Text("Cyberbane-Settings-RunWithCrew", "Run with a crew");
     this.Text("Cyberbane-Settings-RunWithCrew-Desc", "With a gang Friendly to you or better, ask one of its people to watch your back: two of them (three if they are Allied) come and follow you, the way the game's own companions do, and fight whoever fights you. They go home after an in-game hour, when you leave their turf for long, drive off, go to a job, or shoot one of them. Once a day. Off, and nobody comes with you.");
     this.Text("Cyberbane-Settings-OneOfTheirs", "One of theirs");
@@ -100,7 +108,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Trophies", "Trophies");
     this.Text("Cyberbane-Settings-Trophies-Desc", "Kill a named Rival of rank two or more and the weapon they carried goes into your inventory, once each. Off, and only the usual loot.");
     this.Text("Cyberbane-Settings-Category-SafeAreas", "Safe areas and jobs");
-    this.Text("Cyberbane-Settings-Preset-Desc", "Subtle, Default or Dramatic sets everything below in one go, overwriting what is there. Custom leaves your own numbers as they are.");
+    this.Text("Cyberbane-Settings-Preset-Desc", "Subtle, Default or Dramatic sets how loud and how often everything is, in one go, overwriting what is there. Nemesis puts your Rivals first, TurfWar the gangs and their streets, and QuietLife keeps the street and talk with hardly anybody hunting you. Custom leaves your own numbers as they are.");
     this.Text("Cyberbane-Settings-RenownGain-Desc", "How fast your name spreads.");
     this.Text("Cyberbane-Settings-DreadGain-Desc", "How fast you become frightening. Dread is the score that makes people back off.");
     this.Text("Cyberbane-Settings-Decay-Desc", "How fast reputation fades when you stop earning it. Zero never fades.");

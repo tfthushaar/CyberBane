@@ -263,9 +263,13 @@ func CBClashEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBo
   CBWeakenGang(sys, game, loser, CBConfig.ClashGain());
   CBFileLog(sys, n"StreetClash", CBGameSeconds(game), CBEventDistrict(sys, game), winner, 0.0);
   CBLog.Info(n"Street", s"A street clash: \(NameToString(winner)) won over \(NameToString(loser)).");
-  CBEventSay(game, CBPick3(s"Did you see that? \(CBCapFirst(CBFactionLabel(winner))) and \(CBFactionLabel(loser)) went at it in the street. \(CBCapFirst(CBFactionLabel(winner))) walked away.",
-                           s"\(CBCapFirst(CBFactionLabel(loser))) lost a couple on the corner just now. \(CBCapFirst(CBFactionLabel(winner))) are pushing.",
-                           s"Gang trouble round here. \(CBCapFirst(CBFactionLabel(winner))) came out of it on top."));
+  let w = CBCapFirst(CBFactionLabel(winner));
+  let l = CBFactionLabel(loser);
+  let here = CBHere(sys);
+  CBEventSay(game, CBLineOf([s"Did you see that? \(w) and \(l) went at it right here in \(here). \(w) walked away.",
+                             s"\(CBCapFirst(l)) lost a couple on the corner just now. \(w) are pushing into \(here).",
+                             s"Gang trouble in \(here)\(CBWhenTail(game)). \(w) came out of it on top.",
+                             s"That was \(w) and \(l). Whoever holds \(here) next week, it won't be quiet."]));
 }
 
 // For the Hub's web of gangs: a clash between these two lately.

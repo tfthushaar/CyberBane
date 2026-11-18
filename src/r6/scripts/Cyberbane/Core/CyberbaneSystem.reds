@@ -3451,6 +3451,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalLivesDaily(this, game, elapsedDays);  // bonds, feuds, returns, letters, chrome (2.4.4)
     CBAlliesDaily(this, game, elapsedDays);      // one of theirs: the offer and the week's duty (2.4.5)
     CBInformantsDaily(this, game, elapsedDays);  // an informant's gang may find out (2.4.5)
+    CBMorningBriefTick(this, game);              // a broker's text at dawn (2.4.6)
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)

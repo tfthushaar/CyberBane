@@ -151,6 +151,8 @@ public func CBRivalAnnounce(sys: ref<CyberbaneSystem>, game: GameInstance, r: re
   }
   CBAnnounceLater(game, crew, who, 0.3);
   CBAnnounceLater(game, name, CBRivalCatchphrase(r), 3.2);
+  // And one of their people says it in their own voice (Narrative/Telling.reds, [79], 2.4.6).
+  CBSayVoiced(sys, CBNearestTagged(sys, game, n"CB_Escort", CBConfig.PanicRange()), n"enemy_warning");
 }
 
 // ---- Kin ------------------------------------------------------------------------------------------------

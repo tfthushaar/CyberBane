@@ -566,6 +566,7 @@ public class CBHud {
   private let m_stickLatched: Bool;
   private let m_resetArmed: Bool;          // "start over" asks twice as well
   private let m_bountyArmed: Bool;         // and so does paying off the price on V's head (2.4.3)
+  private let m_legendShown: Bool;         // the History page tells V's story instead of the ledger (2.4.6)
   private let m_hover: CName;              // the clickable thing under the cursor, by name
   private let m_inputBound: Bool;          // the tab keys are registered with the pause menu
   // Why no Rival can arrive right now, or "". Resolved once per render, not once per row.
@@ -1964,6 +1965,11 @@ public class CBHud {
   // The buttons under the first. Only the Rivals have them: forget this one, and forget them all.
   // Neither is carried out from here, for the reason given above ActionClicked.
   private func ExtraClicked(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    if this.m_tab == CBHudHistoryTab() && slot == 1 {
+      this.m_legendShown = !this.m_legendShown;
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab != CBHudRivalsTab() {
       return;
     }
@@ -3819,7 +3825,16 @@ public class CBHud {
                 }
                 // Full width, but it stops above the button: run on to the footer, the ledger's last
                 // lines were drawn underneath Start over.
-                this.SetBody(x, CBHudContentTop(), w, CBHudLog(sys), maxLines,
+                // The legend, told (2.4.6, [82]), or the day's headlines (the screamsheet, [81]) over the ledger.
+                this.SetExtra(1, this.m_legendShown ? "Show the ledger" : "Tell my story", true);
+                let page = "";
+                if this.m_legendShown {
+                  page = CBLegendTold(sys, game);
+                } else {
+                  let heads = CBScreamsheet(sys, game);
+                  page = StrLen(heads) > 0 ? heads + "\n\n" + CBHudLog(sys) : CBHudLog(sys);
+                }
+                this.SetBody(x, CBHudContentTop(), w, page, maxLines,
                              CBHudDetailTop() - 4.0 - CBHudFooterGap());
               }
             }
@@ -4569,6 +4584,8 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
     // What the street says about them, their line, and their family (1.9.9).
     out += "On the street: " + CBRivalStreetStatus(sys, game, r) + "\n";
     out += "Says: \"" + CBRivalCatchphrase(r) + "\"\n";
+    // Their story, from what is known of them (Narrative/Telling.reds, [84], 2.4.6).
+    out += "Their story: " + CBRivalStory(sys, game, r) + "\n";
     let kinBook = CBIntelBook.Get(game);
     let kinOf = IsDefined(kinBook) ? kinBook.KinOf(r.id) : 0;
     let kinDead = kinOf > 0 ? sys.FindRivalById(kinOf) : null;

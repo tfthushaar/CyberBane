@@ -1,7 +1,8 @@
 # Cyberbane plan: the road to 2.5.0
 
-Status: **Building on to 2.5.0 (2026-11-18). Done: 2.3.1 to 2.4.5, all released, with a bug pass over every system
-inside 2.4.2. Next: 2.4.6, telling it, and then a crew of my own and a cleaner Hub in 2.5.0; I play it all at the end.** I wrote this on
+Status: **Building on to 2.5.0 (2026-11-18). Done: 2.3.1 to 2.4.6, all released, with a bug pass over every system
+inside 2.4.2. Next: 2.5.0: a crew of my own, the comprehensive pass, and the whole Hub rebuilt cleaner, with pictures
+wherever they help; I play it all at the end.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
@@ -30,22 +31,22 @@ rehearsal from the release before; none played yet):
 | 2.4.2 | ba60842, cb2eacb | Trackers [49], open season [48], lying in wait made default [E2] with V's road [47] and the Wraiths' road [18], the Claws' assassin [11]; then the fixes from player reports (Talk on F, nobody stopping until I talk to them, They Will Remember's hostility and disguises followed, its panel kept off the Hub) and from the bug pass over every file (apex squads at full health, freeze reputation freezing everything, gang chairs, street events, skills in V's menace) |
 | 2.4.3 | 37687a2 | A price on V's head and the hunters' ladder [39], the corporations hire killers [20], corporate interest [88]; rival gangers clash on contested streets [N1]; the web of gangs on the Hub [H1]. [N2] dropped (the game's own gunfire already does it). A fix: Rivals came no more with crews off, with They Will Remember, or after peace with their gang |
 | 2.4.4 | 9420e11 | The facedown [53] [54] and a Rival on their feet [64], humiliation [55], back from the dead [56], Rivals at war [57] and bonds [58], trophies [60], where they ended up [61], places with meaning [62], last words [63], Rival chrome [U9], places lived in [U10], tactics by kind [U11], Rivals' lines [L4], "Nobody kills you but me" made default [E4], the Rivals tree [H2]; `CBRivalBook`. A fix: how V fights was misread from 1.3.2 on |
-| 2.4.5 | (this release) | Run with a crew [65] on the game's own follower role, one of theirs [66], ransom [67], feed the street a lie [69], informants with a life [U12], the sergeant's parley [U2] |
+| 2.4.5 | f15be9e | Run with a crew [65] on the game's own follower role, one of theirs [66], ransom [67], feed the street a lie [69], informants with a life [U12], the sergeant's parley [U2] |
+| 2.4.6 | (this release) | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
 
-**In progress:** 2.4.6, telling it.
+**In progress:** 2.5.0: a crew of my own, then the final form and a cleaner Hub.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
 | Version | What | Items |
 |---|---|---|
-| 2.4.6 | Telling it | [79]-[85], [87], [90]-[92], [U13]-[U15], [L5] (was 2.4.4) |
 | 2.5.0 | A crew of my own, and the final form | [C1]-[C10] (below); the comprehensive pass, optimisation, [U16], [L6], every default confirmed |
 
 **Moved or dropped along the way:** [43] sound before contact (no door or engine sound event confirmed); [76] [77]
 (I do not have Wannabe Edgerunner or Dark Future installed, so there was nothing to probe); tribute haggled by text (folded into [U13]);
 [U1]'s car seats keep one record. Each is noted in its release's section and in IMPROVEMENTS.md.
 
-**Next:** 2.4.6, telling it, then the rest of the road to 2.5.0, built straight through; I play the whole of it at the
+**Next:** 2.5.0, then the rest of the road to 2.5.0, built straight through; I play the whole of it at the
 end instead of stopping after 2.4.2. The bug pass over every system came first, with the 2.5.0 pass's method, and what
 it found went out inside 2.4.2. [H1] the web went out in 2.4.3 and draws the 2.4.0 systems (wars, truces, backing,
 standing), so it will help me check them when I play.
@@ -201,7 +202,7 @@ first release that uses it.
 | **2.4.3** | 5 Being hunted, third part, and the war in the street | [39], [88], [20]; [N1], [N2]; [H1] and the drawing kit | L | done |
 | **2.4.4** | 6 Rivals | [53]-[64]; [U9]-[U11]; [L4]; [E4]; [H2]; `CBRivalBook` | M-L | done |
 | **2.4.5** | 7 Talk and allies | [65]-[67], [69]; [U12]; [U2]'s parley | M-L | done |
-| **2.4.6** | 8 Telling it | [79]-[85], [87], [90]-[92]; [U13]-[U15]; [L5]; voices, mod events | M | left |
+| **2.4.6** | 8 Telling it | [79]-[85], [87], [90]-[92]; [U13]-[U15]; [L5]; voices, mod events | M | done |
 | **2.5.0** | 9 A crew of my own, then the final form | [C1]-[C10]; `CBCrewBook`; the comprehensive bug pass, optimisation, [U16], [L6], every default confirmed, settings and README for good | L | left |
 
 \* [68] moved from 2.3.1 to 2.4.1. Not built: [43], [76], [77] (see "Where it stands").
@@ -836,6 +837,16 @@ Last, because it reads what every other group writes.
 
 **Seams.** The pages read only the History and the books; voices go through the talk wrap's context;
 presets set values by name; mod events are emitted where each system already logs.
+
+**Built in 2.4.6.** In `Narrative/Telling.reds`, the phone (`UI/RealPhone.reds`), the scanner and the Hub. Voices use
+only voiceset lines the game itself plays (`enemy_warning`, `fear_beg`), through the context the talk wrap already
+lets through; a greeting is not one of them, so a friendly gang's greeting stays a subtitle. Street Cred is the game's
+own `ExperiencePointsEvent`, the way its bounties give it. Events go out through the game's callback system
+(`DispatchEventAs`), compiled on both patches. The phone's rows come from one list for what is shown and what is done.
+Every line written since 2.4.3 now draws on what the street knows (V's title, where V is, the hour and the weather,
+the history with whoever is speaking), and every line after this is written that way. Not built: the map remembering
+[85], which needs world-map pins of its own where Cyberbane has only ever placed one at a time, and Ambient Factions
+[92], which is not installed here to probe.
 
 **Done when:** every page fills from a real History, and the brief and screamsheet stay quiet with messages Off. A gang thread can be threatened or stalled, and the scanner shows chrome, sergeants and scouts.
 

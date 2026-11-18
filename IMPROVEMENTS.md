@@ -35,7 +35,7 @@ probe on 2.31 and 2.5 before anything is built on it.
 
 By impact for the effort, most first:
 
-1. **Voices for the moments** (79). The people Cyberbane moves finally sound like it, in their own voices.
+1. *(Built in 2.4.6: voices, with the game's own lines.)*
 2. *(Built in 2.3.2: gangs that adapt, and a code for each gang.)*
 3. *(Built in 2.4.3: the corporations, who hire killers.)*
 4. *(Built in 2.4.4: the facedown, and the rest of the Rivals' stories.)*
@@ -43,7 +43,7 @@ By impact for the effort, most first:
 6. *(Built in 2.3.3: funerals and the rest of gang life's gatherings, deals and rackets.)*
 7. *(Built in 2.4.0: back a gang, the war chest, and the rest of the turf war.)*
 8. *(Built in 2.4.5: run with a crew, and the rest of talk and allies.)*
-9. **Panic in the dark** (80). Stealth play gets the terror loud play already has.
+9. *(Built in 2.4.6: panic in the dark.)*
 
 ## 3. Gang life
 
@@ -78,36 +78,14 @@ Built in 2.4.5 (`Reactions/Allies.reds`): every idea that was here.
 
 ## 9. How it is told
 
-79. **Voices for the moments.** People speak at Cyberbane's moments in their own voices, using the game's own
-    voiceset lines: a taunt as the announcement starts, a scream when they break, a plea when they surrender, a
-    greeting from a friendly gang. Played with `GameObject.PlayVoiceOver`; the context `Scripts:CBStreetTalk` is
-    already reserved in Cyberbane's wrap of it. No new audio. **S to M, verify** (the line names on both patches)
-80. **Panic in the dark.** When V picks off a crew one by one unseen, the rest grow afraid: lines in the subtitles
-    ("Where'd he go?!", "Kenji's not answering"), they bunch up, their nerve falls faster, and one may run.
-    Morale and the subtitles. **S to M** *(Batman: Arkham's predator rooms)*
-81. **The screamsheet.** A Hub page of headlines in Night City's tabloid voice, written from the History: "MERC
-    GUTS CLAW BOSS IN KABUKI", "6TH STREET LOSES ARROYO", a few a day. Data UI only. **S to M** *(Cyberpunk's
-    screamsheets; Dwarf Fortress's legends)*
-82. **The legend, told.** A button on the History page that tells V's story in a few paragraphs, from the biggest
-    entries, the way the street would tell it. **S**
-83. **Morning brief.** At dawn each in-game day, one broker text: what happened overnight, who is hunting V, what
-    is coming. **S**
-84. **A Rival's story on their page.** Their history with V as a timeline: how they were born, each scar, each
-    meeting, the texts, where they were last seen. **S**
+Built in 2.4.6 (`Narrative/Telling.reds`), except the map remembering, below.
+
 85. **The map remembers.** For a day, the Turf map pins where things happened: a Rival's death, a crashed
     sit-down, a takeover. **S**
 
 ## 10. Rewards, settings and other mods
 
-87. **Street Cred follows the legend.** The biggest deeds (a Rival's death, a sit-down crashed, open season
-    survived) give a little of the game's own Street Cred, so its vendors and gigs follow. **S, verify** (the
-    experience call)
-90. **Presets with a shape.** Presets that change what the mod is about, not only how much: **Nemesis** (Rivals
-    first), **Turf war** (gangs and districts first), **Quiet life** (the street and talk, nobody hunting).
-    **S**
-91. **Events other mods can hear.** Codeware custom events ("Cyberbane/RivalSlain", "Cyberbane/StandingChanged",
-    "Cyberbane/HuntStarted") alongside `API/CyberbaneAPI.reds`, so other mods react without calling in. **S**
-92. **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
+92. *(Not built in 2.4.6: the mod is not installed here, so there is nothing to probe.)* **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
     while it has a gang war going near V. **S**
 
 ---

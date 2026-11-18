@@ -74,6 +74,9 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   }
   if Equals(id, n"T_MERC_FROM") { return EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.LocalName); }
   if Equals(id, n"T_CYBERBANE") { return CBCyberbaneCondition(sys, score); }
+  if CBNewTitleCondition(sys, sys.GetGameInstance(), id) {
+    return true;   // the ladder, the war, gang life, trophies, a gang's own (Narrative/Telling.reds, 2.4.6)
+  }
   return false;   // deed-gated titles unlock through the deed system
 }
 
@@ -93,6 +96,13 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
     return "";
   }
   let renown = RoundF(score.GetRenown());
+  // 2.4.6 ([U15]).
+  if Equals(id, n"T_NUMBER_ONE") { return "Reach the top of the hunters' ladder."; }
+  if Equals(id, n"T_WARLORD") { return "Make a district your own: a Legend, where every gang is broken."; }
+  if Equals(id, n"T_SEASON_SURVIVOR") { return "Live through a gang's open season."; }
+  if Equals(id, n"T_PARTY_CRASHER") { return "Crash three of the gangs' gatherings, deals or sit-downs."; }
+  if Equals(id, n"T_TROPHY_HUNTER") { return "Take a trophy off three named Rivals."; }
+  if Equals(id, n"T_MADE") { return "Become one of a gang's own."; }
   if Equals(id, n"T_LIVING_LEGEND") {
     return CBReqNum("Reach this much Renown", renown, RoundF(CBConfig.TierLegend())) + ".";
   }

@@ -339,6 +339,7 @@ public class CBEventEngine {
       CBHearsayFromDistrict(game, district, CBEventWordLine(ev), n"");
     }
     CBLog.Info(n"Street", s"A \(NameToString(kind)) is set: \(NameToString(a)) \(NameToString(b)).");
+    CBEmit(StringToName("Cyberbane/StreetEvent/" + NameToString(kind)), a, 0.0);   // [91], 2.4.6
     return true;
   }
 

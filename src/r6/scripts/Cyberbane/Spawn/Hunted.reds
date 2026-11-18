@@ -87,6 +87,8 @@ public class CBHuntBook extends ScriptableSystem {
   public let comingPair: Int32;          // and a second, likewise
   public let comingTicks: Int32;
   public let payRequested: Bool;         // chosen on the Hub, carried out on the next tick back in the game
+  public let darkKills: Int32;           // a crew picked off this hunt with nobody seeing V (2.4.6, [80])
+  public let briefDay: Int32;            // the game day + 1 the morning brief last went out (2.4.6, [83])
 
   public func BountyBy() -> CName { return this.m_bountyBy; }
   public func BountyAmount() -> Int32 { return this.m_bountyAmount; }
