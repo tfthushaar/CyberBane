@@ -206,6 +206,7 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
   CBHierarchyFill(sys, rival.faction);
   // A fight for the chair, or the end of one (Spawn/StreetEvents.reds, [31]).
   CBPowerStruggleOnSlain(sys, game, rival, wasLeader);
+  CBOpenSeasonLeaderDown(sys, game, rival, wasLeader);   // the one who called open season (2.4.2)
 
   // Taking the top off a crew is worth hearing about.
   if wasLeader && fs.leaderRivalId > 0 {

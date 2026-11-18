@@ -3,6 +3,27 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.4.2 (18 November 2026)
+
+**The hunt grows**
+- **Trackers.** A quickhack from one of Cyberbane's netrunners can plant a tracker on you: for half a day that
+  gang knows where you are (no scout, a hunt that starts right on you), and the HUD line says so. Spend a minute
+  somewhere safe, like home, a clinic or a ripperdoc's chair, to dig it out.
+- **Open season.** At the top of a gang's anger (sworn against you, many of theirs dead, a leader to call it), it
+  can declare open season: for a whole day every one of them knows your face and a crew comes every hour. The
+  HUD line counts it down. Survive it, kill their leader, or pay a crippling price. Surviving leaves them afraid.
+- **Gangs lie in wait, now on for everyone.** A gang sworn against you can park up the road and pull out as you
+  drive past, more often where you're known to go; the Wraiths do it on Badlands roads whatever their grudge. On
+  foot with a job tracked far away, a crew may wait for you near it, outside the job itself. A lookout you paid to
+  keep watch warns you when they park.
+- **The Tyger Claws' assassin.** Some nights the Claws send one killer with a blade instead of a crew.
+
+**Mod Settings**
+- Under **Being hunted**: **Trackers** and **Open season** (on). The car ambush option is now **Gangs lie in
+  wait**, on by default (a new setting, so it reaches every install).
+
+Your progress carries over.
+
 ## 2.4.1 (18 November 2026)
 
 **Being hunted, fairer**

@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.4.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.4.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -72,6 +72,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **Peace with terms**: haggle a gang's price by text, or trade a favour for it.
 - **Fairer hunts.** A moment's grace when they find you, trails that go cold when you lie low, scouts you can
   stop or pay off before they call you in, and lookouts in the crowd.
+- **The hunt grows.** Trackers planted by quickhacks, open season from a gang at the top of its anger, crews lying
+  in wait on your road, and the Tyger Claws' assassin.
 
 ## Requirements
 

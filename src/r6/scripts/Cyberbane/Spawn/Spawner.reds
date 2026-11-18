@@ -1181,6 +1181,13 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBSetUpStreet(sys, game, puppet, true);
     return;
   }
+  // A crew waiting on V's road (Spawn/HuntGrows.reds, 2.4.2): hostile from the start, kitted and built as a crew.
+  if des.IsTagged(id, n"CB_Ambush") {
+    CBSetUpStreet(sys, game, puppet, true);
+    CBKitSquadMember(puppet);
+    CBApplyCrewBuild(sys, game, puppet);
+    return;
+  }
   // Gang life's people (Spawn/StreetEvents.reds, 2.3.3): street people, and a deal's guard built like the gang's best.
   if des.IsTagged(id, n"CB_Event") {
     CBSetUpStreet(sys, game, puppet, false);

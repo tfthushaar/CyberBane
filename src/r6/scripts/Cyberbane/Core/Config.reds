@@ -455,6 +455,29 @@ public abstract class CBConfig {
   public static func ScoutBribePerRenown() -> Float = 0.3
   public static func LookoutMinDistance() -> Float = 15.0
   public static func LookoutMaxDistance() -> Float = 45.0
+  // The hunt grows (Spawn/HuntGrows.reds, 2.4.2). A tracker lasts 12 game hours, or 60 real seconds somewhere safe; a
+  // tracked gang's hunt starts from a tip 15% as far off. Open season: 10% a day for a sworn gang with 40 of theirs
+  // dead and a leader; a crew provoked every 450 ticks (about a game hour); paying costs 2.5 times; surviving is 40
+  // fear and 60 renown. Lying in wait: the Wraiths on their road 2.5 times as likely, 1.5 where V is known to go. V's
+  // road: 40% of the time a sworn crew's moment comes with a job tracked 300 m or more away; they wait 20 m beyond the
+  // job's clearance, up to 6 of them, for 1.5 game hours. The Claws' assassin: 35% of nights.
+  public static func TrackedHours() -> Float = 12.0
+  public static func TrackedClearTicks() -> Int32 = 60
+  public static func TrackedTipMult() -> Float = 0.15
+  public static func OpenSeasonChancePerDay() -> Float = 0.1
+  public static func OpenSeasonKills() -> Int32 = 40
+  public static func OpenSeasonCrewTicks() -> Int32 = 450
+  public static func OpenSeasonPriceMult() -> Float = 2.5
+  public static func OpenSeasonFear() -> Float = 40.0
+  public static func OpenSeasonRenown() -> Float = 60.0
+  public static func WraithRoadMult() -> Float = 2.5
+  public static func HauntWaitMult() -> Float = 1.5
+  public static func RoadChance() -> Float = 0.4
+  public static func RoadMinDistance() -> Float = 300.0
+  public static func RoadOffset() -> Float = 20.0
+  public static func RoadMaxCrew() -> Int32 = 6
+  public static func AmbushWaitSeconds() -> Float = 5400.0
+  public static func AssassinChance() -> Float = 0.35
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

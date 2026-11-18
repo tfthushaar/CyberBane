@@ -55,9 +55,19 @@ public class CBHuntBook extends ScriptableSystem {
   private persistent let m_corpBy: CName;
   private persistent let m_corpAt: Float;
   private let m_padded: Bool;
+  public let safeTicks: Int32;         // real seconds V has spent somewhere safe while tracked (2.4.2)
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.m_padded = false;
+  }
+
+  public func TrackedBy() -> CName { return this.m_trackedBy; }
+  public func TrackedUntil() -> Float { return this.m_trackedUntil; }
+
+  public func SetTracked(gang: CName, until: Float) -> Void {
+    this.m_trackedBy = gang;
+    this.m_trackedUntil = until;
+    this.safeTicks = 0;
   }
 
   public static func Get(game: GameInstance) -> ref<CBHuntBook> {

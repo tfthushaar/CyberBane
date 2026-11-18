@@ -4069,6 +4069,22 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"LetGo") {
     return StrLen(gang) > 0 ? s"You let one of \(gang) walk with their hands up." : "You let somebody walk with their hands up.";
   }
+  // 2.4.2: the hunt grows.
+  if Equals(e.kind, n"Tracked") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) planted a tracker on you." : "Somebody planted a tracker on you.";
+  }
+  if Equals(e.kind, n"OpenSeason") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) declared open season on you." : "A gang declared open season on you.";
+  }
+  if Equals(e.kind, n"OpenSeasonSurvived") {
+    return StrLen(gang) > 0 ? s"You survived \(CBPossessive(gang)) open season." : "You survived open season.";
+  }
+  if Equals(e.kind, n"OpenSeasonEnded") {
+    return StrLen(gang) > 0 ? s"You ended \(CBPossessive(gang)) open season by killing who called it." : "You ended an open season.";
+  }
+  if Equals(e.kind, n"AmbushBeaten") {
+    return StrLen(gang) > 0 ? s"You walked through \(CBPossessive(gang)) ambush on the way to a job." : "You walked through an ambush.";
+  }
   // 2.4.1: being hunted.
   if Equals(e.kind, n"ScoutBribed") {
     return StrLen(gang) > 0 ? s"You paid \(CBPossessive(gang)) scout to say they never found you." : "You paid a scout to say they never found you.";

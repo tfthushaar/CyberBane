@@ -113,7 +113,19 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   // a car can get here, otherwise on foot; whichever chairs either way cannot fill now, the
   // muster walks in shortly (CBApexMusterTick). Same decision as the warning and the HUD line.
   let team = CBConfig.ApexStrikeTeamSize();
-  let withApex = CBCrewBringsApex(sys, fs);
+  let assassin = CBClawsAssassin(game, fs.id);
+  let withApex = !assassin && CBCrewBringsApex(sys, fs);
+  // On foot with a job tracked far away: they may wait for V there instead (Spawn/HuntGrows.reds, [47]).
+  if !withApex && !assassin && CBTryWaitOnRoad(sys, game, fs, size) {
+    fs.lastHitSquadAt = now;
+    let cdRoad = sys.GetCooldowns();
+    if IsDefined(cdRoad) {
+      cdRoad.lastHitSquadAt = now;
+    }
+    CBWarSpend(game, fs.id, CBConfig.WarCrewCost() * Cast<Float>(size));
+    CBLog.Info(n"Spawn", s"\(NameToString(fs.id)) are waiting for you on the road to your job.");
+    return true;
+  }
   let apexFuture = 0;   // chairs a car has yet to bring into the world
   if withApex {
     let apexRecord = CBApexRecordFor(fs);
@@ -153,7 +165,13 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     spawned = byCar;
     crewFuture = Max(0, byCar);
     if byCar <= 0 {
-      spawned = CBSpawnMixedCrew(game, fs, crew, CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
+      if assassin {
+        // One killer with a blade, alone (Spawn/HuntGrows.reds, [11]).
+        let killer = CBAssassinRecord();
+        spawned = TDBID.IsValid(killer) ? CBSpawnGroup(game, killer, n"", 1, n"CB_Squad", CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity) : 0;
+      } else {
+        spawned = CBSpawnMixedCrew(game, fs, crew, CBConfig.HitSquadMinSpawnDistance() + 12.0, squadEntity);
+      }
     }
   }
   // And their netrunner (1.8.5), hanging back while the rest go in. Not with an apex squad, which

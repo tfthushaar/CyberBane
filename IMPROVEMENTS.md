@@ -37,17 +37,13 @@ By impact for the effort, most first:
 
 1. **Voices for the moments** (79). The people Cyberbane moves finally sound like it, in their own voices.
 2. *(Built in 2.3.2: gangs that adapt, and a code for each gang.)*
-3. **What is left of the codes** (11, 18, 20): the Claws' protection and assassin, the Wraiths' road, the corps.
+3. **What is left of the codes** (20): the corporations, with the bounties in 2.4.3.
 4. **The facedown** (53). A Cyberpunk-canon moment before every Rival fight.
 5. **A price on V's head, and the hunters' ladder** (39). A second nemesis line with a goal of its own.
 6. *(Built in 2.3.3: funerals and the rest of gang life's gatherings, deals and rackets.)*
 7. *(Built in 2.4.0: back a gang, the war chest, and the rest of the turf war.)*
 8. **Run with a crew** (65). The payoff for being liked.
 9. **Panic in the dark** (80). Stealth play gets the terror loud play already has.
-11. **Tyger Claws: the assassin.** (Their code and their protection money are built.) When they want V dead they
-    send one assassin with a blade at night, not a crowd. Fits with 2.4.1's hunts. **S to M**
-18. **Wraiths: the road.** (The Aldecaldos' family code is built.) Wraiths ambush V's car on Badlands roads:
-    the car ambush, out there, with [E2] in 2.4.1. **S**
 20. **The corporations: money, not grudges.** Arasaka, Militech and Kang Tao send no gangers. They post a
     contract on V and hire solos (item 39), and they can be bought off at a corporate price. **M**
 
@@ -69,14 +65,6 @@ Built in 2.4.0 (`Economy/War.reds`, `Model/WarBook.reds`): every idea that was h
     Creed Odyssey's mercenaries; New Vegas's hit squads)*
 43. **Sound before contact.** *(Not built in 2.4.1: no door or engine sound event could be confirmed in the game's own scripts; the apex horn is the one verified sound.)* An engine and a door slam when a car crew gets out within earshot, a phone buzz
     when the HUD line changes, played on the player as the apex horn already is. **S** *(old backlog 8)*
-47. **Waiting on V's road.** With a job tracked far away, a vendetta crew may wait near the destination, outside
-    its quest clearance, and spring when V arrives. **M**
-48. **Open season.** The top of a gang's anger: its leader declares open season for one in-game day. A crew every
-    hour, every one of its people hostile on sight citywide, its Rivals together. Survive the day, kill the
-    leader, or pay a crippling price; surviving earns a title and leaves the gang afraid for a week. **M**
-    *(Far Cry 5's escalation tiers)*
-49. **Tracked.** A Rival's netrunner can plant a tracker on V with a quickhack. Until V visits a ripperdoc, that
-    gang always knows the district V is in, and the HUD line says TRACKED. **S to M**
 ## 6. Rivals
 
 53. **The facedown.** When V and a Rival meet face to face (the announcement's beat), V chooses:

@@ -206,6 +206,10 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   let attacker = instigator as ScriptedPuppet;
   if IsDefined(attacker) && !attacker.IsPlayer() {
     puppet.cbLastAttacker = attacker;
+    // A quickhack on V: who from, looked at on the next tick (Spawn/HuntGrows.reds, [49]).
+    if puppet.IsPlayer() && AttackData.IsHack(evt.attackData.GetAttackType()) {
+      puppet.cbHackedFrom = attacker.GetEntityID();
+    }
   }
 }
 

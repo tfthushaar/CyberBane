@@ -677,7 +677,7 @@ public func CBRecognizes(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, n
   // Set by hand to come for V (How gangs see you, 2.1.0): they know V's face, unless it is covered or V is
   // wearing their colours well. Asked fresh each time and never rolled or counted, so Earned in play rolls as it
   // always has.
-  if CBGangViewHunts(faction) && !CBPlayerMasked(sys.GetGameInstance())
+  if (CBGangViewHunts(faction) || CBOpenSeasonFor(sys.GetGameInstance(), faction)) && !CBPlayerMasked(sys.GetGameInstance())
      && !(Equals(faction, sys.GetDisguiseFaction()) && sys.GetDisguiseStrength() >= 0.5) {
     return true;
   }

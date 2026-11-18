@@ -204,6 +204,14 @@ public class CBWarBook extends ScriptableSystem {
     this.m_protectSeen = 0.0;
   }
 
+  public func OpenGang() -> CName { return this.m_openGang; }
+  public func OpenUntil() -> Float { return this.m_openUntil; }
+
+  public func SetOpen(gang: CName, until: Float) -> Void {
+    this.m_openGang = gang;
+    this.m_openUntil = until;
+  }
+
   public func FavourFor() -> CName { return this.m_favourFor; }
   public func FavourUntil() -> Float { return this.m_favourUntil; }
 

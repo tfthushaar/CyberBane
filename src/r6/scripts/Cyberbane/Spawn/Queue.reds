@@ -813,6 +813,10 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   if Equals(fs.id, sys.GetProvoked()) {
     reason = true;
   }
+  // A gang with a tracker on V, or in open season, always knows where to send (Spawn/HuntGrows.reds, 2.4.2).
+  if Equals(fs.id, CBTrackerGang(sys.GetGameInstance())) || CBOpenSeasonFor(sys.GetGameInstance(), fs.id) {
+    reason = true;
+  }
   if onTheirTurf {
     if !broken {
       reason = true;
@@ -1192,6 +1196,10 @@ public func CBTrackingNotice(sys: ref<CyberbaneSystem>, game: GameInstance, lane
 public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, infamous: Bool) -> Int32 {
   if !IsDefined(sys) || !IsDefined(fs) {
     return 3;
+  }
+  // Tonight the Claws send one killer (Spawn/HuntGrows.reds, [11]).
+  if CBClawsAssassin(sys.GetGameInstance(), fs.id) {
+    return 1;
   }
   let size = 3 + FloorF(-CBActingStanding(fs.id, fs.standing) / 35.0);
   if size > 6 {

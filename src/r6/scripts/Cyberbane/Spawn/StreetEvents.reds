@@ -33,6 +33,8 @@ public func CBEvRacket() -> CName = n"Racket"
 public func CBEvExecution() -> CName = n"Execution"
 public func CBEvFrontLine() -> CName = n"FrontLine"
 public func CBEvFugitive() -> CName = n"Fugitive"
+// V's road (Spawn/HuntGrows.reds, 2.4.2): never announced, never pinned.
+public func CBEvAmbush() -> CName = n"Ambush"
 
 public func CBTalkActRespects() -> Int32 = 34
 
@@ -70,6 +72,9 @@ public func CBEventKindOn(kind: CName) -> Bool {
   if CBIsFightKind(kind) {
     return CBGangFightsOn();
   }
+  if Equals(kind, CBEvAmbush()) {
+    return CBLieInWaitOn();
+  }
   return CBGatheringsOn();
 }
 
@@ -88,8 +93,12 @@ public class CBStreetEvent {
   public let district: CName;
   public let placedTick: Int32;
   public let started: Bool;            // a fight: the two sides set against each other (2.3.4)
+  public let size: Int32;              // an ambush's crew (2.4.2)
 
   public func Tag() -> CName {
+    if Equals(this.kind, CBEvAmbush()) {
+      return n"CB_Ambush";
+    }
     return Equals(this.kind, CBEvSitDown()) ? n"CB_Meet" : n"CB_Event";
   }
 
@@ -123,6 +132,25 @@ public class CBEventEngine {
 
   public func Live() -> ref<CBStreetEvent> {
     return this.m_ev;
+  }
+
+  // A crew waiting for V near V's tracked job (Spawn/HuntGrows.reds, [47]): placed when V comes near, hostile from
+  // the start, unannounced.
+  public func StartAmbush(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName, at: Vector4, size: Int32) -> Bool {
+    if IsDefined(this.m_ev) {
+      return false;
+    }
+    let now = CBGameSeconds(game);
+    let ev = new CBStreetEvent();
+    ev.kind = CBEvAmbush();
+    ev.a = gang;
+    ev.at = at;
+    ev.district = sys.GetCurrentDistrict();
+    ev.from = now;
+    ev.until = now + CBConfig.AmbushWaitSeconds();
+    ev.size = size;
+    this.m_ev = ev;
+    return true;
   }
 
   public func OweFuneral(gang: CName, now: Float) -> Void {
@@ -332,7 +360,8 @@ public class CBEventEngine {
     if !IsDefined(ev) {
       return;
     }
-    let want = CBMapMarkersOn();
+    // An ambush is not on anybody's map.
+    let want = CBMapMarkersOn() && !Equals(ev.kind, CBEvAmbush());
     if Equals(want, ev.pinned) {
       return;
     }
@@ -365,7 +394,7 @@ public class CBEventEngine {
     let lone = ev.Lone();
     let fa = sys.FindFaction(ev.a);
     let fb = sides == 2 ? sys.FindFaction(ev.b) : fa;
-    let perSide = CBEventPerSide(ev.kind);
+    let perSide = Equals(ev.kind, CBEvAmbush()) ? Max(ev.size, 2) : CBEventPerSide(ev.kind);
     let full = lone > 0 ? lone + perSide : sides * perSide;
     let want = Min(full, CBSpawnRoom(game));
     if lone == 0 {
@@ -543,7 +572,8 @@ public func CBEventWhisper(game: GameInstance) -> String {
   let life = CBStreetLifeFor(game);
   let ev = IsDefined(life) ? life.Events().Live() : null;
   let sys = CyberbaneSystem.Get(game);
-  if !IsDefined(ev) || ev.placed || !IsDefined(sys) || NotEquals(ev.district, sys.GetCurrentDistrict()) {
+  if !IsDefined(ev) || ev.placed || !IsDefined(sys) || NotEquals(ev.district, sys.GetCurrentDistrict())
+     || Equals(ev.kind, CBEvAmbush()) {
     return "";
   }
   let a = CBFactionLabel(ev.a);
@@ -563,6 +593,11 @@ public func CBEventWhisper(game: GameInstance) -> String {
 
 // V broke it up.
 public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
+  if Equals(ev.kind, CBEvAmbush()) {
+    CBFileLog(sys, n"AmbushBeaten", CBGameSeconds(game), CBEventDistrict(sys, game), ev.a, 0.0);
+    CBEventSay(game, s"\(CBCapFirst(CBFactionLabel(ev.a))) were waiting for you on the way to your job. You walked through them.");
+    return;
+  }
   CBWarEventCrashed(sys, game, ev);   // a favour asked for peace (Economy/War.reds, 2.4.0)
   let now = CBGameSeconds(game);
   let where = CBEventDistrict(sys, game);
@@ -632,6 +667,9 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
 // The window closed without V: the gang had what it came for.
 public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
   let a = CBFactionLabel(ev.a);
+  if Equals(ev.kind, CBEvAmbush()) {
+    return;   // they gave up waiting; nobody tells V about an ambush that never sprang
+  }
   if CBIsFightKind(ev.kind) {
     if ev.placed {
       CBEventSay(game, s"Whatever \(a) started near there, it fizzled out. Nobody won.");

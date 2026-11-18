@@ -172,6 +172,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-LieLow-Desc", "While they're still searching for you, changing clothes or slipping into another district out of sight can make them lose the trail. The Hub's gang page says when a gang is still hot about you or cooling off.");
     this.Text("Cyberbane-Settings-Haunts", "They learn your haunts");
     this.Text("Cyberbane-Settings-Haunts-Desc", "The districts you spend most time in become known. A hunt that starts in one of them starts closer to you.");
+    this.Text("Cyberbane-Settings-Trackers", "Trackers");
+    this.Text("Cyberbane-Settings-Trackers-Desc", "A quickhack from one of Cyberbane's netrunners can plant a tracker on you: for half a day that gang knows where you are, and the HUD line says so. Spend a minute somewhere safe (home, a clinic, a ripperdoc's chair) to dig it out.");
+    this.Text("Cyberbane-Settings-OpenSeason", "Open season");
+    this.Text("Cyberbane-Settings-OpenSeason-Desc", "The top of a gang's anger. Sworn against you, with many of theirs dead and a leader to call it, a gang can declare open season: for a whole day every one of them knows your face and a crew comes every hour. Survive it, kill their leader, or pay a crippling price. Surviving leaves them afraid of you.");
     this.Text("Cyberbane-Settings-Lookouts", "Lookouts in the crowd");
     this.Text("Cyberbane-Settings-Lookouts-Desc", "On a hostile gang's streets, somebody in the crowd is watching for you, and your scanner shows who. Deal with them (talk to them, or put them down) before they report you, and the gang never hears you were there.");
     this.Text("Cyberbane-Settings-Category-Word", "Word on the street");
@@ -312,8 +316,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // ---- Settings: compatibility ----------------------------------------
     this.Text("Cyberbane-Settings-TwrCompat", "They Will Remember compatibility");
     this.Text("Cyberbane-Settings-VehicleArrivals", "Arrive by car");
-    this.Text("Cyberbane-Settings-CarAmbushes", "Gangs lie in wait (experimental)");
-    this.Text("Cyberbane-Settings-CarAmbushes-Desc", "Off by default. When a gang with a vendetta against you sends a crew while you are driving, they may wait in a parked car up the road and pull out as you go past. Turn it off and everything goes back to how it was.");
+    this.Text("Cyberbane-Settings-CarAmbushes", "Gangs lie in wait");
+    this.Text("Cyberbane-Settings-CarAmbushes-Desc", "A gang sworn against you can park a car up the road and pull out as you drive past, more often where you're known to go; the Wraiths do it on Badlands roads whatever their grudge. On foot with a job tracked far away, a crew may wait for you near it instead, outside the job itself. A lookout you paid to keep watch warns you.");
     this.Text("Cyberbane-Settings-LootDrops", "Loot from the people sent after you");
     this.Text("Cyberbane-Settings-Bounties", "Bounties");
     this.Text("Cyberbane-Settings-Pacing", "When they come");

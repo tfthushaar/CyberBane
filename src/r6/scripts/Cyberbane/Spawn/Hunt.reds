@@ -41,7 +41,7 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
   let p = player.GetWorldPosition();
   // Where V spends time, they know where to start (Spawn/Hunted.reds, [U8]).
   let rough = CBHuntTipNear(p);
-  let near = CBHauntTipMult(sys, game);
+  let near = Equals(faction, CBTrackerGang(game)) ? CBConfig.TrackedTipMult() : CBHauntTipMult(sys, game);
   let tip = new Vector4(p.X + (rough.X - p.X) * near, p.Y + (rough.Y - p.Y) * near, rough.Z, 1.0);
   // A hunt already under way keeps what it knows; a new one starts from the tip.
   if sys.GetHuntState() == CBHuntNone() || !CBHuntersOut(sys, game) {
@@ -817,6 +817,19 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     return "";
   }
   let huntsOnly = Equals(mode, ECBHudLine.HuntsOnly);
+  // Open season, and a tracker (Spawn/HuntGrows.reds, 2.4.2), while nobody is on V right now.
+  if !CBHuntersOut(sys, game) && Equals(sys.GetHuntFaction(), n"") {
+    let open = CBOpenSeasonGang(game);
+    let war = CBWarBook.Get(game);
+    if NotEquals(open, n"") && IsDefined(war) {
+      let left = RoundF((war.OpenUntil() - CBGameSeconds(game)) / 3600.0);
+      return "OPEN SEASON: " + CBClip(CBBarFactionLabel(open), CBConfig.HudNameMaxChars()) + s"   -   \(Max(left, 1))H LEFT";
+    }
+    let tracker = CBTrackerGang(game);
+    if NotEquals(tracker, n"") {
+      return "A TRACKER ON YOU: " + CBClip(CBBarFactionLabel(tracker), CBConfig.HudNameMaxChars());
+    }
+  }
   // A scout with eyes on V, calling it in (Spawn/Hunted.reds, 2.4.1): the moment V can still stop it.
   if NotEquals(sys.GetScoutFaction(), n"") && sys.GetScoutSeenTicks() > 0 {
     let left = Max(1, CBConfig.ScoutCallTicks() - sys.GetScoutSeenTicks());
@@ -1050,6 +1063,10 @@ public func CBTrySendScout(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   if !IsDefined(sys) || !CBScoutsOn() || NotEquals(sys.GetScoutFaction(), n"") {
     return false;
   }
+  // A gang with a tracker on V needs nobody to look (Spawn/HuntGrows.reds, [49]).
+  if Equals(faction, CBTrackerGang(game)) {
+    return false;
+  }
   let fs = sys.FindFaction(faction);
   let score = sys.GetScore();
   if !IsDefined(fs) || !IsDefined(score) || !TDBID.IsValid(fs.sampleRecord) {
@@ -1243,7 +1260,7 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
 // sweep leaves them to whatever they belong to, which clears them when it ends. Not the help (CB_Ally),
 // who fight beside V. One list, so a new kind joins every rule at once.
 public func CBStreetTags() -> array<CName> {
-  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event"];
+  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event", n"CB_Ambush"];
 }
 
 // Is anybody of ours still in the fight with V: close, or able to see V?

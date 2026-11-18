@@ -1201,6 +1201,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBWitnessTick(this, game);          // a witness on their way to a gang gets there, or does not (2.3.1)
     CBWarNoteWestbrook(this, game);     // working Japantown, for the Claws (2.4.0)
     CBHuntedTick(this, game);           // haunts, and the trail going cold (2.4.1)
+    CBHuntGrowsTick(this, game);        // trackers and open season (2.4.2)
     if !heavyStreaming {
       CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
     }
@@ -3291,6 +3292,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_onJob;
   }
 
+  public func GetTrackedPins() -> array<Vector4> {
+    return this.m_trackedPins;
+  }
+
   public func SetTrackedPins(pins: array<Vector4>) -> Void {
     this.m_trackedPins = pins;
   }
@@ -3403,6 +3408,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(huntBook) {
       huntBook.FadeHaunts(elapsedDays);      // where V spends time, fading (2.4.1)
     }
+    CBOpenSeasonRoll(this, game, elapsedDays);   // a gang at the top of its anger may declare it (2.4.2)
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)

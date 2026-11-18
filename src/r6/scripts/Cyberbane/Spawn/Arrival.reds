@@ -930,8 +930,7 @@ public func CBLaunchArrivalCar(game: GameInstance, carId: EntityID, slot: Int32)
 // setting is off the answer here is no before anything else is looked at, the wanted flag stays
 // false, CBSpawnVehicleArrival takes its usual spot and CBSendCarOff launches every car as before.
 func CBCrewLiesInWait(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, withApex: Bool) -> Bool {
-  let rt = CyberbaneRuntime.Get();
-  if !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().carAmbushes {
+  if !CBLieInWaitOn() {
     return false;
   }
   if !IsDefined(sys) || !IsDefined(fs) || withApex || !CBVehicleArrivalAllowed(game) {
@@ -942,7 +941,18 @@ func CBCrewLiesInWait(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBF
   if !IsDefined(score) || !IsDefined(player) || !VehicleComponent.IsDriver(game, player) {
     return false;
   }
-  return Equals(score.GetPosture(fs.id), ECBPosture.Vendetta) && RandF() <= CBConfig.AmbushChance();
+  // Sworn against V, or the Wraiths on their own road whatever their grudge (Spawn/HuntGrows.reds, 2.4.2); likelier
+  // where V is known to go. A watcher V paid sees them park.
+  let wraithRoad = CBGangCodesOn() && Equals(fs.id, n"Wraiths") && Equals(sys.GetCurrentDistrict(), n"Badlands")
+                   && Equals(score.GetPosture(fs.id), ECBPosture.Hostile);
+  if !Equals(score.GetPosture(fs.id), ECBPosture.Vendetta) && !wraithRoad {
+    return false;
+  }
+  if RandF() > ClampF(CBConfig.AmbushChance() * CBLieInWaitMult(sys, game, fs.id), 0.0, 0.9) {
+    return false;
+  }
+  CBWarnOfWaiting(sys, game, fs.id);
+  return true;
 }
 
 // Somewhere ahead of a moving V with room for a car, held to the same tests as any other car spot.

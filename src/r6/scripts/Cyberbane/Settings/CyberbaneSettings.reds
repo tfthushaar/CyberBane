@@ -448,7 +448,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarAmbushes")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarAmbushes-Desc")
-  public let carAmbushes: Bool = false;
+  // A new name (2.4.2) so the new default, on, reaches everybody: the old carAmbushes was stored off on every install.
+  public let gangsLieInWait: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Hunted")
@@ -477,6 +478,20 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Lookouts")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Lookouts-Desc")
   public let lookouts: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Hunted")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Trackers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Trackers-Desc")
+  public let trackers: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Hunted")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-OpenSeason")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-OpenSeason-Desc")
+  public let openSeason: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
