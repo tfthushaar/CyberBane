@@ -3,6 +3,25 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.3.4 (18 November 2026)
+
+**Fights between gangs**
+- **Gangs at war settle things near you**, and the street tells you where and when:
+  - **Executions.** A gang has caught one of its rival's people and means to kill him in the open. Put the
+    executioners down and he walks away grateful, and his gang thinks well of you. Or let it happen.
+  - **Street fights.** Two gangs' people go at each other on a street near you. Whoever is left standing takes
+    the ground. Pick a side, or keep your head down.
+  - **Hunts.** Somebody crossed a gang and runs right past you with their people behind him. Stand in the way
+    and he owes you; let them have him, or put him down yourself.
+- **Power struggles.** When a gang's leader dies and two of their lieutenants want the chair, both text you.
+  Put one down and the other takes the chair and owes you. Put both down and the gang tears itself apart.
+- These come up less often than gatherings. Nothing in them turns anybody against you.
+
+**Mod Settings**
+- Two more under **Gang life**: **Fights between gangs** and **Power struggles**, both on.
+
+Your progress carries over.
+
 ## 2.3.3 (18 November 2026)
 
 **Gang life**

@@ -53,22 +53,9 @@ By impact for the effort, most first:
 20. **The corporations: money, not grudges.** Arasaka, Militech and Kang Tao send no gangers. They post a
     contract on V and hire solos (item 39), and they can be bought off at a corporate price. **M**
 
-## 3. Gang life: events with a time and a place
+## 3. Gang life
 
-Built on the sit-down's machinery: a time, a place, a pin once V hears of it (item 32), spawns out of sight, and
-an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's power struggles; the old item 20)*
-
-26. **Hunts.** A gang chasing somebody through the streets (an informant, a debtor) runs them past V. Shelter
-    them (**[Get behind me]**) and they owe V tips; hand them over for the gang's standing; or look away. **M**
-27. **Executions.** A lieutenant executes a prisoner at a marked place at a set hour. Stop it and the prisoner
-    owes V; let it happen and the street hears V let it. The one part of the old item 20 not built. **M to L**
-30. **Front lines.** In a contested district, the two gangs' people clash now and then: both sides spawned out
-    of sight and set hostile to each other, the way Cyberbane already sets its people against V's companions.
-    V can pick a side; the winner pushes the turf. **M to L** *(Ambient Factions of Night City; San Andreas's
-    turf wars)*
-31. **Power struggles.** When a leader dies, two lieutenants fight for the chair (`Rivals/Hierarchy.reds` has
-    the seats). For a few days each texts V asking for help against the other. Back one and they win and owe V;
-    kill both and the gang is leaderless, weaker and wilder for a while. **M to L** *(Shadow of War)*
+Built in 2.3.3 and 2.3.4 (`Spawn/StreetEvents.reds`): every idea that was here.
 
 ## 4. Turf and war
 

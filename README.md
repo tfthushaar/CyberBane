@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.3.3.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.3.4.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -62,6 +62,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **Crews with a sergeant**, mixed from the people you've met, and apex squads that hunt you as a team.
 - **Gang life.** Funerals, celebrations, initiations, recruiting drives, arms deals and rackets happen near you
   at a set time. Crash them, pay your respects, or let the gang grow stronger.
+- **Fights between gangs.** Executions, street fights and hunts you can step into, and power struggles where
+  you decide who runs a gang.
 
 ## Requirements
 

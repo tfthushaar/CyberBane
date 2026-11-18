@@ -362,6 +362,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_crewSergeant: Bool;                     // and its sergeant (2.3.2)
   private let m_apexSearchAt: Vector4;                  // where an apex squad that lost V is searching ([U4], 2.3.2)
   private let m_apexSearchTick: Int32;
+  private let m_rivalDeathByV: Bool;                    // the Rival dying now died by V's hand (2.3.4)
   // Rivals who came with the active one (1.9.0, Spawn/RivalEncounter.reds). Session only.
   private let m_packIds: array<Int32>;
   // The ticks new Rivals were made on lately, so one fight cannot make a crowd of them
@@ -855,6 +856,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_squadAnchor = null;
     this.m_crewGrenadier = false;
     this.m_crewSergeant = false;
+  }
+
+  public func SetRivalDeathByV(byV: Bool) -> Void {
+    this.m_rivalDeathByV = byV;
+  }
+
+  public func RivalDeathByV() -> Bool {
+    return this.m_rivalDeathByV;
   }
 
   public func GetApexSearchPoint() -> Vector4 {
@@ -3714,6 +3723,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     let ledger = CBLedgerBook.Get(this.GetGameInstance());
     if IsDefined(ledger) {
       ledger.Clear();     // and no gang knows how V fights (2.3.2)
+    }
+    let gangLife = CBGangLifeBook.Get(this.GetGameInstance());
+    if IsDefined(gangLife) {
+      gangLife.Clear();   // and nobody is fighting for a chair (2.3.4)
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);

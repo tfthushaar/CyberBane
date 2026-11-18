@@ -364,6 +364,23 @@ public abstract class CBConfig {
   public static func EventBolster() -> Float = 3.0
   public static func RespectsStanding() -> Float = 6.0
   public static func RespectsCode() -> Float = 1.0
+  // The fights between gangs (Spawn/StreetEvents.reds, 2.3.4): in the draw half the time; an execution happens 25
+  // seconds after its people are in place; the hunted runs 30 m past V and is clear at 120 m from the start; a front
+  // line won is 6 strength to the winner and 6 off the loser; saving a prisoner or the hunted is 6 standing with
+  // their gang and 1 of Code.
+  public static func GangFightShare() -> Float = 0.5
+  public static func ExecutionDelayTicks() -> Int32 = 25
+  public static func FugitiveRunPast() -> Float = 30.0
+  public static func FugitiveEscapeDistance() -> Float = 120.0
+  public static func FrontLineGain() -> Float = 6.0
+  public static func FrontLineLoss() -> Float = 6.0
+  public static func SavedStanding() -> Float = 6.0
+  public static func SavedCode() -> Float = 1.0
+  // Power struggles: two in-game days to back one; the one V backs is 15 standing with the gang; putting both down
+  // takes it back and 12 strength off the gang.
+  public static func StruggleDays() -> Float = 2.0
+  public static func StruggleBackStanding() -> Float = 15.0
+  public static func StruggleBothLoss() -> Float = 12.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

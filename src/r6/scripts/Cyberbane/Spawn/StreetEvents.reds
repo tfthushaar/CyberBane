@@ -29,6 +29,10 @@ public func CBEvInitiation() -> CName = n"Initiation"
 public func CBEvRecruitment() -> CName = n"Recruitment"
 public func CBEvArmsDeal() -> CName = n"ArmsDeal"
 public func CBEvRacket() -> CName = n"Racket"
+// The fights between gangs (2.3.4).
+public func CBEvExecution() -> CName = n"Execution"
+public func CBEvFrontLine() -> CName = n"FrontLine"
+public func CBEvFugitive() -> CName = n"Fugitive"
 
 public func CBTalkActRespects() -> Int32 = 34
 
@@ -42,6 +46,15 @@ public func CBDealsOn() -> Bool {
   return IsDefined(rt) && rt.IsEnabled() && (!rt.HasSettings() || rt.GetSettings().dealsAndRackets);
 }
 
+public func CBGangFightsOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.IsEnabled() && (!rt.HasSettings() || rt.GetSettings().gangFights);
+}
+
+public func CBIsFightKind(kind: CName) -> Bool {
+  return Equals(kind, CBEvExecution()) || Equals(kind, CBEvFrontLine()) || Equals(kind, CBEvFugitive());
+}
+
 func CBGangLifeOften() -> Float {
   let rt = CyberbaneRuntime.Get();
   return IsDefined(rt) && rt.HasSettings() ? ClampF(rt.GetSettings().gangLifeOften, 0.1, 5.0) : 1.0;
@@ -53,6 +66,9 @@ public func CBEventKindOn(kind: CName) -> Bool {
   }
   if Equals(kind, CBEvArmsDeal()) || Equals(kind, CBEvRacket()) {
     return CBDealsOn();
+  }
+  if CBIsFightKind(kind) {
+    return CBGangFightsOn();
   }
   return CBGatheringsOn();
 }
@@ -70,13 +86,28 @@ public class CBStreetEvent {
   public let ids: array<EntityID>;
   public let approached: Bool;         // V paid their respects at a funeral
   public let district: CName;
+  public let placedTick: Int32;
+  public let started: Bool;            // a fight: the two sides set against each other (2.3.4)
 
   public func Tag() -> CName {
     return Equals(this.kind, CBEvSitDown()) ? n"CB_Meet" : n"CB_Event";
   }
 
   public func Sides() -> Int32 {
-    return Equals(this.kind, CBEvSitDown()) || Equals(this.kind, CBEvArmsDeal()) ? 2 : 1;
+    return Equals(this.kind, CBEvSitDown()) || Equals(this.kind, CBEvArmsDeal()) || CBIsFightKind(this.kind) ? 2 : 1;
+  }
+
+  // How many of the second gang stand alone at the start: the prisoner at an execution, the one being hunted.
+  public func Lone() -> Int32 {
+    return Equals(this.kind, CBEvExecution()) || Equals(this.kind, CBEvFugitive()) ? 1 : 0;
+  }
+
+  // Which side the i-th body placed is on: 0 the first gang, 1 the second.
+  public func SideOf(i: Int32) -> Int32 {
+    if this.Lone() > 0 {
+      return i < this.Lone() ? 1 : 0;
+    }
+    return i % this.Sides();
   }
 }
 
@@ -164,6 +195,12 @@ public class CBEventEngine {
       ArrayPush(kinds, CBEvArmsDeal());
       ArrayPush(kinds, CBEvRacket());
     }
+    // The fights come at a gentler pace than the rest: in the draw half the time.
+    if CBGangFightsOn() && RandF() < CBConfig.GangFightShare() {
+      ArrayPush(kinds, CBEvExecution());
+      ArrayPush(kinds, CBEvFrontLine());
+      ArrayPush(kinds, CBEvFugitive());
+    }
     return ArraySize(kinds) > 0 ? kinds[RandRange(0, ArraySize(kinds))] : n"";
   }
 
@@ -183,7 +220,7 @@ public class CBEventEngine {
     if Equals(a, n"") || !CBFactionFieldsSquads(a) || !CBFactionOn(a) {
       return false;
     }
-    if Equals(kind, CBEvSitDown()) {
+    if Equals(kind, CBEvSitDown()) || CBIsFightKind(kind) {
       for g in CBGangRivalsOf(sys.GetContent(), a) {
         if Equals(b, n"") && CBFactionFieldsSquads(g) && CBFactionOn(g) && IsDefined(sys.FindFaction(g)) {
           b = g;
@@ -240,8 +277,20 @@ public class CBEventEngine {
     // Their time has come and V is on the way in, not yet looking: put them there.
     if !ev.placed && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() && dist >= 25.0 {
       ev.placed = this.Place(sys, game, des, player, ev);
+      ev.placedTick = sys.GetTickCount();
     }
-    if ev.placed {
+    // A fight: once its people are in the world, the sides are set against each other, and it ends its own way.
+    if ev.placed && CBIsFightKind(ev.kind) {
+      if !ev.started && sys.GetTickCount() - ev.placedTick >= CBEventStartTicks(ev.kind) {
+        ev.started = true;
+        CBStartFight(sys, game, player, ev);
+      }
+      if ev.started && CBFightOver(sys, game, ev) {
+        this.End(game);
+        return;
+      }
+    }
+    if ev.placed && !CBIsFightKind(ev.kind) {
       let down = 0;
       for id in ev.ids {
         if CBTakenOutByV(GameInstance.FindEntityByID(game, id) as ScriptedPuppet) {
@@ -298,11 +347,15 @@ public class CBEventEngine {
   private func Place(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>,
                      ev: ref<CBStreetEvent>) -> Bool {
     let sides = ev.Sides();
+    let lone = ev.Lone();
     let fa = sys.FindFaction(ev.a);
     let fb = sides == 2 ? sys.FindFaction(ev.b) : fa;
     let perSide = CBEventPerSide(ev.kind);
-    let want = Min(sides * perSide, CBSpawnRoom(game));
-    want -= want % sides;
+    let full = lone > 0 ? lone + perSide : sides * perSide;
+    let want = Min(full, CBSpawnRoom(game));
+    if lone == 0 {
+      want -= want % sides;
+    }
     if !IsDefined(fa) || !IsDefined(fb) || !TDBID.IsValid(fa.sampleRecord) || !TDBID.IsValid(fb.sampleRecord) || want < 2 {
       return false;
     }
@@ -326,8 +379,8 @@ public class CBEventEngine {
            && CBSettleOnGround(game, snapped, at) && CBPointHiddenFrom(game, ppos, fwd, at) {
           let facing = Quaternion.BuildFromDirectionVector(new Vector4(-CosF(ang), -SinF(ang), 0.0, 0.0));
           let n = ArraySize(ev.ids);
-          let side = n % sides == 0 ? fa : fb;
-          let chair = n / sides;
+          let side = ev.SideOf(n) == 0 ? fa : fb;
+          let chair = lone > 0 ? (n < lone ? apexPerSide : n - lone) : n / sides;
           let rec = side.sampleRecord;
           let role = n"";
           if chair < apexPerSide {
@@ -347,10 +400,10 @@ public class CBEventEngine {
     }
     let placed = ArraySize(ev.ids);
     // Said once, when it is in place: a try that placed nobody is tried again next tick.
-    if placed >= 2 && placed < sides * perSide {
-      CBLog.Info(n"Street", s"A \(NameToString(ev.kind)) placed \(placed) of \(sides * perSide) people.");
+    if placed >= 2 && placed < full {
+      CBLog.Info(n"Street", s"A \(NameToString(ev.kind)) placed \(placed) of \(full) people.");
     }
-    return placed >= 2;
+    return placed >= Max(2, lone + 1);
   }
 
   public func End(game: GameInstance) -> Void {
@@ -387,12 +440,16 @@ public func CBEventPerSide(kind: CName) -> Int32 {
   if Equals(kind, CBEvInitiation()) { return 4; }
   if Equals(kind, CBEvRecruitment()) { return 5; }
   if Equals(kind, CBEvArmsDeal()) { return 3; }
+  if Equals(kind, CBEvExecution()) { return 3; }   // the executioner and two guards, round the prisoner
+  if Equals(kind, CBEvFrontLine()) { return 4; }
+  if Equals(kind, CBEvFugitive()) { return 3; }    // the hunters, behind the one they hunt
   return 4;   // a racket
 }
 
 public func CBEventApexPerSide(kind: CName) -> Int32 {
   if Equals(kind, CBEvSitDown()) { return CBSitDownApexPerGang(); }
   if Equals(kind, CBEvArmsDeal()) { return 1; }   // somebody to guard the goods
+  if Equals(kind, CBEvExecution()) { return 1; }  // the one who does it
   return 0;
 }
 
@@ -417,6 +474,9 @@ public func CBEventCaption(ev: ref<CBStreetEvent>) -> String {
   if Equals(ev.kind, CBEvInitiation()) { return a + ": an initiation"; }
   if Equals(ev.kind, CBEvRecruitment()) { return a + " recruiting"; }
   if Equals(ev.kind, CBEvArmsDeal()) { return a + " and " + CBFactionLabel(ev.b) + ": guns"; }
+  if Equals(ev.kind, CBEvExecution()) { return a + ": an execution"; }
+  if Equals(ev.kind, CBEvFrontLine()) { return a + " against " + CBFactionLabel(ev.b); }
+  if Equals(ev.kind, CBEvFugitive()) { return a + ": a hunt"; }
   return a + ": a racket";
 }
 
@@ -447,6 +507,18 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
     return CBLineOf([s"\(a) are buying guns from \(CBFactionLabel(ev.b)) near here around \(when). Crash it and the crate is yours.",
                      s"Arms deal near here, \(when): \(a) and \(CBFactionLabel(ev.b)). Heavy crates, light guard."]);
   }
+  if Equals(ev.kind, CBEvExecution()) {
+    return CBLineOf([s"\(a) caught one of \(CBFactionLabel(ev.b)) and they're putting a bullet in him near here around \(when). Stop it, or don't.",
+                     s"Execution near here, \(when). \(a) want everybody to watch one of \(CBFactionLabel(ev.b)) die."]);
+  }
+  if Equals(ev.kind, CBEvFrontLine()) {
+    return CBLineOf([s"\(a) and \(CBFactionLabel(ev.b)) are going to war on a street near here around \(when). Whoever wins takes ground.",
+                     s"Street fight near here, \(when): \(a) against \(CBFactionLabel(ev.b)). Pick a side, or keep your head down."]);
+  }
+  if Equals(ev.kind, CBEvFugitive()) {
+    return CBLineOf([s"\(a) are hunting somebody of \(CBFactionLabel(ev.b)) who crossed them. He'll be running past here around \(when).",
+                     s"Somebody's running from \(a) near here, \(when). Help him or let them have him."]);
+  }
   return CBLineOf([s"Word is \(a) run a racket near here, collecting around \(when). Hit it and take the cash.",
                    s"\(a) collect their take near here around \(when). Nobody's ever robbed them. Yet."]);
 }
@@ -466,6 +538,9 @@ public func CBEventWhisper(game: GameInstance) -> String {
   if Equals(ev.kind, CBEvRecruitment()) { return CBCapFirst(a) + " are looking for new blood. My cousin's thinking about it."; }
   if Equals(ev.kind, CBEvArmsDeal()) { return "Crates came in off a truck for " + a + ". Guns, people say."; }
   if Equals(ev.kind, CBEvRacket()) { return "Don't go near " + CBPossessive(a) + " collection spot later. They count the take there."; }
+  if Equals(ev.kind, CBEvExecution()) { return CBCapFirst(a) + " are executing somebody tonight. In the open. To make a point."; }
+  if Equals(ev.kind, CBEvFrontLine()) { return "Stay home later. " + CBCapFirst(a) + " and " + CBFactionLabel(ev.b) + " are going to settle it in the street."; }
+  if Equals(ev.kind, CBEvFugitive()) { return "Some guy crossed " + a + ". They're going to run him down tonight."; }
   return "Heard " + a + " and " + CBFactionLabel(ev.b) + " are meeting. Could go either way.";
 }
 
@@ -539,6 +614,12 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
 // The window closed without V: the gang had what it came for.
 public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
   let a = CBFactionLabel(ev.a);
+  if CBIsFightKind(ev.kind) {
+    if ev.placed {
+      CBEventSay(game, s"Whatever \(a) started near there, it fizzled out. Nobody won.");
+    }
+    return;
+  }
   if Equals(ev.kind, CBEvSitDown()) {
     if CBMessagesOn() {
       CBHearsayFromStreet(game, s"\(CBCapFirst(a)) and \(CBFactionLabel(ev.b)) made their deal. Nobody stopped them.", n"");
@@ -639,4 +720,304 @@ public func CBOweCelebration(game: GameInstance, gang: CName) -> Void {
   if IsDefined(life) && CBGatheringsOn() {
     life.Events().OweCelebration(gang, CBGameSeconds(game));
   }
+}
+
+// ---- The fights between gangs (2.3.4) ------------------------------------------------------------------
+//
+// Two groups of people set against each other, the way V's companions and Cyberbane's crews already are (pairwise
+// attitudes through each one's attitude agent, behind the NPC gate): an execution (the executioner and guards
+// turn on their prisoner a moment after they are placed), a front line (two gangs' people, at once), a hunt (the
+// hunters turn on the one they are hunting, who runs past V). V can step in or leave them to it; each ends its own
+// way. Nothing is changed towards V by any of it.
+
+public func CBEventStartTicks(kind: CName) -> Int32 {
+  if Equals(kind, CBEvExecution()) { return CBConfig.ExecutionDelayTicks(); }
+  return 3;
+}
+
+public func CBStartFight(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, ev: ref<CBStreetEvent>) -> Void {
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    let pa = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+    let j = i + 1;
+    while j < ArraySize(ev.ids) {
+      if ev.SideOf(i) != ev.SideOf(j) {
+        CBSetPairHostile(sys, pa, GameInstance.FindEntityByID(game, ev.ids[j]) as ScriptedPuppet);
+      }
+      j += 1;
+    }
+    i += 1;
+  }
+  // The one being hunted runs, past V: one order (CBIssueMove), and the hunters follow by themselves.
+  if Equals(ev.kind, CBEvFugitive()) && ArraySize(ev.ids) > 0 {
+    let f = GameInstance.FindEntityByID(game, ev.ids[0]) as ScriptedPuppet;
+    let ppos = player.GetWorldPosition();
+    let dx = ppos.X - ev.at.X;
+    let dy = ppos.Y - ev.at.Y;
+    let d = MaxF(SqrtF(dx * dx + dy * dy), 1.0);
+    let past: Vector4;
+    if IsDefined(f) && CBNpcSafe(sys, f)
+       && CBNavSnap(game, ppos.X + dx / d * CBConfig.FugitiveRunPast(), ppos.Y + dy / d * CBConfig.FugitiveRunPast(), ppos.Z, past) {
+      CBEventRunTo(f, past);
+    }
+  }
+  CBLog.Info(n"Street", s"A \(NameToString(ev.kind)) has started.");
+}
+
+func CBSetPairHostile(sys: ref<CyberbaneSystem>, a: ref<ScriptedPuppet>, b: ref<ScriptedPuppet>) -> Void {
+  if !CBNpcSafe(sys, a) || !CBNpcSafe(sys, b) || !CBStillStanding(a) || !CBStillStanding(b) {
+    return;
+  }
+  let aa = a.GetAttitudeAgent();
+  let ba = b.GetAttitudeAgent();
+  if IsDefined(aa) && IsDefined(ba) {
+    CBTrace("attitude: two gangs' people set against each other");
+    aa.SetAttitudeTowards(ba, EAIAttitude.AIA_Hostile);
+    ba.SetAttitudeTowards(aa, EAIAttitude.AIA_Hostile);
+  }
+}
+
+func CBEventRunTo(p: ref<ScriptedPuppet>, to: Vector4) -> Void {
+  let ai = p.GetAIControllerComponent();
+  if !IsDefined(ai) {
+    return;
+  }
+  let cmd = new AIMoveToCommand();
+  let dest: AIPositionSpec;
+  let wp: WorldPosition;
+  WorldPosition.SetVector4(wp, to);
+  AIPositionSpec.SetWorldPosition(dest, wp);
+  cmd.movementTarget = dest;
+  cmd.movementType = moveMovementType.Sprint;
+  cmd.ignoreInCombat = false;
+  cmd.alwaysUseStealth = false;
+  cmd.ignoreNavigation = false;
+  cmd.finishWhenDestinationReached = true;
+  cmd.desiredDistanceFromTarget = 2.0;
+  CBIssueMove(p, ai, cmd);
+}
+
+// How a side stands: how many are still up, and how many V took out.
+func CBSideCount(game: GameInstance, ev: ref<CBStreetEvent>, side: Int32, out standing: Int32, out byV: Int32) -> Void {
+  standing = 0;
+  byV = 0;
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    if ev.SideOf(i) == side {
+      let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+      if CBStillStanding(p) && !p.cbMoraleBroken && !p.cbSurrendered {
+        standing += 1;
+      }
+      if CBTakenOutByV(p) {
+        byV += 1;
+      }
+    }
+    i += 1;
+  }
+}
+
+// True when the fight has ended, its outcome said.
+public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Bool {
+  let aUp: Int32;
+  let aByV: Int32;
+  let bUp: Int32;
+  let bByV: Int32;
+  CBSideCount(game, ev, 0, aUp, aByV);
+  CBSideCount(game, ev, 1, bUp, bByV);
+  let now = CBGameSeconds(game);
+  let where = CBEventDistrict(sys, game);
+  let a = CBFactionLabel(ev.a);
+  let b = CBFactionLabel(ev.b);
+  let lone = ArraySize(ev.ids) > 0 ? GameInstance.FindEntityByID(game, ev.ids[0]) as ScriptedPuppet : null;
+  if Equals(ev.kind, CBEvExecution()) || Equals(ev.kind, CBEvFugitive()) {
+    let hunt = Equals(ev.kind, CBEvFugitive());
+    // The one alone is up while standing at all: running in fear is what the hunted and the condemned do.
+    if !IsDefined(lone) || !CBStillStanding(lone) {
+      if CBTakenOutByV(lone) {
+        CBEventSay(game, hunt ? s"You put down the one \(a) were hunting. They'll thank you, in their way." : s"You did \(CBPossessive(a)) killing for them.");
+        return true;
+      }
+      CBBolsterGang(sys, game, ev.a, CBConfig.EventBolster());
+      CBTalkFear(sys, game, ev.b, CBConfig.WordKeptFear());
+      CBFileLog(sys, hunt ? n"FugitiveCaught" : n"Executed", now, where, ev.a, 0.0);
+      CBEventSay(game, hunt ? s"\(CBCapFirst(a)) ran down the one they were after." : s"\(CBCapFirst(a)) executed one of \(b). Everybody saw.");
+      return true;
+    }
+    if aUp == 0 && aByV > 0 {
+      CBCreditMercy(sys, ev.b, CBConfig.SavedStanding());
+      CBWeakenGang(sys, game, ev.a, CBConfig.MeetGangLoss());
+      sys.AddCode(CBConfig.SavedCode());
+      if IsDefined(lone) && CBStillStanding(lone) {
+        CBOrderFlee(game, lone);
+        CBEventLoneThanks(game, ev);
+      }
+      CBFileLog(sys, hunt ? n"FugitiveSheltered" : n"PrisonerSaved", now, where, ev.b, 0.0);
+      CBEventSay(game, hunt ? s"You stood between \(a) and the one they were hunting. \(CBCapFirst(b)) heard." : s"You stopped \(CBPossessive(a)) execution. \(CBCapFirst(b)) won't forget it.");
+      return true;
+    }
+    if aUp == 0 {
+      // Their own fight, won by the one they meant to kill: nothing of V's in it.
+      CBEventSay(game, hunt ? s"The one \(a) were hunting fought them off." : s"\(CBPossessive(CBCapFirst(a))) prisoner turned the tables on them.");
+      return true;
+    }
+    if hunt && IsDefined(lone) && CBStillStanding(lone) && Vector4.Distance(lone.GetWorldPosition(), ev.at) > CBConfig.FugitiveEscapeDistance() {
+      CBEventSay(game, s"The one \(a) were hunting got away. Not your doing.");
+      return true;
+    }
+    return false;
+  }
+  // A front line: whichever side is left standing takes the street.
+  if aUp == 0 || bUp == 0 {
+    let winner = aUp > 0 ? ev.a : ev.b;
+    let loser = aUp > 0 ? ev.b : ev.a;
+    CBBolsterGang(sys, game, winner, CBConfig.FrontLineGain());
+    CBWeakenGang(sys, game, loser, CBConfig.FrontLineLoss());
+    CBFileLog(sys, n"FrontLine", now, where, winner, 0.0);
+    CBEventSay(game, s"\(CBCapFirst(CBFactionLabel(winner))) won the street fight against \(CBFactionLabel(loser)). The ground is theirs.");
+    return true;
+  }
+  return false;
+}
+
+// The one V saved says so, in a subtitle.
+func CBEventLoneThanks(game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
+  if !CBMessagesOn() {
+    return;
+  }
+  CBOverheard(game, CBWhisperSpeaker(ev.b), CBLineOf(["I owe you. I owe you my life, merc.",
+                                                      "Don't know why you did that. Thanks.",
+                                                      "I won't forget this. My people won't either."]));
+}
+
+// ---- Power struggles ([31]) -----------------------------------------------------------------------------
+//
+// When a gang's leader falls and the one who takes the chair has a lieutenant who wants it too, both text V for
+// help. V backs one by putting the other down: the one V backed takes the chair for good and the gang thinks well of
+// V. Kill both, and the gang tears itself apart. Nobody backed within two in-game days, and it settles itself. Kept
+// in a book of its own (CBGangLifeBook), because it outlasts a session.
+
+public func CBPowerStrugglesOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.IsEnabled() && (!rt.HasSettings() || rt.GetSettings().powerStruggles);
+}
+
+public class CBGangLifeBook extends ScriptableSystem {
+  private persistent let m_gang: CName;
+  private persistent let m_heir: Int32;
+  private persistent let m_rival: Int32;
+  private persistent let m_until: Float;
+  private persistent let m_winner: Int32;      // after V backed one: who won, until m_until
+
+  public static func Get(game: GameInstance) -> ref<CBGangLifeBook> {
+    let container = GameInstance.GetScriptableSystemsContainer(game);
+    if !IsDefined(container) {
+      return null;
+    }
+    return container.Get(n"CBGangLifeBook") as CBGangLifeBook;
+  }
+
+  public func Gang() -> CName { return this.m_gang; }
+  public func Heir() -> Int32 { return this.m_heir; }
+  public func Rival() -> Int32 { return this.m_rival; }
+  public func Until() -> Float { return this.m_until; }
+  public func Winner() -> Int32 { return this.m_winner; }
+
+  public func Begin(gang: CName, heir: Int32, rival: Int32, until: Float) -> Void {
+    this.m_gang = gang;
+    this.m_heir = heir;
+    this.m_rival = rival;
+    this.m_until = until;
+    this.m_winner = 0;
+  }
+
+  public func Won(winner: Int32) -> Void {
+    this.m_winner = winner;
+  }
+
+  public func Clear() -> Void {
+    this.m_gang = n"";
+    this.m_heir = 0;
+    this.m_rival = 0;
+    this.m_until = 0.0;
+    this.m_winner = 0;
+  }
+}
+
+// From the hierarchy, after a Rival's slot is freed and filled again (CBHierarchyOnSlain).
+public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, slain: ref<CBRival>, wasLeader: Bool) -> Void {
+  let book = CBGangLifeBook.Get(game);
+  if !IsDefined(sys) || !IsDefined(slain) || !IsDefined(book) {
+    return;
+  }
+  let now = CBGameSeconds(game);
+  let content = CBContent(game);
+  let fs = sys.FindFaction(slain.faction);
+  // One under way for this gang: who just fell decides it, if V put them down. Somebody else's doing settles it
+  // without V.
+  if Equals(book.Gang(), slain.faction) && IsDefined(fs) {
+    if now > book.Until() {
+      book.Clear();
+    } else {
+      if !sys.RivalDeathByV() && (slain.id == book.Heir() || slain.id == book.Rival() || slain.id == book.Winner()) {
+        book.Clear();
+        return;
+      }
+      if book.Winner() > 0 {
+        // V backed one, then put the winner down too: the gang tears itself apart.
+        if slain.id == book.Winner() {
+          CBWeakenGang(sys, game, slain.faction, CBConfig.StruggleBothLoss());
+          if !CBReputationFrozen() {
+            fs.standing = ClampF(fs.standing - CBConfig.StruggleBackStanding(), -100.0, 100.0);
+          }
+          CBFileLog(sys, n"StruggleBoth", now, CBEventDistrict(sys, game), slain.faction, 0.0);
+          CBEventSay(game, s"You put down both of them. \(CBCapFirst(CBFactionLabel(slain.faction))) are tearing themselves apart.");
+          book.Clear();
+        }
+        return;
+      }
+      let winner = slain.id == book.Rival() ? book.Heir() : (slain.id == book.Heir() ? book.Rival() : 0);
+      let w = winner > 0 ? sys.FindRivalById(winner) : null;
+      if IsDefined(w) && CBRivalStillAround(w) {
+        // The one V backed takes the chair.
+        if fs.leaderRivalId != w.id {
+          if fs.lt1RivalId == w.id { fs.lt1RivalId = 0; }
+          if fs.lt2RivalId == w.id { fs.lt2RivalId = 0; }
+          if fs.lt3RivalId == w.id { fs.lt3RivalId = 0; }
+          fs.leaderRivalId = w.id;
+          w.rank = Max(w.rank, CBConfig.LeaderMinRank());
+        }
+        if !CBReputationFrozen() {
+          fs.standing = ClampF(fs.standing + CBConfig.StruggleBackStanding(), -100.0, 100.0);
+        }
+        book.Won(w.id);
+        CBFileLog(sys, n"StruggleBacked", now, CBEventDistrict(sys, game), slain.faction, 0.0);
+        if CBMessagesOn() {
+          CBPhoneSendTinted(game, CBRivalDisplayName(content, w), "The chair's mine. You made that happen. " + CBCapFirst(CBFactionLabel(slain.faction)) + " won't forget it, and neither will I.", CBHudCyan());
+        }
+      }
+      return;
+    }
+  }
+  // A new one: the leader fell, an heir took the chair, and a lieutenant wants it.
+  if !wasLeader || !CBPowerStrugglesOn() || !IsDefined(fs) || fs.leaderRivalId <= 0 {
+    return;
+  }
+  let heir = sys.FindRivalById(fs.leaderRivalId);
+  let rivalId = fs.lt1RivalId > 0 ? fs.lt1RivalId : (fs.lt2RivalId > 0 ? fs.lt2RivalId : fs.lt3RivalId);
+  let rival = rivalId > 0 ? sys.FindRivalById(rivalId) : null;
+  if !IsDefined(heir) || !IsDefined(rival) || !CBRivalStillAround(heir) || !CBRivalStillAround(rival) {
+    return;
+  }
+  book.Begin(slain.faction, heir.id, rival.id, now + CBConfig.StruggleDays() * CBConfig.SecondsPerDay());
+  CBLog.Info(n"Rivals", s"A power struggle in \(NameToString(slain.faction)).");
+  if CBMessagesOn() {
+    let heirName = CBRivalDisplayName(content, heir);
+    let rivalName = CBRivalDisplayName(content, rival);
+    CBPhoneSendTinted(game, heirName, s"I run \(CBFactionLabel(slain.faction)) now. \(rivalName) doesn't think so. Put them down and I'll remember who helped.", CBHudCyan());
+    CBPhoneSendTinted(game, rivalName, s"\(heirName) took a chair that should be mine. Deal with them, and \(CBFactionLabel(slain.faction)) are your friends.", CBHudCyan());
+  }
+}
+
+func CBRivalStillAround(r: ref<CBRival>) -> Bool {
+  return IsDefined(r) && r.state != EnumInt(ECBRivalState.Slain) && r.state != EnumInt(ECBRivalState.Retired);
 }

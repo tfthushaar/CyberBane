@@ -194,6 +194,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Gatherings-Desc", "Gangs gather near you at a set time, and the street tells you where and when: a funeral after you kill a Rival or a boss of theirs, a celebration after they take a district, an initiation, a recruiting drive. Crash one and they feel it (a funeral is never forgiven); let it happen and they come out stronger. At a funeral you can pay your respects instead.");
     this.Text("Cyberbane-Settings-DealsAndRackets", "Arms deals and rackets");
     this.Text("Cyberbane-Settings-DealsAndRackets-Desc", "A gang buying guns from another, or collecting its take, near you at a set time. Crash a deal and the crate is yours; hit a racket and the cash is. Leave them be and the gang grows stronger.");
+    this.Text("Cyberbane-Settings-GangFights", "Fights between gangs");
+    this.Text("Cyberbane-Settings-GangFights-Desc", "Gangs at war settle things near you, and the street tells you where and when: an execution of a rival's man, a street fight that decides who holds the ground, a hunt for somebody who crossed them. Step in, pick a side, or let it play out. They come up less often than gatherings.");
+    this.Text("Cyberbane-Settings-PowerStruggles", "Power struggles");
+    this.Text("Cyberbane-Settings-PowerStruggles-Desc", "When a gang's leader falls and two of their lieutenants want the chair, both text you for help. Put one down and the other takes the chair and owes you; put both down and the gang tears itself apart.");
     this.Text("Cyberbane-Settings-GangLifeOften", "How often gangs get together");
     this.Text("Cyberbane-Settings-GangLifeOften-Desc", "How often gatherings, deals and rackets come up. At 1.0, about one every forty minutes of play when there's a gang around; sit-downs keep their own pace.");
     this.Text("Cyberbane-Settings-LifepathHeadStart", "A head start from your lifepath");

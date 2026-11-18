@@ -4063,6 +4063,28 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"LetGo") {
     return StrLen(gang) > 0 ? s"You let one of \(gang) walk with their hands up." : "You let somebody walk with their hands up.";
   }
+  // 2.3.4: the fights.
+  if Equals(e.kind, n"Executed") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) executed somebody, and nobody stopped them." : "Somebody was executed, and nobody stopped it.";
+  }
+  if Equals(e.kind, n"PrisonerSaved") {
+    return StrLen(gang) > 0 ? s"You saved one of \(gang) from an execution." : "You stopped an execution.";
+  }
+  if Equals(e.kind, n"FugitiveCaught") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) ran down the one they were hunting." : "A gang ran somebody down.";
+  }
+  if Equals(e.kind, n"FugitiveSheltered") {
+    return StrLen(gang) > 0 ? s"You saved one of \(gang) from the people hunting them." : "You saved somebody from a gang's hunt.";
+  }
+  if Equals(e.kind, n"FrontLine") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) won a street fight and took ground." : "A street fight decided who holds the ground.";
+  }
+  if Equals(e.kind, n"StruggleBacked") {
+    return StrLen(gang) > 0 ? s"You decided who runs \(gang)." : "You decided who runs a gang.";
+  }
+  if Equals(e.kind, n"StruggleBoth") {
+    return StrLen(gang) > 0 ? s"You put down both of \(CBPossessive(gang)) would-be leaders." : "You put down both would-be leaders.";
+  }
   // 2.3.3: gang life.
   if Equals(e.kind, n"FuneralCrashed") {
     return StrLen(gang) > 0 ? s"You shot up \(CBPossessive(gang)) funeral." : "You shot up a funeral.";

@@ -271,7 +271,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     if IsDefined(slain) || tagged {
       wasRival = true;
       if IsDefined(slain) {
+        sysE.SetRivalDeathByV(puppet.cbDamagedByPlayer);   // a power struggle asks (Spawn/StreetEvents.reds)
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
+        sysE.SetRivalDeathByV(false);
         CBOweFuneral(game, slain.faction);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());

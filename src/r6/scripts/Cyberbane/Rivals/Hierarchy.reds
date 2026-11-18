@@ -204,6 +204,8 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
   let wasLeader = fs.leaderRivalId == rival.id;
   CBHierarchyPrune(sys, fs);
   CBHierarchyFill(sys, rival.faction);
+  // A fight for the chair, or the end of one (Spawn/StreetEvents.reds, [31]).
+  CBPowerStruggleOnSlain(sys, game, rival, wasLeader);
 
   // Taking the top off a crew is worth hearing about.
   if wasLeader && fs.leaderRivalId > 0 {

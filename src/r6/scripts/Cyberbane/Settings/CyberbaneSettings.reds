@@ -876,6 +876,20 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
   @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangFights")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangFights-Desc")
+  public let gangFights: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PowerStruggles")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PowerStruggles-Desc")
+  public let powerStruggles: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "10")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangLifeOften")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangLifeOften-Desc")
   @runtimeProperty("ModSettings.min", "0.25")
