@@ -93,7 +93,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-CrewBetrayal", "Betrayal");
     this.Text("Cyberbane-Settings-CrewBetrayal-Desc", "Somebody whose loyalty you let run low may sell you to the people hunting you, or come when called and turn on you in the fight, and live on as a Rival. The crew page and their texts always warn you first. Off, and nobody ever betrays you.");
     this.Text("Cyberbane-Settings-CrewFrightJoin", "Frightened into joining");
-    this.Text("Cyberbane-Settings-CrewFrightJoin-Desc", "How readily a ganger you have frightened into working for you joins your crew instead of passing you tips. At 0, the frightened only ever inform.");
+    this.Text("Cyberbane-Settings-CrewFrightJoin-Desc", "A ganger already afraid of you always joins your crew when you Intimidate them, if there is room. This is how readily one who only folds under it joins instead of passing you tips. At 0, only the afraid join.");
     this.Text("Cyberbane-Settings-CrewCutMult", "The weekly cut");
     this.Text("Cyberbane-Settings-CrewCutMult-Desc", "What your crew asks for each week, against the usual. At 0 they work for nothing and never ask.");
     this.Text("Cyberbane-Settings-StreetCredFollows", "Street Cred follows the legend");

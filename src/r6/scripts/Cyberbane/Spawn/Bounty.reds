@@ -120,7 +120,15 @@ public func CBHunterRecord(seed: Int32, payer: CName) -> TweakDBID {
       return id;
     }
   }
-  let fallback = CBApexRosterRecord(payer, CBHunterChair(kind));
+  // Nobody's: a solo for V's crew (Reactions/Crew.reds, [C3]). The roster has no list for no gang, so without Phantom
+  // Liberty this was always invalid and the broker never once offered a solo (2.5.0). Freelance-looking fighters the
+  // base game has, by the seed, so the one offered is the one hired.
+  let from = payer;
+  if !IsNameValid(from) {
+    let freelance: array<CName> = [n"Militech", n"KangTao", n"Arasaka", n"SixthStreet", n"Aldecaldos"];
+    from = freelance[CBHashIndex(seed, 29, ArraySize(freelance))];
+  }
+  let fallback = CBApexRosterRecord(from, CBHunterChair(kind), seed);
   return CBHunterRecordFit(fallback) ? fallback : TDBID.None();
 }
 

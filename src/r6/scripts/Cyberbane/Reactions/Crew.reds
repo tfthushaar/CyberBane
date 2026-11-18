@@ -45,7 +45,7 @@ public func CBCrewBetrayalOn() -> Bool {
 
 public func CBCrewFrightJoin() -> Float {
   let rt = CyberbaneRuntime.Get();
-  return IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().crewFrightJoin : 0.3;
+  return IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().crewFrightJoin : 0.5;
 }
 
 public func CBCrewCutMult() -> Float {
@@ -768,16 +768,28 @@ public func CBCrewFrightenedJoins(sys: ref<CyberbaneSystem>, game: GameInstance,
      || !(t.mood == CBTalkAfraid() || t.npc.cbHoldState == 1) {
     return null;
   }
-  let chance = CBCrewFrightJoin() * (1.0 + ClampF(CBTalkNerveGap(t), 0.0, 1.0));
-  if RandF() >= chance {
-    return null;
+  // Somebody already afraid of V, leaned on until they fold, always says yes (2.5.0): a roll of 30 to 60% on top of the
+  // Intimidate that worked left most of them informing instead. One who only folded is asked with the setting.
+  if t.mood != CBTalkAfraid() {
+    let chance = CBCrewFrightJoin() * (1.0 + ClampF(CBTalkNerveGap(t), 0.0, 1.0));
+    if RandF() >= chance {
+      return null;
+    }
   }
   let now = CBGameSeconds(game);
+  // Their own body when it is one that can be sent into a fight; a passer-by of the crowd, or one the game marks as
+  // unfit, comes as one of their gang's own fighters instead (Data/ApexRoster.reds), so the crew member who answers
+  // a call can fight.
   let record = t.npc.GetRecordID();
-  if !TDBID.IsValid(record) || !CBRecordIsPerson(record) {
+  let look = t.npc.GetCurrentAppearanceName();
+  if t.npc.IsCrowd() || !CBHunterRecordFit(record) {
+    record = CBApexRosterRecord(t.faction, RandRange(0, 4));
+    look = n"";
+  }
+  if !CBHunterRecordFit(record) {
     return null;
   }
-  let m = book.Add(CBCrewFrightened(), record, t.npc.GetCurrentAppearanceName(), t.faction, 0,
+  let m = book.Add(CBCrewFrightened(), record, look, t.faction, 0,
                    CBConfig.MyCrewLoyaltyFrightened(), CBEventDistrict(sys, game), now, CBCrewKillsOf(sys, t.faction));
   if !IsDefined(m) {
     return null;
@@ -800,8 +812,11 @@ public func CBCrewTakesFrightened(game: GameInstance) -> Bool {
 public func CBCrewLendLine(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> ref<CBTalkLine> {
   let book = CBCrewBook.Get(game);
   let score = sys.GetScore();
+  // Friendly or Allied (2.5.0): Allied alone was a gang that would die for V, rarer than "a gang that likes you".
+  let posture = IsDefined(score) && IsDefined(t) ? score.GetPosture(t.faction) : ECBPosture.Neutral;
   if !CBMyCrewOn() || !IsDefined(book) || !IsDefined(score) || !book.HasRoom() || !IsDefined(t) || t.cop
-     || Equals(t.faction, n"") || !Equals(score.GetPosture(t.faction), ECBPosture.Allied) || CBCrewHasLentFrom(book, t.faction) {
+     || Equals(t.faction, n"") || !(Equals(posture, ECBPosture.Allied) || Equals(posture, ECBPosture.Friendly))
+     || CBCrewHasLentFrom(book, t.faction) {
     return null;
   }
   return CBTalkMakeLine("[Lend] One of yours on my crew. For good.", CBTalkActLendOne(), t"ChoiceCaptionParts.ReinforcementIcon");
@@ -821,12 +836,27 @@ func CBCrewHasLentFrom(book: ref<CBCrewBook>, faction: CName) -> Bool {
 
 public func CBCrewLendAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let book = CBCrewBook.Get(game);
-  let fs = sys.FindFaction(t.faction);
-  if !IsDefined(book) || !IsDefined(fs) || !book.HasRoom() || !TDBID.IsValid(fs.sampleRecord) {
+  if !IsDefined(book) || !book.HasRoom() {
     return CBTalkSay("Nobody to spare right now.", n"");
   }
-  let seats = [fs.roleAssaultRecord, fs.roleTankRecord, fs.roleBladeRecord, fs.roleNetrunnerRecord];
-  let record = CBCrewSeat(seats[RandRange(0, ArraySize(seats))], fs.sampleRecord);
+  // Who they send: one of their seats as V has seen them fight, else one of their own fighters from the roster, else
+  // the one V is talking to. Their seats are only ever filled from V's kills, so a gang V had never fought, the gangs
+  // most likely to like V, always had "nobody to spare" (2.5.0).
+  let fs = sys.FindFaction(t.faction);
+  let record = TDBID.None();
+  if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {
+    let seats = [fs.roleAssaultRecord, fs.roleTankRecord, fs.roleBladeRecord, fs.roleNetrunnerRecord];
+    record = CBCrewSeat(seats[RandRange(0, ArraySize(seats))], fs.sampleRecord);
+  }
+  if !CBHunterRecordFit(record) {
+    record = CBApexRosterRecord(t.faction, RandRange(0, 4));
+  }
+  if !CBHunterRecordFit(record) && IsDefined(t.npc) && !t.npc.IsCrowd() {
+    record = t.npc.GetRecordID();
+  }
+  if !CBHunterRecordFit(record) {
+    return CBTalkSay("Nobody to spare right now.", n"");
+  }
   let now = CBGameSeconds(game);
   let m = book.Add(CBCrewLent(), record, n"", t.faction, 0, CBConfig.MyCrewLoyaltyLent(), CBEventDistrict(sys, game), now,
                    CBCrewKillsOf(sys, t.faction));

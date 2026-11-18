@@ -501,7 +501,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.min", "0.0")
   @runtimeProperty("ModSettings.max", "1.0")
   @runtimeProperty("ModSettings.step", "0.05")
-  public let crewFrightJoin: Float = 0.3;
+  public let crewFrightJoin: Float = 0.5;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")

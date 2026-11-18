@@ -680,7 +680,9 @@ public abstract class CBConfig {
   public static func MyCrewLoyaltyOwed() -> Int32 = 80
   public static func MyCrewLoyaltyLent() -> Int32 = 65
   public static func MyCrewLoyaltyPaid() -> Int32 = 60
-  public static func MyCrewLoyaltyFrightened() -> Int32 = 35
+  // Frightened recruits start at 60 and their fear wears off by 1 a day (2.5.0): at 35 and 3 they were under the
+  // betrayal line against their old gang inside a day, and turned on V a third of the time when called.
+  public static func MyCrewLoyaltyFrightened() -> Int32 = 60
   public static func MyCrewRestless() -> Int32 = 40
   public static func MyCrewBetrayLine() -> Int32 = 25
   public static func MyCrewOldGangLine() -> Int32 = 10
@@ -691,7 +693,7 @@ public abstract class CBConfig {
   public static func MyCrewDiedLoyalty() -> Int32 = 6
   public static func MyCrewFairCut() -> Int32 = 5
   public static func MyCrewFairCutPaid() -> Int32 = 8
-  public static func MyCrewFearDrift() -> Int32 = 3
+  public static func MyCrewFearDrift() -> Int32 = 1
   public static func MyCrewUnpaidDrift() -> Int32 = 4
   public static func MyCrewUnpaidDriftPaid() -> Int32 = 8
   public static func MyCrewOldGangHurt() -> Int32 = 2
@@ -1719,7 +1721,7 @@ public abstract class CBConfig {
   public static func SqueezeSeconds() -> Float = 3.5
   public static func DownedTalkSeconds() -> Float = 2.0
   public static func DownedTalkRange() -> Float = 2.5
-  public static func IntelScanChance() -> Float = 0.35
+  public static func IntelScanChance() -> Float = 0.5   // a scan turns something up (2.5.0, from 0.35)
   public static func TurnBase() -> Float = 0.25
   public static func InformantSetupChance() -> Float = 0.15
   public static func FlawMinRank() -> Int32 = 3
@@ -1731,7 +1733,7 @@ public abstract class CBConfig {
   public static func RegistryKeepRadius() -> Float = 120.0
   public static func MercyHolsterTicks() -> Int32 = 3
   public static func MercyMinTicks() -> Int32 = 4
-  public static func ExileBase() -> Float = 0.6
+  public static func ExileBase() -> Float = 0.7   // less 0.15 a rank above the first (2.5.0, from 0.6)
   public static func KinChance() -> Float = 0.5
   public static func CallOutChance() -> Float = 0.25
   public static func WordKeptRenownShare() -> Float = 0.5

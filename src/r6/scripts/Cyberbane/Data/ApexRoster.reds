@@ -126,13 +126,14 @@ public func CBApexRosterList(faction: CName, chair: Int32) -> array<TweakDBID> {
 // One record for this chair of this gang: any of the ones listed that this install really has and
 // that is fit to send, chosen at random so the same four faces do not turn up every time. Invalid
 // when the gang has none, and the caller falls back to whoever V has actually fought.
-public func CBApexRosterRecord(faction: CName, chair: Int32) -> TweakDBID {
+// `pick`: the same choice every time for the same number (a bounty hunter, a solo on offer), else a random one.
+public func CBApexRosterRecord(faction: CName, chair: Int32, opt pick: Int32) -> TweakDBID {
   let listed = CBApexRosterList(faction, chair);
   let count = ArraySize(listed);
   if count == 0 {
     return TDBID.None();
   }
-  let start = RandRange(0, count);
+  let start = pick > 0 ? pick % count : RandRange(0, count);
   let i = 0;
   while i < count {
     let id = listed[(start + i) % count];

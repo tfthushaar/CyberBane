@@ -990,9 +990,13 @@ public class CBStreetTalk {
     let t = this.m_target;
     let choice = this.m_pending;
     let npc = IsDefined(t) ? t.npc : null;
-    // Gone, down or already fighting by now: nobody left to answer.
-    if !IsDefined(npc) || !npc.IsAttached() || npc.IsDead() || ScriptedPuppet.IsDefeated(npc)
-       || CBNpcInCombat(npc) {
+    // Gone, down or already fighting by now: nobody left to answer. Except a Rival V put down, who is talked to where
+    // they lie (Rivals/RivalLife.reds): picking them as the one V talks to already allows it (CBTalkWhyNot), and this
+    // did not, so every mercy answer, Spare, Exile, Humiliate, Set on and the crew's Recruit, ended the conversation
+    // before it was given (2.5.0).
+    let downAtFeet = IsDefined(npc) && npc.cbMercyOpen;
+    if !IsDefined(npc) || !npc.IsAttached() || npc.IsDead()
+       || (!downAtFeet && (ScriptedPuppet.IsDefeated(npc) || CBNpcInCombat(npc))) {
       this.End(game, "they are gone");
       return;
     }
