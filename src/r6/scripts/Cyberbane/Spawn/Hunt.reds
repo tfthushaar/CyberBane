@@ -1009,15 +1009,15 @@ public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction
       CBSystemNote(game, "your optics flicker. Somebody is tracing you through the Net.", 4.0);
     }
     if StrLen(own) > 0 {
-      CBPhoneFromGang(game, faction, own);
+      CBPhoneDemandFromGang(game, faction, own);
     } else {
       if vendetta {
-        CBPhoneFromGang(game, faction, s"Everybody we have is coming for you. Somebody saw you in \(where). \(coming)");
+        CBPhoneDemandFromGang(game, faction, s"Everybody we have is coming for you. Somebody saw you in \(where). \(coming)");
       } else {
         if onTheirTurf {
-          CBPhoneFromGang(game, faction, s"You are on our streets in \(where). \(coming)");
+          CBPhoneDemandFromGang(game, faction, s"You are on our streets in \(where). \(coming)");
         } else {
-          CBPhoneFromGang(game, faction, s"\(coming) We hear you are in \(where).");
+          CBPhoneDemandFromGang(game, faction, s"\(coming) We hear you are in \(where).");
         }
       }
     }
@@ -1034,7 +1034,7 @@ public func CBApexOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, factio
     // Their best remember how it went last time ([U4], 2.3.2).
     let beaten = CBApexTimesBeaten(sys, faction);
     let record = beaten == 1 ? " You beat our best once. That was luck." : (beaten > 1 ? s" You've beaten our best \(beaten) times. Not this one." : "");
-    CBPhoneFromGang(game, faction, s"\(name) and three of ours are on the road. Last we heard you were in \(CBHuntWhereLine(sys, game)).\(record)");
+    CBPhoneDemandFromGang(game, faction, s"\(name) and three of ours are on the road. Last we heard you were in \(CBHuntWhereLine(sys, game)).\(record)");
   }
   CBAllyTipOff(sys, game, faction);
   CBWatcherTipOff(sys, game, "Four of " + CBFactionLabel(faction) + "'s best");
@@ -1201,7 +1201,7 @@ func CBScoutCallIn(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
   sys.SetHuntGrade(CBCrewGrade(sys, faction));
   if spotted && CBToastsOn() {
     let fs = sys.FindFaction(faction);
-    CBPhoneFromGang(game, faction, s"Our scout has eyes on you. \(CBCrewComingLine(sys, game, fs))");
+    CBPhoneDemandFromGang(game, faction, s"Our scout has eyes on you. \(CBCrewComingLine(sys, game, fs))");
     CBAllyTipOff(sys, game, faction);
     CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction)));
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout found you and called in the crew.");

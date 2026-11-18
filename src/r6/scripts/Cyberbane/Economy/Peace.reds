@@ -363,9 +363,19 @@ public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionI
 // What a broken gang says when it names its price (1.9.5): less a demand than asking to stop.
 public func CBPeaceBrokenLine(cost: Int32) -> String {
   switch RandRange(0, 3) {
-    case 0: return s"There's hardly any of us left. \(cost)eb and it's over. Please.";
+    case 0: return s"There's hardly any of us left. \(cost)eb to bury our dead, and it's over.";
     case 1: return s"You made your point. \(cost)eb and nobody of ours comes near you again.";
-    default: return s"We're done. Take \(cost)eb and let us be.";
+    default: return s"We're done fighting you. \(cost)eb and we let it go.";
+  }
+}
+
+// The price after a threat that did not name it (UI/PhoneMessages.reds, CBPhoneDemandText): what V's answers under
+// it answer. V pays them, as the Hub's peace does (2.5.0; "Take Xeb" above read as them paying V).
+public func CBPeaceAskLine(cost: Int32) -> String {
+  switch RandRange(0, 3) {
+    case 0: return s"Or pay \(cost)eb and it stops.";
+    case 1: return s"\(cost)eb and we call it off. Your choice.";
+    default: return s"Unless \(cost)eb reaches us first.";
   }
 }
 
@@ -404,7 +414,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   let money = ItemID.FromTDBID(t"Items.money");
   if ts.GetItemQuantity(player, money) < cost {
     if CBToastsOn() {
-      CBPhoneFromGang(game, factionId, s"\(cost)eb and we forget about you. Come back when you have it.");
+      CBPhoneDemandFromGang(game, factionId, s"\(cost)eb and we forget about you. Come back when you have it.", true);
     }
     return false;
   }
@@ -426,7 +436,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
   if CBToastsOn() {
     let what = Equals(posture, ECBPosture.Vendetta) ? "vendetta" : "hostility";
-    CBPhoneFromGang(game, factionId, s"\(cost)eb received. The \(what) is over. Do not make us revisit it.");
+    CBPhoneFromGangFinal(game, factionId, s"\(cost)eb received. The \(what) is over. Do not make us revisit it.");
   }
   CBLog.Info(n"Economy", s"Peace brokered with \(NameToString(factionId)) for \(cost).");
   return true;

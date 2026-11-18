@@ -157,7 +157,7 @@ func CBRivalBirth(sys: ref<CyberbaneSystem>, game: GameInstance, b: ref<CBPendin
       CBHearsayFromStreet(game, s"\(name) got clear of you. You have not seen the last of them.", n"");
     } else {
       if StrLen(b.predecessor) > 0 {
-        CBHearsayFromGang(game, b.faction, name + " picks up where " + b.predecessor + " left off.", n"");
+        CBHearsayFromGangFinal(game, b.faction, name + " picks up where " + b.predecessor + " left off.", n"");
       }
     }
   }

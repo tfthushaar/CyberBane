@@ -248,7 +248,7 @@ func CBRealPhoneAnswerKind(sys: ref<CyberbaneSystem>, game: GameInstance, store:
   let faction = store.ThreadOffer(thread);
   if Equals(faction, n"") {
     if IsDefined(CBPhoneThreadRival(sys, store, thread)) {
-      return CBPhoneAnswerRival();
+      return store.ThreadAwaitsAnswer(thread) ? CBPhoneAnswerRival() : CBPhoneAnswerNone();
     }
     return CBCrewPhoneKind(sys, game, store, thread);   // the crew's own thread, a Debtor's, a solo on offer (2.5.0)
   }
@@ -341,9 +341,9 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   if row == CBPhoneRowHaggle() {
     store.Reply(game, thread, CBPick2("Too much.", "For that? Come on."));
     if CBPeaceHaggle(sys, game, faction) {
-      CBPhoneFromGang(game, faction, s"Fine. \(CBPeaceQuote(sys, game, faction))eb, and that's the last time we move.");
+      CBPhoneDemandFromGang(game, faction, s"Fine. \(CBPeaceQuote(sys, game, faction))eb, and that's the last time we move.", true);
     } else {
-      CBPhoneFromGang(game, faction, s"The price is \(cost)eb. Take it or don't.");
+      CBPhoneDemandFromGang(game, faction, s"The price is \(cost)eb. Take it or don't.", true);
     }
     return;
   }
@@ -958,12 +958,12 @@ func CBPhoneOfferAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
       war.phoneStalled = faction;
     }
     sys.SetPendingSquad(faction, sys.GetPendingSquadTicks() + CBConfig.PhoneStallTicks());
-    CBPhoneFromGang(game, faction, CBPick2(s"An hour, \(you). Then we stop asking.", "You've got a little time. Don't waste it."));
+    CBPhoneDemandFromGang(game, faction, CBPick2(s"An hour, \(you). Then we stop asking.", "You've got a little time. Don't waste it."), true);
     return;
   }
   if row == CBPhoneRowThreaten() {
     store.Reply(game, thread, CBPick2("Call them off, or I start with whoever you send and work my way up.",
-                                      s"You know what I did in \(CBHere(sys)). Back off."));
+                                      "You've seen what I do to your people. Back off."));
     if IsDefined(war) {
       war.phoneThreatDay = CBGameDay(game) + 1;
     }
@@ -978,8 +978,12 @@ func CBPhoneOfferAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
       CBCallOffGang(sys, game, faction);
       CBTalkFear(sys, game, faction, CBConfig.StareFear());
       CBFileLog(sys, n"PhoneThreatWorked", CBGameSeconds(game), CBEventDistrict(sys, game), faction, 0.0);
-      CBPhoneFromGang(game, faction, CBPick2("...Fine. Nobody's coming. This time.", "We'll leave it. For now."));
+      // Settled: nothing left to answer, so the thread closes here (2.5.0). It used to open the offer again, and
+      // "Not paying" then got "We will be seeing you" straight after they had backed down.
+      CBPhoneFromGangFinal(game, faction, CBPick2("...Fine. We'll leave you be. This time.", "We'll leave it. For now."));
     } else {
+      // Called their bluff the wrong way: they are coming, and there is nothing left to answer (2.5.0).
+      store.ClearOffer(thread);
       CBProvoke(sys, game, faction);
       CBPhoneFromGangFinal(game, faction, CBPick2(s"Threats? From you? We're coming, \(you).", "Wrong answer."));
     }
@@ -987,7 +991,7 @@ func CBPhoneOfferAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
   }
   // An insult.
   store.Reply(game, thread, CBPick3("Come and try it. Bring more than last time.", s"I'm in \(CBHere(sys)). Come and find me, if you've got the guts.",
-                                    "Save your eddies for the funerals."));
+                                    "Keep your price. You'll need it for funerals."));
   store.ClearOffer(thread);
   CBTalkSlight(sys, game, faction, CBConfig.PhoneInsultStanding());
   CBProvoke(sys, game, faction);

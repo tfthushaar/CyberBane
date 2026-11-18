@@ -1760,7 +1760,9 @@ public func CBCrewPhoneKind(sys: ref<CyberbaneSystem>, game: GameInstance, store
   if book.offerSeed != 0 && book.offerUntil >= CBGameSeconds(game) && Equals(name, book.offerSender) && book.HasRoom() {
     return CBPhoneAnswerHire();
   }
-  if IsDefined(CBPhoneThreadDebtor(sys, store, thread)) {
+  // Asked once per thing they say (UI/PhoneMessages.reds, ThreadAwaitsAnswer): "Work for me" stayed under every one of
+  // their texts, so V could ask until the dice said yes (2.5.0).
+  if IsDefined(CBPhoneThreadDebtor(sys, store, thread)) && store.ThreadAwaitsAnswer(thread) {
     return CBPhoneAnswerDebtor();
   }
   return CBPhoneAnswerNone();

@@ -745,7 +745,7 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         // name in this warning is the name in the one that says they are on the road.
         let name = CBApexName(CBContent(game), fs.id, fs.apexAtKills);
         if CBMessagesOn() {
-          CBPhoneFromGang(game, fs.id, s"\(name) is coming for you, and not alone. Four of ours. Make your peace.");
+          CBPhoneDemandFromGang(game, fs.id, s"\(name) is coming for you, and not alone. Four of ours.");
         }
         CBAllyTipOff(sys, game, fs.id);
         CBLog.Info(n"Spawn", s"Faction apex inbound for \(NameToString(fs.id)).");

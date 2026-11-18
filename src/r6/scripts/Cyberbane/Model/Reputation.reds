@@ -404,7 +404,7 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
         fs.vendettaSince = MaxF(now, 1.0);
         CBFileLog(sys, n"Vendetta", now, CBEventDistrict(sys, game), fs.id, 0.0);
         if CBToastsOn() && CBFactionFieldsSquads(fs.id) && !CBTwrOwnsHostility(fs.id) {
-          CBPhoneFromGang(game, fs.id, "You are dead to us. Every one of ours who sees you will try.");
+          CBPhoneDemandFromGang(game, fs.id, "You are dead to us. Every one of ours who sees you will try.");
           // That message already carries the pay-off answer, so this gang has had its say.
           sys.NotePeaceOffered(fs.id);
         }
@@ -432,7 +432,7 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
          && (sworn || Equals(posture, ECBPosture.Hostile)) {
         let quote = CBPeaceQuote(sys, game, fs.id);
         if quote >= 0 && sys.NotePeaceOffered(fs.id) {
-          CBPhoneFromGang(game, fs.id, CBGangBroken(sys, fs.id) ? CBPeaceBrokenLine(quote) : CBPeaceDemandLine(quote, sworn));
+          CBPhoneDemandFromGang(game, fs.id, CBGangBroken(sys, fs.id) ? CBPeaceBrokenLine(quote) : CBPeaceDemandLine(quote, sworn), true);
           demanded = true;
           CBLog.Info(n"Model", s"\(NameToString(fs.id)) put its price to you: \(quote)eb.");
         }

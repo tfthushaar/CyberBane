@@ -68,6 +68,10 @@ the next unless a version says otherwise.
   first.
 - A Rival's bar leaves the screen once the fight with them is over. One you spared or outran kept it for as long as
   you could see them.
+- Gang texts make sense as a conversation. Only a threat offers you answers, and it says its price, so paying,
+  haggling or refusing answers something they said. News and grudges carry no answers, and once an exchange is
+  settled (they back down, you refuse, you insult them) the thread closes instead of offering the same answers again.
+  A Rival's thread, and one who owes you, can be answered once for each thing they send.
 - One of your crew walking home, or one of a gang's people lent to you, could come back as a Rival if you hurt them
   on the way.
 - A bounty hunter who killed one of your crew and got away came back as a gang's Rival. Hunters keep their own place

@@ -198,6 +198,8 @@ public class CBPhone {
   // repeating itself word for word is one message, not two unread ones.
   private let m_thLastBody: array<String>;
   private let m_thLastAt: array<Float>;
+  // When V last answered each thread (game seconds), -1 when what it last said is still unanswered.
+  private let m_thAnsweredAt: array<Float>;
 
   // Word that has not reached V yet (Hearsay). Anything a third party tells V about what V did -
   // a body, a Rival in the ground, a crew taking over, a payout - used to arrive in the same tick
@@ -442,6 +444,10 @@ public class CBPhone {
       }
       this.m_thLastBody[thread] = body;
       this.m_thLastAt[thread] = now;
+      // Something new from them, not their answer to what V just said: it can be answered again.
+      if thread < ArraySize(this.m_thAnsweredAt) && this.m_thAnsweredAt[thread] >= 0.0 && now - this.m_thAnsweredAt[thread] > 1.0 {
+        this.m_thAnsweredAt[thread] = -1.0;
+      }
       this.File(game, thread, body, false);
       this.m_thUnread[thread] += 1;
     }
@@ -554,7 +560,7 @@ public class CBPhone {
     }
     // Through the ordinary door, so the silence switches and the delivery mode are asked about
     // now, when it arrives, not back when it was queued.
-    CBPhoneSendTinted(game, sender, body, accent);
+    CBPhoneSendTinted(game, sender, IsNameValid(faction) ? CBPhoneDemandText(game, faction, body, false) : body, accent);
     if IsNameValid(faction) {
       CBPhoneOfferPeace(game, faction);
     }
@@ -603,6 +609,9 @@ public class CBPhone {
       return;
     }
     this.File(game, thread, body, true);
+    if thread < ArraySize(this.m_thAnsweredAt) {
+      this.m_thAnsweredAt[thread] = MaxF(CBGameSeconds(game), 0.0);
+    }
     CBLog.Info(n"UI", s"V replied to \(this.m_thName[thread]): \(body)");
   }
 
@@ -612,6 +621,25 @@ public class CBPhone {
     if thread >= 0 {
       this.m_thOffer[thread] = faction;
     }
+  }
+
+  // Is an offer open in this sender's thread? Asked before a threat says its price again.
+  public func OfferOpenFor(sender: String) -> Bool {
+    let i = 0;
+    while i < ArraySize(this.m_thName) {
+      if Equals(this.m_thName[i], sender) {
+        return i < ArraySize(this.m_thOffer) && IsNameValid(this.m_thOffer[i]);
+      }
+      i += 1;
+    }
+    return false;
+  }
+
+  // Has V answered the last thing this thread said? A Rival's answer to V's reply comes in the same moment as the
+  // reply and does not open it again; anything they send later does (Send). Until 2.5.0 the same three answers stayed
+  // under a Rival's thread for good, so V could send "Come and find me" after every one of their answers (2.5.0).
+  public func ThreadAwaitsAnswer(i: Int32) -> Bool {
+    return i >= 0 && i < ArraySize(this.m_thAnsweredAt) && this.m_thAnsweredAt[i] < 0.0;
   }
 
   public func ThreadOffer(i: Int32) -> CName {
@@ -703,6 +731,7 @@ public class CBPhone {
     ArrayPush(this.m_thLeadHaggled, false);
     ArrayPush(this.m_thLastBody, "");
     ArrayPush(this.m_thLastAt, 0.0);
+    ArrayPush(this.m_thAnsweredAt, -1.0);
     return ArraySize(this.m_thName) - 1;
   }
 
@@ -1193,6 +1222,7 @@ public class CBPhone {
     ArrayClear(this.m_thLeadHaggled);
     ArrayClear(this.m_thLastBody);
     ArrayClear(this.m_thLastAt);
+    ArrayClear(this.m_thAnsweredAt);
     ArrayClear(this.m_hsSender);
     ArrayClear(this.m_hsBody);
     ArrayClear(this.m_hsAccent);
@@ -1447,14 +1477,37 @@ public func CBPhoneSendTinted(game: GameInstance, sender: String, body: String,
   sys.GetPhone().Send(game, sender, body, accent);
 }
 
-// The gang is talking to you. Red, because they are not getting in touch to be friendly.
-//
-// If they are a gang V can buy off and they are hostile, the thread also gets an answer V can
-// send from the phone (UI/RealPhone.reds): pay what they want, or refuse. That is the same
-// peace the Hub brokers, at the same price, through the same function.
+// The gang is talking to you. Red, because they are not getting in touch to be friendly. Nothing to answer: news,
+// a grudge, an answer to something V said (2.5.0). Until 2.5.0 every red message opened the buy-off answers, so a
+// Rival's birth or "our people wear plate now" offered "Pay to call it off" and "Not paying" to a demand nobody made.
 public func CBPhoneFromGang(game: GameInstance, faction: CName, body: String) -> Void {
   CBPhoneSendTinted(game, CBPhoneGangSender(faction), body, CBHudRed());
+}
+
+// A threat V can answer from the phone (UI/RealPhone.reds): pay what they want, haggle, stall, threaten back, insult
+// them or refuse; the same peace the Hub brokers, at the same price, through the same function. The price is said in
+// the message (CBPhoneDemandText), so every answer under it answers something they said. `priced`: the body names
+// the price already.
+public func CBPhoneDemandFromGang(game: GameInstance, faction: CName, body: String, opt priced: Bool) -> Void {
+  CBPhoneSendTinted(game, CBPhoneGangSender(faction), CBPhoneDemandText(game, faction, body, priced), CBHudRed());
   CBPhoneOfferPeace(game, faction);
+}
+
+// A threat's words as they go out: as written when they name the price, when nobody can answer them, or when an offer
+// is already open in the thread (its price is just above); otherwise with the price said after them.
+public func CBPhoneDemandText(game: GameInstance, faction: CName, body: String, priced: Bool) -> String {
+  if priced || !CBRealPhoneOn() || !CBToastsOn() {
+    return body;
+  }
+  let sys = CyberbaneSystem.Get(game);
+  if !IsDefined(sys) {
+    return body;
+  }
+  let quote = CBPeaceQuote(sys, game, faction);
+  if quote < 0 || sys.GetPhone().OfferOpenFor(CBPhoneGangSender(faction)) {
+    return body;
+  }
+  return body + " " + CBPeaceAskLine(quote);
 }
 
 // A gang on V's side: a tip-off, a welcome, a bounty paid. Same thread as the rest of what that
@@ -1546,6 +1599,7 @@ public func CBHearsayFromDistrict(game: GameInstance, district: CName, body: Str
   CBHearsayTinted(game, CBPhoneDistrictSender(district), body, CBHudCyan(), key, n"");
 }
 
+// A gang's threat that waits for word to get round: answerable once it arrives (CBPhoneDemandFromGang).
 public func CBHearsayFromGang(game: GameInstance, faction: CName, body: String, key: CName) -> Void {
   CBHearsayTinted(game, CBPhoneGangSender(faction), body, CBHudRed(), key, faction);
 }

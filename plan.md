@@ -1005,6 +1005,15 @@ the source:
   connectors lost the glow that read as a second line, the fallen move up when the bench is empty, only the first
   empty chair names who steps up (without the nickname, so it fits), and the buttons beside the words close up
   where one is hidden (`PackActions`).
+- **The phone threads did not read as conversations.** Every red gang message opened the buy-off answers, so V
+  answered "Pay to call it off" and "Not paying" under a Rival's birth or "our people wear plate now", and a threat
+  that worked ("Nobody's coming") opened them again, so "Not paying" got "We will be seeing you" right after. Now a
+  threat (`CBPhoneDemandFromGang`: a crew on its way, "you are dead to us", the scout, the apex) opens them and says
+  its price when the thread has no offer open (`CBPhoneDemandText`, `CBPeaceAskLine`); everything else is
+  `CBPhoneFromGang`, which opens nothing; the gang V backs and a favour done talk as friends; a threat that worked,
+  one that failed, a refusal and an insult close the thread. A Rival's thread, and a Debtor's, take one answer per
+  thing they send (`ThreadAwaitsAnswer`). V's lines no longer claim what V may not have done ("You know what I did in
+  Heywood"), and a broken gang no longer reads as offering V money.
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,

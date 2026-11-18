@@ -78,9 +78,9 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
   if CBMessagesOn() {
     let name = CBRivalDisplayName(content, who);
     if isNew {
-      CBPhoneFromGang(game, faction, s"\(name) put you down. They will be looking for you.");
+      CBPhoneDemandFromGang(game, faction, s"\(name) put you down. They will be looking for you.");
     } else {
-      CBPhoneFromGang(game, faction, s"\(name) put you down again. They are getting better at it.");
+      CBPhoneDemandFromGang(game, faction, s"\(name) put you down again. They are getting better at it.");
     }
   }
   CBLog.Info(n"Rivals", s"Killed by \(NameToString(faction)) (\(TDBID.ToStringDEBUG(killerRecordID))); rival \(who.id) is now rank \(who.rank).");

@@ -190,7 +190,7 @@ func CBWarBackedCut(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBW
   CBFileLog(sys, n"WeeklyCut", now, CBEventDistrict(sys, game), gang, Cast<Float>(cut));
   if CBToastsOn() {
     let plural = streets == 1 ? "district" : "districts";
-    CBPhoneFromGang(game, gang, s"Your cut for the week: \(cut)eb. \(streets) \(plural) ours, thanks to you.");
+    CBPhoneFromAlly(game, gang, s"Your cut for the week: \(cut)eb. \(streets) \(plural) ours, thanks to you.");
   }
 }
 
@@ -343,7 +343,7 @@ public func CBSettlePeace(sys: ref<CyberbaneSystem>, game: GameInstance, gang: C
   CBCallOffGang(sys, game, gang);
   CBFileLog(sys, n"PeaceFavour", fs.lastPeaceAt, CBEventDistrict(sys, game), gang, 0.0);
   if CBToastsOn() {
-    CBPhoneFromGang(game, gang, "You did what we asked. We're square. For now.");
+    CBPhoneFromAlly(game, gang, "You did what we asked. We're square. For now.");
   }
 }
 
