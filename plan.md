@@ -996,6 +996,9 @@ the source:
 - **Frightened into the crew** [C2] almost never happened: it was tried only from "You work for me now", which a
   successful Intimidate seldom reached, only for somebody who read as afraid, and only with the informants on. A
   successful Intimidate now tries it, and leaned-on counts as frightened (`CBCrewTakesFrightened`).
+- **The bar over a Rival V spared** stayed up: the threat bar let go only of somebody gone or down, and a spared or
+  outrun Rival gets up and walks off. It now lets go of anybody without a tag it is for (`CBBarStillOnV`), which
+  the encounter's close takes off (`CBRetireRivalBody`), and the same for a crew or apex squad called off.
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,

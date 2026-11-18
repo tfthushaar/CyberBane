@@ -294,11 +294,19 @@ public class CBThreatBar {
     // everyone for the first NpcReadyTicks after they attach. The bar is put up 0.4 seconds
     // after a spawn (and a Rival's at the moment of attach), so on the very next tick every
     // one of them was erased, never to come back. That is why nobody had a bar.
+    // And over means over (2.5.0): somebody whose part is done carries none of the tags that put them on the stack.
+    // A Rival V spared or outran loses CB_Rival as the encounter closes (CBRetireRivalBody), a crew or apex squad
+    // called off loses theirs (CBCallOffGang); standing and still in the world, they kept their bar for as long as V
+    // could see them.
+    let des = GameInstance.GetDynamicEntitySystem();
     let i = ArraySize(this.m_targets) - 1;
     while i >= 0 {
       let target = this.m_targets[i];
       let gone = !IsDefined(target) || !target.IsAttached();
       if !gone && CBNpcSafe(sys, target) && !CBStillStanding(target) {
+        gone = true;
+      }
+      if !gone && IsDefined(des) && !CBBarStillOnV(des, this.m_ids[i]) {
         gone = true;
       }
       if gone {
@@ -370,6 +378,12 @@ public func CBHideStrayHudWidgets(win: wref<inkCompoundWidget>, a: CName, b: CNa
 }
 
 // Does the player want this at all?
+// Still one of those the bar is for: a Rival out after V or waiting at their place, an apex, a bounty hunter or a crew.
+public func CBBarStillOnV(des: ref<DynamicEntitySystem>, id: EntityID) -> Bool {
+  return des.IsTagged(id, n"CB_Rival") || des.IsTagged(id, n"CB_Lair") || des.IsTagged(id, n"CB_Apex")
+      || des.IsTagged(id, n"CB_Bounty") || des.IsTagged(id, n"CB_Squad");
+}
+
 public func CBThreatBarOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return IsDefined(rt) && rt.IsEnabled() && rt.HasSettings() && rt.GetSettings().apexBossBar;

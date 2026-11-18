@@ -66,6 +66,8 @@ the next unless a version says otherwise.
   were.
 - Somebody you pick a fight with in conversation fights you at once. They could stand still for a minute and a half
   first.
+- A Rival's bar leaves the screen once the fight with them is over. One you spared or outran kept it for as long as
+  you could see them.
 - One of your crew walking home, or one of a gang's people lent to you, could come back as a Rival if you hurt them
   on the way.
 - A bounty hunter who killed one of your crew and got away came back as a gang's Rival. Hunters keep their own place
