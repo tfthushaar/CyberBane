@@ -1082,6 +1082,9 @@ public class CBStreetTalk {
     if choice == CBTalkActBack() || choice == CBTalkActIncite() || choice == CBTalkActProtection() || choice == CBTalkActTerms() {
       return CBWarTalkAnswer(sys, game, player, t, choice);
     }
+    if choice == CBTalkActBribeScout() {
+      return CBScoutTalkAnswer(sys, game, player, t);
+    }
     if choice == CBTalkActRespects() {
       return CBEventTalkAnswer(sys, game, t);
     }
@@ -1700,7 +1703,8 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
     return Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) <= range ? "" : "too far";
   }
   let desT = GameInstance.GetDynamicEntitySystem();
-  if CBSentAfterV(desT, npc) {
+  // A scout who has not called it in yet can be talked to (Spawn/Hunted.reds, [68]).
+  if CBSentAfterV(desT, npc) && !CBIsScoutBody(sys, npc) {
     // Called off, or let go with their hands up (CB_Orphan): no longer here for V, and on their way out.
     if desT.IsTagged(npc.GetEntityID(), n"CB_Orphan") {
       return "stood down and on their way out";
@@ -2163,6 +2167,10 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   if gang && (m == CBTalkFriendly() || m == CBTalkWary()) && CBStreetLifeOn(n"favours") && IsDefined(lifeC)
      && !lifeC.FavourOpen() && !CBMaskHas(done, CBTalkActFavour()) {
     ArrayPush(out, CBTalkMakeLine("[Ask] Need anything done?", CBTalkActFavour(), t"ChoiceCaptionParts.GangWatchIcon"));
+  }
+  // A scout's price (Spawn/Hunted.reds, [68]).
+  for sl in CBScoutTalkLines(sys, game, t) {
+    ArrayPush(out, sl);
   }
   // The war (Economy/War.reds, 2.4.0): backing a gang, a lie, protection money, terms.
   for wl in CBWarTalkLines(sys, game, t) {

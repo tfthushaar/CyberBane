@@ -39,7 +39,10 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
     return;
   }
   let p = player.GetWorldPosition();
-  let tip = CBHuntTipNear(p);
+  // Where V spends time, they know where to start (Spawn/Hunted.reds, [U8]).
+  let rough = CBHuntTipNear(p);
+  let near = CBHauntTipMult(sys, game);
+  let tip = new Vector4(p.X + (rough.X - p.X) * near, p.Y + (rough.Y - p.Y) * near, rough.Z, 1.0);
   // A hunt already under way keeps what it knows; a new one starts from the tip.
   if sys.GetHuntState() == CBHuntNone() || !CBHuntersOut(sys, game) {
     sys.SetHuntState(CBHuntSearching());
@@ -572,7 +575,9 @@ func CBHuntEngage(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
   CBHuntEngageTag(sys, game, des, ppos, n"CB_Apex");
   CBHuntEngageTag(sys, game, des, ppos, n"CB_Squad");
   CBHuntEngageTag(sys, game, des, ppos, n"CB_Escort");
-  CBHuntEngageTag(sys, game, des, ppos, n"CB_Scout");
+  if Equals(sys.GetScoutFaction(), n"") {
+    CBHuntEngageTag(sys, game, des, ppos, n"CB_Scout");   // only once they have called it in (2.4.1)
+  }
 }
 
 func CBHuntEngageTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
@@ -627,6 +632,10 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
   }
   // And the rain (Model/Moment.reds, 2.3.1).
   scale *= CBRainSightMult(game);
+  // V by the car they know, or with the gun (Model/StreetBook.reds): easier to pick out ([U8], 2.4.1).
+  if IsDefined(sys) && CBVGivenAway(sys, game) > 0 {
+    scale *= CBConfig.KnownSense();
+  }
   // A gang that has learnt V works unseen keeps its eyes open (Model/Ledger.reds, 2.3.2).
   if IsDefined(sys) {
     scale *= CBAdaptSense(game, sys.GetHuntFaction());
@@ -658,7 +667,8 @@ func CBHuntAnyoneSeesPlayer(sys: ref<CyberbaneSystem>, game: GameInstance, des: 
   if best < 2 {
     best = Max(best, CBHuntTagSees(sys, game, des, n"CB_Escort", player, ppos, loud, sense));
   }
-  if best < 2 {
+  // A scout still looking reports through calling it in (CBScoutTick), never by finding V for the hunt.
+  if best < 2 && Equals(sys.GetScoutFaction(), n"") {
     best = Max(best, CBHuntTagSees(sys, game, des, n"CB_Scout", player, ppos, loud, sense));
   }
   return best;
@@ -807,6 +817,11 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     return "";
   }
   let huntsOnly = Equals(mode, ECBHudLine.HuntsOnly);
+  // A scout with eyes on V, calling it in (Spawn/Hunted.reds, 2.4.1): the moment V can still stop it.
+  if NotEquals(sys.GetScoutFaction(), n"") && sys.GetScoutSeenTicks() > 0 {
+    let left = Max(1, CBConfig.ScoutCallTicks() - sys.GetScoutSeenTicks());
+    return "A SCOUT HAS SEEN YOU: CALLING IT IN   -   " + StrUpper(CBTimeText(left));
+  }
   // A witness on their way to a gang (Reactions/Witnesses.reds, 2.3.1), while nobody is hunting V yet.
   let witness = CBWitnessHudLine(sys, game);
   if StrLen(witness) > 0 && Equals(sys.GetHuntFaction(), n"") && !CBHuntersOut(sys, game) {
@@ -1058,7 +1073,7 @@ public func CBTrySendScout(sys: ref<CyberbaneSystem>, game: GameInstance, factio
     return false;
   }
   let body: EntityID;
-  if CBSpawnGroup(game, fs.sampleRecord, n"", 1, n"CB_Scout", CBConfig.HitSquadMinSpawnDistance(), body) <= 0 {
+  if CBSpawnGroup(game, CBScoutRecord(fs), n"", 1, n"CB_Scout", CBConfig.HitSquadMinSpawnDistance(), body) <= 0 {
     return false;   // could not be placed; the crew comes the usual way
   }
   sys.SetScout(faction, body);
@@ -1103,14 +1118,16 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   // Eyes on V: in a fight with V, or close with nothing in the way.
   let d = Vector4.Distance(scout.GetWorldPosition(), player.GetWorldPosition());
   let sees = CBNpcInCombat(scout) && d <= CBConfig.HuntCombatKnowsDistance()
-          || d <= CBConfig.HuntSpotDistance() * CBHuntSenseScale(sys, game) && CBWitnessCanSee(scout, player);
+          || d <= CBConfig.HuntSpotDistance() * CBHuntSenseScale(sys, game) * CBScoutReach(faction) && CBWitnessCanSee(scout, player);
   if !sees {
     sys.SetScoutSeenTicks(0);
     return;
   }
   sys.SetScoutSeenTicks(sys.GetScoutSeenTicks() + 1);
   if sys.GetScoutSeenTicks() >= CBConfig.ScoutCallTicks() {
+    let scoutId = sys.GetScoutId();
     sys.ClearScout();
+    CBScoutDraws(game, scoutId);   // called in: now they fight (Spawn/Hunted.reds, 2.4.1)
     sys.SetHuntLkp(player.GetWorldPosition());
     sys.SetHuntLastSeenTick(sys.GetTickCount());
     CBScoutCallIn(sys, game, faction, true);

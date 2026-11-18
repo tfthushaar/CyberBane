@@ -431,6 +431,30 @@ public abstract class CBConfig {
   public static func ProtectionUnpaidStanding() -> Float = 8.0
   // A turf patrol that walks its beat without trouble adds 2 to its gang's strength.
   public static func PatrolGrip() -> Float = 2.0
+  // Being hunted (Spawn/Hunted.reds, 2.4.1). A hunter handed V aims at 40% for 2.5 seconds. A gang is "still hot"
+  // for 2 game hours after its last incident and "cooling off" until 12. While they search, a change of clothes (look
+  // moved by 8) or district, unseen for 10 seconds, loses the trail at 35%. A haunt holds a third of V's time, once V has
+  // spent two game hours anywhere; samples every 10 ticks count 80 game seconds and fade to 85% a day; a hunt starting
+  // in one starts from a tip 60% as far off. V by the car or gun they know is seen 15% further. A Voodoo Boys scout sees
+  // 60% further. A scout takes 300eb plus 0.3 a point of renown; a lookout stands 15 to 45 m from V.
+  public static func FairVolleyAim() -> Float = 0.4
+  public static func FairVolleySeconds() -> Float = 2.5
+  public static func HeatHotHours() -> Float = 2.0
+  public static func HeatCoolHours() -> Float = 12.0
+  public static func TrailLookChange() -> Float = 8.0
+  public static func TrailUnseenTicks() -> Int32 = 10
+  public static func TrailColdChance() -> Float = 0.35
+  public static func HauntShare() -> Float = 0.34
+  public static func HauntMinSeconds() -> Float = 7200.0
+  public static func HauntSecondsPerSample() -> Float = 80.0
+  public static func HauntDailyKeep() -> Float = 0.85
+  public static func HauntTipMult() -> Float = 0.6
+  public static func KnownSense() -> Float = 1.15
+  public static func NetrunnerScoutReach() -> Float = 1.6
+  public static func ScoutBribeBase() -> Float = 300.0
+  public static func ScoutBribePerRenown() -> Float = 0.3
+  public static func LookoutMinDistance() -> Float = 15.0
+  public static func LookoutMaxDistance() -> Float = 45.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

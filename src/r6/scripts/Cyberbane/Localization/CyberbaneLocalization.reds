@@ -165,6 +165,15 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-GangView", "How gangs see you");
     this.Text("Cyberbane-Settings-Category-Advanced", "Advanced");
     this.Text("Cyberbane-Settings-Category-Turf", "Turf");
+    this.Text("Cyberbane-Settings-Category-Hunted", "Being hunted");
+    this.Text("Cyberbane-Settings-FairVolley", "A fair first volley");
+    this.Text("Cyberbane-Settings-FairVolley-Desc", "For a couple of seconds after Cyberbane's people first find you, their aim is off, so the opening shots aren't the end of the fight.");
+    this.Text("Cyberbane-Settings-LieLow", "Lie low");
+    this.Text("Cyberbane-Settings-LieLow-Desc", "While they're still searching for you, changing clothes or slipping into another district out of sight can make them lose the trail. The Hub's gang page says when a gang is still hot about you or cooling off.");
+    this.Text("Cyberbane-Settings-Haunts", "They learn your haunts");
+    this.Text("Cyberbane-Settings-Haunts-Desc", "The districts you spend most time in become known. A hunt that starts in one of them starts closer to you.");
+    this.Text("Cyberbane-Settings-Lookouts", "Lookouts in the crowd");
+    this.Text("Cyberbane-Settings-Lookouts-Desc", "On a hostile gang's streets, somebody in the crowd is watching for you, and your scanner shows who. Deal with them (talk to them, or put them down) before they report you, and the gang never hears you were there.");
     this.Text("Cyberbane-Settings-Category-Word", "Word on the street");
 
     // ---- Settings: 2.3.1, the street reads you -------------------------------
@@ -181,7 +190,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-BraindanceGoesRound", "The braindance goes round");
     this.Text("Cyberbane-Settings-BraindanceGoesRound-Desc", "When you do something huge in front of people, somebody recorded it, and it is on every BD stall in the city at once instead of spreading a district at a time.");
     this.Text("Cyberbane-Settings-PayTheStreet", "Pay the street");
-    this.Text("Cyberbane-Settings-PayTheStreet-Desc", "Two more things to say in street talk. Pay somebody off the street to keep watch, and for a few hours in that district you get more warning of anybody coming for you, and a text when they show. And a witness running to a gang can be paid to forget what they saw.");
+    this.Text("Cyberbane-Settings-PayTheStreet-Desc", "Two more things to say in street talk. Pay somebody off the street to keep watch, and for a few hours in that district you get more warning of anybody coming for you, and a text when they show. And a witness running to a gang, a gang's lookout in the crowd, or a scout who hasn't called it in yet can be paid to forget they saw you.");
     this.Text("Cyberbane-Settings-KnownByCarAndGun", "Known by your car and gun");
     this.Text("Cyberbane-Settings-KnownByCarAndGun-Desc", "Keep turning up to fights in the same car, or keep using the same gun, and the gangs come to know it. Once they do, a mask will not hide you in that car or with that gun in your hands. The Hub's gang page says what they know.");
     this.Text("Cyberbane-Settings-BossesSeeThrough", "Bosses see through disguises");

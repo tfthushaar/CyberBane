@@ -52,7 +52,7 @@ public func CBStreetPayLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
     return out;
   }
   let done = t.npc.cbTalkDone;
-  if CBIsTeller(game, t.npc) && !t.npc.cbWitnessHushed {
+  if (CBIsTeller(game, t.npc) || CBIsLookout(t.npc)) && !t.npc.cbWitnessHushed {
     let price = CBHushPrice(sys);
     let pay = CBTalkMakeLine(s"[Pay] \(price)eb. You didn't see anything.", CBTalkActHushPay(), t"ChoiceCaptionParts.PayIcon");
     pay.inactive = CBTalkMoney(game) < price;
@@ -79,7 +79,7 @@ public func CBStreetPayAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
                               t: ref<CBTalkTarget>, choice: Int32) -> ref<CBTalkAnswer> {
   let npc = t.npc;
   if choice == CBTalkActHushPay() {
-    if !CBIsTeller(game, npc) {
+    if !CBIsTeller(game, npc) && !CBIsLookout(npc) {
       return CBTalkSay("Already told you. I saw nothing.", n"");
     }
     if !CBTalkTakeMoney(game, player, CBHushPrice(sys)) {
@@ -91,7 +91,7 @@ public func CBStreetPayAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
                              "Eddies spend the same as gang money. Better, even.", "I've got a bad memory. Always have."), n"");
   }
   if choice == CBTalkActHushLean() {
-    if !CBIsTeller(game, npc) {
+    if !CBIsTeller(game, npc) && !CBIsLookout(npc) {
       return CBTalkSay("I'm not saying anything to anybody!", n"fear_beg");
     }
     let chance = CBTalkNerveGap(t) * CBConfig.TalkIntimidateScale() + CBConfig.TalkIntimidateBase() + CBConfig.HushLeanBonus();
@@ -106,8 +106,12 @@ public func CBStreetPayAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
     }
     // They bolt: whoever they were going to tell hears now.
     let book = CBStreetBook.Get(game);
-    if IsDefined(book) {
+    if IsDefined(book) && CBIsTeller(game, npc) {
       book.tellerTick = sys.GetTickCount() - CBConfig.WitnessTellTicks();
+    }
+    // A lookout runs to report V straight away (Spawn/Hunted.reds, [50]).
+    if CBIsLookout(npc) {
+      sys.SetTurfWatch(npc.cbLookoutFor, sys.GetTickCount() - CBConfig.TurfLingerTicks());
     }
     return CBTalkSay(CBPick3("Get away from me! They'll hear about this!", "You don't scare me. They will.",
                              "Touch me and everybody hears it twice as fast."), n"bump");

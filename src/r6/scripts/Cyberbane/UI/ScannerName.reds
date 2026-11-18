@@ -131,6 +131,9 @@ public func CBScannerNote(npc: ref<NPCPuppet>) -> String {
   if npc.cbSergeant && !npc.IsDead() {
     return "CREW SERGEANT";
   }
+  if NotEquals(npc.cbLookoutFor, n"") && !npc.IsDead() {
+    return "LOOKOUT: " + StrUpper(CBFactionLabel(npc.cbLookoutFor));
+  }
   return "";
 }
 

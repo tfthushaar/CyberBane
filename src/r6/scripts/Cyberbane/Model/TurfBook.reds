@@ -29,6 +29,7 @@ public class CBTurfBook extends ScriptableSystem {
   public let patrolNext: Int32;
   public let patrolAnchor: Vector4;    // the corner they hold, which their beat goes round (2.4.0)
   public let patrolTurned: Bool;       // V hurt one of them and they all turned (2.4.0)
+  public let lookoutId: EntityID;      // the turf watch's eyes in the crowd (Spawn/Hunted.reds, 2.4.1)
   // Padded since the lists last came back from a save or were cleared. Every read goes through
   // InRange, many of them a tick, and the lists only ever change length on a load or a start over.
   private let m_padded: Bool;

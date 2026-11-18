@@ -1199,7 +1199,14 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBSetUpAlly(sys, game, puppet);
     return;
   }
-  let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort") || des.IsTagged(id, n"CB_Scout");
+  // A scout looks without drawing, until they have called it in (Spawn/Hunted.reds, 2.4.1).
+  if des.IsTagged(id, n"CB_Scout") {
+    CBSetUpScout(sys, game, puppet);
+    CBKitSquadMember(puppet);
+    CBApplyCrewBuild(sys, game, puppet);
+    return;
+  }
+  let isSquad = des.IsTagged(id, n"CB_Squad") || des.IsTagged(id, n"CB_Escort");
   let isRival = des.IsTagged(id, n"CB_Rival");
   let isApex = des.IsTagged(id, n"CB_Apex");
   // A Rival waiting at their own place for V to come to them (Rivals/Whereabouts.reds). Set up
@@ -1344,7 +1351,7 @@ func CBNearestForTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
 }
 
 // You lost them. Clear the encounter out and let it count.
-func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>) -> Void {
+func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, opt cold: Bool) -> Void {
   sys.SetChaseAwayTicks(0);
   // A Rival you shook takes it personally and comes back harder; the rest simply lose you. Every
   // Rival of the encounter, not only the one leading it: with a team out (1.9.0) this credited the
@@ -1368,7 +1375,8 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   CBDeleteTaggedSafe(game, n"CB_Escort", false, true);
   CBDeleteTaggedSafe(game, n"CB_Scout", false, true);
   sys.SetHuntEnd("LOST THEM", CBConfig.HuntEndLineTicks());
-  if crewLost && NotEquals(ranFrom, n"") {
+  // A trail gone cold (Spawn/Hunted.reds, 2.4.1) is V lying low, not V running: no cost, and the street says it.
+  if crewLost && NotEquals(ranFrom, n"") && !cold {
     let fs = sys.FindFaction(ranFrom);
     if IsDefined(fs) {
       fs.renown = ClampF(fs.renown - CBConfig.RunRenownLoss(), 0.0, 100.0);
@@ -1383,7 +1391,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   sys.GetThreatBar().Hide();
   sys.SetActiveRivalId(0);
   sys.SetActiveSquadFaction(n"");
-  if CBToastsOn() && !crewLost {
+  if CBToastsOn() && !crewLost && !cold {
     CBPhoneFromStreet(game, "They lost you. Do not go back the way you came.");
   }
   CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");
@@ -1560,6 +1568,7 @@ public func CBEngageV(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   }
   CBTrace("combat: one of ours is told where V is");
   TargetTrackingExtension.InjectThreat(puppet, player);
+  CBFairVolley(game, puppet);   // their aim is off for a moment (Spawn/Hunted.reds, [44])
 }
 
 // ---- Clearing up after ourselves --------------------------------------------------

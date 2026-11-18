@@ -67,21 +67,8 @@ Built in 2.4.0 (`Economy/War.reds`, `Model/WarBook.reds`): every idea that was h
     the ladder (a Hub page); at the top V is the most dangerous merc in Night City. The bounty ends when V pays
     it, or kills whoever posted it. A hunter V beats and leaves alive can become a Rival. **L** *(Assassin's
     Creed Odyssey's mercenaries; New Vegas's hit squads)*
-41. **Lie low on purpose.** Staying off a gang's turf, out of fights, or in a safe place cools that gang faster,
-    and the Hub says each gang's heat in words. Changing clothes out of sight or leaving the district gives an
-    extra chance the trail goes cold. **S** *(old backlog 4 and 12)*
-42. **Lose them on the metro or in a cab.** Riding the NCART or a Delamain cab out of the district while hunted
-    loses them, if no hunter saw V get in. Cyberbane already knows when V is on the metro (it holds arrivals
-    then). **S** *(2.1's metro, 2.3's taxis)*
-43. **Sound before contact.** An engine and a door slam when a car crew gets out within earshot, a phone buzz
+43. **Sound before contact.** *(Not built in 2.4.1: no door or engine sound event could be confirmed in the game's own scripts; the apex horn is the one verified sound.)* An engine and a door slam when a car crew gets out within earshot, a phone buzz
     when the HUD line changes, played on the player as the apex horn already is. **S** *(old backlog 8)*
-44. **A fair first volley.** For two seconds after a hunter first sees V, their accuracy is lowered through the
-    existing build pass, so the opening shots are not the end of the fight. **S** *(old backlog 20)*
-45. **A cost for running.** When a crew or apex squad loses V in a straight run (not by stealth or disguise), the
-    gang texts something dismissive and V loses a little renown with them. **S** *(old backlog 15)*
-46. **Hunters who learn V's haunts.** Rivals and crews are likelier to wait near where V spends time: the district
-    V is in most, the street outside V's apartment (never inside a safe area), a bar V keeps going back to.
-    **S** *(old backlog 22)*
 47. **Waiting on V's road.** With a job tracked far away, a vendetta crew may wait near the destination, outside
     its quest clearance, and spring when V arrives. **M**
 48. **Open season.** The top of a gang's anger: its leader declares open season for one in-game day. A crew every
@@ -90,9 +77,6 @@ Built in 2.4.0 (`Economy/War.reds`, `Model/WarBook.reds`): every idea that was h
     *(Far Cry 5's escalation tiers)*
 49. **Tracked.** A Rival's netrunner can plant a tracker on V with a quickhack. Until V visits a ripperdoc, that
     gang always knows the district V is in, and the HUD line says TRACKED. **S to M**
-50. **Lookouts in the crowd.** On hostile turf, one passer-by is really the gang's lookout. A scan shows it; deal
-    with them (talk, a takedown) before they report V and the turf provocation never happens. **M**
-
 ## 6. Rivals
 
 53. **The facedown.** When V and a Rival meet face to face (the announcement's beat), V chooses:
@@ -182,8 +166,6 @@ Built in 2.4.0 (`Economy/War.reds`, `Model/WarBook.reds`): every idea that was h
     experience call)
 88. **Corporate interest.** At legendary standing, a corporation takes notice: a Cyberbane contact (never a story
     character) offers a contract against a gang or warns V off. **S to M**
-89. **Harder means harder fights.** On Hard and Very Hard, smaller crews, longer spawn distances, shorter hunter
-    sight and longer warnings, so harder means harder fights rather than instant deaths. **S** *(old backlog 18)*
 90. **Presets with a shape.** Presets that change what the mod is about, not only how much: **Nemesis** (Rivals
     first), **Turf war** (gangs and districts first), **Quiet life** (the street and talk, nobody hunting).
     **S**

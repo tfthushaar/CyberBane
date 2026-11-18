@@ -1200,6 +1200,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBNoteDriving(game);                // the car V is in, for the car the street knows (2.3.1)
     CBWitnessTick(this, game);          // a witness on their way to a gang gets there, or does not (2.3.1)
     CBWarNoteWestbrook(this, game);     // working Japantown, for the Claws (2.4.0)
+    CBHuntedTick(this, game);           // haunts, and the trail going cold (2.4.1)
     if !heavyStreaming {
       CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
     }
@@ -3398,6 +3399,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     CBLedgerFade(game, elapsedDays);         // how V fights, fading (Model/Ledger.reds, 2.3.2)
     CBWarTick(this, game, elapsedDays);      // chests, ranks, the cut, V's streets, truces, protection (2.4.0)
+    let huntBook = CBHuntBook.Get(game);
+    if IsDefined(huntBook) {
+      huntBook.FadeHaunts(elapsedDays);      // where V spends time, fading (2.4.1)
+    }
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
@@ -3733,6 +3738,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     let war = CBWarBook.Get(this.GetGameInstance());
     if IsDefined(war) {
       war.Clear();        // and the war starts over (2.4.0)
+    }
+    let hunt = CBHuntBook.Get(this.GetGameInstance());
+    if IsDefined(hunt) {
+      hunt.Clear();       // and nobody knows where V spends time (2.4.1)
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);

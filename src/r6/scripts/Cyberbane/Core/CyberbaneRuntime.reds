@@ -38,6 +38,10 @@ public class CyberbaneRuntime extends ScriptableService {
   // the screen, oldest overwritten first. Session only: it is about what V just heard.
   private let m_said: array<String>;
   private let m_saidNext: Int32;
+  // Where a search began, to tell when V has changed clothes or district since (Spawn/Hunted.reds, 2.4.1).
+  private let m_trailSet: Bool;
+  private let m_trailLook: Float;
+  private let m_trailDistrict: CName;
   // What the last overheard line was about, so the next one is about something else (1.9.5).
   private let m_lastWhisperTopic: CName;
   // How many game seconds pass per real second, measured once a session. About 8.1 by default;
@@ -210,6 +214,20 @@ public class CyberbaneRuntime extends ScriptableService {
     }
     this.m_said[this.m_saidNext] = line;
     this.m_saidNext = (this.m_saidNext + 1) % ArraySize(this.m_said);
+  }
+
+  public func TrailSet() -> Bool { return this.m_trailSet; }
+  public func TrailLook() -> Float { return this.m_trailLook; }
+  public func TrailDistrict() -> CName { return this.m_trailDistrict; }
+
+  public func SetTrailLook(look: Float, district: CName) -> Void {
+    this.m_trailSet = true;
+    this.m_trailLook = look;
+    this.m_trailDistrict = district;
+  }
+
+  public func ClearTrail() -> Void {
+    this.m_trailSet = false;
   }
 
   public func SaidLately(line: String) -> Bool {

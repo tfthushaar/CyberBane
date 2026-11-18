@@ -1,0 +1,398 @@
+// Cyberbane - Being hunted, fairer and more readable (2.4.1)
+//
+//   [44] a fair first volley  for a moment after a hunter is handed V (CBEngageV), their aim is off: the game's own
+//                             Accuracy stat, a modifier added and taken off again the way the game's effectors do
+//   [41] lie low on purpose   while they are still searching, changing clothes or slipping into another district
+//                             unseen can make the trail go cold, and the Hub says how hot each gang is
+//   [42] the metro             riding it already calls back whoever had not reached V (Core/StoryHold.reds); now the
+//                             street says so
+//   [46] [U8] haunts           the districts V spends time in are counted (CBHuntBook); a hunt starting in one starts
+//                             from a closer tip, and hunters see V sooner near the car they know
+//   [U7] [68] scouts worth catching   a scout looks without drawing: hostile only once they have called it in, so V
+//                             can walk up and pay them to say they found nothing; the Voodoo Boys' scout is a
+//                             netrunner who spots V from further off; calling it in shows on the HUD
+//   [50] lookouts in the crowd on a hostile gang's streets, the turf watch is somebody: a passer-by who will report V.
+//                             The scanner shows them; deal with them (talk, a takedown) and nothing is reported
+//
+// Its own save book for what outlives a session (haunts now; the bounty, the hunters' ladder, a tracker and a
+// corporation's interest in 2.4.2 and 2.4.3), laid out whole so its saved shape never changes.
+
+public func CBFairVolleyOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().fairVolley;
+}
+
+public func CBLieLowOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().lieLow;
+}
+
+public func CBHauntsOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().haunts;
+}
+
+public func CBLookoutsOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return CBHitSquadsOn() && (!IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().lookouts);
+}
+
+public func CBTalkActBribeScout() -> Int32 = 39
+
+public class CBHuntBook extends ScriptableSystem {
+  private persistent let m_haunt: array<Float>;        // game seconds V has spent in each district (CBDistrictIndex)
+  // Later releases (2.4.2, 2.4.3): a tracker, the bounty, the hunters' ladder, a corporation's interest.
+  private persistent let m_trackedBy: CName;
+  private persistent let m_trackedUntil: Float;
+  private persistent let m_bountyBy: CName;
+  private persistent let m_bountyAmount: Int32;
+  private persistent let m_bountySince: Float;
+  private persistent let m_hunterSeed: array<Int32>;
+  private persistent let m_hunterRank: array<Int32>;
+  private persistent let m_hunterState: array<Int32>;
+  private persistent let m_ladderRank: Int32;
+  private persistent let m_hunterNext: Float;
+  private persistent let m_corpBy: CName;
+  private persistent let m_corpAt: Float;
+  private let m_padded: Bool;
+
+  private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
+    this.m_padded = false;
+  }
+
+  public static func Get(game: GameInstance) -> ref<CBHuntBook> {
+    let container = GameInstance.GetScriptableSystemsContainer(game);
+    if !IsDefined(container) {
+      return null;
+    }
+    return container.Get(n"CBHuntBook") as CBHuntBook;
+  }
+
+  private func Pad() -> Void {
+    if this.m_padded {
+      return;
+    }
+    this.m_padded = true;
+    while ArraySize(this.m_haunt) < CBDistrictCount() {
+      ArrayPush(this.m_haunt, 0.0);
+    }
+    let n = Min(ArraySize(this.m_hunterSeed), Min(ArraySize(this.m_hunterRank), ArraySize(this.m_hunterState)));
+    ArrayResize(this.m_hunterSeed, n);
+    ArrayResize(this.m_hunterRank, n);
+    ArrayResize(this.m_hunterState, n);
+  }
+
+  public func AddHaunt(i: Int32, seconds: Float) -> Void {
+    this.Pad();
+    if i >= 0 && i < ArraySize(this.m_haunt) {
+      this.m_haunt[i] += seconds;
+    }
+  }
+
+  // A haunt: a district holding at least a third of the time V has spent anywhere lately.
+  public func IsHaunt(i: Int32) -> Bool {
+    this.Pad();
+    if i < 0 || i >= ArraySize(this.m_haunt) {
+      return false;
+    }
+    let total = 0.0;
+    for t in this.m_haunt {
+      total += t;
+    }
+    return total >= CBConfig.HauntMinSeconds() && this.m_haunt[i] >= total * CBConfig.HauntShare();
+  }
+
+  public func FadeHaunts(days: Float) -> Void {
+    this.Pad();
+    let keep = PowF(CBConfig.HauntDailyKeep(), MaxF(days, 0.0));
+    let i = 0;
+    while i < ArraySize(this.m_haunt) {
+      this.m_haunt[i] *= keep;
+      i += 1;
+    }
+  }
+
+  public func Clear() -> Void {
+    ArrayClear(this.m_haunt);
+    this.m_trackedBy = n"";
+    this.m_trackedUntil = 0.0;
+    this.m_bountyBy = n"";
+    this.m_bountyAmount = 0;
+    this.m_bountySince = 0.0;
+    ArrayClear(this.m_hunterSeed);
+    ArrayClear(this.m_hunterRank);
+    ArrayClear(this.m_hunterState);
+    this.m_ladderRank = 0;
+    this.m_hunterNext = 0.0;
+    this.m_corpBy = n"";
+    this.m_corpAt = 0.0;
+    this.m_padded = false;
+  }
+}
+
+// ---- [44] A fair first volley ---------------------------------------------------------------------------
+
+@addField(ScriptedPuppet)
+public let cbVolleyed: Bool;
+
+public class CBVolleyEndCallback extends DelayCallback {
+  public let game: GameInstance;
+  public let id: EntityID;
+  public let mod: ref<gameStatModifierData>;
+
+  public func Call() -> Void {
+    let stats = GameInstance.GetStatsSystem(this.game);
+    if IsDefined(stats) && IsDefined(this.mod) {
+      stats.RemoveModifier(Cast<StatsObjectID>(this.id), this.mod);
+    }
+  }
+}
+
+// The first time a hunter is handed V: their aim is off for a moment, then back. Once per body.
+public func CBFairVolley(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  if !CBFairVolleyOn() || !IsDefined(puppet) || puppet.cbVolleyed || !puppet.IsAttached() {
+    return;
+  }
+  puppet.cbVolleyed = true;
+  let stats = GameInstance.GetStatsSystem(game);
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(stats) || !IsDefined(ds) {
+    return;
+  }
+  let id = puppet.GetEntityID();
+  let mod = RPGManager.CreateStatModifier(gamedataStatType.Accuracy, gameStatModifierType.Multiplier, CBConfig.FairVolleyAim());
+  if !IsDefined(mod) || !stats.AddModifier(Cast<StatsObjectID>(id), mod) {
+    return;
+  }
+  let cb = new CBVolleyEndCallback();
+  cb.game = game;
+  cb.id = id;
+  cb.mod = mod;
+  ds.DelayCallback(cb, CBConfig.FairVolleySeconds(), false);
+}
+
+// ---- [41] Lie low; [46] haunts --------------------------------------------------------------------------
+
+// How hot a gang is, for the Hub: from when they last had reason.
+public func CBHeatWord(game: GameInstance, fs: ref<CBFactionState>) -> String {
+  if !CBLieLowOn() || !IsDefined(fs) || fs.lastIncidentAt <= 0.0 {
+    return "";
+  }
+  let ago = CBGameSeconds(game) - fs.lastIncidentAt;
+  if ago < 0.0 {
+    return "";
+  }
+  if ago < CBConfig.HeatHotHours() * CBConfig.SecondsPerHour() {
+    return "still hot about you";
+  }
+  if ago < CBConfig.HeatCoolHours() * CBConfig.SecondsPerHour() {
+    return "cooling off";
+  }
+  return "";
+}
+
+// From the fast tick: V's time in each district, and the hunt's chances to lose the trail.
+public func CBHuntedTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let book = CBHuntBook.Get(game);
+  let player = GetPlayer(game);
+  if !IsDefined(sys) || !IsDefined(book) || !IsDefined(player) {
+    return;
+  }
+  let tick = sys.GetTickCount();
+  if CBHauntsOn() && tick % 10 == 0 {
+    book.AddHaunt(CBDistrictIndex(sys.GetCurrentDistrict()), CBConfig.HauntSecondsPerSample());
+  }
+  // The trail goes cold: still searching, nobody has eyes on V, and V has changed how they look or where they are.
+  let rt = CyberbaneRuntime.Get();
+  if !CBLieLowOn() || !IsDefined(rt) || sys.GetHuntState() != CBHuntSearching() {
+    if IsDefined(rt) {
+      rt.ClearTrail();
+    }
+    return;
+  }
+  let score = sys.GetScore();
+  let look = IsDefined(score) ? score.GetLook() : 0.0;
+  let here = sys.GetCurrentDistrict();
+  if !rt.TrailSet() {
+    rt.SetTrailLook(look, here);
+    return;
+  }
+  let changedClothes = AbsF(look - rt.TrailLook()) >= CBConfig.TrailLookChange();
+  let changedDistrict = NotEquals(here, rt.TrailDistrict()) && NotEquals(here, n"");
+  if !changedClothes && !changedDistrict {
+    return;
+  }
+  rt.SetTrailLook(look, here);
+  if tick - sys.GetHuntLastSeenTick() < CBConfig.TrailUnseenTicks() || RandF() >= CBConfig.TrailColdChance() {
+    return;
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  let faction = sys.GetHuntFaction();
+  CBChaseGiveUp(sys, game, des, true);
+  sys.SetHuntState(CBHuntNone());
+  sys.SetHuntFaction(n"");
+  sys.SetHuntGrade("");
+  CBLog.Info(n"Spawn", "The trail went cold.");
+  if CBToastsOn() && NotEquals(faction, n"") {
+    CBHearsayFromStreet(game, changedClothes ? "Whoever was after you lost you when you changed. They're looking for somebody else now."
+                                             : "Whoever was after you lost your trail when you crossed over.", n"");
+  }
+}
+
+// A hunt starting where V spends time starts from a closer tip ([U8]).
+public func CBHauntTipMult(sys: ref<CyberbaneSystem>, game: GameInstance) -> Float {
+  let book = CBHuntBook.Get(game);
+  if !CBHauntsOn() || !IsDefined(book) || !IsDefined(sys) {
+    return 1.0;
+  }
+  return book.IsHaunt(CBDistrictIndex(sys.GetCurrentDistrict())) ? CBConfig.HauntTipMult() : 1.0;
+}
+
+// ---- [U7] [68] Scouts worth catching --------------------------------------------------------------------
+
+// A scout looks without drawing (Spawn/Spawner.reds sets them up this way): neutral to V until they have called it in.
+public func CBSetUpScout(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
+  let player = GetPlayer(game);
+  if !IsDefined(player) || !CBStillStanding(puppet) || !puppet.IsAttached() {
+    return;
+  }
+  let agent = puppet.GetAttitudeAgent();
+  let pagent = player.GetAttitudeAgent();
+  if IsDefined(agent) && IsDefined(pagent) {
+    if !IsNameValid(agent.GetAttitudeGroup()) {
+      let group = CBRecordAttitudeGroup(puppet.GetRecordID());
+      if IsNameValid(group) {
+        agent.SetAttitudeGroupUnsavable(group);
+      }
+    }
+    CBTrace("attitude: a scout looks without drawing");
+    agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+  }
+  CBGrantAbility(puppet as NPCPuppet, t"Ability.IsAggressive");
+  CBDisarmGodMode(game, puppet);
+  CBOrderPursue(sys, game, puppet);
+  CBTrackOnMap(game, puppet);
+}
+
+// The scout has called it in: now they fight.
+public func CBScoutDraws(game: GameInstance, scoutId: EntityID) -> Void {
+  let scout = GameInstance.FindEntityByID(game, scoutId) as ScriptedPuppet;
+  if CBStillStanding(scout) && scout.IsAttached() {
+    CBMakeHostileToPlayer(game, scout);
+  }
+}
+
+// Which record a gang's scout comes from: the Voodoo Boys send a netrunner, everybody else one of their own.
+public func CBScoutRecord(fs: ref<CBFactionState>) -> TweakDBID {
+  if CBGangCodesOn() && Equals(fs.id, n"VoodooBoys") {
+    let net = CBNetrunnerSeatRecord(fs);
+    if TDBID.IsValid(net) {
+      return net;
+    }
+  }
+  return fs.sampleRecord;
+}
+
+// How far a gang's scout sees, as a share: a Voodoo Boys netrunner pings from further off.
+public func CBScoutReach(faction: CName) -> Float {
+  return CBGangCodesOn() && Equals(faction, n"VoodooBoys") ? CBConfig.NetrunnerScoutReach() : 1.0;
+}
+
+public func CBIsScoutBody(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
+  return IsDefined(sys) && IsDefined(npc) && EntityID.IsDefined(sys.GetScoutId()) && Equals(npc.GetEntityID(), sys.GetScoutId());
+}
+
+public func CBScoutBribePrice(sys: ref<CyberbaneSystem>) -> Int32 {
+  let score = sys.GetScore();
+  return RoundF(CBConfig.ScoutBribeBase() + (IsDefined(score) ? score.GetRenown() : 0.0) * CBConfig.ScoutBribePerRenown());
+}
+
+public func CBScoutTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> array<ref<CBTalkLine>> {
+  let out: array<ref<CBTalkLine>>;
+  if !CBPayTheStreetOn() || !IsDefined(t) || !CBIsScoutBody(sys, t.npc) {
+    return out;
+  }
+  let price = CBScoutBribePrice(sys);
+  let l = CBTalkMakeLine(s"[Pay] \(price)eb. Tell them you didn't find me.", CBTalkActBribeScout(), t"ChoiceCaptionParts.PayIcon");
+  l.inactive = CBTalkMoney(game) < price;
+  l.important = true;
+  ArrayPush(out, l);
+  return out;
+}
+
+public func CBScoutTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
+  if !CBIsScoutBody(sys, t.npc) {
+    return CBTalkSay("Find what? I'm just walking.", n"");
+  }
+  let price = CBScoutBribePrice(sys);
+  if !CBTalkTakeMoney(game, player, price) {
+    return CBTalkSay("That doesn't buy my silence.", n"");
+  }
+  let faction = sys.GetScoutFaction();
+  sys.ClearScout();
+  let fs = sys.FindFaction(faction);
+  if IsDefined(fs) {
+    fs.lastHitSquadAt = CBGameSeconds(game);   // they leave V alone a while, as a silenced scout's gang does
+  }
+  if IsDefined(t.npc) {
+    CBOrderFlee(game, t.npc);
+  }
+  CBFileLog(sys, n"ScoutBribed", CBGameSeconds(game), CBEventDistrict(sys, game), faction, Cast<Float>(price));
+  return CBTalkSay(CBLineOf(["Never saw you. Nobody here but me.", "You were never here. Good doing business.",
+                             "I'll tell them the trail went cold. Don't make me a liar."]), n"");
+}
+
+// ---- [50] Lookouts in the crowd -------------------------------------------------------------------------
+
+@addField(ScriptedPuppet)
+public let cbLookoutFor: CName;
+
+public func CBIsLookout(npc: wref<ScriptedPuppet>) -> Bool {
+  return IsDefined(npc) && NotEquals(npc.cbLookoutFor, n"");
+}
+
+// Somebody near V in the crowd, to be the gang's eyes on its streets. None, and the watch works as it always did.
+public func CBPickLookout(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> EntityID {
+  let none: EntityID;
+  let reg = sys.GetRegistry();
+  let player = GetPlayer(game);
+  if !CBLookoutsOn() || !IsDefined(reg) || !IsDefined(player) {
+    return none;
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  let ppos = player.GetWorldPosition();
+  for npc in reg.GetAll() {
+    if CBNpcSafe(sys, npc) && CBStillStanding(npc) && !CBSentByUs(des, npc) && !npc.cbTalkPartner {
+      let d = Vector4.Distance(ppos, npc.GetWorldPosition());
+      if d >= CBConfig.LookoutMinDistance() && d <= CBConfig.LookoutMaxDistance() && Equals(CBClassifyFaction(npc), n"") {
+        npc.cbLookoutFor = gang;
+        npc.SetScannerDirty(true);
+        return npc.GetEntityID();
+      }
+    }
+  }
+  return none;
+}
+
+// Has V dealt with the lookout: put them down, or talked them out of it?
+public func CBLookoutDealt(game: GameInstance, id: EntityID) -> Bool {
+  if !EntityID.IsDefined(id) {
+    return false;
+  }
+  let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+  if !IsDefined(p) {
+    return false;   // out of the world: they may yet report
+  }
+  return !CBStillStanding(p) || p.cbWitnessHushed;
+}
+
+public func CBLookoutRelease(game: GameInstance, id: EntityID) -> Void {
+  if !EntityID.IsDefined(id) {
+    return;
+  }
+  let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+  if IsDefined(p) {
+    p.cbLookoutFor = n"";
+    p.SetScannerDirty(true);
+  }
+}

@@ -292,6 +292,10 @@ public func CBStoryStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
              || CBLiveTaggedPresent(game, n"CB_Apex") || CBLiveTaggedPresent(game, n"CB_Escort")
              || CBLiveTaggedPresent(game, n"CB_Scout");
   if !anyLeft && sys.GetHuntState() != CBHuntNone() {
+    // A ride (the metro, a cab, a seat the story gives V) took V away from them: the street says so (2.4.1, [42]).
+    if removed > 0 && sys.GetStoryHold() == CBStoryRestricted() && CBToastsOn() {
+      CBHearsayFromStreet(game, "Whoever was after you lost you on the ride. They're still looking where you were.", n"");
+    }
     CBStoryResetHunt(sys);
   }
 }

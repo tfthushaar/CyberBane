@@ -3,6 +3,32 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.4.1 (18 November 2026)
+
+**Being hunted, fairer**
+- **A fair first volley.** For a couple of seconds after Cyberbane's people first find you, their aim is off,
+  so the opening shots aren't the end of the fight.
+- **Lie low.** While they're still searching, changing clothes or slipping into another district out of sight
+  can make them lose the trail, with no cost for running. The Hub's gang page says when a gang is still hot about
+  you or cooling off.
+- **Lose them on the metro.** Riding off already called back whoever hadn't reached you; now the street tells
+  you they lost you.
+- **They learn your haunts.** The districts you spend most time in become known, and a hunt that starts in one
+  starts closer to you. Being by the car they know, or holding the gun they know, makes you easier to spot.
+
+**Scouts and lookouts worth catching**
+- **A scout looks, it doesn't shoot**, until it has called you in. The HUD line shows when a scout has seen you
+  and is calling it in, so you can still stop it: put it down, or walk up and pay it to say it found nothing.
+  The Voodoo Boys' scout is a netrunner who spots you from further off.
+- **Lookouts in the crowd.** On a hostile gang's streets, somebody in the crowd is watching for you, and your
+  scanner shows who. Deal with them (talk, or a takedown) before they report you and the gang never hears.
+
+**Mod Settings**
+- New heading, **Being hunted**: the car options and bounties moved there, with **Lie low**, **They learn your
+  haunts** and **Lookouts in the crowd**. **A fair first volley** is under **Crews and apex squads**. All on.
+
+Your progress carries over.
+
 ## 2.4.0 (18 November 2026)
 
 **Turf, money and war**

@@ -2455,6 +2455,10 @@ public class CBHud {
     }
     let status = CBHudGangStatus(sys, fs);
     let war = CBWarWords(game, id);   // their chest, their ranks, backed by V, a truce (Economy/War.reds, 2.4.0)
+    let heat = CBHeatWord(game, fs);  // still hot, or cooling off (Spawn/Hunted.reds, 2.4.1)
+    if StrLen(heat) > 0 {
+      war = StrLen(war) > 0 ? heat + ", " + war : heat;
+    }
     if StrLen(status) > 0 || StrLen(war) > 0 {
       let both = StrLen(status) > 0 && StrLen(war) > 0 ? StrLower(status) + "; " + war : StrLower(status) + war;
       out += "Right now: " + both + ".\n";
@@ -4064,6 +4068,10 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   }
   if Equals(e.kind, n"LetGo") {
     return StrLen(gang) > 0 ? s"You let one of \(gang) walk with their hands up." : "You let somebody walk with their hands up.";
+  }
+  // 2.4.1: being hunted.
+  if Equals(e.kind, n"ScoutBribed") {
+    return StrLen(gang) > 0 ? s"You paid \(CBPossessive(gang)) scout to say they never found you." : "You paid a scout to say they never found you.";
   }
   // 2.4.0: the war.
   if Equals(e.kind, n"WeeklyCut") {

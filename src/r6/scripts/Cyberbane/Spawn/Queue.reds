@@ -1000,6 +1000,7 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   if !IsDefined(player) || sys.IsInSafeZone() || sys.IsInQuestArea() || CBPlayerInStealthState(game)
      || sys.GetStoryHold() != CBStoryNone()
      || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetProvoked(), n"") {
+    CBTurfWatchLetGo(game);
     sys.SetTurfWatch(n"", now);
     return;
   }
@@ -1023,16 +1024,35 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     }
   }
   if Equals(owner, n"") {
+    CBTurfWatchLetGo(game);
     sys.SetTurfWatch(n"", now);
     return;
   }
+  let turfBook = CBTurfBook.Get(game);
   if NotEquals(owner, sys.GetTurfWatchFaction()) {
+    CBTurfWatchLetGo(game);
     sys.SetTurfWatch(owner, now);
+    // Their eyes on the street: somebody in the crowd (Spawn/Hunted.reds, [50]).
+    if IsDefined(turfBook) {
+      turfBook.lookoutId = CBPickLookout(sys, game, owner);
+    }
+    return;
+  }
+  // Their lookout dealt with: nothing gets reported, and the street is quiet for a while.
+  if IsDefined(turfBook) && CBLookoutDealt(game, turfBook.lookoutId) {
+    CBTurfWatchLetGo(game);
+    sys.SetTurfSpotNext(now + CBConfig.TurfSpotCooldownTicks());
+    sys.SetTurfWatch(n"", now);
+    CBLog.Info(n"Spawn", s"The \(NameToString(owner)) lookout was dealt with.");
+    if CBToastsOn() {
+      CBHearsayFromStreet(game, s"\(CBCapFirst(CBFactionLabel(owner))) had somebody watching for you. Not any more.", n"");
+    }
     return;
   }
   if (now - sys.GetTurfWatchSince()) < CBConfig.TurfLingerTicks() || now < sys.GetTurfSpotNext() {
     return;
   }
+  CBTurfWatchLetGo(game);
   CBProvoke(sys, game, owner);
   sys.SetTurfSpotNext(now + CBConfig.TurfSpotCooldownTicks());
   sys.SetTurfWatch(owner, now);
@@ -1287,5 +1307,15 @@ func CBApexLaneNote(sys: ref<CyberbaneSystem>, game: GameInstance, why: String) 
       CBLog.Info(n"Spawn", s"Apex squad: \(NameToString(fs.id)) is ready, held because \(why).");
       return;
     }
+  }
+}
+
+// The turf watch's lookout is nobody's any more.
+func CBTurfWatchLetGo(game: GameInstance) -> Void {
+  let book = CBTurfBook.Get(game);
+  if IsDefined(book) && EntityID.IsDefined(book.lookoutId) {
+    CBLookoutRelease(game, book.lookoutId);
+    let none: EntityID;
+    book.lookoutId = none;
   }
 }
