@@ -63,8 +63,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_hubOnMenu: wref<CBHud>;          // the Hub as a tab of the game's menu, while that is up (UI/HubTab.reds)
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
-  private let m_hubWeb: Bool;                 // the Factions page as the web of gangs, this session (2.4.3)
-  private let m_hubTree: Bool;                // the Rivals page as each gang's tree, this session (2.4.4)
+  // The Hub's pages that can be drawn as a picture (the web of gangs, the Rivals tree, the map, the crew): the ones
+  // switched to a list this session, a bit per page. Pictures by default (2.5.0).
+  private let m_hubListMask: Int32;
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
   private let m_ledgerDue: Bool;              // the death ledger waits for the first settled tick (StartSession)
   // V's equipment is read for the first time on the first settled tick too, never from inside the load
@@ -1398,20 +1399,28 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_hubTab = tab;
   }
 
+  public func HubVisual(tab: Int32) -> Bool {
+    return !CBMaskHas(this.m_hubListMask, tab);
+  }
+
+  public func SetHubVisual(tab: Int32, on: Bool) -> Void {
+    this.m_hubListMask = on ? CBMaskClear(this.m_hubListMask, tab) : CBMaskSet(this.m_hubListMask, tab);
+  }
+
   public func HubWeb() -> Bool {
-    return this.m_hubWeb;
+    return this.HubVisual(CBHudFactionsTab());
   }
 
   public func SetHubWeb(on: Bool) -> Void {
-    this.m_hubWeb = on;
+    this.SetHubVisual(CBHudFactionsTab(), on);
   }
 
   public func HubTree() -> Bool {
-    return this.m_hubTree;
+    return this.HubVisual(CBHudRivalsTab());
   }
 
   public func SetHubTree(on: Bool) -> Void {
-    this.m_hubTree = on;
+    this.SetHubVisual(CBHudRivalsTab(), on);
   }
 
   // A pay-off chosen on the Hub. n"" takes the request back. Carried out on resume.

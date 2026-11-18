@@ -21,16 +21,18 @@
 // tick after you resume carries it out (CyberbaneSystem.ServiceHubActions), the same way every
 // other piece of world work in this mod is kept off UI callbacks.
 
-// Six screens. Messages are not one of them: they live in V's phone (UI/RealPhone.reds).
-public func CBHudTabCount() -> Int32 = 7
+// Eight screens (2.5.0: the crew joined them). Messages are not one of them: they live in V's phone (UI/RealPhone.reds).
+public func CBHudTabCount() -> Int32 = 8
 public func CBHudStandingTab() -> Int32 = 1
 public func CBHudFactionsTab() -> Int32 = 2
 // Next to GANGS on purpose: what the gangs think of V, then what V has done to their streets.
 public func CBHudTurfTab() -> Int32 = 3
 public func CBHudCityTab() -> Int32 = 4
 public func CBHudRivalsTab() -> Int32 = 5
-public func CBHudTitlesTab() -> Int32 = 6
-public func CBHudHistoryTab() -> Int32 = 7
+// Next to the Rivals: the people against V, then the people with V (Reactions/Crew.reds, 2.5.0).
+public func CBHudCrewTab() -> Int32 = 6
+public func CBHudTitlesTab() -> Int32 = 7
+public func CBHudHistoryTab() -> Int32 = 8
 
 // Lines of prose each screen has room for under its own content, before the footer rule at 934.
 // Every screen draws its own content first and the prose goes underneath or beside it; these are
@@ -43,6 +45,9 @@ public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == CBHudFactionsTab() || tab == CBHudRivalsTab() || tab == CBHudCityTab()
      || tab == CBHudTurfTab() {
     return 9;    // under ten list rows
+  }
+  if tab == CBHudCrewTab() {
+    return 12;   // under six rows at most
   }
   if tab == CBHudTitlesTab() {
     return 26;   // the right-hand column, full height
@@ -190,7 +195,7 @@ public func CBHudContentW() -> Float = 1320.0
 // with panels rather than hairlines, which is why the same distortion is invisible on them. So
 // the fix for "it looks curved" is the same as the fix for "it does not look like the game":
 // stop drawing the shapes that reveal it.
-public func CBHudChipWidth() -> Float = 172.0
+public func CBHudChipWidth() -> Float = 156.0
 public func CBHudBarCount() -> Int32 = 4
 public func CBHudBarWidth() -> Float = 1320.0
 public func CBHudContentTop() -> Float = 200.0
@@ -226,6 +231,24 @@ public func CBHudActionGap() -> Float = 8.0
 public func CBHudLayoutGangs() -> Int32 = 0
 public func CBHudLayoutWide() -> Int32 = 1
 public func CBHudLayoutTitles() -> Int32 = 2
+public func CBHudLayoutCrew() -> Int32 = 3    // the crew (2.5.0)
+public func CBHudLayoutLanes() -> Int32 = 4   // what is on its way, on Standing (2.5.0)
+
+// A bar drawn in a row (2.5.0): where it sits on each screen, so no column's text runs under it. Gangs: standing, from
+// the middle. The city and turf: renown and share, where the text meters were. Rivals: rank, and a gang's strength.
+// The crew: loyalty.
+public func CBHudRowBarH() -> Float = 10.0
+public func CBHudGangBarX() -> Float = 384.0
+public func CBHudGangBarW() -> Float = 88.0
+public func CBHudWideBarX() -> Float = 411.0
+public func CBHudWideBarW() -> Float = 196.0
+public func CBHudRankBarX() -> Float = 954.0
+public func CBHudRankBarW() -> Float = 84.0
+public func CBHudCrewBarX() -> Float = 884.0
+public func CBHudCrewBarW() -> Float = 120.0
+// The smallest a cell's text is drawn when it is too long for its column: smaller than this, it is shortened at a word.
+public func CBHudMinCellFont() -> Int32 = 16
+public func CBHudBarTrack() -> HDRColor = new HDRColor(0.26, 0.08, 0.10, 0.90)
 
 // Colours.
 //
@@ -277,6 +300,29 @@ public func CBHudTrim(text: String, maxChars: Int32) -> String {
   return StrLeft(text, maxChars - 1) + ".";
 }
 
+// The same, but at a word: what is left ends on a whole word and says there was more. Only a single word longer than
+// the whole column is ever cut inside itself (2.5.0).
+public func CBHudTrimWords(text: String, maxChars: Int32) -> String {
+  if StrLen(text) <= maxChars {
+    return text;
+  }
+  if maxChars <= 4 {
+    return CBHudTrim(text, maxChars);
+  }
+  let words = StrSplit(text, " ");
+  let out = "";
+  let i = 0;
+  while i < ArraySize(words) {
+    let next = StrLen(out) == 0 ? words[i] : out + " " + words[i];
+    if StrLen(next) + 3 > maxChars {
+      return StrLen(out) > 0 ? out + "..." : CBHudTrim(text, maxChars);
+    }
+    out = next;
+    i += 1;
+  }
+  return out;
+}
+
 // Row columns.
 //
 // Six fields per row, one field per column, positioned per screen, so the fields line up down the
@@ -311,10 +357,22 @@ public func CBHudRowColX(col: Int32, layout: Int32) -> Float {
   if layout == CBHudLayoutGangs() {
     if col == 0 { return 21.0; }
     if col == 1 { return 231.0; }
-    if col == 2 { return 360.0; }
-    if col == 3 { return 480.0; }
-    if col == 4 { return 703.0; }
+    if col == 2 { return 484.0; }
+    if col == 3 { return 596.0; }
+    if col == 4 { return 790.0; }
   } else {
+    if layout == CBHudLayoutCrew() {
+      if col == 0 { return 21.0; }
+      if col == 1 { return 350.0; }
+      if col == 2 { return 486.0; }
+      if col == 3 { return 586.0; }
+      return 0.0;
+    }
+    if layout == CBHudLayoutLanes() {
+      if col == 0 { return 21.0; }
+      if col == 1 { return 236.0; }
+      return 0.0;
+    }
     if col == 0 { return 21.0; }
     if col == 1 { return 411.0; }
     if col == 2 { return 626.0; }
@@ -335,11 +393,25 @@ public func CBHudRowColChars(col: Int32, layout: Int32) -> Int32 {
   }
   if layout == CBHudLayoutGangs() {
     if col == 0 { return 15; }
-    if col == 1 { return 9; }
+    if col == 1 { return 11; }
     if col == 2 { return 8; }
-    if col == 3 { return 15; }
-    if col == 4 { return 10; }
-    return 24;
+    if col == 3 { return 14; }
+    if col == 4 { return 9; }
+    return 22;
+  }
+  if layout == CBHudLayoutCrew() {
+    if col == 0 { return 24; }
+    if col == 1 { return 10; }
+    if col == 2 { return 7; }
+    if col == 3 { return 22; }
+    if col == 4 { return 0; }
+    return 12;
+  }
+  if layout == CBHudLayoutLanes() {
+    if col == 0 { return 15; }
+    if col == 1 { return 58; }
+    if col == 5 { return 16; }
+    return 0;
   }
   if col == 0 { return 28; }
   if col == 1 { return 15; }
@@ -401,8 +473,9 @@ public func CBHudTabName(tab: Int32) -> String {
     case 3: return "TURF";
     case 4: return "THE CITY";
     case 5: return "RIVALS";
-    case 6: return "TITLES";
-    case 7: return "HISTORY";
+    case 6: return "CREW";
+    case 7: return "TITLES";
+    case 8: return "HISTORY";
     default: return "";
   }
 }
@@ -415,8 +488,9 @@ public func CBHudTabBlurb(tab: Int32) -> String {
     case 3: return "Who holds each district, how firmly, and who is fighting them for it.";
     case 4: return "Where in Night City your name carries, district by district.";
     case 5: return "The people who have survived you and are still looking. Click one for their file.";
-    case 6: return "What the street calls you and what it gets you. Click any title to read it, or go by one you have earned.";
-    case 7: return "The ledger: what you did, where, and who it was.";
+    case 6: return "The people who work for you: who is ready, who is restless, and what they are owed.";
+    case 7: return "What the street calls you and what it gets you. Click any title to read it, or go by one you have earned.";
+    case 8: return "The ledger: what you did, where, and who it was.";
     default: return "";
   }
 }
@@ -510,6 +584,12 @@ public class CBHud {
   private let m_rowBg: array<wref<inkWidget>>;
   private let m_rowPip: array<wref<inkRectangle>>;
   private let m_rowCell: array<wref<inkText>>;
+  private let m_rowTrack: array<wref<inkRectangle>>;   // a bar in the row (2.5.0), hidden until a screen draws one
+  private let m_rowFill: array<wref<inkRectangle>>;
+  private let m_rowTop: Float;                          // where the first row sits on this screen
+  private let m_rowCrew: array<Int32>;                  // the crew member a row stands for (2.5.0); -1 the solo on offer
+  private let m_pickCrew: Int32;
+  private let m_letGoArmed: Int32;
   private let m_rowNames: array<CName>;
   private let m_rowLayout: Int32;
   private let m_rowPlaced: Bool;
@@ -608,6 +688,12 @@ public class CBHud {
   private let m_treeShown: Bool;
   private let m_treeGang: CName;
   private let m_treeSlotRival: array<Int32>;
+  // The same pool draws two pictures more (2.5.0): Night City as a map on the Turf and City pages, and V's crew round V.
+  private let m_mapShown: Bool;
+  private let m_crewPicShown: Bool;
+  private let m_pickDistrict: CName;
+  private let m_boxDistrict: array<CName>;   // the district each box stands for on the map
+  private let m_boxCrew: array<Int32>;       // the crew member each box stands for (-1 the solo on offer)
 
   public func IsOpen() -> Bool {
     return this.m_open && this.m_built;
@@ -636,6 +722,7 @@ public class CBHud {
     this.m_payArmed = n"";
     this.m_findArmed = 0;
     this.m_forgetArmed = 0;
+    this.m_letGoArmed = 0;
     this.m_listTop = 0;
     this.m_listScrolled = false;
     this.m_hover = n"";
@@ -1062,9 +1149,16 @@ public class CBHud {
       return this.m_actionOn;
     }
     if Equals(name, CBHudWebToggleName()) {
-      return this.m_tab == CBHudFactionsTab() || this.m_tab == CBHudRivalsTab();
+      return CBHudHasPicture(this.m_tab);
     }
-    if this.WebIndex(name) >= 0 {
+    let wbox = this.WebIndex(name);
+    if wbox >= 0 {
+      if this.m_mapShown {
+        return wbox < ArraySize(this.m_boxDistrict) && NotEquals(this.m_boxDistrict[wbox], n"");
+      }
+      if this.m_crewPicShown {
+        return wbox < ArraySize(this.m_boxCrew) && this.m_boxCrew[wbox] != 0;
+      }
       return this.m_webShown || this.m_treeShown;
     }
     let k = this.ExtraIndex(name);
@@ -1350,6 +1444,14 @@ public class CBHud {
       let pip = this.NewRect(rbox, CBHudGrey());
       pip.SetSize(this.PxSize(5.0, 26.0));
       pip.SetMargin(this.PxAt(0.0, 7.0));
+      // A bar of its own: placed and filled by whichever screen uses it (SetRowBar).
+      let track = this.NewRect(rbox, CBHudBarTrack());
+      track.SetVisible(false);
+      let fill = this.NewRect(rbox, CBHudCyan());
+      fill.SetVisible(false);
+      ArrayPush(this.m_rowTrack, track);
+      ArrayPush(this.m_rowFill, fill);
+      ArrayPush(this.m_rowCrew, 0);
       ArrayPush(this.m_rowBox, rbox);
       ArrayPush(this.m_rowBg, band);
       ArrayPush(this.m_rowPip, pip);
@@ -1404,6 +1506,7 @@ public class CBHud {
     actionText.SetFitToContent(false);
     actionText.SetSize(this.PxSize(CBHudActionW(), 30.0));
     actionText.SetMargin(this.PxAt(0.0, 13.0));
+    actionText.SetVerticalAlignment(textVerticalAlignment.Center);
     action.SetVisible(false);
     this.m_actionBox = action;
     this.m_actionBg = actionBg;
@@ -1433,6 +1536,7 @@ public class CBHud {
       extraText.SetFitToContent(false);
       extraText.SetSize(this.PxSize(CBHudActionW(), 30.0));
       extraText.SetMargin(this.PxAt(0.0, 13.0));
+      extraText.SetVerticalAlignment(textVerticalAlignment.Center);
       extra.SetVisible(false);
       ArrayPush(this.m_extraBox, extra);
       ArrayPush(this.m_extraBg, extraBg);
@@ -1595,15 +1699,11 @@ public class CBHud {
     // The web of gangs (2.4.3): the switch, and a gang's box picked.
     if Equals(name, CBHudWebToggleName()) {
       e.Handle();
-      if this.m_tab == CBHudFactionsTab() {
+      if CBHudHasPicture(this.m_tab) {
         this.Click();
-        sys.SetHubWeb(!sys.HubWeb());
+        sys.SetHubVisual(this.m_tab, !sys.HubVisual(this.m_tab));
         this.m_payArmed = n"";
-        this.Render(sys, game);
-      }
-      if this.m_tab == CBHudRivalsTab() {
-        this.Click();
-        sys.SetHubTree(!sys.HubTree());
+        this.m_listTop = 0;
         this.Render(sys, game);
       }
       return true;
@@ -1618,6 +1718,14 @@ public class CBHud {
       if this.m_treeShown {
         this.Click();
         this.TreePick(sys, game, wi);
+      }
+      if this.m_mapShown {
+        this.Click();
+        this.MapPick(sys, game, wi);
+      }
+      if this.m_crewPicShown {
+        this.Click();
+        this.CrewPick(sys, game, wi);
       }
       return true;
     }
@@ -1846,6 +1954,7 @@ public class CBHud {
     this.m_payArmed = n"";
     this.m_findArmed = 0;
     this.m_forgetArmed = 0;
+    this.m_letGoArmed = 0;
     this.m_listTop = 0;
     this.m_listScrolled = false;
     this.m_hover = n"";
@@ -1853,6 +1962,12 @@ public class CBHud {
   }
 
   private func RowClicked(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32) -> Void {
+    if this.m_tab == CBHudCrewTab() {
+      this.m_pickCrew = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] : 0;
+      this.m_letGoArmed = 0;
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudFactionsTab() {
       let f = this.m_rowFaction[row];
       // Clicking the one already open closes it again.
@@ -1885,6 +2000,19 @@ public class CBHud {
   // paused, and both touch the world. They are recorded, and done on the first settled tick after
   // the menu closes. Clicking again before then takes the request back.
   private func ActionClicked(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    // The crew (2.5.0): "Need you. Now." is carried out on the first tick back in the game; clicked again, taken back.
+    if this.m_tab == CBHudCrewTab() {
+      let crew = CBCrewBook.Get(game);
+      if IsDefined(crew) {
+        if crew.reqCall {
+          crew.reqCall = false;
+        } else {
+          crew.reqCall = StrLen(CBCrewCallBlocked(sys, game, false)) == 0;
+        }
+      }
+      this.Render(sys, game);
+      return;
+    }
     // The price on V's head (Spawn/Bounty.reds, 2.4.3): paid on the next tick back in the game, never from here.
     if this.m_tab == CBHudStandingTab() {
       if CBBountyPayPending(game) {
@@ -1965,6 +2093,33 @@ public class CBHud {
   // The buttons under the first. Only the Rivals have them: forget this one, and forget them all.
   // Neither is carried out from here, for the reason given above ActionClicked.
   private func ExtraClicked(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    // The crew (2.5.0): pay the cut, let the picked one go (asks twice), take the solo on. All carried out back in the game.
+    if this.m_tab == CBHudCrewTab() {
+      let cb = CBCrewBook.Get(game);
+      if IsDefined(cb) {
+        if slot == 1 {
+          cb.reqPay = !cb.reqPay;
+        }
+        if slot == 3 {
+          cb.reqHire = !cb.reqHire;
+        }
+        if slot == 2 && this.m_pickCrew > 0 {
+          if cb.reqLetGo == this.m_pickCrew {
+            cb.reqLetGo = 0;
+            this.m_letGoArmed = 0;
+          } else {
+            if this.m_letGoArmed == this.m_pickCrew {
+              cb.reqLetGo = this.m_pickCrew;
+              this.m_letGoArmed = 0;
+            } else {
+              this.m_letGoArmed = this.m_pickCrew;
+            }
+          }
+        }
+      }
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudHistoryTab() && slot == 1 {
       this.m_legendShown = !this.m_legendShown;
       this.Render(sys, game);
@@ -2161,9 +2316,8 @@ public class CBHud {
 
   private func SetAction(label: String, enabled: Bool) -> Void {
     this.m_actionOn = enabled;
-    if IsDefined(this.m_actionText) {
-      this.m_actionText.SetText(CBHudFit(label, CBHudActionW() - 24.0, CBHudActionFont(), 1, true));
-    }
+    // Drawn smaller until it fits, rather than cut (2.5.0).
+    this.BoxText(this.m_actionText, label, CBHudActionW() - 24.0, CBHudActionFont(), 14, true);
     if IsDefined(this.m_actionBox) {
       this.m_actionBox.SetVisible(StrLen(label) > 0);
     }
@@ -2176,9 +2330,7 @@ public class CBHud {
       return;
     }
     this.m_extraOn[k] = enabled && StrLen(label) > 0;
-    if IsDefined(this.m_extraText[k]) {
-      this.m_extraText[k].SetText(CBHudFit(label, CBHudActionW() - 24.0, CBHudActionFont(), 1, true));
-    }
+    this.BoxText(this.m_extraText[k], label, CBHudActionW() - 24.0, CBHudActionFont(), 14, true);
     if IsDefined(this.m_extraBox[k]) {
       this.m_extraBox[k].SetVisible(StrLen(label) > 0);
     }
@@ -2219,16 +2371,52 @@ public class CBHud {
       this.m_rowFaction[i] = n"";
       this.m_rowRival[i] = 0;
       this.m_rowTitle[i] = n"";
+      if i < ArraySize(this.m_rowCrew) { this.m_rowCrew[i] = 0; }
+      if i < ArraySize(this.m_rowTrack) && IsDefined(this.m_rowTrack[i]) { this.m_rowTrack[i].SetVisible(false); }
+      if i < ArraySize(this.m_rowFill) && IsDefined(this.m_rowFill[i]) { this.m_rowFill[i].SetVisible(false); }
       i += 1;
     }
   }
 
-  // Move the rows and their cells to where the screen about to be drawn needs them. Only touches
-  // them when the layout has changed, so changing screen is not re-laying out every cell.
-  private func PlaceRows(layout: Int32) -> Void {
-    if this.m_rowPlaced && this.m_rowLayout == layout {
+  // A bar in row `idx`, at `x` from the row's left edge and `w` wide: `frac` of it filled, or with `bipolar`, filled
+  // from the middle towards the side `frac` (-1..1) leans.
+  private func SetRowBar(idx: Int32, x: Float, w: Float, frac: Float, tint: HDRColor, opt bipolar: Bool) -> Void {
+    if idx < 0 || idx >= ArraySize(this.m_rowTrack) || idx >= ArraySize(this.m_rowFill) {
       return;
     }
+    let track = this.m_rowTrack[idx];
+    let fill = this.m_rowFill[idx];
+    if !IsDefined(track) || !IsDefined(fill) {
+      return;
+    }
+    let stride = this.m_rowLayout == CBHudLayoutTitles() ? CBHudTitleRowHeight() : CBHudRowHeight();
+    let y = (stride - 4.0 - CBHudRowBarH()) / 2.0;
+    track.SetSize(this.PxSize(w, CBHudRowBarH()));
+    track.SetMargin(this.PxAt(x, y));
+    track.SetVisible(true);
+    let fx = x;
+    let fw = ClampF(frac, 0.0, 1.0) * w;
+    if bipolar {
+      let half = w * 0.5;
+      let reach = ClampF(AbsF(frac), 0.0, 1.0) * half;
+      fw = reach;
+      fx = frac < 0.0 ? x + half - reach : x + half;
+    }
+    fw = MaxF(fw, 2.0);   // a sliver, so an empty bar still reads as a bar
+    fill.SetSize(this.PxSize(fw, CBHudRowBarH()));
+    fill.SetMargin(this.PxAt(fx, y));
+    fill.SetTintColor(tint);
+    fill.SetVisible(true);
+  }
+
+  // Move the rows and their cells to where the screen about to be drawn needs them. Only touches
+  // them when the layout has changed, so changing screen is not re-laying out every cell.
+  private func PlaceRows(layout: Int32, opt topY: Float) -> Void {
+    let top = topY > 0.0 ? topY : CBHudContentTop();
+    if this.m_rowPlaced && this.m_rowLayout == layout && this.m_rowTop == top {
+      return;
+    }
+    this.m_rowTop = top;
     let titles = layout == CBHudLayoutTitles();
     let stride = titles ? CBHudTitleRowHeight() : CBHudRowHeight();
     let rowW = titles ? CBHudTitleListW() : CBHudContentW();
@@ -2237,7 +2425,7 @@ public class CBHud {
     let r = 0;
     while r < ArraySize(this.m_rowBox) {
       if IsDefined(this.m_rowBox[r]) {
-        this.m_rowBox[r].SetMargin(this.PxAt(CBHudMarginX(), CBHudContentTop() + Cast<Float>(r) * stride));
+        this.m_rowBox[r].SetMargin(this.PxAt(CBHudMarginX(), top + Cast<Float>(r) * stride));
         this.m_rowBox[r].SetSize(this.PxSize(rowW, rowH));
       }
       if IsDefined(this.m_rowPip[r]) {
@@ -2263,6 +2451,16 @@ public class CBHud {
     this.m_rowPlaced = true;
   }
 
+  // The four scores as tiles, two by two (2.5.0): the meters keep their full story in half the height, and what is on
+  // its way gets the room under them. Where tile `idx` sits.
+  private func TileX(idx: Int32) -> Float {
+    return CBHudMarginX() + Cast<Float>(idx % 2) * (CBHudTileW() + CBHudTileGap());
+  }
+
+  private func TileY(idx: Int32) -> Float {
+    return CBHudContentTop() + Cast<Float>(idx / 2) * CBHudTileStride();
+  }
+
   // Conduct runs -100 to +100, so it is drawn from the middle: left of centre in red as V slides
   // towards cyberpsycho, right of centre in green as they stay clean.
   private func SetBipolarBar(idx: Int32, label: String, value: String, signed: Float,
@@ -2271,14 +2469,11 @@ public class CBHud {
     if idx < 0 || idx >= ArraySize(this.m_barFill) || !IsDefined(this.m_barFill[idx]) {
       return;
     }
-    let half = CBHudBarWidth() * 0.5;
-    let reach = ClampF(AbsF(signed) / 100.0, 0.0, 1.0) * half;
-    if reach < 2.0 {
-      reach = 2.0;
-    }
+    let half = CBHudTileW() * 0.5;
+    let reach = MaxF(ClampF(AbsF(signed) / 100.0, 0.0, 1.0) * half, 2.0);
     let left = signed < 0.0 ? half - reach : half;
     this.m_barFill[idx].SetSize(this.PxSize(reach, 10.0));
-    this.m_barFill[idx].SetMargin(this.PxAt(CBHudMarginX() + left, CBHudContentTop() + Cast<Float>(idx) * 96.0 + 36.0));
+    this.m_barFill[idx].SetMargin(this.PxAt(this.TileX(idx) + left, this.TileY(idx) + 36.0));
     this.m_barFill[idx].SetTintColor(col);
     this.m_barFill[idx].SetVisible(true);
   }
@@ -2287,35 +2482,78 @@ public class CBHud {
     if idx < 0 || idx >= ArraySize(this.m_barLabel) {
       return;
     }
+    let tx = this.TileX(idx);
+    let ty = this.TileY(idx);
+    let tw = CBHudTileW();
     if IsDefined(this.m_barLabel[idx]) {
+      this.m_barLabel[idx].SetMargin(this.PxAt(tx, ty));
       this.m_barLabel[idx].SetText(label);
       this.m_barLabel[idx].SetVisible(true);
     }
     if IsDefined(this.m_barValue[idx]) {
+      this.m_barValue[idx].SetSize(this.PxSize(tw, 30.0));
+      this.m_barValue[idx].SetMargin(this.PxAt(tx, ty));
       this.m_barValue[idx].SetText(value);
       this.m_barValue[idx].SetTintColor(col);
       this.m_barValue[idx].SetVisible(true);
     }
     if IsDefined(this.m_barTrack[idx]) {
+      this.m_barTrack[idx].SetSize(this.PxSize(tw, 10.0));
+      this.m_barTrack[idx].SetMargin(this.PxAt(tx, ty + 36.0));
       this.m_barTrack[idx].SetVisible(true);
     }
     if IsDefined(this.m_barFill[idx]) {
-      let w = ClampF(frac, 0.0, 1.0) * CBHudBarWidth();
-      if w < 2.0 {
-        w = 2.0;      // always show a sliver, so an empty meter still reads as a meter
-      }
-      // Back to the left edge: SetBipolarBar moves this same widget to the middle.
-      this.m_barFill[idx].SetMargin(this.PxAt(CBHudMarginX(), CBHudContentTop() + Cast<Float>(idx) * 96.0 + 36.0));
-      this.m_barFill[idx].SetSize(this.PxSize(w, 10.0));
+      this.m_barFill[idx].SetMargin(this.PxAt(tx, ty + 36.0));
+      this.m_barFill[idx].SetSize(this.PxSize(MaxF(ClampF(frac, 0.0, 1.0) * tw, 2.0), 10.0));
       this.m_barFill[idx].SetTintColor(col);
       this.m_barFill[idx].SetVisible(true);
     }
     if IsDefined(this.m_barCap[idx]) {
-      // One line: the next meter starts 42 px below this caption, and a second line would be
-      // drawn over its label.
-      this.m_barCap[idx].SetText(CBHudFit(caption, CBHudContentW(), 19, 1));
+      // Two lines: the tile below starts clear of a second one.
+      this.m_barCap[idx].SetMargin(this.PxAt(tx, ty + 54.0));
+      this.m_barCap[idx].SetWrapping(true, this.Px(tw));
+      this.m_barCap[idx].SetText(CBHudFit(caption, tw, 19, 2));
       this.m_barCap[idx].SetVisible(true);
     }
+  }
+
+  // What is on its way, as rows under the tiles (2.5.0): each lane with a pip for how close it is, and V's own crew.
+  // Returns where the rows end.
+  private func RenderLanes(sys: ref<CyberbaneSystem>, game: GameInstance) -> Float {
+    let top = CBHudContentTop() + 2.0 * CBHudTileStride() - 4.0;
+    this.PlaceRows(CBHudLayoutLanes(), top);
+    let row = 0;
+    row = this.LaneRow(sys, game, row, CBLaneRival(), "A rival");
+    row = this.LaneRow(sys, game, row, CBLaneSquad(), "A gang crew");
+    row = this.LaneRow(sys, game, row, CBLaneApex(), "An apex squad");
+    let crew = CBCrewBook.Get(game);
+    if CBMyCrewOn() && IsDefined(crew) && crew.Count() > 0 {
+      let out = crew.OutCount();
+      let ready = ArraySize(CBCrewReadyOrder(crew, CBGameSeconds(game), 0));
+      let what = out > 0 ? (crew.leaving ? "Heading home" : s"\(out) with you now") : s"\(ready) of \(crew.Count()) ready to call";
+      this.SetRow(row, CBHudLayoutLanes(), out > 0 ? CBHudGreen() : CBHudCyan(), false, false, "Your crew", what, "", "", "",
+                  crew.CutOwed() > 0 ? s"owed \(crew.CutOwed())eb" : "");
+      row += 1;
+    }
+    return top + Cast<Float>(row) * CBHudRowHeight();
+  }
+
+  private func LaneRow(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32, lane: Int32, label: String) -> Int32 {
+    let text = CBHudLaneLine(sys, game, lane, "");
+    if StrLen(text) > 3 {
+      text = StrRight(text, StrLen(text) - 3);   // the line starts after its label's gap
+    }
+    let tail = "";
+    let cut = StrFindFirst(text, "   (");
+    if cut >= 0 {
+      tail = StrRight(text, StrLen(text) - cut - 3);
+      text = StrLeft(text, cut);
+    }
+    let busy = CBLaneBusy(sys, game, lane);
+    let coming = lane == CBLaneRival() ? sys.GetLaneRivalId(lane) > 0 : NotEquals(sys.GetLaneTarget(lane), n"");
+    let pip = busy ? CBHudRed() : (coming ? CBHudAmber() : CBHudGrey());
+    this.SetRow(row, CBHudLayoutLanes(), pip, false, false, label, CBCapFirst(text), "", "", "", tail);
+    return row + 1;
   }
 
   // One row, six fields, and what it stands for. Anything handed an empty string stays hidden, so
@@ -2348,7 +2586,21 @@ public class CBHud {
         if StrLen(text) == 0 || budget <= 0 {
           this.m_rowCell[cellIdx].SetVisible(false);
         } else {
-          this.m_rowCell[cellIdx].SetText(CBHudTrim(text, budget));
+          // Too long for the column at its size: drawn smaller, down to CBHudMinCellFont, and only past that
+          // shortened, at a word, so nothing is ever cut through the middle of one (2.5.0).
+          let base = col == 0 ? 23 : 22;
+          let size = base;
+          let len = StrLen(text);
+          if len > budget {
+            size = Max(CBHudMinCellFont(), (base * budget) / len);
+          }
+          let room = (budget * base) / size;
+          this.m_rowCell[cellIdx].SetFontSize(Max(1, RoundF(Cast<Float>(size) * this.Scale())));
+          // Drawn smaller, it is moved down by half the difference, so it stays level with its row.
+          let rowTextY = layout == CBHudLayoutTitles() ? 0.0 : 5.0;
+          let cellX = col == CBHudRowCols() - 1 ? 0.0 : CBHudRowColX(col, layout);
+          this.m_rowCell[cellIdx].SetMargin(this.PxAt(cellX, rowTextY + (col == 0 ? 0.0 : 2.0) + Cast<Float>(base - size) * 0.5));
+          this.m_rowCell[cellIdx].SetText(len > room ? CBHudTrimWords(text, room) : text);
           this.m_rowCell[cellIdx].SetVisible(true);
         }
       }
@@ -2527,6 +2779,12 @@ public class CBHud {
       s"\(fs.kills) down",
       right);
     this.m_rowFaction[row] = fs.id;
+    // Where V stands with them, from the middle: red to the left, green to the right (2.5.0).
+    if !off {
+      let standing = score.GetStanding(fs.id);
+      this.SetRowBar(row, CBHudGangBarX(), CBHudGangBarW(), ClampF(standing / 100.0, -1.0, 1.0),
+                     standing < 0.0 ? CBHudRed() : CBHudGreen(), true);
+    }
   }
 
   // The panel under the gangs: the one you clicked, and the button to buy them off.
@@ -2702,11 +2960,12 @@ public class CBHud {
         }
         this.SetRow(shown, CBHudLayoutWide(), pip, false, false,
           dname,
-          CBHudMeter(d.renown, 100.0, 10),
+          "",
           s"\(rd)",
           s"\(d.kills) down",
           "",
           StrLen(quiet) > 0 ? "quiet " + quiet : "nothing yet");
+        this.SetRowBar(shown, CBHudWideBarX(), CBHudWideBarW(), d.renown / 100.0, rd >= 15 ? pip : CBHudCyan());
         shown += 1;
       }
     }
@@ -2775,11 +3034,12 @@ public class CBHud {
         }
         this.SetRow(shown, CBHudLayoutWide(), pip, false, false,
           place,
-          CBHudMeter(shares[top], 1.0, 12),
+          "",
           s"\(RoundF(shares[top] * 100.0))%",
           CBBarFactionLabel(holder),
           "",
           status);
+        this.SetRowBar(shown, CBHudWideBarX(), CBHudWideBarW(), shares[top], CBHudCyan());
         shown += 1;
       }
     }
@@ -2910,6 +3170,10 @@ public class CBHud {
       "",
       n == 1 ? "1 after you" : s"\(n) after you");
     this.m_rowRival[row] = 0;
+    // How much is left of them, where their Rivals show their rank (2.5.0).
+    if CBTurfWarsOn() {
+      this.SetRowBar(row, CBHudRankBarX(), CBHudRankBarW(), ClampF(CBGangStrength(sys, faction), 0.0, 100.0) / 100.0, CBHudGrey());
+    }
   }
 
   // One Rival's line. Pulled out of the loop so the Rival who is actually on their way can be
@@ -2972,6 +3236,8 @@ public class CBHud {
       "",
       rightCol);
     this.m_rowRival[row] = r.id;
+    // Their rank, one to four, as a bar (2.5.0).
+    this.SetRowBar(row, CBHudRankBarX(), CBHudRankBarW(), Cast<Float>(Clamp(r.rank, 1, 4)) / 4.0, hunting ? CBHudRed() : CBHudAmber());
   }
 
   // The panel under the Rivals: the file on the one you clicked, and three buttons beside it - buy
@@ -3076,33 +3342,46 @@ public class CBHud {
     let earned = sys.GetUnlockedTitles();
     let onAuto = Equals(chosen, n"");
     let autoLabel = ArraySize(earned) > 0 ? "Automatic: " + CBHudActiveTitle(sys) : "Automatic";
-    this.SetRow(0, CBHudLayoutTitles(), onAuto ? CBHudCyan() : CBHudGrey(), true, Equals(reading, n""),
-      autoLabel, "", "", "", "", onAuto ? "GOING BY" : "");
-    this.m_rowTitle[0] = n"";
-    if !IsDefined(content) {
-      return;
-    }
-    // Earned first, then the rest. One row each and the whole list fits the pool, with no scrolling.
-    let row = 1;
-    let pass = 0;
-    while pass < 2 {
-      for def in content.GetTitles() {
-        if IsDefined(def) && Equals(sys.HasTitle(def.id), pass == 0) && row < CBHudRowPool() {
-          let mine = Equals(def.id, chosen);
-          let status = mine ? "GOING BY" : "EARNED";
-          if pass == 1 {
-            status = CBTitleProgress(sys, def.id);
-            if StrLen(status) == 0 {
-              status = "LOCKED";
-            }
+    // Automatic, then every title V has earned, then the rest, and the page shows a window onto them. There are more
+    // titles than rows now (2.5.0), and the last of them had simply fallen off the end.
+    let defs: array<ref<CBTitleDef>>;
+    let none: ref<CBTitleDef>;
+    ArrayPush(defs, none);
+    if IsDefined(content) {
+      let pass = 0;
+      while pass < 2 {
+        for def in content.GetTitles() {
+          if IsDefined(def) && Equals(sys.HasTitle(def.id), pass == 0) {
+            ArrayPush(defs, def);
           }
-          this.SetRow(row, CBHudLayoutTitles(), mine ? CBHudCyan() : (pass == 0 ? CBHudAmber() : CBHudGrey()), true,
-            Equals(def.id, reading), CBTitleDisplay(sys, def), "", "", "", "", status);
-          this.m_rowTitle[row] = def.id;
-          row += 1;
         }
+        pass += 1;
       }
-      pass += 1;
+    }
+    let rows = CBHudRowPool() - 1;
+    let top = this.ListWindow(ArraySize(defs), rows);
+    let row = 0;
+    while row < rows && top + row < ArraySize(defs) {
+      let def = defs[top + row];
+      if !IsDefined(def) {
+        this.SetRow(row, CBHudLayoutTitles(), onAuto ? CBHudCyan() : CBHudGrey(), true, Equals(reading, n""),
+          autoLabel, "", "", "", "", onAuto ? "GOING BY" : "");
+        this.m_rowTitle[row] = n"";
+      } else {
+        let have = sys.HasTitle(def.id);
+        let mine = Equals(def.id, chosen);
+        let status = mine ? "GOING BY" : "EARNED";
+        if !have {
+          status = CBTitleProgress(sys, def.id);
+          if StrLen(status) == 0 {
+            status = "LOCKED";
+          }
+        }
+        this.SetRow(row, CBHudLayoutTitles(), mine ? CBHudCyan() : (have ? CBHudAmber() : CBHudGrey()), true,
+          Equals(def.id, reading), CBTitleDisplay(sys, def), "", "", "", "", status);
+        this.m_rowTitle[row] = def.id;
+      }
+      row += 1;
     }
   }
 
@@ -3271,6 +3550,7 @@ public class CBHud {
       return;
     }
     this.PlaceWebBox(slot, x, y, w, h, true);
+    this.DressDefault(slot, w, h);
     while ArraySize(this.m_treeSlotRival) < ArraySize(this.m_webBox) {
       ArrayPush(this.m_treeSlotRival, 0);
     }
@@ -3304,15 +3584,14 @@ public class CBHud {
       this.m_webBoxEdge[slot].SetTintColor(tint);
       this.m_webBoxEdge[slot].SetVisible(true);
     }
-    if IsDefined(this.m_webBoxName[slot]) {
-      this.m_webBoxName[slot].SetText(CBHudTrim(name, w > 160.0 ? 22 : 16));
-    }
+    this.BoxText(this.m_webBoxName[slot], name, w - 24.0, w > 160.0 ? 18 : 15, 11, true);
+    this.BoxText(this.m_webBoxLine[slot], line, w - 24.0, 14, 11, false);
     if IsDefined(this.m_webBoxLine[slot]) {
-      this.m_webBoxLine[slot].SetText(CBHudTrim(line, w > 160.0 ? 26 : 20));
       this.m_webBoxLine[slot].SetTintColor(tint);
     }
+    this.BoxText(this.m_webBoxLead[slot], lead, w - 24.0, 13, 11, false);
     if IsDefined(this.m_webBoxLead[slot]) {
-      this.m_webBoxLead[slot].SetText(CBHudTrim(lead, 30));
+      this.m_webBoxLead[slot].SetTintColor(CBHudDim());
       this.m_webBoxLead[slot].SetVisible(StrLen(lead) > 0 && w > 160.0);
     }
     if IsDefined(this.m_webBarMen[slot]) {
@@ -3369,6 +3648,7 @@ public class CBHud {
     let s = 0;
     while s < ArraySize(this.m_webBox) {
       this.PlaceWebBox(s, 0.0, 0.0, CBWebSlotW(s), CBWebSlotH(s), false);
+      this.ResetBoxLook(s);
       if s < ArraySize(this.m_treeSlotRival) {
         this.m_treeSlotRival[s] = 0;
       }
@@ -3381,6 +3661,7 @@ public class CBHud {
     let book = CBRivalBook.Get(game);
     // V, in the corner: click for the next gang.
     this.PlaceWebBox(0, 1190.0, 0.0, CBWebVW(), CBWebVH(), true);
+    this.DressDefault(0, CBWebVW(), CBWebVH());
     if ArraySize(this.m_webBoxName) > 0 && ArraySize(this.m_webBoxLine) > 0 {
       if IsDefined(this.m_webBoxName[0]) {
         this.m_webBoxName[0].SetText("V");
@@ -3506,6 +3787,8 @@ public class CBHud {
 
   private func HideWeb() -> Void {
     this.m_webShown = false;
+    this.m_mapShown = false;
+    this.m_crewPicShown = false;
     if IsDefined(this.m_webRoot) {
       this.m_webRoot.SetVisible(false);
     }
@@ -3553,6 +3836,8 @@ public class CBHud {
     let place = 0;
     while place < ArraySize(this.m_webBox) {
       this.PlaceWebBox(place, CBWebSlotX(place), CBWebSlotY(place), CBWebSlotW(place), CBWebSlotH(place), true);
+      this.ResetBoxLook(place);
+      this.DressDefault(place, CBWebSlotW(place), CBWebSlotH(place));
       if place < ArraySize(this.m_webBarMen) && IsDefined(this.m_webBarMen[place]) {
         this.m_webBarMen[place].SetVisible(CBWebSlotIsGang(place));
         this.m_webBarChest[place].SetVisible(CBWebSlotIsGang(place));
@@ -3647,17 +3932,16 @@ public class CBHud {
         this.m_webBoxEdge[s].SetTintColor(tint);
         this.m_webBoxEdge[s].SetVisible(s > 0);
       }
-      if IsDefined(this.m_webBoxName[s]) {
-        this.m_webBoxName[s].SetText(s == 0 ? "V" : CBHudTrim(CBFactionLabel(gang), CBWebSlotIsGang(s) ? 16 : 14));
-      }
+      let boxW = s == 0 ? CBWebSlotW(s) : CBWebSlotW(s) - 24.0;
+      this.BoxText(this.m_webBoxName[s], s == 0 ? "V" : CBFactionLabel(gang), boxW, s == 0 ? 30 : (CBWebSlotIsGang(s) ? 20 : 16), 12, true);
+      this.BoxText(this.m_webBoxLine[s], s == 0 ? "YOU" : CBWebBoxLine(sys, game, gang), boxW, CBWebSlotIsGang(s) || s == 0 ? 15 : 13, 11, false);
       if IsDefined(this.m_webBoxLine[s]) {
-        this.m_webBoxLine[s].SetText(s == 0 ? "YOU" : CBHudTrim(CBWebBoxLine(sys, game, gang), CBWebSlotIsGang(s) ? 26 : 20));
         this.m_webBoxLine[s].SetTintColor(s == 0 ? CBHudValue() : tint);
       }
       if CBWebSlotIsGang(s) {
         if IsDefined(this.m_webBoxLead[s]) {
           let lead = CBWebLeader(sys, game, gang);
-          this.m_webBoxLead[s].SetText(StrLen(lead) > 0 ? CBHudTrim("Led by " + lead, 28) : "");
+          this.BoxText(this.m_webBoxLead[s], StrLen(lead) > 0 ? "Led by " + lead : "", CBWebSlotW(s) - 24.0, 14, 11, false);
         }
         let half = CBWebGangW() / 2.0 - 16.0;
         if IsDefined(this.m_webBarMen[s]) {
@@ -3674,7 +3958,16 @@ public class CBHud {
 
   // The boxes' bands: picked, under the cursor, or at rest.
   private func PaintWeb() -> Void {
-    let pickSlot = CBWebSlotOf(this.m_pickFaction);
+    let pickSlot = this.m_webShown ? CBWebSlotOf(this.m_pickFaction) : -1;
+    if this.m_treeShown && this.m_pickRival > 0 {
+      pickSlot = ArrayFindFirst(this.m_treeSlotRival, this.m_pickRival);
+    }
+    if this.m_mapShown && NotEquals(this.m_pickDistrict, n"") {
+      pickSlot = ArrayFindFirst(this.m_boxDistrict, this.m_pickDistrict);
+    }
+    if this.m_crewPicShown && this.m_pickCrew != 0 {
+      pickSlot = ArrayFindFirst(this.m_boxCrew, this.m_pickCrew);
+    }
     let s = 0;
     while s < ArraySize(this.m_webBoxBg) {
       if IsDefined(this.m_webBoxBg[s]) {
@@ -3694,6 +3987,634 @@ public class CBHud {
     }
   }
 
+  // ---- The pool's boxes, dressed for each drawing (2.5.0) --------------------------------------------------------
+
+  // The size of each of a box's three lines, whether the first two are centred, and where each sits. Every drawing
+  // dresses the boxes it uses, so none inherits another drawing's sizes.
+  private func DressBox(s: Int32, w: Float, h: Float, nameSize: Int32, lineSize: Int32, leadSize: Int32, centred: Bool) -> Void {
+    if s < 0 || s >= ArraySize(this.m_webBox) {
+      return;
+    }
+    let inset = centred ? 0.0 : 12.0;
+    let textW = MaxF(w - inset - 8.0, 10.0);
+    let lineY = 3.0 + Cast<Float>(nameSize) * 1.2;
+    let leadY = lineY + Cast<Float>(lineSize) * 1.3;
+    let align = centred ? textHorizontalAlignment.Center : textHorizontalAlignment.Left;
+    if s < ArraySize(this.m_webBoxName) && IsDefined(this.m_webBoxName[s]) {
+      let name = this.m_webBoxName[s];
+      name.SetFontSize(Max(1, RoundF(Cast<Float>(nameSize) * this.Scale())));
+      name.SetHorizontalAlignment(align);
+      name.SetFitToContent(false);
+      name.SetSize(this.PxSize(centred ? w : textW, Cast<Float>(nameSize) * 1.35));
+      name.SetMargin(this.PxAt(inset, 3.0));
+    }
+    if s < ArraySize(this.m_webBoxLine) && IsDefined(this.m_webBoxLine[s]) {
+      let line = this.m_webBoxLine[s];
+      line.SetFontSize(Max(1, RoundF(Cast<Float>(lineSize) * this.Scale())));
+      line.SetHorizontalAlignment(align);
+      line.SetFitToContent(false);
+      line.SetSize(this.PxSize(centred ? w : textW, Cast<Float>(lineSize) * 1.35));
+      line.SetMargin(this.PxAt(inset, lineY));
+    }
+    if s < ArraySize(this.m_webBoxLead) && IsDefined(this.m_webBoxLead[s]) {
+      let lead = this.m_webBoxLead[s];
+      lead.SetFontSize(Max(1, RoundF(Cast<Float>(leadSize) * this.Scale())));
+      lead.SetHorizontalAlignment(textHorizontalAlignment.Left);
+      lead.SetFitToContent(false);
+      lead.SetSize(this.PxSize(MaxF(w - 20.0, 10.0), Cast<Float>(leadSize) * 1.35));
+      lead.SetMargin(this.PxAt(12.0, leadY));
+    }
+  }
+
+  // A box's colours, bars and edge back to how the web built them, before a drawing uses it: the pictures share the
+  // pool, and none may show another's bars, tints or edge.
+  private func ResetBoxLook(s: Int32) -> Void {
+    if s < 0 || s >= ArraySize(this.m_webBox) {
+      return;
+    }
+    if s < ArraySize(this.m_webBoxLead) && IsDefined(this.m_webBoxLead[s]) {
+      this.m_webBoxLead[s].SetTintColor(CBHudDim());
+      this.m_webBoxLead[s].SetVisible(false);
+    }
+    if s < ArraySize(this.m_webBarMen) && IsDefined(this.m_webBarMen[s]) {
+      this.m_webBarMen[s].SetTintColor(CBHudCyan());
+      this.m_webBarMen[s].SetSize(this.PxSize(2.0, 3.0));
+      this.m_webBarMen[s].SetVisible(false);
+    }
+    if s < ArraySize(this.m_webBarChest) && IsDefined(this.m_webBarChest[s]) {
+      this.m_webBarChest[s].SetTintColor(CBHudAmber());
+      this.m_webBarChest[s].SetSize(this.PxSize(2.0, 3.0));
+      this.m_webBarChest[s].SetVisible(false);
+    }
+    if s < ArraySize(this.m_webBoxEdge) && IsDefined(this.m_webBoxEdge[s]) {
+      this.m_webBoxEdge[s].SetVisible(false);
+    }
+    if IsDefined(this.m_webBox[s]) {
+      this.m_webBox[s].SetOpacity(1.0);
+    }
+  }
+
+  // The web's own dress for a box, as it was built.
+  private func DressDefault(s: Int32, w: Float, h: Float) -> Void {
+    if s == 0 {
+      this.DressBox(s, w, h, 30, 15, 14, true);
+    } else {
+      let big = CBWebSlotIsGang(s);
+      this.DressBox(s, w, h, big ? 20 : 16, big ? 15 : 13, 14, false);
+    }
+  }
+
+  // Text that always fits the width it is given: drawn smaller, down to `least`, and only then shortened, at a word.
+  private func BoxText(t: wref<inkText>, text: String, width: Float, base: Int32, least: Int32, caps: Bool) -> Void {
+    if !IsDefined(t) {
+      return;
+    }
+    let em = caps ? CBHudCapsEm() : CBHudCharEm();
+    let len = Max(StrLen(text), 1);
+    let size = base;
+    let fitAt = Cast<Int32>(width / (Cast<Float>(len) * em));
+    if fitAt < size {
+      size = Max(least, fitAt);
+    }
+    let room = Max(4, Cast<Int32>(width / (Cast<Float>(size) * em)));
+    t.SetFontSize(Max(1, RoundF(Cast<Float>(size) * this.Scale())));
+    t.SetText(StrLen(text) > room ? CBHudTrimWords(text, room) : text);
+  }
+
+  // A box's two bars, at its foot: `a` across the whole width, or with `b` given (0..1), the two side by side.
+  private func BoxBars(s: Int32, w: Float, h: Float, a: Float, aTint: HDRColor, b: Float, bTint: HDRColor) -> Void {
+    if s < 0 || s >= ArraySize(this.m_webBarMen) {
+      return;
+    }
+    let men = this.m_webBarMen[s];
+    let chest = this.m_webBarChest[s];
+    let two = b >= 0.0;
+    let full = w - 24.0;
+    let half = w / 2.0 - 16.0;
+    if IsDefined(men) {
+      men.SetMargin(this.PxAt(12.0, h - 12.0));
+      men.SetSize(this.PxSize(MaxF(2.0, (two ? half : full) * ClampF(a, 0.0, 1.0)), 6.0));
+      men.SetTintColor(aTint);
+      men.SetVisible(a >= 0.0);
+    }
+    if IsDefined(chest) {
+      chest.SetMargin(this.PxAt(w / 2.0 + 4.0, h - 12.0));
+      chest.SetSize(this.PxSize(MaxF(2.0, half * ClampF(b, 0.0, 1.0)), 6.0));
+      chest.SetTintColor(bTint);
+      chest.SetVisible(two);
+    }
+  }
+
+  // A word beside a line rather than across it: half-way along, pushed off to the side that is up (or left), and far
+  // enough from a line that runs up and down to clear the word's own width.
+  private func PlaceWordBeside(k: Int32, x1: Float, y1: Float, x2: Float, y2: Float, text: String, tint: HDRColor, alpha: Float) -> Void {
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    let len = MaxF(SqrtF(dx * dx + dy * dy), 1.0);
+    let nx = -dy / len;
+    let ny = dx / len;
+    if ny > 0.0 {
+      nx = -nx;
+      ny = -ny;
+    }
+    let off = 14.0 + AbsF(nx) * Cast<Float>(StrLen(text)) * 4.2;
+    this.PlaceWord(k, (x1 + x2) / 2.0 + nx * off, (y1 + y2) / 2.0 + ny * off, text, tint, alpha);
+  }
+
+  // Is the whole pool there, every list the same length? Built together in BuildWeb, so they always are; a drawing
+  // that indexes them by slot asks first, because a read past the end is a crash, not an error.
+  private func WebPoolReady() -> Bool {
+    let n = ArraySize(this.m_webBox);
+    return n >= CBWebSlotCount() && ArraySize(this.m_webBoxName) == n && ArraySize(this.m_webBoxLine) == n
+        && ArraySize(this.m_webBoxLead) == n && ArraySize(this.m_webBoxEdge) == n && ArraySize(this.m_webBarMen) == n
+        && ArraySize(this.m_webBarChest) == n && ArraySize(this.m_webBoxBg) == n && IsDefined(this.m_webRoot);
+  }
+
+  // Every line and word from these on out of sight: a drawing uses the first few.
+  private func HideWebFrom(lines: Int32, words: Int32) -> Void {
+    let k = lines;
+    while k < ArraySize(this.m_webLine) {
+      if IsDefined(this.m_webLine[k]) {
+        this.m_webLine[k].SetVisible(false);
+      }
+      k += 1;
+    }
+    k = words;
+    while k < ArraySize(this.m_webWord) {
+      if IsDefined(this.m_webWord[k]) {
+        this.m_webWord[k].SetVisible(false);
+      }
+      k += 1;
+    }
+  }
+
+  // ---- Night City as a map (2.5.0) ---------------------------------------------------------------------------------
+
+  // Each district a box where it lies, joined by its roads. On the Turf page a box is the gang holding it, coloured by
+  // how they treat V, with their hold and V's name there as two bars; on the City page it is V's renown there, coloured
+  // by how hot V's name runs. Click a district for the whole of it underneath.
+  private func RenderMap(sys: ref<CyberbaneSystem>, game: GameInstance, turf: Bool) -> Void {
+    let score = sys.GetScore();
+    if !this.WebPoolReady() {
+      return;
+    }
+    this.m_mapShown = true;
+    this.m_webRoot.SetVisible(true);
+    while ArraySize(this.m_boxDistrict) < ArraySize(this.m_webBox) {
+      ArrayPush(this.m_boxDistrict, n"");
+    }
+    let w = CBMapW();
+    let h = CBMapH();
+    let lines = 0;
+    let k = 0;
+    while k < CBMapRoadCount() {
+      let a = CBMapRoadA(k);
+      let b = CBMapRoadB(k);
+      this.PlaceLine(lines, CBMapX(a) + w / 2.0, CBMapY(a) + h / 2.0, CBMapX(b) + w / 2.0, CBMapY(b) + h / 2.0, 6.0, CBHudGrey(), 0.3);
+      lines += 1;
+      k += 1;
+    }
+    let words = 0;
+    let here = sys.GetCurrentDistrict();
+    let content = sys.GetContent();
+    let now = CBGameSeconds(game);
+    let s = 0;
+    while s < ArraySize(this.m_webBox) {
+      let show = s < CBDistrictCount();
+      this.PlaceWebBox(s, show ? CBMapX(s) : 0.0, show ? CBMapY(s) : 0.0, w, h, show);
+      this.ResetBoxLook(s);
+      this.m_boxDistrict[s] = show ? CBDistrictAt(s) : n"";
+      if show {
+        this.DressBox(s, w, h, 20, 15, 14, false);
+        let d = CBDistrictAt(s);
+        let ds = sys.FindDistrict(d);
+        let renown = IsDefined(ds) ? ds.renown : 0.0;
+        let tint = CBHudGrey();
+        let barTint = CBHudCyan();
+        let line = "";
+        let lead = "";
+        let a = 0.0;
+        let b = -1.0;
+        if turf {
+          let ids: array<CName>;
+          let shares: array<Float>;
+          CBTurfShares(sys, game, d, ids, shares);
+          let holder = CBTurfHolder(sys, game, d);
+          let top = -1;
+          let second = -1;
+          let i = 0;
+          while i < ArraySize(ids) {
+            if Equals(ids[i], holder) {
+              top = i;
+            }
+            i += 1;
+          }
+          i = 0;
+          while i < ArraySize(ids) {
+            if i != top && (second < 0 || shares[i] > shares[second]) {
+              second = i;
+            }
+            i += 1;
+          }
+          if top >= 0 && IsDefined(score) {
+            let posture = score.GetPosture(holder);
+            tint = CBWebPostureColour(posture);
+            barTint = Equals(posture, ECBPosture.Neutral) ? CBHudCyan() : tint;
+            line = s"\(CBCapFirst(CBPhoneGangSender(holder))) hold \(RoundF(shares[top] * 100.0))%";
+            lead = CBHudTurfStatus(game, content, d, holder, ids, shares, second);
+            a = shares[top];
+          } else {
+            line = "Nobody holds it";
+          }
+          if CBOwnDistrict(game, d) {
+            line = "Your streets";
+            tint = CBHudGreen();
+          }
+          b = ClampF(renown / 100.0, 0.0, 1.0);
+        } else {
+          let rd = RoundF(renown);
+          tint = rd >= 75 ? CBHudRed() : (rd >= 40 ? CBHudAmber() : (rd >= 15 ? CBHudCyan() : CBHudGrey()));
+          barTint = rd >= 15 ? tint : CBHudCyan();
+          line = s"Renown \(rd)   /   \(IsDefined(ds) ? ds.kills : 0) down";
+          let quiet = IsDefined(ds) ? CBHudSince(now, ds.lastIncidentAt) : "";
+          lead = StrLen(quiet) > 0 ? s"Last trouble \(quiet) ago" : "Nothing yet";
+          a = ClampF(renown / 100.0, 0.0, 1.0);
+        }
+        this.BoxText(this.m_webBoxName[s], CBDistrictLabel(d), w - 24.0, 20, 14, true);
+        this.BoxText(this.m_webBoxLine[s], line, w - 24.0, 15, 12, false);
+        if IsDefined(this.m_webBoxLine[s]) {
+          this.m_webBoxLine[s].SetTintColor(tint);
+        }
+        this.BoxText(this.m_webBoxLead[s], lead, w - 24.0, 14, 12, false);
+        if IsDefined(this.m_webBoxLead[s]) {
+          this.m_webBoxLead[s].SetVisible(StrLen(lead) > 0);
+        }
+        if IsDefined(this.m_webBoxEdge[s]) {
+          this.m_webBoxEdge[s].SetTintColor(tint);
+          this.m_webBoxEdge[s].SetVisible(true);
+        }
+        this.BoxBars(s, w, h, a, barTint, b, CBHudCyan());
+        let dim = NotEquals(this.m_pickDistrict, n"") && !Equals(this.m_pickDistrict, d);
+        this.m_webBox[s].SetOpacity(dim ? 0.6 : 1.0);
+        if Equals(d, here) && words < ArraySize(this.m_webWord) {
+          this.PlaceWord(words, CBMapX(s) + w / 2.0, CBMapY(s) + h + 12.0, "You are here", CBHudHead(), 1.0);
+          words += 1;
+        }
+      }
+      s += 1;
+    }
+    this.HideWebFrom(lines, words);
+    this.PaintWeb();
+  }
+
+  // Under the map: what it shows, or everything about the district picked.
+  private func MapDetail(sys: ref<CyberbaneSystem>, game: GameInstance, turf: Bool) -> String {
+    let d = this.m_pickDistrict;
+    if Equals(d, n"") {
+      let legend = turf ? "Each district is drawn where it lies, coloured by how the gang holding it treats you: green friendly, amber hostile, red out for blood. Left bar: their hold. Right bar: your name there. Click a district for who else wants it."
+                        : "Each district is drawn where it lies, coloured by how far your name carries there, and the bar is your renown. Click a district for more.";
+      return legend + "\n" + (turf ? CBHudTurfBody(sys) : CBHudDistricts(sys));
+    }
+    let out = StrUpper(CBDistrictLabel(d)) + (Equals(d, sys.GetCurrentDistrict()) ? "   (you are here)" : "") + "\n";
+    let ds = sys.FindDistrict(d);
+    let renown = IsDefined(ds) ? RoundF(ds.renown) : 0;
+    if turf {
+      let ids: array<CName>;
+      let shares: array<Float>;
+      CBTurfShares(sys, game, d, ids, shares);
+      let holder = CBTurfHolder(sys, game, d);
+      // Everybody with streets there, the largest first.
+      let order: array<Int32>;
+      let i = 0;
+      while i < ArraySize(ids) {
+        let k = 0;
+        while k < ArraySize(order) && shares[order[k]] >= shares[i] {
+          k += 1;
+        }
+        ArrayInsert(order, k, i);
+        i += 1;
+      }
+      let list = "";
+      for o in order {
+        let part = s"\(CBCapFirst(CBPhoneGangSender(ids[o]))) \(RoundF(shares[o] * 100.0))%";
+        list = StrLen(list) > 0 ? list + ", " + part : part;
+      }
+      if NotEquals(holder, n"") {
+        out += s"\(CBCapFirst(CBFactionLabel(holder))) hold it. ";
+      }
+      if StrLen(list) > 0 {
+        out += "Who has streets here: " + list + ".\n";
+      } else {
+        out += "No gang has streets here.\n";
+      }
+      let second = -1;
+      let top = ArrayFindFirst(ids, holder);
+      i = 0;
+      while i < ArraySize(ids) {
+        if i != top && (second < 0 || shares[i] > shares[second]) {
+          second = i;
+        }
+        i += 1;
+      }
+      if top >= 0 {
+        let status = CBHudTurfStatus(game, sys.GetContent(), d, holder, ids, shares, second);
+        if StrLen(status) > 0 {
+          out += CBCapFirst(status) + ".\n";
+        }
+      }
+      if CBOwnDistrict(game, d) {
+        out += "Nobody runs it but you. The gangs pass through on your say-so.\n";
+      }
+      out += s"Your name here: \(renown) of 100.";
+      return out;
+    }
+    let peak = IsDefined(ds) ? RoundF(ds.renownPeak) : 0;
+    out += s"Your renown here: \(renown) of 100" + (peak > renown ? s", at its height \(peak)" : "") + ".\n";
+    if IsDefined(ds) && ds.kills > 0 {
+      out += ds.kills == 1 ? "One put down here" : s"\(ds.kills) put down here";
+      if ds.lethalOrBrutal > 0 {
+        out += s", \(ds.lethalOrBrutal) of them the hard way";
+      }
+      if ds.quietTakedowns > 0 {
+        out += s", \(ds.quietTakedowns) taken down without a sound";
+      }
+      out += ".\n";
+      let quiet = CBHudSince(CBGameSeconds(game), ds.lastIncidentAt);
+      if StrLen(quiet) > 0 {
+        out += s"The last trouble here was \(quiet) ago.";
+      }
+    } else {
+      out += "You have not made any trouble here yet.";
+    }
+    return out;
+  }
+
+  private func MapPick(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    let d = slot >= 0 && slot < ArraySize(this.m_boxDistrict) ? this.m_boxDistrict[slot] : n"";
+    if Equals(d, n"") {
+      return;
+    }
+    this.m_pickDistrict = Equals(d, this.m_pickDistrict) ? n"" : d;
+    this.Render(sys, game);
+  }
+
+  // ---- The crew (Reactions/Crew.reds, 2.5.0) --------------------------------------------------------------------------
+
+  // V's crew: as a picture with V in the middle, or as a list, then the picked one's file and what can be done.
+  private func RenderCrew(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    let book = CBCrewBook.Get(game);
+    let x = CBHudMarginX();
+    let w = CBHudContentW();
+    if !CBMyCrewOn() || !IsDefined(book) {
+      this.SetBody(x, CBHudContentTop(), w, CBCrewSummary(sys, game), CBHudMaxLinesFor(this.m_tab));
+      return;
+    }
+    let now = CBGameSeconds(game);
+    let offer = book.offerSeed != 0 && book.offerUntil >= now;
+    // The pick: still on the roster, or the offer still standing; otherwise the first of them.
+    if this.m_pickCrew > 0 && !IsDefined(book.Find(this.m_pickCrew)) {
+      this.m_pickCrew = 0;
+    }
+    if this.m_pickCrew == -1 && !offer {
+      this.m_pickCrew = 0;
+    }
+    if this.m_pickCrew == 0 {
+      this.m_pickCrew = book.Count() > 0 ? book.At(0).id : (offer ? -1 : 0);
+    }
+    let anything = book.Count() > 0 || offer;
+    if !anything && book.PastCount() == 0 {
+      this.SetBody(x, CBHudContentTop(), w, CBCrewSummary(sys, game), CBHudMaxLinesFor(this.m_tab));
+      return;
+    }
+    let top = CBHudContentTop();
+    if sys.HubVisual(CBHudCrewTab()) {
+      this.RenderCrewPicture(sys, game, book, offer);
+      top += CBWebHeight() + 24.0;
+    } else {
+      let rows = this.RenderCrewRows(sys, game, book, offer);
+      top += Cast<Float>(Max(rows, 1)) * CBHudRowHeight() + 24.0;
+    }
+    // What can be done: call them, pay the cut, let the picked one go, take the solo on.
+    let why = "";
+    if book.Count() > 0 {
+      if book.reqCall {
+        this.SetAction("Calling them. Click to take it back", true);
+      } else {
+        let blocked = CBCrewCallBlocked(sys, game, false);
+        this.SetAction("Need you. Now.", StrLen(blocked) == 0);
+        if StrLen(blocked) > 0 {
+          why = "Can't call them now: " + StrLower(StrLeft(blocked, 1)) + StrRight(blocked, StrLen(blocked) - 1) + "\n";
+        }
+      }
+    }
+    if book.CutOwed() > 0 {
+      if book.reqPay {
+        this.SetExtra(1, "Paying. Click to take it back", true);
+      } else {
+        this.SetExtra(1, s"Pay the cut: \(book.CutOwed())eb", CBHudEddies(game) >= book.CutOwed());
+      }
+    }
+    let m = this.m_pickCrew > 0 ? book.Find(this.m_pickCrew) : null;
+    if IsDefined(m) {
+      if book.reqLetGo == m.id {
+        this.SetExtra(2, "Keep them", true);
+      } else {
+        if book.IsOut(m.id) {
+          this.SetExtra(2, "With you: wait", false);
+        } else {
+          this.SetExtra(2, this.m_letGoArmed == m.id ? "Click again to let go" : "Let them go", true);
+        }
+      }
+    }
+    if offer {
+      if book.reqHire {
+        this.SetExtra(3, "Hiring. Click to take it back", true);
+      } else {
+        this.SetExtra(3, s"Hire the solo: \(book.offerPrice)eb", book.HasRoom() && CBHudEddies(game) >= book.offerPrice);
+      }
+    }
+    let file = CBCrewFile(sys, game, book, m, this.m_pickCrew == -1);
+    let text = why + (StrLen(file) > 0 ? file + "\n" + CBCrewSummary(sys, game) : CBCrewSummary(sys, game));
+    this.SetBody(x, top, anything ? w - CBHudActionW() - 40.0 : w, text, CBHudMaxLinesFor(this.m_tab));
+  }
+
+  private func RenderCrewRows(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, offer: Bool) -> Int32 {
+    this.PlaceRows(CBHudLayoutCrew());
+    let now = CBGameSeconds(game);
+    let row = 0;
+    let i = 0;
+    while i < book.Count() && row < CBHudListRows() {
+      let m = book.At(i);
+      i += 1;
+      if IsDefined(m) {
+        let state = CBCrewStateWord(book, m, now);
+        this.SetRow(row, CBHudLayoutCrew(), CBCrewStateTint(state), true, m.id == this.m_pickCrew,
+          CBCrewName(sys, m), CBCrewSeatWord(m.seat), s"rank \(CBCrewRank(m.wins))", CBCrewFromShort(m), "", state);
+        this.SetRowBar(row, CBHudCrewBarX(), CBHudCrewBarW(), Cast<Float>(m.loyalty) / 100.0, CBCrewLoyaltyTint(m.loyalty));
+        this.m_rowCrew[row] = m.id;
+        row += 1;
+      }
+    }
+    if offer && row < CBHudListRows() {
+      let seat = CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed);
+      this.SetRow(row, CBHudLayoutCrew(), CBHudGrey(), true, this.m_pickCrew == -1,
+        CBCrewFullName(sys, CBCrewPaid(), n"", 0, book.offerSeed, 0, 0), CBCrewSeatWord(seat), "", "a solo on offer", "",
+        s"\(book.offerPrice)EB");
+      this.m_rowCrew[row] = -1;
+      row += 1;
+    }
+    return row;
+  }
+
+  // V in the middle and the crew round V, each line as strong and as warm as their loyalty; the solo on offer to one
+  // side, and the last few who left along the bottom, with how they left.
+  private func RenderCrewPicture(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, offer: Bool) -> Void {
+    if !this.WebPoolReady() {
+      return;
+    }
+    this.m_crewPicShown = true;
+    this.m_webRoot.SetVisible(true);
+    while ArraySize(this.m_boxCrew) < ArraySize(this.m_webBox) {
+      ArrayPush(this.m_boxCrew, 0);
+    }
+    let now = CBGameSeconds(game);
+    let s = 0;
+    while s < ArraySize(this.m_webBox) {
+      this.PlaceWebBox(s, 0.0, 0.0, 10.0, 10.0, false);
+      this.ResetBoxLook(s);
+      this.m_boxCrew[s] = 0;
+      s += 1;
+    }
+    let lines = 0;
+    let words = 0;
+    // V, in the pool's first box (WebPoolReady has seen the whole pool).
+    let vs = 0;
+    this.PlaceWebBox(vs, CBCrewPicVX(), CBCrewPicVY(), CBCrewPicVW(), CBCrewPicVH(), true);
+    this.DressBox(vs, CBCrewPicVW(), CBCrewPicVH(), 30, 15, 14, true);
+    this.BoxText(this.m_webBoxName[vs], "V", CBCrewPicVW(), 30, 20, true);
+    this.BoxText(this.m_webBoxLine[vs], s"Your crew  /  \(book.Count()) of \(CBConfig.MyCrewRoster())", CBCrewPicVW() - 8.0, 15, 12, false);
+    if IsDefined(this.m_webBoxLine[vs]) {
+      this.m_webBoxLine[vs].SetTintColor(CBHudValue());
+    }
+    this.BoxBars(vs, CBCrewPicVW(), CBCrewPicVH(), -1.0, CBHudCyan(), -1.0, CBHudCyan());
+    let vx = CBCrewPicVX() + CBCrewPicVW() / 2.0;
+    let vy = CBCrewPicVY() + CBCrewPicVH() / 2.0;
+    let mw = CBCrewPicW();
+    let mh = CBCrewPicH();
+    // Each of the crew.
+    let k = 0;
+    while k < book.Count() && k < 5 {
+      let m = book.At(k);
+      let slot = k + 1;
+      if IsDefined(m) {
+        let bx = CBCrewPicX(k);
+        let by = CBCrewPicY(k);
+        let tint = CBCrewLoyaltyTint(m.loyalty);
+        let out = book.IsOut(m.id);
+        let lit = this.m_pickCrew == m.id || this.m_pickCrew == 0;
+        this.PlaceLine(lines, vx, vy, bx + mw / 2.0, by + mh / 2.0, 2.0 + Cast<Float>(m.loyalty) / 20.0, out ? CBHudGreen() : tint,
+                       lit ? 1.0 : 0.45);
+        lines += 1;
+        if words < ArraySize(this.m_webWord) {
+          this.PlaceWordBeside(words, vx, vy, bx + mw / 2.0, by + mh / 2.0,
+                               out ? "With you" : CBCrewLoyaltyShort(m.loyalty), out ? CBHudGreen() : tint, lit ? 1.0 : 0.45);
+          words += 1;
+        }
+        this.PlaceWebBox(slot, bx, by, mw, mh, true);
+        this.DressBox(slot, mw, mh, 18, 14, 14, false);
+        this.BoxText(this.m_webBoxName[slot], CBCrewBoxName(sys, m), mw - 24.0, 18, 13, true);
+        this.BoxText(this.m_webBoxLine[slot], StrUpper(CBCrewSeatWord(m.seat)) + s"  /  RANK \(CBCrewRank(m.wins))", mw - 24.0, 14, 12, false);
+        if IsDefined(this.m_webBoxLine[slot]) { this.m_webBoxLine[slot].SetTintColor(tint); }
+        let state = CBCrewStateWord(book, m, now);
+        this.BoxText(this.m_webBoxLead[slot], state + "  /  " + CBCrewFromShort(m), mw - 24.0, 14, 11, false);
+        if IsDefined(this.m_webBoxLead[slot]) {
+          this.m_webBoxLead[slot].SetVisible(true);
+          this.m_webBoxLead[slot].SetTintColor(CBCrewStateTint(state));
+        }
+        if IsDefined(this.m_webBoxEdge[slot]) {
+          this.m_webBoxEdge[slot].SetTintColor(tint);
+          this.m_webBoxEdge[slot].SetVisible(true);
+        }
+        this.BoxBars(slot, mw, mh, Cast<Float>(m.loyalty) / 100.0, tint, -1.0, CBHudCyan());
+        this.m_webBox[slot].SetOpacity(lit ? 1.0 : 0.7);
+        this.m_boxCrew[slot] = m.id;
+      }
+      k += 1;
+    }
+    // A solo on offer, to one side.
+    if offer {
+      let os = 6;
+      let ox = CBCrewPicOfferX();
+      let oy = CBCrewPicOfferY();
+      let lit = this.m_pickCrew == -1 || this.m_pickCrew == 0;
+      this.PlaceLine(lines, vx, vy, ox + mw / 2.0, oy + mh / 2.0, 2.0, CBHudGrey(), lit ? 0.6 : 0.3);
+      lines += 1;
+      if words < ArraySize(this.m_webWord) {
+        this.PlaceWordBeside(words, vx, vy, ox + mw / 2.0, oy + mh / 2.0, "On offer", CBHudGrey(), lit ? 1.0 : 0.45);
+        words += 1;
+      }
+      let seat = CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed);
+      this.PlaceWebBox(os, ox, oy, mw, mh, true);
+      this.DressBox(os, mw, mh, 18, 14, 14, false);
+      this.BoxText(this.m_webBoxName[os], CBCrewFullName(sys, CBCrewPaid(), n"", 0, book.offerSeed, 0, 0), mw - 24.0, 18, 13, true);
+      this.BoxText(this.m_webBoxLine[os], StrUpper(CBCrewSeatWord(seat)) + s"  /  \(book.offerPrice)EB", mw - 24.0, 14, 12, false);
+      if IsDefined(this.m_webBoxLine[os]) { this.m_webBoxLine[os].SetTintColor(CBHudGrey()); }
+      this.BoxText(this.m_webBoxLead[os], s"A solo, from \(book.offerSender)", mw - 24.0, 14, 11, false);
+      if IsDefined(this.m_webBoxLead[os]) {
+        this.m_webBoxLead[os].SetVisible(true);
+        this.m_webBoxLead[os].SetTintColor(CBHudDim());
+      }
+      if IsDefined(this.m_webBoxEdge[os]) {
+        this.m_webBoxEdge[os].SetTintColor(CBHudGrey());
+        this.m_webBoxEdge[os].SetVisible(true);
+      }
+      this.BoxBars(os, mw, mh, -1.0, CBHudGrey(), -1.0, CBHudGrey());
+      this.m_webBox[os].SetOpacity(lit ? 1.0 : 0.7);
+      this.m_boxCrew[os] = -1;
+    }
+    // The last few who left, newest first, with how they left.
+    let shown = 0;
+    let p = book.PastCount() - 1;
+    while p >= 0 && shown < 3 {
+      let past = book.PastAt(p);
+      p -= 1;
+      if IsDefined(past) {
+        let ps = 12 + shown;
+        let px = CBCrewPicPastX(shown);
+        let py = CBCrewPicPastY();
+        let pw = CBCrewPicPastW();
+        let ph = CBCrewPicPastH();
+        let tint = CBCrewEndTint(past.end);
+        this.PlaceWebBox(ps, px, py, pw, ph, true);
+        this.DressBox(ps, pw, ph, 14, 12, 12, false);
+        this.BoxText(this.m_webBoxName[ps], CBCrewFirstName(sys, past.kind, past.faction, past.rival, past.seed), pw - 24.0, 14, 11, true);
+        this.BoxText(this.m_webBoxLine[ps], CBCrewEndWord(past.end), pw - 24.0, 12, 10, false);
+        if IsDefined(this.m_webBoxLine[ps]) { this.m_webBoxLine[ps].SetTintColor(tint); }
+        if IsDefined(this.m_webBoxLead[ps]) { this.m_webBoxLead[ps].SetVisible(false); }
+        if IsDefined(this.m_webBoxEdge[ps]) {
+          this.m_webBoxEdge[ps].SetTintColor(tint);
+          this.m_webBoxEdge[ps].SetVisible(true);
+        }
+        this.BoxBars(ps, pw, ph, -1.0, tint, -1.0, tint);
+        this.m_webBox[ps].SetOpacity(0.75);
+        shown += 1;
+      }
+    }
+    this.HideWebFrom(lines, words);
+    this.PaintWeb();
+  }
+
+  private func CrewPick(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    let id = slot >= 0 && slot < ArraySize(this.m_boxCrew) ? this.m_boxCrew[slot] : 0;
+    if id == 0 {
+      return;
+    }
+    this.m_pickCrew = id;
+    this.m_letGoArmed = 0;
+    this.Render(sys, game);
+  }
+
+
   private func Render(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if !IsDefined(this.m_root) || !this.m_open {
       return;
@@ -3712,15 +4633,13 @@ public class CBHud {
     this.HideRows();
     this.HideWeb();
     this.m_treeShown = false;
+    // Every page that has a picture can be read as a list instead (2.5.0): the web, the map, the tree, the crew.
+    let pictured = CBHudHasPicture(this.m_tab) && !(this.m_tab == CBHudTurfTab() && !CBTurfWarsOn());
     if IsDefined(this.m_webToggle) {
-      this.m_webToggle.SetVisible(this.m_tab == CBHudFactionsTab() || this.m_tab == CBHudRivalsTab());
+      this.m_webToggle.SetVisible(pictured);
     }
-    if IsDefined(this.m_webToggleText) {
-      if this.m_tab == CBHudRivalsTab() {
-        this.m_webToggleText.SetText(sys.HubTree() ? "Show as a list" : "Show as a tree");
-      } else {
-        this.m_webToggleText.SetText(sys.HubWeb() ? "Show as a list" : "Show as a web");
-      }
+    if IsDefined(this.m_webToggleText) && pictured {
+      this.m_webToggleText.SetText(sys.HubVisual(this.m_tab) ? "Show as a list" : CBHudPictureWord(this.m_tab));
     }
     this.SetAction("", false);
     this.HideExtras();
@@ -3742,13 +4661,23 @@ public class CBHud {
     let w = CBHudContentW();
     let maxLines = CBHudMaxLinesFor(this.m_tab);
     let listBottom = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
+    // The crew (Reactions/Crew.reds, 2.5.0): a page of its own, drawn whole by RenderCrew.
+    if this.m_tab == CBHudCrewTab() {
+      this.RenderCrew(sys, game);
+      this.Paint();
+      this.m_root.SetVisible(true);
+      this.ForeignOverlaysOff();
+      return;
+    }
     if this.m_tab == CBHudStandingTab() {
+      // Four tiles, what is on its way as rows, and two or three lines of why (2.5.0).
       this.RenderScores(sys);
+      let lanesEnd = this.RenderLanes(sys, game);
       // A price on V's head can be paid off here (Spawn/Bounty.reds, 2.4.3); asks twice, like every payment.
       let payOff = CBBountyPayOff(sys, game);
-      let paying = CBBountyPayPending(game);
+      let proseW = w;
       if payOff > 0 {
-        if paying {
+        if CBBountyPayPending(game) {
           this.SetAction("Paying it off. Click to take it back", true);
         } else {
           if this.m_bountyArmed {
@@ -3757,12 +4686,9 @@ public class CBHud {
             this.SetAction(s"Pay off the price on you (\(payOff)eb)", CBHudEddies(game) >= payOff);
           }
         }
-        this.SetBody(x, CBHudContentTop() + Cast<Float>(CBHudBarCount()) * 96.0 + 20.0, w,
-                     CBHudLegend(sys, game), maxLines, CBHudDetailTop() - 4.0 - CBHudFooterGap());
-      } else {
-        this.SetBody(x, CBHudContentTop() + Cast<Float>(CBHudBarCount()) * 96.0 + 20.0, w,
-                     CBHudLegend(sys, game), maxLines);
+        proseW = w - CBHudActionW() - 40.0;
       }
+      this.SetBody(x, lanesEnd + 16.0, proseW, CBHudLegend(sys, game), maxLines);
     } else {
       if this.m_tab == CBHudFactionsTab() {
         // The gangs as a list, or as the web of gangs (UI/HubWeb.reds, 2.4.3); the panel below is the same either way.
@@ -3774,14 +4700,25 @@ public class CBHud {
         this.RenderFactionDetail(sys, game);
       } else {
         if this.m_tab == CBHudTurfTab() {
-          let turfRows = this.RenderTurf(sys, game);
-          // Straight under the last district rather than under ten rows' worth of empty space.
-          let turfTop = CBHudContentTop() + Cast<Float>(Max(turfRows, 1)) * CBHudRowHeight() + 24.0;
-          this.SetBody(x, turfTop, w, CBHudTurfBody(sys), maxLines);
+          // Night City as a map (2.5.0), or the list.
+          if sys.HubVisual(CBHudTurfTab()) && CBTurfWarsOn() {
+            this.RenderMap(sys, game, true);
+            this.SetBody(x, CBHudContentTop() + CBWebHeight() + 24.0, w, this.MapDetail(sys, game, true), maxLines);
+          } else {
+            let turfRows = this.RenderTurf(sys, game);
+            // Straight under the last district rather than under ten rows' worth of empty space.
+            let turfTop = CBHudContentTop() + Cast<Float>(Max(turfRows, 1)) * CBHudRowHeight() + 24.0;
+            this.SetBody(x, turfTop, w, CBHudTurfBody(sys), maxLines);
+          }
         } else {
           if this.m_tab == CBHudCityTab() {
-            this.RenderCity(sys);
-            this.SetBody(x, listBottom, w, CBHudDistricts(sys), maxLines);
+            if sys.HubVisual(CBHudCityTab()) {
+              this.RenderMap(sys, game, false);
+              this.SetBody(x, CBHudContentTop() + CBWebHeight() + 24.0, w, this.MapDetail(sys, game, false), maxLines);
+            } else {
+              this.RenderCity(sys);
+              this.SetBody(x, listBottom, w, CBHudDistricts(sys), maxLines);
+            }
           } else {
             if this.m_tab == CBHudRivalsTab() {
               this.m_holdLabel = CBHoldLabel(sys.GetHuntHoldReason());
@@ -4089,21 +5026,6 @@ func CBHudClamp(text: String, maxLines: Int32) -> String {
   return CBHudFit(text, CBHudContentW(), 21, maxLines);
 }
 
-// What is on its way, in one place.
-//
-// Three lanes, three clocks, always shown together even when a lane is empty. Showing an idle
-// lane as "nobody" is the point: silence used to be ambiguous - it could mean nothing was
-// coming, or that something was coming and the clock had stalled, and those two looked
-// identical. A line that says nobody is after you right now is information. A line that says
-// held, and why, is information. A blank screen is not.
-func CBHudIncoming(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
-  let out = "On its way to you\n";
-  out += "  " + CBHudLaneLine(sys, game, CBLaneRival(), "A rival    ") + "\n";
-  out += "  " + CBHudLaneLine(sys, game, CBLaneSquad(), "A gang crew") + "\n";
-  out += "  " + CBHudLaneLine(sys, game, CBLaneApex(), "An apex squad") + "\n";
-  return out;
-}
-
 func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, label: String) -> String {
   let who = "";
   if lane == CBLaneRival() {
@@ -4275,7 +5197,8 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   //
   // What stays: what is coming, why people are frightened, and what that does right now. Three
   // things a player can act on.
-  let out = CBHudIncoming(sys, game) + "\n";
+  // What is coming is drawn as rows under the tiles now (2.5.0, RenderLanes), each with a pip for how close it is.
+  let out = "";
   // The price on V's head and the ladder (Spawn/Bounty.reds, 2.4.3), when there is one.
   let bounty = CBBountyHubLine(sys, game);
   if StrLen(bounty) > 0 {
@@ -5354,4 +6277,140 @@ func CBHudRivalStanding(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> Int32 {
   let role = CBRivalRole(sys, r);
   let place = role == CBRoleLeader() ? 2000 : (role == CBRoleLieutenant() ? 1000 : 0);
   return place + r.rank * 100 + Min(r.encounters, 99);
+}
+
+// ---- The Hub's pictures and tiles (2.5.0) --------------------------------------------------------------------------
+
+// The four scores, two by two.
+public func CBHudTileW() -> Float = 640.0
+public func CBHudTileGap() -> Float = 40.0
+public func CBHudTileStride() -> Float = 124.0
+
+// The pages that can be drawn as a picture, and what the switch offers when one is showing as a list.
+public func CBHudHasPicture(tab: Int32) -> Bool {
+  return tab == CBHudFactionsTab() || tab == CBHudTurfTab() || tab == CBHudCityTab() || tab == CBHudRivalsTab()
+      || tab == CBHudCrewTab();
+}
+
+public func CBHudPictureWord(tab: Int32) -> String {
+  if tab == CBHudFactionsTab() { return "Show as a web"; }
+  if tab == CBHudRivalsTab() { return "Show as a tree"; }
+  if tab == CBHudCrewTab() { return "Show as a picture"; }
+  return "Show as a map";
+}
+
+// One word for a crew member's state, as a colour.
+public func CBCrewStateTint(state: String) -> HDRColor {
+  if Equals(state, "WITH YOU") { return CBHudGreen(); }
+  if StrBeginsWith(state, "HURT") { return CBHudRed(); }
+  if Equals(state, "RESTLESS") { return CBHudAmber(); }
+  if Equals(state, "RESTING") { return CBHudGrey(); }
+  return CBHudCyan();
+}
+
+// ---- The map: each district roughly where it lies (index order of CBDistrictAt) --------------------------------------
+//
+// Watson at the top, City Center under it and Westbrook to its east, Heywood below with Santo Domingo to its east,
+// Pacifica to the south-west with Dogtown at its foot, and the Badlands out east. The roads join neighbours.
+
+public func CBMapW() -> Float = 250.0
+public func CBMapH() -> Float = 84.0
+
+public func CBMapX(i: Int32) -> Float {
+  switch i {
+    case 0: return 420.0;    // Watson
+    case 1: return 700.0;    // Westbrook
+    case 2: return 420.0;    // City Center
+    case 3: return 400.0;    // Heywood
+    case 4: return 690.0;    // Santo Domingo
+    case 5: return 130.0;    // Pacifica
+    case 6: return 30.0;     // Dogtown
+    case 7: return 1040.0;   // Badlands
+    default: return 0.0;
+  }
+}
+
+public func CBMapY(i: Int32) -> Float {
+  switch i {
+    case 0: return 0.0;
+    case 1: return 60.0;
+    case 2: return 118.0;
+    case 3: return 236.0;
+    case 4: return 290.0;
+    case 5: return 236.0;
+    case 6: return 354.0;
+    case 7: return 170.0;
+    default: return 0.0;
+  }
+}
+
+public func CBMapRoadCount() -> Int32 = 10
+
+public func CBMapRoadA(k: Int32) -> Int32 {
+  switch k {
+    case 0: return 0;
+    case 1: return 0;
+    case 2: return 1;
+    case 3: return 2;
+    case 4: return 1;
+    case 5: return 3;
+    case 6: return 3;
+    case 7: return 5;
+    case 8: return 4;
+    default: return 1;
+  }
+}
+
+public func CBMapRoadB(k: Int32) -> Int32 {
+  switch k {
+    case 0: return 1;
+    case 1: return 2;
+    case 2: return 2;
+    case 3: return 3;
+    case 4: return 4;
+    case 5: return 4;
+    case 6: return 5;
+    case 7: return 6;
+    case 8: return 7;
+    default: return 7;
+  }
+}
+
+// ---- The crew picture --------------------------------------------------------------------------------------------
+
+public func CBCrewPicVX() -> Float = 560.0
+public func CBCrewPicVY() -> Float = 160.0
+public func CBCrewPicVW() -> Float = 200.0
+public func CBCrewPicVH() -> Float = 76.0
+public func CBCrewPicW() -> Float = 260.0
+public func CBCrewPicH() -> Float = 96.0
+public func CBCrewPicOfferX() -> Float = 870.0
+public func CBCrewPicOfferY() -> Float = 330.0
+public func CBCrewPicPastW() -> Float = 150.0
+public func CBCrewPicPastH() -> Float = 44.0
+public func CBCrewPicPastY() -> Float = 384.0
+
+public func CBCrewPicPastX(j: Int32) -> Float {
+  return 30.0 + Cast<Float>(j) * 160.0;
+}
+
+// Five places round V: two above, one either side, one below.
+public func CBCrewPicX(k: Int32) -> Float {
+  switch k {
+    case 0: return 110.0;
+    case 1: return 950.0;
+    case 2: return 40.0;
+    case 3: return 1020.0;
+    default: return 530.0;
+  }
+}
+
+public func CBCrewPicY(k: Int32) -> Float {
+  switch k {
+    case 0: return 10.0;
+    case 1: return 10.0;
+    case 2: return 190.0;
+    case 3: return 190.0;
+    default: return 330.0;
+  }
 }

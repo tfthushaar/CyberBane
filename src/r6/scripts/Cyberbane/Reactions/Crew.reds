@@ -143,6 +143,12 @@ public class CBCrewBook extends ScriptableSystem {
   public let offerSender: String;
   public let offerHaggled: Bool;
   public let offerUntil: Float;
+  // Asked for on the Hub, which is a paused menu: carried out on the first tick back in the game (CBCrewServiceHub),
+  // the way every other Hub action is. Asked again before then, taken back.
+  public let reqCall: Bool;
+  public let reqPay: Bool;
+  public let reqHire: Bool;
+  public let reqLetGo: Int32;
 
   public static func Get(game: GameInstance) -> ref<CBCrewBook> {
     let container = GameInstance.GetScriptableSystemsContainer(game);
@@ -177,6 +183,10 @@ public class CBCrewBook extends ScriptableSystem {
     this.offerSender = "";
     this.offerHaggled = false;
     this.offerUntil = 0.0;
+    this.reqCall = false;
+    this.reqPay = false;
+    this.reqHire = false;
+    this.reqLetGo = 0;
   }
 
   // Once a session: nobody missing, numbers in range, nobody twice.
@@ -446,13 +456,6 @@ public func CBCrewSeatWord(seat: Int32) -> String {
   return "shooter";
 }
 
-public func CBCrewKindWord(kind: Int32) -> String {
-  if kind == CBCrewOwed() { return "owes you"; }
-  if kind == CBCrewFrightened() { return "scared into it"; }
-  if kind == CBCrewPaid() { return "paid"; }
-  return "on loan";
-}
-
 // The nickname they earn at rank 3, from what they do.
 public func CBCrewNickname(seat: Int32, seed: Int32) -> String {
   if seat == 0 {
@@ -520,6 +523,17 @@ public func CBCrewName(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> Strin
   return CBCrewFullName(sys, m.kind, m.faction, m.rival, m.seed, m.wins, m.seat);
 }
 
+// The name they go by, short enough for a box on the crew picture: first name and nickname once they have one.
+public func CBCrewBoxName(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> String {
+  if !IsDefined(m) {
+    return "";
+  }
+  if m.rival > 0 || CBCrewRank(m.wins) < 3 {
+    return CBCrewName(sys, m);
+  }
+  return CBCrewFirst(sys, m) + " \"" + CBCrewNickname(m.seat, m.seed) + "\"";
+}
+
 public func CBCrewFirst(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> String {
   return IsDefined(m) ? CBCrewFirstName(sys, m.kind, m.faction, m.rival, m.seed) : "Somebody";
 }
@@ -528,16 +542,28 @@ public func CBCrewPastName(sys: ref<CyberbaneSystem>, p: ref<CBCrewPast>) -> Str
   return IsDefined(p) ? CBCrewFullName(sys, p.kind, p.faction, p.rival, p.seed, 0, 0) : "Somebody";
 }
 
-// Where they came from, in a few words.
+// Where they came from, as a clause: "a shooter, once of the Valentinos, who owes you a life".
 public func CBCrewFromWords(m: ref<CBCrewMember>) -> String {
   if !IsDefined(m) {
     return "";
   }
   let gang = NotEquals(m.faction, n"") ? CBFactionLabel(m.faction) : "";
-  if m.kind == CBCrewOwed() { return StrLen(gang) > 0 ? s"once of \(gang), owes you a life" : "owes you a life"; }
-  if m.kind == CBCrewFrightened() { return StrLen(gang) > 0 ? s"ex-\(gang), scared into it" : "scared into it"; }
-  if m.kind == CBCrewLent() { return StrLen(gang) > 0 ? s"lent by \(gang)" : "on loan"; }
+  if m.kind == CBCrewOwed() { return StrLen(gang) > 0 ? s"once of \(gang), who owes you a life" : "who owes you a life"; }
+  if m.kind == CBCrewFrightened() { return StrLen(gang) > 0 ? s"once of \(gang), scared into working for you" : "scared into working for you"; }
+  if m.kind == CBCrewLent() { return StrLen(gang) > 0 ? s"on loan from \(gang)" : "on loan"; }
   return "a solo, paid by the week";
+}
+
+// The same, short enough for a row or a box.
+public func CBCrewFromShort(m: ref<CBCrewMember>) -> String {
+  if !IsDefined(m) {
+    return "";
+  }
+  let gang = NotEquals(m.faction, n"") ? CBPhoneGangSender(m.faction) : "";
+  if m.kind == CBCrewOwed() { return StrLen(gang) > 0 ? s"owes you, ex-\(gang)" : "owes you"; }
+  if m.kind == CBCrewFrightened() { return StrLen(gang) > 0 ? s"scared, ex-\(gang)" : "scared into it"; }
+  if m.kind == CBCrewLent() { return StrLen(gang) > 0 ? s"on loan, \(gang)" : "on loan"; }
+  return "paid solo";
 }
 
 public func CBCrewRestless(m: ref<CBCrewMember>) -> Bool {
@@ -998,6 +1024,7 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   if EntityID.IsDefined(book.turnedBody) {
     CBCrewTurnedTick(sys, game, book, des, player);
   }
+  CBCrewServiceHub(sys, game, book);
   if book.OutCount() == 0 {
     if !CBLiveTaggedPresent(game, n"CB_Ambush") {
       book.ambushAnswered = false;
@@ -1877,4 +1904,132 @@ public func CBCrewScannerNote(npc: ref<NPCPuppet>) -> String {
     }
   }
   return "";
+}
+
+// ---- What the Hub asked for, carried out back in the game ----------------------------------------------------------
+
+func CBCrewServiceHub(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
+  if book.reqPay {
+    book.reqPay = false;
+    let paid = CBCrewPayCut(sys, game);
+    if StrLen(paid) > 0 {
+      CBCrewText(sys, game, null, paid);
+    }
+  }
+  if book.reqHire {
+    book.reqHire = false;
+    let sender = book.offerSender;
+    let hired = CBCrewHire(sys, game);
+    if StrLen(hired) > 0 && StrLen(sender) > 0 {
+      CBPhoneSendTinted(game, sender, hired, CBHudCyan());
+    }
+  }
+  if book.reqLetGo > 0 {
+    let id = book.reqLetGo;
+    book.reqLetGo = 0;
+    CBCrewLetGo(sys, game, id);
+  }
+  if book.reqCall {
+    book.reqCall = false;
+    let why = CBCrewCall(sys, game, false);
+    if StrLen(why) > 0 {
+      CBCrewText(sys, game, null, why);
+    }
+  }
+}
+
+// ---- The crew page's words ([C10]) -------------------------------------------------------------------------------
+
+public func CBCrewLoyaltyTint(loyalty: Int32) -> HDRColor {
+  if loyalty >= 60 { return CBHudGreen(); }
+  if loyalty >= CBConfig.MyCrewRestless() { return CBHudCyan(); }
+  if loyalty >= CBConfig.MyCrewBetrayLine() { return CBHudAmber(); }
+  return CBHudRed();
+}
+
+public func CBCrewLoyaltyWord(loyalty: Int32) -> String {
+  if loyalty >= 80 { return "would take a bullet for you"; }
+  if loyalty >= 60 { return "solid"; }
+  if loyalty >= CBConfig.MyCrewRestless() { return "doing the job"; }
+  if loyalty >= CBConfig.MyCrewBetrayLine() { return "restless"; }
+  return "close to walking, or worse";
+}
+
+// One word for the line on the crew picture.
+public func CBCrewLoyaltyShort(loyalty: Int32) -> String {
+  if loyalty >= 80 { return "DEVOTED"; }
+  if loyalty >= 60 { return "LOYAL"; }
+  if loyalty >= CBConfig.MyCrewRestless() { return "STEADY"; }
+  if loyalty >= CBConfig.MyCrewBetrayLine() { return "RESTLESS"; }
+  return "SHAKY";
+}
+
+// What is eating somebody, from what last cost them.
+public func CBCrewWorry(m: ref<CBCrewMember>) -> String {
+  if !IsDefined(m) { return ""; }
+  if m.lastWhy == CBCrewWhyUnpaid() { return "the cut you owe them"; }
+  if m.lastWhy == CBCrewWhyLeftLying() { return "you left them lying in the street"; }
+  if m.lastWhy == CBCrewWhyLost() { return "losing one of the crew"; }
+  if m.lastWhy == CBCrewWhyOldGang() { return s"what you keep doing to \(CBFactionLabel(m.faction))"; }
+  if m.lastWhy == CBCrewWhyFear() { return "they are less afraid of you than they were"; }
+  return "";
+}
+
+// How somebody left, in a word for the crew picture, and the tint it is drawn in.
+public func CBCrewEndWord(end: Int32) -> String {
+  if end == CBCrewEndFell() { return "FELL"; }
+  if end == CBCrewEndLetGo() { return "LET GO"; }
+  if end == CBCrewEndWalked() { return "WALKED"; }
+  if end == CBCrewEndSold() { return "SOLD YOU OUT"; }
+  return "TURNED ON YOU";
+}
+
+public func CBCrewEndTint(end: Int32) -> HDRColor {
+  if end == CBCrewEndSold() || end == CBCrewEndTurned() { return CBHudRed(); }
+  if end == CBCrewEndFell() { return CBHudDim(); }
+  return CBHudGrey();
+}
+
+// The picked member's file, or the solo on offer.
+public func CBCrewFile(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>,
+                       offer: Bool) -> String {
+  let now = CBGameSeconds(game);
+  if offer && IsDefined(book) && book.offerSeed != 0 {
+    let solo = CBCrewFullName(sys, CBCrewPaid(), n"", 0, book.offerSeed, 0, 0);
+    let seat = CBCrewSeatWord(CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed));
+    return StrUpper(solo) + "\n" + s"A solo \(book.offerSender) put forward: a \(seat), \(book.offerPrice)eb to sign, then the weekly cut. "
+         + "Paid people are loyal while the money keeps coming. The offer stands until tomorrow.";
+  }
+  if !IsDefined(m) || !IsDefined(book) {
+    return "";
+  }
+  let out = StrUpper(CBCrewName(sys, m)) + "\n";
+  let home = NotEquals(m.home, n"") ? CBDistrictLabel(m.home) : "the city";
+  let since = CBHudSince(now, m.joinedAt);
+  out += s"A \(CBCrewSeatWord(m.seat)), \(CBCrewFromWords(m)). Lives in \(home)" + (StrLen(since) > 0 ? s", with you \(since)." : ".") + "\n";
+  let rank = CBCrewRank(m.wins);
+  let wins = m.wins == 0 ? "No fights won with you yet" : (m.wins == 1 ? "One fight won with you" : s"\(m.wins) fights won with you");
+  let scars = m.scars == 0 ? "" : (m.scars == 1 ? ", one scar to show for it" : s", \(m.scars) scars to show for it");
+  out += wins + scars + s". Rank \(rank)" + (rank >= 3 ? s", known as \"\(CBCrewNickname(m.seat, m.seed))\"" : "") + ".\n";
+  out += s"Loyalty \(m.loyalty) of 100: \(CBCrewLoyaltyWord(m.loyalty)).";
+  let worry = CBCrewWorry(m);
+  if CBCrewRestless(m) && StrLen(worry) > 0 {
+    out += s" What's eating them: \(worry).";
+  }
+  out += "\n";
+  if book.IsOut(m.id) {
+    out += book.leaving ? "Heading home now.\n" : "With you now.\n";
+  } else {
+    if CBCrewHurt(m, now) {
+      out += s"Hurt: back on their feet in about \(CeilF((m.hurtUntil - now) / CBConfig.SecondsPerHour())) hours.\n";
+    } else {
+      if m.calledAt > 0.0 && now - m.calledAt < CBConfig.MyCrewCallSeconds() {
+        out += "Just got back. They can be called again within the hour.\n";
+      }
+    }
+  }
+  if CBCrewBetrayalOn() && m.kind != CBCrewLent() && m.loyalty < CBConfig.MyCrewBetrayLine() {
+    out += "Call them like this and they might sell you out, or worse. Pay them, win with them, or let them go.\n";
+  }
+  return out;
 }
