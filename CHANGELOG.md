@@ -43,6 +43,8 @@ the next unless a version says otherwise.
 - **Pictures first.** Gangs open as the web of who is at war with whom, Rivals as each gang's tree, Turf and The City
   as a map of Night City with each district where it lies, and your crew round you with lines as strong as their
   loyalty. One button turns any of them into a list.
+- **Easy to read.** Big boxes and large text: each gang, district, Rival and crew member shows its name and a word or
+  two, and only what is happening right now is drawn. Click any box for the rest.
 - **A Crew page:** who is ready, who is restless and what they are owed, with buttons to call them, pay them, let one
   go or take on a solo.
 - **Standing at a glance.** Your four scores are tiles, and what is on its way to you is a row each, coloured by how
@@ -60,6 +62,10 @@ the next unless a version says otherwise.
 - **Start over** left things running into the new playthrough: a street clash, a gang's people lent to you, a ransom
   still due, a gang's offer to take you in, and the map's pins. It ends them all now.
 - One of your crew who turned on you stayed when a story scene began. They leave the way every hunter does.
+- People you talk to walk on when the conversation is over. Someone you had just left could stand frozen where they
+  were.
+- Somebody you pick a fight with in conversation fights you at once. They could stand still for a minute and a half
+  first.
 - One of your crew walking home, or one of a gang's people lent to you, could come back as a Rival if you hurt them
   on the way.
 - A bounty hunter who killed one of your crew and got away came back as a gang's Rival. Hunters keep their own place

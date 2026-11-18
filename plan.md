@@ -982,6 +982,20 @@ the source:
   `ArrayContains` straight on what `CBGangRivalsOf` returned, inside `||`, and the game took the name it searched for
   as an address. No script that has run in a game before did that; eight written since 2.3.0 did. Every one now
   searches a named local, and the mechanical sweep flags the shape (`ARRAY-TEMP`).
+- **The pictures were too small to read**, and too busy: 16 to 20 px names and 11 px lines at 1080p, three lines and
+  two unlabelled bars a box, a line from V to every gang and every old feud drawn at once. Every box now has a name
+  and a word or two in the pictures' type (`CBPicName` and the rest, 26/21/18), the web and the maps are drawn taller
+  (`CBWebTallHeight`, the button moving down with them, `PlaceActions`), V's lines go only to gangs that are more than
+  neutral, gangs' old feuds and the words on lines come only for the gang picked, a long name gives up its nickname
+  or first name before it is cut (`CBHudBoxName`), and each picture's words underneath are its legend alone. Laid
+  out to scale at 1080p before it went in. The tree's bench no longer hangs from nothing when it holds one or two.
+- **Talking.** The conversation's hold-position order ran on in combat (`ignoreInCombat` left false), so somebody V
+  picked a fight with stood still until it ran out, and cancelling it alone did not stop it, so somebody V left stood
+  frozen; it now gives way to a fight and is ended the way the game ends its own (`CBEndHold`). A passer-by V stopped
+  is put back into foot traffic (`TryAndJoinTraffic`) or walks on. Both were there in 2.3.0.
+- **Frightened into the crew** [C2] almost never happened: it was tried only from "You work for me now", which a
+  successful Intimidate seldom reached, only for somebody who read as afraid, and only with the informants on. A
+  successful Intimidate now tries it, and leaned-on counts as frightened (`CBCrewTakesFrightened`).
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,

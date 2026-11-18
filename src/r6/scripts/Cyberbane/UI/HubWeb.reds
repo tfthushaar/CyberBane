@@ -25,12 +25,28 @@ public func CBWebSlotCount() -> Int32 = 16
 public func CBWebLinePool() -> Int32 = 64
 public func CBWebWordPool() -> Int32 = 14
 public func CBWebHeight() -> Float = 440.0
-public func CBWebGangW() -> Float = 200.0
-public func CBWebGangH() -> Float = 76.0
-public func CBWebSmallW() -> Float = 150.0
-public func CBWebSmallH() -> Float = 40.0
-public func CBWebVW() -> Float = 120.0
-public func CBWebVH() -> Float = 60.0
+// The web and the two maps are drawn taller: each has one button at most, and it moves down beside the words under
+// the picture (CBHud.PlaceActions). The tree and the crew keep 440, so their four buttons stay above the footer.
+public func CBWebTallHeight() -> Float = 500.0
+// Boxes and type sized to read from a sofa (2.5.0): the first pictures were 16 to 20 px names and 11 px lines at 1080p.
+public func CBWebGangW() -> Float = 220.0
+public func CBWebGangH() -> Float = 92.0
+public func CBWebSmallW() -> Float = 190.0
+public func CBWebSmallH() -> Float = 56.0
+public func CBWebVW() -> Float = 150.0
+public func CBWebVH() -> Float = 80.0
+// The pictures' type: a box's name, its line, its third line, V's own, the words on lines; and the least each may be
+// drawn at before it is shortened (CBHud.BoxText).
+public func CBPicName() -> Int32 = 26
+public func CBPicLine() -> Int32 = 21
+public func CBPicLead() -> Int32 = 18
+public func CBPicV() -> Int32 = 34
+public func CBPicSmallName() -> Int32 = 21
+public func CBPicSmallLine() -> Int32 = 17
+public func CBPicWord() -> Int32 = 18
+public func CBPicNameLeast() -> Int32 = 17
+public func CBPicLineLeast() -> Int32 = 16
+public func CBPicLeadLeast() -> Int32 = 15
 public func CBHudWebToggleName() -> CName = n"cbHubWebToggle"
 
 // Who is in each place: 0 is V, 1 to 11 the gangs, 12 to 15 the corporations and the law.
@@ -60,41 +76,41 @@ public func CBWebSlotIsGang(i: Int32) -> Bool = i >= 1 && i <= 11
 // Top left of each place, in the page's design units, inside the web's own area.
 public func CBWebSlotX(i: Int32) -> Float {
   switch i {
-    case 0: return 600.0;
+    case 0: return 585.0;
     case 1: return 300.0;
-    case 2: return 560.0;
-    case 3: return 820.0;
-    case 4: return 30.0;
-    case 5: return 30.0;
-    case 6: return 230.0;
-    case 7: return 10.0;
-    case 8: return 460.0;
-    case 9: return 700.0;
-    case 10: return 1090.0;
-    case 11: return 1090.0;
-    case 12: return 350.0;
-    case 13: return 520.0;
-    case 14: return 690.0;
-    case 15: return 860.0;
+    case 2: return 550.0;
+    case 3: return 800.0;
+    case 4: return 40.0;
+    case 5: return 40.0;
+    case 6: return 300.0;
+    case 7: return 40.0;
+    case 8: return 550.0;
+    case 9: return 800.0;
+    case 10: return 1060.0;
+    case 11: return 1060.0;
+    case 12: return 275.0;
+    case 13: return 485.0;
+    case 14: return 695.0;
+    case 15: return 905.0;
     default: return 0.0;
   }
 }
 
 public func CBWebSlotY(i: Int32) -> Float {
   switch i {
-    case 0: return 178.0;
+    case 0: return 170.0;
     case 1: return 0.0;
     case 2: return 0.0;
     case 3: return 0.0;
-    case 4: return 92.0;
-    case 5: return 196.0;
-    case 6: return 280.0;
-    case 7: return 300.0;
-    case 8: return 300.0;
-    case 9: return 300.0;
-    case 10: return 180.0;
+    case 4: return 120.0;
+    case 5: return 230.0;
+    case 6: return 340.0;
+    case 7: return 340.0;
+    case 8: return 340.0;
+    case 9: return 340.0;
+    case 10: return 140.0;
     case 11: return 290.0;
-    default: return 400.0;
+    default: return 444.0;
   }
 }
 
@@ -294,13 +310,9 @@ public func CBWebBoxLine(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CN
   if !IsDefined(score) {
     return "";
   }
-  let out = StrUpper(CBPostureName(score.GetPosture(gang))) + s"  \(RoundF(score.GetStanding(gang)))";
-  if CBWebSlotIsGang(CBWebSlotOf(gang)) {
-    let held = CBWarStreetsHeld(sys, game, gang);
-    if held > 0 {
-      out += held == 1 ? "  1 STREET" : s"  \(held) STREETS";
-    }
-  }
+  // One word (2.5.0): the standing's number, the streets held and the leader are in the panel under the picture,
+  // where the gang's box sent them as three lines of 11 px text.
+  let out = StrUpper(CBPostureName(score.GetPosture(gang)));
   return out;
 }
 
@@ -363,5 +375,14 @@ func CBWebTruceHours(war: ref<CBWarBook>, a: CName, b: CName, now: Float) -> Int
 }
 
 public func CBWebLegend() -> String {
-  return "Lines to you: green friendly, grey neutral, amber hostile, red sworn against you. Between gangs: red at war, dim red an old feud, cyan a truce against you, amber where you set one on the other. Click a gang for more.";
+  return "Lines from you: green friendly, amber hostile, red out for blood; no line, neutral. Between two gangs: red at war, cyan a truce against you, amber one you set on the other.\nClick a gang for its old feuds, what it thinks of you, and to pay it off.";
+}
+
+// The word under a gang's name in its box, what is live between them and V (CBWebVWord), coloured by whether it is
+// trouble or help.
+public func CBWebVWordTint(word: String) -> HDRColor {
+  if Equals(word, "OPEN SEASON") || Equals(word, "TRACKER") || Equals(word, "A PRICE ON YOU") || Equals(word, "PAY UP") {
+    return CBHudRed();
+  }
+  return CBHudGreen();
 }

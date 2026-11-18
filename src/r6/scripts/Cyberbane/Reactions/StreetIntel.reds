@@ -451,6 +451,14 @@ public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
     if IsDefined(joined) {
       return joined;
     }
+    // The question is there for the crew alone when the informants are off (Reactions/StreetTalk.reds, 2.5.0).
+    if !CBInformantsOn() {
+      if IsDefined(t.npc) {
+        t.npc.cbHoldState = 1;
+      }
+      return CBTalkSay(CBPick2("Work for you? I... no. But I'll stay out of your way. Swear.",
+                               "Not that. Anything but that. I never saw you, alright?"), n"fear_beg");
+    }
     let now = CBGameSeconds(game);
     book.AddInformant(0, t.faction, 2, now + RandRangeF(3.0, 6.0) * 3600.0, RandF() < CBConfig.InformantSetupChance());
     CBFileLog(sys, n"Turned", now, CBEventDistrict(sys, game), t.faction, 0.0);

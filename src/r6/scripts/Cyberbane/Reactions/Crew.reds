@@ -759,10 +759,13 @@ public func CBCrewRecruitDebtor(sys: ref<CyberbaneSystem>, game: GameInstance, r
 }
 
 // [C2] From the turn (Reactions/StreetIntel.reds, CBIntelTurn): somebody frightened enough joins instead.
+// Frightened: afraid of V when V walked up, or leaned on until they folded (cbHoldState 1, a successful Intimidate).
+// Until 2.5.0 only the first counted, and a ganger who had just folded under Intimidate read as wary, not afraid, so
+// the one way to frighten somebody into the crew almost never could (2.5.0).
 public func CBCrewFrightenedJoins(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let book = CBCrewBook.Get(game);
-  if !CBMyCrewOn() || !IsDefined(book) || !book.HasRoom() || !IsDefined(t) || !IsDefined(t.npc) || Equals(t.faction, n"")
-     || t.mood != CBTalkAfraid() || t.cop {
+  if !CBCrewTakesFrightened(game) || !IsDefined(t) || !IsDefined(t.npc) || Equals(t.faction, n"") || t.cop
+     || !(t.mood == CBTalkAfraid() || t.npc.cbHoldState == 1) {
     return null;
   }
   let chance = CBCrewFrightJoin() * (1.0 + ClampF(CBTalkNerveGap(t), 0.0, 1.0));
@@ -785,6 +788,12 @@ public func CBCrewFrightenedJoins(sys: ref<CyberbaneSystem>, game: GameInstance,
   return CBTalkSay(CBLineOf([s"Okay. Okay! I'm yours. Just... don't look at me like that, \(CBYou(sys, game)).",
                              s"Work for you? Better than the other thing. Fine. \(CBCapFirst(CBFactionLabel(t.faction))) never paid me anyway.",
                              "Whatever you say. I'll keep my phone on. Please."]), n"");
+}
+
+// The crew is on and has room for one more (2.5.0): asked before a frightened ganger is offered the chance.
+public func CBCrewTakesFrightened(game: GameInstance) -> Bool {
+  let book = CBCrewBook.Get(game);
+  return CBMyCrewOn() && IsDefined(book) && book.HasRoom() && CBCrewFrightJoin() > 0.0;
 }
 
 // [C4] An Allied gang lends one of its people, for good.

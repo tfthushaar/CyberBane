@@ -215,8 +215,29 @@ func CBTalkHold(npc: ref<ScriptedPuppet>) -> Void {
   }
   let cmd = new AIHoldPositionCommand();
   cmd.duration = CBConfig.TalkHoldSeconds();
+  // Dropped the moment they are in a fight (aiComponent.script, OnCommandStateChanged: ignoreInCombatMoveCommand).
+  // Left false, as a new command's Bool is, the hold ran on through combat: somebody V picked a fight with turned
+  // hostile and stood where they were until it ran out, ninety seconds later (2.5.0).
+  cmd.ignoreInCombat = true;
   npc.cbTalkHold = cmd;
   ai.SendCommand(cmd);
+}
+
+// A hold-position order ended the way the game ends one that has run its time (aiIdleCommand.script,
+// HoldPositionCommandTask): cancelled, and stopped if it is still executing. Cancelled alone, the task holding them
+// kept them standing until the order's own time was up, so somebody V walked away from stood frozen (2.5.0).
+public func CBEndHold(npc: ref<ScriptedPuppet>, cmd: ref<AIHoldPositionCommand>) -> Void {
+  if !IsDefined(npc) || !IsDefined(cmd) || !npc.IsAttached() {
+    return;
+  }
+  let ai = npc.GetAIControllerComponent();
+  if !IsDefined(ai) {
+    return;
+  }
+  ai.CancelCommand(cmd);
+  if Equals(cmd.state, AICommandState.Executing) {
+    ai.StopExecutingCommand(cmd, true);
+  }
 }
 
 // Somebody of this tag whose walk a conversation took the place of, and whose conversation is over: the walk
@@ -242,10 +263,7 @@ func CBTalkReleaseHold(npc: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc) || !IsDefined(npc.cbTalkHold) {
     return;
   }
-  let ai = npc.GetAIControllerComponent();
-  if IsDefined(ai) && npc.IsAttached() {
-    ai.CancelCommand(npc.cbTalkHold);
-  }
+  CBEndHold(npc, npc.cbTalkHold);
   npc.cbTalkHold = null;
 }
 
@@ -1208,12 +1226,21 @@ public class CBStreetTalk {
       CBTalkReleaseHold(this.m_target.npc);
       CBTalkUnhush(this.m_target.npc);
     }
-    // A passer-by V stopped walks on.
+    // A passer-by V stopped walks on: back into the crowd's foot traffic, the way the game puts somebody on foot back
+    // into it (reactionSystem.script, TryAndJoinTraffic, away from V), or failing that, a walk away from V. The
+    // traffic stop (TryStopTrafficMovement) has no undo of its own, and the walking pace this used to set changed
+    // nothing, so a passer-by V had talked to stood where they were (2.5.0). Not one already sent off, down or fighting.
     if IsDefined(this.m_target) && IsDefined(this.m_target.npc) && this.m_target.npc.cbTalkStopped {
-      this.m_target.npc.cbTalkStopped = false;
-      let crowd = this.m_target.npc.GetCrowdMemberComponent();
-      if IsDefined(crowd) && this.m_target.npc.IsAttached() {
-        crowd.ChangeMoveType(n"walk");
+      let walker = this.m_target.npc;
+      walker.cbTalkStopped = false;
+      let you = GetPlayer(game);
+      if walker.IsAttached() && IsDefined(you) && !walker.cbTalkSent && CBStillStanding(walker) && !CBNpcInCombat(walker) {
+        let reactions = GameInstance.GetReactionSystem(game);
+        let rejoined = IsDefined(reactions)
+                    && reactions.TryAndJoinTraffic(walker, Vector4.Vector4To3(you.GetWorldPosition()), false);
+        if !rejoined {
+          CBOrderFlee(game, walker, true);
+        }
       }
     }
     if wasOn {
@@ -2251,7 +2278,7 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
     ArrayPush(out, tl);
   }
   // Turning them (1.9.8): somebody of a gang frightened enough of V may agree to pass V word.
-  if gang && CBInformantsOn() && IsDefined(t.npc) && (t.npc.cbHoldState == 1 || m == CBTalkAfraid())
+  if gang && (CBInformantsOn() || CBCrewTakesFrightened(game)) && IsDefined(t.npc) && (t.npc.cbHoldState == 1 || m == CBTalkAfraid())
      && !CBMaskHas(done, CBTalkActTurn()) {
     ArrayPush(out, CBTalkMakeLine("[Intimidate] You work for me now.", CBTalkActTurn(), t"ChoiceCaptionParts.GrappleIcon"));
   }
@@ -2547,6 +2574,11 @@ func CBTalkFight(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   if !IsDefined(director) || !director.TurnHostileFromTalk(player, t.npc, t.faction) {
     return false;
   }
+  // No longer talking, nor held to talk: the fight is theirs to have now (2.5.0).
+  if IsDefined(t.npc) {
+    t.npc.cbTalkPartner = false;
+    CBTalkReleaseHold(t.npc);
+  }
   let lost = CBTalkSlight(sys, game, t.faction, CBConfig.TalkFightCost());
   if lost > 0.0 {
     CBCreditRivalGangs(sys, game, t.faction, -lost);
@@ -2806,6 +2838,14 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   CBTalkFear(sys, game, t.faction, CBConfig.TalkLeanFear());
   CBTalkSlight(sys, game, t.faction, CBConfig.TalkLeanCost());
   npc.cbHoldState = 1;   // leaned on and folded: they will not draw on V after this (1.9.5)
+  // Frightened badly enough, they offer themselves to V's crew (Reactions/Crew.reds, [C2]). Until 2.5.0 only the
+  // follow-up "You work for me now" could do it, which a successful Intimidate usually never reached: the one it
+  // frightened was sent on their way first.
+  let joined = CBCrewFrightenedJoins(sys, game, t);
+  if IsDefined(joined) {
+    CBTalkSendOff(game, t);
+    return joined;
+  }
   let told = CBTalkInform(sys, game, player, t);
   if StrLen(told) > 0 {
     CBTalkSendOff(game, t);

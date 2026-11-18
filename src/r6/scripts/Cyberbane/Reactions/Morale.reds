@@ -288,7 +288,8 @@ func CBFleeSpot(game: GameInstance, npc: wref<ScriptedPuppet>, player: ref<GameO
 // left false the game keeps it running during a fight (tweakAIConditionChecks, IsCommandActive).
 // They stay hostile on purpose: made neutral, shooting one in the back would be an assault to the
 // police. True when they have somewhere to go and have been told to go there.
-public func CBOrderFlee(game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
+// `walk`: the same order at a walk, for somebody V simply let go of (Reactions/StreetTalk.reds, 2.5.0).
+public func CBOrderFlee(game: GameInstance, npc: wref<ScriptedPuppet>, opt walk: Bool) -> Bool {
   let player = GetPlayer(game);
   if !IsDefined(npc) || !IsDefined(player) || !npc.IsAttached() {
     return false;
@@ -308,7 +309,7 @@ public func CBOrderFlee(game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
   WorldPosition.SetVector4(wp, spot);
   AIPositionSpec.SetWorldPosition(dest, wp);
   cmd.movementTarget = dest;
-  cmd.movementType = moveMovementType.Sprint;
+  cmd.movementType = walk ? moveMovementType.Walk : moveMovementType.Sprint;
   cmd.ignoreInCombat = false;
   cmd.alwaysUseStealth = false;
   cmd.ignoreNavigation = false;
