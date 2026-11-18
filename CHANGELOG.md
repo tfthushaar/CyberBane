@@ -3,7 +3,7 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
-## Unreleased
+## 2.3.0 (18 November 2026)
 
 **Fixes**
 - **No more crash from the talk bubbles.** The talk bubble over people who know where a Rival is lying low
@@ -12,7 +12,10 @@ the next unless a version says otherwise.
   and `ScriptedPuppet.IsCrowd`). Every check of nearby people now makes sure they're still there and fully
   loaded before reading anything about them, as the rest of Cyberbane already did. The same fix covers the
   favour that marks somebody who owes a gang, a Rival coming to help when you're outnumbered, talking to
-  somebody downed, squeezing a ganger, and the Talk prompt.
+  somebody downed, squeezing a ganger, the Talk prompt, and finding who you're looking at to talk to.
+- **Your death can't crash on a killer who has gone.** If whoever killed you had already left streaming range
+  by the time your death landed (a shot from far off, or bleeding out), their character data was read anyway.
+  Now the death is recorded without a named killer, as a death with no attacker always was.
 
 Your progress carries over.
 

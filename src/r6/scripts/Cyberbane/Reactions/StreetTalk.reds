@@ -1298,8 +1298,10 @@ public class CBStreetTalk {
     let fwd = Vector4.Normalize2D(player.GetWorldForward());
     let best: ref<ScriptedPuppet>;
     let bestDot = CBConfig.TalkFacingDot();
+    // The per-NPC gate first (Reactions/NpcRegistry.reds, 2.2.1): the registry still holds people who are
+    // streaming in or out.
     for p in reg.GetAll() {
-      if IsDefined(p) && p.IsAttached() && !p.IsPlayer() && !p.IsDead() {
+      if CBNpcSafe(sys, p) && !p.IsPlayer() && !p.IsDead() {
         let pos = p.GetWorldPosition();
         if Vector4.Distance(ppos, pos) <= CBConfig.TalkRange() && AbsF(pos.Z - ppos.Z) <= 1.5 {
           let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
@@ -1336,7 +1338,7 @@ public class CBStreetTalk {
     let best: ref<ScriptedPuppet>;
     let bestDot = CBConfig.TalkNextDot();
     for p in reg.GetAll() {
-      if IsDefined(p) && p.IsAttached() && !p.IsPlayer() && !p.IsDead()
+      if CBNpcSafe(sys, p) && !p.IsPlayer() && !p.IsDead()
          && (!IsDefined(skip) || !Equals(p.GetEntityID(), skip.GetEntityID())) {
         let pos = p.GetWorldPosition();
         if Vector4.Distance(ppos, pos) <= CBConfig.TalkRange() && AbsF(pos.Z - ppos.Z) <= 1.5 {

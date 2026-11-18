@@ -1,7 +1,9 @@
 # Cyberbane improvements
 
-Ideas not built yet, and a short record of the ones that were. Player requests, and what was done about each,
-are in [PLAYER_REQUESTS.md](PLAYER_REQUESTS.md); what each version changed is in [CHANGELOG.md](CHANGELOG.md).
+Ideas not built yet that fit the rules below: every entry here can be built with scripts alone, within the crash
+rules and without changing an existing save's layout. Player requests are in [PLAYER_REQUESTS.md](PLAYER_REQUESTS.md);
+what each version changed is in [CHANGELOG.md](CHANGELOG.md). Item numbers are kept as stable names, so a number
+missing from the list is an idea that was dropped as not buildable.
 
 The list comes from three places: what Cyberbane already has and could do more with; how other games handle
 reputation, nemeses, gangs and being hunted; and what other Cyberpunk 2077 mods do and players keep asking for.
@@ -15,8 +17,7 @@ is copied, and each is redesigned around what Cyberbane already has.
   `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing read from an NPC before `CBNpcSafe` says it is
   safe, behaviour-only kits, no runtime appearance changes, no loot put on bodies, UI as data rather than
   injected widgets.
-- **Scripts only**: no archives, no TweakDB records, no audio files. Ideas that need one are kept apart under
-  [Beyond the current rules](#beyond-the-current-rules).
+- **Scripts only**: no archives, no TweakDB records, no audio files.
 - **Saves**: no new `persistent let` on a class that is already saved, because it wipes everyone's progress.
   New saved state goes in a system of its own (the `CBTurfBook` and `CBIntelBook` pattern).
 - **Nobody the game wrote speaks for Cyberbane.** No fixer, romance partner or story character sends its texts
@@ -27,21 +28,6 @@ is copied, and each is redesigned around what Cyberbane already has.
 **Sizes.** **S**: numbers, text, or one small hook. **M**: a new state machine on pieces that already exist.
 **L**: new spawns, several systems at once, or something to prove in game first. **Verify**: an engine call to
 probe on 2.31 and 2.5 before anything is built on it.
-
----
-
-## Built
-
-What the research sections that used to fill this file led to, compressed.
-
-| Section | Built | In | Left out, and why |
-|---|---|---|---|
-| Talking to gangers: the fixes | Why a prompt closes is logged; a sticky target; conversations instead of single exchanges; refusals said out loud; an exit for people V sent off; the parley | 1.9.6 | Releasing lingering combat sooner: `CBCombatReleaseTick` already did it |
-| Haggling over a Rival's whereabouts | In the street (ask, a price by temperament and standing, pay, haggle, lean, the rare liar) and by text (Deal, Too much, Forget it) | 1.9.7 | |
-| Talking the way the game does | Icons and line types; Talk first, then the list; eye contact; lifepath and attribute lines; the talk bubble | 1.9.6 to 1.9.8 | Timed choices (need a native timer); the boxed attribute check (only the scene system can draw it) |
-| Making talk worth doing | What talk did, in the History; questions with real answers; leads, the toll, a crew called off; turning a ganger; being remembered; fans; favours; a downed Rival spared, made to give up another, or exiled | 1.9.6 to 2.0.0 | A lookout who warns V (allies already do); talking to a Rival who is on their feet and not fighting (item 64) |
-| Borrowed from Stay Dead | Texts wait during talk; the re-arm watch; scan intel; "while you were out"; catchphrases; the street's word on a Rival; the squeeze; the downed talk; informants; mercy as a choice; kin; send word and the call-out; fatal flaws; the announcement; bodyguards; crews in their colours and the Claws' bikes; bagmen; surrender; "nobody kills you but me"; sit-downs | 1.9.6 to 2.2.0 | The marksman on high ground (script cannot find high ground reliably); public executions (item 27); a neutral crew during the announcement (the re-arm watch and the game's combat state would fight it) |
-| The old backlog in PLAYER_REQUESTS.md | Show countdowns; the graded threat on the HUD, with LOST THEM and THREAT ENDED; scouts; hunters who search; loot and bounties; the Immersive Shooting AI step-down; turf damage counted street by street | 1.4.8 to 2.0.0 | What is still open is folded into the list below |
 
 ---
 
@@ -190,9 +176,6 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
 37. **V's own streets.** At legendary standing, a district where V has broken every gang and nobody holds it
     becomes V's: no crews are sent there, the street greets V, and a gang passing through pays V for the
     privilege. The endgame of the turf war. **L** *(San Andreas; Saints Row)*
-38. **A gang can fall.** A gang kept below its floor long enough splinters, and a small new crew rises from what
-    is left, with a new name and a grudge. A design change, not an addition: gangs are kept from extinction on
-    purpose (`GangStrengthFloor`). **L**
 
 ## 5. Being hunted
 
@@ -234,11 +217,6 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
     gang always knows the district V is in, and the HUD line says TRACKED. **S to M**
 50. **Lookouts in the crowd.** On hostile turf, one passer-by is really the gang's lookout. A scan shows it; deal
     with them (talk, a takedown) before they report V and the turf provocation never happens. **M**
-51. **Drive-bys.** A crew in a car passes V on foot, shoots and circles back, using the game's own vehicle
-    combat. **L, verify** (whether a script can order it)
-52. **Taken alive.** With Fenix Rebirth installed (already detected, `Compat/FenixRebirth.reds`), a crew can try
-    to take V alive: going down to them means waking in their place, robbed, with a way out to find. **L**
-    *(Far Cry 5's capture parties)*
 
 ## 6. Rivals
 
@@ -295,8 +273,6 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
     they come sooner. **M** *(Crusader Kings' schemes)*
 70. **Set gangs on each other.** Tell a ganger their enemies are planning a hit on them. Success raises the chance
     of a front-line clash (item 30) between those gangs, and a little turf moves. **M**
-71. **Pick a fight.** **[Provoke]**: insult a ganger into a fistfight with V alone, with no crew answering an
-    unarmed brawl. The other side of the wannabes. **S**
 
 ## 8. Who V is
 
@@ -308,8 +284,6 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
     M**
 74. **A signature weapon.** The weapon V kills with most becomes known: rumours name it, and drawing it while
     masked gives V away. **S**
-75. **A new face.** After V changes appearance at a mirror, recognition falls for a while: the street doesn't
-    know the new face yet. **S to M, verify** (whether a script can tell)
 76. **Humanity.** With Wannabe Edgerunner installed, read through its API: low humanity frightens crowds and
     warms Maelstrom, V's episodes become rumours ("the merc's going psycho"), and killing somebody who surrendered
     costs humanity. **S to M**
@@ -339,9 +313,6 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
     meeting, the texts, where they were last seen. **S**
 85. **The map remembers.** For a day, the Turf map pins where things happened: a Rival's death, a crashed
     sit-down, a takeover. **S**
-86. **The inbox survives a load.** The last few messages of each thread, kept in a save system of their own, so
-    the phone isn't empty after loading (`UI/PhoneMessages.reds` keeps them session-only today because of the
-    save rule, which a separate system gets round). **S to M**
 
 ## 10. Rewards, settings and other mods
 
@@ -359,34 +330,6 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
     "Cyberbane/HuntStarted") alongside `API/CyberbaneAPI.reds`, so other mods react without calling in. **S**
 92. **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
     while it has a gang war going near V. **S**
-
----
-
-## Beyond the current rules
-
-Each needs a dependency or a rule lifted, and is listed so the choice can be made knowingly.
-
-- **Voiced lines of Cyberbane's own** (Audioware): Rival taunts, announcements, catchphrases spoken aloud. Never
-  a cloned voice of one of the game's actors. Needs audio files. **L**
-- **Rivals who look like themselves** (TweakXL and ArchiveXL): a Rival's own appearance, and a named trophy
-  weapon of their own. Breaks the no-records rule. **L**
-- **Real journal messages and phone calls** (ArchiveXL journal and quest phases). Fixed text only, which is why
-  `UI/PhoneMessages.reds` draws its own threads. **L**
-- **Marks on the world**: gang tags on turf that changed hands, a memorial where a Rival fell (ArchiveXL props).
-  **L**
-- **Roadblocks.** The game's are spawned and tracked by the prevention system (crash rule 1).
-- **A hideout of V's own crew**, with props and scenes. **L**
-- **Joining a gang through a scene**, the way Gangs of Night City does it with a braindance. **L**
-
-## Considered and refused
-
-So they are not suggested again:
-
-- **Real characters speaking for Cyberbane.** A story fixer texting "the Animals have sent a crew" reads as a
-  real lead.
-- **The police**: heat, NCPD bounties, roadblocks, turning people in.
-- **Timed choices, a voiced V, dedicated choice keys** (see PLAYER_REQUESTS.md, "Not built, and why").
-- **Loot put on bodies; changing how anybody looks at runtime.**
 
 ---
 

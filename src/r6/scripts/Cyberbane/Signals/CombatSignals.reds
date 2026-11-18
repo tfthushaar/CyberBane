@@ -160,7 +160,7 @@ func CBOnPlayerDeath(player: ref<PlayerPuppet>) -> Void {
     let cb = new CBPlayerDeathCallback();
     cb.entry = entry;
     let killer = player.cbLastAttacker;
-    if IsDefined(killer) {
+    if IsDefined(killer) && killer.IsAttached() {
       cb.killerBody = killer.GetEntityID();
     }
     ds.DelayCallbackNextFrame(cb);

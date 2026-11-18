@@ -39,7 +39,11 @@ public func CBWriteDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance, pl
     killer = player.cbLastAttacker;
   }
   let killerBody: EntityID;
-  if IsDefined(killer) {
+  // Still in the world before their record is read (2.3.0). A weak reference stays defined after its puppet
+  // streams out, which a killer who shot V from range or left V bleeding can do before V's death lands; reading
+  // the record of one that has gone is how the talk bubbles took the game down in 2.2. A killer who is gone
+  // leaves a death with nobody named, as one with no attacker always has.
+  if IsDefined(killer) && killer.IsAttached() {
     entry.killerRecordID = killer.GetRecordID();
     entry.killerFaction = CBClassifyFaction(killer);
     entry.killerAppearance = killer.GetCurrentAppearanceName();
