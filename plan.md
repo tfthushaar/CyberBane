@@ -1,14 +1,15 @@
 # Cyberbane plan: the road to 2.5.0
 
-Status: **I stopped building at 2.4.2 (2026-11-18) to take stock. Done: 2.3.1 to 2.4.2, all released. Next: a bug
-pass over every system, then I play 2.3.1 to 2.4.2 together; the rest of the road after that.** I wrote this on
+Status: **I stopped building at 2.4.2 (2026-11-18) to take stock. Done: 2.3.1 to 2.4.2, all released, and a bug
+pass over every system, which went out inside 2.4.2. Next: I play 2.3.1 to 2.4.2 together; the rest of the road
+after that, which now ends with a crew of my own in 2.5.0.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
 
 2.3.0 is out (the registry crash fixed at the source, IMPROVEMENTS.md pruned). Everything below builds on it, one
-release per phase, and ends at **2.5.0, the final form**: the last features in, then a comprehensive bug pass
-over every file.
+release per phase, and ends at **2.5.0, the final form**: the last features in, a crew of my own, then a
+comprehensive bug pass over every file.
 
 **[n]** is item n in IMPROVEMENTS.md. Sizes as there: **S** small, **M** a new state machine on existing pieces,
 **L** new spawns or several systems at once. **Verify** means an engine call is probed on 2.5 and 2.31 before
@@ -27,9 +28,9 @@ rehearsal from the release before; none played yet):
 | 2.3.4 | 7712243 | Executions [27], front lines [30], hunts [26], power struggles [31] (`CBGangLifeBook`) |
 | 2.4.0 | 06854fe | War chest and manpower [34] [35], back a gang [33], set gangs on each other [70], a common enemy [36], V's own streets [37], peace with terms and the Claws' protection [U6] [11], turf patrols made sturdy (still experimental) [U5] [E3]; `CBWarBook` |
 | 2.4.1 | 9fde2de | A fair first volley [44], lie low [41], the metro said [42], haunts [46] and hunters using what they know [U8], scouts worth catching with the bribe [U7] [68], lookouts in the crowd [50]; `CBHuntBook`; a Being hunted heading. [45] and [89] were found already built |
-| 2.4.2 | ba60842 | Trackers [49], open season [48], lying in wait made default [E2] with V's road [47] and the Wraiths' road [18], the Claws' assassin [11] |
+| 2.4.2 | ba60842, cb2eacb | Trackers [49], open season [48], lying in wait made default [E2] with V's road [47] and the Wraiths' road [18], the Claws' assassin [11]; then the fixes from player reports (Talk on F, nobody stopping until I talk to them, They Will Remember's hostility and disguises followed, its panel kept off the Hub) and from the bug pass over every file (apex squads at full health, freeze reputation freezing everything, gang chairs, street events, skills in V's menace) |
 
-**In progress:** nothing; I stopped building at 2.4.2.
+**In progress:** nothing. The bug pass over every system is done and shipped in 2.4.2.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
@@ -39,14 +40,14 @@ rehearsal from the release before; none played yet):
 | 2.4.4 | Rivals | [53]-[64], [U9]-[U11], [L4], [E4]; [H2] the Rivals tree in the Hub (was 2.4.2) |
 | 2.4.5 | Talk and allies | [65]-[67], [69], [U12], the sergeant's parley from [U2] (was 2.4.3) |
 | 2.4.6 | Telling it | [79]-[85], [87], [90]-[92], [U13]-[U15], [L5] (was 2.4.4) |
-| 2.5.0 | The final form | the comprehensive pass, optimisation, [U16], [L6], every default confirmed |
+| 2.5.0 | A crew of my own, and the final form | [C1]-[C10] (below); the comprehensive pass, optimisation, [U16], [L6], every default confirmed |
 
 **Moved or dropped along the way:** [43] sound before contact (no door or engine sound event confirmed); [76] [77]
 (I do not have Wannabe Edgerunner or Dark Future installed, so there was nothing to probe); tribute haggled by text (folded into [U13]);
 [U1]'s car seats keep one record. Each is noted in its release's section and in IMPROVEMENTS.md.
 
-**Next:** a bug pass over every system (the 2.5.0 pass's method, on 2.3.1 to 2.4.2 and everything they touch),
-with a 2.4.2 fix release if it finds anything, then I play 2.3.1 to 2.4.2 together, then 2.4.3 onwards. I may
+**Next:** I play 2.3.1 to 2.4.2 together, then 2.4.3 onwards. The bug pass over every system came first, with the
+2.5.0 pass's method, and what it found went out inside 2.4.2. I may
 build [H1] the web before that playtest instead of in 2.4.3: it draws exactly the 2.4.0 systems I will be testing
 (wars, truces, backing, standing) and would make them easier to check.
 
@@ -202,19 +203,22 @@ first release that uses it.
 | **2.4.4** | 6 Rivals | [53]-[64]; [U9]-[U11]; [L4]; [E4]; [H2]; `CBRivalBook` | M-L | left |
 | **2.4.5** | 7 Talk and allies | [65]-[67], [69]; [U12]; [U2]'s parley | M-L | left |
 | **2.4.6** | 8 Telling it | [79]-[85], [87], [90]-[92]; [U13]-[U15]; [L5]; voices, mod events | M | left |
-| **2.5.0** | The final form | the comprehensive bug pass, optimisation, [U16], [L6], every default confirmed, settings and README for good | L | left |
+| **2.5.0** | 9 A crew of my own, then the final form | [C1]-[C10]; `CBCrewBook`; the comprehensive bug pass, optimisation, [U16], [L6], every default confirmed, settings and README for good | L | left |
 
 \* [68] moved from 2.3.1 to 2.4.1. Not built: [43], [76], [77] (see "Where it stands").
 
 Why this order: the event engine (0) carries every gang event (3) and some Rival moments (6). Gang codes (2)
 decide how each gang behaves in events, wars and hunts (3-5). The war chest and front lines (4) feed bounties
 and open season (5). Allies (7) reuse the Rival follower (6). Telling it (8) reads the History every other
-group writes, so it goes last, when there is something to tell.
+group writes, so it goes last, when there is something to tell. The crew (9) needs nearly everything before it:
+the spared Rivals and the Rival follower (6), the frightened ganger and the friendly gang's followers (7), the
+phone deals, the arrivals and the hunt, so it comes last of all, in 2.5.0.
 
 **Why the numbers.** 2.3.x is the street and the gangs: how the city sees V, what each gang is, and what it does
 with its days. 2.4.0 opens the war (gangs with money, manpower and sides to take), which changes how the game is
-played, so it gets the minor number; 2.4.x builds on it (hunted, Rivals, allies, the telling). 2.5.0 adds no new
-idea: it is the whole mod made right.
+played, so it gets the minor number; 2.4.x builds on it (hunted, Rivals, allies, the telling). 2.5.0 adds one
+idea, the crew, which is where the Rivals and allies releases were always heading, and then it is the whole mod
+made right.
 
 **Every release** is its own zip from `build.ps1 -Version x.y.z`, its own CHANGELOG entry, pushed to main when
 its release checks pass (below); I put it on Nexus myself. A release is never stretched to take the next
@@ -715,7 +719,8 @@ The facedown and a Rival's life around V. Uses the announcement, the mercy lines
   `CBRivalBook`. **M**
 - **[60] Trophies**: the weapon from their record, given through the loot path. **Verify** reading the record's
   primary weapon. **S to M**
-- **[59] A Rival of your own**: a CB_Ally-style follower, called by text once a day. **M**
+- **[59] A Rival of your own**: a CB_Ally-style follower, called by text once a day. **M** Built as the crew's
+  first member ([C1] in 2.5.0), on the follower role and the `CB_Own` tag the crew uses, so nothing is built twice.
 
 **Settings:** Rivals page.
 
@@ -746,6 +751,8 @@ The payoffs of being liked, and talk as a weapon.
 
 - **[65] Run with a crew**: one to three CB_Ally-style followers of a Friendly gang (one follow order each,
   **verify** the follow command), set against whoever fights V; home after an hour or off their turf. **M to L**
+  The follow command is the game's follower role (verified in the source: see [C6]). In 2.5.0 these become the
+  crew's lent soldiers ([C4]).
 - **[66] One of theirs**: at Allied, counts as wearing their colours everywhere; favours become duties. Stored in
   `CBWarBook`. **M**
 - **[67] Ransom**: a surrendered ganger held for their gang's money or a rescue crew (needs Surrender on). **M**
@@ -792,10 +799,93 @@ presets set values by name; mod events are emitted where each system already log
 
 ---
 
+## 2.5.0, first: Group 9: A crew of my own (added 2026-11-18)
+
+The one new idea in 2.5.0, and the payoff of everything before it: the Rivals I spare, the gangers I frighten and the
+friends I make on the street can end up working for me, and when somebody hunts me, I can call them. It is built
+first in 2.5.0, so the comprehensive pass that follows covers it with everything else.
+
+**Is it feasible?** Yes, with one new engine call, and it is the game's own. The game makes the Flathead my companion
+with a follower role: `new AIFollowerRole`, `SetFollowTarget(player)`, `AIHumanComponent.SetCurrentRole`
+(subCharacterSystem.script). Setting that role (aiRole.script, `AIFollowerRole.OnRoleSet`) moves the NPC into my
+attitude group, joins my squad, registers them to my fights and gives them the follower threat preset; clearing it
+(`OnRoleCleared`) puts their own attitude group back. A role is how they behave, so it is no move order, and the one
+order a crew member ever gets is to walk home at the end. With the role set, `IsPlayerCompanion` is true for them,
+and the rules I already wrote for my companions reach them without new code: every hunter Cyberbane sends is set
+hostile to them and re-checked each tick (`CBMakeHostileToCompanions`, `CBCompanionHostilityTick`), and the Safety
+Gate keeps the Director, morale, the crowd and talk's threats away from them.
+
+How I get people:
+- **[C1] The ones who owe me.** A Rival I have spared twice is already a Debtor and texts me tips. The mercy lines
+  where they lie get a fourth answer, "[Recruit] You owe me. Work for me.", and a Debtor can be asked by text later.
+  The most loyal kind. [59] is the first of them. **M**
+- **[C2] The ones I frighten.** "[Intimidate] You work for me now" already turns a ganger into an informant
+  (`CBIntelTurn`). Pushed further, somebody frightened enough joins instead. They come because they are afraid, fear
+  wears off, and they still have friends in the gang they came from: low loyalty, drifting lower. **S to M**
+- **[C3] The ones I pay.** A merc for hire, found the way a Rival's whereabouts are bought: a fixer texts a price in
+  my district and I answer in the thread (the 1.9.7 phone deals, haggling included). Loyal while paid. **M**
+- **[C4] The ones my friends lend me.** An Allied gang lends a soldier; these are [65]'s followers. Loyal while the
+  gang likes me, and gone the day it stops. **S** on top of [65]
+
+Five on the roster, up to three out at once, inside the live-spawn cap so there is always room for whoever is
+hunting me.
+
+How a crew works:
+- **[C5] Calling them.** A thread on my phone, "My crew", with a reply that only shows while I am hunted, ambushed or
+  in a fight with Cyberbane's people: "Need you. Now." The Hub has the same button. They come from the district they
+  live in, by car when I am outdoors and on foot when not, out of my sight like every arrival, and each can be
+  called once an hour. With **Come on their own**, the most loyal turn up unasked when an ambush springs. **M**
+- **[C6] Whose side they are on.** The follower role above. They never take a move order while they follow; when
+  the fight has been over for a minute, or I drive off, they get the one order, home, and are cleared once I cannot
+  see them. Nothing of mine can turn them on me: they are left out of the rearm watch, the cut-off, the combat
+  release and the orphan sweep through one new list of tags, mine, next to `CBStreetTags`. **M**
+- **[C7] Loyalty, and betrayal.** Each member has a loyalty that starts from how I got them: owed is high, paid is
+  middling, frightened is low and drifts down day by day. It rises with fights won together, a fair cut of a
+  bounty, and picking them up when they go down; it falls when I leave them lying, when one of the crew dies, when I
+  stop paying, and when I hurt the gang they came from. Below a line, a call can go wrong, all the more when the
+  people hunting me are their old gang:
+  - they stay away and tell the hunters where I am, so the hunt skips its scout and comes straight at me (the
+    informant's set-up already works this way);
+  - or they come, and turn on me in the fight: the role is cleared, they are set hostile to me alone, and they
+    become a Rival of a new kind, the Betrayer, who knows my haunts.
+  I can always see it coming: the crew page shows who is restless, they say so by text ("You still owe me for the
+  last job"), and paying them, talking to them or letting them go settles it. **M**
+- **[C8] People with a life.** Each keeps a name (the name book), a rank that climbs with the fights they win, scars,
+  a nickname earned the way a Rival earns one, and a seat from their record (heavy, blade, netrunner or shooter,
+  kitted with the apex role kit). One killed is gone for good: their old gang hears, the street buries them (the
+  2.3.3 funeral, for one of mine), and whoever killed them becomes a lead. **M**
+- **[C9] What it costs, and what it changes.** A weekly cut, taken from what I earn on the street or asked for by
+  text; unpaid, loyalty falls. Running people is renown, the gangs that hate me answer it with bigger crews, and
+  while I am away my own streets ([37]) are watched by them. **S to M**
+- **[C10] The crew page.** On the Hub: who is on it, where they live, loyalty as a bar, who is out and who is hurt,
+  with Call, Pay and Let go; drawn with 2.4.3's kit and built as data, like every other page. **M**
+
+**Settings:** a Crew heading: My crew (on), Come on their own (off), Betrayal (on), how readily a frightened ganger
+joins, and the weekly cut.
+
+**Seams.** Recruiting adds a line to the mercy list (`CBRivalMercyLines`), a step to the turn (`CBIntelTurn`) and a
+deal to the phone; the roster is `CBCrewBook`, a new book, so no saved class changes shape, with its arrays kept in
+step the way `CBIntelBook` keeps its informants; members are spawned through `CBSpawnGroup` or the car arrival with a
+new `CB_Own` tag and set up in `CBApplySpawnSetup` with the follower role; a Betrayer goes through `CBCreateRival` with
+`ECBRivalSource.Betrayer` added after `Hunter`, and `ValidateRivals` learns the new top value so the source is not
+reset on load.
+
+**Verify:** the follower role on a body the DynamicEntitySystem spawned, on both patches, and what happens to it
+when that body streams out and back; what a follower does when I get into a car (the game seats its own companions
+by script, so mine are sent home past a distance instead); the follower's downed state (`FollowerDefeated`) on an
+ordinary gang record; and that clearing the role really restores the attitude group on a spawned body.
+
+**Done when:** a recruited Rival, a frightened ganger and a hired merc have each been called into a hunt and fought
+the hunters; none has taken a second order, or turned on me without the page having warned me first; a betrayal
+has been played both ways, the tip-off and the turn, and the Betrayer has come back as a Rival; one of the crew has
+died and been buried; and nobody of mine is left in the world once a fight is over.
+
+---
+
 ## 2.5.0: The final form
 
-No new idea goes in. 2.5.0 is everything from 2.3.1 to 2.4.6 made to work together, checked end to end, and
-documented for good. It starts only when 2.4.6 is out.
+Besides the crew above, no new idea goes in. 2.5.0 is everything from 2.3.1 to 2.4.6, and the crew, made to work
+together, checked end to end, and documented for good. It starts only when 2.4.6 is out.
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,
@@ -803,7 +893,8 @@ documented for good. It starts only when 2.4.6 is out.
   call is involved, on both patches.
 - **The relations between systems.** With nine groups added, the risk is where they meet: an event, a hunt, a
   Rival and an ally on the same street at once; open season during a sit-down; a backed gang's war chest paying
-  a bounty; a follower in a facedown; a lie sending a crew into a funeral. Every pair of systems that can act on
+  a bounty; a follower in a facedown; a lie sending a crew into a funeral; my crew called into open season; a
+  Betrayer turning during a sit-down. Every pair of systems that can act on
   the same NPC, lane, pin or spawn budget is listed and checked: one AI order, one owner, the live-spawn cap,
   removals out of sight, and an exit for every state.
 - **The mechanical sweeps** over every file (the list under Ground rules), and the audits.
@@ -857,3 +948,6 @@ and the spec brought up to date; the Nexus description and the spawn-and-chance 
    shipped in two), **2.4.4** (the war, the hunt, Rivals, allies, the telling) and **2.5.0**. Because nothing is
    played between those, each release's bug check also re-checks the releases before it in the same phase where
    they meet.
+6. **The crew in 2.5.0.** Added 2026-11-18. 2.5.0 was meant to take no new idea; the crew is the exception,
+   because it is where the Rivals (6) and allies (7) groups were always heading and it needs both. It ships on by
+   default with betrayal on, and Come on their own off until I have played it.
