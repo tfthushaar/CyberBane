@@ -308,7 +308,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         CBRivalFell(sysE, game, puppet, slain, puppet.cbDamagedByPlayer);
         CBCrewRivalFell(sysE, game, slain, puppet.cbDamagedByPlayer);   // one who killed V's own, answered (2.5.0)
         CBMapRemember(sysE, game, CBMemRivalFell(), puppet.GetWorldPosition(), slain.id, slain.faction, n"", n"",
-                      puppet.cbDamagedByPlayer);   // the map remembers where (UI/MapPins.reds, 2.5.1)
+                      puppet.cbDamagedByPlayer);   // the map remembers where (UI/MapPins.reds, 2.5.0)
         CBOweFuneral(game, slain.faction);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());
@@ -373,7 +373,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
                    && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad")
                        || (squadApex && desE.IsTagged(puppet.GetEntityID(), n"CB_Apex")));
     if crewBody && NotEquals(sysE.GetActiveSquadFaction(), n"")
-       && CBCountLiveOrSpawningExcept(game, n"CB_Squad", puppet.GetEntityID()) == 0
+       && CBCountLiveOrSpawningExcept(game, n"CB_Squad", puppet.GetEntityID(), n"CB_Bounty") == 0
        && (!squadApex || CBCountLiveOrSpawningExcept(game, n"CB_Apex", puppet.GetEntityID()) == 0) {
       CBOnCrewBeaten(sysE, game, sysE.GetActiveSquadFaction());
     }

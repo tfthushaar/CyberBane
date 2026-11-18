@@ -1449,8 +1449,10 @@ func CBCrewSurvivorTakesItPersonally(sys: ref<CyberbaneSystem>, game: GameInstan
   let i = 0;
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
+    // A bounty hunter is no crew's survivor: one beaten comes back by their own road (Spawn/Bounty.reds).
+    let hunter = des.IsTagged(ids[i], n"CB_Bounty");
     i += 1;
-    if CBStillStanding(p) && CBNpcSafe(sys, p) {
+    if !hunter && CBStillStanding(p) && CBNpcSafe(sys, p) {
       // The first one standing is the one asked, weighed like every other roll (CBRivalOdds).
       if !CBRivalRoll(sys, "lost a crew", CBConfig.RivalChanceHunter(), p.GetRecordID(), true) {
         return;

@@ -249,6 +249,27 @@ public class CBCrewBook extends ScriptableSystem {
     return null;
   }
 
+  // A Rival this book is made of: one on the crew now, or one who was and left it any way but turning. Their name and
+  // their story are that Rival's record (CBCrewFullName), so no forget, purge or trim takes it from under them
+  // (Core/CyberbaneSystem.reds, RivalKeptByCrew). One who turned is a Betrayer on the board like any Rival (2.5.0).
+  public func Keeps(rivalId: Int32) -> Bool {
+    this.Check();
+    if rivalId <= 0 {
+      return false;
+    }
+    for m in this.m_members {
+      if IsDefined(m) && m.rival == rivalId {
+        return true;
+      }
+    }
+    for p in this.m_past {
+      if IsDefined(p) && p.rival == rivalId && p.end != CBCrewEndTurned() {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public func HasRoom() -> Bool {
     return this.Count() < CBConfig.MyCrewRoster();
   }
@@ -414,6 +435,24 @@ public class CBCrewBook extends ScriptableSystem {
     this.m_cutOwed = 0;
     this.m_dayDone = 0;
     this.ResetSession();
+  }
+}
+
+// Start over (Core/CyberbaneSystem.reds, HardReset), before anything of ours is taken out of the world: everybody out
+// on a call stops following V, so one kept in a car seat until they are out of it does not follow V into the new
+// playthrough. The book itself is cleared after (CBCrewBook.Clear). (2.5.0)
+public func CBCrewStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let book = CBCrewBook.Get(game);
+  if !IsDefined(sys) || !IsDefined(book) {
+    return;
+  }
+  let i = 0;
+  while i < book.OutCount() {
+    let p = GameInstance.FindEntityByID(game, book.outBody[i]) as ScriptedPuppet;
+    if CBNpcSafe(sys, p) && CBStillStanding(p) {
+      CBEndFollower(p);
+    }
+    i += 1;
   }
 }
 
@@ -1342,7 +1381,8 @@ func CBCrewTurnedTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
     return;
   }
   let far = Vector4.Distance(p.GetWorldPosition(), player.GetWorldPosition()) > CBConfig.MyCrewLeaveDistance();
-  if book.turnedTicks >= CBConfig.MyCrewTurnFightTicks() || far {
+  // Gone the moment the story wants the stage, as every hunter is (Core/StoryHold.reds): nobody hostile of ours stays.
+  if book.turnedTicks >= CBConfig.MyCrewTurnFightTicks() || far || sys.GetStoryHold() != CBStoryNone() {
     book.turnedFled = true;
     CBOrderFlee(game, p);
   }
@@ -1424,7 +1464,7 @@ public func CBCrewBodyDied(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
     }
   }
   book.Remove(m, CBCrewEndFell(), byRival, district, now);
-  CBMapRemember(sys, game, CBMemCrewFell(), puppet.GetWorldPosition(), m.id, m.faction, n"", n"", false);   // [85], 2.5.1
+  CBMapRemember(sys, game, CBMemCrewFell(), puppet.GetWorldPosition(), m.id, m.faction, n"", n"", false);   // [85], 2.5.0
   // One who was a Rival dies as one: on the board as fallen, and not by V's hand.
   if m.rival > 0 {
     let was = sys.FindRivalById(m.rival);
@@ -1489,7 +1529,7 @@ public func CBCrewKillerGotAway(sys: ref<CyberbaneSystem>, game: GameInstance, d
   }
   for id in des.GetTaggedIDs(n"CB_Squad") {
     let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
-    if CBStillStanding(p) && CBNpcSafe(sys, p) && p.cbKilledCrew > 0 {
+    if !des.IsTagged(id, n"CB_Bounty") && CBStillStanding(p) && CBNpcSafe(sys, p) && p.cbKilledCrew > 0 {
       let nr = CBCreateRival(sys, game, faction, p.GetRecordID(), n"", ECBRivalSource.Hunter, CBEventDistrict(sys, game),
                              CBGameSeconds(game), true);
       if IsDefined(nr) {

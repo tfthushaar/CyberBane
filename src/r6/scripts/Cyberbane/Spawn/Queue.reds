@@ -99,7 +99,10 @@ public func CBCountLiveOrSpawning(game: GameInstance, tag: CName) -> Int32 {
 
 // As above, leaving one body out: the one whose death is being handled. For "was that the last of
 // them" - somebody still on their way into the world is not beaten yet.
-public func CBCountLiveOrSpawningExcept(game: GameInstance, tag: CName, except: EntityID) -> Int32 {
+// `without`: anybody also carrying that tag is not counted. A gang's crew is CB_Squad, and so is a bounty hunter (Spawn/
+// Bounty.reds), who belongs to no crew: counted as one of it, a hunter still standing kept a crew whose last member had
+// fallen from ever being beaten, and the hunter's own death was then never asked (2.5.0).
+public func CBCountLiveOrSpawningExcept(game: GameInstance, tag: CName, except: EntityID, opt without: CName) -> Int32 {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
     return 0;
@@ -110,7 +113,7 @@ public func CBCountLiveOrSpawningExcept(game: GameInstance, tag: CName, except: 
   while i < ArraySize(ids) {
     let id = ids[i];
     i += 1;
-    if NotEquals(id, except) {
+    if NotEquals(id, except) && !(IsNameValid(without) && des.IsTagged(id, without)) {
       if des.IsSpawning(id) {
         n += 1;
       } else {

@@ -3,28 +3,6 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
-## 2.5.1 (18 November 2026)
-
-**The map remembers**
-- **Pins where it happened.** For a day after something big, a pin marks the spot on your map: where a Rival fell,
-  a gathering you crashed, a district that changed hands, one of your crew you lost. Hover it for who, and when.
-- **A CYBERBANE box in the map's filters.** With [TweakXL](https://www.nexusmods.com/cyberpunk2077/mods/4197)
-  installed, every Cyberbane pin on the map (a Rival's last known place, a gathering on its way, the places above) has
-  its own box in the map's custom filters, ticked the first time you open the map. Without TweakXL they stay under
-  Your Property, as before.
-- **Pins that say what they are.** A gathering's pin used to call itself a Rival. Gatherings, takeovers and fights
-  now each have their own icon and words.
-
-**The Hub looks the part**
-- Every box in the web, the map, the Rival tree and the crew is a card in the game's own style, framed in its colour
-  and cyan when picked. Bars are ten segments, the way the game draws its meters. Lines glow faintly. The Standing
-  tiles are cards too, and the page has the game's vignette behind it.
-
-**Mod Settings**
-- Under **General**: **The map remembers** (on). Off with Map markers off.
-
-Your progress carries over.
-
 ## 2.5.0 (18 November 2026)
 
 **A crew of your own**
@@ -45,6 +23,22 @@ Your progress carries over.
 - **The weekly cut.** Your crew asks for a cut each week, paid from the phone or the Hub. Gangs that hate you answer
   a crew of three or more with bigger crews of their own, and your crew keeps an eye on any streets you run.
 
+**Rivals' places**
+- **A lookout can warn them.** At a Rival's place, one of their people who spots you runs to tell them. Put the
+  runner down and nothing comes of it; let them get away and the Rival moves a few streets over, and your lead moves
+  with them. A mask, or the gang's own colours, gets you past anybody but an officer who looks too long.
+- **Fresh chrome gives them away.** When word goes round that a Rival is having new chrome put in, you may hear
+  which ripperdoc: they are laid up outside it, and it goes on your map.
+
+**The map remembers**
+- **Pins where it happened.** For a day after something big, a pin marks the spot: where a Rival fell, a gathering
+  you crashed, a district that changed hands, one of your crew you lost. Hover it for who, and when.
+- **A CYBERBANE box in the map's filters.** With [TweakXL](https://www.nexusmods.com/cyberpunk2077/mods/4197)
+  installed, every Cyberbane pin (a Rival's last known place, a gathering on its way, the places above) has its own
+  box in the map's custom filters, ticked the first time you open the map. Without TweakXL they stay under Your
+  Property.
+- A gathering's pin used to call itself a Rival. Gatherings, takeovers and fights each have their own icon and words.
+
 **The Hub, rebuilt**
 - **Pictures first.** Gangs open as the web of who is at war with whom, Rivals as each gang's tree, Turf and The City
   as a map of Night City with each district where it lies, and your crew round you with lines as strong as their
@@ -53,18 +47,28 @@ Your progress carries over.
   go or take on a solo.
 - **Standing at a glance.** Your four scores are tiles, and what is on its way to you is a row each, coloured by how
   close it is.
-- **Bars on every list:** where you stand with a gang, your name in a district, a gang's hold on its streets, a
-  Rival's rank, a crew member's loyalty.
+- **In the game's own style.** Every box is a card framed in its colour, cyan when picked; every list has a bar of
+  ten segments; lines glow faintly; the page has the game's vignette behind it.
 - **Everything fits.** Long names and labels are drawn smaller to fit their space, and the Titles page scrolls, so
   every title shows.
 
 **Fixed**
 - A Rival's people holding for a facedown, or a sergeant's crew at a parley, could turn hostile again a moment later,
   and your companions could open fire on them, or on a crew you had just paid to leave. They hold now.
+- Forgetting Rivals on the Hub could rename one of your crew who had been a Rival. Your crew, and the ones who left
+  it, are kept.
+- **Start over** left things running into the new playthrough: a street clash, a gang's people lent to you, a ransom
+  still due, a gang's offer to take you in, and the map's pins. It ends them all now.
+- One of your crew who turned on you stayed when a story scene began. They leave the way every hunter does.
+- One of your crew walking home, or one of a gang's people lent to you, could come back as a Rival if you hurt them
+  on the way.
+- A bounty hunter who killed one of your crew and got away came back as a gang's Rival. Hunters keep their own place
+  on the ladder.
 
 **Mod Settings**
 - A new heading, **Your crew**: Your crew (on), Come on their own (off), Betrayal (on), Frightened into joining, and
   The weekly cut. The headings after it move down one; your values are kept.
+- Under **General**: **The map remembers** (on). Off with Map markers off.
 
 Your progress carries over.
 

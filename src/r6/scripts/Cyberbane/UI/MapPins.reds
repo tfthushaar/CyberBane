@@ -1,10 +1,10 @@
-// Cyberbane - Its own box on the map, and the map remembering ([85], 2.5.1)
+// Cyberbane - Its own box on the map, and the map remembering ([85], 2.5.0)
 //
 //   Its own box   with TweakXL, Cyberbane's place pins (where a Rival was last seen, a gathering on the way, and the
 //                 places remembered below) use a pin definition and a filter group of their own
 //                 (r6/tweaks/Cyberbane/map.yaml), and the map's custom filters gain a CYBERBANE box that shows and
 //                 hides them all, by the game's own rules. It is ticked the first time the map is opened in a
-//                 playthrough. Without TweakXL the pins sit under Your Property, as before 2.5.1.
+//                 playthrough. Without TweakXL the pins sit under Your Property, as before 2.5.0.
 //   Remembering   for a day after something big, a pin marks where it happened: a Rival who fell, a gathering V
 //                 crashed, a district that changed hands, one of V's crew lost. Hovered, it says who and when.
 //
@@ -265,7 +265,10 @@ public class CBMapBook extends ScriptableSystem {
   }
 
   // Start over (Core/CyberbaneSystem.reds, HardReset). The tick takes the pins down.
+  // Start over (Core/CyberbaneSystem.reds, HardReset, from the settled tick). The pins go with the memories, here:
+  // left for the tick, a new memory numbered 1 found the old pin for 1 and was shown where the old one had been (2.5.0).
   public func Clear() -> Void {
+    this.UnpinAll(GameInstance.GetMappinSystem(this.GetGameInstance()));
     ArrayClear(this.m_memories);
     this.m_nextId = 1;
   }

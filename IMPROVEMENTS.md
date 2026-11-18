@@ -17,7 +17,8 @@ is copied, and each is redesigned around what Cyberbane already has.
   `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing read from an NPC before `CBNpcSafe` says it is
   safe, behaviour-only kits, no runtime appearance changes, no loot put on bodies, UI as data rather than
   injected widgets.
-- **Scripts only**: no archives, no TweakDB records, no audio files.
+- **Scripts only**: no archives, no TweakDB records, no audio files. The one exception is optional: with TweakXL,
+  a small file gives the map's pins their own filter box (2.5.0), and nothing else depends on it.
 - **Saves**: no new `persistent let` on a class that is already saved, because it wipes everyone's progress.
   New saved state goes in a system of its own (the `CBTurfBook` and `CBIntelBook` pattern).
 - **Nobody the game wrote speaks for Cyberbane.** No fixer, romance partner or story character sends its texts
@@ -78,13 +79,13 @@ Built in 2.4.5 (`Reactions/Allies.reds`): every idea that was here.
 
 ## 9. How it is told
 
-Built in 2.4.6 (`Narrative/Telling.reds`), and the map remembering in 2.5.1.
+Built in 2.4.6 (`Narrative/Telling.reds`), and the map remembering in 2.5.0.
 
-*(85, the map remembering, built in 2.5.1: `UI/MapPins.reds`.)*
+*(85, the map remembering, built in 2.5.0: `UI/MapPins.reds`.)*
 
 ## 10. Rewards, settings and other mods
 
-92. *(Dropped in 2.5.1 at my word: not installed here, and not wanted.)* **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
+92. *(Dropped in 2.5.0 at my word: not installed here, and not wanted.)* **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
     while it has a gang war going near V. **S**
 
 ---

@@ -1202,9 +1202,17 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   if IsDefined(bookP) {
     bookP.ClearWords();   // nobody is waiting anywhere for V now
   }
+  // V's own crew, and the ones who were, stay (CyberbaneSystem.RivalKeptByCrew): the crew member is that Rival, and
+  // forgetting every Rival renamed them (2.5.0).
+  let kept: array<Int32>;
+  for k in sys.GetRivals() {
+    if IsDefined(k) && sys.RivalKeptByCrew(k.id) {
+      ArrayPush(kept, k.id);
+    }
+  }
   let rivalBook = CBRivalBook.Get(game);
   if IsDefined(rivalBook) {
-    rivalBook.Clear();    // and no bond, ending or place is kept for anybody (2.4.4)
+    rivalBook.ClearExcept(kept);    // and no bond, ending or place is kept for anybody else (2.4.4)
   }
   let removed = sys.ClearRivals();
   sys.SetActiveRivalId(0);
@@ -1217,8 +1225,9 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
 
 // Can this one be forgotten right now? Not while a car is bringing them: their body arrives as a
 // Rival's and is adopted as one, and with nobody left to adopt it as, it would be a nameless hunter.
+// Nor one of V's own crew, or one who was (CyberbaneSystem.RivalKeptByCrew): the crew member is that Rival (2.5.0).
 public func CBRivalForgettable(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> Bool {
-  return IsDefined(sys) && IsDefined(r) && sys.GetRivalCarPending() != r.id;
+  return IsDefined(sys) && IsDefined(r) && sys.GetRivalCarPending() != r.id && !sys.RivalKeptByCrew(r.id);
 }
 
 // Forget one Rival (the Hub, 1.8.2). Everything "Forget every rival" does (CBPurgeRivals), for one of
@@ -1234,7 +1243,7 @@ public func CBForgetRival(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int
     return "";
   }
   if !CBRivalForgettable(sys, r) {
-    CBLog.Info(n"Rivals", s"Rival \(id) is on their way in a car; not forgotten.");
+    CBLog.Info(n"Rivals", s"Rival \(id) is on their way in a car, or one of V's crew; not forgotten.");
     return "";
   }
   let name = CBRivalDisplayName(sys.GetContent(), r);

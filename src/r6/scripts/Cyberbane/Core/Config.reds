@@ -702,7 +702,20 @@ public abstract class CBConfig {
   public static func MyCrewRecruitBase() -> Float = 0.8
   public static func MyCrewRenown() -> Float = 5.0
   public static func MyCrewPastKept() -> Int32 = 12
-  // The map remembers (UI/MapPins.reds, 2.5.1): a day, twelve places at most, one per 40 m of each kind.
+  // The map remembers (UI/MapPins.reds, 2.5.0): a day, twelve places at most, one per 40 m of each kind.
+  // A lookout at a Rival's place (Rivals/Whereabouts.reds, [U10], 2.5.0): three seconds with V in sight inside 25 m,
+  // eight to get away; the place moves 100 to 180 m.
+  public static func LairSpotRange() -> Float = 25.0
+  public static func LairSpotTicks() -> Int32 = 3
+  public static func LairWarnTicks() -> Int32 = 8
+  public static func LairMoveMin() -> Float = 100.0
+  public static func LairMoveMax() -> Float = 180.0
+  // [U9] A ripperdoc this close to where the search started is taken to be in the same district.
+  public static func RipperdocDistrictReach() -> Float = 450.0
+  // [U9] The street outside a clinic: two rings round its pin, and how many of the nearest clinics are tried.
+  public static func RipperdocOutsideNear() -> Float = 15.0
+  public static func RipperdocOutsideFar() -> Float = 30.0
+  public static func RipperdocClinicTries() -> Int32 = 3
   public static func MapMemoryHours() -> Float = 24.0
   public static func MapMemoryKept() -> Int32 = 12
   public static func MapMemoryMerge() -> Float = 40.0

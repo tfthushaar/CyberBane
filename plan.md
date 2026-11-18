@@ -1,8 +1,8 @@
 # Cyberbane plan: the road to 2.5.0
 
 Status: **The road is built (2026-11-18). Done: 2.3.1 to 2.5.0, all released, with a bug pass over every system
-inside 2.4.2 and the final pass inside 2.5.0, which also brought a crew of my own and the whole Hub rebuilt with
-pictures. Next: I play it all.** I wrote this on
+inside 2.4.2 and the final pass inside 2.5.0, which also brought a crew of my own, the whole Hub rebuilt with
+pictures, the map remembering, and the last two upgrades to Rivals' places. Next: I play it all.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
@@ -33,8 +33,7 @@ rehearsal from the release before; none played yet):
 | 2.4.4 | 9420e11 | The facedown [53] [54] and a Rival on their feet [64], humiliation [55], back from the dead [56], Rivals at war [57] and bonds [58], trophies [60], where they ended up [61], places with meaning [62], last words [63], Rival chrome [U9], places lived in [U10], tactics by kind [U11], Rivals' lines [L4], "Nobody kills you but me" made default [E4], the Rivals tree [H2]; `CBRivalBook`. A fix: how V fights was misread from 1.3.2 on |
 | 2.4.5 | f15be9e | Run with a crew [65] on the game's own follower role, one of theirs [66], ransom [67], feed the street a lie [69], informants with a life [U12], the sergeant's parley [U2] |
 | 2.4.6 | 8979f48 | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
-| 2.5.0 | b2c8659, 56c0c7b, db1eeda | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, a bar on every list, text that fits; the final pass |
-| 2.5.1 | 36ba068 | The map remembers [85] (`CBMapBook`), and with TweakXL a CYBERBANE box in the map's custom filters for every place pin; the Hub's cards, segmented bars and glowing lines. Ambient Factions [92] dropped |
+| 2.5.0 | b2c8659, 56c0c7b, db1eeda, 36ba068 | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, cards, segmented bars, text that fits; the map remembers [85] (`CBMapBook`), with TweakXL a CYBERBANE box in the map's custom filters; a lookout who gets away moves a Rival [U10] and a ripperdoc as a lead [U9]; the final pass and a second one. Ambient Factions [92] dropped |
 
 **In progress:** nothing. The road ends at 2.5.0.
 
@@ -959,6 +958,27 @@ the crew) with a switch to a list, Standing as tiles and rows, a bar on every li
 to fit before anything is shortened, and only ever at a word. The layouts were laid out to scale before they went in
 and checked for overlap.
 
+**And a second pass, after the map and the last two upgrades.** I built [U9] and [U10],
+then read the mod again by system, against the pairs below and against the new pieces. What it found, each fixed at
+the source:
+- **V's own crew in the old code.** The Safety Gate judged one of V's crew walking home, or a gang's people lent to
+  V, as anybody V had put down, so they could come back as a Rival; it now passes over anybody tagged as V's. One of
+  the crew who turned was not in the story's stand-down and stayed when a scene began. A bounty hunter, who is
+  `CB_Squad` for the lists, was counted as one of a gang's crew, so a hunter who killed one of V's crew and got away
+  came back as a crew's Rival; the counts and both survivor picks pass over `CB_Bounty`.
+- **Forgetting Rivals.** The crew's names and stories are the Rival records they came from, and forget, forget every
+  rival, another save's forget notes and the archive trim could all take that record away. `CBCrewBook.Keeps` and
+  `RivalKeptByCrew` now guard every one of those paths, and the Rival book keeps their rows.
+- **Start over** cleared the war book's saved fields and none of its session ones: a gang's offer to take V in, a lie
+  still steering a crew, a ransom still due, the last street clash on the web. `CBWarBook.ResetSession` clears them on
+  a load and on Start over, and Start over first ends what is live the way it ends on its own (`CBWarStandDown`,
+  `CBCrewStandDown`: a clash's gangers put back, followers' roles ended). The map book numbered its memories from 1
+  again with the old pins still up, so the first new memory could take an old pin; its clear takes the pins down.
+- **[U9] and [U10] themselves.** A ripperdoc's clinic is usually a safe area, where no lead may be, so the lead is now
+  a usable spot outside the nearest clinic that has one; the district is named only when the clinic is near the
+  last sighting. The lookout who runs keeps their one order, and a mask or the gang's colours gets V past the
+  lookouts the way it gets V past the street (`CBSeesThroughDisguise`).
+
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,
   Narrative, UI, Settings, API, Data, Localization, Compat), against the game's own source wherever an engine
@@ -1023,7 +1043,7 @@ and the spec brought up to date; the Nexus description and the spawn-and-chance 
 6. **The crew in 2.5.0.** Added 2026-11-18. 2.5.0 was meant to take no new idea; the crew is the exception,
    because it is where the Rivals (6) and allies (7) groups were always heading and it needs both. It ships on by
    default with betrayal on, and Come on their own off until I have played it.
-7. **Still open after 2.5.0.** Settled 2026-11-18: the map remembering [85] is built (2.5.1), with pins of its own
-   and its own box in the map's filters the way Gang Retaliation does it, on a filter type and a variant nobody else
-   uses; Ambient Factions [92] is dropped. Still mine to decide once I have played: a guard escaping to move a Rival's
-   lead [U10] and a ripperdoc as a lead [U9].
+7. **Still open after 2.5.0.** Settled 2026-11-18: the map remembering [85] is built, with pins of its own and its
+   own box in the map's filters the way Gang Retaliation does it, on a filter type and a variant nobody else uses;
+   Ambient Factions [92] is dropped; a lookout escaping to move a Rival's lead [U10] and a ripperdoc as a lead [U9]
+   are built. All of it is in 2.5.0.

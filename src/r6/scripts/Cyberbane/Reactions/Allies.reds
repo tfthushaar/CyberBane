@@ -324,6 +324,31 @@ func CBCrewGoHome(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   CBLog.Info(n"Talk", "V's borrowed crew is going home.");
 }
 
+// Start over (Core/CyberbaneSystem.reds, HardReset), before anything of ours is taken out of the world: what the war
+// book has going there ends the way it would on its own. The street clash's gangers are the world's own and stay, so
+// they are put back as they were; the borrowed crew stop following V, so one still in a car seat, kept until they are
+// out of it, does not follow V into the new playthrough; and a held hostage the street's own reset did not let go is
+// let go (CBStreetLife.Reset). An open parley's people are ours and go with the rest. Nothing is said. (2.5.0)
+public func CBWarStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>) -> Void {
+  if !IsDefined(sys) || !IsDefined(war) {
+    return;
+  }
+  CBClashPutBack(sys, game, war);
+  for id in war.crewIds {
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if CBNpcSafe(sys, p) && CBStillStanding(p) {
+      CBEndFollower(p);
+    }
+  }
+  let held = war.ransomNpc;
+  if CBNpcSafe(sys, held) && CBStillStanding(held) && held.cbSurrendered {
+    held.cbSurrendered = false;
+    CBTalkReleaseHold(held);
+    CBOrderFlee(game, held);
+  }
+  war.ResetSession();
+}
+
 // ---- [66] One of theirs --------------------------------------------------------------------------------------------
 
 // One of theirs counts as wearing their colours everywhere (Core/CyberbaneSystem.reds, GetDisguiseFaction).

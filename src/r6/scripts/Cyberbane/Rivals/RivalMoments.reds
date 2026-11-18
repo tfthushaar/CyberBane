@@ -1183,9 +1183,12 @@ func CBRivalChromeTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
           }
           bit += 1;
         }
-        if StrLen(fresh) > 0 && CBMessagesOn() {
-          CBHearsayFromStreet(game, s"\(CBRivalDisplayName(sys.GetContent(), r)) went under the knife. \(CBCapFirst(fresh)), and they're telling everybody it's for you.", n"");
+        if StrLen(fresh) > 0 {
           CBFileLog(sys, n"UnderTheKnife", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
+          // Still in the chair, and somebody knows which (Rivals/Whereabouts.reds, [U9], 2.5.0); or only the news.
+          if !CBRipperdocLead(sys, game, r, fresh) && CBMessagesOn() {
+            CBHearsayFromStreet(game, s"\(CBRivalDisplayName(sys.GetContent(), r)) went under the knife. \(CBCapFirst(fresh)), and they're telling everybody it's for you.", n"");
+          }
           return;   // one a day is plenty
         }
       }

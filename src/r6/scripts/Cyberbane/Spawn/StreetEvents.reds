@@ -418,7 +418,7 @@ public class CBEventEngine {
       ev.pinned = false;
       return;
     }
-    // Cyberbane's own pin with TweakXL (UI/MapPins.reds, 2.5.1), and a gathering's own mark (UI/RivalPin.reds).
+    // Cyberbane's own pin with TweakXL (UI/MapPins.reds, 2.5.0), and a gathering's own mark (UI/RivalPin.reds).
     ev.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(CBEventCaption(ev))), ev.at);
     ev.pinned = true;
   }
@@ -555,7 +555,7 @@ public func CBEventCaption(ev: ref<CBStreetEvent>) -> String {
   return CBEventCaptionOf(ev.kind, ev.a, ev.b);
 }
 
-// The same from what is kept of it, for a place the map remembers (UI/MapPins.reds, 2.5.1).
+// The same from what is kept of it, for a place the map remembers (UI/MapPins.reds, 2.5.0).
 public func CBEventCaptionOf(kind: CName, gangA: CName, gangB: CName) -> String {
   let a = CBCapFirst(CBFactionLabel(gangA));
   if Equals(kind, CBEvSitDown()) { return a + " and " + CBFactionLabel(gangB); }
@@ -639,7 +639,7 @@ public func CBEventWhisper(game: GameInstance) -> String {
 
 // V broke it up.
 public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
-  // The map remembers where (UI/MapPins.reds, 2.5.1); not an ambush, which nobody else knew was there.
+  // The map remembers where (UI/MapPins.reds, 2.5.0); not an ambush, which nobody else knew was there.
   if !Equals(ev.kind, CBEvAmbush()) {
     CBMapRemember(sys, game, CBMemEventCrashed(), ev.at, 0, ev.a, ev.b, ev.kind, true);
   }

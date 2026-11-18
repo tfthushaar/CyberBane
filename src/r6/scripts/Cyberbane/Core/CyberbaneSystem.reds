@@ -1221,7 +1221,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
     if this.m_tickCount % 5 == 2 {
-      CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.1)
+      CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.0)
     }
     if !heavyStreaming {
       CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
@@ -1542,7 +1542,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       if IsDefined(f) && Equals(f.playthroughId, this.m_playthroughId) {
         highest = Max(highest, f.rivalId);
         let gone = this.FindRivalById(f.rivalId);
-        if IsDefined(gone) && gone.recordID == f.recordID && this.RemoveRivalById(f.rivalId) {
+        if IsDefined(gone) && gone.recordID == f.recordID && !this.RivalKeptByCrew(f.rivalId)
+           && this.RemoveRivalById(f.rivalId) {
           one += 1;
         }
       }
@@ -2116,6 +2117,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     return 0;
   }
 
+  // One of V's crew is this Rival, or was (CBCrewBook.Keeps): every way the roster forgets people passes them by,
+  // from this save or from a note another save of the playthrough left (2.5.0).
+  public func RivalKeptByCrew(id: Int32) -> Bool {
+    let crew = CBCrewBook.Get(this.GetGameInstance());
+    return IsDefined(crew) && crew.Keeps(id);
+  }
+
   // Take one Rival off the roster. True when they were on it.
   public func RemoveRivalById(id: Int32) -> Bool {
     let i = ArraySize(this.m_rivals) - 1;
@@ -2136,7 +2144,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     let i = ArraySize(this.m_rivals) - 1;
     while i >= 0 {
       let r = this.m_rivals[i];
-      if !IsDefined(r) || r.id <= upTo {
+      if !IsDefined(r) || (r.id <= upTo && !this.RivalKeptByCrew(r.id)) {
         ArrayErase(this.m_rivals, i);
         if IsDefined(r) {
           removed += 1;
@@ -2157,7 +2165,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     let svc = this.GetPlayService();
     if wanted {
       let r = this.FindRivalById(id);
-      if !IsDefined(r) || ArrayContains(this.m_pendingForgets, id) {
+      if !IsDefined(r) || ArrayContains(this.m_pendingForgets, id) || this.RivalKeptByCrew(id) {
         return;
       }
       ArrayPush(this.m_pendingForgets, id);
@@ -3663,10 +3671,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   // archive cap - the live cap in CBCreateRival counts Active/Hunting ones only, so
   // without this the store would grow for the whole playthrough and go into every save.
   public func TrimArchivedRivals() -> Void {
+    // One of V's fallen crew who was a Rival is the crew's history, not the board's (RivalKeptByCrew): never counted
+    // here, never trimmed.
     let cap = CBConfig.CapArchivedRivals();
     let archived = 0;
     for r in this.m_rivals {
-      if IsDefined(r) && this.IsArchivedRival(r) {
+      if IsDefined(r) && this.IsArchivedRival(r) && !this.RivalKeptByCrew(r.id) {
         archived += 1;
       }
     }
@@ -3675,7 +3685,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       let removed = false;
       while i < ArraySize(this.m_rivals) && !removed {
         let r = this.m_rivals[i];
-        if !IsDefined(r) || this.IsArchivedRival(r) {
+        if !IsDefined(r) || (this.IsArchivedRival(r) && !this.RivalKeptByCrew(r.id)) {
           ArrayErase(this.m_rivals, i);   // oldest archived entry first
           removed = true;
         } else {
@@ -3696,9 +3706,20 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // Forget every Rival. Returns how many went. Used by the Hub's clear shortcut, because an
   // update mid-playthrough can leave Rivals built from records that no longer make sense.
+  // Not the ones V's crew is made of (RivalKeptByCrew).
   public func ClearRivals() -> Int32 {
-    let n = ArraySize(this.m_rivals);
-    ArrayClear(this.m_rivals);
+    let n = 0;
+    let i = ArraySize(this.m_rivals) - 1;
+    while i >= 0 {
+      let r = this.m_rivals[i];
+      if !IsDefined(r) || !this.RivalKeptByCrew(r.id) {
+        ArrayErase(this.m_rivals, i);
+        if IsDefined(r) {
+          n += 1;
+        }
+      }
+      i -= 1;
+    }
     return n;
   }
 
@@ -3731,6 +3752,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBDropLead(this, game);
     this.m_lairActive = false;
     this.ClearApexMuster();   // nothing walks in after the reset to finish a squad
+    // A street clash, a borrowed crew and a ransom, ended as they would end on their own (2.5.0).
+    CBWarStandDown(this, game, CBWarBook.Get(game));
+    CBCrewStandDown(this, game);   // and V's own crew stop following V, for the same reason
     CBDeleteTaggedSafe(game, n"Cyberbane");
 
     // The headline scores.
@@ -3816,7 +3840,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     let mapBook = CBMapBook.Get(game);
     if IsDefined(mapBook) {
-      mapBook.Clear();    // and the map forgets (2.5.1); the tick takes the pins down
+      mapBook.Clear();    // and the map forgets (2.5.0); the tick takes the pins down
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);

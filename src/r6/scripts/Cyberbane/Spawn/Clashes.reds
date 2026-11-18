@@ -239,7 +239,8 @@ func CBClashWatch(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWar
 
 // Over: whoever is still standing is put back how they were towards the other, and the winner, if there was one,
 // takes a little ground.
-func CBClashEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBook>, winner: CName, loser: CName) -> Void {
+// Every pair back to what they thought of each other before (CBClashStart), and the fight forgotten.
+public func CBClashPutBack(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBook>) -> Void {
   let n = Min(ArraySize(book.fightA), Min(ArraySize(book.fightB), ArraySize(book.fightWas)));
   let k = 0;
   while k < n {
@@ -251,6 +252,10 @@ func CBClashEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBo
   ArrayClear(book.fightA);
   ArrayClear(book.fightB);
   ArrayClear(book.fightWas);
+}
+
+func CBClashEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBook>, winner: CName, loser: CName) -> Void {
+  CBClashPutBack(sys, game, book);
   book.lastClashA = book.fightGangA;
   book.lastClashB = book.fightGangB;
   book.lastClashAt = CBGameSeconds(game);

@@ -623,7 +623,7 @@ func CBRunnerGotAway(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsc
 // If nobody of the crew is left standing but them, the crew is beaten.
 func CBCrewBeatenIfLast(sys: ref<CyberbaneSystem>, game: GameInstance, gone: EntityID) -> Void {
   if NotEquals(sys.GetActiveSquadFaction(), n"")
-     && CBCountLiveOrSpawningExcept(game, n"CB_Squad", gone) == 0
+     && CBCountLiveOrSpawningExcept(game, n"CB_Squad", gone, n"CB_Bounty") == 0
      && (!sys.ActiveSquadHasApex() || CBCountLiveOrSpawningExcept(game, n"CB_Apex", gone) == 0) {
     CBOnCrewBeaten(sys, game, sys.GetActiveSquadFaction());
   }

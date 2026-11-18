@@ -403,7 +403,7 @@ func CBLeadPinTick(sys: ref<CyberbaneSystem>, game: GameInstance, on: Bool) -> V
   // name, and every controller that draws a pin with that tag draws Cyberbane's gold mark and the
   // Rival's name instead of an apartment. Through walls, as a destination is: the reason the people
   // markers stay off that does not apply to a place.
-  // With TweakXL (2.5.1) the pin is Cyberbane's own and sits under the map's CYBERBANE box (UI/MapPins.reds).
+  // With TweakXL (2.5.0) the pin is Cyberbane's own and sits under the map's CYBERBANE box (UI/MapPins.reds).
   data = CBPlacePinData(CBRivalPinCaption(CBRivalDisplayName(sys.GetContent(), CBSightingRival(sys, lead))));
   CBTrace("map: pin on a rival's last known place");
   let id = ms.RegisterMappin(data, CBSightingPos(lead));
@@ -708,6 +708,10 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
         // Rival who is minding their own business as one who is out looking for V.
         r.state = EnumInt(ECBRivalState.Active);
         sys.SetLair(r.id);
+        let alarmBook = CBRivalBook.Get(game);
+        if IsDefined(alarmBook) {
+          alarmBook.ResetLairAlarm();   // nobody has seen V yet at this place
+        }
         CBLog.Info(n"Rivals", s"Rival \(r.id) is waiting at their place.");
         // Their people with them (Rivals/RivalLife.reds, 1.9.9).
         CBLairGuards(sys, game, des, r, at);
@@ -771,6 +775,10 @@ func CBLairWatch(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   }
   if IsDefined(body) && CBNpcSafe(sys, body) && (CBNpcInCombat(body) || body.cbDamagedByPlayer) {
     CBLairPromote(sys, game, r, body);
+    return;
+  }
+  // One of their people has seen V and run to warn them (2.5.0, [U10]): they move before V gets there.
+  if IsDefined(body) && CBLairAlarm(sys, game, player, r) {
     return;
   }
   // Still waiting. Taken back out, quietly, if V has gone, the story wants the stage, the switch
@@ -1125,5 +1133,260 @@ public func CBOfferRivalLead(sys: ref<CyberbaneSystem>, game: GameInstance, id: 
     return false;
   }
   CBLog.Info(n"Rivals", s"Put the word out for rival \(id); offered for \(price)eb by text.");
+  return true;
+}
+
+// ---- [U10] A lookout who gets away (2.5.0) --------------------------------------------------------------------------
+//
+// One of a Rival's people at their place who has V in sight for a few seconds, before anybody has fired, runs to warn
+// them, saying so. Stop them (down or dead) within a few seconds and nothing changes. If they get away, the Rival and
+// their people leave, the place moves a short way off, and whoever told V where to look says so. The fight starting
+// first settles it the other way: that is the ordinary encounter (CBLairPromote). One order to each, the run; every
+// body taken out of the world only once V cannot see it.
+
+// True when the place has just moved, and there is nothing left here to watch.
+func CBLairAlarm(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, r: ref<CBRival>) -> Bool {
+  let book = CBRivalBook.Get(game);
+  let intel = CBStreetIntelFor(game);
+  if !IsDefined(book) || !IsDefined(intel) {
+    return false;
+  }
+  let tick = sys.GetTickCount();
+  // Somebody already ran: stopped, or away.
+  if EntityID.IsDefined(book.lairWarnBody) {
+    let runner = GameInstance.FindEntityByID(game, book.lairWarnBody) as ScriptedPuppet;
+    if IsDefined(runner) && CBIsDown(runner) {
+      CBLog.Info(n"Rivals", s"Rival \(r.id)'s lookout was stopped before they could warn anybody.");
+      book.ResetLairAlarm();
+      return false;
+    }
+    if tick - book.lairWarnTick >= CBConfig.LairWarnTicks() {
+      CBLairRelocate(sys, game, r, intel.GuardIds());
+      return true;
+    }
+    return false;
+  }
+  // Does any of them have V in sight?
+  let ppos = player.GetWorldPosition();
+  // A mask, or their own gang's colours, gets V past them as it gets V past anybody on the street: only one of their
+  // officers who looks long enough knows V (Reactions/Director.reds, CBSeesThroughDisguise) (2.5.0).
+  let covered = CBPlayerMasked(game) || (Equals(r.faction, sys.GetDisguiseFaction()) && sys.GetDisguiseStrength() > 0.0);
+  let spotter: ref<ScriptedPuppet>;
+  for gid in intel.GuardIds() {
+    let g = GameInstance.FindEntityByID(game, gid) as ScriptedPuppet;
+    if !IsDefined(spotter) && CBNpcSafe(sys, g) && CBStillStanding(g) && !CBNpcInCombat(g) && !g.cbTalkPartner
+       && Vector4.Distance(g.GetWorldPosition(), ppos) <= CBConfig.LairSpotRange() && CBWitnessCanSee(g, player)
+       && (!covered || CBSeesThroughDisguise(sys, g, r.faction)) {
+      spotter = g;
+    }
+  }
+  if !IsDefined(spotter) {
+    book.lairSeen = 0;
+    return false;
+  }
+  book.lairSeen += 1;
+  if book.lairSeen < CBConfig.LairSpotTicks() {
+    return false;
+  }
+  // Seen long enough: they run to tell.
+  book.lairWarnBody = spotter.GetEntityID();
+  book.lairWarnTick = Max(tick, 1);
+  CBIntelSay(game, 3, CBIntelSpeaker(r.faction), CBLineOf([s"Company! \(CBCapFirst(CBYou(sys, game))) is here!",
+                                                         "We've been made. Go, go, tell them!",
+                                                         s"That's \(CBYou(sys, game)). I'm out of here."]), 3.0);
+  CBSayVoiced(sys, spotter, n"enemy_warning");
+  CBOrderFlee(game, spotter);
+  CBLog.Info(n"Rivals", s"One of Rival \(r.id)'s people saw V and ran to warn them.");
+  return false;
+}
+
+// The warning got through: everybody at the place goes, and the place moves.
+func CBLairRelocate(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, guards: array<EntityID>) -> Void {
+  let book = CBRivalBook.Get(game);
+  let runner: EntityID;
+  if IsDefined(book) {
+    runner = book.lairWarnBody;   // already running, their one order (CBLairAlarm)
+    book.ResetLairAlarm();
+  }
+  let svc = sys.GetPlayService();
+  let old = CBSightingFor(sys, r);
+  let now = CBGameSeconds(game);
+  // They leave on foot: the one order each.
+  let body = GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet;
+  if CBNpcSafe(sys, body) && CBStillStanding(body) {
+    CBOrderFlee(game, body);
+  }
+  for gid in guards {
+    let g = GameInstance.FindEntityByID(game, gid) as ScriptedPuppet;
+    if NotEquals(gid, runner) && CBNpcSafe(sys, g) && CBStillStanding(g) {
+      CBOrderFlee(game, g);
+    }
+  }
+  let intel = CBStreetIntelFor(game);
+  if IsDefined(intel) {
+    intel.ClearGuards();
+  }
+  CBLairStandDown(sys, game);
+  CBDropLead(sys, game);   // the pin goes; it comes back at the new place, if there is one
+  if !IsDefined(svc) || !IsDefined(old) {
+    return;
+  }
+  let tipster = old.tipFaction;
+  let district = old.district;
+  let to: Vector4;
+  let name = CBRivalDisplayName(sys.GetContent(), r);
+  let line = "";
+  if CBLairSecondPlace(sys, game, CBSightingPos(old), to) {
+    svc.NoteSighting(sys.GetPlaythroughId(), r.id, r.recordID, to, district, now);
+    let moved = CBSightingFor(sys, r);
+    if IsDefined(moved) {
+      moved.tippedAt = now;   // still V's lead: the people who told V where to look know where they went
+      moved.tipFaction = tipster;
+    }
+    line = CBLineOf([s"One of \(CBPossessive(name)) people saw you coming and ran to warn them. They've moved, not far.",
+                     s"\(name) knows you're coming now: their lookout got away. They're holed up a few streets over."]);
+    if CBMapMarkersOn() {
+      line += " It's on your map.";
+    }
+  } else {
+    svc.DropSighting(sys.GetPlaythroughId(), r.id);
+    line = s"\(name) got warned and went to ground. Nobody knows where now.";
+  }
+  CBFileLog(sys, n"LairMoved", now, district, r.faction, Cast<Float>(r.id));
+  if IsNameValid(tipster) {
+    CBPhoneFromAlly(game, tipster, line);
+  } else {
+    CBPhoneFromStreet(game, line);
+  }
+  CBLog.Info(n"Rivals", s"Rival \(r.id) was warned and moved.");
+}
+
+// Somewhere a short way off they could be waiting next: on the navmesh, standing room, where a place may be.
+func CBLairSecondPlace(sys: ref<CyberbaneSystem>, game: GameInstance, from: Vector4, out to: Vector4) -> Bool {
+  let start = RandRange(0, 12);
+  let k = 0;
+  while k < 12 {
+    let ang = Cast<Float>((start + k) % 12) * 0.5236;
+    let reach = CBConfig.LairMoveMin() + Cast<Float>(k % 3) * (CBConfig.LairMoveMax() - CBConfig.LairMoveMin()) * 0.5;
+    k += 1;
+    let snapped: Vector4;
+    let spot: Vector4;
+    if CBNavSnap(game, from.X + CosF(ang) * reach, from.Y + SinF(ang) * reach, from.Z, snapped)
+       && CBSettleOnGround(game, snapped, spot) && CBLairPointUsable(sys, game, spot) {
+      to = spot;
+      return true;
+    }
+  }
+  return false;
+}
+
+// ---- [U9] Caught in the chair (2.5.0) -------------------------------------------------------------------------------
+//
+// A Rival who went under the knife (Rivals/RivalMoments.reds, CBRivalChromeTick) is, for a while, in a ripperdoc's
+// chair: the ripperdoc nearest where they were last seen, from the game's own map (its ripperdoc pins). It is a lead
+// like any tip: one at a time, a pin, the place keeping hours. True when there is one.
+// A usable spot in the street by a door: two rings round it, the nearer first.
+func CBSpotOutside(sys: ref<CyberbaneSystem>, game: GameInstance, door: Vector4, out to: Vector4) -> Bool {
+  let k = 0;
+  while k < 16 {
+    let ang = Cast<Float>(k % 8) * 0.7854 + (k >= 8 ? 0.3927 : 0.0);
+    let reach = k < 8 ? CBConfig.RipperdocOutsideNear() : CBConfig.RipperdocOutsideFar();
+    k += 1;
+    let snapped: Vector4;
+    let spot: Vector4;
+    if CBNavSnap(game, door.X + CosF(ang) * reach, door.Y + SinF(ang) * reach, door.Z, snapped)
+       && CBSettleOnGround(game, snapped, spot) && CBLairPointUsable(sys, game, spot) {
+      to = spot;
+      return true;
+    }
+  }
+  return false;
+}
+
+public func CBRipperdocLead(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, implant: String) -> Bool {
+  let svc = sys.GetPlayService();
+  let ms = GameInstance.GetMappinSystem(game);
+  if !CBHideoutsOn() || !IsDefined(svc) || !IsDefined(ms) || !IsDefined(r) || IsDefined(CBCurrentLead(sys, game))
+     || !CBTipEligible(sys, game, r) || !CBWorldStable(game) {
+    return false;
+  }
+  let near: Vector4;
+  let nearDistrict = n"";
+  let seen = CBSightingFor(sys, r);
+  let player = GetPlayer(game);
+  if IsDefined(seen) {
+    near = CBSightingPos(seen);
+    nearDistrict = seen.district;
+  } else {
+    if !IsDefined(player) {
+      return false;
+    }
+    near = player.GetWorldPosition();
+    nearDistrict = sys.GetCurrentDistrict();
+  }
+  // The clinics on the map, nearest first. A clinic is mostly a safe area, where no lead may be (CBLairPointUsable:
+  // tips, bought whereabouts and the place itself all ask it), so the lead is the street outside the nearest one
+  // that has a usable spot by its door (CBSpotOutside), a few of the nearest tried.
+  let pins: array<ref<IMappin>>;
+  ms.GetMappins(gamemappinsMappinTargetType.Map, pins);
+  let clinics: array<Vector4>;
+  for p in pins {
+    if IsDefined(p) && Equals(p.GetVariant(), gamedataMappinVariant.ServicePointRipperdocVariant)
+       && !sys.NearQuestPins(p.GetWorldPosition(), CBConfig.QuestSpawnClearance()) {
+      ArrayPush(clinics, p.GetWorldPosition());
+    }
+  }
+  let best: Vector4;
+  let bestD = -1.0;
+  let tries = 0;
+  while bestD < 0.0 && tries < CBConfig.RipperdocClinicTries() && ArraySize(clinics) > 0 {
+    tries += 1;
+    let pick = 0;
+    let k = 1;
+    while k < ArraySize(clinics) {
+      if Vector4.Distance(clinics[k], near) < Vector4.Distance(clinics[pick], near) {
+        pick = k;
+      }
+      k += 1;
+    }
+    let outside: Vector4;
+    if CBSpotOutside(sys, game, clinics[pick], outside) {
+      best = outside;
+      bestD = Vector4.Distance(clinics[pick], near);
+    }
+    ArrayErase(clinics, pick);
+  }
+  if bestD < 0.0 {
+    return false;
+  }
+  let now = CBGameSeconds(game);
+  // Nothing says which district a point is in, so the clinic is named by the district the search started from only
+  // when it is close to there; further, the lead says "around town" rather than name the wrong place.
+  let district = bestD <= CBConfig.RipperdocDistrictReach() ? nearDistrict : n"";
+  svc.NoteSighting(sys.GetPlaythroughId(), r.id, r.recordID, best, district, now);
+  let lead = CBSightingFor(sys, r);
+  if !IsDefined(lead) {
+    return false;
+  }
+  let tipster = CBPickTipster(sys, r.faction);
+  lead.tippedAt = now;
+  lead.tipFaction = tipster;
+  sys.SetLastTipAt(now);
+  let name = CBRivalDisplayName(sys.GetContent(), r);
+  let line = CBLineOf([s"\(name) is in a ripperdoc's chair right now, getting \(implant) put in for you. Catch them outside when they walk out.",
+                       s"Word is \(name) went under the knife: \(implant). They're laid up by the ripperdoc's, if you hurry."]);
+  if CBRivalKeepsHours(game, r) {
+    line += " They'll be there after dark.";
+  }
+  if CBMapMarkersOn() {
+    line += " It's on your map.";
+  }
+  if IsNameValid(tipster) {
+    CBPhoneFromAlly(game, tipster, line);
+  } else {
+    CBPhoneFromStreet(game, line);
+  }
+  CBFileLog(sys, n"RipperdocLead", now, CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
+  CBLog.Info(n"Rivals", s"Rival \(r.id) is at a ripperdoc: a lead.");
   return true;
 }

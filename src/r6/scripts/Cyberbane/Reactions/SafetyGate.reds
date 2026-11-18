@@ -66,6 +66,13 @@ public abstract class CBSafetyGate {
     if puppet.IsPlayerCompanion() {
       return false;   // never touch companions / crew (spec §16.1)
     }
+    // V's own people, by the tag they came with, even once the follower role is off: one of V's crew walking home,
+    // or a friendly gang's people lent to V (Reactions/Crew.reds, Reactions/Allies.reds). Hurt by V on the way, they
+    // were taken for anybody V had put down, and could come back as a Rival (2.5.0).
+    let desGate = GameInstance.GetDynamicEntitySystem();
+    if IsDefined(desGate) && (desGate.IsTagged(puppet.GetEntityID(), n"CB_Own") || desGate.IsTagged(puppet.GetEntityID(), n"CB_Follower")) {
+      return false;
+    }
     if puppet.IsVendor() {
       return false;   // leave vendors and their transactions alone (spec §16)
     }

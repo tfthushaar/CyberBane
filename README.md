@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.5.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.5.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -50,27 +50,34 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **A living street.** Bagmen to rob, favours for friendly gangs, and sit-downs between gangs at war
   that you can crash (now under **Gang life** in Mod Settings).
 
-### New in 2.3
+### New in 2.5.0
 
+Everything added since 2.3.0, in one place.
+
+**The street**
 - **The street reads you.** Witnesses run to tell the gang unless you stop them. Night, rain and your own
   blood change who notices you. Each district has its own temper, and places remember what you did there.
 - **Known by your car and gun.** Use the same ones and a mask stops hiding you. A gang's bosses can see
   through a disguise.
 - **Wannabes** square up to you for a name, fists only, and the street hears how it went.
 - **Pay the street** to keep watch for you, or to forget what they saw.
+- **The street tells it.** Lines that know who you are and what you did, the morning brief, the day's headlines and
+  your legend on the Hub, voices, panic in a crew you pick off unseen, and answering gangs and Rivals by text.
+
+**The gangs**
 - **A code for each gang.** Every gang respects, forgives and fights in its own way, talks like itself, and
   adapts to how you fight it. The Hub tells you each code as you learn it.
-- **Crews with a sergeant**, mixed from the people you've met, and apex squads that hunt you as a team.
 - **Gang life.** Funerals, celebrations, initiations, recruiting drives, arms deals and rackets happen near you
   at a set time. Crash them, pay your respects, or let the gang grow stronger.
-- **Fights between gangs.** Executions, street fights and hunts you can step into, and power struggles where
-  you decide who runs a gang.
-
-### New in 2.4
-
+- **Gangs fight gangs.** Executions, street fights and hunts you can step into, power struggles where you decide
+  who runs a gang, and rival gangers clashing on contested streets.
 - **The turf war has money in it.** Gangs have war chests and manpower; back one for a weekly cut, set two on
   each other with a lie, watch rivals unite against you, and at the very top, take streets of your own.
 - **Peace with terms**: haggle a gang's price by text, or trade a favour for it.
+
+**Being hunted**
+- **Crews with a sergeant**, mixed from the people you've met, and apex squads that hunt you as a team. Talk a
+  sergeant down before the shooting starts.
 - **Fairer hunts.** A moment's grace when they find you, trails that go cold when you lie low, scouts you can
   stop or pay off before they call you in, and lookouts in the crowd.
 - **The hunt grows.** Trackers planted by quickhacks, open season from a gang at the top of its anger, crews lying
@@ -78,23 +85,25 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **A price on your head.** Gangs, Rivals and the corporations put bounties on you, and named solos from the
   hunters' ladder come to collect. Beat them to climb the ladder, pay the price off from the Hub, or kill whoever put
   it up. The corporations hire killers now instead of sending crews.
-- **Gangs fight gangs.** Rival gangers clash on contested streets, and the Hub's Gangs page can show every gang as
-  a web of who is at war with whom, and how each one sees you.
-- **Friends on the street.** Borrow a friendly gang's people to watch your back, become one of a gang, ransom the
-  ones who give up, feed the street lies, and talk a crew's sergeant down before the shooting starts.
-- **The street tells it.** Lines that know who you are and what you did, the morning brief, the day's headlines and
-  your legend on the Hub, voices, panic in a crew you pick off unseen, and answering gangs and Rivals by text.
+
+**Rivals**
 - **Rivals with a story.** A facedown before the shooting starts, humiliation, Rivals back from the dead, Rivals at
-  war with each other and bound to each other, trophies, chrome that answers how you hurt them, last words, and each
-  gang's Rivals drawn as a tree on the Hub.
+  war with each other and bound to each other, trophies, chrome that answers how you hurt them, and last words.
+- **Their places.** A Rival keeps hours at a place of their own. One of their people who spots you runs to warn
+  them, and if the runner gets away they move a few streets over. Word that a Rival is getting new chrome can tell you
+  which ripperdoc they are laid up at.
 
-### New in 2.5
-
+**Your people**
 - **A crew of your own.** Rivals who owe you, gangers you frightened, solos you pay and people a friendly gang lends
   you work for you. Call up to three when you are hunted, and keep them loyal, or one day they sell you out or turn
   on you and come back as a Rival.
-- **The Hub in pictures.** The gangs as a web, your Rivals as trees, turf and your name on a map of Night City, your
-  crew round you, and a bar on every list.
+- **Friends on the street.** Borrow a friendly gang's people to watch your back, become one of a gang, ransom the
+  ones who give up, and feed the street lies.
+
+**The Hub and the map**
+- **The Hub in pictures.** The gangs as a web of who is at war with whom and how each sees you, each gang's Rivals as
+  a tree, turf and your name on a map of Night City, your crew round you, and a bar on every list, drawn in the
+  game's own style.
 - **The map remembers.** Pins for a day where a Rival fell, a gathering was crashed, a district changed hands or one
   of your crew died, and, with TweakXL, a CYBERBANE box in the map's filters for all of Cyberbane's pins.
 

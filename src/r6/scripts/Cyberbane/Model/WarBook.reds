@@ -84,19 +84,55 @@ public class CBWarBook extends ScriptableSystem {
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.m_trimmed = false;
-    // A clash went with the world the save threw away.
+    // A clash, a borrowed crew, a ransom and a parley went with the world the save threw away.
+    this.ResetSession();
+  }
+
+  // Everything below the saved fields. Start over (Clear) used to keep it: a gang's offer to make V one of theirs, a
+  // lie still steering a crew, a ransom still counting down to pay out or send a crew, and the last street clash on
+  // the web of gangs all carried into the new playthrough (2.5.0). What is live in the world is ended first, the way
+  // it ends on its own (Reactions/Allies.reds, CBWarStandDown).
+  public func ResetSession() -> Void {
+    let none: EntityID;
+    let nowhere: Vector4;
+    this.clashA = n"";
+    this.clashB = n"";
+    this.clashPairTick = 0;
     ArrayClear(this.candA);
     ArrayClear(this.candB);
     ArrayClear(this.fightA);
     ArrayClear(this.fightB);
     ArrayClear(this.fightWas);
+    this.fightGangA = n"";
+    this.fightGangB = n"";
+    this.fightAt = nowhere;
     this.fightTick = 0;
-    this.clashPairTick = 0;
+    this.clashNextTick = 0;
+    this.lastClashA = n"";
+    this.lastClashB = n"";
+    this.lastClashAt = 0.0;
     ArrayClear(this.crewIds);
+    this.crewGang = n"";
+    this.crewUntil = 0.0;
+    this.crewAway = 0;
     this.crewLeaving = false;
+    this.crewDay = 0;
+    this.joinOffer = n"";
     this.ransomNpc = null;
+    this.ransomGang = n"";
+    this.ransomAmount = 0;
+    this.ransomTick = 0;
+    this.lieGang = n"";
+    this.lieUntil = 0.0;
     this.parleyOpen = false;
+    this.parleyBody = none;
+    this.parleyGang = n"";
+    this.parleyTick = 0;
+    this.parleyDoneTick = 0;
     ArrayClear(this.parleyCrew);
+    this.greetTick = 0;
+    this.phoneStalled = n"";
+    this.phoneThreatDay = 0;
   }
 
   // "One of theirs" (Reactions/Allies.reds, [66]): the one save field laid out for it in 2.4.0.
@@ -330,5 +366,6 @@ public class CBWarBook extends ScriptableSystem {
     this.m_openUntil = 0.0;
     this.m_oneOfTheirs = n"";
     this.m_trimmed = true;
+    this.ResetSession();
   }
 }

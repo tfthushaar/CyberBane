@@ -249,7 +249,7 @@ public func CBHudCrewBarW() -> Float = 120.0
 // The smallest a cell's text is drawn when it is too long for its column: smaller than this, it is shortened at a word.
 public func CBHudMinCellFont() -> Int32 = 16
 public func CBHudBarTrack() -> HDRColor = new HDRColor(0.26, 0.08, 0.10, 0.90)
-// A bar is ten segments, the way the game draws its own meters (2.5.1); and the gap between them.
+// A bar is ten segments, the way the game draws its own meters (2.5.0); and the gap between them.
 public func CBHudBarSegs() -> Int32 = 10
 public func CBHudBarGap() -> Float = 2.0
 
@@ -690,7 +690,7 @@ public class CBHud {
   private let m_treeShown: Bool;
   private let m_treeGang: CName;
   private let m_treeSlotRival: array<Int32>;
-  // The pictures' look (2.5.1): every box a card of the game's own art, a frame tinted by what it is and cyan when
+  // The pictures' look (2.5.0): every box a card of the game's own art, a frame tinted by what it is and cyan when
   // picked; two segmented bars a box (box s, bar b, segment k at (s * 2 + b) * CBHudBarSegs() + k); a soft glow under
   // every line. And the four Standing tiles drawn as cards.
   private let m_webBoxArt: array<wref<inkImage>>;
@@ -1220,7 +1220,7 @@ public class CBHud {
     return t;
   }
 
-  // The same art as a free piece of the page, placed and sized by whoever uses it (the Standing tiles, 2.5.1).
+  // The same art as a free piece of the page, placed and sized by whoever uses it (the Standing tiles, 2.5.0).
   private func NewPanelArt(panel: ref<inkCanvas>, part: CName, tint: HDRColor) -> ref<inkImage> {
     let art = new inkImage();
     art.SetAtlasResource(r"base\\gameplay\\gui\\common\\shapes\\atlas_shapes_sync.inkatlas");
@@ -1281,7 +1281,7 @@ public class CBHud {
       backdrop.SetInteractive(false);
     }
     backdrop.Reparent(root, -1);
-    // The game's own vignette over it, faintly red, as its full-screen pages darken their edges (2.5.1).
+    // The game's own vignette over it, faintly red, as its full-screen pages darken their edges (2.5.0).
     if !this.m_inTab {
       let vignette = new inkImage();
       vignette.SetAtlasResource(r"base\\gameplay\\gui\\widgets\\notifications\\vignette.inkatlas");
@@ -3399,7 +3399,7 @@ public class CBHud {
         this.SetExtra(1, "Keep this one", true);
       } else {
         if IsDefined(r) && !CBRivalForgettable(sys, r) {
-          this.SetExtra(1, "On their way: wait", false);
+          this.SetExtra(1, sys.RivalKeptByCrew(r.id) ? "One of your crew" : "On their way: wait", false);
         } else {
           this.SetExtra(1, this.m_forgetArmed == id ? "Click again to forget" : "Forget this rival", IsDefined(r));
         }
@@ -3492,7 +3492,7 @@ public class CBHud {
     web.Reparent(panel, -1);
     web.SetVisible(false);
     this.m_webRoot = web;
-    // The glows first, so every one is under every line (2.5.1).
+    // The glows first, so every one is under every line (2.5.0).
     let g = 0;
     while g < CBWebLinePool() {
       let glow = this.NewRect(web, CBHudGrey());
@@ -3524,7 +3524,7 @@ public class CBHud {
       let h = CBWebSlotH(i);
       let box = this.NewBox(web, name, CBWebSlotX(i), CBWebSlotY(i), w, h);
       let bg = this.NewBand(box, CBHudClear());
-      // The game's own card under the words, and its frame round them (2.5.1); both coloured by PaintWeb.
+      // The game's own card under the words, and its frame round them (2.5.0); both coloured by PaintWeb.
       ArrayPush(this.m_webBoxArt, this.NewGameArt(box, n"cell_bg", CBHudGameCell()));
       ArrayPush(this.m_webBoxFrame, this.NewGameArt(box, n"cell_fg", CBHudGameCellEdge()));
       let edge = this.NewRect(box, CBHudGrey());
@@ -3924,7 +3924,7 @@ public class CBHud {
     line.SetTintColor(tint);
     line.SetOpacity(alpha);
     line.SetVisible(true);
-    // A wide, faint stroke under it, so a line reads as lit rather than drawn (2.5.1). Shown and hidden with it
+    // A wide, faint stroke under it, so a line reads as lit rather than drawn (2.5.0). Shown and hidden with it
     // (PaintWeb).
     if k < ArraySize(this.m_webGlow) && IsDefined(this.m_webGlow[k]) {
       let glow = this.m_webGlow[k];
@@ -4227,7 +4227,7 @@ public class CBHud {
     if s < 0 || s >= ArraySize(this.m_webBarMen) {
       return;
     }
-    // The plain bars are the web's; a picture of these segments instead (2.5.1).
+    // The plain bars are the web's; a picture of these segments instead (2.5.0).
     if IsDefined(this.m_webBarMen[s]) { this.m_webBarMen[s].SetVisible(false); }
     if s < ArraySize(this.m_webBarChest) && IsDefined(this.m_webBarChest[s]) { this.m_webBarChest[s].SetVisible(false); }
     let two = b >= 0.0;
@@ -6058,7 +6058,8 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"StaredDown") || Equals(e.kind, n"FacedownWalked") || Equals(e.kind, n"DuelWon")
      || Equals(e.kind, n"CalledEven") || Equals(e.kind, n"Humiliated") || Equals(e.kind, n"Trophy")
      || Equals(e.kind, n"RivalReturned") || Equals(e.kind, n"BondVengeance") || Equals(e.kind, n"RivalEndedUp")
-     || Equals(e.kind, n"UnderTheKnife") || Equals(e.kind, n"FeudSet") || Equals(e.kind, n"RivalFeud") {
+     || Equals(e.kind, n"UnderTheKnife") || Equals(e.kind, n"FeudSet") || Equals(e.kind, n"RivalFeud")
+     || Equals(e.kind, n"LairMoved") || Equals(e.kind, n"RipperdocLead") {
     let rv = sys.FindRivalById(RoundF(e.value));
     let rn = IsDefined(rv) ? CBRivalDisplayName(sys.GetContent(), rv) : "a Rival";
     if Equals(e.kind, n"StaredDown") { return s"You stared down \(rn), and their people ran."; }
@@ -6072,6 +6073,8 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
     if Equals(e.kind, n"RivalEndedUp") { return s"\(CBCapFirst(rn)), long gone from Night City, got in touch."; }
     if Equals(e.kind, n"UnderTheKnife") { return s"\(CBCapFirst(rn)) went under the knife for you."; }
     if Equals(e.kind, n"FeudSet") { return s"You set a Rival on \(rn)."; }
+    if Equals(e.kind, n"LairMoved") { return s"\(CBCapFirst(rn))'s lookout saw you and got away; they moved."; }
+    if Equals(e.kind, n"RipperdocLead") { return s"You heard which ripperdoc \(rn) was in."; }
     return s"One Rival killed another: \(rn) is gone.";
   }
   if Equals(e.kind, n"StreetClash") {

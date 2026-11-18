@@ -487,7 +487,7 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
                         winner: CName, loser: CName) -> Void {
   let now = CBGameSeconds(game);
   CBFileLog(sys, n"TurfTaken", now, district, winner, 0.0);
-  // The map remembers it (UI/MapPins.reds, 2.5.1), where the street last saw something happen there.
+  // The map remembers it (UI/MapPins.reds, 2.5.0), where the street last saw something happen there.
   let spot: Vector4;
   if CBMapTakeoverSpot(sys, game, district, spot) {
     let book = CBMapBook.Get(game);

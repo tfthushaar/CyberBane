@@ -567,6 +567,11 @@ public class CBStreetIntel {
     this.m_guardRival = rivalId;
   }
 
+  // The Rival's people at their place, for the alarm (Rivals/Whereabouts.reds, [U10]).
+  public func GuardIds() -> array<EntityID> {
+    return this.m_guardIds;
+  }
+
   public func ClearGuards() -> Void {
     ArrayClear(this.m_guardIds);
     ArrayClear(this.m_guardDown);

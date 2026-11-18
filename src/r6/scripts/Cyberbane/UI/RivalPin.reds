@@ -53,7 +53,7 @@ public func CBHunterPinCaption(name: String) -> String {
   return CBRivalPinTag() + CBHunterPinMark() + name;
 }
 
-// A gathering on the way (Spawn/StreetEvents.reds) and a place the map remembers (UI/MapPins.reds, 2.5.1): marks of
+// A gathering on the way (Spawn/StreetEvents.reds) and a place the map remembers (UI/MapPins.reds, 2.5.0): marks of
 // their own after the tag, so each says what it is.
 public func CBEventPinMark() -> String = "#"
 

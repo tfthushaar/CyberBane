@@ -54,12 +54,25 @@ public class CBRivalBook extends ScriptableSystem {
   public let fdEscorts: array<EntityID>;
   public let tauntTick: Int32;
   public let fdHinted: Bool;        // the hint about talking to them has been shown this session
+  // A lookout at a Rival's place who has seen V (Rivals/Whereabouts.reds, [U10], 2.5.0): how long V has been in view,
+  // and the one who ran to warn them, since when.
+  public let lairSeen: Int32;
+  public let lairWarnBody: EntityID;
+  public let lairWarnTick: Int32;
+
+  public func ResetLairAlarm() -> Void {
+    let none: EntityID;
+    this.lairSeen = 0;
+    this.lairWarnBody = none;
+    this.lairWarnTick = 0;
+  }
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.m_trimmed = false;
     this.fdRival = 0;
     this.fdState = 0;
     ArrayClear(this.fdEscorts);
+    this.ResetLairAlarm();
   }
 
   public static func Get(game: GameInstance) -> ref<CBRivalBook> {
@@ -248,22 +261,39 @@ public class CBRivalBook extends ScriptableSystem {
   }
 
   public func Clear() -> Void {
-    ArrayClear(this.m_id);
-    ArrayClear(this.m_bondWith);
-    ArrayClear(this.m_bondKind);
-    ArrayClear(this.m_ending);
-    ArrayClear(this.m_endedAt);
-    ArrayClear(this.m_flags);
-    ArrayClear(this.m_chrome);
-    ArrayClear(this.m_placeX);
-    ArrayClear(this.m_placeY);
-    ArrayClear(this.m_placeZ);
-    ArrayClear(this.m_placeDistrict);
+    let none: array<Int32>;
+    this.ClearExcept(none);
+  }
+
+  // Everybody forgotten but `keep` (Rivals/RivalSystem.reds, CBPurgeRivals): one of V's crew who was a Rival keeps
+  // their row, and any bond they had to somebody forgotten is let go as Forget does it (2.5.0).
+  public func ClearExcept(keep: array<Int32>) -> Void {
+    if ArraySize(keep) == 0 {
+      ArrayClear(this.m_id);
+      ArrayClear(this.m_bondWith);
+      ArrayClear(this.m_bondKind);
+      ArrayClear(this.m_ending);
+      ArrayClear(this.m_endedAt);
+      ArrayClear(this.m_flags);
+      ArrayClear(this.m_chrome);
+      ArrayClear(this.m_placeX);
+      ArrayClear(this.m_placeY);
+      ArrayClear(this.m_placeZ);
+      ArrayClear(this.m_placeDistrict);
+    } else {
+      let ids = this.m_id;
+      for id in ids {
+        if !ArrayContains(keep, id) {
+          this.Forget(id);
+        }
+      }
+    }
     this.SetFeud(0, 0, 0.0);
     this.m_trimmed = false;
     this.fdRival = 0;
     this.fdState = 0;
     ArrayClear(this.fdEscorts);
+    this.ResetLairAlarm();
   }
 }
 
