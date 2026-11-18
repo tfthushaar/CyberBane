@@ -35,9 +35,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **Messages in your phone.** Gangs, Rivals and street contacts text you, and some threads let you
   answer: pay a gang off, or haggle over where a Rival is hiding.
 - **The Hub.** A Cyberbane tab in the game menu shows your standing, every gang, who holds each
-  district, your Rivals, your crew, your titles and a history of what you did, drawn as pictures
-  where that helps (a web of the gangs, a map of Night City, each gang's Rivals as a tree), and
-  explains why the city treats you the way it does.
+  district, your Rivals, your crew, your titles and a history of what you did, as cards you can
+  read at a glance, and explains why the city treats you the way it does.
 
 ### New in 2.0
 
@@ -101,9 +100,8 @@ Everything added since 2.3.0, in one place.
   ones who give up, and feed the street lies.
 
 **The Hub and the map**
-- **The Hub in pictures.** The gangs as a web of who is at war with whom and how each sees you, each gang's Rivals as
-  a tree, turf and your name on a map of Night City, your crew round you, and a bar on every list, drawn in the
-  game's own style.
+- **The Hub in cards.** Every gang, district, Rival and crew member as a card in the game's own style, the gangs after
+  you first. Click a gang and every other card shows how it stands with that one.
 - **The map remembers.** Pins for a day where a Rival fell, a gathering was crashed, a district changed hands or one
   of your crew died, and, with TweakXL, a CYBERBANE box in the map's filters for all of Cyberbane's pins.
 

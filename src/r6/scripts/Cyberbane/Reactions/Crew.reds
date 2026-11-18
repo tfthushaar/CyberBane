@@ -2012,15 +2012,6 @@ public func CBCrewLoyaltyWord(loyalty: Int32) -> String {
   return "close to walking, or worse";
 }
 
-// One word for the line on the crew picture.
-public func CBCrewLoyaltyShort(loyalty: Int32) -> String {
-  if loyalty >= 80 { return "DEVOTED"; }
-  if loyalty >= 60 { return "LOYAL"; }
-  if loyalty >= CBConfig.MyCrewRestless() { return "STEADY"; }
-  if loyalty >= CBConfig.MyCrewBetrayLine() { return "RESTLESS"; }
-  return "SHAKY";
-}
-
 // What is eating somebody, from what last cost them.
 public func CBCrewWorry(m: ref<CBCrewMember>) -> String {
   if !IsDefined(m) { return ""; }

@@ -40,17 +40,16 @@ the next unless a version says otherwise.
 - A gathering's pin used to call itself a Rival. Gatherings, takeovers and fights each have their own icon and words.
 
 **The Hub, rebuilt**
-- **Pictures first.** Gangs open as the web of who is at war with whom, Rivals as each gang's tree, Turf and The City
-  as a map of Night City with each district where it lies, and your crew round you with lines as strong as their
-  loyalty. One button turns any of them into a list.
-- **Easy to read.** Big boxes and large text: each gang, district, Rival and crew member shows its name and a word or
-  two, and only what is happening right now is drawn. Click any box for the rest.
+- **Cards.** Every gang, district, Rival and crew member is a card with large text: a name, a word or two, and a bar.
+  The gangs after you come first, and clicking one makes every other card say how it stands with that gang (at war,
+  a truce against you, an old feud). Your Rivals sit in rows from the leader down to the fallen, and the district you
+  are in has a white frame. Click any card for the rest; one button turns a page into a list.
 - **A Crew page:** who is ready, who is restless and what they are owed, with buttons to call them, pay them, let one
   go or take on a solo.
 - **Standing at a glance.** Your four scores are tiles, and what is on its way to you is a row each, coloured by how
   close it is.
-- **In the game's own style.** Every box is a card framed in its colour, cyan when picked; every list has a bar of
-  ten segments; lines glow faintly; the page has the game's vignette behind it.
+- **In the game's own style.** Cards framed in their colour, cyan when picked; every list has a bar of ten segments;
+  the page has the game's vignette behind it.
 - **Everything fits.** Long names and labels are drawn smaller to fit their space, and the Titles page scrolls, so
   every title shows.
 

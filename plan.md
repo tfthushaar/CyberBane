@@ -1014,6 +1014,16 @@ the source:
   one that failed, a refusal and an insult close the thread. A Rival's thread, and a Debtor's, take one answer per
   thing they send (`ThreadAwaitsAnswer`). V's lines no longer claim what V may not have done ("You know what I did in
   Heywood"), and a broken gang no longer reads as offering V money.
+- **The pictures, again, as cards.** Played, the web still read as clutter: lines crossed boxes and words wherever they
+  were drawn, a picked gang faded the rest so the lines showed through, and the words on lines sat half under boxes.
+  So no picture draws a line now. The gangs are a grid of cards, the ones after V first (`CBCardRank`), each with
+  its word, a bar from red to green and the one thing worth knowing; clicking one makes every other card say how it
+  stands with it (`CBCardPairWords`), which is the web in words. The districts are two rows of cards with a white
+  frame where V is, the Rivals labelled rows from leader to the fallen, the crew a row of cards with the offer and
+  the gone under it. Nothing fades. Laid out to scale before it went in. The line helpers went with the lines.
+- **Numbers raised that were too low to be felt:** gang events every 25 minutes at 70% (were 40 at 60%), open season
+  25% a day (10%), wannabes every six hours at 60% (ten at 50%), a solo on offer 35% a day (15%), a gang's price on
+  V 40% a day (30%), iconics 10% from a top Rival and 5% from an apex fighter (3% and 4%).
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,

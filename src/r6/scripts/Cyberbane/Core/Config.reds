@@ -349,11 +349,12 @@ public abstract class CBConfig {
   public static func ApexSearchShareTicks() -> Int32 = 20
   public static func ApexSearchSpread() -> Float = 6.0
   // Gang life (Spawn/StreetEvents.reds, 2.3.3). The sit-down keeps its own clock (MeetGapTicks, MeetChance). The rest
-  // roll every forty minutes of play (divided by Gang life's How often), at 60%, set half an hour to an hour and a
-  // half of game time ahead, for an hour and a half of game time. A funeral is owed eight game hours after a Rival or
+  // roll every twenty-five minutes of play (divided by Gang life's How often), at 70%, set half an hour to an hour and
+  // a half of game time ahead, for an hour and a half of game time. Raised in 2.5.0 from forty minutes at 60%: about
+  // one an hour was too few to feel the gangs living round V. A funeral is owed eight game hours after a Rival or
   // a boss falls, a celebration four after a district is taken, and either is forgotten after a day.
-  public static func EventGapTicks() -> Int32 = 2400
-  public static func EventChance() -> Float = 0.6
+  public static func EventGapTicks() -> Int32 = 1500
+  public static func EventChance() -> Float = 0.7
   public static func EventLeadMinHours() -> Float = 0.5
   public static func EventLeadMaxHours() -> Float = 1.5
   public static func EventWindowSeconds() -> Float = 5400.0
@@ -471,7 +472,9 @@ public abstract class CBConfig {
   public static func TrackedHours() -> Float = 12.0
   public static func TrackedClearTicks() -> Int32 = 60
   public static func TrackedTipMult() -> Float = 0.15
-  public static func OpenSeasonChancePerDay() -> Float = 0.1
+  // A quarter of days for a gang at the top of its anger with 40 of its own dead (2.5.0; a tenth was about once in
+  // thirty hours of play).
+  public static func OpenSeasonChancePerDay() -> Float = 0.25
   public static func OpenSeasonKills() -> Int32 = 40
   public static func OpenSeasonCrewTicks() -> Int32 = 450
   public static func OpenSeasonPriceMult() -> Float = 2.5
@@ -493,7 +496,7 @@ public abstract class CBConfig {
   // left breathing is taken as beaten once V is 45 m off, or 40 seconds out of combat, and comes back a Rival half
   // the time. Rank ten is built to 0.6 of an apex, rank one to a whole one; ranks three to one get the bar. Renown: 4,
   // and 1.5 more for each place above the bottom.
-  public static func BountyChancePerDay() -> Float = 0.3
+  public static func BountyChancePerDay() -> Float = 0.4   // a gang posting a price, a day (2.5.0, from 0.3)
   public static func BountyGangKills() -> Int32 = 15
   public static func BountyMinChest() -> Float = 3000.0
   public static func BountyChestShare() -> Float = 0.4
@@ -698,7 +701,7 @@ public abstract class CBConfig {
   public static func MyCrewCutPerRank() -> Int32 = 100
   public static func MyCrewMercBase() -> Int32 = 1000
   public static func MyCrewMercPerTier() -> Int32 = 400
-  public static func MyCrewOfferChance() -> Float = 0.15
+  public static func MyCrewOfferChance() -> Float = 0.35   // a solo on offer, a day (2.5.0; 0.15 was one in twenty hours)
   public static func MyCrewRecruitBase() -> Float = 0.8
   public static func MyCrewRenown() -> Float = 5.0
   public static func MyCrewPastKept() -> Int32 = 12
@@ -725,12 +728,12 @@ public abstract class CBConfig {
   public static func HeadStartGrudge() -> Float = 10.0
   public static func HeadStartKnown() -> Float = 10.0
   public static func HeadStartDistrict() -> Float = 5.0
-  // Wannabes (Spawn/Wannabe.reds, 2.3.1): once V is a known merc, an even chance every ten in-game hours or so
-  // (about an hour and a quarter of real play). They challenge within 4 m, give up walking after 90 seconds or
+  // Wannabes (Spawn/Wannabe.reds, 2.3.1): once V is a known merc, a 60% chance every six in-game hours or so (about
+  // forty-five minutes of real play; an even chance every ten until 2.5.0, one in two and a half hours). They challenge within 4 m, give up walking after 90 seconds or
   // 90 m, stand down when V is under 25% health or 35 m away mid-fight, or after 150 seconds of it. Three
   // points of the district's renown won or lost (a third of that for walking away); two of Code for shooting one.
-  public static func WannabeGapHours() -> Float = 10.0
-  public static func WannabeChance() -> Float = 0.5
+  public static func WannabeGapHours() -> Float = 6.0
+  public static func WannabeChance() -> Float = 0.6
   public static func WannabeSpawnGraceTicks() -> Int32 = 20
   public static func WannabeChallengeDistance() -> Float = 4.0
   public static func WannabeApproachTicks() -> Int32 = 90
@@ -1537,8 +1540,10 @@ public abstract class CBConfig {
   public static func LootLegendaryChanceApex() -> Float = 0.25
   public static func LootLegendaryChanceTop() -> Float = 0.4
   // A small chance per apex member, and per top-ranked Rival or crew leader, of an iconic.
-  public static func LootIconicChanceApex() -> Float = 0.04
-  public static func LootIconicChanceRival() -> Float = 0.03
+  // An iconic: an apex fighter, and a Rival at the top of the ladder or leading their gang (2.5.0: 4% and 3% were
+  // seldom seen at all, the second only ever from the few Rivals who get that far).
+  public static func LootIconicChanceApex() -> Float = 0.05
+  public static func LootIconicChanceRival() -> Float = 0.1
   public static func BountyRivalPerRank() -> Int32 = 1500
   public static func BountyLeaderBonus() -> Int32 = 3000
   public static func BountyApexSquad() -> Int32 = 9000

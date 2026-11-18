@@ -25,9 +25,6 @@ public func CBWebSlotCount() -> Int32 = 16
 public func CBWebLinePool() -> Int32 = 64
 public func CBWebWordPool() -> Int32 = 14
 public func CBWebHeight() -> Float = 440.0
-// The web and the two maps are drawn taller: each has one button at most, and it moves down beside the words under
-// the picture (CBHud.PlaceActions). The tree and the crew keep 440, so their four buttons stay above the footer.
-public func CBWebTallHeight() -> Float = 500.0
 // Boxes and type sized to read from a sofa (2.5.0): the first pictures were 16 to 20 px names and 11 px lines at 1080p.
 public func CBWebGangW() -> Float = 220.0
 public func CBWebGangH() -> Float = 92.0
@@ -128,16 +125,6 @@ public func CBWebSlotH(i: Int32) -> Float {
   return CBWebSlotIsGang(i) ? CBWebGangH() : CBWebSmallH();
 }
 
-public func CBWebCentreX(i: Int32) -> Float = CBWebSlotX(i) + CBWebSlotW(i) / 2.0
-public func CBWebCentreY(i: Int32) -> Float = CBWebSlotY(i) + CBWebSlotH(i) / 2.0
-
-// Round the ring for keys and the pad: the eleven gangs in order, then the four below.
-public func CBWebNextSlot(i: Int32, step: Int32) -> Int32 {
-  let n = CBWebSlotCount() - 1;
-  let at = i < 1 ? 0 : i - 1;
-  return ((at + step) % n + n) % n + 1;
-}
-
 public func CBWebSlotOf(gang: CName) -> Int32 {
   let i = 1;
   while i < CBWebSlotCount() {
@@ -162,16 +149,6 @@ public func CBWebPostureColour(posture: ECBPosture) -> HDRColor {
     return CBHudGreen();
   }
   return CBHudGrey();
-}
-
-public func CBWebPostureThickness(posture: ECBPosture) -> Float {
-  if Equals(posture, ECBPosture.Vendetta) || Equals(posture, ECBPosture.Allied) {
-    return 6.0;
-  }
-  if Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Friendly) {
-    return 4.0;
-  }
-  return 2.0;
 }
 
 // The word on V's line to this gang: what is live between them, the most pressing first, or "".
@@ -263,42 +240,6 @@ public func CBWebAtWar(sys: ref<CyberbaneSystem>, game: GameInstance, a: CName, 
   return false;
 }
 
-public func CBWebPairColour(kind: Int32) -> HDRColor {
-  if kind == CBWebPairClash() {
-    return new HDRColor(1.0, 0.36, 0.36, 1.0);
-  }
-  if kind == CBWebPairTruce() {
-    return CBHudCyan();
-  }
-  if kind == CBWebPairIncite() {
-    return CBHudAmber();
-  }
-  return CBHudRed();
-}
-
-// An old feud is drawn only for the gang picked, so it can be plainer than before; what is live is thinner than V's
-// own lines, which are what the picture is about (2.5.0).
-public func CBWebPairOpacity(kind: Int32) -> Float {
-  return kind == CBWebPairFeud() ? 0.55 : 0.9;
-}
-
-public func CBWebPairThickness(kind: Int32) -> Float {
-  return kind == CBWebPairFeud() ? 2.0 : 3.0;
-}
-
-public func CBWebPairWord(kind: Int32) -> String {
-  if kind == CBWebPairClash() {
-    return "CLASHED";
-  }
-  if kind == CBWebPairTruce() {
-    return "TRUCE";
-  }
-  if kind == CBWebPairIncite() {
-    return "SET ON";
-  }
-  return kind == CBWebPairWar() ? "AT WAR" : "";
-}
-
 // ---- What a gang's box and the page below say --------------------------------------------------------------------
 
 public func CBWebBoxLine(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> String {
@@ -365,7 +306,40 @@ func CBWebTruceHours(war: ref<CBWarBook>, a: CName, b: CName, now: Float) -> Int
 }
 
 public func CBWebLegend() -> String {
-  return "Lines from you: green friendly, amber hostile, red out for blood; no line, neutral. Between two gangs: red at war, cyan a truce against you, amber one you set on the other.\nClick a gang for its old feuds, what it thinks of you, and to pay it off.";
+  return "Each card is a gang: what they think of you, and the bar from red (out for blood) to green (on your side). The ones after you come first.\nClick a gang to see how every other gang stands with it, what it thinks of you, and to pay it off.";
+}
+
+// How a gang stands with the one picked, on its card (2.5.0).
+public func CBCardPairWords(kind: Int32, other: String) -> String {
+  if kind == CBWebPairClash() { return "Fought " + other + " today"; }
+  if kind == CBWebPairWar() { return "At war with " + other; }
+  if kind == CBWebPairTruce() { return "Truce with " + other + " against you"; }
+  if kind == CBWebPairIncite() { return "You set them on " + other; }
+  if kind == CBWebPairFeud() { return "Old feud with " + other; }
+  return "No quarrel with " + other;
+}
+
+public func CBCardPairTint(kind: Int32) -> HDRColor {
+  if kind == CBWebPairClash() || kind == CBWebPairWar() { return CBHudRed(); }
+  if kind == CBWebPairTruce() { return CBHudCyan(); }
+  if kind == CBWebPairIncite() { return CBHudAmber(); }
+  if kind == CBWebPairFeud() { return new HDRColor(0.75, 0.38, 0.38, 1.0); }
+  return CBHudDim();
+}
+
+// Where a gang's card goes among the rest: out for blood first, then hostile, neutral, friendly, allied, and within each
+// the worst standing first; a gang switched off goes last (2.5.0).
+public func CBCardRank(score: ref<CBScoreEngine>, gang: CName) -> Float {
+  if !CBFactionOn(gang) || !IsDefined(score) {
+    return 10000.0;
+  }
+  let p = score.GetPosture(gang);
+  let band = 4.0;
+  if Equals(p, ECBPosture.Vendetta) { band = 0.0; }
+  if Equals(p, ECBPosture.Hostile) { band = 1.0; }
+  if Equals(p, ECBPosture.Neutral) { band = 2.0; }
+  if Equals(p, ECBPosture.Friendly) { band = 3.0; }
+  return band * 1000.0 + score.GetStanding(gang);
 }
 
 // The word under a gang's name in its box, what is live between them and V (CBWebVWord), coloured by whether it is
