@@ -644,8 +644,13 @@ public class CBStreetIntel {
     if !IsDefined(npc) {
       return;
     }
+    // Still in the world before their record is read for their gang (2.2.1).
+    if npc.cbIntelGiven || !npc.IsAttached() || npc.IsDead() {
+      this.m_grab = null;
+      return;
+    }
     let faction = CBClassifyFaction(npc);
-    if npc.cbIntelGiven || !npc.IsAttached() || npc.IsDead() || Equals(faction, n"") || Equals(faction, n"NCPD")
+    if Equals(faction, n"") || Equals(faction, n"NCPD")
        || Equals(faction, n"MaxTac") || !CBFactionOn(faction) || !CBSafetyGate.CanTalkTo(npc) {
       this.m_grab = null;
       return;
@@ -748,17 +753,17 @@ public class CBStreetIntel {
     let fwd = Vector4.Normalize2D(player.GetWorldForward());
     let des = GameInstance.GetDynamicEntitySystem();
     let targeting = GameInstance.GetTargetingSystem(game);
+    let sys = CyberbaneSystem.Get(game);
     if IsDefined(targeting) {
       let hit = targeting.GetLookAtObject(player, true, true) as ScriptedPuppet;
-      if this.LyingHere(hit, ppos, fwd, des) {
+      if this.LyingHere(sys, hit, ppos, fwd, des) {
         return hit;
       }
     }
-    let sys = CyberbaneSystem.Get(game);
     let reg = IsDefined(sys) ? sys.GetRegistry() : null;
     if IsDefined(reg) {
       for p in reg.GetAll() {
-        if this.LyingHere(p, ppos, fwd, des) {
+        if this.LyingHere(sys, p, ppos, fwd, des) {
           return p;
         }
       }
@@ -767,8 +772,11 @@ public class CBStreetIntel {
   }
 
   // Cheapest tests first: our own flag, then distance, then the angle, then the engine's questions.
-  private func LyingHere(p: ref<ScriptedPuppet>, ppos: Vector4, fwd: Vector4, des: ref<DynamicEntitySystem>) -> Bool {
-    if !IsDefined(p) || p.cbIntelGiven || !p.IsAttached() || p.IsPlayer() {
+  // CBNpcSafe, not a bare IsAttached (2.2.1): what follows reads their record and tags, and the registry
+  // can hand back somebody who has just streamed in or is on their way out.
+  private func LyingHere(sys: ref<CyberbaneSystem>, p: ref<ScriptedPuppet>, ppos: Vector4, fwd: Vector4,
+                         des: ref<DynamicEntitySystem>) -> Bool {
+    if !IsDefined(p) || p.cbIntelGiven || !CBNpcSafe(sys, p) || p.IsPlayer() {
       return false;
     }
     let pos = p.GetWorldPosition();
@@ -824,7 +832,7 @@ public class CBStreetIntel {
     let i = ArraySize(this.m_bubbleOwner) - 1;
     while i >= 0 {
       let o = this.m_bubbleOwner[i];
-      let keep = on && IsDefined(o) && o.IsAttached() && !o.IsDead() && CBStillStanding(o)
+      let keep = on && CBNpcSafe(sys, o) && !o.IsDead() && CBStillStanding(o)
                  && Vector4.Distance(ppos, o.GetWorldPosition()) <= 40.0 && o.cbTalkTimes == 0
                  && IsDefined(CBTalkRivalForFaction(sys, game, CBClassifyFaction(o)));
       if !keep {
@@ -843,6 +851,14 @@ public class CBStreetIntel {
     }
     // Whether a gang has word of a Rival is asked once per gang a pass, and at most six people are put
     // through the full talk checks: a dense street has dozens of gangers in the registry.
+    //
+    // The per-NPC gate (CBNpcSafe) comes before anything is read from them (2.2.1). This asked IsCrowd,
+    // which reads the person's character record, first, and whether they were attached only after: so
+    // every registry entry, near or far, still in the world or already streamed out, had its record read
+    // every pass and a half. The registry is only pruned once a tick, and not on the busy ones, so a
+    // streamed-out puppet is still in it, and reading its record took the game down (CTD in
+    // ScriptedPuppet.IsCrowd > GetRecord). The Director has always read the same things in this order:
+    // the gate, then the distance, then the record.
     let asked: array<CName>;
     let answers: array<Bool>;
     let checks = 0;
@@ -850,8 +866,8 @@ public class CBStreetIntel {
       if ArraySize(this.m_bubbleOwner) >= 2 || checks >= 6 {
         return;
       }
-      if IsDefined(p) && p.cbTalkTimes == 0 && !p.IsCrowd() && p.IsAttached() && !p.IsPlayer()
-         && Vector4.Distance(ppos, p.GetWorldPosition()) <= 25.0 && !this.HasBubble(p) {
+      if IsDefined(p) && p.cbTalkTimes == 0 && CBNpcSafe(sys, p) && !p.IsPlayer()
+         && Vector4.Distance(ppos, p.GetWorldPosition()) <= 25.0 && !p.IsCrowd() && !this.HasBubble(p) {
         let faction = CBClassifyFaction(p);
         if NotEquals(faction, n"") && !Equals(faction, n"NCPD") && !Equals(faction, n"MaxTac") {
           let k = ArrayFindFirst(asked, faction);

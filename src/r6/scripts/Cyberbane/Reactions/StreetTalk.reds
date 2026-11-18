@@ -1644,7 +1644,17 @@ public func CBTalkWhyHint(why: String) -> String {
 // `talking`, V is already in a conversation with them, and the wait between conversations does not apply.
 public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
                          npc: wref<ScriptedPuppet>, range: Float, opt talking: Bool) -> String {
-  if !IsDefined(npc) || !IsDefined(player) || !npc.IsAttached() || npc.IsDead() {
+  if !IsDefined(npc) || !IsDefined(player) || !npc.IsAttached() {
+    return "they are down or gone";
+  }
+  // The per-NPC gate before anything else is read from them (2.2.1): what follows asks for their status
+  // effects, their record (IsHuman) and their position, and this is handed people straight from the
+  // targeting system and the registry, some of whom have only just streamed in. It used to come halfway
+  // down, after all of those.
+  if !CBNpcSafe(sys, npc) {
+    return "they have only just appeared";
+  }
+  if npc.IsDead() {
     return "they are down or gone";
   }
   // A Rival V has put down can be talked to where they lie (Rivals/RivalLife.reds, 1.9.9).
@@ -1668,9 +1678,6 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   }
   if !talking && npc.cbTalkTick > 0 && (sys.GetTickCount() - npc.cbTalkTick) < CBConfig.TalkCooldownTicks() {
     return "V spoke to them a moment ago";
-  }
-  if !CBNpcSafe(sys, npc) {
-    return "they have only just appeared";
   }
   if !CBSafetyGate.CanTalkTo(npc) {
     return CBTalkGateReason(sys, npc);

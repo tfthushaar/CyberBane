@@ -1,312 +1,437 @@
 # Cyberbane improvements
 
-Research for changes not built yet, ranked by how feasible each is: the surest and smallest first. Nothing
-here is implemented. Player requests, and what was done about each, are in
-[PLAYER_REQUESTS.md](PLAYER_REQUESTS.md).
+Ideas not built yet, and a short record of the ones that were. Player requests, and what was done about each,
+are in [PLAYER_REQUESTS.md](PLAYER_REQUESTS.md); what each version changed is in [CHANGELOG.md](CHANGELOG.md).
 
-Every item has to fit the crash rules (summarised in PLAYER_REQUESTS.md): no police system, one AI order per
-NPC, no entity work inside attach events or on hit/death threads, UI as data rather than injected widgets,
-no loot put on bodies, no runtime appearance changes, scripts only (no archives, no TweakDB records).
-Ideas taken from other mods are taken as ideas: nothing of their code, numbers or text is copied, and each
-is redesigned around what Cyberbane already has.
+The list comes from three places: what Cyberbane already has and could do more with; how other games handle
+reputation, nemeses, gangs and being hunted; and what other Cyberpunk 2077 mods do and players keep asking for.
+Sources are at the end. Ideas from other games and mods are taken as ideas: none of their code, numbers or text
+is copied, and each is redesigned around what Cyberbane already has.
 
----
+## The rules every idea has to fit
 
-## 1. Talking to gangers: what goes wrong, and the fixes
+- **The crash rules** (in full in PLAYER_REQUESTS.md): no police or prevention-system calls, one AI order per
+  NPC, no entity work inside attach events or on hit and death threads, removals only through
+  `CBDeleteTaggedSafe`, nothing removed in V's sight, nothing read from an NPC before `CBNpcSafe` says it is
+  safe, behaviour-only kits, no runtime appearance changes, no loot put on bodies, UI as data rather than
+  injected widgets.
+- **Scripts only**: no archives, no TweakDB records, no audio files. Ideas that need one are kept apart under
+  [Beyond the current rules](#beyond-the-current-rules).
+- **Saves**: no new `persistent let` on a class that is already saved, because it wipes everyone's progress.
+  New saved state goes in a system of its own (the `CBTurfBook` and `CBIntelBook` pattern).
+- **Nobody the game wrote speaks for Cyberbane.** No fixer, romance partner or story character sends its texts
+  or says its lines (`UI/PhoneMessages.reds` says why). Its voices are its own: gangs, brokers, Rivals, unknown
+  numbers, people in the street.
+- No retired `.reds` file is deleted; it becomes a stub (`tools/check_removed.ps1`).
 
-**Built in 1.9.6:** items 1, 2, 3, 4 and 6, plus the parley (a vendetta ganger lets an empty-handed V walk up
-and talk; `[Parley]` can talk them and their crew down). Item 5 needed no change: Cyberbane's combat release
-already lets go of its own people who are far off, out of sight and not closing in (`CBCombatReleaseTick`).
-
-**The report (1.9.5, 17 November):** "So many times I tried to talk to gangers with no weapons drawn while
-they were just standing around and it didn't work. I could talk with NPCs fine, but gangers I could only
-speak to once."
-
-**What the log shows** (`[Cyberbane][Talk]` lines, CET `gamelog.log`, sessions of 17 November):
-
-| Line | Count | What it means |
-|---|---|---|
-| `Prompt up: Tyger Claw - knows you` | 11 in 42 s, no answer between them | The prompt kept opening and closing on its own. Nobody got to choose a line. |
-| `V spoke to them a moment ago` | 7 | The 45 s lockout per person after any answer (`TalkCooldownTicks`). This is "I could only speak once". |
-| `V is in combat` | 19 | Talk is off in combat, and Cyberbane's own crews and hunters keep V in combat from a distance. |
-| `they are running from V` | 2 | Somebody V sent off can never be spoken to again (`cbTalkSent`, no exit). |
-| `TygerClaws: their people are hostile to you, and not by Cyberbane's doing` | 1 | The game itself turned the gang hostile (their turf or an earlier fight), so nobody of theirs can talk. |
-
-**Why the prompt flickered on gangers and not on passers-by.** Gangers stand in groups, shoulder to shoulder.
-Once the prompt is up, it stays only while `LookedAt` keeps returning the same person, with 0.8 s of grace
-(`TalkLookGrace`). The game's look-at follows the crosshair from body to body, and when it returns nobody,
-the fallback takes the **nearest** person in the cone, often the man beside the one V chose. The target
-"changes", the grace runs out, the prompt closes, the next man is settled on, and it opens again. Nothing in
-the log says so because a prompt closing is never logged, only one failing to open.
-
-**Fixes, most certain first:**
-
-1. **Log why a prompt closes** ("Prompt down: looked away / walked off / they turned / a game prompt came
-   up"), the same way refusals are logged. Small. Makes every later report exact.
-2. **A sticky target.** Once the prompt is up on somebody, it stays on them while V is within keep range and
-   they are inside a wide cone (about 45 degrees), whoever else the crosshair crosses. The fallback picks by
-   the smallest angle from the crosshair, not the shortest distance, and the grace grows to about 2 s. Small.
-3. **A conversation, not a single exchange.** After an answer the prompt comes back on the same person for a
-   few seconds with follow-ups that fit what was said (after a greeting: "How's business?", "Seen any of
-   [enemy gang] around?", "Who runs this block?"; after a threat: "Walk away", "Last chance"). The per-person
-   lockout applies to the *effects* (standing, fear, tips: they already have daily ceilings in `CBTalkTally`),
-   not to talking. Only somebody sent off, or a finished conversation, ends it. Medium.
-4. **Say no out loud.** When V settles on a ganger who will not talk (their gang is hostile through the game
-   or at Vendetta, they are in a fight, they are at a job), they answer with one line in the game's subtitles
-   ("Keep walking.", "Not talking to you, merc.") instead of nothing. Then a refusal reads as the ganger's
-   choice, not a broken feature. Small.
-5. **Release lingering combat sooner.** Talk is off in combat, and the log shows combat dragging on. Our
-   release (`CBCombatReleaseTick`, `CBCutOffTick`) already lets go of crew who cannot reach V. A stricter
-   rule for crew far off, not moving and not seeing V for half a minute (sent home, the fight over for V)
-   would give V the street back faster. Small to medium.
-6. **An exit for `cbTalkSent`.** Somebody sent packing is talkable again after a while (a few minutes), or
-   once they have stopped running. Every state needs an exit (crash-rule note from 1.8.0). Small.
+**Sizes.** **S**: numbers, text, or one small hook. **M**: a new state machine on pieces that already exist.
+**L**: new spawns, several systems at once, or something to prove in game first. **Verify**: an engine call to
+probe on 2.31 and 2.5 before anything is built on it.
 
 ---
 
-## 2. Gangers who reply and haggle over a Rival's whereabouts
+## Built
 
-**Built in 1.9.7:** both: the street (ask, a price by temperament and standing, pay, haggle, lean, forget, the loyal
-who warn, the rare liar) and the phone (the Hub's button puts the word out; Deal / Too much / Forget it in the thread).
+What the research sections that used to fill this file led to, compressed.
 
-Today a lead is bought on the Hub at a fixed price (`CBWhereaboutsPrice`: base plus so much a rank), paid at
-once, and a gang at war with the Rival's texts it (`CBPickTipster`, `CBTipLine`). Nobody answers back. Two
-places a deal could be struck instead, both feasible:
-
-**In the street (medium).** Street talk gains one line on gangers: "[Ask] Heard anything about [Rival]?",
-offered when a Rival of theirs, or of a gang at war with theirs, has whereabouts for sale
-(`CBWhereaboutsForSale`). The answer comes from who this ganger is, rolled once per person and kept on the
-puppet the way `cbHoldState` is:
-
-- **Their gang and the Rival's.** One of the Rival's own people sells dear or refuses (and may warn the
-  Rival, who then comes for V); one of a gang at war with the Rival's is glad to sell.
-- **A temperament:** loyal (won't say), greedy (names a price), scared (gives it cheap, or for nothing when
-  afraid enough), a liar (rare; sells a place where nobody waits, and the street later tells V they were
-  played). The roll leans on V's standing with them and their gang's fear of V.
-- **The price** starts from `CBWhereaboutsPrice` and moves: cheaper for a friendly gang or a frightened
-  ganger, dearer for the Rival's own people and the greedy.
-
-The next prompt is the deal: **Pay [price]**, **Haggle** (an odds roll on fear against nerve, the same sum
-intimidation uses: success knocks the price down, failure raises it or ends the talk), **Lean on them**
-(the existing intimidate path, `CBTalkInform`) or **Forget it**. Paying goes through the same code as the
-Hub purchase (`CBRivalHideout`, `CBMarkLeadTold`), so the pin, the waiting Rival and the ambush are
-untouched. Street talk already shows any number of lines, so the deal is one more step in its state machine.
-
-**On the phone (medium).** The Hub's "find them" sends a text to the tipster instead of paying at once.
-They name a price in their gang's voice, and the reply rows (`CBRealPhoneChoices`, which already carries the
-pay-off offer) give **Deal**, **Too much** and **Forget it**. Too much brings a counter-offer or a refusal,
-by their posture to V. Each round is one text, so it takes a little time, which suits a phone deal.
+| Section | Built | In | Left out, and why |
+|---|---|---|---|
+| Talking to gangers: the fixes | Why a prompt closes is logged; a sticky target; conversations instead of single exchanges; refusals said out loud; an exit for people V sent off; the parley | 1.9.6 | Releasing lingering combat sooner: `CBCombatReleaseTick` already did it |
+| Haggling over a Rival's whereabouts | In the street (ask, a price by temperament and standing, pay, haggle, lean, the rare liar) and by text (Deal, Too much, Forget it) | 1.9.7 | |
+| Talking the way the game does | Icons and line types; Talk first, then the list; eye contact; lifepath and attribute lines; the talk bubble | 1.9.6 to 1.9.8 | Timed choices (need a native timer); the boxed attribute check (only the scene system can draw it) |
+| Making talk worth doing | What talk did, in the History; questions with real answers; leads, the toll, a crew called off; turning a ganger; being remembered; fans; favours; a downed Rival spared, made to give up another, or exiled | 1.9.6 to 2.0.0 | A lookout who warns V (allies already do); talking to a Rival who is on their feet and not fighting (item 64) |
+| Borrowed from Stay Dead | Texts wait during talk; the re-arm watch; scan intel; "while you were out"; catchphrases; the street's word on a Rival; the squeeze; the downed talk; informants; mercy as a choice; kin; send word and the call-out; fatal flaws; the announcement; bodyguards; crews in their colours and the Claws' bikes; bagmen; surrender; "nobody kills you but me"; sit-downs | 1.9.6 to 2.2.0 | The marksman on high ground (script cannot find high ground reliably); public executions (item 27); a neutral crew during the announcement (the re-arm watch and the game's combat state would fight it) |
+| The old backlog in PLAYER_REQUESTS.md | Show countdowns; the graded threat on the HUD, with LOST THEM and THREAT ENDED; scouts; hunters who search; loot and bounties; the Immersive Shooting AI step-down; turf damage counted street by street | 1.4.8 to 2.0.0 | What is still open is folded into the list below |
 
 ---
 
-## 3. Talking the way the game does it
+## If you build ten
 
-**Built in 1.9.6:** items 1, 2 and 3 (icons and line types, "Talk" first, eyes on V and a longer keep range).
-**Built in 1.9.8:** item 5 (the talk bubble, at most two near V).
-**Built in 1.9.7:** item 4 (lifepath lines with the game's lifepath icons; Body and Cool shown in the threat, the
-parley and haggling; a price V cannot cover greyed and unselectable).
+By impact for the effort, most first:
 
-**How the game handles a story character** (read from its scripts, `tools/redmod/scripts`):
+1. **Voices for the moments** (79). The people Cyberbane moves finally sound like it, in their own voices.
+2. **Gangs that adapt to how V fights** (40). Every gang feels like it is learning.
+3. **A code for each gang** (10 to 21). Answers the oldest complaint about the game's gangs: they are the same
+   gang in different colours.
+4. **The facedown** (53). A Cyberpunk-canon moment before every Rival fight.
+5. **A price on V's head, and the hunters' ladder** (39). A second nemesis line with a goal of its own.
+6. **Funerals** (22). Closes the loop on every Rival V kills, and feeds kin.
+7. **Back a gang, and the war chest** (33, 34). A side to take and a strategy in the turf war.
+8. **Run with a crew** (65). The payoff for being liked.
+9. **Panic in the dark** (80). Stealth play gets the terror loud play already has.
+10. **The screamsheet** (81). Everything above, visible in one place.
 
-- **The bubble over their head** is a map pin attached to the person (`MappinSystem.RegisterMappinWithObject`
-  on their role-pin slot) with the variant `ConversationVariant` or `SpeechVariant`, both drawn with the
-  game's `talk` icon (`mappinUtils.script`). It says, from a distance, "this one has something for you".
-  Cyberbane already hangs pins on people the same way, for the markers over its crews (`UI/Tracking.reds`).
-- **Two steps.** Close up, one interaction comes up ("Talk", F). Pressing it hands over to a scene, which
-  puts up the choice list and turns the person to face V.
-- **The choice list carries more than text.** Each line (`ListChoiceData`) can have:
-  - **icons**, from records the game already has (`ChoiceCaptionParts.TalkIcon`, `PayIcon`, `HandshakeIcon`,
-    `GiveTakeIcon`, `GrappleIcon`, `IllegalIcon`, `BountyHuntIcon`, the lifepath icons `LifepathStreetKid`,
-    `LifepathNomad`, `LifepathCorpo`, and `Solo`, `Netrunner`, `Techie`, `Cool`, `Reflexes`), added with
-    `InteractionChoiceCaption.AddPartFromRecordID`. No new game data needed;
-  - a **tag** in brackets, which Cyberbane already uses ("[Greet]");
-  - a **line type** (`ChoiceTypeWrapper.SetType`): `QuestImportant` (highlighted: this moves something
-    forward), `AlreadyRead` (dimmed: said before), `Inactive` and `CheckFailed` (greyed: the option exists but
-    V cannot take it), `Illegal` (a crime). Doors and terminals set these from script, so they are open to
-    us too.
-  - The boxed attribute check with its numbers ("Body 9") and the payment box are made natively by the scene
-    system (`InteractionChoiceCaptionBluelinePart` cannot be filled from a script). An icon plus the tag
-    "Body 9", greyed when V is short, reads almost the same. Timed choices need a native timer and are out.
+---
 
-**What to take from it, easiest first:**
+## 1. The street: how ordinary people live with V
 
-1. **Icons and line types on our lines.** A talk icon on greetings, the pay icon on anything that costs, a
-   handshake on deals, the grapple icon on leaning on someone, the illegal type on a shake-down, the
-   quest-important highlight on lines that lead somewhere (asking about a Rival), dimmed lines for what V
-   already said to this person, greyed lines for what V cannot afford. Data only, set where the hub is built
-   (`CBTalkPushHub`). Small.
-2. **Talk first, then the list.** When V settles on somebody, one line comes up: "[Talk]" with the talk icon.
-   F opens the full list, the way the game's own "Talk" works. Fewer prompts popping up while V walks
-   through a crowd, and V's hands are only held once V has chosen to talk. Small.
-3. **They look at V the whole time.** The look-at reaction Cyberbane already sends (`CBGlanceAt`, three
-   seconds) is renewed while the prompt is up and while an answer is due, so the person keeps facing V the way
-   a scene makes them. For somebody walking past, talking range follows them a little further, so a
-   conversation does not end because they took two more steps. Small.
-4. **Lines for this V.** The game shows lifepath and attribute lines to the players who qualify, and greyed
-   lines to the ones who do not. Ours can too: a **[Street Kid]** line gangers warm to (cheaper tips, a
-   warmer greeting), a **[Nomad]** line with the Aldecaldos and the Wraiths, a **[Corpo]** line with corporate
-   security, a **[Body]** threat that does not fail on rank-and-file when V's Body is high enough, a
-   **[Cool]** bluff, a netrunner's threat only when V has the Intelligence for it. Lifepath comes from
-   `PlayerDevelopmentSystem.GetLifePath`, attributes from the stats system. Small to medium.
-5. **The talk bubble.** The game's own `talk` pin over people who really have something for V: a ganger with
-   word of a Rival (section 2), an informant (section 5, item 9), a friendly gang's lookout with a tip or a job
-   (section 4), somebody of a broken gang ready to deal. At most two at a time near V, taken away when used,
-   when they stream out or when V moves on, registered on a settled tick (never in an attach event). It uses
-   the call the markers already use. V then knows who is worth talking to instead of trying everybody.
-   Medium.
+1. **Wannabes.** Once V is known in a district, a young ganger or a solo now and then walks up and calls V out
+   to make a name ("You're the one from Kabuki? Prove it."). Fists only (a melee kit, no guns), never in a safe
+   area. Win and the crowd talks; walk away and the street says V backed down; get knocked down and they brag in
+   the rumours. Animals and 6th Street most often. Talk for the challenge, the spawner, `Reactions/Morale.reds`.
+   **M** *(Yakuza's street challengers; Sleeping Dogs' Face)*
+2. **Witnesses who call the gang.** A passer-by who sees V hurt a ganger takes out a phone (the call the crowd's
+   own reaction already plays) and calls the gang, never the police. Unless V stops them in a few seconds (talk,
+   or a takedown), the gang knows where V is and its scout step is skipped. `Model/Witness.reds`, the lanes.
+   **M** *(Kingdom Come's and Red Dead's witnesses)*
+3. **A wounded V is a target.** Below a third of health on hostile turf, gangers are bolder: lookouts notice
+   sooner, the frightened stop backing off, a crew already out comes faster, and talk notices ("You're bleeding,
+   merc. Bad day?"). Health from the stat pool, read on the tick. **S**
+4. **Fresh from a fight.** For a few minutes after a fight in the open, crowd reactions near V start a stage
+   higher and overheard lines are about what just happened, before the rumour has had time to travel. **S**
+5. **Night and weather.** Gangs own the night: crews and lookouts more likely after dark, sit-downs at night,
+   apex squads in daylight, scouts' sight shorter in rain and fog, fewer people on the street in the rain.
+   **S, verify** (the weather read) *(old backlog 23; Far Cry and Metal Gear's time of day)*
+6. **District temperaments.** Each district gets a temper: how fast word spreads, how easily people scare, how
+   long they remember. Pacifica and Dogtown shrug at a body; Charter Hill and Westbrook panic and remember;
+   Kabuki talks fast. Data in `Data/Districts.reds` read by the witness count, the rumour engine and the crowd
+   stages. **S** *(Kingdom Come's reputation town by town)*
+7. **Places remember.** Where V did something big (a massacre, a Rival's death, a sit-down crashed), people
+   passing mention it for a few days, gangers there are jumpier, and the gang routes its people round it.
+   A short list of spots with dates, in a save system of its own. **M** *(Dwarf Fortress's sites and legends)*
+8. **Pay someone to keep watch.** A **[Keep an eye out]** line on a passer-by, for a few eddies: if a scout or a
+   crew turns up nearby within the hour, they text V ("Two cars of Claws just pulled up by the noodle place").
+   Early warning bought in the street, from the lanes' own warnings. **S**
+9. **The braindance goes round.** A big fight seen by many, or a Rival's death, can be recorded: a broker texts
+   that a BD of it is selling, and word of that one deed reaches every district at once instead of district by
+   district. Rumour engine. **S** *(Cyberpunk's braindances)*
 
-## 4. Making talk worth doing
+## 2. A code for each gang
 
-**Built in 1.9.6:** item 1 (the History lines and the gang page's "today" line).
-**Built in 1.9.7:** items 2 (the questions), 3 (leads, the toll and the crew called off; the lookout left out because
-allies already warn V), 4 in 1.9.8 (turning a ganger), 6 (being remembered) and 7 (a fan's drink, as eddies; "who runs these streets" points V at
-the local gang).
+Today the gangs differ in numbers and colours. Each gets a code: what they respect, what they never forgive, how
+they fight and how they make peace, shown on the Hub so it can be played. Every one runs on existing systems
+(standing, fear, `Spawn/Tactics.reds`, `Reactions/Morale.reds`, the lanes), as a table per faction in
+`Data/Factions.reds`. *(The gang critique in the sources; the gangs' lore)*
 
-A conversation should leave V with something: information V can act on, a deal, a change in how a gang
-treats V, or a consequence. And V should be told what it did. Easiest first:
+10. **Valentinos: honour and family.** Mercy and a fair fight earn more standing with them than with anyone;
+    killing one who surrendered, or attacking a funeral or a sit-down, is never forgotten (a double grudge).
+    Every crew of theirs calls V out before shooting, not only a Rival's. Kin come more often. **S to M**
+11. **Tyger Claws: business and face.** Paying them off costs less, insulting them in talk costs more. They
+    extort: working Japantown draws a weekly protection demand by text, and a crew if V ignores it. When they
+    want V dead they send one assassin with a blade at night, not a crowd. **M**
+12. **Maelstrom: chrome is everything.** They respect visible chrome and see through covered chrome more easily
+    than anyone; their crews come for V's implants ("We want those arms, choom"). A low-humanity V is one of
+    theirs (item 76). **S to M**
+13. **6th Street: the neighbourhood watch.** Veterans guarding "their" streets: hurting civilians in Santo
+    Domingo or Arroyo brings them down on V with no grudge of their own, and protecting locals earns their
+    respect. They fight like soldiers: suppression and flanking, as Cyberbane's corps already do. **M**
+14. **Animals: strength.** They respect fists and blunt takedowns and despise a V who only shoots. They issue
+    the wannabe challenges (item 1). Their crews are juiced: more health, fewer guns, more melee, and fear
+    barely touches them, except fear of V's Body. **S to M**
+15. **Voodoo Boys: information.** They trade in data. Their hunts open with a remote hack (V's HUD glitches, a
+    netrunner tracing V) before anyone walks over, they rarely come in person, and their leads cost a hack's
+    worth of Intelligence rather than eddies. **M**
+16. **Mox: they protect their own.** Hurting other gangs is no business of theirs; hurting the people of
+    Jig-Jig Street is. Small crews, never an apex squad. Driving off the Claws who lean on them wins them over.
+    **S**
+17. **Scavengers: everybody's enemy.** Killing Scavs earns a little standing with every gang and the street.
+    They make no Rivals (they run), but they go for V when V is hurt, for parts. **S**
+18. **Wraiths and Aldecaldos: the Badlands.** Wraiths ambush V's car on Badlands roads (the car ambush, out
+    there). The Aldecaldos are one family: a Nomad V starts known to them, a harm to one is remembered longer,
+    and a favour is repaid in car parts and eddies. **M**
+19. **Barghest: an army.** Soldiers and drones rather than gangers, a grudge that stays in Dogtown, and they
+    neither break nor surrender. Numbers in Morale. **S**
+20. **The corporations: money, not grudges.** Arasaka, Militech and Kang Tao send no gangers. They post a
+    contract on V and hire solos (item 39), and they can be bought off at a corporate price. **M**
+21. **What they respect.** A page per gang on the Hub: what they respect, what they never forgive, how to make
+    peace with them, filled in as V finds each out. **S**
 
-1. **Say what it did.** When an exchange moves something (standing, fear, a lead, Conduct), the History
-   records it in a line, and the gang's page on the Hub says what V has done with its people today ("You
-   greeted their people today", "You leaned on two of them"). The daily ceilings already exist
-   (`CBTalkTally`); this just shows them. Small.
-2. **Questions with real answers.** New lines, answered from what Cyberbane already knows:
-   - "Anyone looking for me?" The next crew or Rival in the queue, said the street's way ("Maelstrom have been
-     asking about you. Tonight, I'd say."). A warning V can use. (The lanes and their timers, `Spawn/Queue.reds`.)
-   - "Who runs these streets?" The turf holder, how strong they are, whether it is contested
-     (`Model/Territory.reds`).
-   - "What's the word?" The loudest rumour that has reached this district (the rumour engine).
-   - "Where's [Rival]?" A lead, with the haggling of section 2.
-   Small to medium, because the answers already exist.
-3. **Deals.** Buying a lead (section 2). Paying a hostile gang's people a toll to be left alone on their
-   streets for a few hours (they hold back, the way the frightened already do: `cbHoldState`). Paying to have
-   a crew that is on its way called off (the pay-off's lane clearing, for one crew only). Asking a friendly
-   gang's lookout to warn V when a crew comes (the warnings friendly gangs already send). Medium.
-4. **Turning someone.** Lean on a ganger hard enough and a new line appears: "You work for me now." If they
-   take it they become an informant and text V a tip later (section 5, item 9); if they do not, they warn
-   their gang and a crew comes sooner. Medium.
-5. **Talking to a Rival who is not fighting.** A Rival met in the street who owes V, who is holding back
-   from fear, or who is a Debtor gets lines of their own: "Call it even" (the Debtor retires), "You owe me:
-   where's [another Rival]?" (a lead), "Get out of Night City" (if afraid enough, they leave the roster). A
-   conversation with a named enemy is the most memorable kind there is. Medium.
-6. **Being remembered.** Within the session the same person remembers V ("You again? Make it quick."), and
-   somebody V greeted or helped is easier next time. From the per-person talk fields already kept. Small.
-7. **Civilians worth stopping.** A fan (V well known, the person friendly) gives a small gift once a day:
-   eddies or a consumable, straight to V's inventory. A frightened passer-by points V at the local gang ("The
-   Claws hang out by the noodle stand. Please, just go."). Small to medium.
-8. **Favours.** "Need anything done?" to a friendly or neutral ganger gives a small street job built from
-   Cyberbane's own pieces: run off a rival gang's lookout two streets away (somebody spawned there with a pin),
-   lean on a named civilian who owes them, carry word to a Rival. The reward is standing above the greeting
-   ceiling, eddies, sometimes a lead. This is the "befriend a gang without a body" request given real
-   content. Larger.
+## 3. Gang life: events with a time and a place
 
-Left out: anything that changes the police's heat (the police system is off limits), timed choices, voices.
+Built on the sit-down's machinery: a time, a place, a pin once V hears of it (item 32), spawns out of sight, and
+an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's power struggles; the old item 20)*
 
-## 5. What can be borrowed from Stay Dead (Night City Nemesis, 0.1.6)
+22. **Funerals.** A day after V kills a Rival or a lieutenant, their people gather on their turf to remember
+    them. Attack it: their hatred doubles (the Valentinos never forgive it) and kin may swear revenge on the spot.
+    Stay away: nothing. Walk up empty-handed with good standing: **[Pay respects]** eases the grudge, though the
+    dead one's kin may still spit. **M**
+23. **Celebrations.** A gang celebrates a win (turf taken, V's crew beaten): a lieutenant drinking with their
+    people in a club's back room or a street party. Crash it and the lieutenant is easy to reach; leave it and
+    the gang grows stronger in that district. **M**
+24. **Initiations.** A recruit has to prove themselves: rob a shop, beat somebody, kill somebody. V comes upon
+    it and stops it (the recruit runs, the gang is annoyed, the street likes it) or lets it happen. **M**
+25. **Recruitment drives.** A gang signs up new blood in a district; unless V scatters them, its turf there
+    grows faster for a day. A broker's text says where. **M**
+26. **Hunts.** A gang chasing somebody through the streets (an informant, a debtor) runs them past V. Shelter
+    them (**[Get behind me]**) and they owe V tips; hand them over for the gang's standing; or look away. **M**
+27. **Executions.** A lieutenant executes a prisoner at a marked place at a set hour. Stop it and the prisoner
+    owes V; let it happen and the street hears V let it. The one part of the old item 20 not built. **M to L**
+28. **Arms deals.** Two gangs, or a gang and a corporate fence, trade guns at a set place. Hit it: the loot goes
+    to V's inventory, both sides lose strength, and buyer and seller blame each other. **M**
+29. **Rackets.** Each gang's business as a place V can hit, found through intel (the squeeze, scans,
+    informants): the Valentinos' chop shop, the Claws' BD den, the Scavs' clinic, Maelstrom's chrome workshop,
+    a stash house. Hitting one drains the war chest (item 34) and the district's strength. **M** *(Mafia III)*
+30. **Front lines.** In a contested district, the two gangs' people clash now and then: both sides spawned out
+    of sight and set hostile to each other, the way Cyberbane already sets its people against V's companions.
+    V can pick a side; the winner pushes the turf. **M to L** *(Ambient Factions of Night City; San Andreas's
+    turf wars)*
+31. **Power struggles.** When a leader dies, two lieutenants fight for the chair (`Rivals/Hierarchy.reds` has
+    the seats). For a few days each texts V asking for help against the other. Back one and they win and owe V;
+    kill both and the gang is leaderless, weaker and wilder for a while. **M to L** *(Shadow of War)*
+32. **Word of what's coming.** Overheard lines and broker texts mention an event before it happens ("Claws are
+    burying Kenji tomorrow night, by the shrine"), so V can plan for it instead of only stumbling on it. Rumour
+    engine, `Narrative/Whispers.reds`. **S**
 
-Read from its scripts (72,000 lines of redscript, a CET part, Audioware sounds, TweakXL records and
-archives). It is a Shadow of War-style nemesis system with a lot of overlap with Cyberbane. Listed here are
-only the ideas that are feasible within Cyberbane's rules, easiest first. Each says what it does, what
-Cyberbane already has, and how ours would be built.
+## 4. Turf and war
 
-**Built in 1.9.6:** items 1 (texts wait during a conversation) and 2 (the re-arm watch).
-**Built in 1.9.9:** items 5 (catchphrases), 6 (the street's word on a Rival), 10 (mercy as a choice, with
-talking to a downed Rival), 11 (kin, as the successor), 12 (send word, and the call-out), 14 (the announcement,
-as words: the crew is not made neutral for it, because the re-arm watch and the game's combat state would fight
-it), 15 (bodyguards at the lair, costing the Rival health as they fall) and 17 in part (gang-painted cars, the
-Claws bike, the call-out; the marksman on high ground is left out: script cannot find high ground reliably).
-**Built in 1.9.8:** items 3 (intel from a scan), 7 (the squeeze), 8 (the downed talk; a Rival's body), 9 (the
-informant, from the Debtor) and 13 (fatal flaws, killed from the hit's next-frame follow-up). See
-`Reactions/StreetIntel.reds`.
+33. **Back a gang.** Pick one gang on the Turf screen. What V does to its enemies in a district counts double for
+    it there, its gains are V's news, and holding a district for it pays V a weekly cut (the tribute path) and
+    raises standing. The half of "be part of the turf wars" still missing in PLAYER_REQUESTS.md. **S to M**
+    *(San Andreas)*
+34. **The war chest.** Each gang has money. Bagmen, rackets and tribute fill it; crews, apex squads and the
+    eddies it pays out empty it. Robbing bagmen and hitting rackets slows how often it can send people, and the
+    Hub says it in words ("flush", "counting every eddie", "broke"). **M** *(Mafia III)*
+35. **Manpower.** A massacre empties a gang's ranks for a while: its crews come smaller and greener, it hires
+    outsiders in its colours, or it sends nobody, and it fills back up over days. Strength already falls; this
+    makes it show in who turns up. **S to M**
+36. **A common enemy.** When V is a terror to two gangs at war with each other, they call a truce against V for a
+    while: their people stop fighting each other and a joint crew comes. Rare, and a big moment when it happens.
+    **M**
+37. **V's own streets.** At legendary standing, a district where V has broken every gang and nobody holds it
+    becomes V's: no crews are sent there, the street greets V, and a gang passing through pays V for the
+    privilege. The endgame of the turf war. **L** *(San Andreas; Saints Row)*
+38. **A gang can fall.** A gang kept below its floor long enough splinters, and a small new crew rises from what
+    is left, with a new name and a grudge. A design change, not an addition: gangs are kept from extinction on
+    purpose (`GangStrengthFloor`). **L**
 
-### Small
+## 5. Being hunted
 
-1. **Texts and overheard lines wait while a choice list is up.** Stay Dead holds its pop-ups while dialogue
-   choices are on screen, in scenes and in menus. Cyberbane's phone and subtitle delivery (`CBPhone.Update`,
-   `Deliver`) does not check for the game's dialogue choices or its own talk prompt. Hold both while any
-   `DialogChoiceHubs` entry is up (`CBNativePromptUp` already reads it) or V is in a scene.
-2. **A spawned crew re-armed if it comes up neutral.** Stay Dead found crews spawned hostile that later read
-   neutral, and re-checks every one of its men once a second for their first 30 s, setting hostility again
-   if it has slipped. Cyberbane sets hostility once at setup. The same short watch over our tagged crews
-   (attitude only, no AI order) is cheap insurance.
-3. **Intel from a scan.** A completed scan of a ganger (a wrap of `ScriptedPuppet.OnScanningEvent`, which
-   only observes) has a chance to turn up one thing about a Rival of their gang: a weakness V did not know,
-   or a lead. Once per ganger. Uses the traits Cyberbane already gives Rivals.
-4. **"While you were out".** One line in the game's subtitles a little after a load, once V is really in the
-   game: the most important thing that happened since (a Rival promoted, a gang broken, turf taken), from
-   the History log Cyberbane already keeps. Never on the loading screen.
-5. **A catchphrase per Rival.** Each Rival gets one line of their own, picked at birth from their gang's
-   pool, and says it when they arrive, when they get away and in their texts. The same face, the same words:
-   cheap, and it makes a Rival a person.
-6. **Rival status as the street says it.** The Rivals screen says why a Rival has not come back the way the
-   street would ("licking their wounds; back in about two days", "waiting for you in Kabuki"), never naming
-   the rules. Cyberbane has the data (`CBRivalSourceLine`, lying low, the lair); only the wording changes.
+39. **A price on V's head, and the hunters' ladder.** A gang, a corporation or a Rival can post a bounty on V.
+    Named independent hunters take it: a roster of solos, each with a look, a trait, a signature and a rank from
+    ten to one, who come alone or in pairs at their own time. Kill one ranked above V and V takes their place on
+    the ladder (a Hub page); at the top V is the most dangerous merc in Night City. The bounty ends when V pays
+    it, or kills whoever posted it. A hunter V beats and leaves alive can become a Rival. **L** *(Assassin's
+    Creed Odyssey's mercenaries; New Vegas's hit squads)*
+40. **Gangs that adapt to how V fights.** Cyberbane already counts how V hurts people (for Rival scars). Count it
+    per gang, and as one method dominates, that gang's crews prepare: more armour against a headshot V; scans
+    and a netrunner's ping against a V who sneaks; hack resistance against quickhacks; shotguns and blades
+    against melee; snipers and flankers against long range; bikes and cars against a V who drives through
+    them; spreading out against grenades; sharper eyes at night against a night stalker. The gang says so
+    ("They're bringing ICE for you, merc"), and it fades when V changes. Through the existing stat build and
+    record choice; nothing about how they look changes. **M to L** *(Metal Gear Solid V's revenge system)*
+41. **Lie low on purpose.** Staying off a gang's turf, out of fights, or in a safe place cools that gang faster,
+    and the Hub says each gang's heat in words. Changing clothes out of sight or leaving the district gives an
+    extra chance the trail goes cold. **S** *(old backlog 4 and 12)*
+42. **Lose them on the metro or in a cab.** Riding the NCART or a Delamain cab out of the district while hunted
+    loses them, if no hunter saw V get in. Cyberbane already knows when V is on the metro (it holds arrivals
+    then). **S** *(2.1's metro, 2.3's taxis)*
+43. **Sound before contact.** An engine and a door slam when a car crew gets out within earshot, a phone buzz
+    when the HUD line changes, played on the player as the apex horn already is. **S** *(old backlog 8)*
+44. **A fair first volley.** For two seconds after a hunter first sees V, their accuracy is lowered through the
+    existing build pass, so the opening shots are not the end of the fight. **S** *(old backlog 20)*
+45. **A cost for running.** When a crew or apex squad loses V in a straight run (not by stealth or disguise), the
+    gang texts something dismissive and V loses a little renown with them. **S** *(old backlog 15)*
+46. **Hunters who learn V's haunts.** Rivals and crews are likelier to wait near where V spends time: the district
+    V is in most, the street outside V's apartment (never inside a safe area), a bar V keeps going back to.
+    **S** *(old backlog 22)*
+47. **Waiting on V's road.** With a job tracked far away, a vendetta crew may wait near the destination, outside
+    its quest clearance, and spring when V arrives. **M**
+48. **Open season.** The top of a gang's anger: its leader declares open season for one in-game day. A crew every
+    hour, every one of its people hostile on sight citywide, its Rivals together. Survive the day, kill the
+    leader, or pay a crippling price; surviving earns a title and leaves the gang afraid for a week. **M**
+    *(Far Cry 5's escalation tiers)*
+49. **Tracked.** A Rival's netrunner can plant a tracker on V with a quickhack. Until V visits a ripperdoc, that
+    gang always knows the district V is in, and the HUD line says TRACKED. **S to M**
+50. **Lookouts in the crowd.** On hostile turf, one passer-by is really the gang's lookout. A scan shows it; deal
+    with them (talk, a takedown) before they report V and the turf provocation never happens. **M**
+51. **Drive-bys.** A crew in a car passes V on foot, shoots and circles back, using the game's own vehicle
+    combat. **L, verify** (whether a script can order it)
+52. **Taken alive.** With Fenix Rebirth installed (already detected, `Compat/FenixRebirth.reds`), a crew can try
+    to take V alive: going down to them means waking in their place, robbed, with a way out to find. **L**
+    *(Far Cry 5's capture parties)*
 
-### Medium
+## 6. Rivals
 
-7. **Squeeze a ganger in a grapple.** V grabs a ganger (the game's own grab) and holds them for about three
-   seconds, and they talk: a Rival's hideout, a weakness, who is coming next. The game's grapple state is
-   `GrappleStandEvents` (`locomotionTakedown.script`, present on 2.5 and 2.31); wrapping its `OnEnter` and
-   `OnExit` only observes, and the hold time is counted on our tick, never in the callback. The vanilla hold
-   lasts long enough for every rank (`SetGrappleDuration`). The temperaments of section 2 apply: the loyal
-   say nothing, the greedy name a price that V pays by holding on, the scared talk at once. A line in the
-   subtitles shows the seconds left. A takedown before the end, or aiming (a human shield), ends it
-   unsaid. No new key and no prompt: holding them is the question. This is the most natural ganger
-   interaction available, because it is a move players already make. Leads go through `CBMarkLeadTold`.
-8. **Make the downed talk.** V crouches over a defeated ganger (alive on the floor) and looks at them for a
-   few seconds; they give one thing up. And a Rival's body can carry a lead about another of their gang (V
-   crouches over it). Built on the look-at Cyberbane already uses and the defeated state it already tracks.
-9. **The informant.** Cyberbane's Debtor (a Rival spared twice) retires after one redemption tip. Instead,
-   somebody spared who is grateful texts V two or three tips over the next days (where a leader holds court,
-   a weakness of another Rival, who is about to come), then "we're square". A small chance, higher if V later
-   kills somebody close to them, that the last tip is a set-up: the place is an ambush. All through the
-   existing tip and lair code.
-10. **Mercy is a choice.** When V defeats a Rival (down, alive), V has about ten seconds: put the weapon away
-    for three seconds or walk off and they are spared; finish them and they die. Nothing happens by
-    accident (a Rival dropped from a rooftop by a quickhack has not been "spared"). Cyberbane's sparing
-    pipeline (`CBSparedCheck`, escapees, `CBRivalSparedByV`) stays; only the decision becomes V's.
-11. **Kin who swear revenge.** When V kills a Rival in front of witnesses (`CBCountWitnesses`), a relative
-    may swear revenge: a new Rival born a few in-game hours later ("Sister of [name]"), the delay longer the
-    farther the news has to travel, with the trait that counters what killed their kin (Cyberbane's traits)
-    and a grief text. One pending avenger per gang. Built on `CBRivalAfterFight` and the Rival births.
-12. **Send word.** A line on a Rival's Hub page: V sends a threat, with optional terms ("the same way as last
-    time", "in front of their crew"). The Rival answers by text, prepares (more guards, armour, a car to run
-    to), and waits at a place on the map: the lair machinery Cyberbane already has (`Rivals/Whereabouts.reds`).
-    Keeping the terms pays more (bounty, street renown, the gang's fear). Medium, because the preparation
-    touches spawning.
-13. **Fatal flaws.** A rare, high-rank Rival carries one hidden weakness tied to something V already does: a
-    headshot from a precision rifle, a blunt takedown, a burn, a toxin, a Short Circuit. Meeting it kills
-    them outright. Learned through intel (items 3, 7, 8, 9). The hit is read in the existing hit hook and the
-    kill is queued to the next frame (crash rule: no entity work on the hit thread). Uses Cyberbane's trait
-    data.
-14. **The announcement.** Before a Rival's crew opens fire, they hold a beat: the crew stays neutral, one of
-    them steps out and names the Rival in the subtitles in two to four short parts (what they survived, what
-    they did to V, their catchphrase), and the fight starts when it is said, when V hurts one of them, or when
-    V walks up. Attitude changes and subtitles only, plus at most one move order per man.
+53. **The facedown.** When V and a Rival meet face to face (the announcement's beat), V chooses:
+    **[Stare them down]** (Cool and renown against their rank and nerve), **[Draw]** or **[Walk away]**. Win and
+    some of their people break and run, and the Rival fights shaken; lose and their crew is emboldened; walk away
+    and they let V go once, and the street hears of it. **M** *(Cyberpunk RED's Facedown; Ghost of Tsushima's
+    standoff)*
+54. **Just you and me.** A fourth choice at the facedown: their crew holds back (the hold state talk already
+    uses) and the Rival fights alone, until V breaks the terms (a gun in a fistfight, a grenade). Valentinos and
+    Animals accept more often. **M**
+55. **Humiliation.** A fourth line at mercy: **[Humiliate]**. They lose rank and their nickname turns mocking;
+    they either quit the gang or come back obsessed (a Rival who hates V, sometimes a cyberpsychotic break). The
+    gang fears V more. **S to M** *(Shadow of War's shaming)*
+56. **Back from the dead.** Rarely, a Rival V killed comes back weeks later, rebuilt by a back-alley ripperdoc:
+    heavier chrome, a new nickname, a line about it. Never one V finished with a fatal flaw or a finisher, so a
+    death V made sure of stays a death. **S to M** *(Shadow of Mordor)*
+57. **Rivals at war with each other.** Rivals of gangs at war hunt each other between V's encounters, and one
+    can kill the other off screen (in the History; the winner climbs). V can arrange it by passing one the
+    other's hiding place, from a **[Collect]**. **M**
+58. **Bonds beyond kin.** Each Rival gets one bond on their page: a mentor, a protégé, a lover, a partner. Killing
+    one moves the other (vengeance, fear or quitting); sparing one puts the other in V's debt. Kin and bodyguards,
+    generalised. **M** *(Watch Dogs: Legion's relationships)*
+59. **A Rival of your own.** A Rival spared twice and frightened enough can be made V's: they stop hunting, text
+    intel (as the Debtor does) and can be called by text once a day to come and fight beside V. **M**
+60. **Trophies.** Killing a named Rival gives V something of theirs: the weapon from their record, into V's
+    inventory, named in the History. The bigger the Rival, the better the trophy. **S to M** *(old backlog 17)*
+61. **Where they ended up.** A Rival who retired or was run out of town is not gone for good: months later a
+    text from them, a small job, a warning, or an invitation to finish it. **S**
+62. **Places with meaning.** A Rival who calls V out picks somewhere that matters: where V first beat them, where
+    their kin died. Positions are already kept for leads and the call-out. **S**
+63. **Last words.** A dying Rival says something of their own, from their history with V. **S**
+64. **A Rival on their feet.** A Rival met in the street who is not fighting (a Debtor, one holding back from
+    fear) gets lines of their own: **[Call it even]**, **[Where's (another Rival)?]**, **[Get out of Night
+    City]**. The one part of "talking to a Rival" left out of 1.9.9. **M**
 
-### Larger
+## 7. Talk
 
-15. **Bodyguards that matter.** A gang leader's lieutenants stand as their guards at the lair (Cyberbane's
-    hierarchy already ranks them). Kill them first and the leader is weaker for the fight; a guard's death in
-    front of the leader sets off a reaction (shaken and quicker to break, enraged for a while, or vowing to
-    come for V afterwards).
-16. **Bagmen.** Now and then on a gang's turf, a named bagman walks the week's take past V with a lookout,
-    spawned out of sight and walking a route that comes near V. Rob or drop them and the eddies go to V's
-    inventory (never into the body: crash rule 6); the gang and the lieutenant whose money it was take the
-    loss (turf strength, standing). Uses Cyberbane's spawner and its out-of-sight placement.
-17. **More ways to arrive.** Rivals and crews already come on foot and by car. Add: two bikes for the Tyger
-    Claws, a marksman of theirs on high ground covering the Rival's approach, and the call-out (the Rival
-    texts a place, turns up there a minute or two later and waits). Each is a new arrival style in
-    `Spawn/Arrival.reds`.
-18. **Surrender.** A beaten ganger sometimes gives up instead of running: they stop fighting (attitude
-    neutral, their threats cleared, one hold-position order, the game's own fear animation), hands empty.
-    V answers: walk away or holster and they go; squeeze them (item 7) and they talk; shoot them and the
-    street hears that V killed someone with their hands up (Conduct, fear, witnesses). Stay Dead gets the pose
-    from its own animation archive, which Cyberbane will not ship, so ours is script-only and plainer. Larger
-    and less certain: it depends on how a ganger's AI takes the hold order mid-fight.
-19. **"Nobody kills V but me".** When V is outnumbered by somebody else's people, a Rival with a claim on V
-    may roll in with their crew and fight on V's side, then walk off with a promise of "tomorrow", and keep it.
-    Cyberbane already sets its people against V's companions (`CBCompanionHostilityTick`), the same kind of
-    attitude work. Larger: a truce that ends if V shoots them.
-20. **Gang events with a time and a place.** A lieutenant executes a prisoner at a marked spot at a set hour,
-    or a gang's leaders hold a sit-down. V hears of it (a text, a pin) and can stop it, crash it, or let it
-    happen, with turf and standing following. Built on the lair pins and spawns. The largest item here.
+65. **Run with a crew.** With a gang Friendly or better, **[Watch my back]** on one of its people: one to three of
+    them follow V for a while (one follow order each) and fight whoever fights V, set the way companions are set
+    against Cyberbane's crews. They go home after an hour, if V leaves their turf for long, or if V shoots one.
+    Once a day. **M to L** *(San Andreas's recruits; Gangs of Night City's allies)*
+66. **One of theirs.** At Allied, a gang offers to make V one of its own. Accept and its people greet V by name,
+    V counts as wearing its colours everywhere, its enemies treat V as one of them, and favours become duties: a
+    weekly ask, and standing falls if V ignores too many. Leave whenever V likes, at a cost. **M**
+67. **Ransom.** Hold a ganger who surrendered: **[Ransom]** texts their gang, which pays or sends a crew to take
+    them back. Or let them go, or hand them to a gang at war with theirs for its standing. **M** *(Mount &
+    Blade)*
+68. **Bribe a lookout.** Pay a gang's lookout to look the other way: V's presence on their turf goes unreported
+    for an hour. **S**
+69. **Feed the street a lie.** **[Spread the word]** to a talkative passer-by or a frightened ganger: "I'm headed
+    to Pacifica", "Tell them I'm dead". A Cool check against how well the gang knows V. Success sends the next
+    scout or crew to the wrong place, or cools the gang for a while; failure, or a liar's temper, sells V out and
+    they come sooner. **M** *(Crusader Kings' schemes)*
+70. **Set gangs on each other.** Tell a ganger their enemies are planning a hit on them. Success raises the chance
+    of a front-line clash (item 30) between those gangs, and a little turf moves. **M**
+71. **Pick a fight.** **[Provoke]**: insult a ganger into a fistfight with V alone, with no crew answering an
+    unarmed brawl. The other side of the wannabes. **S**
+
+## 8. Who V is
+
+72. **A head start from the lifepath.** A Street Kid starts known and liked on Watson's and Heywood's streets, a
+    Nomad by the Aldecaldos (and distrusted by the city gangs), a Corpo by corporate security (and sneered at by
+    the street). Seeds a new playthrough's first numbers, from the lifepath talk already reads. **S**
+73. **V's car is known.** Gangs learn the car V drives most. Driving it on their turf gives V away even masked
+    ("That's the merc's Quadra!"); a different car hides V for a while. From the mounted vehicle's record. **S to
+    M**
+74. **A signature weapon.** The weapon V kills with most becomes known: rumours name it, and drawing it while
+    masked gives V away. **S**
+75. **A new face.** After V changes appearance at a mirror, recognition falls for a while: the street doesn't
+    know the new face yet. **S to M, verify** (whether a script can tell)
+76. **Humanity.** With Wannabe Edgerunner installed, read through its API: low humanity frightens crowds and
+    warms Maelstrom, V's episodes become rumours ("the merc's going psycho"), and killing somebody who surrendered
+    costs humanity. **S to M**
+77. **Nerve.** With Dark Future installed: a facedown, open season or being badly outnumbered drains V's Nerve,
+    and a win restores some. **S**
+78. **Enforcers see through disguises.** Lieutenants, Rivals and apex fighters see through a disguise in their own
+    colours after a few seconds of looking, with a short warning line first. **S** *(Hitman's enforcers; New
+    Vegas's officers)*
+
+## 9. How it is told
+
+79. **Voices for the moments.** People speak at Cyberbane's moments in their own voices, using the game's own
+    voiceset lines: a taunt as the announcement starts, a scream when they break, a plea when they surrender, a
+    greeting from a friendly gang. Played with `GameObject.PlayVoiceOver`; the context `Scripts:CBStreetTalk` is
+    already reserved in Cyberbane's wrap of it. No new audio. **S to M, verify** (the line names on both patches)
+80. **Panic in the dark.** When V picks off a crew one by one unseen, the rest grow afraid: lines in the subtitles
+    ("Where'd he go?!", "Kenji's not answering"), they bunch up, their nerve falls faster, and one may run.
+    Morale and the subtitles. **S to M** *(Batman: Arkham's predator rooms)*
+81. **The screamsheet.** A Hub page of headlines in Night City's tabloid voice, written from the History: "MERC
+    GUTS CLAW BOSS IN KABUKI", "6TH STREET LOSES ARROYO", a few a day. Data UI only. **S to M** *(Cyberpunk's
+    screamsheets; Dwarf Fortress's legends)*
+82. **The legend, told.** A button on the History page that tells V's story in a few paragraphs, from the biggest
+    entries, the way the street would tell it. **S**
+83. **Morning brief.** At dawn each in-game day, one broker text: what happened overnight, who is hunting V, what
+    is coming. **S**
+84. **A Rival's story on their page.** Their history with V as a timeline: how they were born, each scar, each
+    meeting, the texts, where they were last seen. **S**
+85. **The map remembers.** For a day, the Turf map pins where things happened: a Rival's death, a crashed
+    sit-down, a takeover. **S**
+86. **The inbox survives a load.** The last few messages of each thread, kept in a save system of their own, so
+    the phone isn't empty after loading (`UI/PhoneMessages.reds` keeps them session-only today because of the
+    save rule, which a separate system gets round). **S to M**
+
+## 10. Rewards, settings and other mods
+
+87. **Street Cred follows the legend.** The biggest deeds (a Rival's death, a sit-down crashed, open season
+    survived) give a little of the game's own Street Cred, so its vendors and gigs follow. **S, verify** (the
+    experience call)
+88. **Corporate interest.** At legendary standing, a corporation takes notice: a Cyberbane contact (never a story
+    character) offers a contract against a gang or warns V off. **S to M**
+89. **Harder means harder fights.** On Hard and Very Hard, smaller crews, longer spawn distances, shorter hunter
+    sight and longer warnings, so harder means harder fights rather than instant deaths. **S** *(old backlog 18)*
+90. **Presets with a shape.** Presets that change what the mod is about, not only how much: **Nemesis** (Rivals
+    first), **Turf war** (gangs and districts first), **Quiet life** (the street and talk, nobody hunting).
+    **S**
+91. **Events other mods can hear.** Codeware custom events ("Cyberbane/RivalSlain", "Cyberbane/StandingChanged",
+    "Cyberbane/HuntStarted") alongside `API/CyberbaneAPI.reds`, so other mods react without calling in. **S**
+92. **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
+    while it has a gang war going near V. **S**
+
+---
+
+## Beyond the current rules
+
+Each needs a dependency or a rule lifted, and is listed so the choice can be made knowingly.
+
+- **Voiced lines of Cyberbane's own** (Audioware): Rival taunts, announcements, catchphrases spoken aloud. Never
+  a cloned voice of one of the game's actors. Needs audio files. **L**
+- **Rivals who look like themselves** (TweakXL and ArchiveXL): a Rival's own appearance, and a named trophy
+  weapon of their own. Breaks the no-records rule. **L**
+- **Real journal messages and phone calls** (ArchiveXL journal and quest phases). Fixed text only, which is why
+  `UI/PhoneMessages.reds` draws its own threads. **L**
+- **Marks on the world**: gang tags on turf that changed hands, a memorial where a Rival fell (ArchiveXL props).
+  **L**
+- **Roadblocks.** The game's are spawned and tracked by the prevention system (crash rule 1).
+- **A hideout of V's own crew**, with props and scenes. **L**
+- **Joining a gang through a scene**, the way Gangs of Night City does it with a braindance. **L**
+
+## Considered and refused
+
+So they are not suggested again:
+
+- **Real characters speaking for Cyberbane.** A story fixer texting "the Animals have sent a crew" reads as a
+  real lead.
+- **The police**: heat, NCPD bounties, roadblocks, turning people in.
+- **Timed choices, a voiced V, dedicated choice keys** (see PLAYER_REQUESTS.md, "Not built, and why").
+- **Loot put on bodies; changing how anybody looks at runtime.**
+
+---
+
+## Sources
+
+Other games:
+
+- Shadow of Mordor and Shadow of War: [power struggles](https://gamerguides.com/shadow-of-mordor/guide/side-quests/power-struggles),
+  [domination, betrayal and death threats](https://www.rpgsite.net/feature/6192-shadow-of-war-domination-guide-the-nemesis-system-betrayal-death-threats-resurrection-and-more-orc-dominating-mechanics-explained),
+  [the Nemesis system and orders](https://www.gamepressure.com/middle-earth-shadow-of-war/nemesis-system-and-orders/z8a32b)
+- Assassin's Creed Odyssey: [the mercenary system](https://www.pushsquare.com/news/2018/10/guide_assassins_creed_odyssey_mercenaries_-_how_to_beat_them_bounties_tiers_and_rewards),
+  [a wanted system enforced by named mercenaries](https://gamesradar.com/assassins-creed-odysseys-wanted-system-is-enforced-by-mordor-style-mercenary-characters)
+- Metal Gear Solid V: [the revenge system](https://metalgear.fandom.com/wiki/Revenge_System_(enemy_preparedness))
+- Ghost of Tsushima: [standoffs](https://primagames.com/tips/how-master-standoffs-ghost-tsushima),
+  [the legend system](https://samurai-gamers.com/ghost-of-tsushima/legend-level-guide/)
+- Fallout: New Vegas: [reputations and disguises](https://fallout-archive.fandom.com/wiki/Fallout:_New_Vegas_reputations)
+- Red Dead Redemption 2: [honor](https://reddead.fandom.com/wiki/Honor)
+- Mafia III: [rackets and underbosses](https://kotaku.com/mafia-iii-promises-an-open-world-that-you-can-actually-1782839184)
+- Crusader Kings III: [schemes, secrets and hooks](https://forum.paradoxplaza.com/forum/threads/ck3-dev-diary-5-schemes-secrets-and-hooks.1289167)
+- Watch Dogs: Legion: [the play-as-anyone simulation](https://gamedeveloper.com/design/how-watch-dogs-legion-s-play-as-anyone-simulation-works),
+  [relationships and revenge](https://www.videogameschronicle.com/reviews/watch-dogs-legion/)
+- Sleeping Dogs: [Face and Triad reputation](https://en.wikipedia.org/wiki/Sleeping_Dogs_(video_game))
+- Grand Theft Auto: San Andreas: [gangs and turf wars](https://gtabase.com/gta-san-andreas/gangs),
+  [recruiting](https://www.grandtheftwiki.com/Recruiting)
+- Far Cry 5: [resistance and escalation](https://en.wikipedia.org/wiki/Far_Cry_5)
+- RimWorld: [AI storytellers](https://rimworldwiki.com/wiki/AI_Storytellers)
+- Batman: Arkham Asylum: [enemy design](https://store.epicgames.com/news/the-verbs-and-villains-that-shape-rocksteady-s-batman-arkham-asylum)
+- Kingdom Come: Deliverance: [reputation](https://kingdomcomedeliverance.wiki.gg/wiki/Reputation),
+  [cleanliness](https://kingdomcomedeliverance.wiki.gg/wiki/Cleanliness)
+
+Cyberpunk:
+
+- Cyberpunk RED: [reputation and facedowns](https://www.worldanvil.com/w/cyberpunk-konigskind/a/reputation-article),
+  [gangs and combat](https://rtalsoriangames.com/2020/10/29/cyberpunk-red-alert-gangs-and-combat)
+- The gangs' lore: [Cyberpunk 2077 gangs explained](https://www.gamesradar.com/cyberpunk-2077-gangs-explained)
+- The gang critique: [issues, shortcomings and ideas](https://www.gamepressure.com/newsroom/cyberpunk-2077-issues-shortcomings-and-ideas-how-to-salvage-the-g/zc2a18)
+- Update 2.3: [autodrive and Delamain taxis](https://www.cyberpunk.net/update-2.3)
+
+Other Cyberpunk 2077 mods:
+
+- [They Will Remember](https://nexusmods.com/cyberpunk2077/mods/19747)
+- [Ambient Factions of Night City](https://www.notebookcheck.net/A-new-mod-adds-gangs-turf-wars-and-clashes-with-the-police-in-Cyberpunk-2077.1164109.0.html)
+- [Gangs of Night City](https://nexusmods.com/cyberpunk2077/mods/7233)
+- [Wannabe Edgerunner](https://pcgamer.com/cyberpunk-2077-mod-turns-you-into-a-real-edgerunners-cyberpsycho)
+- [Dark Future](https://www.nexusmods.com/cyberpunk2077/mods/16300)
+- [Immersive NPCs](https://www.pcgameshardware.de/Cyberpunk-2077-Spiel-20697/News/Mod-Immersive-NPCs-Begleiter-rekrutieren-1558568/)
+- Tools: [Audioware](https://wiki.redmodding.org/cyberpunk-2077-modding/modding-guides/sound/custom-sounds-and-custom-emitters-with-audioware),
+  [Codeware](https://github.com/psiberx/cp2077-codeware/releases)
