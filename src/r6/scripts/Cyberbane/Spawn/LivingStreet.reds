@@ -602,7 +602,9 @@ public class CBStreetLife {
       }
       return;
     }
-    if busy || !CBStreetLifeOn(n"claimHelp") || !player.IsInCombat() || now % 3 != 0 || CBGameDay(game) == this.m_allyDay {
+    // Not while V has a borrowed crew along (Reactions/Allies.reds, 2.4.5): both are CB_Ally, and this one's clean-up is by tag.
+    if busy || !CBStreetLifeOn(n"claimHelp") || !player.IsInCombat() || now % 3 != 0 || CBGameDay(game) == this.m_allyDay
+       || CBLiveTaggedPresent(game, n"CB_Follower") {
       return;
     }
     // Outnumbered by one gang?

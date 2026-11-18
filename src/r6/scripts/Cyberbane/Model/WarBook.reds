@@ -58,6 +58,27 @@ public class CBWarBook extends ScriptableSystem {
   public let lastClashA: CName;            // the last one, for the Hub's web of gangs ([H1])
   public let lastClashB: CName;
   public let lastClashAt: Float;
+  // Session only: talk and allies (Reactions/Allies.reds, 2.4.5).
+  public let crewIds: array<EntityID>;
+  public let crewGang: CName;
+  public let crewUntil: Float;
+  public let crewAway: Int32;
+  public let crewLeaving: Bool;
+  public let crewDay: Int32;               // the game day + 1 a crew was lent; 0 never
+  public let joinOffer: CName;             // a gang that has offered to make V one of theirs
+  public let ransomNpc: wref<ScriptedPuppet>;
+  public let ransomGang: CName;
+  public let ransomAmount: Int32;
+  public let ransomTick: Int32;
+  public let lieGang: CName;
+  public let lieUntil: Float;
+  public let parleyOpen: Bool;
+  public let parleyBody: EntityID;
+  public let parleyGang: CName;
+  public let parleyTick: Int32;
+  public let parleyDoneTick: Int32;
+  public let parleyCrew: array<EntityID>;
+  public let greetTick: Int32;
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.m_trimmed = false;
@@ -69,7 +90,16 @@ public class CBWarBook extends ScriptableSystem {
     ArrayClear(this.fightWas);
     this.fightTick = 0;
     this.clashPairTick = 0;
+    ArrayClear(this.crewIds);
+    this.crewLeaving = false;
+    this.ransomNpc = null;
+    this.parleyOpen = false;
+    ArrayClear(this.parleyCrew);
   }
+
+  // "One of theirs" (Reactions/Allies.reds, [66]): the one save field laid out for it in 2.4.0.
+  public func OneOfTheirs() -> CName { return this.m_oneOfTheirs; }
+  public func SetOneOfTheirs(gang: CName) -> Void { this.m_oneOfTheirs = gang; }
 
   // One of the two sides of a clash, seen by the Director: kept, the oldest dropped past a handful.
   public func KeepClashCandidate(sideA: Bool, id: EntityID) -> Void {

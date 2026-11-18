@@ -3,6 +3,31 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.4.5 (18 November 2026)
+
+**Talk and allies**
+- **Run with a crew.** Ask one of a friendly gang's people to watch your back: two of them, or three if they're Allied,
+  come and follow you the way the game's own companions do, and fight whoever fights you. They go home after an in-game
+  hour, when you leave their turf for long, drive off, go to a job, or shoot one of them. Once a day.
+- **One of theirs.** A gang that is Allied with you may offer to make you one of its own. Say yes and you count as
+  wearing their colours everywhere, their enemies know you as one of them, their people greet you in the street, and
+  once a week they ask a favour that costs you standing if you ignore it. You can leave whenever you like, at a cost.
+- **Ransom.** Talk to a ganger who has given up and hold them for their gang's money: they pay, or they come to take
+  them back by force. Or hand them to a gang at war with theirs.
+- **Feed the street a lie.** Tell a talkative passer-by or a frightened ganger you've left town, and whoever is after
+  you goes looking in the wrong place and cools off. A bad liar, or a listener who lies for a living, sells you out.
+- **Informants with a life.** The Hub's Rivals page lists who owes you and how many tips they have left. An informant
+  whose gang finds out texts you, and their own people hunt them through the street that night; stand in the way and
+  they owe you more.
+- **The sergeant's parley.** A crew's sergeant who reaches you before anybody has fired stops to talk: pay them to
+  say they never found you, scare them off, or draw.
+
+**Mod Settings**
+- Under **Gangs**: **Run with a crew** and **One of theirs**. Under **Street talk**: **Ransom** and **Feed the street a
+  lie**. All on.
+
+Your progress carries over.
+
 ## 2.4.4 (18 November 2026)
 
 **Rivals with a story**

@@ -1202,6 +1202,11 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBSetUpStreet(sys, game, puppet, false);
     return;
   }
+  // One of a friendly gang's people riding with V (Reactions/Allies.reds, 2.4.5): the game's own follower role.
+  if des.IsTagged(id, n"CB_Follower") {
+    CBSetUpFollower(sys, game, puppet);
+    return;
+  }
   if des.IsTagged(id, n"CB_Ally") {
     CBSetUpAlly(sys, game, puppet);
     return;

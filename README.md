@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.4.4.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.4.5.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -79,6 +79,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   it up. The corporations hire killers now instead of sending crews.
 - **Gangs fight gangs.** Rival gangers clash on contested streets, and the Hub's Gangs page can show every gang as
   a web of who is at war with whom, and how each one sees you.
+- **Friends on the street.** Borrow a friendly gang's people to watch your back, become one of a gang, ransom the
+  ones who give up, feed the street lies, and talk a crew's sergeant down before the shooting starts.
 - **Rivals with a story.** A facedown before the shooting starts, humiliation, Rivals back from the dead, Rivals at
   war with each other and bound to each other, trophies, chrome that answers how you hurt them, last words, and each
   gang's Rivals drawn as a tree on the Hub.

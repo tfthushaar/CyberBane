@@ -1217,6 +1217,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBHuntGrowsTick(this, game);        // trackers and open season (2.4.2)
     CBBountyTick(this, game);           // the price on V's head and the hunters' ladder (2.4.3)
     CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts (2.4.4)
+    CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     if !heavyStreaming {
       CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
     }
@@ -3448,6 +3449,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBBountyRoll(this, game, elapsedDays);       // somebody may put a price on V's head (2.4.3)
     CBCorpInterestRoll(this, game, elapsedDays); // and a Legend gets a corporation's attention
     CBRivalLivesDaily(this, game, elapsedDays);  // bonds, feuds, returns, letters, chrome (2.4.4)
+    CBAlliesDaily(this, game, elapsedDays);      // one of theirs: the offer and the week's duty (2.4.5)
+    CBInformantsDaily(this, game, elapsedDays);  // an informant's gang may find out (2.4.5)
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
@@ -4303,10 +4306,19 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_disguiseFaction = faction;
     this.m_disguiseStrength = strength;
   }
+  // One of theirs (Reactions/Allies.reds, [66], 2.4.5) counts as wearing their colours everywhere, as well as the
+  // colours V wears would; whichever is the stronger.
   public func GetDisguiseFaction() -> CName {
+    let mine = CBOneOfTheirsGang(this.GetGameInstance());
+    if NotEquals(mine, n"") && this.m_disguiseStrength < CBConfig.OneOfTheirsColours() {
+      return mine;
+    }
     return this.m_disguiseFaction;
   }
   public func GetDisguiseStrength() -> Float {
+    if NotEquals(CBOneOfTheirsGang(this.GetGameInstance()), n"") {
+      return MaxF(this.m_disguiseStrength, CBConfig.OneOfTheirsColours());
+    }
     return this.m_disguiseStrength;
   }
 

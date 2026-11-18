@@ -244,6 +244,7 @@ public class CBReactionDirector {
           // One of two gangs at war here, kept for a street clash (Spawn/Clashes.reds, 2.4.3). Their own fields only.
           if !npc.IsCrowd() && NotEquals(faction, n"") {
             CBClashNote(sys, npc, faction);
+            CBOneOfTheirsGreet(sys, game, faction, dist, tick);   // V is one of theirs (2.4.5)
           }
 
           // Recognition, rolled once per spawn and cached on the puppet (spec §8.7).
@@ -683,6 +684,10 @@ public func CBRecognizes(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, n
   // always has.
   if (CBGangViewHunts(faction) || CBOpenSeasonFor(sys.GetGameInstance(), faction)) && !CBPlayerMasked(sys.GetGameInstance())
      && !(Equals(faction, sys.GetDisguiseFaction()) && sys.GetDisguiseStrength() >= 0.5) {
+    return true;
+  }
+  // One of theirs (Reactions/Allies.reds, [66], 2.4.5): the gang's enemies know V for one of them.
+  if CBKnownAsOneOfTheirEnemies(sys, faction) {
     return true;
   }
   // The car they know V by, or the gun (Model/StreetBook.reds, 2.3.1): a gang's people place V by it whatever

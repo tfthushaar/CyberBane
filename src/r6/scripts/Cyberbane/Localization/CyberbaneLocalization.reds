@@ -79,6 +79,14 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-Gangs", "Gangs");
     this.Text("Cyberbane-Settings-Category-Rivals", "Rivals");
     this.Text("Cyberbane-Settings-Category-RivalsYou", "Rivals and you");
+    this.Text("Cyberbane-Settings-RunWithCrew", "Run with a crew");
+    this.Text("Cyberbane-Settings-RunWithCrew-Desc", "With a gang Friendly to you or better, ask one of its people to watch your back: two of them (three if they are Allied) come and follow you, the way the game's own companions do, and fight whoever fights you. They go home after an in-game hour, when you leave their turf for long, drive off, go to a job, or shoot one of them. Once a day. Off, and nobody comes with you.");
+    this.Text("Cyberbane-Settings-OneOfTheirs", "One of theirs");
+    this.Text("Cyberbane-Settings-OneOfTheirs-Desc", "A gang that is Allied with you may offer to make you one of its own. Say yes to any of its people and you count as wearing their colours everywhere, their enemies know you as one of them, their people greet you, and once a week they ask a favour that costs standing if you ignore it. You can leave whenever you like, at a cost. Off, and nobody makes the offer.");
+    this.Text("Cyberbane-Settings-Ransom", "Ransom");
+    this.Text("Cyberbane-Settings-Ransom-Desc", "Talk to a ganger who has given up: hold them for their gang's money, which they pay or come to take back by force, or hand them to a gang at war with theirs. Needs Surrender on. Off, and you can only let them go.");
+    this.Text("Cyberbane-Settings-TalkLies", "Feed the street a lie");
+    this.Text("Cyberbane-Settings-TalkLies-Desc", "Tell a talkative passer-by or a frightened ganger that you have left town, and whoever is after you starts looking in the wrong place and cools off for a while. A bad liar, or a listener who lies for a living, sells you out instead. Off, and the line is not offered.");
     this.Text("Cyberbane-Settings-RivalChrome", "Rivals get chrome");
     this.Text("Cyberbane-Settings-RivalChrome-Desc", "Every time a Rival climbs (a rank, an escape, being spared, putting you down) they can come back with an implant that answers how you hurt them: shot, subdermal armour; cut, dermal plating; hacked, a firewall; outrun, reinforced tendons. Stats and the game's own abilities only; it shows on their page and in the scanner. Off, and Rivals only have their traits.");
     this.Text("Cyberbane-Settings-Facedown", "The facedown");

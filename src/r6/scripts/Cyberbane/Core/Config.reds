@@ -593,6 +593,47 @@ public abstract class CBConfig {
   public static func GuardBeatTicks() -> Int32 = 20
   public static func GuardBeatMin() -> Float = 4.0
   public static func GuardBeatMax() -> Float = 10.0
+  // Talk and allies (Reactions/Allies.reds, 2.4.5). A borrowed crew: two (three at Allied), placed 22 m off, for a game
+  // hour; home when V is 90 m off, off their turf for two minutes, at a job, or shoots one (6 standing). One of theirs:
+  // 20% a day an Allied gang offers; leaving costs 25 standing; a duty every 7 days, five of an enemy, 6 standing
+  // either way. Ransom: 1500eb at level one, answered in 20 seconds, paid 60% of the time (less for a gang that never
+  // forgives a shot prisoner). Handing one over: 8 with the buyer, 6 off their gang. A lie: 35%, up to 35 more for Cool,
+  // up to 30 less the better the gang knows V; holds 8 game hours. An informant found out: 6% a day; saved, two more
+  // tips. The sergeant's parley: within 18 m, five minutes apart; scaring them 20%, up to 40 for fear and 25 for Cool.
+  // Greetings within 8 m, a minute and a half apart.
+  public static func CrewFriendly() -> Int32 = 2
+  public static func CrewAllied() -> Int32 = 3
+  public static func CrewSpawnDistance() -> Float = 22.0
+  public static func CrewHours() -> Float = 1.0
+  public static func CrewLeaveDistance() -> Float = 90.0
+  public static func CrewAwayTicks() -> Int32 = 120
+  public static func CrewShotStanding() -> Float = 6.0
+  public static func JoinOfferChancePerDay() -> Float = 0.2
+  public static func LeaveGangStanding() -> Float = 25.0
+  public static func DutyDays() -> Float = 7.0
+  public static func DutyKills() -> Int32 = 5
+  public static func DutyStanding() -> Float = 6.0
+  public static func RansomBase() -> Float = 1500.0
+  public static func RansomTicks() -> Int32 = 20
+  public static func RansomPayChance() -> Float = 0.6
+  public static func HandOverWarm() -> Float = 8.0
+  public static func HandOverSlight() -> Float = 6.0
+  public static func LieBase() -> Float = 0.35
+  public static func LieCool() -> Float = 0.35
+  public static func LieKnown() -> Float = 0.3
+  public static func LieHours() -> Float = 8.0
+  public static func InformantFoundChancePerDay() -> Float = 0.06
+  public static func InformantSavedTips() -> Int32 = 2
+  public static func SergeantParleyRange() -> Float = 18.0
+  public static func ParleyGapTicks() -> Int32 = 300
+  public static func ParleyScareBase() -> Float = 0.2
+  public static func ParleyScareFear() -> Float = 0.4
+  public static func ParleyScareCool() -> Float = 0.25
+  public static func GreetDistance() -> Float = 8.0
+  public static func GreetTicks() -> Int32 = 90
+  // One of theirs counts as wearing their colours at 0.8 (a good disguise); a lie sends the hunt's tip 4 times as far.
+  public static func OneOfTheirsColours() -> Float = 0.8
+  public static func LieTipMult() -> Float = 4.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

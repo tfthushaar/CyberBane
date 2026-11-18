@@ -622,6 +622,20 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RunWithCrew")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RunWithCrew-Desc")
+  public let runWithCrew: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-OneOfTheirs")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-OneOfTheirs-Desc")
+  public let oneOfTheirs: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "7")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Surrender")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Surrender-Desc")
   // A new name (2.3.2) so the new default, on, reaches everybody: Mod Settings keeps values by field name, and the
@@ -959,6 +973,22 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkPhoneDeals")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkPhoneDeals-Desc")
   public let talkPhoneDeals: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "11")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Ransom")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Ransom-Desc")
+  @runtimeProperty("ModSettings.dependency", "streetTalk")
+  public let ransom: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "11")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkLies")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkLies-Desc")
+  @runtimeProperty("ModSettings.dependency", "streetTalk")
+  public let talkLies: Bool = true;
 
 
   // ---- A living street ---------------------------------------------------------------------------

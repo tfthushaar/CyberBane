@@ -100,6 +100,14 @@ public class CBIntelBook extends ScriptableSystem {
     this.m_infNextAt[i] = nextAt;
   }
 
+  // Saved from their own gang: they have more to tell (Reactions/Allies.reds, [U12], 2.4.5).
+  public func GiveTips(i: Int32, n: Int32) -> Void {
+    if i < 0 || i >= this.InformantCount() {
+      return;
+    }
+    this.m_infTips[i] += n;
+  }
+
   public func RemoveInformant(i: Int32) -> Void {
     this.AlignInformants();
     if i < 0 || i >= this.InformantCount() {

@@ -43,6 +43,10 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
   let rough = CBHuntTipNear(p);
   let near = Equals(faction, CBTrackerGang(game)) ? CBConfig.TrackedTipMult() : CBHauntTipMult(sys, game);
   let tip = new Vector4(p.X + (rough.X - p.X) * near, p.Y + (rough.Y - p.Y) * near, rough.Z, 1.0);
+  // A lie V had the street carry (Reactions/Allies.reds, [69], 2.4.5): they start looking somewhere else entirely.
+  if CBTakeLie(game, faction) {
+    tip = new Vector4(p.X + (rough.X - p.X) * CBConfig.LieTipMult(), p.Y + (rough.Y - p.Y) * CBConfig.LieTipMult(), rough.Z, 1.0);
+  }
   // A hunt already under way keeps what it knows; a new one starts from the tip.
   if sys.GetHuntState() == CBHuntNone() || !CBHuntersOut(sys, game) {
     sys.SetHuntState(CBHuntSearching());

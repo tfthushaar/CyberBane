@@ -323,6 +323,7 @@ public class CBTalkTarget {
   public let atWork: Bool;       // at a workspot: never a move order, the game walks them off (1.9.5)
   public let rivalId: Int32;     // a Rival V has put down, talked to where they lie (1.9.9); 0 otherwise
   public let facedown: Bool;     // ...or one standing in front of V at a facedown (Rivals/RivalMoments.reds, 2.4.4)
+  public let parley: Bool;       // a crew's sergeant stopped to talk (Reactions/Allies.reds, 2.4.5)
 }
 
 // What they say back.
@@ -1109,6 +1110,12 @@ public class CBStreetTalk {
     if CBTalkActIsFacedown(choice) {
       return CBRivalFacedownAnswer(sys, game, player, t, choice);
     }
+    if CBTalkActIsAlly(choice) {
+      return CBAllyTalkAnswer(sys, game, player, t, choice);
+    }
+    if CBTalkActIsParley(choice) {
+      return CBParleyAnswer(sys, game, player, t, choice);
+    }
     if choice == CBTalkActBack() || choice == CBTalkActIncite() || choice == CBTalkActProtection() || choice == CBTalkActTerms() {
       return CBWarTalkAnswer(sys, game, player, t, choice);
     }
@@ -1759,6 +1766,10 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   if npc.cbFacedownOpen {
     return "";
   }
+  // Somebody with their hands up can be talked to, ours or not (a ransom, 2.4.5).
+  if npc.cbSurrendered {
+    return "";
+  }
   let desT = GameInstance.GetDynamicEntitySystem();
   // A scout who has not called it in yet can be talked to (Spawn/Hunted.reds, [68]).
   if CBSentAfterV(desT, npc) && !CBIsScoutBody(sys, npc) {
@@ -1916,6 +1927,13 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
   }
   if StrLen(t.speaker) == 0 {
     t.speaker = gang ? "Ganger" : "Passer-by";
+  }
+  // A crew's sergeant stopped to talk (Reactions/Allies.reds, [U2], 2.4.5).
+  if npc.cbFacedownOpen && npc.cbSergeant {
+    t.parley = true;
+    t.mood = CBTalkHostile();
+    t.speaker = "Crew sergeant";
+    return t;
   }
   // A Rival at a facedown: who they are, and not afraid of anything yet (Rivals/RivalMoments.reds, 2.4.4).
   if npc.cbFacedownOpen {
@@ -2180,6 +2198,9 @@ public func CBTalkTitle(t: ref<CBTalkTarget>) -> String {
 // what it does and how it is shown (1.9.6): an icon, dimmed once said to this person, the Rival question
 // highlighted. After the first exchange the list comes back with a way to leave it there.
 public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, followUp: Bool) -> array<ref<CBTalkLine>> {
+  if t.parley {
+    return CBParleyLines(sys, game, t);
+  }
   if t.rivalId > 0 {
     return t.facedown ? CBRivalFacedownLines(sys, game, t) : CBRivalMercyLines(sys, game, t);
   }
@@ -2244,6 +2265,10 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   // The war (Economy/War.reds, 2.4.0): backing a gang, a lie, protection money, terms.
   for wl in CBWarTalkLines(sys, game, t) {
     ArrayPush(out, wl);
+  }
+  // Allies, ransom and the lie (Reactions/Allies.reds, 2.4.5).
+  for al in CBAllyTalkLines(sys, game, t) {
+    ArrayPush(out, al);
   }
   // A funeral's mourners (Spawn/StreetEvents.reds, 2.3.3).
   for el in CBEventTalkLines(game, t) {

@@ -4598,6 +4598,11 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
   if NotEquals(held, "") {
     out += held + "\n";
   }
+  // Who owes V (Reactions/Allies.reds, [U12], 2.4.5).
+  let owed = CBInformantsLine(sys, game);
+  if StrLen(owed) > 0 {
+    out += owed + "\n";
+  }
   out += s"\(count) of a possible \(cap) are still looking for you. They come back a rank higher each time one escapes.";
   if count >= cap {
     out += "\nNobody new can take against you until you clear some, so the ones you have come faster.";
@@ -4944,6 +4949,21 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"CorpOffer") {
     return StrLen(gang) > 0 ? s"A corporation offered you \(RoundF(e.value))eb for the head of \(gang)." : "A corporation offered you a contract.";
   }
+  // 2.4.5: talk and allies.
+  if Equals(e.kind, n"CrewLent") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) sent people to watch your back." : "A gang sent people to watch your back."; }
+  if Equals(e.kind, n"OneOfTheirs") { return StrLen(gang) > 0 ? s"You became one of \(gang)." : "You joined a gang."; }
+  if Equals(e.kind, n"LeftGang") { return StrLen(gang) > 0 ? s"You stopped being one of \(gang)." : "You left a gang."; }
+  if Equals(e.kind, n"DutyAsked") { return StrLen(gang) > 0 ? s"Your gang asked you to hit \(gang)." : "Your gang asked a favour."; }
+  if Equals(e.kind, n"DutySettled") { return e.value > 0.5 ? "You came through for your gang." : "You let your gang down."; }
+  if Equals(e.kind, n"RansomPaid") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) paid \(RoundF(e.value))eb to get one of theirs back." : "A gang paid a ransom."; }
+  if Equals(e.kind, n"RansomRefused") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) refused your ransom and came for their own." : "A gang refused your ransom."; }
+  if Equals(e.kind, n"HandedOver") { return StrLen(gang) > 0 ? s"You handed a prisoner to \(gang)." : "You handed over a prisoner."; }
+  if Equals(e.kind, n"LieSpread") { return StrLen(gang) > 0 ? s"You fed \(gang) a lie through the street." : "You fed the street a lie."; }
+  if Equals(e.kind, n"LieSold") { return StrLen(gang) > 0 ? s"Somebody sold your lie out to \(gang)." : "Somebody sold you out."; }
+  if Equals(e.kind, n"InformantSaved") { return "You saved an informant from their own gang."; }
+  if Equals(e.kind, n"InformantLost") { return "An informant of yours was run down by their own gang."; }
+  if Equals(e.kind, n"ParleyPaid") { return StrLen(gang) > 0 ? s"You paid a crew of \(gang) to say they never found you." : "You paid off a crew."; }
+  if Equals(e.kind, n"ParleyScared") { return StrLen(gang) > 0 ? s"You talked a crew of \(gang) into walking away." : "You talked a crew down."; }
   // 2.4.4: the Rivals' moments.
   if Equals(e.kind, n"StaredDown") || Equals(e.kind, n"FacedownWalked") || Equals(e.kind, n"DuelWon")
      || Equals(e.kind, n"CalledEven") || Equals(e.kind, n"Humiliated") || Equals(e.kind, n"Trophy")

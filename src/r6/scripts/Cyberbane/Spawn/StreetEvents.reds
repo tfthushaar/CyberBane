@@ -79,6 +79,8 @@ public func CBEventKindOn(kind: CName) -> Bool {
 }
 
 public class CBStreetEvent {
+  public let informant: Bool;            // the one hunted is V's informant (2.4.5, [U12])
+  public let informantRival: Int32;
   public let kind: CName;
   public let a: CName;
   public let b: CName;
@@ -126,6 +128,9 @@ public class CBEventEngine {
   private let m_next: Int32;           // everything else's
   // A gang owed a funeral (a Rival or a boss of theirs killed) or a celebration (a district taken), and from when.
   private let m_funeralFor: CName;
+  private let m_huntFor: CName;          // an informant's gang, owed a hunt for them (Reactions/Allies.reds, 2.4.5)
+  private let m_huntRival: Int32;
+  private let m_huntAt: Float;
   private let m_funeralAt: Float;
   private let m_partyFor: CName;
   private let m_partyAt: Float;
@@ -207,8 +212,21 @@ public class CBEventEngine {
     }
   }
 
+  public func OweInformantHunt(gang: CName, rivalId: Int32, now: Float) -> Void {
+    this.m_huntFor = gang;
+    this.m_huntRival = rivalId;
+    this.m_huntAt = now + CBConfig.SecondsPerHour();
+  }
+
   // What happens next: a debt first, then whatever the switches allow.
   private func Choose(sys: ref<CyberbaneSystem>, now: Float) -> CName {
+    // Owed no longer than a funeral is: a hunt that could never be placed must not stand in front of everything else.
+    if NotEquals(this.m_huntFor, n"") && now > this.m_huntAt + CBConfig.EventOwedDays() * CBConfig.SecondsPerDay() {
+      this.m_huntFor = n"";
+    }
+    if CBGangFightsOn() && NotEquals(this.m_huntFor, n"") && now >= this.m_huntAt {
+      return CBEvFugitive();
+    }
     if CBGatheringsOn() && NotEquals(this.m_funeralFor, n"") && now >= this.m_funeralAt {
       return CBEvFuneral();
     }
@@ -254,7 +272,13 @@ public class CBEventEngine {
     if Equals(a, n"") || !CBFactionFieldsSquads(a) || !CBFactionOn(a) {
       return false;
     }
-    if Equals(kind, CBEvSitDown()) || CBIsFightKind(kind) {
+    // An informant's own gang runs them down: one of theirs, the hunters theirs too (2.4.5, [U12]).
+    let informantHunt = Equals(kind, CBEvFugitive()) && NotEquals(this.m_huntFor, n"") && CBGameSeconds(game) >= this.m_huntAt;
+    if informantHunt {
+      a = this.m_huntFor;
+      b = this.m_huntFor;
+    }
+    if !informantHunt && (Equals(kind, CBEvSitDown()) || CBIsFightKind(kind)) {
       // The pair V set on each other, when the holder here is one of them.
       let war = CBWarBook.Get(game);
       if Equals(kind, CBEvFrontLine()) && IsDefined(war) && CBGameSeconds(game) < war.InciteUntil() {
@@ -289,6 +313,11 @@ public class CBEventEngine {
     ev.kind = kind;
     ev.a = a;
     ev.b = b;
+    if informantHunt {
+      ev.informant = true;
+      ev.informantRival = this.m_huntRival;
+      this.m_huntFor = n"";
+    }
     ev.at = spot;
     ev.district = district;
     if Equals(kind, CBEvSitDown()) {
@@ -945,6 +974,9 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
       CBBolsterGang(sys, game, ev.a, CBConfig.EventBolster());
       CBTalkFear(sys, game, ev.b, CBConfig.WordKeptFear());
       CBFileLog(sys, hunt ? n"FugitiveCaught" : n"Executed", now, where, ev.a, 0.0);
+      if ev.informant {
+        CBInformantHuntOver(sys, game, ev.a, ev.informantRival, false);
+      }
       CBEventSay(game, hunt ? s"\(CBCapFirst(a)) ran down the one they were after." : s"\(CBCapFirst(a)) executed one of \(b). Everybody saw.");
       return true;
     }
@@ -957,6 +989,9 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
         CBEventLoneThanks(game, ev);
       }
       CBFileLog(sys, hunt ? n"FugitiveSheltered" : n"PrisonerSaved", now, where, ev.b, 0.0);
+      if ev.informant {
+        CBInformantHuntOver(sys, game, ev.a, ev.informantRival, true);
+      }
       CBEventSay(game, hunt ? s"You stood between \(a) and the one they were hunting. \(CBCapFirst(b)) heard." : s"You stopped \(CBPossessive(a)) execution. \(CBCapFirst(b)) won't forget it.");
       return true;
     }

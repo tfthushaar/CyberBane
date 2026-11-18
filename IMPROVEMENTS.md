@@ -42,7 +42,7 @@ By impact for the effort, most first:
 5. *(Built in 2.4.3: a price on V's head, and the hunters' ladder.)*
 6. *(Built in 2.3.3: funerals and the rest of gang life's gatherings, deals and rackets.)*
 7. *(Built in 2.4.0: back a gang, the war chest, and the rest of the turf war.)*
-8. **Run with a crew** (65). The payoff for being liked.
+8. *(Built in 2.4.5: run with a crew, and the rest of talk and allies.)*
 9. **Panic in the dark** (80). Stealth play gets the terror loud play already has.
 
 ## 3. Gang life
@@ -66,22 +66,8 @@ the first member of the crew in 2.5.0.
     intel (as the Debtor does) and can be called by text once a day to come and fight beside V. **M**
 ## 7. Talk
 
-65. **Run with a crew.** With a gang Friendly or better, **[Watch my back]** on one of its people: one to three of
-    them follow V for a while (one follow order each) and fight whoever fights V, set the way companions are set
-    against Cyberbane's crews. They go home after an hour, if V leaves their turf for long, or if V shoots one.
-    Once a day. **M to L** *(San Andreas's recruits; Gangs of Night City's allies)*
-66. **One of theirs.** At Allied, a gang offers to make V one of its own. Accept and its people greet V by name,
-    V counts as wearing its colours everywhere, its enemies treat V as one of them, and favours become duties: a
-    weekly ask, and standing falls if V ignores too many. Leave whenever V likes, at a cost. **M**
-67. **Ransom.** Hold a ganger who surrendered: **[Ransom]** texts their gang, which pays or sends a crew to take
-    them back. Or let them go, or hand them to a gang at war with theirs for its standing. **M** *(Mount &
-    Blade)*
-68. **Bribe a lookout.** Pay a gang's lookout to look the other way: V's presence on their turf goes unreported
-    for an hour. **S**
-69. **Feed the street a lie.** **[Spread the word]** to a talkative passer-by or a frightened ganger: "I'm headed
-    to Pacifica", "Tell them I'm dead". A Cool check against how well the gang knows V. Success sends the next
-    scout or crew to the wrong place, or cools the gang for a while; failure, or a liar's temper, sells V out and
-    they come sooner. **M** *(Crusader Kings' schemes)*
+Built in 2.4.5 (`Reactions/Allies.reds`): every idea that was here.
+
 ## 8. Who V is
 
 76. **Humanity.** *(Not built in 2.3.1: Wannabe Edgerunner was not installed to probe its API, and the rule is to drop rather than guess.)* With Wannabe Edgerunner installed, read through its API: low humanity frightens crowds and
