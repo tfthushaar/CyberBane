@@ -33,7 +33,7 @@ rehearsal from the release before; none played yet):
 | 2.4.4 | 9420e11 | The facedown [53] [54] and a Rival on their feet [64], humiliation [55], back from the dead [56], Rivals at war [57] and bonds [58], trophies [60], where they ended up [61], places with meaning [62], last words [63], Rival chrome [U9], places lived in [U10], tactics by kind [U11], Rivals' lines [L4], "Nobody kills you but me" made default [E4], the Rivals tree [H2]; `CBRivalBook`. A fix: how V fights was misread from 1.3.2 on |
 | 2.4.5 | f15be9e | Run with a crew [65] on the game's own follower role, one of theirs [66], ransom [67], feed the street a lie [69], informants with a life [U12], the sergeant's parley [U2] |
 | 2.4.6 | 8979f48 | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
-| 2.5.0 | b2c8659, 56c0c7b, (this release) | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, a bar on every list, text that fits; the final pass |
+| 2.5.0 | b2c8659, 56c0c7b, db1eeda | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, a bar on every list, text that fits; the final pass |
 
 **In progress:** nothing. The road ends at 2.5.0.
 
