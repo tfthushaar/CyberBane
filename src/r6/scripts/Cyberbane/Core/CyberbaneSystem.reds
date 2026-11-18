@@ -63,6 +63,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_hubOnMenu: wref<CBHud>;          // the Hub as a tab of the game's menu, while that is up (UI/HubTab.reds)
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
+  private let m_hubWeb: Bool;                 // the Factions page as the web of gangs, this session (2.4.3)
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
   private let m_ledgerDue: Bool;              // the death ledger waits for the first settled tick (StartSession)
   // V's equipment is read for the first time on the first settled tick too, never from inside the load
@@ -1213,11 +1214,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBWarNoteWestbrook(this, game);     // working Japantown, for the Claws (2.4.0)
     CBHuntedTick(this, game);           // haunts, and the trail going cold (2.4.1)
     CBHuntGrowsTick(this, game);        // trackers and open season (2.4.2)
+    CBBountyTick(this, game);           // the price on V's head and the hunters' ladder (2.4.3)
     if !heavyStreaming {
       CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
     }
     if this.m_tickCount % 5 == 0 {
       CBTurfPatrolTick(this, game);
+      if !heavyStreaming {
+        CBClashTick(this, game);        // rival gangers clash on a contested street (2.4.3)
+      }
     }
     // Bagmen, favours, sit-downs and the rest of the street's own life (Spawn/LivingStreet.reds, 2.0.0).
     if IsDefined(this.m_talk) && !heavyStreaming {
@@ -1387,6 +1392,14 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func SetHubTab(tab: Int32) -> Void {
     this.m_hubTab = tab;
+  }
+
+  public func HubWeb() -> Bool {
+    return this.m_hubWeb;
+  }
+
+  public func SetHubWeb(on: Bool) -> Void {
+    this.m_hubWeb = on;
   }
 
   // A pay-off chosen on the Hub. n"" takes the request back. Carried out on resume.
@@ -3422,6 +3435,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       huntBook.FadeHaunts(elapsedDays);      // where V spends time, fading (2.4.1)
     }
     CBOpenSeasonRoll(this, game, elapsedDays);   // a gang at the top of its anger may declare it (2.4.2)
+    CBBountyRoll(this, game, elapsedDays);       // somebody may put a price on V's head (2.4.3)
+    CBCorpInterestRoll(this, game, elapsedDays); // and a Legend gets a corporation's attention
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)

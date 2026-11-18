@@ -494,6 +494,21 @@ public class CyberbaneSettings {
   public let openSeason: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Hunted")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-PriceOnHead")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PriceOnHead-Desc")
+  public let priceOnHead: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Hunted")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CorpContracts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CorpContracts-Desc")
+  @runtimeProperty("ModSettings.dependency", "priceOnHead")
+  public let corpContracts: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Crews")
   @runtimeProperty("ModSettings.category.order", "4")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LootDrops")
@@ -644,6 +659,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-OwnStreets-Desc")
   @runtimeProperty("ModSettings.dependency", "turfWars")
   public let ownStreets: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")
+  @runtimeProperty("ModSettings.category.order", "7")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-StreetClashes")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-StreetClashes-Desc")
+  @runtimeProperty("ModSettings.dependency", "turfWars")
+  public let streetClashes: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")

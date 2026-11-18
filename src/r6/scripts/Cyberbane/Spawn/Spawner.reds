@@ -1206,6 +1206,12 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBSetUpAlly(sys, game, puppet);
     return;
   }
+  // One of the hunters' ladder (Spawn/Bounty.reds, 2.4.3): CB_Squad too, so every crew list reaches them, but a solo
+  // with their own build, never a sergeant, a grenadier or one of a squad.
+  if des.IsTagged(id, n"CB_Bounty") {
+    CBSetUpBountyHunter(sys, game, puppet, riding);
+    return;
+  }
   // A scout looks without drawing, until they have called it in (Spawn/Hunted.reds, 2.4.1).
   if des.IsTagged(id, n"CB_Scout") {
     CBSetUpScout(sys, game, puppet);

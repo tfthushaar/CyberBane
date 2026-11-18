@@ -62,8 +62,9 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
   }
   // A scout out looking holds the crew lane: the crew is waiting on what the scout finds. A crew
   // that came with its apex squad is out for as long as either half of it is standing.
+  // A bounty hunter on the way holds it too (Spawn/Bounty.reds): once out, they are CB_Squad like anybody's crew.
   return NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetScoutFaction(), n"")
-      || CBLiveTaggedPresent(game, n"CB_Squad")
+      || CBLiveTaggedPresent(game, n"CB_Squad") || CBBountyComing(game)
       || (sys.ActiveSquadHasApex() && CBLiveTaggedPresent(game, n"CB_Apex"));
 }
 
@@ -374,8 +375,12 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   // And the gang a crew or apex lane is holding, the same way: switched off, crews switched off, or no
   // longer hostile since it was picked. Only the Rival lane asked, so a gang that had cooled, or that the
   // player had switched off, went on counting down and was sent when its turn came.
+  // Never the Rival lane, whose target is the Rival's gang only for the record: a Rival is personal, and is asked
+  // CBRivalQueueable above. Asking the crews' question of it let go of every Rival picked while crews were off, while
+  // They Will Remember sent the gangs' people (CBHitSquadsOn is false then), or once their gang had stopped being
+  // hostile to V, so with any of those no Rival ever came (2.0.0 to 2.4.2).
   let laneGang = sys.GetLaneTarget(lane);
-  if NotEquals(laneGang, n"") && !CBGangMaySend(sys, laneGang) {
+  if lane != CBLaneRival() && NotEquals(laneGang, n"") && !CBGangMaySend(sys, laneGang) {
     CBLog.Info(n"Spawn", s"\(CBLaneLabel(lane)) lane let go of \(NameToString(laneGang)): they no longer send anybody.");
     sys.ClearLane(lane);
     return;
@@ -784,6 +789,10 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   if !IsDefined(sys) || !IsDefined(fs) {
     return -1.0;
   }
+  // A corporation sends nobody of its own: it puts a price on V and hires the ladder (Spawn/Bounty.reds, 2.4.3).
+  if CBCorpHiresKillers(fs.id) {
+    return -1.0;
+  }
   // Where V put a pile of their people in the ground, recently: they are slow to come back there
   // (Model/StreetBook.reds, 2.3.1).
   if CBGangAvoidsHere(sys, sys.GetGameInstance(), fs.id) {
@@ -856,7 +865,8 @@ public func CBApexRecordFor(fs: ref<CBFactionState>) -> TweakDBID {
 // for a gang that has since been paid off, come round to V, or been switched off. Picking (CBLanePick,
 // CBApexEligible) asks more than this; this is what must still hold once they have been picked.
 public func CBGangMaySend(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
-  if !IsDefined(sys) || Equals(faction, n"") || !CBHitSquadsOn() || !CBFactionFieldsSquads(faction) {
+  if !IsDefined(sys) || Equals(faction, n"") || !CBHitSquadsOn() || !CBFactionFieldsSquads(faction)
+     || CBCorpHiresKillers(faction) {
     return false;
   }
   let score = sys.GetScore();
@@ -869,7 +879,7 @@ public func CBGangMaySend(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
 
 public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> Bool {
   if !IsDefined(sys) || !IsDefined(fs) || !CBFactionFieldsSquads(fs.id)
-     || !TDBID.IsValid(CBApexRecordFor(fs)) {
+     || !TDBID.IsValid(CBApexRecordFor(fs)) || CBCorpHiresKillers(fs.id) {
     return false;
   }
   let score = sys.GetScore();
@@ -932,6 +942,10 @@ public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState
   let posture = IsDefined(score) ? score.GetPosture(fs.id) : ECBPosture.Neutral;
   if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
     return "";
+  }
+  // A corporation sends nobody: it pays the ladder (Spawn/Bounty.reds, 2.4.3).
+  if CBCorpHiresKillers(fs.id) {
+    return "they hire killers instead of sending their own";
   }
   if CBApexEligible(sys, fs) {
     // Ready is only ready if the lane can send them. Everything that stops it is said here, in the

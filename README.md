@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.4.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.4.3.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -74,6 +74,11 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   stop or pay off before they call you in, and lookouts in the crowd.
 - **The hunt grows.** Trackers planted by quickhacks, open season from a gang at the top of its anger, crews lying
   in wait on your road, and the Tyger Claws' assassin.
+- **A price on your head.** Gangs, Rivals and the corporations put bounties on you, and named solos from the
+  hunters' ladder come to collect. Beat them to climb the ladder, pay the price off from the Hub, or kill whoever put
+  it up. The corporations hire killers now instead of sending crews.
+- **Gangs fight gangs.** Rival gangers clash on contested streets, and the Hub's Gangs page can show every gang as
+  a web of who is at war with whom, and how each one sees you.
 
 ## Requirements
 

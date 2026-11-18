@@ -59,6 +59,14 @@ public class CBHuntBook extends ScriptableSystem {
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.m_padded = false;
+    // Whoever was out or on their way went with the world the save threw away.
+    ArrayClear(this.outBody);
+    ArrayClear(this.outSlot);
+    ArrayClear(this.outDownTick);
+    this.comingSlot = 0;
+    this.comingPair = 0;
+    this.comingTicks = 0;
+    this.payRequested = false;
   }
 
   public func TrackedBy() -> CName { return this.m_trackedBy; }
@@ -68,6 +76,85 @@ public class CBHuntBook extends ScriptableSystem {
     this.m_trackedBy = gang;
     this.m_trackedUntil = until;
     this.safeTicks = 0;
+  }
+
+  // ---- The price on V's head and the hunters' ladder (Spawn/Bounty.reds, 2.4.3) ----
+  // Session only: who of the ladder is out after V now, and who is on their way.
+  public let outBody: array<EntityID>;
+  public let outSlot: array<Int32>;      // index into the roster, for each body above
+  public let outDownTick: array<Int32>;  // the tick they were first seen down and breathing, 0 not yet
+  public let comingSlot: Int32;          // roster index + 1 of the one on their way (0: nobody)
+  public let comingPair: Int32;          // and a second, likewise
+  public let comingTicks: Int32;
+  public let payRequested: Bool;         // chosen on the Hub, carried out on the next tick back in the game
+
+  public func BountyBy() -> CName { return this.m_bountyBy; }
+  public func BountyAmount() -> Int32 { return this.m_bountyAmount; }
+  public func BountySince() -> Float { return this.m_bountySince; }
+  public func SetBounty(by: CName, amount: Int32, since: Float) -> Void {
+    this.m_bountyBy = by;
+    this.m_bountyAmount = Max(amount, 0);
+    this.m_bountySince = since;
+  }
+  public func LadderRank() -> Int32 { return this.m_ladderRank; }
+  public func SetLadderRank(rank: Int32) -> Void { this.m_ladderRank = Clamp(rank, 0, CBConfig.LadderPlaces()); }
+  public func HunterNext() -> Float { return this.m_hunterNext; }
+  public func SetHunterNext(at: Float) -> Void { this.m_hunterNext = at; }
+  public func CorpBy() -> CName { return this.m_corpBy; }
+  public func CorpAt() -> Float { return this.m_corpAt; }
+  public func SetCorp(by: CName, at: Float) -> Void {
+    this.m_corpBy = by;
+    this.m_corpAt = at;
+  }
+
+  // The roster: three arrays kept in step, read only as far as the shortest (Pad).
+  public func HunterCount() -> Int32 {
+    this.Pad();
+    return ArraySize(this.m_hunterSeed);
+  }
+  public func HunterSeed(i: Int32) -> Int32 {
+    this.Pad();
+    return i >= 0 && i < ArraySize(this.m_hunterSeed) ? this.m_hunterSeed[i] : 0;
+  }
+  public func HunterRank(i: Int32) -> Int32 {
+    this.Pad();
+    return i >= 0 && i < ArraySize(this.m_hunterRank) ? this.m_hunterRank[i] : 0;
+  }
+  public func HunterState(i: Int32) -> Int32 {
+    this.Pad();
+    return i >= 0 && i < ArraySize(this.m_hunterState) ? this.m_hunterState[i] : 1;
+  }
+  public func SetHunterRank(i: Int32, rank: Int32) -> Void {
+    this.Pad();
+    if i >= 0 && i < ArraySize(this.m_hunterRank) {
+      this.m_hunterRank[i] = rank;
+    }
+  }
+  public func SetHunterState(i: Int32, state: Int32) -> Void {
+    this.Pad();
+    if i >= 0 && i < ArraySize(this.m_hunterState) {
+      this.m_hunterState[i] = state;
+    }
+  }
+  public func AddHunter(seed: Int32, rank: Int32) -> Void {
+    this.Pad();
+    ArrayPush(this.m_hunterSeed, seed);
+    ArrayPush(this.m_hunterRank, rank);
+    ArrayPush(this.m_hunterState, 0);
+  }
+  // The roster's oldest gone entries, once it has grown long: nobody reads a dead hunter's place.
+  public func DropGone(keep: Int32) -> Void {
+    this.Pad();
+    let i = 0;
+    while ArraySize(this.m_hunterSeed) > keep && i < ArraySize(this.m_hunterSeed) {
+      if this.m_hunterState[i] != 0 {
+        ArrayErase(this.m_hunterSeed, i);
+        ArrayErase(this.m_hunterRank, i);
+        ArrayErase(this.m_hunterState, i);
+      } else {
+        i += 1;
+      }
+    }
   }
 
   public static func Get(game: GameInstance) -> ref<CBHuntBook> {
@@ -137,6 +224,13 @@ public class CBHuntBook extends ScriptableSystem {
     this.m_corpBy = n"";
     this.m_corpAt = 0.0;
     this.m_padded = false;
+    ArrayClear(this.outBody);
+    ArrayClear(this.outSlot);
+    ArrayClear(this.outDownTick);
+    this.comingSlot = 0;
+    this.comingPair = 0;
+    this.comingTicks = 0;
+    this.payRequested = false;
   }
 }
 

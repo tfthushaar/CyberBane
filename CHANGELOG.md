@@ -3,6 +3,42 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.4.3 (18 November 2026)
+
+**A price on your head**
+- **Bounties.** A gang sworn against you with money in its war chest, a Rival who has met you often, or a
+  corporation can put a price on you. Named solos take the contract: one at a time, now and then two, about once
+  every nine in-game hours, and each texts you first. The HUD line names who is coming, and scanning one shows their
+  name and rank.
+- **The hunters' ladder.** Ten names, ranked ten to one. The one who comes is always the one just above you. Beat
+  them and you take their place; reach the top and you are the most dangerous merc in Night City, and the one below
+  comes for it. Leave one breathing and they may come back as a Rival.
+- **Ending it.** Pay the price off on the Hub's Standing page, kill whoever put it up, or make peace with them. The
+  Standing page says who put it up, what it costs to make it go away, and who is coming next.
+- **The corporations hire killers.** Arasaka, Militech and Kang Tao no longer send crews: when they want you dead
+  they open a contract, and a contract can be bought off at a corporate price. Once you are a Legend, a corporation
+  may offer you a contract on a gang's leader, or warn you off.
+
+**The war in the street**
+- **Rival gangs clash.** On a contested street, where a gang is challenging for the district or two gangs at war
+  share the corners, a few of their people now go at each other while you are around. Whoever is left standing
+  gains a little ground.
+- **The web of gangs.** The Hub's Gangs page can be shown as a web: you in the middle, the gangs round you roughly
+  where they live, a line from you to each by how they treat you, and lines between gangs for wars, old feuds,
+  truces and the lies you told. Click a gang, or go round with the keys or the pad, to light its lines and read
+  about it underneath.
+
+**Fixes**
+- **Rivals come again** with crews switched off, with They Will Remember sending the gangs' people, or after you
+  made peace with their gang. Since 2.0 the Rivals' turn was being taken away again the moment it was given in any
+  of those cases, so no Rival arrived.
+
+**Mod Settings**
+- Under **Being hunted**: **A price on your head** and **The corporations hire killers**. Under **Turf**: **Rival
+  gangs clash in the street**. All on.
+
+Your progress carries over.
+
 ## 2.4.2 (18 November 2026)
 
 **The hunt grows**

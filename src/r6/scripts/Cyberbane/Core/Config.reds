@@ -485,6 +485,67 @@ public abstract class CBConfig {
   public static func RoadMaxCrew() -> Int32 = 6
   public static func AmbushWaitSeconds() -> Float = 5400.0
   public static func AssassinChance() -> Float = 0.35
+  // A price on V's head (Spawn/Bounty.reds, 2.4.3). A gang sworn against V, with 15 of theirs dead, a leader and 3000eb
+  // in its chest, puts up 40% of its chest (5000 to 40000), 30% a day; a Rival of rank 3 who has met V 3 times, 4000 a
+  // rank; a corporation that wants V dead, 20000 (hostile) or 40000 (sworn), 50% a day, for 5 days, bought off at 1.5
+  // times. The first hunter 2 to 5 game hours after it goes up, then one every 9 (three quarters to one and a quarter
+  // of that); two at once a third of the time from 20000. Ten places on the ladder; the roster keeps 30 names. A hunter
+  // left breathing is taken as beaten once V is 45 m off, or 40 seconds out of combat, and comes back a Rival half
+  // the time. Rank ten is built to 0.6 of an apex, rank one to a whole one; ranks three to one get the bar. Renown: 4,
+  // and 1.5 more for each place above the bottom.
+  public static func BountyChancePerDay() -> Float = 0.3
+  public static func BountyGangKills() -> Int32 = 15
+  public static func BountyMinChest() -> Float = 3000.0
+  public static func BountyChestShare() -> Float = 0.4
+  public static func BountyGangMin() -> Int32 = 5000
+  public static func BountyGangMax() -> Int32 = 40000
+  public static func BountyRivalRank() -> Int32 = 3
+  public static func BountyRivalMeetings() -> Int32 = 3
+  public static func BountyRivalPostPerRank() -> Int32 = 4000
+  public static func BountyCorpChancePerDay() -> Float = 0.5
+  public static func BountyCorpHostile() -> Int32 = 20000
+  public static func BountyCorpVendetta() -> Int32 = 40000
+  public static func BountyCorpDays() -> Float = 5.0
+  public static func BountyCorpPayMult() -> Float = 1.5
+  public static func BountyFirstHoursMin() -> Float = 2.0
+  public static func BountyFirstHoursMax() -> Float = 5.0
+  public static func BountyGapHours() -> Float = 9.0
+  public static func BountyPairAmount() -> Int32 = 20000
+  public static func BountyPairChance() -> Float = 0.33
+  public static func LadderPlaces() -> Int32 = 10
+  public static func LadderKeep() -> Int32 = 30
+  public static func BountyLeftDistance() -> Float = 45.0
+  public static func BountyLeftTicks() -> Int32 = 40
+  public static func HunterRivalChance() -> Float = 0.5
+  public static func HunterGradeLow() -> Float = 0.6
+  public static func HunterBossBarRank() -> Int32 = 3
+  public static func HunterRenownBase() -> Float = 4.0
+  public static func HunterRenownPerPlace() -> Float = 1.5
+  // Corporate interest ([88]): a Legend, once a week at most, 35% a day; a corporation V stands below -25 with warns V
+  // off; otherwise 30000eb for a hostile gang's leader within 7 days, and 10 standing with them for it.
+  public static func CorpInterestDays() -> Float = 7.0
+  public static func CorpInterestChancePerDay() -> Float = 0.35
+  public static func CorpWarnStanding() -> Float = -25.0
+  public static func CorpContractDays() -> Float = 7.0
+  public static func CorpContractPay() -> Int32 = 30000
+  public static func CorpContractStanding() -> Float = 10.0
+  // Street clashes ([N1], Spawn/Clashes.reds, 2.4.3): the last four of each side the Director saw; who is at war here
+  // worked out every 15 ticks; a try every two minutes at 35%, then ten minutes before the next; up to two pairs, each
+  // within 35 m of each other and 15 to 70 m from V; over at three minutes or with V 140 m off; two points of strength.
+  public static func ClashKeep() -> Int32 = 4
+  public static func ClashPairTicks() -> Int32 = 15
+  public static func ClashRollTicks() -> Int32 = 120
+  public static func ClashChance() -> Float = 0.35
+  public static func ClashGapTicks() -> Int32 = 600
+  public static func ClashMaxPairs() -> Int32 = 2
+  public static func ClashPairDistance() -> Float = 35.0
+  public static func ClashMinFromV() -> Float = 15.0
+  public static func ClashMaxFromV() -> Float = 70.0
+  public static func ClashLeaveDistance() -> Float = 140.0
+  public static func ClashMaxTicks() -> Int32 = 180
+  public static func ClashGain() -> Float = 2.0
+  // The Hub's web of gangs ([H1], UI/HubWeb.reds): a peace paid in the last three game days is said on V's line.
+  public static func WebPeaceDays() -> Float = 3.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

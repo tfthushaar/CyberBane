@@ -37,15 +37,13 @@ By impact for the effort, most first:
 
 1. **Voices for the moments** (79). The people Cyberbane moves finally sound like it, in their own voices.
 2. *(Built in 2.3.2: gangs that adapt, and a code for each gang.)*
-3. **What is left of the codes** (20): the corporations, with the bounties in 2.4.3.
+3. *(Built in 2.4.3: the corporations, who hire killers.)*
 4. **The facedown** (53). A Cyberpunk-canon moment before every Rival fight.
-5. **A price on V's head, and the hunters' ladder** (39). A second nemesis line with a goal of its own.
+5. *(Built in 2.4.3: a price on V's head, and the hunters' ladder.)*
 6. *(Built in 2.3.3: funerals and the rest of gang life's gatherings, deals and rackets.)*
 7. *(Built in 2.4.0: back a gang, the war chest, and the rest of the turf war.)*
 8. **Run with a crew** (65). The payoff for being liked.
 9. **Panic in the dark** (80). Stealth play gets the terror loud play already has.
-20. **The corporations: money, not grudges.** Arasaka, Militech and Kang Tao send no gangers. They post a
-    contract on V and hire solos (item 39), and they can be bought off at a corporate price. **M**
 
 ## 3. Gang life
 
@@ -57,12 +55,6 @@ Built in 2.4.0 (`Economy/War.reds`, `Model/WarBook.reds`): every idea that was h
 
 ## 5. Being hunted
 
-39. **A price on V's head, and the hunters' ladder.** A gang, a corporation or a Rival can post a bounty on V.
-    Named independent hunters take it: a roster of solos, each with a look, a trait, a signature and a rank from
-    ten to one, who come alone or in pairs at their own time. Kill one ranked above V and V takes their place on
-    the ladder (a Hub page); at the top V is the most dangerous merc in Night City. The bounty ends when V pays
-    it, or kills whoever posted it. A hunter V beats and leaves alive can become a Rival. **L** *(Assassin's
-    Creed Odyssey's mercenaries; New Vegas's hit squads)*
 43. **Sound before contact.** *(Not built in 2.4.1: no door or engine sound event could be confirmed in the game's own scripts; the apex horn is the one verified sound.)* An engine and a door slam when a car crew gets out within earshot, a phone buzz
     when the HUD line changes, played on the player as the apex horn already is. **S** *(old backlog 8)*
 ## 6. Rivals
@@ -152,8 +144,6 @@ Built in 2.4.0 (`Economy/War.reds`, `Model/WarBook.reds`): every idea that was h
 87. **Street Cred follows the legend.** The biggest deeds (a Rival's death, a sit-down crashed, open season
     survived) give a little of the game's own Street Cred, so its vendors and gigs follow. **S, verify** (the
     experience call)
-88. **Corporate interest.** At legendary standing, a corporation takes notice: a Cyberbane contact (never a story
-    character) offers a contract against a gang or warns V off. **S to M**
 90. **Presets with a shape.** Presets that change what the mod is about, not only how much: **Nemesis** (Rivals
     first), **Turf war** (gangs and districts first), **Quiet life** (the street and talk, nobody hunting).
     **S**

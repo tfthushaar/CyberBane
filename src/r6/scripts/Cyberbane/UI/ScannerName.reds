@@ -50,6 +50,7 @@ public const func CompileScannerChunks() -> Bool {
   let compiled = wrappedMethod();
   let rival = CBScannerRival(this);
   // Somebody with a note of their own (2.3.2): their hands up. Their name stays the game's; the note goes beside it.
+  // One of the hunters' ladder (2.4.3) has a name of their own, and their place on the ladder under it.
   let note = IsDefined(rival) ? "" : CBScannerNote(this);
   if StrLen(note) > 0 {
     let forcedN: TweakDBID;
@@ -57,7 +58,7 @@ public const func CompileScannerChunks() -> Bool {
     if IsDefined(psN) {
       forcedN = psN.GetForcedScannerPreset();
     }
-    CBScannerShowNote(this, note, forcedN);
+    CBScannerShowNote(this, note, forcedN, CBBountyScannerName(this));
   }
   if IsDefined(rival) {
     // A quest can force a different scanner preset on an NPC, and the game honours it before the
@@ -134,11 +135,12 @@ public func CBScannerNote(npc: ref<NPCPuppet>) -> String {
   if NotEquals(npc.cbLookoutFor, n"") && !npc.IsDead() {
     return "LOOKOUT: " + StrUpper(CBFactionLabel(npc.cbLookoutFor));
   }
-  return "";
+  return CBBountyScannerNote(npc);
 }
 
-// The name chunk again, the game's way: their own name from their record, the note as the line under it.
-public func CBScannerShowNote(npc: ref<NPCPuppet>, note: String, forcedPreset: TweakDBID) -> Void {
+// The name chunk again, the game's way: their own name from their record (or the one given), the note as the line
+// under it.
+public func CBScannerShowNote(npc: ref<NPCPuppet>, note: String, forcedPreset: TweakDBID, opt named: String) -> Void {
   let rec = TweakDBInterface.GetCharacterRecord(npc.GetRecordID());
   if !IsDefined(rec) {
     return;
@@ -154,7 +156,7 @@ public func CBScannerShowNote(npc: ref<NPCPuppet>, note: String, forcedPreset: T
   if !showName {
     return;
   }
-  let name = GetLocalizedTextByKey(rec.DisplayName());
+  let name = StrLen(named) > 0 ? named : GetLocalizedTextByKey(rec.DisplayName());
   if StrLen(name) == 0 {
     return;
   }

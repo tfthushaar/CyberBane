@@ -1,8 +1,7 @@
 # Cyberbane plan: the road to 2.5.0
 
-Status: **I stopped building at 2.4.2 (2026-11-18) to take stock. Done: 2.3.1 to 2.4.2, all released, and a bug
-pass over every system, which went out inside 2.4.2. Next: I play 2.3.1 to 2.4.2 together; the rest of the road
-after that, which now ends with a crew of my own in 2.5.0.** I wrote this on
+Status: **Building on to 2.5.0 (2026-11-18). Done: 2.3.1 to 2.4.3, all released, with a bug pass over every system
+inside 2.4.2. Next: 2.4.4, the Rivals, and on to a crew of my own in 2.5.0; I play it all at the end.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
@@ -29,14 +28,14 @@ rehearsal from the release before; none played yet):
 | 2.4.0 | 06854fe | War chest and manpower [34] [35], back a gang [33], set gangs on each other [70], a common enemy [36], V's own streets [37], peace with terms and the Claws' protection [U6] [11], turf patrols made sturdy (still experimental) [U5] [E3]; `CBWarBook` |
 | 2.4.1 | 9fde2de | A fair first volley [44], lie low [41], the metro said [42], haunts [46] and hunters using what they know [U8], scouts worth catching with the bribe [U7] [68], lookouts in the crowd [50]; `CBHuntBook`; a Being hunted heading. [45] and [89] were found already built |
 | 2.4.2 | ba60842, cb2eacb | Trackers [49], open season [48], lying in wait made default [E2] with V's road [47] and the Wraiths' road [18], the Claws' assassin [11]; then the fixes from player reports (Talk on F, nobody stopping until I talk to them, They Will Remember's hostility and disguises followed, its panel kept off the Hub) and from the bug pass over every file (apex squads at full health, freeze reputation freezing everything, gang chairs, street events, skills in V's menace) |
+| 2.4.3 | (this release) | A price on V's head and the hunters' ladder [39], the corporations hire killers [20], corporate interest [88]; rival gangers clash on contested streets [N1]; the web of gangs on the Hub [H1]. [N2] dropped (the game's own gunfire already does it). A fix: Rivals came no more with crews off, with They Will Remember, or after peace with their gang |
 
-**In progress:** nothing. The bug pass over every system is done and shipped in 2.4.2.
+**In progress:** 2.4.4, the Rivals.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
 | Version | What | Items |
 |---|---|---|
-| 2.4.3 | Bounties, and the war in the street | [39] the price on V's head and the hunters' ladder, [88] corporate interest, [20] the corporations' contracts; [N1] rival gangers clashing on contested streets (from Night City Alive, below); [H1] the web of gangs in the Hub (below) |
 | 2.4.4 | Rivals | [53]-[64], [U9]-[U11], [L4], [E4]; [H2] the Rivals tree in the Hub (was 2.4.2) |
 | 2.4.5 | Talk and allies | [65]-[67], [69], [U12], the sergeant's parley from [U2] (was 2.4.3) |
 | 2.4.6 | Telling it | [79]-[85], [87], [90]-[92], [U13]-[U15], [L5] (was 2.4.4) |
@@ -46,10 +45,10 @@ rehearsal from the release before; none played yet):
 (I do not have Wannabe Edgerunner or Dark Future installed, so there was nothing to probe); tribute haggled by text (folded into [U13]);
 [U1]'s car seats keep one record. Each is noted in its release's section and in IMPROVEMENTS.md.
 
-**Next:** I play 2.3.1 to 2.4.2 together, then 2.4.3 onwards. The bug pass over every system came first, with the
-2.5.0 pass's method, and what it found went out inside 2.4.2. I may
-build [H1] the web before that playtest instead of in 2.4.3: it draws exactly the 2.4.0 systems I will be testing
-(wars, truces, backing, standing) and would make them easier to check.
+**Next:** 2.4.4, the Rivals, then the rest of the road to 2.5.0, built straight through; I play the whole of it at the
+end instead of stopping after 2.4.2. The bug pass over every system came first, with the 2.5.0 pass's method, and what
+it found went out inside 2.4.2. [H1] the web went out in 2.4.3 and draws the 2.4.0 systems (wars, truces, backing,
+standing), so it will help me check them when I play.
 
 ## Learnt from Night City Alive (2026-11-18)
 
@@ -199,7 +198,7 @@ first release that uses it.
 | **2.4.0** | 4 Turf, money and war | [33]-[37], [70]; [U5], [U6]; [E3]; `CBWarBook` | M-L | done |
 | **2.4.1** | 5 Being hunted, first part | [41], [42], [44], [46], [50]; [U7], [U8]; [68]; `CBHuntBook` | M | done |
 | **2.4.2** | 5 Being hunted, second part | [47]-[49]; [E2]; [11], [18] | M | done |
-| **2.4.3** | 5 Being hunted, third part, and the war in the street | [39], [88], [20]; [N1], [N2]; [H1] and the drawing kit | L (may ship in two) | left |
+| **2.4.3** | 5 Being hunted, third part, and the war in the street | [39], [88], [20]; [N1], [N2]; [H1] and the drawing kit | L | done |
 | **2.4.4** | 6 Rivals | [53]-[64]; [U9]-[U11]; [L4]; [E4]; [H2]; `CBRivalBook` | M-L | left |
 | **2.4.5** | 7 Talk and allies | [65]-[67], [69]; [U12]; [U2]'s parley | M-L | left |
 | **2.4.6** | 8 Telling it | [79]-[85], [87], [90]-[92]; [U13]-[U15]; [L5]; voices, mod events | M | left |
@@ -697,6 +696,24 @@ already (the run penalty in `CBChaseGiveUp`; difficulty in crew size, spawn dist
 built: no sound event confirmed. **2.4.2**: [49] tracked, [48] open season, [47] V's road with [E2] lying in wait,
 the Claws' assassin, the Wraiths' road. **2.4.3**: [39] the bounty and the hunters' ladder, [88] corporate interest,
 [20] the corporations' contracts. The groups after move up: Rivals 2.4.4, talk 2.4.5, the telling 2.4.6.
+
+**Built in 2.4.3.** [39] in `Spawn/Bounty.reds`, kept in the hunt book's fields laid out for it in 2.4.1: a price from
+a sworn gang with a leader and money in its chest (40% of the chest), a Rival of rank three who has met V three
+times, or a corporation that wants V dead; ten hunters on the ladder, named and built by rank (the Afterlife's solos
+with Phantom Liberty, the payer's own best without it), each `CB_Squad` with `CB_Bounty` beside it so every crew list
+reaches them; the one just above V comes, about every nine game hours; V takes the place of one beaten above. The
+price ends paid from the Standing page, with whoever put it up dead, or when they stop wanting V dead. [20]: a
+corporation's crews stop at the crew reason, apex eligibility and `CBGangMaySend`, and it puts out a contract that
+can be bought off at one and a half times. [88]: once V is a Legend, a weekly chance of a corporation's offer on a
+hostile gang's leader, or a warning when V stands low with it; the offer is kept as "Arasaka:Valentinos" in the one
+name the book saves for it. [N1] in `Spawn/Clashes.reds`: the Director's walk keeps the last few of each side it saw,
+and a pair or two are set hostile to each other through their attitude agents, with what they thought before put
+back after. [N2] is not built: every NPC who fires an unsilenced gun already sends the game's own gunshot stim
+(`weapon.script`), and the crowd already runs from it. [H1] in `UI/HubWeb.reds` and the Hub: a list or web switch on
+the Gangs page; turned lines rotate clockwise on screen by the angle of the screen's own coordinates, the way the
+game's photo-mode stickers are turned. And a fix found on the way: since 2.0.0 the lane let go of every Rival it
+picked while crews were off, while They Will Remember sent the gangs' people, or once their gang was no longer
+hostile, because it asked them the crews' question.
 
 **Done when:** a hunt can be shaken by the metro, open season can be
 survived all three ways, and the ladder moves when V kills a hunter. A scout can be stopped mid-call, grabbed, bribed and fed a lie, and each gang's scout is its own kind.

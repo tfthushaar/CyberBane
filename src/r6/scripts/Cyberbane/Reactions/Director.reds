@@ -241,6 +241,10 @@ public class CBReactionDirector {
         if passes {
           evaluated += 1;
           let faction = CBClassifyFaction(npc);
+          // One of two gangs at war here, kept for a street clash (Spawn/Clashes.reds, 2.4.3). Their own fields only.
+          if !npc.IsCrowd() && NotEquals(faction, n"") {
+            CBClashNote(sys, npc, faction);
+          }
 
           // Recognition, rolled once per spawn and cached on the puppet (spec §8.7).
           let recognized = CBRecognizes(sys, score, npc, faction, district);

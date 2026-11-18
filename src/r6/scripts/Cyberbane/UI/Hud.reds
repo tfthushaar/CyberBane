@@ -565,6 +565,7 @@ public class CBHud {
   private let m_listScrolled: Bool;        // said so in the log once this page was opened
   private let m_stickLatched: Bool;
   private let m_resetArmed: Bool;          // "start over" asks twice as well
+  private let m_bountyArmed: Bool;         // and so does paying off the price on V's head (2.4.3)
   private let m_hover: CName;              // the clickable thing under the cursor, by name
   private let m_inputBound: Bool;          // the tab keys are registered with the pause menu
   // Why no Rival can arrive right now, or "". Resolved once per render, not once per row.
@@ -583,6 +584,24 @@ public class CBHud {
   private let m_scale: Float;
   // Another mod's overlay this page has put out of sight while it is up (CBForeignOverlays, 2.4.2).
   private let m_overlaysOff: Bool;
+  // The web of gangs ([H1], UI/HubWeb.reds, 2.4.3): the Factions page as a picture. A pool built once with the page and
+  // hidden until used: the lines first so they sit under the boxes, then the words, then a box per place.
+  private let m_webRoot: wref<inkCanvas>;
+  private let m_webLine: array<wref<inkRectangle>>;
+  private let m_webWord: array<wref<inkText>>;
+  private let m_webBox: array<wref<inkCanvas>>;
+  private let m_webBoxBg: array<wref<inkRectangle>>;
+  private let m_webBoxEdge: array<wref<inkRectangle>>;
+  private let m_webBoxName: array<wref<inkText>>;
+  private let m_webBoxLine: array<wref<inkText>>;
+  private let m_webBoxLead: array<wref<inkText>>;
+  private let m_webBarMen: array<wref<inkRectangle>>;
+  private let m_webBarChest: array<wref<inkRectangle>>;
+  private let m_webBoxNames: array<CName>;
+  private let m_webToggle: wref<inkCanvas>;
+  private let m_webToggleBg: wref<inkRectangle>;
+  private let m_webToggleText: wref<inkText>;
+  private let m_webShown: Bool;
 
   public func IsOpen() -> Bool {
     return this.m_open && this.m_built;
@@ -607,6 +626,7 @@ public class CBHud {
     this.m_open = true;
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_bountyArmed = false;
     this.m_payArmed = n"";
     this.m_findArmed = 0;
     this.m_forgetArmed = 0;
@@ -624,6 +644,7 @@ public class CBHud {
     this.m_open = false;
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_bountyArmed = false;
     this.m_payArmed = n"";
     this.m_findArmed = 0;
     this.m_forgetArmed = 0;
@@ -1034,6 +1055,12 @@ public class CBHud {
     if Equals(name, CBHudActionName()) {
       return this.m_actionOn;
     }
+    if Equals(name, CBHudWebToggleName()) {
+      return this.m_tab == CBHudFactionsTab();
+    }
+    if this.WebIndex(name) >= 0 {
+      return this.m_webShown;
+    }
     let k = this.ExtraIndex(name);
     if k >= 0 {
       return this.m_extraOn[k];
@@ -1250,6 +1277,20 @@ public class CBHud {
     this.m_listUpBox = up;
     this.m_listDownBox = down;
 
+    // The switch between the gangs as a list and as a web (2.4.3), at the top left of the list.
+    let toggle = this.NewBox(panel, CBHudWebToggleName(), x, CBHudContentTop() - 36.0, 230.0, 32.0);
+    this.m_webToggleBg = this.NewBand(toggle, CBHudButtonIdle());
+    let toggleText = this.NewText(toggle, 18, n"Semibold", CBHudHead());
+    toggleText.SetLetterCase(textLetterCase.UpperCase);
+    toggleText.SetHorizontalAlignment(textHorizontalAlignment.Center);
+    toggleText.SetFitToContent(false);
+    toggleText.SetSize(this.PxSize(230.0, 24.0));
+    toggleText.SetMargin(this.PxAt(0.0, 5.0));
+    toggle.SetVisible(false);
+    this.m_webToggle = toggle;
+    this.m_webToggleText = toggleText;
+    this.BuildWeb(panel, x);
+
     // No rule under the header. It was 1540 px of two-pixel line, which is the single most
     // warp-revealing shape on the page, and the heading above it already separates the screens.
 
@@ -1453,6 +1494,12 @@ public class CBHud {
     this.Hook(this.m_nextBox);
     this.Hook(this.m_listUpBox);
     this.Hook(this.m_listDownBox);
+    this.Hook(this.m_webToggle);
+    i = 0;
+    while i < ArraySize(this.m_webBox) {
+      this.Hook(this.m_webBox[i]);
+      i += 1;
+    }
     // The previous/next tab keys. Registered once and left until the menu goes, rather than on
     // every show and hide, so nothing is ever registered or unregistered in the middle of the very
     // input event that is being delivered.
@@ -1536,6 +1583,26 @@ public class CBHud {
       if this.m_extraOn[ek] {
         this.Click();
         this.ExtraClicked(sys, game, ek + 1);
+      }
+      return true;
+    }
+    // The web of gangs (2.4.3): the switch, and a gang's box picked.
+    if Equals(name, CBHudWebToggleName()) {
+      e.Handle();
+      if this.m_tab == CBHudFactionsTab() {
+        this.Click();
+        sys.SetHubWeb(!sys.HubWeb());
+        this.m_payArmed = n"";
+        this.Render(sys, game);
+      }
+      return true;
+    }
+    let wi = this.WebIndex(name);
+    if wi >= 0 {
+      e.Handle();
+      if this.m_webShown {
+        this.Click();
+        this.WebPick(sys, game, wi);
       }
       return true;
     }
@@ -1689,6 +1756,12 @@ public class CBHud {
 
   // Move the window on the list being shown. False when it is already as far as it goes that way.
   private func ScrollBy(sys: ref<CyberbaneSystem>, game: GameInstance, step: Int32) -> Bool {
+    // On the web of gangs the keys and the pad go round the ring instead (2.4.3).
+    if this.m_webShown && step != 0 {
+      let from = CBWebSlotOf(this.m_pickFaction);
+      this.WebPick(sys, game, CBWebNextSlot(from, step > 0 ? 1 : -1));
+      return true;
+    }
     if this.m_listTotal <= this.m_listRows {
       return false;
     }
@@ -1749,6 +1822,7 @@ public class CBHud {
     CBHudResampleWorn(sys, game);
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_bountyArmed = false;
     this.m_payArmed = n"";
     this.m_findArmed = 0;
     this.m_forgetArmed = 0;
@@ -1791,6 +1865,26 @@ public class CBHud {
   // paused, and both touch the world. They are recorded, and done on the first settled tick after
   // the menu closes. Clicking again before then takes the request back.
   private func ActionClicked(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    // The price on V's head (Spawn/Bounty.reds, 2.4.3): paid on the next tick back in the game, never from here.
+    if this.m_tab == CBHudStandingTab() {
+      if CBBountyPayPending(game) {
+        CBBountyRequestPay(game, false);
+        this.m_bountyArmed = false;
+      } else {
+        let price = CBBountyPayOff(sys, game);
+        if price > 0 && CBHudEddies(game) >= price {
+          if this.m_bountyArmed {
+            this.m_bountyArmed = false;
+            CBBountyRequestPay(game, true);
+            CBLog.Info(n"UI", "Paying off the price on V's head, chosen on the Hub.");
+          } else {
+            this.m_bountyArmed = true;
+          }
+        }
+      }
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudFactionsTab() {
       // Money leaves V's pocket, so it asks first: the first click turns the button into a
       // confirmation, the second pays. A payment already chosen can be taken back in one.
@@ -2021,6 +2115,7 @@ public class CBHud {
     }
     this.PaintListButton(this.m_listUpBg, this.m_listUpText, CBHudListUpName());
     this.PaintListButton(this.m_listDownBg, this.m_listDownText, CBHudListDownName());
+    this.PaintWeb();
   }
 
   // Lit under the cursor, dimmed when there is nothing further that way.
@@ -2415,12 +2510,24 @@ public class CBHud {
     let width = CBHudContentW() - CBHudActionW() - 40.0;
     if Equals(this.m_pickFaction, n"") {
       this.SetAction("", false);
-      this.SetBody(CBHudMarginX(), top, CBHudContentW(), CBHudFactions(sys), CBHudMaxLinesFor(this.m_tab));
+      // Under the web, what its lines mean, then the page's own words.
+      let intro = this.m_webShown ? CBWebLegend() + "\n" : "";
+      this.SetBody(CBHudMarginX(), top, CBHudContentW(), intro + CBHudFactions(sys), CBHudMaxLinesFor(this.m_tab));
       return;
     }
     let id = this.m_pickFaction;
     let fs = sys.FindFaction(id);
     let score = sys.GetScore();
+    // A gang V has never crossed has no record (only a kill or a pay-off files one), and the web can pick it: said so,
+    // with what the web knows of it, and nothing is written.
+    if !IsDefined(fs) && IsDefined(score) && this.m_webShown {
+      this.SetAction("", false);
+      let ties = CBWebRelationWords(sys, game, id);
+      this.SetBody(CBHudMarginX(), top, CBHudContentW(), StrUpper(CBFactionLabel(id)) + "   " + CBPostureName(score.GetPosture(id)) + "\n"
+                   + (StrLen(ties) > 0 ? ties + "\n" : "") + "You have never crossed them, and they have no opinion of you yet.",
+                   CBHudMaxLinesFor(this.m_tab));
+      return;
+    }
     if !IsDefined(fs) || !IsDefined(score) {
       this.m_pickFaction = n"";
       this.SetAction("", false);
@@ -2431,6 +2538,11 @@ public class CBHud {
     let gang = CBFactionLabel(id);
     let isOn = CBFactionOn(id);
     let out = StrUpper(gang) + "   " + (isOn ? CBPostureName(posture) : "OFF") + "\n";
+    // The web says in words what its lines show for this gang (UI/HubWeb.reds, 2.4.3).
+    if this.m_webShown && isOn {
+      let ties = CBWebRelationWords(sys, game, id);
+      out += (StrLen(ties) > 0 ? ties + " " : "") + s"\(CBPostureName(posture)) to you, \(RoundF(score.GetStanding(id))).\n";
+    }
     if !isOn {
       out += "Switched off under Factions in Mod Settings. Cyberbane leaves them alone: nobody of theirs\n"
            + "turns on you because of Cyberbane, they send nobody, and your standing is kept for later.\n";
@@ -2969,6 +3081,283 @@ public class CBHud {
     }
   }
 
+  // ---- The web of gangs ([H1], UI/HubWeb.reds, 2.4.3) ------------------------------------------------------------
+
+  // Built once with the page. Every widget is the Hub's own kind: thin rectangles for lines, its clickable box for the
+  // places. Nothing takes a click but the boxes.
+  private func BuildWeb(panel: ref<inkCanvas>, x: Float) -> Void {
+    let web = new inkCanvas();
+    web.SetName(n"cbHubWeb");
+    web.SetAnchor(inkEAnchor.TopLeft);
+    web.SetSize(this.PxSize(CBHudContentW(), CBWebHeight()));
+    web.SetMargin(this.PxAt(x, CBHudContentTop()));
+    web.Reparent(panel, -1);
+    web.SetVisible(false);
+    this.m_webRoot = web;
+    let k = 0;
+    while k < CBWebLinePool() {
+      let line = this.NewRect(web, CBHudGrey());
+      line.SetRenderTransformPivot(new Vector2(0.0, 0.5));
+      line.SetVisible(false);
+      ArrayPush(this.m_webLine, line);
+      k += 1;
+    }
+    k = 0;
+    while k < CBWebWordPool() {
+      let word = this.NewText(web, 14, n"Semibold", CBHudAmber());
+      word.SetLetterCase(textLetterCase.UpperCase);
+      word.SetVisible(false);
+      ArrayPush(this.m_webWord, word);
+      k += 1;
+    }
+    let i = 0;
+    while i < CBWebSlotCount() {
+      let name = CBHudWidgetName("cbHubWebBox", i);
+      let w = CBWebSlotW(i);
+      let h = CBWebSlotH(i);
+      let box = this.NewBox(web, name, CBWebSlotX(i), CBWebSlotY(i), w, h);
+      let bg = this.NewBand(box, CBHudBandEven());
+      let edge = this.NewRect(box, CBHudGrey());
+      edge.SetSize(this.PxSize(5.0, h));
+      let big = i == 0 || CBWebSlotIsGang(i);
+      let title = this.NewText(box, i == 0 ? 30 : (big ? 20 : 16), n"Semibold", CBHudHead());
+      title.SetLetterCase(textLetterCase.UpperCase);
+      title.SetMargin(this.PxAt(i == 0 ? 0.0 : 12.0, i == 0 ? 2.0 : 3.0));
+      if i == 0 {
+        title.SetHorizontalAlignment(textHorizontalAlignment.Center);
+        title.SetFitToContent(false);
+        title.SetSize(this.PxSize(w, 36.0));
+      }
+      let line2 = this.NewText(box, big ? 15 : 13, n"Medium", CBHudValue());
+      line2.SetMargin(this.PxAt(i == 0 ? 0.0 : 12.0, i == 0 ? 36.0 : (big ? 28.0 : 21.0)));
+      if i == 0 {
+        line2.SetHorizontalAlignment(textHorizontalAlignment.Center);
+        line2.SetFitToContent(false);
+        line2.SetSize(this.PxSize(w, 20.0));
+      }
+      let lead = this.NewText(box, 14, n"Medium", CBHudDim());
+      lead.SetMargin(this.PxAt(12.0, 47.0));
+      lead.SetVisible(big && i > 0);
+      let men = this.NewRect(box, CBHudCyan());
+      men.SetMargin(this.PxAt(12.0, h - 6.0));
+      men.SetSize(this.PxSize(2.0, 3.0));
+      men.SetVisible(CBWebSlotIsGang(i));
+      let chest = this.NewRect(box, CBHudAmber());
+      chest.SetMargin(this.PxAt(w / 2.0 + 4.0, h - 6.0));
+      chest.SetSize(this.PxSize(2.0, 3.0));
+      chest.SetVisible(CBWebSlotIsGang(i));
+      ArrayPush(this.m_webBox, box);
+      ArrayPush(this.m_webBoxBg, bg);
+      ArrayPush(this.m_webBoxEdge, edge);
+      ArrayPush(this.m_webBoxName, title);
+      ArrayPush(this.m_webBoxLine, line2);
+      ArrayPush(this.m_webBoxLead, lead);
+      ArrayPush(this.m_webBarMen, men);
+      ArrayPush(this.m_webBarChest, chest);
+      ArrayPush(this.m_webBoxNames, name);
+      i += 1;
+    }
+  }
+
+  private func WebIndex(name: CName) -> Int32 {
+    let i = 0;
+    while i < ArraySize(this.m_webBoxNames) {
+      if Equals(this.m_webBoxNames[i], name) {
+        return i;
+      }
+      i += 1;
+    }
+    return -1;
+  }
+
+  // A place picked by click, key or pad: its gang is the pick, as a row is on the list; V's own place, or the one
+  // already picked, clears it.
+  private func WebPick(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    let gang = CBWebSlotGang(slot);
+    this.m_pickFaction = (Equals(gang, n"") || Equals(gang, this.m_pickFaction)) ? n"" : gang;
+    this.m_payArmed = n"";
+    this.Render(sys, game);
+  }
+
+  private func HideWeb() -> Void {
+    this.m_webShown = false;
+    if IsDefined(this.m_webRoot) {
+      this.m_webRoot.SetVisible(false);
+    }
+  }
+
+  // One line from (x1, y1) to (x2, y2) in the web's design units: a rectangle as long as the distance, turned about
+  // its left end. Positive is clockwise on screen, which is how atan2 of screen coordinates already reads.
+  private func PlaceLine(k: Int32, x1: Float, y1: Float, x2: Float, y2: Float, thick: Float, tint: HDRColor, alpha: Float) -> Void {
+    if k < 0 || k >= ArraySize(this.m_webLine) || !IsDefined(this.m_webLine[k]) {
+      return;
+    }
+    let line = this.m_webLine[k];
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    let len = SqrtF(dx * dx + dy * dy);
+    line.SetSize(this.PxSize(MaxF(len, 1.0), thick));
+    line.SetMargin(this.PxAt(x1, y1 - thick / 2.0));
+    line.SetRotation(Rad2Deg(AtanF(dy, dx)));
+    line.SetTintColor(tint);
+    line.SetOpacity(alpha);
+    line.SetVisible(true);
+  }
+
+  private func PlaceWord(k: Int32, x: Float, y: Float, text: String, tint: HDRColor, alpha: Float) -> Void {
+    if k < 0 || k >= ArraySize(this.m_webWord) || !IsDefined(this.m_webWord[k]) {
+      return;
+    }
+    let word = this.m_webWord[k];
+    word.SetText(text);
+    word.SetMargin(this.PxAt(x - Cast<Float>(StrLen(text)) * 4.2, y - 10.0));
+    word.SetTintColor(tint);
+    word.SetOpacity(alpha);
+    word.SetVisible(true);
+  }
+
+  // Filled from the books as the page is drawn: nothing per frame.
+  private func RenderWeb(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    let score = sys.GetScore();
+    if !IsDefined(this.m_webRoot) || !IsDefined(score) {
+      return;
+    }
+    this.m_webShown = true;
+    this.m_webRoot.SetVisible(true);
+    let pick = this.m_pickFaction;
+    let pickSlot = CBWebSlotOf(pick);
+    let lines = 0;
+    let words = 0;
+    let vx = CBWebCentreX(0);
+    let vy = CBWebCentreY(0);
+    // V's own lines first, to every place.
+    let i = 1;
+    while i < CBWebSlotCount() {
+      let gang = CBWebSlotGang(i);
+      let on = CBFactionOn(gang);
+      let posture = score.GetPosture(gang);
+      let lit = pickSlot < 0 || pickSlot == i;
+      if on {
+        let alpha = Equals(posture, ECBPosture.Neutral) ? 0.45 : 1.0;
+        this.PlaceLine(lines, vx, vy, CBWebCentreX(i), CBWebCentreY(i), CBWebPostureThickness(posture),
+                       CBWebPostureColour(posture), lit ? alpha : alpha * 0.25);
+        lines += 1;
+        let word = CBWebVWord(sys, game, gang);
+        if StrLen(word) > 0 && words < CBWebWordPool() {
+          this.PlaceWord(words, (vx + CBWebCentreX(i)) / 2.0, (vy + CBWebCentreY(i)) / 2.0, word,
+                         CBWebPostureColour(posture), lit ? 1.0 : 0.25);
+          words += 1;
+        }
+      }
+      i += 1;
+    }
+    // Between the gangs: live relations first, standing feuds after, so a full pool loses only the dimmest.
+    let pass = 0;
+    while pass < 2 {
+      let a = 1;
+      while a <= 11 {
+        let b = a + 1;
+        while b <= 11 {
+          let ga = CBWebSlotGang(a);
+          let gb = CBWebSlotGang(b);
+          if CBFactionOn(ga) && CBFactionOn(gb) && lines < CBWebLinePool() {
+            let kind = CBWebPair(sys, game, ga, gb);
+            let wanted = pass == 0 ? (kind > CBWebPairFeud()) : (kind == CBWebPairFeud());
+            if wanted {
+              let lit = pickSlot < 0 || pickSlot == a || pickSlot == b;
+              let alpha = CBWebPairOpacity(kind);
+              this.PlaceLine(lines, CBWebCentreX(a), CBWebCentreY(a), CBWebCentreX(b), CBWebCentreY(b),
+                             CBWebPairThickness(kind), CBWebPairColour(kind), lit ? alpha : alpha * 0.25);
+              lines += 1;
+              let pword = CBWebPairWord(kind);
+              if pass == 0 && StrLen(pword) > 0 && words < CBWebWordPool() {
+                this.PlaceWord(words, (CBWebCentreX(a) + CBWebCentreX(b)) / 2.0, (CBWebCentreY(a) + CBWebCentreY(b)) / 2.0,
+                               pword, CBWebPairColour(kind), lit ? 1.0 : 0.25);
+                words += 1;
+              }
+            }
+          }
+          b += 1;
+        }
+        a += 1;
+      }
+      pass += 1;
+    }
+    while lines < ArraySize(this.m_webLine) {
+      if IsDefined(this.m_webLine[lines]) {
+        this.m_webLine[lines].SetVisible(false);
+      }
+      lines += 1;
+    }
+    while words < ArraySize(this.m_webWord) {
+      if IsDefined(this.m_webWord[words]) {
+        this.m_webWord[words].SetVisible(false);
+      }
+      words += 1;
+    }
+    // The places.
+    let s = 0;
+    while s < ArraySize(this.m_webBox) {
+      let gang = CBWebSlotGang(s);
+      let posture = s == 0 ? ECBPosture.Neutral : score.GetPosture(gang);
+      let tint = s == 0 ? CBHudHead() : CBWebPostureColour(posture);
+      let on = s == 0 || CBFactionOn(gang);
+      let related = s == 0 || pickSlot < 0 || pickSlot == s
+                 || (CBWebSlotIsGang(s) && CBWebSlotIsGang(pickSlot) && CBWebPair(sys, game, pick, gang) > CBWebPairFeud());
+      if IsDefined(this.m_webBox[s]) {
+        this.m_webBox[s].SetOpacity(!on ? 0.35 : (related ? 1.0 : 0.4));
+      }
+      if IsDefined(this.m_webBoxEdge[s]) {
+        this.m_webBoxEdge[s].SetTintColor(tint);
+        this.m_webBoxEdge[s].SetVisible(s > 0);
+      }
+      if IsDefined(this.m_webBoxName[s]) {
+        this.m_webBoxName[s].SetText(s == 0 ? "V" : CBHudTrim(CBFactionLabel(gang), CBWebSlotIsGang(s) ? 16 : 14));
+      }
+      if IsDefined(this.m_webBoxLine[s]) {
+        this.m_webBoxLine[s].SetText(s == 0 ? "YOU" : CBHudTrim(CBWebBoxLine(sys, game, gang), CBWebSlotIsGang(s) ? 26 : 20));
+        this.m_webBoxLine[s].SetTintColor(s == 0 ? CBHudValue() : tint);
+      }
+      if CBWebSlotIsGang(s) {
+        if IsDefined(this.m_webBoxLead[s]) {
+          let lead = CBWebLeader(sys, game, gang);
+          this.m_webBoxLead[s].SetText(StrLen(lead) > 0 ? CBHudTrim("Led by " + lead, 28) : "");
+        }
+        let half = CBWebGangW() / 2.0 - 16.0;
+        if IsDefined(this.m_webBarMen[s]) {
+          this.m_webBarMen[s].SetSize(this.PxSize(MaxF(2.0, half * CBWebMen(game, gang)), 3.0));
+        }
+        if IsDefined(this.m_webBarChest[s]) {
+          this.m_webBarChest[s].SetSize(this.PxSize(MaxF(2.0, half * CBWebChest(game, gang)), 3.0));
+        }
+      }
+      s += 1;
+    }
+    this.PaintWeb();
+  }
+
+  // The boxes' bands: picked, under the cursor, or at rest.
+  private func PaintWeb() -> Void {
+    let pickSlot = CBWebSlotOf(this.m_pickFaction);
+    let s = 0;
+    while s < ArraySize(this.m_webBoxBg) {
+      if IsDefined(this.m_webBoxBg[s]) {
+        let band = CBHudBandEven();
+        if s < ArraySize(this.m_webBoxNames) && Equals(this.m_webBoxNames[s], this.m_hover) {
+          band = CBHudBandHover();
+        }
+        if s == pickSlot {
+          band = CBHudBandPicked();
+        }
+        this.m_webBoxBg[s].SetTintColor(band);
+      }
+      s += 1;
+    }
+    if IsDefined(this.m_webToggleBg) {
+      this.m_webToggleBg.SetTintColor(Equals(this.m_hover, CBHudWebToggleName()) ? CBHudButtonHover() : CBHudButtonIdle());
+    }
+  }
+
   private func Render(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if !IsDefined(this.m_root) || !this.m_open {
       return;
@@ -2985,6 +3374,13 @@ public class CBHud {
 
     this.HideBars();
     this.HideRows();
+    this.HideWeb();
+    if IsDefined(this.m_webToggle) {
+      this.m_webToggle.SetVisible(this.m_tab == CBHudFactionsTab());
+    }
+    if IsDefined(this.m_webToggleText) {
+      this.m_webToggleText.SetText(sys.HubWeb() ? "Show as a list" : "Show as a web");
+    }
     this.SetAction("", false);
     this.HideExtras();
     this.m_listTotal = 0;
@@ -3007,11 +3403,33 @@ public class CBHud {
     let listBottom = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
     if this.m_tab == CBHudStandingTab() {
       this.RenderScores(sys);
-      this.SetBody(x, CBHudContentTop() + Cast<Float>(CBHudBarCount()) * 96.0 + 20.0, w,
-                   CBHudLegend(sys, game), maxLines);
+      // A price on V's head can be paid off here (Spawn/Bounty.reds, 2.4.3); asks twice, like every payment.
+      let payOff = CBBountyPayOff(sys, game);
+      let paying = CBBountyPayPending(game);
+      if payOff > 0 {
+        if paying {
+          this.SetAction("Paying it off. Click to take it back", true);
+        } else {
+          if this.m_bountyArmed {
+            this.SetAction(s"Click again: pay \(payOff)eb", true);
+          } else {
+            this.SetAction(s"Pay off the price on you (\(payOff)eb)", CBHudEddies(game) >= payOff);
+          }
+        }
+        this.SetBody(x, CBHudContentTop() + Cast<Float>(CBHudBarCount()) * 96.0 + 20.0, w,
+                     CBHudLegend(sys, game), maxLines, CBHudDetailTop() - 4.0 - CBHudFooterGap());
+      } else {
+        this.SetBody(x, CBHudContentTop() + Cast<Float>(CBHudBarCount()) * 96.0 + 20.0, w,
+                     CBHudLegend(sys, game), maxLines);
+      }
     } else {
       if this.m_tab == CBHudFactionsTab() {
-        this.RenderFactions(sys);
+        // The gangs as a list, or as the web of gangs (UI/HubWeb.reds, 2.4.3); the panel below is the same either way.
+        if sys.HubWeb() {
+          this.RenderWeb(sys, game);
+        } else {
+          this.RenderFactions(sys);
+        }
         this.RenderFactionDetail(sys, game);
       } else {
         if this.m_tab == CBHudTurfTab() {
@@ -3503,6 +3921,11 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   // What stays: what is coming, why people are frightened, and what that does right now. Three
   // things a player can act on.
   let out = CBHudIncoming(sys, game) + "\n";
+  // The price on V's head and the ladder (Spawn/Bounty.reds, 2.4.3), when there is one.
+  let bounty = CBBountyHubLine(sys, game);
+  if StrLen(bounty) > 0 {
+    out += bounty + "\n";
+  }
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
   return out;
@@ -4141,6 +4564,40 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   }
   if Equals(e.kind, n"LetGo") {
     return StrLen(gang) > 0 ? s"You let one of \(gang) walk with their hands up." : "You let somebody walk with their hands up.";
+  }
+  // 2.4.3: the price on V's head, the ladder and the corporations.
+  if Equals(e.kind, n"BountyPosted") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) put a price on your head: \(RoundF(e.value))eb." : s"Somebody put a price on your head: \(RoundF(e.value))eb.";
+  }
+  if Equals(e.kind, n"BountyPaid") {
+    return "You paid off the price on your head.";
+  }
+  if Equals(e.kind, n"BountyPosterDown") {
+    return "Whoever put the price on your head is dead, and the price with them.";
+  }
+  if Equals(e.kind, n"BountyLifted") {
+    return "The price on your head came down.";
+  }
+  if Equals(e.kind, n"HunterKilled") {
+    return s"You killed a bounty hunter ranked \(RoundF(e.value)) on the ladder.";
+  }
+  if Equals(e.kind, n"HunterBeaten") {
+    return s"You beat a bounty hunter ranked \(RoundF(e.value)) and left them breathing.";
+  }
+  if Equals(e.kind, n"LadderRank") {
+    return RoundF(e.value) == 1 ? "You reached the top of the hunters' ladder." : s"You climbed to number \(RoundF(e.value)) on the hunters' ladder.";
+  }
+  if Equals(e.kind, n"CorpWarned") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) warned you off." : "A corporation warned you off.";
+  }
+  if Equals(e.kind, n"CorpOffer") {
+    return StrLen(gang) > 0 ? s"A corporation offered you \(RoundF(e.value))eb for the head of \(gang)." : "A corporation offered you a contract.";
+  }
+  if Equals(e.kind, n"StreetClash") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) won a fight with their enemies in the street." : "Two gangs fought in the street.";
+  }
+  if Equals(e.kind, n"CorpContractDone") {
+    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) paid you \(RoundF(e.value))eb for a job." : s"A corporation paid you \(RoundF(e.value))eb for a job.";
   }
   // 2.4.2: the hunt grows.
   if Equals(e.kind, n"Tracked") {

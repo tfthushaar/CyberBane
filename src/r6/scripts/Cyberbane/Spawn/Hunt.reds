@@ -114,11 +114,12 @@ public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
   // A car on its way counts too: its crew are in the world only once the car has arrived.
   // So does an apex squad still being brought up to four (Spawn/FactionApex.reds): the chairs it
   // is still walking in are on their way, and the hunt is not over before they get here.
+  // And a bounty hunter who has texted and is on the clock (Spawn/Bounty.reds, 2.4.3).
   return NotEquals(sys.GetScoutFaction(), n"")
       || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetPendingApexFaction(), n"")
       || sys.HasPendingArrival() || sys.HasConvoyLegs() || sys.GetRivalCarPending() > 0
       || NotEquals(sys.GetApexMusterFaction(), n"")
-      || rivalComing;
+      || rivalComing || CBBountyComing(sys.GetGameInstance());
 }
 
 // Send one hunter where the hunt says they should go: at V while V is located, otherwise to a
@@ -840,9 +841,18 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
   if StrLen(witness) > 0 && Equals(sys.GetHuntFaction(), n"") && !CBHuntersOut(sys, game) {
     return witness;
   }
+  // A bounty hunter on the clock, or out after V, by their handle (Spawn/Bounty.reds, 2.4.3).
+  let hunterWho = CBClip(CBBountyHudWho(game), CBConfig.HudNameMaxChars());
+  let hunterEta = CBBountyComingTicks(game);
+  if StrLen(hunterWho) > 0 && hunterEta > 0 && !CBHuntersOut(sys, game) {
+    return "A PRICE ON YOUR HEAD: " + hunterWho + "   -   ON THEIR WAY " + StrUpper(CBTimeText(hunterEta));
+  }
   // One short line, never more. Longest first is the name, so the name is what gets clipped.
   let who = CBClip(CBBarFactionLabel(sys.GetHuntFaction()), CBConfig.HudNameMaxChars());
   let head = StrLen(who) > 0 ? "HUNTED: " + who : "HUNTED";
+  if StrLen(hunterWho) > 0 && CBLiveTaggedPresent(game, n"CB_Bounty") {
+    head = "HUNTED: " + hunterWho;
+  }
   // On the way: the nearest countdown that is running.
   let eta = -1;
   if NotEquals(sys.GetPendingSquadFaction(), n"") && sys.GetPendingSquadTicks() > 0 {

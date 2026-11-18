@@ -40,8 +40,54 @@ public class CBWarBook extends ScriptableSystem {
 
   private let m_trimmed: Bool;
 
+  // Session only: rival gangers clashing on a contested street ([N1], Spawn/Clashes.reds, 2.4.3). The two gangs at war
+  // where V is, worked out now and then; a few of each the Director's walk has seen lately; and the clash itself.
+  public let clashA: CName;
+  public let clashB: CName;
+  public let clashPairTick: Int32;
+  public let candA: array<EntityID>;
+  public let candB: array<EntityID>;
+  public let fightA: array<EntityID>;      // side A, and side B pair by pair: fightA[k] against fightB[k]
+  public let fightB: array<EntityID>;
+  public let fightWas: array<Int32>;       // what fightA[k] thought of fightB[k] before (EAIAttitude), to put back
+  public let fightGangA: CName;
+  public let fightGangB: CName;
+  public let fightAt: Vector4;
+  public let fightTick: Int32;
+  public let clashNextTick: Int32;
+  public let lastClashA: CName;            // the last one, for the Hub's web of gangs ([H1])
+  public let lastClashB: CName;
+  public let lastClashAt: Float;
+
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.m_trimmed = false;
+    // A clash went with the world the save threw away.
+    ArrayClear(this.candA);
+    ArrayClear(this.candB);
+    ArrayClear(this.fightA);
+    ArrayClear(this.fightB);
+    ArrayClear(this.fightWas);
+    this.fightTick = 0;
+    this.clashPairTick = 0;
+  }
+
+  // One of the two sides of a clash, seen by the Director: kept, the oldest dropped past a handful.
+  public func KeepClashCandidate(sideA: Bool, id: EntityID) -> Void {
+    if sideA {
+      if !ArrayContains(this.candA, id) {
+        if ArraySize(this.candA) >= CBConfig.ClashKeep() {
+          ArrayErase(this.candA, 0);
+        }
+        ArrayPush(this.candA, id);
+      }
+      return;
+    }
+    if !ArrayContains(this.candB, id) {
+      if ArraySize(this.candB) >= CBConfig.ClashKeep() {
+        ArrayErase(this.candB, 0);
+      }
+      ArrayPush(this.candB, id);
+    }
   }
 
   public static func Get(game: GameInstance) -> ref<CBWarBook> {
@@ -135,6 +181,12 @@ public class CBWarBook extends ScriptableSystem {
   public func TruceWith(gang: CName, now: Float) -> CName {
     let i = this.Find(gang, false);
     return i >= 0 && now < this.m_truceUntil[i] ? this.m_truceWith[i] : n"";
+  }
+
+  // When a's truce with b runs out, or 0 (the Hub's web of gangs, 2.4.3).
+  public func TruceUntilFor(a: CName, b: CName, now: Float) -> Float {
+    let i = this.Find(a, false);
+    return i >= 0 && Equals(this.m_truceWith[i], b) && now < this.m_truceUntil[i] ? this.m_truceUntil[i] : 0.0;
   }
 
   public func SetTruce(a: CName, b: CName, until: Float) -> Void {

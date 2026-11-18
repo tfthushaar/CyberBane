@@ -242,6 +242,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
     sysE.NoteDeadOurs(puppet.GetEntityID());
   }
+  // One of the hunters' ladder (Spawn/Bounty.reds, 2.4.3).
+  if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Bounty") {
+    CBBountyHunterDied(sysE, game, puppet);
+  }
   // Still waiting at their place when they went down: they never got into the fight at all
   // (Rivals/Whereabouts.reds). Read before anything below can change the body's tags.
   let caughtWaiting = IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Lair");
@@ -280,6 +284,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         sysE.SetRivalDeathByV(puppet.cbDamagedByPlayer);   // a power struggle asks (Spawn/StreetEvents.reds)
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
         sysE.SetRivalDeathByV(false);
+        // A price they put up dies with them, and a leader a corporation wanted gone is paid for (Spawn/Bounty.reds).
+        CBBountyPosterSlain(sysE, game, slain, slainRole == CBRoleLeader(), puppet.cbDamagedByPlayer);
         CBOweFuneral(game, slain.faction);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());
@@ -339,7 +345,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     // with its apex squad is one hit squad, and it is beaten when the last of either half goes
     // down with nobody left in the other - not while four of their best are still on V.
     let squadApex = sysE.ActiveSquadHasApex();
-    let crewBody = IsDefined(desE)
+    // A bounty hunter is CB_Squad for the lists, and nobody's crew (Spawn/Bounty.reds, 2.4.3).
+    let crewBody = IsDefined(desE) && !desE.IsTagged(puppet.GetEntityID(), n"CB_Bounty")
                    && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad")
                        || (squadApex && desE.IsTagged(puppet.GetEntityID(), n"CB_Apex")));
     if crewBody && NotEquals(sysE.GetActiveSquadFaction(), n"")
