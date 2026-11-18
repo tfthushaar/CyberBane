@@ -3,6 +3,28 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.3.3 (18 November 2026)
+
+**Gang life**
+- **Gangs get together near you, and the street tells you where and when.** Overheard lines and a text say
+  what's coming, and the place is pinned on your map. Turn up and crash it, or let it happen:
+  - **Funerals.** Kill a Rival or a boss of a gang and, a few hours later, their people gather to bury them.
+    Crash it and they never forgive it (the Valentinos least of all). Or walk up to a mourner and pay your
+    respects, which counts for something.
+  - **Celebrations** after a gang takes a district, **initiations** of new recruits, and **recruiting drives**.
+    Break them up and the gang feels it; leave them be and the gang comes out stronger.
+  - **Arms deals** between two gangs: crash it and the crate of guns is yours.
+  - **Rackets**: a gang collecting its take. Hit it and the cash is yours.
+- **Sit-downs** now run on the same machinery, and play exactly as before.
+- One gathering at a time, never past the limit on how many of Cyberbane's people can be out at once.
+
+**Mod Settings**
+- **A living street** is now called **Gang life**, with three new options: **Gatherings**, **Arms deals and
+  rackets** (both on), and **How often gangs get together** (1.0 is about one every forty minutes of play when
+  there's a gang around; sit-downs keep their own pace).
+
+Your progress carries over.
+
 ## 2.3.2 (18 November 2026)
 
 **A code for each gang**

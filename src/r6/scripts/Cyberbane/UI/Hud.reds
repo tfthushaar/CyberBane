@@ -4063,6 +4063,22 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"LetGo") {
     return StrLen(gang) > 0 ? s"You let one of \(gang) walk with their hands up." : "You let somebody walk with their hands up.";
   }
+  // 2.3.3: gang life.
+  if Equals(e.kind, n"FuneralCrashed") {
+    return StrLen(gang) > 0 ? s"You shot up \(CBPossessive(gang)) funeral." : "You shot up a funeral.";
+  }
+  if Equals(e.kind, n"PaidRespects") {
+    return StrLen(gang) > 0 ? s"You paid your respects at \(CBPossessive(gang)) funeral." : "You paid your respects at a funeral.";
+  }
+  if Equals(e.kind, n"DealCrashed") {
+    return StrLen(gang) > 0 ? s"You took the guns \(gang) were buying." : "You hit an arms deal.";
+  }
+  if Equals(e.kind, n"RacketHit") {
+    return StrLen(gang) > 0 ? s"You hit \(CBPossessive(gang)) racket for \(RoundF(e.value))eb." : s"You hit a racket for \(RoundF(e.value))eb.";
+  }
+  if Equals(e.kind, n"EventCrashed") {
+    return StrLen(gang) > 0 ? s"You broke up something \(gang) had planned." : "You broke up a gang's plans.";
+  }
   if Equals(e.kind, n"ApexBeaten") {
     return StrLen(gang) > 0 ? s"You beat \(CBPossessive(gang)) apex squad, all four." : "You beat an apex squad, all four.";
   }

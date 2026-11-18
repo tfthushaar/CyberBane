@@ -197,6 +197,11 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBWhisperBroken(bag, st, gang);
     mood = n"fear";
   }
+  // Something coming near here (Spawn/StreetEvents.reds, [32]).
+  let coming = CBEventWhisper(game);
+  if StrLen(coming) > 0 {
+    bag.Add(n"coming", 2.5, coming);
+  }
   // A story that actually reached here.
   let r = CBWhisperRumor(sys, game);
   if IsDefined(r) {

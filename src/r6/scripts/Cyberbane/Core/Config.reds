@@ -341,6 +341,29 @@ public abstract class CBConfig {
   // within 6 m of it.
   public static func ApexSearchShareTicks() -> Int32 = 20
   public static func ApexSearchSpread() -> Float = 6.0
+  // Gang life (Spawn/StreetEvents.reds, 2.3.3). The sit-down keeps its own clock (MeetGapTicks, MeetChance). The rest
+  // roll every forty minutes of play (divided by Gang life's How often), at 60%, set half an hour to an hour and a
+  // half of game time ahead, for an hour and a half of game time. A funeral is owed eight game hours after a Rival or
+  // a boss falls, a celebration four after a district is taken, and either is forgotten after a day.
+  public static func EventGapTicks() -> Int32 = 2400
+  public static func EventChance() -> Float = 0.6
+  public static func EventLeadMinHours() -> Float = 0.5
+  public static func EventLeadMaxHours() -> Float = 1.5
+  public static func EventWindowSeconds() -> Float = 5400.0
+  public static func FuneralAfterHours() -> Float = 8.0
+  public static func CelebrationAfterHours() -> Float = 4.0
+  public static func EventOwedDays() -> Float = 1.0
+  // What crashing one is worth and costs, and what a missed one gives the gang.
+  public static func EventRenown() -> Float = 15.0
+  public static func FuneralCrashStanding() -> Float = 12.0
+  public static func FuneralCrashCode() -> Float = 3.0
+  public static func RacketTakeBase() -> Int32 = 350
+  public static func InitiationStopCode() -> Float = 1.0
+  public static func RecruitBolster() -> Float = 8.0
+  public static func CelebrationBolster() -> Float = 5.0
+  public static func EventBolster() -> Float = 3.0
+  public static func RespectsStanding() -> Float = 6.0
+  public static func RespectsCode() -> Float = 1.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

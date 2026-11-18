@@ -862,6 +862,30 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
   @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Gatherings")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Gatherings-Desc")
+  public let gatherings: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DealsAndRackets")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DealsAndRackets-Desc")
+  public let dealsAndRackets: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "10")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangLifeOften")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangLifeOften-Desc")
+  @runtimeProperty("ModSettings.min", "0.25")
+  @runtimeProperty("ModSettings.max", "3.0")
+  @runtimeProperty("ModSettings.step", "0.25")
+  public let gangLifeOften: Float = 1.0;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "10")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ClaimHelp")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClaimHelp-Desc")
   public let claimHelp: Bool = false;

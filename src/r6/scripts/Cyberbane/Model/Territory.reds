@@ -487,6 +487,7 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
                         winner: CName, loser: CName) -> Void {
   let now = CBGameSeconds(game);
   CBFileLog(sys, n"TurfTaken", now, district, winner, 0.0);
+  CBOweCelebration(game, winner);   // and they celebrate (Spawn/StreetEvents.reds, 2.3.3)
   CBLog.Info(n"Model", s"\(NameToString(winner)) took \(NameToString(district)) from \(NameToString(loser)).");
   if !CBMessagesOn() {
     return;

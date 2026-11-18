@@ -59,7 +59,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MercyChoice-Desc", "A Rival you put down alive is spared only when you put your weapon away or walk off, or tell them so where they lie; finish them and they die. You can also make them give up another Rival, or run them out of Night City. Off, a Rival left breathing is spared as soon as the fight ends.");
     this.Text("Cyberbane-Settings-SendWord", "Calling out");
     this.Text("Cyberbane-Settings-SendWord-Desc", "Call a Rival out from their page on the Hub, and now and then a Rival calls you out instead of coming. They name a place and wait there with their people. Finishing it there pays more.");
-    this.Text("Cyberbane-Settings-Category-Street", "A living street");
+    this.Text("Cyberbane-Settings-Category-Street", "Gang life");
     this.Text("Cyberbane-Settings-Bagmen", "Bagmen");
     this.Text("Cyberbane-Settings-Bagmen-Desc", "Now and then a gang's bagman walks the week's take across its turf near you, with one lookout. Put the bagman down and the eddies are yours; the gang takes the loss and won't like you for it.");
     this.Text("Cyberbane-Settings-Favours", "Favours");
@@ -190,6 +190,12 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-GangCodes-Desc", "Each gang lives by its own code: what it respects, what it never forgives, how it fights and how it makes peace. The Valentinos value mercy and never forget a shot surrender, the Claws are business, the Animals respect fists, Barghest never break, the Mox protect Jig-Jig Street and never send their best, killing Scavengers pleases everybody. The Hub's gang page tells you each gang's code as you learn it. Off, every gang behaves alike.");
     this.Text("Cyberbane-Settings-GangsAdapt", "Gangs adapt to how you fight");
     this.Text("Cyberbane-Settings-GangsAdapt-Desc", "Each gang notices how you hurt its people. Keep shooting them and they come in armour; keep fighting up close and they come tougher; keep hacking them and they run fresh ICE; keep taking them quietly and their hunters keep their eyes open. They text you when they change, and it fades when you change how you fight. How they look never changes.");
+    this.Text("Cyberbane-Settings-Gatherings", "Gatherings");
+    this.Text("Cyberbane-Settings-Gatherings-Desc", "Gangs gather near you at a set time, and the street tells you where and when: a funeral after you kill a Rival or a boss of theirs, a celebration after they take a district, an initiation, a recruiting drive. Crash one and they feel it (a funeral is never forgiven); let it happen and they come out stronger. At a funeral you can pay your respects instead.");
+    this.Text("Cyberbane-Settings-DealsAndRackets", "Arms deals and rackets");
+    this.Text("Cyberbane-Settings-DealsAndRackets-Desc", "A gang buying guns from another, or collecting its take, near you at a set time. Crash a deal and the crate is yours; hit a racket and the cash is. Leave them be and the gang grows stronger.");
+    this.Text("Cyberbane-Settings-GangLifeOften", "How often gangs get together");
+    this.Text("Cyberbane-Settings-GangLifeOften-Desc", "How often gatherings, deals and rackets come up. At 1.0, about one every forty minutes of play when there's a gang around; sit-downs keep their own pace.");
     this.Text("Cyberbane-Settings-LifepathHeadStart", "A head start from your lifepath");
     this.Text("Cyberbane-Settings-LifepathHeadStart-Desc", "When Cyberbane starts a playthrough (a new game, or Start over) your past counts: a Nomad starts known and liked by the Aldecaldos and disliked by the Wraiths, a Street Kid known to the Valentinos and Heywood, a Corpo known to Arasaka and not kindly. A playthrough Cyberbane already knows is never changed.");
 

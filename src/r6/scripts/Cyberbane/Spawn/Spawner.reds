@@ -1181,6 +1181,15 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBSetUpStreet(sys, game, puppet, true);
     return;
   }
+  // Gang life's people (Spawn/StreetEvents.reds, 2.3.3): street people, and a deal's guard built like the gang's best.
+  if des.IsTagged(id, n"CB_Event") {
+    CBSetUpStreet(sys, game, puppet, false);
+    let eventSeat = CBTaggedApexSeat(des, id);
+    if eventSeat >= 0 {
+      CBSetUpMeetApex(sys, game, puppet, eventSeat);
+    }
+    return;
+  }
   // A wannabe walks up first and only turns on V when they get there (Spawn/Wannabe.reds, 2.3.1).
   if des.IsTagged(id, n"CB_Wannabe") {
     CBSetUpStreet(sys, game, puppet, false);

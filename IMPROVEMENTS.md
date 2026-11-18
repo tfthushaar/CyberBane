@@ -40,7 +40,7 @@ By impact for the effort, most first:
 3. **What is left of the codes** (11, 18, 20): the Claws' protection and assassin, the Wraiths' road, the corps.
 4. **The facedown** (53). A Cyberpunk-canon moment before every Rival fight.
 5. **A price on V's head, and the hunters' ladder** (39). A second nemesis line with a goal of its own.
-6. **Funerals** (22). Closes the loop on every Rival V kills, and feeds kin.
+6. *(Built in 2.3.3: funerals and the rest of gang life's gatherings, deals and rackets.)*
 7. **Back a gang, and the war chest** (33, 34). A side to take and a strategy in the turf war.
 8. **Run with a crew** (65). The payoff for being liked.
 9. **Panic in the dark** (80). Stealth play gets the terror loud play already has.
@@ -58,26 +58,10 @@ By impact for the effort, most first:
 Built on the sit-down's machinery: a time, a place, a pin once V hears of it (item 32), spawns out of sight, and
 an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's power struggles; the old item 20)*
 
-22. **Funerals.** A day after V kills a Rival or a lieutenant, their people gather on their turf to remember
-    them. Attack it: their hatred doubles (the Valentinos never forgive it) and kin may swear revenge on the spot.
-    Stay away: nothing. Walk up empty-handed with good standing: **[Pay respects]** eases the grudge, though the
-    dead one's kin may still spit. **M**
-23. **Celebrations.** A gang celebrates a win (turf taken, V's crew beaten): a lieutenant drinking with their
-    people in a club's back room or a street party. Crash it and the lieutenant is easy to reach; leave it and
-    the gang grows stronger in that district. **M**
-24. **Initiations.** A recruit has to prove themselves: rob a shop, beat somebody, kill somebody. V comes upon
-    it and stops it (the recruit runs, the gang is annoyed, the street likes it) or lets it happen. **M**
-25. **Recruitment drives.** A gang signs up new blood in a district; unless V scatters them, its turf there
-    grows faster for a day. A broker's text says where. **M**
 26. **Hunts.** A gang chasing somebody through the streets (an informant, a debtor) runs them past V. Shelter
     them (**[Get behind me]**) and they owe V tips; hand them over for the gang's standing; or look away. **M**
 27. **Executions.** A lieutenant executes a prisoner at a marked place at a set hour. Stop it and the prisoner
     owes V; let it happen and the street hears V let it. The one part of the old item 20 not built. **M to L**
-28. **Arms deals.** Two gangs, or a gang and a corporate fence, trade guns at a set place. Hit it: the loot goes
-    to V's inventory, both sides lose strength, and buyer and seller blame each other. **M**
-29. **Rackets.** Each gang's business as a place V can hit, found through intel (the squeeze, scans,
-    informants): the Valentinos' chop shop, the Claws' BD den, the Scavs' clinic, Maelstrom's chrome workshop,
-    a stash house. Hitting one drains the war chest (item 34) and the district's strength. **M** *(Mafia III)*
 30. **Front lines.** In a contested district, the two gangs' people clash now and then: both sides spawned out
     of sight and set hostile to each other, the way Cyberbane already sets its people against V's companions.
     V can pick a side; the winner pushes the turf. **M to L** *(Ambient Factions of Night City; San Andreas's
@@ -85,9 +69,6 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
 31. **Power struggles.** When a leader dies, two lieutenants fight for the chair (`Rivals/Hierarchy.reds` has
     the seats). For a few days each texts V asking for help against the other. Back one and they win and owe V;
     kill both and the gang is leaderless, weaker and wilder for a while. **M to L** *(Shadow of War)*
-32. **Word of what's coming.** Overheard lines and broker texts mention an event before it happens ("Claws are
-    burying Kenji tomorrow night, by the shrine"), so V can plan for it instead of only stumbling on it. Rumour
-    engine, `Narrative/Whispers.reds`. **S**
 
 ## 4. Turf and war
 

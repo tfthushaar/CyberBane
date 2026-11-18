@@ -181,16 +181,8 @@ public class CBStreetLife {
   private let m_favBody: EntityID;
   private let m_favUntil: Int32;
   private let m_favLeaned: Bool;
-  // The sit-down.
-  private let m_meetA: CName;
-  private let m_meetB: CName;
-  private let m_meetAt: Vector4;
-  private let m_meetFrom: Float;       // game seconds
-  private let m_meetPin: NewMappinID;
-  private let m_meetPinned: Bool;
-  private let m_meetSpawned: Bool;
-  private let m_meetIds: array<EntityID>;
-  private let m_meetNext: Int32;
+  // The sit-down and the rest of gang life's events (Spawn/StreetEvents.reds, 2.3.3).
+  private let m_events: ref<CBEventEngine>;
   // While you were out.
   private let m_toldOut: Bool;
   private let m_settled: Int32;
@@ -222,7 +214,7 @@ public class CBStreetLife {
     this.WhileOut(sys, game, player, busy);
     this.Bagman(sys, game, des, player, now, busy);
     this.Favour(sys, game, des, player, now);
-    this.SitDown(sys, game, des, player, busy);
+    this.Events().Tick(sys, game, des, player, busy);
     this.Surrenders(sys, game, player, now);
     this.Claim(sys, game, des, player, now, busy);
   }
@@ -235,7 +227,7 @@ public class CBStreetLife {
     this.m_bagDone = false;
     this.FavourEnd(game);
     this.m_favLeaned = false;
-    this.EndMeet(game);
+    this.Events().Reset(game);
     let i = 0;
     while i < ArraySize(this.m_gaveUp) {
       let p = this.m_gaveUp[i];
@@ -470,195 +462,12 @@ public class CBStreetLife {
 
   // ---- The sit-down ----------------------------------------------------------------------------------------
 
-  private func SitDown(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>, busy: Bool) -> Void {
-    let nowT = sys.GetTickCount();
-    let now = CBGameSeconds(game);
-    if NotEquals(this.m_meetA, n"") {
-      this.KeepMeetPin(game);
-      let ppos = player.GetWorldPosition();
-      let dist = Vector4.Distance(ppos, this.m_meetAt);
-      // Their time has come and V is on the way in, not yet looking: put them there.
-      if !this.m_meetSpawned && now >= this.m_meetFrom && dist <= CBConfig.MeetSpawnDistance() && dist >= 25.0 {
-        this.m_meetSpawned = this.PlaceMeet(sys, game, des, player);
-      }
-      if this.m_meetSpawned {
-        let down = 0;
-        // Taken out of the meeting by V (CBTakenOutByV): put down, broken or giving up after V hurt them, or
-        // talked off. Until 2.1.0 only the downed counted, so two sent running made the crash impossible.
-        for id in this.m_meetIds {
-          let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
-          if CBTakenOutByV(p) {
-            down += 1;
-          }
-        }
-        if down >= Max(2, ArraySize(this.m_meetIds) - 1) {
-          this.Crashed(sys, game);
-          return;
-        }
-      }
-      if now >= this.m_meetFrom + CBConfig.MeetWindowSeconds() || !CBStreetLifeOn(n"sitDowns") {
-        if CBMessagesOn() && CBStreetLifeOn(n"sitDowns") {
-          CBHearsayFromStreet(game, s"\(CBCapFirst(CBFactionLabel(this.m_meetA))) and \(CBFactionLabel(this.m_meetB)) made their deal. Nobody stopped them.", n"");
-        }
-        this.EndMeet(game);
-      }
-      return;
+  // The sit-down and gang life's other events, one at a time (Spawn/StreetEvents.reds, 2.3.3).
+  public func Events() -> ref<CBEventEngine> {
+    if !IsDefined(this.m_events) {
+      this.m_events = new CBEventEngine();
     }
-    if busy || nowT < this.m_meetNext || !CBStreetLifeOn(n"sitDowns") || player.IsInCombat() {
-      return;
-    }
-    this.m_meetNext = nowT + CBJitter(CBConfig.MeetGapTicks(), 0.4);
-    if RandF() >= CBConfig.MeetChance() {
-      return;
-    }
-    let a = CBTurfHolder(sys, game, sys.GetCurrentDistrict());
-    if Equals(a, n"") || !CBFactionFieldsSquads(a) || !CBFactionOn(a) {
-      return;
-    }
-    let b = n"";
-    for g in CBGangRivalsOf(sys.GetContent(), a) {
-      if Equals(b, n"") && CBFactionFieldsSquads(g) && CBFactionOn(g) && IsDefined(sys.FindFaction(g)) {
-        b = g;
-      }
-    }
-    let spot: Vector4;
-    if Equals(b, n"") || !CBWhereaboutsSpot(sys, game, player, spot) {
-      return;
-    }
-    this.m_meetA = a;
-    this.m_meetB = b;
-    this.m_meetAt = spot;
-    this.m_meetFrom = now + RandRangeF(1.0, 2.0) * 3600.0;
-    this.m_meetSpawned = false;
-    ArrayClear(this.m_meetIds);
-    this.KeepMeetPin(game);
-    if CBMessagesOn() {
-      CBHearsayFromDistrict(game, sys.GetCurrentDistrict(),
-        s"\(CBCapFirst(CBFactionLabel(a))) and \(CBFactionLabel(b)) are sitting down near here around \(CBClockWord(this.m_meetFrom)). Crash it, and they both feel it.", n"");
-    }
-    CBLog.Info(n"Street", s"A sit-down between \(NameToString(a)) and \(NameToString(b)) is set.");
-  }
-
-  // The pin on the place, in step with the map markers setting, the way the pin on a Rival's place is
-  // (Rivals/Whereabouts.reds, CBLeadPinTick). It was only ever put up when the sit-down was set, so
-  // switching markers off left it on the map, and switching them on never put it up.
-  private func KeepMeetPin(game: GameInstance) -> Void {
-    let want = CBMapMarkersOn();
-    if Equals(want, this.m_meetPinned) {
-      return;
-    }
-    let ms = GameInstance.GetMappinSystem(game);
-    if !IsDefined(ms) {
-      return;
-    }
-    if !want {
-      ms.UnregisterMappin(this.m_meetPin);
-      this.m_meetPinned = false;
-      return;
-    }
-    let data: MappinData;
-    data.mappinType = t"Mappins.DefaultStaticMappin";
-    data.variant = gamedataMappinVariant.ApartmentVariant;
-    data.active = true;
-    data.visibleThroughWalls = true;
-    data.debugCaption = CBRivalPinCaption(CBCapFirst(CBFactionLabel(this.m_meetA)) + " and " + CBFactionLabel(this.m_meetB));
-    this.m_meetPin = ms.RegisterMappin(data, this.m_meetAt);
-    this.m_meetPinned = true;
-  }
-
-  // The setting's number of each gang (People per gang at a sit-down), out of V's sight round the place.
-  // Two each was the only size before this setting. Placed on rings round the middle: the first ring holds
-  // eight, and a bigger meeting stands further out. Short of room for all of
-  // them under MaxLiveSpawns, as many as fit are asked for, in pairs so neither gang outnumbers the other,
-  // and never fewer than one each: a sit-down V was told about still happens when the street is busy.
-  private func PlaceMeet(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>) -> Bool {
-    let fa = sys.FindFaction(this.m_meetA);
-    let fb = sys.FindFaction(this.m_meetB);
-    let want = Min(2 * CBSitDownPerGang(), CBSpawnRoom(game));
-    want -= want % 2;
-    if !IsDefined(fa) || !IsDefined(fb) || !TDBID.IsValid(fa.sampleRecord) || !TDBID.IsValid(fb.sampleRecord) || want < 2 {
-      return false;
-    }
-    let ppos = player.GetWorldPosition();
-    let fwd = player.GetWorldForward();
-    let ring = 0;
-    while ring < 3 && ArraySize(this.m_meetIds) < want {
-      let radius = 2.2 + Cast<Float>(ring) * 1.6;
-      let slots = 8 + ring * 4;
-      // Each ring turned half a step against the one inside it, so nobody stands right behind somebody.
-      let turn = Cast<Float>(ring) * 3.14159 / Cast<Float>(slots);
-      let k = 0;
-      while k < slots && ArraySize(this.m_meetIds) < want {
-        let ang = turn + Cast<Float>(k) * 6.28318 / Cast<Float>(slots);
-        k += 1;
-        let snapped: Vector4;
-        let at: Vector4;
-        if CBNavSnap(game, this.m_meetAt.X + CosF(ang) * radius, this.m_meetAt.Y + SinF(ang) * radius, this.m_meetAt.Z, snapped)
-           && CBSettleOnGround(game, snapped, at) && CBPointHiddenFrom(game, ppos, fwd, at) {
-          // Facing the middle, the way people meeting stand.
-          let facing = Quaternion.BuildFromDirectionVector(new Vector4(-CosF(ang), -SinF(ang), 0.0, 0.0));
-          // The two gangs take turns, and each gang's first few are its best, one per chair of its apex
-          // squad: they come first, so they stand nearest the middle, with their people round them. A gang
-          // with nobody for a chair (no roster, or nobody this install has) sends one of its rank and file.
-          let n = ArraySize(this.m_meetIds);
-          let side = n % 2 == 0 ? fa : fb;
-          let chair = n / 2;
-          let rec = side.sampleRecord;
-          let role = n"";
-          if chair < CBSitDownApexPerGang() {
-            let best = CBApexRosterRecord(side.id, chair);
-            if TDBID.IsValid(best) {
-              rec = best;
-              role = CBApexRoleTag(chair);
-            }
-          }
-          let id: EntityID;
-          if CBCreateSpawn(des, rec, n"", at, facing, n"CB_Meet", id, role) {
-            ArrayPush(this.m_meetIds, id);
-          }
-        }
-      }
-      ring += 1;
-    }
-    let placed = ArraySize(this.m_meetIds);
-    // Said once, when the sit-down is in place: a try that placed nobody is tried again next tick.
-    if placed >= 2 && placed < 2 * CBSitDownPerGang() {
-      CBLog.Info(n"Street", s"A sit-down placed \(placed) of \(2 * CBSitDownPerGang()) people.");
-    }
-    return placed >= 2;
-  }
-
-  private func Crashed(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-    CBWeakenGang(sys, game, this.m_meetA, CBConfig.MeetGangLoss());
-    CBWeakenGang(sys, game, this.m_meetB, CBConfig.MeetGangLoss());
-    CBTalkFear(sys, game, this.m_meetA, CBConfig.WordKeptFear());
-    CBTalkFear(sys, game, this.m_meetB, CBConfig.WordKeptFear());
-    let mult = 1.0;
-    let rt = CyberbaneRuntime.Get();
-    if IsDefined(rt) && rt.HasSettings() {
-      mult = rt.GetSettings().renownGainMult;
-    }
-    sys.AddRenownPoints(CBConfig.MeetRenown() * mult);
-    CBFileLog(sys, n"MeetCrashed", CBGameSeconds(game), CBEventDistrict(sys, game), this.m_meetA, 0.0);
-    if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"You crashed the sit-down between \(CBFactionLabel(this.m_meetA)) and \(CBFactionLabel(this.m_meetB)). Neither of them will forget it.", n"");
-    }
-    CBLog.Info(n"Street", "V crashed a sit-down.");
-    this.EndMeet(game);
-  }
-
-  private func EndMeet(game: GameInstance) -> Void {
-    if this.m_meetPinned {
-      let ms = GameInstance.GetMappinSystem(game);
-      if IsDefined(ms) {
-        ms.UnregisterMappin(this.m_meetPin);
-      }
-      this.m_meetPinned = false;
-    }
-    this.m_meetA = n"";
-    this.m_meetB = n"";
-    ArrayClear(this.m_meetIds);
-    CBDeleteTaggedSafe(game, n"CB_Meet", true, true);
+    return this.m_events;
   }
 
   // ---- Surrender (experimental) ----------------------------------------------------------------------------

@@ -272,6 +272,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       wasRival = true;
       if IsDefined(slain) {
         CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
+        CBOweFuneral(game, slain.faction);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());
         }
@@ -408,6 +409,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     CBTerrorDeed(sys, CBConfig.TerrorMaxTac());
   }
   if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Boss) {
+    CBOweFuneral(game, info.faction);
     CBTerrorDeed(sys, CBConfig.TerrorBoss());
     CBCreateRumor(sys, game, n"BossKill", 15.0, info.district, info.faction, info.witnessed);
     CBRememberPlace(sys, game, n"BossKill", info.faction, info.district, info.position);

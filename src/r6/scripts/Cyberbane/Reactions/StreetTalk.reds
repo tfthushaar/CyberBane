@@ -1079,6 +1079,9 @@ public class CBStreetTalk {
     if choice == CBTalkActSpare() || choice == CBTalkActCollect() || choice == CBTalkActExile() {
       return CBRivalMercyAnswer(sys, game, player, t, choice);
     }
+    if choice == CBTalkActRespects() {
+      return CBEventTalkAnswer(sys, game, t);
+    }
     if choice == CBTalkActHushPay() || choice == CBTalkActHushLean() || choice == CBTalkActWatch() {
       return CBStreetPayAnswer(sys, game, player, t, choice);
     }
@@ -2157,6 +2160,10 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   if gang && (m == CBTalkFriendly() || m == CBTalkWary()) && CBStreetLifeOn(n"favours") && IsDefined(lifeC)
      && !lifeC.FavourOpen() && !CBMaskHas(done, CBTalkActFavour()) {
     ArrayPush(out, CBTalkMakeLine("[Ask] Need anything done?", CBTalkActFavour(), t"ChoiceCaptionParts.GangWatchIcon"));
+  }
+  // A funeral's mourners (Spawn/StreetEvents.reds, 2.3.3).
+  for el in CBEventTalkLines(game, t) {
+    ArrayPush(out, el);
   }
   // Paying the street (Reactions/StreetPay.reds, 2.3.1): hush a witness, or have somebody keep watch.
   for pl in CBStreetPayLines(sys, game, t) {
