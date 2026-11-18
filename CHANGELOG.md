@@ -3,6 +3,49 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.5.0 (18 November 2026)
+
+**A crew of your own**
+- **People can work for you.** Spare a Rival a second time and, where they lie, tell them they owe you. Frighten a
+  ganger badly enough and they join you. Take on a solo a broker offers by text, or ask a gang that would die for you
+  to lend you one of theirs. Up to five on the roster.
+- **Call them when it counts.** "Need you. Now." on your crew's phone thread or on the Hub, while somebody is hunting
+  you, an ambush springs, or a fight with Cyberbane's people is on. Up to three come, fight at your side the way the
+  game's own companions do, and head home a minute after it is over. With **Come on their own**, the most loyal turn
+  up unasked when an ambush springs.
+- **People with a life.** Each has a name, a seat (heavy, shooter, blade or netrunner), a rank that climbs with the
+  fights you win together, scars, and from rank three a nickname. One who dies is gone for good: their old gang buries
+  them, and whoever did it is marked on your scanner.
+- **Loyalty, and betrayal.** Fights won, a fair cut and standing over them when they go down make them loyal. Leaving
+  them lying, losing one of the crew, an unpaid cut and killing their old gang wear it away. Let it run low and a call
+  can go wrong: they sell you to the hunters, or come and turn on you in the fight and live on as a new kind of Rival,
+  the Betrayer, who knows your haunts. The crew page and their texts always warn you first.
+- **The weekly cut.** Your crew asks for a cut each week, paid from the phone or the Hub. Gangs that hate you answer
+  a crew of three or more with bigger crews of their own, and your crew keeps an eye on any streets you run.
+
+**The Hub, rebuilt**
+- **Pictures first.** Gangs open as the web of who is at war with whom, Rivals as each gang's tree, Turf and The City
+  as a map of Night City with each district where it lies, and your crew round you with lines as strong as their
+  loyalty. One button turns any of them into a list.
+- **A Crew page:** who is ready, who is restless and what they are owed, with buttons to call them, pay them, let one
+  go or take on a solo.
+- **Standing at a glance.** Your four scores are tiles, and what is on its way to you is a row each, coloured by how
+  close it is.
+- **Bars on every list:** where you stand with a gang, your name in a district, a gang's hold on its streets, a
+  Rival's rank, a crew member's loyalty.
+- **Everything fits.** Long names and labels are drawn smaller to fit their space, and the Titles page scrolls, so
+  every title shows.
+
+**Fixed**
+- A Rival's people holding for a facedown, or a sergeant's crew at a parley, could turn hostile again a moment later,
+  and your companions could open fire on them, or on a crew you had just paid to leave. They hold now.
+
+**Mod Settings**
+- A new heading, **Your crew**: Your crew (on), Come on their own (off), Betrayal (on), Frightened into joining, and
+  The weekly cut. The headings after it move down one; your values are kept.
+
+Your progress carries over.
+
 ## 2.4.6 (18 November 2026)
 
 **Telling it**

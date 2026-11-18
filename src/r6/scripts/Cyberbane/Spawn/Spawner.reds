@@ -1577,7 +1577,7 @@ public func CBRearmTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     for id in ids {
       let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
       if IsDefined(p) && p.cbArmTick > 0 && tick - p.cbArmTick <= CBConfig.RearmWatchTicks()
-         && p.IsAttached() && CBStillStanding(p) && !p.cbMoraleBroken && !p.cbSurrendered {
+         && p.IsAttached() && CBStillStanding(p) && !p.cbMoraleBroken && !p.cbSurrendered && !p.cbFacedownHeld {
         let agent = p.GetAttitudeAgent();
         if IsDefined(agent) && NotEquals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
           CBTrace("attitude: one of ours came up neutral; hostile again");
@@ -1744,6 +1744,30 @@ public func CBMakeHostileToTheseCompanions(sys: ref<CyberbaneSystem>, puppet: re
         CBTrace("attitude: one of ours and V's companion");
         agent.SetAttitudeTowards(cagent, EAIAttitude.AIA_Hostile);
         cagent.SetAttitudeTowards(agent, EAIAttitude.AIA_Hostile);
+      }
+    }
+  }
+}
+
+// The other way (2.5.0): one of ours standing down, and V's companions, neutral to each other both ways. Set hostile
+// pair by pair when ours arrived, the pairs outlived the reason: V's crew (Reactions/Crew.reds), a borrowed crew or a
+// friend from another mod opened fire on a Rival's people holding for a facedown, a sergeant's crew at a parley, or a
+// crew V had just paid to walk away, and the fight came back.
+public func CBCalmTowardCompanions(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(sys) || !IsDefined(puppet) || !puppet.IsAttached() {
+    return;
+  }
+  let agent = puppet.GetAttitudeAgent();
+  if !IsDefined(agent) {
+    return;
+  }
+  for c in CBPlayerCompanions(sys) {
+    if IsDefined(c) && c.IsAttached() && NotEquals(c.GetEntityID(), puppet.GetEntityID()) {
+      let cagent = c.GetAttitudeAgent();
+      if IsDefined(cagent) {
+        CBTrace("attitude: one of ours and V's companion, standing down");
+        agent.SetAttitudeTowards(cagent, EAIAttitude.AIA_Neutral);
+        cagent.SetAttitudeTowards(agent, EAIAttitude.AIA_Neutral);
       }
     }
   }

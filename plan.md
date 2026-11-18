@@ -1,8 +1,8 @@
 # Cyberbane plan: the road to 2.5.0
 
-Status: **Building on to 2.5.0 (2026-11-18). Done: 2.3.1 to 2.4.6, all released, with a bug pass over every system
-inside 2.4.2. Next: 2.5.0: a crew of my own, the comprehensive pass, and the whole Hub rebuilt cleaner, with pictures
-wherever they help; I play it all at the end.** I wrote this on
+Status: **The road is built (2026-11-18). Done: 2.3.1 to 2.5.0, all released, with a bug pass over every system
+inside 2.4.2 and the final pass inside 2.5.0, which also brought a crew of my own and the whole Hub rebuilt with
+pictures. Next: I play it all.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
@@ -32,21 +32,20 @@ rehearsal from the release before; none played yet):
 | 2.4.3 | 37687a2 | A price on V's head and the hunters' ladder [39], the corporations hire killers [20], corporate interest [88]; rival gangers clash on contested streets [N1]; the web of gangs on the Hub [H1]. [N2] dropped (the game's own gunfire already does it). A fix: Rivals came no more with crews off, with They Will Remember, or after peace with their gang |
 | 2.4.4 | 9420e11 | The facedown [53] [54] and a Rival on their feet [64], humiliation [55], back from the dead [56], Rivals at war [57] and bonds [58], trophies [60], where they ended up [61], places with meaning [62], last words [63], Rival chrome [U9], places lived in [U10], tactics by kind [U11], Rivals' lines [L4], "Nobody kills you but me" made default [E4], the Rivals tree [H2]; `CBRivalBook`. A fix: how V fights was misread from 1.3.2 on |
 | 2.4.5 | f15be9e | Run with a crew [65] on the game's own follower role, one of theirs [66], ransom [67], feed the street a lie [69], informants with a life [U12], the sergeant's parley [U2] |
-| 2.4.6 | (this release) | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
+| 2.4.6 | 8979f48 | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
+| 2.5.0 | b2c8659, 56c0c7b, (this release) | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, a bar on every list, text that fits; the final pass |
 
-**In progress:** 2.5.0: a crew of my own, then the final form and a cleaner Hub.
+**In progress:** nothing. The road ends at 2.5.0.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
-| Version | What | Items |
-|---|---|---|
-| 2.5.0 | A crew of my own, and the final form | [C1]-[C10] (below); the comprehensive pass, optimisation, [U16], [L6], every default confirmed |
+Nothing. What was not built, and why, is in IMPROVEMENTS.md.
 
 **Moved or dropped along the way:** [43] sound before contact (no door or engine sound event confirmed); [76] [77]
 (I do not have Wannabe Edgerunner or Dark Future installed, so there was nothing to probe); tribute haggled by text (folded into [U13]);
 [U1]'s car seats keep one record. Each is noted in its release's section and in IMPROVEMENTS.md.
 
-**Next:** 2.5.0, then the rest of the road to 2.5.0, built straight through; I play the whole of it at the
+**Next:** I play the road, 2.3.1 to 2.5.0; then the rest of the road to 2.5.0, built straight through; I play the whole of it at the
 end instead of stopping after 2.4.2. The bug pass over every system came first, with the 2.5.0 pass's method, and what
 it found went out inside 2.4.2. [H1] the web went out in 2.4.3 and draws the 2.4.0 systems (wars, truces, backing,
 standing), so it will help me check them when I play.
@@ -203,7 +202,7 @@ first release that uses it.
 | **2.4.4** | 6 Rivals | [53]-[64]; [U9]-[U11]; [L4]; [E4]; [H2]; `CBRivalBook` | M-L | done |
 | **2.4.5** | 7 Talk and allies | [65]-[67], [69]; [U12]; [U2]'s parley | M-L | done |
 | **2.4.6** | 8 Telling it | [79]-[85], [87], [90]-[92]; [U13]-[U15]; [L5]; voices, mod events | M | done |
-| **2.5.0** | 9 A crew of my own, then the final form | [C1]-[C10]; `CBCrewBook`; the comprehensive bug pass, optimisation, [U16], [L6], every default confirmed, settings and README for good | L | left |
+| **2.5.0** | 9 A crew of my own, then the final form | [C1]-[C10]; `CBCrewBook`; the comprehensive bug pass, optimisation, [U16], [L6], every default confirmed, settings and README for good | L | done |
 
 \* [68] moved from 2.3.1 to 2.4.1. Not built: [43], [76], [77] (see "Where it stands").
 
@@ -928,6 +927,16 @@ when that body streams out and back; what a follower does when I get into a car 
 by script, so mine are sent home past a distance instead); the follower's downed state (`FollowerDefeated`) on an
 ordinary gang record; and that clearing the role really restores the attitude group on a spawned body.
 
+**Built in 2.5.0.** In `Reactions/Crew.reds`, with the roster in `CBCrewBook` (a list of `CBCrewMember`, and the
+last twelve who left), a Hub page and a phone thread. Where it differs from the plan above: they arrive on foot from
+out of my sight, the way a borrowed crew does, because the car arrival belongs to the hunt's lanes; the funeral is
+their old gang's (it buries them, and the crew texts me), since the street's funerals are a gang's; whoever killed
+one is marked (on the scanner, as "KILLED <name>"), and becomes a Rival with that on their record if they get away
+when the hunt gives up; a Rival who killed one is a lead at once. Hub actions (call, pay, let go, hire) wait for the
+game to be back, like every other. My own streets bring in a quarter more while two or more are on the crew. A
+Betrayer is a new Rival source, `ECBRivalSource.Betrayer`, which `ValidateRivals` keeps on load; one who owed me
+turns back into the same Rival they were.
+
 **Done when:** a recruited Rival, a frightened ganger and a hired merc have each been called into a hunt and fought
 the hunters; none has taken a second order, or turned on me without the page having warned me first; a betrayal
 has been played both ways, the tip-off and the turn, and the Betrayer has come back as a Rival; one of the crew has
@@ -939,6 +948,15 @@ died and been buried; and nobody of mine is left in the world once a fight is ov
 
 Besides the crew above, no new idea goes in. 2.5.0 is everything from 2.3.1 to 2.4.6, and the crew, made to work
 together, checked end to end, and documented for good. It starts only when 2.4.6 is out.
+
+**Done in 2.5.0.** The every-file read was the 2.4.2 pass; this one read what came after it (2.4.3 to the crew)
+against each other and against what was already there, and went through the pairs in the list below. What it found:
+the re-arm watch turned a facedown's or a parley's held people hostile again inside its first thirty seconds, and V's
+companions stayed at war with people holding still or a crew paid to leave (`CBCalmTowardCompanions`); both fixed at
+the source. The Hub was rebuilt as I asked: every page that has a picture opens as one (the web, the tree, the map,
+the crew) with a switch to a list, Standing as tiles and rows, a bar on every list, and text that is drawn smaller
+to fit before anything is shortened, and only ever at a word. The layouts were laid out to scale before they went in
+and checked for overlap.
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,
@@ -1004,3 +1022,6 @@ and the spec brought up to date; the Nexus description and the spawn-and-chance 
 6. **The crew in 2.5.0.** Added 2026-11-18. 2.5.0 was meant to take no new idea; the crew is the exception,
    because it is where the Rivals (6) and allies (7) groups were always heading and it needs both. It ships on by
    default with betrayal on, and Come on their own off until I have played it.
+7. **Still open after 2.5.0.** The map remembering [85] needs world-map pins of its own, where Cyberbane has only
+   ever placed one at a time; Ambient Factions [92] is not installed here; a guard escaping to move a Rival's lead
+   [U10] and a ripperdoc as a lead [U9] were left out of their releases. Each is mine to decide once I have played.

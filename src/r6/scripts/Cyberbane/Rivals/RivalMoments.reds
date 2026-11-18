@@ -426,6 +426,8 @@ func CBFacedownCalm(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
     CBTrace("attitude: a Rival and their people hold for a facedown");
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
   }
+  // And V's companions, or they open fire on people holding still (2.5.0). Hostile again with V (CBFacedownHostile).
+  CBCalmTowardCompanions(CyberbaneSystem.Get(game), p);
   p.cbFacedownHeld = true;
   CBCancelMove(p);
   CBTalkHold(p);
@@ -521,6 +523,8 @@ func CBFacedownStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref
   if CBNpcSafe(sys, p) && CBStillStanding(p) {
     CBUntrackOnMap(game, p);
     CBTalkReleaseHold(p);
+    CBCalmTowardCompanions(sys, p);
+    p.cbFacedownHeld = false;
     CBOrderFlee(game, p);
   }
 }

@@ -521,6 +521,8 @@ public func CBCallOffGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction
             CBTrace("attitude: one of ours called off; neutral to V");
             agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
           }
+          CBCalmTowardCompanions(sys, p);   // and to V's companions, or V's crew guns them down as they go (2.5.0)
+          p.cbFacedownHeld = false;         // a parley's crew walks off, no longer held
           CBUntrackOnMap(game, p);
         }
         des.UnassignTag(id, tag);

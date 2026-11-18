@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.4.6.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.5.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -35,8 +35,9 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **Messages in your phone.** Gangs, Rivals and street contacts text you, and some threads let you
   answer: pay a gang off, or haggle over where a Rival is hiding.
 - **The Hub.** A Cyberbane tab in the game menu shows your standing, every gang, who holds each
-  district, your Rivals, your titles and a history of what you did, and explains why the city
-  treats you the way it does.
+  district, your Rivals, your crew, your titles and a history of what you did, drawn as pictures
+  where that helps (a web of the gangs, a map of Night City, each gang's Rivals as a tree), and
+  explains why the city treats you the way it does.
 
 ### New in 2.0
 
@@ -87,6 +88,14 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   war with each other and bound to each other, trophies, chrome that answers how you hurt them, last words, and each
   gang's Rivals drawn as a tree on the Hub.
 
+### New in 2.5
+
+- **A crew of your own.** Rivals who owe you, gangers you frightened, solos you pay and people a friendly gang lends
+  you work for you. Call up to three when you are hunted, and keep them loyal, or one day they sell you out or turn
+  on you and come back as a Rival.
+- **The Hub in pictures.** The gangs as a web, your Rivals as trees, turf and your name on a map of Night City, your
+  crew round you, and a bar on every list.
+
 ## Requirements
 
 Install these first:
@@ -116,7 +125,8 @@ lives in your saves: a save made while the mod is removed loses it.
 ## How to play
 
 - **The Hub:** open the game menu and pick the **Cyberbane** tab, after Journal. Click a gang to pay
-  them off, click a Rival to read their file, buy where they are hiding or forget them.
+  them off, click a Rival to read their file, buy where they are hiding or forget them, and call or
+  pay your crew. **Show as a list** on a page turns its picture into a list.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
   a line. Reach for a weapon and the conversation ends.
 - Cyberbane adds no keys of its own.
@@ -124,7 +134,8 @@ lives in your saves: a save made while the mod is removed loses it.
 ## Settings
 
 Everything is in **Mod Settings > Cyberbane**. The first page, **General**, has what most people
-change: Cyberbane on or off, a preset (Subtle, Default, Dramatic), where messages go, the hunt line
+change: Cyberbane on or off, a preset (Subtle, Default, Dramatic, or one with a shape: Nemesis, TurfWar,
+QuietLife), where messages go, the hunt line
 at the top of the screen, and map markers. The pages after it go deeper, one subject each, with
 **Advanced** at the bottom.
 

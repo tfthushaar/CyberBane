@@ -1025,6 +1025,10 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     CBCrewTurnedTick(sys, game, book, des, player);
   }
   CBCrewServiceHub(sys, game, book);
+  // Nobody on the roster and nobody out: nothing to watch for.
+  if book.Count() == 0 && book.OutCount() == 0 {
+    return;
+  }
   if book.OutCount() == 0 {
     if !CBLiveTaggedPresent(game, n"CB_Ambush") {
       book.ambushAnswered = false;
