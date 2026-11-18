@@ -379,8 +379,10 @@ public class CBStreetLife {
     let reg = sys.GetRegistry();
     let ppos = player.GetWorldPosition();
     if IsDefined(reg) {
+      // The per-NPC gate before IsCrowd, which reads their record (2.2.1): the registry still holds
+      // people who have streamed out until its next prune, and the same order in the talk bubbles crashed.
       for p in reg.GetAll() {
-        if IsDefined(p) && p.IsCrowd() && p.IsAttached() && !p.IsDead() && p.cbTalkTimes == 0 {
+        if IsDefined(p) && p.cbTalkTimes == 0 && CBNpcSafe(sys, p) && !p.IsDead() && p.IsCrowd() {
           let d = Vector4.Distance(ppos, p.GetWorldPosition());
           if d >= 15.0 && d <= 60.0 && CBSafetyGate.CanTalkTo(p) {
             p.cbFavourMark = true;
@@ -783,7 +785,7 @@ public class CBStreetLife {
     let gangs: array<CName>;
     let enemy = n"";
     for p in reg.GetAll() {
-      if IsDefined(p) && p.IsAttached() && !p.IsDead() && CBStillStanding(p) && CBNpcInCombat(p)
+      if CBNpcSafe(sys, p) && !p.IsDead() && CBStillStanding(p) && CBNpcInCombat(p)
          && Vector4.Distance(ppos, p.GetWorldPosition()) <= 45.0 {
         let agent = p.GetAttitudeAgent();
         if IsDefined(agent) && IsDefined(pagent) && Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
@@ -842,7 +844,7 @@ public class CBStreetLife {
     }
     let apos = ally.GetWorldPosition();
     for p in reg.GetAll() {
-      if IsDefined(p) && p.IsAttached() && !p.IsDead() && Equals(CBClassifyFaction(p), this.m_allyEnemy)
+      if CBNpcSafe(sys, p) && !p.IsDead() && Equals(CBClassifyFaction(p), this.m_allyEnemy)
          && Vector4.Distance(apos, p.GetWorldPosition()) <= 80.0 {
         let other = p.GetAttitudeAgent();
         if IsDefined(other) {

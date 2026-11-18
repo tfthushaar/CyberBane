@@ -1,8 +1,16 @@
 // Cyberbane - NPC registry (spec §9.1)
 //
-// Holds weak references to attached NPC puppets, populated by the Entity/Attached
-// Codeware callback. Despawned puppets' weak refs go undefined and are dropped by
-// Prune() on the fast tick, so no detach bookkeeping is required.
+// Holds weak references to NPC puppets, populated by the Entity/Attached Codeware callback. Entries that
+// have gone undefined or detached are dropped by Prune() on the fast tick, with no detach bookkeeping.
+//
+// So what GetAll() hands back is not "attached and ready", only "was, at some point" (2.2.1). A puppet
+// that streams out is still a live object, so its weak ref stays defined until the next prune, and the
+// prune is skipped on busy ticks; one that has just streamed in is in the list at once, before its
+// components are up. Every reader asks CBNpcSafe (Core/WorldState.reds) of an entry before reading
+// anything native from it: its record (IsCrowd, IsHuman, CBClassifyFaction), its attitude agent, its
+// status effects. Our own fields (cbTalkTimes and the like) are plain script data and may be read first,
+// to keep the walk cheap.
+// The talk bubbles read IsCrowd ahead of the gate and crashed the game in GetRecord.
 
 // Upper bound on tracked NPCs. The director only evaluates the nearest handful per tick,
 // so this just protects against pathological growth; live NPCs near V always fit.
@@ -96,6 +104,7 @@ public class CBNpcRegistry {
     return ArraySize(this.m_npcs);
   }
 
+  // Ask CBNpcSafe of each entry before reading native state from it (see the top of this file).
   public func GetAll() -> array<wref<ScriptedPuppet>> {
     return this.m_npcs;
   }
