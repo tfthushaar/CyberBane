@@ -34,6 +34,7 @@ rehearsal from the release before; none played yet):
 | 2.4.5 | f15be9e | Run with a crew [65] on the game's own follower role, one of theirs [66], ransom [67], feed the street a lie [69], informants with a life [U12], the sergeant's parley [U2] |
 | 2.4.6 | 8979f48 | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
 | 2.5.0 | b2c8659, 56c0c7b, db1eeda | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, a bar on every list, text that fits; the final pass |
+| 2.5.1 | (this release) | The map remembers [85] (`CBMapBook`), and with TweakXL a CYBERBANE box in the map's custom filters for every place pin; the Hub's cards, segmented bars and glowing lines. Ambient Factions [92] dropped |
 
 **In progress:** nothing. The road ends at 2.5.0.
 
@@ -1022,6 +1023,7 @@ and the spec brought up to date; the Nexus description and the spawn-and-chance 
 6. **The crew in 2.5.0.** Added 2026-11-18. 2.5.0 was meant to take no new idea; the crew is the exception,
    because it is where the Rivals (6) and allies (7) groups were always heading and it needs both. It ships on by
    default with betrayal on, and Come on their own off until I have played it.
-7. **Still open after 2.5.0.** The map remembering [85] needs world-map pins of its own, where Cyberbane has only
-   ever placed one at a time; Ambient Factions [92] is not installed here; a guard escaping to move a Rival's lead
-   [U10] and a ripperdoc as a lead [U9] were left out of their releases. Each is mine to decide once I have played.
+7. **Still open after 2.5.0.** Settled 2026-11-18: the map remembering [85] is built (2.5.1), with pins of its own
+   and its own box in the map's filters the way Gang Retaliation does it, on a filter type and a variant nobody else
+   uses; Ambient Factions [92] is dropped. Still mine to decide once I have played: a guard escaping to move a Rival's
+   lead [U10] and a ripperdoc as a lead [U9].

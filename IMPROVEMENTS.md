@@ -78,14 +78,13 @@ Built in 2.4.5 (`Reactions/Allies.reds`): every idea that was here.
 
 ## 9. How it is told
 
-Built in 2.4.6 (`Narrative/Telling.reds`), except the map remembering, below.
+Built in 2.4.6 (`Narrative/Telling.reds`), and the map remembering in 2.5.1.
 
-85. **The map remembers.** For a day, the Turf map pins where things happened: a Rival's death, a crashed
-    sit-down, a takeover. **S**
+*(85, the map remembering, built in 2.5.1: `UI/MapPins.reds`.)*
 
 ## 10. Rewards, settings and other mods
 
-92. *(Not built in 2.4.6: the mod is not installed here, so there is nothing to probe.)* **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
+92. *(Dropped in 2.5.1 at my word: not installed here, and not wanted.)* **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
     while it has a gang war going near V. **S**
 
 ---

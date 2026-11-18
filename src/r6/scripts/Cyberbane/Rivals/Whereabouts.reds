@@ -403,11 +403,8 @@ func CBLeadPinTick(sys: ref<CyberbaneSystem>, game: GameInstance, on: Bool) -> V
   // name, and every controller that draws a pin with that tag draws Cyberbane's gold mark and the
   // Rival's name instead of an apartment. Through walls, as a destination is: the reason the people
   // markers stay off that does not apply to a place.
-  data.mappinType = t"Mappins.DefaultStaticMappin";
-  data.variant = gamedataMappinVariant.ApartmentVariant;
-  data.active = true;
-  data.visibleThroughWalls = true;
-  data.debugCaption = CBRivalPinCaption(CBRivalDisplayName(sys.GetContent(), CBSightingRival(sys, lead)));
+  // With TweakXL (2.5.1) the pin is Cyberbane's own and sits under the map's CYBERBANE box (UI/MapPins.reds).
+  data = CBPlacePinData(CBRivalPinCaption(CBRivalDisplayName(sys.GetContent(), CBSightingRival(sys, lead))));
   CBTrace("map: pin on a rival's last known place");
   let id = ms.RegisterMappin(data, CBSightingPos(lead));
   sys.SetLeadPin(leadId, id);

@@ -53,6 +53,28 @@ public func CBHunterPinCaption(name: String) -> String {
   return CBRivalPinTag() + CBHunterPinMark() + name;
 }
 
+// A gathering on the way (Spawn/StreetEvents.reds) and a place the map remembers (UI/MapPins.reds, 2.5.1): marks of
+// their own after the tag, so each says what it is.
+public func CBEventPinMark() -> String = "#"
+
+public func CBEventPinCaption(text: String) -> String {
+  return CBRivalPinTag() + CBEventPinMark() + text;
+}
+
+public func CBIsEventPin(mappin: wref<IMappin>) -> Bool {
+  return IsDefined(mappin) && StrBeginsWith(mappin.GetDisplayName(), CBRivalPinTag() + CBEventPinMark());
+}
+
+public func CBIsMemoryPin(mappin: wref<IMappin>) -> Bool {
+  return IsDefined(mappin) && StrBeginsWith(mappin.GetDisplayName(), CBRivalPinTag() + CBMemoryPinMark());
+}
+
+public func CBMemoryPinId(mappin: wref<IMappin>) -> Int32 {
+  let caption = mappin.GetDisplayName();
+  let skip = StrLen(CBRivalPinTag()) + StrLen(CBMemoryPinMark());
+  return StringToInt(StrMid(caption, skip, StrLen(caption) - skip));
+}
+
 public func CBIsHunterPin(mappin: wref<IMappin>) -> Bool {
   if !IsDefined(mappin) {
     return false;
@@ -68,12 +90,18 @@ public func CBIsRivalPin(mappin: wref<IMappin>) -> Bool {
   return StrBeginsWith(mappin.GetDisplayName(), CBRivalPinTag());
 }
 
-// The Rival's name, out of the caption.
+// The Rival's name, out of the caption; or a remembered place's title, worked out now.
 public func CBRivalPinName(mappin: wref<IMappin>) -> String {
+  if CBIsMemoryPin(mappin) {
+    return CBMapMemoryTitle(CyberbaneSystem.Get(GetGameInstance()), CBMemoryPinId(mappin));
+  }
   let caption = mappin.GetDisplayName();
   let skip = StrLen(CBRivalPinTag());
   if CBIsHunterPin(mappin) {
     skip += StrLen(CBHunterPinMark());
+  }
+  if CBIsEventPin(mappin) {
+    skip += StrLen(CBEventPinMark());
   }
   return StrMid(caption, skip, StrLen(caption) - skip);
 }
@@ -93,6 +121,14 @@ public func CBRivalPinColor(mappin: wref<IMappin>) -> HDRColor {
 }
 
 public func CBRivalPinSubtitle(mappin: wref<IMappin>) -> String {
+  if CBIsMemoryPin(mappin) {
+    let sys = CyberbaneSystem.Get(GetGameInstance());
+    return IsDefined(sys) ? CBMapMemoryDesc(sys, CBMemoryPinId(mappin)) : "";
+  }
+  // A gathering's pin said "Cyberbane Rival. Last seen here." up to 2.5.0.
+  if CBIsEventPin(mappin) {
+    return "Gang business, near here now. Crash it, or leave them to it.";
+  }
   return CBIsHunterPin(mappin) ? "Hunting you." : "Cyberbane Rival. Last seen here.";
 }
 
@@ -103,6 +139,29 @@ protected final func CBBrandRivalPin() -> Bool {
   if !CBIsRivalPin(this.GetMappin()) {
     return false;
   }
+  // A gathering, a district taken, a place a fight was crashed: the game's own map glyph for it, in our colour.
+  let part = n"";
+  let tint = CBRivalPinColor(this.GetMappin());
+  if CBIsEventPin(this.GetMappin()) {
+    part = n"dynamic_event";
+    tint = CBHudAmber();
+  }
+  if CBIsMemoryPin(this.GetMappin()) {
+    let sys = CyberbaneSystem.Get(GetGameInstance());
+    let id = CBMemoryPinId(this.GetMappin());
+    part = CBMapMemoryPart(sys, id);
+    tint = CBMapMemoryTint(sys, id);
+  }
+  if NotEquals(part, n"") {
+    inkImageRef.SetAtlasResource(this.iconWidget, r"base\\gameplay\\gui\\common\\icons\\mappin_icons.inkatlas");
+    inkImageRef.SetTexturePart(this.iconWidget, part);
+    let mapIcon = inkWidgetRef.Get(this.iconWidget);
+    if IsDefined(mapIcon) {
+      mapIcon.UnbindProperty(n"tintColor");
+      mapIcon.SetTintColor(tint);
+    }
+    return true;
+  }
   let glyph = TweakDBInterface.GetUIIconRecord(t"ChoiceIcons.BountyHuntIcon");
   if !IsDefined(glyph) {
     return true;
@@ -112,7 +171,7 @@ protected final func CBBrandRivalPin() -> Bool {
   let icon = inkWidgetRef.Get(this.iconWidget);
   if IsDefined(icon) {
     icon.UnbindProperty(n"tintColor");
-    icon.SetTintColor(CBRivalPinColor(this.GetMappin()));
+    icon.SetTintColor(tint);
   }
   return true;
 }

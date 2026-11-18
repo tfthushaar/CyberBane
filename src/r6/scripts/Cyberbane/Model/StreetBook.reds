@@ -113,6 +113,10 @@ public class CBStreetBook extends ScriptableSystem {
     return i >= 0 && i < this.PlaceCount() ? this.m_placeAt[i] : 0.0;
   }
 
+  public func PlaceDistrict(i: Int32) -> CName {
+    return i >= 0 && i < this.PlaceCount() && i < ArraySize(this.m_placeDistrict) ? this.m_placeDistrict[i] : n"";
+  }
+
   public func PlacePos(i: Int32) -> Vector4 {
     if i < 0 || i >= this.PlaceCount() {
       return new Vector4(0.0, 0.0, 0.0, 1.0);

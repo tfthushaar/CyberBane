@@ -3,6 +3,28 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.5.1 (18 November 2026)
+
+**The map remembers**
+- **Pins where it happened.** For a day after something big, a pin marks the spot on your map: where a Rival fell,
+  a gathering you crashed, a district that changed hands, one of your crew you lost. Hover it for who, and when.
+- **A CYBERBANE box in the map's filters.** With [TweakXL](https://www.nexusmods.com/cyberpunk2077/mods/4197)
+  installed, every Cyberbane pin on the map (a Rival's last known place, a gathering on its way, the places above) has
+  its own box in the map's custom filters, ticked the first time you open the map. Without TweakXL they stay under
+  Your Property, as before.
+- **Pins that say what they are.** A gathering's pin used to call itself a Rival. Gatherings, takeovers and fights
+  now each have their own icon and words.
+
+**The Hub looks the part**
+- Every box in the web, the map, the Rival tree and the crew is a card in the game's own style, framed in its colour
+  and cyan when picked. Bars are ten segments, the way the game draws its meters. Lines glow faintly. The Standing
+  tiles are cards too, and the page has the game's vignette behind it.
+
+**Mod Settings**
+- Under **General**: **The map remembers** (on). Off with Map markers off.
+
+Your progress carries over.
+
 ## 2.5.0 (18 November 2026)
 
 **A crew of your own**

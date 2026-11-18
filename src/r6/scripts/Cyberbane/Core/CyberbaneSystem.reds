@@ -1220,6 +1220,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts (2.4.4)
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
+    if this.m_tickCount % 5 == 2 {
+      CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.1)
+    }
     if !heavyStreaming {
       CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
     }
@@ -3810,6 +3813,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     let crewBook = CBCrewBook.Get(game);
     if IsDefined(crewBook) {
       crewBook.Clear();   // and nobody works for V (2.5.0)
+    }
+    let mapBook = CBMapBook.Get(game);
+    if IsDefined(mapBook) {
+      mapBook.Clear();    // and the map forgets (2.5.1); the tick takes the pins down
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);

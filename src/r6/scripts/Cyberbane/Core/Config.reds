@@ -702,6 +702,10 @@ public abstract class CBConfig {
   public static func MyCrewRecruitBase() -> Float = 0.8
   public static func MyCrewRenown() -> Float = 5.0
   public static func MyCrewPastKept() -> Int32 = 12
+  // The map remembers (UI/MapPins.reds, 2.5.1): a day, twelve places at most, one per 40 m of each kind.
+  public static func MapMemoryHours() -> Float = 24.0
+  public static func MapMemoryKept() -> Int32 = 12
+  public static func MapMemoryMerge() -> Float = 40.0
   // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
   // ten against the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0

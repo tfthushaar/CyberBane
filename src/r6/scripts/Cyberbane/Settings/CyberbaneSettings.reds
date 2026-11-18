@@ -165,6 +165,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MapMarkers-Desc")
   public let mapMarkers: ECBMarkerScope = ECBMarkerScope.Everyone;
 
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
+  @runtimeProperty("ModSettings.category.order", "1")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MapRemembers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MapRemembers-Desc")
+  public let mapRemembers: Bool = true;
+
 
   // ---- How often they come -----------------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")

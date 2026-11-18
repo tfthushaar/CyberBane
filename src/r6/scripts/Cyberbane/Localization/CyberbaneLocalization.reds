@@ -280,6 +280,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-PhoneSound", "Message tone");
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");
     this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who carries a Cyberbane marker on your map and minimap: gold for a Rival, purple for an apex squad, white for a crew. Named is the first two. Off leaves you to find them.");
+    this.Text("Cyberbane-Settings-MapRemembers", "The map remembers");
+    this.Text("Cyberbane-Settings-MapRemembers-Desc", "For a day after something big happens, a pin marks the spot: where a Rival fell, a gathering you crashed, a district that changed hands, one of your crew you lost. Hover it for who and when. With TweakXL installed, every Cyberbane pin also gets its own CYBERBANE box in the map's custom filters. Off with Map markers off.");
+    this.Text("Cyberbane-MapFilter", "Cyberbane");
     this.Text("Cyberbane-Settings-PhoneSound-Desc", "Plays the phone's own text message tone when a message arrives.");
     this.Text("Cyberbane-Settings-MessageDelivery-Desc", "Phone puts everyone who gets in touch into your phone as a contact. Cards draws them on the left instead and keeps Cyberbane out of the phone. Notices is the old centre screen line. Off is silence, and changes nothing about the way the mod plays.");
 

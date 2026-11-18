@@ -1,0 +1,50 @@
+# Cyberbane - its own box in the world map's filters, and the pin its places use (2.5.1)
+#
+# Read by TweakXL. It is optional: without TweakXL none of these records exist, Cyberbane sees that
+# (UI/MapPins.reds, CBMapFilterReady) and puts its pins under Your Property as it always has.
+#
+# The box. The map's custom filters are a list of filter groups, and a box's state is kept per filter type, a fixed
+# enum (gamedataWorldMapFilter) that cannot be extended. Every value of it is used by a group of the game's except
+# RelicDeviceFilter and VehicleForSaleFilter, which other mods have taken (Gang Retaliation and Drug Dealer). Courier
+# is free in practice: its one group holds only Zzz09_CourierSandboxActivityVariant, an activity cut from the game,
+# and that group has no box in the custom list. So a group of ours on Courier is a box nobody else answers to.
+#
+# The pin. CPO_PingLootVariant is a ping from the cancelled co-op mode: no filter group, profile or script of the game
+# names it (Gang Retaliation uses its neighbour CPO_PingDoorVariant, Icon Framework CPO_PingGoHereVariant). Listed in
+# our group, it shows and hides with our box, by the game's own rules. Everything that draws it is told what it looks
+# like (UI/RivalPin.reds, UI/MapPins.reds).
+
+Mappins.CBPinDefinition:
+  $type: gamedataMappinDefinition_Record
+  showInWorld: true
+  showOnMap: true
+  showOnMinimap: true
+  visibilityRange: 0
+  possibleVariants:
+    - Mappins.CPO_PingLootVariant
+
+WorldMap.CBFilterGroup:
+  $type: MappinUIFilterGroup_Record
+  filterName: Cyberbane-MapFilter
+  filterType: WorldMap.CourierFilter
+  mappins:
+    - Mappins.CPO_PingLootVariant
+  shouldCollectMappins: false
+
+WorldMap.WorldMapCustomFiltersList.list:
+  - !append-once WorldMap.CBFilterGroup
+
+WorldMap.ZoomLevelSubDistricts.mappinFilterGroups:
+  - !append-once WorldMap.CBFilterGroup
+
+WorldMap.ZoomLevelImportant.mappinFilterGroups:
+  - !append-once WorldMap.CBFilterGroup
+
+WorldMap.ZoomLevelVendors.mappinFilterGroups:
+  - !append-once WorldMap.CBFilterGroup
+
+WorldMap.ZoomLevelAllMappins.mappinFilterGroups:
+  - !append-once WorldMap.CBFilterGroup
+
+WorldMap.ZoomLevelExtraMappins.mappinFilterGroups:
+  - !append-once WorldMap.CBFilterGroup

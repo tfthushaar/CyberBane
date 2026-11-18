@@ -307,6 +307,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         // Last words, a trophy, a bond answered, and how it ended (Rivals/RivalMoments.reds, 2.4.4).
         CBRivalFell(sysE, game, puppet, slain, puppet.cbDamagedByPlayer);
         CBCrewRivalFell(sysE, game, slain, puppet.cbDamagedByPlayer);   // one who killed V's own, answered (2.5.0)
+        CBMapRemember(sysE, game, CBMemRivalFell(), puppet.GetWorldPosition(), slain.id, slain.faction, n"", n"",
+                      puppet.cbDamagedByPlayer);   // the map remembers where (UI/MapPins.reds, 2.5.1)
         CBOweFuneral(game, slain.faction);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());

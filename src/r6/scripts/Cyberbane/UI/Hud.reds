@@ -249,6 +249,9 @@ public func CBHudCrewBarW() -> Float = 120.0
 // The smallest a cell's text is drawn when it is too long for its column: smaller than this, it is shortened at a word.
 public func CBHudMinCellFont() -> Int32 = 16
 public func CBHudBarTrack() -> HDRColor = new HDRColor(0.26, 0.08, 0.10, 0.90)
+// A bar is ten segments, the way the game draws its own meters (2.5.1); and the gap between them.
+public func CBHudBarSegs() -> Int32 = 10
+public func CBHudBarGap() -> Float = 2.0
 
 // Colours.
 //
@@ -584,8 +587,7 @@ public class CBHud {
   private let m_rowBg: array<wref<inkWidget>>;
   private let m_rowPip: array<wref<inkRectangle>>;
   private let m_rowCell: array<wref<inkText>>;
-  private let m_rowTrack: array<wref<inkRectangle>>;   // a bar in the row (2.5.0), hidden until a screen draws one
-  private let m_rowFill: array<wref<inkRectangle>>;
+  private let m_rowSeg: array<wref<inkRectangle>>;     // a bar in each row, ten segments (row r at r * CBHudBarSegs())
   private let m_rowTop: Float;                          // where the first row sits on this screen
   private let m_rowCrew: array<Int32>;                  // the crew member a row stands for (2.5.0); -1 the solo on offer
   private let m_pickCrew: Int32;
@@ -688,6 +690,15 @@ public class CBHud {
   private let m_treeShown: Bool;
   private let m_treeGang: CName;
   private let m_treeSlotRival: array<Int32>;
+  // The pictures' look (2.5.1): every box a card of the game's own art, a frame tinted by what it is and cyan when
+  // picked; two segmented bars a box (box s, bar b, segment k at (s * 2 + b) * CBHudBarSegs() + k); a soft glow under
+  // every line. And the four Standing tiles drawn as cards.
+  private let m_webBoxArt: array<wref<inkImage>>;
+  private let m_webBoxFrame: array<wref<inkImage>>;
+  private let m_webSeg: array<wref<inkRectangle>>;
+  private let m_webGlow: array<wref<inkRectangle>>;
+  private let m_tileArt: array<wref<inkImage>>;
+  private let m_tileFrame: array<wref<inkImage>>;
   // The same pool draws two pictures more (2.5.0): Night City as a map on the Turf and City pages, and V's crew round V.
   private let m_mapShown: Bool;
   private let m_crewPicShown: Bool;
@@ -1209,6 +1220,20 @@ public class CBHud {
     return t;
   }
 
+  // The same art as a free piece of the page, placed and sized by whoever uses it (the Standing tiles, 2.5.1).
+  private func NewPanelArt(panel: ref<inkCanvas>, part: CName, tint: HDRColor) -> ref<inkImage> {
+    let art = new inkImage();
+    art.SetAtlasResource(r"base\\gameplay\\gui\\common\\shapes\\atlas_shapes_sync.inkatlas");
+    art.SetTexturePart(part);
+    art.SetNineSliceScale(true);
+    art.SetNineSliceGrid(new inkMargin(0.0, 0.0, 10.0, 0.0));
+    art.SetAnchor(inkEAnchor.TopLeft);
+    art.SetTintColor(tint);
+    art.SetInteractive(false);
+    art.Reparent(panel, -1);
+    return art;
+  }
+
   // A layer of the game's button, out of the atlas its own buttons are cut from. The cut corner stays
   // the size it was drawn at however wide the button is.
   private func NewGameArt(box: ref<inkCanvas>, part: CName, tint: HDRColor) -> ref<inkImage> {
@@ -1256,6 +1281,18 @@ public class CBHud {
       backdrop.SetInteractive(false);
     }
     backdrop.Reparent(root, -1);
+    // The game's own vignette over it, faintly red, as its full-screen pages darken their edges (2.5.1).
+    if !this.m_inTab {
+      let vignette = new inkImage();
+      vignette.SetAtlasResource(r"base\\gameplay\\gui\\widgets\\notifications\\vignette.inkatlas");
+      vignette.SetTexturePart(n"vignette_1");
+      vignette.SetNineSliceScale(true);
+      vignette.SetAnchor(inkEAnchor.Fill);
+      vignette.SetTintColor(CBHudLabel());
+      vignette.SetOpacity(0.2);
+      vignette.SetInteractive(false);
+      vignette.Reparent(root, -1);
+    }
 
     let panel = new inkCanvas();
     panel.SetAnchor(inkEAnchor.Centered);
@@ -1397,6 +1434,14 @@ public class CBHud {
     // ---- Score meters -------------------------------------------------------
     let b = 0;
     while b < CBHudBarCount() {
+      // The tile's card, under its words; placed with the tile (SetBar).
+      let tileArt = this.NewPanelArt(panel, n"cell_bg", CBHudGameCell());
+      tileArt.SetOpacity(0.85);
+      tileArt.SetVisible(false);
+      let tileFrame = this.NewPanelArt(panel, n"cell_fg", CBHudGameCellEdge());
+      tileFrame.SetVisible(false);
+      ArrayPush(this.m_tileArt, tileArt);
+      ArrayPush(this.m_tileFrame, tileFrame);
       let top = CBHudContentTop() + Cast<Float>(b) * 96.0;
       let bl = this.NewText(panel, 25, n"Semibold", CBHudLabel(), n"MainColors.Red");
       bl.SetLetterCase(textLetterCase.UpperCase);
@@ -1444,13 +1489,14 @@ public class CBHud {
       let pip = this.NewRect(rbox, CBHudGrey());
       pip.SetSize(this.PxSize(5.0, 26.0));
       pip.SetMargin(this.PxAt(0.0, 7.0));
-      // A bar of its own: placed and filled by whichever screen uses it (SetRowBar).
-      let track = this.NewRect(rbox, CBHudBarTrack());
-      track.SetVisible(false);
-      let fill = this.NewRect(rbox, CBHudCyan());
-      fill.SetVisible(false);
-      ArrayPush(this.m_rowTrack, track);
-      ArrayPush(this.m_rowFill, fill);
+      // A bar of its own, in segments: placed and filled by whichever screen uses it (SetRowBar).
+      let seg = 0;
+      while seg < CBHudBarSegs() {
+        let piece = this.NewRect(rbox, CBHudBarTrack());
+        piece.SetVisible(false);
+        ArrayPush(this.m_rowSeg, piece);
+        seg += 1;
+      }
       ArrayPush(this.m_rowCrew, 0);
       ArrayPush(this.m_rowBox, rbox);
       ArrayPush(this.m_rowBg, band);
@@ -2348,6 +2394,12 @@ public class CBHud {
   // never take the page (or the game) down with it. -------------------------------------------
 
   private func HideBars() -> Void {
+    let t = 0;
+    while t < ArraySize(this.m_tileArt) {
+      if IsDefined(this.m_tileArt[t]) { this.m_tileArt[t].SetVisible(false); }
+      if t < ArraySize(this.m_tileFrame) && IsDefined(this.m_tileFrame[t]) { this.m_tileFrame[t].SetVisible(false); }
+      t += 1;
+    }
     let i = 0;
     while i < ArraySize(this.m_barLabel) {
       if IsDefined(this.m_barLabel[i]) { this.m_barLabel[i].SetVisible(false); }
@@ -2372,41 +2424,73 @@ public class CBHud {
       this.m_rowRival[i] = 0;
       this.m_rowTitle[i] = n"";
       if i < ArraySize(this.m_rowCrew) { this.m_rowCrew[i] = 0; }
-      if i < ArraySize(this.m_rowTrack) && IsDefined(this.m_rowTrack[i]) { this.m_rowTrack[i].SetVisible(false); }
-      if i < ArraySize(this.m_rowFill) && IsDefined(this.m_rowFill[i]) { this.m_rowFill[i].SetVisible(false); }
+      let seg = 0;
+      while seg < CBHudBarSegs() {
+        let k = i * CBHudBarSegs() + seg;
+        if k < ArraySize(this.m_rowSeg) && IsDefined(this.m_rowSeg[k]) {
+          this.m_rowSeg[k].SetVisible(false);
+        }
+        seg += 1;
+      }
       i += 1;
     }
   }
 
-  // A bar in row `idx`, at `x` from the row's left edge and `w` wide: `frac` of it filled, or with `bipolar`, filled
-  // from the middle towards the side `frac` (-1..1) leans.
+  // A bar in row `idx`, at `x` from the row's left edge and `w` wide, in ten segments: `frac` of them lit, or with
+  // `bipolar`, lit from the middle towards the side `frac` (-1..1) leans. Any amount at all lights one.
   private func SetRowBar(idx: Int32, x: Float, w: Float, frac: Float, tint: HDRColor, opt bipolar: Bool) -> Void {
-    if idx < 0 || idx >= ArraySize(this.m_rowTrack) || idx >= ArraySize(this.m_rowFill) {
-      return;
-    }
-    let track = this.m_rowTrack[idx];
-    let fill = this.m_rowFill[idx];
-    if !IsDefined(track) || !IsDefined(fill) {
+    let segs = CBHudBarSegs();
+    if idx < 0 || (idx + 1) * segs > ArraySize(this.m_rowSeg) {
       return;
     }
     let stride = this.m_rowLayout == CBHudLayoutTitles() ? CBHudTitleRowHeight() : CBHudRowHeight();
     let y = (stride - 4.0 - CBHudRowBarH()) / 2.0;
-    track.SetSize(this.PxSize(w, CBHudRowBarH()));
-    track.SetMargin(this.PxAt(x, y));
-    track.SetVisible(true);
-    let fx = x;
-    let fw = ClampF(frac, 0.0, 1.0) * w;
+    this.PlaceSegments(this.m_rowSeg, idx * segs, x, y, w, CBHudRowBarH(), frac, tint, bipolar);
+  }
+
+  // Ten segments of a pool, from `first`, laid out along `w` at (x, y) and lit for `frac`.
+  private func PlaceSegments(pool: array<wref<inkRectangle>>, first: Int32, x: Float, y: Float, w: Float, h: Float,
+                             frac: Float, tint: HDRColor, bipolar: Bool) -> Void {
+    let segs = CBHudBarSegs();
+    let gap = CBHudBarGap();
+    let sw = MaxF((w - gap * Cast<Float>(segs - 1)) / Cast<Float>(segs), 1.0);
+    let from = 0;
+    let lit = 0;
     if bipolar {
-      let half = w * 0.5;
-      let reach = ClampF(AbsF(frac), 0.0, 1.0) * half;
-      fw = reach;
-      fx = frac < 0.0 ? x + half - reach : x + half;
+      let half = segs / 2;
+      lit = Min(half, RoundF(AbsF(ClampF(frac, -1.0, 1.0)) * Cast<Float>(half)));
+      if lit == 0 && AbsF(frac) > 0.02 {
+        lit = 1;
+      }
+      from = frac < 0.0 ? half - lit : half;
+    } else {
+      lit = Min(segs, RoundF(ClampF(frac, 0.0, 1.0) * Cast<Float>(segs)));
+      if lit == 0 && frac > 0.02 {
+        lit = 1;
+      }
     }
-    fw = MaxF(fw, 2.0);   // a sliver, so an empty bar still reads as a bar
-    fill.SetSize(this.PxSize(fw, CBHudRowBarH()));
-    fill.SetMargin(this.PxAt(fx, y));
-    fill.SetTintColor(tint);
-    fill.SetVisible(true);
+    let k = 0;
+    while k < segs {
+      let i = first + k;
+      if i < ArraySize(pool) && IsDefined(pool[i]) {
+        pool[i].SetSize(this.PxSize(sw, h));
+        pool[i].SetMargin(this.PxAt(x + Cast<Float>(k) * (sw + gap), y));
+        pool[i].SetTintColor(k >= from && k < from + lit ? tint : CBHudBarTrack());
+        pool[i].SetVisible(true);
+      }
+      k += 1;
+    }
+  }
+
+  private func HideSegments(pool: array<wref<inkRectangle>>, first: Int32) -> Void {
+    let k = 0;
+    while k < CBHudBarSegs() {
+      let i = first + k;
+      if i < ArraySize(pool) && IsDefined(pool[i]) {
+        pool[i].SetVisible(false);
+      }
+      k += 1;
+    }
   }
 
   // Move the rows and their cells to where the screen about to be drawn needs them. Only touches
@@ -2485,6 +2569,16 @@ public class CBHud {
     let tx = this.TileX(idx);
     let ty = this.TileY(idx);
     let tw = CBHudTileW();
+    if idx < ArraySize(this.m_tileArt) && IsDefined(this.m_tileArt[idx]) && IsDefined(this.m_tileFrame[idx]) {
+      this.m_tileArt[idx].SetMargin(this.PxAt(tx - 14.0, ty - 8.0));
+      this.m_tileArt[idx].SetSize(this.PxSize(tw + 28.0, CBHudTileStride() - 6.0));
+      this.m_tileArt[idx].SetVisible(true);
+      this.m_tileFrame[idx].SetMargin(this.PxAt(tx - 14.0, ty - 8.0));
+      this.m_tileFrame[idx].SetSize(this.PxSize(tw + 28.0, CBHudTileStride() - 6.0));
+      this.m_tileFrame[idx].SetTintColor(col);
+      this.m_tileFrame[idx].SetOpacity(0.7);
+      this.m_tileFrame[idx].SetVisible(true);
+    }
     if IsDefined(this.m_barLabel[idx]) {
       this.m_barLabel[idx].SetMargin(this.PxAt(tx, ty));
       this.m_barLabel[idx].SetText(label);
@@ -3398,6 +3492,15 @@ public class CBHud {
     web.Reparent(panel, -1);
     web.SetVisible(false);
     this.m_webRoot = web;
+    // The glows first, so every one is under every line (2.5.1).
+    let g = 0;
+    while g < CBWebLinePool() {
+      let glow = this.NewRect(web, CBHudGrey());
+      glow.SetRenderTransformPivot(new Vector2(0.0, 0.5));
+      glow.SetVisible(false);
+      ArrayPush(this.m_webGlow, glow);
+      g += 1;
+    }
     let k = 0;
     while k < CBWebLinePool() {
       let line = this.NewRect(web, CBHudGrey());
@@ -3420,9 +3523,20 @@ public class CBHud {
       let w = CBWebSlotW(i);
       let h = CBWebSlotH(i);
       let box = this.NewBox(web, name, CBWebSlotX(i), CBWebSlotY(i), w, h);
-      let bg = this.NewBand(box, CBHudBandEven());
+      let bg = this.NewBand(box, CBHudClear());
+      // The game's own card under the words, and its frame round them (2.5.1); both coloured by PaintWeb.
+      ArrayPush(this.m_webBoxArt, this.NewGameArt(box, n"cell_bg", CBHudGameCell()));
+      ArrayPush(this.m_webBoxFrame, this.NewGameArt(box, n"cell_fg", CBHudGameCellEdge()));
       let edge = this.NewRect(box, CBHudGrey());
-      edge.SetSize(this.PxSize(5.0, h));
+      edge.SetSize(this.PxSize(4.0, h));
+      // Two bars of ten segments, for the pictures that use them (BoxBars).
+      let bseg = 0;
+      while bseg < 2 * CBHudBarSegs() {
+        let piece = this.NewRect(box, CBHudBarTrack());
+        piece.SetVisible(false);
+        ArrayPush(this.m_webSeg, piece);
+        bseg += 1;
+      }
       let big = i == 0 || CBWebSlotIsGang(i);
       let title = this.NewText(box, i == 0 ? 30 : (big ? 20 : 16), n"Semibold", CBHudHead());
       title.SetLetterCase(textLetterCase.UpperCase);
@@ -3492,7 +3606,7 @@ public class CBHud {
     this.m_webBox[s].SetSize(this.PxSize(w, h));
     this.m_webBox[s].SetVisible(show);
     if IsDefined(this.m_webBoxEdge[s]) {
-      this.m_webBoxEdge[s].SetSize(this.PxSize(5.0, h));
+      this.m_webBoxEdge[s].SetSize(this.PxSize(4.0, h));
     }
     if IsDefined(this.m_webBarMen[s]) {
       this.m_webBarMen[s].SetMargin(this.PxAt(12.0, h - 6.0));
@@ -3810,6 +3924,17 @@ public class CBHud {
     line.SetTintColor(tint);
     line.SetOpacity(alpha);
     line.SetVisible(true);
+    // A wide, faint stroke under it, so a line reads as lit rather than drawn (2.5.1). Shown and hidden with it
+    // (PaintWeb).
+    if k < ArraySize(this.m_webGlow) && IsDefined(this.m_webGlow[k]) {
+      let glow = this.m_webGlow[k];
+      let wide = thick + 8.0;
+      glow.SetSize(this.PxSize(MaxF(len, 1.0), wide));
+      glow.SetMargin(this.PxAt(x1, y1 - wide / 2.0));
+      glow.SetRotation(Rad2Deg(AtanF(dy, dx)));
+      glow.SetTintColor(tint);
+      glow.SetOpacity(alpha * 0.22);
+    }
   }
 
   private func PlaceWord(k: Int32, x: Float, y: Float, text: String, tint: HDRColor, alpha: Float) -> Void {
@@ -3970,17 +4095,31 @@ public class CBHud {
     }
     let s = 0;
     while s < ArraySize(this.m_webBoxBg) {
-      if IsDefined(this.m_webBoxBg[s]) {
-        let band = CBHudBandEven();
-        if s < ArraySize(this.m_webBoxNames) && Equals(this.m_webBoxNames[s], this.m_hover) {
-          band = CBHudBandHover();
+      let hot = s < ArraySize(this.m_webBoxNames) && Equals(this.m_webBoxNames[s], this.m_hover);
+      // The card: darker at rest, lighter under the cursor, the game's picked colour when chosen. The frame takes the
+      // colour of what the box is (its edge), cyan when chosen, and lights under the cursor.
+      if s < ArraySize(this.m_webBoxArt) && IsDefined(this.m_webBoxArt[s]) {
+        this.m_webBoxArt[s].SetTintColor(s == pickSlot ? CBHudGameRowPicked() : (hot ? CBHudGameCellHot() : CBHudGameCell()));
+      }
+      if s < ArraySize(this.m_webBoxFrame) && IsDefined(this.m_webBoxFrame[s]) {
+        let frame = CBHudGameCellEdge();
+        if s < ArraySize(this.m_webBoxEdge) && IsDefined(this.m_webBoxEdge[s]) && this.m_webBoxEdge[s].IsVisible() {
+          frame = this.m_webBoxEdge[s].GetTintColor();
         }
-        if s == pickSlot {
-          band = CBHudBandPicked();
+        if s == pickSlot || hot {
+          frame = CBHudCyan();
         }
-        this.m_webBoxBg[s].SetTintColor(band);
+        this.m_webBoxFrame[s].SetTintColor(frame);
+        this.m_webBoxFrame[s].SetOpacity(s == pickSlot || hot ? 1.0 : 0.75);
       }
       s += 1;
+    }
+    let g = 0;
+    while g < ArraySize(this.m_webGlow) && g < ArraySize(this.m_webLine) {
+      if IsDefined(this.m_webGlow[g]) && IsDefined(this.m_webLine[g]) {
+        this.m_webGlow[g].SetVisible(this.m_webLine[g].IsVisible());
+      }
+      g += 1;
     }
     if IsDefined(this.m_webToggleBg) {
       this.m_webToggleBg.SetTintColor(Equals(this.m_hover, CBHudWebToggleName()) ? CBHudButtonHover() : CBHudButtonIdle());
@@ -4049,6 +4188,8 @@ public class CBHud {
     if s < ArraySize(this.m_webBoxEdge) && IsDefined(this.m_webBoxEdge[s]) {
       this.m_webBoxEdge[s].SetVisible(false);
     }
+    this.HideSegments(this.m_webSeg, (s * 2) * CBHudBarSegs());
+    this.HideSegments(this.m_webSeg, (s * 2 + 1) * CBHudBarSegs());
     if IsDefined(this.m_webBox[s]) {
       this.m_webBox[s].SetOpacity(1.0);
     }
@@ -4086,22 +4227,23 @@ public class CBHud {
     if s < 0 || s >= ArraySize(this.m_webBarMen) {
       return;
     }
-    let men = this.m_webBarMen[s];
-    let chest = this.m_webBarChest[s];
+    // The plain bars are the web's; a picture of these segments instead (2.5.1).
+    if IsDefined(this.m_webBarMen[s]) { this.m_webBarMen[s].SetVisible(false); }
+    if s < ArraySize(this.m_webBarChest) && IsDefined(this.m_webBarChest[s]) { this.m_webBarChest[s].SetVisible(false); }
     let two = b >= 0.0;
     let full = w - 24.0;
     let half = w / 2.0 - 16.0;
-    if IsDefined(men) {
-      men.SetMargin(this.PxAt(12.0, h - 12.0));
-      men.SetSize(this.PxSize(MaxF(2.0, (two ? half : full) * ClampF(a, 0.0, 1.0)), 6.0));
-      men.SetTintColor(aTint);
-      men.SetVisible(a >= 0.0);
+    let firstA = (s * 2) * CBHudBarSegs();
+    let firstB = (s * 2 + 1) * CBHudBarSegs();
+    if a >= 0.0 {
+      this.PlaceSegments(this.m_webSeg, firstA, 12.0, h - 13.0, two ? half : full, 7.0, a, aTint, false);
+    } else {
+      this.HideSegments(this.m_webSeg, firstA);
     }
-    if IsDefined(chest) {
-      chest.SetMargin(this.PxAt(w / 2.0 + 4.0, h - 12.0));
-      chest.SetSize(this.PxSize(MaxF(2.0, half * ClampF(b, 0.0, 1.0)), 6.0));
-      chest.SetTintColor(bTint);
-      chest.SetVisible(two);
+    if two {
+      this.PlaceSegments(this.m_webSeg, firstB, w / 2.0 + 4.0, h - 13.0, half, 7.0, b, bTint, false);
+    } else {
+      this.HideSegments(this.m_webSeg, firstB);
     }
   }
 

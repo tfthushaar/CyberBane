@@ -1424,6 +1424,7 @@ public func CBCrewBodyDied(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
     }
   }
   book.Remove(m, CBCrewEndFell(), byRival, district, now);
+  CBMapRemember(sys, game, CBMemCrewFell(), puppet.GetWorldPosition(), m.id, m.faction, n"", n"", false);   // [85], 2.5.1
   // One who was a Rival dies as one: on the board as fallen, and not by V's hand.
   if m.rival > 0 {
     let was = sys.FindRivalById(m.rival);

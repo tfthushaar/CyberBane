@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.5.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.5.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -95,6 +95,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   on you and come back as a Rival.
 - **The Hub in pictures.** The gangs as a web, your Rivals as trees, turf and your name on a map of Night City, your
   crew round you, and a bar on every list.
+- **The map remembers.** Pins for a day where a Rival fell, a gathering was crashed, a district changed hands or one
+  of your crew died, and, with TweakXL, a CYBERBANE box in the map's filters for all of Cyberbane's pins.
 
 ## Requirements
 
@@ -104,6 +106,9 @@ Install these first:
 - [redscript](https://www.nexusmods.com/cyberpunk2077/mods/1511)
 - [Codeware](https://www.nexusmods.com/cyberpunk2077/mods/7780)
 - [Mod Settings](https://www.nexusmods.com/cyberpunk2077/mods/4885)
+
+Optional: [TweakXL](https://www.nexusmods.com/cyberpunk2077/mods/4197) gives Cyberbane's map pins their own
+CYBERBANE box in the map's custom filters. Everything else works without it.
 
 Use the framework versions that match your game:
 

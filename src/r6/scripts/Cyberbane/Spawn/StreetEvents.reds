@@ -418,13 +418,8 @@ public class CBEventEngine {
       ev.pinned = false;
       return;
     }
-    let data: MappinData;
-    data.mappinType = t"Mappins.DefaultStaticMappin";
-    data.variant = gamedataMappinVariant.ApartmentVariant;
-    data.active = true;
-    data.visibleThroughWalls = true;
-    data.debugCaption = CBRivalPinCaption(CBEventCaption(ev));
-    ev.pin = ms.RegisterMappin(data, ev.at);
+    // Cyberbane's own pin with TweakXL (UI/MapPins.reds, 2.5.1), and a gathering's own mark (UI/RivalPin.reds).
+    ev.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(CBEventCaption(ev))), ev.at);
     ev.pinned = true;
   }
 
@@ -557,16 +552,21 @@ func CBDealPartner(sys: ref<CyberbaneSystem>, a: CName) -> CName {
 }
 
 public func CBEventCaption(ev: ref<CBStreetEvent>) -> String {
-  let a = CBCapFirst(CBFactionLabel(ev.a));
-  if Equals(ev.kind, CBEvSitDown()) { return a + " and " + CBFactionLabel(ev.b); }
-  if Equals(ev.kind, CBEvFuneral()) { return a + ": a funeral"; }
-  if Equals(ev.kind, CBEvCelebration()) { return a + " celebrating"; }
-  if Equals(ev.kind, CBEvInitiation()) { return a + ": an initiation"; }
-  if Equals(ev.kind, CBEvRecruitment()) { return a + " recruiting"; }
-  if Equals(ev.kind, CBEvArmsDeal()) { return a + " and " + CBFactionLabel(ev.b) + ": guns"; }
-  if Equals(ev.kind, CBEvExecution()) { return a + ": an execution"; }
-  if Equals(ev.kind, CBEvFrontLine()) { return a + " against " + CBFactionLabel(ev.b); }
-  if Equals(ev.kind, CBEvFugitive()) { return a + ": a hunt"; }
+  return CBEventCaptionOf(ev.kind, ev.a, ev.b);
+}
+
+// The same from what is kept of it, for a place the map remembers (UI/MapPins.reds, 2.5.1).
+public func CBEventCaptionOf(kind: CName, gangA: CName, gangB: CName) -> String {
+  let a = CBCapFirst(CBFactionLabel(gangA));
+  if Equals(kind, CBEvSitDown()) { return a + " and " + CBFactionLabel(gangB); }
+  if Equals(kind, CBEvFuneral()) { return a + ": a funeral"; }
+  if Equals(kind, CBEvCelebration()) { return a + " celebrating"; }
+  if Equals(kind, CBEvInitiation()) { return a + ": an initiation"; }
+  if Equals(kind, CBEvRecruitment()) { return a + " recruiting"; }
+  if Equals(kind, CBEvArmsDeal()) { return a + " and " + CBFactionLabel(gangB) + ": guns"; }
+  if Equals(kind, CBEvExecution()) { return a + ": an execution"; }
+  if Equals(kind, CBEvFrontLine()) { return a + " against " + CBFactionLabel(gangB); }
+  if Equals(kind, CBEvFugitive()) { return a + ": a hunt"; }
   return a + ": a racket";
 }
 
@@ -639,6 +639,10 @@ public func CBEventWhisper(game: GameInstance) -> String {
 
 // V broke it up.
 public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
+  // The map remembers where (UI/MapPins.reds, 2.5.1); not an ambush, which nobody else knew was there.
+  if !Equals(ev.kind, CBEvAmbush()) {
+    CBMapRemember(sys, game, CBMemEventCrashed(), ev.at, 0, ev.a, ev.b, ev.kind, true);
+  }
   if Equals(ev.kind, CBEvAmbush()) {
     CBFileLog(sys, n"AmbushBeaten", CBGameSeconds(game), CBEventDistrict(sys, game), ev.a, 0.0);
     CBEventSay(game, s"\(CBCapFirst(CBFactionLabel(ev.a))) were waiting for you on the way to your job. You walked through them.");
