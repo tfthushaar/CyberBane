@@ -1024,6 +1024,15 @@ the source:
 - **Numbers raised that were too low to be felt:** gang events every 25 minutes at 70% (were 40 at 60%), open season
   25% a day (10%), wannabes every six hours at 60% (ten at 50%), a solo on offer 35% a day (15%), a gang's price on
   V 40% a day (30%), iconics 10% from a top Rival and 5% from an apex fighter (3% and 4%).
+- **Every pipeline traced, start to finish,** asking whether each condition can come true. Found and fixed at the
+  source: the talk's answer step dropped anyone defeated, in combat or giving up, which every mercy choice, facedown,
+  parley and ransom talk is, so none of them was ever answered; a gang's people were only filed from V's kills, so a
+  gang V had never crossed could not lend anyone, give a favour's lookout, field a bagman, join a truce's crew or hold
+  a gang event (`CBGangTemplate`, the gang's own fighters, for all of them); events and lies needed the other gang to
+  have a record; the broker's solo needed Phantom Liberty; frightening a ganger into the crew sat behind three rolls;
+  the facedown and the parley waited for nobody to be in combat, which a crew sent hostile always is (a Rival owed a
+  facedown now walks up calm; a parley asks whether anybody has been hurt). Every hard-coded record was checked
+  against the game's own data (`check_records.py`): all present, only Barghest's are Phantom Liberty's.
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,

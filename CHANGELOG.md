@@ -67,6 +67,10 @@ the next unless a version says otherwise.
   first.
 - A Rival's bar leaves the screen once the fight with them is over. One you spared or outran kept it for as long as
   you could see them.
+- Talking to a Rival you have beaten works: spare them, make them give someone up, or run them out of town. The
+  conversation used to end before they could answer.
+- Bagmen, favours and sit-downs come from every gang, including ones you have never fought. They only ever came from
+  gangs you had killed members of.
 - Gang texts make sense as a conversation. Only a threat offers you answers, and it says its price, so paying,
   haggling or refusing answers something they said. News and grudges carry no answers, and once an exchange is
   settled (they back down, you refuse, you insult them) the thread closes instead of offering the same answers again.
