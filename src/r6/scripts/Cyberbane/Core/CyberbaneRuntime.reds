@@ -34,9 +34,10 @@ public class CyberbaneRuntime extends ScriptableService {
   // saying anything. A refusal that names itself turns a week of guessing into one sentence
   // from whoever is playing.
   private let m_lastSpawnBlock: Int32;
-  // Which whisper line was used last, so the next one is never the same. Session only: it is
-  // about what you just heard, and nothing about it is worth carrying into a save.
-  private let m_lastWhisperIdx: Int32;
+  // What the street has said lately (Narrative/Lines.reds, 2.3.1): the last LineMemory lines that reached
+  // the screen, oldest overwritten first. Session only: it is about what V just heard.
+  private let m_said: array<String>;
+  private let m_saidNext: Int32;
   // What the last overheard line was about, so the next one is about something else (1.9.5).
   private let m_lastWhisperTopic: CName;
   // How many game seconds pass per real second, measured once a session. About 8.1 by default;
@@ -198,12 +199,43 @@ public class CyberbaneRuntime extends ScriptableService {
     }
   }
 
-  public func GetLastWhisperIndex() -> Int32 {
-    return this.m_lastWhisperIdx;
+  public func NoteSaid(line: String) -> Void {
+    let cap = CBConfig.LineMemory();
+    if ArraySize(this.m_said) < cap {
+      ArrayPush(this.m_said, line);
+      return;
+    }
+    if this.m_saidNext < 0 || this.m_saidNext >= ArraySize(this.m_said) {
+      this.m_saidNext = 0;
+    }
+    this.m_said[this.m_saidNext] = line;
+    this.m_saidNext = (this.m_saidNext + 1) % ArraySize(this.m_said);
   }
 
-  public func SetLastWhisperIndex(idx: Int32) -> Void {
-    this.m_lastWhisperIdx = idx;
+  public func SaidLately(line: String) -> Bool {
+    return ArrayContains(this.m_said, line);
+  }
+
+  // Of these, the one heard longest ago (or never). The ring's oldest entry sits at m_saidNext once it is
+  // full, and at 0 before.
+  public func HeardLongestAgo(options: array<String>) -> String {
+    let n = ArraySize(this.m_said);
+    let best = 0;
+    let bestAge = -1;
+    let i = 0;
+    while i < ArraySize(options) {
+      let at = ArrayFindFirst(this.m_said, options[i]);
+      if at < 0 {
+        return options[i];
+      }
+      let age = n - ((at - this.m_saidNext + n) % n);
+      if age > bestAge {
+        bestAge = age;
+        best = i;
+      }
+      i += 1;
+    }
+    return ArraySize(options) > 0 ? options[best] : "";
   }
 
   public func GetLastWhisperTopic() -> CName {

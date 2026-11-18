@@ -379,14 +379,14 @@ func CBIntelSpoken(i: ref<CBIntel>) -> String {
     return s"\(i.name)? \(CBFlawStory(i.flaw))";
   }
   if i.kind == CBIntelLead() {
-    return CBWhisperPick3(s"\(i.name)'s lying low \(i.place). That's all I know!\(i.pin)",
+    return CBPick3(s"\(i.name)'s lying low \(i.place). That's all I know!\(i.pin)",
                           s"Okay! \(i.name), \(i.place). Let go!\(i.pin)",
                           s"\(i.name) is holed up \(i.place). Please.\(i.pin)");
   }
   if i.kind == CBIntelComing() {
     return i.coming;
   }
-  return CBWhisperPick3("I don't know anything! I swear!", "Nothing! I got nothing!", "I'm nobody, I don't hear anything!");
+  return CBPick3("I don't know anything! I swear!", "Nothing! I got nothing!", "I'm nobody, I don't hear anything!");
 }
 
 // As a file, a note or a text has it.
@@ -445,7 +445,7 @@ public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
     if IsDefined(t.npc) {
       t.npc.cbHoldState = 1;
     }
-    return CBTalkSay(CBWhisperPick2("Okay. Okay. I hear things, I'll text you. Just don't tell anyone.",
+    return CBTalkSay(CBPick2("Okay. Okay. I hear things, I'll text you. Just don't tell anyone.",
                                     "Fine. I'll keep my ears open. Now get away from me before somebody sees."), n"");
   }
   // They tell their own instead.
@@ -457,7 +457,7 @@ public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
                       "Heard you're trying to buy my people. Come buy me.", CBHudRed());
   }
   CBLog.Info(n"Intel", s"One of \(NameToString(t.faction)) would not be turned, and told their own.");
-  return CBTalkSay(CBWhisperPick2("Rat on my own? I'm telling them you asked.", "You picked the wrong one. Everybody's going to hear about this."), n"bump");
+  return CBTalkSay(CBPick2("Rat on my own? I'm telling them you asked.", "You picked the wrong one. Everybody's going to hear about this."), n"bump");
 }
 
 // ---- The hooks: who was grabbed, who was scanned ---------------------------------------------------------------
@@ -585,7 +585,7 @@ public class CBStreetIntel {
             pools.RequestSettingStatPoolValue(sid, gamedataStatPoolType.Health, MaxF(cur - CBConfig.GuardNerveLoss(), 10.0), GetPlayer(game));
           }
           CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), r),
-                     CBWhisperPick3("You'll pay for that!", "No! Get them, get them!", "That's it. Now it's personal."), 3.0);
+                     CBPick3("You'll pay for that!", "No! Get them, get them!", "That's it. Now it's personal."), 3.0);
         }
       }
       i += 1;
@@ -685,7 +685,7 @@ public class CBStreetIntel {
     this.m_grab = null;
     let speaker = CBIntelSpeaker(faction);
     if temper == CBTalkTemperLoyal() {
-      CBIntelSay(game, 3, speaker, CBWhisperPick2("Go to hell. I'm not telling you anything.", "Do it, then. I'm not talking."), 5.0);
+      CBIntelSay(game, 3, speaker, CBPick2("Go to hell. I'm not telling you anything.", "Do it, then. I'm not talking."), 5.0);
       CBLog.Info(n"Intel", "A loyal ganger said nothing in V's grip.");
       return;
     }

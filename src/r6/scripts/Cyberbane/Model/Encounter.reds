@@ -27,6 +27,10 @@ public class CBEncounter {
   // encounter when it opens. Forgotten once V is out of combat with nobody down.
   public let preHpMin: Float;
   public let preSampled: Bool;
+  // Where the last of them went down, and whose they were (2.3.1): a massacre is remembered there
+  // (Model/StreetBook.reds).
+  public let lastBodyAt: Vector4;
+  public let lastBodyGang: CName;
 }
 
 // How much health V may lose and still call a fight flawless.
@@ -66,6 +70,7 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     enc.playerHpMin = enc.preSampled ? enc.preHpMin : -1.0;
     enc.preSampled = false;
     ArrayClear(enc.killTicks);
+    enc.lastBodyGang = n"";
   }
   if recount {
     enc.kills += 1;
@@ -77,6 +82,12 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
   }
   if info.victimClass == EnumInt(ECBVictimClass.Boss) {
     enc.bossDown = true;
+  }
+  if info.lethal {
+    enc.lastBodyAt = info.position;
+    if NotEquals(info.faction, n"") {
+      enc.lastBodyGang = info.faction;
+    }
   }
   // The massacre window too: a room of people knocked out in thirty seconds is not a massacre.
   if info.lethal {
@@ -168,6 +179,9 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
       CBHearsayFromStreet(game, "Heard what you left behind. People are going to be repeating that one.", n"Massacre");
     }
     CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
+    if enc.bodies > 0 {
+      CBRememberPlace(sys, game, n"Massacre", enc.lastBodyGang, CBEventDistrict(sys, game), enc.lastBodyAt);
+    }
     CBFileLog(sys, n"Massacre", CBGameSeconds(game), CBEventDistrict(sys, game), n"", Cast<Float>(enc.bodies));
     CBLog.Info(n"Model", s"Massacre resolved (\(enc.bodies) bodies).");
   }

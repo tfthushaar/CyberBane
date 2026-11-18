@@ -42,30 +42,37 @@ public func CBContactMessage(game: GameInstance, body: String) -> Void {
   CBPhoneFromStreet(game, body);
 }
 
-// Word that carries your name, because people were there to put it there.
+// Word that carries your name, because people were there to put it there. Through the line library
+// (Narrative/Lines.reds), so a broker never sends the same text twice running; `seed` is kept for the callers.
 func CBGrapevineNamedLine(kind: CName, where: String, seed: Int32) -> String {
   if Equals(kind, n"BossKill") {
-    return "Heard what you did to their boss. " + where + " is talking about it.";
+    return CBLineOf([
+      "Heard what you did to their boss. " + where + " is talking about it.",
+      "Boss of theirs, down. " + where + " can't shut up about it, and they're using your name.",
+      "Every bar in " + where + " is drinking to that boss of theirs tonight. Or to you. Depends on the bar."]);
   }
   if Equals(kind, n"Massacre") {
-    return "Word out of " + where + " is you left a mess. People are repeating it.";
+    return CBLineOf([
+      "Word out of " + where + " is you left a mess. People are repeating it.",
+      "What you left in " + where + "? The ambulances are still counting.",
+      "People in " + where + " are describing it to each other in detail. Your name keeps coming up."]);
   }
-  switch seed {
-    case 0: return "Your name came up in " + where + " today. Thought you should know.";
-    case 1: return "They are talking about you in " + where + ". Not quietly.";
-    case 2: return "Heard about " + where + ". Word travels faster than you do.";
-    default: return "Somebody in " + where + " knows your name now. Make of that what you will.";
-  }
+  return CBLineOf([
+    "Your name came up in " + where + " today. Thought you should know.",
+    "They are talking about you in " + where + ". Not quietly.",
+    "Heard about " + where + ". Word travels faster than you do.",
+    "Somebody in " + where + " knows your name now. Make of that what you will.",
+    "Your name's doing the rounds in " + where + ". Fixers, bartenders, the lot."]);
 }
 
 // Word with nobody's name on it, because nobody lived close enough to supply one.
 func CBGrapevineAnonLine(where: String, seed: Int32) -> String {
-  switch seed {
-    case 0: return "Bodies turning up in " + where + " and nobody can say whose work it is.";
-    case 1: return "Something is working " + where + ". No name on it. People are nervous.";
-    case 2: return "Heard " + where + " has a problem nobody can describe. Know anything?";
-    default: return "Whatever happened in " + where + ", no witnesses walked. Street is spooked.";
-  }
+  return CBLineOf([
+    "Bodies turning up in " + where + " and nobody can say whose work it is.",
+    "Something is working " + where + ". No name on it. People are nervous.",
+    "Heard " + where + " has a problem nobody can describe. Know anything?",
+    "Whatever happened in " + where + ", no witnesses walked. Street is spooked.",
+    "People in " + where + " are locking their doors and not saying why."]);
 }
 
 // Called when a rumor reaches a district it had not touched before.
@@ -184,23 +191,25 @@ public func CBGrapevineOnArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
 // What the local broker says when you turn up somewhere your name got to first.
 func CBGrapevineArrivalLine(r: ref<CBRumor>, from: String, seed: Int32) -> String {
   if !r.witnessed {
-    switch seed {
-      case 0: return "You are a long way from " + from + ". Whatever happened there followed you here anyway.";
-      case 1: return "Word came in from " + from + " before you did. No name on it. Still made people careful.";
-      case 2: return "Something out of " + from + " has people here talking. You would not know anything about it.";
-      default: return "People here heard about " + from + ". Nobody can say who. Welcome to the neighbourhood.";
-    }
+    return CBLineOf([
+      "You are a long way from " + from + ". Whatever happened there followed you here anyway.",
+      "Word came in from " + from + " before you did. No name on it. Still made people careful.",
+      "Something out of " + from + " has people here talking. You would not know anything about it.",
+      "People here heard about " + from + ". Nobody can say who. Welcome to the neighbourhood."]);
   }
   if Equals(r.kind, n"BossKill") {
-    return "They know about the boss you put down in " + from + ". That story got here before you.";
+    return CBLineOf([
+      "They know about the boss you put down in " + from + ". That story got here before you.",
+      "The boss in " + from + "? Everybody here has heard. Some of them liked him."]);
   }
   if Equals(r.kind, n"Massacre") {
-    return "What you left in " + from + " is being repeated on this side of town. Word for word.";
+    return CBLineOf([
+      "What you left in " + from + " is being repeated on this side of town. Word for word.",
+      "They've heard about " + from + " here. Some people moved their kids indoors."]);
   }
-  switch seed {
-    case 0: return "Your name is already in circulation here. Came up from " + from + ".";
-    case 1: return "You are known on this side of town now. Word travelled out of " + from + ".";
-    case 2: return "Heard about " + from + " before you ever walked in here. People notice.";
-    default: return "They were talking about " + from + " here before you arrived. You should know that.";
-  }
+  return CBLineOf([
+    "Your name is already in circulation here. Came up from " + from + ".",
+    "You are known on this side of town now. Word travelled out of " + from + ".",
+    "Heard about " + from + " before you ever walked in here. People notice.",
+    "They were talking about " + from + " here before you arrived. You should know that."]);
 }

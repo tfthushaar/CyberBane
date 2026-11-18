@@ -179,6 +179,8 @@ public class CBReactionDirector {
       civIntensity = s.civIntensity;
       maxCiv = s.maxReactingCivilians;
     }
+    // The district's temper, the blood on V, a fight just over (Model/Moment.reds, 2.3.1).
+    civIntensity *= CBCrowdMomentMult(sys, game);
     let civReacted = 0;
     let playerInCombat = player.IsInCombat();
     // An exchange V is having (Reactions/StreetTalk.reds) is not talked over by the street (1.9.5).
@@ -679,8 +681,14 @@ public func CBRecognizes(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, n
      && !(Equals(faction, sys.GetDisguiseFaction()) && sys.GetDisguiseStrength() >= 0.5) {
     return true;
   }
+  // The car they know V by, or the gun (Model/StreetBook.reds, 2.3.1): a gang's people place V by it whatever
+  // V has over their face. Nobody of the law, and only a gang that fields people.
+  if NotEquals(faction, n"") && CBFactionFieldsSquads(faction) && CBVGivenAway(sys, sys.GetGameInstance()) > 0 {
+    return true;
+  }
   if npc.cbRecoState == 0 {
-    let p = score.RecognitionChance(district, faction, false, false);
+    // Harder to make out a face at night and in the rain (Model/Moment.reds, 2.3.1).
+    let p = score.RecognitionChance(district, faction, false, false) * CBSightMult(sys.GetGameInstance());
     // Wearing this gang's colours makes them slower to place you (spec §9.3).
     if NotEquals(faction, n"") && Equals(faction, sys.GetDisguiseFaction()) {
       p *= (1.0 - sys.GetDisguiseStrength());
@@ -693,7 +701,70 @@ public func CBRecognizes(sys: ref<CyberbaneSystem>, score: ref<CBScoreEngine>, n
       }
     }
   }
+  // A boss who looks closer (2.3.1): somebody the roll did not let place V, an officer or an elite, close to a V
+  // who is masked or in their colours, for long enough.
+  if npc.cbRecoState == 2 && CBSeesThroughDisguise(sys, npc, faction) {
+    npc.cbRecoState = 1;
+  }
   return npc.cbRecoState == 1;
+}
+
+public func CBBossesSeeThroughOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().bossesSeeThrough;
+}
+
+// Whether they are somebody who would look closer: an officer, an elite or a boss, read once and kept.
+@addField(ScriptedPuppet)
+public let cbEnforcer: Int32;        // 0 unread, 1 yes, 2 no
+@addField(ScriptedPuppet)
+public let cbLookSince: Float;       // game seconds V has been close and covered, 0 when not
+
+func CBSeesThroughDisguise(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, faction: CName) -> Bool {
+  if !CBBossesSeeThroughOn() || Equals(faction, n"") || !CBFactionFieldsSquads(faction) {
+    return false;
+  }
+  let game = sys.GetGameInstance();
+  let covered = CBPlayerMasked(game) || (Equals(faction, sys.GetDisguiseFaction()) && sys.GetDisguiseStrength() > 0.0);
+  if !covered {
+    npc.cbLookSince = 0.0;
+    return false;
+  }
+  // The record's rarity is a native read: only for somebody the gate has already passed (every caller has).
+  if npc.cbEnforcer == 0 {
+    if !npc.IsAttached() {
+      return false;
+    }
+    let r = npc.GetNPCRarity();
+    npc.cbEnforcer = Equals(r, gamedataNPCRarity.Officer) || Equals(r, gamedataNPCRarity.Elite)
+                     || Equals(r, gamedataNPCRarity.Boss) ? 1 : 2;
+  }
+  if npc.cbEnforcer != 1 {
+    return false;
+  }
+  let player = GetPlayer(game);
+  if !IsDefined(player) || Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > CBConfig.EnforcerLookRange()
+     || !CBWitnessCanSee(npc, player) {
+    npc.cbLookSince = 0.0;
+    return false;
+  }
+  let now = CBGameSeconds(game);
+  if npc.cbLookSince <= 0.0 || now < npc.cbLookSince {
+    npc.cbLookSince = MaxF(now, 1.0);
+    return false;
+  }
+  if now - npc.cbLookSince < CBConfig.EnforcerLookSeconds() {
+    return false;
+  }
+  CBLog.Info(n"Model", s"One of \(NameToString(faction))'s officers saw through the disguise.");
+  if CBToastsOn() {
+    CBOverheard(game, CBWhisperSpeaker(faction), CBPick4(
+      "Nice mask. I'd know that walk anywhere.",
+      "You think a scrap of cloth fools me? I know who you are.",
+      "Wearing our colours doesn't make you one of us. I see you.",
+      "Took me a second. Not two. Hello, merc."));
+  }
+  return true;
 }
 
 // Fast-tick driver (spec §5.5). Carries a generation token so stale tick chains

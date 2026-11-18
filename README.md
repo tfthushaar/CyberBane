@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.3.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.3.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -48,6 +48,15 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   they name, bodyguards, and mercy as your choice.
 - **A living street.** Bagmen to rob, favours for friendly gangs, and sit-downs between gangs at war
   that you can crash.
+
+### New in 2.3
+
+- **The street reads you.** Witnesses run to tell the gang unless you stop them. Night, rain and your own
+  blood change who notices you. Each district has its own temper, and places remember what you did there.
+- **Known by your car and gun.** Use the same ones and a mask stops hiding you. A gang's bosses can see
+  through a disguise.
+- **Wannabes** square up to you for a name, fists only, and the street hears how it went.
+- **Pay the street** to keep watch for you, or to forget what they saw.
 
 ## Requirements
 

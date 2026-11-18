@@ -44,6 +44,8 @@ public class CBKillInfo {
   // Killed by hand, in a takedown. Set from ETakedownActionType, which is the only place the
   // distinction exists; it is gone by the time the puppet dies.
   public let mFinisher: Bool;
+  // The weapon in V's hands at the last hit (2.3.1), for the gun the street comes to know (Model/StreetBook.reds).
+  public let weaponRecord: TweakDBID;
 }
 
 // How much of a kill's dread survives nobody having seen it.
@@ -157,7 +159,8 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     // And their enemies hear about it (Model/GangRivalries.reds).
     CBCreditRivalGangs(sys, GetGameInstance(), info.faction, standingLoss);
     // Killing a hostile gang's people where somebody sees it is what sends their next crew.
-    if info.lethal && info.witnessed {
+    // When only people off the street saw it, one of them has to carry it to the gang first (Reactions/Witnesses.reds).
+    if info.lethal && info.witnessed && !CBWitnessCarries(sys, GetGameInstance(), info) {
       CBProvoke(sys, GetGameInstance(), info.faction);
     }
     fs.renown = ClampF(fs.renown + CBFactionRenownForKill(info.victimClass, brutal) * standingWitness, 0.0, 100.0);

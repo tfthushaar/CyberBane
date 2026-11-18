@@ -48,6 +48,15 @@ public class CBStreetRead {
   public let hunter: String;          // a Rival of theirs out after V right now
   public let leader: String;          // whoever runs their crew, from V's Rivals
   public let rivalsAlive: Int32;
+
+  // The moment (Model/Moment.reds) and what the street remembers (Model/StreetBook.reds), 2.3.1.
+  public let night: Bool;
+  public let rain: Int32;              // 0 dry, 1 light, 2 heavy
+  public let wounded: Bool;
+  public let fresh: Bool;              // V hurt somebody a moment ago
+  public let placeKind: CName;         // what happened where V is standing, n"" for nothing remembered
+  public let placeGang: CName;         // whose people it happened to
+  public let givenAway: Int32;         // 0 no, 1 by V's car, 2 by V's gun
 }
 
 public func CBReadStreet(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> ref<CBStreetRead> {
@@ -75,6 +84,20 @@ public func CBReadStreet(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
   r.heat = score.GetHeatStage();
   r.recentKills = sys.GetRecentKills();
   r.layingLow = CBIsLayingLow(sys, CBGameSeconds(game));
+  r.night = CBMomentNight(game);
+  r.rain = CBRainLevel(game);
+  r.wounded = CBVWounded(game);
+  r.fresh = CBVFreshFromFight(sys, game);
+  r.givenAway = CBVGivenAway(sys, game);
+  let here = GetPlayer(game);
+  if IsDefined(here) {
+    let place = CBPlaceNear(game, here.GetWorldPosition(), CBConfig.PlaceReach());
+    if place >= 0 {
+      let book = CBStreetBook.Get(game);
+      r.placeKind = book.PlaceKind(place);
+      r.placeGang = book.PlaceGang(place);
+    }
+  }
   let worn = sys.GetWorn();
   if IsDefined(worn) {
     r.armsCovered = worn.arms;

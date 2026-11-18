@@ -1339,6 +1339,7 @@ public func CBShowGameSubtitle(game: GameInstance, slot: Int32, speaker: String,
   if !IsDefined(bb) {
     return false;
   }
+  CBLineHeard(text);   // the street's memory of what it has said (Narrative/Lines.reds)
   // V's line and the answer each go up under whichever of their channel's two ids is not up now, and the one
   // that is comes down (see CBSubtitleLineId).
   let id = slot;
@@ -1404,6 +1405,7 @@ public func CBOverheard(game: GameInstance, speaker: String, line: String) -> Vo
     return;
   }
   if Equals(CBMessageDelivery(), ECBMessageDelivery.Notices) {
+    CBLineHeard(line);
     CBShowMessage(game, speaker + ": " + line, CBConfig.OverheardSeconds());
     return;
   }
@@ -1432,6 +1434,7 @@ public func CBPhoneSendTinted(game: GameInstance, sender: String, body: String,
   if !CBMessagesOn() {
     return;
   }
+  CBLineHeard(body);
   // Anyone who would rather have the old centre-screen line keeps it.
   if Equals(CBMessageDelivery(), ECBMessageDelivery.Notices) {
     CBShowMessage(game, sender + ": " + body, CBConfig.PhoneHoldSeconds());

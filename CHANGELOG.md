@@ -3,6 +3,60 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.3.1 (18 November 2026)
+
+**The street reads you**
+- **Witnesses tell the gang.** Kill a ganger where only ordinary people can see, and one of them may run to
+  tell their gang. You get about twelve seconds: talk them out of it (pay them, or scare them), or put them
+  down. The HUD line says when a witness is running. If they get there, the gang comes for you without
+  sending a scout first. If the gang's own people saw it, they come as before. Nobody ever calls the police.
+- **Night, rain and blood.** At night and in the rain your face is harder to place and fewer people see a
+  kill. Rain also makes you harder for hunters and scouts to spot. Badly hurt, people back away from you and
+  gangers who were afraid of you get bolder. Just after a fight, the crowd keeps its distance.
+- **Each district has a temper.** Watson talks fast and forgets fast, Heywood remembers every name and tells
+  the Valentinos, City Center sees nothing, Pacifica and Dogtown are hard to scare. It changes how fast word
+  moves, how easily people frighten, how long a place remembers, and how often a witness talks. The Hub's
+  City page says how the district you're in takes things.
+- **Places remember.** Where you left a room full of bodies, put a boss down, wiped out an apex squad or
+  dropped a MaxTac operative, people talk about it for a few days. The gang that lost people there is jumpier
+  on that corner and won't send anybody back there for about half a day.
+- **The braindance goes round.** Do something huge where people can see your face, and there's an even chance
+  somebody recorded it: it reaches every district at once instead of spreading one at a time.
+- **Known by your car and gun.** Keep turning up to fights in the same car, or keep killing with the same gun,
+  and the gangs learn it (six fights for a car, fifteen kills for a gun, forgotten after five days without).
+  After that a mask won't hide you in that car or with that gun out. The Hub's gang page says what they know.
+- **Bosses see through disguises.** A gang's officers and elites take a closer look: stay near one for a few
+  seconds with a mask or their colours on and they may see who you are.
+- **Wannabes.** Once your name means something, a kid out to make theirs can walk up and square up to you,
+  fists only. Beat them and the district hears it; walk away or lose and it hears that too. Shoot one and the
+  street calls it what it is. Never in safe areas, near a job or during a hunt.
+- **A head start from your lifepath.** When Cyberbane starts a new playthrough (a new game, or Start over),
+  a Nomad starts known and liked by the Aldecaldos and disliked by the Wraiths, a Street Kid known to the
+  Valentinos, a Corpo known to Arasaka and not kindly. A playthrough Cyberbane already knows is never changed.
+
+**Talk**
+- **Pay the street.** Pay somebody off the street 250eb to keep watch, and for six in-game hours in that
+  district you get about twenty seconds more warning of anybody coming for you, and a text from them when
+  they show. A witness on their way to a gang can be paid or leaned on in talk.
+
+**What people say**
+- **The street talks about what's happening.** Overheard lines now notice the blood on you, a fight that just
+  ended, the hour and the rain, the corner where something happened, the car or gun that gives you away, and
+  each district's own way of talking. Rumours, brokers' texts and "What's the word?" got more to say too.
+- **No more repeats.** Cyberbane remembers the last forty lines anybody said to you and steers clear of
+  them, instead of only avoiding the very last one.
+
+**Mod Settings**
+- **Tidier pages.** Options that only matter while a switch is on are hidden while it's off (with Mod Settings
+  0.2.21 or newer). Turf has its own heading, and overheard lines, rumours and "while you were out" are under
+  a new **Word on the street** heading. Surrender moved to **Gangs**. Your values are kept.
+- Every new feature above has its own switch: **Crowds and morale** (Night, rain and blood; District
+  temperaments; Witnesses tell the gang; Wannabes), **Word on the street** (Places remember; The braindance
+  goes round), **Street talk** (Pay the street), **Gangs** (Known by your car and gun; Bosses see through
+  disguises), **Reputation and money** (A head start from your lifepath). All on by default.
+
+Your progress carries over.
+
 ## 2.3.0 (18 November 2026)
 
 **Fixes**

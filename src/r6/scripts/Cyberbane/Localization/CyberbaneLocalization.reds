@@ -164,6 +164,30 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-Factions", "Factions");
     this.Text("Cyberbane-Settings-Category-GangView", "How gangs see you");
     this.Text("Cyberbane-Settings-Category-Advanced", "Advanced");
+    this.Text("Cyberbane-Settings-Category-Turf", "Turf");
+    this.Text("Cyberbane-Settings-Category-Word", "Word on the street");
+
+    // ---- Settings: 2.3.1, the street reads you -------------------------------
+    this.Text("Cyberbane-Settings-StreetReadsMoment", "Night, rain and blood");
+    this.Text("Cyberbane-Settings-StreetReadsMoment-Desc", "The street reads the moment. At night and in the rain a face is harder to place and fewer people see a kill. Badly hurt, people back away from you and gangers who feared you get bolder. Just after a fight, the crowd keeps its distance and talks about what it saw.");
+    this.Text("Cyberbane-Settings-DistrictTempers", "District temperaments");
+    this.Text("Cyberbane-Settings-DistrictTempers-Desc", "Each district takes things its own way. Watson talks fast and forgets fast, Heywood remembers every name and tells the Valentinos, City Center sees nothing, Pacifica and Dogtown are hard to scare. Sets how fast word moves on, how easily people frighten, how long a place remembers and how often a witness talks.");
+    this.Text("Cyberbane-Settings-WitnessesCall", "Witnesses tell the gang");
+    this.Text("Cyberbane-Settings-WitnessesCall-Desc", "Somebody who sees you hurt a ganger may go and tell their gang. You get a few seconds: talk to them, or put them down. If word gets out, the gang comes looking for you in that district without sending a scout first. They never call the police.");
+    this.Text("Cyberbane-Settings-Wannabes", "Wannabes");
+    this.Text("Cyberbane-Settings-Wannabes-Desc", "Once your name means something, a kid out to make theirs can square up to you, fists only. Beat them, walk away or lose, and the street hears how it went. Never in a safe area or near a job.");
+    this.Text("Cyberbane-Settings-PlacesRemember", "Places remember");
+    this.Text("Cyberbane-Settings-PlacesRemember-Desc", "Where something big happened (a room full of bodies, a boss put down) the street remembers for a few days: people there talk about it, the gang that lost people there is jumpy, and it is slow to send anybody back. How long depends on the district.");
+    this.Text("Cyberbane-Settings-BraindanceGoesRound", "The braindance goes round");
+    this.Text("Cyberbane-Settings-BraindanceGoesRound-Desc", "When you do something huge in front of people, somebody recorded it, and it is on every BD stall in the city at once instead of spreading a district at a time.");
+    this.Text("Cyberbane-Settings-PayTheStreet", "Pay the street");
+    this.Text("Cyberbane-Settings-PayTheStreet-Desc", "Two more things to say in street talk. Pay somebody off the street to keep watch, and for a few hours in that district you get more warning of anybody coming for you, and a text when they show. And a witness running to a gang can be paid to forget what they saw.");
+    this.Text("Cyberbane-Settings-KnownByCarAndGun", "Known by your car and gun");
+    this.Text("Cyberbane-Settings-KnownByCarAndGun-Desc", "Keep turning up to fights in the same car, or keep using the same gun, and the gangs come to know it. Once they do, a mask will not hide you in that car or with that gun in your hands. The Hub's gang page says what they know.");
+    this.Text("Cyberbane-Settings-BossesSeeThrough", "Bosses see through disguises");
+    this.Text("Cyberbane-Settings-BossesSeeThrough-Desc", "A gang's officers and elites take a closer look. Stay near one for a few seconds with a mask or their colours on and they may see who you are.");
+    this.Text("Cyberbane-Settings-LifepathHeadStart", "A head start from your lifepath");
+    this.Text("Cyberbane-Settings-LifepathHeadStart-Desc", "When Cyberbane starts a playthrough (a new game, or Start over) your past counts: a Nomad starts known and liked by the Aldecaldos and disliked by the Wraiths, a Street Kid known to the Valentinos and Heywood, a Corpo known to Arasaka and not kindly. A playthrough Cyberbane already knows is never changed.");
 
     // ---- Settings: general ----------------------------------------------
     this.Text("Cyberbane-Settings-Enabled", "Enabled");

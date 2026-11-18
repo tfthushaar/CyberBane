@@ -109,6 +109,11 @@ func CBQueueDeath(puppet: ref<ScriptedPuppet>) -> Void {
 @addField(ScriptedPuppet)
 public let cbHitQueued: Bool;
 
+// The weapon V last hit them with (2.3.1). Written in the hit event with the rest of what the hit was, read a
+// frame later or at death; nothing shared is touched.
+@addField(ScriptedPuppet)
+public let cbLastWeaponRecord: TweakDBID;
+
 public class CBHitFollowUpCallback extends DelayCallback {
   public let puppet: wref<ScriptedPuppet>;
 
@@ -124,6 +129,8 @@ public class CBHitFollowUpCallback extends DelayCallback {
     if !IsDefined(sys) || !p.IsAttached() || CBVDown(game) {
       return;
     }
+    // V is fresh from a fight (Model/Moment.reds).
+    sys.NoteFight(CBGameSeconds(game));
     // A wounded enemy may lose its nerve and run (spec §10.2).
     CBCombatFleeCheck(sys, game, p);
     // Put them down without killing them? That gets remembered too (spec §10.2).
@@ -181,6 +188,8 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
     puppet.cbScarMask = CBMaskSet(puppet.cbScarMask, CBScarBitFor(puppet.cbLastAttackType));
     puppet.cbLastMethodMask = CBMethodMaskFor(evt.attackData);
+    let weapon = evt.attackData.GetWeapon();
+    puppet.cbLastWeaponRecord = IsDefined(weapon) ? ItemID.GetTDBID(weapon.GetItemID()) : TDBID.None();
     if !puppet.cbHitQueued {
       let ds = GameInstance.GetDelaySystem(puppet.GetGame());
       if IsDefined(ds) {
@@ -358,6 +367,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   CBApplyKill(sys, info);
   // Already counted in this fight as somebody down; now they are a body. Not a second person.
   CBEncounterRecordKill(sys, info, puppet.cbSparedLogged);
+  // The car and the gun somebody saw V fight with (Model/StreetBook.reds).
+  CBNoteKnownBy(game, info);
 
   // Nearby squad-mates may lose their nerve and run (spec §9.4).
   CBMoraleOnKill(sys, game, info);
@@ -391,6 +402,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Boss) {
     CBTerrorDeed(sys, CBConfig.TerrorBoss());
     CBCreateRumor(sys, game, n"BossKill", 15.0, info.district, info.faction, info.witnessed);
+    CBRememberPlace(sys, game, n"BossKill", info.faction, info.district, info.position);
     if info.witnessed {
       CBFileLog(sys, n"BossKill", info.at, info.district, info.faction, 0.0);
     }
@@ -400,6 +412,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if info.lethal && info.witnessed && IsDefined(desApex)
      && desApex.IsTagged(puppet.GetEntityID(), n"CB_Apex") {
     CBFileLog(sys, n"ApexDown", info.at, info.district, info.faction, 0.0);
+    CBRememberPlace(sys, game, n"ApexDown", info.faction, info.district, info.position);
+  }
+  if info.lethal && info.victimClass == EnumInt(ECBVictimClass.MaxTac) {
+    CBRememberPlace(sys, game, n"MaxTacDown", n"", info.district, info.position);
   }
 
   // Avenger Rival (spec §10.2): killing an Officer or Boss can summon an avenger
@@ -688,5 +704,6 @@ public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
   info.stealth = witnesses == 0;
   info.at = CBGameSeconds(game);
   CBSetMethodFlags(info, puppet.cbLastMethodMask);
+  info.weaponRecord = puppet.cbLastWeaponRecord;
   return info;
 }

@@ -44,7 +44,8 @@ public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: Ent
   }
   let npcs = reg.GetAll();
   let player = GetPlayer(sys.GetGameInstance());
-  let radius = CBConfig.WitnessRadius();
+  // Fewer eyes reach as far at night and in the rain (Model/Moment.reds, 2.3.1).
+  let radius = CBConfig.WitnessRadius() * CBSightMult(sys.GetGameInstance());
   let seen = 0;
   let scanned = 0;
   let i = 0;

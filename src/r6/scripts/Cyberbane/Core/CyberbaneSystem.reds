@@ -232,6 +232,13 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The How gangs see you setting each gang had when last looked at (2.1.0), so a posture that moved because
   // the player changed it is not announced as the gang's own doing. Session only.
   private let m_seenViewIds: array<CName>;
+  // When V last hurt somebody, in game seconds (Model/Moment.reds, 2.3.1). Session only.
+  private let m_lastFightAt: Float;
+  // A new playthrough's lifepath head start, given on the first settled tick with the faction table warm
+  // (Model/Lifepath.reds, 2.3.1): made any earlier, a gang's record would be created without its baseline.
+  // A flag and a value, never a negative default: field initialisers are not trusted here, and 0 is a lifepath.
+  private let m_headStartDue: Bool;
+  private let m_headStartPath: Int32;
   private let m_seenViewVals: array<Int32>;
   // Which hostile gangs have restated their price this session, so each one does it once
   // (Model/Reputation.reds, CBVendettaWatch). Session only, like the phone threads it re-opens.
@@ -1043,6 +1050,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBApplyDeathLedger(this, game);
       CBPruneUniqueRivals(this);
     }
+    if this.m_headStartDue && this.HasContent() {
+      this.m_headStartDue = false;
+      CBLifepathHeadStart(this, this.m_headStartPath);
+    }
     // And the first look at what V has fitted and is wearing, now that the load is over and V's own
     // body is the one in the world (StartSession, 1.9.5).
     if this.m_wornDue {
@@ -1151,6 +1162,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBHuntTick(this, game);             // the people after you search, find you, lose you
     CBRivalHuntTick(this, game);        // confirms a queued rival actually arrived
     CBWhereaboutsTick(this, game);      // a Rival waiting where they were last seen, and its pin
+    CBNoteDriving(game);                // the car V is in, for the car the street knows (2.3.1)
+    CBWitnessTick(this, game);          // a witness on their way to a gang gets there, or does not (2.3.1)
+    if !heavyStreaming {
+      CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
+    }
     if this.m_tickCount % 5 == 0 {
       CBTurfPatrolTick(this, game);
     }
@@ -1488,6 +1504,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_installedAt = this.NewBirthStamp();
       svc.NoteBirth(this.m_playthroughId, this.m_installedAt, lifepath);
       CBLog.Info(n"Core", s"Playthrough \(NameToString(this.m_playthroughId)) starts here (lifepath \(lifepath)).");
+      this.m_headStartDue = true;            // a new playthrough only (Model/Lifepath.reds, 2.3.1)
+      this.m_headStartPath = lifepath;
       return;
     }
 
@@ -2569,6 +2587,14 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // The same for the How gangs see you setting (CBGangView): what it was at the last look, -1 the first time.
+  public func NoteFight(at: Float) -> Void {
+    this.m_lastFightAt = at;
+  }
+
+  public func GetLastFightAt() -> Float {
+    return this.m_lastFightAt;
+  }
+
   public func SwapSeenView(id: CName, now: Int32) -> Int32 {
     let i = 0;
     while i < ArraySize(this.m_seenViewIds) && i < ArraySize(this.m_seenViewVals) {
@@ -3330,6 +3356,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     CBEvaluateTitles(this, game);
     CBRumorTick(this, game);
+    let streetBook = CBStreetBook.Get(game);
+    if IsDefined(streetBook) {
+      streetBook.Age(CBGameSeconds(game));   // places their district has forgotten (2.3.1)
+    }
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
@@ -3650,12 +3680,18 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(intelBook) {
       intelBook.Clear();  // and nothing is known about its Rivals, and nobody owes V (1.9.8)
     }
+    let streetBook = CBStreetBook.Get(this.GetGameInstance());
+    if IsDefined(streetBook) {
+      streetBook.Clear(); // no place remembers, and nobody knows V's car or gun (2.3.1)
+    }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);
     this.m_installedAt = this.NewBirthStamp();
     if IsDefined(svc) {
       svc.NoteBirth(this.m_playthroughId, this.m_installedAt, CBPlayerLifePath(this.GetGameInstance()));
     }
+    this.m_headStartDue = true;                                        // Start over is a new playthrough
+    this.m_headStartPath = CBPlayerLifePath(this.GetGameInstance());
     let rtNow = CyberbaneRuntime.Get();
     if IsDefined(rtNow) {
       rtNow.SetSessionPlaythrough(this.m_playthroughId);

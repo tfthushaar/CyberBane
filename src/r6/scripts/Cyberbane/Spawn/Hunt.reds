@@ -596,6 +596,8 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
   if CBIsNight(game) {
     scale *= CBConfig.NightSenseMult();
   }
+  // And the rain (Model/Moment.reds, 2.3.1).
+  scale *= CBRainSightMult(game);
   if IsDefined(sys) && NotEquals(sys.GetHuntFaction(), n"")
      && Equals(sys.GetDisguiseFaction(), sys.GetHuntFaction()) {
     scale *= CBConfig.DisguiseSenseMult();
@@ -766,6 +768,11 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     return "";
   }
   let huntsOnly = Equals(mode, ECBHudLine.HuntsOnly);
+  // A witness on their way to a gang (Reactions/Witnesses.reds, 2.3.1), while nobody is hunting V yet.
+  let witness = CBWitnessHudLine(sys, game);
+  if StrLen(witness) > 0 && Equals(sys.GetHuntFaction(), n"") && !CBHuntersOut(sys, game) {
+    return witness;
+  }
   // One short line, never more. Longest first is the name, so the name is what gets clipped.
   let who = CBClip(CBBarFactionLabel(sys.GetHuntFaction()), CBConfig.HudNameMaxChars());
   let head = StrLen(who) > 0 ? "HUNTED: " + who : "HUNTED";
@@ -914,6 +921,7 @@ public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     }
   }
   CBAllyTipOff(sys, game, faction);
+  CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction)));
 }
 
 // The gang tells V its apex squad is on the road.
@@ -924,6 +932,7 @@ public func CBApexOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, factio
     CBPhoneFromGang(game, faction, s"\(name) and three of ours are on the road. Last we heard you were in \(CBHuntWhereLine(sys, game)).");
   }
   CBAllyTipOff(sys, game, faction);
+  CBWatcherTipOff(sys, game, "Four of " + CBFactionLabel(faction) + "'s best");
 }
 
 // A Rival tells V they are coming. Chosen by how they came to be one.
@@ -949,6 +958,7 @@ public func CBRivalWarning(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
     }
   }
   CBPhoneSendTinted(game, CBRivalDisplayName(content, r), line, CBHudRed());
+  CBWatcherTipOff(sys, game, CBRivalDisplayName(content, r));
 }
 
 // ---- Scouts --------------------------------------------------------------------
@@ -1079,6 +1089,7 @@ func CBScoutCallIn(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
     let fs = sys.FindFaction(faction);
     CBPhoneFromGang(game, faction, s"Our scout has eyes on you. \(CBCrewComingLine(sys, game, fs))");
     CBAllyTipOff(sys, game, faction);
+    CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction)));
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout found you and called in the crew.");
     return;
   }
@@ -1162,7 +1173,7 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
 // sweep leaves them to whatever they belong to, which clears them when it ends. Not the help (CB_Ally),
 // who fight beside V. One list, so a new kind joins every rule at once.
 public func CBStreetTags() -> array<CName> {
-  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet"];
+  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe"];
 }
 
 // Is anybody of ours still in the fight with V: close, or able to see V?

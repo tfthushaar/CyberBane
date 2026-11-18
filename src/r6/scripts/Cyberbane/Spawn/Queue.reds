@@ -784,6 +784,11 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   if !IsDefined(sys) || !IsDefined(fs) {
     return -1.0;
   }
+  // Where V put a pile of their people in the ground, recently: they are slow to come back there
+  // (Model/StreetBook.reds, 2.3.1).
+  if CBGangAvoidsHere(sys, sys.GetGameInstance(), fs.id) {
+    return -1.0;
+  }
   let bonus = 0.0;
   let reason = false;
   // A gang V has broken (1.9.5) has nobody to spare for a standing grudge or for V walking its streets:
@@ -1084,7 +1089,8 @@ public func CBJitter(ticks: Int32, frac: Float) -> Int32 {
 // ready.
 public func CBWarningTicks(base: Int32) -> Int32 {
   return CBJitter(base, CBConfig.WarningJitterFraction())
-       + CBConfig.DifficultyWarningExtra() * CBDifficultyLevel();
+       + CBConfig.DifficultyWarningExtra() * CBDifficultyLevel()
+       + CBWatchExtraTicks();   // somebody V paid to keep watch sees them sooner (Reactions/StreetPay.reds)
 }
 
 // ---- Being tracked -----------------------------------------------------------------

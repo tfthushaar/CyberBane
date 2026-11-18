@@ -249,6 +249,84 @@ public abstract class CBConfig {
   // district. High on purpose: a line about a specific thing V did somewhere else is the whole
   // point of the rumour engine, and hearing it is the only way a player knows it exists.
   public static func WhisperRumorChance() -> Float = 0.6
+  // The line library (Narrative/Lines.reds, 2.3.1): how many lines the street remembers saying, and what a
+  // line heard among them is still worth in a weighted pick.
+  public static func LineMemory() -> Int32 = 40
+  public static func LineHeardWeight() -> Float = 0.15
+  // The moment (Model/Moment.reds, 2.3.1). A face is that much harder to place at night (the lanes' night,
+  // NightStartHour) and in rain: recognition, the reach of a witness, and in rain a hunter's sight. V is wounded
+  // under 40% health, and fresh from a fight for 600 game seconds (about a real minute and a quarter) after
+  // hurting anybody.
+  public static func NightSight() -> Float = 0.8
+  public static func HeavyRainSight() -> Float = 0.8
+  public static func LightRainSight() -> Float = 0.92
+  public static func WoundedHealthPercent() -> Float = 40.0
+  public static func FreshFightSeconds() -> Float = 600.0
+  public static func FreshFightCrowdMult() -> Float = 1.2
+  public static func WoundedCrowdMult() -> Float = 1.1
+  // A ganger who sees V bleeding is that much less afraid of V (CBHoldBackOdds).
+  public static func WoundedEmbolden() -> Float = 0.1
+  // Places that remember (Model/StreetBook.reds, 2.3.1): up to twelve, one per corner (a deed within 30 m of a
+  // remembered one replaces it). Within 40 m people talk about it and the gang that lost people there is that
+  // much more afraid; within 60 m of it, for twelve in-game hours, that gang sends nobody.
+  public static func PlaceCap() -> Int32 = 12
+  public static func PlaceMergeDistance() -> Float = 30.0
+  public static func PlaceReach() -> Float = 40.0
+  public static func PlaceFear() -> Float = 0.1
+  public static func PlaceAvoidReach() -> Float = 60.0
+  public static func PlaceAvoidHours() -> Float = 12.0
+  // Known by car and gun: four of each kept; a car is known after six witnessed fights in it or by it (within
+  // 25 m), a gun after fifteen witnessed kills with it; forgotten after five in-game days without one.
+  public static func KnownCap() -> Int32 = 4
+  public static func CarKnownAfter() -> Int32 = 6
+  public static func GunKnownAfter() -> Int32 = 15
+  public static func KnownForDays() -> Float = 5.0
+  public static func CarByReach() -> Float = 25.0
+  // One sighting of the car per fight: kills within ten game minutes (a real minute and a quarter) are one fight.
+  public static func CarNoteGapSeconds() -> Float = 600.0
+  // Bosses see through disguises ([78]): an officer or elite within 15 m for 30 game seconds (about four real
+  // seconds) of V masked or in their colours places V anyway.
+  public static func EnforcerLookRange() -> Float = 15.0
+  public static func EnforcerLookSeconds() -> Float = 30.0
+  // Witnesses who tell the gang (Reactions/Witnesses.reds, 2.3.1): three in four go, times the district's temper,
+  // and take twelve seconds to get there. Hushing one costs 150eb plus 0.4eb per point of V's renown; leaning
+  // on them is that much easier than leaning on a ganger.
+  public static func WitnessTellChance() -> Float = 0.75
+  public static func WitnessTellTicks() -> Int32 = 12
+  public static func HushBasePrice() -> Float = 150.0
+  public static func HushPerRenown() -> Float = 0.4
+  public static func HushLeanBonus() -> Float = 0.15
+  // Keeping watch (Reactions/StreetPay.reds): 250eb for six in-game hours in one district, and twenty more
+  // seconds of warning on anybody coming.
+  public static func WatchPrice() -> Int32 = 250
+  public static func WatchHours() -> Float = 6.0
+  public static func WatchExtraTicks() -> Int32 = 20
+  // The braindance goes round (Model/RumorEngine.reds, 2.3.1): a witnessed story of magnitude 8 or more (a
+  // massacre, a boss) has an even chance of being recorded and reaching every district at once.
+  public static func BraindanceMinMagnitude() -> Float = 8.0
+  public static func BraindanceChance() -> Float = 0.5
+  // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
+  // ten against the one with a grudge, ten points of being known by each, and five in the home district.
+  public static func HeadStartFriend() -> Float = 15.0
+  public static func HeadStartGrudge() -> Float = 10.0
+  public static func HeadStartKnown() -> Float = 10.0
+  public static func HeadStartDistrict() -> Float = 5.0
+  // Wannabes (Spawn/Wannabe.reds, 2.3.1): once V is a known merc, an even chance every ten in-game hours or so
+  // (about an hour and a quarter of real play). They challenge within 4 m, give up walking after 90 seconds or
+  // 90 m, stand down when V is under 25% health or 35 m away mid-fight, or after 150 seconds of it. Three
+  // points of the district's renown won or lost (a third of that for walking away); two of Code for shooting one.
+  public static func WannabeGapHours() -> Float = 10.0
+  public static func WannabeChance() -> Float = 0.5
+  public static func WannabeSpawnGraceTicks() -> Int32 = 20
+  public static func WannabeChallengeDistance() -> Float = 4.0
+  public static func WannabeApproachTicks() -> Int32 = 90
+  public static func WannabeLoseInterestDistance() -> Float = 90.0
+  public static func WannabeLoseHealth() -> Float = 25.0
+  public static func WannabeWalkAwayDistance() -> Float = 35.0
+  public static func WannabeFightTicks() -> Int32 = 150
+  public static func WannabeLifeTicks() -> Int32 = 240
+  public static func WannabeRenown() -> Float = 3.0
+  public static func WannabeShotCode() -> Float = 2.0
 
   // ---- Morale (spec §9.4) ----------------------------------------------
   public static func MoraleMaxBreakFraction() -> Float = 0.35

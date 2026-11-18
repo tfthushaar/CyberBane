@@ -410,6 +410,16 @@ public func CBHoldBackOdds(sys: ref<CyberbaneSystem>, faction: CName, nerve: Flo
       fear += CBConfig.LostGroundFear();
     }
   }
+  // Where their people died, they are jumpier (Model/StreetBook.reds, 2.3.1).
+  let atGame = IsDefined(sys) ? sys.GetGameInstance() : GetGameInstance();
+  let vNow = GetPlayer(atGame);
+  if IsDefined(vNow) && CBGangLostHere(atGame, faction, vNow.GetWorldPosition()) {
+    fear += CBConfig.PlaceFear();
+  }
+  // V bleeding is a chance, to somebody who was afraid of V (Model/Moment.reds, 2.3.1).
+  if IsDefined(sys) && CBVWounded(sys.GetGameInstance()) {
+    fear -= CBConfig.WoundedEmbolden();
+  }
   let chance = (fear - nerve * CBConfig.HoldBackNerveWeight()) * CBConfig.HoldBackScale()
              - Cast<Float>(backers) * CBConfig.HoldBackPerBacker();
   return ClampF(chance * sys.WornPerk().breakMult, 0.0, CBConfig.HoldBackMax());

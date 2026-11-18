@@ -336,10 +336,10 @@ public func CBRivalMercyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pl
     e.mercyChosen = true;
     if RandF() < chance {
       e.exiled = true;
-      return CBTalkSay(CBWhisperPick2("Okay. Okay. I'm gone. You'll never see me again.", "Fine. Night City's yours. I'm done."), n"");
+      return CBTalkSay(CBPick2("Okay. Okay. I'm gone. You'll never see me again.", "Fine. Night City's yours. I'm done."), n"");
     }
     CBRivalGiveTrait(r, n"Humiliated");
-    return CBTalkSay(CBWhisperPick2("This is my city. I'll crawl back if I have to.", "Run? From you? Never."), n"");
+    return CBTalkSay(CBPick2("This is my city. I'll crawl back if I have to.", "Run? From you? Never."), n"");
   }
   e.mercyChosen = true;
   if choice == CBTalkActCollect() {
@@ -349,5 +349,5 @@ public func CBRivalMercyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pl
     }
     return CBTalkSay(CBIntelSpoken(i) + " We're even.", n"");
   }
-  return CBTalkSay(CBWhisperPick2(s"...I won't forget this. \(CBRivalCatchphrase(r))", "Why? ...Doesn't matter. I owe you."), n"");
+  return CBTalkSay(CBPick2(s"...I won't forget this. \(CBRivalCatchphrase(r))", "Why? ...Doesn't matter. I owe you."), n"");
 }

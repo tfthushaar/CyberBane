@@ -2457,6 +2457,11 @@ public class CBHud {
     if StrLen(status) > 0 {
       out += "Right now: " + StrLower(status) + ".\n";
     }
+    // What the street knows V by (Model/StreetBook.reds, 2.3.1).
+    let knownBy = CBKnownByLine(game);
+    if StrLen(knownBy) > 0 {
+      out += knownBy + "\n";
+    }
     out += "\n";
     let quote = CBPeaceQuote(sys, game, id);
     let money = CBHudEddies(game);
@@ -3453,7 +3458,7 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   let chromeVisible = score.GetChromeVisible();
   // The crowd's own number, from the crowd's own formula, including the intensity slider the
   // player set. Working it out separately here is what let this screen disagree with the street.
-  let eff = CBCrowdFear(score, CBCivIntensity());
+  let eff = CBCrowdFear(score, CBCivIntensity() * CBCrowdMomentMult(sys, GetGameInstance()));
   let reach = 1.0 + (chromeVisible / 100.0) * CBConfig.ChromeNoticeRangeBonus();
   if eff >= CBConfig.CivFearRun() {
     let r = RoundF(CBConfig.CivFleeRadius() * reach);
@@ -3552,8 +3557,14 @@ func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
   }
   // The districts themselves are drawn as rows (RenderCity). This is only the line that says
   // how to read them.
-  return "Word spreads outward from where things happened, so you can be a legend in one "
-       + "district and a nobody in the next. The bar is how widely your name carries there.";
+  let out = "Word spreads outward from where things happened, so you can be a legend in one "
+          + "district and a nobody in the next. The bar is how widely your name carries there.";
+  // How the district V is standing in takes things ([6], Data/Districts.reds).
+  let temper = CBTemperWords(sys.GetCurrentDistrict());
+  if StrLen(temper) > 0 {
+    out += " " + temper;
+  }
+  return out;
 }
 
 // What is going on in a district, in as few words as will do, for the right-hand column of TURF.

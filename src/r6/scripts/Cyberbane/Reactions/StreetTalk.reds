@@ -1079,13 +1079,16 @@ public class CBStreetTalk {
     if choice == CBTalkActSpare() || choice == CBTalkActCollect() || choice == CBTalkActExile() {
       return CBRivalMercyAnswer(sys, game, player, t, choice);
     }
+    if choice == CBTalkActHushPay() || choice == CBTalkActHushLean() || choice == CBTalkActWatch() {
+      return CBStreetPayAnswer(sys, game, player, t, choice);
+    }
     if choice == CBTalkActDealLean() {
       this.m_menu = CBTalkMenuMain();
       return CBTalkDealLean(sys, game, player, t, this.m_dealRival);
     }
     if choice == CBTalkActDealForget() {
       this.m_menu = CBTalkMenuMain();
-      return CBTalkSay(CBWhisperPick2("Your loss.", "Suit yourself."), n"");
+      return CBTalkSay(CBPick2("Your loss.", "Suit yourself."), n"");
     }
     return null;
   }
@@ -1110,10 +1113,10 @@ public class CBStreetTalk {
     let faction = CBClassifyFaction(npc);
     let line = "";
     if Equals(faction, n"NCPD") {
-      line = CBWhisperPick2("Move along.", "Not now. Keep walking.");
+      line = CBPick2("Move along.", "Not now. Keep walking.");
     } else {
       if NotEquals(faction, n"") && NotEquals(faction, n"MaxTac") {
-        line = CBWhisperPick3("Keep walking, merc.", "Not talking to you. Move.", "Wrong street to stop on.");
+        line = CBPick3("Keep walking, merc.", "Not talking to you. Move.", "Wrong street to stop on.");
       }
     }
     if StrLen(line) == 0 {
@@ -1792,7 +1795,7 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
     if gang {
       fear = MaxF(score.GetFactionFear(faction) / 100.0, looks);
     } else {
-      fear = MaxF(CBCrowdFear(score, 1.0) / 100.0, looks);
+      fear = MaxF(CBCrowdFear(score, CBCrowdMomentMult(sys, game)) / 100.0, looks);
     }
   }
   if gang && CBGangBroken(sys, faction) {
@@ -2152,6 +2155,10 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
      && !lifeC.FavourOpen() && !CBMaskHas(done, CBTalkActFavour()) {
     ArrayPush(out, CBTalkMakeLine("[Ask] Need anything done?", CBTalkActFavour(), t"ChoiceCaptionParts.GangWatchIcon"));
   }
+  // Paying the street (Reactions/StreetPay.reds, 2.3.1): hush a witness, or have somebody keep watch.
+  for pl in CBStreetPayLines(sys, game, t) {
+    ArrayPush(out, pl);
+  }
   // Business (1.9.7): what a gang at war with V will sell. Only when there is something to sell.
   if gang && CBTalkHasBusiness(sys, game, t) {
     ArrayPush(out, CBTalkMakeLine("[Deal] Let's talk business.", CBTalkActBusiness(), t"ChoiceCaptionParts.PayIcon"));
@@ -2432,11 +2439,11 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
   // Credit for saying hello once to each person; saying it again is just being friendly.
   let first = t.first;
   if t.cop {
-    return CBTalkSay(CBWhisperPick3("Move along, citizen.", "Keep it clean tonight.", "Mhm. Don't make me run your ID."), n"");
+    return CBTalkSay(CBPick3("Move along, citizen.", "Keep it clean tonight.", "Mhm. Don't make me run your ID."), n"");
   }
   if !gang {
     if t.mood == CBTalkAfraid() {
-      return CBTalkSay(CBWhisperPick3("H-hi. I don't want any trouble.", "Please, I'm just going home.", "Okay. Okay. Hi."), n"fear_beg");
+      return CBTalkSay(CBPick3("H-hi. I don't want any trouble.", "Please, I'm just going home.", "Okay. Okay. Hi."), n"fear_beg");
     }
     if first {
       CBTalkConduct(sys, game, n"", CBConfig.TalkGreetConduct());
@@ -2446,22 +2453,22 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
       if first {
         let gift = CBTalkFanGift(sys, game, player);
         if gift > 0 {
-          return CBTalkSay(CBWhisperPick3(s"No way. It's you. Here, drinks are on me. \(gift)eb.",
+          return CBTalkSay(CBPick3(s"No way. It's you. Here, drinks are on me. \(gift)eb.",
                                           s"Wait till I tell everyone. Take this, \(gift)eb, for the stories.",
                                           s"You're the real thing. Here, \(gift)eb. Don't argue."), n"greeting");
         }
       }
       let title = CBWhisperTitle(sys);
       if StrLen(title) > 0 {
-        return CBTalkSay(CBWhisperPick3("No way. " + title + ", saying hi to me?", "Wait till I tell everyone. " + title + "!", "Hey! Big fan. Seriously."), n"greeting");
+        return CBTalkSay(CBPick3("No way. " + title + ", saying hi to me?", "Wait till I tell everyone. " + title + "!", "Hey! Big fan. Seriously."), n"greeting");
       }
-      return CBTalkSay(CBWhisperPick3("Hey! Good to see you around.", "Evening. Stay safe out there.", "Heard good things about you."), n"greeting");
+      return CBTalkSay(CBPick3("Hey! Good to see you around.", "Evening. Stay safe out there.", "Heard good things about you."), n"greeting");
     }
     // They remember V while they are around (1.9.7).
     if IsDefined(t.npc) && t.npc.cbTalkTimes > 0 {
-      return CBTalkSay(CBWhisperPick3("You again?", "Back already? What now?", "We just talked."), n"");
+      return CBTalkSay(CBPick3("You again?", "Back already? What now?", "We just talked."), n"");
     }
-    return CBTalkSay(CBWhisperPick4("Hey.", "Evening.", "Uh. Hi.", "Do I know you?"), n"greeting");
+    return CBTalkSay(CBPick4("Hey.", "Evening.", "Uh. Hi.", "Do I know you?"), n"greeting");
   }
   let label = StrLen(CBFactionLabel(t.faction)) > 0 ? CBFactionLabel(t.faction) : "the crew";
   if t.mood == CBTalkFriendly() {
@@ -2473,7 +2480,7 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
     if StrLen(tip) > 0 {
       return CBTalkSay(tip, n"greeting");
     }
-    return CBTalkSay(CBWhisperPick4("Good to see you, choom.", "Always welcome here.", "You need anything, you ask " + label + ".", "The boss says hi."), n"greeting");
+    return CBTalkSay(CBPick4("Good to see you, choom.", "Always welcome here.", "You need anything, you ask " + label + ".", "The boss says hi."), n"greeting");
   }
   if t.mood == CBTalkAfraid() {
     // Saying hello to somebody who expected worse: mercy, in a small way, and the way back from a
@@ -2489,7 +2496,7 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
         }
       }
     }
-    return CBTalkSay(CBWhisperPick3("We good? We're good. Right?", "Hey. Yeah. Hi. I'm not looking for anything.", "Didn't see you. Whatever you need, it's fine."), n"fear_beg");
+    return CBTalkSay(CBPick3("We good? We're good. Right?", "Hey. Yeah. Hi. I'm not looking for anything.", "Didn't see you. Whatever you need, it's fine."), n"fear_beg");
   }
   if t.mood == CBTalkHostile() {
     // The parley (1.9.6), once per person: talked down, they and the crew standing with them back off for
@@ -2502,19 +2509,19 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
       if RandF() < chance * sys.WornPerk().breakMult {
         let calmed = CBTalkParleyCrew(sys, t);
         CBLog.Info(n"Talk", s"Parley held with one of \(NameToString(t.faction)); \(calmed) of their crew back off with them.");
-        return CBTalkSay(CBWhisperPick3("Fine. Walk away. This time.", "You've got nerve. Go on, before I change my mind.", "Alright. Nobody here saw you."), n"");
+        return CBTalkSay(CBPick3("Fine. Walk away. This time.", "You've got nerve. Go on, before I change my mind.", "Alright. Nobody here saw you."), n"");
       }
       CBLog.Info(n"Talk", s"Parley refused by one of \(NameToString(t.faction)).");
     }
-    return CBTalkSay(CBWhisperPick3("You've got nerve, walking up to me.", "Keep walking before I change my mind.", "Not your street. Not your friend."), n"bump");
+    return CBTalkSay(CBPick3("You've got nerve, walking up to me.", "Keep walking before I change my mind.", "Not your street. Not your friend."), n"bump");
   }
   if first {
     CBTalkWarm(sys, game, t.faction, CBConfig.TalkGreetWarmth(), CBConfig.MercyCeiling());
   }
   if IsDefined(t.npc) && t.npc.cbTalkTimes > 0 {
-    return CBTalkSay(CBWhisperPick3("Back again? What is it now?", "You again. Make it quick.", "Thought we were done."), n"");
+    return CBTalkSay(CBPick3("Back again? What is it now?", "You again. Make it quick.", "Thought we were done."), n"");
   }
-  return CBTalkSay(CBWhisperPick3("Hey. You're all right, I guess.", "Choom.", "Evening. Keep it friendly."), n"greeting");
+  return CBTalkSay(CBPick3("Hey. You're all right, I guess.", "Choom.", "Evening. Keep it friendly."), n"greeting");
 }
 
 // A friend of V's passing on where one of their enemies' Rivals is: once a day per gang.
@@ -2548,7 +2555,7 @@ func CBTalkFriendTip(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
 func CBTalkOnDismiss(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let gang = NotEquals(t.faction, n"") && !t.cop;
   if t.cop {
-    return CBTalkSay(CBWhisperPick2("Watch the attitude.", "Sure. Move along."), n"");
+    return CBTalkSay(CBPick2("Watch the attitude.", "Sure. Move along."), n"");
   }
   if t.mood == CBTalkAfraid() {
     if gang {
@@ -2557,7 +2564,7 @@ func CBTalkOnDismiss(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
     } else {
       CBTalkScare(player, t, 1);
     }
-    return CBTalkSay(CBWhisperPick3("Going. I'm going.", "Sorry. Sorry.", "You got it."), n"fear_beg");
+    return CBTalkSay(CBPick3("Going. I'm going.", "Sorry. Sorry.", "You got it."), n"fear_beg");
   }
   if gang && t.mood == CBTalkFriendly() {
     // Blanking friends once is nothing. Doing it all day is noticed.
@@ -2569,12 +2576,12 @@ func CBTalkOnDismiss(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
         tally.slight += 0.01;
       }
     }
-    return CBTalkSay(CBWhisperPick2("Whatever, choom.", "Busy, huh? Fine."), n"");
+    return CBTalkSay(CBPick2("Whatever, choom.", "Busy, huh? Fine."), n"");
   }
   if t.mood == CBTalkHostile() {
-    return CBTalkSay(CBWhisperPick2("Watch yourself.", "Walk while you can."), n"bump");
+    return CBTalkSay(CBPick2("Watch yourself.", "Walk while you can."), n"bump");
   }
-  return CBTalkSay(CBWhisperPick3("Fine.", "Yeah, yeah.", "Your loss."), n"");
+  return CBTalkSay(CBPick3("Fine.", "Yeah, yeah.", "Your loss."), n"");
 }
 
 // ---- Antagonize ----------------------------------------------------------------------------------------
@@ -2585,23 +2592,23 @@ func CBTalkOnAntagonize(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   if t.cop {
     CBTalkSlight(sys, game, t.faction, CBConfig.TalkCopCost());
     CBTalkConduct(sys, game, n"", -CBConfig.TalkBullyConduct());
-    return CBTalkSay(CBWhisperPick3("Real funny. Move it before I run your ID.", "Keep talking and see where it gets you.", "I've got your face now, merc."), n"bump");
+    return CBTalkSay(CBPick3("Real funny. Move it before I run your ID.", "Keep talking and see where it gets you.", "I've got your face now, merc."), n"bump");
   }
   if !gang {
     CBTalkConduct(sys, game, n"", -CBConfig.TalkCivAntagonizeConduct());
     if t.mood == CBTalkAfraid() || RandF() < t.fear {
       CBTalkScare(player, t, t.fear >= CBConfig.TalkCivAfraid() ? 3 : 2);
-      return CBTalkSay(CBWhisperPick3("Leave me alone!", "I don't want trouble!", "Psycho!"), n"fear_beg");
+      return CBTalkSay(CBPick3("Leave me alone!", "I don't want trouble!", "Psycho!"), n"fear_beg");
     }
-    return CBTalkSay(CBWhisperPick3("The hell's your problem?", "Get out of my face.", "Real tough. Go bother someone else."), n"bump");
+    return CBTalkSay(CBPick3("The hell's your problem?", "Get out of my face.", "Real tough. Go bother someone else."), n"bump");
   }
   if t.mood == CBTalkFriendly() {
     CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultFriendCost());
-    return CBTalkSay(CBWhisperPick3("Not funny, choom. Not funny at all.", "Careful. Friends have limits.", "Say that again and we're done."), n"bump");
+    return CBTalkSay(CBPick3("Not funny, choom. Not funny at all.", "Careful. Friends have limits.", "Say that again and we're done."), n"bump");
   }
   if t.mood == CBTalkHostile() {
     if CBTalkFight(sys, game, player, t) {
-      return CBTalkSay(CBWhisperPick3("You're dead.", "Big mistake.", "Been waiting for this."), n"");
+      return CBTalkSay(CBPick3("You're dead.", "Big mistake.", "Been waiting for this."), n"");
     }
     return CBTalkSay("Not here. Not now. But soon.", n"bump");
   }
@@ -2609,18 +2616,18 @@ func CBTalkOnAntagonize(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   if t.mood == CBTalkAfraid() || gap > CBConfig.TalkFoldGap() {
     // Most fold. A few snap.
     if t.mood == CBTalkAfraid() && RandF() < CBConfig.TalkSnapChance() && CBTalkFight(sys, game, player, t) {
-      return CBTalkSay(CBWhisperPick2("I'm not running from you!", "Enough! ENOUGH!"), n"");
+      return CBTalkSay(CBPick2("I'm not running from you!", "Enough! ENOUGH!"), n"");
     }
     CBTalkFear(sys, game, t.faction, CBConfig.TalkFoldFear());
     CBTalkConduct(sys, game, t.faction, -CBConfig.TalkBullyConduct());
     CBTalkSendOff(game, t);
-    return CBTalkSay(CBWhisperPick3("Okay, okay! Forget it!", "Not worth it. Not worth it.", "Whatever you say."), n"fear_beg");
+    return CBTalkSay(CBPick3("Okay, okay! Forget it!", "Not worth it. Not worth it.", "Whatever you say."), n"fear_beg");
   }
   if gap < -CBConfig.TalkFoldGap() && CBTalkFight(sys, game, player, t) {
-    return CBTalkSay(CBWhisperPick3("Alright. Let's dance.", "You picked the wrong one.", "Say that to my face. Oh wait."), n"");
+    return CBTalkSay(CBPick3("Alright. Let's dance.", "You picked the wrong one.", "Say that to my face. Oh wait."), n"");
   }
   CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost());
-  return CBTalkSay(CBWhisperPick3("Keep running your mouth, see what happens.", "Big talk. Walk away.", "Another word and you're bleeding."), n"bump");
+  return CBTalkSay(CBPick3("Keep running your mouth, see what happens.", "Big talk. Walk away.", "Another word and you're bleeding."), n"bump");
 }
 
 // ---- Intimidate ----------------------------------------------------------------------------------------
@@ -2630,7 +2637,7 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   if t.cop {
     CBTalkSlight(sys, game, t.faction, CBConfig.TalkCopCost() * 2.0);
     CBTalkConduct(sys, game, n"", -CBConfig.TalkBullyConduct());
-    return CBTalkSay(CBWhisperPick2("Threatening an officer? Bold.", "Try that again. I dare you."), n"bump");
+    return CBTalkSay(CBPick2("Threatening an officer? Bold.", "Try that again. I dare you."), n"bump");
   }
   let npc = t.npc;
   let immovable = npc.IsBoss() || CBHoldsGround(npc);
@@ -2655,13 +2662,13 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
           sys.AddDeedDreadPoints(CBConfig.TalkCivDread());
         }
       }
-      return CBTalkSay(CBWhisperPick3("Okay! I'm going!", "Please, I didn't see anything!", "Don't hurt me!"), n"fear_beg");
+      return CBTalkSay(CBPick3("Okay! I'm going!", "Please, I didn't see anything!", "Don't hurt me!"), n"fear_beg");
     }
-    return CBTalkSay(CBWhisperPick3("Yeah? Whatever, poser.", "Is that supposed to scare me?", "Go practise on someone else."), n"bump");
+    return CBTalkSay(CBPick3("Yeah? Whatever, poser.", "Is that supposed to scare me?", "Go practise on someone else."), n"bump");
   }
   if t.mood == CBTalkFriendly() {
     CBTalkSlight(sys, game, t.faction, CBConfig.TalkLeanOnFriendCost());
-    return CBTalkSay(CBWhisperPick2("Whoa. Okay. No need for that, choom.", "That's how you treat friends? Noted."), n"bump");
+    return CBTalkSay(CBPick2("Whoa. Okay. No need for that, choom.", "That's how you treat friends? Noted."), n"bump");
   }
   if immovable || RandF() >= chance {
     // Lost face. And somebody with the nerve, or the grudge, takes it further.
@@ -2669,9 +2676,9 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
     CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost() * 0.5);
     if (t.mood == CBTalkHostile() || CBTalkNerveGap(t) < -CBConfig.TalkFoldGap()) && RandF() < CBConfig.TalkCallBluffFight()
        && CBTalkFight(sys, game, player, t) {
-      return CBTalkSay(CBWhisperPick2("Let's see you back that up.", "Wrong one to push."), n"");
+      return CBTalkSay(CBPick2("Let's see you back that up.", "Wrong one to push."), n"");
     }
-    return CBTalkSay(CBWhisperPick3("That supposed to scare me?", "Heard of you. Thought you'd be scarier.", "Walk away while I'm feeling generous."), n"bump");
+    return CBTalkSay(CBPick3("That supposed to scare me?", "Heard of you. Thought you'd be scarier.", "Walk away while I'm feeling generous."), n"bump");
   }
   // It worked. What they give up depends on what they have.
   CBTalkFear(sys, game, t.faction, CBConfig.TalkLeanFear());
@@ -2684,10 +2691,10 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   }
   let paid = CBTalkShakedown(sys, game, player, t);
   if paid > 0 {
-    return CBTalkSay(CBWhisperPick3(s"Here. \(paid). Take it and go.", s"\(paid) eddies. That's all I got, I swear.", s"Fine! \(paid). We're square, right?"), n"fear_beg");
+    return CBTalkSay(CBPick3(s"Here. \(paid). Take it and go.", s"\(paid) eddies. That's all I got, I swear.", s"Fine! \(paid). We're square, right?"), n"fear_beg");
   }
   CBTalkSendOff(game, t);
-  return CBTalkSay(CBWhisperPick3("Alright, alright! I'm gone.", "I'm leaving. Look, I'm leaving.", "Didn't mean anything by it!"), n"fear_beg");
+  return CBTalkSay(CBPick3("Alright, alright! I'm gone.", "I'm leaving. Look, I'm leaving.", "Didn't mean anything by it!"), n"fear_beg");
 }
 
 // Somebody leaned on hard enough gives up where one of their own gang's Rivals is lying low: the same
@@ -2716,7 +2723,7 @@ func CBTalkInform(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pla
   let name = CBRivalDisplayName(sys.GetContent(), r);
   let place = CBPlacePhrase(s.district);
   let pin = CBMapMarkersOn() ? " It's on your map." : "";
-  return CBWhisperPick3(
+  return CBPick3(
     s"Fine! \(name)'s lying low \(place). You didn't hear it from me.\(pin)",
     s"\(name)? Holed up \(place). Please, just go.\(pin)",
     s"Okay! \(name), \(place). Last I heard. That's all I know.\(pin)");

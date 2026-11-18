@@ -1181,6 +1181,11 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBSetUpStreet(sys, game, puppet, true);
     return;
   }
+  // A wannabe walks up first and only turns on V when they get there (Spawn/Wannabe.reds, 2.3.1).
+  if des.IsTagged(id, n"CB_Wannabe") {
+    CBSetUpStreet(sys, game, puppet, false);
+    return;
+  }
   if des.IsTagged(id, n"CB_Ally") {
     CBSetUpAlly(sys, game, puppet);
     return;

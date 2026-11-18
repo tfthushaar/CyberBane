@@ -42,8 +42,43 @@ public func CBCreateRumor(sys: ref<CyberbaneSystem>, game: GameInstance, kind: C
   r.reachedMask = CBMaskSet(0, CBDistrictIndex(origin));   // unknown origin sets no bit
 
   CBApplyDistrictRenown(sys, origin, r.magnitude * (witnessed ? 1.0 : CBConfig.UnwitnessedSpreadMult()));
+  CBBraindanceGoesRound(sys, game, r);
   sys.AddRumor(r);
   CBTrimRumors(sys, now);
+}
+
+public func CBBraindanceOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().braindanceGoesRound;
+}
+
+// The braindance goes round ([9], 2.3.1). Somebody had a recorder running: a deed big enough, done where people
+// could see V's face, is on every BD stall in the city at once. It reaches every district in one go, at the
+// strength a story has after one hop, and goes no further (there is nowhere further to go). Through the same
+// renown and the same grapevine as any rumour, so nothing reads it twice.
+func CBBraindanceGoesRound(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRumor>) -> Void {
+  if !CBBraindanceOn() || !IsDefined(r) || !r.witnessed || r.magnitude < CBConfig.BraindanceMinMagnitude()
+     || CBDistrictIndex(r.origin) < 0 || RandF() >= CBConfig.BraindanceChance() {
+    return;
+  }
+  let mag = r.magnitude * CBConfig.RumorSpreadMagnitudeMult();
+  let i = 0;
+  while i < CBDistrictCount() {
+    if !CBMaskHas(r.reachedMask, i) {
+      r.reachedMask = CBMaskSet(r.reachedMask, i);
+      CBApplyDistrictRenown(sys, CBDistrictAt(i), mag);
+    }
+    i += 1;
+  }
+  r.hops = CBConfig.RumorMaxHops();
+  CBLog.Info(n"Model", s"\(NameToString(r.kind)) went round as a braindance.");
+  if CBToastsOn() {
+    let where = CBDistrictLabel(r.origin);
+    CBHearsayFromStreet(game, CBPick3(
+      "Somebody had a recorder running. What you did" + (StrLen(where) > 0 ? " in " + where : "") + " is on every BD stall from Kabuki to Pacifica.",
+      "It's a braindance now. Kids in Japantown are playing your night on repeat.",
+      "Every scroller in the city has the footage. Your face, frame by frame."), n"");
+  }
 }
 
 // Drop rumors once the store is over its cap, oldest-expired first.
@@ -102,7 +137,8 @@ public func CBRumorTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       sys.RemoveRumorAt(i);
       // array shifted: do not advance i
     } else {
-      if r.hops < CBConfig.RumorMaxHops() && (now - r.lastSpreadAt) >= spreadInterval {
+      // A district that talks moves a story on sooner ([6], Data/Districts.reds).
+      if r.hops < CBConfig.RumorMaxHops() && (now - r.lastSpreadAt) >= spreadInterval / MaxF(CBTemperWord(r.origin), 0.1) {
         CBSpreadRumor(sys, game, content, r, now);
       }
       i += 1;

@@ -49,39 +49,6 @@ By impact for the effort, most first:
 
 ---
 
-## 1. The street: how ordinary people live with V
-
-1. **Wannabes.** Once V is known in a district, a young ganger or a solo now and then walks up and calls V out
-   to make a name ("You're the one from Kabuki? Prove it."). Fists only (a melee kit, no guns), never in a safe
-   area. Win and the crowd talks; walk away and the street says V backed down; get knocked down and they brag in
-   the rumours. Animals and 6th Street most often. Talk for the challenge, the spawner, `Reactions/Morale.reds`.
-   **M** *(Yakuza's street challengers; Sleeping Dogs' Face)*
-2. **Witnesses who call the gang.** A passer-by who sees V hurt a ganger takes out a phone (the call the crowd's
-   own reaction already plays) and calls the gang, never the police. Unless V stops them in a few seconds (talk,
-   or a takedown), the gang knows where V is and its scout step is skipped. `Model/Witness.reds`, the lanes.
-   **M** *(Kingdom Come's and Red Dead's witnesses)*
-3. **A wounded V is a target.** Below a third of health on hostile turf, gangers are bolder: lookouts notice
-   sooner, the frightened stop backing off, a crew already out comes faster, and talk notices ("You're bleeding,
-   merc. Bad day?"). Health from the stat pool, read on the tick. **S**
-4. **Fresh from a fight.** For a few minutes after a fight in the open, crowd reactions near V start a stage
-   higher and overheard lines are about what just happened, before the rumour has had time to travel. **S**
-5. **Night and weather.** Gangs own the night: crews and lookouts more likely after dark, sit-downs at night,
-   apex squads in daylight, scouts' sight shorter in rain and fog, fewer people on the street in the rain.
-   **S, verify** (the weather read) *(old backlog 23; Far Cry and Metal Gear's time of day)*
-6. **District temperaments.** Each district gets a temper: how fast word spreads, how easily people scare, how
-   long they remember. Pacifica and Dogtown shrug at a body; Charter Hill and Westbrook panic and remember;
-   Kabuki talks fast. Data in `Data/Districts.reds` read by the witness count, the rumour engine and the crowd
-   stages. **S** *(Kingdom Come's reputation town by town)*
-7. **Places remember.** Where V did something big (a massacre, a Rival's death, a sit-down crashed), people
-   passing mention it for a few days, gangers there are jumpier, and the gang routes its people round it.
-   A short list of spots with dates, in a save system of its own. **M** *(Dwarf Fortress's sites and legends)*
-8. **Pay someone to keep watch.** A **[Keep an eye out]** line on a passer-by, for a few eddies: if a scout or a
-   crew turns up nearby within the hour, they text V ("Two cars of Claws just pulled up by the noodle place").
-   Early warning bought in the street, from the lanes' own warnings. **S**
-9. **The braindance goes round.** A big fight seen by many, or a Rival's death, can be recorded: a broker texts
-   that a BD of it is selling, and word of that one deed reaches every district at once instead of district by
-   district. Rumour engine. **S** *(Cyberpunk's braindances)*
-
 ## 2. A code for each gang
 
 Today the gangs differ in numbers and colours. Each gets a code: what they respect, what they never forgive, how
@@ -102,7 +69,7 @@ they fight and how they make peace, shown on the Hub so it can be played. Every 
     Domingo or Arroyo brings them down on V with no grudge of their own, and protecting locals earns their
     respect. They fight like soldiers: suppression and flanking, as Cyberbane's corps already do. **M**
 14. **Animals: strength.** They respect fists and blunt takedowns and despise a V who only shoots. They issue
-    the wannabe challenges (item 1). Their crews are juiced: more health, fewer guns, more melee, and fear
+    the wannabe challenges (built in 2.3.1, `Spawn/Wannabe.reds`) more often than anyone. Their crews are juiced: more health, fewer guns, more melee, and fear
     barely touches them, except fear of V's Body. **S to M**
 15. **Voodoo Boys: information.** They trade in data. Their hunts open with a remote hack (V's HUD glitches, a
     netrunner tracing V) before anyone walks over, they rarely come in person, and their leads cost a hack's
@@ -276,22 +243,11 @@ an outcome whether or not V turns up. *(Shadow of Mordor's and Shadow of War's p
 
 ## 8. Who V is
 
-72. **A head start from the lifepath.** A Street Kid starts known and liked on Watson's and Heywood's streets, a
-    Nomad by the Aldecaldos (and distrusted by the city gangs), a Corpo by corporate security (and sneered at by
-    the street). Seeds a new playthrough's first numbers, from the lifepath talk already reads. **S**
-73. **V's car is known.** Gangs learn the car V drives most. Driving it on their turf gives V away even masked
-    ("That's the merc's Quadra!"); a different car hides V for a while. From the mounted vehicle's record. **S to
-    M**
-74. **A signature weapon.** The weapon V kills with most becomes known: rumours name it, and drawing it while
-    masked gives V away. **S**
-76. **Humanity.** With Wannabe Edgerunner installed, read through its API: low humanity frightens crowds and
+76. **Humanity.** *(Not built in 2.3.1: Wannabe Edgerunner was not installed to probe its API, and the rule is to drop rather than guess.)* With Wannabe Edgerunner installed, read through its API: low humanity frightens crowds and
     warms Maelstrom, V's episodes become rumours ("the merc's going psycho"), and killing somebody who surrendered
     costs humanity. **S to M**
-77. **Nerve.** With Dark Future installed: a facedown, open season or being badly outnumbered drains V's Nerve,
+77. **Nerve.** *(Not built in 2.3.1, for the same reason with Dark Future.)* With Dark Future installed: a facedown, open season or being badly outnumbered drains V's Nerve,
     and a win restores some. **S**
-78. **Enforcers see through disguises.** Lieutenants, Rivals and apex fighters see through a disguise in their own
-    colours after a few seconds of looking, with a short warning line first. **S** *(Hitman's enforcers; New
-    Vegas's officers)*
 
 ## 9. How it is told
 

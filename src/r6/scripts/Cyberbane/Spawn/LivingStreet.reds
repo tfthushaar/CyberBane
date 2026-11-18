@@ -691,7 +691,7 @@ public class CBStreetLife {
     ArrayPush(this.m_gaveUp, npc);
     ArrayPush(this.m_gaveUpTick, sys.GetTickCount());
     this.HandOffSurrendered(sys, game, des, npc);
-    CBIntelSay(game, 3, CBIntelSpeaker(CBClassifyFaction(npc)), CBWhisperPick3("Okay! Okay! I'm done!", "Don't shoot! I give up!", "Enough! It's over, I'm out!"), 3.5);
+    CBIntelSay(game, 3, CBIntelSpeaker(CBClassifyFaction(npc)), CBPick3("Okay! Okay! I'm done!", "Don't shoot! I give up!", "Enough! It's over, I'm out!"), 3.5);
     CBLog.Info(n"Street", "An enemy gave up instead of running.");
     return true;
   }

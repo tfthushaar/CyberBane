@@ -287,11 +287,11 @@ func CBRealPhoneLeadReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: 
   if choice == count - 1 {
     store.ClearLead(thread);
     store.Reply(game, thread, "Forget it.");
-    CBPhoneSendTinted(game, sender, CBWhisperPick2("Your loss.", "Suit yourself. Offer's gone."), CBHudCyan());
+    CBPhoneSendTinted(game, sender, CBPick2("Your loss.", "Suit yourself. Offer's gone."), CBHudCyan());
     return;
   }
   // Too much: a gang that likes V comes down more readily, and V's Cool helps.
-  store.Reply(game, thread, CBWhisperPick2("Too much.", "For that? Come on."));
+  store.Reply(game, thread, CBPick2("Too much.", "For that? Come on."));
   let chance = CBConfig.PhoneLeadHaggleBase();
   let score = sys.GetScore();
   if IsNameValid(tipster) && IsDefined(score) {
@@ -310,11 +310,11 @@ func CBRealPhoneLeadReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: 
   if RandF() < chance {
     let lower = Max(100, RoundF(Cast<Float>(price) * CBConfig.TalkHaggleCut() / 50.0) * 50);
     store.SetLeadPrice(thread, lower);
-    CBPhoneSendTinted(game, sender, CBWhisperPick2(s"Fine. \(lower)eb. Last offer.", s"\(lower)eb, because I like you. Don't tell anyone."), CBHudCyan());
+    CBPhoneSendTinted(game, sender, CBPick2(s"Fine. \(lower)eb. Last offer.", s"\(lower)eb, because I like you. Don't tell anyone."), CBHudCyan());
     return;
   }
   store.SetLeadPrice(thread, price);
-  CBPhoneSendTinted(game, sender, CBWhisperPick2("Price is the price. Take it or don't.", s"\(price)eb. Not a cent less."), CBHudCyan());
+  CBPhoneSendTinted(game, sender, CBPick2("Price is the price. Take it or don't.", s"\(price)eb. Not a cent less."), CBHudCyan());
 }
 
 public func CBRealPhoneThreadBodies(hash: Int32) -> array<String> {
