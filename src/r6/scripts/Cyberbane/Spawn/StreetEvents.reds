@@ -263,7 +263,8 @@ public class CBEventEngine {
     if Equals(kind, CBEvFuneral()) || Equals(kind, CBEvCelebration()) {
       a = Equals(kind, CBEvFuneral()) ? this.m_funeralFor : this.m_partyFor;
       // On their own streets: only where they are, near V.
-      if !ArrayContains(CBTurfGangsHere(sys), a) {
+      let gangsHere = CBTurfGangsHere(sys);   // a local, never a temporary (UI/HubWeb.reds, CBWebPair)
+      if !ArrayContains(gangsHere, a) {
         return false;
       }
     } else {

@@ -1364,7 +1364,8 @@ func CBCrewTurnedTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
   if book.turnedFled {
     CBDeleteTaggedSafe(game, n"CB_Turned", true, true);
   }
-  if !ArrayContains(des.GetTaggedIDs(n"CB_Turned"), book.turnedBody) && !des.IsSpawning(book.turnedBody) {
+  let tagged = des.GetTaggedIDs(n"CB_Turned");   // a local, never a temporary (UI/HubWeb.reds, CBWebPair)
+  if !ArrayContains(tagged, book.turnedBody) && !des.IsSpawning(book.turnedBody) {
     CBCrewTurnedGone(sys, game, book, book.turnedFled);
     return;
   }

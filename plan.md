@@ -978,6 +978,10 @@ the source:
   a usable spot outside the nearest clinic that has one; the district is named only when the clinic is near the
   last sighting. The lookout who runs keeps their one order, and a mask or the gang's colours gets V past the
   lookouts the way it gets V past the street (`CBSeesThroughDisguise`).
+- **A crash opening the Gangs page**, the first thing I hit in play. `CBWebPair` searched the gangs' rival lists with
+  `ArrayContains` straight on what `CBGangRivalsOf` returned, inside `||`, and the game took the name it searched for
+  as an address. No script that has run in a game before did that; eight written since 2.3.0 did. Every one now
+  searches a named local, and the mechanical sweep flags the shape (`ARRAY-TEMP`).
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,

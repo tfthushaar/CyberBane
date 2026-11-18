@@ -214,11 +214,19 @@ public func CBWebPair(sys: ref<CyberbaneSystem>, game: GameInstance, a: CName, b
   if CBWebAtWar(sys, game, a, b) {
     return CBWebPairWar();
   }
+  // Each list in a local of its own before it is searched: ArrayContains handed a function's result, inside ||, took
+  // the gang's name for an address and crashed the game as the Gangs page opened (2.5.0). Never a temporary.
   let content = sys.GetContent();
-  if IsDefined(content) && (ArrayContains(CBGangRivalsOf(content, a), b) || ArrayContains(CBGangRivalsOf(content, b), a)) {
-    return CBWebPairFeud();
+  if !IsDefined(content) {
+    return CBWebPairNone();
   }
-  return CBWebPairNone();
+  let rivalsOfA = CBGangRivalsOf(content, a);
+  let rivalsOfB = CBGangRivalsOf(content, b);
+  let feud = ArrayContains(rivalsOfA, b);
+  if !feud {
+    feud = ArrayContains(rivalsOfB, a);
+  }
+  return feud ? CBWebPairFeud() : CBWebPairNone();
 }
 
 // One of them is challenging for a district the other holds.

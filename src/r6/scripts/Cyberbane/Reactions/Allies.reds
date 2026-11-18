@@ -245,9 +245,10 @@ func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBoo
   if war.crewLeaving {
     // Gone once V cannot see them; the list empties as they do.
     CBDeleteTaggedSafe(game, n"CB_Follower", true, true);
+    let tagged = des.GetTaggedIDs(n"CB_Follower");   // a local, never a temporary (UI/HubWeb.reds, CBWebPair)
     let i = ArraySize(war.crewIds) - 1;
     while i >= 0 {
-      if !des.IsSpawning(war.crewIds[i]) && !ArrayContains(des.GetTaggedIDs(n"CB_Follower"), war.crewIds[i]) {
+      if !des.IsSpawning(war.crewIds[i]) && !ArrayContains(tagged, war.crewIds[i]) {
         ArrayErase(war.crewIds, i);
       }
       i -= 1;
@@ -276,7 +277,8 @@ func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBoo
     }
   }
   // Off their turf for long, they go home.
-  if ArrayContains(CBTurfGangsHere(sys), war.crewGang) {
+  let gangsHere = CBTurfGangsHere(sys);
+  if ArrayContains(gangsHere, war.crewGang) {
     war.crewAway = 0;
   } else {
     war.crewAway += 1;
@@ -364,7 +366,11 @@ public func CBKnownAsOneOfTheirEnemies(sys: ref<CyberbaneSystem>, faction: CName
     return false;
   }
   let content = sys.GetContent();
-  return IsDefined(content) && ArrayContains(CBGangRivalsOf(content, mine), faction);
+  if !IsDefined(content) {
+    return false;
+  }
+  let enemies = CBGangRivalsOf(content, mine);
+  return ArrayContains(enemies, faction);
 }
 
 // Once a game day (the slow tick): an offer, the week's duty, and leaving when they stop liking V.

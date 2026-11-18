@@ -574,7 +574,8 @@ func CBBountyWatchOut(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
     if !IsDefined(p) {
       // Gone from the world and not on the way into it: the hunt let them go, or the world did. Still on the ladder.
       // One who has only streamed out is still registered, and stays on the list until they are.
-      drop = !des.IsSpawning(id) && !ArrayContains(des.GetTaggedIDs(n"CB_Bounty"), id);
+      let tagged = des.GetTaggedIDs(n"CB_Bounty");   // a local, never a temporary (UI/HubWeb.reds, CBWebPair)
+      drop = !des.IsSpawning(id) && !ArrayContains(tagged, id);
     } else {
       if p.IsAttached() && CBIsDown(p) && !p.IsDead() {
         // Beaten and left breathing, once V has walked away from them.

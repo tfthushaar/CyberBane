@@ -168,8 +168,11 @@ func CBWarStreetsHeld(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName
 // Does V's work against this gang's enemies count double right now? Where the gang V backs is on the streets.
 public func CBBackedHere(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> Bool {
   let book = CBWarBook.Get(game);
-  return CBBackingOn() && IsDefined(book) && IsDefined(sys) && Equals(book.Backed(), gang)
-      && ArrayContains(CBTurfGangsHere(sys), gang);
+  if !CBBackingOn() || !IsDefined(book) || !IsDefined(sys) || !Equals(book.Backed(), gang) {
+    return false;
+  }
+  let here = CBTurfGangsHere(sys);   // searched from a local, never a temporary (UI/HubWeb.reds, CBWebPair)
+  return ArrayContains(here, gang);
 }
 
 func CBWarBackedCut(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBook>, now: Float) -> Void {
