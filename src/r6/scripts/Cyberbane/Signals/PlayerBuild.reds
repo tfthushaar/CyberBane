@@ -35,19 +35,15 @@ public func CBComputePlayerMenace(game: GameInstance) -> Float {
   let level = Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Level));       // ~1-60
   let cred = Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.StreetCred));    // ~1-50
 
-  // Skill lines (2.0 renamed these in the UI; the underlying proficiencies still track).
+  // The five skill lines, each to 60 (2.4.2). These read the proficiencies from before 2.0 (Assault, Hacking,
+  // Stealth and the rest), which the game has not given a point of experience to since (rpgManager.script awards
+  // to the five below), so the whole skill share of V's menace was always nothing.
   let skills = 0.0;
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Hacking));        // Netrunner
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.CombatHacking));
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Engineering));     // Engineer
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Demolition));
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Stealth));         // Shinobi / Headhunter
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.ColdBlood));
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Kenjutsu));
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Athletics));       // Solo
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Brawling));
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Assault));
-  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.Gunslinger));
+  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.StrengthSkill));          // Solo
+  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.ReflexesSkill));          // Shinobi
+  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.CoolSkill));              // Headhunter
+  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.IntelligenceSkill));      // Netrunner
+  skills += Cast<Float>(dev.GetProficiencyLevel(gamedataProficiencyType.TechnicalAbilitySkill));  // Engineer
 
   // Level carries the most weight (it aggregates everything), street cred next, then the
   // raw skill spread. Clamped to 0-100 to sit alongside Dread and visible chrome.

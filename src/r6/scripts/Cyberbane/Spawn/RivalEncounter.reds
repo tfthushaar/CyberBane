@@ -691,7 +691,9 @@ public func CBRivalsShakenOff(sys: ref<CyberbaneSystem>, game: GameInstance, onl
     let r = sys.FindRivalById(id);
     if IsDefined(r) && r.state == EnumInt(ECBRivalState.Hunting) && EntityID.IsDefined(r.spawnedEntityId) {
       let body = GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet;
-      let counts = !IsDefined(body) || (!onlyGone && CBStillStanding(body));
+      // On their way out of the world is gone too (2.4.2): CBStillStanding reads nothing from a body that is not
+      // attached and calls it not standing, which left one caught mid-stream filed as out after V.
+      let counts = !IsDefined(body) || !body.IsAttached() || (!onlyGone && CBStillStanding(body));
       if counts {
         CBRivalEscapedByPlayerFor(sys, game, r);
         // With the body, when it is still here: it is handed off as theirs (CBRetireRivalBody), so if

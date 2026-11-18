@@ -93,15 +93,31 @@ public func CBGangViewVendetta(faction: CName) -> Bool {
 // hates V keeps all of it, and sends the bigger crews that go with it), and is otherwise the middle of that
 // stance. What V earns is never written over: it keeps counting, and is what comes back on Earned in play.
 // What earns standing (rewards, decay, titles) reads the earned figure, CBFactionState.standing, directly.
+//
+// With They Will Remember deciding who is hostile (2.4.2; compatibility on, and it tracks the gang), its answer
+// is the line between hostile and not: hostile there is hostile here (V's earned standing kept if it is
+// already in the hostile band or below, the middle of the band if not), and not hostile there is at worst
+// neutral here (friendlier standing V earned is kept, since it keeps no such thing). Until 2.4.2 only the
+// Gangs screen asked it, so the rest of Cyberbane went by its own standing and a gang could be hostile in one
+// mod and not the other. A stance set by hand still comes first: it is the player's own word on that gang.
 public func CBActingStanding(faction: CName, earned: Float) -> Float {
   let view = CBGangView(faction);
-  if view == 0 {
-    return earned;
-  }
   let allied = CBConfig.PostureAllied();
   let friendly = CBConfig.PostureFriendly();
   let hostile = CBConfig.PostureHostile();
   let vendetta = CBConfig.PostureVendetta();
+  if view == 0 {
+    if CBTwrOwnsHostility(faction) {
+      let says = CBTwrGangHostile(GetGameInstance(), faction);
+      if says == 1 {
+        return earned <= hostile ? earned : (vendetta + hostile) / 2.0;
+      }
+      if says == 0 {
+        return earned > hostile ? earned : 0.0;
+      }
+    }
+    return earned;
+  }
   if view == 1 {
     return earned >= allied ? earned : (allied + 100.0) / 2.0;
   }

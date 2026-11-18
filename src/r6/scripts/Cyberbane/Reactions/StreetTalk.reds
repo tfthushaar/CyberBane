@@ -446,6 +446,11 @@ public class CBStreetTalk {
   private let m_lostFor: Float;
   private let m_glanceIn: Float;
   private let m_handsHeld: Bool;
+  // Whether the conversation has started (Engage): the person stopped and turned to V. "Talk" only offered
+  // is not a conversation.
+  private let m_engaged: Bool;
+  // A confirm press acted on, whose release is still to come as Choice1 (see OnInput).
+  private let m_applyPressed: Bool;
   // Whether this session has made sure the lock is off (see OnTick).
   private let m_handsChecked: Bool;
 
@@ -679,9 +684,10 @@ public class CBStreetTalk {
       this.Push(game);
       this.m_wipes += 1;
     }
-    // They keep their eyes on V, the way a scene turns the game's own characters to face V.
+    // They keep their eyes on V, the way a scene turns the game's own characters to face V: once V has
+    // started talking to them, never for an offer alone (Engage).
     this.m_glanceIn -= dt;
-    if this.m_glanceIn <= 0.0 {
+    if this.m_engaged && this.m_glanceIn <= 0.0 {
       this.m_glanceIn = CBConfig.TalkGlanceEvery();
       let reactions = t.npc.GetStimReactionComponent();
       if IsDefined(reactions) {
@@ -806,29 +812,18 @@ public class CBStreetTalk {
     this.m_dealKind = CBTalkDealLead();
     this.m_wipes = 0;
     this.m_frameGen += 1;
+    this.m_engaged = false;
+    this.m_applyPressed = false;
     CBTalkTemper(npc);
     this.Listen(player);
-    let reactions = npc.GetStimReactionComponent();
-    if IsDefined(reactions) {
-      reactions.CBGlanceAt(player);
-    }
-    // A passer-by stops to talk (1.9.7), with the call the game itself uses to stop a pedestrian
-    // (reactionComponent.script, the crowd's CallPolice reaction); they walk on when it is over. Before
-    // this they kept walking and were out of range before V had chosen a line.
-    // Played in 1.9.7, the traffic stop alone did not hold them ("too far" on every passer-by), so they are
-    // also given the game's hold-position order for the length of the conversation (CBTalkHold).
+    // While "Talk" is only offered, nothing about them changes that anybody can see (2.4.2): they walk on and
+    // go about their day, and only V pressing Talk stops them and turns them to V (Engage). Stopping and
+    // turning everybody the look-at settled on, the moment the offer went up, had people up and down a
+    // street freezing to stare at V as V walked past. What is done here is unseen: the game's own talk on F
+    // and their stock lines are switched off while the offer is up (CBTalkHush), or the game's prompt would
+    // come up over Cyberbane's and F would play one of their voice lines instead.
     npc.cbTalkPartner = true;
     CBTalkHush(npc);
-    if CBTalkStopWalkersOn() && !t.atWork && t.rivalId == 0 {
-      if npc.IsCrowd() {
-        let crowd = npc.GetCrowdMemberComponent();
-        if IsDefined(crowd) && crowd.IsInCrowd() && crowd.CheckIsMoving() {
-          crowd.TryStopTrafficMovement();
-          npc.cbTalkStopped = true;
-        }
-      }
-      CBTalkHold(npc);
-    }
     this.NextFrame(game);
     if CBTalkFirstOn() {
       ArrayClear(this.m_lines);
@@ -873,6 +868,7 @@ public class CBStreetTalk {
     this.m_index = 0;
     this.m_stage = CBTalkStageOpen();
     this.m_lostFor = 0.0;
+    this.Engage(player);
     this.Push(game);
     // Hands stay empty while the lines are up, so the wheel picks a line instead of drawing a gun.
     if !this.m_handsHeld {
@@ -881,6 +877,35 @@ public class CBStreetTalk {
     }
     if this.m_exchanges == 0 {
       CBLog.Info(n"Talk", s"Prompt up: \(CBTalkTitle(t)).");
+    }
+  }
+
+  // The conversation has started: V pressed Talk, or with Ask first off, the lines came straight up. Once
+  // per conversation. A passer-by stops to talk (1.9.7), with the call the game itself uses to stop a
+  // pedestrian (reactionComponent.script, the crowd's CallPolice reaction), and the game's hold-position
+  // order for the length of it (CBTalkHold): played in 1.9.7, the traffic stop alone did not hold them.
+  // With Passers-by stop to talk off they keep walking, and the conversation ends when they are out of reach.
+  private func Engage(player: ref<PlayerPuppet>) -> Void {
+    let t = this.m_target;
+    if this.m_engaged || !IsDefined(t) || !IsDefined(t.npc) || !t.npc.IsAttached() {
+      return;
+    }
+    this.m_engaged = true;
+    let npc = t.npc;
+    if CBTalkStopWalkersOn() && !t.atWork && t.rivalId == 0 {
+      if npc.IsCrowd() {
+        let crowd = npc.GetCrowdMemberComponent();
+        if IsDefined(crowd) && crowd.IsInCrowd() && crowd.CheckIsMoving() {
+          crowd.TryStopTrafficMovement();
+          npc.cbTalkStopped = true;
+        }
+      }
+      CBTalkHold(npc);
+    }
+    this.m_glanceIn = CBConfig.TalkGlanceEvery();
+    let reactions = npc.GetStimReactionComponent();
+    if IsDefined(reactions) {
+      reactions.CBGlanceAt(player);
     }
   }
 
@@ -1190,6 +1215,7 @@ public class CBStreetTalk {
     this.m_lostFor = 0.0;
     this.m_wantOpen = false;
     this.m_wantSay = false;
+    this.m_engaged = false;
     this.ReleaseHands(game);
   }
 
@@ -1442,13 +1468,34 @@ public class CBStreetTalk {
       }
       return;
     }
+    // Each confirm key arrives as the event type the game's input setup lets through for it (r6/config/
+    // inputContexts.xml, acceptedEvents): ChoiceApply, the dialogue list's confirm, as BUTTON_PRESSED;
+    // Choice1, the interaction prompt's F (A), as BUTTON_RELEASED only, its press commented out there, and
+    // read by the game the same way (meleeTransitions.script, IsActionJustReleased('Choice1')). Only
+    // presses were taken until 2.4.2, so F on the "Talk" prompt, which only Choice1 answers, did nothing at
+    // all. One push of F can bring both (the press as ChoiceApply while a list is up, the release as
+    // Choice1), so a release that follows a press already acted on is that same push, whatever the stage
+    // by the time it lands.
+    let confirm = Equals(name, n"ChoiceApply") || Equals(name, n"Choice1");
+    let push = false;
+    if Equals(name, n"ChoiceApply") {
+      push = pressed;
+      if push {
+        this.m_applyPressed = true;
+      }
+    } else {
+      if Equals(name, n"Choice1") && Equals(kind, gameinputActionType.BUTTON_RELEASED) {
+        push = !this.m_applyPressed;
+        this.m_applyPressed = false;
+      }
+    }
     if this.m_stage != CBTalkStageOffered() && this.m_stage != CBTalkStageOpen() {
       return;
     }
-    if Equals(name, n"ChoiceApply") || Equals(name, n"Choice1") {
+    if confirm {
       // Only a list V can see can be answered (1.9.7). F pressed at somebody whose list the game had
       // wiped said a line V never saw.
-      if pressed && this.Shown(this.m_game) {
+      if push && this.Shown(this.m_game) {
         if this.m_stage == CBTalkStageOffered() {
           this.m_wantOpen = true;
         } else {
@@ -1848,7 +1895,8 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
   }
   // Hostile to V by the game's own say, and not afraid: hostile, whatever Cyberbane's standing says.
   let agentR = npc.GetAttitudeAgent();
-  let pagentR = GetPlayer(game).GetAttitudeAgent();
+  let playerR = GetPlayer(game);
+  let pagentR = IsDefined(playerR) ? playerR.GetAttitudeAgent() : null;
   if gang && t.mood != CBTalkAfraid() && IsDefined(agentR) && IsDefined(pagentR)
      && Equals(agentR.GetAttitudeTowards(pagentR), EAIAttitude.AIA_Hostile) {
     t.mood = CBTalkHostile();

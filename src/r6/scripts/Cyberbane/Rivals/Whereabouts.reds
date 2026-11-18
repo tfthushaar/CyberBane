@@ -728,6 +728,12 @@ func CBLairWatch(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     sys.ClearLair();   // the death handler has it
     return;
   }
+  // On their way in or out of the world: nothing is read from them, and nothing decided, until they are one or
+  // the other (2.4.2). Taken as not standing, a body caught streaming was let go as if left lying there, and the
+  // lead was spent.
+  if IsDefined(body) && !body.IsAttached() {
+    return;
+  }
   // Down but breathing: never removed from here. If V put them down, the mercy path settles it
   // within seconds (CBHandleSpared closes the encounter, which forgets the body, and the check
   // above clears this on the next tick); taking the body first would leave it nobody to settle.

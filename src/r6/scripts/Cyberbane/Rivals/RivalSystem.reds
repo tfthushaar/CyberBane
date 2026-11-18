@@ -663,6 +663,14 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
   if dropped > 0 {
     CBLog.Info(n"Rivals", s"Retired \(dropped) rival(s) built from story characters or the police; they will not come back.");
   }
+  // Every gang's chairs put right, once a session (2.4.2): somebody retired just now, made a Debtor, or run out of
+  // the city in an earlier build kept their chair until the gang next changed shape, and open season, the Hub and
+  // the street all took them for the one in charge.
+  for gang in sys.GetFactionStates() {
+    if IsDefined(gang) {
+      CBHierarchyFill(sys, gang.id);
+    }
+  }
   if enlisted > 0 {
     CBLog.Info(n"Rivals", s"\(enlisted) rival(s) built from police records are their gang's own people now, so fighting them draws no heat.");
   }

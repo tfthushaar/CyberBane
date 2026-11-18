@@ -568,21 +568,26 @@ public class CBStreetIntel {
     }
     let r = sys.FindRivalById(this.m_guardRival);
     let body = IsDefined(r) ? GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet : null;
-    if !IsDefined(body) || body.IsDead() || !CBStillStanding(body) {
+    if !IsDefined(body) || CBIsDown(body) {
       this.ClearGuards();
       return;
+    }
+    if !body.IsAttached() {
+      return;   // on their way in or out of the world: asked again next pass (2.4.2)
     }
     let i = 0;
     while i < ArraySize(this.m_guardIds) {
       if !this.m_guardDown[i] {
         let g = GameInstance.FindEntityByID(game, this.m_guardIds[i]) as ScriptedPuppet;
-        if IsDefined(g) && (g.IsDead() || !CBStillStanding(g)) {
+        if CBIsDown(g) {
           this.m_guardDown[i] = true;
           let pools = GameInstance.GetStatPoolsSystem(game);
           let sid = Cast<StatsObjectID>(body.GetEntityID());
           if IsDefined(pools) {
             let cur = pools.GetStatPoolValue(sid, gamedataStatPoolType.Health, true);
-            pools.RequestSettingStatPoolValue(sid, gamedataStatPoolType.Health, MaxF(cur - CBConfig.GuardNerveLoss(), 10.0), GetPlayer(game));
+            // Read as a percentage, so written as one (the last flag): without it this set that many hit
+            // points, and a Rival at 80% dropped to 65 hit points the moment one of their people fell.
+            pools.RequestSettingStatPoolValue(sid, gamedataStatPoolType.Health, MaxF(cur - CBConfig.GuardNerveLoss(), 10.0), GetPlayer(game), true);
           }
           CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), r),
                      CBPick3("You'll pay for that!", "No! Get them, get them!", "That's it. Now it's personal."), 3.0);

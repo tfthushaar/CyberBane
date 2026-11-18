@@ -284,7 +284,9 @@ public func CBStoryStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
               + CBStoryRemoveUnseen(game, des, n"CB_Apex")
               + CBStoryRemoveUnseen(game, des, n"CB_Escort")
               + CBStoryRemoveUnseen(game, des, n"CB_Scout")
-              + CBStoryRemoveUnseen(game, des, n"CB_Lair");
+              + CBStoryRemoveUnseen(game, des, n"CB_Lair")
+              // A crew lying in wait for V (Spawn/HuntGrows.reds, 2.4.2) is a crew sent after V like the rest.
+              + CBStoryRemoveUnseen(game, des, n"CB_Ambush");
   if removed > 0 {
     CBLog.Info(n"Spawn", s"The story has the stage (\(CBStoryLabel(sys.GetStoryHold()))): called back \(removed) of ours who had not reached you.");
   }

@@ -238,6 +238,13 @@ public abstract class CBConfig {
   // what the city knows about you.
   public static func MaskDisguise() -> Float = 0.60
   public static func DisguiseDreadDamp() -> Float = 0.50
+  // How much of V's face They Will Remember must count hidden for Cyberbane to treat it as a mask (2.4.2).
+  // A full-face helmet or a mask reads 80-95% there; a cap or sunglasses well under half. Below this its
+  // reading still counts, in proportion, towards the disguise (CBUpdateLook).
+  public static func TwrMaskedFace() -> Float = 0.75
+  // How long after a meeting's people are placed its two sides go on being set to keep the peace while the last
+  // of them come into the world (Spawn/StreetEvents.reds, CBCalmSides, 2.4.2).
+  public static func EventCalmTicks() -> Int32 = 12
   public static func ChromeNoticeRangeBonus() -> Float = 0.5
 
   // ---- Whispers (spec §9.10) -------------------------------------------

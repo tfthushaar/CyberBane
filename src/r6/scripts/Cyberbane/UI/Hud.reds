@@ -581,6 +581,8 @@ public class CBHud {
   // page did not line up with anything it responded to. Now the page is laid out at its real
   // size and nothing is scaled at draw time, so what you see is exactly what you click.
   private let m_scale: Float;
+  // Another mod's overlay this page has put out of sight while it is up (CBForeignOverlays, 2.4.2).
+  private let m_overlaysOff: Bool;
 
   public func IsOpen() -> Bool {
     return this.m_open && this.m_built;
@@ -629,11 +631,34 @@ public class CBHud {
     if IsDefined(this.m_root) {
       this.m_root.SetVisible(false);
     }
+    this.ForeignOverlaysBack();
+  }
+
+  // Another mod's text drawn over the menu as a whole, where this page sits, goes out of sight while the
+  // page is up and comes back when it goes (2.4.2). They Will Remember writes its disguise scores on the
+  // menu layer whenever V's paperdoll is set up, at a place fixed for the inventory screens, and on this
+  // page it landed across the title and the first lines. It hides that text itself while a weapon tooltip
+  // covers the spot, by its name (DisguiseScoresUI.reds, Journal.SetTooltipOpen); this does the same for a
+  // page it does not know about. Nothing of theirs is removed or changed but whether it shows, and what it
+  // says is on this page instead, under the chrome bar (CBHudWornLine). Asked at every draw and as the page
+  // comes up, since the paperdoll can be set up after the page is.
+  private func ForeignOverlaysOff() -> Void {
+    if CBForeignOverlays(false) {
+      this.m_overlaysOff = true;
+    }
+  }
+
+  private func ForeignOverlaysBack() -> Void {
+    if this.m_overlaysOff {
+      this.m_overlaysOff = false;
+      CBForeignOverlays(true);
+    }
   }
 
   // The pause menu is going. Hand every callback back while the widgets still exist, then let go.
   // Called from the menu's OnUninitialize, before the game starts dismantling it.
   public func Detach() -> Void {
+    this.ForeignOverlaysBack();
     let i = 0;
     while i < ArraySize(this.m_tabBox) {
       this.Unhook(this.m_tabBox[i]);
@@ -994,6 +1019,7 @@ public class CBHud {
     if !IsDefined(this.m_root) {
       return;
     }
+    this.ForeignOverlaysOff();
     let fade = new inkAnimTransparency();
     fade.SetStartTransparency(0.0);
     fade.SetEndTransparency(1.0);
@@ -2356,17 +2382,14 @@ public class CBHud {
         postureText = twrHostile == 2 ? "TWR: Hostile" : "Seen hostile";
       }
     }
-    // They Will Remember decides who is hostile (1.9.4): its answer is the one shown, both ways.
-    if !off && CBTwrOwnsHostility(fs.id) {
+    // They Will Remember decides who is hostile (1.9.4), and since 2.4.2 the posture itself follows it
+    // (CBActingStanding), so all this adds is whose word it is. A stance set by hand is the player's own.
+    if !off && !CBGangViewSet(fs.id) && CBTwrOwnsHostility(fs.id) {
       let says = CBTwrGangHostile(sys.GetGameInstance(), fs.id);
-      if says == 1 {
-        pip = CBHudAmber();
-        postureText = "Hostile (TWR)";
+      if says >= 0 {
+        postureText = CBPostureName(posture) + " (TWR)";
       } else {
-        if says == 0 && (Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)) {
-          pip = CBHudGrey();
-          postureText = "Not hostile (TWR)";
-        }
+        postureText = CBPostureName(posture) + " (TWR?)";
       }
     }
     let right = CBHudGangStatus(sys, fs);
@@ -2421,6 +2444,15 @@ public class CBHud {
     // Two records, said as two (CBForeignHostile): somebody else's is who shoots on sight, and a pay-off
     // or the switch above changes Cyberbane's alone.
     let foreign = CBForeignHostile(sys, game, id);
+    if isOn && !CBGangViewSet(id) && CBTwrOwnsHostility(id) {
+      if CBTwrGangHostile(game, id) >= 0 {
+        out += "They Will Remember decides whether they are hostile, and Cyberbane follows it.\n";
+      } else {
+        out += "They Will Remember decides whether they are hostile, but could not be asked (" + CBTwrHostilityWhy() + "),\n"
+             + "so this is Cyberbane's own standing until it answers.\n";
+      }
+      foreign = 0;   // said just now; the two records are one here
+    }
     if foreign == 2 {
       out += "They Will Remember has them hostile on sight: their people attack you when they know you.\n"
            + "That is its own record, kept apart from your standing here, and nothing here changes it.\n";
@@ -3039,7 +3071,46 @@ public class CBHud {
     }
     this.Paint();
     this.m_root.SetVisible(true);
+    this.ForeignOverlaysOff();
   }
+}
+
+// Other mods' overlays on the menu layer that this page covers, by the names they give them: They Will
+// Remember's disguise scores (They_Will_Remember/HubMenu/DisguiseScoresUI.reds, "disguise_journal").
+func CBForeignOverlayName(name: CName) -> Bool {
+  return Equals(name, n"disguise_journal");
+}
+
+// Out of sight (show false) or back (show true). True when one was there to hide, visible, or to bring back.
+// Only the top level of the menu layer is looked through, where those mods put them, as they look for them.
+func CBForeignOverlays(show: Bool) -> Bool {
+  let ink = GameInstance.GetInkSystem();
+  let layer = IsDefined(ink) ? ink.GetLayer(n"inkMenuLayer") : null;
+  let window = IsDefined(layer) ? layer.GetVirtualWindow() : null;
+  if !IsDefined(window) {
+    return false;
+  }
+  let found = false;
+  let count = window.GetNumChildren();
+  let i = 0;
+  while i < count {
+    let w = window.GetWidgetByIndex(i);
+    i += 1;
+    if IsDefined(w) && CBForeignOverlayName(w.GetName()) {
+      if show {
+        if !w.IsVisible() {
+          w.SetVisible(true);
+          found = true;
+        }
+      } else {
+        if w.IsVisible() {
+          w.SetVisible(false);
+          found = true;
+        }
+      }
+    }
+  }
+  return found;
 }
 
 // ---- Things the gang screen says ----------------------------------------------------------------
@@ -3504,6 +3575,8 @@ func CBHudResampleWorn(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) || !IsDefined(GetPlayer(game)) {
     return;
   }
+  // And They Will Remember's word on who is hostile, which the gangs' standing now follows (2.4.2).
+  CBTwrRefreshHostility(game);
   CBUpdateChrome(sys, game);
   CBUpdateLook(sys, game);
   let score = sys.GetScore();
@@ -4382,13 +4455,22 @@ func CBHudWornLine(sys: ref<CyberbaneSystem>) -> String {
   let line = StrLen(parts) > 0 ? "Covered: " + parts + "." : "Nothing you wear covers your chrome.";
   if worn.masked {
     line += " Masked: nobody can place you.";
-  }
-  if CBTwrActive() {
-    return line + " Gang disguises: They Will Remember.";
+  } else {
+    if worn.twrRead && worn.twrFace >= 0.05 {
+      line += s" Face \(RoundF(worn.twrFace * 100.0))% hidden.";
+    }
   }
   let gang = CBFactionLabel(sys.GetDisguiseFaction());
   if StrLen(gang) > 0 {
-    line += " In " + gang + " gear: slower to place you.";
+    line += worn.twrRead ? s" Passing for \(gang), \(RoundF(sys.GetDisguiseStrength() * 100.0))%." : " In " + gang + " gear: slower to place you.";
+  }
+  // Whose reading this is, when it is not Cyberbane's own (2.4.2).
+  if worn.twrRead {
+    line += " (They Will Remember's reading.)";
+  } else {
+    if CBTwrActive() {
+      line += " They Will Remember's disguises could not be read; this is Cyberbane's own.";
+    }
   }
   return line;
 }

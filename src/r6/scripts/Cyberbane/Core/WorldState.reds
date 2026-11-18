@@ -142,11 +142,31 @@ public func CBPlayerInSafeZone(game: GameInstance) -> Bool {
 // of them answers "not dead", so the lane that sent them stayed busy for ever and no further
 // encounter of that kind could be arranged - you had cleared the fight and the mod disagreed.
 // Anyone defeated or incapacitated is out of it as surely as a corpse is.
+//
+// Only of somebody still in the world (2.4.2). IsDefeated reads their status effects and IsIncapacitated their
+// persistent state, the reads the 2.3.0 crash rule keeps off anybody streaming out, and this took whatever it
+// was handed: a stored reference, or an entity found by id in its last moments. Somebody already streamed out is
+// not found at all and reads as gone; somebody on the way out now reads the same, a moment early.
 public func CBStillStanding(p: wref<ScriptedPuppet>) -> Bool {
-  if !IsDefined(p) || p.IsDead() {
+  if !IsDefined(p) || !p.IsAttached() || p.IsDead() {
     return false;
   }
   return !ScriptedPuppet.IsDefeated(p) && !p.IsIncapacitated();
+}
+
+// Is this somebody put down: dead, or defeated or out cold where they lie (2.4.2)? Not the opposite of
+// CBStillStanding, and the difference is somebody on their way out of the world: not standing, because nothing
+// may be read from them, and not down either. Read as "not standing", they were taken for down: a hurt bagman
+// streaming out counted as robbed, a guard at a Rival's place as fallen, a scout as silenced, a Rival at their
+// place as left lying there. Dead is asked of anybody (the stat system, by id); the rest only of the attached.
+public func CBIsDown(p: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(p) {
+    return false;
+  }
+  if p.IsDead() {
+    return true;
+  }
+  return p.IsAttached() && (ScriptedPuppet.IsDefeated(p) || p.IsIncapacitated());
 }
 
 // Is this NPC in combat? NPCs have no IsInCombat of their own (that is the player's); the game

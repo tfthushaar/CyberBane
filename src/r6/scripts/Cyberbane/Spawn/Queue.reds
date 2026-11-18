@@ -923,7 +923,9 @@ public func CBEnsureHuntingGangs(sys: ref<CyberbaneSystem>) -> Void {
 
 // What the Hub says about this gang's apex squad when nothing is on its way.
 public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> String {
-  if !IsDefined(sys) || !IsDefined(fs) {
+  // Nothing to count towards when Cyberbane sends nobody (crews off, or They Will Remember sending the gangs'
+  // people): the Gangs screen said "apex squad in 20 kills" for a squad that was never coming (2.4.2).
+  if !IsDefined(sys) || !IsDefined(fs) || !CBHitSquadsOn() {
     return "";
   }
   let score = sys.GetScore();

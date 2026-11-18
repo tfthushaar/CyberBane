@@ -514,6 +514,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_wornReady = false;
     this.m_wornDue = true;
     this.m_worn = null;
+    // They Will Remember's answers were the last save's (2.4.2); asked again on the first settled tick.
+    let rtTwr = CyberbaneRuntime.Get();
+    if IsDefined(rtTwr) {
+      rtTwr.ClearTwrHostility();
+    }
 
     // Nothing asked for on a Hub in another session is carried into this one.
     this.m_pendingPeace = n"";
@@ -1094,6 +1099,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_wornDue {
       this.m_wornDue = false;
       this.m_wornReady = true;
+      CBTwrRefreshHostility(game);
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
     }
@@ -1133,6 +1139,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     // What V has fitted and is wearing is read whatever the streaming is doing: it is V's own
     // equipment and stats and nothing in the world, and on a busy street, where streaming is heavy
     // for minutes at a time, it stood still, so putting a coat on changed nothing that could be seen.
+    // Who They Will Remember has hostile, for everything that reads a gang's standing (2.4.2): its data
+    // only, never the world, so like the wardrobe it is read whatever the streaming is doing.
+    if this.m_tickCount % 2 == 0 {
+      CBTwrRefreshHostility(game);
+    }
     if this.m_tickCount % 10 == 0 {
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
@@ -3367,8 +3378,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_lastSlowTickAt = now;
       return;
     }
+    // Only counted as done when it ran (2.4.2): the slow tick waits for the content cache, and an hour that came
+    // round before it was warm was marked done anyway, so that hour's decay, tribute and the rest never happened.
     let elapsed = now - this.m_lastSlowTickAt;
-    if elapsed >= CBConfig.SecondsPerHour() {
+    if elapsed >= CBConfig.SecondsPerHour() && this.HasContent() {
       this.OnSlowTick(elapsed / CBConfig.SecondsPerDay());
       this.m_lastSlowTickAt = now;
     }
@@ -4439,7 +4452,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   // (+100, keeps a code, clean work, mercy). Fixers, crews and vendors read it.
   // Separate from Dread (feared) and Renown (known).
   public func GetCode() -> Float { return this.m_code; }
+  // Like the other scores, still with reputation frozen (2.4.2): "Stops your reputation changing", and Conduct is
+  // one of the four on the Hub. Kills already stopped short of it; talk, the street's events and surrenders did not.
   public func AddCode(delta: Float) -> Void {
+    if CBReputationFrozen() {
+      return;
+    }
     this.m_code = ClampF(this.m_code + delta, -100.0, 100.0);
   }
 
@@ -4454,29 +4472,29 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // ---- Accumulator mutators (clamped at zero; called by the model layer) -
   public func AddRenownPoints(delta: Float) -> Void {
-    if delta > 0.0 && CBReputationFrozen() {
-      return;
+    if CBReputationFrozen() {
+      return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
     }
     this.m_renownPoints = MaxF(0.0, this.m_renownPoints + delta);
     this.GetScore().MarkDirty();
   }
   public func AddKillDreadPoints(delta: Float) -> Void {
-    if delta > 0.0 && CBReputationFrozen() {
-      return;
+    if CBReputationFrozen() {
+      return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
     }
     this.m_killDreadPoints = MaxF(0.0, this.m_killDreadPoints + delta);
     this.GetScore().MarkDirty();
   }
   public func AddDeedDreadPoints(delta: Float) -> Void {
-    if delta > 0.0 && CBReputationFrozen() {
-      return;
+    if CBReputationFrozen() {
+      return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
     }
     this.m_deedDreadPoints = MaxF(0.0, this.m_deedDreadPoints + delta);
     this.GetScore().MarkDirty();
   }
   public func AddHeatPoints(delta: Float) -> Void {
-    if delta > 0.0 && CBReputationFrozen() {
-      return;
+    if CBReputationFrozen() {
+      return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
     }
     this.m_heatPoints = MaxF(0.0, this.m_heatPoints + delta);
     this.GetScore().MarkDirty();

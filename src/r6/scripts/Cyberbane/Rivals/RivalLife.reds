@@ -94,9 +94,10 @@ public func CBRivalStreetStatus(sys: ref<CyberbaneSystem>, game: GameInstance, r
   if r.id == sys.GetLaneRivalId(CBLaneRival()) {
     return "Getting their people together. You'll hear from them soon.";
   }
+  // In the HUD's own words for a countdown (CBWhen, 2.4.2). The cooldown is in fast ticks, a real second each,
+  // and this called every 150 of them an hour: an in-game hour is about 450, so the page said six hours for two.
   if r.huntTicks > 0 {
-    let hours = Max(1, r.huntTicks / 150);
-    return s"Licking their wounds. Back in maybe \(hours) hours.";
+    return s"Licking their wounds. Back \(CBWhen(r.huntTicks)).";
   }
   return "Around. Keeping their ears open for your name.";
 }

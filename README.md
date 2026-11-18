@@ -131,7 +131,8 @@ Each playthrough keeps its own record, and nothing one character does reaches an
 ## Compatibility
 
 - **They Will Remember / Night City Remembers:** detected automatically. Cyberbane lets it decide
-  who is hostile to you. Set compatibility to Off under Advanced to let Cyberbane decide instead.
+  who is hostile to you and how well a disguise works, and follows both: the Gangs page marks the
+  gangs it decides with "(TWR)". Set compatibility to Off under Advanced to let Cyberbane decide instead.
 - **Much Better AI, Street Sense, New Game Plus:** detected automatically; Cyberbane steps back
   where they already cover something.
 - **Equipment-EX and other outfit mods:** your outfit is read as it looks on V.

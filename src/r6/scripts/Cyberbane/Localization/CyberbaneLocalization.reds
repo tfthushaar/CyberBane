@@ -144,7 +144,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ShowCountdowns-Desc", "Show exact times on the Hub and the HUD line. Off says soon, any moment or later instead.");
     this.Text("Cyberbane-Settings-Bounties-Desc", "Putting down a Rival or an apex squad pays eddies, from a gang at war with theirs.");
     this.Text("Cyberbane-Settings-ApexTraits-Desc", "Each apex gets two traits of its own, so no two fight the same way. Stands down on its own when New Game Plus is installed.");
-    this.Text("Cyberbane-Settings-TwrCompat-Desc", "Auto or On: They Will Remember decides who is hostile to you, and Cyberbane follows it (crews, hostility on sight and disguises are left to it). Off: Cyberbane decides; turn hostility off in They Will Remember's own settings so the two do not disagree.");
+    this.Text("Cyberbane-Settings-TwrCompat-Desc", "Auto or On: They Will Remember decides who is hostile to you and how well a disguise works, and Cyberbane follows both: every gang it has hostile is hostile here, and crews and hostility on sight are left to it. Off: Cyberbane decides; turn hostility off in They Will Remember's own settings so the two do not disagree.");
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising for a bug report.");
     this.Text("Cyberbane-Settings-FreezeReputation-Desc", "Stops your reputation changing. Everything already earned keeps working.");
     this.Text("Cyberbane-Settings-HudScale-Desc", "Size of Cyberbane's own screens and bars, on top of the scaling it already does for your resolution.");

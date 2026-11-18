@@ -466,7 +466,9 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
     book.SetProtect(0.0, 0, now);
     CBWarEarn(game, n"TygerClaws", Cast<Float>(amount));
     let fs = sys.EnsureFaction(n"TygerClaws");
-    fs.standing = ClampF(fs.standing + CBConfig.ProtectionPaidStanding(), -100.0, 100.0);
+    if !CBReputationFrozen() {   // as the unpaid side already was (CBWarProtection)
+      fs.standing = ClampF(fs.standing + CBConfig.ProtectionPaidStanding(), -100.0, 100.0);
+    }
     CBFileLog(sys, n"ProtectionPaid", now, CBEventDistrict(sys, game), n"TygerClaws", Cast<Float>(amount));
     return CBTalkSay(CBLineOf(["Pleasure doing business. Japantown's safe for you this week.",
                                "Smart. Nobody of ours bothers a paying customer."]), n"");

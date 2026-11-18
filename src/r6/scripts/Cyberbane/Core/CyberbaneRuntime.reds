@@ -13,7 +13,6 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_settings: ref<CyberbaneSettings>;
   private let m_rewardDepth: Int32;    // nesting depth of the reward hook (see GigBonus)
   private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
-  private let m_twrProbeLogged: Bool;  // how asking They Will Remember went has been logged (1.9.1)
   private let m_resetRequested: Bool;  // the player asked for a hard reset (see CyberbaneSettings)
   // Which playthrough that reset is for, and which one is loaded now. This service outlives every
   // save, so a request parked here used to survive a Load Game from the pause menu and wipe
@@ -52,6 +51,15 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_lastMessageAt: Float;
   // Equipment-EX's outfit functions, looked up once a launch (Signals/Concealment.reds, 1.9.5).
   private let m_eqexProbe: ref<CBEqExProbe>;
+  // They Will Remember's disguise functions, looked up once a launch (Signals/Concealment.reds, 2.4.2).
+  private let m_twrDisguiseProbe: ref<CBTwrDisguiseProbe>;
+  // They Will Remember's word on who is hostile, by its own gang index, asked on the tick
+  // (CBTwrRefreshHostility, 2.4.2): 1 hostile, 0 not, -1 not asked or no answer. Cleared at each session's
+  // start, so one save's answers never stand for another's. Why it could not be asked, or "".
+  private let m_twrAttitudeProbe: ref<CBTwrAttitudeProbe>;
+  private let m_twrHostile: array<Int32>;
+  private let m_twrHostileWhy: String;
+  private let m_twrHostileAsked: Bool;
   // Whether V has been told to put a weapon away to talk to people (Reactions/StreetTalk.reds, 1.9.5).
   private let m_talkHolsterHinted: Bool;
   private let m_subGen: array<Int32>;
@@ -166,12 +174,43 @@ public class CyberbaneRuntime extends ScriptableService {
     return this.m_eqexProbe;
   }
 
-  public func GetTwrProbeLogged() -> Bool {
-    return this.m_twrProbeLogged;
+  public func GetTwrAttitudeProbe() -> ref<CBTwrAttitudeProbe> {
+    if !IsDefined(this.m_twrAttitudeProbe) {
+      this.m_twrAttitudeProbe = new CBTwrAttitudeProbe();
+    }
+    return this.m_twrAttitudeProbe;
   }
 
-  public func SetTwrProbeLogged(v: Bool) -> Void {
-    this.m_twrProbeLogged = v;
+  public func ClearTwrHostility() -> Void {
+    ArrayClear(this.m_twrHostile);
+    this.m_twrHostileAsked = false;
+  }
+
+  // True when how the asking went is not what was last logged.
+  public func SetTwrHostility(answers: array<Int32>, why: String) -> Bool {
+    this.m_twrHostile = answers;
+    let changed = !this.m_twrHostileAsked || NotEquals(why, this.m_twrHostileWhy);
+    this.m_twrHostileWhy = why;
+    this.m_twrHostileAsked = true;
+    return changed;
+  }
+
+  public func TwrHostility(index: Int32) -> Int32 {
+    if index < 0 || index >= ArraySize(this.m_twrHostile) {
+      return -1;
+    }
+    return this.m_twrHostile[index];
+  }
+
+  public func TwrHostilityWhy() -> String {
+    return this.m_twrHostileAsked ? this.m_twrHostileWhy : "it has not been asked yet this session";
+  }
+
+  public func GetTwrDisguiseProbe() -> ref<CBTwrDisguiseProbe> {
+    if !IsDefined(this.m_twrDisguiseProbe) {
+      this.m_twrDisguiseProbe = new CBTwrDisguiseProbe();
+    }
+    return this.m_twrDisguiseProbe;
   }
 
   // New Game Plus rebuilds every NPC in the game to be harder. Stacking Cyberbane's own apex

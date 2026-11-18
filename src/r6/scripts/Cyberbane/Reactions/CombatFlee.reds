@@ -449,6 +449,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       // Told to leave Night City where they lay, and they went (Rivals/RivalLife.reds, 1.9.9).
       if e.exiled {
         already.state = EnumInt(ECBRivalState.Retired);
+        CBHierarchyFill(sys, already.faction);   // their chair is somebody else's now (2.4.2)
         CBCloseRivalEncounter(sys, game, already, e.puppet);
         CBFileLog(sys, n"RivalExiled", now, district, already.faction, Cast<Float>(already.id));
         if CBMessagesOn() {
@@ -462,8 +463,10 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       if !indebted {
         CBRivalMaybeBreak(sys, game, already);
       } else {
-        // Grateful instead: they owe V, and pay it back in tips (Reactions/StreetIntel.reds, 1.9.8).
+        // Grateful instead: they owe V, and pay it back in tips (Reactions/StreetIntel.reds, 1.9.8). Out of the
+        // fight for good, so out of their chair too (2.4.2).
         CBIntelDebtor(sys, game, already);
+        CBHierarchyFill(sys, already.faction);
       }
       // Their gang hears that V had one of their names cold and let them walk. Done here
       // rather than inside CBRivalSparedByV, which has no system handle to credit against.

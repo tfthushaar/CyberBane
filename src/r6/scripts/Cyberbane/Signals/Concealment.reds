@@ -42,6 +42,14 @@ public class CBWornRead {
   public let face: Bool;
   public let masked: Bool;
   public let fromMods: Int32;           // how many of the garments only the attached-clothing read found
+  // They Will Remember's own reading of the same clothes, when it is the one deciding disguises (2.4.2):
+  // whether it answered, how much of V's face it counts hidden (0..1, -1 when its face disguise is off),
+  // and whose gear it says V passes in and how well (n"" and 0 for nobody, or its gang disguise off).
+  public let twrRead: Bool;
+  public let twrFace: Float;
+  public let twrGangOn: Bool;
+  public let twrFaction: CName;
+  public let twrCover: Float;
 }
 
 func CBClothingAreas() -> array<gamedataEquipmentArea> {
@@ -283,6 +291,7 @@ public func CBReadWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>)
   let eqexSlots: array<TweakDBID>;
   if CBEqExOutfitSlots(game, eqexSlots) {
     CBReadEqExOutfit(game, worn, eqexSlots);
+    CBReadTwrDisguise(game, worn);
     return worn;
   }
   let equipped: array<ItemID>;
@@ -317,6 +326,7 @@ public func CBReadWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>)
       worn.masked = true;
     }
   }
+  CBReadTwrDisguise(game, worn);
   return worn;
 }
 
@@ -641,4 +651,110 @@ func CBEqExLegPart(slot: TweakDBID) -> Int32 {
     return 2;
   }
   return -1;
+}
+
+// ---- They Will Remember's disguises (2.4.2) -----------------------------------------------------
+//
+// "With a disguise score of 89 my standing stays the same." With They Will Remember installed and its
+// compatibility on, Cyberbane handed it gang disguises and switched its own off, and never asked what They
+// Will Remember made of V's clothes. So the two mods disagreed about the same outfit: They Will Remember
+// said V's face was 89% hidden and V passed for a Tyger Claw, while Cyberbane's street, crews and hunters
+// went on placing V as if V were bare-faced in street clothes, or as if no gang's gear counted at all.
+// Its face reading is also much the finer one: it rates every helmet, hood and visor by how much of the
+// face it leaves, where Cyberbane only knows masks and balaclavas.
+//
+// So whoever decides disguises decides them for both. With compatibility on and its disguise system
+// answering, They Will Remember's face reading counts towards Cyberbane's mask (a face it counts mostly
+// hidden is a mask), and its gang reading is Cyberbane's faction disguise. If it cannot be asked, or a
+// version of it lacks these functions, Cyberbane's own reading stands, as before. Asked through Codeware
+// reflection with every function's shape checked once a launch, as Equipment-EX is (CBEqExProbe), so
+// nothing here names anything of theirs and no version of theirs can break this build.
+
+public class CBTwrDisguiseProbe {
+  public let state: Int32;   // 0 not looked yet, 1 usable, 2 absent or not the shape this reads
+  public let ready: ref<ReflectionMemberFunc>;
+  public let faceOn: ref<ReflectionMemberFunc>;
+  public let gangOn: ref<ReflectionMemberFunc>;
+  public let face: ref<ReflectionMemberFunc>;
+  public let cover: ref<ReflectionMemberFunc>;
+  public let coverScore: ref<ReflectionMemberFunc>;
+
+  public func Resolve() -> Bool {
+    if this.state == 0 {
+      this.state = 2;
+      let type = Reflection.GetClass(CBTwrDisguiseClass());
+      if IsDefined(type) {
+        let ready = CBReflectNoArgs(type.GetFunction(n"IsDisguiseReady"), n"Bool");
+        let faceOn = CBReflectNoArgs(type.GetFunction(n"IsFaceDisguiseEnabled"), n"Bool");
+        let gangOn = CBReflectNoArgs(type.GetFunction(n"IsAffiliationDisguiseEnabled"), n"Bool");
+        let face = CBReflectNoArgs(type.GetFunction(n"DisguiseScore"), n"Float");
+        let cover = CBReflectNoArgs(type.GetFunction(n"Cover"), n"Int32");
+        let coverScore = CBReflectNoArgs(type.GetFunction(n"CoverScore"), n"Float");
+        if IsDefined(ready) && IsDefined(faceOn) && IsDefined(gangOn) && IsDefined(face) && IsDefined(cover)
+           && IsDefined(coverScore) {
+          this.ready = ready;
+          this.faceOn = faceOn;
+          this.gangOn = gangOn;
+          this.face = face;
+          this.cover = cover;
+          this.coverScore = coverScore;
+          this.state = 1;
+          CBLog.Info(n"Signals", "They Will Remember's disguises found: its face and gang readings are Cyberbane's too.");
+        } else {
+          CBLog.Info(n"Signals", "They Will Remember's disguise system is not the shape Cyberbane reads; Cyberbane reads disguises itself.");
+        }
+      }
+    }
+    return this.state == 1;
+  }
+}
+
+public func CBTwrDisguiseClass() -> CName = n"TheyWillRemember.Disguise.Disguise"
+
+// A function taking nothing and handing back exactly this type, or nothing.
+func CBReflectNoArgs(fn: ref<ReflectionMemberFunc>, typeName: CName) -> ref<ReflectionMemberFunc> {
+  if !IsDefined(fn) || ArraySize(fn.GetParameters()) != 0 || !CBReflectReturns(fn, typeName) {
+    return null;
+  }
+  return fn;
+}
+
+// Fills the They Will Remember part of this reading, when compatibility is on and it answers.
+func CBReadTwrDisguise(game: GameInstance, worn: ref<CBWornRead>) -> Void {
+  worn.twrRead = false;
+  worn.twrFace = -1.0;
+  if !CBTwrActive() {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  let container = GameInstance.GetScriptableSystemsContainer(game);
+  if !IsDefined(rt) || !IsDefined(container) {
+    return;
+  }
+  let probe = rt.GetTwrDisguiseProbe();
+  if !probe.Resolve() {
+    return;
+  }
+  let disguise = container.Get(CBTwrDisguiseClass());
+  let none: array<Variant>;
+  if !IsDefined(disguise) || !FromVariant<Bool>(probe.ready.Call(disguise, none)) {
+    return;
+  }
+  worn.twrRead = true;
+  if FromVariant<Bool>(probe.faceOn.Call(disguise, none)) {
+    // Its score is what is left to see: 1 a bare face, 0.11 a face 89% hidden.
+    worn.twrFace = ClampF(1.0 - FromVariant<Float>(probe.face.Call(disguise, none)), 0.0, 1.0);
+    if worn.twrFace >= CBConfig.TwrMaskedFace() {
+      worn.face = true;
+      worn.masked = true;
+    }
+  }
+  worn.twrGangOn = FromVariant<Bool>(probe.gangOn.Call(disguise, none));
+  if worn.twrGangOn {
+    let gang = CBTwrFactionAt(FromVariant<Int32>(probe.cover.Call(disguise, none)));
+    if NotEquals(gang, n"") {
+      worn.twrFaction = gang;
+      worn.twrCover = ClampF(1.0 - FromVariant<Float>(probe.coverScore.Call(disguise, none)), 0.0, 1.0);
+    }
+  }
 }

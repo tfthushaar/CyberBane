@@ -1386,7 +1386,10 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   if crewLost && NotEquals(ranFrom, n"") && !cold {
     let fs = sys.FindFaction(ranFrom);
     if IsDefined(fs) {
-      fs.renown = ClampF(fs.renown - CBConfig.RunRenownLoss(), 0.0, 100.0);
+      // Not with reputation frozen (2.4.2): every other change to how a gang sees V already stopped there.
+      if !CBReputationFrozen() {
+        fs.renown = ClampF(fs.renown - CBConfig.RunRenownLoss(), 0.0, 100.0);
+      }
       fs.lastHitSquadAt = CBGameSeconds(game);
     }
     if CBToastsOn() && CBFactionFieldsSquads(ranFrom) {

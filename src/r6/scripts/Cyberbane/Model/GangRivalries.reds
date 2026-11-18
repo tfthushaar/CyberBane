@@ -56,7 +56,8 @@ public func CBGangsAreRivals(content: ref<CyberbaneContent>, a: CName, b: CName)
 // enemies warm to V by a share of it, up to a ceiling: being somebody's enemy's enemy makes you
 // welcome, it does not make you family. A gang already above the ceiling is left where it is.
 public func CBCreditRivalGangs(sys: ref<CyberbaneSystem>, game: GameInstance, victim: CName, loss: Float) -> Void {
-  if !IsDefined(sys) || loss >= 0.0 {
+  // Not with reputation frozen (2.4.2): kills stopped short of here, words in the street did not.
+  if !IsDefined(sys) || loss >= 0.0 || CBReputationFrozen() {
     return;
   }
   let content = CBContent(game);
@@ -115,7 +116,8 @@ func CBTopEnemyOf(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, fac
 // gang tolerate V and nothing more. A gang already past the cap is left alone rather than
 // pulled back down to it, because a gang that likes V for other reasons does not mind mercy.
 public func CBCreditMercy(sys: ref<CyberbaneSystem>, faction: CName, amount: Float) -> Void {
-  if !IsDefined(sys) || Equals(faction, n"") || amount <= 0.0 {
+  // Not with reputation frozen (2.4.2): talk, surrenders and the street's events credit mercy here directly.
+  if !IsDefined(sys) || Equals(faction, n"") || amount <= 0.0 || CBReputationFrozen() {
     return;
   }
   let fs = sys.EnsureFaction(faction);

@@ -45,8 +45,9 @@ public func CBRivalRole(sys: ref<CyberbaneSystem>, rival: ref<CBRival>) -> Int32
   }
   // A cyberpsycho is nobody's lieutenant. Keeping them out of the hierarchy keeps the leader
   // and lieutenant health multipliers off them as well, which is the other half of giving them
-  // wits instead of padding.
-  if CBRecordIsSightingCyberpsycho(rival.recordID) {
+  // wits instead of padding. Nor is anybody no longer around (2.4.2): a Debtor or somebody run out of the city
+  // still named in a chair read as LEADER on the Hub until the gang next changed shape.
+  if !CBSlotEligible(rival) {
     return CBRoleNone();
   }
   let fs = sys.FindFaction(rival.faction);
@@ -62,16 +63,23 @@ public func CBRivalRole(sys: ref<CyberbaneSystem>, rival: ref<CBRival>) -> Int32
   return CBRoleNone();
 }
 
-// Is this id still a Rival who is actually around?
+// Can this Rival hold a chair at all: still around, and not a cyberpsycho (CBRivalRole). The one rule every
+// slot answers to (2.4.2). CBRivalRole kept psychos out of the hierarchy but filling the slots never did, so a
+// psycho could take the leader's chair: given the leader's rank, named in "runs us now", calling open season,
+// while the Hub, asking CBRivalRole, showed that gang with nobody at the top.
+func CBSlotEligible(r: ref<CBRival>) -> Bool {
+  return IsDefined(r) && r.id > 0
+      && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting))
+      && !CBRecordIsSightingCyberpsycho(r.recordID);
+}
+
+// Is this id still a Rival who can hold their chair? A psycho already in one from an earlier build is let go
+// the next time the gang's shape changes (CBHierarchyPrune).
 func CBSlotHolderActive(sys: ref<CyberbaneSystem>, id: Int32) -> Bool {
   if id <= 0 {
     return false;
   }
-  let r = sys.FindRivalById(id);
-  if !IsDefined(r) {
-    return false;
-  }
-  return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
+  return CBSlotEligible(sys.FindRivalById(id));
 }
 
 // Clear any slot held by a Rival who is gone, so vacancies are real.
@@ -104,8 +112,7 @@ func CBBestCandidate(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> ref<
   while i < ArraySize(rivals) {
     let r = rivals[i];
     i += 1;
-    if IsDefined(r) && Equals(r.faction, fs.id) && !CBHoldsAnySlot(fs, r.id)
-       && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
+    if CBSlotEligible(r) && Equals(r.faction, fs.id) && !CBHoldsAnySlot(fs, r.id) {
       let score = r.rank * 100 + r.encounters;
       if score > bestScore {
         bestScore = score;

@@ -333,9 +333,12 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   if IsDefined(sys) {
     sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
   }
+  // Topped up to the new maximum, the way the game refills a pool (RequestSettingStatPoolMaxValue). This set
+  // 100.0 without the percentage flag, which is a hundred hit points: a built apex started the fight at a
+  // fraction of the health it had just been given.
   let pools = GameInstance.GetStatPoolsSystem(game);
   if IsDefined(pools) {
-    pools.RequestSettingStatPoolValue(id, gamedataStatPoolType.Health, 100.0, null);
+    pools.RequestSettingStatPoolMaxValue(id, gamedataStatPoolType.Health, null);
   }
 }
 
@@ -397,9 +400,12 @@ public func CBApplyCrewBuild(sys: ref<CyberbaneSystem>, game: GameInstance, pupp
   if IsDefined(sys) {
     sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
   }
+  // Topped up to the new maximum, the way the game refills a pool (RequestSettingStatPoolMaxValue). This set
+  // 100.0 without the percentage flag, which is a hundred hit points: a built apex started the fight at a
+  // fraction of the health it had just been given.
   let pools = GameInstance.GetStatPoolsSystem(game);
   if IsDefined(pools) {
-    pools.RequestSettingStatPoolValue(id, gamedataStatPoolType.Health, 100.0, null);
+    pools.RequestSettingStatPoolMaxValue(id, gamedataStatPoolType.Health, null);
   }
 }
 

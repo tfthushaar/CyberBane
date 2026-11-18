@@ -70,8 +70,9 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
 
   // The gang saw it done. Standing is V's footing with them, and somebody who has put V down
   // is harder to frighten.
+  // Not with reputation frozen (2.4.2), which every other change to standing already respected.
   let fs = sys.FindFaction(faction);
-  if IsDefined(fs) {
+  if IsDefined(fs) && !CBReputationFrozen() {
     fs.standing = ClampF(fs.standing - CBConfig.DeathStandingDrop(), -100.0, 100.0);
   }
   if CBMessagesOn() {

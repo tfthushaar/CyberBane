@@ -115,15 +115,20 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   // A mask is a disguise whether or not the look tables happen to list that particular one.
   // Those tables are hand-written and will never cover every face item in the game, and a
   // player who covers their face and sees nothing change reasonably concludes the system does
-  // not work.
-  if worn.masked {
-    disguiseSum += CBConfig.MaskDisguise();
+  // not work. A face They Will Remember counts partly hidden (a hood, a visor) is that share of a
+  // mask (2.4.2, Signals/Concealment.reds, CBReadTwrDisguise).
+  let faceHidden = worn.masked ? 1.0 : 0.0;
+  if worn.twrRead && worn.twrFace > faceHidden {
+    faceHidden = worn.twrFace;
   }
+  disguiseSum += CBConfig.MaskDisguise() * faceHidden;
   score.SetLook(MaxF(lookSum, 0.0), ClampF(disguiseSum, 0.0, 0.85));
 
-  // Faction-colour disguise is off under the kill switch, when disabled, or in TWR compat.
+  // Whose gear V passes in. With They Will Remember deciding disguises and answering, its reading is the
+  // one (2.4.2): until then Cyberbane switched its own off under compatibility and put nothing in its
+  // place, so no gang's gear fooled any of Cyberbane's people. Off under the kill switch or the setting.
   let rt = CyberbaneRuntime.Get();
-  let allow = !CBTwrActive();
+  let allow = true;
   if IsDefined(rt) {
     if !rt.IsEnabled() {
       allow = false;
@@ -132,7 +137,11 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
       allow = false;
     }
   }
-  if allow {
+  if worn.twrRead {
+    bestFaction = worn.twrGangOn ? worn.twrFaction : n"";
+    bestFactionDisguise = worn.twrGangOn ? worn.twrCover : 0.0;
+  }
+  if allow && NotEquals(bestFaction, n"") {
     sys.SetDisguise(bestFaction, ClampF(bestFactionDisguise, 0.0, 0.8));
   } else {
     sys.SetDisguise(n"", 0.0);

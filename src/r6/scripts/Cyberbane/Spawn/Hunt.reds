@@ -1124,7 +1124,9 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     }
     return;
   }
-  if !CBStillStanding(scout) {
+  // Down, not merely on their way out of the world (2.4.2): one streaming out was counted as put down, and the
+  // gang went quiet over a scout nobody had touched.
+  if CBIsDown(scout) {
     CBScoutSilenced(sys, game, faction);
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout went down before calling it in.");
     return;

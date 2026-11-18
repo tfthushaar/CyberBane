@@ -145,7 +145,7 @@ func CBTakenOutByV(p: wref<ScriptedPuppet>) -> Bool {
   if p.cbTalkSentTick > 0 {
     return true;
   }
-  return p.cbDamagedByPlayer && (p.IsDead() || !CBStillStanding(p) || p.cbMoraleBroken || p.cbSurrendered);
+  return p.cbDamagedByPlayer && (CBIsDown(p) || p.cbMoraleBroken || p.cbSurrendered);
 }
 
 public func CBStreetLifeFor(game: GameInstance) -> ref<CBStreetLife> {
@@ -279,7 +279,7 @@ public class CBStreetLife {
                       now: Int32, busy: Bool) -> Void {
     if NotEquals(this.m_bagFaction, n"") {
       let p = GameInstance.FindEntityByID(game, this.m_bagBody) as ScriptedPuppet;
-      if !this.m_bagDone && IsDefined(p) && p.cbDamagedByPlayer && (p.IsDead() || !CBStillStanding(p)) {
+      if !this.m_bagDone && IsDefined(p) && p.cbDamagedByPlayer && CBIsDown(p) {
         this.m_bagDone = true;
         this.Robbed(sys, game);
       }

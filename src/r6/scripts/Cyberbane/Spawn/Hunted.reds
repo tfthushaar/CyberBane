@@ -390,8 +390,8 @@ public func CBLookoutDealt(game: GameInstance, id: EntityID) -> Bool {
     return false;
   }
   let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
-  if !IsDefined(p) {
-    return false;   // out of the world: they may yet report
+  if !IsDefined(p) || !p.IsAttached() {
+    return false;   // out of the world, or on the way out: they may yet report
   }
   return !CBStillStanding(p) || p.cbWitnessHushed;
 }

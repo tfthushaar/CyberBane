@@ -124,50 +124,106 @@ func CBTwrModulePresent() -> Bool {
 // run their own hostility, this answered -1 without asking, and the Hub showed Cyberbane's record alone.
 // What it found is said once a launch in the log, so a report says which step it got to.
 public func CBTwrGangHostile(game: GameInstance, faction: CName) -> Int32 {
-  if !CBDetectTwr() {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !CBDetectTwr() {
     return -1;
   }
-  let index = CBTwrFactionIndex(faction);
-  let container = GameInstance.GetScriptableSystemsContainer(game);
-  if index < 0 || !IsDefined(container) {
-    return -1;
-  }
-  let manager = container.Get(n"TheyWillRemember.Factions.AttitudeManager");
-  let type = Reflection.GetClass(n"TheyWillRemember.Factions.AttitudeManager");
-  if !IsDefined(type) {
-    CBTwrProbeNote("its attitude class is not in this build");
-    return -1;
-  }
-  if !IsDefined(manager) {
-    CBTwrProbeNote("its attitude system is not running");
-    return -1;
-  }
-  let ask = type.GetFunction(n"IsFactionHostileByIndex");
-  if !IsDefined(ask) || ArraySize(ask.GetParameters()) != 1 {
-    CBTwrProbeNote("it has no IsFactionHostileByIndex taking one argument");
-    return -1;
-  }
-  // Without the call's status flag: it is a script reference, a form this mod has never shipped, and
-  // 2.31's compiler cannot be tried here. A call that fails hands back an empty value, which reads as
-  // not hostile, and the Hub then shows Cyberbane's own standing, as it always did.
-  let args: array<Variant>;
-  ArrayPush(args, ToVariant(index));
-  let answer = ask.Call(manager, args);
-  CBTwrProbeNote("");
-  return FromVariant<Bool>(answer) ? 1 : 0;
+  return rt.TwrHostility(CBTwrFactionIndex(faction));
 }
 
-// Once a launch, how asking They Will Remember went. Empty means it answered.
-func CBTwrProbeNote(why: String) -> Void {
+// 2.4.2: asked on Cyberbane's tick and kept, every gang at once, instead of on every question. The standing
+// a gang acts on follows its answer now (Data/Factions.reds, CBActingStanding), and that is read for every
+// person on the street on every tick; asking They Will Remember there would have been a dozen reflected
+// calls per person. Asked every other second, as the Hub opens, and fresh at a session's start.
+//
+// "Isn't Cyberbane supposed to follow They Will Remember's hostility? Factions can be hostile
+// independently." They could, two ways. The Gangs screen alone asked it, so everything Cyberbane does
+// about a gang went on reading Cyberbane's own standing: a gang They Will Remember had hostile was neutral
+// to the rest of Cyberbane, and a gang Cyberbane had hostile (its lifepath, say) stayed hostile. And when
+// the asking failed the screen showed neither, with the reason logged once a launch, the first time it was
+// tried, often at the main menu before its system was running. Now the reason is kept and shown
+// (CBTwrHostilityWhy) and logged whenever it changes, and the call's own status says whether it went through.
+public class CBTwrAttitudeProbe {
+  public let state: Int32;   // 0 not looked yet, 1 usable, 2 absent or not the shape this reads
+  public let ask: ref<ReflectionMemberFunc>;
+  public let why: String;
+
+  public func Resolve() -> Bool {
+    if this.state == 0 {
+      this.state = 2;
+      let type = Reflection.GetClass(CBTwrAttitudeClass());
+      if !IsDefined(type) {
+        this.why = "its attitude class is not in this build";
+      } else {
+        let ask = type.GetFunction(n"IsFactionHostileByIndex");
+        if !IsDefined(ask) || ArraySize(ask.GetParameters()) != 1 || !CBReflectReturns(ask, n"Bool") {
+          this.why = "it has no IsFactionHostileByIndex taking one argument and answering yes or no";
+        } else {
+          this.ask = ask;
+          this.state = 1;
+        }
+      }
+    }
+    return this.state == 1;
+  }
+}
+
+public func CBTwrAttitudeClass() -> CName = n"TheyWillRemember.Factions.AttitudeManager"
+
+public func CBTwrRefreshHostility(game: GameInstance) -> Void {
   let rt = CyberbaneRuntime.Get();
-  if !IsDefined(rt) || rt.GetTwrProbeLogged() {
+  if !IsDefined(rt) || !CBDetectTwr() {
     return;
   }
-  rt.SetTwrProbeLogged(true);
-  if StrLen(why) == 0 {
-    CBLog.Info(n"Core", "They Will Remember answers the Gangs screen when it asks who is hostile on sight.");
+  let answers: array<Int32>;
+  let why = "";
+  let probe = rt.GetTwrAttitudeProbe();
+  let container = GameInstance.GetScriptableSystemsContainer(game);
+  let manager = IsDefined(container) ? container.Get(CBTwrAttitudeClass()) : null;
+  if !probe.Resolve() {
+    why = probe.why;
   } else {
-    CBLog.Info(n"Core", s"They Will Remember could not be asked who is hostile on sight: \(why). The Gangs screen goes by what it sees of their people instead.");
+    if !IsDefined(manager) {
+      why = "its attitude system is not running";
+    }
+  }
+  let i = 0;
+  while i < CBTwrFactionSlots() {
+    let answer = -1;
+    if StrLen(why) == 0 && NotEquals(CBTwrFactionAt(i), n"") {
+      let args: array<Variant>;
+      ArrayPush(args, ToVariant(i));
+      let ok = false;
+      let said = probe.ask.Call(manager, args, ok);
+      if ok {
+        answer = FromVariant<Bool>(said) ? 1 : 0;
+      } else {
+        why = "it would not take the question";
+      }
+    }
+    ArrayPush(answers, answer);
+    i += 1;
+  }
+  if rt.SetTwrHostility(answers, why) {
+    CBTwrProbeNote(why);
+  }
+}
+
+// How many of its gang indexes there are (0 to 15, Disguise.m_factionNames).
+public func CBTwrFactionSlots() -> Int32 = 16
+
+// Why They Will Remember could not be asked who is hostile, or "" when it answered.
+public func CBTwrHostilityWhy() -> String {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) ? rt.TwrHostilityWhy() : "";
+}
+
+// In the log whenever how asking They Will Remember went changes. Empty means it answered.
+func CBTwrProbeNote(why: String) -> Void {
+  if StrLen(why) == 0 {
+    CBLog.Info(n"Core", "They Will Remember answers who is hostile on sight, and Cyberbane follows it.");
+  } else {
+    CBLog.Info(n"Core", s"They Will Remember could not be asked who is hostile on sight: \(why). Cyberbane goes by its own standing until it answers.");
   }
 }
 
@@ -186,8 +242,9 @@ public func CBForeignHostile(sys: ref<CyberbaneSystem>, game: GameInstance, fact
   return 0;
 }
 
-// Their numbering of the gangs (They Will Remember 2.7, KillCounts.GetFactionIndex). The ones they do
-// not track - the Mox, the Aldecaldos, MaxTac - have no answer.
+// Their numbering of the gangs (They Will Remember 2.7, KillCounts.GetFactionIndex; 3.x adds the Aldecaldos
+// and the Mox, GetFactionRelationshipIndex, and the same order is its disguise's, Disguise.m_factionNames).
+// MaxTac and Trauma Team have no answer here.
 func CBTwrFactionIndex(faction: CName) -> Int32 {
   if Equals(faction, n"Maelstrom") { return 0; }
   if Equals(faction, n"TygerClaws") { return 1; }
@@ -203,7 +260,30 @@ func CBTwrFactionIndex(faction: CName) -> Int32 {
   if Equals(faction, n"Barghest") { return 12; }
   if Equals(faction, n"NCPD") { return 13; }
   if Equals(faction, n"Aldecaldos") { return 14; }   // They Will Remember 3.0 tracks them too
+  if Equals(faction, n"Mox") { return 15; }
   return -1;
+}
+
+// And back: the gang at their index, or n"" (Trauma Team, 10, is nobody's gang here).
+func CBTwrFactionAt(index: Int32) -> CName {
+  switch index {
+    case 0: return n"Maelstrom";
+    case 1: return n"TygerClaws";
+    case 2: return n"Animals";
+    case 3: return n"Scavengers";
+    case 4: return n"Valentinos";
+    case 5: return n"VoodooBoys";
+    case 6: return n"SixthStreet";
+    case 7: return n"Arasaka";
+    case 8: return n"Militech";
+    case 9: return n"KangTao";
+    case 11: return n"Wraiths";
+    case 12: return n"Barghest";
+    case 13: return n"NCPD";
+    case 14: return n"Aldecaldos";
+    case 15: return n"Mox";
+  }
+  return n"";
 }
 
 // What will this gang take to call it off?
@@ -425,7 +505,8 @@ public func CBCallOffGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     for id in ids {
       let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
       let theirs = false;
-      if IsDefined(p) {
+      // Their record only of somebody in the world (2.3.0's rule; this read it of whoever the id found).
+      if IsDefined(p) && p.IsAttached() {
         theirs = Equals(CBClassifyFaction(p), faction);
       } else {
         // Not in the world yet, so nothing to ask: who sent their kind tells.

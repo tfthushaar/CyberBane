@@ -18,6 +18,43 @@ the next unless a version says otherwise.
   keep watch warns you when they park.
 - **The Tyger Claws' assassin.** Some nights the Claws send one killer with a blade instead of a crew.
 
+**Fixes from your reports**
+- **Talk works.** Pressing F on the "Talk" prompt now opens the conversation. It did nothing before, because
+  the game sends that key when you let go of it and Cyberbane was only listening for the press.
+- **People no longer stop and stare as you walk past.** The "Talk" prompt no longer stops anybody or turns
+  their head. Only the person you start talking to stops and looks at you, and they walk on when you are done.
+  **Passers-by stop to talk** still decides whether walkers stop at all.
+- **They Will Remember decides who is hostile, and Cyberbane follows it.** Every gang it has hostile to you is
+  Hostile on the Gangs page and in everything Cyberbane does, and a gang it leaves alone is no longer hostile
+  here just because of your own record. The Gangs page marks those gangs "(TWR)". This applies with
+  compatibility on Auto or On.
+- **They Will Remember's disguises count.** What it reads off your clothes (how much of your face is covered,
+  which gang you are passing for) now feeds how Cyberbane sees you, so your disguise and how recognisable you
+  are agree, with Equipment-EX too. The Hub's outfit line shows They Will Remember's reading.
+- **They Will Remember's disguise panel no longer draws over the Cyberbane menu.**
+
+**Fixes from a full pass over the mod**
+- **Apex squads and boosted crews now start at full health.** After their extra health was added they were set
+  to a hundred hit points instead of to full, so they began the fight with a fraction of it. Expect them to be
+  tougher.
+- **A Rival's bodyguards** cost the Rival a fair share of their nerve when they fall, not nearly all their health.
+- **Freeze reputation freezes everything.** Conduct, mercy, the credit for hurting a gang's enemies, talk,
+  protection money, the standing lost when one of a gang puts you down and the renown lost for running all
+  stayed live before.
+- **Gang chairs.** A cyberpsycho Rival can no longer become a gang's leader or lieutenant, and a Rival who owes
+  you, left Night City or was retired gives up their chair. Saves are put right when they load.
+- **Street events.** Gang fights happen with gatherings and deals switched off. The two sides of a sit-down or an
+  arms deal no longer turn on each other. Arms deals are with different gangs instead of always the same one.
+  Planned events wait while you are on a job or in a scene. Backing a lieutenant in a power struggle no longer
+  leaves the old leader with no place at all.
+- **Your skills count towards how dangerous you look.** Cyberbane was reading the skill lines the game retired in
+  2.0, so only your level and Street Cred counted.
+- **A Rival's page** says when they will be back in the HUD's own words. It said hours for what was minutes.
+- **The Gangs page** no longer counts down to an apex squad when crews are switched off.
+- **The first in-game hour after loading** gets its decay and tribute instead of being skipped.
+- **Somebody leaving the world is not taken for somebody put down.** A bagman walking out of range counted as
+  robbed, a scout as silenced and a Rival waiting at their place as left lying there.
+
 **Mod Settings**
 - Under **Being hunted**: **Trackers** and **Open season** (on). The car ambush option is now **Gangs lie in
   wait**, on by default (a new setting, so it reaches every install).

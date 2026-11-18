@@ -444,6 +444,9 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 // A Scavenger down where people saw it: a little standing with every other gang, under the mercy ceiling, the way
 // a favour is (Data/GangCodes.reds).
 public func CBCreditEverybody(sys: ref<CyberbaneSystem>, except: CName) -> Void {
+  if CBReputationFrozen() {
+    return;   // 2.4.2, as every standing change
+  }
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) && NotEquals(fs.id, except) && CBFactionFieldsSquads(fs.id) && fs.standing < CBConfig.MercyCeiling() {
       fs.standing = MinF(CBConfig.MercyCeiling(), fs.standing + CBConfig.ScavengerFavour());

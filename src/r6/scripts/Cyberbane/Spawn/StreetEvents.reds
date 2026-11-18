@@ -92,7 +92,7 @@ public class CBStreetEvent {
   public let approached: Bool;         // V paid their respects at a funeral
   public let district: CName;
   public let placedTick: Int32;
-  public let started: Bool;            // a fight: the two sides set against each other (2.3.4)
+  public let started: Bool;            // the two sides set against each other (a fight, 2.3.4) or at peace (a meeting, 2.4.2)
   public let size: Int32;              // an ambush's crew (2.4.2)
 
   public func Tag() -> CName {
@@ -192,8 +192,9 @@ public class CBEventEngine {
         return;
       }
     }
-    // Everything else.
-    if nowT < this.m_next || !(CBGatheringsOn() || CBDealsOn()) {
+    // Everything else. The fights between gangs have their own switch (2.4.2): with gatherings and deals both off
+    // this used to stop here, so no fight ever came, and two gangs V had set on each other never met.
+    if nowT < this.m_next || !(CBGatheringsOn() || CBDealsOn() || CBGangFightsOn()) {
       return;
     }
     this.m_next = nowT + CBJitter(RoundF(Cast<Float>(CBConfig.EventGapTicks()) / CBGangLifeOften()), 0.4);
@@ -317,8 +318,11 @@ public class CBEventEngine {
     let now = CBGameSeconds(game);
     this.KeepPin(game);
     let dist = Vector4.Distance(player.GetWorldPosition(), ev.at);
-    // Their time has come and V is on the way in, not yet looking: put them there.
-    if !ev.placed && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() && dist >= 25.0 {
+    // Their time has come and V is on the way in, not yet looking: put them there. Never while the story has the
+    // stage, V is at a job or in a scene (2.4.2): an event already planned placed its people whatever V was doing,
+    // and a crew lying in wait near V's job (an ambush) walked in on the job itself.
+    let storyBusy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game);
+    if !ev.placed && !storyBusy && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() && dist >= 25.0 {
       ev.placed = this.Place(sys, game, des, player, ev);
       ev.placedTick = sys.GetTickCount();
     }
@@ -331,6 +335,16 @@ public class CBEventEngine {
       if ev.started && CBFightOver(sys, game, ev) {
         this.End(game);
         return;
+      }
+    }
+    // Two gangs meeting keep the peace between themselves (2.4.2): each side's people are set neutral to the
+    // other's, pair by pair, as they come into the world, the reverse of what a fight does. Nothing set them
+    // either way before, so gangs the game's own data has at odds (Night City Alive makes many more of them
+    // so) could open fire on each other as they appeared, and a meeting whose people killed each other could
+    // never be crashed by V, since only V's work counts. Only between these people, and gone with them.
+    if ev.placed && !ev.started && ev.Sides() == 2 && !CBIsFightKind(ev.kind) {
+      if CBCalmSides(sys, game, ev) || sys.GetTickCount() - ev.placedTick > CBConfig.EventCalmTicks() {
+        ev.started = true;
       }
     }
     if ev.placed && !CBIsFightKind(ev.kind) {
@@ -497,17 +511,19 @@ public func CBEventApexPerSide(kind: CName) -> Int32 {
   return 0;
 }
 
-// Somebody to buy guns from this gang: a gang it is not at war with.
+// Somebody to buy guns from this gang: a gang it is not at war with, any of them. The first in the book was taken
+// every time until 2.4.2, so every arms deal in a playthrough was with the same gang.
 func CBDealPartner(sys: ref<CyberbaneSystem>, a: CName) -> CName {
   let content = sys.GetContent();
+  let fit: array<CName>;
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) && NotEquals(fs.id, a) && CBFactionFieldsSquads(fs.id) && CBFactionOn(fs.id)
        && !CBIsCorpFaction(fs.id) && TDBID.IsValid(fs.sampleRecord)
        && !CBGangsAreRivals(content, a, fs.id) && !CBGangsAreRivals(content, fs.id, a) {
-      return fs.id;
+      ArrayPush(fit, fs.id);
     }
   }
-  return n"";
+  return ArraySize(fit) > 0 ? fit[RandRange(0, ArraySize(fit))] : n"";
 }
 
 public func CBEventCaption(ev: ref<CBStreetEvent>) -> String {
@@ -825,16 +841,45 @@ public func CBStartFight(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
 }
 
 func CBSetPairHostile(sys: ref<CyberbaneSystem>, a: ref<ScriptedPuppet>, b: ref<ScriptedPuppet>) -> Void {
+  CBSetPairAttitude(sys, a, b, EAIAttitude.AIA_Hostile);
+}
+
+// Two people set to this attitude towards each other, behind the NPC gate. True when it was set.
+func CBSetPairAttitude(sys: ref<CyberbaneSystem>, a: ref<ScriptedPuppet>, b: ref<ScriptedPuppet>, att: EAIAttitude) -> Bool {
   if !CBNpcSafe(sys, a) || !CBNpcSafe(sys, b) || !CBStillStanding(a) || !CBStillStanding(b) {
-    return;
+    return false;
   }
   let aa = a.GetAttitudeAgent();
   let ba = b.GetAttitudeAgent();
-  if IsDefined(aa) && IsDefined(ba) {
-    CBTrace("attitude: two gangs' people set against each other");
-    aa.SetAttitudeTowards(ba, EAIAttitude.AIA_Hostile);
-    ba.SetAttitudeTowards(aa, EAIAttitude.AIA_Hostile);
+  if !IsDefined(aa) || !IsDefined(ba) {
+    return false;
   }
+  CBTrace(Equals(att, EAIAttitude.AIA_Hostile) ? "attitude: two gangs' people set against each other"
+                                               : "attitude: two gangs' people keep the peace");
+  aa.SetAttitudeTowards(ba, att);
+  ba.SetAttitudeTowards(aa, att);
+  return true;
+}
+
+// The two sides of a meeting, neutral to each other. True once every pair of them has been set.
+func CBCalmSides(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Bool {
+  let all = true;
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    let pa = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+    let j = i + 1;
+    while j < ArraySize(ev.ids) {
+      if ev.SideOf(i) != ev.SideOf(j) {
+        let pb = GameInstance.FindEntityByID(game, ev.ids[j]) as ScriptedPuppet;
+        if !CBSetPairAttitude(sys, pa, pb, EAIAttitude.AIA_Neutral) {
+          all = false;
+        }
+      }
+      j += 1;
+    }
+    i += 1;
+  }
+  return all;
 }
 
 func CBEventRunTo(p: ref<ScriptedPuppet>, to: Vector4) -> Void {
@@ -1045,6 +1090,9 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
           if fs.lt3RivalId == w.id { fs.lt3RivalId = 0; }
           fs.leaderRivalId = w.id;
           w.rank = Max(w.rank, CBConfig.LeaderMinRank());
+          // Whoever the hierarchy had just put in the chair, and the lieutenant's place the winner left, are
+          // filled again (2.4.2): the one bumped from the chair was left holding no place at all.
+          CBHierarchyFill(sys, slain.faction);
         }
         if !CBReputationFrozen() {
           fs.standing = ClampF(fs.standing + CBConfig.StruggleBackStanding(), -100.0, 100.0);

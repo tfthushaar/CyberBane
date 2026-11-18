@@ -203,15 +203,26 @@ public class CyberbaneService extends ScriptableService {
       }
       i -= 1;
     }
+    // An empty slot met on the way is cleared too, but only this playthrough's own count towards the cap: one
+    // cleared slot was taken for one of its deaths, and the trim stopped a death short.
     while count > cap {
       let j = 0;
-      while j < ArraySize(this.m_ledger) {
-        if !IsDefined(this.m_ledger[j]) || Equals(this.m_ledger[j].playthroughId, playthroughId) {
+      let trimmed = false;
+      while j < ArraySize(this.m_ledger) && !trimmed {
+        if !IsDefined(this.m_ledger[j]) {
           ArrayErase(this.m_ledger, j);
-          count -= 1;
-          break;
+        } else {
+          if Equals(this.m_ledger[j].playthroughId, playthroughId) {
+            ArrayErase(this.m_ledger, j);
+            count -= 1;
+            trimmed = true;
+          } else {
+            j += 1;
+          }
         }
-        j += 1;
+      }
+      if !trimmed {
+        count = 0;   // nothing of theirs left to trim
       }
     }
   }
