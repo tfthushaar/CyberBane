@@ -689,6 +689,8 @@ public class CBHud {
   // each place (0 for none).
   private let m_treeShown: Bool;
   private let m_treeGang: CName;
+  private let m_treeNemesis: Int32;   // the Rival of the gang drawn V has met most, for their box (2.5.0)
+  private let m_actionTop: Float;     // where the buttons start on this page (PlaceActions)
   private let m_treeSlotRival: array<Int32>;
   // The pictures' look (2.5.0): every box a card of the game's own art, a frame tinted by what it is and cyan when
   // picked; two segmented bars a box (box s, bar b, segment k at (s * 2 + b) * CBHudBarSegs() + k); a soft glow under
@@ -2235,6 +2237,7 @@ public class CBHud {
 
   // Recolour everything that reacts to the cursor or to being chosen. Cheap: a tint per widget.
   private func Paint() -> Void {
+    this.PackActions();
     let i = 0;
     while i < ArraySize(this.m_tabBox) {
       let on = (i + 1) == this.m_tab;
@@ -2372,6 +2375,7 @@ public class CBHud {
   // The button and the ones under it, from `top` down (2.5.0). Every page starts them at CBHudDetailTop (Render); the
   // web of gangs is drawn taller and puts them beside the words under it.
   private func PlaceActions(top: Float) -> Void {
+    this.m_actionTop = top;
     let x = CBHudMarginX() + CBHudContentW() - CBHudActionW();
     if IsDefined(this.m_actionBox) {
       this.m_actionBox.SetMargin(this.PxAt(x, top));
@@ -2380,6 +2384,27 @@ public class CBHud {
     while k < ArraySize(this.m_extraBox) {
       if IsDefined(this.m_extraBox[k]) {
         this.m_extraBox[k].SetMargin(this.PxAt(x, top + Cast<Float>(k + 1) * (CBHudActionH() + CBHudActionGap())));
+      }
+      k += 1;
+    }
+  }
+
+  // The buttons showing, one under another from the top with no gap where a hidden one is (2.5.0): a page that
+  // showed its first and fourth buttons left two buttons' worth of empty space between them. Each keeps its own name,
+  // so a click still reaches the same action.
+  private func PackActions() -> Void {
+    let x = CBHudMarginX() + CBHudContentW() - CBHudActionW();
+    let y = this.m_actionTop > 0.0 ? this.m_actionTop : CBHudDetailTop() - 4.0;
+    let step = CBHudActionH() + CBHudActionGap();
+    if IsDefined(this.m_actionBox) && this.m_actionBox.IsVisible() {
+      this.m_actionBox.SetMargin(this.PxAt(x, y));
+      y += step;
+    }
+    let k = 0;
+    while k < ArraySize(this.m_extraBox) {
+      if IsDefined(this.m_extraBox[k]) && this.m_extraBox[k].IsVisible() {
+        this.m_extraBox[k].SetMargin(this.PxAt(x, y));
+        y += step;
       }
       k += 1;
     }
@@ -2970,6 +2995,11 @@ public class CBHud {
         out += "Their people have been hostile to you on sight, and Cyberbane did not make them so:\n"
              + "They Will Remember, another mod or the game has them that way. Nothing here changes it.\n";
       }
+    }
+    // Who runs them, which the gang's box on the web said in small type until 2.5.0.
+    let leader = CBWebLeader(sys, game, id);
+    if StrLen(leader) > 0 {
+      out += s"Led by \(leader).\n";
     }
     let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), id));
     if StrLen(enemy) > 0 {
@@ -3690,9 +3720,11 @@ public class CBHud {
     }
     this.m_treeSlotRival[slot] = IsDefined(r) ? r.id : 0;
     let tint = CBHudGrey();
-    let name = "EMPTY";
-    let line = StrLen(empty) > 0 ? "NEXT: " + StrUpper(empty) : "NOBODY TO STEP UP";
+    let name = "EMPTY CHAIR";
+    // Who steps up, by name without the nickname so it fits whole (2.5.0); said once, in the first empty chair.
+    let line = StrLen(empty) > 0 ? "NEXT: " + StrUpper(CBHudNameNoNick(empty)) : "NOBODY YET";
     let lead = "";
+    let leadTint = CBHudDim();
     if IsDefined(r) {
       name = CBRivalDisplayName(sys.GetContent(), r);
       let hunting = r.id == sys.GetActiveRivalId() || r.state == EnumInt(ECBRivalState.Hunting);
@@ -3707,8 +3739,23 @@ public class CBHud {
         }
       } else {
         line = s"RANK \(r.rank)  " + StrUpper(hunting ? "hunting you" : CBRivalStateName(r.state));
-        // Short enough to read whole at the pictures' size (2.5.0); their chrome is in their file underneath.
-        lead = s"Met \(r.encounters), ran \(r.escapes), spared \(r.sparedByV)";
+        // Who they are to V or to another of theirs, in words (2.5.0): a bond and V's nemesis were lines across the
+        // tree from the middle of one box to the middle of another, and showed only as strokes in the air between
+        // them. Otherwise what V and they have been through, or that they have never met.
+        let bookT = CBRivalBook.Get(game);
+        let with = IsDefined(bookT) ? bookT.BondWith(r.id) : 0;
+        let partner = with > 0 ? sys.FindRivalById(with) : null;
+        if r.id == this.m_treeNemesis {
+          lead = s"Your nemesis: met you \(r.encounters) times";
+          leadTint = CBHudRed();
+        } else {
+          if IsDefined(partner) && StrLen(CBBondWord(bookT.BondKind(r.id))) > 0 {
+            lead = CBCapFirst(CBBondWord(bookT.BondKind(r.id))) + " " + CBHudNameNoNick(CBRivalDisplayName(sys.GetContent(), partner));
+            leadTint = CBHudCyan();
+          } else {
+            lead = r.encounters > 0 ? s"Met \(r.encounters), ran \(r.escapes), spared \(r.sparedByV)" : "Never met you";
+          }
+        }
       }
     }
     if IsDefined(this.m_webBoxEdge[slot]) {
@@ -3722,7 +3769,7 @@ public class CBHud {
     }
     this.BoxText(this.m_webBoxLead[slot], lead, w - 24.0, CBPicLead(), CBPicLeadLeast(), false);
     if IsDefined(this.m_webBoxLead[slot]) {
-      this.m_webBoxLead[slot].SetTintColor(CBHudDim());
+      this.m_webBoxLead[slot].SetTintColor(leadTint);
       this.m_webBoxLead[slot].SetVisible(StrLen(lead) > 0 && !fallen);
     }
     if IsDefined(this.m_webBarMen[slot]) {
@@ -3732,7 +3779,7 @@ public class CBHud {
       this.m_webBarChest[slot].SetVisible(false);
     }
     let dim = this.m_pickRival > 0 && IsDefined(r) && r.id != this.m_pickRival;
-    this.m_webBox[slot].SetOpacity(fallen ? 0.5 : (dim ? 0.6 : 1.0));
+    this.m_webBox[slot].SetOpacity(fallen ? 0.5 : (dim || !IsDefined(r) ? 0.6 : 1.0));
   }
 
   private func TreeLine(k: Int32, x1: Float, y1: Float, x2: Float, y2: Float, thick: Float) -> Int32 {
@@ -3740,27 +3787,9 @@ public class CBHud {
     return k + 1;
   }
 
-  // The middle of a drawn place of the tree, by slot, in the web's design units.
-  private func TreeCx(slot: Int32) -> Float {
-    if slot == 1 {
-      return 660.0;
-    }
-    if slot >= 2 && slot <= 4 {
-      return 330.0 + Cast<Float>(slot - 2) * 330.0;
-    }
-    return 138.0 + Cast<Float>(slot - 5) * 258.0;
-  }
-
-  private func TreeCy(slot: Int32) -> Float {
-    if slot == 1 {
-      return 44.0;
-    }
-    return slot <= 4 ? 168.0 : 292.0;
-  }
-
   // A gang's leader, their three lieutenants, the rest of their Rivals as the bench, and the fallen, top down: the
-  // hierarchy that already exists (CBFactionState leader and lieutenants), with an empty chair naming who steps up
-  // next (the order CBHierarchyFill uses). Bonds between two of them in cyan, and V's nemesis tied to V in the corner.
+  // hierarchy that already exists (CBFactionState leader and lieutenants), with the first empty chair naming who steps
+  // up next (the order CBHierarchyFill uses). A bond, and V's nemesis, are said in the box (TreeBox), not drawn.
   private func RenderTree(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if !IsDefined(this.m_webRoot) {
       return;
@@ -3789,7 +3818,6 @@ public class CBHud {
     let words = 0;
     let gang = this.m_treeGang;
     let fs = sys.FindFaction(gang);
-    let book = CBRivalBook.Get(game);
     // V, in the corner: click for the next gang.
     this.PlaceWebBox(0, CBHudContentW() - CBWebVW(), 0.0, CBWebVW(), CBWebVH(), true);
     this.DressDefault(0, CBWebVW(), CBWebVH());
@@ -3815,19 +3843,53 @@ public class CBHud {
       if IsDefined(leader) && !CBRivalStillAround(leader) {
         leader = null;
       }
+      // Who is on the bench and who has fallen, first, so the rows close up when the bench is empty (2.5.0).
+      let benchIds: array<Int32>;
+      let fallenIds: array<Int32>;
+      this.m_treeNemesis = 0;
+      let most = 1;
+      for r in sys.GetRivals() {
+        if IsDefined(r) && Equals(r.faction, gang) {
+          let seated = r.id == fs.leaderRivalId || r.id == fs.lt1RivalId || r.id == fs.lt2RivalId || r.id == fs.lt3RivalId;
+          let around = CBRivalStillAround(r) || r.state == EnumInt(ECBRivalState.Debtor) || r.state == EnumInt(ECBRivalState.Dormant);
+          // V's nemesis in this gang: the one V has met most, twice at least. Said in their box, where a red line to V
+          // across the whole tree said it before.
+          if around && r.encounters > most {
+            most = r.encounters;
+            this.m_treeNemesis = r.id;
+          }
+          if !seated {
+            if around {
+              if ArraySize(benchIds) < 5 {
+                ArrayPush(benchIds, r.id);
+              }
+            } else {
+              if ArraySize(fallenIds) < 4 && (r.state == EnumInt(ECBRivalState.Slain) || r.state == EnumInt(ECBRivalState.Retired)) {
+                ArrayPush(fallenIds, r.id);
+              }
+            }
+          }
+        }
+      }
       let nextUp = CBBestCandidate(sys, fs);
       let nextLt = CBBestLieutenant(sys, fs);
       this.TreeBox(sys, game, 1, leader, IsDefined(nextUp) ? CBRivalDisplayName(sys.GetContent(), nextUp) : "",
                    530.0, 0.0, 260.0, 88.0, false);
       let ltIds: array<Int32> = [fs.lt1RivalId, fs.lt2RivalId, fs.lt3RivalId];
+      // Only the first empty chair names who steps up next: it is the same person for every one of them.
+      let named = false;
       let k = 0;
       while k < 3 {
         let lt = ltIds[k] > 0 ? sys.FindRivalById(ltIds[k]) : null;
         if IsDefined(lt) && !CBRivalStillAround(lt) {
           lt = null;
         }
-        this.TreeBox(sys, game, 2 + k, lt, IsDefined(nextLt) ? CBRivalDisplayName(sys.GetContent(), nextLt) : "",
-                     200.0 + Cast<Float>(k) * 330.0, 124.0, 260.0, 88.0, false);
+        let next = "";
+        if !IsDefined(lt) && !named && IsDefined(nextLt) {
+          next = CBRivalDisplayName(sys.GetContent(), nextLt);
+          named = true;
+        }
+        this.TreeBox(sys, game, 2 + k, lt, next, 200.0 + Cast<Float>(k) * 330.0, 124.0, 260.0, 88.0, false);
         k += 1;
       }
       // The chair lines: down from the leader, along, and down to each lieutenant.
@@ -3839,30 +3901,16 @@ public class CBHud {
         lines = this.TreeLine(lines, cx, 106.0, cx, 124.0, 3.0);
         k += 1;
       }
-      // The bench, and the fallen.
-      let bench = 0;
-      let fallen = 0;
-      for r in sys.GetRivals() {
-        if IsDefined(r) && Equals(r.faction, gang) && r.id != fs.leaderRivalId && r.id != fs.lt1RivalId
-           && r.id != fs.lt2RivalId && r.id != fs.lt3RivalId {
-          if CBRivalStillAround(r) || r.state == EnumInt(ECBRivalState.Debtor) || r.state == EnumInt(ECBRivalState.Dormant) {
-            if bench < 5 {
-              this.TreeBox(sys, game, 5 + bench, r, "", 20.0 + Cast<Float>(bench) * 258.0, 248.0, 236.0, 88.0, false);
-              bench += 1;
-            }
-          } else {
-            if fallen < 4 && (r.state == EnumInt(ECBRivalState.Slain) || r.state == EnumInt(ECBRivalState.Retired)) {
-              this.TreeBox(sys, game, 12 + fallen, r, "", 40.0 + Cast<Float>(fallen) * 230.0, 374.0, 200.0, 56.0, true);
-              fallen += 1;
-            }
-          }
-        }
+      // The bench, hung from the chairs above: the bar along it always reaches the drop in the middle.
+      let bench = ArraySize(benchIds);
+      k = 0;
+      while k < bench {
+        this.TreeBox(sys, game, 5 + k, sys.FindRivalById(benchIds[k]), "", 20.0 + Cast<Float>(k) * 258.0, 248.0, 236.0, 88.0, false);
+        k += 1;
       }
-      // The bar along the bench reaches the drop from the chairs above whatever its length: with one or two on the
-      // bench it stopped short of the middle, and the bench hung from nothing (2.5.0).
       if bench > 0 {
         let first = 138.0;
-        let last = 138.0 + Cast<Float>(Max(bench - 1, 0)) * 258.0;
+        let last = 138.0 + Cast<Float>(bench - 1) * 258.0;
         lines = this.TreeLine(lines, 660.0, 212.0, 660.0, 230.0, 2.0);
         lines = this.TreeLine(lines, MinF(first, 660.0), 230.0, MaxF(last, 660.0), 230.0, 2.0);
         k = 0;
@@ -3872,38 +3920,16 @@ public class CBHud {
           k += 1;
         }
       }
-      if fallen > 0 {
-        this.PlaceWord(words, 140.0, 355.0, "THE FALLEN", CBHudDim(), 1.0);
+      // The fallen, under the bench, or straight under the chairs when nobody is on it.
+      let fallenY = bench > 0 ? 374.0 : 250.0;
+      if ArraySize(fallenIds) > 0 {
+        this.PlaceWord(words, 140.0, fallenY - 19.0, "THE FALLEN", CBHudDim(), 1.0);
         words += 1;
       }
-      // Bonds between two of those drawn, and V's nemesis (the one V has met most) tied to V.
-      let nemesis = 0;
-      let most = 0;
-      let a = 1;
-      while a < 10 {
-        let ra = a < ArraySize(this.m_treeSlotRival) ? this.m_treeSlotRival[a] : 0;
-        let rr = ra > 0 ? sys.FindRivalById(ra) : null;
-        if IsDefined(rr) && rr.encounters > most {
-          most = rr.encounters;
-          nemesis = a;
-        }
-        if ra > 0 && IsDefined(book) {
-          let with = book.BondWith(ra);
-          let b = a + 1;
-          while b < 10 {
-            if b < ArraySize(this.m_treeSlotRival) && with > 0 && this.m_treeSlotRival[b] == with && lines < CBWebLinePool() {
-              this.PlaceLine(lines, this.TreeCx(a), this.TreeCy(a), this.TreeCx(b), this.TreeCy(b), 3.0, CBHudCyan(), 0.9);
-              lines += 1;
-            }
-            b += 1;
-          }
-        }
-        a += 1;
-      }
-      if nemesis > 0 && most >= 2 && lines < CBWebLinePool() {
-        this.PlaceLine(lines, this.TreeCx(nemesis), this.TreeCy(nemesis), CBHudContentW() - CBWebVW() / 2.0, CBWebVH() / 2.0,
-                       3.0, CBHudRed(), 0.9);
-        lines += 1;
+      k = 0;
+      while k < ArraySize(fallenIds) {
+        this.TreeBox(sys, game, 12 + k, sys.FindRivalById(fallenIds[k]), "", 40.0 + Cast<Float>(k) * 230.0, fallenY, 200.0, 56.0, true);
+        k += 1;
       }
     }
     while lines < ArraySize(this.m_webLine) {
@@ -3955,7 +3981,9 @@ public class CBHud {
       glow.SetMargin(this.PxAt(x1, y1 - wide / 2.0));
       glow.SetRotation(Rad2Deg(AtanF(dy, dx)));
       glow.SetTintColor(tint);
-      glow.SetOpacity(alpha * 0.22);
+      // Only under lines thick enough to carry one (2.5.0): under the tree's thin connectors the faint band read as a
+      // second line running beside each.
+      glow.SetOpacity(thick >= 4.0 ? alpha * 0.22 : 0.0);
     }
   }
 
@@ -4024,9 +4052,8 @@ public class CBHud {
           let mine = pickGang && (pickSlot == a || pickSlot == b);
           let kind = CBWebPair(sys, game, ga, gb);
           if kind > CBWebPairFeud() || (mine && kind == CBWebPairFeud()) {
-            let alpha = kind == CBWebPairFeud() ? 0.55 : 0.9;
             this.PlaceLine(lines, CBWebCentreX(a), CBWebCentreY(a), CBWebCentreX(b), CBWebCentreY(b),
-                           kind == CBWebPairFeud() ? 2.0 : 3.0, CBWebPairColour(kind), pickSlot < 0 || mine ? alpha : 0.2);
+                           CBWebPairThickness(kind), CBWebPairColour(kind), pickSlot < 0 || mine ? CBWebPairOpacity(kind) : 0.2);
             lines += 1;
             let pword = kind == CBWebPairFeud() ? "OLD FEUD" : CBWebPairWord(kind);
             if mine && StrLen(pword) > 0 && words < CBWebWordPool() {
@@ -5084,6 +5111,21 @@ public func CBHudBoxName(text: String, width: Float, base: Int32, least: Int32) 
   if StrLen(firstLast) <= tight { return firstLast; }
   if StrLen(nick) <= tight { return nick; }
   return firstLast;
+}
+
+// First "Nick" Last as First Last, for a line that names somebody in passing (2.5.0). Anything else as it is.
+public func CBHudNameNoNick(text: String) -> String {
+  let a = StrFindFirst(text, "\"");
+  let b = StrFindLast(text, "\"");
+  if a < 0 || b <= a {
+    return text;
+  }
+  let first = a > 1 ? StrLeft(text, a - 1) : "";
+  let last = b + 2 < StrLen(text) ? StrRight(text, StrLen(text) - b - 2) : "";
+  if StrLen(first) > 0 && StrLen(last) > 0 {
+    return first + " " + last;
+  }
+  return StrLen(first) > 0 ? first : (StrLen(last) > 0 ? last : text);
 }
 
 public func CBHudCharEm() -> Float = 0.58

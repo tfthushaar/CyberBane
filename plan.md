@@ -999,6 +999,12 @@ the source:
 - **The bar over a Rival V spared** stayed up: the threat bar let go only of somebody gone or down, and a spared or
   outrun Rival gets up and walks off. It now lets go of anybody without a tag it is for (`CBBarStillOnV`), which
   the encounter's close takes off (`CBRetireRivalBody`), and the same for a crew or apex squad called off.
+- **The Rivals tree's lines did not connect.** A bond and V's nemesis were lines from the middle of one box to the
+  middle of another, so only a stroke in the air between them showed, across the chair lines; they are words in the
+  box now (a bond in cyan, the nemesis in red, or what V and they have been through, or "Never met you"). The thin
+  connectors lost the glow that read as a second line, the fallen move up when the bench is empty, only the first
+  empty chair names who steps up (without the nickname, so it fits), and the buttons beside the words close up
+  where one is hidden (`PackActions`).
 
 **1. The comprehensive bug pass.** Like the 2.0.0 pass, over the whole mod and not only what changed:
 - **Every file read end to end**, system by system (Core, Model, Signals, Reactions, Spawn, Rivals, Economy,

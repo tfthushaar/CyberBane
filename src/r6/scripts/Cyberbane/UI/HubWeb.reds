@@ -276,15 +276,14 @@ public func CBWebPairColour(kind: Int32) -> HDRColor {
   return CBHudRed();
 }
 
+// An old feud is drawn only for the gang picked, so it can be plainer than before; what is live is thinner than V's
+// own lines, which are what the picture is about (2.5.0).
 public func CBWebPairOpacity(kind: Int32) -> Float {
-  return kind == CBWebPairFeud() ? 0.3 : 1.0;
+  return kind == CBWebPairFeud() ? 0.55 : 0.9;
 }
 
 public func CBWebPairThickness(kind: Int32) -> Float {
-  if kind == CBWebPairFeud() {
-    return 2.0;
-  }
-  return kind == CBWebPairClash() ? 5.0 : 4.0;
+  return kind == CBWebPairFeud() ? 2.0 : 3.0;
 }
 
 public func CBWebPairWord(kind: Int32) -> String {
@@ -322,15 +321,6 @@ public func CBWebLeader(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CNa
   return IsDefined(r) && CBRivalStillAround(r) ? CBRivalDisplayName(CBContent(game), r) : "";
 }
 
-public func CBWebMen(game: GameInstance, gang: CName) -> Float {
-  let war = CBWarBook.Get(game);
-  return IsDefined(war) && CBWarChestOn() ? ClampF(war.Men(gang) / 100.0, 0.0, 1.0) : 1.0;
-}
-
-public func CBWebChest(game: GameInstance, gang: CName) -> Float {
-  let war = CBWarBook.Get(game);
-  return IsDefined(war) && CBWarChestOn() ? ClampF(war.Chest(gang) / CBConfig.WarChestFlush(), 0.0, 1.0) : 1.0;
-}
 
 // The relations of one gang, in words, for the page below the web: the same things the lines say.
 public func CBWebRelationWords(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> String {
