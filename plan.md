@@ -1,8 +1,10 @@
 # Cyberbane plan: the road to 2.5.0
 
-Status: **building stopped at 2.4.2 by your call (2026-11-18). Done: 2.3.1 to 2.4.2, all pushed. Next: the bug pass over every system, then you test 2.3.1-2.4.2 together; the rest of the road after that. This update (where it stands, Night City Alive, the Hub drawn) waits for your
-approval.** Written 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune. Committed from 2026-11-18 so you can
-read it on GitHub (still listed in .gitignore, but tracked now, so changes show). Replaces the old plan (the road to 2.0.0, all built).
+Status: **I stopped building at 2.4.2 (2026-11-18) to take stock. Done: 2.3.1 to 2.4.2, all released. Next: a bug
+pass over every system, then I play 2.3.1 to 2.4.2 together; the rest of the road after that.** I wrote this on
+2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
+The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
+been through them again.
 
 2.3.0 is out (the registry crash fixed at the source, IMPROVEMENTS.md pruned). Everything below builds on it, one
 release per phase, and ends at **2.5.0, the final form**: the last features in, then a comprehensive bug pass
@@ -27,7 +29,7 @@ rehearsal from the release before; none played yet):
 | 2.4.1 | 9fde2de | A fair first volley [44], lie low [41], the metro said [42], haunts [46] and hunters using what they know [U8], scouts worth catching with the bribe [U7] [68], lookouts in the crowd [50]; `CBHuntBook`; a Being hunted heading. [45] and [89] were found already built |
 | 2.4.2 | ba60842 | Trackers [49], open season [48], lying in wait made default [E2] with V's road [47] and the Wraiths' road [18], the Claws' assassin [11] |
 
-**In progress:** nothing. Building stopped at 2.4.2.
+**In progress:** nothing; I stopped building at 2.4.2.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
@@ -40,19 +42,19 @@ rehearsal from the release before; none played yet):
 | 2.5.0 | The final form | the comprehensive pass, optimisation, [U16], [L6], every default confirmed |
 
 **Moved or dropped along the way:** [43] sound before contact (no door or engine sound event confirmed); [76] [77]
-(Wannabe Edgerunner and Dark Future not installed, nothing to probe); tribute haggled by text (folded into [U13]);
+(I do not have Wannabe Edgerunner or Dark Future installed, so there was nothing to probe); tribute haggled by text (folded into [U13]);
 [U1]'s car seats keep one record. Each is noted in its release's section and in IMPROVEMENTS.md.
 
-**Next:** the bug pass over every system you asked for (the 2.5.0 pass's method, on 2.3.1-2.4.2 and everything
-they touch), fixes shipped as 2.4.2's fix release if it finds anything, then your test of 2.3.1-2.4.2 together,
-then 2.4.3 onwards. One option for you: [H1] the web could be built before your test instead of in 2.4.3,
-because it draws exactly the 2.4.0 systems you will be testing (wars, truces, backing, standing) and would make
-them easier to check.
+**Next:** a bug pass over every system (the 2.5.0 pass's method, on 2.3.1 to 2.4.2 and everything they touch),
+with a 2.4.2 fix release if it finds anything, then I play 2.3.1 to 2.4.2 together, then 2.4.3 onwards. I may
+build [H1] the web before that playtest instead of in 2.4.3: it draws exactly the 2.4.0 systems I will be testing
+(wars, truces, backing, standing) and would make them easier to check.
 
 ## Learnt from Night City Alive (2026-11-18)
 
-Read in full (NCA Lite, Standard Density 2.3.3: four scripts and the TweakXL files), never run, nothing copied. What
-it is: a density and liveliness mod built mostly from TweakDB edits.
+I read it in full (NCA Lite, Standard Density 2.3.3: four scripts and the TweakXL files) to learn from it; I have
+not run it, and nothing of it is copied into Cyberbane. Credit to its author for the ideas. What it is: a density
+and liveliness mod, built mostly from TweakDB edits.
 
 **How it works:**
 - **Gangs fight gangs** by editing the game's attitude groups (TweakXL `attitude.yml`): the Wraiths against the
@@ -68,7 +70,7 @@ it is: a density and liveliness mod built mostly from TweakDB edits.
 - Its gates are the ones Cyberbane uses: the `NoCombat` status tag, the safe-zone state, the safe-area manager,
   and a navmesh check.
 
-**What fits Cyberbane, rebuilt our way (scripts only, inside the crash rules):**
+**What fits Cyberbane, rebuilt my way (scripts only, inside the crash rules):**
 - **[N1] Rival gangers clash on contested streets** (2.4.3). In a contested district (a challenger in the turf
   book, or two gangs at war both on the streets V is in), now and then the world's own gangers of the two gangs
   meet and fight: a pair or two set hostile to each other through their attitude agents (the way 2.3.4's fights
@@ -114,11 +116,11 @@ it is: a density and liveliness mod built mostly from TweakDB edits.
   and make sure every per-tick reader added since 2.3.0 returns on its first line when idle (most do; the pass
   checks every one).
 
-**Compatibility:** Cyberbane and NCA compile together (`cbval_nca.sh`). No method is wrapped by both (Cyberbane wraps
+**Compatibility:** Cyberbane and NCA compile together (checked 2026-11-18). No method is wrapped by both (Cyberbane wraps
 `ReactionManagerComponent.OnEventReceived`, NCA others). NCA's `CanTriggerAlertedFromHostileStim` replaces rather
 than wraps, which matters only to a mod wrapping that method. Added to 2.5.0's compatibility list.
 
-## The Hub, drawn (asked for 2026-11-18)
+## The Hub, drawn (added 2026-11-18)
 
 Two pictures in the Hub, in the game's own look (the Hub's colours, fonts and boxes): how the gangs stand with
 each other and with V, and who is who among each gang's Rivals. Both read only the books that already exist; neither
@@ -175,7 +177,7 @@ Hub remembers which for the session.
   (`SetInteractive(false)`). If it looks rough at odd angles, the web's lines go to elbows like the tree's.
 
 **Settings**: none; the switch lives on each page. One option under Messages and HUD (open as pictures or lists) only
-if your test asks for it.
+if my playtest shows it is needed.
 
 **Done when**: every relation in the books shows on the web and says the same in words as the list; the tree matches
 the hierarchy after a promotion, a slaying and a return; both work with mouse, keys and pad, on both patches, at
@@ -215,7 +217,7 @@ played, so it gets the minor number; 2.4.x builds on it (hunted, Rivals, allies,
 idea: it is the whole mod made right.
 
 **Every release** is its own zip from `build.ps1 -Version x.y.z`, its own CHANGELOG entry, pushed to main when
-its release checks pass (below), and yours to put on Nexus. A release is never stretched to take the next
+its release checks pass (below); I put it on Nexus myself. A release is never stretched to take the next
 group's work: if a group runs long it ships in two (for example 2.4.1 and 2.4.1's second half as 2.4.2), and the
 versions after it move up one.
 
@@ -306,7 +308,7 @@ touches that heading, as part of its push; 2.5.0 only checks it.
   line where there were twelve.
 - **Each heading is one idea**, named in the player's words, with its main switch first, then what is most often
   changed, and anything experimental last, marked "(experimental)".
-- **Labels say what you will see** ("Witnesses tell the gang"), never a system's name. **Descriptions** are one
+- **Labels say what the player will see** ("Witnesses tell the gang"), never a system's name. **Descriptions** are one
   or two sentences: what happens in play, then what turning it up, down or off does. Units are always said
   (real minutes, in-game days, per cent).
 - **No heading over 15 options.** Ideas that are one thing to a player share one switch (funerals, celebrations,
@@ -349,7 +351,7 @@ dependency names a Bool on the same heading, no heading is over 15, and every op
 
 ## Ground rules (every group)
 
-- **Crash rules** (memory and STATUS.md): no police or prevention system; one AI order per NPC through
+- **Crash rules** (kept in full in my notes): no police or prevention system; one AI order per NPC through
   `CBIssueMove` / `CBTalkHold`; spawns through `CBSpawnGroup` / `CBCreateSpawn`; removals through
   `CBDeleteTaggedSafe` / `CBRemoveOne`, never in V's sight; nothing on hit/death threads or in attach events
   (queue to the next frame); **`CBNpcSafe` before any native read of an NPC** (the 2.3.0 lesson); UI as data;
@@ -380,14 +382,14 @@ dependency names a Bool on the same heading, no heading is over 15, and every op
      the system, and the system's other readers still see the same numbers when the feature is off). Two new
      features that can act on the same NPC, lane or spawn are listed and checked together: one order, one owner,
      one exit.
-  2. Compiled on 2.5 and 2.31, and with They Will Remember and Equipment-EX (`cbval_mods.sh`).
+  2. Compiled on 2.5 and 2.31, and with They Will Remember and Equipment-EX installed.
   3. Settings, scoring, API and orphan audits clean; `check_removed`; no `persistent` field added or removed on
      a class a save already holds (`git diff` of the release, counted).
   4. Update rehearsal: the previous release's zip in the sandbox, this one extracted over it, compiled.
   5. Every new switch turns its feature fully off, and with every new switch off, everything that was there
      before behaves as it did.
-  6. CHANGELOG (player-facing), README if players see it, IMPROVEMENTS (built items removed), STATUS (what was
-     built and anything learnt), SPEC. Pushed with no co-author line.
+  6. CHANGELOG (player-facing), README if players see it, IMPROVEMENTS (built items removed), my notes (what was
+     built and anything learnt), the spec. Pushed.
 - **The mechanical sweeps** (from the 2.0.0 and 2.1.0 passes): duplicate global function names (2.3.1: redscript
   accepts a second one silently); `continue`; negative field defaults; raw deletes
   and AI commands outside their helpers; parallel arrays, saved ones especially, read past the shortest; tags
@@ -540,7 +542,7 @@ foot (`CBSendByCar` takes one record; the car path is for [E2]); [U2]'s parley w
 refuses anybody sent after V); the VDB's remote hack is a HUD and subtitle beat, no status effect.
 
 **Done when:** each gang's rule can be seen
-working once in game (a checklist in STATUS), and adaptation shows within a play session and fades. A crew arrives mixed (not five of one person), its sergeant falling shakes the rest, an apex squad that loses V searches together, and the Hub says in words what each gang is sending.
+working once in game (a checklist in my notes), and adaptation shows within a play session and fades. A crew arrives mixed (not five of one person), its sergeant falling shakes the rest, an apex squad that loses V searches together, and the Hub says in words what each gang is sending.
 
 ---
 
@@ -574,7 +576,7 @@ the sit-down moved onto it unchanged, [32] word of what's coming, the gatherings
 arms deals [28] and rackets [29] (one switch) and How often. Funerals are owed on a Rival's or a boss's death and
 celebrations on a district taken; paying respects is talk act 34. **2.3.4** is the fights between gangs, which need
 two groups set hostile to each other (the pairwise attitudes companions already use): [26] hunts, [27] executions,
-[30] front lines, [31] power struggles. You test at the end of 2.3.4.
+[30] front lines, [31] power struggles. (I meant to play at the end of 2.3.4; I now play 2.3.1 to 2.4.2 together.)
 
 **Settings:** a new page, **Gang life**: one switch per event kind and one "how often". Heavy ones (front lines, power struggles, executions) start at a gentle frequency. **Done when:** each event can be crashed, approached and missed, and the
 cap on live spawns is never broken when two events overlap.
@@ -828,15 +830,15 @@ the table says, none over 15, every dependency hiding what it should, every labe
 in game, presets setting what they say, and nobody's values moved.
 
 **4. Documents for good.** CHANGELOG 2.5.0 as one entry players can read in a minute; the README rewritten for
-the final form (kept short, the video kept); IMPROVEMENTS.md holding only what was not built and why; STATUS
-and SPEC brought up to date; the Nexus description and the spawn-and-chance list redone for 2.5.0.
+the final form (kept short, the video kept); IMPROVEMENTS.md holding only what was not built and why; my notes
+and the spec brought up to date; the Nexus description and the spawn-and-chance list redone for 2.5.0.
 
 **5. The release.** `build.ps1 -Version 2.5.0`, the release checks, an update rehearsal from 2.2.0 and from
 2.4.6, pushed.
 
 ---
 
-## Decisions for you
+## Decisions
 
 1. **Defaults.** Settled: everything ships on by default with its own switch, and three of the experimental
    features become default in their releases ([E1], [E2], [E4]). Turf patrols stay experimental and off by
@@ -844,13 +846,14 @@ and SPEC brought up to date; the Nexus description and the spawn-and-chance list
    power struggles, executions, V's own streets, run with a crew, ransom) start at a gentle frequency.
 2. **Rival chrome's reach.** As planned it is stats, behaviour abilities and words, which the crash rules allow.
    Visible chrome (a Rival who looks more chromed) would need appearance changes or new records, which the rules
-   forbid; it is left out unless you want to revisit that rule.
+   forbid; it stays out unless I revisit that rule.
 3. **Other mods.** Wannabe Edgerunner, Dark Future and Ambient Factions are read through reflection only and are
    never required. If any of their APIs cannot be found on probing, that item is dropped rather than guessed.
-4. **Order.** 2.3.1 and 2.3.2 can swap if the gang codes matter more to you than the street; everything from 2.3.3
+4. **Order.** 2.3.1 and 2.3.2 could have swapped if the gang codes mattered more than the street; everything from 2.3.3
    on depends on both, and the version numbers stay in order whatever ships first.
-5. **Playtesting.** Settled, and changed 2026-11-18: building stopped at 2.4.2; after the bug pass over every system
-   you test 2.3.1-2.4.2 together. Before that, the rule was: every release is pushed when its release checks pass,
-   and you play at the end of each major phase: **2.3.4** (the street and the gangs; was 2.3.3 before gang life shipped in two), **2.4.4** (the war, the hunt, Rivals, allies, the
-   telling) and **2.5.0**. Because nothing is played between those, each release's bug check also re-checks the
-   releases before it in the same phase where they meet.
+5. **Playtesting.** Changed 2026-11-18: I stopped building at 2.4.2, and after the bug pass over every system I
+   play 2.3.1 to 2.4.2 together. Before that, the rule was: every release is pushed when its release checks pass,
+   and I play at the end of each major phase: **2.3.4** (the street and the gangs; was 2.3.3 before gang life
+   shipped in two), **2.4.4** (the war, the hunt, Rivals, allies, the telling) and **2.5.0**. Because nothing is
+   played between those, each release's bug check also re-checks the releases before it in the same phase where
+   they meet.
