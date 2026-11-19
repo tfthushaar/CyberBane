@@ -1042,12 +1042,12 @@ public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance,
   let price = agreedPrice > 0 ? agreedPrice : CBWhereaboutsPrice(r);
   let money = ItemID.FromTDBID(t"Items.money");
   if ts.GetItemQuantity(player, money) < price {
-    CBSystemNote(game, s"not enough eddies for that. It costs \(price)eb.", 4.0);
+    CBMenuNote(game, s"not enough eddies for that. It costs \(price)eb.", 4.0);
     return false;
   }
   let s = CBRivalHideout(sys, game, player, r);
   if !IsDefined(s) {
-    CBSystemNote(game, "nobody could find them from here. Try again somewhere else.", 5.0);
+    CBMenuNote(game, "nobody could find them from here. Try again somewhere else.", 5.0);
     CBLog.Info(n"Rivals", s"Whereabouts of rival \(id): no usable place near V; nothing paid.");
     return false;
   }

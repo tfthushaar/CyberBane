@@ -45,6 +45,8 @@ By impact for the effort, most first:
 7. *(Built in 2.4.0: back a gang, the war chest, and the rest of the turf war.)*
 8. *(Built in 2.4.5: run with a crew, and the rest of talk and allies.)*
 9. *(Built in 2.4.6: panic in the dark.)*
+10. **Your crew, a faction of its own** (93 to 95, asked for after 2.5.0): kit them out, give them colours and a name,
+    and let the city treat them as a faction.
 
 ## 3. Gang life
 
@@ -87,6 +89,56 @@ Built in 2.4.6 (`Narrative/Telling.reds`), and the map remembering in 2.5.0.
 
 92. *(Dropped in 2.5.0 at my word: not installed here, and not wanted.)* **Ambient Factions of Night City.** Count its gangs' people as their gang's, and have the lanes stand back
     while it has a gang war going near V. **S**
+
+## 11. Your crew, a faction of its own
+
+Asked for after 2.5.0: *"Would be sick if, at some point, we could gear up and kit out our gang/crew. Give them colors
+and change their equipment. Like, make them a legit faction."* Looked into against what the crew already is
+(`Reactions/Crew.reds`: a record, a look, a seat, a rank, loyalty; spawned on each call, kitted in
+`CBSetUpCrewMember`) and against the rules above. Most of it can be built. The parts that cannot are said here
+with the reason, so nobody spends an evening on them.
+
+93. **Kit them out.** Bought for each member from the Hub's Crew page (or the crew's phone thread) and put on them
+    every time they are called, as they spawn, never on a live body in a way that changes how they look.
+    - *Their seat.* Retrain somebody as a heavy, a shooter, a blade or a netrunner. An NPC's weapons are its record's,
+      so a new seat means the next call brings them on a record that fights that way: their old gang's chair from the
+      roster (`CBApexRosterRecord`), or a hunter's record for a solo (`CBHunterRecord`), with the seat's behaviour kit
+      (`CBKitApexSeat`). Name, rank, scars, nickname and loyalty stay theirs. One who was a Rival keeps their own body,
+      which is who they are, and only the behaviour kit follows the seat.
+    - *Gear in tiers.* Armour, health and aim as stat modifiers applied at spawn, the path apex strength already uses
+      (`Spawn/FactionApex.reds`), in a few paid tiers; lost with them when they die, and part of the weekly cut.
+    - *Chrome.* The five implants Rival chrome already uses ([U9]: subdermal armour, dermal plating, a firewall,
+      reinforced tendons, smoke-filter optics), fitted at a ripperdoc for a price and applied the same way. Shown on
+      their card and in the scanner, and the street hears about it.
+    - *Not buildable:* handing one of them a particular gun, or swapping their weapon in the field. Items put on NPCs
+      are what the loot rule keeps out, and an equip order on top of the follower role breaks one AI order per NPC.
+    **M**
+94. **Their colours.**
+    - *A crew colour,* picked on the Hub from a fixed palette: their cards, their names in texts, their scanner line,
+      their map pins, and the districts V holds on the turf map. UI as data, nothing on them. **S**
+    - *Wearing a gang's colours.* Dress the whole crew in one gang's gear: a gang V is Friendly or Allied with, or the
+      one V is one of ([66]). Chosen before they spawn, so every call after brings them on that gang's records
+      (`CBGangTemplate` and its roster), and that gang's people take them for their own. Owed Rivals keep their bodies.
+      **M**
+    - *Not buildable as scripts:* recolouring their clothes, a crew jacket or a crew tattoo. New colours on a garment
+      are new mesh appearances, which only an archive can add, and changing the look of somebody already in the world
+      is the runtime appearance change the crash rules forbid. **Verify:** an optional crew outfit with ArchiveXL, the way
+      TweakXL gives the map its filter box (2.5.0): nothing else would depend on it. **L**
+95. **A name, and a place in the city.**
+    - *A name,* picked on the Hub from generated ones (the Hub has no text field). The street says it ("that's
+      [name], V's people"), and so do the scanner, the texts and the History.
+    - *A faction on the Hub:* a card on the Gangs page and a node on the web ([H1]), with a standing towards each gang
+      drawn from what the crew has done to it: a gang whose people the crew put down hates it, a gang that lent V one
+      of its own likes it. Gangs already answer a crew of three or more with bigger crews (`CBCrewAnswerSize`); this
+      makes it a grudge they hold against the crew by name, and they text the crew's thread.
+    - *Their streets:* V's own streets ([37]) in the crew's colour on the turf map, with crew members seen there on
+      the turf patrol machinery. Still experimental, so a setting, off by default.
+    - *Not buildable:* a real attitude group for the crew, which is a TweakDB record. Outside the follower role the
+      game still sees each of them as whatever their record is.
+    **L**
+96. **Where it is saved.** The roster is a saved class (`CBCrewMember` in `CBCrewBook`), and a new `persistent let`
+    there would wipe everybody's crew. Kit, colours, the name and the crew's standing go in a system of their own
+    (a `CBCrewKitBook` keyed by member id), the `CBTurfBook` pattern. Part of 93 to 95, not a feature of its own.
 
 ---
 

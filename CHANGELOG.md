@@ -41,6 +41,13 @@ the next unless a version says otherwise.
 - A hostage you have asked a ransom for stays where they kneel until their gang answers.
 - Your crew and a borrowed crew walk home when it is over. They used to sprint off.
 
+**Messages**
+- **Off means off.** With Toasts off, or "Where messages go" set to Off, some of Cyberbane's notes still came up: a
+  tracker, a fatal flaw, what a scan or a body turned up, a Rival down at your feet, a bag or a racket robbed, "while
+  you were out", the Voodoo Boys tracing you, and the talk and Rival-place hints. They obey both switches now. Only the
+  answer to a button you press on the Hub or in Mod Settings still shows. Messages already on their way when you switch
+  off are no longer let through.
+
 **They Will Remember**
 - **Cyberbane asks it properly.** It asks who is hostile in every way They Will Remember's versions answer, and asks
   again on every load: a failure used to last until you restarted the game. When it still can't be asked, the Gangs

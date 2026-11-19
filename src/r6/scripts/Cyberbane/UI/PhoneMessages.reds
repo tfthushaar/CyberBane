@@ -107,7 +107,7 @@ public func CBMessageDelivery() -> ECBMessageDelivery {
 // drawn, no notice, no overheard line, and no message tone.
 //
 // What it deliberately does not touch: the HUD line (its own setting), the Hub, and the replies
-// to something V just did in a menu (CBSystemNote). Nothing about the gameplay changes either -
+// to something V just did in a menu (CBMenuNote). Nothing about the gameplay changes either -
 // they still come, and the Hub still brokers peace - so silence costs the player nothing except
 // being told, which is the point.
 public func CBMessagesOn() -> Bool {
@@ -1054,6 +1054,15 @@ public class CBPhone {
 
   // Hand everything waiting to whichever surface is in use. Runs on a settled tick only.
   private func Deliver(game: GameInstance) -> Void {
+    // Silenced since these were filed (2.5.1): they stay in their threads and are not announced, the way a message
+    // sent after the switch is never sent. Switching messages off used to let the last few through.
+    if !CBMessagesOn() {
+      this.m_subDirty = false;
+      ArrayClear(this.m_pendThread);
+      ArrayClear(this.m_pendBody);
+      ArrayClear(this.m_pendAccent);
+      return;
+    }
     // Nothing talks over a conversation (1.9.6). While one of the game's dialogues is on screen, or a
     // scene is playing, the overheard line and the texts wait; while V is talking to somebody through
     // street talk, the texts wait. Waiting loses nothing: every text is already filed in its thread.
@@ -1545,11 +1554,22 @@ public func CBPhoneFromStreet(game: GameInstance, body: String) -> Void {
   CBPhoneSend(game, CBPhoneStreetSender(RandRange(0, 4)), body);
 }
 
-// Cyberbane itself is talking to you, and there is no pretending otherwise: a title unlocked, a
-// reputation wiped, a settings change confirmed. These are the only things left on the old
-// channel, because a text message from nobody about a menu you just used is worse than a line
-// of white text.
+// Cyberbane itself is talking to you, and there is no pretending otherwise: a tracker pinged, a fatal flaw found, a
+// scan's find, a hint. On the old channel, because a text message from nobody about it is worse than a line of text.
+// It obeys the silence switches (2.5.1), as every other surface does: "I turned off all notifications and blue text
+// still pops up". It was left out of them so a reply to a menu could always be seen, and by 2.5.0 a dozen of the
+// world's own messages had come to use it, so Toasts off and "Where messages go: Off" still put them on screen.
 public func CBSystemNote(game: GameInstance, body: String, duration: Float) -> Void {
+  if !CBMessagesOn() {
+    return;
+  }
+  CBShowMessage(game, "Cyberbane: " + body, duration);
+}
+
+// The answer to something V just did in a menu (the Hub's buttons, Mod Settings): a reputation wiped, Rivals
+// forgotten, a lead that could not be bought. Shown whatever the silence switches say, because it is the only sign
+// the button did anything (2.5.1, split from CBSystemNote).
+public func CBMenuNote(game: GameInstance, body: String, duration: Float) -> Void {
   CBShowMessage(game, "Cyberbane: " + body, duration);
 }
 
