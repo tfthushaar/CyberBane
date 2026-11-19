@@ -1171,6 +1171,19 @@ interaction prompts to places in the world.
 - *Read as having none.* A candidate whose own talk `CBGenericTalkWanted` reads as absent was turned away on the spot
   (`!HushCandidate`). The person V is looking at, and the one V talks to, are switched off whatever the rule says
   (`anyway`), and put back as it says.
+- *Lines hidden after F* (played on 2.5.1: a frightened passer-by, then a man leaning on a wall; F froze them, no lines,
+  and the lines appeared once V stepped back). The person's own talk was only switched off as the offer went up, and on
+  2.5.1 not at all for anybody busy, which a frightened person is; the game turns it back on once they stop being busy.
+  Their own "Talk" came up under V's eyes, but the frame keeper (`OnFrame`) wrote Cyberbane's "Talk" back over it every
+  frame, so the tick never saw it: F did both, the game's talk stopped them, and with its own prompt open the game kept
+  Cyberbane's lines hidden until V left its reach. Now the person's own talk is switched off again every tick of the
+  conversation (`Keep`), and "Talk" gives way to any prompt of the game's that takes its place instead of being written
+  back over it (`YieldsToGamePrompt`, and no re-push in `Keep` while one is up), so the tick sees it, switches off whose
+  it is, and puts "Talk" back the frame it goes.
+- *The Standing page's lanes.* With nobody queued, each lane's row named when the day's next window opens, so a new
+  game with no Rival and no gang against V read as a Rival, a crew and an apex squad on their way. `CBLaneNobodyWhy`
+  asks what `CBLanePick` requires before it picks anybody (a Rival who can be sent or a gang to put one forward, a gang
+  that may send, a gang that has earned its apex squad) and the row says who is missing instead.
 - *What stays.* A thing's prompt (a door, a seat, an item, another mod's spot) also takes F, so talk still waits for it
   rather than have one key do both. V is told once (`CBTalkWhyHint`), and the log now names the prompt
   (`CBNativePromptWords`), so the next report says what stood in the way.
@@ -1189,12 +1202,20 @@ interaction prompts to places in the world.
 world's or a hint and is silenced with the rest, and the phone's three pending lists are cleared together. Stale lines:
 `PLAYER_REQUESTS.md`'s header, `Spawn/LivingStreet.reds`'s header (surrender and "Nobody kills you but me" are on).
 
+**Found, not changed: the log reaches no file.** Neither the reporter's `r6\logs` nor mine (game 2.5, Codeware 1.21.4,
+no redscript runtime plugin in `red4ext\plugins`) holds a single runtime line of Cyberbane's, though every load writes
+"attaching" at the default level: `FTLog` lands nowhere on these setups, so "send redscript_rCURRENT.log" brings back
+the compile only. Codeware declares a native `ModLog(mod, text)`, which could be the way, but where it writes was not
+confirmed, so `CBEmitLogLine` is unchanged until it is checked in game.
+
 Compiled on 2.5 (the installed game) with Codeware, Mod Settings and TweakXL; settings, scoring and API audits clean; no
 `persistent` field added or removed; `check_removed` clean. Not compiled on 2.31 this time.
 
 **To check when it is played:** a group of two or three chatting, and a passer-by walking behind the person V looks at:
-"Talk" comes up without a scan; bystanders' own "Talk" is back once V walks off; a door or a seat beside somebody still
-holds talk, with the note once; the Standing page right after a load shows the floor and its note.
+"Talk" comes up without a scan; F on a frightened passer-by and on somebody leaning on a wall brings the lines up close,
+with no stock line; bystanders' own "Talk" is back once V walks off; a door or a seat beside somebody still holds talk,
+with the note once; the Standing page right after a load shows the floor and its note, and on a new game no lane counts
+down to anybody.
 
 ---
 

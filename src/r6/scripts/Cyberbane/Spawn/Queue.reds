@@ -298,6 +298,55 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
 }
 
+// Why nobody at all could take this lane's next turn, in the player's words, or "" when somebody could (2.5.2). The
+// Standing page named the time of the next window whether or not anybody could come in it, so a new game, with no
+// Rival and no gang against V, read as a Rival, a crew and an apex squad on their way. Only what CBLanePick itself
+// asks before it will pick anybody, so the two cannot disagree: a Rival who can be sent, or with none on the books a
+// gang V has fought to put one forward (CBSeedRivalFromFactions); a gang that may send people (CBGangMaySend); a gang
+// that has earned its apex squad (CBApexEligible). What changes by the hour (a reason to come today, a cooldown, a
+// Rival lying low) is left to the lines that already say it.
+public func CBLaneNobodyWhy(sys: ref<CyberbaneSystem>, lane: Int32) -> String {
+  if !IsDefined(sys) {
+    return "";
+  }
+  if lane == CBLaneRival() {
+    if !CBRivalsOn() {
+      return "Rivals are off in Mod Settings";
+    }
+    for r in sys.GetRivals() {
+      if IsDefined(r) && CBRivalQueueable(sys, r.id) {
+        return "";
+      }
+    }
+    if sys.CountActiveRivals() > 0 {
+      return "none of your Rivals can come right now";
+    }
+    for fs in sys.GetFactionStates() {
+      if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) && CBFactionFieldsSquads(fs.id) && fs.kills > 0 {
+        return "";
+      }
+    }
+    return "nobody has a grudge against you yet";
+  }
+  if !CBHitSquadsOn() {
+    return CBTwrActive() ? "They Will Remember sends the gangs' people" : "crews are off in Mod Settings";
+  }
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) {
+      if lane == CBLaneApex() {
+        if CBApexEligible(sys, fs) {
+          return "";
+        }
+      } else {
+        if CBGangMaySend(sys, fs.id) {
+          return "";
+        }
+      }
+    }
+  }
+  return lane == CBLaneApex() ? "no gang is angry enough to send its best" : "no gang is after you";
+}
+
 func CBAnotherLaneJustFired(sys: ref<CyberbaneSystem>, lane: Int32) -> Bool {
   let i = CBLaneRival();
   while i <= CBLaneApex() {

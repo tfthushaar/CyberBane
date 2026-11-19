@@ -817,15 +817,22 @@ public class CBStreetTalk {
     // person standing beside them bring up that person's own "Talk", which is switched off too, and one standing over
     // somebody V put down brings up "Carry body", which stays. It ended the conversation on the spot, so talking to
     // one of a group, or to anybody lying at V's feet, kept closing.
+    // Their own talk on F off again, every tick of the conversation (2.5.2). The game turns it back on by itself once they
+    // stop being busy, and a frightened passer-by is busy until the fear wears off, which it does while V holds them to
+    // talk. Their "Talk" then came up under V's eyes, F said the game's stock line and stopped them as well as opening
+    // Cyberbane's lines, and the game, with its own prompt open, kept the lines off the screen until V stepped out of
+    // its reach. Not left to the prompt being seen: while "Talk" is offered, Cyberbane's own prompt sits where the
+    // game's would be read.
+    CBTalkHushTalk(t.npc, true, true);
     let kind = CBNativePromptKind(game);
     if kind == CBPromptDialogue() {
       this.End(game, "one of the game's own dialogues came up");
       return;
     }
-    if kind == CBPromptInteraction() && !CBTalkDownAtFeet(t.npc) {
-      // Their own talk off again if the game put it back, and that of anybody standing by them in front of V
-      // (2.5.2): with one person's own "Talk" off, the game shows the next person's.
-      CBTalkHushTalk(t.npc, true, true);
+    let foreign = kind == CBPromptInteraction() && !CBTalkDownAtFeet(t.npc);
+    if foreign {
+      // And that of anybody standing by them in front of V (2.5.2): with one person's own "Talk" off, the game shows
+      // the next person's.
       this.HushNear(sys, player, t.npc);
       this.m_promptWait += dt;
       if this.m_promptWait > CBConfig.TalkOwnPromptWait() {
@@ -861,7 +868,8 @@ public class CBStreetTalk {
     // it goes (OnFrame), and this is the tick's own check. 1.9.7 gave up on anybody the game kept wiping it
     // for; played, the list stayed visible with the keeper even when it was wiped every frame (168 times in
     // one conversation), and the give-up only shut out people standing chatting together. Counted for the log.
-    if !this.Shown(game) {
+    // Never over a prompt of the game's (2.5.2): that is not a wipe but something else on F, waited out above.
+    if !foreign && !this.Shown(game) {
       this.Push(game);
       this.m_wipes += 1;
     }
@@ -904,11 +912,23 @@ public class CBStreetTalk {
     }
     // Waiting for an answer, nothing is up on purpose; the chain only keeps going.
     if (this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen())
-       && !this.Shown(game) && !CBGameDialogueUp(game) {
+       && !this.Shown(game) && !CBGameDialogueUp(game) && !this.YieldsToGamePrompt(game) {
       this.Push(game);
       this.m_wipes += 1;
     }
     this.NextFrame(game);
+  }
+
+  // "Talk" gives way to a prompt of the game's that has taken its place (2.5.2). Written back over it every frame, the
+  // game's prompt was gone from the blackboard before the tick could see it, so nothing was switched off or waited
+  // out, while the game's prompt stayed open underneath: one press of F did both, and with the lines up the game kept
+  // them hidden for as long as its own prompt was open. Left on screen, the tick sees it (Keep): their own talk and
+  // their neighbours' are switched off, and "Talk" comes back the frame the game's prompt goes, or the offer ends
+  // after TalkOwnPromptWait. The lines live elsewhere on the blackboard, and somebody down at V's feet keeps their lines
+  // over "Carry body" (2.5.1), so neither is held back here.
+  private func YieldsToGamePrompt(game: GameInstance) -> Bool {
+    return this.m_stage == CBTalkStageOffered() && IsDefined(this.m_target) && !CBTalkDownAtFeet(this.m_target.npc)
+        && CBNativePromptKind(game) == CBPromptInteraction();
   }
 
   private func NextFrame(game: GameInstance) -> Void {

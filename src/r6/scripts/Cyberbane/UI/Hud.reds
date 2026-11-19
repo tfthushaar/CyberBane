@@ -5184,6 +5184,12 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     if CBLaneDailyCap(lane) <= 0 {
       return label + "   off";
     }
+    // Nobody who could come at all (2.5.2): said instead of the next window's time, which on a new game read as a
+    // Rival, a crew and an apex squad on their way with nobody against V.
+    let nobody = CBLaneNobodyWhy(sys, lane);
+    if StrLen(nobody) > 0 {
+      return label + "   " + nobody;
+    }
     // When the day's timetable next has room for this kind, in the player's own minutes. The
     // schedule is kept in in-game hours because that is what the sectors are made of; nobody
     // reading a Hub wants to be told "in 3 game hours", so it is converted here.
