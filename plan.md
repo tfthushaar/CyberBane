@@ -2,7 +2,9 @@
 
 Status: **The road is built (2026-11-18). Done: 2.3.1 to 2.5.0, all released, with a bug pass over every system
 inside 2.4.2 and the final pass inside 2.5.0, which also brought a crew of my own, the whole Hub rebuilt with
-pictures, the map remembering, and the last two upgrades to Rivals' places. Next: I play it all.** I wrote this on
+pictures, the map remembering, and the last two upgrades to Rivals' places. Then 2.5.1 (2026-11-19), from the first
+reports: talk that comes up, people who walk on, They Will Remember asked properly, loud fights scored loud. Next: I
+play it all.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
@@ -34,10 +36,10 @@ rehearsal from the release before; none played yet):
 | 2.4.5 | f15be9e | Run with a crew [65] on the game's own follower role, one of theirs [66], ransom [67], feed the street a lie [69], informants with a life [U12], the sergeant's parley [U2] |
 | 2.4.6 | 8979f48 | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
 | 2.5.0 | b2c8659, 56c0c7b, db1eeda, 36ba068, 34ebfb2, 6e0a8d5, a32a24b, 917777f, 6e04477, 6d452d3, 67a836a, 8e16b55, a604774, ac117a9 | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, cards, segmented bars, text that fits; the map remembers [85] (`CBMapBook`), with TweakXL a CYBERBANE box in the map's custom filters; a lookout who gets away moves a Rival [U10] and a ripperdoc as a lead [U9]; the final pass and a second one. Ambient Factions [92] dropped |
-| 2.5.1 | (this branch) | From the first reports, and a pass over the pipelines: talk that comes up (the game's own Talk and Carry body prompts no longer hold it back, the stealth state no longer switches it off, a holster no longer settles a downed Rival's mercy, people with their hands up can be talked to), nobody frozen after a conversation (short renewed holds, the crowd put back into its traffic), the talk waits cut to a tick, clocks that hold while V talks (facedown, parley, scout), lines 31 and up remembered, They Will Remember asked in every shape and retried each load, loud fights scored loud (schema 4 evens out the Ghost tally). **Not compiled yet: run tools/validate.ps1 on 2.5 and 2.31 before it ships** |
+| 2.5.1 | 4dce83e, 5cbeeb4, c9913fe | From the first reports, and a pass over the pipelines: talk that comes up (the game's own Talk and Carry body prompts no longer hold it back, the stealth state no longer switches it off, a holster no longer settles a downed Rival's mercy, people with their hands up can be talked to), nobody frozen after a conversation (short renewed holds, the crowd put back into its traffic), the talk waits cut to a tick, clocks that hold while V talks (facedown, parley, scout), lines 31 and up remembered, They Will Remember asked in every shape and retried each load, loud fights scored loud (schema 4 evens out the Ghost tally); then a check of all of it that fixed four faults of its own (below) |
 
-**In progress:** 2.5.1, written from the first player reports and a trace of every pipeline (see "2.5.1: the first
-reports" below). It has not been compiled: it needs `tools/validate.ps1` on 2.5 and 2.31, and the talk changes played.
+**In progress:** nothing. 2.5.1 is built from the first player reports and a trace of every pipeline (see "2.5.1: the
+first reports" below); the talk changes are next to be played.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
@@ -1119,6 +1121,25 @@ witnesses and fighting style, They Will Remember. Swept by script across every f
 arrays changed inside loops over them, random ranges, settings that reach nothing, scoring fields nobody reads.
 **Not re-read line by line this time:** the queue, arrivals and the hunt, the Rival lifecycle, the war's money,
 territory, the narrative layer and the Hub, phone and map drawing; each had its pass in 2.4.2 and 2.5.0.
+
+**Checked before it shipped, and four faults of its own fixed (c9913fe):**
+- *They Will Remember's probe took any one-argument function.* Its own `IsFactionHostile` takes a person (3.1), and
+  would have been asked with a gang's number whenever `IsFactionHostileByIndex` was missing. The argument's type is
+  read now (`Int32` only), and the why names every function's argument types.
+- *A wait that ran out for good.* Once the game's prompt outlasted `TalkOwnPromptWait` for somebody (a door or a pickup
+  behind them), their own talk was switched back on, their own Talk prompt came up, and the wait, already spent, turned
+  them away for as long as V kept looking at them. Now the wait starts afresh whenever their own talk is put back, and
+  somebody waiting out another prompt stays hushed while V looks at them.
+- *Bystanders hushed unchecked.* Mid-conversation, whoever V's eyes drifted to had their own talk switched off, with no
+  per-NPC gate first and no story, vendor or companion check. Only somebody `CBTalkWhyNot` passes is hushed now.
+- *A clock that never ran.* `CBTalkEngaged` held a facedown's, a parley's or a scout's clock for as long as "Talk" was
+  offered, so a Rival V only stared at with empty hands waited for ever. The lines up hold it as long as V takes to
+  choose; "Talk" offered and not pressed holds it `TalkOfferHoldTicks` (10). A facedown Rival V walks away from
+  mid-conversation is held again for the facedown's own length (`FacedownHoldSeconds`), as a hostage is.
+- `CBNativePromptUp` and `CBPlayerSneaking` went with the change that replaced them.
+
+Compiled on 2.5 and 2.31, with every installed mod, with They Will Remember 3.1 and Equipment-EX, and installed over
+2.5.0; all clean.
 
 **To check when it is played:** that the game's Talk prompt never flickers up over Cyberbane's; that "Carry body" and the
 lines on screen together never pick the body up on F; that nobody stands frozen; that a facedown still turns into a

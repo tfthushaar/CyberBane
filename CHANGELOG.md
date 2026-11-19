@@ -6,58 +6,58 @@ the next unless a version says otherwise.
 ## 2.5.1 (19 November 2026)
 
 **Talking to people**
-- **Talk comes up for everybody it should.** The game puts its own "Talk" prompt on most of the crowd, and while it was
-  up Cyberbane's was held back: walk straight up to somebody and you only got the game's, which plays a stock line.
-  Scanning hides the game's prompt, which is why scanning somebody was the one way to get Cyberbane's. Their own talk
-  is now switched off the moment you settle on them, and back on when you move on.
-- **Talk to a Rival you put down**, with "Carry body" on screen. Their lines come up at once.
+- **Talk comes up for everybody it should.** Most people in the crowd have the game's own "Talk" prompt, and while it
+  was up, Cyberbane's waited behind it: walk straight up to somebody and you only got the game's, which plays a stock
+  line. Scanning hides the game's prompt, which is why scanning somebody was the one sure way to get Cyberbane's. The
+  game's prompt now steps aside the moment you look at someone with empty hands, and comes back when you look away.
+- **Talk to a Rival you put down**, even with "Carry body" on screen. Their lines come up straight away.
 - **Putting your weapon away no longer spares a downed Rival while you stand over them.** It settled the mercy three
   seconds after you holstered to walk up and talk, and the conversation was gone. Walk away to spare them, as before,
   or put your weapon away from more than ten metres off.
-- **People with their hands up can be talked to** (ransom them, or hand them over). Nobody who gave up ever could: the
-  same check that turns away people running from you turned them away first. So could a Rival who had run from you
-  once and was put down after.
-- **Talk works with unaware hostiles nearby.** The game's stealth state switched it off for everybody in sight with
-  you standing in the open; only crouching stops it now.
+- **People with their hands up can be talked to**, so you can ransom them or hand them over. Nobody who gave up ever
+  could, and neither could a Rival who had run from you once and was put down later.
+- **Talk works with enemies nearby who haven't spotted you.** The game's sneaking state switched talk off for everybody
+  while you stood in the open; only crouching stops it now.
 - **A facedown, a sergeant's parley and a scout wait while you talk to them.** A facedown became a fight fifteen
-  seconds after it opened, and a scout called you in six seconds after seeing you, mid-conversation or not.
-- Every line you have said to somebody is remembered and dimmed. The ones from paying a witness onward never were, and
-  "Keep an eye out for me" came back after you had paid it.
-- A crew lying in wait for you can no longer be chatted with, and a Rival's people at their place say why they won't
-  talk.
-- **Shorter waits.** The same person can be talked to again a second after a conversation (it was three), somebody you
-  sent packing after half a minute (it was three minutes), and the prompt comes back 1.5 seconds after you reach for a
-  weapon (it was four). "Talk" comes up a little quicker too.
+  seconds after it opened, and a scout called you in six seconds after seeing you, mid-conversation or not. Leave
+  "Talk" on screen without pressing it and they give you about ten seconds.
+- Lines you have already used with somebody are remembered, including the newer ones: "Keep an eye out for me" no
+  longer comes back after you have paid it.
+- A crew lying in wait for you can't be chatted with any more, and a Rival's people at their place tell you why they
+  won't talk.
+- **Shorter waits.** You can talk to the same person again a second after a conversation (it was three), to somebody
+  you sent packing after half a minute (it was three minutes), and the prompt comes back 1.5 seconds after you reach
+  for a weapon (it was four). "Talk" also comes up a little quicker.
 
 **People walk on**
-- **Nobody stands frozen after a conversation.** The order holding them was one of ninety seconds that only a cancel
-  ended, and a cancel the game ignored left them standing for the rest of it. It is a short order now, renewed while
-  you talk, stopped and cancelled when you finish, and anybody of the crowd who was held is put back into the foot
-  traffic, not only somebody stopped mid-stride.
-- Somebody you just talked to is left alone by the street's fear for a moment, instead of cowering on the spot the
-  second the conversation let go.
-- A passer-by you frighten mid-conversation runs. The scare was being filtered out, and they said "Leave me alone!"
-  and stood there.
-- Somebody sent packing by a Rival's mercy, a facedown, a hand-over or a parley could never be talked to again.
+- **Nobody stands frozen after a conversation.** People are held in place only while you talk to them, and anybody
+  from the crowd goes back to walking with the crowd when you finish, including people who had only stopped to look
+  at you.
+- Somebody you just talked to is left alone by the street's fear for a moment, so they don't cower on the spot the
+  second the conversation ends.
+- A passer-by you frighten mid-conversation runs. They used to say "Leave me alone!" and stand there.
+- Somebody sent on their way by a Rival's mercy, a facedown, a hand-over or a parley can be talked to again later.
+  Before, they never could.
 - A hostage you have asked a ransom for stays where they kneel until their gang answers.
-- Your crew and a borrowed crew walk home when it is over, instead of sprinting off.
+- Your crew and a borrowed crew walk home when it is over. They used to sprint off.
 
 **They Will Remember**
-- **Cyberbane asks it properly.** Who is hostile is asked in every shape its versions use, asked again on every load
-  (a failure used to hold until the game was restarted), and when it still cannot be asked, the Gangs page says what it
-  found instead of one line covering three different problems.
-- **Its disguises are read** with its face reading or its gang reading alone; all six functions had to be there in
-  exactly one shape. When it cannot be read, the Standing page says why.
-- While it cannot be asked, a gang whose people have lately been hostile to you on sight counts as hostile.
+- **Cyberbane asks it properly.** It asks who is hostile in every way They Will Remember's versions answer, and asks
+  again on every load: a failure used to last until you restarted the game. When it still can't be asked, the Gangs
+  page says exactly what went wrong.
+- **Its disguises are read** with just its face reading or just its gang reading; before, all six of its disguise
+  functions had to be there in one exact shape. When they can't be read, the Standing page says why.
+- While it can't be asked, a gang whose people have recently been hostile to you on sight counts as hostile.
 
 **How you fight**
-- **Going in guns blazing reads as Butcher, not Ghost.** A kill in an open fight was scored as unseen whenever nobody
-  standing passed a line-of-sight test, which was most of a firefight, so a loud player read as a Ghost and stayed one.
-  A kill in a fight is never stealth now, the people fighting you are witnesses, loud kills build Butcher, and enemies
-  shot down and left breathing in a firefight count towards Operator.
-- Firefights are witnessed, so they carry full renown and standing, and the gangs adapt to how you really fight: their
-  ledger was reading your firefights as quiet work.
-- Existing saves: the Ghost tally is evened out once, down to your next style's, so your next fights decide.
+- **Going in guns blazing makes you a Butcher.** A kill in a gunfight counted as unseen whenever nobody left standing
+  could be shown to have watched it, which was most of a firefight, so a loud player read as a Ghost and stayed one.
+  Kills in a fight never count as stealth now, the people fighting you count as witnesses, loud kills build Butcher,
+  and enemies you shoot down and leave breathing in a firefight count towards Operator.
+- Firefights are witnessed, so they carry full renown and standing, and gangs adapt to how you really fight. Before,
+  they read your firefights as quiet work.
+- Existing saves: your Ghost score is brought down once, to the level of your next style, so your next fights decide
+  what you are.
 
 Your progress carries over.
 
