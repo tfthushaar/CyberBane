@@ -4,8 +4,9 @@ Status: **The road is built (2026-11-18). Done: 2.3.1 to 2.5.0, all released, wi
 inside 2.4.2 and the final pass inside 2.5.0, which also brought a crew of my own, the whole Hub rebuilt with
 pictures, the map remembering, and the last two upgrades to Rivals' places. Then 2.5.1 (2026-11-19), from the first
 reports: talk that comes up, people who walk on, They Will Remember asked properly, loud fights scored loud. Then 2.5.2
-(2026-11-19), from the next reports: talk that needs no scan, Renown right from the load, messages off meaning off.
-Next: I play it all.** I wrote this on
+(2026-11-19), from the next reports: talk that needs no scan, Renown right from the load, messages off meaning off. Then
+2.5.3 (2026-11-19): the lines when Talk is pressed, no countdown to nobody, a new Rival in the cards. Next: I play it
+all.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
@@ -38,10 +39,11 @@ rehearsal from the release before; none played yet):
 | 2.4.6 | 8979f48 | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
 | 2.5.0 | b2c8659, 56c0c7b, db1eeda, 36ba068, 34ebfb2, 6e0a8d5, a32a24b, 917777f, 6e04477, 6d452d3, 67a836a, 8e16b55, a604774, ac117a9 | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, cards, segmented bars, text that fits; the map remembers [85] (`CBMapBook`), with TweakXL a CYBERBANE box in the map's custom filters; a lookout who gets away moves a Rival [U10] and a ripperdoc as a lead [U9]; the final pass and a second one. Ambient Factions [92] dropped |
 | 2.5.1 | 4dce83e, 5cbeeb4, c9913fe | From the first reports, and a pass over the pipelines: talk that comes up (the game's own Talk and Carry body prompts no longer hold it back, the stealth state no longer switches it off, a holster no longer settles a downed Rival's mercy, people with their hands up can be talked to), nobody frozen after a conversation (short renewed holds, the crowd put back into its traffic), the talk waits cut to a tick, clocks that hold while V talks (facedown, parley, scout), lines 31 and up remembered, They Will Remember asked in every shape and retried each load, loud fights scored loud (schema 4 evens out the Ghost tally); then a check of all of it that fixed four faults of its own (below) |
-| 2.5.2 | f900bbf, and the 2.5.2 commit | Messages off means off (`CBMenuNote` split from `CBSystemNote`, built on a branch during 2.5.1 and merged here); talk that needs no scan (bystanders' own talk switched off while a game prompt stands in the way, the switch renewed when the game turns it back on, the person V addresses switched off whatever the rule reads); Renown's Street Cred floor read on the first settled tick, and the Standing page saying when the floor holds it; IMPROVEMENTS 93 to 96 (see "2.5.2: talk that needs no scan" below) |
+| 2.5.3 | e96d1dc, and the 2.5.3 commit | The lines come up when Talk is pressed (the person's own talk off every tick, "Talk" giving way to the game's prompts instead of writing over them); no Standing page countdown to people nobody could send; a Rival from a gang with no record seated and drawn in the cards (see "2.5.3" below) |
+| 2.5.2 | f900bbf, da699d3 | Messages off means off (`CBMenuNote` split from `CBSystemNote`, built on a branch during 2.5.1 and merged here); talk that needs no scan (bystanders' own talk switched off while a game prompt stands in the way, the switch renewed when the game turns it back on, the person V addresses switched off whatever the rule reads); Renown's Street Cred floor read on the first settled tick, and the Standing page saying when the floor holds it; IMPROVEMENTS 93 to 96 (see "2.5.2: talk that needs no scan" below) |
 
-**In progress:** nothing. 2.5.2 is built from the reports after 2.5.1 (see "2.5.2: talk that needs no scan" below); the
-talk changes of 2.5.1 and 2.5.2 are next to be played.
+**In progress:** nothing. 2.5.2 and 2.5.3 are built from the reports after 2.5.1 (see their sections below); the talk
+changes of 2.5.1 to 2.5.3 are next to be played.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
@@ -1171,19 +1173,6 @@ interaction prompts to places in the world.
 - *Read as having none.* A candidate whose own talk `CBGenericTalkWanted` reads as absent was turned away on the spot
   (`!HushCandidate`). The person V is looking at, and the one V talks to, are switched off whatever the rule says
   (`anyway`), and put back as it says.
-- *Lines hidden after F* (played on 2.5.1: a frightened passer-by, then a man leaning on a wall; F froze them, no lines,
-  and the lines appeared once V stepped back). The person's own talk was only switched off as the offer went up, and on
-  2.5.1 not at all for anybody busy, which a frightened person is; the game turns it back on once they stop being busy.
-  Their own "Talk" came up under V's eyes, but the frame keeper (`OnFrame`) wrote Cyberbane's "Talk" back over it every
-  frame, so the tick never saw it: F did both, the game's talk stopped them, and with its own prompt open the game kept
-  Cyberbane's lines hidden until V left its reach. Now the person's own talk is switched off again every tick of the
-  conversation (`Keep`), and "Talk" gives way to any prompt of the game's that takes its place instead of being written
-  back over it (`YieldsToGamePrompt`, and no re-push in `Keep` while one is up), so the tick sees it, switches off whose
-  it is, and puts "Talk" back the frame it goes.
-- *The Standing page's lanes.* With nobody queued, each lane's row named when the day's next window opens, so a new
-  game with no Rival and no gang against V read as a Rival, a crew and an apex squad on their way. `CBLaneNobodyWhy`
-  asks what `CBLanePick` requires before it picks anybody (a Rival who can be sent or a gang to put one forward, a gang
-  that may send, a gang that has earned its apex squad) and the row says who is missing instead.
 - *What stays.* A thing's prompt (a door, a seat, an item, another mod's spot) also takes F, so talk still waits for it
   rather than have one key do both. V is told once (`CBTalkWhyHint`), and the log now names the prompt
   (`CBNativePromptWords`), so the next report says what stood in the way.
@@ -1202,6 +1191,41 @@ interaction prompts to places in the world.
 world's or a hint and is silenced with the rest, and the phone's three pending lists are cleared together. Stale lines:
 `PLAYER_REQUESTS.md`'s header, `Spawn/LivingStreet.reds`'s header (surrender and "Nobody kills you but me" are on).
 
+Compiled on 2.5 (the installed game) with Codeware, Mod Settings and TweakXL; settings, scoring and API audits clean; no
+`persistent` field added or removed; `check_removed` clean. Not compiled on 2.31 this time.
+
+**To check when it is played:** a group of two or three chatting, and a passer-by walking behind the person V looks at:
+"Talk" comes up without a scan; bystanders' own "Talk" is back once V walks off; a door or a seat beside somebody still
+holds talk, with the note once; the Standing page right after a load shows the floor and its note.
+
+## 2.5.3: the lines when Talk is pressed, and the Hub saying what is so (2026-11-19)
+
+**Reported**, played on 2.5.1 (2.5.2 was not yet installed): a frightened passer-by, then a man leaning on a wall, froze
+when V pressed Talk and no lines came, until V stepped back; on a new game, the Standing page counting down to a Rival, a
+crew and an apex squad with nobody against V; a new Rival in the list view of the Rivals page and not in its cards.
+
+**Causes found, and what changed:**
+- *Lines hidden after F.* The person's own talk was only switched off as the offer went up, and on 2.5.1 not at all for
+  anybody busy, which a frightened person is; the game turns it back on once they stop being busy. Their own "Talk" came
+  up under V's eyes, but the frame keeper (`OnFrame`) wrote Cyberbane's "Talk" back over it every frame, so the tick
+  never saw it: F did both, the game's talk stopped them, and with its own prompt open the game kept Cyberbane's lines
+  hidden until V left its reach. Now the person's own talk is switched off again every tick of the conversation
+  (`Keep`), and "Talk" gives way to any prompt of the game's that takes its place instead of being written back over it
+  (`YieldsToGamePrompt`, and no re-push in `Keep` while one is up), so the tick sees it, switches off whose it is, and
+  puts "Talk" back the frame it goes.
+- *The Standing page's lanes.* With nobody queued, each lane's row named when the day's next window opens, so a new
+  game with no Rival and no gang against V read as a Rival, a crew and an apex squad on their way. `CBLaneNobodyWhy`
+  asks what `CBLanePick` requires before it picks anybody (a Rival who can be sent or a gang to put one forward, a gang
+  that may send, a gang that has earned its apex squad) and the row says who is missing instead.
+- *A Rival in the list and not the cards.* Only a kill or a pay-off filed a gang's record (`EnsureFaction`), and
+  `CBHierarchyFill` seats nobody in a gang without one, so a Rival from a gang V had only knocked out or let get away held
+  no chair; the cards (`RenderTree`) refused to draw a gang without a record at all and said "No Rivals yet". Now
+  `CBCreateRival` files the gang before filling its chairs, `CBFileRivalGangs` does the same once a session for Rivals
+  made before (the record is the gang's ordinary one at its baseline standing, which is what everything already read
+  for a gang with none, so no posture moves; the Rival is seated as any gang's first Rival is), and `RenderTree` draws a
+  gang with no record (nobody in a chair, everybody in the rest). Rivals of no gang, which `CBFactionOn` lets through,
+  have a group of their own in the cards (`CBTreeNoGang`) and are "No gang" in the list, where they read "None".
+
 **Found, not changed: the log reaches no file.** Neither the reporter's `r6\logs` nor mine (game 2.5, Codeware 1.21.4,
 no redscript runtime plugin in `red4ext\plugins`) holds a single runtime line of Cyberbane's, though every load writes
 "attaching" at the default level: `FTLog` lands nowhere on these setups, so "send redscript_rCURRENT.log" brings back
@@ -1209,13 +1233,11 @@ the compile only. Codeware declares a native `ModLog(mod, text)`, which could be
 confirmed, so `CBEmitLogLine` is unchanged until it is checked in game.
 
 Compiled on 2.5 (the installed game) with Codeware, Mod Settings and TweakXL; settings, scoring and API audits clean; no
-`persistent` field added or removed; `check_removed` clean. Not compiled on 2.31 this time.
+`persistent` field added or removed; `check_removed` clean. Not compiled on 2.31.
 
-**To check when it is played:** a group of two or three chatting, and a passer-by walking behind the person V looks at:
-"Talk" comes up without a scan; F on a frightened passer-by and on somebody leaning on a wall brings the lines up close,
-with no stock line; bystanders' own "Talk" is back once V walks off; a door or a seat beside somebody still holds talk,
-with the note once; the Standing page right after a load shows the floor and its note, and on a new game no lane counts
-down to anybody.
+**To check when it is played:** F on a frightened passer-by and on somebody leaning on a wall brings the lines up close,
+with no stock line; on a new game no lane counts down to anybody; a Rival from a gang V never killed one of is a card
+(and on an older save, after one load).
 
 ---
 

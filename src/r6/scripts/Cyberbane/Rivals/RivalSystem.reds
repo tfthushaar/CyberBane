@@ -900,7 +900,13 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   if !counted {
     sys.NoteRivalMade();   // so the next roll in the same fight is less likely (CBRivalOdds)
   }
-  // A new name in a crew may be the only one left standing in it (spec §10.1).
+  // A new name in a crew may be the only one left standing in it (spec §10.1). Their gang on the books first (2.5.3): only
+  // a kill or a pay-off filed a gang's record, and the hierarchy seats nobody in a gang without one, so a Rival from a gang
+  // V had only knocked out or let get away held no chair, and the Rivals page's cards, which are drawn by chair, did not
+  // show them at all while the list did.
+  if NotEquals(faction, n"") {
+    sys.EnsureFaction(faction);
+  }
   CBHierarchyFill(sys, faction);
 
   CBLogRival(sys, n"RivalCreated", at, origin, faction, Cast<Float>(r.id), r.id);

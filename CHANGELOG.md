@@ -3,6 +3,25 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.5.3 (19 November 2026)
+
+**Talking to people**
+- **Pressing Talk brings up the lines, however close you stand.** Somebody frightened, or leaning on a wall, could get
+  their own "Talk" back while you stood next to them. Pressing F then played their stock line and froze them, and the
+  game kept Cyberbane's lines hidden until you stepped back out of reach. Their own "Talk" now stays off for the whole
+  conversation, and Cyberbane's "Talk" never sits on top of another prompt, so F only ever does one thing.
+
+**The Hub**
+- **A new Rival shows on the Rivals page's cards.** A Rival from a gang you had never killed anyone of or paid off showed
+  in the list but not in the cards, which said "No Rivals yet". The gang is now on your books as soon as one of its
+  people has your name, and the Rival takes their place at the top of it. Existing saves are put right on the next load.
+- **No countdown to people nobody could send.** On a new game the Standing page showed a Rival, a gang crew and an apex
+  squad each coming at a set time, with nobody against you. It was the time the day's next window opened, not anybody
+  on their way. Until somebody could actually come it now says so: "nobody has a grudge against you yet", "no gang is
+  after you", "no gang is angry enough to send its best".
+
+Your progress carries over.
+
 ## 2.5.2 (19 November 2026)
 
 **Talking to people**
@@ -14,18 +33,8 @@ the next unless a version says otherwise.
   It used to hold Cyberbane's off for as long as you stood there.
 - Somebody Cyberbane wrongly read as having no "Talk" of their own was turned away on the spot. They get the same
   moment as everybody else now.
-- **Pressing Talk brings up the lines, however close you stand.** Somebody frightened, or leaning on a wall, could get
-  their own "Talk" back while you stood next to them. Pressing F then played their stock line and froze them, and the
-  game kept Cyberbane's lines hidden until you stepped back out of reach. Their own "Talk" now stays off for the whole
-  conversation, and Cyberbane's "Talk" never sits on top of another prompt, so F only ever does one thing.
 - When a thing beside them has a prompt on F (a door, a seat, an item, a spot another mod adds), talk still waits for
   it, because one key can't do both. Cyberbane now tells you so once, and the log names the prompt.
-
-**The Standing page**
-- **No countdown to people nobody could send.** On a new game the page showed a Rival, a gang crew and an apex squad
-  each coming at a set time, with nobody against you. It was the time the day's next window opened, not anybody on
-  their way. Until somebody could actually come it now says so: "nobody has a grudge against you yet", "no gang is
-  after you", "no gang is angry enough to send its best".
 
 **Renown**
 - **Renown is right from the moment you load.** With the Street Cred floor on, your Renown is at least 14 for every

@@ -148,6 +148,28 @@ func CBBestLieutenant(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> ref
   return best;
 }
 
+// Every gang with a Rival still after V, or owing V, on the books and its chairs filled (2.5.3). A Rival made before 2.5.3
+// for a gang V had never killed one of or paid off belonged to a gang with no record, so they held no chair and the Rivals
+// page's cards left them out. Run once a session, on its first settled tick: the record is a gang's ordinary one, at its
+// baseline standing, which is the standing everything already read for a gang with none, so nobody's posture moves.
+public func CBFileRivalGangs(sys: ref<CyberbaneSystem>) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let unfiled: array<CName>;
+  for r in sys.GetRivals() {
+    if IsDefined(r) && NotEquals(r.faction, n"") && CBRivalStillAround(r) && !ArrayContains(unfiled, r.faction)
+       && !IsDefined(sys.FindFaction(r.faction)) {
+      ArrayPush(unfiled, r.faction);
+    }
+  }
+  for f in unfiled {
+    sys.EnsureFaction(f);
+    CBHierarchyFill(sys, f);
+    CBLog.Info(n"Rivals", s"\(NameToString(f)) put on the books: they have a Rival after V.");
+  }
+}
+
 public func CBHierarchyFill(sys: ref<CyberbaneSystem>, faction: CName) -> Void {
   if !IsDefined(sys) || Equals(faction, n"") {
     return;

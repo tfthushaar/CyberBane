@@ -3314,7 +3314,8 @@ public class CBHud {
     if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
     let label = CBBarFactionLabel(faction);
     if StrLen(label) == 0 {
-      label = StrUpper(NameToString(faction));
+      // Rivals of no gang (2.5.3): an empty name prints as "None"; the cards call the group the same.
+      label = Equals(faction, n"") ? "NO GANG" : StrUpper(NameToString(faction));
     }
     let strength = CBTurfWarsOn() ? CBGangStrengthWord(CBGangStrength(sys, faction)) : "";
     this.SetRow(row, CBHudLayoutWide(), pip, false, false,
@@ -3680,12 +3681,24 @@ public class CBHud {
   // ---- The Rivals tree ([H2], 2.4.4) -------------------------------------------------------------------------------
 
   // The gangs that have Rivals to draw, in roster order.
+  // Every gang with a Rival on the roster, and last a group of its own for Rivals of no gang (2.5.3), whom the list showed
+  // and the cards never did.
   private func TreeGangs(sys: ref<CyberbaneSystem>) -> array<CName> {
     let out: array<CName>;
+    let gangless = false;
     for r in sys.GetRivals() {
-      if IsDefined(r) && !ArrayContains(out, r.faction) && NotEquals(r.faction, n"") {
-        ArrayPush(out, r.faction);
+      if IsDefined(r) {
+        if Equals(r.faction, n"") {
+          gangless = true;
+        } else {
+          if !ArrayContains(out, r.faction) {
+            ArrayPush(out, r.faction);
+          }
+        }
       }
+    }
+    if gangless {
+      ArrayPush(out, CBTreeNoGang());
     }
     return out;
   }
@@ -3803,8 +3816,8 @@ public class CBHud {
     let gangs = this.TreeGangs(sys);
     if !ArrayContains(gangs, this.m_treeGang) {
       let picked = sys.FindRivalById(this.m_pickRival);
-      if IsDefined(picked) && ArrayContains(gangs, picked.faction) {
-        this.m_treeGang = picked.faction;
+      if IsDefined(picked) && ArrayContains(gangs, CBTreeGangOf(picked)) {
+        this.m_treeGang = CBTreeGangOf(picked);
       } else {
         this.m_treeGang = ArraySize(gangs) > 0 ? gangs[0] : n"";
       }
@@ -3834,19 +3847,27 @@ public class CBHud {
         this.m_webBoxLine[0].SetText(ArraySize(gangs) > 1 ? "NEXT GANG" : "YOU");
       }
     }
-    if Equals(gang, n"") || !IsDefined(fs) {
+    // Drawn whether or not the gang has a record (2.5.3): this asked for one, and a gang V had never killed one of or paid
+    // off had none, so its Rival was in the list and the cards said "No Rivals yet". Without one nobody holds a chair,
+    // and every Rival of theirs is in the rest.
+    if ArraySize(gangs) == 0 || Equals(gang, n"") {
       this.PlaceWord(words, 660.0, 200.0, "No Rivals yet", CBHudGrey(), 1.0);
       words += 1;
     } else {
       // Rows, each named on the left (2.5.0): the leader, the lieutenants, the rest, the fallen. No lines between them:
       // the chair lines and the bond lines crossed the boxes wherever they were drawn.
-      let label = StrUpper(CBFactionLabel(gang));
+      let gangName = Equals(gang, CBTreeNoGang()) ? "No gang" : CBFactionLabel(gang);
+      let label = StrUpper(StrLen(gangName) > 0 ? gangName : NameToString(gang));
       if ArraySize(gangs) > 1 {
         label += s"  (\(ArrayFindFirst(gangs, gang) + 1) OF \(ArraySize(gangs)))";
       }
       this.PlaceWord(words, 805.0, 40.0, label, CBHudHead(), 1.0);
       words += 1;
-      let leader = fs.leaderRivalId > 0 ? sys.FindRivalById(fs.leaderRivalId) : null;
+      let leaderId = IsDefined(fs) ? fs.leaderRivalId : 0;
+      let lt1Id = IsDefined(fs) ? fs.lt1RivalId : 0;
+      let lt2Id = IsDefined(fs) ? fs.lt2RivalId : 0;
+      let lt3Id = IsDefined(fs) ? fs.lt3RivalId : 0;
+      let leader = leaderId > 0 ? sys.FindRivalById(leaderId) : null;
       if IsDefined(leader) && !CBRivalStillAround(leader) {
         leader = null;
       }
@@ -3855,8 +3876,8 @@ public class CBHud {
       this.m_treeNemesis = 0;
       let most = 1;
       for r in sys.GetRivals() {
-        if IsDefined(r) && Equals(r.faction, gang) {
-          let seated = r.id == fs.leaderRivalId || r.id == fs.lt1RivalId || r.id == fs.lt2RivalId || r.id == fs.lt3RivalId;
+        if IsDefined(r) && Equals(CBTreeGangOf(r), gang) {
+          let seated = r.id == leaderId || r.id == lt1Id || r.id == lt2Id || r.id == lt3Id;
           let around = CBRivalStillAround(r) || r.state == EnumInt(ECBRivalState.Debtor) || r.state == EnumInt(ECBRivalState.Dormant);
           if around && r.encounters > most {
             most = r.encounters;
@@ -3877,8 +3898,8 @@ public class CBHud {
       }
       let cw = CBTreeCardW();
       let ch = CBTreeCardH();
-      let nextUp = CBBestCandidate(sys, fs);
-      let nextLt = CBBestLieutenant(sys, fs);
+      let nextUp = IsDefined(fs) ? CBBestCandidate(sys, fs) : null;
+      let nextLt = IsDefined(fs) ? CBBestLieutenant(sys, fs) : null;
       this.PlaceLabel(words, 0.0, ch / 2.0, "LEADER", CBHudDim());
       words += 1;
       this.TreeBox(sys, game, 1, leader, IsDefined(nextUp) ? CBRivalDisplayName(sys.GetContent(), nextUp) : "",
@@ -3886,7 +3907,7 @@ public class CBHud {
       let rowY = ch + CBTreeRowGap();
       this.PlaceLabel(words, 0.0, rowY + ch / 2.0, "LIEUTENANTS", CBHudDim());
       words += 1;
-      let ltIds: array<Int32> = [fs.lt1RivalId, fs.lt2RivalId, fs.lt3RivalId];
+      let ltIds: array<Int32> = [lt1Id, lt2Id, lt3Id];
       let named = false;
       let k = 0;
       while k < 3 {
@@ -5184,7 +5205,7 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     if CBLaneDailyCap(lane) <= 0 {
       return label + "   off";
     }
-    // Nobody who could come at all (2.5.2): said instead of the next window's time, which on a new game read as a
+    // Nobody who could come at all (2.5.3): said instead of the next window's time, which on a new game read as a
     // Rival, a crew and an apex squad on their way with nobody against V.
     let nobody = CBLaneNobodyWhy(sys, lane);
     if StrLen(nobody) > 0 {
@@ -5243,6 +5264,17 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
                            : label + "   " + who + "  any moment" + tail;
   }
   return label + "   " + who + "  " + CBTimeText(ticks) + CBHudBudgetTail(sys, game, lane);
+}
+
+// The Rivals page's cards group Rivals by gang; Rivals of no gang are a group of their own, under this name (2.5.3). No
+// gang is called this, and nothing but the cards' own choice of group ever holds it.
+func CBTreeNoGang() -> CName = n"CB_NoGang"
+
+func CBTreeGangOf(r: ref<CBRival>) -> CName {
+  if !IsDefined(r) {
+    return n"";
+  }
+  return Equals(r.faction, n"") ? CBTreeNoGang() : r.faction;
 }
 
 // Is every Rival who could come on their cooldown after their last fight?

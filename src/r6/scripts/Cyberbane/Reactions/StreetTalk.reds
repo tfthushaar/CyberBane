@@ -817,7 +817,7 @@ public class CBStreetTalk {
     // person standing beside them bring up that person's own "Talk", which is switched off too, and one standing over
     // somebody V put down brings up "Carry body", which stays. It ended the conversation on the spot, so talking to
     // one of a group, or to anybody lying at V's feet, kept closing.
-    // Their own talk on F off again, every tick of the conversation (2.5.2). The game turns it back on by itself once they
+    // Their own talk on F off again, every tick of the conversation (2.5.3). The game turns it back on by itself once they
     // stop being busy, and a frightened passer-by is busy until the fear wears off, which it does while V holds them to
     // talk. Their "Talk" then came up under V's eyes, F said the game's stock line and stopped them as well as opening
     // Cyberbane's lines, and the game, with its own prompt open, kept the lines off the screen until V stepped out of
@@ -868,7 +868,7 @@ public class CBStreetTalk {
     // it goes (OnFrame), and this is the tick's own check. 1.9.7 gave up on anybody the game kept wiping it
     // for; played, the list stayed visible with the keeper even when it was wiped every frame (168 times in
     // one conversation), and the give-up only shut out people standing chatting together. Counted for the log.
-    // Never over a prompt of the game's (2.5.2): that is not a wipe but something else on F, waited out above.
+    // Never over a prompt of the game's (2.5.3): that is not a wipe but something else on F, waited out above.
     if !foreign && !this.Shown(game) {
       this.Push(game);
       this.m_wipes += 1;
@@ -919,7 +919,7 @@ public class CBStreetTalk {
     this.NextFrame(game);
   }
 
-  // "Talk" gives way to a prompt of the game's that has taken its place (2.5.2). Written back over it every frame, the
+  // "Talk" gives way to a prompt of the game's that has taken its place (2.5.3). Written back over it every frame, the
   // game's prompt was gone from the blackboard before the tick could see it, so nothing was switched off or waited
   // out, while the game's prompt stayed open underneath: one press of F did both, and with the lines up the game kept
   // them hidden for as long as its own prompt was open. Left on screen, the tick sees it (Keep): their own talk and

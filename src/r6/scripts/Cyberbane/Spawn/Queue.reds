@@ -298,7 +298,7 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
 }
 
-// Why nobody at all could take this lane's next turn, in the player's words, or "" when somebody could (2.5.2). The
+// Why nobody at all could take this lane's next turn, in the player's words, or "" when somebody could (2.5.3). The
 // Standing page named the time of the next window whether or not anybody could come in it, so a new game, with no
 // Rival and no gang against V, read as a Rival, a crew and an apex squad on their way. Only what CBLanePick itself
 // asks before it will pick anybody, so the two cannot disagree: a Rival who can be sent, or with none on the books a

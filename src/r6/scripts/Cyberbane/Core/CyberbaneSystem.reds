@@ -1109,6 +1109,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       // was first read on a quiet tick, which on a busy street came minutes after a load: until then the Hub, the
       // titles, the prices and everything else that reads Renown saw it without the floor, and then it jumped.
       CBRefreshStreetCred(this, game);
+      // Any gang with a Rival after V and no record, put on the books with its chairs filled (2.5.3).
+      CBFileRivalGangs(this);
     }
 
     // What the player chose on the Hub while the game was paused. Same reasoning again. After the
