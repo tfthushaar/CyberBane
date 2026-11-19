@@ -347,6 +347,11 @@ public class CBStreetLife {
     return NotEquals(this.m_favFaction, n"");
   }
 
+  // Whose favour it is, for the map's marker on the one who owes them (UI/Tracking.reds, 2.5.4).
+  public func FavourFaction() -> CName {
+    return this.m_favFaction;
+  }
+
   // Asked in a conversation (Reactions/StreetTalk.reds). Starts one and says what it is, or says no.
   public func OfferFavour(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
     if this.FavourOpen() || !CBStreetLifeOn(n"favours") {
@@ -381,8 +386,8 @@ public class CBStreetLife {
           let d = Vector4.Distance(ppos, p.GetWorldPosition());
           if d >= 15.0 && d <= 60.0 && CBSafetyGate.CanTalkTo(p) {
             p.cbFavourMark = true;
+            this.m_favFaction = t.faction;   // before the marker, which names whose favour it is (2.5.4)
             CBTrackOnMap(game, p);
-            this.m_favFaction = t.faction;
             this.m_favKind = 2;
             this.m_favTarget = p;
             this.m_favLeaned = false;

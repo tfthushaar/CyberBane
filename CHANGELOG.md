@@ -3,6 +3,18 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.5.4 (19 November 2026)
+
+**The map**
+- **Only the people after you are marked "Hunting you".** Every marker Cyberbane put on anybody said it: a bagman, a
+  gang's people at a sit-down or a funeral, a wannabe, a favour's lookout, a Rival waiting at their place, and the
+  passer-by a friendly gang asks you to lean on, who has no gang and so read "Crew - Hunting you". Each now says what
+  they are and what to do about them: "Owes the Valentinos" with "A favour: remind them what they owe", a bagman
+  "Carrying the take", a Rival "At their place, not looking for you. Yet." A Rival at their place is marked as hunting you once the fight starts.
+- A bounty hunter's marker carries their name instead of "Crew", and anybody else after you with no gang is a "Hunter".
+
+Your progress carries over.
+
 ## 2.5.3 (19 November 2026)
 
 **Talking to people**

@@ -156,7 +156,10 @@ public func CBTrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Voi
   data.active = true;
   data.visibleThroughWalls = false;
   data.scriptData = look;
-  data.debugCaption = CBHunterPinCaption(CBMarkerName(game, puppet));
+  // Somebody out for V wears the hunter's caption; anybody else of ours says what they are (2.5.4, CBMarkerNote).
+  let note = CBMarkerNote(game, puppet);
+  data.debugCaption = StrLen(note) > 0 ? CBMarkedPinCaption(CBMarkerName(game, puppet), note)
+                                       : CBHunterPinCaption(CBMarkerName(game, puppet));
   CBTrace("map: marker on a spawned enemy");
   // The same slot the game hangs its own role pins from, so the icon sits over the head.
   // A body that streamed out and back in has lost cbMapped and is set up again. Whatever pin it had
@@ -196,11 +199,65 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     }
     return CBRivalDisplayName(sys.GetContent(), who);
   }
-  let gang = CBCapFirst(CBFactionLabel(CBClassifyFaction(puppet)));
-  if StrLen(gang) == 0 {
-    return des.IsTagged(id, n"CB_Apex") ? "Apex squad" : "Crew";
+  // One of the hunters' ladder by their own name, a passer-by by what a favour says of them, and the street's people by
+  // what they are doing (2.5.4). Everybody of no gang was "Crew".
+  if des.IsTagged(id, n"CB_Bounty") {
+    let hunter = CBBountyScannerName(puppet);
+    return StrLen(hunter) > 0 ? hunter : "Bounty hunter";
   }
-  return gang + (des.IsTagged(id, n"CB_Apex") ? " apex squad" : " crew");
+  let gang = CBCapFirst(CBFactionLabel(CBClassifyFaction(puppet)));
+  if puppet.cbFavourMark {
+    let life = CBStreetLifeFor(game);
+    let owed = IsDefined(life) ? CBFactionLabel(life.FavourFaction()) : "";
+    return StrLen(owed) > 0 ? "Owes " + owed : "Owes a favour";
+  }
+  if des.IsTagged(id, n"CB_Wannabe") {
+    return "Wannabe";
+  }
+  let what = "";
+  if des.IsTagged(id, n"CB_Bagman") { what = "bagman"; }
+  if des.IsTagged(id, n"CB_Favour") { what = "lookout"; }
+  if des.IsTagged(id, n"CB_Patrol") { what = "patrol"; }
+  if des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") { what = "gathering"; }
+  if des.IsTagged(id, n"CB_Apex") { what = "apex squad"; }
+  if StrLen(what) == 0 {
+    what = "crew";
+  }
+  if StrLen(gang) == 0 {
+    return CBCapFirst(Equals(what, "crew") ? "hunter" : what);
+  }
+  return gang + " " + what;
+}
+
+// The line under the name for somebody of ours who is not out for V, "" for somebody who is (2.5.4).
+func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || !IsDefined(puppet) {
+    return "";
+  }
+  let id = puppet.GetEntityID();
+  if puppet.cbFavourMark {
+    return "A favour: remind them what they owe. Lean on them, or square up to them.";
+  }
+  if des.IsTagged(id, n"CB_Lair") {
+    return "At their place, not looking for you. Yet.";
+  }
+  if des.IsTagged(id, n"CB_Bagman") {
+    return "Carrying the take. Rob them, or let them walk.";
+  }
+  if des.IsTagged(id, n"CB_Favour") {
+    return "Watching a friend's corner. Run them off.";
+  }
+  if des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") {
+    return "Gang business. Crash it, or leave them to it.";
+  }
+  if des.IsTagged(id, n"CB_Wannabe") {
+    return "Out to make a name off you. Fists only.";
+  }
+  if des.IsTagged(id, n"CB_Patrol") {
+    return "Walking their turf.";
+  }
+  return "";
 }
 
 // Take down any pin whose owner has left the world.

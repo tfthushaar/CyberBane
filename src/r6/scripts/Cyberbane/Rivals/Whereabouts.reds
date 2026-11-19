@@ -810,6 +810,11 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   des.UnassignTag(id, n"CB_Lair");
   des.AssignTag(id, n"CB_Rival");
   sys.ClearLair();
+  // Their marker said they were at their place; now they are after V (UI/Tracking.reds, 2.5.4).
+  if body.cbMapped {
+    CBUntrackOnMap(game, body);
+    CBTrackOnMap(game, body);
+  }
   let now = CBGameSeconds(game);
   // What CBRivalOnTheirWay sets for one who walked in, so the encounter code finds them where it
   // expects them: hunting, the active Rival, and the retire clock starting now rather than from

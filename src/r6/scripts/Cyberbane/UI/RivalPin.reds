@@ -53,6 +53,35 @@ public func CBHunterPinCaption(name: String) -> String {
   return CBRivalPinTag() + CBHunterPinMark() + name;
 }
 
+// The marker on somebody of Cyberbane's who is not out looking for V (2.5.4): a bagman, a gang's people at a sit-down
+// or a gathering, a wannabe, a favour's lookout, a Rival waiting at their place, a passer-by a favour is about. Every
+// one of them wore the hunter's caption, so the map called them "Hunting you", and a passer-by with no gang, the one a
+// favour asks V to lean on, read "Crew - Hunting you". The caption carries what they are and a line about them,
+// split by CBMarkedPinSplit.
+public func CBMarkedPinMark() -> String = "~"
+public func CBMarkedPinSplit() -> String = "^"
+
+public func CBMarkedPinCaption(name: String, note: String) -> String {
+  return CBRivalPinTag() + CBMarkedPinMark() + name + CBMarkedPinSplit() + note;
+}
+
+public func CBIsMarkedPin(mappin: wref<IMappin>) -> Bool {
+  return IsDefined(mappin) && StrBeginsWith(mappin.GetDisplayName(), CBRivalPinTag() + CBMarkedPinMark());
+}
+
+// The name or the line of a marked pin's caption.
+func CBMarkedPinPart(mappin: wref<IMappin>, note: Bool) -> String {
+  let caption = mappin.GetDisplayName();
+  let skip = StrLen(CBRivalPinTag()) + StrLen(CBMarkedPinMark());
+  let body = StrMid(caption, skip, StrLen(caption) - skip);
+  let name: String;
+  let line: String;
+  if !StrSplitFirst(body, CBMarkedPinSplit(), name, line) {
+    return note ? "" : body;
+  }
+  return note ? line : name;
+}
+
 // A gathering on the way (Spawn/StreetEvents.reds) and a place the map remembers (UI/MapPins.reds, 2.5.0): marks of
 // their own after the tag, so each says what it is.
 public func CBEventPinMark() -> String = "#"
@@ -95,6 +124,9 @@ public func CBRivalPinName(mappin: wref<IMappin>) -> String {
   if CBIsMemoryPin(mappin) {
     return CBMapMemoryTitle(CyberbaneSystem.Get(GetGameInstance()), CBMemoryPinId(mappin));
   }
+  if CBIsMarkedPin(mappin) {
+    return CBMarkedPinPart(mappin, false);
+  }
   let caption = mappin.GetDisplayName();
   let skip = StrLen(CBRivalPinTag());
   if CBIsHunterPin(mappin) {
@@ -128,6 +160,9 @@ public func CBRivalPinSubtitle(mappin: wref<IMappin>) -> String {
   // A gathering's pin said "Cyberbane Rival. Last seen here." up to 2.5.0.
   if CBIsEventPin(mappin) {
     return "Gang business, near here now. Crash it, or leave them to it.";
+  }
+  if CBIsMarkedPin(mappin) {
+    return CBMarkedPinPart(mappin, true);
   }
   return CBIsHunterPin(mappin) ? "Hunting you." : "Cyberbane Rival. Last seen here.";
 }
@@ -205,7 +240,7 @@ public func SetData(const data: script_ref<WorldMapTooltipData>, menu: ref<World
 public func CreateMappinUIProfile(mappin: wref<IMappin>, mappinVariant: gamedataMappinVariant,
                                   customData: ref<MappinControllerCustomData>) -> MappinUIProfile {
   let profile = wrappedMethod(mappin, mappinVariant, customData);
-  if !CBIsRivalPin(mappin) || CBIsHunterPin(mappin) {
+  if !CBIsRivalPin(mappin) || CBIsHunterPin(mappin) || CBIsMarkedPin(mappin) {
     return profile;
   }
   return MappinUIProfile.Create(r"base\\gameplay\\gui\\widgets\\minimap\\minimap_poi_mappin.inkwidget",
