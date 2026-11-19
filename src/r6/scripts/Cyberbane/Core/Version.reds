@@ -6,10 +6,10 @@
 //
 // Global scope (no module); every symbol is prefixed to avoid collisions.
 
-public func CyberbaneVersion() -> String = "2.5.0"
+public func CyberbaneVersion() -> String = "2.5.1"
 
 // Numeric form: major*10000 + minor*100 + patch. Used for logging and gating.
-public func CyberbaneVersionCode() -> Int32 = 20500
+public func CyberbaneVersionCode() -> Int32 = 20501
 
 // Current persistent-state schema version (see spec section 19.2). Bump and add a
 // Migrate() step whenever the shape of persistent data changes.
@@ -21,4 +21,6 @@ public func CyberbaneVersionCode() -> Int32 = 20500
 //    only ever written, never read. CBStats.killsByClass / killsByMethod moved out to a
 //    flat array on the system; killsByMethod was dead and is dropped. Kill tallies start
 //    fresh rather than being read back out of the old shape.
-public func CyberbaneSchemaVersion() -> Int32 = 3
+// 4: no change of shape (2.5.1). The fighting-style tallies are evened out once: until 2.5.1 most kills in a
+//    firefight were scored as unseen, so a player who went in shooting had a Ghost tally they never earned.
+public func CyberbaneSchemaVersion() -> Int32 = 4

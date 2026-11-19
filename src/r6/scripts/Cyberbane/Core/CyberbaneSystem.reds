@@ -4330,6 +4330,28 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
       CBLog.Info(n"Core", "Migrated Cyberbane state to schema 2 (bit-set rumor and trait storage).");
     }
+    if fromSchema > 0 && fromSchema < 4 {
+      // 2.5.1: until now most kills in a gunfight were scored as unseen, a ghost's work, so a V who always went in
+      // shooting read as a Ghost and could not stop. The Ghost tally is brought down to the highest of the others (or
+      // to the least a style needs to show at all), once: a real ghost keeps the style and goes on earning it, and
+      // anybody else's next fights decide what they are.
+      if ArraySize(this.m_archetype) == CBArchetypeCount() {
+        let ghost = EnumInt(ECBArchetype.Ghost);
+        let others = 0.0;
+        let k = 0;
+        while k < ArraySize(this.m_archetype) {
+          if k != ghost {
+            others = MaxF(others, this.m_archetype[k]);
+          }
+          k += 1;
+        }
+        let cap = MaxF(others, CBConfig.ArchetypeMinTotal());
+        if this.m_archetype[ghost] > cap {
+          CBLog.Info(n"Core", s"Fighting style evened out for 2.5.1: Ghost \(RoundF(this.m_archetype[ghost])) down to \(RoundF(cap)).");
+          this.m_archetype[ghost] = cap;
+        }
+      }
+    }
   }
 
   // ---- Basic accessors (expanded by the model layer) --------------------

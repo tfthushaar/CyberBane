@@ -109,6 +109,14 @@ public func CBActingStanding(faction: CName, earned: Float) -> Float {
   if view == 0 {
     if CBTwrOwnsHostility(faction) {
       let says = CBTwrGangHostile(GetGameInstance(), faction);
+      // It could not be asked (2.5.1): what its people do is the next best answer. Hostile on sight lately, by any
+      // hand but Cyberbane's (which stands down from hostility under compatibility), is hostile here.
+      if says < 0 {
+        let sysSeen = CyberbaneSystem.Get(GetGameInstance());
+        if IsDefined(sysSeen) && sysSeen.SeenHostileRecently(faction) {
+          says = 1;
+        }
+      }
       if says == 1 {
         return earned <= hostile ? earned : (vendetta + hostile) / 2.0;
       }

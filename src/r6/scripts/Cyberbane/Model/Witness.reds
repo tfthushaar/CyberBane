@@ -58,10 +58,13 @@ public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: Ent
     // standing beside V were never asked. And somebody lying unconscious saw nothing.
     if CBNpcSafe(sys, npc) && Vector4.Distance(at, npc.GetWorldPosition()) <= radius {
       scanned += 1;
+      // Anybody in the fight saw it (2.5.1): somebody shooting at V knows where V is. The reaction component's sight
+      // test is the street's, for people going about their day, and is not something to lean on mid-fight; a gunfight
+      // whose kills it turned down was scored as nobody's to tell, and as a ghost's work.
       if NotEquals(npc.GetEntityID(), victim)
          && CBStillStanding(npc)
          && !ScriptedPuppet.IsPlayerCompanion(npc)
-         && CBWitnessCanSee(npc, player) {
+         && (CBNpcInCombat(npc) || CBWitnessCanSee(npc, player)) {
         seen += 1;
       }
     }

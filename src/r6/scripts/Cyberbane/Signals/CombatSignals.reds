@@ -761,8 +761,11 @@ public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
   // it cannot identify.
   info.witnessed = witnesses > 0 && !CBPlayerMasked(game);
   // Stealth stays literal: it is about whether anyone was there at all, and it feeds the quiet
-  // takedown count rather than attribution.
-  info.stealth = witnesses == 0;
+  // takedown count rather than attribution. And never in an open fight (2.5.1): the last of a crew V shot their way
+  // through had nobody left standing to see it, and every such kill was scored as unseen, a ghost's.
+  let you = GetPlayer(game);
+  info.loud = IsDefined(you) && you.IsInCombat();
+  info.stealth = witnesses == 0 && !info.loud;
   info.at = CBGameSeconds(game);
   CBSetMethodFlags(info, puppet.cbLastMethodMask);
   info.weaponRecord = puppet.cbLastWeaponRecord;
