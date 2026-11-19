@@ -379,19 +379,31 @@ public let cbTalkHeldTick: Int32;
 // into a fight fifteen seconds after it opened, and a scout called it in six seconds after seeing V, whether or not V
 // was in the middle of talking to them, so V's answer was lost to a gunfight more often than not.
 public func CBTalkEngaged(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
-  if !IsDefined(npc) {
+  if !IsDefined(npc) || !IsDefined(sys) {
     return false;
   }
-  if npc.cbTalkPartner {
+  // The lines are up, or an answer is coming: as long as V takes to choose, as the game's own dialogues wait.
+  if npc.cbTalkPartner && npc.cbTalkLinesUp {
     return true;
+  }
+  // "Talk" offered and not pressed holds the clock for a few seconds, no longer: a Rival V only stands and stares at
+  // with empty hands would otherwise have waited for ever.
+  if npc.cbTalkPartner {
+    return npc.cbTalkOfferedTick > 0 && sys.GetTickCount() - npc.cbTalkOfferedTick <= CBConfig.TalkOfferHoldTicks();
   }
   // Settling with a gun in hand is not walking up to talk: a Rival V stares down a barrel at does not wait for ever.
   let player = GetPlayer(npc.GetGame());
   if !IsDefined(player) || IsDefined(GameObject.GetActiveWeapon(player)) {
     return false;
   }
-  return IsDefined(sys) && npc.cbTalkHeldTick > 0 && sys.GetTickCount() - npc.cbTalkHeldTick <= 2;
+  return npc.cbTalkHeldTick > 0 && sys.GetTickCount() - npc.cbTalkHeldTick <= 2;
 }
+
+// The conversation's lines are up for them (Engage) and when "Talk" was offered to them (Begin), for CBTalkEngaged.
+@addField(ScriptedPuppet)
+public let cbTalkLinesUp: Bool;
+@addField(ScriptedPuppet)
+public let cbTalkOfferedTick: Int32;
 
 // The four choices, in the order they are shown.
 public func CBTalkGreet() -> Int32 = 0
@@ -784,7 +796,8 @@ public class CBStreetTalk {
       return;
     }
     if kind == CBPromptInteraction() && !CBTalkDownAtFeet(t.npc) {
-      if IsDefined(npc) && NotEquals(npc.GetEntityID(), t.id) {
+      if IsDefined(npc) && NotEquals(npc.GetEntityID(), t.id)
+         && StrLen(CBTalkWhyNot(sys, game, player, npc, CBConfig.TalkKeepRange())) == 0 {
         this.HushCandidate(npc);
       }
       this.m_promptWait += dt;
@@ -817,7 +830,7 @@ public class CBStreetTalk {
       }
     }
     // Still on screen? Something of the game's may write over the hub without a hub of its own
-    // (CBNativePromptUp would have ended ours for one of those): the frame keeper puts it back the frame
+    // (CBNativePromptKind would have ended ours for one of those): the frame keeper puts it back the frame
     // it goes (OnFrame), and this is the tick's own check. 1.9.7 gave up on anybody the game kept wiping it
     // for; played, the list stayed visible with the keeper even when it was wiped every frame (168 times in
     // one conversation), and the give-up only shut out people standing chatting together. Counted for the log.
@@ -915,7 +928,7 @@ public class CBStreetTalk {
     if StrLen(why) == 0 && IsDefined(npc) {
       let kind = CBNativePromptKind(game);
       if kind == CBPromptDialogue() {
-        why = "one of the game's own prompts is up";
+        why = CBTalkWhyGamePrompt();
       } else {
         if kind == CBPromptInteraction() && !CBTalkDownAtFeet(npc) {
           // Waited out once per person: a prompt still up a moment after their own talk went off is not theirs (a
@@ -926,7 +939,7 @@ public class CBStreetTalk {
           }
           this.m_promptWait += dt;
           if this.m_promptWait > CBConfig.TalkOwnPromptWait() || !this.HushCandidate(npc) {
-            why = "one of the game's own prompts is up";
+            why = CBTalkWhyGamePrompt();
           } else {
             waitPrompt = true;
           }
@@ -936,7 +949,16 @@ public class CBStreetTalk {
       }
     }
     if !IsDefined(npc) || StrLen(why) > 0 {
-      this.SetCandidate(null);
+      // Somebody whose own talk is off while something else of the game's stays up in front of V (a door, a pickup)
+      // is left that way while V keeps looking at them: switched back on, their own "Talk" came up, the wait had
+      // already run out for them, and they could not be talked to until V looked at somebody else.
+      let waitingOut = IsDefined(npc) && IsDefined(this.m_hushed) && Equals(why, CBTalkWhyGamePrompt())
+                    && Equals(this.m_hushed.GetEntityID(), npc.GetEntityID());
+      if waitingOut {
+        this.m_candidate = null;
+      } else {
+        this.SetCandidate(null);
+      }
       this.m_dwell = 0.0;
       this.NoteWhyNot(game, dt, npc, why);
       this.Explain(game, npc, why);
@@ -980,10 +1002,21 @@ public class CBStreetTalk {
   private func SetCandidate(npc: ref<ScriptedPuppet>) -> Void {
     let was = this.m_hushed;
     if IsDefined(was) && (!IsDefined(npc) || NotEquals(was.GetEntityID(), npc.GetEntityID())) && !was.cbTalkPartner {
-      CBTalkUnhush(was);
-      this.m_hushed = null;
+      this.Unhushed(was);
     }
     this.m_candidate = npc;
+  }
+
+  // Their own talk back on, and the wait for the game's prompt starts afresh for them: the prompt V sees next on them
+  // is their own again.
+  private func Unhushed(was: ref<ScriptedPuppet>) -> Void {
+    CBTalkUnhush(was);
+    this.m_hushed = null;
+    if Equals(this.m_promptWaitFor, was.GetEntityID()) {
+      let none: EntityID;
+      this.m_promptWaitFor = none;
+      this.m_promptWait = 0.0;
+    }
   }
 
   // Their own talk on F off while V settles on them (CBTalkHushTalk). True when the prompt the game shows can be theirs.
@@ -993,8 +1026,7 @@ public class CBStreetTalk {
     }
     let was = this.m_hushed;
     if IsDefined(was) && NotEquals(was.GetEntityID(), npc.GetEntityID()) && !was.cbTalkPartner {
-      CBTalkUnhush(was);
-      this.m_hushed = null;
+      this.Unhushed(was);
     }
     if !CBTalkHushTalk(npc) {
       return false;
@@ -1037,6 +1069,8 @@ public class CBStreetTalk {
     // and their stock lines are switched off while the offer is up (CBTalkHush), or the game's prompt would
     // come up over Cyberbane's and F would play one of their voice lines instead.
     npc.cbTalkPartner = true;
+    npc.cbTalkLinesUp = false;
+    npc.cbTalkOfferedTick = Max(sys.GetTickCount(), 1);
     CBTalkHush(npc);
     // Their own talk is the conversation's to put back now (End), not the settling's.
     this.m_hushed = null;
@@ -1112,6 +1146,7 @@ public class CBStreetTalk {
     this.m_engaged = true;
     this.m_holdAge = 0.0;
     let npc = t.npc;
+    npc.cbTalkLinesUp = true;
     if CBTalkStopWalkersOn() && !t.atWork && t.rivalId == 0 {
       if npc.IsCrowd() {
         let crowd = npc.GetCrowdMemberComponent();
@@ -1430,6 +1465,7 @@ public class CBStreetTalk {
     // Their own voice and their own fears again, and the hold let go.
     if IsDefined(this.m_target) && IsDefined(this.m_target.npc) {
       this.m_target.npc.cbTalkPartner = false;
+      this.m_target.npc.cbTalkLinesUp = false;
       CBTalkReleaseHold(this.m_target.npc);
       CBTalkUnhush(this.m_target.npc);
     }
@@ -1461,6 +1497,12 @@ public class CBStreetTalk {
     if IsDefined(this.m_target) && IsDefined(this.m_target.npc) && this.m_target.npc.cbSurrendered
        && !this.m_target.npc.cbTalkSent && CBStillStanding(this.m_target.npc) {
       CBTalkHold(this.m_target.npc, CBConfig.SurrenderHoldSeconds());
+    }
+    // So does a Rival standing for a facedown V walked away from without an answer: the conversation's short holds
+    // took the place of theirs, and the facedown's own clock, not a lapsed order, decides what happens next.
+    if IsDefined(this.m_target) && IsDefined(this.m_target.npc) && this.m_target.npc.cbFacedownHeld
+       && !this.m_target.npc.cbTalkSent && CBStillStanding(this.m_target.npc) {
+      CBTalkHold(this.m_target.npc, CBConfig.FacedownHoldSeconds());
     }
     // The street leaves them be for a moment as they go (2.5.1): standing right beside V, the crowd's fear reached them
     // the second the conversation let go, and somebody V had just chatted with cowered on the spot, hands up, frozen.
@@ -1910,15 +1952,6 @@ func CBTalkReachKey(name: CName) -> Bool {
       || Equals(name, n"QuickMelee") || Equals(name, n"UseCombatGadget");
 }
 
-// Is V creeping about? Crouched, or in the stealth state the game puts V in when there are hostiles about
-// who have not found V yet.
-public func CBPlayerSneaking(game: GameInstance) -> Bool {
-  if CBPlayerCrouched(game) {
-    return true;
-  }
-  return CBPlayerInStealthState(game);
-}
-
 // Crouched, and only that (2.5.1). Talk asks this: the game's stealth state is also on while V stands upright in the
 // open with hostiles about who have not found V (a gang's people idling up the street), and it switched talk off for
 // everybody in sight with nothing on screen to say why.
@@ -1965,6 +1998,7 @@ public func CBTalkWhyJob() -> String = "they are at one of V's jobs"
 public func CBTalkWhyStory() -> String = "part of a story or a job (a quest character)"
 public func CBTalkWhyTracked() -> String = "at the job V is tracking"
 public func CBTalkWhyLair() -> String = "a Rival at their place, or one of their people"
+public func CBTalkWhyGamePrompt() -> String = "one of the game's own prompts is up"
 
 // What V is told when somebody will not talk for a reason V cannot see (2.1.0), "" for the rest: a fight, a
 // weapon, a car, somebody running or too far off speak for themselves, a vendor and a companion have the
@@ -2259,11 +2293,6 @@ public func CBTalkLeadFor(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 }
 
 // ---- The prompt ----------------------------------------------------------------------------------------
-
-// Anything of the game's own on screen: a dialogue, an interaction prompt, a loot list.
-public func CBNativePromptUp(game: GameInstance) -> Bool {
-  return CBNativePromptKind(game) != CBPromptNone();
-}
 
 // What of the game's own is on screen (2.5.1), because the two kinds are not the same to talk. A dialogue or a loot
 // list is somebody else's moment, and talk waits for it. An interaction prompt alone (the game's own "Talk" on a

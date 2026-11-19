@@ -169,17 +169,25 @@ public class CBTwrAttitudeProbe {
           if this.state != 1 {
             let fn = type.GetFunction(name);
             if IsDefined(fn) {
-              let params = ArraySize(fn.GetParameters());
+              let paramList = fn.GetParameters();
+              let params = ArraySize(paramList);
               let yesNo = CBReflectReturns(fn, n"Bool");
               let number = CBReflectReturns(fn, n"Int32");
-              if params == 1 && (yesNo || number) {
+              // The one argument has to be a gang's number, since that is what is handed over. Its own
+              // IsFactionHostile takes a person (They Will Remember 3.1), and was taken here before the type was read.
+              let takesIndex = false;
+              if params == 1 && IsDefined(paramList[0]) {
+                let pt = paramList[0].GetType();
+                takesIndex = IsDefined(pt) && Equals(pt.GetName(), n"Int32");
+              }
+              if takesIndex && (yesNo || number) {
                 this.ask = fn;
                 this.answersInt = number;
                 this.state = 1;
               } else {
                 let ret = fn.GetReturnType();
                 let retName = IsDefined(ret) ? NameToString(ret.GetName()) : "nothing";
-                seen += (StrLen(seen) > 0 ? "; " : "") + s"\(NameToString(name)) takes \(params) and answers \(retName)";
+                seen += (StrLen(seen) > 0 ? "; " : "") + s"\(NameToString(name)) takes \(CBReflectParamNames(paramList)) and answers \(retName)";
               }
             }
           }
@@ -199,6 +207,19 @@ public class CBTwrAttitudeProbe {
       this.state = 0;
     }
   }
+}
+
+// What a function takes, for the why: "Int32", "ScriptedPuppet, Bool", "nothing".
+func CBReflectParamNames(params: array<ref<ReflectionProp>>) -> String {
+  if ArraySize(params) == 0 {
+    return "nothing";
+  }
+  let out = "";
+  for p in params {
+    let t = IsDefined(p) ? p.GetType() : null;
+    out += (StrLen(out) > 0 ? ", " : "") + (IsDefined(t) ? NameToString(t.GetName()) : "?");
+  }
+  return out;
 }
 
 public func CBTwrAttitudeClass() -> CName = n"TheyWillRemember.Factions.AttitudeManager"
