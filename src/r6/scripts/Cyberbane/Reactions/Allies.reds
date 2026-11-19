@@ -141,7 +141,7 @@ public func CBAllyTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: re
   // [66] One of theirs: join when offered, leave when in.
   if gang && CBOneOfTheirsOn() {
     if Equals(war.OneOfTheirs(), t.faction) {
-      ArrayPush(out, CBTalkMakeLine("[Leave] I'm out. Tell them I'm done.", CBTalkActLeaveGang(), t"ChoiceCaptionParts.BackOutIcon"));
+      ArrayPush(out, CBTalkMakeLine("[Quit the gang] I'm out. Tell them I'm done.", CBTalkActLeaveGang(), t"ChoiceCaptionParts.BackOutIcon"));
     } else {
       if Equals(posture, ECBPosture.Allied) && Equals(war.joinOffer, t.faction) && Equals(war.OneOfTheirs(), n"") {
         let j = CBTalkMakeLine("[Join] Tell them yes. I'm one of yours.", CBTalkActJoin(), t"ChoiceCaptionParts.HandshakeIcon");
@@ -444,7 +444,7 @@ func CBGangDuty(sys: ref<CyberbaneSystem>, game: GameInstance, mine: CName, now:
     if IsDefined(efs) && CBFactionFieldsSquads(e) {
       CBFileLog(sys, n"DutyAsked", now, CBEventDistrict(sys, game), e, Cast<Float>(efs.kills));
       if CBMessagesOn() {
-        CBPhoneFromAlly(game, mine, s"Family business, \(CBYou(sys, game)): \(CBFactionLabel(e)) are getting comfortable. Put down five of them this week. We'll know.");
+        CBPhoneFromAlly(game, mine, s"Family business, \(CBYou(sys, game)): \(CBFactionLabel(e)) are getting comfortable. Put down five of them this week, dead or out cold. We'll know.");
       }
       return;
     }
@@ -635,7 +635,8 @@ public func CBInformantsLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     out += (StrLen(out) > 0 ? "; " : "") + who + (tips == 1 ? ", one tip left" : s", \(tips) tips left");
     i += 1;
   }
-  return "Who owes you: " + out + ".";
+  // Named for what they are (2.5.5): "Who owes you" read as a list of debts.
+  return "Your informants: " + out + ".";
 }
 
 // Once a game day: an informant's gang may find out, and hunt them through the street (the event engine's hunt).
@@ -658,7 +659,7 @@ public func CBInformantsDaily(sys: ref<CyberbaneSystem>, game: GameInstance, day
     let rid = book.InformantRival(i);
     let r = rid > 0 ? sys.FindRivalById(rid) : null;
     CBPhoneSend(game, IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "Your informant",
-                s"They know. \(CBCapFirst(CBFactionLabel(gang))) know I've been talking to you. They're coming for me tonight. If you want me alive, be there.");
+                s"They know. \(CBCapFirst(CBFactionLabel(gang))) know I've been talking to you. They're coming for me within the hour, and I'll run your way. If you want me alive, be ready.");
   }
 }
 

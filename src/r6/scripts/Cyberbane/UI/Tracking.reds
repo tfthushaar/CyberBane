@@ -209,7 +209,8 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   if puppet.cbFavourMark {
     let life = CBStreetLifeFor(game);
     let owed = IsDefined(life) ? CBFactionLabel(life.FavourFaction()) : "";
-    return StrLen(owed) > 0 ? "Owes " + owed : "Owes a favour";
+    // Money, said as money (2.5.5): "Owes the Valentinos" alone read as easily as a contract on them as a debt.
+    return StrLen(owed) > 0 ? "Owes " + owed + " money" : "Owes a gang money";
   }
   if des.IsTagged(id, n"CB_Wannabe") {
     return "Wannabe";
@@ -237,7 +238,9 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   }
   let id = puppet.GetEntityID();
   if puppet.cbFavourMark {
-    return "A favour: remind them what they owe. Lean on them, or square up to them.";
+    // What does it, said plainly: words, and nothing else. A beating or a body does not count, and the old line ("lean
+    // on them, or square up to them") read like a hit.
+    return "A favour, not a hit: talk to them and scare them into paying (Intimidate or Antagonize). They should walk away scared, not hurt.";
   }
   if des.IsTagged(id, n"CB_Lair") {
     return "At their place, not looking for you. Yet.";
@@ -246,7 +249,7 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     return "Carrying the take. Rob them, or let them walk.";
   }
   if des.IsTagged(id, n"CB_Favour") {
-    return "Watching a friend's corner. Run them off.";
+    return "A favour: watching your friends' corner. They will fight. Put them down or make them run.";
   }
   if des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") {
     return "Gang business. Crash it, or leave them to it.";

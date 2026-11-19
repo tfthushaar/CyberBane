@@ -62,20 +62,20 @@ func CBPerkOf(c: ref<CyberbaneContent>, id: CName, effect: String) -> ref<CBTitl
 // what the player reads, so a number changed here has to be changed in the sentence too.
 func CBSeedTitlePerks(c: ref<CyberbaneContent>) -> Void {
   // 2.4.6 ([U15]).
-  let n1 = CBPerkOf(c, n"T_NUMBER_ONE", "Bounties pay 25% more, and people read you as 10% more frightening.");
+  let n1 = CBPerkOf(c, n"T_NUMBER_ONE", "Rewards for kills pay 25% more, and people read you as 10% more frightening.");
   n1.bountyMult = 1.25;
   n1.crowdMult = 1.1;
   let wl = CBPerkOf(c, n"T_WARLORD", "Enemies are 15% more likely to break.");
   wl.breakMult = 1.15;
   let ss = CBPerkOf(c, n"T_SEASON_SURVIVOR", "Enemies are 10% more likely to break.");
   ss.breakMult = 1.1;
-  let pc = CBPerkOf(c, n"T_PARTY_CRASHER", "Bounties pay 10% more.");
+  let pc = CBPerkOf(c, n"T_PARTY_CRASHER", "Rewards for kills pay 10% more.");
   pc.bountyMult = 1.1;
-  let th = CBPerkOf(c, n"T_TROPHY_HUNTER", "Bounties pay 15% more.");
+  let th = CBPerkOf(c, n"T_TROPHY_HUNTER", "Rewards for kills pay 15% more.");
   th.bountyMult = 1.15;
   let md = CBPerkOf(c, n"T_MADE", "People read you as 10% more frightening.");
   md.crowdMult = 1.1;
-  let t = CBPerkOf(c, n"T_CYBERBANE", "Enemies are 25% more likely to break and people read you as 15% more frightening. Bounties pay 25% more. Crews send one extra.");
+  let t = CBPerkOf(c, n"T_CYBERBANE", "Enemies are 25% more likely to break and people read you as 15% more frightening. Rewards for kills pay 25% more. Crews send one extra.");
   t.breakMult = 1.25;
   t.crowdMult = 1.15;
   t.bountyMult = 1.25;
@@ -102,7 +102,7 @@ func CBSeedTitlePerks(c: ref<CyberbaneContent>) -> Void {
   t.senseMult = 0.8;
   t.recognitionAdd = -0.10;
 
-  t = CBPerkOf(c, n"T_RIVAL_BREAKER", "Bounties pay 40% more.");
+  t = CBPerkOf(c, n"T_RIVAL_BREAKER", "Rewards for kills pay 40% more.");
   t.bountyMult = 1.4;
 
   t = CBPerkOf(c, n"T_DISTRICT_PROBLEM", "Vendors charge 6% less to keep you happy. 5% more people recognise you.");
@@ -123,7 +123,7 @@ func CBSeedTitlePerks(c: ref<CyberbaneContent>) -> Void {
   t = CBPerkOf(c, n"T_PSYCHO_WHISPERER", "Sparing people earns 50% more goodwill with their gang.");
   t.mercyMult = 1.5;
 
-  t = CBPerkOf(c, n"T_PSYCHO_HUNTER", "Bounties pay 20% more.");
+  t = CBPerkOf(c, n"T_PSYCHO_HUNTER", "Rewards for kills pay 20% more.");
   t.bountyMult = 1.2;
 
   t = CBPerkOf(c, n"T_UNTOUCHABLE", "Hunters find you 15% less easily and give up on you 15% sooner.");

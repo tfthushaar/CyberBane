@@ -73,6 +73,15 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
     }
     label = StrUpper(CBRoleName(role));
   }
+  // One of the hunters' ladder by what they are and their own name (2.5.5): the bar read "HUNTING YOU" over the game's
+  // name for their record, a stranger's, when the HUD line and the scanner already called them by theirs.
+  if des.IsTagged(id, n"CB_Bounty") {
+    label = "BOUNTY HUNTER";
+    let hunter = CBBountyScannerName(npc);
+    if StrLen(hunter) > 0 {
+      name = StrUpper(hunter);
+    }
+  }
   if des.IsTagged(id, n"CB_Rival") {
     label = "RIVAL";
     // Whose body it is, first: a Rival who came with the active one carries their own name (1.9.0).

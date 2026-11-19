@@ -76,7 +76,7 @@ func CBOpenSeasonEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
   if Equals(how, n"leader") {
     CBTalkFear(sys, game, gang, CBConfig.OpenSeasonFear());
     CBFileLog(sys, n"OpenSeasonEnded", now, CBEventDistrict(sys, game), gang, 0.0);
-    CBEventSay(game, s"You killed the one who called it. \(CBCapFirst(CBFactionLabel(gang)))' open season is over.");
+    CBEventSay(game, s"You killed the one who called it. \(CBCapFirst(CBPossessive(CBFactionLabel(gang)))) open season is over.");
     return;
   }
   CBLog.Info(n"Spawn", s"Open season on V by \(NameToString(gang)) is over (\(NameToString(how))).");
@@ -176,7 +176,7 @@ public func CBOpenSeasonRoll(sys: ref<CyberbaneSystem>, game: GameInstance, days
         CBFileLog(sys, n"OpenSeason", now, CBEventDistrict(sys, game), fs.id, 0.0);
         if CBMessagesOn() {
           CBPhoneSendTinted(game, CBRivalDisplayName(CBContent(game), leader),
-            s"Open season. Every one of \(CBFactionLabel(fs.id)) knows your face, and we're coming every hour until the sun comes up tomorrow. Run.", CBHudRed());
+            s"Open season. Every one of \(CBFactionLabel(fs.id)) knows your face, and we're coming every hour for the next twenty-four. Run.", CBHudRed());
         }
         return;
       }

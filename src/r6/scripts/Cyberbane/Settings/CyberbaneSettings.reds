@@ -108,7 +108,7 @@ enum ECBLogLevel {
 // corpos: every gang with a vendetta against them, set by hand. Earned is what V earned in play; any other
 // value is the stance the gang takes whatever V does (Data/Factions.reds, CBActingStanding). Each gang's
 // own setting can follow the page's first one (AllGangs) or say for itself. The values read as their
-// names in the menu, so they are single words; the two that are not get a label (displayValues).
+// names in the menu, so they are single words; those that are not get a label (displayValues).
 enum ECBGangViewAll {
   Earned = 0,
   Allied = 1,
@@ -142,6 +142,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Preset")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Preset-Desc")
+  @runtimeProperty("ModSettings.displayValues.TurfWar", "Turf war")
+  @runtimeProperty("ModSettings.displayValues.QuietLife", "Quiet life")
   public let preset: ECBPreset = ECBPreset.Default;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -156,6 +158,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
+  @runtimeProperty("ModSettings.displayValues.HuntsOnly", "Hunts only")
   public let hudLine: ECBHudLine = ECBHudLine.Everything;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -163,6 +166,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MapMarkers")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MapMarkers-Desc")
+  @runtimeProperty("ModSettings.displayValues.NamedOnly", "Named only")
   public let mapMarkers: ECBMarkerScope = ECBMarkerScope.Everyone;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")

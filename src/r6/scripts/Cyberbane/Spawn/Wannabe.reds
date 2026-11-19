@@ -214,6 +214,12 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
   }
   CBApplyDistrictRenown(sys, book.wannabeDistrict, CBConfig.WannabeRenown());
   CBFileLog(sys, n"WannabeBeaten", now, CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
+  // Dead, said as dead (2.5.5): a kid V beat to death with fists or a blade was told as "out cold".
+  if CBMessagesOn() && IsDefined(p) && p.IsDead() {
+    CBHearsayFromStreet(game, CBPick2("That kid who squared up to you didn't get up. Ever. Half the block saw it.",
+                                      "A kid wanted a fistfight with you and ended up in a body bag. People are talking."), n"");
+    return;
+  }
   if CBMessagesOn() {
     CBHearsayFromStreet(game, CBPick3("That kid who squared up to you? Out cold. Half the block saw it.",
                                       "Somebody tried to make their name off you. Now they're famous for the wrong reason.",

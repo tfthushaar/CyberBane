@@ -429,7 +429,7 @@ public func CBWarTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref
   // Backing them: a gang that likes V, not already backed, a week after the last change of heart.
   if CBBackingOn() && t.mood == CBTalkFriendly() && NotEquals(book.Backed(), t.faction)
      && (Equals(book.Backed(), n"") || now >= book.BackedSince() + 7.0 * CBConfig.SecondsPerDay()) {
-    ArrayPush(out, CBTalkMakeLine("[Back] Your war is my war.", CBTalkActBack(), t"ChoiceCaptionParts.HandshakeIcon"));
+    ArrayPush(out, CBTalkMakeLine("[Side with them] Your war is my war.", CBTalkActBack(), t"ChoiceCaptionParts.HandshakeIcon"));
   }
   // The lie: one of a gang at war with somebody, not hostile to V.
   if CBInciteOn() && t.mood != CBTalkHostile() && now >= book.InciteUntil() {

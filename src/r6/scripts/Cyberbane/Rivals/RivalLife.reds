@@ -337,7 +337,7 @@ public func CBRivalMercyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
   if IsDefined(recruit) {
     ArrayPush(out, recruit);
   }
-  ArrayPush(out, CBTalkMakeLine("[Leave] Think about it.", CBTalkActLeave(), TDBID.None()));
+  ArrayPush(out, CBTalkMakeLine("[Not yet] Stay down. I haven't decided.", CBTalkActLeave(), TDBID.None()));
   return out;
 }
 

@@ -313,14 +313,16 @@ public class CBStreetLife {
       return;
     }
     let body: EntityID;
-    if CBSpawnGroup(game, bagRecord, n"", 2, n"CB_Bagman", CBConfig.TurfPatrolDistance(), body) > 0 {
+    let placed = CBSpawnGroup(game, bagRecord, n"", 2, n"CB_Bagman", CBConfig.TurfPatrolDistance(), body);
+    if placed > 0 {
       this.m_bagFaction = holder;
       this.m_bagBody = body;
       this.m_bagTick = now;
       this.m_bagDone = false;
       if CBMessagesOn() {
         CBHearsayFromDistrict(game, sys.GetCurrentDistrict(),
-          s"\(CBCapFirst(CBFactionLabel(holder)))' bagman is doing the rounds near you with the week's take. One lookout. Heavy pockets.", n"");
+          // The lookout only when one came (2.5.5): a crowded street can leave room for the bagman alone.
+          s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder)))) bagman is doing the rounds near you with the week's take. \(placed > 1 ? "One lookout." : "Nobody watching their back.") Heavy pockets.", n"");
       }
       CBLog.Info(n"Street", s"A \(NameToString(holder)) bagman is out near V.");
     }
@@ -336,7 +338,7 @@ public class CBStreetLife {
     CBFileLog(sys, n"BagmanRobbed", now, CBEventDistrict(sys, game), this.m_bagFaction, Cast<Float>(take));
     CBSystemNote(game, s"you took the bag: \(take)eb.", 5.0);
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"Somebody hit \(CBFactionLabel(this.m_bagFaction))' bagman. Word is it was you.", n"");
+      CBHearsayFromStreet(game, s"Somebody robbed \(CBPossessive(CBFactionLabel(this.m_bagFaction))) bagman. Word is it was you.", n"");
     }
     CBLog.Info(n"Street", s"V robbed a bagman for \(take)eb.");
   }
@@ -371,7 +373,7 @@ public class CBStreetLife {
           this.m_favBody = body;
           this.m_favUntil = now + CBConfig.FavourLifeTicks();
           CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): run off a \(NameToString(g)) lookout.");
-          return CBTalkSay(s"One of \(CBFactionLabel(g))' lookouts is watching our corner, a couple of streets over. Run them off. Marked it for you.", n"");
+          return CBTalkSay(s"One of \(CBPossessive(CBFactionLabel(g))) lookouts is watching our corner, a couple of streets over. Run them off. Marked it for you.", n"");
         }
       }
     }
@@ -382,7 +384,7 @@ public class CBStreetLife {
       // The per-NPC gate before IsCrowd, which reads their record (2.2.1): the registry still holds
       // people who have streamed out until its next prune, and the same order in the talk bubbles crashed.
       for p in reg.GetAll() {
-        if IsDefined(p) && p.cbTalkTimes == 0 && CBNpcSafe(sys, p) && !p.IsDead() && p.IsCrowd() {
+        if IsDefined(p) && p.cbTalkTimes == 0 && !p.cbDamagedByPlayer && CBNpcSafe(sys, p) && !p.IsDead() && p.IsCrowd() {
           let d = Vector4.Distance(ppos, p.GetWorldPosition());
           if d >= 15.0 && d <= 60.0 && CBSafetyGate.CanTalkTo(p) {
             p.cbFavourMark = true;
@@ -393,7 +395,7 @@ public class CBStreetLife {
             this.m_favLeaned = false;
             this.m_favUntil = now + CBConfig.FavourLifeTicks();
             CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): lean on somebody who owes them.");
-            return CBTalkSay("Somebody round here owes us and keeps forgetting. Remind them. Hard. I marked them for you.", n"");
+            return CBTalkSay("Somebody round here owes us money and keeps forgetting to pay. Go and have a word: lean on them, scare them. We want them paying, not dead. I marked them for you.", n"");
           }
         }
       }
@@ -420,6 +422,16 @@ public class CBStreetLife {
       done = CBTakenOutByV(p);
     } else {
       done = this.m_favLeaned;
+      // Hurt or killed by V instead (2.5.5): the favour was words, and it is over, said as it is. It used to run on to
+      // its end and say "somebody else handled it", which read as if somebody else had done the killing.
+      let debtor = this.m_favTarget;
+      if !done && IsDefined(debtor) && debtor.cbDamagedByPlayer {
+        if CBMessagesOn() {
+          CBPhoneFromAlly(game, this.m_favFaction, "We said scare them, not hurt them. A body doesn't pay. Forget the favour.");
+        }
+        this.FavourEnd(game);
+        return;
+      }
     }
     if done {
       this.FavourDone(sys, game, player);
@@ -427,7 +439,9 @@ public class CBStreetLife {
     }
     if now >= this.m_favUntil {
       if CBMessagesOn() {
-        CBPhoneFromAlly(game, this.m_favFaction, "Forget it. Somebody else handled it.");
+        // What happened, for each kind (2.5.5): "somebody else handled it" fit neither a debt nor a lookout plainly.
+        CBPhoneFromAlly(game, this.m_favFaction, this.m_favKind == 2 ? "Forget it. They paid up before you got to them."
+                                                                     : "Forget it. The lookout's gone. Somebody else ran them off.");
       }
       this.FavourEnd(game);
     }

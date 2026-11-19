@@ -3,6 +3,63 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.5.5 (19 November 2026)
+
+Every line Cyberbane shows was read again for what a player could take from it, so that none can be read two ways,
+none says one thing while the game does another, and none has a grammar slip.
+
+**Favours**
+- **A debt is a favour, not a hit.** The marker said "Owes the Valentinos", which reads as a reminder or a contract. It
+  now says "Owes the Valentinos money", and its note says "A favour, not a hit: talk to them and scare them into paying
+  (Intimidate or Antagonize). They should walk away scared, not hurt." The gang asks the same way: they want them
+  paying, not dead.
+- Hurting the one who owes ends the favour, and the gang texts you why. It used to run on and end with "Somebody else
+  handled it", which read as if somebody else had done the killing. When time runs out the gang now says they paid up,
+  or, for a lookout, that somebody else ran them off. Somebody you have already hurt is never the one picked.
+- A lookout favour's marker says they will fight: put them down or make them run.
+
+**The Hub and the map**
+- **A gathering's map pin shows the hour it starts.** It said "near here now" from the moment the street heard of it,
+  often an hour early. Word of a funeral, an initiation, an execution or a hunt said "tonight" at any hour; it says
+  "later".
+- **A Rival's file opens with whole sentences that match their card.** The one coming for you read "at large" under a
+  card that said HUNTING YOU, and a dead Rival read "quiet". One who owes you their life says so, on the card too
+  ("owes you" alone reads as money).
+- **The Crew page names the four ways to get people, as they work.** It said only a gang that "would die for you"
+  lends you one; a Friendly gang does too. "Ask them where they lie" is now "while they are on the ground, tell them to
+  work for you". The cut says "due within a day" instead of "tomorrow" when it is hours away.
+- Informants are listed as "Your informants" (it said "Who owes you"), and a crew member who owes you a life says
+  "owes you a life".
+- A bounty hunter's bar says BOUNTY HUNTER with their name, as the scanner does. It said HUNTING YOU over the game's
+  name for a stranger.
+- The scanner calls your own gang's people YOUR GANG. ONE OF YOURS read like your crew.
+- History says what happened: you were asked to put down five in a week, a corporation offered money to kill a gang's
+  leader, you killed both would-be leaders.
+
+**Messages and choices**
+- **Each one says what you have to do.** A power struggle and a corporation's contract say "kill", because sparing
+  does not count. Your gang's duty says five put down "dead or out cold", because both count. An informant in trouble
+  says "within the hour, and I'll run your way" instead of "tonight". Open season lasts "the next twenty-four" hours.
+- "Rewards for kills" replaces "Bounties" on titles and in Mod Settings. It means what you are paid for killing a
+  Rival, a crew or an apex squad, not the price on your head.
+- Choices say what they do: "[Quit the gang]", "[Side with them]", and "[Not yet] Stay down. I haven't decided." for a
+  downed Rival you can come back to.
+- A wannabe you killed is no longer said to have walked away. A bagman is said to have one lookout only when one came.
+- Gang names take the right possessive: "the Valentinos' bagman", "Maelstrom's open season".
+
+**Mod Settings**
+- Choices read as words: "Hunts only", "Named only", "Turf war", "Quiet life".
+- Descriptions name the setting they mean and where it is, for example **Hunt line on the HUD** under **General**.
+  Scouts and Lookouts list the real ways to stop them: put them down, pay or scare them into silence (with **Pay the
+  street** on), or stay out of a scout's sight.
+
+**Fixed**
+- **A scout you get away from no longer sends the crew anyway.** Leave the scout far enough behind that the game lets
+  them go, and they have lost you: the crew never comes and the gang cools off, as Mod Settings always said. Before,
+  the crew set off about half a minute later.
+
+Your progress carries over.
+
 ## 2.5.4 (19 November 2026)
 
 **The map**
@@ -58,11 +115,11 @@ Your progress carries over.
   what you have done, turn off **Street Cred reputation floor** under **Reputation and money**.
 
 **Messages**
-- **Off means off.** With Toasts off, or "Where messages go" set to Off, some of Cyberbane's notes still came up: a
-  tracker, a fatal flaw, what a scan or a body turned up, a Rival down at your feet, a bag or a racket robbed, "while
-  you were out", the Voodoo Boys tracing you, and the talk and Rival-place hints. They obey both switches now. Only the
-  answer to a button you press on the Hub or in Mod Settings still shows. Messages already on their way when you switch
-  off are no longer let through.
+- **Off means off.** With **Show messages** off (under **Messages and HUD**), or **Where messages go** set to Off
+  (under **General**), some of Cyberbane's notes still came up: a tracker, a fatal flaw, what a scan or a body turned
+  up, a Rival down at your feet, a bag or a racket robbed, "while you were out", the Voodoo Boys tracing you, and the
+  talk and Rival-place hints. They obey both switches now. Only the answer to a button you press on the Hub or in Mod
+  Settings still shows. Messages already on their way when you switch off are no longer let through.
 
 Your progress carries over.
 

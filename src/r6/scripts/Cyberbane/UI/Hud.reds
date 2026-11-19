@@ -3324,7 +3324,7 @@ public class CBHud {
       "",
       strength,
       "",
-      n == 1 ? "1 after you" : s"\(n) after you");
+      n == 1 ? "1 Rival" : s"\(n) Rivals");   // a count, not a claim they are all out looking (2.5.5)
     this.m_rowRival[row] = 0;
     // How much is left of them, where their Rivals show their rank (2.5.0).
     if CBTurfWarsOn() {
@@ -5379,7 +5379,7 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   // outside: a city that ignores you.
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && !rt.IsEnabled() {
-    return "Right now: Cyberbane is switched off in Mod Settings, so nothing reacts.";
+    return "Right now: Cyberbane is switched off in Mod Settings (Enabled, under General), so nothing reacts.";
   }
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().civReactions {
     return "Right now: crowd reactions are switched off in Mod Settings.";
@@ -5596,26 +5596,53 @@ public func CBHudMeter(value: Float, full: Float, cells: Int32) -> String {
 }
 
 // Why this Rival has it in for you, in plain words.
+// Whole sentences (2.5.5): the file opened on a fragment in lower case ("got away from you bleeding, at large"),
+// two subjects run together ("you beat them down and left them alive, quiet").
 func CBRivalSourceLine(source: Int32) -> String {
   if source == EnumInt(ECBRivalSource.Survivor) {
-    return "got away from you bleeding";
+    return "They got away from you bleeding.";
   }
   if source == EnumInt(ECBRivalSource.Spared) {
-    return "you beat them down and left them alive";
+    return "You beat them down and left them alive.";
   }
   if source == EnumInt(ECBRivalSource.Killer) {
-    return "put you down once";
+    return "They put you down once.";
   }
   if source == EnumInt(ECBRivalSource.Avenger) {
-    return "avenging someone you killed";
+    return "They are avenging someone you killed.";
   }
   if source == EnumInt(ECBRivalSource.Hunter) {
-    return "lost you after coming for your head";
+    return "They came for your head and lost you.";
   }
   if source == EnumInt(ECBRivalSource.Betrayer) {
-    return "ran with your crew, then turned on you";
+    return "They ran with your crew, then turned on you.";
   }
-  return "remembers you";
+  return "They remember you.";
+}
+
+// Where they stand now, as a sentence for the file, by the same test as their row in the tree (2.5.5): the file
+// went by the state alone, so the one coming for V read "at large" under a row that said HUNTING YOU, and a dead
+// one read "quiet".
+func CBRivalStateLine(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> String {
+  if r.state == EnumInt(ECBRivalState.Slain) {
+    return "They are dead.";
+  }
+  if r.state == EnumInt(ECBRivalState.Retired) {
+    return "They have left Night City.";
+  }
+  if r.id == sys.GetActiveRivalId() || r.state == EnumInt(ECBRivalState.Hunting) {
+    return "They are hunting you.";
+  }
+  if r.state == EnumInt(ECBRivalState.Debtor) {
+    return "They owe you their life.";
+  }
+  if r.state == EnumInt(ECBRivalState.Dormant) {
+    return "They have gone quiet.";
+  }
+  if r.id == sys.GetLaneRivalId(CBLaneRival()) {
+    return "They are at large, and next in line to come for you.";
+  }
+  return "They are at large.";
 }
 
 func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32, opt findArmed: Int32,
@@ -5638,11 +5665,7 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
   if IsDefined(r) {
     let content = sys.GetContent();
     out += StrUpper(CBRivalDisplayName(content, r)) + "\n";
-    out += CBRivalSourceLine(r.source) + ", " + CBRivalStateName(r.state);
-    if r.id == sys.GetLaneRivalId(CBLaneRival()) {
-      out += ", and next in line";
-    }
-    out += ".\n";
+    out += CBRivalSourceLine(r.source) + " " + CBRivalStateLine(sys, r) + "\n";
     // What is about to happen to them, or where they are: one line, near the top, so nothing that
     // matters is what the panel cuts when it runs out of room (CBHudFit).
     out += CBHudRivalWhere(sys, game, r, findArmed, forgetArmed) + "\n";
@@ -5751,7 +5774,7 @@ func CBHudRivalWhere(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiv
     return s"\(price)eb buys where they are hiding. Go there on foot and catch them unawares. You have \(CBHudEddies(game))eb.";
   }
   if why == 1 {
-    return "Turn on Rival hideouts in Mod Settings to buy where they are hiding.";
+    return "Turn on Tips on where Rivals are (under Rivals in Mod Settings) to buy where they are hiding.";
   }
   if why == 5 {
     return "Their faction is switched off under Factions in Mod Settings. Nobody of theirs is sent after you or found for you.";
@@ -5953,7 +5976,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
                             : s"You paid \(RoundF(e.value))eb for safe passage.";
   }
   if Equals(e.kind, n"BagmanRobbed") {
-    return StrLen(gang) > 0 ? s"You robbed \(gang)' bagman of \(RoundF(e.value))eb." : s"You robbed a bagman of \(RoundF(e.value))eb.";
+    return StrLen(gang) > 0 ? s"You robbed \(CBPossessive(gang)) bagman of \(RoundF(e.value))eb." : s"You robbed a bagman of \(RoundF(e.value))eb.";
   }
   if Equals(e.kind, n"Favour") {
     return StrLen(gang) > 0 ? s"You did \(gang) a favour, for \(RoundF(e.value))eb." : "You did somebody a favour.";
@@ -6048,13 +6071,13 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
     return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) warned you off." : "A corporation warned you off.";
   }
   if Equals(e.kind, n"CorpOffer") {
-    return StrLen(gang) > 0 ? s"A corporation offered you \(RoundF(e.value))eb for the head of \(gang)." : "A corporation offered you a contract.";
+    return StrLen(gang) > 0 ? s"A corporation offered you \(RoundF(e.value))eb to kill the leader of \(gang)." : "A corporation offered you a contract.";
   }
   // 2.4.5: talk and allies.
   if Equals(e.kind, n"CrewLent") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) sent people to watch your back." : "A gang sent people to watch your back."; }
   if Equals(e.kind, n"OneOfTheirs") { return StrLen(gang) > 0 ? s"You became one of \(gang)." : "You joined a gang."; }
   if Equals(e.kind, n"LeftGang") { return StrLen(gang) > 0 ? s"You stopped being one of \(gang)." : "You left a gang."; }
-  if Equals(e.kind, n"DutyAsked") { return StrLen(gang) > 0 ? s"Your gang asked you to hit \(gang)." : "Your gang asked a favour."; }
+  if Equals(e.kind, n"DutyAsked") { return StrLen(gang) > 0 ? s"Your gang asked you to put down five of \(gang) in a week." : "Your gang asked a favour."; }
   if Equals(e.kind, n"DutySettled") { return e.value > 0.5 ? "You came through for your gang." : "You let your gang down."; }
   if Equals(e.kind, n"RansomPaid") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) paid \(RoundF(e.value))eb to get one of theirs back." : "A gang paid a ransom."; }
   if Equals(e.kind, n"RansomRefused") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) refused your ransom and came for their own." : "A gang refused your ransom."; }
@@ -6110,7 +6133,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
     return StrLen(gang) > 0 ? s"You survived \(CBPossessive(gang)) open season." : "You survived open season.";
   }
   if Equals(e.kind, n"OpenSeasonEnded") {
-    return StrLen(gang) > 0 ? s"You ended \(CBPossessive(gang)) open season by killing who called it." : "You ended an open season.";
+    return StrLen(gang) > 0 ? s"You ended \(CBPossessive(gang)) open season by killing the one who called it." : "You ended an open season by killing the one who called it.";
   }
   if Equals(e.kind, n"AmbushBeaten") {
     return StrLen(gang) > 0 ? s"You walked through \(CBPossessive(gang)) ambush on the way to a job." : "You walked through an ambush.";
@@ -6167,7 +6190,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
     return StrLen(gang) > 0 ? s"You decided who runs \(gang)." : "You decided who runs a gang.";
   }
   if Equals(e.kind, n"StruggleBoth") {
-    return StrLen(gang) > 0 ? s"You put down both of \(CBPossessive(gang)) would-be leaders." : "You put down both would-be leaders.";
+    return StrLen(gang) > 0 ? s"You killed both of \(CBPossessive(gang)) would-be leaders." : "You killed both would-be leaders.";
   }
   // 2.3.3: gang life.
   if Equals(e.kind, n"FuneralCrashed") {
@@ -6375,6 +6398,11 @@ func CBRivalStateName(state: Int32) -> String {
   }
   if state == EnumInt(ECBRivalState.Active) {
     return "at large";
+  }
+  // Said as what they are (2.5.5): one who owes V their life read "quiet", the word for one keeping their head down.
+  // Their life, in full: "owes you" alone reads as money.
+  if state == EnumInt(ECBRivalState.Debtor) {
+    return "owes you their life";
   }
   return "quiet";
 }

@@ -17,7 +17,7 @@ with names and grudges.
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
 [Releases page](https://github.com/tfthushaar/CyberBane/releases)
 
-**Version 2.5.4.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.5.5.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -146,8 +146,8 @@ lives in your saves: a save made while the mod is removed loses it.
 ## Settings
 
 Everything is in **Mod Settings > Cyberbane**. The first page, **General**, has what most people
-change: Cyberbane on or off, a preset (Subtle, Default, Dramatic, or one with a shape: Nemesis, TurfWar,
-QuietLife), where messages go, the hunt line
+change: Cyberbane on or off, a preset (Subtle, Default, Dramatic, or one with a shape: Nemesis, Turf war,
+Quiet life), where messages go, the hunt line
 at the top of the screen, and map markers. The pages after it go deeper, one subject each, with
 **Advanced** at the bottom.
 

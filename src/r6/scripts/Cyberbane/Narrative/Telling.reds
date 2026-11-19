@@ -422,7 +422,8 @@ public func CBScannerStance(npc: ref<NPCPuppet>) -> String {
   if Equals(p, ECBPosture.Hostile) { word = "HOSTILE TO YOU"; }
   if Equals(p, ECBPosture.Friendly) { word = "FRIENDLY TO YOU"; }
   if Equals(p, ECBPosture.Allied) { word = "ALLIED WITH YOU"; }
-  if Equals(CBOneOfTheirsGang(npc.GetGame()), faction) { word = "ONE OF YOURS"; }
+  // "ONE OF YOURS" read like V's own crew, whose line is YOUR CREW (2.5.5): this is the gang V belongs to.
+  if Equals(CBOneOfTheirsGang(npc.GetGame()), faction) { word = "YOUR GANG"; }
   return word;
 }
 

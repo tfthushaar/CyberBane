@@ -422,7 +422,8 @@ public class CBEventEngine {
       return;
     }
     // Cyberbane's own pin with TweakXL (UI/MapPins.reds, 2.5.0), and a gathering's own mark (UI/RivalPin.reds).
-    ev.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(CBEventCaption(ev))), ev.at);
+    // With the hour it starts (2.5.5): the pin goes up when the street hears of it, often an hour before.
+    ev.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(CBEventCaption(ev) + ", around " + CBClockWord(ev.from))), ev.at);
     ev.pinned = true;
   }
 
@@ -634,15 +635,15 @@ public func CBEventWhisper(game: GameInstance) -> String {
     return "";
   }
   let a = CBFactionLabel(ev.a);
-  if Equals(ev.kind, CBEvFuneral()) { return "You hear " + a + " are burying one of theirs tonight? Somebody should send flowers."; }
+  if Equals(ev.kind, CBEvFuneral()) { return "You hear " + a + " are burying one of theirs later? Somebody should send flowers."; }
   if Equals(ev.kind, CBEvCelebration()) { return "Stay off that block later. " + CBCapFirst(a) + " are partying, and they get loud."; }
-  if Equals(ev.kind, CBEvInitiation()) { return "Some kid's getting jumped into " + a + " tonight. Poor bastard. Or poor whoever."; }
+  if Equals(ev.kind, CBEvInitiation()) { return "Some kid's getting jumped into " + a + " later. Poor bastard. Or poor whoever."; }
   if Equals(ev.kind, CBEvRecruitment()) { return CBCapFirst(a) + " are looking for new blood. My cousin's thinking about it."; }
   if Equals(ev.kind, CBEvArmsDeal()) { return "Crates came in off a truck for " + a + ". Guns, people say."; }
   if Equals(ev.kind, CBEvRacket()) { return "Don't go near " + CBPossessive(a) + " collection spot later. They count the take there."; }
-  if Equals(ev.kind, CBEvExecution()) { return CBCapFirst(a) + " are executing somebody tonight. In the open. To make a point."; }
+  if Equals(ev.kind, CBEvExecution()) { return CBCapFirst(a) + " are executing somebody later. In the open. To make a point."; }
   if Equals(ev.kind, CBEvFrontLine()) { return "Stay home later. " + CBCapFirst(a) + " and " + CBFactionLabel(ev.b) + " are going to settle it in the street."; }
-  if Equals(ev.kind, CBEvFugitive()) { return "Some guy crossed " + a + ". They're going to run him down tonight."; }
+  if Equals(ev.kind, CBEvFugitive()) { return "Some guy crossed " + a + ". They're going to run him down later."; }
   return "Heard " + a + " and " + CBFactionLabel(ev.b) + " are meeting. Could go either way.";
 }
 
@@ -1126,7 +1127,7 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
             fs.standing = ClampF(fs.standing - CBConfig.StruggleBackStanding(), -100.0, 100.0);
           }
           CBFileLog(sys, n"StruggleBoth", now, CBEventDistrict(sys, game), slain.faction, 0.0);
-          CBEventSay(game, s"You put down both of them. \(CBCapFirst(CBFactionLabel(slain.faction))) are tearing themselves apart.");
+          CBEventSay(game, s"You killed both of them. \(CBCapFirst(CBFactionLabel(slain.faction))) are tearing themselves apart.");
           book.Clear();
         }
         return;
@@ -1172,8 +1173,8 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
   if CBMessagesOn() {
     let heirName = CBRivalDisplayName(content, heir);
     let rivalName = CBRivalDisplayName(content, rival);
-    CBPhoneSendTinted(game, heirName, s"I run \(CBFactionLabel(slain.faction)) now. \(rivalName) doesn't think so. Put them down and I'll remember who helped.", CBHudCyan());
-    CBPhoneSendTinted(game, rivalName, s"\(heirName) took a chair that should be mine. Deal with them, and \(CBFactionLabel(slain.faction)) are your friends.", CBHudCyan());
+    CBPhoneSendTinted(game, heirName, s"I run \(CBFactionLabel(slain.faction)) now. \(rivalName) doesn't think so. Kill them and I'll remember who helped.", CBHudCyan());
+    CBPhoneSendTinted(game, rivalName, s"\(heirName) took a chair that should be mine. Kill them, and \(CBFactionLabel(slain.faction)) are your friends.", CBHudCyan());
   }
 }
 

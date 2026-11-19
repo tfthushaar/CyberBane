@@ -159,7 +159,7 @@ public func CBRivalPinSubtitle(mappin: wref<IMappin>) -> String {
   }
   // A gathering's pin said "Cyberbane Rival. Last seen here." up to 2.5.0.
   if CBIsEventPin(mappin) {
-    return "Gang business, near here now. Crash it, or leave them to it.";
+    return "Gang business. It starts around the time on the pin. Crash it, or leave them to it.";
   }
   if CBIsMarkedPin(mappin) {
     return CBMarkedPinPart(mappin, true);

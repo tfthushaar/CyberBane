@@ -34,7 +34,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Category-Civilians", "Crowds and morale");
     this.Text("Cyberbane-Settings-Category-Talk", "Street talk");
     this.Text("Cyberbane-Settings-StreetTalk", "Talk to people");
-    this.Text("Cyberbane-Settings-StreetTalk-Desc", "Look at somebody up close with your hands empty and the game's own choice prompt comes up: Greet, Dismiss, Antagonize or Intimidate. Scroll and press F to choose. How they answer, and what it does to your standing, depends on whether they know you, how much they and their gang fear and respect you, and how you work.");
+    this.Text("Cyberbane-Settings-StreetTalk-Desc", "Look at somebody up close with your hands empty and a Talk prompt comes up; press F and the game's own choice list opens: Greet, questions, deals, Dismiss, Antagonize, Intimidate and more. Scroll and press F to choose. How they answer, and what it does to your standing, depends on whether they know you, how much they and their gang fear and respect you, and how you work.");
     this.Text("Cyberbane-Settings-TalkShakedowns", "Shake-downs pay");
     this.Text("Cyberbane-Settings-TalkShakedowns-Desc", "Whether a ganger you intimidate may pay you to go away, once a day per gang. It costs you Conduct. Off, they only give up a Rival's hiding place or leave.");
     this.Text("Cyberbane-Settings-TalkFirst", "Ask first");
@@ -63,7 +63,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Bagmen", "Bagmen");
     this.Text("Cyberbane-Settings-Bagmen-Desc", "Now and then a gang's bagman walks the week's take across its turf near you, with one lookout. Put the bagman down and the eddies are yours; the gang takes the loss and won't like you for it.");
     this.Text("Cyberbane-Settings-Favours", "Favours");
-    this.Text("Cyberbane-Settings-Favours-Desc", "Ask a ganger who doesn't hate you whether they need anything done: run off a rival gang's lookout, or lean on somebody who owes them. They pay, warm to you, and sometimes pass on a lead.");
+    this.Text("Cyberbane-Settings-Favours-Desc", "Ask a ganger who doesn't hate you whether they need anything done: run off a rival gang's lookout (they fight: put them down or make them run), or have a word with somebody who owes them money (scare them into paying with Intimidate or Antagonize; hurting them ends the favour). They pay, warm to you, and sometimes pass on a lead.");
     this.Text("Cyberbane-Settings-SitDowns", "Sit-downs");
     this.Text("Cyberbane-Settings-SitDowns-Desc", "Word reaches you that two gangs at war are meeting at a place and an hour. Crash it and both gangs lose strength and fear you more.");
     this.Text("Cyberbane-Settings-SitDownSize", "People per gang at a sit-down");
@@ -87,13 +87,13 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-PanicInDark", "Panic in the dark");
     this.Text("Cyberbane-Settings-PanicInDark-Desc", "Pick off a crew without being seen and the rest grow afraid: they call out for whoever stopped answering, and after the second, somebody may run. Off, and a crew keeps its nerve however quietly you work.");
     this.Text("Cyberbane-Settings-MyCrew", "Your crew");
-    this.Text("Cyberbane-Settings-MyCrew-Desc", "People can end up working for you: a Rival you spared twice, a ganger you frightened badly enough, a solo a broker offers, or one of a gang that would die for you. Call them from the phone or the Hub when somebody comes for you. Off, and nobody offers, nobody joins, and nobody comes.");
+    this.Text("Cyberbane-Settings-MyCrew-Desc", "People can end up working for you: a Rival you spared before and beat down again, a ganger you frightened badly enough, a solo a broker offers, or one lent by a Friendly or Allied gang. Call them from the phone or the Hub when somebody comes for you. Off, and nobody offers, nobody joins, and nobody comes.");
     this.Text("Cyberbane-Settings-CrewComeOnOwn", "Come on their own");
     this.Text("Cyberbane-Settings-CrewComeOnOwn-Desc", "The most loyal of your crew turn up unasked when an ambush springs on you. Off, and they only come when you call.");
     this.Text("Cyberbane-Settings-CrewBetrayal", "Betrayal");
     this.Text("Cyberbane-Settings-CrewBetrayal-Desc", "Somebody whose loyalty you let run low may sell you to the people hunting you, or come when called and turn on you in the fight, and live on as a Rival. The crew page and their texts always warn you first. Off, and nobody ever betrays you.");
     this.Text("Cyberbane-Settings-CrewFrightJoin", "Frightened into joining");
-    this.Text("Cyberbane-Settings-CrewFrightJoin-Desc", "A ganger already afraid of you always joins your crew when you Intimidate them, if there is room. This is how readily one who only folds under it joins instead of passing you tips. At 0, only the afraid join.");
+    this.Text("Cyberbane-Settings-CrewFrightJoin-Desc", "A ganger already afraid of you always joins your crew when you Intimidate them, if there is room. This slider sets how often one who only gives in to Intimidate joins too, instead of passing you tips. At 0, only the already afraid join.");
     this.Text("Cyberbane-Settings-CrewCutMult", "The weekly cut");
     this.Text("Cyberbane-Settings-CrewCutMult-Desc", "What your crew asks for each week, against the usual. At 0 they work for nothing and never ask.");
     this.Text("Cyberbane-Settings-StreetCredFollows", "Street Cred follows the legend");
@@ -107,7 +107,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TalkLies", "Feed the street a lie");
     this.Text("Cyberbane-Settings-TalkLies-Desc", "Tell a talkative passer-by or a frightened ganger that you have left town, and whoever is after you starts looking in the wrong place and cools off for a while. A bad liar, or a listener who lies for a living, sells you out instead. Off, and the line is not offered.");
     this.Text("Cyberbane-Settings-RivalChrome", "Rivals get chrome");
-    this.Text("Cyberbane-Settings-RivalChrome-Desc", "Every time a Rival climbs (a rank, an escape, being spared, putting you down) they can come back with an implant that answers how you hurt them: shot, subdermal armour; cut, dermal plating; hacked, a firewall; outrun, reinforced tendons. Stats and the game's own abilities only; it shows on their page and in the scanner. Off, and Rivals only have their traits.");
+    this.Text("Cyberbane-Settings-RivalChrome-Desc", "Every time a Rival climbs (a rank, an escape, being spared, putting you down) they can come back with an implant that answers how you hurt them: shot, subdermal armour; cut, dermal plating; hacked, a firewall; outrun, reinforced tendons; burned, smoke-filter optics. Stats and the game's own abilities only; it shows on their page and in the scanner. Off, and Rivals only have their traits.");
     this.Text("Cyberbane-Settings-Facedown", "The facedown");
     this.Text("Cyberbane-Settings-Facedown-Desc", "When a Rival gets close before anybody has fired, everyone stops: talk to them to stare them down, draw first, walk away, or ask for a fight one on one. A Rival who owes you or is afraid of you can be talked out of it altogether. Off, and Rivals just open fire.");
     this.Text("Cyberbane-Settings-NobodyButMe", "Nobody kills you but me");
@@ -115,11 +115,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-BackFromDead", "Back from the dead");
     this.Text("Cyberbane-Settings-BackFromDead-Desc", "Rarely, a Rival you killed comes back weeks later, rebuilt by a back-alley ripperdoc, with heavier chrome and a new name. Never one you finished with a finisher or their fatal flaw. Off, and the dead stay dead.");
     this.Text("Cyberbane-Settings-RivalFeuds", "Rivals at war, and their bonds");
-    this.Text("Cyberbane-Settings-RivalFeuds-Desc", "Rivals of gangs at war hunt each other between your fights, and one can kill the other off screen; you can set one on another when you spare them. Two Rivals of a gang can be bound as mentor and protege, lovers or partners: kill one and the other answers it. Off, and Rivals only ever deal with you.");
+    this.Text("Cyberbane-Settings-RivalFeuds-Desc", "Rivals of gangs at war hunt each other between your fights, and one can kill the other off screen; you can set one on another when you spare them. Two Rivals of a gang can be bound as mentor and protégé, lovers or partners: kill one and the other answers it. Off, and Rivals only ever go after you, never each other.");
     this.Text("Cyberbane-Settings-Trophies", "Trophies");
     this.Text("Cyberbane-Settings-Trophies-Desc", "Kill a named Rival of rank two or more and the weapon they carried goes into your inventory, once each. Off, and only the usual loot.");
     this.Text("Cyberbane-Settings-Category-SafeAreas", "Safe areas and jobs");
-    this.Text("Cyberbane-Settings-Preset-Desc", "Subtle, Default or Dramatic sets how loud and how often everything is, in one go, overwriting what is there. Nemesis puts your Rivals first, TurfWar the gangs and their streets, and QuietLife keeps the street and talk with hardly anybody hunting you. Custom leaves your own numbers as they are.");
+    this.Text("Cyberbane-Settings-Preset-Desc", "Subtle, Default or Dramatic sets how loud and how often everything is, in one go, overwriting what is there. Nemesis puts your Rivals first, Turf war the gangs and their streets, and Quiet life keeps the street and talk with hardly anybody hunting you. Custom leaves your own numbers as they are.");
     this.Text("Cyberbane-Settings-RenownGain-Desc", "How fast your name spreads.");
     this.Text("Cyberbane-Settings-DreadGain-Desc", "How fast you become frightening. Dread is the score that makes people back off.");
     this.Text("Cyberbane-Settings-Decay-Desc", "How fast reputation fades when you stop earning it. Zero never fades.");
@@ -160,7 +160,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Whispers-Desc", "Whether you overhear people talking about you as you pass.");
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines.");
     this.Text("Cyberbane-Settings-CarsOnFoot-Desc", "Lets gangs, Rivals and apex squads drive to you while you are on foot, pull up and get out. Off, they only drive while you are driving and otherwise walk in out of sight. Turning it off takes effect at once.");
-    this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all: phone, cards, notices and overheard lines. Off changes nothing about the way the mod plays. The hunt line at the top of the screen has its own setting under General, and the Rival and apex bars theirs under Messages and HUD.");
+    this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all: phone, cards, notices and overheard lines. Off changes nothing about the way the mod plays. The answer to a button you press on the Hub or here still shows. Two things have settings of their own: the line at the top of the screen (Hunt line on the HUD, under General) and the bars under it (Rival and apex bars, under Messages and HUD).");
     this.Text("Cyberbane-Settings-MessageHold-Desc", "How long on-screen messages stay up, as a percentage. Never less than five seconds.");
     this.Text("Cyberbane-Settings-RivalsPerDay-Desc", "How many Rivals can catch up with you in one in-game day, counted separately from crews and apex squads. 0 stops them coming.");
     this.Text("Cyberbane-Settings-HitSquadsPerDay-Desc", "How many gang crews can be sent after you in one in-game day. 0 stops them coming.");
@@ -169,7 +169,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TurfWars-Desc", "Hurting a gang weakens it, most of all on its own streets. A broken gang loses its districts to its enemies next door, and they stay taken until somebody takes them back. Off keeps every gang on its own streets.");
     this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "Every crew a gang sends is led by its apex squad: a heavy, a shooter, a blade and a netrunner. Off sends the crew alone.");
     this.Text("Cyberbane-Settings-ApexArrivalSound-Desc", "Plays the game's own MaxTac descent horn when a gang sends its apex squad.");
-    this.Text("Cyberbane-Settings-ApexBossBar-Desc", "The name and health bars at the top of the screen: one for a Rival, one for each apex. The line of text above them is Hunt line on the HUD.");
+    this.Text("Cyberbane-Settings-ApexBossBar-Desc", "The name and health bars at the top of the screen: one for a Rival, one for each apex. The line of text above them is a setting of its own: Hunt line on the HUD, under General.");
     this.Text("Cyberbane-Settings-VendettaSquads-Desc", "A gang at vendetta simply comes for you rather than rolling dice. The Hub shows how long until they arrive.");
     this.Text("Cyberbane-Settings-VendettaSquadSize-Desc", "How many a vendetta sends at full menace. Lower it if the frame rate dips when a crew arrives.");
     this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Rivals, crews and apex squads drive to you whenever a car can be sent, and give chase if you are driving. If a car cannot get through, they come on foot.");
@@ -177,12 +177,12 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalStrength-Desc", "How dangerous a Rival is, as a percentage of a full boss build. A new Rival gets part of it and grows into the rest with every escape, mercy and kill, and running a crew adds a little. 55 is hard but fair. Your menace and the game's difficulty scale it further.");
     this.Text("Cyberbane-Settings-LootDrops-Desc", "Anyone Cyberbane sends who you put down leaves you something, straight into your inventory. The higher they ranked, the better it is.");
     this.Text("Cyberbane-Settings-Pacing-Desc", "Timetable sends trouble inside daily windows. Unpredictable: any minute might be the one. Reactive: only when you give a gang a reason. The per-day limits apply in every mode.");
-    this.Text("Cyberbane-Settings-Scouts-Desc", "A gang that cannot find you sends one scout ahead of the crew. Deal with the scout, or stay out of sight, and the crew never comes.");
-    this.Text("Cyberbane-Settings-DistrictLine-Desc", "Where you stand in the district you are in, shown on that same line while nobody is after you. Always leaves it up. Briefly shows it when you arrive somewhere and when your standing there changes, then clears it. Off never shows it.");
+    this.Text("Cyberbane-Settings-Scouts-Desc", "A gang that cannot find you sends one scout ahead of the crew. Put the scout down, pay them to keep quiet (with Pay the street on, under Street talk), or stay out of their sight until they lose you, and the crew never comes.");
+    this.Text("Cyberbane-Settings-DistrictLine-Desc", "Where you stand in the district you are in, shown on the hunt line while nobody is after you. Always: it stays up. Briefly: it shows when you arrive somewhere and when your standing there changes, then clears. Off: never shown.");
     this.Text("Cyberbane-Settings-DistrictLineSeconds-Desc", "How long the district line stays up, when it is set to Briefly.");
-    this.Text("Cyberbane-Settings-HudLine-Desc", "The line of text at the top of the screen. Everything is the full story. HuntsOnly shows it only while somebody is on their way or out looking. Off hides it. The bars under it are their own setting, just below.");
+    this.Text("Cyberbane-Settings-HudLine-Desc", "The line of text at the top of the screen. Everything: the full story, all the time. Hunts only: only while somebody is on their way or out looking. Off: hidden. The Rival and apex bars under it are a setting of their own: Rival and apex bars, under Messages and HUD.");
     this.Text("Cyberbane-Settings-ShowCountdowns-Desc", "Show exact times on the Hub and the HUD line. Off says soon, any moment or later instead.");
-    this.Text("Cyberbane-Settings-Bounties-Desc", "Putting down a Rival or an apex squad pays eddies, from a gang at war with theirs.");
+    this.Text("Cyberbane-Settings-Bounties-Desc", "Putting down a Rival, a crew or an apex squad earns you eddies, paid by a gang at war with theirs. This is a reward to you, not the price on your head (that is A price on your head, under Being hunted).");
     this.Text("Cyberbane-Settings-ApexTraits-Desc", "Each apex gets two traits of its own, so no two fight the same way. Stands down on its own when New Game Plus is installed.");
     this.Text("Cyberbane-Settings-TwrCompat-Desc", "Auto or On: They Will Remember decides who is hostile to you and how well a disguise works, and Cyberbane follows both: every gang it has hostile is hostile here, and crews and hostility on sight are left to it. Off: Cyberbane decides; turn hostility off in They Will Remember's own settings so the two do not disagree.");
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising for a bug report.");
@@ -219,11 +219,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-StreetClashes", "Rival gangs clash in the street");
     this.Text("Cyberbane-Settings-StreetClashes-Desc", "On a contested street, where a gang is challenging for the district or two gangs at war both work the corners, now and then a few of their people go at each other while you are around. Whoever is left standing gains a little ground. Never at a job, in a scene or somewhere safe, and only one clash every ten minutes or so. Off, and gangs only fight each other in Cyberbane's own street events.");
     this.Text("Cyberbane-Settings-PriceOnHead", "A price on your head");
-    this.Text("Cyberbane-Settings-PriceOnHead-Desc", "A gang sworn against you, a Rival who has met you often, or a corporation can put a price on you. Named solos from the hunters' ladder take it, one at a time and sometimes two, about once every nine in-game hours, and text you first. Beat one ranked above you and you take their place; at the top you are the most dangerous merc in Night City. It ends when you pay it off on the Hub, kill whoever put it up, or they stop wanting you dead. Off, and nobody puts a price on you.");
+    this.Text("Cyberbane-Settings-PriceOnHead-Desc", "A gang sworn against you, a Rival who has met you often, or a corporation can put a price on you. Named solos from the hunters' ladder take it, one at a time and sometimes two, about once every nine in-game hours, and text you first. Beat one ranked above you and you take their place; at the top you are the most dangerous merc in Night City. It ends when you pay it off on the Hub, kill whoever put it up (a gang's leader, when a gang did), or they stop wanting you dead. Off, and nobody puts a price on you.");
     this.Text("Cyberbane-Settings-CorpContracts", "The corporations hire killers");
     this.Text("Cyberbane-Settings-CorpContracts-Desc", "Arasaka, Militech and Kang Tao send no crews of their own: when they want you dead they open a contract and hire the hunters' ladder, and the contract can be bought off at a corporate price. Once you are a Legend, a corporation may also offer you a contract on a gang's leader, or warn you off. Off, and the corporations send crews like any gang.");
     this.Text("Cyberbane-Settings-Lookouts", "Lookouts in the crowd");
-    this.Text("Cyberbane-Settings-Lookouts-Desc", "On a hostile gang's streets, somebody in the crowd is watching for you, and your scanner shows who. Deal with them (talk to them, or put them down) before they report you, and the gang never hears you were there.");
+    this.Text("Cyberbane-Settings-Lookouts-Desc", "On a hostile gang's streets, somebody in the crowd is watching for you, and your scanner shows who. Put them down, or pay or scare them into silence (with Pay the street on, under Street talk), before they report you, and the gang never hears you were there.");
     this.Text("Cyberbane-Settings-Category-Word", "Word on the street");
 
     // ---- Settings: 2.3.1, the street reads you -------------------------------
@@ -254,7 +254,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-DealsAndRackets", "Arms deals and rackets");
     this.Text("Cyberbane-Settings-DealsAndRackets-Desc", "A gang buying guns from another, or collecting its take, near you at a set time. Crash a deal and the crate is yours; hit a racket and the cash is. Leave them be and the gang grows stronger.");
     this.Text("Cyberbane-Settings-WarChest", "War chests and manpower");
-    this.Text("Cyberbane-Settings-WarChest-Desc", "Every gang has money and people. Its streets earn it eddies; crews, apex squads, tribute and bounties cost it. Rob its bagmen and hit its rackets and it sends fewer people; massacre its crews and its ranks empty for days. The Hub's gang page says if a gang is flush, counting every eddie, or broke.");
+    this.Text("Cyberbane-Settings-WarChest-Desc", "Every gang has money and people. Its streets earn it eddies; crews, apex squads, tribute and the rewards it pays out for kills cost it. Rob its bagmen and hit its rackets and it sends fewer people; massacre its crews and its ranks empty for days. The Hub's gang page says if a gang is flush, counting every eddie, or broke.");
     this.Text("Cyberbane-Settings-BackAGang", "Back a gang");
     this.Text("Cyberbane-Settings-BackAGang-Desc", "Tell one of a gang that likes you that their war is yours. Hurting their enemies where they fight counts double with them, and every week they pay you a cut for each district they hold. Their enemies like you less. You can change sides once a week.");
     this.Text("Cyberbane-Settings-CommonEnemy", "A common enemy");
@@ -266,7 +266,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-GangFights", "Fights between gangs");
     this.Text("Cyberbane-Settings-GangFights-Desc", "Gangs at war settle things near you, and the street tells you where and when: an execution of a rival's man, a street fight that decides who holds the ground, a hunt for somebody who crossed them. Step in, pick a side, or let it play out. They come up less often than gatherings.");
     this.Text("Cyberbane-Settings-PowerStruggles", "Power struggles");
-    this.Text("Cyberbane-Settings-PowerStruggles-Desc", "When a gang's leader falls and two of their lieutenants want the chair, both text you for help. Put one down and the other takes the chair and owes you; put both down and the gang tears itself apart.");
+    this.Text("Cyberbane-Settings-PowerStruggles-Desc", "When a gang's leader falls and two of their lieutenants want the chair, both text you for help. Kill one and the other takes the chair and owes you; kill both and the gang tears itself apart. Sparing one decides nothing.");
     this.Text("Cyberbane-Settings-GangLifeOften", "How often gangs get together");
     this.Text("Cyberbane-Settings-GangLifeOften-Desc", "How often gatherings, deals and rackets come up. At 1.0, about one every forty minutes of play when there's a gang around; sit-downs keep their own pace.");
     this.Text("Cyberbane-Settings-LifepathHeadStart", "A head start from your lifepath");
@@ -279,9 +279,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MessageDelivery", "Where messages go");
     this.Text("Cyberbane-Settings-PhoneSound", "Message tone");
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");
-    this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who carries a Cyberbane marker on your map and minimap: gold for a Rival, purple for an apex squad, white for a crew. Named is the first two. Off leaves you to find them.");
+    this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who carries a Cyberbane marker on your map and minimap: gold for a Rival, purple for an apex squad, white for everybody else (a crew, a bagman, somebody a favour is about). Everyone: all of them. Named only: Rivals, apex squads, and the people a favour or a bagman is about. Off leaves you to find them.");
     this.Text("Cyberbane-Settings-MapRemembers", "The map remembers");
-    this.Text("Cyberbane-Settings-MapRemembers-Desc", "For a day after something big happens, a pin marks the spot: where a Rival fell, a gathering you crashed, a district that changed hands, one of your crew you lost. Hover it for who and when. With TweakXL installed, every Cyberbane pin also gets its own CYBERBANE box in the map's custom filters. Off with Map markers off.");
+    this.Text("Cyberbane-Settings-MapRemembers-Desc", "For a day after something big happens, a pin marks the spot: where a Rival fell, a gathering you crashed, a district that changed hands, one of your crew you lost. Hover it for who and when. With TweakXL installed, every Cyberbane pin also gets its own CYBERBANE box in the map's custom filters. Off when Mark them on the map is off.");
     this.Text("Cyberbane-MapFilter", "Cyberbane");
     this.Text("Cyberbane-Settings-PhoneSound-Desc", "Plays the phone's own text message tone when a message arrives.");
     this.Text("Cyberbane-Settings-MessageDelivery-Desc", "Phone puts everyone who gets in touch into your phone as a contact. Cards draws them on the left instead and keeps Cyberbane out of the phone. Notices is the old centre screen line. Off is silence, and changes nothing about the way the mod plays.");
@@ -368,7 +368,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-CarAmbushes", "Gangs lie in wait");
     this.Text("Cyberbane-Settings-CarAmbushes-Desc", "A gang sworn against you can park a car up the road and pull out as you drive past, more often where you're known to go; the Wraiths do it on Badlands roads whatever their grudge. On foot with a job tracked far away, a crew may wait for you near it instead, outside the job itself. A lookout you paid to keep watch warns you.");
     this.Text("Cyberbane-Settings-LootDrops", "Loot from the people sent after you");
-    this.Text("Cyberbane-Settings-Bounties", "Bounties");
+    this.Text("Cyberbane-Settings-Bounties", "Rewards for kills");
     this.Text("Cyberbane-Settings-Pacing", "When they come");
     this.Text("Cyberbane-Settings-Scouts", "Scouts before crews");
     this.Text("Cyberbane-Settings-ShowCountdowns", "Show countdowns");
@@ -398,7 +398,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexPerDay", "Apex squads per day");
     this.Text("Cyberbane-Settings-MessageHold", "Message hold");
     this.Text("Cyberbane-Settings-WordTravel", "Word travels (in-game minutes)");
-    this.Text("Cyberbane-Settings-WordTravel-Desc", "How long it takes for news of what you did - a body, a dead Rival, a payout, a crew changing hands - to reach your phone. The same story is only told once while it gets around. 0 sends it as it happens.");
+    this.Text("Cyberbane-Settings-WordTravel-Desc", "How long news of what you did (a body, a dead Rival, a payout, a crew changing hands) takes to reach your phone. The same story is only told once while it gets around. 0 sends it as it happens.");
     this.Text("Cyberbane-Settings-InboxGap", "Gap between messages (seconds)");
     this.Text("Cyberbane-Settings-InboxGap-Desc", "The least time between two pieces of news arriving. Anything waiting arrives later, in order. 0 lets them through as soon as they are due.");
     this.Text("Cyberbane-Settings-CyberpsychoRivals", "Spared cyberpsychos come back");

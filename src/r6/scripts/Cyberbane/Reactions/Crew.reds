@@ -599,7 +599,8 @@ public func CBCrewFromShort(m: ref<CBCrewMember>) -> String {
     return "";
   }
   let gang = NotEquals(m.faction, n"") ? CBPhoneGangSender(m.faction) : "";
-  if m.kind == CBCrewOwed() { return StrLen(gang) > 0 ? s"owes you, ex-\(gang)" : "owes you"; }
+  // A life, as the long form says (2.5.5): "owes you" alone reads as money.
+  if m.kind == CBCrewOwed() { return StrLen(gang) > 0 ? s"owes you a life, ex-\(gang)" : "owes you a life"; }
   if m.kind == CBCrewFrightened() { return StrLen(gang) > 0 ? s"scared, ex-\(gang)" : "scared into it"; }
   if m.kind == CBCrewLent() { return StrLen(gang) > 0 ? s"on loan, \(gang)" : "on loan"; }
   return "paid solo";
@@ -1919,7 +1920,9 @@ public func CBCrewSummary(sys: ref<CyberbaneSystem>, game: GameInstance) -> Stri
     return "Your crew is switched off in Mod Settings.";
   }
   if !IsDefined(book) || book.Count() == 0 {
-    return "Nobody works for you yet. Spare a Rival twice and ask them where they lie, frighten a ganger into it, take a solo a broker offers, or ask a gang that would die for you to lend you one.";
+    // Said as the options really are (2.5.5): "ask them where they lie" read as where their loyalty lies, and a gang
+    // lends one as soon as it is Friendly (2.5.0), not only when it "would die for you".
+    return "Nobody works for you yet. Four ways in: beat down a Rival you have spared before and, while they are on the ground, tell them to work for you; scare a ganger badly enough and tell them they work for you now; hire a solo a broker offers you; or ask a Friendly or Allied gang to lend you one of theirs.";
   }
   let out = s"\(book.Count()) of \(CBConfig.MyCrewRoster()) on the roster.";
   if book.CutOwed() > 0 {
@@ -1927,7 +1930,7 @@ public func CBCrewSummary(sys: ref<CyberbaneSystem>, game: GameInstance) -> Stri
   } else {
     if book.CutDueAt() > 0.0 && CBCrewCutMult() > 0.0 {
       let days = CeilF((book.CutDueAt() - CBGameSeconds(game)) / CBConfig.SecondsPerDay());
-      out += days <= 1 ? " The cut is due tomorrow." : s" The cut is due in \(days) days.";
+      out += days <= 1 ? " The cut is due within a day." : s" The cut is due in \(days) days.";
     }
   }
   return out;
@@ -2075,7 +2078,7 @@ public func CBCrewFile(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
     let solo = CBCrewFullName(sys, CBCrewPaid(), n"", 0, book.offerSeed, 0, 0);
     let seat = CBCrewSeatWord(CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed));
     return StrUpper(solo) + "\n" + s"A solo \(book.offerSender) put forward: a \(seat), \(book.offerPrice)eb to sign, then the weekly cut. "
-         + "Paid people are loyal while the money keeps coming. The offer stands until tomorrow.";
+         + "Paid people are loyal while the money keeps coming. The offer stands for a day.";
   }
   if !IsDefined(m) || !IsDefined(book) {
     return "";

@@ -288,6 +288,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_scoutId: EntityID;
   private let m_scoutSentTick: Int32;
   private let m_scoutSeenTicks: Int32;
+  private let m_scoutInWorld: Bool;     // session only: they did appear, so gone again means V left them behind (2.5.5)
   // Our own dead, waiting to be cleared once V is far enough away (Spawn/Spawner.reds,
   // CBSweepRemains). Session only.
   private let m_deadOurs: array<EntityID>;
@@ -2910,6 +2911,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_scoutId = id;
     this.m_scoutSentTick = this.m_tickCount;
     this.m_scoutSeenTicks = 0;
+    this.m_scoutInWorld = false;
   }
 
   public func ClearScout() -> Void {
@@ -2917,6 +2919,15 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_scoutFaction = n"";
     this.m_scoutId = none;
     this.m_scoutSeenTicks = 0;
+    this.m_scoutInWorld = false;
+  }
+
+  public func GetScoutInWorld() -> Bool {
+    return this.m_scoutInWorld;
+  }
+
+  public func SetScoutInWorld() -> Void {
+    this.m_scoutInWorld = true;
   }
 
   public func CrewBeaten(faction: CName) -> Bool {

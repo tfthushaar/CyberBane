@@ -894,7 +894,7 @@ public func CBCorpInterestRoll(sys: ref<CyberbaneSystem>, game: GameInstance, da
   book.SetCorp(StringToName(NameToString(corp) + ":" + NameToString(target)), now);
   CBFileLog(sys, n"CorpOffer", now, CBEventDistrict(sys, game), target, Cast<Float>(pay));
   CBPhoneSendTinted(game, CBBountyContact(corp),
-    s"A proposal for \(CBYou(sys, game)). \(leaderName) of \(CBFactionLabel(target)) has become an obstacle to our interests. Remove them within the week and \(pay) eddies are yours. We were never in touch.", CBHudCyan());
+    s"A proposal for \(CBYou(sys, game)). \(leaderName) of \(CBFactionLabel(target)) has become an obstacle to our interests. Kill them yourself within the week and \(pay) eddies are yours. We were never in touch.", CBHudCyan());
 }
 
 // The leader they wanted gone is dead by V's hand: paid.

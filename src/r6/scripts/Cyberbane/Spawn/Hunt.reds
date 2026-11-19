@@ -1143,6 +1143,14 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   let scout = GameInstance.FindEntityByID(game, sys.GetScoutId()) as ScriptedPuppet;
   let age = sys.GetTickCount() - sys.GetScoutSentTick();
   if !IsDefined(scout) {
+    // Out of the world again after they had appeared (2.5.5): V got far enough away that the game let them go, so
+    // they lost V. That went down the branch below for a scout who never appeared, and the crew came anyway, when
+    // Mod Settings promises that staying out of the scout's sight means the crew never comes.
+    let des = GameInstance.GetDynamicEntitySystem();
+    if sys.GetScoutInWorld() && !(IsDefined(des) && des.IsSpawning(sys.GetScoutId())) {
+      CBScoutLostYou(sys, game, faction);
+      return;
+    }
     // Not in the world. Give a new spawn time to appear; after that the crew comes the usual way.
     if age >= CBConfig.ScoutSpawnGraceTicks() {
       sys.ClearScout();
@@ -1150,6 +1158,7 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     }
     return;
   }
+  sys.SetScoutInWorld();
   // Down, not merely on their way out of the world (2.4.2): one streaming out was counted as put down, and the
   // gang went quiet over a scout nobody had touched.
   if CBIsDown(scout) {
@@ -1196,6 +1205,22 @@ func CBScoutSilenced(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNa
     let lost = CBGangScoutLostLine(faction);
     CBHearsayFromGangFinal(game, faction, StrLen(lost) > 0 ? lost : "Our guy stopped answering. We will find you another way.", n"");
   }
+}
+
+// The scout lost V before they could call it in: V left them behind (2.5.5). As for a silenced scout, the crew never
+// hears and the gang cools off, but said as what happened: nobody touched this one.
+func CBScoutLostYou(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
+  sys.ClearScout();
+  CBDeleteTaggedSafe(game, n"CB_Scout", false, true);
+  let fs = sys.FindFaction(faction);
+  if IsDefined(fs) {
+    fs.lastHitSquadAt = CBGameSeconds(game);
+  }
+  if CBToastsOn() {
+    CBHearsayFromGangFinal(game, faction, CBLineOf(["Our scout lost you. You won't get that lucky twice.",
+                                                    "Our eyes lost you in the crowd. We'll find you another day."]), n"");
+  }
+  CBLog.Info(n"Spawn", s"V left the \(NameToString(faction)) scout behind before they could call it in.");
 }
 
 // The crew sets off: because the scout found V, or because no scout could be placed.
