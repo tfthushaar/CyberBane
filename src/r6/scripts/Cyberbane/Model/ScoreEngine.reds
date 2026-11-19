@@ -22,6 +22,7 @@ public class CBScoreEngine {
 
   // Cached derived headline values.
   private let m_renown: Float;
+  private let m_renownEarned: Float;
   private let m_dread: Float;
   private let m_dreadCiv: Float;
   private let m_tier: ECBRenownTier;
@@ -102,6 +103,7 @@ public class CBScoreEngine {
       return;
     }
     this.m_renown = CBComputeRenown(sys.GetRenownPoints(), this.m_streetCred, this.UseStreetCredFloor());
+    this.m_renownEarned = CBComputeRenown(sys.GetRenownPoints(), 0.0, false);
     this.m_tier = CBRenownTier(this.m_renown);
 
     let k = CBKillDreadComponent(sys.GetKillDreadPoints());
@@ -143,6 +145,13 @@ public class CBScoreEngine {
   public func GetRenown() -> Float {
     this.Recompute();
     return this.m_renown;
+  }
+
+  // Renown from what Cyberbane has counted alone, without the Street Cred floor (2.5.2). Below GetRenown while the floor
+  // holds it up, which the Standing page says, since nothing V does moves the number until this passes it.
+  public func GetEarnedRenown() -> Float {
+    this.Recompute();
+    return this.m_renownEarned;
   }
 
   public func GetDread() -> Float {

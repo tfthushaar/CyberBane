@@ -1105,6 +1105,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBTwrRefreshHostility(game);
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
+      // And V's Street Cred, the floor under Renown (2.5.2). The score engine starts every session at none, and it
+      // was first read on a quiet tick, which on a busy street came minutes after a load: until then the Hub, the
+      // titles, the prices and everything else that reads Renown saw it without the floor, and then it jumped.
+      CBRefreshStreetCred(this, game);
     }
 
     // What the player chose on the Hub while the game was paused. Same reasoning again. After the
@@ -1150,6 +1154,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_tickCount % 10 == 0 {
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
+      // V's own stat, nothing in the world, so read whatever the streaming is doing, like the wardrobe (2.5.2).
+      CBRefreshStreetCred(this, game);
     }
     // How V looks right now: a weapon out, a fight, fresh bodies. Every other second (1.9.3); at
     // every tenth, drawing a gun on a street took up to ten seconds to register with anybody.

@@ -3,9 +3,12 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 2.0.0. The "Requests after 1.9.0", "Requests during 1.9.0", "Requests after 1.8.3", "Requests after 1.8.2", "Requests after 1.8.1", "Requests after 1.8.0", "Requests after 1.7.8", "Requests after 1.7.7", "Requests after 1.7.6", "Requests after 1.7.3", "Requests after 1.7.2", "Requests after 1.7.0", "Requests after 1.6.8" and "Requests after 1.6.4" sections at the top are the current ones;
-everything below it was written against 1.5.0 and is kept for the reasoning rather than as a
-description of today's code. The original point-by-point section and the backlog describe the mod
+The released version is 2.5.2. This file follows the requests up to 2.0.0: the sections from
+"Requests during 1.9.8 and 1.9.9" down to "Requests after 1.6.1" are the current ones. Reports from
+2.3.0 on, and what was done about each, are in `plan.md` (for example "2.5.1: the first reports" and
+"2.5.2: talk that needs no scan") and in [CHANGELOG.md](CHANGELOG.md). Everything from "Status after
+1.5.0" down was written against 1.5.0 and is kept for the reasoning rather than as a description of
+today's code. The original point-by-point section and the backlog describe the mod
 as it was *before* that backlog was built, and each entry's own status line says what has been
 done since - so read the status lines, not the surrounding prose, for what is true now.
 

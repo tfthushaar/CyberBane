@@ -9,10 +9,10 @@
 //                 and sometimes pass on a lead.
 //   The sit-down  two gangs at war meet at a place and an hour V hears about. Crash it and both lose.
 //   While you were out   a little after a load, one line: the latest thing that mattered.
-//   Surrender     (experimental, off) a beaten ganger may give up instead of running: hands up, not
-//                 fighting. Walk away and they go; grab them and they talk; shoot them and the street hears.
-//   "Nobody kills you but me"   (experimental, off) outnumbered by one gang, V may be helped by a Rival
-//                 with a claim on them, who walks off afterwards with a promise.
+//   Surrender     (on by default since 2.3.2, [E1]) a beaten ganger may give up instead of running: hands up,
+//                 not fighting. Walk away and they go; grab them and they talk; shoot them and the street hears.
+//   "Nobody kills you but me"   (on by default since 2.4.4, [E4]) outnumbered by one gang, V may be helped by a
+//                 Rival with a claim on them, who walks off afterwards with a promise.
 //
 // Placement is CBSpawnGroup or, at a named place, CBCreateSpawn on a spot V cannot see; one order per
 // person through CBIssueMove; removal through CBDeleteTaggedSafe, never in V's sight. Session state only:

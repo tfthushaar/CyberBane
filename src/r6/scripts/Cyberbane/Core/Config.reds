@@ -1725,6 +1725,9 @@ public abstract class CBConfig {
   // How long the game's own interaction prompt may stay up once the person's own talk is switched off before it is
   // taken for something else's (a door, a pickup) and talk waits for it (2.5.1).
   public static func TalkOwnPromptWait() -> Float = 1.5
+  // At most this many bystanders in front of V have their own talk on F switched off at once while one of the game's
+  // prompts stands between V and the person V wants (Reactions/StreetTalk.reds, HushNear, 2.5.2).
+  public static func TalkHushNearCap() -> Int32 = 6
   // How long "Talk" offered and not pressed holds a facedown's, a parley's or a scout's clock (ticks, CBTalkEngaged).
   // With the lines up it holds for as long as V takes to choose.
   public static func TalkOfferHoldTicks() -> Int32 = 10

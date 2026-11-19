@@ -171,7 +171,7 @@ func CBTalkHush(npc: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc) || !npc.IsAttached() {
     return;
   }
-  CBTalkHushTalk(npc);
+  CBTalkHushTalk(npc, false, true);
   if !npc.cbTalkHushedLines && npc.IsCrowd() {
     let quiet = new entChangeVoicesetStateEvent();
     quiet.enableVoicesetLines = false;
@@ -187,19 +187,39 @@ func CBTalkHush(npc: ref<ScriptedPuppet>) -> Void {
 // game's prompt came, which played a stock line on F. Its scanner hides that prompt, which is why scanning somebody
 // was the one way to get Cyberbane's "Talk". True when this person's own talk is off now (or they have none to
 // switch off, false then): the prompt on screen is theirs and is on its way down.
-func CBTalkHushTalk(npc: ref<ScriptedPuppet>) -> Bool {
+//
+// `again` (2.5.2): switched off once more although it was already, because the game puts it back by itself. It turns a
+// person's own talk on again when they stop being busy (reactionComponent.script, the Busy status effect), and the
+// street's reactions to V make people busy and then not; the flag said it was still off, nothing switched it off
+// again, their "Talk" came back up and held Cyberbane's off for good. Asked only while one of the game's prompts is up.
+// `anyway` (2.5.2): for the person V is addressing, switched off whatever the game's rule is read to say. Read as having
+// none, they were turned away on the spot with their own "Talk" on screen. Put back as the rule says (CBTalkUnhush).
+func CBTalkHushTalk(npc: ref<ScriptedPuppet>, opt again: Bool, opt anyway: Bool) -> Bool {
   if !IsDefined(npc) || !npc.IsAttached() {
     return false;
   }
-  if npc.cbTalkHushedTalk {
+  if npc.cbTalkHushedTalk && !again {
     return true;
   }
-  if !CBGenericTalkWanted(npc) {
+  if !npc.cbTalkHushedTalk && !anyway && !CBGenericTalkWanted(npc) {
     return false;
   }
   npc.EnableInteraction(n"GenericTalk", false);
   npc.cbTalkHushedTalk = true;
   return true;
+}
+
+// Whether a bystander's own talk on F may be switched off while V settles on somebody beside them (2.5.2): only
+// somebody ready to be read (CBNpcSafe, before anything native), a person, and never the story's, a vendor, a
+// companion or anybody at the job V is tracking (the Safety Gate), nor anybody standing at one of V's jobs.
+func CBTalkMayHush(sys: ref<CyberbaneSystem>, npc: ref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(npc) || npc.IsPlayer() || !CBNpcSafe(sys, npc) || npc.IsDead() {
+    return false;
+  }
+  if !npc.IsHuman() || npc.IsMechanical() || !CBSafetyGate.CanTalkTo(npc) {
+    return false;
+  }
+  return !IsDefined(sys) || !sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.TalkJobClearance());
 }
 
 // Their own voice back, as the game would have it now.
@@ -602,6 +622,9 @@ public class CBStreetTalk {
   private let m_hushed: wref<ScriptedPuppet>;
   private let m_promptWait: Float;
   private let m_promptWaitFor: EntityID;
+  // Bystanders whose own talk on F is off because one of the game's prompts stood between V and the person V wanted
+  // (2.5.2, HushNear), each put back once V has moved on from them (RestoreNear).
+  private let m_hushedNear: array<wref<ScriptedPuppet>>;
   // How long the current hold-position order has run (CBTalkRenewHold, 2.5.1).
   private let m_holdAge: Float;
 
@@ -658,6 +681,8 @@ public class CBStreetTalk {
     ArrayClear(this.m_lines);
     this.m_candidate = null;
     this.m_hushed = null;
+    // The old world's people (2.5.2): nobody in it is there to switch back on.
+    ArrayClear(this.m_hushedNear);
     this.m_promptWait = 0.0;
     this.m_dwell = 0.0;
     this.m_wantOpen = false;
@@ -719,6 +744,8 @@ public class CBStreetTalk {
       return;
     }
     let tick = Max(sys.GetTickCount(), 1);
+    // Bystanders V has moved on from get their own talk back (2.5.2). Returns at once when there are none.
+    this.RestoreNear(player, false);
     this.GetIntel().Tick(sys, game, player, dt);
     // A line said: the answer comes after a beat, only with the world settled.
     if this.m_stage == CBTalkStageWaiting() {
@@ -796,10 +823,10 @@ public class CBStreetTalk {
       return;
     }
     if kind == CBPromptInteraction() && !CBTalkDownAtFeet(t.npc) {
-      if IsDefined(npc) && NotEquals(npc.GetEntityID(), t.id)
-         && StrLen(CBTalkWhyNot(sys, game, player, npc, CBConfig.TalkKeepRange())) == 0 {
-        this.HushCandidate(npc);
-      }
+      // Their own talk off again if the game put it back, and that of anybody standing by them in front of V
+      // (2.5.2): with one person's own "Talk" off, the game shows the next person's.
+      CBTalkHushTalk(t.npc, true, true);
+      this.HushNear(sys, player, t.npc);
       this.m_promptWait += dt;
       if this.m_promptWait > CBConfig.TalkOwnPromptWait() {
         this.End(game, "one of the game's own prompts came up");
@@ -938,7 +965,14 @@ public class CBStreetTalk {
             this.m_promptWait = 0.0;
           }
           this.m_promptWait += dt;
-          if this.m_promptWait > CBConfig.TalkOwnPromptWait() || !this.HushCandidate(npc) {
+          // Whose prompt it can be (2.5.2): theirs, put back by the game after they were busy, or somebody's beside
+          // them, whose own "Talk" the game shows the moment theirs goes off (two people chatting, a passer-by behind).
+          // Only theirs was ever switched off, so on any crowded street the next person's held talk off, and only the
+          // scanner, which hides every prompt, let it through. Asked every tick while a prompt is up, so somebody who
+          // steps up beside them later is switched off too, and the prompt going down sets the wait back to nothing.
+          let hushable = this.HushCandidate(npc, true);
+          this.HushNear(sys, player, npc);
+          if this.m_promptWait > CBConfig.TalkOwnPromptWait() || !hushable {
             why = CBTalkWhyGamePrompt();
           } else {
             waitPrompt = true;
@@ -1020,7 +1054,9 @@ public class CBStreetTalk {
   }
 
   // Their own talk on F off while V settles on them (CBTalkHushTalk). True when the prompt the game shows can be theirs.
-  private func HushCandidate(npc: ref<ScriptedPuppet>) -> Bool {
+  // Switched off whatever the game's rule is read to say (2.5.2): they are the one V is looking at, and put back as the
+  // rule says. With `again`, switched off once more in case the game put it back.
+  private func HushCandidate(npc: ref<ScriptedPuppet>, opt again: Bool) -> Bool {
     if !IsDefined(npc) {
       return false;
     }
@@ -1028,13 +1064,85 @@ public class CBStreetTalk {
     if IsDefined(was) && NotEquals(was.GetEntityID(), npc.GetEntityID()) && !was.cbTalkPartner {
       this.Unhushed(was);
     }
-    if !CBTalkHushTalk(npc) {
+    if !CBTalkHushTalk(npc, again, true) {
       return false;
     }
     if !npc.cbTalkPartner {
       this.m_hushed = npc;
     }
     return true;
+  }
+
+  // The game's own talk off for everybody standing close in front of V besides `skip` (2.5.2), while one of the game's
+  // prompts stands between V and the person V wants: switching off one person's own "Talk" only made the game show the
+  // next one's. Those already off are switched off again, since the game puts it back by itself after they were busy.
+  // Only people CBTalkMayHush allows, at most TalkHushNearCap, each put back once V has moved on (RestoreNear).
+  private func HushNear(sys: ref<CyberbaneSystem>, player: ref<PlayerPuppet>, skip: ref<ScriptedPuppet>) -> Void {
+    for held in this.m_hushedNear {
+      if IsDefined(held) && held.IsAttached() && held.cbTalkHushedTalk && !held.cbTalkPartner {
+        CBTalkHushTalk(held, true);
+      }
+    }
+    let reg = IsDefined(sys) ? sys.GetRegistry() : null;
+    if !IsDefined(reg) || !IsDefined(player) || ArraySize(this.m_hushedNear) >= CBConfig.TalkHushNearCap() {
+      return;
+    }
+    let ppos = player.GetWorldPosition();
+    let fwd = Vector4.Normalize2D(player.GetWorldForward());
+    let skipSet = IsDefined(skip);
+    let skipId: EntityID;
+    if skipSet {
+      skipId = skip.GetEntityID();
+    }
+    for p in reg.GetAll() {
+      // Our own field first, then the per-NPC gate before anything native is read (CBTalkMayHush asks CBNpcSafe).
+      if ArraySize(this.m_hushedNear) < CBConfig.TalkHushNearCap() && IsDefined(p) && !p.cbTalkHushedTalk
+         && !p.cbTalkPartner && (!skipSet || NotEquals(p.GetEntityID(), skipId)) && CBNpcSafe(sys, p) && !p.IsPlayer() {
+        let pos = p.GetWorldPosition();
+        if Vector4.Distance(ppos, pos) <= CBConfig.TalkKeepRange() && AbsF(pos.Z - ppos.Z) <= 1.5 {
+          let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
+          if fwd.X * dir.X + fwd.Y * dir.Y >= CBConfig.TalkKeepDot() && CBTalkMayHush(sys, p) && CBTalkHushTalk(p) {
+            ArrayPush(this.m_hushedNear, p);
+          }
+        }
+      }
+    }
+  }
+
+  // Bystanders get their own talk back once V has moved on from them: out of reach or behind V, or with `all` (talk
+  // standing down), every one. Never the person V is settling on or talking to: their own talk is the settling's and
+  // the conversation's to put back, so they only leave this list. Somebody gone from the world is let go of as is.
+  private func RestoreNear(player: ref<PlayerPuppet>, all: Bool) -> Void {
+    if ArraySize(this.m_hushedNear) == 0 {
+      return;
+    }
+    let keep: array<wref<ScriptedPuppet>>;
+    let ppos: Vector4;
+    let fwd: Vector4;
+    let placed = IsDefined(player);
+    if placed {
+      ppos = player.GetWorldPosition();
+      fwd = Vector4.Normalize2D(player.GetWorldForward());
+    }
+    for p in this.m_hushedNear {
+      if IsDefined(p) && p.IsAttached() && p.cbTalkHushedTalk {
+        let owned = p.cbTalkPartner || (IsDefined(this.m_hushed) && Equals(this.m_hushed.GetEntityID(), p.GetEntityID()));
+        if !owned {
+          let stay = false;
+          if !all && placed {
+            let pos = p.GetWorldPosition();
+            let dir = Vector4.Normalize2D(new Vector4(pos.X - ppos.X, pos.Y - ppos.Y, 0.0, 0.0));
+            stay = Vector4.Distance(ppos, pos) <= CBConfig.TalkKeepRange() + 1.0 && fwd.X * dir.X + fwd.Y * dir.Y >= 0.0;
+          }
+          if stay {
+            ArrayPush(keep, p);
+          } else {
+            CBTalkUnhush(p);
+          }
+        }
+      }
+    }
+    this.m_hushedNear = keep;
   }
 
   private func Begin(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
@@ -1539,6 +1647,8 @@ public class CBStreetTalk {
     this.StopListening();
     this.SetCandidate(null);
     this.m_dwell = 0.0;
+    // Talk is off for now (a fight, a car, a scene): every bystander's own talk back (2.5.2).
+    this.RestoreNear(GetPlayer(game), true);
   }
 
   // Everything that has to be true for anybody to be talked to at all, as the first reason it fails
@@ -1603,7 +1713,13 @@ public class CBStreetTalk {
     }
     this.m_whyLogged = why;
     this.m_whyLogAt = now;
-    CBLog.Info(n"Talk", s"No prompt for the person in front of V: \(why).");
+    // Which of the game's prompts it is (2.5.2), so a report says what stood in the way: a door, a seat, another mod's.
+    let words = Equals(why, CBTalkWhyGamePrompt()) ? CBNativePromptWords(game) : "";
+    if StrLen(words) > 0 {
+      CBLog.Info(n"Talk", s"No prompt for the person in front of V: \(why) (\(words)).");
+    } else {
+      CBLog.Info(n"Talk", s"No prompt for the person in front of V: \(why).");
+    }
   }
 
   // V has stood in front of somebody with empty hands, plainly wanting a word, and the reason they will not
@@ -2020,6 +2136,11 @@ public func CBTalkWhyHint(why: String) -> String {
   if Equals(why, "MaxTac") {
     return "MaxTac does not talk.";
   }
+  // Since 2.5.2 nobody's own "Talk" holds it back, so what is left is a thing's prompt (a door, a seat, an item, another
+  // mod's), which takes F as well: talk waits for it rather than have one key do both.
+  if Equals(why, CBTalkWhyGamePrompt()) {
+    return "something beside them has a prompt of its own on F (a door, a seat, an item). Step to one side and look at them again.";
+  }
   return "";
 }
 
@@ -2328,6 +2449,23 @@ public func CBNativePromptKind(game: GameInstance) -> Int32 {
     return CBPromptInteraction();
   }
   return CBPromptNone();
+}
+
+// What the game's own interaction prompt on screen says, for the log alone (2.5.2): its title and its first choice, as
+// the blackboard holds them. "" when there is none, or it is street talk's.
+public func CBNativePromptWords(game: GameInstance) -> String {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  let defs = GetAllBlackboardDefs().UIInteractions;
+  let bb = IsDefined(bbs) ? bbs.Get(defs) : null;
+  if !IsDefined(bb) {
+    return "";
+  }
+  let prompt = FromVariant<InteractionChoiceHubData>(bb.GetVariant(defs.InteractionChoiceHub));
+  if !prompt.active || prompt.id == CBConfig.TalkHubId() {
+    return "";
+  }
+  let first = ArraySize(prompt.choices) > 0 ? prompt.choices[0].localizedName : "";
+  return s"\"\(prompt.title)\" / \"\(first)\", \(ArraySize(prompt.choices)) choice(s)";
 }
 
 // Somebody talked to where they lie or kneel: a Rival V put down, or somebody with their hands up. The game offers to

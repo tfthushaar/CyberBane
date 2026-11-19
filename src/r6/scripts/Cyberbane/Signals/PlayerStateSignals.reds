@@ -8,10 +8,21 @@ public func CBRefreshLiveInputs(sys: ref<CyberbaneSystem>, game: GameInstance) -
   if !IsDefined(sys) {
     return;
   }
-  sys.GetScore().SetStreetCred(CBPlayerStreetCred(game));
+  // Street Cred is no longer read here (2.5.2): this waits for a tick without heavy streaming, which on a busy street
+  // can be minutes, and Renown went without its floor all that time. CBRefreshStreetCred, on every tenth tick.
   CBUpdateHeat(sys, game);
   // Not the aura: the fast tick reads it every other tick on its own (CyberbaneSystem), and this runs on
   // one of those same ticks, so it was being worked out twice in a row.
+}
+
+// V's Street Cred into the score engine, the floor under Renown (Model/ScoreMath.reds, CBComputeRenown). V's own stat
+// and nothing in the world (2.5.2): read on the session's first settled tick and on every tenth one after, streaming or
+// not, so Renown never goes without its floor for the first minutes after a load.
+public func CBRefreshStreetCred(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  sys.GetScore().SetStreetCred(CBPlayerStreetCred(game));
 }
 
 // Aura (spec 8.6): how dangerous V looks at this moment.

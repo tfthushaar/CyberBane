@@ -3,6 +3,38 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.5.2 (19 November 2026)
+
+**Talking to people**
+- **"Talk" no longer needs a scan.** Look at somebody standing with others and their own "Talk" prompt stepped aside,
+  but the game then put up the next person's in its place, and Cyberbane's waited behind it. Scanning hides every
+  prompt, which is why scanning was the one sure way to get Cyberbane's. Now everybody close in front of you steps
+  aside, not only the one you look at, and gets their own "Talk" back once you move on.
+- Somebody whose own "Talk" came back by itself, after they flinched or turned to look at you, steps aside again.
+  It used to hold Cyberbane's off for as long as you stood there.
+- Somebody Cyberbane wrongly read as having no "Talk" of their own was turned away on the spot. They get the same
+  moment as everybody else now.
+- When a thing beside them has a prompt on F (a door, a seat, an item, a spot another mod adds), talk still waits for
+  it, because one key can't do both. Cyberbane now tells you so once, and the log names the prompt.
+
+**Renown**
+- **Renown is right from the moment you load.** With the Street Cred floor on, your Renown is at least 14 for every
+  level of Street Cred (700 at level 50). Street Cred was only read a while after a load, minutes later on a busy
+  street, so the Standing page showed the lower number first and then jumped, and everything that reads Renown
+  (prices, the gig bonus, who comes for you) used the lower number until then.
+- **The Standing page says when Street Cred is holding your Renown up**, and shows what your own work counts so far.
+  Until that passes the floor, nothing you do moves the number. That is the floor working as designed: to see only
+  what you have done, turn off **Street Cred reputation floor** under **Reputation and money**.
+
+**Messages**
+- **Off means off.** With Toasts off, or "Where messages go" set to Off, some of Cyberbane's notes still came up: a
+  tracker, a fatal flaw, what a scan or a body turned up, a Rival down at your feet, a bag or a racket robbed, "while
+  you were out", the Voodoo Boys tracing you, and the talk and Rival-place hints. They obey both switches now. Only the
+  answer to a button you press on the Hub or in Mod Settings still shows. Messages already on their way when you switch
+  off are no longer let through.
+
+Your progress carries over.
+
 ## 2.5.1 (19 November 2026)
 
 **Talking to people**
@@ -40,13 +72,6 @@ the next unless a version says otherwise.
   Before, they never could.
 - A hostage you have asked a ransom for stays where they kneel until their gang answers.
 - Your crew and a borrowed crew walk home when it is over. They used to sprint off.
-
-**Messages**
-- **Off means off.** With Toasts off, or "Where messages go" set to Off, some of Cyberbane's notes still came up: a
-  tracker, a fatal flaw, what a scan or a body turned up, a Rival down at your feet, a bag or a racket robbed, "while
-  you were out", the Voodoo Boys tracing you, and the talk and Rival-place hints. They obey both switches now. Only the
-  answer to a button you press on the Hub or in Mod Settings still shows. Messages already on their way when you switch
-  off are no longer let through.
 
 **They Will Remember**
 - **Cyberbane asks it properly.** It asks who is hostile in every way They Will Remember's versions answer, and asks

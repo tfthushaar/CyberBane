@@ -2777,9 +2777,15 @@ public class CBHud {
     let chrome = score.GetChromeVisible();
     let code = sys.GetCode();
 
+    // While the Street Cred floor holds Renown up (2.5.2), nothing V does moves the number until what Cyberbane has
+    // counted passes it, so the tile says so and shows that count: "it never changes" was the floor, unexplained.
+    let earned = score.GetEarnedRenown();
+    let renownCaption = "How widely Night City knows your name.";
+    if renown >= earned + 1.0 {
+      renownCaption = s"Held here by your Street Cred. What you have done counts \(RoundF(earned)) so far.";
+    }
     this.SetBar(0, "Renown", s"\(RoundF(renown))   \(CBTierName(EnumInt(score.GetTier())))",
-      renown / 1000.0, CBHudCyan(),
-      "How widely Night City knows your name.");
+      renown / 1000.0, CBHudCyan(), renownCaption);
 
     // The number is Dread; the word is what the street does with it. The second figure is what
     // the street actually reads, which is not the same number and never was - it belongs in the
