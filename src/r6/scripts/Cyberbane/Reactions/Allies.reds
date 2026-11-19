@@ -317,7 +317,8 @@ func CBCrewGoHome(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
     if CBNpcSafe(sys, p) && CBStillStanding(p) {
       CBEndFollower(p);
-      CBOrderFlee(game, p);
+      // Walked off, as the line says (2.5.1): a sprint away from V read as the crew running from something.
+      CBOrderFlee(game, p, true);
     }
   }
   if StrLen(why) > 1 && CBMessagesOn() {
@@ -546,7 +547,7 @@ func CBHandOver(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarg
   CBTalkSlight(sys, game, t.faction, CBConfig.HandOverSlight());
   CBFileLog(sys, n"HandedOver", CBGameSeconds(game), CBEventDistrict(sys, game), buyer, 0.0);
   t.npc.cbSurrendered = false;
-  t.npc.cbTalkSent = true;
+  CBTalkMarkSent(game, t.npc);
   CBTalkReleaseHold(t.npc);
   CBOrderFlee(game, t.npc);
   if CBMessagesOn() {
@@ -696,6 +697,10 @@ func CBParleyTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
         crewHit = true;
       }
     }
+    // The clock holds while V is talking to the sergeant (2.5.1, CBTalkEngaged).
+    if CBNpcSafe(sys, s) && CBTalkEngaged(sys, s) {
+      war.parleyTick = tick;
+    }
     if !CBNpcSafe(sys, s) || !CBStillStanding(s) || s.cbDamagedByPlayer || crewHit || tick - war.parleyTick > CBConfig.FacedownTicks() {
       CBParleyFight(sys, game, war);
     }
@@ -803,7 +808,7 @@ public func CBParleyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, player
   }
   let gang = war.parleyGang;
   if IsDefined(t.npc) {
-    t.npc.cbTalkSent = true;
+    CBTalkMarkSent(game, t.npc);
     t.npc.cbFacedownOpen = false;
   }
   if choice == CBTalkActParleyPay() {

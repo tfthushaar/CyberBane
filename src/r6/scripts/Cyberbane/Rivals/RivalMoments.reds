@@ -377,7 +377,11 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
         CBFacedownRelease(sys, game, book, true);
         return;
       }
-      // V fired first, hit one of them, or took too long: it is a fight.
+      // V fired first, hit one of them, or took too long: it is a fight. Not too long while V is talking to them
+      // (2.5.1, CBTalkEngaged): the clock holds while the words go back and forth.
+      if CBTalkEngaged(sys, body) {
+        book.fdTick = tick;
+      }
       if body.cbDamagedByPlayer || CBFacedownEscortHit(game, book) || tick - book.fdTick > CBConfig.FacedownTicks() {
         CBFacedownFight(sys, game, book, r, body, false);
       }
@@ -496,7 +500,8 @@ func CBFacedownCalm(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
   p.cbFacedownHeld = true;
   p.cbFacedownWait = false;
   CBCancelMove(p);
-  CBTalkHold(p);
+  // As long as a facedown can wait for V, as the hold always was: a conversation's own holds are short now (2.5.1).
+  CBTalkHold(p, CBConfig.FacedownHoldSeconds());
 }
 
 // Back to the fight: hostile to V again and after V, through the same door as when they arrived.
@@ -664,7 +669,7 @@ public func CBRivalFacedownAnswer(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !IsDefined(book) || !IsDefined(r) || book.fdState != 1 || !IsDefined(body) || NotEquals(body.GetEntityID(), book.fdBody) {
     return CBTalkSay("...", n"");
   }
-  body.cbTalkSent = true;   // it is over, whatever was said
+  CBTalkMarkSent(game, body);   // it is over, whatever was said
   body.cbFacedownOpen = false;
   let now = CBGameSeconds(game);
   let district = CBEventDistrict(sys, game);

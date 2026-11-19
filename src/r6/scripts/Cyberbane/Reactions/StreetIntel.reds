@@ -777,7 +777,7 @@ public class CBStreetIntel {
 
   // Crouched over somebody on the ground: a ganger down and alive talks; a Rival's body carries something.
   private func Downed(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, dt: Float) -> Void {
-    if !CBPlayerSneaking(game) || player.IsInCombat() {
+    if !CBPlayerCrouched(game) || player.IsInCombat() {   // crouched over them, as the feature says (2.5.1)
       this.m_down = null;
       this.m_downFor = 0.0;
       return;

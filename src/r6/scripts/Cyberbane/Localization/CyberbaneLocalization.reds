@@ -56,7 +56,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalFlaws", "Fatal flaws");
     this.Text("Cyberbane-Settings-RivalFlaws-Desc", "Some senior Rivals have one fatal flaw: a blade, something heavy, a bare fist, a quickhack or explosives kills them outright. Their people can tell you which.");
     this.Text("Cyberbane-Settings-MercyChoice", "Mercy is your choice");
-    this.Text("Cyberbane-Settings-MercyChoice-Desc", "A Rival you put down alive is spared only when you put your weapon away or walk off, or tell them so where they lie; finish them and they die. You can also make them give up another Rival, or run them out of Night City. Off, a Rival left breathing is spared as soon as the fight ends.");
+    this.Text("Cyberbane-Settings-MercyChoice-Desc", "A Rival you put down alive is spared only when you walk off (or put your weapon away from a distance), or tell them so where they lie; finish them and they die. You can also make them give up another Rival, or run them out of Night City. Off, a Rival left breathing is spared as soon as the fight ends.");
     this.Text("Cyberbane-Settings-SendWord", "Calling out");
     this.Text("Cyberbane-Settings-SendWord-Desc", "Call a Rival out from their page on the Hub, and now and then a Rival calls you out instead of coming. They name a place and wait there with their people. Finishing it there pays more.");
     this.Text("Cyberbane-Settings-Category-Street", "Gang life");

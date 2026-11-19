@@ -13,6 +13,8 @@ public class CBKillInfo {
   public let lethal: Bool;          // false = non-lethal defeat
   public let witnessed: Bool;
   public let stealth: Bool;
+  // V was in an open fight when it happened (2.5.1): the game had V in combat. A firefight is never stealth.
+  public let loud: Bool;
   public let instigatorIsPlayer: Bool;
   // A one-off story character rather than a generic archetype. Their record is never kept as
   // a spawn template, because spawning from it would put a visible duplicate of a named
@@ -321,6 +323,16 @@ func CBAccrueArchetypeForKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, 
       sys.AddArchetype(EnumInt(ECBArchetype.Butcher), 5.0);
       sys.AddArchetype(EnumInt(ECBArchetype.Professional), -3.0);
     }
+    // Guns blazing (2.5.1): killing in an open fight is the body count Butcher is built from ("Killing people builds
+    // it"). A loud kill added a fifth of a point and nothing else, while every kill nobody standing could be shown to
+    // see (most of a firefight: see CBCountWitnesses) went to Ghost, so a player who went in shooting every time read
+    // as a Ghost and stayed one.
+    if info.loud {
+      sys.AddArchetype(EnumInt(ECBArchetype.Butcher), CBConfig.ButcherPerLoudKill());
+      if info.mExplosive {
+        sys.AddArchetype(EnumInt(ECBArchetype.Butcher), CBConfig.ButcherPerLoudKill() * 0.5);
+      }
+    }
     if info.stealth {
       // Lethal, and nobody alive saw it. That is the definition of ghosting a place, so it
       // outweighs the quiet body count it also produced.
@@ -344,15 +356,23 @@ func CBAccrueArchetypeForKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, 
     if hands {
       sys.AddArchetype(EnumInt(ECBArchetype.Brawler), 1.5);
     }
-    if !hands || info.stealth {
+    // Quiet work, out of any fight or unseen, is a ghost's. Somebody shot down and left breathing in the middle of a
+    // firefight is not (2.5.1): every enemy a gunfight left on the floor went to Ghost, the one style it is not, and
+    // now counts as the clean work an Operator does.
+    if (!hands && !info.loud) || info.stealth {
       sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 1.5);
+    }
+    if !hands && info.loud && !info.stealth {
+      sys.AddArchetype(EnumInt(ECBArchetype.Professional), 1.0);
     }
     if info.stealth {
       sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 1.0);
     }
     if info.mQuickhack {
       sys.AddArchetype(EnumInt(ECBArchetype.Netrunner), 0.5);
-      sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 0.5);
+      if !info.loud {
+        sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 0.5);
+      }
     }
   }
 }

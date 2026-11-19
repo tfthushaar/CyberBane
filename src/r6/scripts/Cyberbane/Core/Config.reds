@@ -887,6 +887,8 @@ public abstract class CBConfig {
   public static func ButcherPerBrutalKill() -> Float = 1.5
   // Lethal with nobody left to report it.
   public static func GhostPerUnseenKill() -> Float = 1.5
+  // On top of the plain kill, for one in an open fight (2.5.1): going in shooting is the body count Butcher measures.
+  public static func ButcherPerLoudKill() -> Float = 0.6
 
   // ---- Witnesses (spec §8.5) -------------------------------------------
   // How far a kill carries to someone who could report it. Wider than NpcEvalRadius: a
@@ -1706,15 +1708,23 @@ public abstract class CBConfig {
   public static func TalkTickSeconds() -> Float = 0.2
   public static func TalkRange() -> Float = 3.5
   public static func TalkKeepRange() -> Float = 5.5
-  public static func TalkDwell() -> Float = 0.6
+  public static func TalkDwell() -> Float = 0.4
   public static func TalkLookGrace() -> Float = 2.0
   // After a conversation, before the same person can be spoken to again (1.9.6: it used to follow every
-  // single exchange, for 45).
-  public static func TalkCooldownTicks() -> Int32 = 3
+  // single exchange, for 45). 2.5.1: one tick, only so "Talk" does not flash straight back up under the last answer.
+  public static func TalkCooldownTicks() -> Int32 = 1
   // How far to the side of V's line of sight the next talkable person may be when the one in front cannot talk.
   public static func TalkNextDot() -> Float = 0.8
-  // The hold-position order's length (seconds); cancelled when the conversation ends.
-  public static func TalkHoldSeconds() -> Float = 90.0
+  // The hold-position order's length (seconds), renewed every TalkHoldRenewSeconds while the conversation lasts and
+  // let go when it ends (2.5.1: it was one order of ninety seconds, which froze anybody whose cancel was missed).
+  public static func TalkHoldSeconds() -> Float = 8.0
+  public static func TalkHoldRenewSeconds() -> Float = 5.0
+  // Somebody who gave up, and a Rival's people holding for a facedown, keep the long hold they always had.
+  public static func SurrenderHoldSeconds() -> Float = 90.0
+  public static func FacedownHoldSeconds() -> Float = 90.0
+  // How long the game's own interaction prompt may stay up once the person's own talk is switched off before it is
+  // taken for something else's (a door, a pickup) and talk waits for it (2.5.1).
+  public static func TalkOwnPromptWait() -> Float = 1.5
   // Within this of the job V is tracking, talk is words only.
   public static func TalkWordsOnlyNearJob() -> Float = 30.0
   // How many times V can push back on one price.
@@ -1735,6 +1745,8 @@ public abstract class CBConfig {
   // Once the NPC registry is most of the way full, people farther than this from V make room (1.9.9).
   public static func RegistryKeepRadius() -> Float = 120.0
   public static func MercyHolsterTicks() -> Int32 = 3
+  // Within this of a Rival V put down, V is still deciding: empty hands do not spare them (2.5.1).
+  public static func MercyTalkRadius() -> Float = 10.0
   public static func MercyMinTicks() -> Int32 = 4
   public static func ExileBase() -> Float = 0.7   // less 0.15 a rank above the first (2.5.0, from 0.6)
   public static func KinChance() -> Float = 0.5
@@ -1804,13 +1816,14 @@ public abstract class CBConfig {
   public static func TalkLiarRevealSeconds() -> Float = 150.0
   // The odds a seller texting a lead comes down when V says it is too much, before their standing and V's Cool.
   public static func PhoneLeadHaggleBase() -> Float = 0.4
-  public static func TalkSentRestTicks() -> Int32 = 180
+  // 2.5.1: half a minute, from three. Somebody V sent packing is out of reach while they go, not for minutes after.
+  public static func TalkSentRestTicks() -> Int32 = 30
   // How long the prompt keeps away after V reaches for a weapon with it up.
-  public static func TalkQuietAfterReach() -> Float = 4.0
+  public static func TalkQuietAfterReach() -> Float = 1.5
   // How long V has to look at somebody with a weapon in hand before being told to put it away (once a launch).
   public static func TalkArmedHintDwell() -> Float = 1.2
   // How far round a job's marker people are left out of street talk (CBTalkWhyNot), and the cone in front
-  // of V somebody has to be in when the game's look-at finds nobody (cos of about 25 degrees).
+  // of V somebody has to be in when the game's look-at finds nobody (cos of about 30 degrees).
   public static func TalkJobClearance() -> Float = 8.0
   // The job V is tracking keeps a little more: its people, not the neighbourhood (CBSafetyGate.CanTalkTo).
   public static func TalkTrackedClearance() -> Float = 10.0
@@ -1824,7 +1837,8 @@ public abstract class CBConfig {
   public static func ParleyScale() -> Float = 1.2
   public static func ParleyMin() -> Float = 0.1
   public static func ParleyMax() -> Float = 0.85
-  public static func TalkFacingDot() -> Float = 0.9
+  // 2.5.1: about 30 degrees, from 25: the look-at misses people the crosshair is not quite on.
+  public static func TalkFacingDot() -> Float = 0.86
   // The same reason for no prompt is logged at most this often (seconds).
   public static func TalkWhyLogSeconds() -> Float = 8.0
   // How long after telling V why somebody will not talk before another is told (StreetTalk Explain, 2.1.0).

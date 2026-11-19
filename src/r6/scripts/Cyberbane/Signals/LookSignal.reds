@@ -137,7 +137,7 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
       allow = false;
     }
   }
-  if worn.twrRead {
+  if worn.twrRead && worn.twrGangRead {
     bestFaction = worn.twrGangOn ? worn.twrFaction : n"";
     bestFactionDisguise = worn.twrGangOn ? worn.twrCover : 0.0;
   }

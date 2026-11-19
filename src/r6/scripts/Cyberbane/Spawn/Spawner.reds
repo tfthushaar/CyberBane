@@ -819,7 +819,7 @@ public func CBIssueMove(puppet: ref<ScriptedPuppet>, ai: ref<AIHumanComponent>, 
   }
   // A conversation's hold-position order goes first (Reactions/StreetTalk.reds, 1.9.8): one order at a time.
   if IsDefined(puppet.cbTalkHold) {
-    ai.CancelCommand(puppet.cbTalkHold);
+    CBEndHold(puppet, puppet.cbTalkHold);
     puppet.cbTalkHold = null;
   }
   puppet.cbMoveCmd = cmd;

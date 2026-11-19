@@ -72,6 +72,12 @@ func CBSentAfterV(des: ref<DynamicEntitySystem>, npc: wref<ScriptedPuppet>) -> B
   if des.IsTagged(id, n"CB_Patrol") {
     return false;
   }
+  // A crew lying in wait (Spawn/HuntGrows.reds) shares the street's rules for being released from a fight, so it is on
+  // that list, but it is a crew sent after V like any other (2.5.1): one waiting by V's job could be walked up to and
+  // chatted with like a passer-by.
+  if des.IsTagged(id, n"CB_Ambush") {
+    return true;
+  }
   for tag in CBStreetTags() {
     if des.IsTagged(id, tag) {
       return false;

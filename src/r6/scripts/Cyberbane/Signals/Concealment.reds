@@ -50,6 +50,9 @@ public class CBWornRead {
   public let twrGangOn: Bool;
   public let twrFaction: CName;
   public let twrCover: Float;
+  // Whether its gang reading could be asked at all (2.5.1): a version of theirs without one leaves the gang
+  // disguise to Cyberbane's own reading instead of to nobody.
+  public let twrGangRead: Bool;
 }
 
 func CBClothingAreas() -> array<gamedataEquipmentArea> {
@@ -678,34 +681,57 @@ public class CBTwrDisguiseProbe {
   public let face: ref<ReflectionMemberFunc>;
   public let cover: ref<ReflectionMemberFunc>;
   public let coverScore: ref<ReflectionMemberFunc>;
+  public let why: String;
 
+  // 2.5.1: what it needs, not all six. Every one of the six had to be there in exactly its shape, so a version of theirs
+  // that renamed or dropped any one (the switches, say) read as not there at all: "They Will Remember's disguises could
+  // not be read". The face reading alone, or the gang reading alone, is enough now; a switch that is missing reads as
+  // on, and readiness as ready. Which functions it lacks is kept for the Hub and the log, and a look that failed is
+  // tried again each session (Retry).
   public func Resolve() -> Bool {
     if this.state == 0 {
       this.state = 2;
+      this.why = "";
       let type = Reflection.GetClass(CBTwrDisguiseClass());
-      if IsDefined(type) {
-        let ready = CBReflectNoArgs(type.GetFunction(n"IsDisguiseReady"), n"Bool");
-        let faceOn = CBReflectNoArgs(type.GetFunction(n"IsFaceDisguiseEnabled"), n"Bool");
-        let gangOn = CBReflectNoArgs(type.GetFunction(n"IsAffiliationDisguiseEnabled"), n"Bool");
-        let face = CBReflectNoArgs(type.GetFunction(n"DisguiseScore"), n"Float");
-        let cover = CBReflectNoArgs(type.GetFunction(n"Cover"), n"Int32");
-        let coverScore = CBReflectNoArgs(type.GetFunction(n"CoverScore"), n"Float");
-        if IsDefined(ready) && IsDefined(faceOn) && IsDefined(gangOn) && IsDefined(face) && IsDefined(cover)
-           && IsDefined(coverScore) {
-          this.ready = ready;
-          this.faceOn = faceOn;
-          this.gangOn = gangOn;
-          this.face = face;
-          this.cover = cover;
-          this.coverScore = coverScore;
+      if !IsDefined(type) {
+        this.why = "its disguise class is not in this build";
+        CBLog.Info(n"Signals", "They Will Remember's disguise class was not found; Cyberbane reads disguises itself.");
+      } else {
+        this.ready = CBReflectNoArgs(type.GetFunction(n"IsDisguiseReady"), n"Bool");
+        this.faceOn = CBReflectNoArgs(type.GetFunction(n"IsFaceDisguiseEnabled"), n"Bool");
+        this.gangOn = CBReflectNoArgs(type.GetFunction(n"IsAffiliationDisguiseEnabled"), n"Bool");
+        this.face = CBReflectNoArgs(type.GetFunction(n"DisguiseScore"), n"Float");
+        this.cover = CBReflectNoArgs(type.GetFunction(n"Cover"), n"Int32");
+        this.coverScore = CBReflectNoArgs(type.GetFunction(n"CoverScore"), n"Float");
+        let missing = "";
+        if !IsDefined(this.ready) { missing += " IsDisguiseReady"; }
+        if !IsDefined(this.faceOn) { missing += " IsFaceDisguiseEnabled"; }
+        if !IsDefined(this.gangOn) { missing += " IsAffiliationDisguiseEnabled"; }
+        if !IsDefined(this.face) { missing += " DisguiseScore"; }
+        if !IsDefined(this.cover) { missing += " Cover"; }
+        if !IsDefined(this.coverScore) { missing += " CoverScore"; }
+        let faceOk = IsDefined(this.face);
+        let gangOk = IsDefined(this.cover) && IsDefined(this.coverScore);
+        if faceOk || gangOk {
           this.state = 1;
-          CBLog.Info(n"Signals", "They Will Remember's disguises found: its face and gang readings are Cyberbane's too.");
+          if StrLen(missing) > 0 {
+            CBLog.Info(n"Signals", "They Will Remember's disguises found, without:" + missing + ". The rest is read.");
+          } else {
+            CBLog.Info(n"Signals", "They Will Remember's disguises found: its face and gang readings are Cyberbane's too.");
+          }
         } else {
-          CBLog.Info(n"Signals", "They Will Remember's disguise system is not the shape Cyberbane reads; Cyberbane reads disguises itself.");
+          this.why = "it has neither a face reading nor a gang reading Cyberbane can ask for (missing:" + missing + ")";
+          CBLog.Info(n"Signals", "They Will Remember's disguise system is not the shape Cyberbane reads (missing:" + missing + "); Cyberbane reads disguises itself.");
         }
       }
     }
     return this.state == 1;
+  }
+
+  public func Retry() -> Void {
+    if this.state == 2 {
+      this.state = 0;
+    }
   }
 }
 
@@ -719,7 +745,8 @@ func CBReflectNoArgs(fn: ref<ReflectionMemberFunc>, typeName: CName) -> ref<Refl
   return fn;
 }
 
-// Fills the They Will Remember part of this reading, when compatibility is on and it answers.
+// Fills the They Will Remember part of this reading, when compatibility is on and it answers. Why it could not be read
+// is kept on the runtime for the Hub (CBTwrDisguiseWhy, 2.5.1).
 func CBReadTwrDisguise(game: GameInstance, worn: ref<CBWornRead>) -> Void {
   worn.twrRead = false;
   worn.twrFace = -1.0;
@@ -733,15 +760,22 @@ func CBReadTwrDisguise(game: GameInstance, worn: ref<CBWornRead>) -> Void {
   }
   let probe = rt.GetTwrDisguiseProbe();
   if !probe.Resolve() {
+    rt.SetTwrDisguiseWhy(probe.why);
     return;
   }
   let disguise = container.Get(CBTwrDisguiseClass());
-  let none: array<Variant>;
-  if !IsDefined(disguise) || !FromVariant<Bool>(probe.ready.Call(disguise, none)) {
+  if !IsDefined(disguise) {
+    rt.SetTwrDisguiseWhy("its disguise system is not running");
     return;
   }
+  let none: array<Variant>;
+  if IsDefined(probe.ready) && !FromVariant<Bool>(probe.ready.Call(disguise, none)) {
+    rt.SetTwrDisguiseWhy("it has not read your outfit yet");
+    return;
+  }
+  rt.SetTwrDisguiseWhy("");
   worn.twrRead = true;
-  if FromVariant<Bool>(probe.faceOn.Call(disguise, none)) {
+  if IsDefined(probe.face) && (!IsDefined(probe.faceOn) || FromVariant<Bool>(probe.faceOn.Call(disguise, none))) {
     // Its score is what is left to see: 1 a bare face, 0.11 a face 89% hidden.
     worn.twrFace = ClampF(1.0 - FromVariant<Float>(probe.face.Call(disguise, none)), 0.0, 1.0);
     if worn.twrFace >= CBConfig.TwrMaskedFace() {
@@ -749,7 +783,9 @@ func CBReadTwrDisguise(game: GameInstance, worn: ref<CBWornRead>) -> Void {
       worn.masked = true;
     }
   }
-  worn.twrGangOn = FromVariant<Bool>(probe.gangOn.Call(disguise, none));
+  let gangReadable = IsDefined(probe.cover) && IsDefined(probe.coverScore);
+  worn.twrGangRead = gangReadable;
+  worn.twrGangOn = gangReadable && (!IsDefined(probe.gangOn) || FromVariant<Bool>(probe.gangOn.Call(disguise, none)));
   if worn.twrGangOn {
     let gang = CBTwrFactionAt(FromVariant<Int32>(probe.cover.Call(disguise, none)));
     if NotEquals(gang, n"") {

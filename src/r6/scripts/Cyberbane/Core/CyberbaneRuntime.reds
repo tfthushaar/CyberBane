@@ -60,6 +60,7 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_twrHostile: array<Int32>;
   private let m_twrHostileWhy: String;
   private let m_twrHostileAsked: Bool;
+  private let m_twrDisguiseWhy: String;
   // Whether V has been told to put a weapon away to talk to people (Reactions/StreetTalk.reds, 1.9.5).
   private let m_talkHolsterHinted: Bool;
   private let m_subGen: array<Int32>;
@@ -181,9 +182,27 @@ public class CyberbaneRuntime extends ScriptableService {
     return this.m_twrAttitudeProbe;
   }
 
+  // At each session's start. A look at They Will Remember that failed is tried again too (2.5.1): it was made once a
+  // launch, and a failure, whatever its cause, held for every save loaded until the game was restarted.
   public func ClearTwrHostility() -> Void {
     ArrayClear(this.m_twrHostile);
     this.m_twrHostileAsked = false;
+    if IsDefined(this.m_twrAttitudeProbe) {
+      this.m_twrAttitudeProbe.Retry();
+    }
+    if IsDefined(this.m_twrDisguiseProbe) {
+      this.m_twrDisguiseProbe.Retry();
+    }
+    this.m_twrDisguiseWhy = "";
+  }
+
+  // Why They Will Remember's disguises could not be read on the last reading, "" when they were (2.5.1).
+  public func SetTwrDisguiseWhy(why: String) -> Void {
+    this.m_twrDisguiseWhy = why;
+  }
+
+  public func TwrDisguiseWhy() -> String {
+    return this.m_twrDisguiseWhy;
   }
 
   // True when how the asking went is not what was last logged.

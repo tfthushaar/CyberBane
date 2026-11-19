@@ -351,10 +351,15 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
               e.puppet.cbMercyOpen = true;
               let fallen = CBFindRivalByBody(sys, e.entityId);
               if IsDefined(fallen) {
-                CBSystemNote(game, s"\(CBRivalDisplayName(sys.GetContent(), fallen)) is down. Finish them, or put your weapon away or walk off to spare them. Or talk to them.", 8.0);
+                CBSystemNote(game, s"\(CBRivalDisplayName(sys.GetContent(), fallen)) is down. Finish them, walk off to spare them, or put your weapon away and walk up to talk to them.", 8.0);
               }
             }
-            let empty = IsDefined(player) && !player.IsInCombat() && !IsDefined(GameObject.GetActiveWeapon(player));
+            // Empty hands spare them only from a distance (2.5.1). Talking needs empty hands too, and "put your weapon
+            // away to spare them, or talk to them" settled it as spared three seconds after V holstered to walk up and
+            // talk, which closed the conversation before it could open ("I holstered and all I got was Carry body").
+            // Standing over them, or in a conversation with them, V is still deciding.
+            let deciding = !gone && (e.puppet.cbTalkPartner || distance <= CBConfig.MercyTalkRadius());
+            let empty = IsDefined(player) && !player.IsInCombat() && !IsDefined(GameObject.GetActiveWeapon(player)) && !deciding;
             e.holsterTicks = empty ? e.holsterTicks + 1 : 0;
             leftThem = leftThem || e.holsterTicks >= CBConfig.MercyHolsterTicks() || e.mercyChosen
                     || (!gone && distance > CBConfig.EscapeDistance());

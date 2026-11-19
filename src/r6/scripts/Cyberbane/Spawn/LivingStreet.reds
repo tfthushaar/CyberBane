@@ -498,7 +498,8 @@ public class CBStreetLife {
     let data: stimInvestigateData;
     data.fearPhase = 2;
     StimBroadcasterComponent.SendStimDirectly(player, gamedataStimType.SpreadFear, npc, data);
-    CBTalkHold(npc);
+    // Held where they kneel for as long as a hold always was here: the conversation's own holds are short now (2.5.1).
+    CBTalkHold(npc, CBConfig.SurrenderHoldSeconds());
     npc.cbSurrendered = true;
     CBSayVoiced(sys, npc, n"fear_beg");   // in their own voice (Narrative/Telling.reds, [79], 2.4.6)
     npc.SetScannerDirty(true);   // the scanner says so (UI/ScannerName.reds)

@@ -146,25 +146,58 @@ public func CBTwrGangHostile(game: GameInstance, faction: CName) -> Int32 {
 public class CBTwrAttitudeProbe {
   public let state: Int32;   // 0 not looked yet, 1 usable, 2 absent or not the shape this reads
   public let ask: ref<ReflectionMemberFunc>;
+  public let answersInt: Bool;   // it answers a number (above zero hostile) rather than yes or no
   public let why: String;
 
+  // 2.5.1: tolerant of how a version of theirs words the question, and exact about what it found when it cannot ask.
+  // "They Will Remember decides whether they are hostile, but could not be asked (it has no IsFactionHostileByIndex
+  // taking one argument and answering yes or no)" was all a player could report, and it covered three different
+  // failures. Now: the names a version of theirs has used or may use, an answer of yes or no or of a number, and a why
+  // that says which function was found and in what shape. A look that failed is tried again each session (Retry).
   public func Resolve() -> Bool {
     if this.state == 0 {
       this.state = 2;
+      this.why = "";
       let type = Reflection.GetClass(CBTwrAttitudeClass());
       if !IsDefined(type) {
         this.why = "its attitude class is not in this build";
       } else {
-        let ask = type.GetFunction(n"IsFactionHostileByIndex");
-        if !IsDefined(ask) || ArraySize(ask.GetParameters()) != 1 || !CBReflectReturns(ask, n"Bool") {
-          this.why = "it has no IsFactionHostileByIndex taking one argument and answering yes or no";
-        } else {
-          this.ask = ask;
-          this.state = 1;
+        let names: array<CName> = [n"IsFactionHostileByIndex", n"IsFactionIndexHostile", n"IsFactionHostile",
+                                   n"GetFactionHostileByIndex", n"IsHostileByIndex"];
+        let seen = "";
+        for name in names {
+          if this.state != 1 {
+            let fn = type.GetFunction(name);
+            if IsDefined(fn) {
+              let params = ArraySize(fn.GetParameters());
+              let yesNo = CBReflectReturns(fn, n"Bool");
+              let number = CBReflectReturns(fn, n"Int32");
+              if params == 1 && (yesNo || number) {
+                this.ask = fn;
+                this.answersInt = number;
+                this.state = 1;
+              } else {
+                let ret = fn.GetReturnType();
+                let retName = IsDefined(ret) ? NameToString(ret.GetName()) : "nothing";
+                seen += (StrLen(seen) > 0 ? "; " : "") + s"\(NameToString(name)) takes \(params) and answers \(retName)";
+              }
+            }
+          }
+        }
+        if this.state != 1 {
+          this.why = StrLen(seen) > 0
+            ? "its functions are not the shape Cyberbane asks, one gang's number in and yes or no out (" + seen + ")"
+            : "it has none of the functions Cyberbane knows to ask (IsFactionHostileByIndex)";
         }
       }
     }
     return this.state == 1;
+  }
+
+  public func Retry() -> Void {
+    if this.state == 2 {
+      this.state = 0;
+    }
   }
 }
 
@@ -196,7 +229,11 @@ public func CBTwrRefreshHostility(game: GameInstance) -> Void {
       let ok = false;
       let said = probe.ask.Call(manager, args, ok);
       if ok {
-        answer = FromVariant<Bool>(said) ? 1 : 0;
+        if probe.answersInt {
+          answer = FromVariant<Int32>(said) > 0 ? 1 : 0;
+        } else {
+          answer = FromVariant<Bool>(said) ? 1 : 0;
+        }
       } else {
         why = "it would not take the question";
       }

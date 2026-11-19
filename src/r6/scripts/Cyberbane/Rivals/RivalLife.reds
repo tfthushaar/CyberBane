@@ -350,7 +350,7 @@ public func CBRivalMercyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pl
     return CBTalkSay("...", n"");
   }
   if IsDefined(t.npc) {
-    t.npc.cbTalkSent = true;   // it is over, whatever was said
+    CBTalkMarkSent(game, t.npc);   // it is over, whatever was said
     t.npc.cbMercyOpen = false;
   }
   if choice == CBTalkActExile() {

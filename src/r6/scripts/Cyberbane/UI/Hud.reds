@@ -2987,7 +2987,8 @@ public class CBHud {
         out += "They Will Remember decides whether they are hostile, and Cyberbane follows it.\n";
       } else {
         out += "They Will Remember decides whether they are hostile, but could not be asked (" + CBTwrHostilityWhy() + "),\n"
-             + "so this is Cyberbane's own standing until it answers.\n";
+             + "so Cyberbane goes by what their people do: hostile while they have lately been hostile to you on\n"
+             + "sight, and otherwise its own standing, until it answers.\n";
       }
       foreign = 0;   // said just now; the two records are one here
     }
@@ -6381,7 +6382,13 @@ func CBHudWornLine(sys: ref<CyberbaneSystem>) -> String {
     line += " (They Will Remember's reading.)";
   } else {
     if CBTwrActive() {
-      line += " They Will Remember's disguises could not be read; this is Cyberbane's own.";
+      let rtWhy = CyberbaneRuntime.Get();
+      let why = IsDefined(rtWhy) ? rtWhy.TwrDisguiseWhy() : "";
+      if StrLen(why) > 0 {
+        line += " They Will Remember's disguises could not be read (" + why + "); this is Cyberbane's own.";
+      } else {
+        line += " They Will Remember's disguises could not be read; this is Cyberbane's own.";
+      }
     }
   }
   return line;
