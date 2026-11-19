@@ -195,7 +195,7 @@ public func CBSendWord(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   }
   if !IsDefined(s) {
     if !calledOut {
-      CBSystemNote(game, "nowhere near here they would agree to meet. Try somewhere else.", 5.0);
+      CBMenuNote(game, "nowhere near here they would agree to meet. Try somewhere else.", 5.0);
     }
     return false;
   }

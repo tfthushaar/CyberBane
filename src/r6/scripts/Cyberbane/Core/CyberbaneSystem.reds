@@ -1064,7 +1064,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     let rtReset = CyberbaneRuntime.Get();
     if IsDefined(rtReset) && rtReset.TakeHardResetRequest(this.m_playthroughId) {
       this.HardReset();
-      CBSystemNote(game, "reputation wiped. Night City has never heard of you.", 6.0);
+      CBMenuNote(game, "reputation wiped. Night City has never heard of you.", 6.0);
       this.GetPhone().Clear();
     }
     // "This save is another character" (1.8.3). After the reset, which gives the save a new
@@ -1766,7 +1766,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if dropped > 0 {
       note = s"this save has its own records now. \(dropped) Rival(s) from another character's deaths are gone.";
     }
-    CBSystemNote(game, note, 6.0);
+    CBMenuNote(game, note, 6.0);
   }
 
   // ---- Hunting a Rival down (Rivals/Whereabouts.reds) -------------------------------------
@@ -2247,7 +2247,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
       this.m_purgeNoted = false;
       let removed = CBPurgeRivals(this, game);
-      CBSystemNote(game, s"cleared \(removed) rivals.", 4.0);
+      CBMenuNote(game, s"cleared \(removed) rivals.", 4.0);
     }
     if ArraySize(this.m_pendingForgets) > 0 {
       let forgot = 0;
@@ -2261,10 +2261,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
       ArrayClear(this.m_pendingForgets);
       if forgot == 1 {
-        CBSystemNote(game, s"forgot \(lastName).", 4.0);
+        CBMenuNote(game, s"forgot \(lastName).", 4.0);
       } else {
         if forgot > 1 {
-          CBSystemNote(game, s"forgot \(forgot) rivals.", 4.0);
+          CBMenuNote(game, s"forgot \(forgot) rivals.", 4.0);
         }
       }
     }
