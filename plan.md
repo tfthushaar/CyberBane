@@ -34,8 +34,10 @@ rehearsal from the release before; none played yet):
 | 2.4.5 | f15be9e | Run with a crew [65] on the game's own follower role, one of theirs [66], ransom [67], feed the street a lie [69], informants with a life [U12], the sergeant's parley [U2] |
 | 2.4.6 | 8979f48 | Voices [79], panic in the dark [80], the screamsheet [81], the legend told [82], the morning brief [83], a Rival's story [84], Street Cred follows the legend [87], presets with a shape [90], events for other mods [91], phone threads with answers [U13], the scanner tells the story [U14], titles for what's new [U15], and every line since 2.4.3 rewritten to draw on what the street knows [L5]. Not built: the map remembering [85] and Ambient Factions [92] |
 | 2.5.0 | b2c8659, 56c0c7b, db1eeda, 36ba068, 34ebfb2, 6e0a8d5, a32a24b, 917777f, 6e04477, 6d452d3, 67a836a, 8e16b55, a604774, ac117a9 | A crew of my own [C1]-[C10] (`CBCrewBook`, the Betrayer); the Hub rebuilt with pictures: the map, the crew, the web and the tree first, tiles, cards, segmented bars, text that fits; the map remembers [85] (`CBMapBook`), with TweakXL a CYBERBANE box in the map's custom filters; a lookout who gets away moves a Rival [U10] and a ripperdoc as a lead [U9]; the final pass and a second one. Ambient Factions [92] dropped |
+| 2.5.1 | (this branch) | From the first reports, and a pass over the pipelines: talk that comes up (the game's own Talk and Carry body prompts no longer hold it back, the stealth state no longer switches it off, a holster no longer settles a downed Rival's mercy, people with their hands up can be talked to), nobody frozen after a conversation (short renewed holds, the crowd put back into its traffic), the talk waits cut to a tick, clocks that hold while V talks (facedown, parley, scout), lines 31 and up remembered, They Will Remember asked in every shape and retried each load, loud fights scored loud (schema 4 evens out the Ghost tally). **Not compiled yet: run tools/validate.ps1 on 2.5 and 2.31 before it ships** |
 
-**In progress:** nothing. The road ends at 2.5.0.
+**In progress:** 2.5.1, written from the first player reports and a trace of every pipeline (see "2.5.1: the first
+reports" below). It has not been compiled: it needs `tools/validate.ps1` on 2.5 and 2.31, and the talk changes played.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
@@ -1073,6 +1075,54 @@ and the spec brought up to date; the Nexus description and the spawn-and-chance 
 
 **5. The release.** `build.ps1 -Version 2.5.0`, the release checks, an update rehearsal from 2.2.0 and from
 2.4.6, pushed.
+
+
+## 2.5.1: the first reports (2026-11-19)
+
+**Reported:** talk that sometimes never came up, or only after a scan; people who stood frozen after a conversation,
+even once V had walked off; the waits between conversations too long; a downed Rival who offered only "Carry body";
+They Will Remember's hostility and disguises not read ("no IsFactionHostileByIndex taking one argument"); a player who
+went in guns blazing every time and was still a Ghost.
+
+**Causes found, and what changed:**
+- *Talk held back by the game's own prompts.* Any interaction prompt of the game's held the offer back, and the game puts
+  its own Talk (GenericTalk) on most of the crowd and Carry body on anybody down. Its scanner hides those prompts, which
+  is why a scan made Cyberbane's appear. Now the settling person's own talk is switched off the moment V settles on them
+  (`CBTalkHushTalk`, `HushCandidate`) and the game's prompt is waited out for a moment; a dialogue or a loot list still
+  holds talk back (`CBNativePromptKind`); somebody down at V's feet gets the lines at once (`CBTalkDownAtFeet`).
+- *The stealth state.* `CBPlayerSneaking` also read the game's stealth combat state, which is on with V standing in the
+  open near unaware hostiles. Talk asks `CBPlayerCrouched` now.
+- *Mercy closed by the holster.* "Put your weapon away to spare them, or talk to them" settled the mercy three ticks after
+  the holster that talking needs. Empty hands spare only from beyond `MercyTalkRadius` or outside a conversation.
+- *Gates in the wrong order.* `cbMoraleBroken` was checked before `cbSurrendered` and the mercy flag, and `CBMoraleBreak`
+  marks everybody who gives up as broken: ransom and hand-over could never be reached.
+- *Frozen people.* A ninety-second hold ended only by a cancel; the cancel ran before the stop and could miss. Short holds
+  renewed while talking (`CBTalkRenewHold`), stop before cancel (`CBEndHold`), every held crowd member back into
+  traffic (`cbTalkHeld`), the crowd's fear stamped off them for a moment, scares mid-conversation let through, and every
+  send-off timed (`CBTalkMarkSent`; four places set the flag without the tick, so it never wore off). Surrender and the
+  facedown keep their long holds (`SurrenderHoldSeconds`, `FacedownHoldSeconds`).
+- *Clocks during talk.* A facedown, a parley and a scout's call ran out mid-conversation; they hold while
+  `CBTalkEngaged`.
+- *Lines 31 and up.* `cbTalkDone` is one Int32 and `CBBitValue` stops at 30; the lines run to 59. `cbTalkDoneHigh`.
+- *They Will Remember.* The probe resolved once a launch and wanted one exact shape. Several names, Bool or Int32 answers,
+  a why that names what it found, retried each session; disguises need the face or the gang reading, not all six; while
+  unanswered, `SeenHostileRecently` counts as its answer in `CBActingStanding`.
+- *The Ghost.* `info.stealth` was "no witness passed the reaction component's sight test", which a firefight mostly
+  fails, and loud lethal kills added Butcher 0.2 and nothing else. Now a kill with V in combat is never stealth
+  (`info.loud`), combatants are witnesses, loud kills add `ButcherPerLoudKill`, firefight knockouts go to Operator, and
+  schema 4 brings the Ghost tally down once to the highest of the others (or to `ArchetypeMinTotal`).
+
+**Traced in full for 2.5.1:** talk end to end (settling, the offer, the lines, answers, every topic and deal, refusals,
+explanations), mercy, surrender and ransom, the facedown, the parley, scouts, street intel, the crew, allies, Rival
+places and lookouts, bounties and the ladder, street clashes, trackers and open season, gang life's talk, kill scoring,
+witnesses and fighting style, They Will Remember. Swept by script across every file: bit masks against their width,
+arrays changed inside loops over them, random ranges, settings that reach nothing, scoring fields nobody reads.
+**Not re-read line by line this time:** the queue, arrivals and the hunt, the Rival lifecycle, the war's money,
+territory, the narrative layer and the Hub, phone and map drawing; each had its pass in 2.4.2 and 2.5.0.
+
+**To check when it is played:** that the game's Talk prompt never flickers up over Cyberbane's; that "Carry body" and the
+lines on screen together never pick the body up on F; that nobody stands frozen; that a facedown still turns into a
+fight if V only stares.
 
 ---
 

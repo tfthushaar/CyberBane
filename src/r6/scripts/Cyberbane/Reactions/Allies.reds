@@ -317,7 +317,8 @@ func CBCrewGoHome(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
     if CBNpcSafe(sys, p) && CBStillStanding(p) {
       CBEndFollower(p);
-      CBOrderFlee(game, p);
+      // Walked off, as the line says (2.5.1): a sprint away from V read as the crew running from something.
+      CBOrderFlee(game, p, true);
     }
   }
   if StrLen(why) > 1 && CBMessagesOn() {
@@ -695,6 +696,10 @@ func CBParleyTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
       if IsDefined(p) && p.cbDamagedByPlayer {
         crewHit = true;
       }
+    }
+    // The clock holds while V is talking to the sergeant (2.5.1, CBTalkEngaged).
+    if CBNpcSafe(sys, s) && CBTalkEngaged(sys, s) {
+      war.parleyTick = tick;
     }
     if !CBNpcSafe(sys, s) || !CBStillStanding(s) || s.cbDamagedByPlayer || crewHit || tick - war.parleyTick > CBConfig.FacedownTicks() {
       CBParleyFight(sys, game, war);

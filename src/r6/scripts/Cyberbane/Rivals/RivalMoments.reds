@@ -377,7 +377,11 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
         CBFacedownRelease(sys, game, book, true);
         return;
       }
-      // V fired first, hit one of them, or took too long: it is a fight.
+      // V fired first, hit one of them, or took too long: it is a fight. Not too long while V is talking to them
+      // (2.5.1, CBTalkEngaged): the clock holds while the words go back and forth.
+      if CBTalkEngaged(sys, body) {
+        book.fdTick = tick;
+      }
       if body.cbDamagedByPlayer || CBFacedownEscortHit(game, book) || tick - book.fdTick > CBConfig.FacedownTicks() {
         CBFacedownFight(sys, game, book, r, body, false);
       }

@@ -71,6 +71,30 @@ public let cbTalkTick: Int32;
 @addField(ScriptedPuppet)
 public let cbTalkDone: Int32;
 
+// The lines numbered 31 and up (2.5.1). One Int32 holds bits 0 to 30 (CBBitValue), and the lines run to 59 now, so
+// nothing V said from paying a witness on (the war's deals, a facedown, a ransom, the crew) was ever put down as said:
+// never dimmed, and "Keep an eye out for me" came back after V had paid it.
+@addField(ScriptedPuppet)
+public let cbTalkDoneHigh: Int32;
+
+public func CBTalkDid(npc: wref<ScriptedPuppet>, act: Int32) -> Bool {
+  if !IsDefined(npc) {
+    return false;
+  }
+  return act <= 30 ? CBMaskHas(npc.cbTalkDone, act) : CBMaskHas(npc.cbTalkDoneHigh, act - 31);
+}
+
+public func CBTalkSetDid(npc: wref<ScriptedPuppet>, act: Int32) -> Void {
+  if !IsDefined(npc) {
+    return;
+  }
+  if act <= 30 {
+    npc.cbTalkDone = CBMaskSet(npc.cbTalkDone, act);
+  } else {
+    npc.cbTalkDoneHigh = CBMaskSet(npc.cbTalkDoneHigh, act - 31);
+  }
+}
+
 @addField(ScriptedPuppet)
 public let cbTalkSent: Bool;
 
@@ -349,6 +373,25 @@ protected cb func OnEventReceived(stimEvent: ref<StimuliEvent>) -> Bool {
 // Director does not turn somebody on V mid-conversation (Reactions/Director.reds, TryGangHostile).
 @addField(ScriptedPuppet)
 public let cbTalkHeldTick: Int32;
+
+// V is talking to them, or settling on them to talk (2.5.1). Whatever is on a clock for somebody V can talk to (a
+// facedown, a sergeant's parley, a scout about to call it in) holds its clock while this is true: a facedown turned
+// into a fight fifteen seconds after it opened, and a scout called it in six seconds after seeing V, whether or not V
+// was in the middle of talking to them, so V's answer was lost to a gunfight more often than not.
+public func CBTalkEngaged(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(npc) {
+    return false;
+  }
+  if npc.cbTalkPartner {
+    return true;
+  }
+  // Settling with a gun in hand is not walking up to talk: a Rival V stares down a barrel at does not wait for ever.
+  let player = GetPlayer(npc.GetGame());
+  if !IsDefined(player) || IsDefined(GameObject.GetActiveWeapon(player)) {
+    return false;
+  }
+  return IsDefined(sys) && npc.cbTalkHeldTick > 0 && sys.GetTickCount() - npc.cbTalkHeldTick <= 2;
+}
 
 // The four choices, in the order they are shown.
 public func CBTalkGreet() -> Int32 = 0
@@ -1160,8 +1203,8 @@ public class CBStreetTalk {
       this.End(game, "they are gone");
       return;
     }
-    t.first = !CBMaskHas(npc.cbTalkDone, choice);
-    npc.cbTalkDone = CBMaskSet(npc.cbTalkDone, choice);
+    t.first = !CBTalkDid(npc, choice);
+    CBTalkSetDid(npc, choice);
     let again = !t.first;
     let a: ref<CBTalkAnswer>;
     if choice == CBTalkGreet() {
@@ -1411,6 +1454,13 @@ public class CBStreetTalk {
           CBOrderFlee(game, walker, true);
         }
       }
+    }
+    // Somebody with their hands up stays where they kneel (2.5.1): the conversation's own short holds replaced the long
+    // one they gave up with, and its end let them go, so a hostage V had just asked a ransom for wandered off before
+    // their gang could answer.
+    if IsDefined(this.m_target) && IsDefined(this.m_target.npc) && this.m_target.npc.cbSurrendered
+       && !this.m_target.npc.cbTalkSent && CBStillStanding(this.m_target.npc) {
+      CBTalkHold(this.m_target.npc, CBConfig.SurrenderHoldSeconds());
     }
     // The street leaves them be for a moment as they go (2.5.1): standing right beside V, the crowd's fear reached them
     // the second the conversation let go, and somebody V had just chatted with cowered on the spot, hands up, frozen.
@@ -1914,6 +1964,7 @@ public func CBTalkWhySentAfterV() -> String = "one of Cyberbane's own, here for 
 public func CBTalkWhyJob() -> String = "they are at one of V's jobs"
 public func CBTalkWhyStory() -> String = "part of a story or a job (a quest character)"
 public func CBTalkWhyTracked() -> String = "at the job V is tracking"
+public func CBTalkWhyLair() -> String = "a Rival at their place, or one of their people"
 
 // What V is told when somebody will not talk for a reason V cannot see (2.1.0), "" for the rest: a fight, a
 // weapon, a car, somebody running or too far off speak for themselves, a vendor and a companion have the
@@ -1922,6 +1973,9 @@ public func CBTalkWhyTracked() -> String = "at the job V is tracking"
 public func CBTalkWhyHint(why: String) -> String {
   if Equals(why, CBTalkWhySentAfterV()) {
     return "they are here for you. There is nothing to talk about.";
+  }
+  if Equals(why, CBTalkWhyLair()) {
+    return "they are a Rival's people, on the Rival's own ground. Words will not settle this.";
   }
   if Equals(why, CBTalkWhyJob()) || Equals(why, CBTalkWhyTracked()) {
     return "they are part of a job, so they will not talk.";
@@ -1999,6 +2053,10 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
     // Called off, or let go with their hands up (CB_Orphan): no longer here for V, and on their way out.
     if desT.IsTagged(npc.GetEntityID(), n"CB_Orphan") {
       return "stood down and on their way out";
+    }
+    // A Rival at their place, or one of their people there (2.5.1): told "they are here for you" when it is V who came.
+    if desT.IsTagged(npc.GetEntityID(), n"CB_Lair") {
+      return CBTalkWhyLair();
     }
     return CBTalkWhySentAfterV();
   }

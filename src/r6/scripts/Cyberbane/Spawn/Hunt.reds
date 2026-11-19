@@ -1168,6 +1168,11 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     sys.SetScoutSeenTicks(0);
     return;
   }
+  // V walking up to talk, or talking, to the scout (the bribe, [68]) holds the call (2.5.1): it went in six seconds after
+  // the scout saw V, whatever V was saying to them.
+  if CBTalkEngaged(sys, scout) {
+    return;
+  }
   sys.SetScoutSeenTicks(sys.GetScoutSeenTicks() + 1);
   if sys.GetScoutSeenTicks() >= CBConfig.ScoutCallTicks() {
     let scoutId = sys.GetScoutId();

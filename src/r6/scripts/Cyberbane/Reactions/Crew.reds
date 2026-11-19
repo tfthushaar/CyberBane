@@ -1235,7 +1235,7 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
     if CBNpcSafe(sys, p) && CBStillStanding(p) {
       CBEndFollower(p);
       CBCrewFriendlyToV(game, p);
-      CBOrderFlee(game, p);
+      CBOrderFlee(game, p, true);   // walking home, as the comment above says (2.5.1); a sprint read as running away
     }
     i += 1;
   }

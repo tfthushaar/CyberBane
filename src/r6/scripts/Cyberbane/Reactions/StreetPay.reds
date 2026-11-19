@@ -51,7 +51,6 @@ public func CBStreetPayLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   if !CBPayTheStreetOn() || !IsDefined(t) || !IsDefined(t.npc) || t.cop {
     return out;
   }
-  let done = t.npc.cbTalkDone;
   if (CBIsTeller(game, t.npc) || CBIsLookout(t.npc)) && !t.npc.cbWitnessHushed {
     let price = CBHushPrice(sys);
     let pay = CBTalkMakeLine(s"[Pay] \(price)eb. You didn't see anything.", CBTalkActHushPay(), t"ChoiceCaptionParts.PayIcon");
@@ -65,7 +64,7 @@ public func CBStreetPayLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   }
   // A watcher is somebody off the street with no gang to answer to.
   if Equals(t.faction, n"") && t.mood != CBTalkHostile() && !CBWatchedHere(sys, game)
-     && !CBMaskHas(done, CBTalkActWatch()) {
+     && !CBTalkDid(t.npc, CBTalkActWatch()) {
     let price = CBWatchPrice();
     let w = CBTalkMakeLine(s"[Pay] \(price)eb. Keep an eye out for me.", CBTalkActWatch(), t"ChoiceCaptionParts.PayIcon");
     w.inactive = CBTalkMoney(game) < price;
