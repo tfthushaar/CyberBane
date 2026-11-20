@@ -1,11 +1,13 @@
 # Build output
 /dist/
 
-# Local-only developer helper (never committed)
+# Developer notes are kept local; the repo holds only what players read
 STATUS.md
-
-# Design spec is kept local, not published to the repo
 CYBERBANE_SPEC.md
+plan.md
+IMPROVEMENTS.md
+PLAYER_REQUESTS.md
+console.md
 
 # Editor / OS
 .vscode/
@@ -21,7 +23,3 @@ desktop.ini
 *.redscripts.bk
 *.redscripts.ts
 r6/cache/
-
-# Local showcase video (never committed)
-/brag-output/
-plan.md

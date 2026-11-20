@@ -1,21 +1,10 @@
-<div align="center">
-
-<a href="docs/assets/cyberbane.mp4">
-  <img src="docs/assets/cyberbane-preview.gif" alt="CyberBane: Night City reacts to your reputation in Cyberpunk 2077" width="100%">
-</a>
-
-<sub><a href="docs/assets/cyberbane.mp4">Watch the full video</a></sub>
-
-</div>
-
 # Cyberbane
 
 A reputation overhaul for Cyberpunk 2077. Night City notices what V does and acts on it: crowds get
 out of your way, gangs decide whether to respect you or hunt you, and the people you hurt come back
 with names and grudges.
 
-**Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847) or the
-[Releases page](https://github.com/tfthushaar/CyberBane/releases)
+**Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
 **Version 2.5.6.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
@@ -49,9 +38,9 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **A living street.** Bagmen to rob, favours for friendly gangs, and sit-downs between gangs at war
   that you can crash (now under **Gang life** in Mod Settings).
 
-### New in 2.5.0
+### New in 2.5
 
-Everything added since 2.3.0, in one place.
+Everything added since 2.3.0, in one place. The fixes in each update are in [CHANGELOG.md](CHANGELOG.md).
 
 **The street**
 - **The street reads you.** Witnesses run to tell the gang unless you stop them. Night, rain and your own
@@ -169,7 +158,7 @@ Each playthrough keeps its own record, and nothing one character does reaches an
 
 - **They Will Remember / Night City Remembers:** detected automatically. Cyberbane lets it decide
   who is hostile to you and how well a disguise works, and follows both: the Gangs page marks the
-  gangs it decides with "(TWR)". Set compatibility to Off under Advanced to let Cyberbane decide instead.
+  gangs it decides with "(TWR)". Set **They Will Remember compatibility** to Off under **Advanced** to let Cyberbane decide instead.
 - **Much Better AI, Street Sense, New Game Plus:** detected automatically; Cyberbane steps back
   where they already cover something.
 - **Equipment-EX and other outfit mods:** your outfit is read as it looks on V.
@@ -181,9 +170,14 @@ Each playthrough keeps its own record, and nothing one character does reaches an
 
 ## Reporting a bug
 
-If the game shows a red error at start-up, a script failed to compile and Cyberbane is not running.
-Send `r6\logs\redscript_rCURRENT.log` from your game folder with your game version. Send it for any
-other bug too: Cyberbane writes what it was doing into the same file.
+Post on the mod's Nexus page with your game version, your list of mods, and what you were doing when it
+happened. A screenshot helps a lot: the Hub's Standing and Gangs pages say why the city is treating you
+the way it is, so a picture of the page that fits your problem often explains it.
+
+- **A red error at start-up** means a script failed to load and Cyberbane is not running. Send
+  `r6\logs\redscript_rCURRENT.log` from your game folder.
+- **A crash to desktop:** if you have a crash reporter installed (for example Advanced Crash Reporter),
+  send its newest report.
 
 ## Credits
 

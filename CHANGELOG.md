@@ -50,7 +50,7 @@ the next unless a version says otherwise.
   killed them. It now says somebody got to them first.
 - An informant whose gang found out said they were coming "within the hour". The hunt comes a few hours later at the
   soonest, and the text says so.
-- Switching off **My crew** or **Run with a crew** while they are out with you sends them home. They went on following you
+- Switching off **Your crew** or **Run with a crew** while they are out with you sends them home. They went on following you
   until the fight was over or their hour was up.
 - A Rival who was warned to be coming, then spared or switched off before they arrived, came straight in without a
   warning the next time they were sent.
@@ -343,7 +343,7 @@ Your progress carries over.
 - **Presets with a shape.** Alongside Subtle, Default and Dramatic: Nemesis (Rivals first), TurfWar (gangs and their
   streets first) and QuietLife (the street and talk, hardly anybody hunting you).
 - **For other mods.** Cyberbane now announces its moments (a Rival slain, a hunt started, a price posted, a new place on
-  the ladder, a street event) through the game's callback system.
+  the ladder, a street event), so other mods can react to them.
 
 **Mod Settings**
 - Under **Messages and HUD**: **Voices for the moments** and **Morning brief**. Under **Crews and apex squads**:
@@ -727,14 +727,13 @@ Your progress carries over.
 
 **Fixes**
 - **No more crash from the talk bubbles.** The talk bubble over people who know where a Rival is lying low
-  read each nearby person's character data before checking they were still in the world, so somebody who had
-  just walked out of streaming range could crash the game (the crash report names `CBStreetIntel.Bubbles`
-  and `ScriptedPuppet.IsCrowd`). Every check of nearby people now makes sure they're still there and fully
-  loaded before reading anything about them, as the rest of Cyberbane already did. The same fix covers the
+  read each nearby person's details before checking they were still in the world, so somebody who had just
+  walked far enough away to vanish could crash the game. Every check of nearby people now makes sure they're
+  still there and fully loaded before reading anything about them, as the rest of Cyberbane already did. The same fix covers the
   favour that marks somebody who owes a gang, a Rival coming to help when you're outnumbered, talking to
   somebody downed, squeezing a ganger, the Talk prompt, and finding who you're looking at to talk to.
-- **Your death can't crash on a killer who has gone.** If whoever killed you had already left streaming range
-  by the time your death landed (a shot from far off, or bleeding out), their character data was read anyway.
+- **Your death can't crash on a killer who has gone.** If whoever killed you had already vanished from the
+  area by the time your death landed (a shot from far off, or bleeding out), their character data was read anyway.
   Now the death is recorded without a named killer, as a death with no attacker always was.
 
 Your progress carries over.
@@ -797,8 +796,8 @@ With They Will Remember deciding who is hostile, it still does.
 **Fixes**
 - **A crew member who surrenders stays where they stand.** Their orders to come for you kept running.
 - **Your death is worked through a moment later.** Making your killer a Rival, the death count and the line in
-  your History all ran inside the game's own death event, alongside Cyberbane's tick, and the Rival list could
-  be changed by both at once. The death still goes on record at once, so a reload still makes them a Rival.
+  your History all happened at the instant you died, at the same moment as Cyberbane's own regular update, and
+  the Rival list could be changed by both at once. The death still goes on record at once, so a reload still makes them a Rival.
 - Talk's note about why somebody won't talk, and its log line, no longer go quiet for a while after a load.
 
 Your progress carries over.
@@ -851,9 +850,9 @@ options long, is now three. Every setting you changed is kept.
 - **A gang's second apex squad in a session gets its warning text.** Only the first one did.
 - **Flawless counts all of the fight.** Damage you took before your first kill (and healed) used to be
   ignored.
-- **Panic driving works.** The gunshot stim it sends to drivers had no range, so it reached nobody. It now
+- **Panic driving works.** The gunshot alert it sends to drivers had no range, so it reached nobody. It now
   uses the game's own gunshot range.
-- **Your hands no longer stay locked outside a safe area.** With **Fight in safe areas** on, a scene that
+- **Your hands no longer stay locked outside a safe area.** With **Let me fight in safe areas** on, a scene that
   quieted things outside a real safe area could leave the safe-area weapon lock on with nothing to lift it.
 - **Send word is cleared when the meeting comes to nothing**: the Rival got away, the lead ran out, you
   left them lying at their place, or you forgot them. Their page said "Waiting for you" for good, they got
@@ -880,7 +879,7 @@ options long, is now three. Every setting you changed is kept.
 - **Switching map markers off takes every Cyberbane marker off**, the favour's mark on a passer-by included.
 - **Phone:** answering a thread that holds both a gang's offer and a Rival lead carries out the answer you
   picked. While another purchase was going through, "Pay to call it off" could buy the lead instead.
-- A save whose informant records came back damaged can no longer crash the street-intel tick.
+- A save whose informant records came back damaged can no longer crash the game.
 
 **Changes**
 - Finding the person you look at is cheaper: the game's targeting is asked only when nothing else finds
