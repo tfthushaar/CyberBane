@@ -179,6 +179,8 @@ the way it is, so a picture of the page that fits your problem often explains it
   `r6\logs\redscript_rCURRENT.log` from your game folder.
 - **A crash to desktop:** if you have a crash reporter installed (for example Advanced Crash Reporter),
   send its newest report.
+- **Anything else, with Cyber Engine Tweaks installed:** send `bin\x64\plugins\cyber_engine_tweaks\gamelog.log`.
+  Cyberbane writes what it was doing there, including why somebody would not talk to you.
 
 ## Credits
 

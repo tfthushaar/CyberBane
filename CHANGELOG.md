@@ -18,6 +18,12 @@ the next unless a version says otherwise.
   Cyberbane's came up. Now it waits a moment, then gives everything back and leaves that person to the game until you
   look at somebody else. A prompt the game is not actually showing no longer holds talk off.
 
+- **Pressing Talk brings up the lines for people with a "Talk" of their own too.** For passers-by and anybody else the
+  game gives its own "Talk", the lines went up and could not be seen: Cyberbane switched their own talk off again five
+  times a second, and each time the game redrew that person's prompts and took the lines away. It is now switched off
+  only when the game has really put it back. Their second talk prompt, the one the game shows once you have spoken to
+  them, is switched off and given back the same way.
+
 **Rivals**
 - **Talk in the middle of a fight to the people the fight is for.** A Rival down at your feet, somebody with their
   hands up, a Rival or a sergeant standing for a facedown or a parley: you can talk to them while the shooting goes on

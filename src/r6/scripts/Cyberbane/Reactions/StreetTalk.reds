@@ -203,7 +203,25 @@ func CBTalkHushTalk(npc: ref<ScriptedPuppet>, opt again: Bool) -> Bool {
   if !IsDefined(npc) || !npc.IsAttached() {
     return false;
   }
-  if npc.cbTalkHushedTalk && !again {
+  // Their other talk on F (2.5.7): every NPC carries GenericInteraction.ReturnTalk beside Talk, on its own layer and on
+  // Choice1 too, and only GenericTalk was ever switched off, so a person with it live kept the game's talk armed under
+  // Cyberbane's: F set off the game's, and the game kept Cyberbane's lines hidden until V walked away. Off only while
+  // the game shows it live for V, never on somebody with business of their own, and always put back (CBTalkUnhush).
+  let returnOff = false;
+  if npc.cbOwnReturnLive && !npc.cbReturnHushed && !CBTalkOwnBusiness(npc) {
+    npc.EnableInteraction(n"ReturnTalk", false);
+    npc.cbReturnHushed = true;
+    CBLog.Info(n"Talk", "Their own ReturnTalk was live: switched off for the conversation.");
+  }
+  returnOff = npc.cbReturnHushed;
+  // Switched off once more only when the game has put it back on and it is live for V again (2.5.7). Sent every tick,
+  // five times a second, the call that switched off a talk already off made the game redo that person's prompts each
+  // time, and each redo took Cyberbane's lines off the screen: "I pressed Talk and no lines came" while the log said
+  // they were up, wiped forty times in ten seconds, for exactly the people who had a talk of their own.
+  if npc.cbTalkHushedTalk && (!again || !npc.cbOwnTalkLive) {
+    return true;
+  }
+  if !npc.cbTalkHushedTalk && !npc.cbOwnTalkLive && !CBGenericTalkByRule(npc) && returnOff {
     return true;
   }
   if !npc.cbTalkHushedTalk {
@@ -229,12 +247,28 @@ func CBTalkHushTalk(npc: ref<ScriptedPuppet>, opt again: Bool) -> Bool {
 public let cbOwnTalkLive: Bool;
 @addField(ScriptedPuppet)
 public let cbTalkHushWasOn: Bool;
+// The same for their ReturnTalk layer (2.5.7).
+@addField(ScriptedPuppet)
+public let cbOwnReturnLive: Bool;
+@addField(ScriptedPuppet)
+public let cbReturnHushed: Bool;
 
 @wrapMethod(ScriptedPuppet)
 protected cb func OnInteractionActivated(evt: ref<InteractionActivationEvent>) -> Bool {
   let r = wrappedMethod(evt);
-  if IsDefined(evt) && Equals(evt.layerData.tag, n"GenericTalk") && IsDefined(evt.activator) && evt.activator.IsPlayer() {
-    this.cbOwnTalkLive = Equals(evt.eventType, gameinteractionsEInteractionEventType.EIET_activate);
+  if IsDefined(evt) && IsDefined(evt.activator) && evt.activator.IsPlayer() {
+    let on = Equals(evt.eventType, gameinteractionsEInteractionEventType.EIET_activate);
+    if Equals(evt.layerData.tag, n"GenericTalk") {
+      this.cbOwnTalkLive = on;
+    }
+    if Equals(evt.layerData.tag, n"ReturnTalk") {
+      this.cbOwnReturnLive = on;
+    }
+    // What of theirs comes and goes on F while V settles on them or talks to them: the log says, so a report of lines
+    // that never showed names what stood in the way.
+    if this.cbTalkPartner || this.cbTalkHushedTalk || this.cbReturnHushed {
+      CBLog.Info(n"Talk", s"Their prompt layer \(NameToString(evt.layerData.tag)) \(on ? "came up" : "went down").");
+    }
   }
   return r;
 }
@@ -271,6 +305,12 @@ public func CBTalkWhyOwnBusiness() -> String = "they have business of their own 
 func CBTalkUnhush(npc: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc) {
     return;
+  }
+  if npc.cbReturnHushed {
+    npc.cbReturnHushed = false;
+    if npc.IsAttached() {
+      npc.EnableInteraction(n"ReturnTalk", true);
+    }
   }
   if npc.cbTalkHushedTalk {
     npc.cbTalkHushedTalk = false;
@@ -674,6 +714,9 @@ public class CBStreetTalk {
   private let m_hushedNear: array<wref<ScriptedPuppet>>;
   // How long the current hold-position order has run (CBTalkRenewHold, 2.5.1).
   private let m_holdAge: Float;
+  // The on-screen note while the lines are up and unanswered (2.5.7).
+  private let m_diagLeft: Float;
+  private let m_diagCount: Int32;
 
   // A line said, waiting for the answer.
   private let m_pending: Int32;
@@ -927,6 +970,16 @@ public class CBStreetTalk {
     if !foreign && !this.Shown(game) {
       this.Push(game);
       this.m_wipes += 1;
+    }
+    // The lines up and nothing said yet: what the game's interface holds, three times (2.5.7). Reported as "I pressed Talk
+    // and no lines came" with the log saying the lines were up; this says what was in front of them.
+    if this.m_stage == CBTalkStageOpen() && this.m_exchanges == 0 && this.m_diagCount < 3 {
+      this.m_diagLeft -= dt;
+      if this.m_diagLeft <= 0.0 {
+        this.m_diagLeft = 2.0;
+        this.m_diagCount += 1;
+        CBLog.Info(n"Talk", s"On screen: \(CBTalkScreenNote(game)); their own talk live \(t.npc.cbOwnTalkLive), off \(t.npc.cbTalkHushedTalk); ReturnTalk live \(t.npc.cbOwnReturnLive), off \(t.npc.cbReturnHushed); wiped \(this.m_wipes).");
+      }
     }
     // They keep their eyes on V, the way a scene turns the game's own characters to face V: once V has
     // started talking to them, never for an offer alone (Engage).
@@ -1343,6 +1396,8 @@ public class CBStreetTalk {
     }
     if this.m_exchanges == 0 {
       CBLog.Info(n"Talk", s"Prompt up: \(CBTalkTitle(t)).");
+      this.m_diagLeft = 1.0;
+      this.m_diagCount = 0;
     }
   }
 
@@ -2591,6 +2646,29 @@ public func CBNativePromptWords(game: GameInstance) -> String {
 // carry their body, which is an interaction prompt that never goes away while V stands over them.
 public func CBTalkDownAtFeet(npc: wref<ScriptedPuppet>) -> Bool {
   return IsDefined(npc) && (npc.cbMercyOpen || npc.cbSurrendered);
+}
+
+// What the game's interface holds right now, in a line for the log (2.5.7): every list and how many lines each, which
+// list is active, the game's own prompt and its first caption, and a loot list.
+public func CBTalkScreenNote(game: GameInstance) -> String {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(bbs) {
+    return "no blackboard";
+  }
+  let defs = GetAllBlackboardDefs().UIInteractions;
+  let bb = bbs.Get(defs);
+  if !IsDefined(bb) {
+    return "no blackboard";
+  }
+  let lists = "";
+  let dialogs = FromVariant<DialogChoiceHubs>(bb.GetVariant(defs.DialogChoiceHubs));
+  for hub in dialogs.choiceHubs {
+    lists += (StrLen(lists) > 0 ? ", " : "") + s"\(hub.id)\(hub.id == CBConfig.TalkHubId() ? " (ours)" : "") with \(ArraySize(hub.choices))";
+  }
+  let prompt = FromVariant<InteractionChoiceHubData>(bb.GetVariant(defs.InteractionChoiceHub));
+  let first = ArraySize(prompt.choices) > 0 ? prompt.choices[0].localizedName : "";
+  let loot = FromVariant<LootData>(bb.GetVariant(defs.LootData));
+  return s"lists [\(lists)], active list \(bb.GetInt(defs.ActiveChoiceHubID)); game prompt \(prompt.active ? "up" : "down") id \(prompt.id) with \(ArraySize(prompt.choices)) \"\(first)\"; loot \(loot.isActive)";
 }
 
 // Is one of the game's own dialogues on screen (a hub that is not street talk's)? Texts wait for it (1.9.6).
