@@ -283,6 +283,8 @@ public func CBTalkDealPayToll(sys: ref<CyberbaneSystem>, game: GameInstance, pla
   sys.AddToll(t.faction, now + CBConfig.TalkTollHours() * 3600.0);
   CBFileLog(sys, n"TalkToll", now, CBEventDistrict(sys, game), t.faction, Cast<Float>(price));
   CBLog.Info(n"Talk", s"V bought safe passage from \(NameToString(t.faction)) for \(price)eb.");
+  // Starting with the one V paid, here and now; the rest of theirs as V passes them (Reactions/Director.reds, KeepCalm).
+  CBCalmTowardsV(game, t.npc, 2);
   return CBTalkSay(CBPick2("Done. Word goes round: you walk, nobody of ours stops you. For a while.",
                                   "Pleasure. Keep your head down and nobody of ours will lift a finger."), n"");
 }
@@ -304,6 +306,7 @@ public func CBTalkDealPayCallOff(sys: ref<CyberbaneSystem>, game: GameInstance, 
   }
   CBFileLog(sys, n"TalkCallOff", CBGameSeconds(game), CBEventDistrict(sys, game), t.faction, Cast<Float>(price));
   CBLog.Info(n"Talk", s"V paid one of \(NameToString(t.faction)) \(price)eb to call off their crew.");
+  CBCalmTowardsV(game, t.npc, 1);   // the one who took V's money is not the one to draw on V (2.6.0)
   return CBTalkSay(CBPick2("Alright. I'll tell them you weren't where they thought. Don't make me regret it.",
                                   "Done. They'll turn around. Next time I can't help you."), n"");
 }
@@ -704,6 +707,7 @@ public func CBTalkDealPay(sys: ref<CyberbaneSystem>, game: GameInstance, player:
   }
   ts.RemoveItem(player, ItemID.FromTDBID(t"Items.money"), price);
   CBFileLog(sys, n"TalkBought", CBGameSeconds(game), CBEventDistrict(sys, game), t.faction, Cast<Float>(price));
+  CBCalmTowardsV(game, t.npc, 1);   // paid and told: they do not turn round and draw on V (2.6.0, CBCalmTowardsV)
   return CBTalkSay(CBTalkGiveLead(sys, game, player, t, r, true), n"");
 }
 
@@ -770,9 +774,7 @@ public func CBTalkDealLean(sys: ref<CyberbaneSystem>, game: GameInstance, player
   chance = ClampF(chance * sys.WornPerk().breakMult, CBConfig.TalkIntimidateMin(), CBConfig.TalkIntimidateMax());
   if IsDefined(npc) && !npc.IsBoss() && !CBHoldsGround(npc) && RandF() < chance {
     CBTalkFear(sys, game, t.faction, CBConfig.TalkLeanFear());
-    if IsDefined(npc) {
-      npc.cbHoldState = 1;
-    }
+    CBStandDownFromV(game, npc);
     return CBTalkSay(CBTalkGiveLead(sys, game, player, t, r, false), n"fear_beg");
   }
   CBTalkFear(sys, game, t.faction, -CBConfig.TalkLostFace());

@@ -658,6 +658,14 @@ public func CBCrewText(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBC
   if StrLen(line) == 0 {
     return;
   }
+  // An order carried out while the Hub is still open (CBCrewKitDoNow): the text waits for the game, as everything the
+  // world says does, and goes on the next tick (CBCrewKitService).
+  let kb = CBCrewKitBook.Get(game);
+  if IsDefined(kb) && kb.deferTexts {
+    ArrayPush(kb.laterWho, IsDefined(m) ? m.id : 0);
+    ArrayPush(kb.laterLines, line);
+    return;
+  }
   CBPhoneSendTinted(game, CBCrewSender(), IsDefined(m) ? CBCrewFirst(sys, m) + ": " + line : line, CBCrewColour(game));
 }
 
@@ -819,7 +827,10 @@ public func CBCrewFrightenedJoins(sys: ref<CyberbaneSystem>, game: GameInstance,
   if !IsDefined(m) {
     return null;
   }
-  t.npc.cbHoldState = 1;
+  // One of V's crew now: they stand down here and now, by the game's rules as well as Cyberbane's (2.6.0). Left to the
+  // game, one of a gang it keeps hostile to V (the Scavengers) went on watching V, their detection rising, until the
+  // newest member of V's crew opened fire on V.
+  CBStandDownFromV(game, t.npc);
   CBCrewJoined(sys, game, m, s"It's me. From \(CBHere(sys)). I don't want trouble with you. Ever. Tell me where to be.");
   CBLog.Info(n"Crew", s"A frightened ganger of \(NameToString(t.faction)) joined V's crew.");
   return CBTalkSay(CBLineOf([s"Okay. Okay! I'm yours. Just... don't look at me like that, \(CBYou(sys, game)).",

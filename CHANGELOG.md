@@ -6,16 +6,19 @@ the next unless a version says otherwise.
 ## 2.6.0 (20 November 2026)
 
 **Your crew, kitted out.** Everything below is on the Hub's Crew page. Pick somebody and press **Orders** for their
-list; press **Name, colours, the fallen** for the crew itself. Orders are carried out when you are back in the game,
-and clicking one again before then takes it back.
+list; press **Name, colours, the fallen** for the crew itself. Orders happen as you pick them, and their texts come once
+you are back in the game. A spar waits for the game, and clicking it again before then calls it off.
 
 - **Give them a weapon** from your bag. Its mods and attachments go back in your bag first. From their next call they
   fight the way it is used (heavy, shooter or blade), on a body of their gang's that carries that kind of weapon, and
   it adds to their damage by its quality. Take it back whenever you like, and it comes back to you if they leave the
   crew. One who used to be a Rival keeps their own face; only the way they fight changes.
-- **Have chrome put in.** Spare cyberware you own and do not wear goes in for good, up to four pieces each. What it
-  does follows where it goes: armour, health, damage, critical hits or resistance to hacks. Their file lists it, and
-  you feel it the next time they fight beside you.
+- **Have chrome put in.** Spare cyberware you own and do not wear goes in for good, up to four pieces each, and does
+  for them what it does in the game, by the game's own numbers for that piece and its quality: a Mechatronic Core
+  makes them hit drones, mechs and robots harder, subdermal armour adds its armour, a Sandevistan, a Kerenzikov or a
+  second heart gives them one of their own. What the game lets only you use (critical hits, headshots, weak spots,
+  attack speed) counts as the extra damage it would do on average. Chrome that only helps you (RAM, zoom, stamina) is
+  not offered. Their text and their file say what it does, and you feel it the next time they fight beside you.
 - **Ranks:** Rookie, Soldier, Veteran, Lieutenant, Enforcer, Legend. Their wins and their training together decide it,
   and every rank makes them tougher.
 - **Send them to train.** They are away for some hours and it costs money, more each time, three times at most. They
@@ -46,6 +49,13 @@ and clicking one again before then takes it back.
 **Fixed in this version**, from a read of the whole mod.
 
 *Your crew*
+- **Somebody who joins your crew stands down on the spot.** A ganger the game keeps hostile to you (the Scavengers,
+  anywhere) went on sizing you up after saying yes, the detection meter rising, until your newest crew member opened
+  fire. The same goes for anybody who backs down to you in words (see the street, below).
+- **Your crew's name is saved as you press Save**, and the crew's screen shows it at once. It waited until you closed
+  the menu.
+- The sharper edge after a spar promised better critical hits, which never did anything: the game lets only you land
+  them. It now counts as the extra damage it would do.
 - The chrome you give your crew is now saved in a shape that cannot upset loading a save, for the living and on the
   memorial.
 - Rank is the same everywhere: the card, their file, their nickname, their weekly cut and the text when they move up
@@ -71,6 +81,14 @@ and clicking one again before then takes it back.
 - Loading a save clears a facedown or a taunt that was under way.
 
 *The street*
+- **Whoever backs down to you stops watching you.** Somebody you talk down, lean on until they fold, frighten into
+  informing, buy a lead from, pay to call off a crew, or pay for protection: Cyberbane kept itself from turning them on
+  you, and nothing told the game. A gang the game keeps hostile to you went on sizing you up, the detection meter
+  rising, until they drew on the person they had just backed down to. Now they stand down the way the game stands
+  people down, and stay that way while they are about, unless you hurt them. A ganger afraid of you stops sizing you up
+  the moment you speak to them.
+- **A toll you buy holds for that gang's people as you pass them**, the way they promise ("nobody of ours stops you"),
+  for as long as it lasts. It held only against Cyberbane's own grudges.
 - Paying off a gang, or settling a war, now leaves them neutral. Before, it made them friendly, so the gang you had
   just paid texted that you were welcome on their streets.
 - A gang's first tribute reads as an offer; "as agreed" comes from the second payment on.

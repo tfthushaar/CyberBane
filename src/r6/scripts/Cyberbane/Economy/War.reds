@@ -480,6 +480,7 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
       fs.standing = ClampF(fs.standing + CBConfig.ProtectionPaidStanding(), -100.0, 100.0);
     }
     CBFileLog(sys, n"ProtectionPaid", now, CBEventDistrict(sys, game), n"TygerClaws", Cast<Float>(amount));
+    CBCalmTowardsV(game, t.npc, 1);   // a paying customer is nobody's target, starting with the one paid (2.6.0)
     return CBTalkSay(CBLineOf(["Pleasure doing business. Japantown's safe for you this week.",
                                "Smart. Nobody of ours bothers a paying customer."]), n"");
   }
@@ -495,6 +496,7 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
     }
     CBFileLog(sys, n"Backed", now, CBEventDistrict(sys, game), t.faction, 0.0);
     CBLog.Info(n"Model", s"V backs \(NameToString(t.faction)) (was \(NameToString(old))).");
+    CBCalmTowardsV(game, t.npc, 1);   // on their side now: the one V shook on it with stands down (2.6.0)
     return CBTalkSay(CBLineOf(["Then you're with us. Hurt our enemies and you'll get your cut.",
                                "Good. Every street we take, you get a piece.",
                                "Welcome to the war, choom. Our enemies are yours now."]), n"greeting");

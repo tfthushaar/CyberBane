@@ -38,6 +38,74 @@ public let cbAttitudeReadTick: Int32;
 @addField(ScriptedPuppet)
 public let cbHoldState: Int32;
 
+// Whether Cyberbane has calmed this NPC towards V when the game had them hostile (2.6.0, CBCalmTowardsV): 0 not, 1 they
+// stood down to V or struck a deal with V (for as long as they are about), 2 V's toll with their gang (until it runs out).
+@addField(ScriptedPuppet)
+public let cbCalmedBy: Int32;
+
+// Somebody who has stood down to V does not draw on V, by the game's rules as well as Cyberbane's (2.6.0).
+//
+// cbHoldState kept Cyberbane from turning them on V, and that was all it did. Somebody the game itself has hostile to
+// V (the Scavengers anywhere, another mod's hostility) went on watching V after a conversation that ended with them
+// folding, informing, or joining V's crew, their detection rising until they opened fire on the one who had just
+// spared them. "I told him he works for me and a crew member was created, but his detection kept rising."
+//
+// The game's own two steps: their attitude to V to neutral, as a surrender here already does (Spawn/LivingStreet.reds,
+// TrySurrender), and what they had seen of V forgotten, as the Blind quickhack does (NPCPuppet.script, ResetDetection).
+// And V's companions are told, or V's crew guns them down as they go (CBCalmTowardCompanions). Never the law, whose
+// attitude is the heat system's; never in a gang's own compound, where the game's rules stand; never mid-fight; never
+// somebody V has hurt. Only somebody hostile to V: anybody else is already how they should be.
+public func CBCalmTowardsV(game: GameInstance, npc: wref<ScriptedPuppet>, how: Int32) -> Bool {
+  if !IsDefined(npc) || !npc.IsAttached() || npc.IsDead() || npc.cbDamagedByPlayer || CBNpcInCombat(npc)
+     || CBPlayerInHostileZone(game) {
+    return false;
+  }
+  let faction = CBClassifyFaction(npc);
+  if Equals(faction, n"NCPD") || Equals(faction, n"MaxTac") || Equals(faction, n"Police") {
+    return false;
+  }
+  let player = GetPlayer(game);
+  let agent = npc.GetAttitudeAgent();
+  let pagent = IsDefined(player) ? player.GetAttitudeAgent() : null;
+  if !IsDefined(agent) || !IsDefined(pagent) {
+    return false;
+  }
+  // A stand-down is kept from now on, whatever they are to V this moment: should the game turn them later (their
+  // squad's attitude, another mod), the Director calms them again (KeepCalm). A deal for good outlasts a toll.
+  if how == 1 {
+    npc.cbCalmedBy = 1;
+  }
+  if !Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
+    return false;
+  }
+  // The toll marks only somebody whose hostility it lifted: they get it back when the toll runs out, nobody else does.
+  if how == 2 && npc.cbCalmedBy == 0 {
+    npc.cbCalmedBy = 2;
+  }
+  CBTrace("attitude: stood down to V; neutral, and what they saw forgotten");
+  agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+  let senses = npc.GetSensesComponent();
+  if IsDefined(senses) {
+    senses.ResetDetection(player.GetEntityID());
+  }
+  npc.cbHostileByCyberbane = false;   // whatever Cyberbane set is undone by this as well
+  CBCalmTowardCompanions(CyberbaneSystem.Get(game), npc);
+  return true;
+}
+
+// Talked down, leaned on until they folded, frightened into V's crew or into informing: they hold back from V from now
+// on (cbHoldState 1, CBHoldsBackFromV), and stand down by the game's rules too.
+public func CBStandDownFromV(game: GameInstance, npc: wref<ScriptedPuppet>) -> Void {
+  if !IsDefined(npc) {
+    return;
+  }
+  npc.cbHoldState = 1;
+  if CBCalmTowardsV(game, npc, 1) {
+    CBLog.Info(n"Talk", "Somebody the game had hostile to V stood down: neutral to V now, and what they had seen of V forgotten.");
+  }
+}
+
+
 // The tick this NPC last failed the Director's checks (the Safety Gate, a job site, one of ours), so it
 // is passed over for a few ticks rather than asked again every second (1.9.1). 0 = never failed.
 @addField(ScriptedPuppet)
@@ -220,6 +288,7 @@ public class CBReactionDirector {
     }
     let looked = 0;
     let tick = sys.GetTickCount();
+    let now = CBGameSeconds(game);
     let k = 0;
     while k < count && evaluated < CBConfig.NpcEvalPerTick() && looked < CBConfig.NpcLookPerTick() {
       let npc = npcs[(start + k) % count];
@@ -251,6 +320,11 @@ public class CBReactionDirector {
           if !npc.IsCrowd() && NotEquals(faction, n"") {
             CBClashNote(sys, npc, faction);
             CBOneOfTheirsGreet(sys, game, faction, dist, tick);   // V is one of theirs (2.4.5)
+          }
+
+          // Whoever stood down to V stays stood down, and a toll V bought holds for their gang (2.6.0).
+          if !npc.IsCrowd() && NotEquals(faction, n"") {
+            this.KeepCalm(sys, game, npc, faction, now);
           }
 
           // Recognition, rolled once per spawn and cached on the puppet (spec §8.7).
@@ -286,6 +360,42 @@ public class CBReactionDirector {
       }
     }
     this.m_cursor = count > 0 ? (start + k) % count : 0;
+  }
+
+  // The stand-down kept (CBCalmTowardsV, 2.6.0). Somebody who held back from V or struck a deal with V is calmed again
+  // should the game turn them later; a toll V bought calms its gang's people V passes, the promise it made ("nobody of
+  // ours stops you"), which held only against Cyberbane's own hostility before; and when the toll runs out, those it
+  // calmed are as the game had them again. Somebody V has hurt keeps none of it: V broke the peace, and the fight that
+  // follows is the game's.
+  private func KeepCalm(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>, faction: CName,
+                        now: Float) -> Void {
+    if npc.cbDamagedByPlayer {
+      if npc.cbCalmedBy > 0 || npc.cbHoldState == 1 {
+        npc.cbCalmedBy = 0;
+        npc.cbHoldState = 2;
+      }
+      return;
+    }
+    let toll = sys.TollActive(faction, now);
+    if npc.cbCalmedBy == 2 && !toll {
+      npc.cbCalmedBy = 0;
+      let player = GetPlayer(game);
+      let agent = npc.GetAttitudeAgent();
+      let pagent = IsDefined(player) ? player.GetAttitudeAgent() : null;
+      if IsDefined(agent) && IsDefined(pagent) && !CBNpcInCombat(npc) && npc.cbHoldState != 1
+         && Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Neutral) {
+        CBTrace("attitude: the toll ran out; back to how the game had them");
+        agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
+      }
+      return;
+    }
+    if npc.cbHoldState == 1 || npc.cbCalmedBy == 1 {
+      CBCalmTowardsV(game, npc, 1);
+      return;
+    }
+    if toll {
+      CBCalmTowardsV(game, npc, 2);
+    }
   }
 
   // Vendetta gangs attack a recognized V on sight (spec §9.3). Tracked for revert.

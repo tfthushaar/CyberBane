@@ -2028,7 +2028,8 @@ public class CBHud {
 
   private func RowClicked(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32) -> Void {
     if this.m_tab == CBHudCrewTab() && this.m_crewMode >= 1 && this.m_crewMode <= 3 {
-      // A pick from the list (2.6.0): asked for, carried out back in the game; back to their orders, where it shows.
+      // A pick from the list (2.6.0): carried out here and now (CBCrewKitDoNow: it moves only V's bag and the crew's books),
+      // its text sent once back in the game; back to their orders, where it shows.
       let pick = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] - 1 : -1;
       let kbPick = CBCrewKitBook.Get(game);
       let noItem: ItemID;
@@ -2042,6 +2043,7 @@ public class CBHud {
         if this.m_crewMode == 3 && pick < ArraySize(this.m_pickGangs) {
           kbPick.Ask(this.m_pickCrew, CBCrewAskWar(), noItem, this.m_pickGangs[pick]);
         }
+        CBCrewKitDoNow(sys, game);
       }
       this.m_crewMode = 6;
       this.Render(sys, game);
@@ -2105,11 +2107,13 @@ public class CBHud {
       // "Back" out of a screen, "Save the name" when naming (2.6.0): a pick list goes back to the orders it came from,
       // the name and the memorial to the crew's own screen, the rest to the roster.
       let mode = this.m_crewMode;
+      // The name is only words: it touches nothing in the world, so it is saved here and now and the crew's screen
+      // shows it at once. Waiting for the next tick, as the orders do, it read as not saved until the menu closed.
       if mode == 4 {
         let kbName = CBCrewKitBook.Get(game);
         if IsDefined(kbName) && IsDefined(this.m_nameInput) {
-          kbName.reqNameText = this.m_nameInput.GetText();
-          kbName.reqName = true;
+          kbName.SetName(this.m_nameInput.GetText());
+          CBLog.Info(n"Crew", s"V named the crew: \(kbName.Name()).");
         }
       }
       this.m_crewMode = mode >= 1 && mode <= 3 ? 6 : (mode == 4 || mode == 5 ? 7 : 0);
@@ -4755,7 +4759,7 @@ public class CBHud {
         if IsDefined(data) {
           tier = CBCrewTierWord(CBCrewTierOf(RPGManager.GetItemQuality(data)));
           kind = this.m_crewMode == 1 ? CBCrewSeatWord(CBCrewSeatForWeapon(data.GetItemType()))
-                                      : CBCrewChromeWord(CBCrewChromeArea(ItemID.GetTDBID(id)));
+                                      : CBCrewChromeWords(CBCrewChromeRead(ItemID.GetTDBID(id)), 1);
         }
         this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCrewItemName(ItemID.GetTDBID(id)), kind, tier, "", "", "");
         this.m_rowCrew[row] = i + 1;
@@ -4764,10 +4768,10 @@ public class CBHud {
       }
       intro = this.m_crewMode == 1
         ? s"Pick a weapon for \(name). Its mods and attachments go back in your bag. From their next call they fight the way it is used, and it adds to their damage by its quality. Take it back any time; it comes back if they leave."
-        : s"Pick chrome for \(name), from what you own and do not wear. It goes in for good: armour, health, damage, critical hits or hack resistance, by where it goes. Up to \(CBCrewChromeSlots()).";
+        : s"Pick chrome for \(name), from what you own and do not wear. It goes in for good and does for them what it does in a fight, by the game's own numbers. Chrome that only helps you (RAM, zoom, stamina) is not listed. Up to \(CBCrewChromeSlots()).";
       if row == 0 {
         intro = this.m_crewMode == 1 ? "You have no spare weapon to give: everything is equipped, or there is nothing a person could fight with."
-                                     : "You have no spare chrome: everything you own is installed in you.";
+                                     : "You have no spare chrome that would help them in a fight: what you own is installed in you, or only helps you.";
       }
     }
     if this.m_crewMode == 3 {
@@ -4864,7 +4868,7 @@ public class CBHud {
                         out ? "with you: wait" : "", "");
     }
     let text = CBCrewFile(sys, game, book, m, false) + "\n" + CBCrewKitLines(sys, game, m) + "\n"
-             + "Orders are carried out when you are back in the game; click one again before then to take it back. One of your crew recruits at a time.";
+             + "Orders happen as you pick them; their texts come once you are back in the game. A spar waits for the game: click it again before then to call it off. One of your crew recruits at a time.";
     if out {
       text = "With you now: orders wait until they are home.\n" + text;
     }
@@ -4902,6 +4906,7 @@ public class CBHud {
     if code == CBCrewAskWar() { this.m_crewMode = 3; }
     if code == CBCrewAskTakeBack() || code == CBCrewAskTrain() || code == CBCrewAskSpar() || code == CBCrewAskWork() {
       kb.Ask(id, code, noItem, n"");
+      CBCrewKitDoNow(CyberbaneSystem.Get(game), game);   // all but a spar, here and now
     }
     if code == CBHudCrewOrderLetGo() {
       if cb.reqLetGo == id {

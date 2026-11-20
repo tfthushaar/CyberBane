@@ -111,10 +111,12 @@ public class CBCrewKitBook extends ScriptableSystem {
   public let sparBody: EntityID;
   public let sparStart: Int32;     // the tick it was asked for
   public let sparSeen: Int32;      // the tick their body was first in the world, 0 before
-  // Asked for on the Hub, carried out on the next tick (CBCrewKitService).
+  // Asked for on the Hub: a spar on the next tick (CBCrewKitService), the rest at once (CBCrewKitDoNow).
   public let asks: array<ref<CBCrewKitAsk>>;
-  public let reqName: Bool;
-  public let reqNameText: String;
+  // Texts from orders carried out while the Hub is open, sent on the next tick (CBCrewText). Session only.
+  public let deferTexts: Bool;
+  public let laterWho: array<Int32>;
+  public let laterLines: array<String>;
 
   public static func Get(game: GameInstance) -> ref<CBCrewKitBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -130,8 +132,9 @@ public class CBCrewKitBook extends ScriptableSystem {
     this.sparStart = 0;
     this.sparSeen = 0;
     ArrayClear(this.asks);
-    this.reqName = false;
-    this.reqNameText = "";
+    this.deferTexts = false;
+    ArrayClear(this.laterWho);
+    ArrayClear(this.laterLines);
   }
 
   public func Find(id: Int32) -> ref<CBCrewKit> {
@@ -383,7 +386,7 @@ public func CBCrewWeaponChoices(game: GameInstance) -> array<ItemID> {
   return out;
 }
 
-// Chrome V owns and is not wearing.
+// Chrome V owns and is not wearing, that would do something for one of the crew in a fight (CBCrewChromeRead).
 public func CBCrewChromeChoices(game: GameInstance) -> array<ItemID> {
   let out: array<ItemID>;
   let player = GetPlayer(game);
@@ -395,48 +398,287 @@ public func CBCrewChromeChoices(game: GameInstance) -> array<ItemID> {
   ts.GetItemListByTag(player, n"Cyberware", items);
   for d in items {
     if IsDefined(d) && !d.HasTag(n"Quest") && !RPGManager.IsItemEquipped(player, d.GetID())
-       && CBCrewChromeArea(ItemID.GetTDBID(d.GetID())) >= 0 && ArraySize(out) < CBConfig.CrewPickListMax() {
+       && CBCrewChromeRead(ItemID.GetTDBID(d.GetID())).Any() && ArraySize(out) < CBConfig.CrewPickListMax() {
       ArrayPush(out, d.GetID());
     }
   }
   return out;
 }
 
-// What an implant does for a crew member, by where it goes: 0 armour, 1 health, 2 damage, 3 critical hits,
-// 4 resistance to hacks; -1 for anything else.
-public func CBCrewChromeArea(id: TweakDBID) -> Int32 {
-  let rec = TweakDBInterface.GetItemRecord(id);
-  if !IsDefined(rec) || !IsDefined(rec.EquipArea()) {
-    return -1;
+// ---- Chrome: what each piece does for them, by the game's own numbers (2.6.0) ------------------------------------
+//
+// It sorted implants into five rough kinds by where they go (armour, health, damage, critical hits, hack resistance),
+// so a Mechatronic Core, which makes whoever wears it hit drones, mechs and robots harder, read as hack resistance.
+//
+// Now each piece is read from its own record, the way the game reads it for V: the stats on the implant itself (a body
+// part's armour, a constant and a share by its quality: statModifiers) and the stats it gives whoever wears it
+// (OnEquip). Each goes one of three ways:
+// - what the game reads for anybody in a fight goes on as it is: armour, health, mitigation, the resistances and
+//   immunities, damage to machines (damageSystem.script ProcessArmor, ProcessMitigation, ProcessDamageReduction;
+//   damageManager.script CalculateSourceModifiers);
+// - what the game reads for V alone is turned into what it is worth on average: critical hits, headshots and weak
+//   spots (ProcessCriticalHit and ProcessLocalizedDamage return at once for anybody else) and attack speed become
+//   damage, the armour multiplier becomes armour;
+// - the rest is V's own (RAM, zoom, stamina, healing items) and does nothing for anybody else, so a piece with only that
+//   is not offered.
+// An implant that is a power to use (a Sandevistan, a Kerenzikov, a second heart, optical camo, Berserk, a biomonitor,
+// a pain editor) gives the ability the game gives its own people who have one (gmpl_abilities/abilities.tweak). The
+// effects inside an implant's packages are never applied to them: those set quest facts, drive V's detection meter and
+// play V's sounds, and what an implant does only under a condition (low health, a kill) lives in those effects, so it
+// is never given for good either.
+public class CBCrewChromeEffect {
+  public let stats: array<gamedataStatType>;
+  public let types: array<gameStatModifierType>;
+  public let values: array<Float>;
+  public let critChance: Float;   // percent, as the game keeps it
+  public let critDamage: Float;   // percent
+  public let headshot: Float;     // the multiplier's gain: 0.3 for x1.3
+  public let weakspot: Float;
+  public let speed: Float;        // attack speed's gain
+  public let armourMult: Float;   // the armour multiplier's gain
+  public let abilities: array<TweakDBID>;
+  public let words: array<String>;
+
+  public func Any() -> Bool {
+    return ArraySize(this.stats) > 0 || ArraySize(this.abilities) > 0 || this.critChance > 0.0 || this.critDamage > 0.0
+        || this.headshot > 0.0 || this.weakspot > 0.0 || this.speed > 0.0 || this.armourMult > 0.0;
   }
-  switch rec.EquipArea().Type() {
-    case gamedataEquipmentArea.IntegumentarySystemCW:
-    case gamedataEquipmentArea.LegsCW:
-      return 0;
-    case gamedataEquipmentArea.MusculoskeletalSystemCW:
-    case gamedataEquipmentArea.CardiovascularSystemCW:
-    case gamedataEquipmentArea.ImmuneSystemCW:
-      return 1;
-    case gamedataEquipmentArea.ArmsCW:
-    case gamedataEquipmentArea.SystemReplacementCW:
-    case gamedataEquipmentArea.HandsCW:
-      return 2;
-    case gamedataEquipmentArea.NervousSystemCW:
-    case gamedataEquipmentArea.EyesCW:
-      return 3;
-    case gamedataEquipmentArea.FrontalCortexCW:
-      return 4;
+
+  public func Say(w: String) -> Void {
+    if !ArrayContains(this.words, w) {
+      ArrayPush(this.words, w);
+    }
   }
-  return -1;
 }
 
-public func CBCrewChromeWord(area: Int32) -> String {
-  if area == 0 { return "armour"; }
-  if area == 1 { return "health"; }
-  if area == 2 { return "damage"; }
-  if area == 3 { return "critical hits"; }
-  if area == 4 { return "hack resistance"; }
+// The implant's quality as the two stats its own numbers lean on: Quality 0 (common) to 4 (legendary), and IsItemPlus
+// 0, 1 or 2 (items/quality/quality.tweak).
+func CBCrewQualityOf(rec: ref<Item_Record>, out quality: Float, out plus: Float) -> Void {
+  quality = 0.0;
+  plus = 0.0;
+  let qr = IsDefined(rec) ? rec.Quality() : null;
+  if !IsDefined(qr) {
+    return;
+  }
+  switch qr.Type() {
+    case gamedataQuality.CommonPlus: plus = 1.0; break;
+    case gamedataQuality.Uncommon: quality = 1.0; break;
+    case gamedataQuality.UncommonPlus: quality = 1.0; plus = 1.0; break;
+    case gamedataQuality.Rare: quality = 2.0; break;
+    case gamedataQuality.RarePlus: quality = 2.0; plus = 1.0; break;
+    case gamedataQuality.Epic: quality = 3.0; break;
+    case gamedataQuality.EpicPlus: quality = 3.0; plus = 1.0; break;
+    case gamedataQuality.Legendary: quality = 4.0; break;
+    case gamedataQuality.Iconic: quality = 4.0; break;
+    case gamedataQuality.LegendaryPlus: quality = 4.0; plus = 1.0; break;
+    case gamedataQuality.LegendaryPlusPlus: quality = 4.0; plus = 2.0; break;
+  }
+}
+
+// One of the implant's stat modifiers, sorted into what it does for them.
+func CBCrewChromeTake(e: ref<CBCrewChromeEffect>, mod: wref<StatModifier_Record>, quality: Float, plus: Float) -> Void {
+  if !IsDefined(mod) || !IsDefined(mod.StatType()) {
+    return;
+  }
+  let value = 0.0;
+  let constant = mod as ConstantStatModifier_Record;
+  if IsDefined(constant) {
+    value = constant.Value();
+  } else {
+    // A share by the implant's own quality ("value * Quality", "value * IsItemPlus") is the item's, so it is known here.
+    // Anything leaning on V (an attribute of V's, refObject Player) is V's and left out.
+    let combined = mod as CombinedStatModifier_Record;
+    if !IsDefined(combined) || !IsDefined(combined.RefStat()) || NotEquals(combined.OpSymbol(), n"*")
+       || Equals(combined.RefObject(), n"Player") {
+      return;
+    }
+    let by = combined.RefStat().StatType();
+    if Equals(by, gamedataStatType.Quality) {
+      value = combined.Value() * quality;
+    } else {
+      if Equals(by, gamedataStatType.IsItemPlus) {
+        value = combined.Value() * plus;
+      } else {
+        return;
+      }
+    }
+  }
+  if value == 0.0 {
+    return;
+  }
+  let kind = mod.ModifierType();
+  let modType = gameStatModifierType.Additive;
+  if Equals(kind, n"Multiplier") {
+    modType = gameStatModifierType.Multiplier;
+  } else {
+    if Equals(kind, n"AdditiveMultiplier") {
+      modType = gameStatModifierType.AdditiveMultiplier;
+    } else {
+      if NotEquals(kind, n"Additive") {
+        return;
+      }
+    }
+  }
+  let stat = mod.StatType().StatType();
+  let multiplied = Equals(modType, gameStatModifierType.Multiplier);
+  // What the game only lets V use, worth its average.
+  switch stat {
+    case gamedataStatType.CritChance:
+      e.critChance += value;
+      e.Say("more damage");
+      return;
+    case gamedataStatType.CritDamage:
+      e.critDamage += value;
+      e.Say("more damage");
+      return;
+    case gamedataStatType.HeadshotDamageMultiplier:
+      e.headshot += multiplied ? value - 1.0 : value;
+      e.Say("more damage");
+      return;
+    case gamedataStatType.WeakspotDamageMultiplier:
+      e.weakspot += multiplied ? value - 1.0 : value;
+      e.Say("more damage");
+      return;
+    case gamedataStatType.AttackSpeed:
+      e.speed += multiplied ? value - 1.0 : value;
+      e.Say("more damage");
+      return;
+    case gamedataStatType.ArmorMultBonus:
+      e.armourMult += value;
+      e.Say("more armour");
+      return;
+  }
+  // What the game reads for anybody in a fight, as it is.
+  let word = CBCrewChromeStatWord(stat);
+  if StrLen(word) == 0 {
+    return;   // V's own business
+  }
+  ArrayPush(e.stats, stat);
+  ArrayPush(e.types, modType);
+  ArrayPush(e.values, value);
+  e.Say(word);
+}
+
+// The stats the game reads for anybody in a fight, in words; "" for one it reads for V alone.
+func CBCrewChromeStatWord(stat: gamedataStatType) -> String {
+  switch stat {
+    case gamedataStatType.Armor: return "more armour";
+    case gamedataStatType.Health: return "more health";
+    case gamedataStatType.MitigationChance: return "shrugging off hits";
+    case gamedataStatType.MitigationStrength: return "shrugging off hits";
+    case gamedataStatType.BonusDamageAgainstMechanicals: return "harder hits on drones, mechs and robots";
+    case gamedataStatType.ThermalResistance: return "fire resistance";
+    case gamedataStatType.ChemicalResistance: return "resistance to chemicals";
+    case gamedataStatType.ElectricResistance: return "shock resistance";
+    case gamedataStatType.ExplosionResistance: return "blast resistance";
+    case gamedataStatType.MeleeResistance: return "resistance to blades and fists";
+    case gamedataStatType.QuickhackResistance: return "resistance to quickhacks";
+    case gamedataStatType.DamageOverTimeResistance: return "resistance to bleeding and burning";
+    case gamedataStatType.BossResistance: return "resistance to the big ones";
+    case gamedataStatType.MechResistance: return "resistance to machines";
+    case gamedataStatType.BurningImmunity: return "fireproof";
+    case gamedataStatType.ElectrocuteImmunity: return "shockproof";
+    case gamedataStatType.EMPImmunity: return "shockproof";
+    case gamedataStatType.BleedingImmunity: return "no bleeding";
+    case gamedataStatType.PoisonImmunity: return "poison-proof";
+  }
   return "";
+}
+
+// The power an implant is, as the game gives it to its own people, by the implant's cyberwareType (the key the game
+// itself asks of an implant: rpgManager.script, player.script).
+func CBCrewChromeAbilities(e: ref<CBCrewChromeEffect>, kind: CName, quality: Float) -> Void {
+  switch kind {
+    case n"Sandevistan":
+      ArrayPush(e.abilities, t"Ability.HasSandevistan");
+      if quality <= 1.0 {
+        ArrayPush(e.abilities, t"Ability.HasSandevistanTier1");
+      } else {
+        if quality <= 3.0 {
+          ArrayPush(e.abilities, t"Ability.HasSandevistanTier2");
+        } else {
+          ArrayPush(e.abilities, t"Ability.HasSandevistanTier3");
+        }
+      }
+      e.Say("a Sandevistan of their own");
+      break;
+    case n"Kerenzikov":
+      ArrayPush(e.abilities, t"Ability.HasKerenzikov");
+      e.Say("Kerenzikov dodges");
+      break;
+    case n"SecondHeart":
+      ArrayPush(e.abilities, t"Ability.HasSecondHeart");
+      e.Say("a second heart");
+      break;
+    case n"OpticalCamo":
+      ArrayPush(e.abilities, t"Ability.CanUseOpticalCamo");
+      e.Say("optical camo");
+      break;
+    case n"Berserk":
+      ArrayPush(e.abilities, t"Ability.HasBerserk");
+      e.Say("Berserk");
+      break;
+    case n"HealthMonitor":
+      ArrayPush(e.abilities, t"Ability.HasHealthMonitor");
+      e.Say("a biomonitor that patches them up");
+      break;
+    case n"PainReductor":
+      ArrayPush(e.abilities, t"Ability.HasPainEditor");
+      e.Say("no flinching");
+      break;
+  }
+}
+
+// What one implant does for a crew member. Empty for anything that is not chrome, or does nothing for anybody but V.
+public func CBCrewChromeRead(id: TweakDBID) -> ref<CBCrewChromeEffect> {
+  let e = new CBCrewChromeEffect();
+  let rec = TweakDBInterface.GetItemRecord(id);
+  if !IsDefined(rec) || !IsDefined(rec.ItemCategory()) || NotEquals(rec.ItemCategory().Type(), gamedataItemCategory.Cyberware) {
+    return e;
+  }
+  let quality: Float;
+  let plus: Float;
+  CBCrewQualityOf(rec, quality, plus);
+  let n = rec.GetStatModifiersCount();
+  let i = 0;
+  while i < n {
+    CBCrewChromeTake(e, rec.GetStatModifiersItem(i), quality, plus);
+    i += 1;
+  }
+  let p = rec.GetOnEquipCount();
+  i = 0;
+  while i < p {
+    let pkg = rec.GetOnEquipItem(i);
+    i += 1;
+    if IsDefined(pkg) {
+      let s = pkg.GetStatsCount();
+      let j = 0;
+      while j < s {
+        CBCrewChromeTake(e, pkg.GetStatsItem(j), quality, plus);
+        j += 1;
+      }
+    }
+  }
+  CBCrewChromeAbilities(e, TweakDBInterface.GetCName(id + t".cyberwareType", n""), quality);
+  return e;
+}
+
+// What it does for them in words, the first `most` of them: "more armour and fire resistance".
+public func CBCrewChromeWords(e: ref<CBCrewChromeEffect>, most: Int32) -> String {
+  if !IsDefined(e) {
+    return "";
+  }
+  let n = Min(ArraySize(e.words), most);
+  let out = "";
+  let i = 0;
+  while i < n {
+    if i > 0 {
+      out += i == n - 1 ? " and " : ", ";
+    }
+    out += e.words[i];
+    i += 1;
+  }
+  return out;
 }
 
 // ---- Training and war -----------------------------------------------------------------------------
@@ -516,8 +758,14 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   let health = 1.0 + CBConfig.CrewRankHealthStep() * steps;
   let armour = 1.0 + CBConfig.CrewRankArmourStep() * steps;
   let damage = 1.0 + CBConfig.CrewRankDamageStep() * steps;
-  let crit = 0.0;
-  let ice = 0.0;
+  // What the game lets only V use (CBCrewChromeRead), gathered from the chrome and a spar, and turned into damage below.
+  let critChance = 0.0;
+  let critDamage = 0.0;
+  let headshot = 0.0;
+  let weakspot = 0.0;
+  let id = Cast<StatsObjectID>(puppet.GetEntityID());
+  CBTrace("stats: kitting one of V's crew");
+  let chromeSaid = "";
   if IsDefined(k) {
     // Training brings better gear: armour and health.
     health += CBConfig.CrewGearStep() * Cast<Float>(k.trained);
@@ -527,34 +775,50 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
     }
     if k.sharpUntil > CBGameSeconds(game) {
       damage += CBConfig.CrewSharpDamage();
-      crit += CBConfig.CrewSharpCrit();
+      critChance += CBConfig.CrewSharpCrit();
     }
+    // Each implant as the game has it (CBCrewChromeRead): its own stats on them, its power as the game's own people have
+    // it, and what only V could use turned into its worth.
     let ci = 0;
     while ci < CBCrewChromeSlots() {
       let c = k.ChromeAt(ci);
       ci += 1;
       if TDBID.IsValid(c) {
-        let area = CBCrewChromeArea(c);
-        if area == 0 { armour += CBConfig.CrewChromeStep(); }
-        if area == 1 { health += CBConfig.CrewChromeStep(); }
-        if area == 2 { damage += CBConfig.CrewChromeStep(); }
-        if area == 3 { crit += CBConfig.CrewChromeCrit(); }
-        if area == 4 { ice += CBConfig.CrewChromeIce(); }
+        let e = CBCrewChromeRead(c);
+        let si = 0;
+        while si < ArraySize(e.stats) {
+          let mod = RPGManager.CreateStatModifier(e.stats[si], e.types[si], e.values[si]);
+          if IsDefined(mod) {
+            stats.AddModifier(id, mod);
+          }
+          si += 1;
+        }
+        for a in e.abilities {
+          CBGrantAbility(puppet as NPCPuppet, a);
+        }
+        critChance += e.critChance;
+        critDamage += e.critDamage;
+        headshot += e.headshot;
+        weakspot += e.weakspot;
+        damage += e.speed;          // more attacks in the same time
+        armour += e.armourMult;
+        chromeSaid += (StrLen(chromeSaid) > 0 ? "; " : "") + CBCrewItemName(c) + ": " + CBCrewChromeWords(e, 4);
       }
     }
   }
-  let id = Cast<StatsObjectID>(puppet.GetEntityID());
-  CBTrace("stats: kitting one of V's crew");
+  // The game lets nobody but V land a critical hit, a headshot bonus or a weak spot (damageSystem.script), so what those
+  // stats would do is given as the damage they add on average: the gain over V's own base chance and damage, and the
+  // share of hits that land on a head or a weak spot.
+  let baseChance = CBConfig.CrewCritBaseChance() / 100.0;
+  let baseDamage = CBConfig.CrewCritBaseDamage() / 100.0;
+  let chance = ClampF(baseChance + critChance / 100.0, 0.0, 1.0);
+  damage += chance * (baseDamage + critDamage / 100.0) - baseChance * baseDamage;
+  damage += CBConfig.CrewHeadshotShare() * headshot + CBConfig.CrewWeakspotShare() * weakspot;
   CBAddMult(stats, id, gamedataStatType.Health, ClampF(health, 1.0, CBConfig.CrewMultCeiling()));
   CBAddMult(stats, id, gamedataStatType.Armor, ClampF(armour, 1.0, CBConfig.CrewMultCeiling()));
   CBAddMult(stats, id, gamedataStatType.PhysicalDamage, ClampF(damage, 1.0, CBConfig.CrewMultCeiling()));
-  if crit > 0.0 {
-    CBAddFlat(stats, id, gamedataStatType.CritChance, crit);
-  }
-  if ice > 0.0 {
-    CBAddFlat(stats, id, gamedataStatType.HackingResistance, ice);
-  }
-  CBLog.Info(n"Crew", s"Kitted for the call: rank \(rank), health x\(health), armour x\(armour), damage x\(damage).");
+  CBLog.Info(n"Crew", s"Kitted for the call: rank \(rank), health x\(health), armour x\(armour), damage x\(damage)."
+                    + (StrLen(chromeSaid) > 0 ? s" Chrome: \(chromeSaid)." : ""));
 }
 
 // The weapon back to V, wherever it was going: on request, and whenever they leave the crew.
@@ -591,35 +855,81 @@ public func CBCrewKitService(sys: ref<CyberbaneSystem>, game: GameInstance, book
     return;
   }
   let now = CBGameSeconds(game);
-  if kb.reqName {
-    kb.reqName = false;
-    kb.SetName(kb.reqNameText);
-    let named = kb.Name();
-    CBMenuNote(game, StrLen(named) > 0 ? s"your crew is \(named) now." : "your crew has no name now.", 4.0);
-    CBLog.Info(n"Crew", s"V named the crew: \(named).");
+  // The texts of orders carried out on the Hub, now that the game is back.
+  let t = 0;
+  while t < ArraySize(kb.laterLines) {
+    let who = t < ArraySize(kb.laterWho) ? book.Find(kb.laterWho[t]) : null;
+    CBCrewText(sys, game, who, kb.laterLines[t]);
+    t += 1;
   }
-  // Every order asked for, in the order asked; each for a member still on the roster, here and not away.
+  ArrayClear(kb.laterWho);
+  ArrayClear(kb.laterLines);
+  // Every order still waiting, in the order asked: a spar, and anything the Hub could not carry out itself.
   let asks: array<ref<CBCrewKitAsk>>;
   for queued in kb.asks {
     ArrayPush(asks, queued);
   }
   ArrayClear(kb.asks);
   for a in asks {
-    let m = IsDefined(a) ? book.Find(a.member) : null;
-    if IsDefined(m) && !book.IsOut(m.id) && !CBCrewAway(game, m.id, now) {
-      if a.what == CBCrewAskTakeBack() { CBCrewTakeBack(sys, game, kb, m); }
-      if a.what == CBCrewAskGive() { CBCrewGiveWeapon(sys, game, kb, m, a.item); }
-      if a.what == CBCrewAskChrome() { CBCrewInstallChrome(sys, game, kb, m, a.item); }
-      if a.what == CBCrewAskTrain() { CBCrewSendTraining(sys, game, kb, m, now); }
-      if a.what == CBCrewAskWar() { CBCrewSendToWar(sys, game, kb, m, a.gang, now); }
-      if a.what == CBCrewAskSpar() { CBCrewSparStart(sys, game, kb, m, now); }
-      if a.what == CBCrewAskWork() { CBCrewSetWork(sys, game, m); }   // earning, recruiting, or none (CrewBanner.reds)
-    }
+    CBCrewKitCarryOut(sys, game, kb, book, a, now);
   }
   CBCrewKitReturns(sys, game, kb, book, now);
   CBCrewSparTick(sys, game, kb, book, now);
   CBCrewEarnTick(sys, game, kb, book, now);
   CBCrewBannerTick(sys, game, now);
+}
+
+// One order, for a member still on the roster, here and not away.
+func CBCrewKitCarryOut(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, book: ref<CBCrewBook>,
+                       a: ref<CBCrewKitAsk>, now: Float) -> Void {
+  let m = IsDefined(a) ? book.Find(a.member) : null;
+  if !IsDefined(m) {
+    return;
+  }
+  if book.IsOut(m.id) || CBCrewAway(game, m.id, now) {
+    CBMenuNote(game, s"\(CBCrewName(sys, m)) is not here for that: out with you, training or at war.", 4.0);
+    return;
+  }
+  if a.what == CBCrewAskTakeBack() { CBCrewTakeBack(sys, game, kb, m); }
+  if a.what == CBCrewAskGive() { CBCrewGiveWeapon(sys, game, kb, m, a.item); }
+  if a.what == CBCrewAskChrome() { CBCrewInstallChrome(sys, game, kb, m, a.item); }
+  if a.what == CBCrewAskTrain() { CBCrewSendTraining(sys, game, kb, m, now); }
+  if a.what == CBCrewAskWar() { CBCrewSendToWar(sys, game, kb, m, a.gang, now); }
+  if a.what == CBCrewAskSpar() { CBCrewSparStart(sys, game, kb, m, now); }
+  if a.what == CBCrewAskWork() { CBCrewSetWork(sys, game, m); }   // earning, recruiting, or none (CrewBanner.reds)
+}
+
+// What the Hub asked that touches nothing but V's bag and the crew's own books, done while the menu is still open
+// (2.6.0): a weapon given or taken back, chrome put in, training, work, a war. The game's own menus move items while it
+// is paused, and so does this. Waiting for the game, as a spar has to (it puts somebody in the world), every order read
+// as not done until the menu closed. Their texts still wait for the game (CBCrewText).
+public func CBCrewKitDoNow(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let kb = CBCrewKitBook.Get(game);
+  let book = CBCrewBook.Get(game);
+  if !IsDefined(sys) || !IsDefined(kb) || !IsDefined(book) {
+    return;
+  }
+  let now = CBGameSeconds(game);
+  let todo: array<ref<CBCrewKitAsk>>;
+  let wait: array<ref<CBCrewKitAsk>>;
+  for a in kb.asks {
+    if IsDefined(a) {
+      if a.what == CBCrewAskSpar() {
+        ArrayPush(wait, a);
+      } else {
+        ArrayPush(todo, a);
+      }
+    }
+  }
+  ArrayClear(kb.asks);
+  for w in wait {
+    ArrayPush(kb.asks, w);
+  }
+  kb.deferTexts = true;
+  for a in todo {
+    CBCrewKitCarryOut(sys, game, kb, book, a, now);
+  }
+  kb.deferTexts = false;
 }
 
 // ---- A spar --------------------------------------------------------------------------------------
@@ -941,14 +1251,20 @@ func CBCrewInstallChrome(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<
     return;
   }
   let rec = ItemID.GetTDBID(item);
-  let area = CBCrewChromeArea(rec);
-  if area < 0 || RPGManager.IsItemEquipped(player, item) || !ts.RemoveItem(player, item, 1) {
+  let e = CBCrewChromeRead(rec);
+  if !e.Any() {
+    CBMenuNote(game, "that implant would do nothing for them in a fight.", 4.0);
+    return;
+  }
+  if RPGManager.IsItemEquipped(player, item) || !ts.RemoveItem(player, item, 1) {
     CBMenuNote(game, "that implant is not in your bag any more.", 4.0);
     return;
   }
   k.AddChrome(rec);
-  CBCrewText(sys, game, m, s"Got the \(CBCrewItemName(rec)) put in. Feel it already. More \(CBCrewChromeWord(area)), next time you call.");
-  CBLog.Info(n"Crew", s"V had chrome put in one of the crew (\(CBCrewChromeWord(area))).");
+  // What it really does for them, in their words (CBCrewChromeRead): a Mechatronic Core is harder hits on machines.
+  let what = CBCrewChromeWords(e, 3);
+  CBCrewText(sys, game, m, s"Got the \(CBCrewItemName(rec)) put in. Feel it already. \(CBCapFirst(what)), next time you call.");
+  CBLog.Info(n"Crew", s"V had chrome put in one of the crew: \(CBCrewItemName(rec)) (\(CBCrewChromeWords(e, 6))).");
 }
 
 func CBCrewSendTraining(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, m: ref<CBCrewMember>, now: Float) -> Void {

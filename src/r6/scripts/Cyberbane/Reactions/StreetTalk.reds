@@ -1398,6 +1398,12 @@ public class CBStreetTalk {
       CBLog.Info(n"Talk", s"Prompt up: \(CBTalkTitle(t)).");
       this.m_diagLeft = 1.0;
       this.m_diagCount = 0;
+      // A ganger afraid of V, spoken to, does not go on sizing V up (2.6.0): one the game has hostile to V watched V
+      // through the whole conversation with their detection rising. Antagonized into snapping, they still fight
+      // (CBTalkFight turns them, and that is the game's fight from there).
+      if t.mood == CBTalkAfraid() && NotEquals(t.faction, n"") && !t.cop && t.npc.cbHoldState != 2 {
+        CBStandDownFromV(game, t.npc);
+      }
     }
   }
 
@@ -2244,7 +2250,7 @@ func CBTalkParleyCrew(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>) -> Int32 
   if !IsDefined(npc) {
     return 0;
   }
-  npc.cbHoldState = 1;
+  CBStandDownFromV(npc.GetGame(), npc);
   let reg = IsDefined(sys) ? sys.GetRegistry() : null;
   if !IsDefined(reg) {
     return 0;
@@ -2256,7 +2262,7 @@ func CBTalkParleyCrew(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>) -> Int32 
     if CBNpcSafe(sys, other) && NotEquals(other.GetEntityID(), id) && !other.IsDead() && !other.cbHostileByCyberbane
        && Vector4.Distance(here, other.GetWorldPosition()) <= CBConfig.HoldBackBackerRadius()
        && Equals(CBClassifyFaction(other), t.faction) {
-      other.cbHoldState = 1;
+      CBStandDownFromV(other.GetGame(), other);
       count += 1;
     }
   }
@@ -3173,8 +3179,9 @@ func CBTalkSendOff(game: GameInstance, t: ref<CBTalkTarget>) -> Bool {
   }
   CBTalkMarkSent(game, npc);
   // Whoever V has sent packing holds back from V from now on (1.9.5): a vendetta ganger talked down
-  // in their warning was otherwise turned on V by the Director a second later, mid-retreat.
-  npc.cbHoldState = 1;
+  // in their warning was otherwise turned on V by the Director a second later, mid-retreat. And by the game's own
+  // rules too (2.6.0, CBStandDownFromV), or one the game has hostile to V walked off still watching V.
+  CBStandDownFromV(game, npc);
   npc.cbTalkPartner = false;
   CBTalkReleaseHold(npc);
   if t.safe {
@@ -3480,7 +3487,7 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   // It worked. What they give up depends on what they have.
   CBTalkFear(sys, game, t.faction, CBConfig.TalkLeanFear());
   CBTalkSlight(sys, game, t.faction, CBConfig.TalkLeanCost());
-  npc.cbHoldState = 1;   // leaned on and folded: they will not draw on V after this (1.9.5)
+  CBStandDownFromV(game, npc);   // leaned on and folded: they will not draw on V after this (1.9.5), by the game's rules too
   // Frightened badly enough, they offer themselves to V's crew (Reactions/Crew.reds, [C2]). Until 2.5.0 only the
   // follow-up "You work for me now" could do it, which a successful Intimidate usually never reached: the one it
   // frightened was sent on their way first.

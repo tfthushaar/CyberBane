@@ -581,10 +581,12 @@ public abstract class CBConfig {
   public static func CrewGearStep() -> Float = 0.1
   // A weapon handed over: damage by its quality, common 1 step to legendary 5.
   public static func CrewWeaponTierDamage() -> Float = 0.05
-  // Each implant: a step of what it does, or critical chance, or hack resistance.
-  public static func CrewChromeStep() -> Float = 0.12
-  public static func CrewChromeCrit() -> Float = 8.0
-  public static func CrewChromeIce() -> Float = 15.0
+  // Each implant does what the game says it does (Reactions/CrewKit.reds, CBCrewChromeRead). What only V can use is worth
+  // its average: critical hits over V's own base chance and damage (percent), and the share of hits on a head or a weak spot.
+  public static func CrewCritBaseChance() -> Float = 5.0
+  public static func CrewCritBaseDamage() -> Float = 50.0
+  public static func CrewHeadshotShare() -> Float = 0.2
+  public static func CrewWeakspotShare() -> Float = 0.05
   public static func CrewChromeMax() -> Int32 = 4
   public static func CrewMultCeiling() -> Float = 3.0
   // Training: the first costs this, each one after it more; away this many game hours, more each time; at most this many.
