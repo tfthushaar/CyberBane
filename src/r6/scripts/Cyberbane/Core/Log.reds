@@ -48,5 +48,9 @@ func CBWriteLog(level: Int32, category: CName, message: String) -> Void {
 }
 
 func CBEmitLogLine(category: CName, message: String) -> Void {
-  FTLog(s"[Cyberbane][\(NameToString(category))] \(message)");
+  let line = s"[Cyberbane][\(NameToString(category))] \(message)";
+  FTLog(line);
+  // And through Codeware's own log (2.5.6), which writes a file on setups where FTLog's lines reach none: players'
+  // redscript logs held the compile only, so no report could show what Cyberbane had done.
+  ModLog(n"Cyberbane", line);
 }

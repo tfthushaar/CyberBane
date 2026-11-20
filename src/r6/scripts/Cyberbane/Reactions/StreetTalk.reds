@@ -136,22 +136,12 @@ public let cbTalkHushedTalk: Bool;
 @addField(ScriptedPuppet)
 public let cbTalkHushedLines: Bool;
 
-// Whether the game gives this person its own talk on F (the GenericTalk interaction: a random line in their
-// own voice, with its subtitle). The game's own rule, read the way it sets the layer up
-// (scriptedPuppet.script, ToggleInteractionLayers) and takes it off while they are busy
-// (reactionComponent.script, the Busy status effect).
-func CBGenericTalkWanted(npc: ref<ScriptedPuppet>) -> Bool {
-  if !IsDefined(npc) || StatusEffectSystem.ObjectHasStatusEffectWithTag(npc, n"Busy") {
-    return false;
-  }
-  return CBGenericTalkByRule(npc);
-}
-
-// Whether the game's own rule gives them the talk at all, busy or not (2.5.6). Busy only holds it off for a moment, and
-// the game turns it back on itself when they stop (reactionComponent.script), so it is this that says whether Cyberbane
-// may switch their talk off: somebody frightened is busy, and their talk comes back mid-conversation unless Cyberbane
-// switches it off again (2.5.3). Anybody whose talk the rule does not give came by it some other way (their own
-// setup, a scene), and theirs is never touched.
+// Whether the game's own rule gives this person its own talk on F (the GenericTalk interaction: a random line in their
+// own voice, with its subtitle), read the way it sets the layer up (scriptedPuppet.script, ToggleInteractionLayers),
+// busy or not (2.5.6). Busy only holds it off for a moment, and the game turns it back on itself when they stop
+// (reactionComponent.script), so a frightened person's talk comes back mid-conversation unless Cyberbane switches it
+// off again (2.5.3). Anybody whose talk the rule does not give came by it some other way (their own setup, a scene),
+// and theirs is switched off only while the game shows it live (cbOwnTalkLive), and always put back.
 func CBGenericTalkByRule(npc: ref<ScriptedPuppet>) -> Bool {
   if !IsDefined(npc) {
     return false;
@@ -216,12 +206,37 @@ func CBTalkHushTalk(npc: ref<ScriptedPuppet>, opt again: Bool) -> Bool {
   if npc.cbTalkHushedTalk && !again {
     return true;
   }
-  if !npc.cbTalkHushedTalk && (!CBGenericTalkByRule(npc) || CBTalkOwnBusiness(npc)) {
-    return false;
+  if !npc.cbTalkHushedTalk {
+    // Theirs to switch off when the game's rule gives it, or when the game has their own "Talk" live in front of V
+    // right now (cbOwnTalkLive, from the game's own interaction event): placed people whose talk comes from their own
+    // setup, like two smokers by a fence, whose stock bark was all F gave once 2.5.6 stopped switching it off. Never
+    // somebody with business of their own.
+    let live = npc.cbOwnTalkLive;
+    if (!live && !CBGenericTalkByRule(npc)) || CBTalkOwnBusiness(npc) {
+      return false;
+    }
+    npc.cbTalkHushWasOn = true;
   }
   npc.EnableInteraction(n"GenericTalk", false);
   npc.cbTalkHushedTalk = true;
   return true;
+}
+
+// The game says their own "Talk" is live for V (2.5.6): its interaction layer activated for the player, which it only
+// does while the layer is switched on. Cyberbane may switch off only a talk it knows was on, and it puts that back on
+// (CBTalkUnhush), so nobody's own conversation is ever left off.
+@addField(ScriptedPuppet)
+public let cbOwnTalkLive: Bool;
+@addField(ScriptedPuppet)
+public let cbTalkHushWasOn: Bool;
+
+@wrapMethod(ScriptedPuppet)
+protected cb func OnInteractionActivated(evt: ref<InteractionActivationEvent>) -> Bool {
+  let r = wrappedMethod(evt);
+  if IsDefined(evt) && Equals(evt.layerData.tag, n"GenericTalk") && IsDefined(evt.activator) && evt.activator.IsPlayer() {
+    this.cbOwnTalkLive = Equals(evt.eventType, gameinteractionsEInteractionEventType.EIET_activate);
+  }
+  return r;
 }
 
 // Whether a bystander's own talk on F may be switched off while V settles on somebody beside them (2.5.2): only
@@ -259,8 +274,10 @@ func CBTalkUnhush(npc: ref<ScriptedPuppet>) -> Void {
   }
   if npc.cbTalkHushedTalk {
     npc.cbTalkHushedTalk = false;
-    if npc.IsAttached() {
-      npc.EnableInteraction(n"GenericTalk", CBGenericTalkWanted(npc));
+    let wasOn = npc.cbTalkHushWasOn;
+    npc.cbTalkHushWasOn = false;
+    if npc.IsAttached() && wasOn {
+      npc.EnableInteraction(n"GenericTalk", !StatusEffectSystem.ObjectHasStatusEffectWithTag(npc, n"Busy"));
     }
   }
   if npc.cbTalkHushedLines {
