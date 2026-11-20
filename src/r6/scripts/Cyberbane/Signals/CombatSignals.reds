@@ -33,7 +33,8 @@ public let cbLastAttacker: wref<ScriptedPuppet>;
 
 // Whether the last hit this puppet took came from somebody other than V (2.5.6). A death was V's whenever V had hit
 // them at any point, so a ganger V grazed and a rival gang then killed counted as V's kill: their gang's grudge, V's
-// fighting style, the Renown. The killing blow decides now (CBOnPuppetDeath).
+// fighting style, the Renown. The killing blow decides now (CBOnPuppetDeath), and one landed by somebody on V's side
+// still counts as V's for somebody V had hurt (CBOnVsSide). Who it was is cbLastAttacker, written with this.
 @addField(ScriptedPuppet)
 public let cbLastHitByOther: Bool;
 
@@ -224,11 +225,31 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   }
 }
 
+// Somebody fighting on V's side (2.5.6): the game's companions and other mods' (IsPlayerCompanion), V's own crew (CB_Own,
+// never one who has turned, CB_Turned), and anybody a gang or a Rival sent to help V (CB_Ally). Asked a frame after a
+// death, of whoever landed the last hit on them, never on the hit thread; the tags first, the companion read only of
+// somebody still in the world and ready to be read (CBNpcSafe).
+func CBOnVsSide(game: GameInstance, p: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(p) || !p.IsAttached() {
+    return false;
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  if IsDefined(des) {
+    let id = p.GetEntityID();
+    if des.IsTagged(id, n"CB_Ally") || (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned")) {
+      return true;
+    }
+  }
+  return CBNpcSafe(CyberbaneSystem.Get(game), p) && p.IsPlayerCompanion();
+}
+
 func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
   // Hurt by V, then killed by somebody else (2.5.6): not V's kill, for everything below that asks. Read here, a frame
   // after the death, when the killing hit has been written down whichever event the game delivered first.
-  if puppet.cbDamagedByPlayer && puppet.cbLastHitByOther {
+  // Unless whoever landed it fights on V's side (CBOnVsSide): a bagman V shot and V's companion finished was robbed, a
+  // sit-down V and V's crew cut down was crashed, the way it always was before 2.5.6. The rule was for other gangs' kills.
+  if puppet.cbDamagedByPlayer && puppet.cbLastHitByOther && !CBOnVsSide(game, puppet.cbLastAttacker) {
     puppet.cbDamagedByPlayer = false;
     CBLog.Info(n"Signals", "Somebody V had hurt was killed by somebody else: not counted as V's kill.");
   }

@@ -1189,6 +1189,11 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   if up == 0 && coming == 0 && !trouble {
     why = 4;
   }
+  // Switched off with them out (2.5.6): they go home now, the one order they get, instead of following V until the fight
+  // went quiet. No win is counted and nothing is said, as when arrivals are held.
+  if !CBMyCrewOn() {
+    why = 3;
+  }
   if why >= 0 {
     CBCrewEndCall(sys, game, book, why);
   }

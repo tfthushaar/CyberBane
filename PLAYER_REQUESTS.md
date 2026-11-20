@@ -3,7 +3,7 @@
 A working list of what players have asked for, what the mod already does about it, and what is
 left.
 
-The released version is 2.5.3. This file follows the requests up to 2.0.0: the sections from
+The released version is 2.5.6. This file follows the requests up to 2.0.0: the sections from
 "Requests during 1.9.8 and 1.9.9" down to "Requests after 1.6.1" are the current ones. Reports from
 2.3.0 on, and what was done about each, are in `plan.md` (for example "2.5.1: the first reports" and
 "2.5.2: talk that needs no scan") and in [CHANGELOG.md](CHANGELOG.md). Everything from "Status after

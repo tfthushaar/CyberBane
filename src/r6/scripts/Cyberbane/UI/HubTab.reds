@@ -12,9 +12,11 @@
 // behind it, the button hints below it, opening and closing, and Esc, which closes the menu here as it
 // does on any other tab. The page itself is built from the game's parts on this screen (CBHud).
 //
-// This is where the Hub lives unless the player turns on "Hub in the pause menu". Then the entry is
-// not added, nothing can hand the Stats screen the marker, and the Stats screen goes on being the
-// Stats screen. The setting is read each time the menu opens.
+// This is where the Hub lives unless the player turns on "Hub in the pause menu" (Mod Settings, Messages and HUD), the
+// way out for a player whose tab does not show. Then the entry is not added, nothing can hand the Stats screen the
+// marker, the Stats screen goes on being the Stats screen, and the Hub is Escape > Cyberbane (UI/PauseMenuEntry.reds).
+// The setting is read each time the menu opens. From 2.4.6 to 2.5.6 the switch had come loose from its field and moved
+// nothing (Settings/CyberbaneSettings.reds).
 //
 // Mod Settings is the one thing the page cannot link to from here. It is a screen of the pause menu's,
 // and this is not the pause menu, so the page does not offer the button.

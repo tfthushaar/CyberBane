@@ -319,8 +319,28 @@ public func CBOrderFlee(game: GameInstance, npc: wref<ScriptedPuppet>, opt walk:
   return true;
 }
 
+// Nobody breaks at a job (2.5.6): "the surgeon in Big in Japan came out of his box", "Haze doesn't work". A break is an
+// order to run and a Terror stim to everybody within FearStimRadius, and a stim reaches whoever is in range: no Safety
+// Gate stands between a broadcast and a story's own people, waiting in a box or a workspot for their scene. A gig's guards
+// and fights are exactly where V kills people and somebody breaks. The rule is the Director's own: nothing at the job V
+// is tracking, in a scene or while the story has the stage, and nobody standing near any active objective's pin
+// (QuestSpawnClearance, Reactions/Director.reds). Held here, they fight on, as when they have nowhere to run.
+func CBMoraleHeldAtJob(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(sys) || !IsDefined(npc) || !npc.IsAttached() {
+    return true;
+  }
+  if CBPlayerInScene(game) || sys.IsInQuestArea() || sys.GetStoryHold() != CBStoryNone() {
+    return true;
+  }
+  return sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.QuestSpawnClearance());
+}
+
 // True when they really ran. Nowhere to go is a reason to keep fighting.
 func CBMoraleBreak(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>, faction: CName, chance: Float) -> Bool {
+  if CBMoraleHeldAtJob(sys, game, npc) {
+    CBLog.Verbose(n"Reactions", "An enemy would have broken, but it is a job's ground: they hold.");
+    return false;
+  }
   // Some give up instead (Spawn/LivingStreet.reds, experimental).
   let life = CBStreetLifeFor(game);
   if IsDefined(life) && life.TrySurrender(sys, game, npc) {

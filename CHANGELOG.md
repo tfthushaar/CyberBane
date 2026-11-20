@@ -24,6 +24,37 @@ the next unless a version says otherwise.
   minutes or half an hour later, instead of fading. Cyberbane now takes its card down itself two seconds after the
   game should have, if it is still showing and nothing else has replaced it.
 
+**Quests and jobs**
+- **Nobody breaks and runs at a job any more.** When you kill somebody, the people beside them can lose their nerve and
+  run, and the one who breaks frightens everybody near them. At a gig that reached the job's own people too: a surgeon
+  hidden in a box for his scene could come out of it before his time. Now nobody breaks or gives up at the job you are
+  tracking, in a scene, while the story has the stage, or near any job's marker. They fight on instead.
+
+**The Hub**
+- **"Hub in the pause menu" works again.** Since 2.4.6 that switch in Mod Settings had come loose: it moved nothing, and
+  if you saw it, it switched Voices instead. It is back where it was, under **Messages and HUD**. Off (the default), the
+  Hub is the CYBERBANE tab at the top of the game menu, after Journal; with the game's radial menu, open Character and
+  it is beside it. On, it is Cyberbane in the pause menu (Escape). Turn it on if you cannot find the tab. If you changed
+  that switch since 2.4.6, check that **Voices for the moments** is the way you want it.
+
+**Fights**
+- **Your side's killing blows still count as yours.** With the killing blow deciding, somebody you hurt and your crew,
+  a companion, a borrowed crew or a Rival fighting at your side then finished was counted as nobody's: a bagman you had
+  shot was not robbed, a sit-down you and your crew cut down was not crashed. They count as yours again. Other gangs'
+  killing blows still do not.
+- Somebody you hurt and another gang then knocked out cold is not counted as you sparing them, as their death would not
+  be your kill: no Conduct, no standing for sparing them, and no Rival who remembers you letting them live.
+
+**Fixed**
+- A favour to lean on somebody who owes money ended with "They paid up before you got to them" when somebody else had
+  killed them. It now says somebody got to them first.
+- An informant whose gang found out said they were coming "within the hour". The hunt comes a few hours later at the
+  soonest, and the text says so.
+- Switching off **My crew** or **Run with a crew** while they are out with you sends them home. They went on following you
+  until the fight was over or their hour was up.
+- A Rival who was warned to be coming, then spared or switched off before they arrived, came straight in without a
+  warning the next time they were sent.
+
 Your progress carries over.
 
 ## 2.5.5 (19 November 2026)

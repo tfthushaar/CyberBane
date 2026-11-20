@@ -136,9 +136,11 @@ lives in your saves: a save made while the mod is removed loses it.
 
 ## How to play
 
-- **The Hub:** open the game menu and pick the **Cyberbane** tab, after Journal. Click a gang to pay
-  them off, click a Rival to read their file, buy where they are hiding or forget them, and call or
-  pay your crew. **Show as a list** on a page turns its cards into a list.
+- **The Hub:** open the game menu (Inventory, Map, Character...) and pick the **Cyberbane** tab, after
+  Journal. With the game's radial menu, open Character and it is beside it. Can't find it? Turn on
+  **Hub in the pause menu** (Mod Settings > Cyberbane > Messages and HUD) and it is under Escape instead.
+  Click a gang to pay them off, click a Rival to read their file, buy where they are hiding or forget
+  them, and call or pay your crew. **Show as a list** on a page turns its cards into a list.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
   a line. Reach for a weapon and the conversation ends.
 - Cyberbane adds no keys of its own.

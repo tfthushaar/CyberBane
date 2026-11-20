@@ -5,8 +5,9 @@ inside 2.4.2 and the final pass inside 2.5.0, which also brought a crew of my ow
 pictures, the map remembering, and the last two upgrades to Rivals' places. Then 2.5.1 (2026-11-19), from the first
 reports: talk that comes up, people who walk on, They Will Remember asked properly, loud fights scored loud. Then 2.5.2
 (2026-11-19), from the next reports: talk that needs no scan, Renown right from the load, messages off meaning off. Then
-2.5.3 (2026-11-19): the lines when Talk is pressed, no countdown to nobody, a new Rival in the cards. Next: I play it
-all.** I wrote this on
+2.5.3 (2026-11-19): the lines when Talk is pressed, no countdown to nobody, a new Rival in the cards. 2.5.4 to 2.5.6
+(2026-11-20): markers that say what they are, every line read, texts that ask nothing back, the killing blow, and a
+pass over every pipeline. Next: I play it all.** I wrote this on
 2026-11-18 from IMPROVEMENTS.md after the 2.3.0 prune, and it replaces my old plan (the road to 2.0.0, all built).
 The newest sections (where it stands, what I learnt from Night City Alive, the Hub drawn) are a draft until I have
 been through them again.
@@ -42,11 +43,11 @@ rehearsal from the release before; none played yet):
 | 2.5.3 | e96d1dc, and the 2.5.3 commit | The lines come up when Talk is pressed (the person's own talk off every tick, "Talk" giving way to the game's prompts instead of writing over them); no Standing page countdown to people nobody could send; a Rival from a gang with no record seated and drawn in the cards (see "2.5.3" below) |
 | 2.5.4 | 352f7a7 | "A civilian marked [Crew] Hunting You": every map marker wore the hunter caption, so the passer-by a favour is about (no gang) read "Crew / Hunting you"; the street's people, wannabes, a favour's lookout and a Rival at their place each get a marked pin of their own (`CBMarkedPinCaption`, `CBMarkerNote`), a bounty hunter their name, a Rival at their place re-marked when the fight starts. **Not compiled yet** |
 | 2.5.5 | c8ebdd4 | Every line read for what a player could take from it: the debt favour framed as a favour, not a hit ("owes money", scare them into paying, hurting them ends it); kill rewards no longer called bounties; setting values in words ("Hunts only", "Named only", "Turf war", "Quiet life"); a gathering's pin with its hour; a Rival's file in whole sentences by the same test as their row; the Crew page's four ways in; a bounty hunter's bar with their name. A fix: a scout V got away from no longer sends the crew anyway (`m_scoutInWorld`, `CBScoutLostYou`). **Not compiled yet** |
-| 2.5.6 | bed7029 | From reports on 2.5.5: a text that asks nothing back opens no answers (`CBPhoneSendAside`, `CBPhone.Settle`: a power struggle's offers and thanks, a Rival on V's side), a Rival waiting at the place they named offers none either; the killing blow decides whose kill it is (`cbLastHitByOther`, read in `CBOnPuppetDeath`); a card taken down when its time is up if the game has not (`CBCardClearCallback`). **Not compiled yet** |
+| 2.5.6 | bed7029 | From reports on 2.5.5: a text that asks nothing back opens no answers (`CBPhoneSendAside`, `CBPhone.Settle`: a power struggle's offers and thanks, a Rival on V's side), a Rival waiting at the place they named offers none either; the killing blow decides whose kill it is (`cbLastHitByOther`, read in `CBOnPuppetDeath`); a card taken down when its time is up if the game has not (`CBCardClearCallback`); then, in the same release, the pass over every pipeline below: compiled, the Hub switch put back on its field, nobody breaking at a job, V's side's killing blows counted, and the edges found (see "2.5.6: every pipeline traced" below) |
 | 2.5.2 | f900bbf, da699d3 | Messages off means off (`CBMenuNote` split from `CBSystemNote`, built on a branch during 2.5.1 and merged here); talk that needs no scan (bystanders' own talk switched off while a game prompt stands in the way, the switch renewed when the game turns it back on, the person V addresses switched off whatever the rule reads); Renown's Street Cred floor read on the first settled tick, and the Standing page saying when the floor holds it; IMPROVEMENTS 93 to 96 (see "2.5.2: talk that needs no scan" below) |
 
-**In progress:** nothing. 2.5.2 and 2.5.3 are built from the reports after 2.5.1 (see their sections below); the talk
-changes of 2.5.1 to 2.5.3 are next to be played.
+**In progress:** nothing. 2.5.2 to 2.5.6 are built from the reports after 2.5.1 (see their sections below); the talk
+changes of 2.5.1 to 2.5.6 are next to be played.
 
 **Left** (renumbered: the hunt group shipped in three, so everything after it moved up):
 
@@ -1241,6 +1242,66 @@ Compiled on 2.5 (the installed game) with Codeware, Mod Settings and TweakXL; se
 **To check when it is played:** F on a frightened passer-by and on somebody leaning on a wall brings the lines up close,
 with no stock line; on a new game no lane counts down to anybody; a Rival from a gang V never killed one of is a card
 (and on an older save, after one load).
+
+## 2.5.6: every pipeline traced (2026-11-20)
+
+2.5.4 to 2.5.6 were written where the game could not be run, and 2.5.6 was marked not compiled. This pass merged them,
+compiled them, read every line they changed against its callers, ran the mechanical sweeps over every file, traced the
+pipelines the 2.5.1 pass left out (the queue's pick and fire, the Rival warning, the kill and mercy attribution, the Hub's
+two doors, the street's favours, the crew and borrowed crew, Start over across every book, money taken, and everything
+that can touch a job's own people), and took two new reports.
+
+**Reported:** "how to open the Cyberbane UI? checked everywhere" (Better Phone UI, Find-EX, Mod Config, Equipment-EX
+installed, no UI overhaul); "this mod breaks my game: Haze doesn't work, and in Big in Japan the surgeon comes out of the
+box".
+
+**Found and fixed:**
+- *The Hub's switch on the wrong field.* 2.4.6 put `voices` and `morningBrief` between "Hub in the pause menu"'s
+  annotations and `hubInPauseMenu`, and redscript gives a field every annotation since the last field: `voices` carried
+  two labels and descriptions, and the switch left the menu. The way out written down in 1.7.5 for a player whose tab
+  does not show (the radial hub, a menu mod) was gone. The field is back under its annotations, the description says where
+  the Hub is either way, the README says what to do, and `audit_settings.py` now fails any option with a label or
+  description missing or doubled (it finds the 2.4.6 shape in the old file). None of the reporter's mods touches the
+  game menu's row or the Stats screen (Equipment-EX only links its wardrobe from Inventory; Mod Config extends the pause
+  menu), so the tab should be there for them; the switch is the answer whatever hides it. An Escape entry that is always
+  there was tried and put back: it would have made the switch mean half of what it says.
+- *Nobody breaks at a job.* A morale break is a flee order and a Terror stim to everybody within `FearStimRadius`, and a
+  stim reaches whoever is in range: the Safety Gate filters who Cyberbane orders, not who hears a broadcast. A gig's fight
+  is where V kills and somebody breaks, so a job's own people waiting for their scene (a surgeon in a box) could be sent
+  off. `CBMoraleHeldAtJob` holds every break, and with it every surrender, by the Director's own rule: nothing at the
+  tracked job, in a scene or while the story has the stage, and nobody within `QuestSpawnClearance` of any objective's pin.
+  Every other broadcast was already kept from jobs (panic driving by the quest area, the apex wave by the pins, the
+  crowd's startle by its sender being 60 m from any pin). Haze could not be traced to a cause without the reporter's
+  log; this is the one way found for Cyberbane to move a job's people.
+- *V's side's killing blows.* 2.5.6's killing-blow rule cleared V's credit for anybody another hit last, V's companions
+  and crew included, so `CBTakenOutByV` stopped counting a bagman V shot and a companion finished as robbed, a sit-down V's
+  crew helped cut down as crashed, a favour's lookout as run off. `CBOnVsSide` (companions, `CB_Own` not `CB_Turned`,
+  `CB_Ally`), asked a frame after the death of `cbLastAttacker`, keeps V's credit for V's side. The mercy sweep follows
+  the same rule: knocked out by another gang after V hurt them is not V sparing them.
+- *Edges:* a debtor killed by somebody else ended the favour with "they paid up"; an informant's hunt was promised
+  "within the hour" and cannot start for an hour plus the event engine's turn and lead; My crew and Run with a crew
+  switched off left their people following V; a Rival warned and then made unsendable kept the warning flag, so their next
+  turn skipped the warning.
+
+**Checked and sound:** the card clear (its stamp is exactly what `CBShowMessage` records; it clears only its own text); the
+phone's `Settle` (a thread answered under a second ago is not reopened by `Send`); the scout left behind (only after they
+had appeared, never one that never spawned); markers' captions and every reader of them; every display name against its
+enum; every line 2.5.5 rewrote that states a rule, against the code (dead or out cold, a Friendly gang lending, the
+setting names); every AI order through `CBIssueMove` or `CBTalkHold` and every delete through the safe helpers or far
+and out of sight; Start over clearing every book but the name book, which is kept on purpose, and the street's life;
+every place that takes money checking the balance first. The sweeps found no `continue`, no negative field default, no
+`ArrayContains` on a call's result, no native read before `CBNpcSafe` on a registry walk, no array changed inside a loop
+over it, no bit past 30. `ArraySize` on a call's result, ten places, is left: two have run since 1.4 and 1.6.
+
+**Found, not changed:** the log still reaches no file on two setups (2.5.3's note). A switched-off bounty hunter already
+on the way finishes the hunt, as a crew already sent does.
+
+Compiled on 2.5 (the installed game) with Codeware, Mod Settings and TweakXL; settings, scoring and API audits clean; no
+`persistent` field added or removed; `check_removed` clean. Not compiled on 2.31.
+
+**To check when it is played:** a gig with guards (Big in Japan): kill some, nobody runs, the job's people stay put; Hub in
+the pause menu on and off, with the radial menu too; a bagman shot by V and finished by a companion is robbed; My crew
+switched off with the crew out sends them home.
 
 ---
 

@@ -432,6 +432,16 @@ public class CBStreetLife {
         this.FavourEnd(game);
         return;
       }
+      // Put down by somebody else (2.5.6): the favour is just as over, and the timeout's "They paid up before you got to
+      // them" would have been said of a body. Since 2.5.6 a debtor V hurt and somebody else then killed reads as not V's
+      // (Signals/CombatSignals.reds, the killing blow), so this is where that one ends too.
+      if !done && IsDefined(debtor) && CBIsDown(debtor) {
+        if CBMessagesOn() {
+          CBPhoneFromAlly(game, this.m_favFaction, "Forget it. Somebody got to them before you did, and a body doesn't pay.");
+        }
+        this.FavourEnd(game);
+        return;
+      }
     }
     if done {
       this.FavourDone(sys, game, player);

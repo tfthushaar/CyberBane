@@ -296,6 +296,11 @@ func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBoo
   if CBArrivalsHeld(sys, game) {
     why = "Looks like you've got business. We'll leave you to it.";
   }
+  // Run with a crew switched off while they are out (2.5.6): they walk home now, without a text ("-"), rather than
+  // following V for the rest of the hour, and are removed once V cannot see them, as any going home is.
+  if !CBRunWithCrewOn() {
+    why = "-";
+  }
   if up == 0 {
     why = "-";
   }
@@ -659,7 +664,9 @@ public func CBInformantsDaily(sys: ref<CyberbaneSystem>, game: GameInstance, day
     let rid = book.InformantRival(i);
     let r = rid > 0 ? sys.FindRivalById(rid) : null;
     CBPhoneSend(game, IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "Your informant",
-                s"They know. \(CBCapFirst(CBFactionLabel(gang))) know I've been talking to you. They're coming for me within the hour, and I'll run your way. If you want me alive, be ready.");
+                // When it really is (2.5.6): the hunt may start an in-game hour from now at the soonest (OweInformantHunt),
+                // then waits for the street's next event and its lead time, so a few hours; "within the hour" was never true.
+                s"They know. \(CBCapFirst(CBFactionLabel(gang))) know I've been talking to you. They're coming for me in the next few hours, and I'll run your way. If you want me alive, be ready.");
   }
 }
 

@@ -70,7 +70,9 @@ private let m_cbEntryAdded: Bool;
 @wrapMethod(gameuiMenuItemListGameController)
 protected func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) {
   wrappedMethod(label, spawnEvent);
-  // Only for a player who has asked for the Hub here: it is a tab of the game's menu otherwise.
+  // Only for a player who has asked for the Hub here: it is a tab of the game's menu otherwise. That switch is the way
+  // out for a player whose tab does not show (the radial hub puts it inside Character's group, and a menu mod can
+  // rebuild the row), and from 2.4.6 to 2.5.6 it had come loose from its field and moved nothing (Settings/CyberbaneSettings.reds).
   if this.m_cbEntryAdded || !this.IsA(n"PauseMenuGameController") || CBHubAsGameMenuTab() {
     return;
   }

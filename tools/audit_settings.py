@@ -53,4 +53,26 @@ print()
 print('%d options, %d with no effect' % (len(options), len(dead)))
 if dead:
     print('dead: ' + ', '.join(n for _, n in dead))
-sys.exit(1 if dead else 0)
+
+# Every option carries exactly one label and one description, its own (2.5.6). redscript hands a field every annotation
+# written above it since the last field, so a field slipped in between an option's annotations and its `let` takes them:
+# 2.4.6 did that to "Hub in the pause menu", which became a second name on Voices while the real switch left the menu.
+# The settings class is a Mod Settings class, so every public field in it is an option and needs both.
+loose = []
+labels, descs = [], []
+for n, line in enumerate(src[SETTINGS].split('\n'), 1):
+    if re.search(r'ModSettings\.displayName"', line):
+        labels.append(n)
+    if re.search(r'ModSettings\.description"', line):
+        descs.append(n)
+    m = re.match(r'\s*public let (\w+)\s*:', line)
+    if m:
+        if len(labels) != 1 or len(descs) != 1:
+            loose.append('%s (line %d): %d label(s), %d description(s)' % (m.group(1), n, len(labels), len(descs)))
+        labels, descs = [], []
+if labels or descs:
+    loose.append('annotations after the last option, on no field (line %d)' % (labels + descs)[0])
+print('%d option(s) with a missing or doubled label' % len(loose))
+for l in loose:
+    print('  *** ' + l)
+sys.exit(1 if dead or loose else 0)

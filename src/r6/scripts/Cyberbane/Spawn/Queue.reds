@@ -421,6 +421,11 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
   // name a Rival who did not appear on the Rivals tab at all. Re-checking each tick costs one
   // lookup and lets the lane pick somebody who can actually come.
   if sys.GetLaneRivalId(lane) > 0 && !CBRivalQueueable(sys, sys.GetLaneRivalId(lane)) {
+    // And the warning they were given with it (2.5.6): left standing, a Rival warned and then spared, switched off or
+    // waiting at a place they named would, picked again some day, skip the warning and walk straight in.
+    if sys.GetRivalWarned() == sys.GetLaneRivalId(lane) {
+      sys.SetRivalWarned(0);
+    }
     sys.ClearLane(lane);
     return;
   }

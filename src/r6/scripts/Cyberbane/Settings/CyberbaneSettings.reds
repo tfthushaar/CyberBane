@@ -1377,11 +1377,17 @@ public class CyberbaneSettings {
 
   // The Hub is a tab of the game's menu (UI/HubTab.reds) unless the player would rather have it in
   // the pause menu, where it lived until 1.7.3.
+  //
+  // Its field straight under its own annotations (2.5.6). 2.4.6 put Voices and the morning brief between the two, and
+  // redscript gives a field every annotation above it since the last field, so these went to `voices`: one option with
+  // two names, one of which moved nothing, and this switch out of the menu altogether. tools/audit_settings.py now fails
+  // a field with more than one label, or none.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HubPauseMenu")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HubPauseMenu-Desc")
+  public let hubInPauseMenu: Bool = false;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
@@ -1396,8 +1402,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MorningBrief")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MorningBrief-Desc")
   public let morningBrief: Bool = true;
-
-  public let hubInPauseMenu: Bool = false;
 
 
   // ---- Safe areas and jobs -----------------------------------------------------------------------
