@@ -18,6 +18,17 @@
 // person through CBIssueMove; removal through CBDeleteTaggedSafe, never in V's sight. Session state only:
 // a load ends whatever was going on, the way it ends a fight.
 
+// Why one of the street's features did not happen when its turn came (2.5.7), in the log at most once a game hour for each
+// feature and reason. Bagmen, gang life, sit-downs and street clashes never once appeared in hours of play, and every one
+// of them gave up without a word, so nothing could say which of their conditions never came true.
+public func CBStreetWhyNot(game: GameInstance, feature: String, why: String) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.ShouldNoteWhy(feature + "|" + why, CBGameSeconds(game), CBConfig.SecondsPerHour()) {
+    return;
+  }
+  CBLog.Info(n"Street", s"No \(feature) this time: \(why).");
+}
+
 public func CBStreetLifeOn(flag: CName) -> Bool {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.IsEnabled() {
@@ -213,6 +224,13 @@ public class CBStreetLife {
     }
     let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || sys.IsInSanctuary()
             || sys.IsInSafeZone() || CBPlayerInScene(game);
+    // The shared room nearly gone: what is holding it, once a game hour (2.5.7).
+    if CBSpawnRoom(game) <= 2 {
+      let rtRoom = CyberbaneRuntime.Get();
+      if IsDefined(rtRoom) && rtRoom.ShouldNoteWhy("room", CBGameSeconds(game), CBConfig.SecondsPerHour()) {
+        CBLog.Info(n"Spawn", s"Room for Cyberbane's people nearly gone: \(CBSpawnRoomNote(game)).");
+      }
+    }
     this.WhileOut(sys, game, player, busy);
     this.Bagman(sys, game, des, player, now, busy);
     this.Favour(sys, game, des, player, now);
@@ -298,8 +316,18 @@ public class CBStreetLife {
       }
       return;
     }
-    if busy || now < this.m_bagNext || !CBStreetLifeOn(n"bagmen") || player.IsInCombat() || IsDefined(player.GetMountedVehicle())
-       || CBPlayerIndoors(game) || CBHuntersOut(sys, game) || CBHuntPending(sys) {
+    if now < this.m_bagNext || !CBStreetLifeOn(n"bagmen") {
+      return;
+    }
+    let bagWhy = "";
+    if busy { bagWhy = "V is somewhere the story, a job or a safe place keeps quiet"; }
+    else { if player.IsInCombat() { bagWhy = "V is in a fight"; }
+    else { if IsDefined(player.GetMountedVehicle()) { bagWhy = "V is in a car"; }
+    else { if CBPlayerIndoors(game) { bagWhy = "V is indoors"; }
+    else { if CBHuntersOut(sys, game) { bagWhy = "somebody is out hunting V"; }
+    else { if CBHuntPending(sys) { bagWhy = "somebody is on their way for V"; } } } } } }
+    if StrLen(bagWhy) > 0 {
+      CBStreetWhyNot(game, "bagman", bagWhy);
       return;
     }
     this.m_bagNext = now + CBJitter(CBConfig.BagmanGapTicks(), 0.4);
@@ -308,12 +336,19 @@ public class CBStreetLife {
     }
     let holder = CBTurfHolder(sys, game, sys.GetCurrentDistrict());
     let bagRecord = CBGangTemplate(sys, holder);   // a gang V has never fought has bagmen too (2.5.0)
-    if Equals(holder, n"") || !CBFactionFieldsSquads(holder) || !TDBID.IsValid(bagRecord)
-       || CBSpawnRoom(game) < 2 + CBConfig.TurfPatrolKeepRoom() {
+    if Equals(holder, n"") || !CBFactionFieldsSquads(holder) || !TDBID.IsValid(bagRecord) {
+      CBStreetWhyNot(game, "bagman", s"no gang that fields people holds \(NameToString(sys.GetCurrentDistrict()))");
+      return;
+    }
+    if CBSpawnRoom(game) < 2 + CBConfig.TurfPatrolKeepRoom() {
+      CBStreetWhyNot(game, "bagman", s"too many of Cyberbane's people are out already: \(CBSpawnRoomNote(game))");
       return;
     }
     let body: EntityID;
     let placed = CBSpawnGroup(game, bagRecord, n"", 2, n"CB_Bagman", CBConfig.TurfPatrolDistance(), body);
+    if placed == 0 {
+      CBStreetWhyNot(game, "bagman", "nowhere to put them out of V's sight");
+    }
     if placed > 0 {
       this.m_bagFaction = holder;
       this.m_bagBody = body;

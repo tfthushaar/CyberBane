@@ -25,6 +25,9 @@ the next unless a version says otherwise.
   them, is switched off and given back the same way.
 
 **Rivals**
+- **A Rival at their own place gives you the facedown too.** Every Rival you tracked down at their place opened fire
+  the moment they saw you, so the facedown never happened at all. Now, walk up openly and they step out to face you;
+  sneak up or shoot first and it is still an ambush.
 - **Talk in the middle of a fight to the people the fight is for.** A Rival down at your feet, somebody with their
   hands up, a Rival or a sergeant standing for a facedown or a parley: you can talk to them while the shooting goes on
   around you. Being in combat closed talk for everybody, so the mercy choice and the ransom could only be had once
@@ -38,11 +41,17 @@ the next unless a version says otherwise.
   facedown: they turned hostile after about a minute without a word. They now wait up to four minutes for you.
 
 **Fights**
+- A ganger who has given up, lies at your feet for your mercy, or is talking to you is never turned back on you by their
+  gang's grudge. Somebody who had just put their hands up could be sent at you again a second later.
 - **A Rival somebody else kills is not your kill.** A Rival the NCPD or another gang killed counted as yours: on your
   tally and your titles, Renown paid, the street saying everybody knew who did it, and worst, the Rival bound to them
   texting "You killed..." and coming after you, or a successor sworn to avenge them on you. Now they are simply dead,
   their chair is filled, and nobody blames you. Your History says a Rival died, and not by your hand.
 - Somebody you hurt and a car then ran down (a police car, another gang's) is not your kill.
+
+**Bug reports**
+- Cyberbane's log (in Cyber Engine Tweaks' `gamelog.log`) now says why a bagman, a gang event, a sit-down, a street
+  clash or your crew did not come when their turn came, and what is taking up room for Cyberbane's people.
 
 Your progress carries over.
 

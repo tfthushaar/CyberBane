@@ -1260,7 +1260,12 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   // A Rival owed a facedown, and the people with them, walk up calm (Rivals/RivalMoments.reds, [53], 2.5.0). Sent in
   // hostile, they saw V from forty metres and the fight was on before the facedown's twenty-four, so it all but never
   // opened. Hostile the moment V hits one of them, or once it cannot happen (CBFacedownWaitTick).
-  if (isRival || des.IsTagged(id, n"CB_Escort")) && !isLair && CBFacedownAwaits(sys, game) {
+  // At their place too (2.5.7): every Rival encounter played since 2.4 was at the Rival's place, which went hostile on
+  // sight, so no facedown ever opened. They wait there calm, theirs with them, and step out to face V who walks up
+  // openly (Rivals/Whereabouts.reds); sneak up or open fire and it is the ambush it always was. Their wait only starts
+  // counting once they step out (CBLairPromote): before that they are where they live.
+  let lairCalm = isLair && CBFacedownAwaitsFor(sys, game, sys.FindRivalById(sys.GetLairRivalId()));
+  if ((isRival || des.IsTagged(id, n"CB_Escort")) && !isLair && CBFacedownAwaits(sys, game)) || lairCalm {
     puppet.cbFacedownWait = true;
     puppet.cbFacedownWaitTick = Max(sys.GetTickCount(), 1);
   } else {

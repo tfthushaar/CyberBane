@@ -306,12 +306,19 @@ public func CBRivalMomentsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
 
 // The facedown is owed: the active Rival has not had one this time, and nothing else is calling the shots.
 public func CBFacedownAwaits(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
-  if !CBFacedownOn() || !IsDefined(sys) {
+  if !IsDefined(sys) {
+    return false;
+  }
+  return CBFacedownAwaitsFor(sys, game, sys.FindRivalById(sys.GetActiveRivalId()));
+}
+
+// The same for one Rival in particular (2.5.7): the one waiting at their place, who is nobody's active Rival yet.
+public func CBFacedownAwaitsFor(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
+  if !CBFacedownOn() || !IsDefined(sys) || !IsDefined(r) {
     return false;
   }
   let book = CBRivalBook.Get(game);
-  let r = sys.FindRivalById(sys.GetActiveRivalId());
-  if !IsDefined(book) || !IsDefined(r) || book.fdState != 0 || NotEquals(sys.GetApexMusterFaction(), n"") {
+  if !IsDefined(book) || book.fdState != 0 || NotEquals(sys.GetApexMusterFaction(), n"") {
     return false;
   }
   return r.id * 64 + Min(r.encounters, 63) != book.fdDoneKey;

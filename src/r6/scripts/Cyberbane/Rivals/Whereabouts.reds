@@ -773,7 +773,15 @@ func CBLairWatch(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     CBLairGiveUp(sys, game, r, body);
     return;
   }
-  if IsDefined(body) && CBNpcSafe(sys, body) && (CBNpcInCombat(body) || body.cbDamagedByPlayer) {
+  // Or one of their people (2.5.7): waiting calm, a guard V shot left the Rival standing there calm beside them.
+  if IsDefined(body) && CBNpcSafe(sys, body) && (CBNpcInCombat(body) || body.cbDamagedByPlayer || CBLairGuardHit(sys, game)) {
+    CBLairPromote(sys, game, r, body);
+    return;
+  }
+  // Walked up to openly, with a facedown owed (2.5.7): they step out to face V, and the facedown opens from the Rival's
+  // own tick (Rivals/RivalMoments.reds). Crouched, V is sneaking up, and it stays an ambush.
+  if IsDefined(body) && CBNpcSafe(sys, body) && body.cbFacedownWait && !player.IsInCombat() && !CBPlayerCrouched(game)
+     && Vector4.Distance(body.GetWorldPosition(), player.GetWorldPosition()) <= CBConfig.FacedownRange() {
     CBLairPromote(sys, game, r, body);
     return;
   }
@@ -806,6 +814,23 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
     return;
   }
   let id = body.GetEntityID();
+  // Their people waiting calm for a facedown step out with them as the Rival's escorts (2.5.7), so the facedown holds
+  // them, lets them go and turns them on V as it does any Rival's people; and every wait counts from now, not from when
+  // they were put at the place. Those spawned hostile stay as they were.
+  let tickNow = Max(sys.GetTickCount(), 1);
+  let lairIds = des.GetTaggedIDs(n"CB_Lair");
+  for gid in lairIds {
+    let g = GameInstance.FindEntityByID(game, gid) as ScriptedPuppet;
+    if IsDefined(g) && g.cbFacedownWait {
+      g.cbFacedownWaitTick = tickNow;
+      g.cbFacedownWaitHeld = 0;
+      g.cbFacedownWaitSeen = 0;
+      if NotEquals(gid, id) {
+        des.UnassignTag(gid, n"CB_Lair");
+        des.AssignTag(gid, n"CB_Escort");
+      }
+    }
+  }
   // The same two calls the combat release has always used to move a body between tags.
   des.UnassignTag(id, n"CB_Lair");
   des.AssignTag(id, n"CB_Rival");
@@ -849,6 +874,22 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   }
   CBPhoneSendTinted(game, CBRivalDisplayName(sys.GetContent(), r), line, CBHudRed());
   CBLog.Info(n"Rivals", s"Rival \(r.id) was found at their place; the fight is on.");
+}
+
+// One of the people waiting at a Rival's place hurt by V, or fighting (2.5.7). Our own field first, then the per-NPC gate.
+func CBLairGuardHit(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || !des.IsPopulated(n"CB_Lair") {
+    return false;
+  }
+  let ids = des.GetTaggedIDs(n"CB_Lair");
+  for gid in ids {
+    let g = GameInstance.FindEntityByID(game, gid) as ScriptedPuppet;
+    if IsDefined(g) && (g.cbDamagedByPlayer || (CBNpcSafe(sys, g) && CBNpcInCombat(g))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Take a waiting Rival back out of the world, without a word: nobody escaped anybody. Living

@@ -132,6 +132,57 @@ public func CBSpawnRoom(game: GameInstance) -> Int32 {
   return Max(0, CBConfig.MaxLiveSpawns() - CBCountLiveOrSpawning(game, n"Cyberbane"));
 }
 
+// What is taking up the room, in a line for the log (2.5.7): how many are still on their way into the world, and how
+// many are standing under each tag. Every spawn of Cyberbane's shares MaxLiveSpawns, so a room that never frees blocks
+// crews, the street and V's own crew at once, and nothing said so.
+public func CBSpawnRoomNote(game: GameInstance) -> String {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return "";
+  }
+  let tags: array<CName> = [n"CB_Squad", n"CB_Escort", n"CB_Apex", n"CB_Rival", n"CB_Lair", n"CB_Orphan", n"CB_Scout",
+                            n"CB_Bounty", n"CB_Own", n"CB_Ally", n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Event",
+                            n"CB_Patrol", n"CB_Ambush", n"CB_Wannabe"];
+  let counts: array<Int32>;
+  for t in tags {
+    ArrayPush(counts, 0);
+  }
+  let spawning = 0;
+  let standing = 0;
+  let ids = des.GetTaggedIDs(n"Cyberbane");
+  for id in ids {
+    let counted = false;
+    if des.IsSpawning(id) {
+      spawning += 1;
+      counted = true;
+    } else {
+      let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+      if CBStillStanding(p) {
+        standing += 1;
+        counted = true;
+      }
+    }
+    if counted {
+      let k = 0;
+      while k < ArraySize(tags) {
+        if des.IsTagged(id, tags[k]) {
+          counts[k] += 1;
+        }
+        k += 1;
+      }
+    }
+  }
+  let parts = "";
+  let k = 0;
+  while k < ArraySize(tags) {
+    if counts[k] > 0 {
+      parts += (StrLen(parts) > 0 ? ", " : "") + s"\(NameToString(tags[k])) \(counts[k])";
+    }
+    k += 1;
+  }
+  return s"\(spawning + standing) of \(CBConfig.MaxLiveSpawns()) taken: \(spawning) still spawning, \(standing) standing [\(parts)]";
+}
+
 // ---- A hit squad is an apex squad and a crew ------------------------------------------
 //
 // "Apex squad should always be four members with MaxTac-like roles; a hit squad should contain an

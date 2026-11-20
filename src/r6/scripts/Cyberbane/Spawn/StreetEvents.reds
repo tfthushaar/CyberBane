@@ -188,13 +188,19 @@ public class CBEventEngine {
       this.m_partyFor = n"";
     }
     if busy || player.IsInCombat() {
+      if nowT >= this.m_next && (CBGatheringsOn() || CBDealsOn() || CBGangFightsOn()) {
+        CBStreetWhyNot(game, "gang life", busy ? "V is somewhere the story, a job or a safe place keeps quiet" : "V is in a fight");
+      }
       return;
     }
     // The sit-down, on its own clock and chance, as before.
     if nowT >= this.m_meetNext && CBStreetLifeOn(n"sitDowns") {
       this.m_meetNext = nowT + CBJitter(CBConfig.MeetGapTicks(), 0.4);
-      if RandF() < CBConfig.MeetChance() && this.Start(sys, game, player, CBEvSitDown()) {
-        return;
+      if RandF() < CBConfig.MeetChance() {
+        if this.Start(sys, game, player, CBEvSitDown()) {
+          return;
+        }
+        CBStreetWhyNot(game, "sit-down", this.m_why);
       }
     }
     // Everything else. The fights between gangs have their own switch (2.4.2): with gatherings and deals both off
@@ -207,10 +213,13 @@ public class CBEventEngine {
       return;
     }
     let kind = this.Choose(sys, now);
-    if IsNameValid(kind) {
-      this.Start(sys, game, player, kind);
+    if IsNameValid(kind) && !this.Start(sys, game, player, kind) {
+      CBStreetWhyNot(game, NameToString(kind), this.m_why);
     }
   }
+
+  // Why the last Start came to nothing (2.5.7), for CBStreetWhyNot.
+  private let m_why: String;
 
   public func OweInformantHunt(gang: CName, rivalId: Int32, now: Float) -> Void {
     this.m_huntFor = gang;
@@ -260,17 +269,20 @@ public class CBEventEngine {
     let district = sys.GetCurrentDistrict();
     let a = n"";
     let b = n"";
+    this.m_why = "";
     if Equals(kind, CBEvFuneral()) || Equals(kind, CBEvCelebration()) {
       a = Equals(kind, CBEvFuneral()) ? this.m_funeralFor : this.m_partyFor;
       // On their own streets: only where they are, near V.
       let gangsHere = CBTurfGangsHere(sys);   // a local, never a temporary (UI/HubWeb.reds, CBWebPair)
       if !ArrayContains(gangsHere, a) {
+        this.m_why = s"\(NameToString(a)) have no streets here";
         return false;
       }
     } else {
       a = CBTurfHolder(sys, game, district);
     }
     if Equals(a, n"") || !CBFactionFieldsSquads(a) || !CBFactionOn(a) {
+      this.m_why = s"no gang that fields people holds \(NameToString(district))";
       return false;
     }
     // An informant's own gang runs them down: one of theirs, the hunters theirs too (2.4.5, [U12]).
@@ -294,21 +306,25 @@ public class CBEventEngine {
         }
       }
       if Equals(b, n"") {
+        this.m_why = s"\(NameToString(a)) have no rival gang that fields people";
         return false;
       }
       // Two gangs in a truce against V do not fight each other (Economy/War.reds, [36]).
       if CBIsFightKind(kind) && Equals(CBTrucePartner(game, a), b) {
+        this.m_why = s"\(NameToString(a)) and \(NameToString(b)) are in a truce";
         return false;
       }
     }
     if Equals(kind, CBEvArmsDeal()) {
       b = CBDealPartner(sys, a);
       if Equals(b, n"") {
+        this.m_why = s"nobody to deal with \(NameToString(a))";
         return false;
       }
     }
     let spot: Vector4;
     if !CBWhereaboutsSpot(sys, game, player, spot) {
+      this.m_why = "no place for it near V, out of sight and reachable";
       return false;
     }
     let now = CBGameSeconds(game);

@@ -110,6 +110,15 @@ public func CBClashTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       ArrayClear(book.candB);
     }
   }
+  if tick >= book.clashNextTick && !player.IsInCombat() {
+    if Equals(book.clashA, n"") {
+      CBStreetWhyNot(game, "street clash", s"no two gangs at war on these streets (\(NameToString(sys.GetCurrentDistrict())))");
+    } else {
+      if ArraySize(book.candA) == 0 || ArraySize(book.candB) == 0 {
+        CBStreetWhyNot(game, "street clash", s"not enough of \(NameToString(book.clashA)) and \(NameToString(book.clashB)) out near V");
+      }
+    }
+  }
   if Equals(book.clashA, n"") || tick < book.clashNextTick || player.IsInCombat()
      || ArraySize(book.candA) == 0 || ArraySize(book.candB) == 0 {
     return;

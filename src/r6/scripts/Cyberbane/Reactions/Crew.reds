@@ -997,6 +997,9 @@ func CBCrewWillBetray(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> Bool {
 public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: Bool) -> String {
   let blocked = CBCrewCallBlocked(sys, game, unasked);
   if StrLen(blocked) > 0 {
+    // Said on the Hub, and now in the log too (2.5.7), with what is taking up the room: "I couldn't call my crew" came
+    // with nothing to say which of these it was.
+    CBLog.Info(n"Crew", s"V's crew was not called: \(blocked) (\(CBSpawnRoomNote(game))).");
     return blocked;
   }
   let book = CBCrewBook.Get(game);
@@ -1039,6 +1042,9 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
     }
   }
   if sent == 0 {
+    if sold == 0 {
+      CBLog.Info(n"Crew", s"V's crew was not called: nowhere to put them near V out of sight (\(CBSpawnRoomNote(game))).");
+    }
     return sold > 0 ? "" : "Nobody could get to you.";
   }
   book.leaving = false;
