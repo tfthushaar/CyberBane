@@ -236,7 +236,7 @@ func CBFlawStory(kind: Int32) -> String {
     case 2: return "Got a plate in their skull. Hit them with something heavy and that's it.";
     case 3: return "Glass jaw. Everybody knows. One clean punch and they don't get up.";
     case 4: return "Cheap chrome, never firewalled. Any netrunner could cook them.";
-    case 5: return "Half their body's burn scars. Fire's the one thing that'll finish them.";
+    case 5: return "Half their body's scars from the last blast that caught them. One more explosion and they're done.";
   }
   return "";
 }

@@ -986,9 +986,10 @@ public func CBProvoke(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CN
 
 // ---- Being told ------------------------------------------------------------
 
+// A place name every caller puts after "in" or "to": "around here" there read "Heard you are in around here".
 func CBHuntWhereLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let where = CBDistrictLabel(CBEventDistrict(sys, game));
-  return StrLen(where) > 0 ? where : "around here";
+  return StrLen(where) > 0 ? where : "Night City";
 }
 
 // The gang tells V a crew is coming, and roughly how much they know.

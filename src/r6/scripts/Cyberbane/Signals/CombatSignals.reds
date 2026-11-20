@@ -388,7 +388,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         CBCrewRivalFell(sysE, game, slain, puppet.cbDamagedByPlayer);   // one who killed V's own, answered (2.5.0)
         CBMapRemember(sysE, game, CBMemRivalFell(), puppet.GetWorldPosition(), slain.id, slain.faction, n"", n"",
                       puppet.cbDamagedByPlayer);   // the map remembers where (UI/MapPins.reds, 2.5.0)
-        CBOweFuneral(game, slain.faction);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
+        CBOweFuneral(game, slain.faction, puppet.cbDamagedByPlayer);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());
         }
@@ -526,7 +526,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     CBTerrorDeed(sys, CBConfig.TerrorMaxTac());
   }
   if info.lethal && info.victimClass == EnumInt(ECBVictimClass.Boss) {
-    CBOweFuneral(game, info.faction);
+    CBOweFuneral(game, info.faction, true);   // past the gate above: V's kill
     CBTerrorDeed(sys, CBConfig.TerrorBoss());
     CBCreateRumor(sys, game, n"BossKill", 15.0, info.district, info.faction, info.witnessed);
     CBRememberPlace(sys, game, n"BossKill", info.faction, info.district, info.position);
@@ -550,7 +550,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // A Rival's death has already had its say about who comes next (CBRivalSlain).
   if info.lethal && !wasRival && NotEquals(info.faction, n"")
      && (info.victimClass == EnumInt(ECBVictimClass.Boss) || info.victimClass == EnumInt(ECBVictimClass.Officer)) {
-    if CBRivalRoll(sys, "avenger", CBConfig.RivalChanceAvenger(), info.recordID, true) {
+    if CBRivalRoll(sys, "avenger", CBConfig.RivalChanceAvenger(), info.recordID, true, info.faction) {
       // Once the fight is over (Rivals/Births.reds, 1.9.1).
       CBRivalAfterFight(sys, game, info.faction, info.recordID, n"", ECBRivalSource.Avenger,
                         info.district, info.at, null, 0, "");

@@ -271,10 +271,10 @@ public func CBLiveTaggedPresent(game: GameInstance, tag: CName) -> Bool {
 
 // All three lanes, once per fast tick.
 public func CBEncounterQueueTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  CBScheduleTick(sys, game);   // a new in-game day gets a new timetable
   if !IsDefined(sys) {
     return;
   }
+  CBScheduleTick(sys, game);   // a new in-game day gets a new timetable
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && !rt.IsEnabled() {
     return;

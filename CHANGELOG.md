@@ -43,6 +43,71 @@ and clicking one again before then takes it back.
 - **Remember the fallen.** Everyone of your crew who dies goes on a memorial: their rank, how and where they died and
   how long ago, how long they were with you, their wins, the weapon of yours they carried and the chrome you gave them.
 
+**Fixed in this version**, from a read of the whole mod.
+
+*Your crew*
+- The chrome you give your crew is now saved in a shape that cannot upset loading a save, for the living and on the
+  memorial.
+- Rank is the same everywhere: the card, their file, their nickname, their weekly cut and the text when they move up
+  all count training as well as wins. A member trained to Veteran had a Veteran card but no nickname.
+- A spar ends when the story takes over, a scene starts, or you walk into a job or a safe place. Loading a save in the
+  middle of one no longer scores a round nobody fought.
+- Answers to your crew orders on the Hub (no room for more chrome, the weapon is gone from your bag, training costs
+  this much, the crew's new name) show even with Cyberbane's messages turned off.
+- Switching the crew off in Mod Settings no longer gets you a "Not our kind of place" text.
+- Somebody who joins by text after owing you their life costs your crew standing with their old gang, as they do when
+  they join on the street.
+
+*Rivals*
+- A gang you have switched off, or one set to everybody's enemy, no longer makes Rivals of its own. Before, the roll
+  could say yes and the Rival was then never made.
+- A Rival's successor climbs to the rank they inherit, as the story says.
+- A Rival who kills you gets the scar of the weapon used: a gun left no scar and a blade counted as a gunshot.
+- A Rival you humiliate at the top of their gang's ladder can now break as intended. The rank they lose for it was
+  taken before the check, so it never happened.
+- A beaten Rival's comeback keeps to the Max rivals setting and the limit per gang; with no room, it is a warning.
+- A Rival tied to another (lovers, a debt) no longer retires with them or calls the debt in while that other Rival is
+  out in the world or after you.
+- Loading a save clears a facedown or a taunt that was under way.
+
+*The street*
+- Paying off a gang, or settling a war, now leaves them neutral. Before, it made them friendly, so the gang you had
+  just paid texted that you were welcome on their streets.
+- A gang's first tribute reads as an offer; "as agreed" comes from the second payment on.
+- A gang talking peace now simply asks you to send the money.
+- A funeral after a Rival or a boss dies says whether you were the one who put them down, and the mourners answer you
+  accordingly. A Rival somebody else killed still gets a funeral, and nobody there blames you.
+- A scout who takes your bribe walks off for good, and their pin goes with them.
+- Gangs talking about taking ground back say so only when it was theirs before; otherwise they have pushed the other
+  gang out.
+- When Cyberbane holds off because you are in a gang's restricted or dangerous zone, the Hub and its message say so.
+  They called it a job.
+- Lowering your weapon in a safe area follows the same rules on the way in as while you stay: never in a scene or with
+  a conversation open, and turning the setting off inside puts the lock back.
+- Gunfire no longer sends drivers into a panic near a job you are at, tracked or not.
+- A Rival who steps into your fight because nobody kills you but them now holds the grudge and comes for you
+  afterwards, even with Cyberbane's messages turned off.
+- A corp you finished a contract for no longer opens a later contract on you with "We told you to stop".
+- The bounty button on the Hub tells you when the money has gone from your pocket before it could be paid.
+- With **Apex squads per day** at 0, no apex squad is announced either. The warning still came, for a squad that never
+  did.
+- In a safe place the doors stay shut to the people sent after you, and open for your crew, a friendly gang's people
+  riding with you and the help you called. Your crew was left standing outside.
+- Nothing new goes round the street while reputation is frozen.
+
+*Words*
+- The Nightmare title names the gang it was earned on.
+- The Butcher title's requirement says "Kills in one district", which is what it counts.
+- Lines with no district or gang to name say "Night City" or "a gang" in their place; a Rival made outside the eight
+  districts no longer has "back in ." in their story.
+- A masked V after dark is talked about as masked after dark. Seeing through a disguise names what they saw through:
+  the mask, or their own colours on you.
+- Your talk log lists phone threats and dares.
+- A Rival's weak spot to explosives is told as explosives.
+- A few lines no longer assume somebody is a man.
+- The descriptions of Gatherings and Fights between gangs in Mod Settings match what happens.
+- Every preset now sets how often gang life happens: choosing Turf war and then another preset kept Turf war's.
+
 Your progress carries over.
 
 ## 2.5.7 (20 November 2026)

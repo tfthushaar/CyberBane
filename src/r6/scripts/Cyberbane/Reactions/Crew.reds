@@ -540,9 +540,15 @@ public func CBCrewFirstName(sys: ref<CyberbaneSystem>, kind: Int32, faction: CNa
   return solo[CBHashIndex(seed, 41, ArraySize(solo))];
 }
 
-// The whole name, with the nickname once they have earned it.
+// The whole name, with the nickname once they have earned it: rank 3 from fights won alone, for anybody with no kit to
+// count (a solo on offer, somebody who left). A member on the roster goes by CBCrewName, whose rank counts training too.
 public func CBCrewFullName(sys: ref<CyberbaneSystem>, kind: Int32, faction: CName, rival: Int32, seed: Int32, wins: Int32,
                            seat: Int32) -> String {
+  return CBCrewFullNameNicked(sys, kind, faction, rival, seed, CBCrewRank(wins) >= 3, seat);
+}
+
+public func CBCrewFullNameNicked(sys: ref<CyberbaneSystem>, kind: Int32, faction: CName, rival: Int32, seed: Int32,
+                                 nicked: Bool, seat: Int32) -> String {
   if rival > 0 && IsDefined(sys) {
     let r = sys.FindRivalById(rival);
     if IsDefined(r) {
@@ -559,15 +565,17 @@ public func CBCrewFullName(sys: ref<CyberbaneSystem>, kind: Int32, faction: CNam
     let solo = ["Vance", "Okafor", "Reyes", "Lindgren", "Abara", "Castillo", "Moretti", "Sato", "Kowal", "Duarte"];
     last = solo[CBHashIndex(seed, 43, ArraySize(solo))];
   }
-  let nick = CBCrewRank(wins) >= 3 ? " \"" + CBCrewNickname(seat, seed) + "\"" : "";
+  let nick = nicked ? " \"" + CBCrewNickname(seat, seed) + "\"" : "";
   return StrLen(last) > 0 ? first + nick + " " + last : first + nick;
 }
 
+// A member's name, nicknamed from Veteran up: their rank as the card shows it, fights and training together
+// (Reactions/CrewKit.reds, CBCrewRankOf). It counted fights alone, so a member trained to Veteran had no nickname.
 public func CBCrewName(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> String {
   if !IsDefined(m) {
     return "Somebody";
   }
-  return CBCrewFullName(sys, m.kind, m.faction, m.rival, m.seed, m.wins, m.seat);
+  return CBCrewFullNameNicked(sys, m.kind, m.faction, m.rival, m.seed, CBCrewRankOf(GetGameInstance(), m) >= 3, m.seat);
 }
 
 // The name they go by, short enough for a box on the crew picture: first name and nickname once they have one.
@@ -575,7 +583,7 @@ public func CBCrewBoxName(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> St
   if !IsDefined(m) {
     return "";
   }
-  if m.rival > 0 || CBCrewRank(m.wins) < 3 {
+  if m.rival > 0 || CBCrewRankOf(GetGameInstance(), m) < 3 {
     return CBCrewName(sys, m);
   }
   return CBCrewFirst(sys, m) + " \"" + CBCrewNickname(m.seat, m.seed) + "\"";
@@ -766,9 +774,12 @@ public func CBCrewRecruitDebtor(sys: ref<CyberbaneSystem>, game: GameInstance, r
   }
   CBFileLog(sys, n"CrewJoined", now, CBEventDistrict(sys, game), m.faction, Cast<Float>(m.id));
   sys.AddRenownPoints(CBConfig.MyCrewRenown());
+  // A Rival of theirs taken, as on the street (CBCrewJoined): the reply is this thread's text, so that is all it skips.
+  CBCrewStandingShift(game, m.faction, -CBConfig.CrewStandOwed());
   if book.CutDueAt() <= 0.0 {
     book.SetCutDueAt(now + 7.0 * CBConfig.SecondsPerDay());
   }
+  CBLog.Info(n"Crew", s"Somebody joined V's crew by text (kind \(m.kind), loyalty \(m.loyalty)).");
   return CBLineOf([s"Funny. I was going to ask you the same thing. I'm in.", "Paying a debt with my trigger finger. Fair. I'm in."]);
 }
 
@@ -1263,7 +1274,7 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   // Switched off with them out (2.5.6): they go home now, the one order they get, instead of following V until the fight
   // went quiet. No win is counted and nothing is said, as when arrivals are held.
   if !CBMyCrewOn() {
-    why = 3;
+    why = 5;   // its own reason: 3 texts "Not our kind of place", and switching the crew off says nothing
   }
   if why >= 0 {
     CBCrewEndCall(sys, game, book, why);
@@ -1279,6 +1290,7 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
   let ppos = IsDefined(player) ? player.GetWorldPosition() : new Vector4(0.0, 0.0, 0.0, 1.0);
   let speaker: ref<CBCrewMember>;
   let promoted: ref<CBCrewMember>;
+  let promotedFrom = 0;
   let leftLying: ref<CBCrewMember>;
   let i = 0;
   while i < book.OutCount() {
@@ -1297,11 +1309,12 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
         }
       } else {
         if won {
-          let before = CBCrewRank(m.wins);
+          let before = CBCrewRankOf(game, m);
           m.wins += 1;
           CBCrewLoyalty(m, CBConfig.MyCrewWinLoyalty(), CBCrewWhyNone());
-          if CBCrewRank(m.wins) > before {
+          if CBCrewRankOf(game, m) > before {
             promoted = m;
+            promotedFrom = before;
           }
         }
         if !IsDefined(speaker) || m.loyalty > speaker.loyalty {
@@ -1343,10 +1356,11 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
     }
   }
   if IsDefined(promoted) {
-    let rank = CBCrewRank(promoted.wins);
-    CBCrewText(sys, game, null, rank >= 3
+    // The rank the card shows (fights and training together); the nickname is news once, on reaching Veteran.
+    let rank = CBCrewRankOf(game, promoted);
+    CBCrewText(sys, game, null, rank >= 3 && promotedFrom < 3
       ? s"The street's calling \(CBCrewFirst(sys, promoted)) \"\(CBCrewNickname(promoted.seat, promoted.seed))\" now. Earned it."
-      : s"\(CBCrewFirst(sys, promoted)) is getting good at this. Rank \(rank).");
+      : s"\(CBCrewFirst(sys, promoted)) is getting good at this. \(CBCrewRankWord(rank)) now.");
   }
   if IsDefined(leftLying) {
     CBCrewText(sys, game, leftLying, CBLineOf(["You left me lying there. I'll remember that.", "Woke up alone on the pavement. Thanks for nothing."]));
@@ -1778,7 +1792,7 @@ public func CBCrewWeeklyCut(book: ref<CBCrewBook>) -> Int32 {
     i += 1;
     if IsDefined(m) {
       let base = m.kind == CBCrewPaid() ? CBConfig.MyCrewCutPaid() : CBConfig.MyCrewCutBase();
-      total += base + CBConfig.MyCrewCutPerRank() * (CBCrewRank(m.wins) - 1);
+      total += base + CBConfig.MyCrewCutPerRank() * (CBCrewRankOf(GetGameInstance(), m) - 1);
     }
   }
   return RoundF(Cast<Float>(total) * CBCrewCutMult());
@@ -2190,10 +2204,10 @@ public func CBCrewFile(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
   let home = NotEquals(m.home, n"") ? CBDistrictLabel(m.home) : "the city";
   let since = CBHudSince(now, m.joinedAt);
   out += s"A \(CBCrewSeatWord(m.seat)), \(CBCrewFromWords(m)). Lives in \(home)" + (StrLen(since) > 0 ? s", with you \(since)." : ".") + "\n";
-  let rank = CBCrewRank(m.wins);
+  let rank = CBCrewRankOf(game, m);
   let wins = m.wins == 0 ? "No fights won with you yet" : (m.wins == 1 ? "One fight won with you" : s"\(m.wins) fights won with you");
   let scars = m.scars == 0 ? "" : (m.scars == 1 ? ", one scar to show for it" : s", \(m.scars) scars to show for it");
-  out += wins + scars + s". Rank \(rank)" + (rank >= 3 ? s", known as \"\(CBCrewNickname(m.seat, m.seed))\"" : "") + ".\n";
+  out += wins + scars + s". \(CBCrewRankWord(rank))" + (rank >= 3 ? s", known as \"\(CBCrewNickname(m.seat, m.seed))\"" : "") + ".\n";
   out += s"Loyalty \(m.loyalty) of 100: \(CBCrewLoyaltyWord(m.loyalty)).";
   let worry = CBCrewWorry(m);
   if CBCrewRestless(m) && StrLen(worry) > 0 {

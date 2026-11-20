@@ -182,8 +182,6 @@ public class CyberbaneRuntime extends ScriptableService {
     return this.m_twrAttitudeProbe;
   }
 
-  // At each session's start. A look at They Will Remember that failed is tried again too (2.5.1): it was made once a
-  // launch, and a failure, whatever its cause, held for every save loaded until the game was restarted.
   // Which of the street's features last said why it did not happen, and when (2.5.7, CBStreetWhyNot).
   private let m_whyKeys: array<String>;
   private let m_whyAt: array<Float>;
@@ -209,6 +207,8 @@ public class CyberbaneRuntime extends ScriptableService {
     return true;
   }
 
+  // At each session's start. A look at They Will Remember that failed is tried again too (2.5.1): it was made once a
+  // launch, and a failure, whatever its cause, held for every save loaded until the game was restarted.
   public func ClearTwrHostility() -> Void {
     ArrayClear(this.m_twrHostile);
     this.m_twrHostileAsked = false;

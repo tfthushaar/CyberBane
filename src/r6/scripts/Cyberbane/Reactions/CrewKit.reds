@@ -33,7 +33,13 @@ public class CBCrewKit {
   public persistent let weapon: ItemID;
   public persistent let weaponType: Int32;    // gamedataItemType, as a number
   public persistent let weaponTier: Int32;    // 0 common .. 4 legendary or iconic
-  public persistent let chrome: array<TweakDBID>;
+  // The chrome put in them, up to CBCrewChromeSlots, as four scalars. Never an array: this class is saved inside the
+  // book's own list, and an array nested in a saved class is the shape that crashed the game before (schema 2 and 3,
+  // CBRumor.reachedMask), the reason CBFactionState keeps its role records as four fields too.
+  public persistent let chrome0: TweakDBID;
+  public persistent let chrome1: TweakDBID;
+  public persistent let chrome2: TweakDBID;
+  public persistent let chrome3: TweakDBID;
   public persistent let trained: Int32;       // trainings finished
   public persistent let trainUntil: Float;    // game seconds; 0 when not away training
   public persistent let warUntil: Float;      // game seconds; 0 when not away at war
@@ -42,6 +48,40 @@ public class CBCrewKit {
   public persistent let sparDay: Int32;       // the game day of the last, stored one up
   public persistent let sharpUntil: Float;    // a spar's edge, until then
   public persistent let earning: Bool;        // put to work
+
+  public func ChromeCount() -> Int32 {
+    let n = 0;
+    let i = 0;
+    while i < CBCrewChromeSlots() {
+      if TDBID.IsValid(this.ChromeAt(i)) {
+        n += 1;
+      }
+      i += 1;
+    }
+    return n;
+  }
+
+  public func ChromeAt(i: Int32) -> TweakDBID {
+    if i == 0 { return this.chrome0; }
+    if i == 1 { return this.chrome1; }
+    if i == 2 { return this.chrome2; }
+    if i == 3 { return this.chrome3; }
+    return TDBID.None();
+  }
+
+  // Into the first empty slot. False when every slot is taken.
+  public func AddChrome(rec: TweakDBID) -> Bool {
+    if !TDBID.IsValid(this.chrome0) { this.chrome0 = rec; return true; }
+    if !TDBID.IsValid(this.chrome1) { this.chrome1 = rec; return true; }
+    if !TDBID.IsValid(this.chrome2) { this.chrome2 = rec; return true; }
+    if !TDBID.IsValid(this.chrome3) { this.chrome3 = rec; return true; }
+    return false;
+  }
+}
+
+// How many implants a crew member can carry: the four fields above, or fewer if the setting asks.
+public func CBCrewChromeSlots() -> Int32 {
+  return Clamp(CBConfig.CrewChromeMax(), 0, 4);
 }
 
 // One order asked for on the Hub, for one member, carried out on the next tick. Each member's orders are their own: one
@@ -79,6 +119,19 @@ public class CBCrewKitBook extends ScriptableSystem {
   public static func Get(game: GameInstance) -> ref<CBCrewKitBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
     return IsDefined(c) ? c.Get(n"CBCrewKitBook") as CBCrewKitBook : null;
+  }
+
+  // A load starts the session over, as the crew's other books do: a spar under way went with the world the save threw
+  // away (left set, the next tick scored a round nobody fought), and nothing asked on a Hub carries into another save.
+  private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
+    this.sparMember = 0;
+    let none: EntityID;
+    this.sparBody = none;
+    this.sparStart = 0;
+    this.sparSeen = 0;
+    ArrayClear(this.asks);
+    this.reqName = false;
+    this.reqNameText = "";
   }
 
   public func Find(id: Int32) -> ref<CBCrewKit> {
@@ -476,13 +529,18 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
       damage += CBConfig.CrewSharpDamage();
       crit += CBConfig.CrewSharpCrit();
     }
-    for c in k.chrome {
-      let area = CBCrewChromeArea(c);
-      if area == 0 { armour += CBConfig.CrewChromeStep(); }
-      if area == 1 { health += CBConfig.CrewChromeStep(); }
-      if area == 2 { damage += CBConfig.CrewChromeStep(); }
-      if area == 3 { crit += CBConfig.CrewChromeCrit(); }
-      if area == 4 { ice += CBConfig.CrewChromeIce(); }
+    let ci = 0;
+    while ci < CBCrewChromeSlots() {
+      let c = k.ChromeAt(ci);
+      ci += 1;
+      if TDBID.IsValid(c) {
+        let area = CBCrewChromeArea(c);
+        if area == 0 { armour += CBConfig.CrewChromeStep(); }
+        if area == 1 { health += CBConfig.CrewChromeStep(); }
+        if area == 2 { damage += CBConfig.CrewChromeStep(); }
+        if area == 3 { crit += CBConfig.CrewChromeCrit(); }
+        if area == 4 { ice += CBConfig.CrewChromeIce(); }
+      }
     }
   }
   let id = Cast<StatsObjectID>(puppet.GetEntityID());
@@ -537,7 +595,7 @@ public func CBCrewKitService(sys: ref<CyberbaneSystem>, game: GameInstance, book
     kb.reqName = false;
     kb.SetName(kb.reqNameText);
     let named = kb.Name();
-    CBSystemNote(game, StrLen(named) > 0 ? s"your crew is \(named) now." : "your crew has no name now.", 4.0);
+    CBMenuNote(game, StrLen(named) > 0 ? s"your crew is \(named) now." : "your crew has no name now.", 4.0);
     CBLog.Info(n"Crew", s"V named the crew: \(named).");
   }
   // Every order asked for, in the order asked; each for a member still on the roster, here and not away.
@@ -609,7 +667,7 @@ public func CBCrewSparBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, m: 
 func CBCrewSparStart(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, m: ref<CBCrewMember>, now: Float) -> Void {
   let blocked = CBCrewSparBlocked(sys, game, m, now);
   if StrLen(blocked) > 0 {
-    CBSystemNote(game, s"no spar: \(blocked).", 4.0);
+    CBMenuNote(game, s"no spar: \(blocked).", 4.0);
     return;
   }
   let record = m.record;
@@ -618,7 +676,7 @@ func CBCrewSparStart(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCr
   }
   let body: EntityID;
   if !TDBID.IsValid(record) || CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.CrewSparSpawnDistance(), body, n"CB_Spar") == 0 {
-    CBSystemNote(game, "no spar: they could not get to you.", 4.0);
+    CBMenuNote(game, "no spar: they could not get to you.", 4.0);
     return;
   }
   kb.sparMember = m.id;
@@ -665,6 +723,13 @@ func CBCrewSparTick(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
   let p = GameInstance.FindEntityByID(game, kb.sparBody) as ScriptedPuppet;
   if !IsDefined(m) {
     CBCrewSparEnd(sys, game, kb, m, p, 0);
+    return;
+  }
+  // The story, a scene, a job or a safe place takes over mid-round: the bell goes (or the round is called off before it
+  // began). The round's body is hostile to V, and nothing hostile of ours stays while those hold; it was only asked
+  // when the round was set up (CBCrewSparBlocked).
+  if sys.GetStoryHold() != CBStoryNone() || CBArrivalsHeld(sys, game) {
+    CBCrewSparEnd(sys, game, kb, m, p, kb.sparSeen > 0 ? 3 : 0);
     return;
   }
   if kb.sparSeen == 0 {
@@ -813,7 +878,7 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   }
   let data = ts.GetItemData(player, item);
   if !IsDefined(data) || RPGManager.IsItemEquipped(player, item) {
-    CBSystemNote(game, "that weapon is not in your bag any more.", 4.0);
+    CBMenuNote(game, "that weapon is not in your bag any more.", 4.0);
     return;
   }
   let seat = CBCrewSeatForWeapon(data.GetItemType());
@@ -860,7 +925,7 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
 func CBCrewTakeBack(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, m: ref<CBCrewMember>) -> Void {
   let k = kb.Find(m.id);
   if CBCrewReturnWeapon(game, k) {
-    CBSystemNote(game, s"\(CBCrewName(sys, m)) handed your weapon back.", 4.0);
+    CBMenuNote(game, s"\(CBCrewName(sys, m)) handed your weapon back.", 4.0);
   }
 }
 
@@ -871,17 +936,17 @@ func CBCrewInstallChrome(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<
     return;
   }
   let k = kb.Kit(m.id);
-  if ArraySize(k.chrome) >= CBConfig.CrewChromeMax() {
-    CBSystemNote(game, s"\(CBCrewName(sys, m)) has no room for more chrome.", 4.0);
+  if k.ChromeCount() >= CBCrewChromeSlots() {
+    CBMenuNote(game, s"\(CBCrewName(sys, m)) has no room for more chrome.", 4.0);
     return;
   }
   let rec = ItemID.GetTDBID(item);
   let area = CBCrewChromeArea(rec);
   if area < 0 || RPGManager.IsItemEquipped(player, item) || !ts.RemoveItem(player, item, 1) {
-    CBSystemNote(game, "that implant is not in your bag any more.", 4.0);
+    CBMenuNote(game, "that implant is not in your bag any more.", 4.0);
     return;
   }
-  ArrayPush(k.chrome, rec);
+  k.AddChrome(rec);
   CBCrewText(sys, game, m, s"Got the \(CBCrewItemName(rec)) put in. Feel it already. More \(CBCrewChromeWord(area)), next time you call.");
   CBLog.Info(n"Crew", s"V had chrome put in one of the crew (\(CBCrewChromeWord(area))).");
 }
@@ -895,7 +960,7 @@ func CBCrewSendTraining(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<C
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
   if !IsDefined(player) || !IsDefined(ts) || ts.GetItemQuantity(player, ItemID.FromTDBID(t"Items.money")) < cost {
-    CBSystemNote(game, s"training costs \(cost)eb.", 4.0);
+    CBMenuNote(game, s"training costs \(cost)eb.", 4.0);
     return;
   }
   ts.RemoveItem(player, ItemID.FromTDBID(t"Items.money"), cost);
@@ -950,7 +1015,7 @@ func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   let rank = CBCrewRankOf(game, m);
   let strength = CBGangStrength(sys, gang) / 100.0;
   let chance = CBConfig.CrewWarBase() + CBConfig.CrewWarPerRank() * Cast<Float>(rank)
-             + 0.03 * Cast<Float>(ArraySize(k.chrome)) + 0.02 * Cast<Float>(k.weaponTier) + 0.03 * Cast<Float>(k.trained)
+             + 0.03 * Cast<Float>(k.ChromeCount()) + 0.02 * Cast<Float>(k.weaponTier) + 0.03 * Cast<Float>(k.trained)
              - CBConfig.CrewWarStrengthWeight() * strength;
   // A gang that already hates the crew is ready for it; one that respects it is caught out (Reactions/CrewBanner.reds).
   chance += CBConfig.CrewStandWarWeight() * Cast<Float>(CBCrewStandingWith(game, gang)) / 100.0;
@@ -1007,10 +1072,15 @@ public func CBCrewKitLines(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref
     if k.hasWeapon {
       out += s" Carrying your \(CBCrewItemName(ItemID.GetTDBID(k.weapon))) (\(CBCrewTierWord(k.weaponTier))): they fight as a \(CBCrewSeatWord(m.seat)).";
     }
-    if ArraySize(k.chrome) > 0 {
+    if k.ChromeCount() > 0 {
       let parts = "";
-      for c in k.chrome {
-        parts += (StrLen(parts) > 0 ? ", " : "") + CBCrewItemName(c);
+      let ci = 0;
+      while ci < CBCrewChromeSlots() {
+        let c = k.ChromeAt(ci);
+        ci += 1;
+        if TDBID.IsValid(c) {
+          parts += (StrLen(parts) > 0 ? ", " : "") + CBCrewItemName(c);
+        }
       }
       out += s" Chrome: \(parts).";
     }

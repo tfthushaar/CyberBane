@@ -268,8 +268,8 @@ public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
   if !IsDefined(npc) {
     return;
   }
-  // Everybody on the team gets these: they use cover properly, they are not blinded by their
-  // own smoke, and they pick themselves back up once.
+  // Everybody on the team gets these: they use cover properly, and they are not blinded by their
+  // own smoke.
   CBGrantAbility(npc, t"Ability.CanUseCovers");
   CBGrantAbility(npc, t"Ability.CanSeeThroughSmoke");
 

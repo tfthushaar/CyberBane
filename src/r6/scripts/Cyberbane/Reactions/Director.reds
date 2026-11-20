@@ -786,11 +786,13 @@ func CBSeesThroughDisguise(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>,
   }
   CBLog.Info(n"Model", s"One of \(NameToString(faction))'s officers saw through the disguise.");
   if CBToastsOn() {
-    CBOverheard(game, CBWhisperSpeaker(faction), CBPick4(
-      "Nice mask. I'd know that walk anywhere.",
-      "You think a scrap of cloth fools me? I know who you are.",
-      "Wearing our colours doesn't make you one of us. I see you.",
-      "Took me a second. Not two. Hello, merc."));
+    // What they saw through: the mask, or their own colours on V (either may be what covered V).
+    let masked = CBPlayerMasked(game);
+    CBOverheard(game, CBWhisperSpeaker(faction), masked
+      ? CBPick3("Nice mask. I'd know that walk anywhere.", "You think a scrap of cloth fools me? I know who you are.",
+                "Took me a second. Not two. Hello, merc.")
+      : CBPick3("Wearing our colours doesn't make you one of us. I see you.", "Nice jacket. Shame about who's in it.",
+                "Took me a second. Not two. Hello, merc."));
   }
   return true;
 }

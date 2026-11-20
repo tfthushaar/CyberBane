@@ -11,7 +11,7 @@
 // gorilla arms and a monowire read as a threat from across the street. Eyes and chromed skin get
 // clocked closer in, and chromed legs show the moment you move. Everything internal scores 0,
 // because nobody on the street can tell what your cardiovascular system is running.
-// Max visible sum is 24, which becomes 60 after the x2.5 in CBComputeChromeVisible.
+// Max visible sum is 24, scaled by CBChromeVisibleScale in CBComputeChromeVisible.
 func CBVisibleChromeWeight(area: gamedataEquipmentArea) -> Float {
   if Equals(area, gamedataEquipmentArea.ArmsCW) {
     return 12.0;

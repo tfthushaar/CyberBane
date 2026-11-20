@@ -215,7 +215,7 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
   if st.masked && st.givenAway == 0 {
     // Behind a mask V is nobody: there is no V to talk about, only somebody nobody can place.
     mood = n"fear";
-    CBWhisperMasked(bag, mood);
+    CBWhisperMasked(bag, st);
     CBWhisperMoment(bag, st, mood);
   } else {
     CBWhisperGivenAway(bag, st);
@@ -494,11 +494,11 @@ func CBWhisperBroken(bag: ref<CBLineBag>, st: ref<CBStreetRead>, gang: String) -
 }
 
 // Somebody nobody can put a name to.
-func CBWhisperMasked(bag: ref<CBLineBag>, mood: CName) -> Void {
+func CBWhisperMasked(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
   bag.Add(n"mask", 3.0, CBPick4(
     "Who's under the mask? Never mind. I don't want to know.",
     "Can't see a face. Don't need to.",
-    "Masked up in the middle of the day. That's never good.",
+    st.night ? "Masked up after dark. That's never good." : "Masked up in the middle of the day. That's never good.",
     "Somebody who doesn't want to be known. Fine by me."));
 }
 

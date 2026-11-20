@@ -200,7 +200,7 @@ func CBGrapevineArrivalLine(r: ref<CBRumor>, from: String, seed: Int32) -> Strin
   if Equals(r.kind, n"BossKill") {
     return CBLineOf([
       "They know about the boss you put down in " + from + ". That story got here before you.",
-      "The boss in " + from + "? Everybody here has heard. Some of them liked him."]);
+      "The boss in " + from + "? Everybody here has heard. Not all of them are sorry."]);
   }
   if Equals(r.kind, n"Massacre") {
     return CBLineOf([

@@ -66,7 +66,12 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
     return false;   // refused: the roster is full, or this is somebody the story owns
   }
   CBRivalKilledV(who, content, now, district);
-  who.scarMask = who.scarMask | CBScarForWeaponCategory(weaponCategory);
+  // A scar is a bit position (Core/Types.reds), set as every other scar is: OR-ing the position in itself left a gun
+  // (position 0) as no scar at all and turned a blade into a gunshot.
+  let scar = CBScarForWeaponCategory(weaponCategory);
+  if scar >= 0 {
+    who.scarMask = CBMaskSet(who.scarMask, scar);
+  }
 
   // The gang saw it done. Standing is V's footing with them, and somebody who has put V down
   // is harder to frighten.
@@ -91,11 +96,11 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
 //
 // Fenix Rebirth reports the weapon's `gamedataItemType` as a name, which is the same vocabulary
 // Cyberbane's own scars use, so the mapping is a read and not a guess. Anything unrecognised
-// counts as shot, which is what the overwhelming majority of deaths are.
+// counts as shot, which is what the overwhelming majority of deaths are. -1 when nothing is known.
 public func CBScarForWeaponCategory(category: CName) -> Int32 {
   let c = NameToString(category);
   if StrLen(c) == 0 {
-    return 0;   // nothing known about the weapon; do not invent a wound
+    return -1;   // nothing known about the weapon; do not invent a wound
   }
   if StrContains(c, "Katana") || StrContains(c, "Knife") || StrContains(c, "Sword")
      || StrContains(c, "Blade") || StrContains(c, "Machete") || StrContains(c, "Axe") {

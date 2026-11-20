@@ -802,7 +802,13 @@ public func CBRivalOdds(sys: ref<CyberbaneSystem>, base: Float, recordID: TweakD
 
 // Roll it, and say what the odds were: "harder to make Rivals" has been reported before, and the
 // log is the only place the number can be read.
-public func CBRivalRoll(sys: ref<CyberbaneSystem>, what: String, base: Float, recordID: TweakDBID, byRank: Bool) -> Bool {
+// Not rolled at all for a gang that keeps no Rivals (switched off under Factions, or the Scavengers, who run): the log
+// said "a Rival" and, a line later, that none was made.
+public func CBRivalRoll(sys: ref<CyberbaneSystem>, what: String, base: Float, recordID: TweakDBID, byRank: Bool,
+                        faction: CName) -> Bool {
+  if NotEquals(faction, n"") && (!CBFactionOn(faction) || CBCodeEverybodysEnemy(faction)) {
+    return false;
+  }
   let odds = CBRivalOdds(sys, base, recordID, byRank);
   let hit = RandF() < odds;
   let outcome = hit ? "a Rival" : "not this time";
@@ -1344,7 +1350,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   // nothing; now a small name usually ends with them, and a big one usually does not.
   let succeedChance = CBConfig.SuccessionChanceBase()
     + Cast<Float>(rival.rank) * CBConfig.SuccessionChancePerRank();
-  if CBRivalRoll(sys, "succession", succeedChance, rival.recordID, false) {
+  if CBRivalRoll(sys, "succession", succeedChance, rival.recordID, false, rival.faction) {
     // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1, which is
     // what made every nemesis you killed a clean reset. Made once the fight is over, with the street
     // saying who picked up where they left off (Rivals/Births.reds, 1.9.1).

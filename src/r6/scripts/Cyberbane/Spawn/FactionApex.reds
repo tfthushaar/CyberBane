@@ -696,6 +696,10 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if NotEquals(sys.GetPendingApexFaction(), n"") {
     return;   // one is already on the way
   }
+  // Apex squads per day at zero sends none, so none is promised (as a beaten crew's line already asks, CBOnCrewBeaten).
+  if CBLaneDailyCap(CBLaneApex()) <= 0 {
+    return;
+  }
   // Unless the player has opted into being hunted indoors, the warning does not even fire
   // in a safe area: announcing someone who then cannot be placed is worse than silence.
   if sys.IsInSanctuary() {

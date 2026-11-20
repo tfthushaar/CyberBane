@@ -743,15 +743,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_arrivalBoarders);
   }
 
-  // The people created for the car now boarding. Only they are given its seats.
-  //
-  // Seating was keyed on the CB_Crew tag, which every car's crew keeps for good, and the attach
-  // callback that seats people fires again whenever one of them streams back in. So somebody who
-  // got out of an earlier car and streamed in again while a later car was boarding was taken by
-  // that car: an instant mount moved them from wherever they were into a seat out of sight, and
-  // the car left with a seat its own crew needed.
-  // A car of ours is still driving in. Its crew can be out of the world while it is far off, and
-  // that is not the same as having been left behind (Spawn/Hunt.reds, CBHuntersLeftBehind).
   // At most once a minute, so a long fight against a full gang does not fill the log.
   public func TakeRivalCapLog() -> Bool {
     if this.m_rivalCapLoggedTick > 0 && (this.m_tickCount - this.m_rivalCapLoggedTick) < 60 {
@@ -780,6 +771,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return ambush;
   }
 
+  // A car of ours is still driving in. Its crew can be out of the world while it is far off, and
+  // that is not the same as having been left behind (Spawn/Hunt.reds, CBHuntersLeftBehind).
   public func NoteCarOnTheWay() -> Void {
     this.m_carWatchTick = this.m_tickCount;
   }
@@ -788,6 +781,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_carWatchTick > 0 && (this.m_tickCount - this.m_carWatchTick) <= CBConfig.CarWatchGraceTicks();
   }
 
+  // The people created for the car now boarding. Only they are given its seats.
+  //
+  // Seating was keyed on the CB_Crew tag, which every car's crew keeps for good, and the attach
+  // callback that seats people fires again whenever one of them streams back in. So somebody who
+  // got out of an earlier car and streamed in again while a later car was boarding was taken by
+  // that car: an instant mount moved them from wherever they were into a seat out of sight, and
+  // the car left with a seat its own crew needed.
   public func NoteArrivalBoarder(id: EntityID) -> Void {
     if EntityID.IsDefined(id) {
       ArrayPush(this.m_arrivalBoarders, id);
@@ -2689,7 +2689,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     return -1;
   }
 
-  // The same for the How gangs see you setting (CBGangView): what it was at the last look, -1 the first time.
   public func NoteFight(at: Float) -> Void {
     this.m_lastFightAt = at;
   }
@@ -2698,6 +2697,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_lastFightAt;
   }
 
+  // The same for the How gangs see you setting (CBGangView): what it was at the last look, -1 the first time.
   public func SwapSeenView(id: CName, now: Int32) -> Int32 {
     let i = 0;
     while i < ArraySize(this.m_seenViewIds) && i < ArraySize(this.m_seenViewVals) {
@@ -3301,8 +3301,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_pendingApexFaction;
   }
 
-  // Counts the warning window down by one tick and reports what is left.
-  // Fast ticks left before the announced apex walks in. Shown in the Hub.
   // True while V is in a stealth job, or was within the last few seconds.
   public func IsStealthHeld() -> Bool {
     return this.m_stealthHoldTicks > 0;
@@ -3320,10 +3318,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
+  // Fast ticks left before the announced apex walks in. Shown in the Hub.
   public func GetPendingApexTicks() -> Int32 {
     return this.m_pendingApexTicks;
   }
 
+  // Counts the warning window down by one tick and reports what is left.
   public func TickDownPendingApex() -> Int32 {
     if this.m_pendingApexTicks > 0 {
       this.m_pendingApexTicks -= 1;
@@ -4225,9 +4225,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
-  // Rumors carry a nested array<CName> (the districts the rumor has reached), which is
-  // what the slow tick walks. A rumor can never have reached more districts than exist,
-  // so anything longer than that is rebuilt from its origin rather than trusted.
+  // Rumors carry the districts they have reached as a bit set (schema 2), which is what the slow
+  // tick walks. A rumor can never have reached a district that does not exist, so any bit past the
+  // last district is dropped rather than trusted.
   private func ValidateRumors() -> Void {
     let maxReached = CBDistrictCount();
     let i = 0;

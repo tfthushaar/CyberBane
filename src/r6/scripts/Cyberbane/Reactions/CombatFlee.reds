@@ -564,7 +564,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   // A cyberpsycho carries their own fifty-fifty inside CBCreateRival. Letting the generic roll
   // run first as well would compound the two and turn a coin flip into three chances in eight.
   if !CBRecordIsSightingCyberpsycho(e.record)
-     && !CBRivalRoll(sys, "spared", CBConfig.RivalChanceSpared(), e.record, true) {
+     && !CBRivalRoll(sys, "spared", CBConfig.RivalChanceSpared(), e.record, true, e.faction) {
     return;   // not everyone you spare makes it personal (Rivals/RivalSystem.reds, CBRivalOdds)
   }
   // Made once the fight is over, not with them still lying at V's feet (Rivals/Births.reds, 1.9.1).
@@ -619,7 +619,7 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   // check in CBCombatFleeCheck), and now that it opens at a quarter health, everybody V walked away
   // from wounded would otherwise come back with a name.
   if Equals(e.faction, n"") || !TDBID.IsValid(e.record)
-     || !CBRivalRoll(sys, "got away", CBConfig.RivalChanceSurvivor(), e.record, true) {
+     || !CBRivalRoll(sys, "got away", CBConfig.RivalChanceSurvivor(), e.record, true, e.faction) {
     return;
   }
   // Made once the fight is over (Rivals/Births.reds, 1.9.1).

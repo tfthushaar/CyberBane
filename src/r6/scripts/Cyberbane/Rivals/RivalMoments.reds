@@ -862,7 +862,6 @@ public func CBRivalWasHumiliated(r: ref<CBRival>) -> Bool {
 // A rank down, a mocking name, and then they either quit the gang or come back obsessed. Their gang fears V more.
 public func CBRivalHumiliate(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, e: ref<CBEscapee>) -> String {
   let book = CBRivalBook.Get(game);
-  r.rank = Max(1, r.rank - 1);
   CBRivalGiveTrait(r, n"Humiliated");
   if IsDefined(book) {
     book.SetFlag(r.id, CBRivalFlagHumiliated());
@@ -870,11 +869,15 @@ public func CBRivalHumiliate(sys: ref<CyberbaneSystem>, game: GameInstance, r: r
   CBTalkFear(sys, game, r.faction, CBConfig.HumiliateFear());
   CBFileLog(sys, n"Humiliated", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
   if RandF() < CBConfig.HumiliateQuitChance() {
+    r.rank = Max(1, r.rank - 1);
     e.exiled = true;
     return CBPick2("...I'm done. I'm done with all of it.", "Nobody will ever look at me the same. I'm out.");
   }
   CBRivalGiveTrait(r, n"GrudgeBearer");
+  // Obsessed enough to go under the knife, asked while they still stand at the top: a break is for the top of the ladder
+  // (CBRivalMaybeBreak), and asked after the rank they lose for this, it could never happen.
   CBRivalMaybeBreak(sys, game, r);
+  r.rank = Max(1, r.rank - 1);
   return CBPick2("Laugh. Go on. I'll remember every second of this.", "You'll pay for this. Every word of it.");
 }
 
@@ -1001,7 +1004,8 @@ func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
     }
     return;
   }
-  if kind == CBBondLover() && RandF() < 0.3 {
+  // Not one out in the world or after V right now: their encounter is theirs to finish first.
+  if kind == CBBondLover() && RandF() < 0.3 && !CBRivalBodyPresent(game, other) && other.id != sys.GetActiveRivalId() {
     other.state = EnumInt(ECBRivalState.Retired);
     book.SetEnding(other.id, CBEndingRetired(), now);
     CBHierarchyFill(sys, other.faction);
@@ -1050,7 +1054,7 @@ public func CBRivalSparedMoment(sys: ref<CyberbaneSystem>, game: GameInstance, r
   let otherId = book.BondWith(r.id);
   let other = otherId > 0 ? sys.FindRivalById(otherId) : null;
   if !IsDefined(other) || other.state != EnumInt(ECBRivalState.Active) || book.HasFlag(other.id, CBRivalFlagBondSettled())
-     || RandF() >= CBConfig.BondDebtChance() {
+     || CBRivalBodyPresent(game, other) || other.id == sys.GetActiveRivalId() || RandF() >= CBConfig.BondDebtChance() {
     return;
   }
   book.SetFlag(other.id, CBRivalFlagBondSettled());
@@ -1255,14 +1259,19 @@ func CBRivalEndedUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiva
       return;
     }
   }
-  if roll == 1 {
+  // The warning: theirs by the roll, or by a tip with nothing in it, or a comeback with no room for one. A tip with
+  // nothing to tell fell through to the comeback, and a comeback took no notice of the Max rivals setting.
+  let rt = CyberbaneRuntime.Get();
+  let maxRivals = IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().maxRivals : CBConfig.RivalMaxActiveHardCap();
+  if roll <= 1 || sys.CountActiveRivals() >= maxRivals || sys.CountActiveFactionRivals(r.faction) >= CBConfig.RivalMaxPerFaction() {
     CBPhoneSendTinted(game, name, s"Heads up, for old times' sake. \(CBCapFirst(CBFactionLabel(r.faction))) still talk about you. They haven't forgotten. Neither have I, but I'm not coming.", CBHudAmber());
     return;
   }
-  // An invitation to finish it: they come back.
+  // An invitation to finish it: they come back, and may take a chair that stood empty.
   r.state = EnumInt(ECBRivalState.Active);
   r.huntTicks = CBConfig.RivalAfterEscapeTicks();
   CBRivalGiveTrait(r, n"GrudgeBearer");
+  CBHierarchyFill(sys, r.faction);
   CBPhoneSendTinted(game, name, "Thought I could leave it. I can't. I'm back in Night City, and we're going to finish this.", CBHudRed());
 }
 

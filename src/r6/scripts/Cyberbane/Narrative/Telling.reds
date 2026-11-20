@@ -273,6 +273,15 @@ public func CBScreamsheet(sys: ref<CyberbaneSystem>, game: GameInstance) -> Stri
 public func CBHeadline(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>) -> String {
   let gang = StrUpper(CBFactionLabel(e.faction));
   let where = StrUpper(CBDistrictLabel(e.district));
+  // Somewhere the file has no district for (a death outside the eight, a load before the first sample): the city.
+  if StrLen(where) == 0 {
+    where = "NIGHT CITY";
+  }
+  // And a story about a gang the file has no name for, told about a gang.
+  if StrLen(gang) == 0 && (Equals(e.kind, n"BossKill") || Equals(e.kind, n"TurfTaken") || Equals(e.kind, n"OpenSeasonSurvived")
+     || Equals(e.kind, n"StreetClash") || Equals(e.kind, n"RivalFeud") || Equals(e.kind, n"ApexBeaten")) {
+    gang = "A GANG";
+  }
   if Equals(e.kind, n"RivalSlain") { return StrLen(gang) > 0 ? s"MERC PUTS \(gang) NAME IN THE GROUND IN \(where)" : s"NAMED KILLER DIES IN \(where)"; }
   if Equals(e.kind, n"RivalDied") { return StrLen(gang) > 0 ? s"\(gang) LOSE A NAME IN \(where)" : s"NAMED KILLER DIES IN \(where)"; }
   if Equals(e.kind, n"BossKill") { return s"\(gang) LOSE THEIR BIG FISH IN \(where)"; }
@@ -386,22 +395,25 @@ public func CBRivalStory(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<C
 }
 
 func CBRivalSourceStory(r: ref<CBRival>) -> String {
+  // " in Watson", or nothing for a Rival made somewhere the eight districts do not cover.
+  let place = CBDistrictLabel(r.origin);
+  let inPlace = StrLen(place) > 0 ? " in " + place : "";
   if r.source == EnumInt(ECBRivalSource.Spared) {
-    return s"You put them down and walked away, back in \(CBDistrictLabel(r.origin)).";
+    return StrLen(place) > 0 ? s"You put them down and walked away, back in \(place)." : "You put them down and walked away.";
   }
   if r.source == EnumInt(ECBRivalSource.Survivor) {
-    return s"They ran from you in \(CBDistrictLabel(r.origin)) and lived.";
+    return s"They ran from you\(inPlace) and lived.";
   }
   if r.source == EnumInt(ECBRivalSource.Killer) {
-    return s"They are the one who put you down in \(CBDistrictLabel(r.origin)).";
+    return s"They are the one who put you down\(inPlace).";
   }
   if r.source == EnumInt(ECBRivalSource.Avenger) {
-    return s"You killed somebody of theirs in \(CBDistrictLabel(r.origin)), and they swore on it.";
+    return s"You killed somebody of theirs\(inPlace), and they swore on it.";
   }
   if r.source == EnumInt(ECBRivalSource.Betrayer) {
-    return s"They ran with your crew, and turned on you in \(CBDistrictLabel(r.origin)). They know where you sleep.";
+    return s"They ran with your crew, and turned on you\(inPlace). They know where you sleep.";
   }
-  return s"They came after you for the money, out of \(CBDistrictLabel(r.origin)).";
+  return StrLen(place) > 0 ? s"They came after you for the money, out of \(place)." : "They came after you for the money.";
 }
 
 // ---- [U14] The scanner tells the story --------------------------------------------------------------------------------

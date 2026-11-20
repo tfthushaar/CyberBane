@@ -3,12 +3,6 @@
 // Small shared helpers for the signal hooks. All signatures compile-verified
 // against Cyberpunk 2077 2.5.
 
-// In-game time as Float game-seconds (spec §6.1). TimeSystem.GetGameTimeStamp()
-// returns the in-game clock as a Float, which is exactly the unit Cyberbane stores.
-// Which day of the playthrough this is, by the game's own calendar.
-//
-// GameTime.Days is exact and needs no interpretation, unlike GetGameTimeStamp, whose unit is
-// still an open question. Anything paced "per day" uses this.
 // Can the world clock be read yet?
 //
 // Right after a load the time system is not up, and every clock helper here answers 0 rather
@@ -20,6 +14,8 @@ public func CBClockReady(game: GameInstance) -> Bool {
   return IsDefined(GameInstance.GetTimeSystem(game));
 }
 
+// Which day of the playthrough this is, by the game's own calendar. GameTime.Days is exact and needs
+// no interpretation; anything paced "per day" uses this.
 public func CBGameDay(game: GameInstance) -> Int32 {
   let ts = GameInstance.GetTimeSystem(game);
   if !IsDefined(ts) {
@@ -28,6 +24,8 @@ public func CBGameDay(game: GameInstance) -> Int32 {
   return GameTime.Days(ts.GetGameTime());
 }
 
+// In-game time as Float game-seconds (spec §6.1). TimeSystem.GetGameTimeStamp() returns the in-game
+// clock as a Float, which is exactly the unit Cyberbane stores.
 public func CBGameSeconds(game: GameInstance) -> Float {
   let ts = GameInstance.GetTimeSystem(game);
   if !IsDefined(ts) {

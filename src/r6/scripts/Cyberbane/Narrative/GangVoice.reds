@@ -69,7 +69,7 @@ public func CBGangWarnLine(f: CName) -> String {
 
 // A crew on its way, in their own words, around how many and where (CBCrewWarning, Spawn/Hunt.reds).
 public func CBGangCrewText(f: CName, where: String, coming: String, vendetta: Bool, onTheirTurf: Bool) -> String {
-  let place = StrLen(where) > 0 ? where : "around here";
+  let place = StrLen(where) > 0 ? where : "Night City";   // after "in" and "to" below
   if Equals(f, n"Valentinos") {
     return CBLineOf([s"You hurt the family. Now the family comes for you in \(place). \(coming)",
                      s"We know you're in \(place). Pray to whoever you pray to. \(coming)",

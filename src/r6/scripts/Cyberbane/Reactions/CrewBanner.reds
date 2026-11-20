@@ -26,7 +26,11 @@ public class CBCrewFallen {
   public persistent let hadWeapon: Bool;
   public persistent let weapon: TweakDBID;
   public persistent let weaponTier: Int32;
-  public persistent let chrome: array<TweakDBID>;
+  // What chrome they had, four scalars for the reason CBCrewKit keeps them so: saved inside the book's list.
+  public persistent let chrome0: TweakDBID;
+  public persistent let chrome1: TweakDBID;
+  public persistent let chrome2: TweakDBID;
+  public persistent let chrome3: TweakDBID;
   public persistent let trained: Int32;
   public persistent let spars: Int32;
   public persistent let cause: Int32;        // CBCrewFellBeside, CBCrewFellAtWar
@@ -35,6 +39,28 @@ public class CBCrewFallen {
   public persistent let district: CName;
   public persistent let joinedAt: Float;
   public persistent let at: Float;
+
+  public func ChromeAt(i: Int32) -> TweakDBID {
+    if i == 0 { return this.chrome0; }
+    if i == 1 { return this.chrome1; }
+    if i == 2 { return this.chrome2; }
+    if i == 3 { return this.chrome3; }
+    return TDBID.None();
+  }
+
+  // Their chrome, named, "" for none.
+  public func ChromeNames() -> String {
+    let parts = "";
+    let i = 0;
+    while i < 4 {
+      let c = this.ChromeAt(i);
+      i += 1;
+      if TDBID.IsValid(c) {
+        parts += (StrLen(parts) > 0 ? ", " : "") + CBCrewItemName(c);
+      }
+    }
+    return parts;
+  }
 }
 
 public func CBCrewFellBeside() -> Int32 = 0
@@ -339,9 +365,10 @@ public func CBCrewRememberFallen(game: GameInstance, m: ref<CBCrewMember>, by: I
       f.weapon = ItemID.GetTDBID(k.weapon);
       f.weaponTier = k.weaponTier;
     }
-    for c in k.chrome {
-      ArrayPush(f.chrome, c);
-    }
+    f.chrome0 = k.ChromeAt(0);
+    f.chrome1 = k.ChromeAt(1);
+    f.chrome2 = k.ChromeAt(2);
+    f.chrome3 = k.ChromeAt(3);
     f.trained = k.trained;
     f.spars = k.spars;
   }
@@ -352,7 +379,8 @@ public func CBCrewRememberFallen(game: GameInstance, m: ref<CBCrewMember>, by: I
 }
 
 public func CBCrewFallenName(sys: ref<CyberbaneSystem>, f: ref<CBCrewFallen>) -> String {
-  return IsDefined(f) ? CBCrewFullName(sys, f.kind, f.faction, f.rival, f.seed, f.wins, f.seat) : "Somebody";
+  // Nicknamed as they were when they fell: their rank then counted their training (CBCrewRankOf), kept as f.rank.
+  return IsDefined(f) ? CBCrewFullNameNicked(sys, f.kind, f.faction, f.rival, f.seed, f.rank >= 3, f.seat) : "Somebody";
 }
 
 // How they died, short enough for a row: "beside you", "at war, Maelstrom", "killed by Maelstrom".
@@ -420,11 +448,8 @@ public func CBCrewEpitaph(sys: ref<CyberbaneSystem>, game: GameInstance, f: ref<
   } else {
     out += "They carried nothing of yours.";
   }
-  if ArraySize(f.chrome) > 0 {
-    let parts = "";
-    for c in f.chrome {
-      parts += (StrLen(parts) > 0 ? ", " : "") + CBCrewItemName(c);
-    }
+  let parts = f.ChromeNames();
+  if StrLen(parts) > 0 {
     out += s" Chrome you gave them: \(parts).";
   }
   if f.trained > 0 || f.spars > 0 {

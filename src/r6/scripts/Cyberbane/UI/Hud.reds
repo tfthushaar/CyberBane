@@ -4764,7 +4764,7 @@ public class CBHud {
       }
       intro = this.m_crewMode == 1
         ? s"Pick a weapon for \(name). Its mods and attachments go back in your bag. From their next call they fight the way it is used, and it adds to their damage by its quality. Take it back any time; it comes back if they leave."
-        : s"Pick chrome for \(name), from what you own and do not wear. It goes in for good: armour, health, damage, critical hits or hack resistance, by where it goes. Up to \(CBConfig.CrewChromeMax()).";
+        : s"Pick chrome for \(name), from what you own and do not wear. It goes in for good: armour, health, damage, critical hits or hack resistance, by where it goes. Up to \(CBCrewChromeSlots()).";
       if row == 0 {
         intro = this.m_crewMode == 1 ? "You have no spare weapon to give: everything is equipped, or there is nothing a person could fight with."
                                      : "You have no spare chrome: everything you own is installed in you.";
@@ -4815,11 +4815,11 @@ public class CBHud {
                         "nothing of yours", "");
     }
     // Chrome.
-    let chrome = IsDefined(k) ? ArraySize(k.chrome) : 0;
-    let room = chrome < CBConfig.CrewChromeMax();
+    let chrome = IsDefined(k) ? k.ChromeCount() : 0;
+    let room = chrome < CBCrewChromeSlots();
     asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskChrome());
     this.CrewOrderRow(1, CBCrewAskChrome(), asked ? "Chrome on its way..." : (room ? "Have chrome put in" : "No room for more chrome"),
-                      (free && room) || asked, asked, s"\(chrome) of \(CBConfig.CrewChromeMax()) fitted", "");
+                      (free && room) || asked, asked, s"\(chrome) of \(CBCrewChromeSlots()) fitted", "");
     // Training.
     let trained = IsDefined(k) ? k.trained : 0;
     asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskTrain());
@@ -5111,7 +5111,7 @@ public class CBHud {
         this.PlaceWebBox(slot, Cast<Float>(k) * (mw + CBCrewCardGap()), y, mw, mh, true);
         this.DressBox(slot, mw, mh, CBPicName(), CBPicLine(), CBPicLead(), false);
         this.BoxText(this.m_webBoxName[slot], CBCrewBoxName(sys, m), mw - 24.0, CBPicName(), CBPicNameLeast(), true);
-        this.BoxText(this.m_webBoxLine[slot], StrUpper(CBCrewSeatWord(m.seat)) + s"  /  RANK \(CBCrewRank(m.wins))", mw - 24.0,
+        this.BoxText(this.m_webBoxLine[slot], StrUpper(CBCrewSeatWord(m.seat)) + "  /  " + StrUpper(CBCrewRankWord(CBCrewRankOf(GetGameInstance(), m))), mw - 24.0,
                      CBPicLine(), CBPicLineLeast(), false);
         if IsDefined(this.m_webBoxLine[slot]) { this.m_webBoxLine[slot].SetTintColor(tint); }
         let state = CBCrewStateWord(book, m, now);
@@ -6583,6 +6583,9 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"InformantLost") { return "An informant of yours was run down by their own gang."; }
   if Equals(e.kind, n"ParleyPaid") { return StrLen(gang) > 0 ? s"You paid a crew of \(gang) to say they never found you." : "You paid off a crew."; }
   if Equals(e.kind, n"ParleyScared") { return StrLen(gang) > 0 ? s"You talked a crew of \(gang) into walking away." : "You talked a crew down."; }
+  // Answers by text (UI/RealPhone.reds, 2.4.6): written to the file and, until 2.6.0, read out as their own names.
+  if Equals(e.kind, n"PhoneThreatWorked") { return StrLen(gang) > 0 ? s"You threatened \(gang) by text, and they backed down." : "A threat by text made a gang back down."; }
+  if Equals(e.kind, n"PhoneInsult") { return StrLen(gang) > 0 ? s"You told \(gang) to come and try it." : "You dared a gang to come for you."; }
   // 2.5.0: a crew of V's own (Reactions/Crew.reds).
   let crewLine = CBCrewHistoryLine(sys, e);
   if StrLen(crewLine) > 0 {

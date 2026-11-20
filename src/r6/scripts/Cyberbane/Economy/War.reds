@@ -337,7 +337,7 @@ public func CBSettlePeace(sys: ref<CyberbaneSystem>, game: GameInstance, gang: C
   if !IsDefined(fs) {
     return;
   }
-  fs.standing = MaxF(fs.standing, 15.0);
+  fs.standing = MaxF(fs.standing, 0.0);   // to neutral, as a paid peace does (CBBrokerPeace): square, not friends
   fs.vendettaSince = 0.0;
   fs.lastPeaceAt = CBGameSeconds(game);
   CBCallOffGang(sys, game, gang);
@@ -523,7 +523,7 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
       return CBTalkSay("There's nothing to end.", n"");
     }
     if Equals(enemy, n"") {
-      return CBTalkSay(s"\(quote)eb. Pay it on the Hub and we're done.", n"");
+      return CBTalkSay(s"\(quote)eb. Send it and we're done.", n"");
     }
     book.SetFavour(t.faction, now + CBConfig.FavourDays() * CBConfig.SecondsPerDay());
     return CBTalkSay(s"Eddies, \(quote) of them. Or do us a favour: break up whatever \(CBFactionLabel(enemy)) have going next near here. Do that and we're square.", n"");

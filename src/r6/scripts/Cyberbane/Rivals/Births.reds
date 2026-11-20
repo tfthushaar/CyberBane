@@ -127,9 +127,12 @@ func CBRivalBirth(sys: ref<CyberbaneSystem>, game: GameInstance, b: ref<CBPendin
   if spared || survivor {
     r.state = EnumInt(ECBRivalState.Hunting);
   }
-  // A successor inherits the slain Rival's standing, one rung down (CBRivalSlain).
-  if b.inheritRank > 1 {
-    r.rank = Min(b.inheritRank, 4);
+  // A successor inherits the slain Rival's standing, one rung down (CBRivalSlain), climbed the way every Rival climbs
+  // (CBPromoteRival), so a rank three successor carries a rank three Rival's traits rather than a newcomer's one.
+  let climb = Min(b.inheritRank, 4);
+  let contentB = CBContent(game);
+  while r.rank < climb {
+    CBPromoteRival(r, contentB, b.at);
   }
   // Family (1.9.9): the slain Rival's surname, geared against what killed them, and they say why.
   let dead = b.kinOf > 0 ? sys.FindRivalById(b.kinOf) : null;

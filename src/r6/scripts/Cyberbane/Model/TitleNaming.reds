@@ -122,13 +122,41 @@ func CBTopFactionLabel(sys: ref<CyberbaneSystem>, friendly: Bool) -> String {
   return bestLabel;
 }
 
+// The gang a Nightmare title is about: the one that earned it (75 of theirs down, fearing V at TitleFearNeeded), the
+// most of theirs down first; before any does, the gang V has put the most of down. It named the gang with the worst
+// standing, which need not be the one the title was earned on.
+func CBNightmareGangLabel(sys: ref<CyberbaneSystem>) -> String {
+  if !IsDefined(sys) {
+    return "";
+  }
+  let score = sys.GetScore();
+  let earned = n"";
+  let earnedKills = 0;
+  let most = n"";
+  let mostKills = 0;
+  for fs in sys.GetFactionStates() {
+    if IsDefined(fs) && StrLen(CBFactionLabel(fs.id)) > 0 {
+      if fs.kills > mostKills {
+        most = fs.id;
+        mostKills = fs.kills;
+      }
+      if fs.kills >= 75 && fs.kills > earnedKills && IsDefined(score)
+         && score.GetFactionFear(fs.id) >= CBConfig.TitleFearNeeded() {
+        earned = fs.id;
+        earnedKills = fs.kills;
+      }
+    }
+  }
+  return CBFactionLabel(NotEquals(earned, n"") ? earned : most);
+}
+
 // The readable place or gang a parameterised title is about, or "" when nothing qualifies.
 public func CBTitleToken(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if Equals(id, n"T_BUTCHER_OF") { return CBTopDistrictLabel(sys, 0); }
   if Equals(id, n"T_GHOST_OF") { return CBTopDistrictLabel(sys, 1); }
   if Equals(id, n"T_DISTRICT_PROBLEM") { return CBTopDistrictLabel(sys, 2); }
   if Equals(id, n"T_MERC_FROM") { return CBTopDistrictLabel(sys, 2); }
-  if Equals(id, n"T_FACTION_NIGHTMARE") { return CBTopFactionLabel(sys, false); }
+  if Equals(id, n"T_FACTION_NIGHTMARE") { return CBNightmareGangLabel(sys); }
   if Equals(id, n"T_FACTION_FRIEND") { return CBTopFactionLabel(sys, true); }
   return "";
 }

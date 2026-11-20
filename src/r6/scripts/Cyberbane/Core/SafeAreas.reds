@@ -430,7 +430,12 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   // 3. On a job, or in a restricted or dangerous zone, when V asked Cyberbane to stay out of them -
   //    the quest-area switch's own question, which the safe-area opt-in has nothing to do with.
   if CBPlayerInQuestArea(game) || (IsDefined(sysQ) && sysQ.IsOnJob()) {
-    CBNoteSpawnBlock(CBBlockQuestArea());
+    // The quest area also holds restricted and dangerous zones; the Hub names which it was, as
+    // CBArrivalsHeldWhy does, instead of calling a gang's compound a job.
+    let onJob = (IsDefined(sysQ) && sysQ.IsOnJob()) || CBPlayerInScene(game)
+        || (IsDefined(sysQ) && IsDefined(GetPlayer(game))
+            && sysQ.NearTrackedPins(GetPlayer(game).GetWorldPosition(), CBQuestAreaRadius()));
+    CBNoteSpawnBlock((!onJob && CBPlayerInHostileZone(game)) ? CBBlockHostileArea() : CBBlockQuestArea());
     return true;
   }
   // And never placed at the job itself, wherever V is standing. Checking only V's position let a
@@ -510,11 +515,21 @@ private final func OnEnterSafeZone() -> Void {
   if !IsDefined(rt) || !rt.IsEnabled() || !rt.HasSettings() || !rt.GetSettings().allowSafeZoneCombat {
     return;
   }
-  let evt = new PSMPostponedParameterBool();
-  evt.id = n"ForceEmptyHandsByZone";
-  evt.value = false;
-  evt.aspect = gamestateMachineParameterAspect.Permanent;
-  this.QueueEvent(evt);
+  // The same rules as the tick that keeps it lifted (CBSafeZoneArmsTick): never in a scene, never under an open
+  // talk prompt, and recorded as ours so that tick puts the lock back if the setting is turned off inside.
+  let game = this.GetGame();
+  let sys = CyberbaneSystem.Get(game);
+  if CBPlayerInScene(game) {
+    return;
+  }
+  if IsDefined(sys) {
+    let talk = sys.GetStreetTalk();
+    if IsDefined(talk) && talk.HoldsHands() {
+      return;
+    }
+    sys.SetSafeArmsApplied(true);
+  }
+  CBQueueZoneArmsLock(this, false);
 }
 
 // Keep the safe-area weapon lock lifted for as long as V is in a safe area with the setting on.

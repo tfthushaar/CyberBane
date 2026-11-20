@@ -647,11 +647,15 @@ public class CBStreetLife {
       if this.m_allyCalm == CBConfig.ClaimCalmTicks() {
         // They leave with a line that sets up their next fight with V, and they will come for it ([E4], 2.4.4).
         let ally = sys.FindRivalById(this.m_allyRival);
+        // What it does to them, whatever the message setting (2.6.0): with messages off they went on the lane at once and
+        // never took up the grudge, since both sat inside the line's own test.
+        if IsDefined(ally) {
+          ally.huntTicks = Max(ally.huntTicks, CBConfig.RivalAfterEscapeTicks());
+          CBRivalGiveTrait(ally, n"GrudgeBearer");
+        }
         if IsDefined(ally) && CBMessagesOn() {
           CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), ally), CBPick3("We're square for today. Next time it's you and me.",
             "Don't thank me. Nobody else gets to kill you. That's mine.", "Enjoy it. The next fight's ours, and I won't be on your side."), 4.0);
-          ally.huntTicks = Max(ally.huntTicks, CBConfig.RivalAfterEscapeTicks());
-          CBRivalGiveTrait(ally, n"GrudgeBearer");
         }
         for id in des.GetTaggedIDs(n"CB_Ally") {
           let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;

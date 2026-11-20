@@ -353,7 +353,13 @@ func CBBountyPayNow(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBH
   book.payRequested = false;
   let price = CBBountyPayOff(sys, game);
   let player = GetPlayer(game);
-  if price <= 0 || !IsDefined(player) || !CBTalkTakeMoney(game, player, price) {
+  if price <= 0 || !IsDefined(player) {
+    return;
+  }
+  // The Hub only offers it with the eddies in V's pocket; spent between the click and the game, the button's answer is
+  // said rather than lost.
+  if !CBTalkTakeMoney(game, player, price) {
+    CBMenuNote(game, s"not enough eddies to clear the price any more. It costs \(price)eb.", 5.0);
     return;
   }
   let gang = CBBountyGang(sys, book.BountyBy());
@@ -906,7 +912,9 @@ func CBCorpContractSlain(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
   let pay = CBBountyRound(Cast<Float>(CBConfig.CorpContractPay()) * CBLootLevelScale(game));
-  book.SetCorp(corp, book.CorpAt());   // done: no target left, the week still counts
+  // Done: no target left, the week still counts. "Arasaka:" rather than "Arasaka", which is what a warning leaves, so a
+  // contract they put out on V later does not open with "We told you to stop" to a merc who did their job for them.
+  book.SetCorp(StringToName(NameToString(corp) + ":"), book.CorpAt());
   if IsDefined(player) && IsDefined(ts) {
     ts.GiveItem(player, ItemID.FromTDBID(t"Items.money"), pay);
   }

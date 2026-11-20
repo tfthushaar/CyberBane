@@ -445,8 +445,11 @@ func CBTurfTickDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
       book.Challenge(i, leader, now);
     } else {
       if (now - book.ChallengeAt(i)) >= CBConfig.TurfFlipHours() * CBConfig.SecondsPerHour() {
+        // Taking it back only when it was taken from them: two gangs that both call it home can trade it
+        // without either having held it before.
+        let tookBack = Equals(book.From(i), leader);
         book.Flip(i, leader, held, now);
-        CBTurfChangedHands(sys, game, district, leader, held);
+        CBTurfChangedHands(sys, game, district, leader, held, tookBack);
         return;
       }
     }
@@ -484,7 +487,7 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
 }
 
 func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName,
-                        winner: CName, loser: CName) -> Void {
+                        winner: CName, loser: CName, tookBack: Bool) -> Void {
   let now = CBGameSeconds(game);
   CBFileLog(sys, n"TurfTaken", now, district, winner, 0.0);
   // The map remembers it (UI/MapPins.reds, 2.5.0), where the street last saw something happen there.
@@ -511,7 +514,11 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
   let prof = content.GetFaction(winner);
   let home = IsDefined(prof) && ArrayContains(prof.turf, district);
   if home {
-    CBHearsayFromDistrict(game, district, s"\(wCap) have taken \(place) back from \(l).", n"");
+    if tookBack {
+      CBHearsayFromDistrict(game, district, s"\(wCap) have taken \(place) back from \(l).", n"");
+    } else {
+      CBHearsayFromDistrict(game, district, s"\(wCap) have pushed \(l) out of \(place). It's their streets now.", n"");
+    }
     return;
   }
   // Moved in on somebody V broke. A gang that does not want V dead says thank you, in its own way;

@@ -139,7 +139,16 @@ func CBDoorTurnsAway(door: ref<GameObject>, npc: ref<ScriptedPuppet>) -> Bool {
   if !IsDefined(sys) || !sys.IsInSanctuary() {
     return false;
   }
-  if !CBSentByUs(GameInstance.GetDynamicEntitySystem(), npc) && !npc.cbHostileByCyberbane {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !CBSentByUs(des, npc) && !npc.cbHostileByCyberbane {
+    return false;
+  }
+  // V's own side comes in with V: V's crew (one who has not turned), a friendly gang's people riding with V, and the help
+  // V called. Every one of ours was turned away at the door, so V's crew stood outside the apartment, the bar or the
+  // clinic V had just walked into, and forgot V was theirs to follow.
+  let id = npc.GetEntityID();
+  if IsDefined(des) && (des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Follower")
+                        || (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned"))) {
     return false;
   }
   // Only the doors around V. A hunter crossing a shop on the far side of the block is not at V's door.

@@ -1467,7 +1467,7 @@ func CBCrewSurvivorTakesItPersonally(sys: ref<CyberbaneSystem>, game: GameInstan
     i += 1;
     if !hunter && CBStillStanding(p) && CBNpcSafe(sys, p) {
       // The first one standing is the one asked, weighed like every other roll (CBRivalOdds).
-      if !CBRivalRoll(sys, "lost a crew", CBConfig.RivalChanceHunter(), p.GetRecordID(), true) {
+      if !CBRivalRoll(sys, "lost a crew", CBConfig.RivalChanceHunter(), p.GetRecordID(), true, faction) {
         return;
       }
       let nr = CBCreateRival(sys, game, faction, p.GetRecordID(), n"", ECBRivalSource.Hunter,

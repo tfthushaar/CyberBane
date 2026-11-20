@@ -374,7 +374,7 @@ public func CBTalkAnswerWord(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   let st = CBReadStreet(sys, game, t.faction);
   if Equals(st.placeKind, n"Massacre") {
     return CBTalkSay(CBPick2("You're standing on it. That's where they found them all. Still gives me chills.",
-                             "Right here. Bodies everywhere, a couple of days back. Nobody's been the same."), n"");
+                             "Right here. Bodies everywhere, not long ago. Nobody's been the same."), n"");
   }
   if Equals(st.placeKind, n"BossKill") && StrLen(CBFactionLabel(st.placeGang)) > 0 {
     return CBTalkSay(s"This corner? \(CBCapFirst(CBFactionLabel(st.placeGang))) lost their boss right there. Still raw.", n"");

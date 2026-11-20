@@ -19,7 +19,9 @@ public func CBApplyDistrictRenown(sys: ref<CyberbaneSystem>, districtId: CName, 
 }
 
 public func CBCreateRumor(sys: ref<CyberbaneSystem>, game: GameInstance, kind: CName, magnitude: Float, origin: CName, faction: CName, witnessed: Bool) -> Void {
-  if !IsDefined(sys) {
+  // Nothing new goes round with reputation frozen: a story started now would spread, raise renown and come back as
+  // a text once it was thawed, which is the reputation changing after all.
+  if !IsDefined(sys) || CBReputationFrozen() {
     return;
   }
   let spreadMult = 1.0;

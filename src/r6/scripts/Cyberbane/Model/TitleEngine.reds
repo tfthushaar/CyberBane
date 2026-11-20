@@ -162,7 +162,7 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
     let where = "";
     let best = CBBestDistrict(sys, 0, where);
     return CBReqStyle(sys, ECBArchetype.Butcher, "Killing people builds it, brutally faster.") + "\n"
-         + CBReqNum("Lethal or brutal kills in one district", best, 50) + CBReqBest(where) + ".";
+         + CBReqNum("Kills in one district", best, 50) + CBReqBest(where) + ".";
   }
   if Equals(id, n"T_GHOST_OF") {
     let where = "";
@@ -222,7 +222,7 @@ func CBMostKilledGang(sys: ref<CyberbaneSystem>, out gang: CName) -> Int32 {
   return most;
 }
 
-// mode 0: lethal or brutal kills. 1: quiet takedowns. 2: Renown.
+// mode 0: kills (a knockout is not one since 1.9.3). 1: quiet takedowns. 2: Renown.
 func CBBestDistrict(sys: ref<CyberbaneSystem>, mode: Int32, out where: String) -> Int32 {
   let best = 0;
   for ds in sys.GetDistrictStates() {

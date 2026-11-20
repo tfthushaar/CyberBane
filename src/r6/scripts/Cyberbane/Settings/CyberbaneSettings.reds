@@ -1806,6 +1806,9 @@ public class CyberbaneSettings {
         this.hitSquadFrequencyMult = 0.5;
         this.rivalFrequencyMult = 0.6;
         this.tributeMult = 0.75;
+        // Every preset sets gang life (2.6.0): only Turf war and Quiet life did, so leaving Turf war for any other kept
+        // its 1.5 for good.
+        this.gangLifeOften = 0.75;
         break;
       case ECBPreset.Nemesis:
         this.civIntensity = 1.0;
@@ -1816,6 +1819,7 @@ public class CyberbaneSettings {
         this.hitSquadFrequencyMult = 0.6;
         this.rivalFrequencyMult = 1.7;
         this.tributeMult = 1.0;
+        this.gangLifeOften = 1.0;
         break;
       case ECBPreset.TurfWar:
         this.civIntensity = 1.1;
@@ -1848,6 +1852,7 @@ public class CyberbaneSettings {
         this.hitSquadFrequencyMult = 1.6;
         this.rivalFrequencyMult = 1.5;
         this.tributeMult = 1.25;
+        this.gangLifeOften = 1.25;
         break;
       default:
         this.civIntensity = 1.0;
@@ -1858,6 +1863,7 @@ public class CyberbaneSettings {
         this.hitSquadFrequencyMult = 1.0;
         this.rivalFrequencyMult = 1.0;
         this.tributeMult = 1.0;
+        this.gangLifeOften = 1.0;
     }
   }
 

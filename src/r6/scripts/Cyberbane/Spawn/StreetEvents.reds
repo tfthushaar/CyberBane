@@ -96,6 +96,7 @@ public class CBStreetEvent {
   public let placedTick: Int32;
   public let started: Bool;            // the two sides set against each other (a fight, 2.3.4) or at peace (a meeting, 2.4.2)
   public let size: Int32;              // an ambush's crew (2.4.2)
+  public let byV: Bool;                // a funeral for somebody V put down, rather than somebody else's dead
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -128,6 +129,7 @@ public class CBEventEngine {
   private let m_next: Int32;           // everything else's
   // A gang owed a funeral (a Rival or a boss of theirs killed) or a celebration (a district taken), and from when.
   private let m_funeralFor: CName;
+  private let m_funeralByV: Bool;        // whoever they bury, V put them there (CBOweFuneral)
   private let m_huntFor: CName;          // an informant's gang, owed a hunt for them (Reactions/Allies.reds, 2.4.5)
   private let m_huntRival: Int32;
   private let m_huntAt: Float;
@@ -158,9 +160,10 @@ public class CBEventEngine {
     return true;
   }
 
-  public func OweFuneral(gang: CName, now: Float) -> Void {
+  public func OweFuneral(gang: CName, now: Float, byV: Bool) -> Void {
     if CBFactionFieldsSquads(gang) {
       this.m_funeralFor = gang;
+      this.m_funeralByV = byV;
       this.m_funeralAt = now + CBConfig.FuneralAfterHours() * CBConfig.SecondsPerHour();
     }
   }
@@ -348,6 +351,7 @@ public class CBEventEngine {
     }
     this.m_ev = ev;
     if Equals(kind, CBEvFuneral()) {
+      ev.byV = this.m_funeralByV;
       this.m_funeralFor = n"";
     }
     if Equals(kind, CBEvCelebration()) {
@@ -606,7 +610,10 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
     return s"\(a) and \(CBFactionLabel(ev.b)) are sitting down near here around \(when). Crash it, and they both feel it.";
   }
   if Equals(ev.kind, CBEvFuneral()) {
-    return CBLineOf([s"\(a) are burying one of theirs near here around \(when). The one you put down.",
+    // "The one you put down" only when V did (2.6.0): a funeral is also owed for one of theirs killed by somebody else, a
+    // Rival another Rival finished off screen, or one of V's own crew who came from them.
+    let whose = ev.byV ? " The one you put down." : "";
+    return CBLineOf([s"\(a) are burying one of theirs near here around \(when).\(whose)",
                      s"Funeral for one of \(CBFactionLabel(ev.a)) near here, \(when). Go pay your respects. Or don't."]);
   }
   if Equals(ev.kind, CBEvCelebration()) {
@@ -626,7 +633,7 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
                      s"Arms deal near here, \(when): \(a) and \(CBFactionLabel(ev.b)). Heavy crates, light guard."]);
   }
   if Equals(ev.kind, CBEvExecution()) {
-    return CBLineOf([s"\(a) caught one of \(CBFactionLabel(ev.b)) and they're putting a bullet in him near here around \(when). Stop it, or don't.",
+    return CBLineOf([s"\(a) caught one of \(CBFactionLabel(ev.b)), and the poor soul gets a bullet near here around \(when). Stop it, or don't.",
                      s"Execution near here, \(when). \(a) want everybody to watch one of \(CBFactionLabel(ev.b)) die."]);
   }
   if Equals(ev.kind, CBEvFrontLine()) {
@@ -634,8 +641,8 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
                      s"Street fight near here, \(when): \(a) against \(CBFactionLabel(ev.b)). Pick a side, or keep your head down."]);
   }
   if Equals(ev.kind, CBEvFugitive()) {
-    return CBLineOf([s"\(a) are hunting somebody of \(CBFactionLabel(ev.b)) who crossed them. He'll be running past here around \(when).",
-                     s"Somebody's running from \(a) near here, \(when). Help him or let them have him."]);
+    return CBLineOf([s"\(a) are hunting somebody of \(CBFactionLabel(ev.b)) who crossed them. The runner comes past here around \(when).",
+                     s"Somebody's running from \(a) near here, \(when). Help the runner, or let them have their way."]);
   }
   return CBLineOf([s"Word is \(a) run a racket near here, collecting around \(when). Hit it and take the cash.",
                    s"\(a) collect their take near here around \(when). Nobody's ever robbed them. Yet."]);
@@ -659,7 +666,7 @@ public func CBEventWhisper(game: GameInstance) -> String {
   if Equals(ev.kind, CBEvRacket()) { return "Don't go near " + CBPossessive(a) + " collection spot later. They count the take there."; }
   if Equals(ev.kind, CBEvExecution()) { return CBCapFirst(a) + " are executing somebody later. In the open. To make a point."; }
   if Equals(ev.kind, CBEvFrontLine()) { return "Stay home later. " + CBCapFirst(a) + " and " + CBFactionLabel(ev.b) + " are going to settle it in the street."; }
-  if Equals(ev.kind, CBEvFugitive()) { return "Some guy crossed " + a + ". They're going to run him down later."; }
+  if Equals(ev.kind, CBEvFugitive()) { return "Somebody crossed " + a + ". They're running the poor soul down later."; }
   return "Heard " + a + " and " + CBFactionLabel(ev.b) + " are meeting. Could go either way.";
 }
 
@@ -762,7 +769,8 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
   }
   if Equals(ev.kind, CBEvFuneral()) {
     if !ev.approached {
-      CBEventSay(game, s"\(CBCapFirst(a)) buried their dead. They said your name at the grave.");
+      CBEventSay(game, ev.byV ? s"\(CBCapFirst(a)) buried their dead. They said your name at the grave."
+                              : s"\(CBCapFirst(a)) buried their dead. Quietly, and among their own.");
     }
     return;
   }
@@ -839,17 +847,24 @@ public func CBEventTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
   CBCreditMercy(sys, ev.a, CBConfig.RespectsStanding());
   sys.AddCode(CBConfig.RespectsCode());
   CBFileLog(sys, n"PaidRespects", CBGameSeconds(game), CBEventDistrict(sys, game), ev.a, 0.0);
+  // Nerve only when it was V who put them in the ground (2.6.0).
+  if !ev.byV {
+    return CBTalkSay(CBLineOf(["Didn't expect you here. Thanks for coming.",
+                               "You didn't have to come. It's noticed.",
+                               "Kind of you. Say your piece and go."]), n"");
+  }
   return CBTalkSay(CBLineOf(["You've got some nerve. But you came. That counts for something.",
-                             "He'd have spat at you. I won't. Not today.",
+                             "They'd have spat at you. I won't. Not today.",
                              "Coming here took guts. Say what you came to say and go."]), n"");
 }
 
 // A gang owes a funeral (a Rival of theirs slain, or a boss) or a celebration (a district taken). From the death
 // handler and the turf book's change of hands.
-public func CBOweFuneral(game: GameInstance, gang: CName) -> Void {
+// `byV`: the one they bury is somebody V put down, which is what the street then says.
+public func CBOweFuneral(game: GameInstance, gang: CName, opt byV: Bool) -> Void {
   let life = CBStreetLifeFor(game);
   if IsDefined(life) && CBGatheringsOn() {
-    life.Events().OweFuneral(gang, CBGameSeconds(game));
+    life.Events().OweFuneral(gang, CBGameSeconds(game), byV);
   }
 }
 

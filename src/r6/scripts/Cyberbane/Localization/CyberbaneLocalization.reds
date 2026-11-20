@@ -250,7 +250,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-GangsAdapt", "Gangs adapt to how you fight");
     this.Text("Cyberbane-Settings-GangsAdapt-Desc", "Each gang notices how you hurt its people. Keep shooting them and they come in armour; keep fighting up close and they come tougher; keep hacking them and they run fresh ICE; keep taking them quietly and their hunters keep their eyes open. They text you when they change, and it fades when you change how you fight. How they look never changes.");
     this.Text("Cyberbane-Settings-Gatherings", "Gatherings");
-    this.Text("Cyberbane-Settings-Gatherings-Desc", "Gangs gather near you at a set time, and the street tells you where and when: a funeral after you kill a Rival or a boss of theirs, a celebration after they take a district, an initiation, a recruiting drive. Crash one and they feel it (a funeral is never forgiven); let it happen and they come out stronger. At a funeral you can pay your respects instead.");
+    this.Text("Cyberbane-Settings-Gatherings-Desc", "Gangs gather near you at a set time, and the street tells you where and when: a funeral after a Rival or a boss of theirs dies, a celebration after they take a district, an initiation, a recruiting drive. Crash one and they feel it (a funeral is never forgiven); let it happen and they come out stronger. At a funeral you can pay your respects instead.");
     this.Text("Cyberbane-Settings-DealsAndRackets", "Arms deals and rackets");
     this.Text("Cyberbane-Settings-DealsAndRackets-Desc", "A gang buying guns from another, or collecting its take, near you at a set time. Crash a deal and the crate is yours; hit a racket and the cash is. Leave them be and the gang grows stronger.");
     this.Text("Cyberbane-Settings-WarChest", "War chests and manpower");
@@ -264,7 +264,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TalkIncite", "Set gangs on each other");
     this.Text("Cyberbane-Settings-TalkIncite-Desc", "In street talk, tell a ganger their enemies are planning a hit on them. Believed, both gangs lose a little ground and the next street fight near you is between them. Not believed, they take offence.");
     this.Text("Cyberbane-Settings-GangFights", "Fights between gangs");
-    this.Text("Cyberbane-Settings-GangFights-Desc", "Gangs at war settle things near you, and the street tells you where and when: an execution of a rival's man, a street fight that decides who holds the ground, a hunt for somebody who crossed them. Step in, pick a side, or let it play out. They come up less often than gatherings.");
+    this.Text("Cyberbane-Settings-GangFights-Desc", "Gangs at war settle things near you, and the street tells you where and when: an execution of one of a rival gang's people, a street fight that decides who holds the ground, a hunt for somebody who crossed them. Step in, pick a side, or let it play out. They come up less often than gatherings.");
     this.Text("Cyberbane-Settings-PowerStruggles", "Power struggles");
     this.Text("Cyberbane-Settings-PowerStruggles-Desc", "When a gang's leader falls and two of their lieutenants want the chair, both text you for help. Kill one and the other takes the chair and owes you; kill both and the gang tears itself apart. Sparing one decides nothing.");
     this.Text("Cyberbane-Settings-GangLifeOften", "How often gangs get together");

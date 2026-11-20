@@ -63,7 +63,7 @@ public func CBStealthHoldReason(sys: ref<CyberbaneSystem>, game: GameInstance) -
     if StrLen(zone) == 0 {
       zone = "somebody else's territory";
     }
-    return "Holding off: the game calls this a " + zone + ". Nobody walks in on a job.";
+    return "Holding off: the game calls this a " + zone + ". Nobody walks in on you there.";
   }
   if CBStealthEncounterNearby(sys, game) {
     return "Holding off while you are working quietly. They will not walk in on a stealth job.";

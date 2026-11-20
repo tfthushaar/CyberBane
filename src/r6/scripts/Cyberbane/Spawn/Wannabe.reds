@@ -207,7 +207,7 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
     sys.AddCode(-CBConfig.WannabeShotCode());
     CBFileLog(sys, n"WannabeShot", now, CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, CBPick2("A kid came at you with his fists and you shot him. People saw.",
+      CBHearsayFromStreet(game, CBPick2("A kid came at you with bare fists and you shot them. People saw.",
                                         "Bringing a gun to a fistfight. With a kid. That's going round."), n"");
     }
     return;
@@ -245,7 +245,7 @@ func CBWannabeWalked(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
   CBWannabeDent(sys, book.wannabeDistrict, CBConfig.WannabeRenown() * 0.34);
   CBFileLog(sys, n"WannabeWalked", CBGameSeconds(game), CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
   if CBMessagesOn() {
-    CBHearsayFromStreet(game, CBPick2("The kid's telling everybody you wouldn't fight him. Nobody who matters believes it.",
+    CBHearsayFromStreet(game, CBPick2("The kid's telling everybody you wouldn't fight. Nobody who matters believes it.",
                                       "You walked away from some kid's fistfight. Smart, or scared, depending who's telling it."), n"");
   }
 }

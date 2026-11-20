@@ -34,7 +34,9 @@ public func CBPanicDrivingTick(sys: ref<CyberbaneSystem>, game: GameInstance, ti
   }
   // Not on a job, in a scene, or while the story has the stage: a gunshot stim there sets the
   // story's own people off.
-  if sys.IsInQuestArea() || CBPlayerInScene(game) || sys.GetStoryHold() != CBStoryNone() {
+  // Any job V is at, not only the tracked one (IsOnJob, 1.8.4): a broadcast reaches whoever is in range, Safety Gate
+  // or not, and a job's own people waiting for their scene are exactly who it would set off (CBMoraleHeldAtJob, 2.5.6).
+  if sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game) || sys.GetStoryHold() != CBStoryNone() {
     return;
   }
   let player = GetPlayer(game);

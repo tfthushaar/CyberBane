@@ -440,6 +440,20 @@ public func CBScoutTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
   if IsDefined(fs) {
     fs.lastHitSquadAt = CBGameSeconds(game);   // they leave V alone a while, as a silenced scout's gang does
   }
+  // Out of the hunt for good, the way anybody stood down is (Rivals/RivalMoments.reds, CBFacedownStandDown): still wearing
+  // the scout's tag, the hunt went on ordering them after V and, once V was found, handed them V as a target, so the one V
+  // had just paid walked straight back into the fight. An orphan the sweep clears once V cannot see them, walking off.
+  let des = GameInstance.GetDynamicEntitySystem();
+  if IsDefined(t.npc) && IsDefined(des) {
+    let id = t.npc.GetEntityID();
+    if des.IsTagged(id, n"CB_Scout") {
+      des.UnassignTag(id, n"CB_Scout");
+    }
+    if des.IsTagged(id, n"Cyberbane") && !des.IsTagged(id, n"CB_Orphan") {
+      des.AssignTag(id, n"CB_Orphan");
+    }
+    CBUntrackOnMap(game, t.npc);
+  }
   if IsDefined(t.npc) {
     CBOrderFlee(game, t.npc);
   }

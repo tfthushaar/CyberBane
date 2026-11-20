@@ -2,10 +2,8 @@
 //
 // id, display name, priority (higher wins the auto active title: Cyberbane >
 // Living Legend > faction/district > others), hidden (shown as ??? until earned).
-// Konpeki Ghost used to sit here. It is tied to one specific quest played one specific way,
-// and Cyberbane has no per-quest detection (job completion is recognised by payout size, not
-// by name), so it could never be awarded. Offering a title nobody can earn is worse than not
-// offering it; if per-quest tracking is ever added, put it back.
+// Konpeki Ghost is earned from The Heist's own quest fact (Data/Deeds.reds, q005_done) or by the
+// unseen-kill count in Model/TitleEngine.reds.
 //
 // Conditions are evaluated in code (Model/TitleEngine.reds). The six district- and
 // faction-parameterised titles keep their generic wording here and are rewritten at display

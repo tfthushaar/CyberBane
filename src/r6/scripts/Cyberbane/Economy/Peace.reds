@@ -478,7 +478,9 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   }
 
   ts.RemoveItem(player, money, cost);
-  fs.standing = MaxF(fs.standing, 15.0);   // pull out of the hostile band
+  // Out of the hostile band, to neutral. It was 15, which is Friendly exactly, so every pay-off was followed by the
+  // gang texting that V was welcome on its streets: the money buys the grudge back, not their friendship.
+  fs.standing = MaxF(fs.standing, 0.0);
   fs.vendettaSince = 0.0;
   fs.lastPeaceAt = CBGameSeconds(game);
 

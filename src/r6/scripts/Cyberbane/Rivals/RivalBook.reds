@@ -73,6 +73,13 @@ public class CBRivalBook extends ScriptableSystem {
     this.fdState = 0;
     ArrayClear(this.fdEscorts);
     this.ResetLairAlarm();
+    // Stamped in the session's tick count, which starts again with a load: a stamp from before it would read as the
+    // future and hold the next taunt or facedown back for as long as the last session had run.
+    let none: EntityID;
+    this.fdBody = none;
+    this.fdTick = 0;
+    this.tauntTick = 0;
+    this.fdHinted = false;
   }
 
   public static func Get(game: GameInstance) -> ref<CBRivalBook> {

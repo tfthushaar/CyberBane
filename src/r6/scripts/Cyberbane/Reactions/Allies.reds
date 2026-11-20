@@ -772,7 +772,7 @@ func CBParleyOpen(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   s.cbFacedownOpen = true;
   CBSayVoiced(sys, s, n"enemy_warning");
   let crewSize = ArraySize(war.parleyCrew);
-  CBIntelSay(game, 3, "Crew sergeant", CBLineOf([s"Hold it! Nobody shoot. \(crewSize) of us, one of \(CBYou(sys, game)). Let's hear what you've got to say.",
+  CBIntelSay(game, 3, "Crew sergeant", CBLineOf([s"Hold it! Nobody shoot. \(crewSize) of us and one of you, \(CBYou(sys, game)). Let's hear what you've got to say.",
                                                  s"Easy. \(CBCapFirst(CBFactionLabel(faction))) talk first. Then we'll see.",
                                                  "Hold your fire! I want to hear this before we start."]), 3.5);
   CBLog.Info(n"Talk", s"A crew sergeant of \(NameToString(faction)) stops to talk.");
