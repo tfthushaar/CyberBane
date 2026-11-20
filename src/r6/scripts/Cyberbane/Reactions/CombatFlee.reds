@@ -295,7 +295,7 @@ public func CBSparedSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
       // Put down by somebody else after V had hurt them (2.5.6): not V's mercy to give, as their death would not be V's
       // kill (Signals/CombatSignals.reds, the killing blow): no Conduct, no standing for sparing them, no Spared Rival.
       // Somebody on V's side putting them down is V's (CBOnVsSide). Marked looked-at so the sweep asks once.
-      if npc.cbLastHitByOther && !CBOnVsSide(game, npc.cbLastAttacker) {
+      if CBLastHitWasOthers(game, npc) {
         npc.cbSparedLogged = true;
       } else {
         CBSparedCheck(sys, game, npc);

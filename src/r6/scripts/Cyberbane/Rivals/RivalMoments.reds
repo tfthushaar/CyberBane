@@ -919,7 +919,7 @@ public func CBRivalFell(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
     CBRivalTrophy(sys, game, book, puppet, r);
     CBGiveStreetCred(game, CBConfig.CredRivalBase() + CBConfig.CredRivalPerRank() * r.rank);   // [87], 2.4.6
   }
-  CBBondOnDeath(sys, game, book, r);
+  CBBondOnDeath(sys, game, book, r, byV);
   CBEmit(n"Cyberbane/RivalSlain", r.faction, Cast<Float>(r.rank));   // [91], 2.4.6
 }
 
@@ -951,7 +951,9 @@ func CBRivalTrophy(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
 }
 
 // One of a bond is dead: the other answers it, by what they were to them.
-func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, dead: ref<CBRival>) -> Void {
+// `byV` (2.5.6): only a death V caused is avenged on V. The one bound to them texted "You killed [name]" and came for V
+// whoever had killed them, the NCPD or another gang included.
+func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, dead: ref<CBRival>, byV: Bool) -> Void {
   let otherId = book.BondWith(dead.id);
   let other = otherId > 0 ? sys.FindRivalById(otherId) : null;
   if !IsDefined(other) || !CBRivalStillAround(other) || book.HasFlag(other.id, CBRivalFlagBondSettled()) {
@@ -962,6 +964,12 @@ func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
   let name = CBRivalDisplayName(sys.GetContent(), other);
   let deadName = CBRivalDisplayName(sys.GetContent(), dead);
   let now = CBGameSeconds(game);
+  if !byV {
+    if CBMessagesOn() {
+      CBHearsayFromStreet(game, s"\(name) buried \(deadName). Whoever did it, it wasn't you, and \(name) knows it.", n"");
+    }
+    return;
+  }
   // A mentor who lost a protégé may be frightened off; a lover may just leave; the rest come for V.
   if kind == CBBondMentor() && RandF() < 0.5 {
     CBRivalGiveTrait(other, n"Shaken");

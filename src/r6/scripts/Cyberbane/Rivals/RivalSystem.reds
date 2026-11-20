@@ -1288,25 +1288,32 @@ public func CBForgetRival(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int
   return name;
 }
 
-public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: ref<CBRival>, at: Float, district: CName) -> Void {
+// `byV`: V landed the killing blow, or V's side did (2.5.6, CBLastHitWasOthers). Until 2.5.6 every Rival death was
+// taken as V's: a Rival the NCPD or another gang killed went on V's tally and titles, paid V Renown, had the street say
+// everybody knew who did it, and left a successor sworn to avenge them on V, who never touched them. Dead either way,
+// and their chair filled either way; only what V did is V's.
+public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: ref<CBRival>, at: Float, district: CName,
+                         byV: Bool) -> Void {
   if !IsDefined(sys) || !IsDefined(rival) {
     return;
   }
   rival.state = EnumInt(ECBRivalState.Slain);
   rival.lastSeenAt = at;
 
-  let stats = sys.GetStats();
-  if IsDefined(stats) {
-    stats.rivalsSlain += 1;
+  if byV {
+    let stats = sys.GetStats();
+    if IsDefined(stats) {
+      stats.rivalsSlain += 1;
+    }
+    let renownMult = 1.0;
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) && rt.HasSettings() {
+      renownMult = rt.GetSettings().renownGainMult;
+    }
+    sys.AddRenownPoints((25.0 + 10.0 * Cast<Float>(rival.rank)) * renownMult);
   }
-  let renownMult = 1.0;
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.HasSettings() {
-    renownMult = rt.GetSettings().renownGainMult;
-  }
-  sys.AddRenownPoints((25.0 + 10.0 * Cast<Float>(rival.rank)) * renownMult);
 
-  CBLogRival(sys, n"RivalSlain", at, district, rival.faction, Cast<Float>(rival.rank), rival.id);
+  CBLogRival(sys, byV ? n"RivalSlain" : n"RivalDied", at, district, rival.faction, Cast<Float>(rival.rank), rival.id);
   // A name of theirs in the ground costs a gang more than a body does (Model/Territory.reds).
   CBWeakenGang(sys, game, rival.faction,
                CBConfig.GangLossRival() + CBConfig.GangLossRivalPerRank() * Cast<Float>(rival.rank));
@@ -1314,7 +1321,16 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   CBHierarchyOnSlain(sys, game, rival);
   let content = CBContent(game);
   if CBMessagesOn() {
-    CBHearsayFromStreet(game, CBRivalDisplayName(content, rival) + " is dead and everybody knows who did it.", n"");
+    if byV {
+      CBHearsayFromStreet(game, CBRivalDisplayName(content, rival) + " is dead and everybody knows who did it.", n"");
+    } else {
+      CBHearsayFromStreet(game, CBRivalDisplayName(content, rival) + " is dead. Somebody got to them before you did.", n"");
+    }
+  }
+  if !byV {
+    // Nobody to avenge them on V, and no meeting V kept.
+    CBEvaluateTitles(sys, game);
+    return;
   }
 
   // Succession (Nemesis-inspired): a crew does not simply lose its best and move on.

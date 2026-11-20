@@ -5,6 +5,16 @@ the next unless a version says otherwise.
 
 ## 2.5.6 (20 November 2026)
 
+**Talking to people**
+- **Vendors, joytoys, fixers and ripperdocs work as normal again.** Since 2.5.2, Cyberbane switched off the game's own
+  "Talk" on anybody you looked at and gave it back by its own rule, which for people whose conversation the game sets
+  up its own way meant never: joytoys could not be hired, and some people had no prompt at all. Cyberbane now leaves
+  them alone completely, and only ever switches off the stock "Talk" of ordinary passers-by, which it always gives back.
+- **F always does something.** When another prompt stayed in front of somebody (a door, a seat, another mod's spot),
+  Cyberbane kept their "Talk" and their neighbours' switched off while it waited, so neither the game's prompt nor
+  Cyberbane's came up. Now it waits a moment, then gives everything back and leaves that person to the game until you
+  look at somebody else. A prompt the game is not actually showing no longer holds talk off.
+
 **Texts**
 - **A text that asks nothing back no longer offers a Rival's taunts.** When a gang's leader dies, the two who want the
   chair text you an offer: kill the other one. Because both are Rivals, the thread offered "Come and find me", "Name
@@ -44,6 +54,11 @@ the next unless a version says otherwise.
   killing blows still do not.
 - Somebody you hurt and another gang then knocked out cold is not counted as you sparing them, as their death would not
   be your kill: no Conduct, no standing for sparing them, and no Rival who remembers you letting them live.
+- **A Rival somebody else kills is not your kill.** A Rival the NCPD or another gang killed counted as yours: on your
+  tally and your titles, Renown paid, the street saying everybody knew who did it, and worst, the Rival bound to them
+  texting "You killed..." and coming after you, or a successor sworn to avenge them on you. Now they are simply dead,
+  their chair is filled, and nobody blames you. Your History says a Rival died, and not by your hand.
+- Somebody you hurt and a car then ran down (a police car, another gang's) is not your kill.
 
 **Fixed**
 - A favour to lean on somebody who owes money ended with "They paid up before you got to them" when somebody else had

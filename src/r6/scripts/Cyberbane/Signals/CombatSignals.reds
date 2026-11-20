@@ -195,6 +195,7 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   if IsDefined(instigator) && instigator.IsPlayer() && CBPlayerIsVHere(instigator as PlayerPuppet) {
     puppet.cbDamagedByPlayer = true;
     puppet.cbLastHitByOther = false;
+    puppet.cbLastHitVehicle = CBNoEntity();
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
     puppet.cbScarMask = CBMaskSet(puppet.cbScarMask, CBScarBitFor(puppet.cbLastAttackType));
     puppet.cbLastMethodMask = CBMethodMaskFor(evt.attackData);
@@ -217,12 +218,44 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
     // Somebody else's hit, not their own grenade going off under them.
     if !Equals(attacker.GetEntityID(), puppet.GetEntityID()) {
       puppet.cbLastHitByOther = true;
+      puppet.cbLastHitVehicle = CBNoEntity();
     }
     // A quickhack on V: who from, looked at on the next tick (Spawn/HuntGrows.reds, [49]).
     if puppet.IsPlayer() && AttackData.IsHack(evt.attackData.GetAttackType()) {
       puppet.cbHackedFrom = attacker.GetEntityID();
     }
   }
+  // Run down by a car (2.5.6): the instigator is the vehicle, not a person, so the last-hit test never saw it, and
+  // somebody V had shot once and a police car then hit was V's kill. Whose car it was is asked a frame after the death
+  // (CBLastHitWasOthers), never here on the hit thread: one V is driving is V's.
+  let car = instigator as VehicleObject;
+  if IsDefined(car) && !puppet.IsPlayer() {
+    puppet.cbLastHitByOther = true;
+    puppet.cbLastHitVehicle = car.GetEntityID();
+  }
+}
+
+// The car that landed the last hit on them, when it was a car (2.5.6).
+@addField(ScriptedPuppet)
+public let cbLastHitVehicle: EntityID;
+
+func CBNoEntity() -> EntityID {
+  let none: EntityID;
+  return none;
+}
+
+// Was the last hit on them somebody else's, and not V's side's (2.5.6)? A car counts as V's when V is in it; a person
+// when they fight on V's side (CBOnVsSide). Asked a frame after a death or a knockout, never on the hit thread.
+func CBLastHitWasOthers(game: GameInstance, puppet: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(puppet) || !puppet.cbLastHitByOther {
+    return false;
+  }
+  if EntityID.IsDefined(puppet.cbLastHitVehicle) {
+    let car = GameInstance.FindEntityByID(game, puppet.cbLastHitVehicle) as VehicleObject;
+    let you = GetPlayer(game);
+    return !(IsDefined(car) && IsDefined(you) && VehicleComponent.IsMountedToProvidedVehicle(game, you.GetEntityID(), car));
+  }
+  return !CBOnVsSide(game, puppet.cbLastAttacker);
 }
 
 // Somebody fighting on V's side (2.5.6): the game's companions and other mods' (IsPlayerCompanion), V's own crew (CB_Own,
@@ -249,7 +282,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // after the death, when the killing hit has been written down whichever event the game delivered first.
   // Unless whoever landed it fights on V's side (CBOnVsSide): a bagman V shot and V's companion finished was robbed, a
   // sit-down V and V's crew cut down was crashed, the way it always was before 2.5.6. The rule was for other gangs' kills.
-  if puppet.cbDamagedByPlayer && puppet.cbLastHitByOther && !CBOnVsSide(game, puppet.cbLastAttacker) {
+  if puppet.cbDamagedByPlayer && CBLastHitWasOthers(game, puppet) {
     puppet.cbDamagedByPlayer = false;
     CBLog.Info(n"Signals", "Somebody V had hurt was killed by somebody else: not counted as V's kill.");
   }
@@ -338,7 +371,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       wasRival = true;
       if IsDefined(slain) {
         sysE.SetRivalDeathByV(puppet.cbDamagedByPlayer);   // a power struggle asks (Spawn/StreetEvents.reds)
-        CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game));
+        CBRivalSlain(sysE, game, slain, CBGameSeconds(game), CBEventDistrict(sysE, game), puppet.cbDamagedByPlayer);
         sysE.SetRivalDeathByV(false);
         // A price they put up dies with them, and a leader a corporation wanted gone is paid for (Spawn/Bounty.reds).
         CBBountyPosterSlain(sysE, game, slain, slainRole == CBRoleLeader(), puppet.cbDamagedByPlayer);

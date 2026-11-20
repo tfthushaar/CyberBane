@@ -56,6 +56,7 @@ func CBOnTakedownNoise(owner: wref<GameObject>, t: ETakedownActionType) -> Void 
   // the mercy check in CBSparedSweep - keys off this one flag.
   puppet.cbDamagedByPlayer = true;
   puppet.cbLastHitByOther = false;   // V's hands are the last on them (Signals/CombatSignals.reds, 2.5.6)
+  puppet.cbLastHitVehicle = CBNoEntity();
   // And if it was a killing takedown, that is a finisher.
   //
   // Finisher was dropped from scoring for having no signal, which was wrong: this hook already

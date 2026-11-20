@@ -274,6 +274,7 @@ public func CBHeadline(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>) -> String 
   let gang = StrUpper(CBFactionLabel(e.faction));
   let where = StrUpper(CBDistrictLabel(e.district));
   if Equals(e.kind, n"RivalSlain") { return StrLen(gang) > 0 ? s"MERC PUTS \(gang) NAME IN THE GROUND IN \(where)" : s"NAMED KILLER DIES IN \(where)"; }
+  if Equals(e.kind, n"RivalDied") { return StrLen(gang) > 0 ? s"\(gang) LOSE A NAME IN \(where)" : s"NAMED KILLER DIES IN \(where)"; }
   if Equals(e.kind, n"BossKill") { return s"\(gang) LOSE THEIR BIG FISH IN \(where)"; }
   if Equals(e.kind, n"MeetCrashed") { return s"SIT-DOWN TURNS BLOODBATH IN \(where)"; }
   if Equals(e.kind, n"TurfTaken") { return s"\(where) CHANGES HANDS: \(gang) MOVE IN"; }

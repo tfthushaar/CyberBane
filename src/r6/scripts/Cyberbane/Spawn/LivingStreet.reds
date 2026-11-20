@@ -726,7 +726,7 @@ public class CBStreetLife {
 
 // What is worth telling after a load: what changed the street, not the small stuff.
 func CBWhileOutWorthIt(kind: CName) -> Bool {
-  return Equals(kind, n"RivalCreated") || Equals(kind, n"RivalSlain") || Equals(kind, n"TurfTaken") || Equals(kind, n"TurfPush")
+  return Equals(kind, n"RivalCreated") || Equals(kind, n"RivalSlain") || Equals(kind, n"RivalDied") || Equals(kind, n"TurfTaken") || Equals(kind, n"TurfPush")
       || Equals(kind, n"KinSworn") || Equals(kind, n"CalledOut") || Equals(kind, n"Allied") || Equals(kind, n"Peace")
       || Equals(kind, n"RivalExiled") || Equals(kind, n"MeetCrashed") || Equals(kind, n"BagmanRobbed");
 }

@@ -141,11 +141,23 @@ public let cbTalkHushedLines: Bool;
 // (scriptedPuppet.script, ToggleInteractionLayers) and takes it off while they are busy
 // (reactionComponent.script, the Busy status effect).
 func CBGenericTalkWanted(npc: ref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(npc) || StatusEffectSystem.ObjectHasStatusEffectWithTag(npc, n"Busy") {
+    return false;
+  }
+  return CBGenericTalkByRule(npc);
+}
+
+// Whether the game's own rule gives them the talk at all, busy or not (2.5.6). Busy only holds it off for a moment, and
+// the game turns it back on itself when they stop (reactionComponent.script), so it is this that says whether Cyberbane
+// may switch their talk off: somebody frightened is busy, and their talk comes back mid-conversation unless Cyberbane
+// switches it off again (2.5.3). Anybody whose talk the rule does not give came by it some other way (their own
+// setup, a scene), and theirs is never touched.
+func CBGenericTalkByRule(npc: ref<ScriptedPuppet>) -> Bool {
   if !IsDefined(npc) {
     return false;
   }
   let rec = npc.GetRecord();
-  if !IsDefined(rec) || StatusEffectSystem.ObjectHasStatusEffectWithTag(npc, n"Busy") {
+  if !IsDefined(rec) {
     return false;
   }
   if npc.IsCrowd() {
@@ -171,7 +183,7 @@ func CBTalkHush(npc: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc) || !npc.IsAttached() {
     return;
   }
-  CBTalkHushTalk(npc, false, true);
+  CBTalkHushTalk(npc);
   if !npc.cbTalkHushedLines && npc.IsCrowd() {
     let quiet = new entChangeVoicesetStateEvent();
     quiet.enableVoicesetLines = false;
@@ -192,16 +204,19 @@ func CBTalkHush(npc: ref<ScriptedPuppet>) -> Void {
 // person's own talk on again when they stop being busy (reactionComponent.script, the Busy status effect), and the
 // street's reactions to V make people busy and then not; the flag said it was still off, nothing switched it off
 // again, their "Talk" came back up and held Cyberbane's off for good. Asked only while one of the game's prompts is up.
-// `anyway` (2.5.2): for the person V is addressing, switched off whatever the game's rule is read to say. Read as having
-// none, they were turned away on the spot with their own "Talk" on screen. Put back as the rule says (CBTalkUnhush).
-func CBTalkHushTalk(npc: ref<ScriptedPuppet>, opt again: Bool, opt anyway: Bool) -> Bool {
+// Only ever the talk the game's own rule gives (2.5.6, CBGenericTalkByRule): the crowd's stock line, which is what
+// CBTalkUnhush puts back. 2.5.2 switched off whoever V looked at "whatever the rule says", and put it back as the rule
+// says, which for anybody whose talk the game gave some other way (a joytoy, a vendor with no shop, the people their
+// own setup gives a conversation) is off: their own "Talk" never came back, joytoys could not be hired, and people V
+// had only glanced at had nothing on F at all. Their prompt is theirs to use; talk waits it out instead (Settle).
+func CBTalkHushTalk(npc: ref<ScriptedPuppet>, opt again: Bool) -> Bool {
   if !IsDefined(npc) || !npc.IsAttached() {
     return false;
   }
   if npc.cbTalkHushedTalk && !again {
     return true;
   }
-  if !npc.cbTalkHushedTalk && !anyway && !CBGenericTalkWanted(npc) {
+  if !npc.cbTalkHushedTalk && (!CBGenericTalkByRule(npc) || CBTalkOwnBusiness(npc)) {
     return false;
   }
   npc.EnableInteraction(n"GenericTalk", false);
@@ -216,11 +231,26 @@ func CBTalkMayHush(sys: ref<CyberbaneSystem>, npc: ref<ScriptedPuppet>) -> Bool 
   if !IsDefined(npc) || npc.IsPlayer() || !CBNpcSafe(sys, npc) || npc.IsDead() {
     return false;
   }
-  if !npc.IsHuman() || npc.IsMechanical() || !CBSafetyGate.CanTalkTo(npc) {
+  if !npc.IsHuman() || npc.IsMechanical() || !CBSafetyGate.CanTalkTo(npc) || CBTalkOwnBusiness(npc) {
     return false;
   }
   return !IsDefined(sys) || !sys.NearQuestPins(npc.GetWorldPosition(), CBConfig.TalkJobClearance());
 }
+
+// Somebody whose own conversation is the point of them (2.5.6): a vendor, a joytoy, a fixer, a ripperdoc. The game
+// marks them with these visual tags (the same ones it reads to keep them out of fights, aigeneralsettings.tweak), and a
+// shop by its vendor record. Street talk leaves them to their own: no "Talk" of Cyberbane's over theirs, and theirs
+// never switched off. Joytoys in particular have no vendor record, so the old vendor test let them through. Natives:
+// only after CBNpcSafe.
+public func CBTalkOwnBusiness(npc: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(npc) {
+    return false;
+  }
+  return npc.IsVendor() || npc.MatchVisualTag(n"Prostitute") || npc.MatchVisualTag(n"Vendor")
+      || npc.MatchVisualTag(n"Ripperdoc") || npc.MatchVisualTag(n"Fixer");
+}
+
+public func CBTalkWhyOwnBusiness() -> String = "they have business of their own (a vendor, a joytoy, a fixer or a ripperdoc)"
 
 // Their own voice back, as the game would have it now.
 func CBTalkUnhush(npc: ref<ScriptedPuppet>) -> Void {
@@ -823,7 +853,7 @@ public class CBStreetTalk {
     // Cyberbane's lines, and the game, with its own prompt open, kept the lines off the screen until V stepped out of
     // its reach. Not left to the prompt being seen: while "Talk" is offered, Cyberbane's own prompt sits where the
     // game's would be read.
-    CBTalkHushTalk(t.npc, true, true);
+    CBTalkHushTalk(t.npc, true);
     let kind = CBNativePromptKind(game);
     if kind == CBPromptDialogue() {
       this.End(game, "one of the game's own dialogues came up");
@@ -836,7 +866,9 @@ public class CBStreetTalk {
       this.HushNear(sys, player, t.npc);
       this.m_promptWait += dt;
       if this.m_promptWait > CBConfig.TalkOwnPromptWait() {
+        let gone = t.id;
         this.End(game, "one of the game's own prompts came up");
+        this.GiveUpOn(player, gone);
         return;
       }
     } else {
@@ -990,11 +1022,16 @@ public class CBStreetTalk {
           // Only theirs was ever switched off, so on any crowded street the next person's held talk off, and only the
           // scanner, which hides every prompt, let it through. Asked every tick while a prompt is up, so somebody who
           // steps up beside them later is switched off too, and the prompt going down sets the wait back to nothing.
-          let hushable = this.HushCandidate(npc, true);
-          this.HushNear(sys, player, npc);
-          if this.m_promptWait > CBConfig.TalkOwnPromptWait() || !hushable {
+          // Given up on once it outlasts the wait (2.5.6): whatever was switched off for them goes back on, theirs and
+          // their neighbours', and nothing is switched off again while V stays on them. It was kept off while the
+          // other prompt stood (a door, another mod's spot, a prompt the game never takes down), and the neighbours
+          // until V walked away, so the player had nothing at all on F: neither the game's talk nor Cyberbane's.
+          if this.m_promptWait > CBConfig.TalkOwnPromptWait() {
+            this.GiveUpOn(player, npc.GetEntityID());
             why = CBTalkWhyGamePrompt();
           } else {
+            this.HushCandidate(npc, true);
+            this.HushNear(sys, player, npc);
             waitPrompt = true;
           }
         } else {
@@ -1003,16 +1040,7 @@ public class CBStreetTalk {
       }
     }
     if !IsDefined(npc) || StrLen(why) > 0 {
-      // Somebody whose own talk is off while something else of the game's stays up in front of V (a door, a pickup)
-      // is left that way while V keeps looking at them: switched back on, their own "Talk" came up, the wait had
-      // already run out for them, and they could not be talked to until V looked at somebody else.
-      let waitingOut = IsDefined(npc) && IsDefined(this.m_hushed) && Equals(why, CBTalkWhyGamePrompt())
-                    && Equals(this.m_hushed.GetEntityID(), npc.GetEntityID());
-      if waitingOut {
-        this.m_candidate = null;
-      } else {
-        this.SetCandidate(null);
-      }
+      this.SetCandidate(null);
       this.m_dwell = 0.0;
       this.NoteWhyNot(game, dt, npc, why);
       this.Explain(game, npc, why);
@@ -1073,9 +1101,21 @@ public class CBStreetTalk {
     }
   }
 
-  // Their own talk on F off while V settles on them (CBTalkHushTalk). True when the prompt the game shows can be theirs.
-  // Switched off whatever the game's rule is read to say (2.5.2): they are the one V is looking at, and put back as the
-  // rule says. With `again`, switched off once more in case the game put it back.
+  // A prompt that would not go: everything switched off for it is put back (their own talk and their neighbours'), and
+  // the wait is left spent for this person, so nothing is switched off again until V settles on somebody else.
+  private func GiveUpOn(player: ref<PlayerPuppet>, id: EntityID) -> Void {
+    let was = this.m_hushed;
+    if IsDefined(was) && !was.cbTalkPartner {
+      CBTalkUnhush(was);
+    }
+    this.m_hushed = null;
+    this.RestoreNear(player, true);
+    this.m_promptWaitFor = id;
+    this.m_promptWait = MaxF(this.m_promptWait, CBConfig.TalkOwnPromptWait() + CBConfig.TalkTickSeconds());
+  }
+
+  // Their own talk on F off while V settles on them (CBTalkHushTalk), when the game's own rule gave it to them. True
+  // when it is off now. With `again`, switched off once more in case the game put it back.
   private func HushCandidate(npc: ref<ScriptedPuppet>, opt again: Bool) -> Bool {
     if !IsDefined(npc) {
       return false;
@@ -1084,7 +1124,7 @@ public class CBStreetTalk {
     if IsDefined(was) && NotEquals(was.GetEntityID(), npc.GetEntityID()) && !was.cbTalkPartner {
       this.Unhushed(was);
     }
-    if !CBTalkHushTalk(npc, again, true) {
+    if !CBTalkHushTalk(npc, again) {
       return false;
     }
     if !npc.cbTalkPartner {
@@ -2159,7 +2199,7 @@ public func CBTalkWhyHint(why: String) -> String {
   // Since 2.5.2 nobody's own "Talk" holds it back, so what is left is a thing's prompt (a door, a seat, an item, another
   // mod's), which takes F as well: talk waits for it rather than have one key do both.
   if Equals(why, CBTalkWhyGamePrompt()) {
-    return "something beside them has a prompt of its own on F (a door, a seat, an item). Step to one side and look at them again.";
+    return "they, or something beside them, have a prompt of their own on F (their own conversation, a door, a seat, an item). Use it, or step to one side and look at them again.";
   }
   return "";
 }
@@ -2180,6 +2220,9 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   }
   if npc.IsDead() {
     return "they are down or gone";
+  }
+  if CBTalkOwnBusiness(npc) {
+    return CBTalkWhyOwnBusiness();
   }
   // A Rival V has put down can be talked to where they lie (Rivals/RivalLife.reds, 1.9.9).
   let mercy = npc.cbMercyOpen;
@@ -2454,9 +2497,11 @@ public func CBNativePromptKind(game: GameInstance) -> Int32 {
   if !IsDefined(bb) {
     return CBPromptDialogue();
   }
+  // Only what the game draws (2.5.6): an entry with nothing to choose shows nothing (interactionsUI.script lists its
+  // choices), and one left behind on the blackboard by a mod held talk off for good.
   let dialogs = FromVariant<DialogChoiceHubs>(bb.GetVariant(defs.DialogChoiceHubs));
   for hub in dialogs.choiceHubs {
-    if hub.id != CBConfig.TalkHubId() {
+    if hub.id != CBConfig.TalkHubId() && ArraySize(hub.choices) > 0 {
       return CBPromptDialogue();
     }
   }
@@ -2465,7 +2510,7 @@ public func CBNativePromptKind(game: GameInstance) -> Int32 {
     return CBPromptDialogue();
   }
   let prompt = FromVariant<InteractionChoiceHubData>(bb.GetVariant(defs.InteractionChoiceHub));
-  if prompt.active && prompt.id != CBConfig.TalkHubId() {
+  if prompt.active && prompt.id != CBConfig.TalkHubId() && ArraySize(prompt.choices) > 0 {
     return CBPromptInteraction();
   }
   return CBPromptNone();
@@ -2507,7 +2552,7 @@ public func CBGameDialogueUp(game: GameInstance) -> Bool {
   }
   let dialogs = FromVariant<DialogChoiceHubs>(bb.GetVariant(defs.DialogChoiceHubs));
   for hub in dialogs.choiceHubs {
-    if hub.id != CBConfig.TalkHubId() {
+    if hub.id != CBConfig.TalkHubId() && ArraySize(hub.choices) > 0 {
       return true;
     }
   }

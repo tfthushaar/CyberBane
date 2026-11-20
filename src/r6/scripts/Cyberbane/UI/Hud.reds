@@ -6285,6 +6285,11 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
       }
     }
   }
+  // A Rival somebody else killed (2.5.6, CBRivalSlain): before, every Rival's death was written as V's.
+  if Equals(e.kind, n"RivalDied") {
+    line = StrLen(gang) > 0 ? s"A rank \(RoundF(e.value)) rival from \(gang) died, and not by your hand."
+                            : s"A rank \(RoundF(e.value)) rival died, and not by your hand.";
+  }
   let place = CBDistrictLabel(e.district);
   if StrLen(place) > 0 {
     line += "  " + place;

@@ -131,7 +131,8 @@ lives in your saves: a save made while the mod is removed loses it.
   Click a gang to pay them off, click a Rival to read their file, buy where they are hiding or forget
   them, and call or pay your crew. **Show as a list** on a page turns its cards into a list.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
-  a line. Reach for a weapon and the conversation ends.
+  a line. Reach for a weapon and the conversation ends. Vendors, joytoys, fixers and ripperdocs keep the
+  game's own conversations.
 - Cyberbane adds no keys of its own.
 
 ## Settings
