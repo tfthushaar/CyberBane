@@ -3,6 +3,29 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.5.6 (20 November 2026)
+
+**Texts**
+- **A text that asks nothing back no longer offers a Rival's taunts.** When a gang's leader dies, the two who want the
+  chair text you an offer: kill the other one. Because both are Rivals, the thread offered "Come and find me", "Name
+  the place" and "You'll lose again". Those offers, the winner's thanks, and a Rival texting that they are coming to
+  help you ("Nobody kills you but me") now offer no answers. Killing the other one is the answer.
+- A Rival who has named a place to meet offers no answers either. "Name the place" asked them for a second one, and
+  "Come and find me" made them text "On my way" while they went on waiting where they said. Go to the place.
+
+**Fights**
+- **A kill is yours only if you land the killing blow.** A death counted as yours whenever you had hit them at any
+  point, so a ganger you grazed and another gang then killed was put on your record: their gang's grudge, your
+  fighting style, the Renown. Now whoever hits them last decides, and a takedown counts as your hit. Somebody you
+  knocked down and somebody else then finished is no longer counted as a kill of yours.
+
+**Messages**
+- **A card no longer sticks on screen.** With messages set to cards, one now and then stayed up until the next message,
+  minutes or half an hour later, instead of fading. Cyberbane now takes its card down itself two seconds after the
+  game should have, if it is still showing and nothing else has replaced it.
+
+Your progress carries over.
+
 ## 2.5.5 (19 November 2026)
 
 Every line Cyberbane shows was read again for what a player could take from it, so that none can be read two ways,

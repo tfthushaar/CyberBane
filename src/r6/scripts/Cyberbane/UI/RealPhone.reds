@@ -247,7 +247,14 @@ func CBRealPhoneAnswerKind(sys: ref<CyberbaneSystem>, game: GameInstance, store:
   }
   let faction = store.ThreadOffer(thread);
   if Equals(faction, n"") {
-    if IsDefined(CBPhoneThreadRival(sys, store, thread)) {
+    let threadRival = CBPhoneThreadRival(sys, store, thread);
+    if IsDefined(threadRival) {
+      // Waiting at the place they named (2.5.6): "Name the place" asked for a second one, and "Come and find me" had
+      // them text "On my way" while they went on waiting where they said. Going there is the answer.
+      let intel = CBIntelBook.Get(game);
+      if IsDefined(intel) && intel.WordSent(threadRival.id) {
+        return CBPhoneAnswerNone();
+      }
       return store.ThreadAwaitsAnswer(thread) ? CBPhoneAnswerRival() : CBPhoneAnswerNone();
     }
     return CBCrewPhoneKind(sys, game, store, thread);   // the crew's own thread, a Debtor's, a solo on offer (2.5.0)

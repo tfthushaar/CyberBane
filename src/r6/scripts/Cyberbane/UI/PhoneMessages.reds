@@ -642,6 +642,22 @@ public class CBPhone {
     return i >= 0 && i < ArraySize(this.m_thAnsweredAt) && this.m_thAnsweredAt[i] < 0.0;
   }
 
+  // What this sender just said asks nothing back (2.5.6, CBPhoneSendAside): an offer, thanks, a warning on V's side.
+  // Every text from a Rival still at large opened the Rival's answers, so a power struggle's offer to V read
+  // "Come and find me", "Name the place" and "You'll lose again" under "Kill them and I'll remember who helped".
+  public func Settle(game: GameInstance, sender: String) -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_thName) {
+      if Equals(this.m_thName[i], sender) {
+        if i < ArraySize(this.m_thAnsweredAt) {
+          this.m_thAnsweredAt[i] = MaxF(CBGameSeconds(game), 0.0);
+        }
+        return;
+      }
+      i += 1;
+    }
+  }
+
   public func ThreadOffer(i: Int32) -> CName {
     if i < 0 || i >= ArraySize(this.m_thOffer) {
       return n"";
@@ -1484,6 +1500,16 @@ public func CBPhoneSendTinted(game: GameInstance, sender: String, body: String,
     return;
   }
   sys.GetPhone().Send(game, sender, body, accent);
+}
+
+// A text that asks nothing back (2.5.6): filed and shown as any other, and the thread offers no answers under it.
+// For somebody whose other texts can be answered, a Rival above all, when this one is not a threat.
+public func CBPhoneSendAside(game: GameInstance, sender: String, body: String, accent: HDRColor) -> Void {
+  CBPhoneSendTinted(game, sender, body, accent);
+  let sys = CyberbaneSystem.Get(game);
+  if IsDefined(sys) && IsDefined(sys.GetPhone()) {
+    sys.GetPhone().Settle(game, sender);
+  }
 }
 
 // The gang is talking to you. Red, because they are not getting in touch to be friendly. Nothing to answer: news,

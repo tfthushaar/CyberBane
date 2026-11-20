@@ -1152,7 +1152,7 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
         book.Won(w.id);
         CBFileLog(sys, n"StruggleBacked", now, CBEventDistrict(sys, game), slain.faction, 0.0);
         if CBMessagesOn() {
-          CBPhoneSendTinted(game, CBRivalDisplayName(content, w), "The chair's mine. You made that happen. " + CBCapFirst(CBFactionLabel(slain.faction)) + " won't forget it, and neither will I.", CBHudCyan());
+          CBPhoneSendAside(game, CBRivalDisplayName(content, w), "The chair's mine. You made that happen. " + CBCapFirst(CBFactionLabel(slain.faction)) + " won't forget it, and neither will I.", CBHudCyan());
         }
       }
       return;
@@ -1173,8 +1173,9 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
   if CBMessagesOn() {
     let heirName = CBRivalDisplayName(content, heir);
     let rivalName = CBRivalDisplayName(content, rival);
-    CBPhoneSendTinted(game, heirName, s"I run \(CBFactionLabel(slain.faction)) now. \(rivalName) doesn't think so. Kill them and I'll remember who helped.", CBHudCyan());
-    CBPhoneSendTinted(game, rivalName, s"\(heirName) took a chair that should be mine. Kill them, and \(CBFactionLabel(slain.faction)) are your friends.", CBHudCyan());
+    // Offers, not threats (2.5.6): nothing to answer by text; killing the other one is the answer.
+    CBPhoneSendAside(game, heirName, s"I run \(CBFactionLabel(slain.faction)) now. \(rivalName) doesn't think so. Kill them and I'll remember who helped.", CBHudCyan());
+    CBPhoneSendAside(game, rivalName, s"\(heirName) took a chair that should be mine. Kill them, and \(CBFactionLabel(slain.faction)) are your friends.", CBHudCyan());
   }
 }
 

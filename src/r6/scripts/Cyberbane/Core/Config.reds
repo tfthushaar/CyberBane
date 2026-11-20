@@ -1220,6 +1220,8 @@ public abstract class CBConfig {
   // closer than this replaces a message the player was still reading.
   public static func MessageMinGapSeconds() -> Float = 3.5
   public static func MessageMinSeconds() -> Float = 5.0
+  // A card is taken down this long after the game should have faded it, if it has not (UI/Notify.reds, 2.5.6).
+  public static func MessageClearSlackSeconds() -> Float = 2.0   // past the game's own fade, so a card that did go is never cut short
 
   // ---- Vendetta hit squads ----
   // Smallest share of the full crew that turns out, before menace scales it up.

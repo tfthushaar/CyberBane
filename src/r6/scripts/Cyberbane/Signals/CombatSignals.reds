@@ -31,6 +31,12 @@ public let cbScarMask: Int32;
 @addField(ScriptedPuppet)
 public let cbLastAttacker: wref<ScriptedPuppet>;
 
+// Whether the last hit this puppet took came from somebody other than V (2.5.6). A death was V's whenever V had hit
+// them at any point, so a ganger V grazed and a rival gang then killed counted as V's kill: their gang's grudge, V's
+// fighting style, the Renown. The killing blow decides now (CBOnPuppetDeath).
+@addField(ScriptedPuppet)
+public let cbLastHitByOther: Bool;
+
 @wrapMethod(ScriptedPuppet)
 protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   let result = wrappedMethod(evt);
@@ -187,6 +193,7 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   // a real gang's standing or send a VR enemy back as a Rival (Core/StoryHold.reds).
   if IsDefined(instigator) && instigator.IsPlayer() && CBPlayerIsVHere(instigator as PlayerPuppet) {
     puppet.cbDamagedByPlayer = true;
+    puppet.cbLastHitByOther = false;
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
     puppet.cbScarMask = CBMaskSet(puppet.cbScarMask, CBScarBitFor(puppet.cbLastAttackType));
     puppet.cbLastMethodMask = CBMethodMaskFor(evt.attackData);
@@ -206,6 +213,10 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   let attacker = instigator as ScriptedPuppet;
   if IsDefined(attacker) && !attacker.IsPlayer() {
     puppet.cbLastAttacker = attacker;
+    // Somebody else's hit, not their own grenade going off under them.
+    if !Equals(attacker.GetEntityID(), puppet.GetEntityID()) {
+      puppet.cbLastHitByOther = true;
+    }
     // A quickhack on V: who from, looked at on the next tick (Spawn/HuntGrows.reds, [49]).
     if puppet.IsPlayer() && AttackData.IsHack(evt.attackData.GetAttackType()) {
       puppet.cbHackedFrom = attacker.GetEntityID();
@@ -215,6 +226,12 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
 
 func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
+  // Hurt by V, then killed by somebody else (2.5.6): not V's kill, for everything below that asks. Read here, a frame
+  // after the death, when the killing hit has been written down whichever event the game delivered first.
+  if puppet.cbDamagedByPlayer && puppet.cbLastHitByOther {
+    puppet.cbDamagedByPlayer = false;
+    CBLog.Info(n"Signals", "Somebody V had hurt was killed by somebody else: not counted as V's kill.");
+  }
   CBUntrackOnMap(game, puppet);   // no marker left hanging over a body
   // Shot with their hands up (Spawn/LivingStreet.reds, experimental surrender).
   if puppet.cbSurrendered && puppet.cbDamagedByPlayer {

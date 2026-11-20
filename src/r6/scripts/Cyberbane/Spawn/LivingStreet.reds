@@ -682,7 +682,8 @@ public class CBStreetLife {
           this.m_allyEnemy = enemy;
           this.m_allyCalm = 0;
           this.m_allyDay = CBGameDay(game);
-          CBPhoneSendTinted(game, CBRivalDisplayName(sys.GetContent(), r), "Nobody kills you but me. Keep your head down.", CBHudRed());
+          // On V's side for once (2.5.6): no taunts to send back under it.
+          CBPhoneSendAside(game, CBRivalDisplayName(sys.GetContent(), r), "Nobody kills you but me. Keep your head down.", CBHudRed());
           // And they say so as they arrive, in the street ([E4], 2.4.4).
           CBAnnounceLater(game, CBRivalDisplayName(sys.GetContent(), r), CBPick2("Nobody kills this one but me!", "Back off! This merc's mine!"), 2.5);
           CBLog.Info(n"Street", s"Rival \(r.id) came to help V against \(NameToString(enemy)).");
