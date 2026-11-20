@@ -3857,6 +3857,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(crewBook) {
       crewBook.Clear();   // and nobody works for V (2.5.0)
     }
+    let kitBook = CBCrewKitBook.Get(game);
+    if IsDefined(kitBook) {
+      kitBook.Clear();    // nor carries anything of V's, nor has a name (2.6.0)
+    }
     let mapBook = CBMapBook.Get(game);
     if IsDefined(mapBook) {
       mapBook.Clear();    // and the map forgets (2.5.0); the tick takes the pins down

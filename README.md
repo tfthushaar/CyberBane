@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.5.7.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.6.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -37,6 +37,12 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   they name, bodyguards, and mercy as your choice.
 - **A living street.** Bagmen to rob, favours for friendly gangs, and sit-downs between gangs at war
   that you can crash (now under **Gang life** in Mod Settings).
+
+### New in 2.6
+
+- **Your crew, kitted out.** Hand them a weapon from your bag, have spare chrome put in, send them to train, spar with
+  them, put them to work earning, send a senior one to start a war on a gang, and give the crew a name. All from the
+  Hub's Crew page. Details in [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.5
 
@@ -129,7 +135,8 @@ lives in your saves: a save made while the mod is removed loses it.
   Journal. With the game's radial menu, open Character and it is beside it. Can't find it? Turn on
   **Hub in the pause menu** (Mod Settings > Cyberbane > Messages and HUD) and it is under Escape instead.
   Click a gang to pay them off, click a Rival to read their file, buy where they are hiding or forget
-  them, and call or pay your crew. **Show as a list** on a page turns its cards into a list.
+  them, and call or pay your crew. Pick one of your crew to kit them out, train or spar with them, or
+  send them to work or to war. **Show as a list** on a page turns its cards into a list.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
   a line. Reach for a weapon and the conversation ends. Vendors, joytoys, fixers and ripperdocs keep the
   game's own conversations.

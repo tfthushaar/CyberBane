@@ -322,6 +322,7 @@ public class CBCrewBook extends ScriptableSystem {
       ArrayErase(this.m_past, 0);
     }
     ArrayRemove(this.m_members, m);
+    CBCrewKitLeaves(GetGameInstance(), m.id);   // their weapon back to V, their kit forgotten (2.6.0)
   }
 
   public func PastCount() -> Int32 {
@@ -615,7 +616,7 @@ public func CBCrewHurt(m: ref<CBCrewMember>, now: Float) -> Bool {
 }
 
 public func CBCrewReady(book: ref<CBCrewBook>, m: ref<CBCrewMember>, now: Float) -> Bool {
-  return IsDefined(m) && !CBCrewHurt(m, now) && !book.IsOut(m.id)
+  return IsDefined(m) && !CBCrewHurt(m, now) && !book.IsOut(m.id) && !CBCrewAway(GetGameInstance(), m.id, now)
       && (m.calledAt <= 0.0 || now - m.calledAt >= CBConfig.MyCrewCallSeconds());
 }
 
@@ -1079,10 +1080,15 @@ public func CBSetUpCrewMember(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   if !IsDefined(puppet) || !IsDefined(player) || !CBStillStanding(puppet) || !IsDefined(book) {
     return;
   }
+  // One of them called out for a spar (Reactions/CrewKit.reds, 2.6.0): set up for the round, never as a follower.
+  if CBCrewSparSetUp(sys, game, puppet) {
+    return;
+  }
   let m = book.MemberOfBody(puppet.GetEntityID());
   CBDisarmGodMode(game, puppet);
   if IsDefined(m) {
     CBKitApexSeat(puppet, m.seat);
+    CBCrewApplyKit(sys, game, puppet, m);   // rank, gear, the weapon handed over, chrome (Reactions/CrewKit.reds, 2.6.0)
   } else {
     CBKitSquadMember(puppet);
   }
@@ -1483,6 +1489,9 @@ public func CBCrewBodyDied(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
     return false;
   }
   let id = puppet.GetEntityID();
+  if CBCrewSparBodyDied(sys, game, id) {
+    return true;   // a round that went too far: hurt, never a death or a kill (2.6.0)
+  }
   if Equals(book.turnedBody, id) {
     CBCrewTurnedGone(sys, game, book, false, true);
     if puppet.cbDamagedByPlayer {
@@ -1911,6 +1920,10 @@ public func CBCrewStateWord(book: ref<CBCrewBook>, m: ref<CBCrewMember>, now: Fl
   if book.IsOut(m.id) {
     return "WITH YOU";
   }
+  let away = CBCrewAwayWord(GetGameInstance(), m.id, now);
+  if StrLen(away) > 0 {
+    return away;
+  }
   if CBCrewHurt(m, now) {
     let hours = CeilF((m.hurtUntil - now) / CBConfig.SecondsPerHour());
     return s"HURT, \(hours)H";
@@ -2009,6 +2022,7 @@ public func CBCrewScannerNote(npc: ref<NPCPuppet>) -> String {
 // ---- What the Hub asked for, carried out back in the game ----------------------------------------------------------
 
 func CBCrewServiceHub(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
+  CBCrewKitService(sys, game, book);   // kits, training, wars and the crew's name (Reactions/CrewKit.reds, 2.6.0)
   if book.reqPay {
     book.reqPay = false;
     let paid = CBCrewPayCut(sys, game);

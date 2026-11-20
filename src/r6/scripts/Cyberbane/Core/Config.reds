@@ -569,6 +569,54 @@ public abstract class CBConfig {
   public static func FacedownWaitMaxTicks() -> Int32 = 240
   // A Rival at the end of their rope who breaks gives up where they stand this often, instead of running (2.5.7).
   public static func RivalYieldShare() -> Float = 0.5
+
+  // ---- Kitting out the crew (Reactions/CrewKit.reds, 2.6.0) ----
+  public static func CrewNameMaxLength() -> Int32 = 24
+  public static func CrewPickListMax() -> Int32 = 10
+  // Each rank above Rookie (1 to 6): this much more health, armour and damage.
+  public static func CrewRankHealthStep() -> Float = 0.12
+  public static func CrewRankArmourStep() -> Float = 0.08
+  public static func CrewRankDamageStep() -> Float = 0.08
+  // Each training's better gear: health and armour.
+  public static func CrewGearStep() -> Float = 0.1
+  // A weapon handed over: damage by its quality, common 1 step to legendary 5.
+  public static func CrewWeaponTierDamage() -> Float = 0.05
+  // Each implant: a step of what it does, or critical chance, or hack resistance.
+  public static func CrewChromeStep() -> Float = 0.12
+  public static func CrewChromeCrit() -> Float = 8.0
+  public static func CrewChromeIce() -> Float = 15.0
+  public static func CrewChromeMax() -> Int32 = 4
+  public static func CrewMultCeiling() -> Float = 3.0
+  // Training: the first costs this, each one after it more; away this many game hours, more each time; at most this many.
+  public static func CrewTrainCostBase() -> Int32 = 2500
+  public static func CrewTrainHoursBase() -> Float = 8.0
+  public static func CrewTrainMax() -> Int32 = 3
+  public static func CrewTrainLoyalty() -> Int32 = 5
+  // A war: from this rank (Lieutenant), away this long, and how it goes.
+  public static func CrewWarMinRank() -> Int32 = 4
+  public static func CrewWarHours() -> Float = 18.0
+  public static func CrewWarBase() -> Float = 0.3
+  public static func CrewWarPerRank() -> Float = 0.07
+  public static func CrewWarStrengthWeight() -> Float = 0.25
+  public static func CrewWarGangLoss() -> Float = 18.0
+  public static func CrewWarStanding() -> Float = 12.0
+  public static func CrewWarDeathShare() -> Float = 0.35
+  public static func CrewWarHurtHours() -> Float = 48.0
+  // A spar: put down this far off; a minute of fighting; stopped when either side is under this much health (percent);
+  // they are this much tougher and hit this hard. Sharp for this many game hours after; every few spars a training.
+  public static func CrewSparSpawnDistance() -> Float = 25.0
+  public static func CrewSparArriveTicks() -> Int32 = 45
+  public static func CrewSparTicks() -> Int32 = 60
+  public static func CrewSparStopHealth() -> Float = 30.0
+  public static func CrewSparHealthMult() -> Float = 2.5
+  public static func CrewSparDamageMult() -> Float = 0.35
+  public static func CrewSharpHours() -> Float = 24.0
+  public static func CrewSharpDamage() -> Float = 0.1
+  public static func CrewSharpCrit() -> Float = 5.0
+  public static func CrewSparsPerTraining() -> Int32 = 3
+  // Work: each earner brings in this much per rank each game day; now and then gets hurt for a day.
+  public static func CrewEarnPerRank() -> Int32 = 150
+  public static func CrewEarnHurtChance() -> Float = 0.08
   public static func FacedownDropSeconds() -> Float = 3.0
   public static func StareBase() -> Float = 0.3
   public static func StareCool() -> Float = 0.35

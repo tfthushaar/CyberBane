@@ -1,3 +1,5 @@
+import Codeware.UI.*   // HubTextInput, the crew's name box (2.6.0)
+
 // Cyberbane - The Hub (spec §12.1)
 //
 // A page of the pause menu: Escape, then Cyberbane. It opens over the menu's own list, the game
@@ -224,7 +226,7 @@ public func CBHudActionFont() -> Int32 = 20
 // Two more buttons stacked under it, for a screen with more than one thing to do (the Rivals: find
 // one, forget one, forget them all). Three of them end at 844, well clear of the footer at 952, and
 // they stand in the column the prose beside them already leaves free (CBHudActionW).
-public func CBHudExtraActions() -> Int32 = 3
+public func CBHudExtraActions() -> Int32 = 10
 public func CBHudActionGap() -> Float = 8.0
 
 // Row layouts, as the columns are positioned for them.
@@ -592,6 +594,12 @@ public class CBHud {
   private let m_rowCrew: array<Int32>;                  // the crew member a row stands for (2.5.0); -1 the solo on offer
   private let m_pickCrew: Int32;
   private let m_letGoArmed: Int32;
+  // The Crew page's kit (2.6.0): 0 the roster, 1 picking a weapon, 2 picking chrome, 3 picking a gang for a war,
+  // 4 naming the crew; what is on offer in the list, and the name box.
+  private let m_crewMode: Int32;
+  private let m_pickItems: array<ItemID>;
+  private let m_pickGangs: array<CName>;
+  private let m_nameInput: ref<HubTextInput>;
   private let m_rowNames: array<CName>;
   private let m_rowLayout: Int32;
   private let m_rowPlaced: Bool;
@@ -1846,7 +1854,7 @@ public class CBHud {
   // them, so the page takes the keys the game's screens use for their inner pages (the perk trees,
   // the journal, the ripperdoc's categories).
   protected cb func CBOnGlobalRelease(e: ref<inkPointerEvent>) -> Bool {
-    if !this.IsOpen() || !IsDefined(e) || e.IsHandled() {
+    if !this.IsOpen() || !IsDefined(e) || e.IsHandled() || this.m_crewMode == 4 {
       return false;
     }
     let step = 0;
@@ -2014,6 +2022,29 @@ public class CBHud {
   }
 
   private func RowClicked(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32) -> Void {
+    if this.m_tab == CBHudCrewTab() && this.m_crewMode >= 1 && this.m_crewMode <= 3 {
+      // A pick from the list (2.6.0): what it is for, asked for, carried out back in the game.
+      let pick = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] - 1 : -1;
+      let kbPick = CBCrewKitBook.Get(game);
+      if IsDefined(kbPick) && pick >= 0 && this.m_pickCrew > 0 {
+        kbPick.reqMember = this.m_pickCrew;
+        if this.m_crewMode == 1 && pick < ArraySize(this.m_pickItems) {
+          kbPick.reqItem = this.m_pickItems[pick];
+          kbPick.reqGive = true;
+        }
+        if this.m_crewMode == 2 && pick < ArraySize(this.m_pickItems) {
+          kbPick.reqItem = this.m_pickItems[pick];
+          kbPick.reqChrome = true;
+        }
+        if this.m_crewMode == 3 && pick < ArraySize(this.m_pickGangs) {
+          kbPick.reqWarOn = this.m_pickGangs[pick];
+          kbPick.reqWar = true;
+        }
+      }
+      this.m_crewMode = 0;
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudCrewTab() {
       this.m_pickCrew = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] : 0;
       this.m_letGoArmed = 0;
@@ -2053,6 +2084,19 @@ public class CBHud {
   // the menu closes. Clicking again before then takes the request back.
   private func ActionClicked(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // The crew (2.5.0): "Need you. Now." is carried out on the first tick back in the game; clicked again, taken back.
+    if this.m_tab == CBHudCrewTab() && this.m_crewMode != 0 {
+      // "Back" out of a list; "Save the name" when naming (2.6.0).
+      if this.m_crewMode == 4 {
+        let kbName = CBCrewKitBook.Get(game);
+        if IsDefined(kbName) && IsDefined(this.m_nameInput) {
+          kbName.reqNameText = this.m_nameInput.GetText();
+          kbName.reqName = true;
+        }
+      }
+      this.m_crewMode = 0;
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudCrewTab() {
       let crew = CBCrewBook.Get(game);
       if IsDefined(crew) {
@@ -2146,6 +2190,53 @@ public class CBHud {
   // Neither is carried out from here, for the reason given above ActionClicked.
   private func ExtraClicked(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
     // The crew (2.5.0): pay the cut, let the picked one go (asks twice), take the solo on. All carried out back in the game.
+    if this.m_tab == CBHudCrewTab() && this.m_crewMode == 4 {
+      if slot == 1 {
+        this.m_crewMode = 0;   // Cancel: the name stays as it was
+      }
+      this.Render(sys, game);
+      return;
+    }
+    if this.m_tab == CBHudCrewTab() && slot >= 4 {
+      // The kit (2.6.0): a list to pick from, or the request straight away, carried out back in the game.
+      let kb = CBCrewKitBook.Get(game);
+      if IsDefined(kb) {
+        if slot == 8 {
+          this.m_crewMode = 4;
+        }
+        if this.m_pickCrew > 0 {
+          let k = kb.Find(this.m_pickCrew);
+          if slot == 4 {
+            if IsDefined(k) && k.hasWeapon {
+              kb.reqMember = this.m_pickCrew;
+              kb.reqTakeBack = true;
+            } else {
+              this.m_crewMode = 1;
+            }
+          }
+          if slot == 5 {
+            this.m_crewMode = 2;
+          }
+          if slot == 6 {
+            kb.reqMember = this.m_pickCrew;
+            kb.reqTrain = true;
+          }
+          if slot == 7 {
+            this.m_crewMode = 3;
+          }
+          if slot == 9 {
+            kb.reqMember = this.m_pickCrew;
+            kb.reqSpar = true;
+          }
+          if slot == 10 {
+            kb.reqMember = this.m_pickCrew;
+            kb.reqEarn = true;
+          }
+        }
+      }
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudCrewTab() {
       let cb = CBCrewBook.Get(game);
       if IsDefined(cb) {
@@ -4491,6 +4582,9 @@ public class CBHud {
       return;
     }
     let now = CBGameSeconds(game);
+    if this.m_crewMode != 0 && this.RenderCrewMode(sys, game, book) {
+      return;
+    }
     let offer = book.offerSeed != 0 && book.offerUntil >= now;
     // The pick: still on the roster, or the offer still standing; otherwise the first of them.
     if this.m_pickCrew > 0 && !IsDefined(book.Find(this.m_pickCrew)) {
@@ -4554,9 +4648,158 @@ public class CBHud {
         this.SetExtra(3, s"Hire the solo: \(book.offerPrice)eb", book.HasRoom() && CBHudEddies(game) >= book.offerPrice);
       }
     }
+    this.CrewKitButtons(sys, game, book, m, now);
     let file = CBCrewFile(sys, game, book, m, this.m_pickCrew == -1);
-    let text = why + (StrLen(file) > 0 ? file + "\n" + CBCrewSummary(sys, game) : CBCrewSummary(sys, game));
+    if IsDefined(m) && this.m_pickCrew > 0 {
+      file += "\n" + CBCrewKitLines(sys, game, m);
+    }
+    let crewName = CBCrewNameOf(game);
+    let named = StrLen(crewName) > 0 ? StrUpper(crewName) + "\n" : "";
+    let kbWars = CBCrewKitBook.Get(game);
+    if IsDefined(kbWars) && kbWars.WarsWon() > 0 {
+      named += s"Wars your crew started and won: \(kbWars.WarsWon()).\n";
+    }
+    let text = named + why + (StrLen(file) > 0 ? file + "\n" + CBCrewSummary(sys, game) : CBCrewSummary(sys, game));
     this.SetBody(x, top, anything ? w - CBHudActionW() - 40.0 : w, text, CBHudMaxLinesFor(this.m_tab));
+  }
+
+  // The kit's buttons for the one picked (2.6.0): a weapon, chrome, training, a war, and the crew's name.
+  private func CrewKitButtons(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>, now: Float) -> Void {
+    if book.Count() > 0 {
+      this.SetExtra(8, StrLen(CBCrewNameOf(game)) > 0 ? "Rename your crew" : "Name your crew", true);
+    }
+    if !IsDefined(m) || this.m_pickCrew <= 0 {
+      return;
+    }
+    let kb = CBCrewKitBook.Get(game);
+    let k = IsDefined(kb) ? kb.Find(m.id) : null;
+    let free = !book.IsOut(m.id) && !CBCrewAway(game, m.id, now);
+    let queued = IsDefined(kb) && kb.reqMember == m.id;
+    if IsDefined(k) && k.hasWeapon {
+      this.SetExtra(4, queued && kb.reqTakeBack ? "Taking it back..." : "Take your weapon back", free && !queued);
+    } else {
+      this.SetExtra(4, "Give them a weapon", free && !queued);
+    }
+    let chromeCount = IsDefined(k) ? ArraySize(k.chrome) : 0;
+    this.SetExtra(5, chromeCount >= CBConfig.CrewChromeMax() ? "No room for more chrome" : "Have chrome put in",
+                  free && !queued && chromeCount < CBConfig.CrewChromeMax());
+    let trained = IsDefined(k) ? k.trained : 0;
+    if trained >= CBConfig.CrewTrainMax() {
+      this.SetExtra(6, "Fully trained", false);
+    } else {
+      let cost = CBCrewTrainCost(k);
+      this.SetExtra(6, queued && kb.reqTrain ? "Sending them..." : s"Send to train: \(cost)eb, \(RoundF(CBCrewTrainHours(k)))h",
+                    free && !queued && !CBCrewHurt(m, now) && CBHudEddies(game) >= cost);
+    }
+    let rank = CBCrewRankOf(game, m);
+    if rank < CBConfig.CrewWarMinRank() {
+      this.SetExtra(7, s"Start a war: needs \(CBCrewRankWord(CBConfig.CrewWarMinRank()))", false);
+    } else {
+      this.SetExtra(7, queued && kb.reqWar ? "Sending them..." : "Send them to start a war", free && !queued && !CBCrewHurt(m, now));
+    }
+    let sparWhy = CBCrewSparBlocked(sys, game, m, now);
+    if IsDefined(kb) && kb.sparMember == m.id {
+      this.SetExtra(9, "Sparring now", false);
+    } else {
+      this.SetExtra(9, StrLen(sparWhy) > 0 ? s"Spar: \(sparWhy)" : "Spar with them", StrLen(sparWhy) == 0 && !queued);
+    }
+    this.SetExtra(10, IsDefined(k) && k.earning ? "Stop their work" : "Put them to work", !queued);
+  }
+
+  // Picking a weapon, chrome or a gang, or naming the crew (2.6.0). False when there is nothing to do it for.
+  private func RenderCrewMode(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Bool {
+    let x = CBHudMarginX();
+    let w = CBHudContentW();
+    let top = CBHudContentTop();
+    let m = this.m_pickCrew > 0 ? book.Find(this.m_pickCrew) : null;
+    if this.m_crewMode != 4 && !IsDefined(m) {
+      this.m_crewMode = 0;
+      return false;
+    }
+    this.HideWeb();
+    if this.m_crewMode == 4 {
+      this.ShowNameInput(game, x, top);
+      this.SetAction("Save the name", true);
+      this.SetExtra(1, "Cancel", true);
+      this.SetBody(x, top + 110.0, w - CBHudActionW() - 40.0,
+        "Type a name for your crew, then save it. Letters, numbers, spaces and - ' . & ! only, up to 24. Save it empty to go without one.",
+        CBHudMaxLinesFor(this.m_tab));
+      return true;
+    }
+    this.PlaceRows(CBHudLayoutCrew());
+    let player = GetPlayer(game);
+    let ts = GameInstance.GetTransactionSystem(game);
+    let row = 0;
+    let intro = "";
+    let name = CBCrewName(sys, m);
+    if this.m_crewMode == 1 || this.m_crewMode == 2 {
+      this.m_pickItems = this.m_crewMode == 1 ? CBCrewWeaponChoices(game) : CBCrewChromeChoices(game);
+      let i = 0;
+      while i < ArraySize(this.m_pickItems) && row < CBHudListRows() {
+        let id = this.m_pickItems[i];
+        let data = IsDefined(ts) && IsDefined(player) ? ts.GetItemData(player, id) : null;
+        let kind = "";
+        let tier = "";
+        if IsDefined(data) {
+          tier = CBCrewTierWord(CBCrewTierOf(RPGManager.GetItemQuality(data)));
+          kind = this.m_crewMode == 1 ? CBCrewSeatWord(CBCrewSeatForWeapon(data.GetItemType()))
+                                      : CBCrewChromeWord(CBCrewChromeArea(ItemID.GetTDBID(id)));
+        }
+        this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCrewItemName(ItemID.GetTDBID(id)), kind, tier, "", "", "");
+        this.m_rowCrew[row] = i + 1;
+        row += 1;
+        i += 1;
+      }
+      intro = this.m_crewMode == 1
+        ? s"Pick a weapon for \(name). Its mods and attachments go back in your bag. From their next call they fight the way it is used, and it adds to their damage by its quality. Take it back any time; it comes back if they leave."
+        : s"Pick chrome for \(name), from what you own and do not wear. It goes in for good: armour, health, damage, critical hits or hack resistance, by where it goes. Up to \(CBConfig.CrewChromeMax()).";
+      if row == 0 {
+        intro = this.m_crewMode == 1 ? "You have no spare weapon to give: everything is equipped, or there is nothing a person could fight with."
+                                     : "You have no spare chrome: everything you own is installed in you.";
+      }
+    }
+    if this.m_crewMode == 3 {
+      this.m_pickGangs = CBCrewWarTargets(sys);
+      let g = 0;
+      while g < ArraySize(this.m_pickGangs) && row < CBHudListRows() {
+        let gang = this.m_pickGangs[g];
+        this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCapFirst(CBFactionLabel(gang)),
+          CBGangStrengthWord(CBGangStrength(sys, gang)), "", "", "", "");
+        this.m_rowCrew[row] = g + 1;
+        row += 1;
+        g += 1;
+      }
+      intro = s"Pick a gang for \(name) to start a war on. Away \(RoundF(CBConfig.CrewWarHours())) hours. Won, the gang loses ground and blames you; lost, \(name) comes back hurt, or not at all. The weaker the gang, the better the odds.";
+      if row == 0 {
+        intro = "No gang to go to war on: every gang that fields people is friendly with you.";
+      }
+    }
+    this.SetAction("Back", true);
+    let bodyTop = top + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
+    this.SetBody(x, bodyTop, w - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
+    return true;
+  }
+
+  // The name box, built the first time it is wanted (Codeware's HubTextInput), in the page's own panel.
+  private func ShowNameInput(game: GameInstance, x: Float, y: Float) -> Void {
+    if !IsDefined(this.m_nameInput) && IsDefined(this.m_panel) {
+      let input = HubTextInput.Create();
+      input.SetName(n"CBCrewNameInput");
+      input.SetMaxLength(CBConfig.CrewNameMaxLength());
+      input.SetDefaultText("Name your crew");
+      input.Reparent(this.m_panel);
+      input.SetText(CBCrewNameOf(game));
+      this.m_nameInput = input;
+    }
+    if !IsDefined(this.m_nameInput) {
+      return;
+    }
+    let root = this.m_nameInput.GetRootWidget();
+    if IsDefined(root) {
+      root.SetVisible(true);
+      root.SetMargin(this.PxAt(x, y));
+    }
+    this.m_nameInput.SetWidth(this.Px(760.0));
   }
 
   private func RenderCrewRows(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, offer: Bool) -> Int32 {
@@ -4570,7 +4813,7 @@ public class CBHud {
       if IsDefined(m) {
         let state = CBCrewStateWord(book, m, now);
         this.SetRow(row, CBHudLayoutCrew(), CBCrewStateTint(state), true, m.id == this.m_pickCrew,
-          CBCrewName(sys, m), CBCrewSeatWord(m.seat), s"rank \(CBCrewRank(m.wins))", CBCrewFromShort(m), "", state);
+          CBCrewName(sys, m), CBCrewSeatWord(m.seat), CBCrewRankWord(CBCrewRankOf(game, m)), CBCrewFromShort(m), "", state);
         this.SetRowBar(row, CBHudCrewBarX(), CBHudCrewBarW(), Cast<Float>(m.loyalty) / 100.0, CBCrewLoyaltyTint(m.loyalty));
         this.m_rowCrew[row] = m.id;
         row += 1;
@@ -4716,6 +4959,15 @@ public class CBHud {
   private func Render(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if !IsDefined(this.m_root) || !this.m_open {
       return;
+    }
+    if this.m_tab != CBHudCrewTab() {
+      this.m_crewMode = 0;
+    }
+    if IsDefined(this.m_nameInput) && this.m_crewMode != 4 {
+      let nameRoot = this.m_nameInput.GetRootWidget();
+      if IsDefined(nameRoot) {
+        nameRoot.SetVisible(false);
+      }
     }
     let score = sys.GetScore();
     let titleName = CBHudActiveTitle(sys);
@@ -6284,6 +6536,13 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
       }
       }
     }
+  }
+  // A war one of V's crew started (2.6.0).
+  if Equals(e.kind, n"CrewWarWon") {
+    line = StrLen(gang) > 0 ? s"One of your crew started a war on \(gang), and won it." : "One of your crew started a war, and won it.";
+  }
+  if Equals(e.kind, n"CrewWarLost") {
+    line = StrLen(gang) > 0 ? s"One of your crew went to war on \(gang), and did not come back." : "One of your crew went to war, and did not come back.";
   }
   // A Rival somebody else killed (2.5.6, CBRivalSlain): before, every Rival's death was written as V's.
   if Equals(e.kind, n"RivalDied") {

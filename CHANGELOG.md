@@ -3,6 +3,34 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.6.0 (20 November 2026)
+
+**Your crew, kitted out.** Everything below is on the Hub's Crew page: pick somebody, then use the buttons beside their
+file.
+
+- **Give them a weapon** from your bag. Its mods and attachments go back in your bag first. From their next call they
+  fight the way it is used (heavy, shooter or blade), on a body of their gang's that carries that kind of weapon, and
+  it adds to their damage by its quality. Take it back whenever you like, and it comes back to you if they leave the
+  crew. One who used to be a Rival keeps their own face; only the way they fight changes.
+- **Have chrome put in.** Spare cyberware you own and do not wear goes in for good, up to four pieces each. What it
+  does follows where it goes: armour, health, damage, critical hits or resistance to hacks. Their file lists it, and
+  you feel it the next time they fight beside you.
+- **Ranks:** Rookie, Soldier, Veteran, Lieutenant, Enforcer, Legend. Their wins and their training together decide it,
+  and every rank makes them tougher.
+- **Send them to train.** They are away for some hours and it costs money, more each time, three times at most. They
+  come back a rank higher, with better gear.
+- **Spar with them.** Call one out for a timed round. They come at you tougher than usual but hitting softly, and the
+  round stops the moment either of you is close to going down, or the time runs out. Nobody dies of it. Afterwards they
+  are sharper for a day, and every three spars count as a training. Once a day each.
+- **Put them to work.** An earner brings in money every day, more the higher their rank, and now and then comes back
+  hurt.
+- **Send them to start a war.** From Lieutenant up, send one against a gang that is not your friend. Won, the gang loses
+  ground and blames you; lost, they come back hurt, or not at all. The weaker the gang, the better the odds. Your
+  History keeps every war.
+- **Name your crew.** Type a name on the Crew page. It heads the page.
+
+Your progress carries over.
+
 ## 2.5.7 (20 November 2026)
 
 **Talking to people**
