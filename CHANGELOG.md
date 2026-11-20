@@ -5,8 +5,9 @@ the next unless a version says otherwise.
 
 ## 2.6.0 (20 November 2026)
 
-**Your crew, kitted out.** Everything below is on the Hub's Crew page: pick somebody, then use the buttons beside their
-file.
+**Your crew, kitted out.** Everything below is on the Hub's Crew page. Pick somebody and press **Orders** for their
+list; press **Name, colours, the fallen** for the crew itself. Orders are carried out when you are back in the game,
+and clicking one again before then takes it back.
 
 - **Give them a weapon** from your bag. Its mods and attachments go back in your bag first. From their next call they
   fight the way it is used (heavy, shooter or blade), on a body of their gang's that carries that kind of weapon, and
@@ -24,10 +25,23 @@ file.
   are sharper for a day, and every three spars count as a training. Once a day each.
 - **Put them to work.** An earner brings in money every day, more the higher their rank, and now and then comes back
   hurt.
+- **Put one to recruiting.** One of your crew at a time can look for people worth having. The broker texts you a solo
+  more often, even before the city knows your name, for a quarter less, and the solo arrives as a Soldier with a few
+  fights behind them (a Veteran when your recruiter is a Lieutenant or higher) and more loyal than most.
 - **Send them to start a war.** From Lieutenant up, send one against a gang that is not your friend. Won, the gang loses
   ground and blames you; lost, they come back hurt, or not at all. The weaker the gang, the better the odds. Your
   History keeps every war.
-- **Name your crew.** Type a name on the Crew page. It heads the page.
+- **Name your crew** and **give it colours**, from eight. The name heads the Crew page; the colours go on your crew's
+  cards and their texts.
+- **Your crew has its own standing with each gang**, apart from yours. A war it starts sets that gang against it, more
+  when it wins, and pleases the gang at war with them. A gang that lends you somebody warms to it; a gang whose people
+  it scares into joining or kills cools, and so does one that kills one of yours. It eases a little every day. A gang
+  that hates your crew is ready for its next war, so the odds drop. The Crew page lists where it stands, worst first.
+- **Your crew on the Gangs page.** A card of its own among the gangs, in its colours. Pick a gang and the card says how
+  that gang sees your crew; with nothing picked, it names the gang that thinks least of it. Click it for the crew's
+  page. Each gang's words under the list say it too.
+- **Remember the fallen.** Everyone of your crew who dies goes on a memorial: their rank, how and where they died and
+  how long ago, how long they were with you, their wins, the weapon of yours they carried and the chrome you gave them.
 
 Your progress carries over.
 

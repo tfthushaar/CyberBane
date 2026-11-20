@@ -41,8 +41,10 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 ### New in 2.6
 
 - **Your crew, kitted out.** Hand them a weapon from your bag, have spare chrome put in, send them to train, spar with
-  them, put them to work earning, send a senior one to start a war on a gang, and give the crew a name. All from the
-  Hub's Crew page. Details in [CHANGELOG.md](CHANGELOG.md).
+  them, put them to work earning or recruiting, and send a senior one to start a war on a gang. All from the Hub's Crew
+  page. Details in [CHANGELOG.md](CHANGELOG.md).
+- **Your crew as a crew.** Give it a name and colours. It has its own standing with every gang, a card of its own on
+  the Gangs page, and a memorial for the ones who died, with what they carried.
 
 ### New in 2.5
 
@@ -135,8 +137,9 @@ lives in your saves: a save made while the mod is removed loses it.
   Journal. With the game's radial menu, open Character and it is beside it. Can't find it? Turn on
   **Hub in the pause menu** (Mod Settings > Cyberbane > Messages and HUD) and it is under Escape instead.
   Click a gang to pay them off, click a Rival to read their file, buy where they are hiding or forget
-  them, and call or pay your crew. Pick one of your crew to kit them out, train or spar with them, or
-  send them to work or to war. **Show as a list** on a page turns its cards into a list.
+  them, and call or pay your crew. Pick one of your crew and press **Orders** to kit them out, train or
+  spar with them, or send them to work or to war; **Name, colours, the fallen** is for the crew itself.
+  **Show as a list** on a page turns its cards into a list.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
   a line. Reach for a weapon and the conversation ends. Vendors, joytoys, fixers and ripperdocs keep the
   game's own conversations.

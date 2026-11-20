@@ -21,7 +21,8 @@
 //     the moment either side is close to going down, or the time runs out. Nobody dies of it: the game's god mode is
 //     what Cyberbane strips off its people (CBDisarmGodMode), so the round is kept safe by its own stop instead. Each
 //     spar leaves them sharp for a day, and every few count as a training. Once a game day each.
-//   - Work. Put on earning, they bring in money every game day by their rank, and now and then come back hurt.
+//   - Work. Put on earning, they bring in money every game day by their rank, and now and then come back hurt. Or
+//     put to recruiting (one at a time), they find the broker better solos (Reactions/CrewBanner.reds).
 //
 // Everything is kept in CBCrewKitBook, keyed by the member's id: the crew's own saved class is never changed.
 
@@ -43,6 +44,23 @@ public class CBCrewKit {
   public persistent let earning: Bool;        // put to work
 }
 
+// One order asked for on the Hub, for one member, carried out on the next tick. Each member's orders are their own: one
+// slot for everybody gave the first one's order to the next one picked.
+public class CBCrewKitAsk {
+  public let member: Int32;
+  public let what: Int32;     // CBCrewAskGive .. CBCrewAskWork
+  public let item: ItemID;    // the weapon or the chrome
+  public let gang: CName;     // the war's gang
+}
+
+public func CBCrewAskGive() -> Int32 = 1
+public func CBCrewAskTakeBack() -> Int32 = 2
+public func CBCrewAskChrome() -> Int32 = 3
+public func CBCrewAskTrain() -> Int32 = 4
+public func CBCrewAskWar() -> Int32 = 5
+public func CBCrewAskSpar() -> Int32 = 6
+public func CBCrewAskWork() -> Int32 = 7
+
 public class CBCrewKitBook extends ScriptableSystem {
   private persistent let m_kits: array<ref<CBCrewKit>>;
   private persistent let m_name: array<Int32>;    // the crew's name, as places in CBCrewNameAlphabet, one up
@@ -53,17 +71,8 @@ public class CBCrewKitBook extends ScriptableSystem {
   public let sparBody: EntityID;
   public let sparStart: Int32;     // the tick it was asked for
   public let sparSeen: Int32;      // the tick their body was first in the world, 0 before
-  public let reqSpar: Bool;
-  public let reqEarn: Bool;
   // Asked for on the Hub, carried out on the next tick (CBCrewKitService).
-  public let reqMember: Int32;
-  public let reqGive: Bool;
-  public let reqItem: ItemID;
-  public let reqTakeBack: Bool;
-  public let reqChrome: Bool;
-  public let reqTrain: Bool;
-  public let reqWar: Bool;
-  public let reqWarOn: CName;
+  public let asks: array<ref<CBCrewKitAsk>>;
   public let reqName: Bool;
   public let reqNameText: String;
 
@@ -108,6 +117,51 @@ public class CBCrewKitBook extends ScriptableSystem {
     this.m_warsWon = 0;
     this.m_earnDay = 0;
     this.sparMember = 0;
+    ArrayClear(this.asks);
+  }
+
+  // An order for a member, in place of any of the same kind already asked for them.
+  public func Ask(member: Int32, what: Int32, item: ItemID, gang: CName) -> Void {
+    if member <= 0 {
+      return;
+    }
+    this.Unask(member, what);
+    let a = new CBCrewKitAsk();
+    a.member = member;
+    a.what = what;
+    a.item = item;
+    a.gang = gang;
+    ArrayPush(this.asks, a);
+  }
+
+  // Taken back before it was carried out.
+  public func Unask(member: Int32, what: Int32) -> Void {
+    let i = ArraySize(this.asks) - 1;
+    while i >= 0 {
+      if IsDefined(this.asks[i]) && this.asks[i].member == member && this.asks[i].what == what {
+        ArrayErase(this.asks, i);
+      }
+      i -= 1;
+    }
+  }
+
+  public func Asked(member: Int32, what: Int32) -> Bool {
+    for a in this.asks {
+      if IsDefined(a) && a.member == member && a.what == what {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // A weapon or an implant already asked to go to one of them: not offered twice.
+  public func ItemAsked(item: ItemID) -> Bool {
+    for a in this.asks {
+      if IsDefined(a) && (a.what == CBCrewAskGive() || a.what == CBCrewAskChrome()) && Equals(a.item, item) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public func EarnDay() -> Int32 {
@@ -486,43 +540,28 @@ public func CBCrewKitService(sys: ref<CyberbaneSystem>, game: GameInstance, book
     CBSystemNote(game, StrLen(named) > 0 ? s"your crew is \(named) now." : "your crew has no name now.", 4.0);
     CBLog.Info(n"Crew", s"V named the crew: \(named).");
   }
-  let m = kb.reqMember > 0 ? book.Find(kb.reqMember) : null;
-  if IsDefined(m) && !book.IsOut(m.id) && !CBCrewAway(game, m.id, now) {
-    if kb.reqTakeBack {
-      CBCrewTakeBack(sys, game, kb, m);
-    }
-    if kb.reqGive {
-      CBCrewGiveWeapon(sys, game, kb, m, kb.reqItem);
-    }
-    if kb.reqChrome {
-      CBCrewInstallChrome(sys, game, kb, m, kb.reqItem);
-    }
-    if kb.reqTrain {
-      CBCrewSendTraining(sys, game, kb, m, now);
-    }
-    if kb.reqWar {
-      CBCrewSendToWar(sys, game, kb, m, kb.reqWarOn, now);
-    }
-    if kb.reqSpar {
-      CBCrewSparStart(sys, game, kb, m, now);
-    }
-    if kb.reqEarn {
-      let ke = kb.Kit(m.id);
-      ke.earning = !ke.earning;
-      CBCrewText(sys, game, m, ke.earning ? "I'll work the street for you. You'll see a cut every day." : "Done working. I'm here when you need me.");
+  // Every order asked for, in the order asked; each for a member still on the roster, here and not away.
+  let asks: array<ref<CBCrewKitAsk>>;
+  for queued in kb.asks {
+    ArrayPush(asks, queued);
+  }
+  ArrayClear(kb.asks);
+  for a in asks {
+    let m = IsDefined(a) ? book.Find(a.member) : null;
+    if IsDefined(m) && !book.IsOut(m.id) && !CBCrewAway(game, m.id, now) {
+      if a.what == CBCrewAskTakeBack() { CBCrewTakeBack(sys, game, kb, m); }
+      if a.what == CBCrewAskGive() { CBCrewGiveWeapon(sys, game, kb, m, a.item); }
+      if a.what == CBCrewAskChrome() { CBCrewInstallChrome(sys, game, kb, m, a.item); }
+      if a.what == CBCrewAskTrain() { CBCrewSendTraining(sys, game, kb, m, now); }
+      if a.what == CBCrewAskWar() { CBCrewSendToWar(sys, game, kb, m, a.gang, now); }
+      if a.what == CBCrewAskSpar() { CBCrewSparStart(sys, game, kb, m, now); }
+      if a.what == CBCrewAskWork() { CBCrewSetWork(sys, game, m); }   // earning, recruiting, or none (CrewBanner.reds)
     }
   }
-  kb.reqMember = 0;
-  kb.reqGive = false;
-  kb.reqTakeBack = false;
-  kb.reqChrome = false;
-  kb.reqTrain = false;
-  kb.reqWar = false;
-  kb.reqSpar = false;
-  kb.reqEarn = false;
   CBCrewKitReturns(sys, game, kb, book, now);
   CBCrewSparTick(sys, game, kb, book, now);
   CBCrewEarnTick(sys, game, kb, book, now);
+  CBCrewBannerTick(sys, game, now);
 }
 
 // ---- A spar --------------------------------------------------------------------------------------
@@ -913,11 +952,17 @@ func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   let chance = CBConfig.CrewWarBase() + CBConfig.CrewWarPerRank() * Cast<Float>(rank)
              + 0.03 * Cast<Float>(ArraySize(k.chrome)) + 0.02 * Cast<Float>(k.weaponTier) + 0.03 * Cast<Float>(k.trained)
              - CBConfig.CrewWarStrengthWeight() * strength;
+  // A gang that already hates the crew is ready for it; one that respects it is caught out (Reactions/CrewBanner.reds).
+  chance += CBConfig.CrewStandWarWeight() * Cast<Float>(CBCrewStandingWith(game, gang)) / 100.0;
   chance = ClampF(chance, 0.15, 0.9);
   let label = CBFactionLabel(gang);
   if RandF() < chance {
     CBWeakenGang(sys, game, gang, CBConfig.CrewWarGangLoss());
     CBTalkSlight(sys, game, gang, CBConfig.CrewWarStanding());
+    CBCrewStandingShift(game, gang, -CBConfig.CrewStandWarWon());
+    let content = sys.GetContent();
+    let enemy = IsDefined(content) ? CBTopEnemyOf(sys, content, gang) : n"";
+    CBCrewStandingShift(game, enemy, CBConfig.CrewStandWarEnemy());   // the enemy of their enemy
     m.wins += 2;
     m.loyalty = Min(100, m.loyalty + 5);
     kb.NoteWarWon();
@@ -926,9 +971,15 @@ func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
     CBLog.Info(n"Crew", s"A crew member's war on \(NameToString(gang)) was won.");
     return false;
   }
+  CBCrewStandingShift(game, gang, -CBConfig.CrewStandWarLost());
   if RandF() < CBConfig.CrewWarDeathShare() {
     let name = CBCrewName(sys, m);
     CBFileLog(sys, n"CrewWarLost", now, CBEventDistrict(sys, game), gang, Cast<Float>(m.id));
+    let bb = CBCrewBannerBook.Get(game);
+    if IsDefined(bb) {
+      bb.fallCause = CBCrewFellAtWar();   // for the memorial
+      bb.fallGang = gang;
+    }
     book.Remove(m, CBCrewEndFell(), 0, CBEventDistrict(sys, game), now);
     if CBMessagesOn() {
       CBPhoneSendTinted(game, CBCapFirst(label), s"\(name) came for us. \(name) isn't coming back.", CBHudRed());
@@ -976,6 +1027,13 @@ public func CBCrewKitLines(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref
   }
   if IsDefined(k) && k.earning {
     out += " Working the street for you.";
+  }
+  if CBCrewIsRecruiter(game, m.id) {
+    out += " Recruiting for the crew: the broker's solos come more often, cheaper, and with fights behind them.";
+    let roster = CBCrewBook.Get(game);
+    if IsDefined(roster) && !roster.HasRoom() {
+      out += " Your crew is full, so they have nobody to bring until somebody leaves.";
+    }
   }
   if IsDefined(k) && k.spars > 0 {
     out += s" Sparred \(k.spars) times.";

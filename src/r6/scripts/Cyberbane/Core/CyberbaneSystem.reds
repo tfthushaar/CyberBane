@@ -3861,6 +3861,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(kitBook) {
       kitBook.Clear();    // nor carries anything of V's, nor has a name (2.6.0)
     }
+    let bannerBook = CBCrewBannerBook.Get(game);
+    if IsDefined(bannerBook) {
+      bannerBook.Clear(); // nor colours, standing, fallen or a recruiter (2.6.0)
+    }
     let mapBook = CBMapBook.Get(game);
     if IsDefined(mapBook) {
       mapBook.Clear();    // and the map forgets (2.5.0); the tick takes the pins down

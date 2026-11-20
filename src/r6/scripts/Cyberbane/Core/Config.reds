@@ -617,6 +617,26 @@ public abstract class CBConfig {
   // Work: each earner brings in this much per rank each game day; now and then gets hurt for a day.
   public static func CrewEarnPerRank() -> Int32 = 150
   public static func CrewEarnHurtChance() -> Float = 0.08
+  // The crew as a crew (Reactions/CrewBanner.reds, 2.6.0): its colours, its own standing with each gang, its fallen
+  // and its recruiter.
+  public static func CrewColourDefault() -> Int32 = 3          // green, the colour its texts always had
+  public static func CrewStandWarWon() -> Int32 = 30           // the gang a war was won on
+  public static func CrewStandWarEnemy() -> Int32 = 10         // and the gang at war with them, pleased
+  public static func CrewStandWarLost() -> Int32 = 15
+  public static func CrewStandLent() -> Int32 = 10             // a gang lent the crew one of theirs
+  public static func CrewStandFrightened() -> Int32 = 8        // one of theirs scared into joining
+  public static func CrewStandOwed() -> Int32 = 5              // a Rival of theirs who joined
+  public static func CrewStandMemberKilled() -> Int32 = 10     // one of the crew killed by their people
+  public static func CrewStandKill() -> Int32 = 1              // one of theirs killed by the crew
+  public static func CrewStandEase() -> Int32 = 2              // a game day, back towards nothing
+  public static func CrewStandWarWeight() -> Float = 0.1       // war odds at -100 or +100
+  public static func CrewFallenKept() -> Int32 = 10            // the memorial's names (one list of the Hub's rows)
+  public static func CrewRecruitChance() -> Float = 0.35       // on top of MyCrewOfferChance, a day
+  public static func CrewRecruitDiscount() -> Float = 0.25     // off the solo's price
+  public static func CrewRecruitLoyalty() -> Int32 = 10        // a solo a crew member vouched for
+  public static func CrewRecruitWins() -> Int32 = 3            // a recruited solo comes as a Soldier...
+  public static func CrewRecruitWinsSenior() -> Int32 = 7      // ...or a Veteran, found by a senior recruiter
+  public static func CrewRecruitSeniorRank() -> Int32 = 4
   public static func FacedownDropSeconds() -> Float = 3.0
   public static func StareBase() -> Float = 0.3
   public static func StareCool() -> Float = 0.35

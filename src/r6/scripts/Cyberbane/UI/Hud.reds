@@ -226,7 +226,9 @@ public func CBHudActionFont() -> Int32 = 20
 // Two more buttons stacked under it, for a screen with more than one thing to do (the Rivals: find
 // one, forget one, forget them all). Three of them end at 844, well clear of the footer at 952, and
 // they stand in the column the prose beside them already leaves free (CBHudActionW).
-public func CBHudExtraActions() -> Int32 = 10
+public func CBHudExtraActions() -> Int32 = 3
+// The Crew page's orders list: the row that lets one go, after the kit's asks (CBCrewAskGive .. CBCrewAskWork).
+public func CBHudCrewOrderLetGo() -> Int32 = 8
 public func CBHudActionGap() -> Float = 8.0
 
 // Row layouts, as the columns are positioned for them.
@@ -594,9 +596,12 @@ public class CBHud {
   private let m_rowCrew: array<Int32>;                  // the crew member a row stands for (2.5.0); -1 the solo on offer
   private let m_pickCrew: Int32;
   private let m_letGoArmed: Int32;
-  // The Crew page's kit (2.6.0): 0 the roster, 1 picking a weapon, 2 picking chrome, 3 picking a gang for a war,
-  // 4 naming the crew; what is on offer in the list, and the name box.
+  // The Crew page's screens (2.6.0): 0 the roster, 1 picking a weapon, 2 picking chrome, 3 picking a gang for a war,
+  // 4 naming the crew, 5 the memorial, 6 the picked one's orders, 7 the crew itself; what is on offer in the list, the
+  // name box, the memorial's pick (one up), and whether the Gangs page drew the crew's card.
   private let m_crewMode: Int32;
+  private let m_pickFallen: Int32;
+  private let m_crewCardShown: Bool;
   private let m_pickItems: array<ItemID>;
   private let m_pickGangs: array<CName>;
   private let m_nameInput: ref<HubTextInput>;
@@ -2023,25 +2028,37 @@ public class CBHud {
 
   private func RowClicked(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32) -> Void {
     if this.m_tab == CBHudCrewTab() && this.m_crewMode >= 1 && this.m_crewMode <= 3 {
-      // A pick from the list (2.6.0): what it is for, asked for, carried out back in the game.
+      // A pick from the list (2.6.0): asked for, carried out back in the game; back to their orders, where it shows.
       let pick = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] - 1 : -1;
       let kbPick = CBCrewKitBook.Get(game);
+      let noItem: ItemID;
       if IsDefined(kbPick) && pick >= 0 && this.m_pickCrew > 0 {
-        kbPick.reqMember = this.m_pickCrew;
         if this.m_crewMode == 1 && pick < ArraySize(this.m_pickItems) {
-          kbPick.reqItem = this.m_pickItems[pick];
-          kbPick.reqGive = true;
+          kbPick.Ask(this.m_pickCrew, CBCrewAskGive(), this.m_pickItems[pick], n"");
         }
         if this.m_crewMode == 2 && pick < ArraySize(this.m_pickItems) {
-          kbPick.reqItem = this.m_pickItems[pick];
-          kbPick.reqChrome = true;
+          kbPick.Ask(this.m_pickCrew, CBCrewAskChrome(), this.m_pickItems[pick], n"");
         }
         if this.m_crewMode == 3 && pick < ArraySize(this.m_pickGangs) {
-          kbPick.reqWarOn = this.m_pickGangs[pick];
-          kbPick.reqWar = true;
+          kbPick.Ask(this.m_pickCrew, CBCrewAskWar(), noItem, this.m_pickGangs[pick]);
         }
       }
-      this.m_crewMode = 0;
+      this.m_crewMode = 6;
+      this.Render(sys, game);
+      return;
+    }
+    if this.m_tab == CBHudCrewTab() && this.m_crewMode >= 5 {
+      let code = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] : 0;
+      if this.m_crewMode == 5 {
+        this.m_pickFallen = code == this.m_pickFallen ? 0 : code;
+      }
+      if this.m_crewMode == 6 {
+        this.CrewOrderClicked(game, code);
+      } else {
+        if this.m_crewMode == 7 {
+          this.CrewRecordClicked(game, code);
+        }
+      }
       this.Render(sys, game);
       return;
     }
@@ -2085,15 +2102,18 @@ public class CBHud {
   private func ActionClicked(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // The crew (2.5.0): "Need you. Now." is carried out on the first tick back in the game; clicked again, taken back.
     if this.m_tab == CBHudCrewTab() && this.m_crewMode != 0 {
-      // "Back" out of a list; "Save the name" when naming (2.6.0).
-      if this.m_crewMode == 4 {
+      // "Back" out of a screen, "Save the name" when naming (2.6.0): a pick list goes back to the orders it came from,
+      // the name and the memorial to the crew's own screen, the rest to the roster.
+      let mode = this.m_crewMode;
+      if mode == 4 {
         let kbName = CBCrewKitBook.Get(game);
         if IsDefined(kbName) && IsDefined(this.m_nameInput) {
           kbName.reqNameText = this.m_nameInput.GetText();
           kbName.reqName = true;
         }
       }
-      this.m_crewMode = 0;
+      this.m_crewMode = mode >= 1 && mode <= 3 ? 6 : (mode == 4 || mode == 5 ? 7 : 0);
+      this.m_pickFallen = 0;
       this.Render(sys, game);
       return;
     }
@@ -2189,75 +2209,33 @@ public class CBHud {
   // The buttons under the first. Only the Rivals have them: forget this one, and forget them all.
   // Neither is carried out from here, for the reason given above ActionClicked.
   private func ExtraClicked(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
-    // The crew (2.5.0): pay the cut, let the picked one go (asks twice), take the solo on. All carried out back in the game.
     if this.m_tab == CBHudCrewTab() && this.m_crewMode == 4 {
       if slot == 1 {
-        this.m_crewMode = 0;   // Cancel: the name stays as it was
-      }
-      this.Render(sys, game);
-      return;
-    }
-    if this.m_tab == CBHudCrewTab() && slot >= 4 {
-      // The kit (2.6.0): a list to pick from, or the request straight away, carried out back in the game.
-      let kb = CBCrewKitBook.Get(game);
-      if IsDefined(kb) {
-        if slot == 8 {
-          this.m_crewMode = 4;
-        }
-        if this.m_pickCrew > 0 {
-          let k = kb.Find(this.m_pickCrew);
-          if slot == 4 {
-            if IsDefined(k) && k.hasWeapon {
-              kb.reqMember = this.m_pickCrew;
-              kb.reqTakeBack = true;
-            } else {
-              this.m_crewMode = 1;
-            }
-          }
-          if slot == 5 {
-            this.m_crewMode = 2;
-          }
-          if slot == 6 {
-            kb.reqMember = this.m_pickCrew;
-            kb.reqTrain = true;
-          }
-          if slot == 7 {
-            this.m_crewMode = 3;
-          }
-          if slot == 9 {
-            kb.reqMember = this.m_pickCrew;
-            kb.reqSpar = true;
-          }
-          if slot == 10 {
-            kb.reqMember = this.m_pickCrew;
-            kb.reqEarn = true;
-          }
-        }
+        this.m_crewMode = 7;   // Cancel: the name stays as it was
       }
       this.Render(sys, game);
       return;
     }
     if this.m_tab == CBHudCrewTab() {
+      // Pay the cut; the picked one's orders, or the solo hired; the crew itself (2.6.0). Requests are carried out back
+      // in the game.
       let cb = CBCrewBook.Get(game);
       if IsDefined(cb) {
         if slot == 1 {
           cb.reqPay = !cb.reqPay;
         }
-        if slot == 3 {
-          cb.reqHire = !cb.reqHire;
-        }
-        if slot == 2 && this.m_pickCrew > 0 {
-          if cb.reqLetGo == this.m_pickCrew {
-            cb.reqLetGo = 0;
+        if slot == 2 {
+          if this.m_pickCrew > 0 {
+            this.m_crewMode = 6;
             this.m_letGoArmed = 0;
-          } else {
-            if this.m_letGoArmed == this.m_pickCrew {
-              cb.reqLetGo = this.m_pickCrew;
-              this.m_letGoArmed = 0;
-            } else {
-              this.m_letGoArmed = this.m_pickCrew;
-            }
           }
+          if this.m_pickCrew == -1 {
+            cb.reqHire = !cb.reqHire;
+          }
+        }
+        if slot == 3 {
+          this.m_crewMode = 7;
+          this.m_pickFallen = 0;
         }
       }
       this.Render(sys, game);
@@ -3066,6 +3044,10 @@ public class CBHud {
       let ties = CBWebRelationWords(sys, game, id);
       out += (StrLen(ties) > 0 ? ties + " " : "") + s"\(CBPostureName(posture)) to you, \(RoundF(score.GetStanding(id))).\n";
     }
+    let crewLine = isOn ? CBCrewStandingLine(game, id) : "";
+    if StrLen(crewLine) > 0 {
+      out += crewLine + "\n";   // the crew's own standing with them (2.6.0)
+    }
     if !isOn {
       out += "Switched off under Factions in Mod Settings. Cyberbane leaves them alone: nobody of theirs\n"
            + "turns on you because of Cyberbane, they send nobody, and your standing is kept for later.\n";
@@ -3744,6 +3726,13 @@ public class CBHud {
   // A place picked by click, key or pad: its gang is the pick, as a row is on the list; V's own place, or the one
   // already picked, clears it.
   private func WebPick(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    // V's crew's card (2.6.0): the Crew page's screen for the crew itself.
+    if slot == 0 && this.m_crewCardShown {
+      this.m_crewMode = 7;
+      this.m_pickFallen = 0;
+      this.SelectTab(sys, game, CBHudCrewTab());
+      return;
+    }
     let gang = CBWebSlotGang(slot);
     this.m_pickFaction = (Equals(gang, n"") || Equals(gang, this.m_pickFaction)) ? n"" : gang;
     this.m_payArmed = n"";
@@ -4103,6 +4092,11 @@ public class CBHud {
                     w, h, false);
       n += 1;
     }
+    // V's crew in the grid's empty place (2.6.0).
+    this.m_crewCardShown = false;
+    if ArraySize(this.m_webOrder) == 11 {
+      this.CrewWebCard(sys, game, 3.0 * (w + CBCardGapX()), 2.0 * (h + CBCardGapY()), w, h);
+    }
     let corpY = 3.0 * (h + CBCardGapY());
     let c = 12;
     while c <= 15 {
@@ -4112,6 +4106,46 @@ public class CBHud {
     }
     this.HideWebFrom(0, 0);
     this.PaintWeb();
+  }
+
+  // V's crew among the gangs (2.6.0), in the box the web once drew V in: its name and colours, and how the gang picked
+  // stands with it, or else the one that thinks least of it. Clicked, the Crew page's screen for the crew itself.
+  private func CrewWebCard(sys: ref<CyberbaneSystem>, game: GameInstance, x: Float, y: Float, w: Float, h: Float) -> Void {
+    let book = CBCrewBook.Get(game);
+    let bb = CBCrewBannerBook.Get(game);
+    if !CBMyCrewOn() || !IsDefined(book) || !IsDefined(bb) || (book.Count() == 0 && bb.StandCount() == 0 && bb.FallenCount() == 0) {
+      return;
+    }
+    let slot = 0;
+    this.PlaceWebBox(slot, x, y, w, h, true);
+    this.DressBox(slot, w, h, CBPicName(), CBPicLine(), CBPicLead(), false);
+    let colour = CBCrewColour(game);
+    let name = CBCrewNameOf(game);
+    this.BoxText(this.m_webBoxName[slot], StrLen(name) > 0 ? name : "Your crew", w - 24.0, CBPicName(), CBPicNameLeast(), true);
+    let kb = CBCrewKitBook.Get(game);
+    let wars = IsDefined(kb) ? kb.WarsWon() : 0;
+    let line = s"\(book.Count()) ON THE ROSTER" + (wars > 0 ? s"  /  \(wars) \(wars == 1 ? "WAR" : "WARS") WON" : "");
+    this.BoxText(this.m_webBoxLine[slot], line, w - 24.0, CBPicLine(), CBPicLineLeast(), false);
+    if IsDefined(this.m_webBoxLine[slot]) {
+      this.m_webBoxLine[slot].SetTintColor(colour);
+    }
+    if IsDefined(this.m_webBoxEdge[slot]) {
+      this.m_webBoxEdge[slot].SetTintColor(colour);
+      this.m_webBoxEdge[slot].SetVisible(true);
+    }
+    let gang = this.m_pickFaction;
+    if !IsNameValid(gang) || !CBWebSlotIsGang(CBWebSlotOf(gang)) {
+      gang = CBCrewWorstGang(game);
+    }
+    let v = IsNameValid(gang) ? bb.Standing(gang) : 0;
+    let lead = IsNameValid(gang) ? s"\(CBCrewStandWord(v)) with \(CBPhoneGangSender(gang))" : "No gang holds a grudge yet";
+    if IsDefined(this.m_webBoxLead[slot]) {
+      this.BoxText(this.m_webBoxLead[slot], lead, w - 24.0, CBPicLead(), CBPicLeadLeast(), false);
+      this.m_webBoxLead[slot].SetTintColor(IsNameValid(gang) ? CBCrewStandTint(v) : CBHudDim());
+      this.m_webBoxLead[slot].SetVisible(true);
+    }
+    this.BoxBarSigned(slot, w, h, ClampF(Cast<Float>(v) / 100.0, -1.0, 1.0), v < 0 ? CBHudRed() : CBHudGreen());
+    this.m_crewCardShown = true;
   }
 
   // One gang's card.
@@ -4609,7 +4643,7 @@ public class CBHud {
       let rows = this.RenderCrewRows(sys, game, book, offer);
       top += Cast<Float>(Max(rows, 1)) * CBHudRowHeight() + 24.0;
     }
-    // What can be done: call them, pay the cut, let the picked one go, take the solo on.
+    // What can be done: call them, pay the cut, the picked one's orders or the solo hired, and the crew itself.
     let why = "";
     if book.Count() > 0 {
       if book.reqCall {
@@ -4630,25 +4664,24 @@ public class CBHud {
       }
     }
     let m = this.m_pickCrew > 0 ? book.Find(this.m_pickCrew) : null;
+    // The picked one's orders on a screen of their own (2.6.0): a button each ran off the bottom of the page.
     if IsDefined(m) {
-      if book.reqLetGo == m.id {
-        this.SetExtra(2, "Keep them", true);
-      } else {
-        if book.IsOut(m.id) {
-          this.SetExtra(2, "With you: wait", false);
-        } else {
-          this.SetExtra(2, this.m_letGoArmed == m.id ? "Click again to let go" : "Let them go", true);
-        }
-      }
+      this.SetExtra(2, s"Orders for \(CBCrewFirst(sys, m))", true);
     }
-    if offer {
+    if offer && this.m_pickCrew == -1 {
       if book.reqHire {
-        this.SetExtra(3, "Hiring. Click to take it back", true);
+        this.SetExtra(2, "Hiring. Click to take it back", true);
       } else {
-        this.SetExtra(3, s"Hire the solo: \(book.offerPrice)eb", book.HasRoom() && CBHudEddies(game) >= book.offerPrice);
+        this.SetExtra(2, s"Hire the solo: \(book.offerPrice)eb", book.HasRoom() && CBHudEddies(game) >= book.offerPrice);
       }
     }
-    this.CrewKitButtons(sys, game, book, m, now);
+    if offer && this.m_pickCrew != -1 {
+      why += "A solo is on offer: pick them to hire them.\n";
+    }
+    let bbPage = CBCrewBannerBook.Get(game);
+    if book.Count() > 0 || (IsDefined(bbPage) && bbPage.FallenCount() > 0) {
+      this.SetExtra(3, "Name, colours, the fallen", true);
+    }
     let file = CBCrewFile(sys, game, book, m, this.m_pickCrew == -1);
     if IsDefined(m) && this.m_pickCrew > 0 {
       file += "\n" + CBCrewKitLines(sys, game, m);
@@ -4663,56 +4696,15 @@ public class CBHud {
     this.SetBody(x, top, anything ? w - CBHudActionW() - 40.0 : w, text, CBHudMaxLinesFor(this.m_tab));
   }
 
-  // The kit's buttons for the one picked (2.6.0): a weapon, chrome, training, a war, and the crew's name.
-  private func CrewKitButtons(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>, now: Float) -> Void {
-    if book.Count() > 0 {
-      this.SetExtra(8, StrLen(CBCrewNameOf(game)) > 0 ? "Rename your crew" : "Name your crew", true);
-    }
-    if !IsDefined(m) || this.m_pickCrew <= 0 {
-      return;
-    }
-    let kb = CBCrewKitBook.Get(game);
-    let k = IsDefined(kb) ? kb.Find(m.id) : null;
-    let free = !book.IsOut(m.id) && !CBCrewAway(game, m.id, now);
-    let queued = IsDefined(kb) && kb.reqMember == m.id;
-    if IsDefined(k) && k.hasWeapon {
-      this.SetExtra(4, queued && kb.reqTakeBack ? "Taking it back..." : "Take your weapon back", free && !queued);
-    } else {
-      this.SetExtra(4, "Give them a weapon", free && !queued);
-    }
-    let chromeCount = IsDefined(k) ? ArraySize(k.chrome) : 0;
-    this.SetExtra(5, chromeCount >= CBConfig.CrewChromeMax() ? "No room for more chrome" : "Have chrome put in",
-                  free && !queued && chromeCount < CBConfig.CrewChromeMax());
-    let trained = IsDefined(k) ? k.trained : 0;
-    if trained >= CBConfig.CrewTrainMax() {
-      this.SetExtra(6, "Fully trained", false);
-    } else {
-      let cost = CBCrewTrainCost(k);
-      this.SetExtra(6, queued && kb.reqTrain ? "Sending them..." : s"Send to train: \(cost)eb, \(RoundF(CBCrewTrainHours(k)))h",
-                    free && !queued && !CBCrewHurt(m, now) && CBHudEddies(game) >= cost);
-    }
-    let rank = CBCrewRankOf(game, m);
-    if rank < CBConfig.CrewWarMinRank() {
-      this.SetExtra(7, s"Start a war: needs \(CBCrewRankWord(CBConfig.CrewWarMinRank()))", false);
-    } else {
-      this.SetExtra(7, queued && kb.reqWar ? "Sending them..." : "Send them to start a war", free && !queued && !CBCrewHurt(m, now));
-    }
-    let sparWhy = CBCrewSparBlocked(sys, game, m, now);
-    if IsDefined(kb) && kb.sparMember == m.id {
-      this.SetExtra(9, "Sparring now", false);
-    } else {
-      this.SetExtra(9, StrLen(sparWhy) > 0 ? s"Spar: \(sparWhy)" : "Spar with them", StrLen(sparWhy) == 0 && !queued);
-    }
-    this.SetExtra(10, IsDefined(k) && k.earning ? "Stop their work" : "Put them to work", !queued);
-  }
-
-  // Picking a weapon, chrome or a gang, or naming the crew (2.6.0). False when there is nothing to do it for.
+  // The Crew page's other screens (2.6.0): a member's orders and the lists they pick from, the crew's own record,
+  // naming it, and the memorial. False when there is nobody to show it for.
   private func RenderCrewMode(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Bool {
     let x = CBHudMarginX();
     let w = CBHudContentW();
     let top = CBHudContentTop();
     let m = this.m_pickCrew > 0 ? book.Find(this.m_pickCrew) : null;
-    if this.m_crewMode != 4 && !IsDefined(m) {
+    let forMember = (this.m_crewMode >= 1 && this.m_crewMode <= 3) || this.m_crewMode == 6;
+    if forMember && !IsDefined(m) {
       this.m_crewMode = 0;
       return false;
     }
@@ -4726,6 +4718,18 @@ public class CBHud {
         CBHudMaxLinesFor(this.m_tab));
       return true;
     }
+    if this.m_crewMode == 5 {
+      this.RenderCrewFallen(sys, game);
+      return true;
+    }
+    if this.m_crewMode == 6 {
+      this.RenderCrewOrders(sys, game, book, m);
+      return true;
+    }
+    if this.m_crewMode == 7 {
+      this.RenderCrewRecord(sys, game, book);
+      return true;
+    }
     this.PlaceRows(CBHudLayoutCrew());
     let player = GetPlayer(game);
     let ts = GameInstance.GetTransactionSystem(game);
@@ -4733,7 +4737,15 @@ public class CBHud {
     let intro = "";
     let name = CBCrewName(sys, m);
     if this.m_crewMode == 1 || this.m_crewMode == 2 {
-      this.m_pickItems = this.m_crewMode == 1 ? CBCrewWeaponChoices(game) : CBCrewChromeChoices(game);
+      // What V has, less anything already asked to go to one of them.
+      let choices = this.m_crewMode == 1 ? CBCrewWeaponChoices(game) : CBCrewChromeChoices(game);
+      let kbItems = CBCrewKitBook.Get(game);
+      ArrayClear(this.m_pickItems);
+      for c in choices {
+        if !IsDefined(kbItems) || !kbItems.ItemAsked(c) {
+          ArrayPush(this.m_pickItems, c);
+        }
+      }
       let i = 0;
       while i < ArraySize(this.m_pickItems) && row < CBHudListRows() {
         let id = this.m_pickItems[i];
@@ -4763,13 +4775,14 @@ public class CBHud {
       let g = 0;
       while g < ArraySize(this.m_pickGangs) && row < CBHudListRows() {
         let gang = this.m_pickGangs[g];
+        let stand = CBCrewStandingWith(game, gang);
         this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCapFirst(CBFactionLabel(gang)),
-          CBGangStrengthWord(CBGangStrength(sys, gang)), "", "", "", "");
+          CBGangStrengthWord(CBGangStrength(sys, gang)), "", s"your crew: \(StrLower(CBCrewStandWord(stand)))", "", "");
         this.m_rowCrew[row] = g + 1;
         row += 1;
         g += 1;
       }
-      intro = s"Pick a gang for \(name) to start a war on. Away \(RoundF(CBConfig.CrewWarHours())) hours. Won, the gang loses ground and blames you; lost, \(name) comes back hurt, or not at all. The weaker the gang, the better the odds.";
+      intro = s"Pick a gang for \(name) to start a war on. Away \(RoundF(CBConfig.CrewWarHours())) hours. Won, the gang loses ground and blames you; lost, \(name) comes back hurt, or not at all. The weaker the gang, the better the odds, and a gang that already hates your crew is ready for it.";
       if row == 0 {
         intro = "No gang to go to war on: every gang that fields people is friendly with you.";
       }
@@ -4778,6 +4791,236 @@ public class CBHud {
     let bodyTop = top + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(x, bodyTop, w - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
     return true;
+  }
+
+  // One member's orders (2.6.0), a row each, carried out back in the game. One asked for says so, and clicked again
+  // before then is taken back.
+  private func RenderCrewOrders(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>) -> Void {
+    let now = CBGameSeconds(game);
+    let kb = CBCrewKitBook.Get(game);
+    let k = IsDefined(kb) ? kb.Find(m.id) : null;
+    let out = book.IsOut(m.id);
+    let free = !out && !CBCrewAway(game, m.id, now);
+    let hurt = CBCrewHurt(m, now);
+    let asked = false;
+    this.PlaceRows(CBHudLayoutCrew());
+    // A weapon from V's bag, or theirs handed back.
+    if IsDefined(k) && k.hasWeapon {
+      asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskTakeBack());
+      this.CrewOrderRow(0, CBCrewAskTakeBack(), asked ? "Handing it back..." : "Take your weapon back", free || asked, asked,
+                        CBCrewItemName(ItemID.GetTDBID(k.weapon)), StrUpper(CBCrewTierWord(k.weaponTier)));
+    } else {
+      asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskGive());
+      this.CrewOrderRow(0, CBCrewAskGive(), asked ? "A weapon on its way..." : "Give them a weapon", free || asked, asked,
+                        "nothing of yours", "");
+    }
+    // Chrome.
+    let chrome = IsDefined(k) ? ArraySize(k.chrome) : 0;
+    let room = chrome < CBConfig.CrewChromeMax();
+    asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskChrome());
+    this.CrewOrderRow(1, CBCrewAskChrome(), asked ? "Chrome on its way..." : (room ? "Have chrome put in" : "No room for more chrome"),
+                      (free && room) || asked, asked, s"\(chrome) of \(CBConfig.CrewChromeMax()) fitted", "");
+    // Training.
+    let trained = IsDefined(k) ? k.trained : 0;
+    asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskTrain());
+    if trained >= CBConfig.CrewTrainMax() {
+      this.CrewOrderRow(2, CBCrewAskTrain(), "Fully trained", false, false, s"\(trained) of \(CBConfig.CrewTrainMax()) done", "");
+    } else {
+      let cost = CBCrewTrainCost(k);
+      this.CrewOrderRow(2, CBCrewAskTrain(), asked ? "Off to train..." : "Send them to train",
+                        (free && !hurt && CBHudEddies(game) >= cost) || asked, asked,
+                        hurt ? "hurt: not yet" : s"away \(RoundF(CBCrewTrainHours(k))) hours", s"\(cost)EB");
+    }
+    // A war, from Lieutenant up.
+    let rank = CBCrewRankOf(game, m);
+    asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskWar());
+    if rank < CBConfig.CrewWarMinRank() {
+      this.CrewOrderRow(3, CBCrewAskWar(), "Send them to start a war", false, false,
+                        s"needs \(CBCrewRankWord(CBConfig.CrewWarMinRank()))", "");
+    } else {
+      this.CrewOrderRow(3, CBCrewAskWar(), asked ? "Off to war..." : "Send them to start a war", (free && !hurt) || asked, asked,
+                        hurt ? "hurt: not yet" : s"away \(RoundF(CBConfig.CrewWarHours())) hours", "");
+    }
+    // A spar.
+    asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskSpar());
+    if IsDefined(kb) && kb.sparMember == m.id {
+      this.CrewOrderRow(4, CBCrewAskSpar(), "Sparring now", false, false, "", "");
+    } else {
+      let sparWhy = asked ? "" : CBCrewSparBlocked(sys, game, m, now);
+      this.CrewOrderRow(4, CBCrewAskSpar(), asked ? "Coming to spar..." : "Spar with them", StrLen(sparWhy) == 0, asked, sparWhy, "");
+    }
+    // Work: earning, recruiting, or none.
+    let work = CBCrewWorkOf(game, m.id);
+    let next = CBCrewNextWork(game, m.id);
+    asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskWork());
+    let workLabel = next == 1 ? "Put them to work earning" : (next == 2 ? "Put them to recruiting" : "Stop their work");
+    this.CrewOrderRow(5, CBCrewAskWork(), asked ? "Telling them..." : workLabel, free || asked, asked,
+                      s"now: \(CBCrewWorkWord(work))", work == 1 ? s"\(CBConfig.CrewEarnPerRank() * rank)EB A DAY" : "");
+    // Letting them go, asked twice.
+    if book.reqLetGo == m.id {
+      this.CrewOrderRow(6, CBHudCrewOrderLetGo(), "Keep them", true, true, "leaving your crew", "");
+    } else {
+      this.CrewOrderRow(6, CBHudCrewOrderLetGo(), this.m_letGoArmed == m.id ? "Click again to let go" : "Let them go", !out, false,
+                        out ? "with you: wait" : "", "");
+    }
+    let text = CBCrewFile(sys, game, book, m, false) + "\n" + CBCrewKitLines(sys, game, m) + "\n"
+             + "Orders are carried out when you are back in the game; click one again before then to take it back. One of your crew recruits at a time.";
+    if out {
+      text = "With you now: orders wait until they are home.\n" + text;
+    }
+    this.SetAction("Back", true);
+    let bodyTop = CBHudContentTop() + 7.0 * CBHudRowHeight() + 24.0;
+    this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
+  }
+
+  private func CrewOrderRow(row: Int32, code: Int32, label: String, clickable: Bool, asked: Bool, detail: String, right: String) -> Void {
+    this.SetRow(row, CBHudLayoutCrew(), asked ? CBHudCyan() : (clickable ? CBHudLabel() : CBHudDim()), clickable, asked,
+                label, "", "", detail, "", right);
+    if row >= 0 && row < ArraySize(this.m_rowCrew) {
+      this.m_rowCrew[row] = code;
+    }
+  }
+
+  // An order picked: a list to pick from, the order asked for, or taken back if it already was.
+  private func CrewOrderClicked(game: GameInstance, code: Int32) -> Void {
+    let kb = CBCrewKitBook.Get(game);
+    let cb = CBCrewBook.Get(game);
+    let id = this.m_pickCrew;
+    if !IsDefined(kb) || !IsDefined(cb) || id <= 0 || code <= 0 {
+      return;
+    }
+    if code != CBHudCrewOrderLetGo() {
+      this.m_letGoArmed = 0;
+    }
+    if code < CBHudCrewOrderLetGo() && kb.Asked(id, code) {
+      kb.Unask(id, code);
+      return;
+    }
+    let noItem: ItemID;
+    if code == CBCrewAskGive() { this.m_crewMode = 1; }
+    if code == CBCrewAskChrome() { this.m_crewMode = 2; }
+    if code == CBCrewAskWar() { this.m_crewMode = 3; }
+    if code == CBCrewAskTakeBack() || code == CBCrewAskTrain() || code == CBCrewAskSpar() || code == CBCrewAskWork() {
+      kb.Ask(id, code, noItem, n"");
+    }
+    if code == CBHudCrewOrderLetGo() {
+      if cb.reqLetGo == id {
+        cb.reqLetGo = 0;
+        this.m_letGoArmed = 0;
+      } else {
+        if this.m_letGoArmed == id {
+          cb.reqLetGo = id;
+          this.m_letGoArmed = 0;
+        } else {
+          this.m_letGoArmed = id;
+        }
+      }
+    }
+  }
+
+  // The crew itself (2.6.0): its name, its colours, the memorial, and its own standing with each gang, worst first.
+  private func RenderCrewRecord(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
+    let bb = CBCrewBannerBook.Get(game);
+    let kb = CBCrewKitBook.Get(game);
+    this.PlaceRows(CBHudLayoutCrew());
+    let name = CBCrewNameOf(game);
+    this.SetRow(0, CBHudLayoutCrew(), CBHudLabel(), true, false, StrLen(name) > 0 ? "Rename your crew" : "Name your crew", "", "",
+                StrLen(name) > 0 ? name : "no name yet", "", "");
+    this.m_rowCrew[0] = 1;
+    let colour = CBCrewColourIndex(game);
+    this.SetRow(1, CBHudLayoutCrew(), CBCrewColourTint(colour), true, false, "Change its colours", StrUpper(CBCrewColourWord(colour)), "",
+                "click for the next", "", "");
+    this.m_rowCrew[1] = 2;
+    let fallen = IsDefined(bb) ? bb.FallenCount() : 0;
+    this.SetRow(2, CBHudLayoutCrew(), fallen > 0 ? CBHudLabel() : CBHudDim(), fallen > 0, false, "Remember the fallen", "", "",
+                fallen > 0 ? s"\(fallen) \(fallen == 1 ? "name" : "names")" : "nobody yet", "", "");
+    this.m_rowCrew[2] = 3;
+    let row = 3;
+    // Its standing, worst first.
+    let order: array<Int32>;
+    let n = IsDefined(bb) ? bb.StandCount() : 0;
+    let i = 0;
+    while i < n {
+      let v = bb.StandValueAt(i);
+      let at = 0;
+      while at < ArraySize(order) && bb.StandValueAt(order[at]) <= v {
+        at += 1;
+      }
+      ArrayInsert(order, at, i);
+      i += 1;
+    }
+    let shown = 0;
+    for idx in order {
+      let gang = bb.StandGangAt(idx);
+      if row < CBHudListRows() && CBFactionOn(gang) {
+        let value = bb.StandValueAt(idx);
+        let tint = CBCrewStandTint(value);
+        this.SetRow(row, CBHudLayoutCrew(), tint, false, false, CBPhoneGangSender(gang), StrUpper(CBCrewStandWord(value)), "", "", "",
+                    s"\(value)");
+        this.SetRowBar(row, CBHudCrewBarX(), CBHudCrewBarW(), ClampF(Cast<Float>(value) / 100.0, -1.0, 1.0), tint, true);
+        this.m_rowCrew[row] = 0;
+        row += 1;
+        shown += 1;
+      }
+    }
+    let wars = IsDefined(kb) ? kb.WarsWon() : 0;
+    let text = (StrLen(name) > 0 ? StrUpper(name) : "YOUR CREW") + "\n"
+             + s"\(book.Count()) on the roster, \(fallen) fallen" + (wars > 0 ? s", \(wars) \(wars == 1 ? "war" : "wars") won." : ".") + "\n";
+    if shown == 0 {
+      text += "No gang thinks anything of your crew yet.\n";
+    }
+    text += "Your crew has its own standing with the gangs, apart from yours. A war it starts sets that gang against it, more when it wins, and pleases the gang at war with them. A gang that lends you somebody warms to it; one whose people it scares into joining or kills cools, and so does one that kills one of yours. A gang that hates your crew is ready for its next war. It all eases a little every day.";
+    this.SetAction("Back", true);
+    let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
+    this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
+  }
+
+  private func CrewRecordClicked(game: GameInstance, code: Int32) -> Void {
+    if code == 1 {
+      this.m_crewMode = 4;
+    }
+    if code == 2 {
+      let bb = CBCrewBannerBook.Get(game);
+      if IsDefined(bb) {
+        bb.reqColour = (CBCrewColourIndex(game) + 1) % CBCrewColourCount() + 1;   // the next one, carried out on the tick
+      }
+    }
+    if code == 3 {
+      this.m_crewMode = 5;
+      this.m_pickFallen = 0;
+    }
+  }
+
+  // The memorial (2.6.0): the fallen, the last first; one picked, what is remembered of them.
+  private func RenderCrewFallen(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    let bb = CBCrewBannerBook.Get(game);
+    this.PlaceRows(CBHudLayoutCrew());
+    let row = 0;
+    let n = IsDefined(bb) ? bb.FallenCount() : 0;
+    let picked: ref<CBCrewFallen>;
+    let i = n - 1;
+    while i >= 0 && row < CBHudListRows() {
+      let f = bb.FallenAt(i);
+      if IsDefined(f) {
+        let isPicked = this.m_pickFallen == i + 1;
+        if isPicked {
+          picked = f;
+        }
+        this.SetRow(row, CBHudLayoutCrew(), CBCrewColour(game), true, isPicked, CBCrewFallenName(sys, f), CBCrewRankWord(f.rank), "",
+                    CBCrewFallenShort(sys, f), "", StrUpper(CBCrewFallenAgo(game, f)));
+        this.m_rowCrew[row] = i + 1;
+        row += 1;
+      }
+      i -= 1;
+    }
+    let text = IsDefined(picked) ? CBCrewEpitaph(sys, game, picked)
+             : "THE FALLEN\nThe ones who died for your crew, and what they carried. Pick a name to read what is remembered of them.";
+    if n == 0 {
+      text = "THE FALLEN\nNobody from your crew has died yet.";
+    }
+    this.SetAction("Back", true);
+    let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
+    this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
 
   // The name box, built the first time it is wanted (Codeware's HubTextInput), in the page's own panel.
@@ -4822,7 +5065,7 @@ public class CBHud {
     if offer && row < CBHudListRows() {
       let seat = CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed);
       this.SetRow(row, CBHudLayoutCrew(), CBHudGrey(), true, this.m_pickCrew == -1,
-        CBCrewFullName(sys, CBCrewPaid(), n"", 0, book.offerSeed, 0, 0), CBCrewSeatWord(seat), "", "a solo on offer", "",
+        CBCrewOfferName(sys, game, book), CBCrewSeatWord(seat), "", "a solo on offer", "",
         s"\(book.offerPrice)EB");
       this.m_rowCrew[row] = -1;
       row += 1;
@@ -4878,7 +5121,7 @@ public class CBHud {
           this.m_webBoxLead[slot].SetTintColor(CBCrewStateTint(state));
         }
         if IsDefined(this.m_webBoxEdge[slot]) {
-          this.m_webBoxEdge[slot].SetTintColor(tint);
+          this.m_webBoxEdge[slot].SetTintColor(CBCrewColour(game));   // the crew's colours (2.6.0)
           this.m_webBoxEdge[slot].SetVisible(true);
         }
         this.BoxBars(slot, mw, mh, Cast<Float>(m.loyalty) / 100.0, tint, -1.0, CBHudCyan());
@@ -4897,7 +5140,7 @@ public class CBHud {
       let seat = CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed);
       this.PlaceWebBox(os, 0.0, y, mw, mh, true);
       this.DressBox(os, mw, mh, CBPicName(), CBPicLine(), CBPicLead(), false);
-      this.BoxText(this.m_webBoxName[os], CBCrewFullName(sys, CBCrewPaid(), n"", 0, book.offerSeed, 0, 0), mw - 24.0, CBPicName(),
+      this.BoxText(this.m_webBoxName[os], CBCrewOfferName(sys, game, book), mw - 24.0, CBPicName(),
                    CBPicNameLeast(), true);
       this.BoxText(this.m_webBoxLine[os], StrUpper(CBCrewSeatWord(seat)) + s"  /  \(book.offerPrice)EB", mw - 24.0, CBPicLine(),
                    CBPicLineLeast(), false);

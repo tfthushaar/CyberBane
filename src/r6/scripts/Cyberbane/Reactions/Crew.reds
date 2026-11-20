@@ -267,7 +267,9 @@ public class CBCrewBook extends ScriptableSystem {
         return true;
       }
     }
-    return false;
+    // Or one the memorial names (2.6.0), whose name is that Rival's record too.
+    let bb = CBCrewBannerBook.Get(GetGameInstance());
+    return IsDefined(bb) && bb.RemembersRival(rivalId);
   }
 
   public func HasRoom() -> Bool {
@@ -322,7 +324,12 @@ public class CBCrewBook extends ScriptableSystem {
       ArrayErase(this.m_past, 0);
     }
     ArrayRemove(this.m_members, m);
-    CBCrewKitLeaves(GetGameInstance(), m.id);   // their weapon back to V, their kit forgotten (2.6.0)
+    let game = GetGameInstance();
+    if end == CBCrewEndFell() {
+      CBCrewRememberFallen(game, m, by, district, now);   // the memorial, with what they carried (2.6.0)
+    }
+    CBCrewBannerLeaves(game, m.id);   // no longer recruiting (2.6.0)
+    CBCrewKitLeaves(game, m.id);      // their weapon back to V, their kit forgotten (2.6.0)
   }
 
   public func PastCount() -> Int32 {
@@ -643,7 +650,7 @@ public func CBCrewText(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBC
   if StrLen(line) == 0 {
     return;
   }
-  CBPhoneSendTinted(game, CBCrewSender(), IsDefined(m) ? CBCrewFirst(sys, m) + ": " + line : line, CBHudGreen());
+  CBPhoneSendTinted(game, CBCrewSender(), IsDefined(m) ? CBCrewFirst(sys, m) + ": " + line : line, CBCrewColour(game));
 }
 
 // ---- Joining ([C1]-[C4]) --------------------------------------------------------------------------------------------
@@ -664,6 +671,11 @@ func CBCrewJoined(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMe
     book.SetCutDueAt(now + 7.0 * CBConfig.SecondsPerDay());
   }
   sys.AddRenownPoints(CBConfig.MyCrewRenown());   // people working for V is a name of its own
+  // The gang they came from thinks better or worse of the crew for it (Reactions/CrewBanner.reds, 2.6.0): one lent is
+  // trust, one scared into it or a Rival of theirs who owes V is one of theirs taken.
+  if m.kind == CBCrewLent() { CBCrewStandingShift(game, m.faction, CBConfig.CrewStandLent()); }
+  if m.kind == CBCrewFrightened() { CBCrewStandingShift(game, m.faction, -CBConfig.CrewStandFrightened()); }
+  if m.kind == CBCrewOwed() { CBCrewStandingShift(game, m.faction, -CBConfig.CrewStandOwed()); }
   CBFileLog(sys, n"CrewJoined", now, CBEventDistrict(sys, game), m.faction, Cast<Float>(m.id));
   CBCrewText(sys, game, m, line);
   CBLog.Info(n"Crew", s"Somebody joined V's crew (kind \(m.kind), loyalty \(m.loyalty)).");
@@ -874,8 +886,13 @@ public func CBCrewLendAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
 // [C3] A solo looking for work: a broker texts the price now and then.
 func CBCrewMercOffer(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, now: Float) -> Void {
   let score = sys.GetScore();
-  if !IsDefined(score) || !book.HasRoom() || EnumInt(score.GetTier()) < EnumInt(ECBRenownTier.KnownMerc)
-     || book.offerUntil > now || RandF() >= CBConfig.MyCrewOfferChance() {
+  // One of the crew put to recruiting (Reactions/CrewBanner.reds, 2.6.0): a solo more often, before V has a name of
+  // their own, cheaper, and with fights already behind them.
+  let recruiter = CBCrewRecruiterReady(game, book, now);
+  let chance = CBConfig.MyCrewOfferChance() + (IsDefined(recruiter) ? CBConfig.CrewRecruitChance() : 0.0);
+  if !IsDefined(score) || !book.HasRoom()
+     || (!IsDefined(recruiter) && EnumInt(score.GetTier()) < EnumInt(ECBRenownTier.KnownMerc))
+     || book.offerUntil > now || RandF() >= chance {
     return;
   }
   let seed = RandRange(1, 1000000);
@@ -891,8 +908,27 @@ func CBCrewMercOffer(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
   if Equals(book.offerSender, "Unknown Number") {
     book.offerSender = "Broker";
   }
-  let solo = CBCrewFullName(sys, CBCrewPaid(), n"", 0, seed, 0, 0);
+  let bb = CBCrewBannerBook.Get(game);
+  if IsDefined(bb) {
+    bb.offerWins = 0;
+    if IsDefined(recruiter) {
+      bb.offerWins = CBCrewRankOf(game, recruiter) >= CBConfig.CrewRecruitSeniorRank() ? CBConfig.CrewRecruitWinsSenior()
+                                                                                      : CBConfig.CrewRecruitWins();
+    }
+  }
+  if IsDefined(recruiter) {
+    book.offerPrice = RoundF(Cast<Float>(book.offerPrice) * (1.0 - CBConfig.CrewRecruitDiscount()));
+  }
+  let solo = CBCrewOfferName(sys, game, book);
   let seat = CBCrewSeatWord(CBCrewSeatOf(CBHunterRecord(seed, n""), seed));
+  if IsDefined(recruiter) {
+    let rank = StrLower(CBCrewRankWord(CBCrewRank(IsDefined(bb) ? bb.offerWins : 0)));
+    CBPhoneSendTinted(game, book.offerSender, CBLineOf([
+      s"\(CBCrewFirst(sys, recruiter)) from your crew sent me. Found you \(solo): a \(seat), a \(rank) already. \(book.offerPrice)eb up front, then the weekly cut, and that's the friends price.",
+      s"Your \(CBCrewFirst(sys, recruiter)) vouches for this one: \(solo), \(seat), fights behind them. \(book.offerPrice)eb to sign. Say the word."]), CBHudCyan());
+    CBLog.Info(n"Crew", "A broker offered V a solo the crew's recruiter found.");
+    return;
+  }
   CBPhoneSendTinted(game, book.offerSender, CBLineOf([
     s"Got a solo looking for steady work: \(solo), a \(seat). Wants \(book.offerPrice)eb up front, then the weekly cut. Interested?",
     s"Word's out you're building a crew. \(solo) wants in: \(seat), clean record, \(book.offerPrice)eb to sign. Say the word."]), CBHudCyan());
@@ -914,16 +950,39 @@ public func CBCrewHire(sys: ref<CyberbaneSystem>, game: GameInstance) -> String 
     return s"Come back with \(book.offerPrice)eb.";
   }
   let record = CBHunterRecord(book.offerSeed, n"");
+  let bb = CBCrewBannerBook.Get(game);
   let m = book.Add(CBCrewPaid(), record, n"", n"", 0, CBConfig.MyCrewLoyaltyPaid(), CBEventDistrict(sys, game), now, 0);
   if IsDefined(m) {
     m.seed = book.offerSeed;   // the name on the offer is the name they go by
     m.seat = CBCrewSeatOf(record, m.seed);
-    CBCrewJoined(sys, game, m, CBLineOf(["Money's in. I'm yours till it stops. Call when it gets loud.",
-                                        s"Signed and loaded. Where in \(CBHere(sys)) do you want me?"]));
+    // Found by the crew's recruiter (2.6.0): their fights come with them, and somebody vouched for them.
+    let found = IsDefined(bb) && bb.offerWins > 0;
+    if found {
+      m.wins = bb.offerWins;
+      m.loyalty = Min(100, m.loyalty + CBConfig.CrewRecruitLoyalty());
+    }
+    CBCrewJoined(sys, game, m, found ? "Heard good things about this crew. Didn't think I'd get the chance. Call me."
+                                     : CBLineOf(["Money's in. I'm yours till it stops. Call when it gets loud.",
+                                                 s"Signed and loaded. Where in \(CBHere(sys)) do you want me?"]));
   }
   book.offerSeed = 0;
   book.offerUntil = 0.0;
+  if IsDefined(bb) {
+    bb.offerWins = 0;
+  }
   return "";
+}
+
+// The solo on offer's name, as it will be once hired: one the recruiter found comes with fights, and a nickname with
+// enough of them.
+public func CBCrewOfferName(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> String {
+  if !IsDefined(book) || book.offerSeed == 0 {
+    return "";
+  }
+  let bb = CBCrewBannerBook.Get(game);
+  let wins = IsDefined(bb) ? bb.offerWins : 0;
+  let seat = CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed);
+  return CBCrewFullName(sys, CBCrewPaid(), n"", 0, book.offerSeed, wins, seat);
 }
 
 // ---- Calling them ([C5]) ------------------------------------------------------------------------------------------
@@ -1514,14 +1573,30 @@ public func CBCrewBodyDied(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   // Whoever did it is marked: a Rival becomes a lead, anybody else carries it on their body, for the scanner and
   // for the hunt's end, when one who got away comes back with a name (Spawn/Spawner.reds).
   let byRival = 0;
+  let killerGang = n"";
   let killer = puppet.cbLastAttacker;
   if IsDefined(killer) && killer.IsAttached() && !killer.IsDead() {
     killer.cbKilledCrew = m.id;
     let kr = CBFindRivalByBody(sys, killer.GetEntityID());
     if IsDefined(kr) {
       byRival = kr.id;
+      killerGang = kr.faction;
       CBNoteRivalSeen(sys, game, kr, killer);
     }
+    if !IsNameValid(killerGang) && CBNpcSafe(sys, killer) {
+      killerGang = CBClassifyFaction(killer);
+    }
+  }
+  // For the memorial, and the crew's own standing (Reactions/CrewBanner.reds, 2.6.0): the killers' gang, and the gang
+  // that lent somebody who did not come back.
+  let bb = CBCrewBannerBook.Get(game);
+  if IsDefined(bb) {
+    bb.fallCause = CBCrewFellBeside();
+    bb.fallGang = killerGang;
+  }
+  CBCrewStandingShift(game, killerGang, -CBConfig.CrewStandMemberKilled());
+  if m.kind == CBCrewLent() {
+    CBCrewStandingShift(game, m.faction, -CBConfig.CrewStandMemberKilled());
   }
   book.Remove(m, CBCrewEndFell(), byRival, district, now);
   CBMapRemember(sys, game, CBMemCrewFell(), puppet.GetWorldPosition(), m.id, m.faction, n"", n"", false);   // [85], 2.5.0
@@ -2100,10 +2175,13 @@ public func CBCrewFile(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
                        offer: Bool) -> String {
   let now = CBGameSeconds(game);
   if offer && IsDefined(book) && book.offerSeed != 0 {
-    let solo = CBCrewFullName(sys, CBCrewPaid(), n"", 0, book.offerSeed, 0, 0);
+    let solo = CBCrewOfferName(sys, game, book);
     let seat = CBCrewSeatWord(CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed));
+    let bbOffer = CBCrewBannerBook.Get(game);
+    let found = IsDefined(bbOffer) && bbOffer.offerWins > 0
+      ? s"Your recruiter found them: they come as a \(StrLower(CBCrewRankWord(CBCrewRank(bbOffer.offerWins)))), more loyal than most. " : "";
     return StrUpper(solo) + "\n" + s"A solo \(book.offerSender) put forward: a \(seat), \(book.offerPrice)eb to sign, then the weekly cut. "
-         + "Paid people are loyal while the money keeps coming. The offer stands for a day.";
+         + found + "Paid people are loyal while the money keeps coming. The offer stands for a day.";
   }
   if !IsDefined(m) || !IsDefined(book) {
     return "";

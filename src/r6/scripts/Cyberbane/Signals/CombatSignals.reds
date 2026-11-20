@@ -321,6 +321,14 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       return;
     }
   }
+  // Killed by one of V's crew (2.6.0): their gang thinks less of the crew (Reactions/CrewBanner.reds). Never a spar.
+  if IsDefined(sysE) && IsDefined(desD) && puppet.cbLastHitByOther && puppet.IsAttached() {
+    let crewHand = puppet.cbLastAttacker;
+    if IsDefined(crewHand) && crewHand.IsAttached() && desD.IsTagged(crewHand.GetEntityID(), n"CB_Own")
+       && !desD.IsTagged(crewHand.GetEntityID(), n"CB_Turned") && !desD.IsTagged(crewHand.GetEntityID(), n"CB_Spar") {
+      CBCrewStandingShift(game, CBClassifyFaction(puppet), -CBConfig.CrewStandKill());
+    }
+  }
   // Somebody who killed one of V's crew, killed by V.
   if IsDefined(sysE) && puppet.cbKilledCrew > 0 && puppet.cbDamagedByPlayer {
     CBCrewAvenged(sysE, game, puppet.cbKilledCrew);
