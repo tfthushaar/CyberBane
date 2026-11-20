@@ -811,6 +811,12 @@ public class CBStreetTalk {
       return;
     }
     let notNow = this.AllowedWhyNot(sys, game, player);
+    // Mid-fight, words still reach whoever the fight is for (2.5.7): a Rival down at V's feet, somebody with their hands
+    // up, a Rival or a sergeant standing for a facedown or a parley. "V is in combat" closed talk for everybody, so the
+    // mercy, the ransom and the facedown, the moments made for fights, could not be had while anybody was still shooting.
+    if Equals(notNow, CBTalkWhyVInCombat()) && this.MidFightTalk(sys, game, player) {
+      notNow = "";
+    }
     if StrLen(notNow) > 0 {
       this.StandDown(game, notNow);
       // Said in the log when V is facing somebody; not looked for at all while talk is off, the world
@@ -1020,6 +1026,9 @@ public class CBStreetTalk {
     // the game's prompt, and a Rival V had put down could not be talked to at all ("all I got was Carry body").
     // A dialogue or a loot list still holds it back. An interaction prompt does not when it is the person's own talk
     // (switched off here, the moment V settles on them, and waited out) or when they are down at V's feet.
+    if StrLen(why) == 0 && IsDefined(npc) && player.IsInCombat() && !CBTalkMidFight(npc) {
+      why = CBTalkWhyVInCombat();
+    }
     let waitPrompt = false;
     if StrLen(why) == 0 && IsDefined(npc) {
       let kind = CBNativePromptKind(game);
@@ -1094,6 +1103,25 @@ public class CBStreetTalk {
     if this.m_dwell >= CBConfig.TalkDwell() && !waitPrompt {
       this.Begin(sys, game, player, npc);
     }
+  }
+
+  // The fight's own people can be spoken to in it (2.5.7, CBTalkMidFight): the one V is already talking to, or the one V
+  // is looking at. The game's look-at only, as in a fight: no walk of the registry five times a second.
+  private func MidFightTalk(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>) -> Bool {
+    if (this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen()) && IsDefined(this.m_target)
+       && CBTalkMidFight(this.m_target.npc) {
+      return true;
+    }
+    let targeting = GameInstance.GetTargetingSystem(game);
+    if !IsDefined(targeting) {
+      return false;
+    }
+    let hit = targeting.GetLookAtObject(player, true, true) as ScriptedPuppet;
+    if !IsDefined(hit) {
+      hit = targeting.GetLookAtObject(player, false, false) as ScriptedPuppet;
+    }
+    return IsDefined(hit) && !hit.IsPlayer() && CBNpcSafe(sys, hit) && CBTalkMidFight(hit)
+        && Vector4.Distance(player.GetWorldPosition(), hit.GetWorldPosition()) <= CBConfig.TalkKeepRange();
   }
 
   // Whoever V is settling on, and the person whose own talk was switched off for it: switched back on the moment V
@@ -1755,7 +1783,7 @@ public class CBStreetTalk {
       return "the session has only just started";
     }
     if player.IsInCombat() {
-      return "V is in combat";
+      return CBTalkWhyVInCombat();
     }
     if VehicleComponent.IsMountedToVehicle(game, player.GetEntityID()) {
       return "V is in a vehicle";
@@ -2192,6 +2220,13 @@ public func CBTalkWhyStory() -> String = "part of a story or a job (a quest char
 public func CBTalkWhyTracked() -> String = "at the job V is tracking"
 public func CBTalkWhyLair() -> String = "a Rival at their place, or one of their people"
 public func CBTalkWhyGamePrompt() -> String = "one of the game's own prompts is up"
+public func CBTalkWhyVInCombat() -> String = "V is in combat"
+
+// Somebody a fight is for, who can be spoken to in the middle of it (2.5.7): down at V's feet for the mercy choice, hands
+// up, or standing for a facedown or a parley. Our own fields only.
+public func CBTalkMidFight(npc: wref<ScriptedPuppet>) -> Bool {
+  return IsDefined(npc) && (npc.cbMercyOpen || npc.cbSurrendered || npc.cbFacedownOpen);
+}
 
 // What V is told when somebody will not talk for a reason V cannot see (2.1.0), "" for the rest: a fight, a
 // weapon, a car, somebody running or too far off speak for themselves, a vendor and a companion have the
@@ -2295,7 +2330,9 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
     }
     return CBTalkWhySentAfterV();
   }
-  if CBNpcInCombat(npc) {
+  // Somebody down at V's feet or with their hands up is out of it, whatever the game still has them down as (2.5.7):
+  // mercy now opens the moment a Rival goes down, while the rest of the fight goes on around them.
+  if CBNpcInCombat(npc) && !CBTalkDownAtFeet(npc) {
     return "they are in a fight";
   }
   // Somebody standing at a job of V's: a gig's target, a contact. Close to the marker only (1.9.5): sixty

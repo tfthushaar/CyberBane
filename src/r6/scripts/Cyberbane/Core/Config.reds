@@ -565,6 +565,10 @@ public abstract class CBConfig {
   public static func FacedownTicks() -> Int32 = 15
   // A Rival owed a facedown walks up calm for at most this long before it is a fight anyway (2.5.0).
   public static func FacedownWaitTicks() -> Int32 = 75
+  // In all, holding while V fights somebody else included (2.5.7).
+  public static func FacedownWaitMaxTicks() -> Int32 = 240
+  // A Rival at the end of their rope who breaks gives up where they stand this often, instead of running (2.5.7).
+  public static func RivalYieldShare() -> Float = 0.5
   public static func FacedownDropSeconds() -> Float = 3.0
   public static func StareBase() -> Float = 0.3
   public static func StareCool() -> Float = 0.35

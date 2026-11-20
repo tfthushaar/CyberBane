@@ -245,9 +245,42 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   }
   let shaken = MaxF(CBConfig.MoraleHurtShock(), puppet.cbMorale > 0.0 ? 1.0 - puppet.cbMorale : 0.0);
   let chance = CBBreakChance(sys, puppet, faction, shaken, CBAlliesNear(sys, puppet), false, false, intensity);
-  if RandF() < chance && CBRoomToBreak(sys, puppet) {
-    CBMoraleBreak(sys, game, puppet, faction, chance);
+  if RandF() < chance {
+    if CBRivalYields(sys, game, puppet) {
+      return;
+    }
+    if CBRoomToBreak(sys, puppet) {
+      CBMoraleBreak(sys, game, puppet, faction, chance);
+    }
   }
+}
+
+// A Rival at the end of their rope, who breaks, may give up where they stand instead of running (2.5.7): down, in the
+// game's own defeated state (NPCPuppet.script, OnPotentialDeath: Defeated, and the moment of invulnerability after it),
+// with V as the one who put them there. From there it is the mercy every downed Rival gets (CBSparedSweep): finish
+// them, walk off, or talk to them. A badly hurt Rival could only fight on or run, and neither could be spoken to.
+// Only when the mercy is V's choice, and V's own hand brought them low.
+func CBRivalYields(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Bool {
+  if !CBMercyChoiceOn() || !puppet.cbDamagedByPlayer || puppet.cbLastHitByOther
+     || RandF() >= CBConfig.RivalYieldShare() {
+    return false;
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || !des.IsTagged(puppet.GetEntityID(), n"CB_Rival") || !IsDefined(CBFindRivalByBody(sys, puppet.GetEntityID())) {
+    return false;
+  }
+  if CBMoraleHeldAtJob(sys, game, puppet) {
+    return false;
+  }
+  let player = GetPlayer(game);
+  let by: EntityID;
+  if IsDefined(player) {
+    by = player.GetEntityID();
+  }
+  StatusEffectHelper.ApplyStatusEffect(puppet, t"BaseStatusEffect.Defeated", by);
+  StatusEffectHelper.ApplyStatusEffect(puppet, t"BaseStatusEffect.InvulnerableAfterDefeated", by);
+  CBLog.Info(n"Rivals", "A Rival at the end of their rope gave up: down, and V's to decide.");
+  return true;
 }
 
 // Resolve pending escapees on the fast tick. Deaths already dropped the ones V caught, so
@@ -353,7 +386,9 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
             // V's choice (1.9.9): told once; spared when V stands with empty hands for a moment out of
             // the fight, walks away, or says so where they lie. Killing them is the other answer, and
             // the death handler has that. Being out of combat alone no longer spares anybody.
-            if !gone && !e.announced && IsDefined(player) && !player.IsInCombat() {
+            // As soon as they are down (2.5.7). It waited for V to be out of combat, so a Rival who went down while their
+            // people were still shooting could not be spoken to, or spared in words, until the whole fight was over.
+            if !gone && !e.announced && IsDefined(player) {
               e.announced = true;
               e.puppet.cbMercyOpen = true;
               let fallen = CBFindRivalByBody(sys, e.entityId);

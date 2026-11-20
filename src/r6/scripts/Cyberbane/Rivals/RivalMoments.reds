@@ -328,12 +328,23 @@ func CBFacedownWaitTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
   let tags: array<CName> = [n"CB_Rival", n"CB_Escort"];
   let waiting = 0;
   let over = !CBFacedownOn() || book.fdState != 0;
+  // V in a fight that is not theirs (2.5.7): they are calm, so whoever V is fighting is somebody else. The facedown
+  // cannot open in the middle of it, and its wait ran on regardless, so a Rival who walked up while V was busy turned
+  // hostile without a word. The wait holds while V is busy, up to FacedownWaitMaxTicks in all.
+  let player = GetPlayer(game);
+  let busy = IsDefined(player) && player.IsInCombat();
   for tag in tags {
     for id in des.GetTaggedIDs(tag) {
       let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
       if IsDefined(p) && p.cbFacedownWait {
         waiting += 1;
-        if p.cbDamagedByPlayer || tick - p.cbFacedownWaitTick > CBConfig.FacedownWaitTicks() {
+        if busy && p.cbFacedownWaitSeen > 0 {
+          p.cbFacedownWaitHeld += Max(0, tick - p.cbFacedownWaitSeen);
+        }
+        p.cbFacedownWaitSeen = tick;
+        let waited = tick - p.cbFacedownWaitTick - p.cbFacedownWaitHeld;
+        if p.cbDamagedByPlayer || waited > CBConfig.FacedownWaitTicks()
+           || tick - p.cbFacedownWaitTick > CBConfig.FacedownWaitMaxTicks() {
           over = true;
         }
       }
@@ -483,6 +494,11 @@ func CBFacedownOpener(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRi
 public let cbFacedownWait: Bool;
 @addField(ScriptedPuppet)
 public let cbFacedownWaitTick: Int32;
+// How much of that wait was held while V fought somebody else, and when it was last looked at (2.5.7).
+@addField(ScriptedPuppet)
+public let cbFacedownWaitHeld: Int32;
+@addField(ScriptedPuppet)
+public let cbFacedownWaitSeen: Int32;
 
 func CBFacedownCalm(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
   let player = GetPlayer(game);

@@ -3,18 +3,44 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
-## 2.5.6 (20 November 2026)
+## 2.5.7 (20 November 2026)
 
 **Talking to people**
 - **Vendors, joytoys, fixers and ripperdocs work as normal again.** Since 2.5.2, Cyberbane switched off the game's own
   "Talk" on anybody you looked at and gave it back by its own rule, which for people whose conversation the game sets
   up its own way meant never: joytoys could not be hired, and some people had no prompt at all. Cyberbane now leaves
-  them alone completely. Everybody else still gets Cyberbane's conversation, including people standing about with a
-  "Talk" of their own (two smokers by a fence), and their own "Talk" always comes back afterwards.
+  them alone completely.
+- **Everybody else gets Cyberbane's conversation**, including people standing about with a "Talk" of their own, like
+  two smokers by a fence or a Barghest soldier on watch: pressing F gave only the game's one-liner. Their own "Talk"
+  always comes back afterwards.
 - **F always does something.** When another prompt stayed in front of somebody (a door, a seat, another mod's spot),
   Cyberbane kept their "Talk" and their neighbours' switched off while it waited, so neither the game's prompt nor
   Cyberbane's came up. Now it waits a moment, then gives everything back and leaves that person to the game until you
   look at somebody else. A prompt the game is not actually showing no longer holds talk off.
+
+**Rivals**
+- **Talk in the middle of a fight to the people the fight is for.** A Rival down at your feet, somebody with their
+  hands up, a Rival or a sergeant standing for a facedown or a parley: you can talk to them while the shooting goes on
+  around you. Being in combat closed talk for everybody, so the mercy choice and the ransom could only be had once
+  every last enemy was down.
+- **A Rival who goes down mid-fight can be spared in words at once.** The choice to finish them, walk away or talk
+  waited until the whole fight was over.
+- **A Rival at the end of their rope may give up.** Badly hurt, a Rival who loses their nerve now sometimes drops where
+  they stand instead of running, and it is your call: finish them, walk away, or talk to them. A badly hurt Rival could
+  only fight on or run, and neither could be talked to.
+- **A Rival walking up for a facedown waits while you deal with somebody else.** Busy in another fight, you lost the
+  facedown: they turned hostile after about a minute without a word. They now wait up to four minutes for you.
+
+**Fights**
+- **A Rival somebody else kills is not your kill.** A Rival the NCPD or another gang killed counted as yours: on your
+  tally and your titles, Renown paid, the street saying everybody knew who did it, and worst, the Rival bound to them
+  texting "You killed..." and coming after you, or a successor sworn to avenge them on you. Now they are simply dead,
+  their chair is filled, and nobody blames you. Your History says a Rival died, and not by your hand.
+- Somebody you hurt and a car then ran down (a police car, another gang's) is not your kill.
+
+Your progress carries over.
+
+## 2.5.6 (20 November 2026)
 
 **Texts**
 - **A text that asks nothing back no longer offers a Rival's taunts.** When a gang's leader dies, the two who want the
@@ -55,11 +81,6 @@ the next unless a version says otherwise.
   killing blows still do not.
 - Somebody you hurt and another gang then knocked out cold is not counted as you sparing them, as their death would not
   be your kill: no Conduct, no standing for sparing them, and no Rival who remembers you letting them live.
-- **A Rival somebody else kills is not your kill.** A Rival the NCPD or another gang killed counted as yours: on your
-  tally and your titles, Renown paid, the street saying everybody knew who did it, and worst, the Rival bound to them
-  texting "You killed..." and coming after you, or a successor sworn to avenge them on you. Now they are simply dead,
-  their chair is filled, and nobody blames you. Your History says a Rival died, and not by your hand.
-- Somebody you hurt and a car then ran down (a police car, another gang's) is not your kill.
 
 **Fixed**
 - A favour to lean on somebody who owes money ended with "They paid up before you got to them" when somebody else had
