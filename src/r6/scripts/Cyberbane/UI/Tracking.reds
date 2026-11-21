@@ -219,6 +219,7 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   if des.IsTagged(id, n"CB_Bagman") { what = "bagman"; }
   if des.IsTagged(id, n"CB_Favour") { what = "lookout"; }
   if des.IsTagged(id, n"CB_Patrol") { what = "patrol"; }
+  if des.IsTagged(id, n"CB_Hangout") { what = "hanging out"; }
   if des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") { what = "gathering"; }
   if des.IsTagged(id, n"CB_Apex") { what = "apex squad"; }
   if StrLen(what) == 0 {
@@ -259,6 +260,9 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   }
   if des.IsTagged(id, n"CB_Patrol") {
     return "Walking their turf.";
+  }
+  if des.IsTagged(id, n"CB_Hangout") {
+    return "Hanging out on their own streets. Somebody of theirs to talk to.";
   }
   return "";
 }

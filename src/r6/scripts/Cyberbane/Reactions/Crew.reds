@@ -1019,15 +1019,9 @@ public func CBCrewTrouble(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool
   if CBHuntersOut(sys, game) || CBHuntPending(sys) || CBLiveTaggedPresent(game, n"CB_Ambush") {
     return true;
   }
-  if !player.IsInCombat() {
-    return false;
-  }
-  for tag in CBStreetTags() {
-    if CBTagEngagedNear(sys, game, des, player, tag) {
-      return true;
-    }
-  }
-  return false;
+  // Any fight V is in (2.6.0). It counted only Cyberbane's own people, so a V jumped by the game's own gangers could
+  // never call the crew ("Nothing to call them for"), and a crew already out went home in the middle of the fight.
+  return player.IsInCombat();
 }
 
 // Can the crew be called right now? "" when yes, otherwise why not, in V's words.
@@ -1925,7 +1919,9 @@ public func CBCrewPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, kind:
     return out;
   }
   if kind == CBPhoneAnswerCrew() {
-    if StrLen(CBCrewCallBlocked(sys, game, false)) == 0 {
+    // Always offered while there is a crew (2.6.0): hidden whenever they could not come, the thread had nothing to press
+    // and no word why. Pressed then, the crew texts back the reason (CBCrewPhoneReply).
+    if book.Count() > 0 && book.OutCount() == 0 {
       ArrayPush(out, CBPhoneRowCallCrew());
     }
     if book.CutOwed() > 0 {

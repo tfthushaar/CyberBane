@@ -246,6 +246,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Which hostile gangs have restated their price this session, so each one does it once
   // (Model/Reputation.reds, CBVendettaWatch). Session only, like the phone threads it re-opens.
   private let m_peaceOfferedIds: array<CName>;
+  // When the last gang put its price to V (game seconds), 0 for not yet this session (2.6.1, PeaceOfferDue).
+  private let m_lastPeaceOfferAt: Float;
   // The hunt (Spawn/Hunt.reds): what the people after V know. Session only.
   private let m_huntState: Int32;
   private let m_huntLkp: Vector4;
@@ -2723,6 +2725,24 @@ public class CyberbaneSystem extends ScriptableSystem {
     return true;
   }
 
+  // Is it time for another gang to put its price to V (2.6.1)? One every PeaceOfferSpacingHours, the first a little
+  // after a load: "one gang per pass" was every few seconds, so after every load each hostile gang texted its price
+  // inside a minute.
+  public func PeaceOfferDue(now: Float) -> Bool {
+    if now <= 0.0 {
+      return false;
+    }
+    let spacing = CBConfig.PeaceOfferSpacingHours() * CBConfig.SecondsPerHour();
+    if this.m_lastPeaceOfferAt <= 0.0 || this.m_lastPeaceOfferAt > now {
+      this.m_lastPeaceOfferAt = now - spacing + CBConfig.PeaceOfferFirstHours() * CBConfig.SecondsPerHour();
+    }
+    return now - this.m_lastPeaceOfferAt >= spacing;
+  }
+
+  public func NotePeaceOfferAt(now: Float) -> Void {
+    this.m_lastPeaceOfferAt = now;
+  }
+
   // ---- The hunt ----
   public func GetHuntState() -> Int32 { return this.m_huntState; }
   public func SetHuntState(v: Int32) -> Void { this.m_huntState = v; }
@@ -3869,6 +3889,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(mapBook) {
       mapBook.Clear();    // and the map forgets (2.5.0); the tick takes the pins down
     }
+    let clearBook = CBClearBook.Get(game);
+    if IsDefined(clearBook) {
+      clearBook.Clear();  // and no street is cleared of anybody (2.6.1)
+    }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);
     this.m_installedAt = this.NewBirthStamp();
@@ -3941,6 +3965,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_seenViewIds);
     ArrayClear(this.m_seenViewVals);
     ArrayClear(this.m_peaceOfferedIds);
+    this.m_lastPeaceOfferAt = 0.0;
     this.GetThreatBar().Hide();
 
     // The day's timetable of who is coming for V, and the per-lane counters behind it. Cleared

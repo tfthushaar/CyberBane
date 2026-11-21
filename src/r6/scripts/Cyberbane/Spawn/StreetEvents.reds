@@ -37,6 +37,7 @@ public func CBEvFugitive() -> CName = n"Fugitive"
 public func CBEvAmbush() -> CName = n"Ambush"
 
 public func CBTalkActRespects() -> Int32 = 34
+public func CBTalkActStandWith() -> Int32 = 60
 
 public func CBGatheringsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -97,6 +98,8 @@ public class CBStreetEvent {
   public let started: Bool;            // the two sides set against each other (a fight, 2.3.4) or at peace (a meeting, 2.4.2)
   public let size: Int32;              // an ambush's crew (2.4.2)
   public let byV: Bool;                // a funeral for somebody V put down, rather than somebody else's dead
+  public let vSide: Int32;             // a front line V stood with one side of (2.6.1): 0 neither, 1 the first gang, 2 the second
+  public let pinWhen: String;          // the time its pin says, so the pin is redrawn when "tomorrow" becomes "today"
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -381,7 +384,13 @@ public class CBEventEngine {
     }
     // A fight: once its people are in the world, the sides are set against each other, and it ends its own way.
     if ev.placed && CBIsFightKind(ev.kind) {
-      if !ev.started && sys.GetTickCount() - ev.placedTick >= CBEventStartTicks(ev.kind) {
+      // A front line's standoff: the two sides held off each other, as at a meeting, until it starts.
+      let opened = false;
+      if !ev.started && Equals(ev.kind, CBEvFrontLine()) {
+        CBCalmSides(sys, game, ev);
+        opened = CBEventHurtByV(game, ev);   // V opened fire: it starts now, whoever V shot at
+      }
+      if !ev.started && (sys.GetTickCount() - ev.placedTick >= CBEventStartTicks(ev.kind) || ev.vSide > 0 || opened) {
         ev.started = true;
         CBStartFight(sys, game, player, ev);
       }
@@ -429,21 +438,27 @@ public class CBEventEngine {
     }
     // An ambush is not on anybody's map.
     let want = CBMapMarkersOn() && !Equals(ev.kind, CBEvAmbush());
-    if Equals(want, ev.pinned) {
+    // The time it says, with the day (2.6.1): redrawn when that changes, so "tomorrow" turns into "today" at midnight.
+    let when = CBWhenWord(game, ev.from);
+    if Equals(want, ev.pinned) && (!want || Equals(when, ev.pinWhen)) {
       return;
     }
     let ms = GameInstance.GetMappinSystem(game);
     if !IsDefined(ms) {
       return;
     }
-    if !want {
+    if ev.pinned {
       ms.UnregisterMappin(ev.pin);
       ev.pinned = false;
+    }
+    if !want {
       return;
     }
     // Cyberbane's own pin with TweakXL (UI/MapPins.reds, 2.5.0), and a gathering's own mark (UI/RivalPin.reds).
     // With the hour it starts (2.5.5): the pin goes up when the street hears of it, often an hour before.
-    ev.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(CBEventCaption(ev) + ", around " + CBClockWord(ev.from))), ev.at);
+    let around = Equals(when, "now") ? ", now" : ", around " + when;
+    ev.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(CBEventCaption(ev) + around)), ev.at);
+    ev.pinWhen = when;
     ev.pinned = true;
   }
 
@@ -605,7 +620,7 @@ public func CBEventCaptionOf(kind: CName, gangA: CName, gangB: CName) -> String 
 // Word of what's coming ([32]): what, who, and when.
 public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
   let a = CBCapFirst(CBFactionLabel(ev.a));
-  let when = CBClockWord(ev.from);
+  let when = CBWhenWord(GetGameInstance(), ev.from);
   if Equals(ev.kind, CBEvSitDown()) {
     return s"\(a) and \(CBFactionLabel(ev.b)) are sitting down near here around \(when). Crash it, and they both feel it.";
   }
@@ -827,8 +842,17 @@ public func CBEventTalkLines(game: GameInstance, t: ref<CBTalkTarget>) -> array<
   let life = CBStreetLifeFor(game);
   let ev = IsDefined(life) ? life.Events().Live() : null;
   let des = GameInstance.GetDynamicEntitySystem();
-  if !IsDefined(ev) || !ev.placed || ev.approached || !Equals(ev.kind, CBEvFuneral()) || !IsDefined(t.npc) || !IsDefined(des)
-     || !des.IsTagged(t.npc.GetEntityID(), n"CB_Event") {
+  if !IsDefined(ev) || !ev.placed || !IsDefined(t.npc) || !IsDefined(des) || !des.IsTagged(t.npc.GetEntityID(), n"CB_Event") {
+    return out;
+  }
+  // A front line squaring up (2.6.1): either side will take a gun on their side.
+  if Equals(ev.kind, CBEvFrontLine()) && !ev.started && ev.vSide == 0 && CBEventSideOf(ev, t.npc) >= 0 {
+    let side = CBTalkMakeLine("[Side] I'm with you.", CBTalkActStandWith(), t"ChoiceCaptionParts.ReinforcementIcon");
+    side.important = true;
+    ArrayPush(out, side);
+    return out;
+  }
+  if ev.approached || !Equals(ev.kind, CBEvFuneral()) {
     return out;
   }
   let l = CBTalkMakeLine("[Respects] I'm sorry for your loss.", CBTalkActRespects(), t"ChoiceCaptionParts.HandshakeIcon");
@@ -858,6 +882,69 @@ public func CBEventTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
                              "Coming here took guts. Say what you came to say and go."]), n"");
 }
 
+// Has V hurt any of this event's people?
+public func CBEventHurtByV(game: GameInstance, ev: ref<CBStreetEvent>) -> Bool {
+  for id in ev.ids {
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if IsDefined(p) && p.cbDamagedByPlayer {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Which side of this event somebody is on, 0 or 1, or -1 for somebody who is not one of its people.
+public func CBEventSideOf(ev: ref<CBStreetEvent>, p: wref<ScriptedPuppet>) -> Int32 {
+  if !IsDefined(ev) || !IsDefined(p) {
+    return -1;
+  }
+  let id = p.GetEntityID();
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    if Equals(ev.ids[i], id) {
+      return ev.SideOf(i);
+    }
+    i += 1;
+  }
+  return -1;
+}
+
+// V picks a side at a front line (2.6.1): that side takes V as one of theirs, the other turns on V, and it starts.
+public func CBEventStandWith(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
+  let life = CBStreetLifeFor(game);
+  let ev = IsDefined(life) ? life.Events().Live() : null;
+  let side = CBEventSideOf(ev, t.npc);
+  let player = GetPlayer(game);
+  if !IsDefined(ev) || ev.started || ev.vSide > 0 || side < 0 || !IsDefined(player) {
+    return CBTalkSay("Too late for that. Find cover.", n"");
+  }
+  ev.vSide = side + 1;
+  let pagent = player.GetAttitudeAgent();
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+    if CBNpcSafe(sys, p) && CBStillStanding(p) {
+      if ev.SideOf(i) == side {
+        let agent = p.GetAttitudeAgent();
+        if IsDefined(agent) && IsDefined(pagent) {
+          CBTrace("attitude: a front line's side takes V in");
+          agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Friendly);
+        }
+        CBCalmTowardCompanions(sys, p);
+      } else {
+        CBMakeHostileToPlayer(game, p);
+      }
+    }
+    i += 1;
+  }
+  let mine = side == 0 ? ev.a : ev.b;
+  let theirs = side == 0 ? ev.b : ev.a;
+  CBLog.Info(n"Street", s"V stood with \(NameToString(mine)) at a front line against \(NameToString(theirs)).");
+  return CBTalkSay(CBLineOf([s"Then stay close. \(CBCapFirst(CBFactionLabel(theirs))) are about to find out.",
+                             "Good. We hit them now. Don't miss.",
+                             s"With you on our side? \(CBCapFirst(CBFactionLabel(theirs))) are done."]), n"");
+}
+
 // A gang owes a funeral (a Rival of theirs slain, or a boss) or a celebration (a district taken). From the death
 // handler and the turf book's change of hands.
 // `byV`: the one they bury is somebody V put down, which is what the street then says.
@@ -885,6 +972,8 @@ public func CBOweCelebration(game: GameInstance, gang: CName) -> Void {
 
 public func CBEventStartTicks(kind: CName) -> Int32 {
   if Equals(kind, CBEvExecution()) { return CBConfig.ExecutionDelayTicks(); }
+  // A front line squares up first (2.6.1): time for V to walk up and pick a side (CBEventStandWith).
+  if Equals(kind, CBEvFrontLine()) { return CBConfig.FrontLineStandoffTicks(); }
   return 3;
 }
 
@@ -1061,6 +1150,23 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
     CBBolsterGang(sys, game, winner, CBConfig.FrontLineGain());
     CBWeakenGang(sys, game, loser, CBConfig.FrontLineLoss());
     CBFileLog(sys, n"FrontLine", now, where, winner, 0.0);
+    // V stood with one side (2.6.1): they remember it, and so does the other.
+    if ev.vSide > 0 {
+      let mine = ev.vSide == 1 ? ev.a : ev.b;
+      if Equals(mine, winner) {
+        let pay = CBConfig.FrontLineSidePay();
+        CBStreetGiveMoney(game, pay);
+        CBTalkWarm(sys, game, mine, CBConfig.FrontLineSideWarmth(), CBConfig.PostureAllied() + 1.0);
+        CBTalkSlight(sys, game, loser, CBConfig.FrontLineSideCost());
+        CBFileLog(sys, n"StoodWith", now, where, mine, Cast<Float>(pay));
+        CBEventSay(game, s"You stood with \(CBFactionLabel(mine)), and the street is theirs. \(pay)eb, and friends who saw it.");
+      } else {
+        CBTalkSlight(sys, game, winner, CBConfig.FrontLineSideCost());
+        CBFileLog(sys, n"StoodWithLost", now, where, mine, 0.0);
+        CBEventSay(game, s"You stood with \(CBFactionLabel(mine)), and they lost the street. \(CBCapFirst(CBFactionLabel(winner))) will remember whose side you were on.");
+      }
+      return true;
+    }
     CBEventSay(game, s"\(CBCapFirst(CBFactionLabel(winner))) won the street fight against \(CBFactionLabel(loser)). The ground is theirs.");
     return true;
   }

@@ -142,7 +142,7 @@ public func CBSpawnRoomNote(game: GameInstance) -> String {
   }
   let tags: array<CName> = [n"CB_Squad", n"CB_Escort", n"CB_Apex", n"CB_Rival", n"CB_Lair", n"CB_Orphan", n"CB_Scout",
                             n"CB_Bounty", n"CB_Own", n"CB_Ally", n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Event",
-                            n"CB_Patrol", n"CB_Ambush", n"CB_Wannabe"];
+                            n"CB_Patrol", n"CB_Ambush", n"CB_Wannabe", n"CB_Hangout"];
   let counts: array<Int32>;
   for t in tags {
     ArrayPush(counts, 0);
@@ -706,7 +706,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     }
     if IsDefined(r) && sys.GetRivalWarned() != r.id {
       sys.SetRivalWarned(r.id);
-      sys.SetLaneTicks(lane, CBWarningTicks(CBConfig.RivalWarningTicks()));
+      sys.SetLaneTicks(lane, CBRivalArrivalTicks(sys, game, r, CBConfig.RivalWarningTicks()));
       sys.SetHuntGrade("RIVAL");
       CBHuntBegin(sys, game, r.faction);
       CBRivalWarning(sys, game, r);
@@ -743,7 +743,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // fight in progress, and bring them in when they reach zero.
     CBHuntBegin(sys, game, faction);
     if lane == CBLaneApex() {
-      sys.SetPendingApex(faction, CBWarningTicks(CBConfig.ApexWarningTicks()));
+      sys.SetPendingApex(faction, CBArrivalTicks(sys, game, faction, CBConfig.ApexWarningTicks()));
       sys.SetHuntGrade("APEX SQUAD");
       sys.ClearCrewBeaten(faction);   // the beaten crew has been answered
       CBApexOnTheWay(sys, game, faction);
@@ -751,7 +751,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       // A gang that does not know where V is may send one person to look first (Spawn/Hunt.reds).
       // The crew then only comes if the scout finds V.
       if !CBTrySendScout(sys, game, faction) {
-        sys.SetPendingSquad(faction, CBWarningTicks(CBConfig.CrewWarningTicks()));
+        sys.SetPendingSquad(faction, CBArrivalTicks(sys, game, faction, CBConfig.CrewWarningTicks()));
         sys.SetHuntGrade(CBCrewGrade(sys, faction));
         CBCrewWarning(sys, game, faction);
       }
@@ -1259,6 +1259,66 @@ public func CBWarningTicks(base: Int32) -> Int32 {
   return CBJitter(base, CBConfig.WarningJitterFraction())
        + CBConfig.DifficultyWarningExtra() * CBDifficultyLevel()
        + CBWatchExtraTicks();   // somebody V paid to keep watch sees them sooner (Reactions/StreetPay.reds)
+}
+
+// How far they have to come (2.6.1): the warning before a gang's people arrive, by how many districts lie between V
+// and the nearest streets that gang holds. On their own turf they are round the corner (Barghest in Dogtown); a gang
+// from across the city takes a while to get there (the same Barghest with V in the City Center). A gang with no streets
+// anywhere (a corporation) comes in the usual time.
+public func CBArrivalTicks(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, base: Int32) -> Int32 {
+  let hops = CBGangHopsToV(sys, game, faction);
+  return Max(1, RoundF(Cast<Float>(CBWarningTicks(base)) * CBArrivalDistanceMult(hops)));
+}
+
+// A Rival comes from their own district, where they keep their place.
+public func CBRivalArrivalTicks(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, base: Int32) -> Int32 {
+  let hops = IsDefined(r) && IsDefined(sys) ? CBDistrictHops(game, r.origin, sys.GetCurrentDistrict()) : -1;
+  if IsDefined(r) && CBDistrictIndex(r.origin) < 0 {
+    hops = -1;
+  }
+  return Max(1, RoundF(Cast<Float>(CBWarningTicks(base)) * CBArrivalDistanceMult(hops)));
+}
+
+public func CBArrivalDistanceMult(hops: Int32) -> Float {
+  if hops < 0 { return 1.0; }   // nowhere they come from
+  if hops == 0 { return CBConfig.ArrivalHomeMult(); }
+  if hops == 1 { return 1.0; }
+  if hops == 2 { return CBConfig.ArrivalFarMult(); }
+  return CBConfig.ArrivalAcrossCityMult();
+}
+
+// Districts between V and the nearest place this gang has streets, -1 for a gang with none. With turf wars on, where
+// it holds a share now (a gang pushed off its own streets comes from wherever it still is); otherwise its home turf.
+public func CBGangHopsToV(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Int32 {
+  let content = IsDefined(sys) ? sys.GetContent() : null;
+  if !IsDefined(content) || Equals(faction, n"") {
+    return -1;
+  }
+  let here = sys.GetCurrentDistrict();
+  if CBDistrictIndex(here) < 0 {
+    return -1;
+  }
+  let prof = content.GetFaction(faction);
+  let best = -1;
+  let i = 0;
+  while i < CBDistrictCount() {
+    let d = CBDistrictAt(i);
+    i += 1;
+    let holds = false;
+    if CBTurfWarsOn() {
+      let there = CBTurfGangsIn(sys, game, d);   // a local, never a temporary (UI/HubWeb.reds, CBWebPair)
+      holds = ArrayContains(there, faction);
+    } else {
+      holds = IsDefined(prof) && ArrayContains(prof.turf, d);
+    }
+    if holds {
+      let hops = CBDistrictHops(game, d, here);
+      if best < 0 || hops < best {
+        best = hops;
+      }
+    }
+  }
+  return best;
 }
 
 // ---- Being tracked -----------------------------------------------------------------

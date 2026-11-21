@@ -213,7 +213,13 @@ public class CBPhone {
   private let m_hsAccent: array<HDRColor>;
   private let m_hsKey: array<CName>;
   private let m_hsFaction: array<CName>;   // a gang whose message carries a peace offer, or n""
-  private let m_hsDue: array<Float>;       // game seconds
+  private let m_hsDue: array<Float>;       // game seconds: when word has got round where it happened
+  // Where it happened and how long word takes to get round there (2.6.1): from there it travels a district at a time
+  // to wherever V is when it is due (ReleaseWord, CBDistrictHops).
+  private let m_hsFrom: array<CName>;
+  private let m_hsSpan: array<Float>;
+  // Sim seconds V was last in a fight: nobody's news reaches V in the middle of one.
+  private let m_lastFightReal: Float;
   // Stories already told, and when (game seconds), for the repeat window.
   private let m_toldKey: array<CName>;
   private let m_toldAt: array<Float>;
@@ -471,7 +477,7 @@ public class CBPhone {
   // the first is still waiting, or soon after it was told, is the same story and is dropped.
   // n"" means this one never merges with anything.
   public func Hearsay(game: GameInstance, sender: String, body: String, accent: HDRColor,
-                      key: CName, offerFaction: CName) -> Void {
+                      key: CName, offerFaction: CName, opt from: CName) -> Void {
     this.m_game = game;
     if StrLen(body) == 0 {
       return;
@@ -500,8 +506,15 @@ public class CBPhone {
       CBLog.Info(n"UI", s"Word dropped (queue full) from \(sender): \(body)");
       return;
     }
-    // Not to the minute: two things done together reach V at different times, the way word does.
+    // Not to the minute: two things done together reach V at different times, the way word does. This is how long it
+    // takes to get round where it happened; further off, it takes longer again (ReleaseWord).
     let delay = CBWordTravelSeconds() * RandRangeF(0.6, 1.4);
+    if !IsNameValid(from) {
+      let sysFrom = CyberbaneSystem.Get(game);
+      from = IsDefined(sysFrom) ? CBEventDistrict(sysFrom, game) : n"";
+    }
+    ArrayPush(this.m_hsFrom, from);
+    ArrayPush(this.m_hsSpan, delay);
     ArrayPush(this.m_hsSender, sender);
     ArrayPush(this.m_hsBody, body);
     ArrayPush(this.m_hsAccent, accent);
@@ -527,16 +540,36 @@ public class CBPhone {
       return;
     }
     let simNow = EngineTime.ToFloat(tsNow.GetSimTime());
+    // Nobody's news reaches V in the middle of a fight, nor straight after one (2.6.1): it waits, and the fight it
+    // might be about has to be over before the word can start going round anyway.
+    let player = GetPlayer(game);
+    if IsDefined(player) && player.IsInCombat() {
+      this.m_lastFightReal = simNow;
+    }
+    if this.m_lastFightReal > 0.0 && simNow >= this.m_lastFightReal
+       && (simNow - this.m_lastFightReal) < CBConfig.WordCalmSeconds() {
+      return;
+    }
     if this.m_lastWordReal > 0.0 && simNow >= this.m_lastWordReal
        && (simNow - this.m_lastWordReal) < CBInboxGapSeconds() {
       return;
     }
-    // The one that has been due longest.
+    // The one that has been due longest, among those that have reached V: word that has got round where it happened
+    // still has to cross the city to wherever V is now, a district at a time (CBDistrictHops).
+    let sysHere = CyberbaneSystem.Get(game);
+    let here = IsDefined(sysHere) ? CBEventDistrict(sysHere, game) : n"";
     let pick = -1;
+    let pickDue = 0.0;
     let i = 0;
     while i < ArraySize(this.m_hsDue) {
-      if this.m_hsDue[i] <= now && (pick < 0 || this.m_hsDue[i] < this.m_hsDue[pick]) {
+      // At most two districts' more (CBConfig.WordMaxHops): across the city it takes longer, never so long the story
+      // stops mattering.
+      let hops = i < ArraySize(this.m_hsFrom) ? Min(CBDistrictHops(game, this.m_hsFrom[i], here), CBConfig.WordMaxHops()) : 0;
+      let span = i < ArraySize(this.m_hsSpan) ? this.m_hsSpan[i] : 0.0;
+      let due = this.m_hsDue[i] + span * Cast<Float>(hops);
+      if due <= now && (pick < 0 || due < pickDue) {
         pick = i;
+        pickDue = due;
       }
       i += 1;
     }
@@ -554,6 +587,12 @@ public class CBPhone {
     ArrayErase(this.m_hsKey, pick);
     ArrayErase(this.m_hsFaction, pick);
     ArrayErase(this.m_hsDue, pick);
+    if pick < ArraySize(this.m_hsFrom) {
+      ArrayErase(this.m_hsFrom, pick);
+    }
+    if pick < ArraySize(this.m_hsSpan) {
+      ArrayErase(this.m_hsSpan, pick);
+    }
     this.m_lastWordReal = simNow;
     if IsNameValid(key) {
       this.NoteTold(key, now);
@@ -1254,6 +1293,9 @@ public class CBPhone {
     ArrayClear(this.m_hsKey);
     ArrayClear(this.m_hsFaction);
     ArrayClear(this.m_hsDue);
+    ArrayClear(this.m_hsFrom);
+    ArrayClear(this.m_hsSpan);
+    this.m_lastFightReal = 0.0;
     ArrayClear(this.m_toldKey);
     ArrayClear(this.m_toldAt);
     this.m_lastWordReal = 0.0;
@@ -1626,7 +1668,7 @@ public func CBInboxGapSeconds() -> Float {
 }
 
 func CBHearsayTinted(game: GameInstance, sender: String, body: String, accent: HDRColor,
-                     key: CName, offerFaction: CName) -> Void {
+                     key: CName, offerFaction: CName, opt from: CName) -> Void {
   if !CBMessagesOn() {
     return;
   }
@@ -1634,7 +1676,7 @@ func CBHearsayTinted(game: GameInstance, sender: String, body: String, accent: H
   if !IsDefined(sys) {
     return;
   }
-  sys.GetPhone().Hearsay(game, sender, body, accent, key, offerFaction);
+  sys.GetPhone().Hearsay(game, sender, body, accent, key, offerFaction, from);
 }
 
 public func CBHearsayFromStreet(game: GameInstance, body: String, key: CName) -> Void {
@@ -1642,7 +1684,7 @@ public func CBHearsayFromStreet(game: GameInstance, body: String, key: CName) ->
 }
 
 public func CBHearsayFromDistrict(game: GameInstance, district: CName, body: String, key: CName) -> Void {
-  CBHearsayTinted(game, CBPhoneDistrictSender(district), body, CBHudCyan(), key, n"");
+  CBHearsayTinted(game, CBPhoneDistrictSender(district), body, CBHudCyan(), key, n"", district);   // news from there
 }
 
 // A gang's threat that waits for word to get round: answerable once it arrives (CBPhoneDemandFromGang).

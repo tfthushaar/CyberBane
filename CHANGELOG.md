@@ -3,6 +3,49 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.6.1 (21 November 2026)
+
+**Fixed**
+- **Calling your crew works in any fight.** The crew only counted Cyberbane's own hunters as trouble, so being jumped
+  by the game's own gangers always said there was "nothing to call them for", and a crew already with you went home
+  in the middle of the fight. While they're not already with you, their phone thread always has **Need you. Now.**,
+  and they text back why when they can't come.
+- **A Rival you put down no longer gives up their own hiding place.** Crouching over a downed Rival questioned them
+  like one of their people. A Rival on the ground is now yours to judge in words: look at them and press F to spare
+  them, finish them, or (one you have spared before) ask them to work for you. Nobody you grab, scan or question ever
+  names themselves.
+- **A gang's favour is on your map the moment they ask.** The lookout or the debtor was only marked once they were in
+  the world, so "I marked it for you" could leave nothing on the map.
+
+**Messages that feel like word getting round**
+- **News takes time to travel.** It starts going round once the fight is over, takes longer the further away it
+  happened, and never reaches you in the middle of a fight.
+- **Fewer, better-spaced messages.** Hostile gangs put their price to you one at a time, a couple of in-game hours
+  apart, instead of all at once after a load. Somebody coming for you is announced once: by your lookout, a friendly
+  gang, or the gang itself, never all three. A gang's spoken warning is not repeated every minute, and a gang that
+  knows what you have done to it no longer calls you "civilian".
+- **Calmer defaults:** at least a minute and a half between pieces of news, a little more between overheard lines,
+  and the line at the top of the screen shows only while somebody is after you. All three are still settings.
+- **Gatherings say when:** "21:00 today", "03:00 tomorrow", and their pin keeps up as the day turns.
+
+**New**
+- **Enemies measured against you.** Apex squads, Rivals and named bounty hunters now read how strong you are from the
+  game itself: your level and attributes, your health and armour, your best weapon and your chrome. Each lasts a few
+  seconds of your own fire (longer at a higher strength setting) and hits hard enough to get through your armour, and
+  they come ready for how you fight: ICE against a netrunner, blocks and dodges against blades, eyes that see through
+  camo against stealth, their own dodges against a Sandevistan or Kerenzikov, and cover against a marksman. Always
+  beatable.
+- **Pick a side.** A street fight between two gangs squares up first. Walk up to either side and tell them you're
+  with them: they take you in, the others turn on you, and if your side takes the street they pay you and remember it.
+- **Hangouts.** On a gang's own streets where none of theirs are about, a few of them now hang out nearby now and then,
+  marked on your map: somebody to talk to, ask a favour of or join. Hard-to-find gangs like the Mox are the reason.
+- **Distance matters.** A gang reaches you faster on its own turf and takes a while to come across the city. A Rival
+  comes from their own district.
+- **Cleared streets stay clear** (experimental, off by default, under Gangs). Wipe a gang out of a spot and for three
+  in-game days their people keep away from it.
+
+Your progress carries over.
+
 ## 2.6.0 (20 November 2026)
 
 **Your crew, kitted out.** Everything below is on the Hub's Crew page. Pick somebody and press **Orders** for their

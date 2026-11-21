@@ -6689,6 +6689,12 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"FrontLine") {
     return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) won a street fight and took ground." : "A street fight decided who holds the ground.";
   }
+  if Equals(e.kind, n"StoodWith") {
+    return StrLen(gang) > 0 ? s"You stood with \(gang) in a street fight, and won it with them." : "You picked a side in a street fight, and won.";
+  }
+  if Equals(e.kind, n"StoodWithLost") {
+    return StrLen(gang) > 0 ? s"You stood with \(gang) in a street fight, and lost it with them." : "You picked a side in a street fight, and lost.";
+  }
   if Equals(e.kind, n"StruggleBacked") {
     return StrLen(gang) > 0 ? s"You decided who runs \(gang)." : "You decided who runs a gang.";
   }

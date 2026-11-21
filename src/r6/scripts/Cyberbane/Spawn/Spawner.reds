@@ -464,6 +464,10 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
   spec.tags = tags;
   CBTrace("spawn: creating an NPC");
   created = des.CreateEntity(spec);
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && EntityID.IsDefined(created) {
+    rt.lastSpawnAt = pos;
+  }
   return EntityID.IsDefined(created);
 }
 
@@ -1179,6 +1183,11 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   if des.IsTagged(id, n"CB_Favour") {
     CBSetUpStreet(sys, game, puppet, true);
+    return;
+  }
+  // A gang's people hanging out on their own streets (Spawn/Hangouts.reds, 2.6.1): neutral, there to be talked to.
+  if des.IsTagged(id, n"CB_Hangout") {
+    CBSetUpStreet(sys, game, puppet, false);
     return;
   }
   // A crew waiting on V's road (Spawn/HuntGrows.reds, 2.4.2): hostile from the start, kitted and built as a crew.

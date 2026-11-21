@@ -156,6 +156,10 @@ func CBSentAfterV(des: ref<DynamicEntitySystem>, npc: wref<ScriptedPuppet>) -> B
 
 public class CBReactionDirector {
   private let m_whisperCooldownTicks: Int32;
+  // When each gang's spoken warning was last said (game seconds), so the same gang does not say it to V every minute
+  // (2.6.1, CBConfig.GangWarnLineHours). Session only.
+  private let m_warnSaidFaction: array<CName>;
+  private let m_warnSaidAt: array<Float>;
   // Street Sense detection, resolved once and kept: 0 unknown, 1 present, 2 absent. The
   // scan allocates, and whispers are decided every tick, so it must not run every tick.
   private let m_streetSense: Int32;
@@ -179,6 +183,14 @@ public class CBReactionDirector {
       return;
     }
     reg.Prune();
+    // Cleared streets (Spawn/ClearedStreets.reds, 2.6.1): every few ticks.
+    if sys.GetTickCount() % 3 == 0 {
+      CBClearedStreetsTick(sys, game);
+    }
+    // Hangouts (Spawn/Hangouts.reds, 2.6.1): a gang's people somewhere to be found on its own streets.
+    if sys.GetTickCount() % 5 == 0 {
+      CBHangoutTick(sys, game);
+    }
     let pruneFrom = GetPlayer(game);
     if IsDefined(pruneFrom) {
       reg.PruneFar(pruneFrom.GetWorldPosition(), CBConfig.RegistryKeepRadius());
@@ -460,7 +472,7 @@ public class CBReactionDirector {
       // reason; the warning was simply not using it.
       //
       // They still flip hostile either way. Only the line is rationed.
-      if this.m_whisperCooldownTicks <= 0 {
+      if this.m_whisperCooldownTicks <= 0 && this.WarnLineDue(faction, CBGameSeconds(player.GetGame())) {
         this.m_whisperCooldownTicks = this.WhisperCooldownTicks();
         CBShowWhisper(CyberbaneSystem.Get(player.GetGame()), player.GetGame(),
                       faction, n"hate", n"warning");
@@ -785,12 +797,27 @@ public class CBReactionDirector {
     CBShowWhisper(sys, game, faction, mood, topic);
   }
 
+  // Has this gang said its warning to V lately? Marks it said when not.
+  private func WarnLineDue(faction: CName, now: Float) -> Bool {
+    let i = ArrayFindFirst(this.m_warnSaidFaction, faction);
+    if i >= 0 && now >= this.m_warnSaidAt[i] && now - this.m_warnSaidAt[i] < CBConfig.GangWarnLineHours() * CBConfig.SecondsPerHour() {
+      return false;
+    }
+    if i >= 0 {
+      this.m_warnSaidAt[i] = now;
+    } else {
+      ArrayPush(this.m_warnSaidFaction, faction);
+      ArrayPush(this.m_warnSaidAt, now);
+    }
+    return true;
+  }
+
   private func WhisperCooldownTicks() -> Int32 {
     let rt = CyberbaneRuntime.Get();
     if IsDefined(rt) && rt.HasSettings() {
       return rt.GetSettings().whisperCooldown;
     }
-    return 25;
+    return 40;
   }
 }
 

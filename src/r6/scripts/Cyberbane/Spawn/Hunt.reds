@@ -994,7 +994,10 @@ func CBHuntWhereLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
 
 // The gang tells V a crew is coming, and roughly how much they know.
 public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
-  if CBToastsOn() {
+  // One voice per arrival (2.6.1): V's own lookout first, a friendly gang next, the gang itself when nobody else tells
+  // V. All three used to text about the same crew in the same second.
+  let told = CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction))) || CBAllyTipOff(sys, game, faction);
+  if CBToastsOn() && !told {
     let score = sys.GetScore();
     let vendetta = IsDefined(score) && Equals(score.GetPosture(faction), ECBPosture.Vendetta);
     let where = CBHuntWhereLine(sys, game);
@@ -1024,22 +1027,20 @@ public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction
       }
     }
   }
-  CBAllyTipOff(sys, game, faction);
-  CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction)));
 }
 
 // The gang tells V its apex squad is on the road.
 public func CBApexOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
   let fs = sys.FindFaction(faction);
-  if CBToastsOn() && IsDefined(fs) {
+  // One voice per arrival (2.6.1, CBCrewWarning).
+  let told = CBWatcherTipOff(sys, game, "Four of " + CBFactionLabel(faction) + "'s best") || CBAllyTipOff(sys, game, faction);
+  if CBToastsOn() && IsDefined(fs) && !told {
     let name = CBApexName(CBContent(game), faction, fs.apexAtKills);
     // Their best remember how it went last time ([U4], 2.3.2).
     let beaten = CBApexTimesBeaten(sys, faction);
     let record = beaten == 1 ? " You beat our best once. That was luck." : (beaten > 1 ? s" You've beaten our best \(beaten) times. Not this one." : "");
     CBPhoneDemandFromGang(game, faction, s"\(name) and three of ours are on the road. Last we heard you were in \(CBHuntWhereLine(sys, game)).\(record)");
   }
-  CBAllyTipOff(sys, game, faction);
-  CBWatcherTipOff(sys, game, "Four of " + CBFactionLabel(faction) + "'s best");
 }
 
 // A Rival tells V they are coming. Chosen by how they came to be one.
@@ -1064,8 +1065,11 @@ public func CBRivalWarning(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
       }
     }
   }
-  CBPhoneSendTinted(game, CBRivalDisplayName(content, r), line, CBHudRed());
-  CBWatcherTipOff(sys, game, CBRivalDisplayName(content, r));
+  // One voice per arrival (2.6.1): V's lookout saw them first; the Rival's own text otherwise. Both came in the same
+  // second, saying the same thing.
+  if !CBWatcherTipOff(sys, game, CBRivalDisplayName(content, r)) {
+    CBPhoneSendTinted(game, CBRivalDisplayName(content, r), line, CBHudRed());
+  }
 }
 
 // ---- Scouts --------------------------------------------------------------------
@@ -1229,13 +1233,14 @@ func CBScoutCallIn(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
   if NotEquals(sys.GetPendingSquadFaction(), n"") {
     return;
   }
-  sys.SetPendingSquad(faction, CBWarningTicks(CBConfig.CrewWarningTicks()));
+  sys.SetPendingSquad(faction, CBArrivalTicks(sys, game, faction, CBConfig.CrewWarningTicks()));
   sys.SetHuntGrade(CBCrewGrade(sys, faction));
   if spotted && CBToastsOn() {
     let fs = sys.FindFaction(faction);
-    CBPhoneDemandFromGang(game, faction, s"Our scout has eyes on you. \(CBCrewComingLine(sys, game, fs))");
-    CBAllyTipOff(sys, game, faction);
-    CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction)));
+    // One voice per arrival (2.6.1, CBCrewWarning).
+    if !CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction))) && !CBAllyTipOff(sys, game, faction) {
+      CBPhoneDemandFromGang(game, faction, s"Our scout has eyes on you. \(CBCrewComingLine(sys, game, fs))");
+    }
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout found you and called in the crew.");
     return;
   }
@@ -1319,7 +1324,7 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
 // sweep leaves them to whatever they belong to, which clears them when it ends. Not the help (CB_Ally),
 // who fight beside V. One list, so a new kind joins every rule at once.
 public func CBStreetTags() -> array<CName> {
-  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event", n"CB_Ambush"];
+  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event", n"CB_Ambush", n"CB_Hangout"];
 }
 
 // Is anybody of ours still in the fight with V: close, or able to see V?

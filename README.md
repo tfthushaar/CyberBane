@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.6.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.6.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -40,6 +40,10 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.6
 
+- **Enemies measured against you.** Apex squads, Rivals and bounty hunters read your level, attributes, armour, best
+  weapon and chrome from the game, and come ready for how you fight.
+- **Pick a side** in a street fight between two gangs, find a gang's people at their **hangouts**, and news that takes
+  time to get round.
 - **Your crew, kitted out.** Hand them a weapon from your bag, have spare chrome put in, send them to train, spar with
   them, put them to work earning or recruiting, and send a senior one to start a war on a gang. All from the Hub's Crew
   page. Details in [CHANGELOG.md](CHANGELOG.md).
@@ -143,6 +147,12 @@ lives in your saves: a save made while the mod is removed loses it.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
   a line. Reach for a weapon and the conversation ends. Vendors, joytoys, fixers and ripperdocs keep the
   game's own conversations.
+- **Calling your crew:** in any fight, open the **My crew** thread on your phone and pick **Need you. Now.**, or press
+  it on the Hub's Crew page. Up to three come. If they can't, they say why.
+- **Recruiting a Rival:** beat a Rival without killing them, look at them where they lie and press F, and spare them.
+  The next time you put that Rival down, the same talk offers **[Recruit] You owe me. Work for me.** A Rival you have
+  spared twice may also text you, and you can ask them in the thread. Crouching over somebody down is for questioning
+  their people; a Rival on the ground is talked to.
 - Cyberbane adds no keys of its own.
 
 ## Settings

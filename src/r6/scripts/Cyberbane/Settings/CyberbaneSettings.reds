@@ -159,7 +159,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
   @runtimeProperty("ModSettings.displayValues.HuntsOnly", "Hunts only")
-  public let hudLine: ECBHudLine = ECBHudLine.Everything;
+  public let hudLine: ECBHudLine = ECBHudLine.HuntsOnly;   // 2.6.1: less on screen while nothing is after V
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
@@ -712,6 +712,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
   @runtimeProperty("ModSettings.category.order", "8")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ClearedStreets")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClearedStreets-Desc")
+  public let clearedStreets: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Gangs")
+  @runtimeProperty("ModSettings.category.order", "8")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Tribute")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Tribute-Desc")
   public let tribute: Bool = true;
@@ -920,7 +927,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.max", "120")
   @runtimeProperty("ModSettings.step", "1")
   @runtimeProperty("ModSettings.dependency", "whispers")
-  public let whisperCooldown: Int32 = 25;
+  public let whisperCooldown: Int32 = 40;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Word")
@@ -1300,7 +1307,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.min", "0")
   @runtimeProperty("ModSettings.max", "300")
   @runtimeProperty("ModSettings.step", "5")
-  public let inboxGapSeconds: Int32 = 45;
+  public let inboxGapSeconds: Int32 = 90;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

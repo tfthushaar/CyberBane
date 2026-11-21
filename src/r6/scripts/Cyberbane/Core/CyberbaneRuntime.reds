@@ -14,6 +14,9 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_rewardDepth: Int32;    // nesting depth of the reward hook (see GigBonus)
   private let m_twrDetected: Int32;    // 0 = not scanned yet, 1 = present, 2 = absent
   private let m_resetRequested: Bool;  // the player asked for a hard reset (see CyberbaneSettings)
+  // Where the last of ours was put down (Spawn/Spawner.reds, CBCreateSpawn), for a place pin before the body is in the
+  // world (a favour's lookout, Spawn/LivingStreet.reds).
+  public let lastSpawnAt: Vector4;
   // Which playthrough that reset is for, and which one is loaded now. This service outlives every
   // save, so a request parked here used to survive a Load Game from the pause menu and wipe
   // whichever save was loaded next, even one from another playthrough. n"" means none is loaded:

@@ -313,6 +313,30 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   hpMult = ClampF(hpMult, 1.0, CBConfig.ApexHealthMultCeiling());
   armourMult = ClampF(armourMult, 1.0, CBConfig.ApexArmorMultCeiling());
   dmgMult = ClampF(dmgMult, 1.0, CBConfig.ApexDamageMultCeiling());
+  // An apex squad's people and a Rival, measured against V by the game's own numbers (2.6.1, Spawn/MeasureV.reds):
+  // whichever is tougher, this or the build above, under ceilings of their own, and the game's abilities that answer
+  // how V fights. A Rival lasts longer than one of a squad, and grows into it: a new one brings part of it.
+  let desMatch = GameInstance.GetDynamicEntitySystem();
+  let matchId = puppet.GetEntityID();
+  let isApex = IsDefined(desMatch) && desMatch.IsTagged(matchId, n"CB_Apex");
+  // A named bounty hunter is measured as a Rival is, at their rank on the ladder.
+  let isRival = IsDefined(desMatch) && (desMatch.IsTagged(matchId, n"CB_Rival") || desMatch.IsTagged(matchId, n"CB_Lair")
+                                        || desMatch.IsTagged(matchId, n"CB_Bounty"));
+  let counters = "";
+  let measure: ref<CBVMeasure>;
+  if isApex || isRival {
+    measure = CBMeasureV(game);
+    let npcId = Cast<StatsObjectID>(matchId);
+    let seconds = (isRival ? CBConfig.RivalMatchSeconds() : CBConfig.ApexMatchSeconds()) * (0.5 + ClampF(strength, 0.0, 1.0));
+    let matchHp = CBMatchHealthMult(measure, stats.GetStatValue(npcId, gamedataStatType.Health), seconds);
+    let matchDmg = CBMatchDamageMult(measure, CBConfig.ApexArmourAnswer() * (isRival ? ClampF(grade, 0.4, 1.0) : 1.0));
+    if matchHp > 0.0 {
+      hpMult = ClampF(MaxF(hpMult, matchHp), 1.0, CBConfig.ApexMatchHealthCeiling());
+    }
+    dmgMult = ClampF(MaxF(dmgMult, matchDmg), 1.0, CBConfig.ApexMatchDamageCeiling());
+    counters = CBCounterV(sys, game, puppet, measure, isRival ? ClampF(grade, 0.0, 1.0) : 1.0);
+    CBLog.Info(n"Spawn", s"Measured you for this one: level \(measure.level), best weapon \(measure.bestDps) DPS (\(measure.Dps()) with crits), armour \(measure.armour), health \(measure.health); you fight as \(measure.Styles()); they bring \(counters).");
+  }
   critChance = ClampF(critChance, 0.0, CBConfig.ApexCritChanceCeiling());
   critDamage = ClampF(critDamage, 0.0, CBConfig.ApexCritDamageCeiling());
   let power = ClampF(tPower, 0.0, CBConfig.ApexPowerLevelCeiling());
@@ -748,10 +772,10 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         // Seeded by the kills already paid for, which does not move until they are sent, so the
         // name in this warning is the name in the one that says they are on the road.
         let name = CBApexName(CBContent(game), fs.id, fs.apexAtKills);
-        if CBMessagesOn() {
+        // One voice (2.6.1, CBCrewWarning): a friendly gang's word, or theirs.
+        if !CBAllyTipOff(sys, game, fs.id) && CBMessagesOn() {
           CBPhoneDemandFromGang(game, fs.id, s"\(name) is coming for you, and not alone. Four of ours.");
         }
-        CBAllyTipOff(sys, game, fs.id);
         CBLog.Info(n"Spawn", s"Faction apex inbound for \(NameToString(fs.id)).");
         return;   // only ever one gang at a time
       }

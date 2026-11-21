@@ -448,11 +448,15 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       // One gang per pass, so several at once do not all text in the same instant after a load,
       // and never a gang that has already been offered this session - including one that refused
       // one, because NotePeaceOffered marks them the first time either way.
+      // And one gang every couple of in-game hours, never in the middle of a fight (2.6.1, PeaceOfferDue).
+      let offerPlayer = GetPlayer(game);
       if !demanded && CBToastsOn() && CBFactionFieldsSquads(fs.id)
-         && (sworn || Equals(posture, ECBPosture.Hostile)) {
+         && (sworn || Equals(posture, ECBPosture.Hostile))
+         && sys.PeaceOfferDue(now) && !(IsDefined(offerPlayer) && offerPlayer.IsInCombat()) {
         let quote = CBPeaceQuote(sys, game, fs.id);
         if quote >= 0 && sys.NotePeaceOffered(fs.id) {
           CBPhoneDemandFromGang(game, fs.id, CBGangBroken(sys, fs.id) ? CBPeaceBrokenLine(quote) : CBPeaceDemandLine(quote, sworn), true);
+          sys.NotePeaceOfferAt(now);
           demanded = true;
           CBLog.Info(n"Model", s"\(NameToString(fs.id)) put its price to you: \(quote)eb.");
         }

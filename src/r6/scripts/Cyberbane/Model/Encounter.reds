@@ -31,6 +31,7 @@ public class CBEncounter {
   // (Model/StreetBook.reds).
   public let lastBodyAt: Vector4;
   public let lastBodyGang: CName;
+  public let lastGangBodies: Int32;     // how many of lastBodyGang V has killed in this fight (2.6.1, Spawn/ClearedStreets.reds)
 }
 
 // How much health V may lose and still call a fight flawless.
@@ -71,6 +72,7 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     enc.preSampled = false;
     ArrayClear(enc.killTicks);
     enc.lastBodyGang = n"";
+    enc.lastGangBodies = 0;
   }
   if recount {
     enc.kills += 1;
@@ -86,6 +88,7 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
   if info.lethal {
     enc.lastBodyAt = info.position;
     if NotEquals(info.faction, n"") {
+      enc.lastGangBodies = Equals(info.faction, enc.lastBodyGang) ? enc.lastGangBodies + 1 : 1;
       enc.lastBodyGang = info.faction;
     }
   }
@@ -190,6 +193,8 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
   if enc.bossDown {
     sys.AddRenownPoints(10.0 * renownMult);
   }
+  // A gang wiped off a spot stays off it for a while (Spawn/ClearedStreets.reds, 2.6.1, off by default).
+  CBNoteWipedOut(sys, game, enc.lastBodyGang, enc.lastBodyAt, enc.lastGangBodies);
 
   CBEvaluateTitles(sys, game);
 }

@@ -1659,6 +1659,9 @@ public class CBStreetTalk {
     if choice == CBTalkActBribeScout() {
       return CBScoutTalkAnswer(sys, game, player, t);
     }
+    if choice == CBTalkActStandWith() {
+      return CBEventStandWith(sys, game, t);   // a front line's side (Spawn/StreetEvents.reds, 2.6.1)
+    }
     if choice == CBTalkActRespects() {
       return CBEventTalkAnswer(sys, game, t);
     }

@@ -35,6 +35,50 @@ public func CBDistrictAt(index: Int32) -> CName {
   }
 }
 
+// How many districts apart two are, by the roads that join them (the adjacency below): 0 for the same one or for
+// anywhere the table does not know, 1 next door, and so on. For how long word takes to cross the city
+// (UI/PhoneMessages.reds) and how long a gang takes to reach V (Spawn/Queue.reds).
+public func CBDistrictHops(game: GameInstance, from: CName, to: CName) -> Int32 {
+  let a = CBDistrictIndex(from);
+  let b = CBDistrictIndex(to);
+  if a < 0 || b < 0 || a == b {
+    return 0;
+  }
+  let content = CBContent(game);
+  if !IsDefined(content) {
+    return 0;
+  }
+  let reached = CBMaskSet(0, a);
+  let hops = 0;
+  while hops < CBDistrictCount() {
+    hops += 1;
+    let next = reached;
+    let i = 0;
+    while i < CBDistrictCount() {
+      if CBMaskHas(reached, i) {
+        let def = content.GetDistrict(CBDistrictAt(i));
+        if IsDefined(def) {
+          for adj in def.adjacency {
+            let bit = CBDistrictIndex(adj);
+            if bit >= 0 {
+              next = CBMaskSet(next, bit);
+            }
+          }
+        }
+      }
+      i += 1;
+    }
+    if CBMaskHas(next, b) {
+      return hops;
+    }
+    if next == reached {
+      return 0;   // not joined to it at all
+    }
+    reached = next;
+  }
+  return 0;
+}
+
 public func CBSeedDistricts(c: ref<CyberbaneContent>) -> Void {
   let d: ref<CBDistrictDef>;
 

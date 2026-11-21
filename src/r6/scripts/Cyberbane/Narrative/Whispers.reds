@@ -174,11 +174,12 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   if Equals(topic, n"warning") {
     // In their own voice, most of the time (Narrative/GangVoice.reds).
+    // Their own words for a stranger (Narrative/GangVoice.reds): a gang V has bled does not call V "civilian" (2.6.1).
     let own = CBGangWarnLine(st.faction);
-    if StrLen(own) > 0 && RandF() < CBConfig.GangVoiceShare() {
+    if StrLen(own) > 0 && st.kills < CBConfig.WarnKnowsYouKills() && RandF() < CBConfig.GangVoiceShare() {
       return own;
     }
-    if st.kills >= 20 {
+    if st.kills >= CBConfig.WarnKnowsYouKills() {
       return CBPick3(
         "You've put enough of us in the ground. Walk away, or you're next.",
         CBCapFirst(gang) + " remember every one. Turn around.",

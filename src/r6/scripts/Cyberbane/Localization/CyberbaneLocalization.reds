@@ -73,6 +73,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-WhileOut", "While you were out");
     this.Text("Cyberbane-Settings-WhileOut-Desc", "A little after you load, one line about the latest thing that changed the street.");
     this.Text("Cyberbane-Settings-Surrender", "Gangers surrender");
+    this.Text("Cyberbane-Settings-ClearedStreets", "Cleared streets stay clear (experimental)");
+    this.Text("Cyberbane-Settings-ClearedStreets-Desc", "Wipe a gang out of a spot (six or more of theirs dead in one fight, none of them left standing there) and for three in-game days their people keep away from it: anybody of theirs who turns up there walks off, and the game takes them away once you can't see them, the way it does with somebody who runs. Story characters, vendors and anybody already fighting are never touched. Off by default.");
     this.Text("Cyberbane-Settings-Surrender-Desc", "Some beaten gangers give up instead of running: hands up, not fighting, and your scanner says so. The Mox and the Scavengers give up often, Barghest never. Let them go and their gang thinks better of you; grab them and they talk; shoot them and the street hears about it, and their gang takes it hard.");
     this.Text("Cyberbane-Settings-ClaimHelp", "Nobody kills you but me (experimental)");
     this.Text("Cyberbane-Settings-ClaimHelp-Desc", "When one gang has you badly outnumbered, a Rival with a claim on you may turn up and fight at your side, then walk off with a promise of next time. Once a day at most.");
@@ -173,7 +175,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-VendettaSquads-Desc", "A gang at vendetta simply comes for you rather than rolling dice. The Hub shows how long until they arrive.");
     this.Text("Cyberbane-Settings-VendettaSquadSize-Desc", "How many a vendetta sends at full menace. Lower it if the frame rate dips when a crew arrives.");
     this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Rivals, crews and apex squads drive to you whenever a car can be sent, and give chase if you are driving. If a car cannot get through, they come on foot.");
-    this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous a gang's apex squad is, as a percentage of a full boss build. 100 matches the game's own set piece enforcers; 55 is hard but fair. Your menace and the game's difficulty scale it further. Rivals have their own slider, under Rivals.");
+    this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous a gang's apex squad is, as a percentage of a full boss build. 100 matches the game's own set piece enforcers; 55 is hard but fair. They are also measured against you: each takes a few seconds of your best weapon's fire to put down, longer the higher this is, and hits hard enough to get through your armour. Rivals have their own slider, under Rivals.");
     this.Text("Cyberbane-Settings-RivalStrength-Desc", "How dangerous a Rival is, as a percentage of a full boss build. A new Rival gets part of it and grows into the rest with every escape, mercy and kill, and running a crew adds a little. 55 is hard but fair. Your menace and the game's difficulty scale it further.");
     this.Text("Cyberbane-Settings-LootDrops-Desc", "Anyone Cyberbane sends who you put down leaves you something, straight into your inventory. The higher they ranked, the better it is.");
     this.Text("Cyberbane-Settings-Pacing-Desc", "Timetable sends trouble inside daily windows. Unpredictable: any minute might be the one. Reactive: only when you give a gang a reason. The per-day limits apply in every mode.");
@@ -398,7 +400,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexPerDay", "Apex squads per day");
     this.Text("Cyberbane-Settings-MessageHold", "Message hold");
     this.Text("Cyberbane-Settings-WordTravel", "Word travels (in-game minutes)");
-    this.Text("Cyberbane-Settings-WordTravel-Desc", "How long news of what you did (a body, a dead Rival, a payout, a crew changing hands) takes to reach your phone. The same story is only told once while it gets around. 0 sends it as it happens.");
+    this.Text("Cyberbane-Settings-WordTravel-Desc", "How long news of what you did (a body, a dead Rival, a payout, a crew changing hands) takes to get round where it happened. From further away it takes longer, a district at a time, and nothing reaches you in the middle of a fight. The same story is only told once while it gets around. 0 sends it as soon as the fight is over.");
     this.Text("Cyberbane-Settings-InboxGap", "Gap between messages (seconds)");
     this.Text("Cyberbane-Settings-InboxGap-Desc", "The least time between two pieces of news arriving. Anything waiting arrives later, in order. 0 lets them through as soon as they are due.");
     this.Text("Cyberbane-Settings-CyberpsychoRivals", "Spared cyberpsychos come back");

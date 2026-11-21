@@ -430,6 +430,15 @@ public func CBTalkRivalForFaction(sys: ref<CyberbaneSystem>, game: GameInstance,
   return null;
 }
 
+// The Rival this person is, 0 for anybody else: they are never the one they give up.
+public func CBRivalIdOfBody(sys: ref<CyberbaneSystem>, p: wref<ScriptedPuppet>) -> Int32 {
+  if !IsDefined(p) {
+    return 0;
+  }
+  let r = CBFindRivalByBody(sys, p.GetEntityID());
+  return IsDefined(r) ? r.id : 0;
+}
+
 // ---- Turning a ganger (asked in a conversation, Reactions/TalkTopics.reds) ------------------------------------
 
 public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
@@ -764,7 +773,7 @@ public class CBStreetIntel {
       CBLog.Info(n"Intel", "A loyal ganger said nothing in V's grip.");
       return;
     }
-    let i = CBIntelGive(sys, game, player, faction);
+    let i = CBIntelGive(sys, game, player, faction, false, CBRivalIdOfBody(sys, npc));
     CBIntelSay(game, 3, speaker, CBIntelSpoken(i), 6.0);
     if i.kind != CBIntelNone() {
       CBFileLog(sys, n"Squeezed", CBGameSeconds(game), CBEventDistrict(sys, game), faction, 0.0);
@@ -802,7 +811,7 @@ public class CBStreetIntel {
     let faction = CBClassifyFaction(p);
     if p.IsDead() {
       // Only a Rival's body has anything on it worth finding.
-      let i = CBIntelGive(sys, game, player, faction, true);
+      let i = CBIntelGive(sys, game, player, faction, true, CBRivalIdOfBody(sys, p));
       if i.kind == CBIntelNone() {
         CBSystemNote(game, "Nothing on the body worth having.", 4.0);
         return;
@@ -815,7 +824,7 @@ public class CBStreetIntel {
       CBIntelSay(game, 3, CBIntelSpeaker(faction), "...go to hell...", 4.0);
       return;
     }
-    let i = CBIntelGive(sys, game, player, faction);
+    let i = CBIntelGive(sys, game, player, faction, false, CBRivalIdOfBody(sys, p));
     CBIntelSay(game, 3, CBIntelSpeaker(faction), CBIntelSpoken(i), 6.0);
     if i.kind != CBIntelNone() {
       CBFileLog(sys, n"Squeezed", CBGameSeconds(game), CBEventDistrict(sys, game), faction, 0.0);
@@ -869,6 +878,11 @@ public class CBStreetIntel {
     if p.IsDead() {
       return IsDefined(des) && des.IsTagged(p.GetEntityID(), n"CB_Rival");
     }
+    // A Rival down alive is V's to judge in words (Talk: spare them, recruit one V has spared before, finish them), never
+    // squeezed like one of their people: crouched over, they were asked where "their boss" was and named themselves.
+    if (IsDefined(des) && des.IsTagged(p.GetEntityID(), n"CB_Rival")) || p.cbMercyOpen {
+      return false;
+    }
     return ScriptedPuppet.IsDefeated(p) && CBSafetyGate.CanTalkTo(p);
   }
 
@@ -885,7 +899,7 @@ public class CBStreetIntel {
         let faction = CBClassifyFaction(p);
         let gang = NotEquals(faction, n"") && !Equals(faction, n"NCPD") && !Equals(faction, n"MaxTac") && CBFactionOn(faction);
         if gang && RandF() < CBConfig.IntelScanChance() {
-          let i = CBIntelGive(sys, game, player, faction, true);
+          let i = CBIntelGive(sys, game, player, faction, true, CBRivalIdOfBody(sys, p));
           if i.kind != CBIntelNone() {
             CBSystemNote(game, "Scan: their messages mention " + CBIntelWritten(i), 8.0);
             CBLog.Info(n"Intel", "A scan turned something up.");
@@ -1047,7 +1061,7 @@ public class CBStreetIntel {
       book.RemoveInformant(k);
       return;
     }
-    let i = CBIntelGive(sys, game, player, about);
+    let i = CBIntelGive(sys, game, player, about, false, rivalId);   // never a tip about themselves
     let body = i.kind == CBIntelNone() ? "Quiet out there. Nothing worth your time yet." : CBIntelWritten(i);
     if last {
       body += " That's it. We're square.";

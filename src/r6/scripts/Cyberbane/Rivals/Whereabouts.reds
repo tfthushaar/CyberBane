@@ -996,6 +996,11 @@ public func CBWhereaboutsForSale(sys: ref<CyberbaneSystem>, game: GameInstance, 
   if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
     return 3;
   }
+  // Right here: in V's encounter, or their body in the world (down at V's feet, standing for a facedown). Nobody can
+  // sell where they are hiding. A Rival V had put down and was talking to gave up "where they were lying low" (2.6.0).
+  if r.id == sys.GetActiveRivalId() || CBRivalBodyPresent(game, r) {
+    return 3;
+  }
   let lead = CBCurrentLead(sys, game);
   if IsDefined(lead) && lead.rivalId == r.id {
     return 3;

@@ -382,6 +382,12 @@ public abstract class CBConfig {
   public static func FugitiveEscapeDistance() -> Float = 120.0
   public static func FrontLineGain() -> Float = 6.0
   public static func FrontLineLoss() -> Float = 6.0
+  // A front line squares up this many ticks before it starts, time to pick a side; V's side winning pays this and warms
+  // that gang this much, and costs V this much with the other (2.6.1).
+  public static func FrontLineStandoffTicks() -> Int32 = 40
+  public static func FrontLineSidePay() -> Int32 = 1500
+  public static func FrontLineSideWarmth() -> Float = 10.0
+  public static func FrontLineSideCost() -> Float = 8.0
   public static func SavedStanding() -> Float = 6.0
   public static func SavedCode() -> Float = 1.0
   // Power struggles: two in-game days to back one; the one V backs is 15 standing with the gang; putting both down
@@ -1207,7 +1213,38 @@ public abstract class CBConfig {
   // Word getting around (CBPhone.Hearsay). Defaults for the two settings, used before Mod
   // Settings is up.
   public static func WordTravelMinutesDefault() -> Int32 = 30
-  public static func InboxGapSecondsDefault() -> Int32 = 45
+  public static func InboxGapSecondsDefault() -> Int32 = 90
+  // News waits until V has been out of any fight this long (real seconds), 2.6.1.
+  public static func WordCalmSeconds() -> Float = 60.0
+  // Word from further off takes one more travel time a district, up to this many (so at most three times as long).
+  public static func WordMaxHops() -> Int32 = 2
+  // How long a gang's people take to reach V, against the usual warning, by districts from their nearest streets (2.6.1,
+  // CBArrivalTicks): on their own turf, two away, three or more.
+  public static func ArrivalHomeMult() -> Float = 0.6
+  public static func ArrivalFarMult() -> Float = 1.35
+  public static func ArrivalAcrossCityMult() -> Float = 1.7
+  // Cleared streets (Spawn/ClearedStreets.reds, 2.6.1): this many of one gang dead in a fight clears them off this far
+  // round the last body for this many in-game days; at most this many spots kept.
+  public static func ClearKills() -> Int32 = 6
+  public static func ClearRadius() -> Float = 70.0
+  public static func ClearDays() -> Float = 3.0
+  public static func ClearSpotsCap() -> Int32 = 24
+  // Hangouts (Spawn/Hangouts.reds, 2.6.1): looked for every this many ticks; on a gang's turf with none of theirs within
+  // this range, this likely; this many of them, this far off; packed up past this distance or after this many hours.
+  public static func HangoutLookTicks() -> Int32 = 120
+  public static func HangoutScarceRange() -> Float = 120.0
+  public static func HangoutChance() -> Float = 0.6
+  public static func HangoutSize() -> Int32 = 3
+  public static func HangoutDistance() -> Float = 60.0
+  public static func HangoutLeaveDistance() -> Float = 300.0
+  public static func HangoutHours() -> Float = 2.0
+  // Gangs putting their price to V: one every this many in-game hours, the first this long after a load (2.6.1).
+  public static func PeaceOfferSpacingHours() -> Float = 2.0
+  public static func PeaceOfferFirstHours() -> Float = 0.5
+  // The same gang's spoken warning, at most once in this many in-game hours (2.6.1); the warning itself still happens.
+  public static func GangWarnLineHours() -> Float = 1.0
+  // From this many of theirs dead, a gang's warning is about what V did to them, never its words for a stranger.
+  public static func WarnKnowsYouKills() -> Int32 = 20
   // A story already told is not told again inside this many in-game hours. A cyberpsycho
   // episode is one massacre to the street, not one per lull in the shooting.
   public static func HearsayRepeatHours() -> Float = 6.0
@@ -1426,6 +1463,16 @@ public abstract class CBConfig {
   // now: CBApplyApexGradeBuff combines everything and clamps it here, so the worst enemy the
   // mod can build is a known quantity rather than an emergent one.
   public static func ApexHealthMultCeiling() -> Float = 3.0
+  // Apex squads, Rivals and named hunters matched to V (2.6.1, Spawn/MeasureV.reds): each takes this many seconds of V's
+  // steady fire at a middling strength (half again at 100, half at 0), answers this share of V's armour, and never passes
+  // these ceilings.
+  public static func ApexMatchSeconds() -> Float = 6.0
+  public static func RivalMatchSeconds() -> Float = 10.0
+  // ICE an enemy brings against a netrunner V, at a full answer.
+  public static func CounterIce() -> Float = 30.0
+  public static func ApexArmourAnswer() -> Float = 0.5
+  public static func ApexMatchHealthCeiling() -> Float = 15.0
+  public static func ApexMatchDamageCeiling() -> Float = 2.5
   public static func ApexArmorMultCeiling() -> Float = 1.8
   public static func ApexDamageMultCeiling() -> Float = 1.6
   public static func ApexCritChanceCeiling() -> Float = 15.0

@@ -179,6 +179,27 @@ func CBClockWord(gameSeconds: Float) -> String {
   return h < 10 ? s"0\(h):00" : s"\(h):00";
 }
 
+// The hour and which day (2.6.1): "21:00 today", "03:00 tomorrow", "now" once it has started. The hour alone left a
+// player reading "around 03:00" at midnight unsure whether it meant in three hours or tomorrow night.
+public func CBWhenWord(game: GameInstance, at: Float) -> String {
+  let now = CBGameSeconds(game);
+  if now <= 0.0 {
+    return CBClockWord(at);
+  }
+  if at <= now {
+    return "now";
+  }
+  let dayNow = Cast<Int32>(now / 86400.0);
+  let dayAt = Cast<Int32>(at / 86400.0);
+  if dayAt == dayNow {
+    return CBClockWord(at) + " today";
+  }
+  if dayAt == dayNow + 1 {
+    return CBClockWord(at) + " tomorrow";
+  }
+  return CBClockWord(at);
+}
+
 public class CBStreetLife {
   // The bagman.
   private let m_bagFaction: CName;
@@ -193,6 +214,11 @@ public class CBStreetLife {
   private let m_favBody: EntityID;
   private let m_favUntil: Int32;
   private let m_favLeaned: Bool;
+  // Where it is, on the map from the moment it is asked (2.6.1): the person's own marker came only once they were in the
+  // world, so a lookout who never streamed in, or somebody the map would not mark, left "I marked it for you" with
+  // nothing on the map. The place pin goes once their own marker is up.
+  private let m_favPin: NewMappinID;
+  private let m_favPinned: Bool;
   // The sit-down and the rest of gang life's events (Spawn/StreetEvents.reds, 2.3.3).
   private let m_events: ref<CBEventEngine>;
   // While you were out.
@@ -407,6 +433,10 @@ public class CBStreetLife {
           this.m_favKind = 1;
           this.m_favBody = body;
           this.m_favUntil = now + CBConfig.FavourLifeTicks();
+          let rt = CyberbaneRuntime.Get();
+          if IsDefined(rt) {
+            this.FavourPin(game, rt.lastSpawnAt, s"A favour for \(CBFactionLabel(t.faction)): run off the \(CBFactionLabel(g)) lookout");
+          }
           CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): run off a \(NameToString(g)) lookout.");
           return CBTalkSay(s"One of \(CBPossessive(CBFactionLabel(g))) lookouts is watching our corner, a couple of streets over. Run them off. Marked it for you.", n"");
         }
@@ -429,6 +459,7 @@ public class CBStreetLife {
             this.m_favTarget = p;
             this.m_favLeaned = false;
             this.m_favUntil = now + CBConfig.FavourLifeTicks();
+            this.FavourPin(game, p.GetWorldPosition(), s"A favour for \(CBFactionLabel(t.faction)): lean on who owes them");
             CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): lean on somebody who owes them.");
             return CBTalkSay("Somebody round here owes us money and keeps forgetting to pay. Go and have a word: lean on them, scare them. We want them paying, not dead. I marked them for you.", n"");
           }
@@ -449,6 +480,16 @@ public class CBStreetLife {
   private func Favour(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>, now: Int32) -> Void {
     if !this.FavourOpen() {
       return;
+    }
+    // Their own marker is up: the place pin has done its work.
+    if this.m_favPinned {
+      let who: ref<ScriptedPuppet> = this.m_favTarget;
+      if this.m_favKind == 1 {
+        who = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
+      }
+      if IsDefined(who) && who.cbMapped {
+        this.FavourUnpin(game);
+      }
     }
     let done = false;
     if this.m_favKind == 1 {
@@ -515,7 +556,29 @@ public class CBStreetLife {
     this.FavourEnd(game);
   }
 
+  private func FavourPin(game: GameInstance, at: Vector4, text: String) -> Void {
+    this.FavourUnpin(game);
+    let ms = GameInstance.GetMappinSystem(game);
+    if !IsDefined(ms) || !CBMapMarkersOn() || (at.X == 0.0 && at.Y == 0.0) {
+      return;
+    }
+    this.m_favPin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(text)), at);
+    this.m_favPinned = true;
+  }
+
+  private func FavourUnpin(game: GameInstance) -> Void {
+    if !this.m_favPinned {
+      return;
+    }
+    let ms = GameInstance.GetMappinSystem(game);
+    if IsDefined(ms) {
+      ms.UnregisterMappin(this.m_favPin);
+    }
+    this.m_favPinned = false;
+  }
+
   private func FavourEnd(game: GameInstance) -> Void {
+    this.FavourUnpin(game);
     let target = this.m_favTarget;
     if IsDefined(target) {
       target.cbFavourMark = false;

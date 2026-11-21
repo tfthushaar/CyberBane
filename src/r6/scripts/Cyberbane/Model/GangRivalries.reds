@@ -153,19 +153,19 @@ public func CBAnnounceWarming(sys: ref<CyberbaneSystem>, game: GameInstance, fac
 }
 
 // One of `attacker`'s enemies who likes V gives V a heads up that `attacker` has sent people.
-public func CBAllyTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, attacker: CName) -> Void {
+public func CBAllyTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, attacker: CName) -> Bool {
   if !IsDefined(sys) || !CBToastsOn() {
-    return;
+    return false;
   }
   let score = sys.GetScore();
   let content = CBContent(game);
   if !IsDefined(score) || !IsDefined(content) {
-    return;
+    return false;
   }
   let rivals = CBGangRivalsOf(content, attacker);
   let label = CBFactionLabel(attacker);
   if StrLen(label) == 0 {
-    return;
+    return false;
   }
   let i = 0;
   while i < ArraySize(rivals) {
@@ -175,9 +175,10 @@ public func CBAllyTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, attacker
     if (Equals(posture, ECBPosture.Allied) || Equals(posture, ECBPosture.Friendly))
        && CBFactionFieldsSquads(ally) {
       CBPhoneFromAlly(game, ally, s"Heads up. \(label) just sent people your way. Watch the road.");
-      return;   // one warning is enough
+      return true;   // one warning is enough
     }
   }
+  return false;
 }
 
 // Vendors on a gang's turf know where V stands with that gang. Returns a signed buy-price
