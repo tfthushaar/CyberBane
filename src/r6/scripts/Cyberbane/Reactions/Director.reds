@@ -497,8 +497,11 @@ public class CBReactionDirector {
     // A weapon in V's hands, or lingering past it, and they draw. What V says decides the rest
     // (Reactions/StreetTalk.reds, the [Parley] line): talked down, they and their crew back off for good;
     // not, and the fight starts the moment the talk is over.
+    // Over the whole distance they warn from (2.6.3): it held only within 20 m, and they warn from 35, so a V walking up
+    // from further out to talk was shot at before getting near ("I went close and they just became hostile"). Not while
+    // V is fighting anybody.
     if CBWarningsOn() && npc.cbGangWarnTick > 0 && dist <= CBConfig.ParleyRange()
-       && !IsDefined(GameObject.GetActiveWeapon(player))
+       && !IsDefined(GameObject.GetActiveWeapon(player)) && !player.IsInCombat()
        && tick - npc.cbGangWarnTick < CBConfig.ParleyMaxTicks() {
       return true;
     }

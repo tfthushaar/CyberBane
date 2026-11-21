@@ -526,7 +526,9 @@ func CBSpawnBearing(attempt: Int32) -> Float {
   return -2.36;
 }
 
-public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, wanted: Int32, squadTag: CName, baseDist: Float, out lastSpawned: EntityID, opt extraTag: CName) -> Int32 {
+// `inSightOk` (2.6.3): V's own crew only, on a second try when nowhere out of V's sight would take them. The engine still
+// waits for V to look away before they appear (spawnInView), so it is the walk up that V may see, never the appearing.
+public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, wanted: Int32, squadTag: CName, baseDist: Float, out lastSpawned: EntityID, opt extraTag: CName, opt inSightOk: Bool) -> Int32 {
   // Further out on harder difficulties, so there is more time between a warning and a fight.
   let dist = baseDist + CBConfig.DifficultySpawnExtra() * Cast<Float>(CBDifficultyLevel());
   // Never more of ours alive at once than the ceiling. A vendetta crew of twenty on top of an
@@ -602,7 +604,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       // the rest form up within SpawnGroupRadius of it, so if the lead is out of frame so are
       // they, and a squad that arrives together is the point of forming up at all.
       if ok && ArraySize(used) == 0 {
-        ok = CBPointOutOfSight(game, ppos, fwd, at);
+        ok = inSightOk || CBPointOutOfSight(game, ppos, fwd, at);
       }
       if ok && ArraySize(used) > 0 {
         ok = Vector4.Distance(at, used[0]) <= CBConfig.SpawnGroupRadius();
@@ -648,7 +650,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let standing: Vector4;
       if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
          && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing)
-         && (ArraySize(used) > 0 || CBPointOutOfSight(game, ppos, fwd, standing))
+         && (ArraySize(used) > 0 || inSightOk || CBPointOutOfSight(game, ppos, fwd, standing))
          && CBPointArrivable(game, standing, used, ppos, openAir) {
         if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned, extraTag) {
           spawned += 1;
@@ -687,7 +689,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop()
            && CBStandOnNavmesh(game, px, py, gz, stand) {
           if CBPointIsFree(used, stand)
-             && (ArraySize(used) > 0 || CBPointOutOfSight(game, ppos, fwd, stand))
+             && (ArraySize(used) > 0 || inSightOk || CBPointOutOfSight(game, ppos, fwd, stand))
              && CBPointArrivable(game, stand, used, ppos, openAir)
              && CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned, extraTag) {
             spawned += 1;
@@ -731,7 +733,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         // to V and joined to V, and a street under a walkway should not be able to stop an arrival
         // outright: a gate that refuses everywhere is how this mod has gone silent before.
         if !CBSafeAreaBlocksSpawn(game, fallback)
-           && CBPointOutOfSight(game, ppos, fwd, fallback)
+           && (inSightOk || CBPointOutOfSight(game, ppos, fwd, fallback))
            && CBPointIsFree(used, fallback)
            && CBPointArrivable(game, fallback, used, ppos, false)
            && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned, extraTag) {

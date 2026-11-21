@@ -100,6 +100,9 @@ public class CBStreetEvent {
   public let byV: Bool;                // a funeral for somebody V put down, rather than somebody else's dead
   public let vSide: Int32;             // a front line V stood with one side of (2.6.1): 0 neither, 1 the first gang, 2 the second
   public let pinWhen: String;          // the time its pin says, so the pin is redrawn when "tomorrow" becomes "today"
+  // Where each of `ids` walks to once in the world (2.6.3), beside `ids`: the zero vector for one placed on the spot.
+  // Somebody placed further out, out of V's sight, walks in, because V was standing at the place or looking at it.
+  public let walkAt: array<Vector4>;
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -386,9 +389,18 @@ public class CBEventEngine {
     // stage, V is at a job or in a scene (2.4.2): an event already planned placed its people whatever V was doing,
     // and a crew lying in wait near V's job (an ambush) walked in on the job itself.
     let storyBusy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game);
-    if !ev.placed && !storyBusy && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() && dist >= 25.0 {
+    // V already at the place counts too (2.6.3): it asked for V to be 25 m off at least, so a V waiting on the spot for
+    // the time on the pin was never given anybody ("I went there and there's nothing"). Whoever cannot be put there out
+    // of V's sight comes from further off and walks in (Place).
+    if !ev.placed && !storyBusy && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() {
       ev.placed = this.Place(sys, game, des, player, ev);
       ev.placedTick = sys.GetTickCount();
+      if !ev.placed {
+        CBStreetWhyNot(game, NameToString(ev.kind), "nowhere near the place out of V's sight to put its people yet");
+      }
+    }
+    if ev.placed {
+      CBEventWalkIns(game, ev);
     }
     // A fight: once its people are in the world, the sides are set against each other, and it ends its own way.
     if ev.placed && CBIsFightKind(ev.kind) {
@@ -527,10 +539,47 @@ public class CBEventEngine {
           let id: EntityID;
           if CBCreateSpawn(des, rec, n"", at, facing, tag, id, role) {
             ArrayPush(ev.ids, id);
+            ArrayPush(ev.walkAt, new Vector4(0.0, 0.0, 0.0, 0.0));
           }
         }
       }
       ring += 1;
+    }
+    // V at the place, or looking at it (2.6.3): the rest come from further out, out of sight, and walk to their spot.
+    let outer = 0;
+    while outer < 4 && ArraySize(ev.ids) < want {
+      let far = 12.0 + Cast<Float>(outer) * 6.0;
+      let slotsOut = 10 + outer * 2;
+      let o = 0;
+      while o < slotsOut && ArraySize(ev.ids) < want {
+        let angOut = Cast<Float>(o) * 6.28318 / Cast<Float>(slotsOut);
+        o += 1;
+        let snappedOut: Vector4;
+        let atOut: Vector4;
+        if CBNavSnap(game, ev.at.X + CosF(angOut) * far, ev.at.Y + SinF(angOut) * far, ev.at.Z, snappedOut)
+           && CBSettleOnGround(game, snappedOut, atOut) && CBPointHiddenFrom(game, ppos, fwd, atOut) {
+          let n2 = ArraySize(ev.ids);
+          let sideGang2 = ev.SideOf(n2) == 0 ? gangA : gangB;
+          let chair2 = lone > 0 ? (n2 < lone ? apexPerSide : n2 - lone) : n2 / sides;
+          let rec2 = ev.SideOf(n2) == 0 ? recA : recB;
+          let role2 = n"";
+          if chair2 < apexPerSide {
+            let best2 = CBApexRosterRecord(sideGang2, chair2);
+            if TDBID.IsValid(best2) {
+              rec2 = best2;
+              role2 = CBApexRoleTag(chair2);
+            }
+          }
+          let facingOut = Quaternion.BuildFromDirectionVector(new Vector4(-CosF(angOut), -SinF(angOut), 0.0, 0.0));
+          let id2: EntityID;
+          if CBCreateSpawn(des, rec2, n"", atOut, facingOut, tag, id2, role2) {
+            ArrayPush(ev.ids, id2);
+            let spot = 2.2 + Cast<Float>(n2 % 3) * 1.6;
+            ArrayPush(ev.walkAt, new Vector4(ev.at.X + CosF(angOut) * spot, ev.at.Y + SinF(angOut) * spot, ev.at.Z, 1.0));
+          }
+        }
+      }
+      outer += 1;
     }
     let placed = ArraySize(ev.ids);
     // Said once, when it is in place: a try that placed nobody is tried again next tick.
@@ -1074,6 +1123,51 @@ func CBEventRunTo(p: ref<ScriptedPuppet>, to: Vector4) -> Void {
   cmd.finishWhenDestinationReached = true;
   cmd.desiredDistanceFromTarget = 2.0;
   CBIssueMove(p, ai, cmd);
+}
+
+// The same, at a walk: somebody arriving at a meeting or a front line (2.6.3).
+func CBEventWalkTo(p: ref<ScriptedPuppet>, to: Vector4) -> Void {
+  let ai = p.GetAIControllerComponent();
+  if !IsDefined(ai) {
+    return;
+  }
+  let cmd = new AIMoveToCommand();
+  let dest: AIPositionSpec;
+  let wp: WorldPosition;
+  WorldPosition.SetVector4(wp, to);
+  AIPositionSpec.SetWorldPosition(dest, wp);
+  cmd.movementTarget = dest;
+  cmd.movementType = moveMovementType.Walk;
+  cmd.ignoreInCombat = false;
+  cmd.alwaysUseStealth = false;
+  cmd.ignoreNavigation = false;
+  cmd.finishWhenDestinationReached = true;
+  cmd.desiredDistanceFromTarget = 1.5;
+  CBIssueMove(p, ai, cmd);
+}
+
+@addField(ScriptedPuppet)
+public let cbEventWalked: Bool;
+
+// Whoever was placed further out walks to their spot, once, as soon as they are standing in the world (2.6.3): the move
+// order is the one order they get, and never while the fight they came for is on.
+func CBEventWalkIns(game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
+  if ev.started {
+    return;
+  }
+  let n = Min(ArraySize(ev.ids), ArraySize(ev.walkAt));
+  let i = 0;
+  while i < n {
+    let to = ev.walkAt[i];
+    if to.W > 0.0 {
+      let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+      if CBStillStanding(p) && !p.cbEventWalked && !CBNpcInCombat(p) {
+        p.cbEventWalked = true;
+        CBEventWalkTo(p, to);
+      }
+    }
+    i += 1;
+  }
 }
 
 // How a side stands: how many are still up, and how many V took out.

@@ -29,6 +29,8 @@ the next unless a version says otherwise.
 - Calling during a spar sent a second copy of the person you were sparring with. Finish the round first; when real
   trouble turns up, the round ends on its own.
 - When they can't come, they say exactly why: a scene, the story, somewhere safe, your car, a crowd, or everybody hurt.
+- Somewhere tight with nowhere out of your sight for them, they come anyway, and you may see them walk up. That used to
+  be "Nobody could get through to you."
 - **Call your crew (key)** under Your crew in Mod Settings: one key to call them, or send them home. Not set at first.
 - **Your crew fights whoever is fighting you.** They followed you, but only ever took on the people Cyberbane itself
   had sent: anybody else hostile to you was nobody to them, so they walked around until one of them shot them.
@@ -47,6 +49,9 @@ the next unless a version says otherwise.
   you can still talk to them as they go, even while the fight goes on around you.
 - A line you pick counts even when the game has cleared the list for a moment, which some places do many times a
   second.
+- **Walk up to a gang at war with you and talk.** After their warning they hold fire while your hands are empty and
+  you're not fighting, from as far off as they warn you. It used to be only within 20 metres, so walking up from
+  further away got you shot before you were close enough to say anything.
 
 **Fixed: words you can read**
 - Conversation lines, and what people tell you, stay up as long as they take to read. They were up for 2.4 and 4
@@ -61,6 +66,9 @@ the next unless a version says otherwise.
   bagmen, recruitment, sit-downs and front lines spent their chance on nobody, so a short session saw no gang life.
   They wait for the district now, and an interior keeps the district you walked in from.
 - Each reload left a few hidden pieces of the threat bars behind. The bars are reused now.
+- **Gang business happens when you're already there.** A meeting or a front line only appeared if you came within 90
+  metres while staying at least 25 away, so waiting at the pin for the time on it got you nothing. Now its people come
+  whenever you're near, and the ones who can't appear out of your sight arrive from round the corner and walk in.
 - A crew member's war is filed in History under the gang's district.
 
 Your progress carries over.

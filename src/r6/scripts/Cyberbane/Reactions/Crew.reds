@@ -1248,7 +1248,13 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
         record = CBGangTemplate(sys, m.faction);
       }
       let body: EntityID;
-      if TDBID.IsValid(record) && CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.MyCrewSpawnDistance(), body) > 0 {
+      // Out of V's sight first, as everybody; failing that, anywhere V might see them walk up (2.6.3): "nowhere to put them
+      // near V out of sight" refused the crew with nobody else of ours in the world.
+      let placedOut = TDBID.IsValid(record) && CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.MyCrewSpawnDistance(), body) > 0;
+      if !placedOut && TDBID.IsValid(record) {
+        placedOut = CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.MyCrewSpawnDistance(), body, n"", true) > 0;
+      }
+      if placedOut {
         // Their wait between calls starts when they are seen standing (CBMyCrewTick), not here: the engine can take a
         // spawn and never place it.
         book.AddOut(body, m.id, sys.GetTickCount());

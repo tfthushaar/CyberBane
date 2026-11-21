@@ -2000,8 +2000,8 @@ public abstract class CBConfig {
   // close an empty-handed V may be to a ganger who has warned V, and for how long after the warning
   // (settled ticks), before they draw; and the odds of talking them down, from the nerve gap like
   // intimidation, held between the two bounds.
-  public static func ParleyRange() -> Float = 20.0
-  public static func ParleyMaxTicks() -> Int32 = 30
+  public static func ParleyRange() -> Float = 35.0   // the whole of NpcEvalRadius, where the warning comes from (2.6.3; was 20)
+  public static func ParleyMaxTicks() -> Int32 = 40  // 2.6.3; was 30
   public static func ParleyBase() -> Float = 0.4
   public static func ParleyScale() -> Float = 1.2
   public static func ParleyMin() -> Float = 0.1
