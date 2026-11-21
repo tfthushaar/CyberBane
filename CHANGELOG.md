@@ -3,6 +3,32 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.6.4 (22 November 2026)
+
+**New: Dogtown's Scrappers are a gang (Phantom Liberty)**
+- The people picking through Dogtown's ruins in work clothes, with no Scav masks and no Barghest uniforms, are a gang of
+  their own now. Until now Cyberbane took them for passers-by: fighting them counted for nothing, none of them ever came
+  back as a Rival, and they never came after you.
+- They live by their own code: they respect a good haul and a chance to walk away, give up easily, never forgive you
+  for shooting one with their hands up, keep their grudges inside Dogtown, and make peace cheaply. They talk like
+  themselves, carry names of their own, and have their own card on the Hub's Gangs page.
+- They share Dogtown with Barghest, who still run it. Bleed Barghest badly enough and the Scrappers take it over.
+- Switch them off under **Factions**, or set how they see you under **How gangs see you**, in Mod Settings.
+- Your crew's card on the Gangs page moves down beside the corporations to make room.
+
+**Fixed: your crew walking off with "Not our kind of place. We're gone."**
+- Your crew left the moment you switched on Berserk, did a finisher, or picked up a body. The game limits what you can
+  do during each of those, and Cyberbane mistook those limits for a story scene. The same mistake called hunters back
+  in the middle of fights. Now only real story moments send anybody away.
+- When your crew does leave, they tell you why: the story, a scene, a safe place, or a job.
+
+**Fixed: a first Rival nobody could kill**
+- Since 2.6.1 every Rival and apex squad carried part of Adam Smasher's toughness, whatever your level. A level 2 V
+  could empty every magazine into a brand-new Rival and barely mark them. That toughness now grows with your level:
+  early on, a Rival is built to stand up to the gun you actually carry, and the boss-grade toughness only arrives as
+  you near the end of the game.
+- Your crew follows the same rule, so sparring with them early on is a fair fight.
+
 ## 2.6.3 (21 November 2026)
 
 **Fixed: crashes with Rivals and apex squads close by**
