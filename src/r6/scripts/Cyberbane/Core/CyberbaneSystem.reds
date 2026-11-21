@@ -1529,6 +1529,31 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
+  // Undo the last Start over (2.6.3, the Hub's History page): data only, so on the click. Returns the playthrough taken
+  // off the record, n"" when there was none. Its saves from before the Start over load as they were from now on; a reset
+  // still waiting for it is taken back.
+  public func UndoLastStartOver() -> CName {
+    let svc = this.GetPlayService();
+    if !IsDefined(svc) {
+      return n"";
+    }
+    let id = svc.LastRetired();
+    if !IsNameValid(id) || !svc.Unretire(id) {
+      return n"";
+    }
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) {
+      rt.CancelHardResetFor(id);
+    }
+    CBLog.Info(n"Core", s"Start over undone for playthrough \(NameToString(id)): its saves from before it load as they were.");
+    return id;
+  }
+
+  public func HasStartOverToUndo() -> Bool {
+    let svc = this.GetPlayService();
+    return IsDefined(svc) && IsNameValid(svc.LastRetired());
+  }
+
   // Read the service's notes on this playthrough and act on them. Called once a session, from
   // StartSession, which is where the death ledger has always read the same service. Returns true
   // when the playthrough was started over on some save and this one is about to be reset too.

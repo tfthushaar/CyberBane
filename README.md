@@ -188,7 +188,10 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
 - **How often you are hunted:** **How often they come** sets how many Rivals, crews and apex squads
   reach you per day. Zero turns that kind off.
 - **Start over:** **Reset all Cyberbane data** under **Advanced** (or Start over on the Hub's History
-  page) wipes this playthrough's reputation. It can't be undone.
+  page) wipes this playthrough's reputation, and older saves of it are wiped too when they load, so
+  loading one does not bring it back. Changed your mind? **Undo the last Start over** on the same page,
+  then load a save from before it: its reputation, Rivals, crew and titles are back. Where your Rivals
+  were last seen and how hard you had hit each gang are gone either way.
 
 Each playthrough keeps its own record, and nothing one character does reaches another.
 

@@ -413,6 +413,14 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_resetFor = playthroughId;
   }
 
+  // A reset still waiting for this playthrough, taken back (2.6.3, undoing a Start over before the game had a tick).
+  public func CancelHardResetFor(playthroughId: CName) -> Void {
+    if this.m_resetRequested && Equals(this.m_resetFor, playthroughId) {
+      this.m_resetRequested = false;
+      this.m_resetFor = n"";
+    }
+  }
+
   // Taken by the settled tick of the playthrough that is loaded. A request made for a different
   // playthrough is dropped rather than carried out here: that playthrough is on record as started
   // over (CyberbaneService.Retire), and it is reset the next time one of its saves loads.

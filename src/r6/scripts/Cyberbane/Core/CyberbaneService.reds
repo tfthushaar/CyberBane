@@ -354,6 +354,25 @@ public class CyberbaneService extends ScriptableService {
     }
   }
 
+  // The playthrough started over most recently, n"" when none was (2.6.3).
+  public func LastRetired() -> CName {
+    let n = ArraySize(this.m_retiredIds);
+    return n > 0 ? this.m_retiredIds[n - 1] : n"";
+  }
+
+  // Undo a Start over (2.6.3): the playthrough is no longer on record as started over, so its saves from before it load
+  // as they were. "I saved before Start over and loaded that save, and everything was gone": by design, an older save of
+  // a playthrough that was started over is reset when it loads, and nothing could take that back. What Start over took
+  // from this service itself (sightings, gang power, the day's talk) is not in any save and stays gone.
+  public func Unretire(playthroughId: CName) -> Bool {
+    let i = ArrayFindFirst(this.m_retiredIds, playthroughId);
+    if i < 0 {
+      return false;
+    }
+    ArrayErase(this.m_retiredIds, i);
+    return true;
+  }
+
   // ---- Sightings (Rivals/Whereabouts.reds) -----------------------------------------------
 
   public func GetSightings() -> array<ref<CBSighting>> {

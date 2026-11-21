@@ -70,6 +70,10 @@ the next unless a version says otherwise.
   metres while staying at least 25 away, so waiting at the pin for the time on it got you nothing. Now its people come
   whenever you're near, and the ones who can't appear out of your sight arrive from round the corner and walk in.
 - A crew member's war is filed in History under the gang's district.
+- **Undo the last Start over**, on the Hub's History page. Start over also wipes older saves of the same playthrough
+  when they load, so a save made just before it came back empty, and nothing could undo that. Now this button takes
+  the Start over back; load a save from before it and its reputation, Rivals, crew and titles are there. Where your
+  Rivals were last seen and how hard you had hit each gang were kept outside your saves, and stay gone.
 
 Your progress carries over.
 

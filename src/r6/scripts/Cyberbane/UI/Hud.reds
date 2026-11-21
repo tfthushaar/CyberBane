@@ -660,6 +660,7 @@ public class CBHud {
   private let m_listScrolled: Bool;        // said so in the log once this page was opened
   private let m_stickLatched: Bool;
   private let m_resetArmed: Bool;          // "start over" asks twice as well
+  private let m_undoArmed: Bool;           // and so does undoing it (2.6.3)
   private let m_bountyArmed: Bool;         // and so does paying off the price on V's head (2.4.3)
   private let m_legendShown: Bool;         // the History page tells V's story instead of the ledger (2.4.6)
   private let m_hover: CName;              // the clickable thing under the cursor, by name
@@ -746,6 +747,7 @@ public class CBHud {
     this.m_open = true;
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_undoArmed = false;
     this.m_bountyArmed = false;
     this.m_payArmed = n"";
     this.m_findArmed = 0;
@@ -765,6 +767,7 @@ public class CBHud {
     this.m_open = false;
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_undoArmed = false;
     this.m_bountyArmed = false;
     this.m_payArmed = n"";
     this.m_findArmed = 0;
@@ -2015,6 +2018,7 @@ public class CBHud {
     CBHudResampleWorn(sys, game);
     this.m_purgeArmed = false;
     this.m_resetArmed = false;
+    this.m_undoArmed = false;
     this.m_bountyArmed = false;
     this.m_payArmed = n"";
     this.m_findArmed = 0;
@@ -2254,6 +2258,22 @@ public class CBHud {
     }
     if this.m_tab == CBHudHistoryTab() && slot == 1 {
       this.m_legendShown = !this.m_legendShown;
+      this.Render(sys, game);
+      return;
+    }
+    // Undo the last Start over (2.6.3): asks twice, then acts on the click, since it only takes a note off the record
+    // kept outside the saves.
+    if this.m_tab == CBHudHistoryTab() && slot == 2 {
+      if this.m_undoArmed {
+        this.m_undoArmed = false;
+        let undone = sys.UndoLastStartOver();
+        if IsNameValid(undone) {
+          CBMenuNote(game, "the last Start over is undone. Load a save from before it, and its reputation, Rivals, crew and titles are back. Where Rivals were last seen and how hard you had hit each gang went with the Start over.", 12.0);
+        }
+      } else {
+        this.m_undoArmed = true;
+        this.m_resetArmed = false;
+      }
       this.Render(sys, game);
       return;
     }
@@ -5379,6 +5399,9 @@ public class CBHud {
                 // lines were drawn underneath Start over.
                 // The legend, told (2.4.6, [82]), or the day's headlines (the screamsheet, [81]) over the ledger.
                 this.SetExtra(1, this.m_legendShown ? "Show the ledger" : "Tell my story", true);
+                if sys.HasStartOverToUndo() {
+                  this.SetExtra(2, this.m_undoArmed ? "Click again: undo it" : "Undo the last Start over", true);
+                }
                 let page = "";
                 if this.m_legendShown {
                   page = CBLegendTold(sys, game);
