@@ -3,6 +3,25 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.6.2 (21 November 2026)
+
+**New**
+- **Your crew can outgrow an apex squad.** Crew members now climb on the same scale: every rank and every spar with
+  you makes them tougher and harder-hitting, they pick up new moves as they rise (dodges, cover, shrugging off hits,
+  their own Kerenzikov at Legend), and a Legend who has sparred with you is stronger than an apex squad member at the
+  highest strength.
+- **See where your crew stands.** Their card and the list show their rank out of six, and their file says exactly
+  what it takes to reach the next one: how many more fights won, or a training, and how many more spars count as one.
+- **Names in the scanner.** Scan one of Cyberbane's people and you get their name: a Rival, your crew (with their rank),
+  the one you are sparring with, a crew member who turned on you, a bounty hunter, and now every member of an apex squad,
+  led by the one their gang's warning named.
+
+**Fixed**
+- **A spar hits softly, as it says.** The softer hits in a spar were never applied, so a crew member hit as hard in a
+  practice round as in a real fight. A spar also stays a round you can win as they climb the ranks.
+
+Your progress carries over.
+
 ## 2.6.1 (21 November 2026)
 
 **Fixed**

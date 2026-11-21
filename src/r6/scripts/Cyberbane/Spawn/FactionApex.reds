@@ -923,6 +923,12 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     sys.SetPendingApex(n"", 0);   // nothing to send; do not sit on a dead appointment
     return;
   }
+  // The name their warning gave them, kept for their bodies (2.6.1, CBApexMemberName): it moves on once they are sent.
+  let rtName = CyberbaneRuntime.Get();
+  if IsDefined(rtName) {
+    rtName.lastApexFaction = fs.id;
+    rtName.lastApexSeed = fs.apexAtKills;
+  }
   // They may have been paid off, or come round to V, while their best were on their way, or been
   // switched off since - the same question the crew asks before it sets off (CBGangMaySend).
   if !CBGangMaySend(sys, fs.id) {

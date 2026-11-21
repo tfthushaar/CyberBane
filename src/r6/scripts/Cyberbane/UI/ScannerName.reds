@@ -62,6 +62,9 @@ public const func CompileScannerChunks() -> Bool {
     if StrLen(named) == 0 {
       named = CBCrewScannerName(this);   // one of V's own crew (Reactions/Crew.reds, 2.5.0)
     }
+    if StrLen(named) == 0 && !this.IsDead() {
+      named = this.cbApexName;          // an apex squad's people by name (Spawn/ApexSquad.reds, 2.6.1)
+    }
     CBScannerShowNote(this, note, forcedN, named);
   }
   if IsDefined(rival) {
@@ -147,6 +150,12 @@ public func CBScannerNote(npc: ref<NPCPuppet>) -> String {
   let bounty = CBBountyScannerNote(npc);
   if StrLen(bounty) > 0 {
     return bounty;
+  }
+  // One of a gang's apex squad (2.6.1): their gang's best, and their place in the squad.
+  if StrLen(npc.cbApexName) > 0 {
+    let role: ECBApexRole;
+    let place = CBApexSeatRole(npc, role) ? "  /  " + StrUpper(CBRoleName(role)) : "";
+    return "APEX SQUAD: " + StrUpper(CBBarFactionLabel(CBClassifyFaction(npc))) + place;
   }
   // A scout's job (2.4.6, [U14]).
   let sys = CyberbaneSystem.Get(npc.GetGame());

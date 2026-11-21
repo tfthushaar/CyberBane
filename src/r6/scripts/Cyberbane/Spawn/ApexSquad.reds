@@ -119,6 +119,34 @@ public func CBArchetypeRole(a: gamedataArchetypeType, out role: ECBApexRole) -> 
 }
 
 // The chair this one was actually given, if it was given one.
+// An apex squad member's name (2.6.1): the one their gang's warning named for the first chair ("X and three of ours"),
+// and names of the same gang's own for the other three, from the same seed so a squad keeps its names however often it
+// is scanned. Stamped on the body when it is set up (Spawn/Spawner.reds).
+@addField(ScriptedPuppet)
+public let cbApexName: String;
+
+public func CBApexMemberName(game: GameInstance, faction: CName, seat: Int32) -> String {
+  let rt = CyberbaneRuntime.Get();
+  let content = CBContent(game);
+  if !IsDefined(content) {
+    return "";
+  }
+  let seed = IsDefined(rt) && Equals(rt.lastApexFaction, faction) ? rt.lastApexSeed : 0;
+  let lead = CBApexName(content, faction, seed);
+  if seat <= 0 {
+    return lead;
+  }
+  let k = 0;
+  while k < 6 {
+    let name = CBApexName(content, faction, seed + 1009 * seat + 97 * k);
+    if StrLen(name) > 0 && NotEquals(name, lead) {
+      return name;
+    }
+    k += 1;
+  }
+  return "";
+}
+
 public func CBApexSeatRole(npc: ref<ScriptedPuppet>, out role: ECBApexRole) -> Bool {
   if !IsDefined(npc) || npc.cbApexSeatRole <= 0 {
     return false;

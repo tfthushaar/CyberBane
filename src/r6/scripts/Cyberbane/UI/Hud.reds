@@ -5061,7 +5061,7 @@ public class CBHud {
       if IsDefined(m) {
         let state = CBCrewStateWord(book, m, now);
         this.SetRow(row, CBHudLayoutCrew(), CBCrewStateTint(state), true, m.id == this.m_pickCrew,
-          CBCrewName(sys, m), CBCrewSeatWord(m.seat), CBCrewRankWord(CBCrewRankOf(game, m)), CBCrewFromShort(m), "", state);
+          CBCrewName(sys, m), CBCrewSeatWord(m.seat), CBCrewRankShort(game, m), CBCrewFromShort(m), "", state);
         this.SetRowBar(row, CBHudCrewBarX(), CBHudCrewBarW(), Cast<Float>(m.loyalty) / 100.0, CBCrewLoyaltyTint(m.loyalty));
         this.m_rowCrew[row] = m.id;
         row += 1;
@@ -5116,7 +5116,7 @@ public class CBHud {
         this.PlaceWebBox(slot, Cast<Float>(k) * (mw + CBCrewCardGap()), y, mw, mh, true);
         this.DressBox(slot, mw, mh, CBPicName(), CBPicLine(), CBPicLead(), false);
         this.BoxText(this.m_webBoxName[slot], CBCrewBoxName(sys, m), mw - 24.0, CBPicName(), CBPicNameLeast(), true);
-        this.BoxText(this.m_webBoxLine[slot], StrUpper(CBCrewSeatWord(m.seat)) + "  /  " + StrUpper(CBCrewRankWord(CBCrewRankOf(GetGameInstance(), m))), mw - 24.0,
+        this.BoxText(this.m_webBoxLine[slot], StrUpper(CBCrewSeatWord(m.seat)) + "  /  " + StrUpper(CBCrewRankShort(GetGameInstance(), m)), mw - 24.0,
                      CBPicLine(), CBPicLineLeast(), false);
         if IsDefined(this.m_webBoxLine[slot]) { this.m_webBoxLine[slot].SetTintColor(tint); }
         let state = CBCrewStateWord(book, m, now);

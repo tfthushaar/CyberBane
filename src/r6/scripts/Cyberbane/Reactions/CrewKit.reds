@@ -295,6 +295,50 @@ public func CBCrewRankOf(game: GameInstance, m: ref<CBCrewMember>) -> Int32 {
   return Min(6, CBCrewRank(m.wins) + (IsDefined(k) ? k.trained : 0));
 }
 
+// Where they stand on the climb, for a card or a row (2.6.1): "Veteran 3/6".
+public func CBCrewRankShort(game: GameInstance, m: ref<CBCrewMember>) -> String {
+  let rank = CBCrewRankOf(game, m);
+  return s"\(CBCrewRankWord(rank)) \(rank)/6";
+}
+
+// The fights won it takes to reach this rank by wins alone (Reactions/Crew.reds, CBCrewRank).
+func CBCrewWinsFor(rank: Int32) -> Int32 {
+  if rank <= 2 { return 3; }
+  if rank == 3 { return 7; }
+  return 12;
+}
+
+// What it takes to reach the next rank, said plainly (2.6.1): "Next, Lieutenant: 5 more wins, or a training (2 more
+// spars count as one)." Every way there is, from their wins and their training as they are now.
+public func CBCrewNextRankLine(game: GameInstance, m: ref<CBCrewMember>) -> String {
+  if !IsDefined(m) {
+    return "";
+  }
+  let rank = CBCrewRankOf(game, m);
+  if rank >= 6 {
+    return "Legend: the top of the climb.";
+  }
+  let kb = CBCrewKitBook.Get(game);
+  let k = IsDefined(kb) ? kb.Find(m.id) : null;
+  let trained = IsDefined(k) ? k.trained : 0;
+  let spars = IsDefined(k) ? k.spars : 0;
+  let ways = "";
+  let winRank = CBCrewRank(m.wins);
+  if winRank < 4 {
+    let need = Max(1, CBCrewWinsFor(winRank + 1) - m.wins);
+    ways = need == 1 ? "1 more fight won" : s"\(need) more fights won";
+  }
+  if trained < CBConfig.CrewTrainMax() {
+    let left = CBConfig.CrewSparsPerTraining() - spars % CBConfig.CrewSparsPerTraining();
+    let train = s"a training (\(left) more spar" + (left == 1 ? "" : "s") + " count as one)";
+    ways = StrLen(ways) > 0 ? ways + ", or " + train : train;
+  }
+  if StrLen(ways) == 0 {
+    return "";
+  }
+  return s"Next, \(CBCrewRankWord(rank + 1)): \(ways).";
+}
+
 public func CBCrewRankWord(rank: Int32) -> String {
   if rank >= 6 { return "Legend"; }
   if rank == 5 { return "Enforcer"; }
@@ -814,10 +858,70 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   let chance = ClampF(baseChance + critChance / 100.0, 0.0, 1.0);
   damage += chance * (baseDamage + critDamage / 100.0) - baseChance * baseDamage;
   damage += CBConfig.CrewHeadshotShare() * headshot + CBConfig.CrewWeakspotShare() * weakspot;
-  CBAddMult(stats, id, gamedataStatType.Health, ClampF(health, 1.0, CBConfig.CrewMultCeiling()));
+  // Their climb, on the scale the apex squads are built on (2.6.1, Spawn/FactionApex.reds): Adam Smasher's own curves at
+  // their power level, a share of him that grows with every rank and every spar, and the same measure of V's fire an apex
+  // squad member takes. A Legend who has sparred with V is past an apex squad member at the highest Apex strength: a
+  // larger share of Smasher (CrewSmasherShareTop against ApexSmasherShareMax), longer under fire, and a tighter limit on
+  // any one hit. A Rookie is a ganger, much as before.
+  let climb = ClampF(Cast<Float>(rank - 1) / 5.0, 0.0, 1.0);
+  let sparred = IsDefined(k) ? MinF(Cast<Float>(k.spars) * CBConfig.CrewSmasherSparStep(), CBConfig.CrewSmasherSparMax()) : 0.0;
+  let share = CBConfig.CrewSmasherShareTop() * climb + sparred;
+  let healthCeiling = CBConfig.CrewMultCeiling();
+  let damageCeiling = CBConfig.CrewMultCeiling();
+  let npcDamage = 1.0;
+  let hitCap = 0.0;
+  let said = "";
+  if share > 0.0 {
+    let sm = CBSmasherScale(game, stats.GetStatValue(id, gamedataStatType.PowerLevel));
+    if sm.X > 0.0 {
+      health = MaxF(health, 1.0 + (sm.X - 1.0) * share);
+      healthCeiling = MaxF(healthCeiling, sm.X * CBConfig.SmasherCeilingShare());
+    }
+    if sm.Y > 0.0 {
+      let smDamage = 1.0 + MaxF(sm.Y * CBConfig.SmasherDamageScale() - 1.0, 0.0) * share;
+      damage = MaxF(damage, smDamage);
+      npcDamage = smDamage;
+      damageCeiling = MaxF(damageCeiling, sm.Y * CBConfig.SmasherDamageScale() * CBConfig.SmasherCeilingShare());
+    }
+    // What an apex squad member at the highest strength would take of V's fire, and a tenth more at Legend.
+    let measure = CBMeasureV(game);
+    let seconds = CBConfig.ApexMatchSeconds() * 1.5 * climb * CBConfig.CrewPastApex();
+    let underFire = CBMatchHealthMult(measure, stats.GetStatValue(id, gamedataStatType.Health), seconds);
+    health = MaxF(health, underFire);
+    healthCeiling = MaxF(healthCeiling, underFire);
+    hitCap = CBConfig.CrewHitCapRookie() - (CBConfig.CrewHitCapRookie() - CBConfig.CrewHitCapLegend()) * climb;
+    said = s" Smasher x\(sm.X) health, x\(sm.Y) damage at their level; their share \(share); no more than \(hitCap)% a hit.";
+  }
+  // What a rank brings with it, the game's own abilities (gmpl_abilities/abilities.tweak).
+  let npc = puppet as NPCPuppet;
+  if rank >= 3 {
+    CBGrantAbility(npc, t"Ability.HasDodge");
+    CBGrantAbility(npc, t"Ability.CanCatchUp");
+  }
+  if rank >= 4 {
+    CBGrantAbility(npc, t"Ability.CanUseCovers");
+    CBGrantAbility(npc, t"Ability.CanShootWhileMoving");
+  }
+  if rank >= 5 {
+    CBGrantAbility(npc, t"Ability.HasExtendedHitReactionImmunity");
+    CBGrantAbility(npc, t"Ability.HasMeleeHitReactionAndTakedownResistance");
+    CBGrantAbility(npc, t"Ability.CanUseAntiStun");
+  }
+  if rank >= 6 {
+    CBGrantAbility(npc, t"Ability.HasKerenzikov");
+    CBGrantAbility(npc, t"Ability.CanGuardBreak");
+  }
+  CBAddMult(stats, id, gamedataStatType.Health, ClampF(health, 1.0, healthCeiling));
   CBAddMult(stats, id, gamedataStatType.Armor, ClampF(armour, 1.0, CBConfig.CrewMultCeiling()));
-  CBAddMult(stats, id, gamedataStatType.PhysicalDamage, ClampF(damage, 1.0, CBConfig.CrewMultCeiling()));
-  CBLog.Info(n"Crew", s"Kitted for the call: rank \(rank), health x\(health), armour x\(armour), damage x\(damage)."
+  CBAddMult(stats, id, gamedataStatType.PhysicalDamage, ClampF(damage, 1.0, damageCeiling));
+  CBAddMult(stats, id, gamedataStatType.NPCDamage, ClampF(npcDamage, 1.0, damageCeiling));
+  puppet.cbHitCap = hitCap;   // no single hit takes more than this share of them (Spawn/FactionApex.reds, ApplyDamage)
+  // Topped up to the new maximum, the way the game refills a pool.
+  let pools = GameInstance.GetStatPoolsSystem(game);
+  if IsDefined(pools) {
+    pools.RequestSettingStatPoolMaxValue(id, gamedataStatPoolType.Health, null);
+  }
+  CBLog.Info(n"Crew", s"Kitted for the call: rank \(rank), health x\(health), armour x\(armour), damage x\(damage).\(said)"
                     + (StrLen(chromeSaid) > 0 ? s" Chrome: \(chromeSaid)." : ""));
 }
 
@@ -1015,8 +1119,19 @@ public func CBCrewSparSetUp(sys: ref<CyberbaneSystem>, game: GameInstance, puppe
   let stats = GameInstance.GetStatsSystem(game);
   if IsDefined(stats) {
     let id = Cast<StatsObjectID>(puppet.GetEntityID());
-    CBAddMult(stats, id, gamedataStatType.Health, CBConfig.CrewSparHealthMult());
-    CBAddMult(stats, id, gamedataStatType.PhysicalDamage, CBConfig.CrewSparDamageMult());
+    // Tougher for a round, less so the further they have climbed: a Legend is built near an apex squad's grade already
+    // (CBCrewApplyKit), and two and a half times that again only ever ran a round out on the clock (2.6.1).
+    let climb = IsDefined(m) ? ClampF(Cast<Float>(CBCrewRankOf(game, m) - 1) / 5.0, 0.0, 1.0) : 0.0;
+    CBAddMult(stats, id, gamedataStatType.Health, 1.0 + (CBConfig.CrewSparHealthMult() - 1.0) * (1.0 - climb));
+    // Hitting softly, for real: CBAddMult only ever raises a stat, so the spar's 0.35 was never applied (2.6.1).
+    let soft = RPGManager.CreateStatModifier(gamedataStatType.PhysicalDamage, gameStatModifierType.Multiplier, CBConfig.CrewSparDamageMult());
+    if IsDefined(soft) {
+      stats.AddModifier(id, soft);
+    }
+    let softNpc = RPGManager.CreateStatModifier(gamedataStatType.NPCDamage, gameStatModifierType.Multiplier, CBConfig.CrewSparDamageMult());
+    if IsDefined(softNpc) {
+      stats.AddModifier(id, softNpc);
+    }
   }
   CBMakeHostileToPlayer(game, puppet);
   CBOrderPursue(sys, game, puppet);

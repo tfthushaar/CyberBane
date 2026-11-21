@@ -17,6 +17,10 @@ public class CyberbaneRuntime extends ScriptableService {
   // Where the last of ours was put down (Spawn/Spawner.reds, CBCreateSpawn), for a place pin before the body is in the
   // world (a favour's lookout, Spawn/LivingStreet.reds).
   public let lastSpawnAt: Vector4;
+  // The apex squad last sent and the seed its warning named it from (Spawn/FactionApex.reds, CBProcessPendingApex): the
+  // bodies are set up after the seed has moved on, and read their names from here (Spawn/ApexSquad.reds, CBApexMemberName).
+  public let lastApexFaction: CName;
+  public let lastApexSeed: Int32;
   // Which playthrough that reset is for, and which one is loaded now. This service outlives every
   // save, so a request parked here used to survive a Load Game from the pause menu and wipe
   // whichever save was loaded next, even one from another playthrough. n"" means none is loaded:

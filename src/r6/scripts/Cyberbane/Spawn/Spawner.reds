@@ -1300,6 +1300,9 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
         seat = sys.NextApexRole();
       }
       CBKitApexSeat(puppet, seat);
+      // Their name, for the scanner (UI/ScannerName.reds, 2.6.1).
+      puppet.cbApexName = CBApexMemberName(game, CBClassifyFaction(puppet), seat);
+      puppet.SetScannerDirty(true);
     }
     CBShowBossBar(puppet);
   }

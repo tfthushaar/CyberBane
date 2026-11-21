@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.6.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.6.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -42,6 +42,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 - **Enemies measured against you.** Apex squads, Rivals and bounty hunters read your level, attributes, armour, best
   weapon and chrome from the game, and come ready for how you fight.
+- **A crew that can outgrow an apex squad**, with its rank and the way to the next one on every card, and Cyberbane's
+  people by name in your scanner.
 - **Pick a side** in a street fight between two gangs, find a gang's people at their **hangouts**, and news that takes
   time to get round.
 - **Your crew, kitted out.** Hand them a weapon from your bag, have spare chrome put in, send them to train, spar with

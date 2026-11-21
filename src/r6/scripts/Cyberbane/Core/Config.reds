@@ -595,6 +595,16 @@ public abstract class CBConfig {
   public static func CrewWeakspotShare() -> Float = 0.05
   public static func CrewChromeMax() -> Int32 = 4
   public static func CrewMultCeiling() -> Float = 3.0
+  // Their climb on the apex squads' scale (2.6.1, CBCrewApplyKit): this share of Adam Smasher at Legend (an apex member
+  // tops out at ApexSmasherShareMax), and this much more for every spar with V, up to the most; this much longer under
+  // V's fire than an apex member at the highest strength, at Legend; and no single hit takes more than this percent of
+  // their health, from Rookie down to Legend.
+  public static func CrewSmasherShareTop() -> Float = 0.45
+  public static func CrewSmasherSparStep() -> Float = 0.01
+  public static func CrewSmasherSparMax() -> Float = 0.08
+  public static func CrewPastApex() -> Float = 1.1
+  public static func CrewHitCapRookie() -> Float = 30.0
+  public static func CrewHitCapLegend() -> Float = 9.0
   // Training: the first costs this, each one after it more; away this many game hours, more each time; at most this many.
   public static func CrewTrainCostBase() -> Int32 = 2500
   public static func CrewTrainHoursBase() -> Float = 8.0

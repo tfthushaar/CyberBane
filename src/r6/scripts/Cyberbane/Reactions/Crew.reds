@@ -2091,8 +2091,27 @@ public func CBCrewHistoryLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>) -> 
 public func CBCrewScannerName(npc: ref<NPCPuppet>) -> String {
   let sys = IsDefined(npc) ? CyberbaneSystem.Get(npc.GetGame()) : null;
   let book = IsDefined(npc) ? CBCrewBook.Get(npc.GetGame()) : null;
-  let m = IsDefined(book) ? book.MemberOfBody(npc.GetEntityID()) : null;
-  return IsDefined(m) ? CBCrewName(sys, m) : "";
+  if !IsDefined(book) {
+    return "";
+  }
+  let id = npc.GetEntityID();
+  let m = book.MemberOfBody(id);
+  // The one V is sparring with (2.6.1): a body of their own, not one of the crew out with V.
+  let kb = CBCrewKitBook.Get(npc.GetGame());
+  if !IsDefined(m) && IsDefined(kb) && kb.sparMember > 0 && Equals(kb.sparBody, id) {
+    m = book.Find(kb.sparMember);
+  }
+  if IsDefined(m) {
+    return CBCrewName(sys, m);
+  }
+  // One who turned on V (2.6.1): by the name V knew them by, now a Rival's.
+  if EntityID.IsDefined(book.turnedBody) && Equals(book.turnedBody, id) && book.turnedRival > 0 && IsDefined(sys) {
+    let r = sys.FindRivalById(book.turnedRival);
+    if IsDefined(r) {
+      return CBRivalDisplayName(sys.GetContent(), r);
+    }
+  }
+  return "";
 }
 
 // Under the name: one of V's crew and their seat; or whoever killed one of them, marked.
@@ -2104,7 +2123,14 @@ public func CBCrewScannerNote(npc: ref<NPCPuppet>) -> String {
   }
   let m = book.MemberOfBody(npc.GetEntityID());
   if IsDefined(m) {
-    return "YOUR CREW  /  " + StrUpper(CBCrewSeatWord(m.seat));
+    return "YOUR CREW  /  " + StrUpper(CBCrewRankWord(CBCrewRankOf(npc.GetGame(), m))) + "  /  " + StrUpper(CBCrewSeatWord(m.seat));
+  }
+  let kb = CBCrewKitBook.Get(npc.GetGame());
+  if IsDefined(kb) && kb.sparMember > 0 && Equals(kb.sparBody, npc.GetEntityID()) {
+    return "YOUR CREW  /  SPARRING";
+  }
+  if EntityID.IsDefined(book.turnedBody) && Equals(book.turnedBody, npc.GetEntityID()) {
+    return "TURNED ON YOU";
   }
   if npc.cbKilledCrew > 0 {
     let p = book.FindPast(npc.cbKilledCrew);
@@ -2214,7 +2240,12 @@ public func CBCrewFile(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
   let rank = CBCrewRankOf(game, m);
   let wins = m.wins == 0 ? "No fights won with you yet" : (m.wins == 1 ? "One fight won with you" : s"\(m.wins) fights won with you");
   let scars = m.scars == 0 ? "" : (m.scars == 1 ? ", one scar to show for it" : s", \(m.scars) scars to show for it");
-  out += wins + scars + s". \(CBCrewRankWord(rank))" + (rank >= 3 ? s", known as \"\(CBCrewNickname(m.seat, m.seed))\"" : "") + ".\n";
+  out += wins + scars + s". \(CBCrewRankWord(rank)), rank \(rank) of 6" + (rank >= 3 ? s", known as \"\(CBCrewNickname(m.seat, m.seed))\"" : "") + ".\n";
+  // How far to the next rank (2.6.1).
+  let next = CBCrewNextRankLine(game, m);
+  if StrLen(next) > 0 {
+    out += next + "\n";
+  }
   out += s"Loyalty \(m.loyalty) of 100: \(CBCrewLoyaltyWord(m.loyalty)).";
   let worry = CBCrewWorry(m);
   if CBCrewRestless(m) && StrLen(worry) > 0 {
