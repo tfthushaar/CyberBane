@@ -16,6 +16,14 @@ the next unless a version says otherwise.
 - Switch them off under **Factions**, or set how they see you under **How gangs see you**, in Mod Settings.
 - Your crew's card on the Gangs page moves down beside the corporations to make room.
 
+**Better: debt collection**
+- Not every friendly ganger has a favour for you any more. Only some of them do, and a gang that has just given you one
+  has nothing more for a few hours.
+- The one who owes is somewhere else now, usually in another district, with a pin on your map. They're there when you
+  arrive, not standing twenty metres from the people they owe.
+- Lean on them and they may pay. The less they fear you, the likelier they put their fists up instead. Beat them down
+  and they pay. Kill them and the money is gone, and the gang thinks less of you for it.
+
 **Fixed: your crew walking off with "Not our kind of place. We're gone."**
 - Your crew left the moment you switched on Berserk, did a finisher, or picked up a body. The game limits what you can
   do during each of those, and Cyberbane mistook those limits for a story scene. The same mistake called hunters back

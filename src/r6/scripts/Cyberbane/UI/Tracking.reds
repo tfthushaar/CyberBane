@@ -206,7 +206,7 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     return StrLen(hunter) > 0 ? hunter : "Bounty hunter";
   }
   let gang = CBCapFirst(CBFactionLabel(CBClassifyFaction(puppet)));
-  if puppet.cbFavourMark {
+  if puppet.cbFavourMark || des.IsTagged(id, n"CB_Debtor") {
     let life = CBStreetLifeFor(game);
     let owed = IsDefined(life) ? CBFactionLabel(life.FavourFaction()) : "";
     // Money, said as money (2.5.5): "Owes the Valentinos" alone read as easily as a contract on them as a debt.
@@ -238,10 +238,9 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     return "";
   }
   let id = puppet.GetEntityID();
-  if puppet.cbFavourMark {
-    // What does it, said plainly: words, and nothing else. A beating or a body does not count, and the old line ("lean
-    // on them, or square up to them") read like a hit.
-    return "A favour, not a hit: talk to them and scare them into paying (Intimidate or Antagonize). They should walk away scared, not hurt.";
+  if puppet.cbFavourMark || des.IsTagged(id, n"CB_Debtor") {
+    // What does it, said plainly (2.6.4): words first, fists if they swing, never a body.
+    return "A debt to collect: talk them into paying (Intimidate or Antagonize). If they put their fists up, beat it out of them, but leave them breathing: nobody pays from a body bag.";
   }
   if des.IsTagged(id, n"CB_Lair") {
     return "At their place, not looking for you. Yet.";

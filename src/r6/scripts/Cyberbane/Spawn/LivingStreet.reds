@@ -89,6 +89,33 @@ public func CBSetUpMeetApex(sys: ref<CyberbaneSystem>, game: GameInstance, puppe
 
 public func CBTalkActFavour() -> Int32 = 30
 
+// Whether this person has a favour for V (2.6.4, CBStreetLife.HasWorkFor): 0 not asked yet, 1 yes, 2 no.
+@addField(ScriptedPuppet)
+public let cbFavourRoll: Int32;
+
+// Who owes (2.6.4): one of the district's own who fights with fists (the wannabes' records), never one of the gang that is
+// owed. Only a record this install has, a person nobody wrote.
+func CBDebtorRecord(sys: ref<CyberbaneSystem>, district: CName, owed: CName) -> TweakDBID {
+  let content = IsDefined(sys) ? sys.GetContent() : null;
+  let picks: array<TweakDBID>;
+  ArrayPush(picks, CBWannabeRecord(district));
+  ArrayPush(picks, t"Character.valentinos_grunt4_hmelee2_fists_mb_rare");
+  ArrayPush(picks, t"Character.tyger_claws_gangster1_melee1_fists_ma");
+  ArrayPush(picks, t"Character.animals_grunt1_melee1_fists_mb");
+  ArrayPush(picks, t"Character.tyger_claws_biker1_melee1_fists_wa");
+  for id in picks {
+    if TDBID.IsValid(id) && CBRecordIsPerson(id) && !CBRecordUnfitTemplate(id) {
+      let rec = TweakDBInterface.GetCharacterRecord(id);
+      let aff = IsDefined(rec) ? rec.Affiliation() : null;
+      let gang = IsDefined(aff) && IsDefined(content) ? content.FactionForAffiliation(aff.EnumName()) : n"";
+      if IsDefined(rec) && NotEquals(gang, owed) {
+        return id;
+      }
+    }
+  }
+  return TDBID.None();
+}
+
 @addField(ScriptedPuppet)
 public let cbFavourMark: Bool;
 
@@ -225,6 +252,16 @@ public class CBStreetLife {
   // nothing on the map. The place pin goes once their own marker is up.
   private let m_favPin: NewMappinID;
   private let m_favPinned: Bool;
+  // A debt to collect somewhere else (2.6.4): where the one who owes is, which district, whether they are in the world yet,
+  // and whether they would sooner fight than pay (0 no, 1 once the talk is over, 2 fighting).
+  private let m_favAt: Vector4;
+  private let m_favDistrict: CName;
+  private let m_favPlaced: Bool;
+  private let m_favFight: Int32;
+  private let m_favFightTick: Int32;
+  // A gang that has just handed out a favour has no more for a while (2.6.4). Session only, like the favour.
+  private let m_favRestGang: array<CName>;
+  private let m_favRestUntil: array<Float>;
   // The sit-down and the rest of gang life's events (Spawn/StreetEvents.reds, 2.3.3).
   private let m_events: ref<CBEventEngine>;
   // While you were out.
@@ -425,6 +462,98 @@ public class CBStreetLife {
     return this.m_favFaction;
   }
 
+  // Has this one got work for V (2.6.4)? "Three Tyger Claws on one corner and all of them had a favour for me": any
+  // friendly ganger had one, every time, while none was open. Now only some of them do, rolled once for each person, and
+  // a gang that has just handed one out has nothing more for FavourGangRestHours.
+  public func HasWorkFor(game: GameInstance, npc: ref<ScriptedPuppet>, faction: CName) -> Bool {
+    if this.FavourOpen() || !IsDefined(npc) || Equals(faction, n"") || this.GangResting(game, faction) {
+      return false;
+    }
+    if npc.cbFavourRoll == 0 {
+      npc.cbFavourRoll = RandF() < CBConfig.FavourGiverChance() ? 1 : 2;
+    }
+    return npc.cbFavourRoll == 1;
+  }
+
+  private func GangResting(game: GameInstance, faction: CName) -> Bool {
+    let i = ArrayFindFirst(this.m_favRestGang, faction);
+    return i >= 0 && i < ArraySize(this.m_favRestUntil) && CBGameSeconds(game) < this.m_favRestUntil[i];
+  }
+
+  private func RestGang(game: GameInstance, faction: CName) -> Void {
+    let until = CBGameSeconds(game) + CBConfig.FavourGangRestHours() * CBConfig.SecondsPerHour();
+    let i = ArrayFindFirst(this.m_favRestGang, faction);
+    if i >= 0 && i < ArraySize(this.m_favRestUntil) {
+      this.m_favRestUntil[i] = until;
+      return;
+    }
+    ArrayPush(this.m_favRestGang, faction);
+    ArrayPush(this.m_favRestUntil, until);
+  }
+
+  // Where the one who owes them is (2.6.4). "The victims spawn 20 metres away from them": the debtor was whoever of the
+  // crowd stood 15 to 60 metres from V. Somewhere else now, the way a Rival's hideout is: a place the street remembers in
+  // a district next door, else in any other district, else one where a Rival was seen in another district, else a spot
+  // well away from V. Every one a point an arrival could use (CBLairPointUsable: no job, no safe area).
+  private func DebtPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, out at: Vector4,
+                         out where: CName) -> Bool {
+    let here = sys.GetCurrentDistrict();
+    let ppos = player.GetWorldPosition();
+    let content = sys.GetContent();
+    let def = IsDefined(content) && NotEquals(here, n"") ? content.GetDistrict(here) : null;
+    let minD = CBConfig.FavourDebtMinDistance();
+    let found = false;
+    let bestNext = false;
+    let bestAt = -1.0;
+    let book = CBStreetBook.Get(game);
+    if IsDefined(book) {
+      let i = 0;
+      while i < book.PlaceCount() {
+        let d = book.PlaceDistrict(i);
+        let p = book.PlacePos(i);
+        if NotEquals(d, n"") && NotEquals(d, here) && CBDistrictIndex(d) >= 0 && Vector4.Distance(p, ppos) >= minD
+           && CBLairPointUsable(sys, game, p) {
+          let next = IsDefined(def) && def.IsAdjacentTo(d);
+          // Next door before further off, the newest memory before an older one.
+          if !found || (next && !bestNext) || (Equals(next, bestNext) && book.PlaceAt(i) > bestAt) {
+            found = true;
+            bestNext = next;
+            bestAt = book.PlaceAt(i);
+            at = p;
+            where = d;
+          }
+        }
+        i += 1;
+      }
+    }
+    if found {
+      return true;
+    }
+    let svc = sys.GetPlayService();
+    if IsDefined(svc) {
+      for s in svc.GetSightings() {
+        if !found && IsDefined(s) && NotEquals(s.district, n"") && NotEquals(s.district, here) && CBDistrictIndex(s.district) >= 0 {
+          let sp = new Vector4(s.x, s.y, s.z, 1.0);
+          if Vector4.Distance(sp, ppos) >= minD && CBLairPointUsable(sys, game, sp) {
+            found = true;
+            at = sp;
+            where = s.district;
+          }
+        }
+      }
+    }
+    if found {
+      return true;
+    }
+    let spot: Vector4;
+    if CBWhereaboutsSpot(sys, game, player, spot) {
+      at = spot;
+      where = here;
+      return true;
+    }
+    return false;
+  }
+
   // Asked in a conversation (Reactions/StreetTalk.reds). Starts one and says what it is, or says no.
   public func OfferFavour(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
     if this.FavourOpen() || !CBStreetLifeOn(n"favours") {
@@ -448,42 +577,112 @@ public class CBStreetLife {
             this.FavourPin(game, rt.lastSpawnAt, s"A favour for \(CBFactionLabel(t.faction)): run off the \(CBFactionLabel(g)) lookout");
           }
           CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): run off a \(NameToString(g)) lookout.");
+          this.RestGang(game, t.faction);
+          if IsDefined(t.npc) {
+            t.npc.cbFavourRoll = 2;
+          }
           return CBTalkSay(s"One of \(CBPossessive(CBFactionLabel(g))) lookouts is watching our corner, a couple of streets over. Run them off. Marked it for you.", n"");
         }
       }
     }
-    // Somebody near who owes them.
-    let reg = sys.GetRegistry();
-    let ppos = player.GetWorldPosition();
-    if IsDefined(reg) {
-      // The per-NPC gate before IsCrowd, which reads their record (2.2.1): the registry still holds
-      // people who have streamed out until its next prune, and the same order in the talk bubbles crashed.
-      for p in reg.GetAll() {
-        if IsDefined(p) && p.cbTalkTimes == 0 && !p.cbDamagedByPlayer && CBNpcSafe(sys, p) && !p.IsDead() && p.IsCrowd() {
-          let d = Vector4.Distance(ppos, p.GetWorldPosition());
-          if d >= 15.0 && d <= 60.0 && CBSafetyGate.CanTalkTo(p) {
-            p.cbFavourMark = true;
-            this.m_favFaction = t.faction;   // before the marker, which names whose favour it is (2.5.4)
-            CBTrackOnMap(game, p);
-            this.m_favKind = 2;
-            this.m_favTarget = p;
-            this.m_favLeaned = false;
-            this.m_favUntil = now + CBConfig.FavourLifeTicks();
-            this.FavourPin(game, p.GetWorldPosition(), s"A favour for \(CBFactionLabel(t.faction)): lean on who owes them");
-            CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): lean on somebody who owes them.");
-            return CBTalkSay("Somebody round here owes us money and keeps forgetting to pay. Go and have a word: lean on them, scare them. We want them paying, not dead. I marked them for you.", n"");
-          }
-        }
+    // Somebody somewhere else who owes them (2.6.4): a place, a pin, and the one who owes put there when V arrives.
+    let at: Vector4;
+    let where: CName;
+    if this.DebtPlace(sys, game, player, at, where) {
+      this.m_favFaction = t.faction;
+      this.m_favKind = 2;
+      this.m_favAt = at;
+      this.m_favDistrict = where;
+      this.m_favPlaced = false;
+      this.m_favFight = 0;
+      this.m_favLeaned = false;
+      this.m_favTarget = null;
+      this.m_favUntil = now + CBConfig.FavourDebtLifeTicks();
+      let place = NotEquals(where, n"") && NotEquals(where, sys.GetCurrentDistrict()) ? CBDistrictLabel(where) : "a few blocks over";
+      this.FavourPin(game, at, s"A favour for \(CBFactionLabel(t.faction)): collect a debt in \(place)");
+      this.RestGang(game, t.faction);
+      if IsDefined(t.npc) {
+        t.npc.cbFavourRoll = 2;
       }
+      CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): collect a debt in \(NameToString(where)).");
+      return CBTalkSay(s"Somebody in \(place) owes us and keeps forgetting. Go and collect. Lean on them, and if they swing, fists only: nobody pays from a body bag. I marked it for you.", n"");
     }
     return CBTalkSay("Nothing that needs you today. Ask me again sometime.", n"");
   }
 
   // V leaned on somebody (Reactions/StreetTalk.reds, Intimidate and Antagonize): was it the one who owes?
+  // Frightened enough of V and they pay; otherwise they would sooner find out with their fists (2.6.4). The more the street
+  // fears V, the likelier the first.
   public func NoteLeaned(npc: ref<ScriptedPuppet>) -> Void {
     let target = this.m_favTarget;
-    if this.m_favKind == 2 && IsDefined(npc) && IsDefined(target) && Equals(npc.GetEntityID(), target.GetEntityID()) {
-      this.m_favLeaned = true;
+    if this.m_favKind == 2 && IsDefined(npc) && IsDefined(target) && Equals(npc.GetEntityID(), target.GetEntityID())
+       && this.m_favFight == 0 && !this.m_favLeaned {
+      let menace = CBMenaceScale(CyberbaneSystem.Get(npc.GetGame()));
+      if RandF() < ClampF(CBConfig.FavourPayBase() + menace * CBConfig.FavourPayMenace(), 0.0, 0.9) {
+        this.m_favLeaned = true;
+      } else {
+        this.m_favFight = 1;
+      }
+    }
+  }
+
+  // The one who owes is put at the place once V is close (2.6.4): somewhere round it V cannot see, as a Rival at their place
+  // is (Rivals/Whereabouts.reds, CBLairTryPlace), minding their own business. On foot and calm, every third tick.
+  private func DebtorArrive(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                            player: ref<PlayerPuppet>, now: Int32) -> Void {
+    let ppos = player.GetWorldPosition();
+    let center = this.m_favAt;
+    if this.m_favPlaced || now % 3 != 0 || Vector4.Distance(ppos, center) > CBConfig.LairPlaceDistance()
+       || player.IsInCombat() || IsDefined(player.GetMountedVehicle()) || CBStoryHoldNow(game) || CBSpawnRoom(game) <= 0 {
+      return;
+    }
+    let record = CBDebtorRecord(sys, this.m_favDistrict, this.m_favFaction);
+    if !TDBID.IsValid(record) {
+      return;
+    }
+    let fwd = player.GetWorldForward();
+    let k = 0;
+    while k < 13 {
+      let px = center.X;
+      let py = center.Y;
+      if k > 0 && k <= 6 {
+        let angIn = Cast<Float>(k - 1) * 1.0472;
+        px = center.X + CosF(angIn) * CBConfig.LairSearchRadius();
+        py = center.Y + SinF(angIn) * CBConfig.LairSearchRadius();
+      }
+      if k > 6 {
+        let angOut = Cast<Float>(k - 7) * 1.0472 + 0.5236;
+        px = center.X + CosF(angOut) * CBConfig.LairOuterSearchRadius();
+        py = center.Y + SinF(angOut) * CBConfig.LairOuterSearchRadius();
+      }
+      k += 1;
+      let snapped: Vector4;
+      let spot: Vector4;
+      if CBNavSnap(game, px, py, center.Z, snapped) && CBSettleOnGround(game, snapped, spot)
+         && Vector4.Distance(spot, ppos) >= CBConfig.LairMinDistance() && !CBSafeAreaBlocksSpawn(game, spot)
+         && CBPointHiddenFrom(game, ppos, fwd, spot) && CBPointReachable(game, spot, ppos) {
+        let yaw = RandRangeF(0.0, 6.2831);
+        let facing = Quaternion.BuildFromDirectionVector(new Vector4(CosF(yaw), SinF(yaw), 0.0, 0.0));
+        let body: EntityID;
+        if CBCreateSpawn(des, record, n"", spot, facing, n"CB_Debtor", body) {
+          this.m_favBody = body;
+          this.m_favPlaced = true;
+          CBLog.Info(n"Street", "The one who owes is at the place.");
+        }
+        return;
+      }
+    }
+  }
+
+  // They put their fists up (2.6.4): hostile to V alone, the way a wannabe squares up (Spawn/Wannabe.reds).
+  private func DebtorSwings(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
+    CBCancelMove(p);
+    CBGrantAbility(p as NPCPuppet, t"Ability.IsAggressive");
+    CBMakeHostileToPlayer(game, p);
+    if CBMessagesOn() {
+      CBOverheard(game, "Owes money", CBLineOf(["Pay those thieves? Come and take it, then.",
+                                                "I'm not paying. You want it, earn it.",
+                                                "Fists, then. Winner keeps the money."]));
     }
   }
 
@@ -507,26 +706,70 @@ public class CBStreetLife {
       let p = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
       done = CBTakenOutByV(p);
     } else {
-      done = this.m_favLeaned;
-      // Hurt or killed by V instead (2.5.5): the favour was words, and it is over, said as it is. It used to run on to
-      // its end and say "somebody else handled it", which read as if somebody else had done the killing.
+      this.DebtorArrive(sys, game, des, player, now);
       let debtor = this.m_favTarget;
-      if !done && IsDefined(debtor) && debtor.cbDamagedByPlayer {
-        if CBMessagesOn() {
-          CBPhoneFromAlly(game, this.m_favFaction, "We said scare them, not hurt them. A body doesn't pay. Forget the favour.");
+      if this.m_favPlaced && !IsDefined(debtor) {
+        let body = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
+        if CBNpcSafe(sys, body) {
+          body.cbFavourMark = true;
+          this.m_favTarget = body;
+          debtor = body;
+          CBTrackOnMap(game, body);
         }
-        this.FavourEnd(game);
-        return;
       }
-      // Put down by somebody else (2.5.6): the favour is just as over, and the timeout's "They paid up before you got to
-      // them" would have been said of a body. Since 2.5.6 a debtor V hurt and somebody else then killed reads as not V's
-      // (Signals/CombatSignals.reds, the killing blow), so this is where that one ends too.
-      if !done && IsDefined(debtor) && CBIsDown(debtor) {
-        if CBMessagesOn() {
-          CBPhoneFromAlly(game, this.m_favFaction, "Forget it. Somebody got to them before you did, and a body doesn't pay.");
+      done = this.m_favLeaned;
+      if IsDefined(debtor) {
+        // Dead: nobody pays from a body bag (2.6.4). By V's hand, the gang thinks less of V for it; by somebody else's, it is
+        // just over (2.5.6).
+        if debtor.IsDead() {
+          let byV = debtor.cbDamagedByPlayer && !CBLastHitWasOthers(game, debtor);
+          if byV {
+            let fs = sys.EnsureFaction(this.m_favFaction);
+            if IsDefined(fs) && !CBReputationFrozen() {
+              fs.standing = ClampF(fs.standing - CBConfig.FavourKillStanding(), -100.0, 100.0);
+            }
+            CBFileLog(sys, n"FavourKilled", CBGameSeconds(game), CBEventDistrict(sys, game), this.m_favFaction, 0.0);
+          }
+          if CBMessagesOn() {
+            CBPhoneFromAlly(game, this.m_favFaction, byV ? "You killed them? Nobody pays from a body bag. The money's gone, and so is our patience."
+                                                         : "Forget it. Somebody got to them before you did, and a body doesn't pay.");
+          }
+          this.FavourEnd(game);
+          return;
         }
-        this.FavourEnd(game);
-        return;
+        // Hurt by V before a word was said: that is the fight (2.6.4). It used to end the favour on the spot.
+        if this.m_favFight == 0 && !done && debtor.cbDamagedByPlayer {
+          this.m_favFight = 1;
+        }
+        if this.m_favFight == 1 && !debtor.cbTalkPartner && CBStillStanding(debtor) {
+          this.DebtorSwings(game, debtor);
+          this.m_favFight = 2;
+          this.m_favFightTick = now;
+        }
+        if this.m_favFight == 2 {
+          if CBIsDown(debtor) || !CBStillStanding(debtor) {
+            done = true;   // beaten, and breathing: they pay
+          } else {
+            let hp = CBSamplePlayerHp(game, player);
+            if hp >= 0.0 && hp < CBConfig.WannabeLoseHealth() {
+              CBWannabeStandDown(game, debtor);
+              if CBMessagesOn() {
+                CBPhoneFromAlly(game, this.m_favFaction, "Heard they put you on the ground. Forget the money.");
+              }
+              this.FavourEnd(game);
+              return;
+            }
+            if now - this.m_favFightTick > 3
+               && Vector4.Distance(player.GetWorldPosition(), debtor.GetWorldPosition()) > CBConfig.WannabeWalkAwayDistance() {
+              CBWannabeStandDown(game, debtor);
+              if CBMessagesOn() {
+                CBPhoneFromAlly(game, this.m_favFaction, "They're still not paying. Forget it.");
+              }
+              this.FavourEnd(game);
+              return;
+            }
+          }
+        }
       }
     }
     if done {
@@ -547,8 +790,9 @@ public class CBStreetLife {
     let faction = this.m_favFaction;
     let pay = CBConfig.FavourPay() + RandRange(0, CBConfig.FavourPay() / 2 + 1);
     if this.m_favKind == 2 {
-      pay += CBConfig.FavourPay() / 2;   // the debt, less their cut
+      pay += CBConfig.FavourPay();   // the debt, less their cut, for a trip across town (2.6.4)
     }
+    let beaten = this.m_favKind == 2 && this.m_favFight == 2;
     CBStreetGiveMoney(game, pay);
     CBTalkWarm(sys, game, faction, CBConfig.FavourWarmth(), CBConfig.PostureAllied() - 1.0);
     let tip = "";
@@ -560,7 +804,8 @@ public class CBStreetLife {
     }
     CBFileLog(sys, n"Favour", CBGameSeconds(game), CBEventDistrict(sys, game), faction, Cast<Float>(pay));
     if CBMessagesOn() {
-      CBPhoneFromAlly(game, faction, s"Saw what you did. \(pay)eb, and you've got friends here.\(tip)");
+      CBPhoneFromAlly(game, faction, beaten ? s"Heard you had to put them on the ground. They paid. \(pay)eb, and you've got friends here.\(tip)"
+                                            : s"Saw what you did. \(pay)eb, and you've got friends here.\(tip)");
     }
     CBLog.Info(n"Street", s"A favour for \(NameToString(faction)) done; \(pay)eb.");
     this.FavourEnd(game);
@@ -597,7 +842,11 @@ public class CBStreetLife {
     this.m_favFaction = n"";
     this.m_favKind = 0;
     this.m_favTarget = null;
+    this.m_favPlaced = false;
+    this.m_favFight = 0;
+    this.m_favDistrict = n"";
     CBDeleteTaggedSafe(game, n"CB_Favour", true, true);
+    CBDeleteTaggedSafe(game, n"CB_Debtor", true, true);
   }
 
   // ---- The sit-down ----------------------------------------------------------------------------------------

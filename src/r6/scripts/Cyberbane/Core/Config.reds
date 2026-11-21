@@ -1941,6 +1941,17 @@ public abstract class CBConfig {
   public static func FavourPay() -> Int32 = 700
   public static func FavourWarmth() -> Float = 2.0
   public static func FavourTipChance() -> Float = 0.35
+  // Who has work, and where the debt is (2.6.4, Spawn/LivingStreet.reds): the share of a friendly gang's people with a
+  // favour to give, the game hours a gang has nothing more after handing one out, how long a debt waits (a trip across
+  // town), how far off it is at least, the chance the one who owes pays when leaned on (more the more the street fears V,
+  // never past 0.9), and the standing V loses with the gang for killing them.
+  public static func FavourGiverChance() -> Float = 0.3
+  public static func FavourGangRestHours() -> Float = 3.0
+  public static func FavourDebtLifeTicks() -> Int32 = 2400
+  public static func FavourDebtMinDistance() -> Float = 120.0
+  public static func FavourPayBase() -> Float = 0.35
+  public static func FavourPayMenace() -> Float = 0.45
+  public static func FavourKillStanding() -> Float = 6.0
   // A roll about every half hour of free roaming. Forty minutes at 0.3 was a sit-down every two hours or
   // more of play, before asking for a gang at war with the one holding the district.
   public static func MeetGapTicks() -> Int32 = 1800

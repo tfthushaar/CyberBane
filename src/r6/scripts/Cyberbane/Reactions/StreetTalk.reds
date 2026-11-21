@@ -3069,7 +3069,7 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   // A favour (Spawn/LivingStreet.reds, 2.0.0): a gang that does not hate V may have a small job.
   let lifeC = CBStreetLifeFor(game);
   if gang && (m == CBTalkFriendly() || m == CBTalkWary()) && CBStreetLifeOn(n"favours") && IsDefined(lifeC)
-     && !lifeC.FavourOpen() && !CBMaskHas(done, CBTalkActFavour()) {
+     && lifeC.HasWorkFor(game, t.npc, t.faction) && !CBMaskHas(done, CBTalkActFavour()) {
     ArrayPush(out, CBTalkMakeLine("[Ask] Need anything done?", CBTalkActFavour(), t"ChoiceCaptionParts.GangWatchIcon"));
   }
   // A scout's price (Spawn/Hunted.reds, [68]).
