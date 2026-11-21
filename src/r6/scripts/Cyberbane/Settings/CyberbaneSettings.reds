@@ -517,6 +517,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
   @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewCanDie")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewCanDie-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let crewCanDie: Bool = true;   // 2.6.3: the game's companion knock-down is where they die
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewBetrayal")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewBetrayal-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")

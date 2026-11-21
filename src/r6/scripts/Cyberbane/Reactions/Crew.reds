@@ -1409,6 +1409,12 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
         coming += 1;
         near = true;
       } else {
+        // Where the game knocks a follower down, they die, with Your crew can die on (2.6.3, CBCrewDiesOfIt). Already
+        // dying: nothing more, their death is on its way.
+        if IsDefined(p) && !p.IsDead() && (p.cbCrewDying || CBCrewDiesOfIt(game, p)) {
+          coming += 1;   // the call is not over before their death is
+          near = true;
+        } else {
         if IsDefined(p) && CBIsDown(p) && !p.IsDead() {
           // Down, not dead (2.6.3): the game's follower role drops a follower the way it drops its own companions,
           // where anybody else would die. Said at once, so a body on the ground is not read as a death nobody mentions.
@@ -1423,6 +1429,7 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
           if p.IsAttached() && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.MyCrewLeaveDistance() {
             near = true;   // lying where the fight is, not lost
           }
+        }
         }
       }
     }
@@ -1683,6 +1690,74 @@ func CBCrewHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
           }
           p.cbCrewPaired = enemy;
         }
+      }
+    }
+  }
+}
+
+// Your crew can die (2.6.3, on by default). The game's follower role keeps a follower alive the way it keeps its own
+// companions: nearly dead and hit again, they go down invulnerable and get back up 15 to 30 seconds later
+// (hitReactionComponent.script, BaseStatusEffect.FollowerDefeated*). On, that knock-down is where they die instead: the
+// knock-down taken off, the way the game takes it off a follower who stops following (AIFollowerRole.OnRoleCleared), and
+// a moment later the game's own kill (BaseStatusEffect.ForceKill) with whoever hit them last as the killer, so the death
+// goes through every death hook as anybody's would, and is never V's. Off, they go down and are hurt for a few hours.
+public func CBCrewCanDie() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().crewCanDie;
+}
+
+@addField(ScriptedPuppet)
+public let cbCrewDying: Bool;
+
+// Down by the game's follower rule, and to die of it. True when it was.
+func CBCrewDiesOfIt(game: GameInstance, p: ref<ScriptedPuppet>) -> Bool {
+  if !CBCrewCanDie() || !IsDefined(p) || p.IsDead() || !StatusEffectSystem.ObjectHasStatusEffectWithTag(p, n"FollowerDefeated") {
+    return false;
+  }
+  CBTrace("status: one of V's crew dies where the game would have knocked them down");
+  StatusEffectHelper.RemoveStatusEffectsWithTag(p, n"FollowerDefeated");
+  p.cbCrewDying = true;
+  CBCrewQueueDeath(game, p, 0.25);
+  return true;
+}
+
+func CBCrewQueueDeath(game: GameInstance, p: ref<ScriptedPuppet>, delay: Float) -> Void {
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(ds) || !IsDefined(p) {
+    return;
+  }
+  let cb = new CBCrewDeathCallback();
+  cb.game = game;
+  cb.body = p.GetEntityID();
+  cb.tries = 0;
+  ds.DelayCallback(cb, delay, false);
+}
+
+// The kill itself, a moment after the knock-down came off: the game refuses to kill anybody still invulnerable
+// (NPCPuppet.Kill), so it is tried again a few times while the knock-down's invulnerability wears off.
+public class CBCrewDeathCallback extends DelayCallback {
+  public let game: GameInstance;
+  public let body: EntityID;
+  public let tries: Int32;
+
+  public func Call() -> Void {
+    let p = GameInstance.FindEntityByID(this.game, this.body) as ScriptedPuppet;
+    if !IsDefined(p) || !p.IsAttached() || p.IsDead() || !p.cbCrewDying || !CBWorldStable(this.game) {
+      return;
+    }
+    StatusEffectHelper.RemoveStatusEffectsWithTag(p, n"FollowerDefeated");
+    let killer = p.cbLastAttacker;
+    CBTrace("status: the game's own kill on one of V's crew");
+    if IsDefined(killer) && killer.IsAttached() {
+      StatusEffectHelper.ApplyStatusEffect(p, t"BaseStatusEffect.ForceKill", killer.GetEntityID());
+    } else {
+      StatusEffectHelper.ApplyStatusEffect(p, t"BaseStatusEffect.ForceKill");
+    }
+    this.tries += 1;
+    if this.tries < 4 {
+      let ds = GameInstance.GetDelaySystem(this.game);
+      if IsDefined(ds) {
+        ds.DelayCallback(this, 0.5, false);   // asked again; does nothing once they are dead
       }
     }
   }

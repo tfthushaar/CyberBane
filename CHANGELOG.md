@@ -32,9 +32,10 @@ the next unless a version says otherwise.
 - **Call your crew (key)** under Your crew in Mod Settings: one key to call them, or send them home. Not set at first.
 - **Your crew fights whoever is fighting you.** They followed you, but only ever took on the people Cyberbane itself
   had sent: anybody else hostile to you was nobody to them, so they walked around until one of them shot them.
-- **A crew member who goes down says so,** and when the fight is over tells you they'll live and how long they're out.
-  The game keeps a follower on the ground where anybody else would die, so one seen falling read as dead, with only
-  "Hurt" on their card.
+- **Your crew can die.** The game protected them the way it protects its own companions: nearly dead and hit again,
+  they went down, couldn't be hurt while down, and got back up, so a crew member who "died" was only hurt. Now that
+  moment is their death, and the fallen go on the memorial. **Your crew can die** under Your crew in Mod Settings is on
+  by default; off, they go down instead, say so, and tell you after the fight they'll live and how long they're out.
 
 **Fixed: talk that shows up**
 - With a weapon in your hand, the person in front of you shows a greyed **Holster to talk** where Talk would be, every

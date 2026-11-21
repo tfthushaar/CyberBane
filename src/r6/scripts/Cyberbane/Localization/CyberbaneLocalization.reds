@@ -94,6 +94,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-CrewComeOnOwn-Desc", "The most loyal of your crew turn up unasked when an ambush springs on you. Off, and they only come when you call.");
     this.Text("Cyberbane-Settings-CrewOnJobs", "Your crew on jobs");
     this.Text("Cyberbane-Settings-CrewOnJobs-Desc", "Where your crew comes when you call. Gigs and side jobs: everywhere except the main story's own missions. Never: not near any job on the map. Everywhere but the story: any job, but never into the story itself. A cutscene or a safe place like your apartment always keeps them out.");
+    this.Text("Cyberbane-Settings-CrewCanDie", "Your crew can die");
+    this.Text("Cyberbane-Settings-CrewCanDie-Desc", "On, your crew can be killed like anybody else, and the ones who fall go on the memorial. Off, the game protects them the way it protects its own companions: hurt badly enough, they go down instead of dying, get back up a little later, and are out for a few hours once the fight is over.");
     this.Text("Cyberbane-Settings-CrewCallKey", "Call your crew (key)");
     this.Text("Cyberbane-Settings-CrewCallKey-Desc", "A key that calls your crew, or sends them home when they are with you. Not set at first: pick a key nothing else uses. It only works out in the game, never in a menu. The phone (My crew, Need you. Now.) and the Hub's Crew page do the same.");
     this.Text("Cyberbane-Settings-CrewBetrayal", "Betrayal");

@@ -161,7 +161,8 @@ lives in your saves: a save made while the mod is removed loses it.
   three come and go home once it is over; with nothing to fight, two come and walk with you until you send them home
   (**Go home. I've got this.** on the phone, **Send them home** on the Hub, or the same key). They come to gigs and side
   jobs; **Your crew on jobs** changes that. Cutscenes, the main story's own missions and safe places like your
-  apartment keep them out. If they can't come, they say why.
+  apartment keep them out. If they can't come, they say why. They can be killed like anybody else, and the fallen go
+  on the memorial; turn off **Your crew can die** and the game protects them the way it protects its own companions.
 - **Recruiting a Rival:** beat a Rival without killing them, look at them where they lie and press F, and spare them.
   The next time you put that Rival down, the same talk offers **[Recruit] You owe me. Work for me.** A Rival you have
   spared twice may also text you, and you can ask them in the thread. Crouching over somebody down is for questioning
