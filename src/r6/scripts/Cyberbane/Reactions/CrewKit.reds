@@ -889,18 +889,21 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   let said = "";
   if share > 0.0 {
     let sm = CBSmasherScale(game, stats.GetStatValue(id, gamedataStatType.PowerLevel));
+    // As far as V is into the game (2.6.4, Spawn/MeasureV.reds CBVProgress), as for a Rival: a crew V spars with at level 5
+    // is not a share of the last boss.
+    let measure = CBMeasureV(game);
+    let progress = CBVProgress(measure);
     if sm.X > 0.0 {
-      health = MaxF(health, 1.0 + (sm.X - 1.0) * share);
-      healthCeiling = MaxF(healthCeiling, sm.X * CBConfig.SmasherCeilingShare());
+      health = MaxF(health, CBSmasherPart(sm.X, share, progress));
+      healthCeiling = MaxF(healthCeiling, CBSmasherPart(sm.X, CBConfig.SmasherCeilingShare(), progress));
     }
     if sm.Y > 0.0 {
-      let smDamage = 1.0 + MaxF(sm.Y * CBConfig.SmasherDamageScale() - 1.0, 0.0) * share;
+      let smDamage = CBSmasherPart(sm.Y * CBConfig.SmasherDamageScale(), share, progress);
       damage = MaxF(damage, smDamage);
       npcDamage = smDamage;
-      damageCeiling = MaxF(damageCeiling, sm.Y * CBConfig.SmasherDamageScale() * CBConfig.SmasherCeilingShare());
+      damageCeiling = MaxF(damageCeiling, CBSmasherPart(sm.Y * CBConfig.SmasherDamageScale(), CBConfig.SmasherCeilingShare(), progress));
     }
     // What an apex squad member at the highest strength would take of V's fire, and a tenth more at Legend.
-    let measure = CBMeasureV(game);
     let seconds = CBConfig.ApexMatchSeconds() * 1.5 * climb * CBConfig.CrewPastApex();
     let underFire = CBMatchHealthMult(measure, stats.GetStatValue(id, gamedataStatType.Health), seconds);
     health = MaxF(health, underFire);

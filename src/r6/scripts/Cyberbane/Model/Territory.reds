@@ -197,7 +197,7 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
       if ArrayContains(prof.turf, district) {
         let s = CBGangStrengthIn(sys, prof.id, district);
         ArrayPush(ids, prof.id);
-        ArrayPush(weights, s * s * CBTurfWobble(game, dIdx, i) * (invaded ? CBConfig.TurfLostGroundMult() : 1.0));
+        ArrayPush(weights, s * s * MaxF(prof.turfHold, 0.0) * CBTurfWobble(game, dIdx, i) * (invaded ? CBConfig.TurfLostGroundMult() : 1.0));
         ArrayPush(natives, prof.id);
         weakestNative = MinF(weakestNative, s);
       } else {

@@ -341,10 +341,12 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
     let sm = CBSmasherScale(game, stats.GetStatValue(npcId, gamedataStatType.PowerLevel));
     let share = isRival ? (CBConfig.RivalSmasherShareMin() + (CBConfig.RivalSmasherShareMax() - CBConfig.RivalSmasherShareMin()) * level) * ClampF(grade, 0.25, 1.0)
                         : CBConfig.ApexSmasherShareMin() + (CBConfig.ApexSmasherShareMax() - CBConfig.ApexSmasherShareMin()) * level;
-    let smHp = sm.X > 0.0 ? 1.0 + (sm.X - 1.0) * share : 0.0;
-    let smDmg = sm.Y > 0.0 ? 1.0 + MaxF(sm.Y * CBConfig.SmasherDamageScale() - 1.0, 0.0) * share : 0.0;
-    let hpCeiling = sm.X > 0.0 ? MaxF(CBConfig.ApexMatchHealthCeiling(), sm.X * CBConfig.SmasherCeilingShare()) : CBConfig.ApexMatchHealthCeiling();
-    let dmgCeiling = sm.Y > 0.0 ? MaxF(CBConfig.ApexMatchDamageCeiling(), sm.Y * CBConfig.SmasherDamageScale() * CBConfig.SmasherCeilingShare()) : CBConfig.ApexMatchDamageCeiling();
+    // As far as V is into the game (2.6.4, CBVProgress): none of him for a new V, all of the share at the level cap.
+    let progress = CBVProgress(measure);
+    let smHp = CBSmasherPart(sm.X, share, progress);
+    let smDmg = CBSmasherPart(sm.Y * CBConfig.SmasherDamageScale(), share, progress);
+    let hpCeiling = MaxF(CBConfig.ApexMatchHealthCeiling(), CBSmasherPart(sm.X, CBConfig.SmasherCeilingShare(), progress));
+    let dmgCeiling = MaxF(CBConfig.ApexMatchDamageCeiling(), CBSmasherPart(sm.Y * CBConfig.SmasherDamageScale(), CBConfig.SmasherCeilingShare(), progress));
     hpMult = ClampF(MaxF(hpMult, MaxF(matchHp, smHp)), 1.0, hpCeiling);
     // Their hits: the most of their own build, V's armour answered, and Smasher's share, on the damage multiplier this
     // build has always used for their weapons; and the same share on NPCDamage, which is what their burning and bleeding
@@ -364,7 +366,7 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
       CBGrantAbility(puppet as NPCPuppet, t"Ability.HasMeleeHitReactionAndTakedownResistance");
       counters += "Smasher's footing ";
     }
-    CBLog.Info(n"Spawn", s"Measured you for this one: level \(measure.level), best weapon \(measure.bestDps) DPS (\(measure.Dps()) with crits), armour \(measure.armour), health \(measure.health); you fight as \(measure.Styles()); they bring \(counters). Smasher at their power level: health x\(sm.X), damage x\(sm.Y); their share \(share): health x\(hpMult), NPC damage x\(npcDamageMult), no more than \(hitCap)% a hit.");
+    CBLog.Info(n"Spawn", s"Measured you for this one: level \(measure.level), best weapon \(measure.bestDps) DPS (\(measure.Dps()) with crits), armour \(measure.armour), health \(measure.health); you fight as \(measure.Styles()); they bring \(counters). Their power level \(stats.GetStatValue(npcId, gamedataStatType.PowerLevel)); Smasher there: health x\(sm.X), damage x\(sm.Y); their share \(share) of it, x\(progress) for how far you are into the game: health x\(hpMult), NPC damage x\(npcDamageMult), no more than \(hitCap)% a hit.");
   }
   critChance = ClampF(critChance, 0.0, CBConfig.ApexCritChanceCeiling());
   critDamage = ClampF(critDamage, 0.0, CBConfig.ApexCritDamageCeiling());

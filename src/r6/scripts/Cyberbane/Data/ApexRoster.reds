@@ -101,6 +101,15 @@ public func CBApexRosterList(faction: CName, chair: Int32) -> array<TweakDBID> {
     if c == 2 { picked = [t"Character.kurtz_martial_fmelee3_fists_ma_rare"]; return picked; }
     picked = [t"Character.kurtz_netrunner2_netrunner2_lexington_ma_rare"]; return picked;
   }
+  if Equals(faction, n"Scrappers") {
+    // Phantom Liberty's scrappers.tweak, the whole of it: one elite, two kinds of rifleman, wrenches and revolvers. No
+    // heavies, blades or netrunners of their own; the chairs hold what they really field. Without Phantom Liberty none of
+    // these records exists and the gang sends nobody.
+    if c == 0 { picked = [t"Character.scrappers_elite2_shotgun_igla_ma"]; return picked; }   // no heavies; their elite
+    if c == 1 { picked = [t"Character.scrappers_ranged2_copperhead_ma", t"Character.scrappers_ranged2_ajax_wa", t"Character.scrappers_ranged2_ajax_ma", t"Character.scrappers_ranged2_copperhead_wa"]; return picked; }
+    if c == 2 { picked = [t"Character.scrappers_grunt1_melee1_pipewrench_ma", t"Character.scrappers_grunt1_melee1_pipewrench_wa"]; return picked; }   // no blades; a wrench
+    picked = [t"Character.scrappers_grunt1_ranged1_nova_wa", t"Character.scrappers_grunt1_ranged1_nova_ma"]; return picked;   // no netrunners; a revolver
+  }
   if Equals(faction, n"Arasaka") {
     if c == 0 { picked = [t"Character.arasaka_rare2_gunner3_hmg_mm_elite", t"Character.arasaka_sumo_hmelee2_hammer_mb_rare"]; return picked; }
     if c == 1 { picked = [t"Character.arasaka_cyborg_franged3_shingen_ma_elite", t"Character.arasaka_cyborg_fshotgun3_zhuo_ma_elite"]; return picked; }

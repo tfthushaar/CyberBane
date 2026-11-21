@@ -109,7 +109,7 @@ public func CBArrivalVehicle(factionId: CName, needed: Int32, roll: Int32, out s
   let own: array<TweakDBID>;
   if Equals(factionId, n"Wraiths") || Equals(factionId, n"Aldecaldos")
      || Equals(factionId, n"Animals") || Equals(factionId, n"Scavengers")
-     || Equals(factionId, n"Barghest") {
+     || Equals(factionId, n"Barghest") || Equals(factionId, n"Scrappers") {
     ArrayPush(own, galena);
     ArrayPush(own, mackinaw);
     ArrayPush(own, colby);

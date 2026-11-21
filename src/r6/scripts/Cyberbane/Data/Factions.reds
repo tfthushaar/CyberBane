@@ -226,7 +226,7 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f.affiliations = [n"Barghest"];
   f.SetRespect(ECBArchetype.Professional, 0.3);
   f.SetRespect(ECBArchetype.Butcher, 0.2);
-  f.rivalFactions = [n"Militech", n"Animals", n"VoodooBoys"];
+  f.rivalFactions = [n"Militech", n"Animals", n"VoodooBoys", n"Scrappers"];
   f.turf = [n"Dogtown"];
   c.AddFaction(f);
 
@@ -260,5 +260,19 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   // MaxTac: never bought, courage immune (handled at reaction time), low dreadSens.
   f = CBMakeFaction(n"MaxTac", 0.0, 0.0, 0.3, 0.0, false, false, "Cyberbane-Faction-MaxTac");
   f.affiliations = [n"MaxTac"];
+  c.AddFaction(f);
+
+  // Dogtown's Scrappers (2.6.4): the people who live off what the war leaves lying in the ruins. A player met them and
+  // asked who they were: "they looked like Voodoo Boys... they didn't have Scav masks nor did they look like Barghest
+  // soldiers". The game files every one of them Factions.Unaffiliated, so Cyberbane had never known them from a passer-by:
+  // their kills counted for nobody, they made no Rivals and sent nobody. They are known by the game's attitude group for
+  // them instead. Last in the list, so every gang before them keeps its place (the turf drift is seeded by it).
+  f = CBMakeFaction(n"Scrappers", -5.0, -0.05, 1.2, 0.0, true, true, "Cyberbane-Faction-Scrappers");
+  f.attitudeGroups = [n"scrappers"];
+  f.SetRespect(ECBArchetype.Ghost, 0.3);
+  f.SetRespect(ECBArchetype.Professional, 0.2);
+  f.rivalFactions = [n"Barghest", n"Scavengers"];
+  f.turf = [n"Dogtown"];
+  f.turfHold = 0.55;   // Barghest's Dogtown; the Scrappers hold it only when Barghest has been bled white
   c.AddFaction(f);
 }

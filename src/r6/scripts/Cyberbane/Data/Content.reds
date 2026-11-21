@@ -30,6 +30,12 @@ public class CBFactionProfile {
   public let respectWeights: array<Float>;    // index = ECBArchetype, length = CBArchetypeCount()
   public let rivalFactions: array<CName>;
   public let turf: array<CName>;              // district ids
+  // The game's attitude group for a gang it never gave an affiliation (2.6.4): Dogtown's Scrappers are Factions.Unaffiliated
+  // and only their base attitude group, "scrappers", says who they are (attitudes.tweak, Group_Scrappers).
+  public let attitudeGroups: array<CName>;
+  // How hard they push for their own streets, against a gang that shares them (2.6.4): 1 for a gang that runs its district,
+  // less for one that lives in the cracks of somebody else's (the Scrappers in Barghest's Dogtown).
+  public let turfHold: Float;
   public let isGang: Bool;                    // tribute/hit-squad eligibility
   public let canBeBought: Bool;               // broker-peace eligibility (corps cannot)
   public let displayKey: String;
@@ -274,6 +280,19 @@ public class CyberbaneContent extends ScriptableService {
     return n"";
   }
 
+  // A gang known only by its attitude group (2.6.4), n"" if none.
+  public func FactionForAttitude(group: CName) -> CName {
+    if !IsNameValid(group) {
+      return n"";
+    }
+    for f in this.m_factions {
+      if ArrayContains(f.attitudeGroups, group) {
+        return f.id;
+      }
+    }
+    return n"";
+  }
+
   // ---- Districts ----------------------------------------------------------
   public func AddDistrict(def: ref<CBDistrictDef>) -> Void {
     if IsDefined(def) {
@@ -480,6 +499,7 @@ public func CBMakeFaction(
   f.isGang = isGang;
   f.canBeBought = canBeBought;
   f.displayKey = displayKey;
+  f.turfHold = 1.0;
   ArrayResize(f.respectWeights, CBArchetypeCount());
   return f;
 }

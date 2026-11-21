@@ -589,10 +589,12 @@ func CBClassifyFactionNow(puppet: ref<ScriptedPuppet>, content: ref<CyberbaneCon
     return n"";
   }
   let aff = rec.Affiliation();
-  if !IsDefined(aff) {
-    return n"";
+  let faction = IsDefined(aff) ? content.FactionForAffiliation(aff.EnumName()) : n"";
+  // Nobody's by affiliation: a gang the game knows only by its attitude group (2.6.4, the Scrappers). The record's base
+  // group, never the live one, which a quest can change for a scene.
+  if Equals(faction, n"") {
+    faction = content.FactionForAttitude(rec.BaseAttitudeGroup());
   }
-  let faction = content.FactionForAffiliation(aff.EnumName());
   // MaxTac is not an affiliation. gamedataAffiliation has no such value and every MaxTac record is
   // Factions.NCPD, so nobody was ever classed as MaxTac: their kills scored as cops, MaxTac's Problem
   // could not be earned, and every "MaxTac holds its ground" test here was reading a name that

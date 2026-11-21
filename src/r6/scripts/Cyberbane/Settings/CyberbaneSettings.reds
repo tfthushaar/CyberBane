@@ -1570,6 +1570,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
   @runtimeProperty("ModSettings.category.order", "17")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Scrappers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
+  public let factionScrappers: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
+  @runtimeProperty("ModSettings.category.order", "17")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Arasaka")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-FactionOn-Desc")
   public let factionArasaka: Bool = true;
@@ -1708,6 +1715,15 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
   @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
   public let viewBarghest: ECBGangView = ECBGangView.AllGangs;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
+  @runtimeProperty("ModSettings.category.order", "18")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Scrappers")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  public let viewScrappers: ECBGangView = ECBGangView.AllGangs;
 
 
   // ---- Advanced ----------------------------------------------------------------------------------
@@ -1928,6 +1944,7 @@ public class CyberbaneSettings {
     if Equals(id, n"Wraiths") { return this.factionWraiths; }
     if Equals(id, n"Aldecaldos") { return this.factionAldecaldos; }
     if Equals(id, n"Barghest") { return this.factionBarghest; }
+    if Equals(id, n"Scrappers") { return this.factionScrappers; }
     if Equals(id, n"Arasaka") { return this.factionArasaka; }
     if Equals(id, n"Militech") { return this.factionMilitech; }
     if Equals(id, n"KangTao") { return this.factionKangTao; }
@@ -1951,6 +1968,7 @@ public class CyberbaneSettings {
     if Equals(id, n"Wraiths") { own = this.viewWraiths; gang = true; }
     if Equals(id, n"Aldecaldos") { own = this.viewAldecaldos; gang = true; }
     if Equals(id, n"Barghest") { own = this.viewBarghest; gang = true; }
+    if Equals(id, n"Scrappers") { own = this.viewScrappers; gang = true; }
     if !gang {
       return 0;
     }

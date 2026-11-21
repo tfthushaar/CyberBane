@@ -117,6 +117,16 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
     ["Dust", "Sand", "Salt", "Bone", "Sun", "Dry", "Ash", "Thorn", "Flint", "Rattle", "Burn", "Scorch"],
     ["devil", "wind", "runner", "fang", "snake", "back", "claw", "mouth", "walker", "crow"]);
 
+  // Dogtown's Scrappers (2.6.4): handles from what they pull out of the ruins. A new gang's pools go last, after every
+  // other call, so no name already given out in a save moves.
+  c.AddFactionNames(CBMakeHandleNames(n"Scrappers",
+    ["Lugnut", "Rebar", "Crowbar", "Gasket", "Ratchet", "Sprocket", "Copperwire", "Pliers", "Rivet", "Tinker",
+     "Hubcap", "Flux", "Axle", "Slagheap", "Spanner", "Bracket", "Torque", "Dross", "Filament", "Washer",
+     "Coil", "Bolt Cutter", "Pry"]));
+  CBAddCompoundHandles(c, n"Scrappers",
+    ["Copper", "Lug", "Crank", "Cog", "Brass", "Tar", "Grease", "Pipe", "Slug", "Wrench", "Nickel", "Dent"],
+    ["nut", "hand", "rat", "head", "tooth", "knuckle", "eye", "pocket", "boot", "neck"]);
+
   // How long each list was before 1.7.7. These numbers never change: they mark the names that may
   // already have been somebody in a save, before saves kept a record of them.
   c.MarkOldNames(n"NCPD", 5, 5);

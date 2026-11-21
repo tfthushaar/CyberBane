@@ -37,6 +37,7 @@ public func CBFactionLabel(id: CName) -> String {
   if Equals(id, n"Scavengers") { return "the Scavs"; }
   if Equals(id, n"Mox") { return "the Mox"; }
   if Equals(id, n"Barghest") { return "Barghest"; }
+  if Equals(id, n"Scrappers") { return "the Scrappers"; }
   if Equals(id, n"Aldecaldos") { return "the Aldecaldos"; }
   if Equals(id, n"Wraiths") { return "the Wraiths"; }
   if Equals(id, n"Arasaka") { return "Arasaka"; }

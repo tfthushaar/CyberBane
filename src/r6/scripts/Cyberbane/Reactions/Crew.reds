@@ -1140,26 +1140,52 @@ public func CBCrewCallBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, una
 // used to be held by every arrival rule: within 80 m of any objective's pin (so never at a gig) and in any gang's
 // compound, the places V fights most, all under one "They can't get to you here".
 public func CBCrewHeldWhy(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
+  switch CBCrewHeldReason(sys, game) {
+    case 1: return "Nobody's answering.";
+    case 2: return "Not into the story. Call when it's done.";
+    case 3: return "You're in the middle of something. Call after.";
+    case 4: return "Somewhere safe. They'll wait for you outside.";
+    case 5: return "You're on a job. They stay out of those.";
+    case 6: return "That's no gig. They stay out of the big story.";
+    default: return "";
+  }
+}
+
+// Which of those it is (2.6.4), so that a crew already out says the real reason when it goes. They all said "Not our
+// kind of place. We're gone.", which told a player whose crew left the moment a fight started nothing they could act on.
+public func CBCrewHeldReason(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int32 {
   if !IsDefined(sys) {
-    return "Nobody's answering.";
+    return 1;
   }
   if sys.GetStoryHold() != CBStoryNone() {
-    return "Not into the story. Call when it's done.";
+    return 2;
   }
   if CBPlayerInScene(game) {
-    return "You're in the middle of something. Call after.";
+    return 3;
   }
   if sys.IsInSanctuary() {
-    return "Somewhere safe. They'll wait for you outside.";
+    return 4;
   }
   let jobs = CBCrewOnJobs();
   if Equals(jobs, ECBCrewOnJobs.Never) && sys.IsOnJob() {
-    return "You're on a job. They stay out of those.";
+    return 5;
   }
   if Equals(jobs, ECBCrewOnJobs.GigsAndSideJobs) && CBOnMainStoryJob(sys, game) {
-    return "That's no gig. They stay out of the big story.";
+    return 6;
   }
-  return "";
+  return 0;
+}
+
+// What the crew says as they go for that reason.
+public func CBCrewHeldLeaving(reason: Int32) -> String {
+  switch reason {
+    case 2: return "The story's got you. We'll be around when it lets go.";
+    case 3: return "You're tied up. We'll head back.";
+    case 4: return "You're safe in there. We'll head back.";
+    case 5: return "That's your job, not ours. Heading back.";
+    case 6: return "This is the big story. We stay out of that one.";
+    default: return "We're heading back.";
+  }
 }
 
 public func CBCrewOnJobs() -> ECBCrewOnJobs {
@@ -1525,7 +1551,7 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   // Switched off with them out (2.5.6): they go home now, the one order they get, instead of following V until the fight
   // went quiet. No win is counted and nothing is said, as when arrivals are held.
   if !CBMyCrewOn() {
-    why = 5;   // its own reason: 3 texts "Not our kind of place", and switching the crew off says nothing
+    why = 5;   // its own reason: 3 says where V is, and switching the crew off says nothing
   }
   if why >= 0 {
     CBCrewEndCall(sys, game, book, why);
@@ -1618,7 +1644,7 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
       CBCrewText(sys, game, speaker, s"Lost you. Heading back to \(home).");
     }
     if why == 3 {
-      CBCrewText(sys, game, speaker, sys.IsInSanctuary() ? "You're safe in there. We'll head back." : "Not our kind of place. We're gone.");
+      CBCrewText(sys, game, speaker, CBCrewHeldLeaving(CBCrewHeldReason(sys, game)));
     }
     if why == 6 {
       CBCrewText(sys, game, speaker, CBLineOf([s"Heading back to \(home). Call when you need us.", "Going. You know where to find us."]));

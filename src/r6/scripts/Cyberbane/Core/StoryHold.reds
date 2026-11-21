@@ -82,6 +82,16 @@ public func CBStoryLabel(reason: Int32) -> String {
 //     as Fenix Rebirth the first of those would call the hunters back in the middle of the fight.
 //     A quest that holds V in place does it with a scene, which is checked separately.
 //
+//   - The game also puts some of these tags on V for things V does, and the tag alone cannot tell
+//     the two apart (2.6.4). Berserk is a cyberware V switches on in a fight, and it carries Melee and
+//     the GameplayRestriction tag itself (breserk_advanced.tweak); a finisher holds FirearmsNoSwitch
+//     (finisher.script:288); carrying a body holds FirearmsNoSwitch or OneHandedFirearms for as long
+//     as V carries it (carriedObject.script:504-536). Read as the story, every Berserk build had its
+//     crew walk off with "Not our kind of place" the moment it fought, hunters were called back in the
+//     middle of katana fights, and picking up a body sent everybody home. So a tag counts only from an
+//     effect the story put there: each effect carrying it is looked at, and V's own (CBEffectIsVsOwn)
+//     are passed over.
+//
 // Deliberately on neither list: the driving-combat and vehicle-weapon tags (V fighting from a car
 // in free roam), the perk and cyberware buffs that share the status-effect system, phone call tags
 // (fixers ring in free roam all the time), and the fast-travel and time-skip blocks, which some
@@ -136,6 +146,54 @@ public func CBHasAnyTag(obj: ref<GameObject>, tags: array<CName>) -> Bool {
   return false;
 }
 
+// Does V carry any of these tags from something the story put on V? The same tags the game reads,
+// looked at effect by effect, so that the ones V brings on V's own are not taken for the story.
+public func CBHasStoryTag(game: GameInstance, player: ref<GameObject>, tags: array<CName>) -> Bool {
+  if !IsDefined(player) {
+    return false;
+  }
+  let ses = GameInstance.GetStatusEffectSystem(game);
+  if !IsDefined(ses) {
+    return false;
+  }
+  let id = player.GetEntityID();
+  for tag in tags {
+    // The cheap test first: almost always nothing carries the tag at all.
+    if StatusEffectSystem.ObjectHasStatusEffectWithTag(player, tag) {
+      let effects: array<ref<StatusEffect>>;
+      ses.GetAppliedEffectsWithTag(id, tag, effects);
+      for e in effects {
+        if IsDefined(e) && !CBEffectIsVsOwn(e.GetRecord()) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// An effect the game puts on V for something V is doing, not something the story is doing to V.
+//
+// Each of these is applied by the game's own handling of V's actions, and only there: Berserk by the
+// cyberware's activation (berserkAction.script), whose effects all share the Berserk type; the finisher
+// by finisher.script; the carry by carriedObject.script, one record per way of carrying, each tagged
+// with its own name (the friendly carry inherits the generic one's).
+public func CBEffectIsVsOwn(rec: ref<StatusEffect_Record>) -> Bool {
+  if !IsDefined(rec) {
+    return false;
+  }
+  let kind = rec.StatusEffectType();
+  if IsDefined(kind) && Equals(kind.Type(), gamedataStatusEffectType.Berserk) {
+    return true;
+  }
+  if rec.GetID() == t"BaseStatusEffect.PlayerInFinisherWorkspot" {
+    return true;
+  }
+  return rec.GameplayTagsContains(n"BodyCarryingGeneric")
+      || rec.GameplayTagsContains(n"BodyCarryingCanSprint")
+      || rec.GameplayTagsContains(n"BodyCarryingBodyMasterPerk5");
+}
+
 // Is the player V, in V's own world?
 //
 // False for the VR avatar, Johnny, anyone else the story makes you, and for V in cyberspace or a
@@ -162,14 +220,14 @@ public func CBPlayerStoryRestricted(game: GameInstance) -> Bool {
   if !IsDefined(player) {
     return false;
   }
-  if CBHasAnyTag(player, CBStoryRestrictionTags()) {
+  if CBHasStoryTag(game, player, CBStoryRestrictionTags()) {
     return true;
   }
   // In a car the weapon limits are the car's, not the story's.
   if VehicleComponent.IsMountedToVehicle(game, player) {
     return false;
   }
-  return CBHasAnyTag(player, CBStoryWeaponTags());
+  return CBHasStoryTag(game, player, CBStoryWeaponTags());
 }
 
 // Somebody the story placed is walking with V.

@@ -44,6 +44,7 @@ public func CBFactionMemberWord(faction: CName) -> String {
   if Equals(faction, n"Scavengers") { return "Scav"; }
   if Equals(faction, n"Mox") { return "Mox"; }
   if Equals(faction, n"Barghest") { return "Barghest"; }
+  if Equals(faction, n"Scrappers") { return "Scrapper"; }
   if Equals(faction, n"Aldecaldos") { return "Aldecaldo"; }
   if Equals(faction, n"Wraiths") { return "Wraith"; }
   if Equals(faction, n"Arasaka") { return "Arasaka Security"; }
@@ -647,7 +648,7 @@ func CBWhisperDistrict(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
       break;
     case 6:
       lines = ["Barghest will know about this before you finish blinking.", "In Dogtown you don't stare. You survive.",
-               "Hansen's people are always watching. Always."];
+               "Hansen's people are always watching. Always.", "Scrappers'll have that stripped and sold by morning."];
       break;
     case 7:
       lines = ["Long way from the city to run into that one.", "Out here you hear a name once and never forget it.",

@@ -329,6 +329,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-FactionOn-Wraiths", "Wraiths");
     this.Text("Cyberbane-Settings-FactionOn-Aldecaldos", "Aldecaldos");
     this.Text("Cyberbane-Settings-FactionOn-Barghest", "Barghest");
+    this.Text("Cyberbane-Settings-FactionOn-Scrappers", "Scrappers (Dogtown, Phantom Liberty)");
     this.Text("Cyberbane-Settings-FactionOn-Arasaka", "Arasaka");
     this.Text("Cyberbane-Settings-FactionOn-Militech", "Militech");
     this.Text("Cyberbane-Settings-FactionOn-KangTao", "Kang Tao");

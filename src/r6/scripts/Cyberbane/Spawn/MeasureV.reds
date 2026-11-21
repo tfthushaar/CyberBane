@@ -119,6 +119,30 @@ public func CBMeasureV(game: GameInstance) -> ref<CBVMeasure> {
   return m;
 }
 
+// How far into the game V is (2.6.4): 0 at level 1, 1 at the game's own level cap (Proficiencies.Level, 60 with Phantom
+// Liberty and 50 without). Adam Smasher's curves are the game's answer to an endgame V, and a share of them was given to
+// every Rival and apex squad whatever V's level: "the first rival I've met is an Animal and seems to be unkillable, no
+// matter how much I shoot him his health bar doesn't move. I'm only level 2." Smasher's share grows with this now, so a
+// new V meets somebody measured against V's own weapon, and the boss's numbers arrive as V nears the point the game
+// brings the boss.
+public func CBVProgress(m: ref<CBVMeasure>) -> Float {
+  if !IsDefined(m) {
+    return 0.0;
+  }
+  let cap = 50.0;
+  let rec = RPGManager.GetProficiencyRecord(gamedataProficiencyType.Level);
+  if IsDefined(rec) && rec.MaxLevel() > 1 {
+    cap = Cast<Float>(rec.MaxLevel());
+  }
+  return ClampF((m.level - 1.0) / (cap - 1.0), 0.0, 1.0);
+}
+
+// A share of Smasher's multiplier, and the ceiling over it, both weighed by how far into the game V is: 1 (nothing of
+// him) for a new V, the whole share at the level cap.
+public func CBSmasherPart(full: Float, share: Float, progress: Float) -> Float {
+  return full > 0.0 ? 1.0 + MaxF(full - 1.0, 0.0) * share * ClampF(progress, 0.0, 1.0) : 0.0;
+}
+
 // How much tougher to make somebody so they last `seconds` of V's fire: a health multiplier, 0 when V's damage cannot be
 // read (no weapon equipped: a netrunner), and the build stands without it.
 public func CBMatchHealthMult(m: ref<CBVMeasure>, npcHealth: Float, seconds: Float) -> Float {

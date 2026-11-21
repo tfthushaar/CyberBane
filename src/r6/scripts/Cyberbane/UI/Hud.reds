@@ -4104,7 +4104,7 @@ public class CBHud {
     // The order: worst first, as the list has it, and the corporations and police after.
     ArrayClear(this.m_webOrder);
     let i = 1;
-    while i <= 11 {
+    while i <= CBWebGangSlots() {
       let rank = CBCardRank(score, CBWebSlotGang(i));
       let k = 0;
       while k < ArraySize(this.m_webOrder) && CBCardRank(score, CBWebSlotGang(this.m_webOrder[k])) <= rank {
@@ -4123,16 +4123,23 @@ public class CBHud {
                     w, h, false);
       n += 1;
     }
-    // V's crew in the grid's empty place (2.6.0).
+    // V's crew in the row beneath, first beside the corporations and the law (2.6.4). It had the grid's one empty place,
+    // and twelve gangs leave none: with the Scrappers it would have gone from the page.
     this.m_crewCardShown = false;
-    if ArraySize(this.m_webOrder) == 11 {
-      this.CrewWebCard(sys, game, 3.0 * (w + CBCardGapX()), 2.0 * (h + CBCardGapY()), w, h);
+    let crew = this.CrewCardWanted(game);
+    let across = crew ? 5 : 4;
+    let rowW = (CBHudContentW() - Cast<Float>(across - 1) * CBCardGapX()) / Cast<Float>(across);
+    let corpY = Cast<Float>((CBWebGangSlots() + 3) / 4) * (h + CBCardGapY());
+    let col = 0;
+    if crew {
+      this.CrewWebCard(sys, game, 0.0, corpY, rowW, CBCardSmallH());
+      col = 1;
     }
-    let corpY = 3.0 * (h + CBCardGapY());
-    let c = 12;
-    while c <= 15 {
+    let c = CBWebGangSlots() + 1;
+    while c < CBWebSlotCount() {
       ArrayPush(this.m_webOrder, c);
-      this.GangCard(sys, game, score, c, Cast<Float>(c - 12) * (w + CBCardGapX()), corpY, w, CBCardSmallH(), true);
+      this.GangCard(sys, game, score, c, Cast<Float>(col) * (rowW + CBCardGapX()), corpY, rowW, CBCardSmallH(), true);
+      col += 1;
       c += 1;
     }
     this.HideWebFrom(0, 0);
@@ -4141,22 +4148,31 @@ public class CBHud {
 
   // V's crew among the gangs (2.6.0), in the box the web once drew V in: its name and colours, and how the gang picked
   // stands with it, or else the one that thinks least of it. Clicked, the Crew page's screen for the crew itself.
+  // Is there a crew to show: on, with somebody on the roster or a banner standing or fallen.
+  private func CrewCardWanted(game: GameInstance) -> Bool {
+    let book = CBCrewBook.Get(game);
+    let bb = CBCrewBannerBook.Get(game);
+    return CBMyCrewOn() && IsDefined(book) && IsDefined(bb) && (book.Count() > 0 || bb.StandCount() > 0 || bb.FallenCount() > 0);
+  }
+
+  // Small (2.6.4) in the row beneath the gangs: its name and roster on two lines, the bar for the gang, no third line.
   private func CrewWebCard(sys: ref<CyberbaneSystem>, game: GameInstance, x: Float, y: Float, w: Float, h: Float) -> Void {
     let book = CBCrewBook.Get(game);
     let bb = CBCrewBannerBook.Get(game);
-    if !CBMyCrewOn() || !IsDefined(book) || !IsDefined(bb) || (book.Count() == 0 && bb.StandCount() == 0 && bb.FallenCount() == 0) {
+    if !this.CrewCardWanted(game) {
       return;
     }
+    let small = h < CBCardH();
     let slot = 0;
     this.PlaceWebBox(slot, x, y, w, h, true);
-    this.DressBox(slot, w, h, CBPicName(), CBPicLine(), CBPicLead(), false);
+    this.DressBox(slot, w, h, small ? CBPicSmallName() : CBPicName(), small ? CBPicSmallLine() : CBPicLine(), CBPicLead(), false);
     let colour = CBCrewColour(game);
     let name = CBCrewNameOf(game);
-    this.BoxText(this.m_webBoxName[slot], StrLen(name) > 0 ? name : "Your crew", w - 24.0, CBPicName(), CBPicNameLeast(), true);
+    this.BoxText(this.m_webBoxName[slot], StrLen(name) > 0 ? name : "Your crew", w - 24.0, small ? CBPicSmallName() : CBPicName(), CBPicNameLeast(), true);
     let kb = CBCrewKitBook.Get(game);
     let wars = IsDefined(kb) ? kb.WarsWon() : 0;
     let line = s"\(book.Count()) ON THE ROSTER" + (wars > 0 ? s"  /  \(wars) \(wars == 1 ? "WAR" : "WARS") WON" : "");
-    this.BoxText(this.m_webBoxLine[slot], line, w - 24.0, CBPicLine(), CBPicLineLeast(), false);
+    this.BoxText(this.m_webBoxLine[slot], line, w - 24.0, small ? CBPicSmallLine() : CBPicLine(), CBPicLineLeast(), false);
     if IsDefined(this.m_webBoxLine[slot]) {
       this.m_webBoxLine[slot].SetTintColor(colour);
     }
@@ -4173,7 +4189,7 @@ public class CBHud {
     if IsDefined(this.m_webBoxLead[slot]) {
       this.BoxText(this.m_webBoxLead[slot], lead, w - 24.0, CBPicLead(), CBPicLeadLeast(), false);
       this.m_webBoxLead[slot].SetTintColor(IsNameValid(gang) ? CBCrewStandTint(v) : CBHudDim());
-      this.m_webBoxLead[slot].SetVisible(true);
+      this.m_webBoxLead[slot].SetVisible(!small);
     }
     this.BoxBarSigned(slot, w, h, ClampF(Cast<Float>(v) / 100.0, -1.0, 1.0), v < 0 ? CBHudRed() : CBHudGreen());
     this.m_crewCardShown = true;

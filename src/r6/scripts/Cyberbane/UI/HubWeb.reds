@@ -21,7 +21,9 @@
 // SetRotation in degrees, clockwise on screen, as the game's own photo-mode stickers turn), both on 2.31 and 2.5.
 // Everything here is a read of a book that already exists; no saved data, no per-frame work.
 
-public func CBWebSlotCount() -> Int32 = 16
+public func CBWebSlotCount() -> Int32 = 17
+// The gangs' places, 1 to this; the corporations and the law after them (2.6.4: twelve, with the Scrappers).
+public func CBWebGangSlots() -> Int32 = 12
 public func CBWebLinePool() -> Int32 = 64
 public func CBWebWordPool() -> Int32 = 14
 public func CBWebHeight() -> Float = 440.0
@@ -46,7 +48,7 @@ public func CBPicLineLeast() -> Int32 = 16
 public func CBPicLeadLeast() -> Int32 = 15
 public func CBHudWebToggleName() -> CName = n"cbHubWebToggle"
 
-// Who is in each place: 0 is V, 1 to 11 the gangs, 12 to 15 the corporations and the law.
+// Who is in each place: 0 is V, 1 to 12 the gangs, 13 to 16 the corporations and the law.
 public func CBWebSlotGang(i: Int32) -> CName {
   switch i {
     case 1: return n"Maelstrom";
@@ -60,15 +62,16 @@ public func CBWebSlotGang(i: Int32) -> CName {
     case 9: return n"SixthStreet";
     case 10: return n"Wraiths";
     case 11: return n"Aldecaldos";
-    case 12: return n"Arasaka";
-    case 13: return n"Militech";
-    case 14: return n"KangTao";
-    case 15: return n"NCPD";
+    case 12: return n"Scrappers";
+    case 13: return n"Arasaka";
+    case 14: return n"Militech";
+    case 15: return n"KangTao";
+    case 16: return n"NCPD";
     default: return n"";
   }
 }
 
-public func CBWebSlotIsGang(i: Int32) -> Bool = i >= 1 && i <= 11
+public func CBWebSlotIsGang(i: Int32) -> Bool = i >= 1 && i <= CBWebGangSlots()
 
 // Top left of each place, in the page's design units, inside the web's own area.
 public func CBWebSlotX(i: Int32) -> Float {
@@ -85,10 +88,11 @@ public func CBWebSlotX(i: Int32) -> Float {
     case 9: return 800.0;
     case 10: return 1060.0;
     case 11: return 1060.0;
-    case 12: return 275.0;
-    case 13: return 485.0;
-    case 14: return 695.0;
-    case 15: return 905.0;
+    case 12: return 1060.0;
+    case 13: return 275.0;
+    case 14: return 485.0;
+    case 15: return 695.0;
+    case 16: return 905.0;
     default: return 0.0;
   }
 }
@@ -107,6 +111,7 @@ public func CBWebSlotY(i: Int32) -> Float {
     case 9: return 340.0;
     case 10: return 140.0;
     case 11: return 290.0;
+    case 12: return 0.0;
     default: return 444.0;
   }
 }
@@ -268,7 +273,7 @@ public func CBWebRelationWords(sys: ref<CyberbaneSystem>, game: GameInstance, ga
   let now = CBGameSeconds(game);
   let out = "";
   let i = 1;
-  while i <= 11 {
+  while i <= CBWebGangSlots() {
     let other = CBWebSlotGang(i);
     if NotEquals(other, gang) {
       let kind = CBWebPair(sys, game, gang, other);

@@ -18,7 +18,7 @@
 //   forgive    how fast a grudge fades (Model/Decay.reds): the Aldecaldos remember
 //   toughness  extra health on their crews (Spawn/FactionApex.reds, the crew build): the Animals
 //   kin        how often a fallen Rival's family takes their place (the Valentinos)
-//   home       a district their grudge stays in (Barghest: Dogtown)
+//   home       a district their grudge stays in (Barghest and the Scrappers: Dogtown)
 //   guards     a district whose ordinary people they guard (6th Street: Santo Domingo; the Mox: Westbrook,
 //              Jig-Jig Street)
 //   everybody  killing them is a favour to every other gang (the Scavengers), who also make no Rivals
@@ -40,6 +40,7 @@ public func CBCodeMercy(f: CName) -> Float {
   if Equals(f, n"Animals") { return 0.7; }
   if Equals(f, n"Barghest") { return 0.6; }
   if Equals(f, n"Maelstrom") { return 0.7; }
+  if Equals(f, n"Scrappers") { return 1.3; }
   return 1.0;
 }
 
@@ -58,7 +59,7 @@ public func CBCodeGrudge(f: CName, info: ref<CBKillInfo>) -> Float {
 public func CBCodeShotHands(f: CName) -> Float {
   if !CBGangCodesOn() { return 1.0; }
   if Equals(f, n"Valentinos") { return 2.0; }
-  if Equals(f, n"Aldecaldos") || Equals(f, n"Mox") { return 1.5; }
+  if Equals(f, n"Aldecaldos") || Equals(f, n"Mox") || Equals(f, n"Scrappers") { return 1.5; }
   return 1.0;
 }
 
@@ -70,6 +71,7 @@ public func CBCodeNerve(f: CName) -> Float {
   if Equals(f, n"SixthStreet") { return 0.8; }
   if Equals(f, n"Scavengers") { return 1.4; }
   if Equals(f, n"Mox") { return 1.2; }
+  if Equals(f, n"Scrappers") { return 1.3; }
   return 1.0;
 }
 
@@ -82,6 +84,7 @@ public func CBCodeSurrender(f: CName) -> Float {
   if Equals(f, n"Valentinos") || Equals(f, n"Wraiths") || Equals(f, n"Aldecaldos") { return 0.8; }
   if Equals(f, n"Mox") { return 1.6; }
   if Equals(f, n"Scavengers") { return 1.5; }
+  if Equals(f, n"Scrappers") { return 1.4; }
   return 1.0;
 }
 
@@ -90,7 +93,7 @@ public func CBCodePeace(f: CName) -> Float {
   if Equals(f, n"TygerClaws") { return 0.75; }
   if Equals(f, n"Barghest") { return 1.4; }
   if Equals(f, n"Valentinos") { return 1.15; }
-  if Equals(f, n"Scavengers") { return 0.8; }
+  if Equals(f, n"Scavengers") || Equals(f, n"Scrappers") { return 0.8; }
   return 1.0;
 }
 
@@ -120,6 +123,7 @@ public func CBCodeForgive(f: CName) -> Float {
   if Equals(f, n"Aldecaldos") { return 0.5; }
   if Equals(f, n"Valentinos") { return 0.7; }
   if Equals(f, n"Scavengers") { return 1.5; }
+  if Equals(f, n"Scrappers") { return 1.3; }
   return 1.0;
 }
 
@@ -140,7 +144,7 @@ public func CBCodeKin(f: CName) -> Float {
 
 // The one district this gang's grudge reaches, or n"" for anywhere.
 public func CBCodeHome(f: CName) -> CName {
-  if CBGangCodesOn() && Equals(f, n"Barghest") { return n"Dogtown"; }
+  if CBGangCodesOn() && (Equals(f, n"Barghest") || Equals(f, n"Scrappers")) { return n"Dogtown"; }
   return n"";
 }
 
@@ -215,6 +219,7 @@ func CBCodeRespectShort(f: CName) -> String {
   if Equals(f, n"Wraiths") { return "the road"; }
   if Equals(f, n"Aldecaldos") { return "family: a favour repaid, a harm remembered"; }
   if Equals(f, n"Barghest") { return "discipline"; }
+  if Equals(f, n"Scrappers") { return "a good haul, and a chance to walk away"; }
   return "";
 }
 
@@ -230,6 +235,7 @@ func CBCodeNeverShort(f: CName) -> String {
   if Equals(f, n"Wraiths") { return "anyone on their road"; }
   if Equals(f, n"Aldecaldos") { return "harm to family, twice as long"; }
   if Equals(f, n"Barghest") { return "anything, but only in Dogtown"; }
+  if Equals(f, n"Scrappers") { return "a shot surrender, but only in Dogtown"; }
   return "";
 }
 
@@ -245,6 +251,7 @@ func CBCodeFightShort(f: CName) -> String {
   if Equals(f, n"Wraiths") { return "on the road"; }
   if Equals(f, n"Aldecaldos") { return "as one family"; }
   if Equals(f, n"Barghest") { return "in numbers, never breaking or surrendering"; }
+  if Equals(f, n"Scrappers") { return "in the ruins they know, and break when it turns"; }
   return "";
 }
 
@@ -260,5 +267,6 @@ func CBCodePeaceShort(f: CName) -> String {
   if Equals(f, n"Wraiths") { return "pay, and stay off their road"; }
   if Equals(f, n"Aldecaldos") { return "spare the family"; }
   if Equals(f, n"Barghest") { return "pay a lot, or stay out of Dogtown"; }
+  if Equals(f, n"Scrappers") { return "cheap, and spare the ones who give up"; }
   return "";
 }

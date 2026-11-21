@@ -3,7 +3,7 @@
 // The texts, warnings, refusals and surrenders a gang's people say, written for that gang, from its code
 // (Data/GangCodes.reds): the Valentinos' family and honour, the Claws' face and business, Maelstrom's chrome,
 // 6th Street's veterans, the Animals' strength, the Voodoo Boys' Net, the Mox looking after their own, the
-// Scavengers, the Wraiths' road, the Aldecaldos' family, Barghest's soldiers. Every line goes through the line
+// Scavengers, the Wraiths' road, the Aldecaldos' family, Barghest's soldiers, the Scrappers' salvage. Every line goes through the line
 // library (Narrative/Lines.reds), so none comes twice running. A gang with nothing of its own here, or a
 // moment it has nothing for, answers "" and the caller says what it always said.
 
@@ -63,6 +63,11 @@ public func CBGangWarnLine(f: CName) -> String {
     return CBLineOf(["Restricted zone. Leave the area.",
                      "This is your only warning, civilian. Turn back.",
                      "You are being tracked. Comply and withdraw."]);
+  }
+  if Equals(f, n"Scrappers") {
+    return CBLineOf(["This pile's spoken for. Find your own.",
+                     "Walk on, choom. Nothing here worth bleeding for.",
+                     "We pull what we pull. Don't make us pull you apart."]);
   }
   return "";
 }
@@ -125,6 +130,11 @@ public func CBGangCrewText(f: CName, where: String, coming: String, vendetta: Bo
                      s"Engaging target in \(place). \(coming)",
                      s"You were warned. Strike team inbound to \(place). \(coming)"]);
   }
+  if Equals(f, n"Scrappers") {
+    return CBLineOf([s"Everything you've got is salvage now. Coming to \(place) to strip it. \(coming)",
+                     s"We know every hole in \(place). You don't. \(coming)",
+                     s"You took from us. We're coming to take it back, \(place). \(coming)"]);
+  }
   return "";
 }
 
@@ -141,6 +151,7 @@ public func CBGangRefuseLine(f: CName) -> String {
   if Equals(f, n"Wraiths") { return CBLineOf(["Road's this way. Take it.", "Nothing to say to you.", "Get lost, desert's big enough."]); }
   if Equals(f, n"Aldecaldos") { return CBLineOf(["Not now. Not to you.", "You know what you did.", "Family doesn't talk to you anymore."]); }
   if Equals(f, n"Barghest") { return CBLineOf(["Move along, civilian.", "No comment.", "This conversation is over before it started."]); }
+  if Equals(f, n"Scrappers") { return CBLineOf(["Busy. This won't strip itself.", "Got nothing to sell you.", "Talk to somebody who cares."]); }
   return "";
 }
 
@@ -157,6 +168,7 @@ public func CBGangScoutLostLine(f: CName) -> String {
   if Equals(f, n"Wraiths") { return CBLineOf(["Rider's gone quiet. The road remembers you.", "Lost our spotter. Desert's still ours."]); }
   if Equals(f, n"Aldecaldos") { return CBLineOf(["Our cousin's not answering. If he's hurt, you'll answer for it.", "Lost our scout. We'll find you."]); }
   if Equals(f, n"Barghest") { return CBLineOf(["Recon unit lost. Adjusting.", "Forward observer down. Mission continues."]); }
+  if Equals(f, n"Scrappers") { return CBLineOf(["Our lookout went quiet. We'll dig you up some other way.", "Lost our eyes in the ruins. Plenty more where he came from."]); }
   return "";
 }
 
@@ -172,5 +184,6 @@ public func CBGangSurrenderLine(f: CName) -> String {
   if Equals(f, n"Scavengers") { return CBLineOf(["Don't shoot! I'll go, I'll go!", "Okay! Take the parts, I'm out!", "Please! I'm done!"]); }
   if Equals(f, n"Wraiths") { return CBLineOf(["Alright! Road's yours! I'm done!", "Enough! I give!"]); }
   if Equals(f, n"Aldecaldos") { return CBLineOf(["Okay! For the family's sake, I'm done!", "Stop! I yield, I yield!"]); }
+  if Equals(f, n"Scrappers") { return CBLineOf(["Take it! Take the haul, I'm out!", "Okay! Not worth dying over junk!", "I'm done! I'm walking!"]); }
   return CBPick3("Okay! Okay! I'm done!", "Don't shoot! I give up!", "Enough! It's over, I'm out!");
 }
