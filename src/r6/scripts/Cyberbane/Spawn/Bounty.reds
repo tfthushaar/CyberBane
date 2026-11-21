@@ -82,6 +82,24 @@ public func CBHunterTraitWord(seed: Int32) -> String {
   }
 }
 
+// How long until the next hunter on the ladder (2.6.5): as the grudge clock reads a gang (Spawn/Grudge.reds), by the grudge
+// of whoever put the price on V, and the player's How eager gangs are. A payer whose anger has cooled sends fewer; one at the
+// bottom of Vendetta, more. A corporation's price is business and keeps its pace.
+func CBBountyGapHours(sys: ref<CyberbaneSystem>, book: ref<CBHuntBook>) -> Float {
+  let hours = CBConfig.BountyGapHours();
+  let payer = IsDefined(book) ? book.BountyBy() : n"";
+  let fs = IsDefined(sys) && NotEquals(payer, n"") ? sys.FindFaction(payer) : null;
+  if IsDefined(fs) && !CBIsCorpFaction(payer) {
+    let heat = CBGrudgeHeat(fs);
+    hours *= heat < 0.0 ? 2.0 : 1.5 - heat;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() {
+    hours /= MaxF(rt.GetSettings().hitSquadFrequencyMult, 0.05);
+  }
+  return MaxF(hours, CBConfig.GrudgeFloorHours());
+}
+
 // The apex chair their kind sits in, for a body taken from whoever paid them and for their kit.
 func CBHunterChair(kind: Int32) -> Int32 {
   switch kind {
@@ -502,7 +520,7 @@ public func CBBountyTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   if CBHunterTrait(seed) == 2 && !CBIsNight(game) {
     return;
   }
-  book.SetHunterNext(now + CBConfig.BountyGapHours() * CBConfig.SecondsPerHour() * RandRangeF(0.75, 1.25));
+  book.SetHunterNext(now + CBBountyGapHours(sys, book) * CBConfig.SecondsPerHour() * RandRangeF(0.75, 1.25));
   book.comingSlot = next + 1;
   book.comingPair = 0;
   // A big enough price brings two, the next one down with them.

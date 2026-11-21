@@ -239,6 +239,19 @@ public func CBGrudgeNextIn(sys: ref<CyberbaneSystem>, game: GameInstance, lane: 
         }
       }
     }
+    // Nobody on the roster yet: the lane makes its first Rival from a gang V has fought (CBLanePick, CBSeedRivalFromFactions),
+    // when that gang's grudge is ready. Without this an empty roster was never due, and no first Rival was ever made.
+    if best < 0.0 && sys.CountActiveRivals() == 0 {
+      for fs in sys.GetFactionStates() {
+        if IsDefined(fs) && fs.kills > 0 && TDBID.IsValid(fs.sampleRecord) && CBFactionFieldsSquads(fs.id) {
+          let inS = CBGangMovesIn(sys, game, fs);
+          if inS >= 0.0 && (best < 0.0 || inS < best) {
+            best = inS;
+            faction = fs.id;
+          }
+        }
+      }
+    }
     return best;
   }
   if !CBHitSquadsOn() {
@@ -250,7 +263,12 @@ public func CBGrudgeNextIn(sys: ref<CyberbaneSystem>, game: GameInstance, lane: 
       if lane == CBLaneApex() {
         inG = CBApexReady(sys, fs) ? 0.0 : -1.0;
       } else {
-        if TDBID.IsValid(fs.sampleRecord) && (fs.renown >= CBConfig.HitSquadMinRenown() || CBGangViewHunts(fs.id)) {
+        // Ready means they would really come: known to them, and a reason today (CBCrewReason), the lane's own tests.
+        let score = sys.GetScore();
+        let turf = CBTurfGangsHere(sys);
+        let posture = IsDefined(score) ? score.GetPosture(fs.id) : ECBPosture.Neutral;
+        if TDBID.IsValid(fs.sampleRecord) && (fs.renown >= CBConfig.HitSquadMinRenown() || CBGangViewHunts(fs.id))
+           && CBCrewReason(sys, fs, posture, ArrayContains(turf, fs.id), CBGameSeconds(game)) >= 0.0 {
           inG = CBGangMovesIn(sys, game, fs);
         }
       }

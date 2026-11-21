@@ -3,6 +3,66 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.6.5 (22 November 2026)
+
+**New: gangs come for you by their grudge, not a timetable**
+- There is no daily allowance of Rivals, crews and apex squads any more. Each gang that holds a grudge against you comes
+  when its patience runs out, and that patience is how it stands with you: a gang that only just turned on you waits
+  about a day between moves, one in a blood feud a few hours.
+- Everything it would weigh counts. Hurt them recently and they come sooner. Break them, and the fewer of them are left,
+  the longer they take to find anybody to send; a gang that is all but finished barely comes at all, and never sends its
+  best. A crew of theirs you just beat makes them regroup. They come sooner when you are on their streets and later
+  from across town, later while they are fighting a war of their own, later if you are masked or they barely know you,
+  and sooner at night. A gang that frightens easily stays home longer the more frightening you are.
+- Rivals keep their own grudge: the more times they have faced you, got away or been let go, the sooner they come.
+- Bounty hunters come by the grudge of whoever put the price on you.
+- The Hub's Standing page says whose grudge runs out next, and roughly when.
+- In Mod Settings, the three "per day" sliders and **When they come** are gone. **How eager gangs are** and **How eager
+  Rivals are** stretch or shorten every wait, **Apex squads** switches apex squads off, and **Encounter gap** is still
+  the breather after each fight.
+
+**New: fewer messages**
+- **How much you hear**, on the first page of Mod Settings, spaces out the street's chatter: word going round about you,
+  and lines overheard in passing. **Less chatter** is the default; **Rarely** spaces it out further; **Everything** is
+  the old flood. Warnings, demands, offers, your crew and answers to what you did always come through.
+- News of a bagman or a gang meeting near you is a message now, so it is never held back as chatter.
+
+**New: a street with stories**
+- **The bagman walks the week's take to his gang's drop**, and the drop is pinned on your map. Rob him on the way, or
+  he gets there and the chance is gone.
+- **Debt collection is a trip.** Only some friendly gangers have a favour for you, and a gang that just gave you one has
+  nothing more for a few hours. The one who owes is somewhere else, usually in another district, pinned. Lean on them
+  and they may pay; the less they fear you, the likelier they put their fists up. Beat them down and they pay. Kill
+  them and the money is gone, and the gang thinks less of you for it. A debtor who pays may give up another name.
+- **Somebody saw your Rival.** On the way to a Rival's hideout you meet somebody who saw them. Ask and they show you
+  the way in their lookouts don't watch. Pay and they forget you. Lean on them and they run ahead to warn the Rival,
+  who moves, unless you stop them first.
+- **Wannabes** turn up most where your name is newest, with two friends watching who tell everybody how it went.
+- **A ransom is paid at a drop** in the gang's own district, pinned. Now and then the drop is a trap and their people
+  are waiting instead.
+- **Gang sit-downs are about something**: money owed, a killing, a street, or you. Crash one and the side it hurt most
+  takes it worst. Leave it, and the deal changes something: money changes hands, they bleed each other, they split a
+  street, or two gangs after you agree to work together for a while.
+
+**Fixed: your crew refusing to come on gigs, side jobs and gang turf**
+- Calling your crew on a job or on a gang's ground always ended in "Nobody could get through to you." The crew's
+  setting let them come there, but every spot near you was still being refused by the rule that keeps hunters off your
+  jobs. Your crew now comes wherever **Your crew on jobs** says. The same goes for people a friendly gang lends you,
+  who also went home the moment you stepped onto a gig.
+- In a crowded, closed-in spot your crew also only looked for a place within a few dozen metres of you. They now come
+  from further out when nothing closer works, the way the people hunting you do, and run the rest of the way.
+
+**Fixed: a Rival's offer to talk ending in gunfire**
+- A Rival who stopped to face you down was called off a few seconds later if you were on a job or on a gang's ground,
+  and they and their bodyguards opened fire before you could say a word. Only a real story moment, a scene or a safe
+  place ends a face-down now.
+
+**Fixed: talk going quiet while you're being hunted**
+- While anyone is still after you, the game counts you as being in a fight, even with your hands empty and nobody in
+  sight, and walking up to somebody showed nothing at all. Now the greyed prompt says **Not while you're in a fight**.
+
+Your progress carries over.
+
 ## 2.6.4 (22 November 2026)
 
 **New: Dogtown's Scrappers are a gang (Phantom Liberty)**
@@ -16,29 +76,11 @@ the next unless a version says otherwise.
 - Switch them off under **Factions**, or set how they see you under **How gangs see you**, in Mod Settings.
 - Your crew's card on the Gangs page moves down beside the corporations to make room.
 
-**Better: debt collection**
-- Not every friendly ganger has a favour for you any more. Only some of them do, and a gang that has just given you one
-  has nothing more for a few hours.
-- The one who owes is somewhere else now, usually in another district, with a pin on your map. They're there when you
-  arrive, not standing twenty metres from the people they owe.
-- Lean on them and they may pay. The less they fear you, the likelier they put their fists up instead. Beat them down
-  and they pay. Kill them and the money is gone, and the gang thinks less of you for it.
-
 **Fixed: your crew walking off with "Not our kind of place. We're gone."**
 - Your crew left the moment you switched on Berserk, did a finisher, or picked up a body. The game limits what you can
   do during each of those, and Cyberbane mistook those limits for a story scene. The same mistake called hunters back
   in the middle of fights. Now only real story moments send anybody away.
 - When your crew does leave, they tell you why: the story, a scene, a safe place, or a job.
-
-**Fixed: your crew not coming in tight places**
-- In a crowded, closed-in spot your crew answered "Nobody could get through to you" even while an apex squad walked
-  straight in. Your crew only looked for a place to start within a few dozen metres of you, out of your sight; the
-  people hunting you start much further out. Now your crew does too when nothing closer works, and runs the rest of
-  the way. The same goes for a crew member you call out to spar and for people a friendly gang lends you.
-
-**Fixed: talk going quiet while you're being hunted**
-- While anyone is still after you, the game counts you as being in a fight, even with your hands empty and nobody in
-  sight, and walking up to somebody showed nothing at all. Now the greyed prompt says **Not while you're in a fight**.
 
 **Fixed: a first Rival nobody could kill**
 - Since 2.6.1 every Rival and apex squad carried part of Adam Smasher's toughness, whatever your level. A level 2 V

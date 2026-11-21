@@ -357,6 +357,7 @@ public func CBWarStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, war: r
     CBTalkReleaseHold(held);
     CBOrderFlee(game, held);
   }
+  CBRansomDropEnd(game, war);   // its pin down too (2.6.5)
   war.ResetSession();
 }
 

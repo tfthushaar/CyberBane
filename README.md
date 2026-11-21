@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.6.4.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.6.5.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -40,6 +40,12 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.6
 
+- **Grudges, not a timetable (2.6.5).** Each gang comes for you by how it stands with you: a fresh wound brings them sooner,
+  a gang you have broken barely comes at all, and distance, their own wars, your mask and the hour all count. The Hub's
+  Standing page says whose grudge runs out next.
+- **A street with stories (2.6.5).** A bagman walking the take to his gang's drop, debts that lead to more debts, somebody
+  who saw your Rival met on the way there, wannabes with friends watching, ransoms paid at a drop (or not), and gang
+  sit-downs held over something.
 - **Dogtown's Scrappers (2.6.4).** The scavengers of Dogtown's ruins are a gang of their own, with a code, a voice, names
   and a card on the Hub. They share Dogtown with Barghest. Needs Phantom Liberty.
 - **A crew that comes when you call (2.6.3).** Call them from the phone, the Hub or a key of your own, to gigs, side
@@ -187,8 +193,11 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
   Friendly, Neutral, Hostile or Vendetta, whatever you have done. **Earned in play** puts it back.
 - **Leave a gang alone:** switch it off under **Factions**. Cyberbane stops reacting for that gang
   and keeps your standing for later. The NCPD can be switched off the same way.
-- **How often you are hunted:** **How often they come** sets how many Rivals, crews and apex squads
-  reach you per day. Zero turns that kind off.
+- **How often you are hunted:** each gang comes by its own grudge against you, and Rivals by theirs. **How eager gangs
+  are** and **How eager Rivals are** under **How often they come** stretch or shorten every wait, **Apex squads** turns
+  those off, and **Encounter gap** is the breather after each fight.
+- **Fewer messages:** **How much you hear**, on the first page, spaces out the street's chatter (word going round and
+  lines overheard). Warnings, demands, offers, your crew and answers to what you did always come through.
 - **Start over:** **Reset all Cyberbane data** under **Advanced** (or Start over on the Hub's History
   page) wipes this playthrough's reputation, and older saves of it are wiped too when they load, so
   loading one does not bring it back. Changed your mind? **Undo the last Start over** on the same page,

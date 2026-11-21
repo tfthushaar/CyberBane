@@ -131,6 +131,12 @@ public class CBWarBook extends ScriptableSystem {
     this.ransomGang = n"";
     this.ransomAmount = 0;
     this.ransomTick = 0;
+    // The ransom's drop (2.6.5): its pin is the mappin system's and is unregistered where it is registered
+    // (CBRansomDropEnd); here only what is ours, so a reset cannot leave a drop waiting for a playthrough that is gone.
+    this.dropGang = n"";
+    this.dropAmount = 0;
+    this.dropBetray = false;
+    this.dropPinned = false;
     this.lieGang = n"";
     this.lieUntil = 0.0;
     this.parleyOpen = false;
