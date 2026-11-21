@@ -198,6 +198,10 @@ public func CBSpendSlot(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int
 
 // Roll a new timetable when the day turns. Safe to call every tick.
 public func CBScheduleTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  // No timetable since 2.6.5: every gang and Rival comes on its grudge's own clock (Spawn/Grudge.reds).
+  if true {
+    return;
+  }
   // Nothing is planned until the clock and the world are both up. A timetable built against a
   // clock that is not running yet is a timetable for the wrong day at the wrong hour, and
   // every lane then sits waiting for windows that already passed or have not come.

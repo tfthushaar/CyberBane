@@ -194,7 +194,7 @@ func CBWannabeChallenge(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
       "Everybody says you're the real thing. Let's find out. Hands only.",
       "No guns, no chrome tricks. Just you and me. Come on.",
       "Beat you and I'm somebody. Ready?",
-      "My crew's watching. Don't make me look bad, legend."]));
+      "My crew's watching. Don't make me look bad, legend."]), true);
   }
 }
 

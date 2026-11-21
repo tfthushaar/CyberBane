@@ -959,6 +959,24 @@ public abstract class CBConfig {
 
   // ---- Hit squads (spec §9.9) ------------------------------------------
   public static func HitSquadFactionCooldownDays() -> Float = 2.0
+  // The grudge clock (2.6.5, Spawn/Grudge.reds), in game hours and multipliers on a gang's or a Rival's patience.
+  public static func GrudgeSlowHours() -> Float = 24.0       // just over the line into Hostile
+  public static func GrudgeFastHours() -> Float = 3.0        // the bottom of Vendetta
+  public static func GrudgeFloorHours() -> Float = 1.5
+  public static func GrudgeFreshHours() -> Float = 6.0
+  public static func GrudgeFreshMult() -> Float = 0.5
+  public static func GrudgeBrokenWeight() -> Float = 3.0     // a gang with nobody left waits up to four times as long
+  public static func GrudgeRegroupMult() -> Float = 1.5
+  public static func GrudgeFearWeight() -> Float = 0.8
+  public static func GrudgeAtWarMult() -> Float = 1.3
+  public static func GrudgeOnTurfMult() -> Float = 0.6
+  public static func GrudgeHopWeight() -> Float = 0.25
+  public static func GrudgeMaskMult() -> Float = 1.4
+  public static func GrudgeNightMult() -> Float = 0.8
+  public static func GrudgeApexMinManpower() -> Float = 0.25
+  public static func GrudgeRivalSlowHours() -> Float = 16.0
+  public static func GrudgeRivalFastHours() -> Float = 3.0
+  public static func GrudgeRivalGangShare() -> Float = 0.6
   // Further out than an ambush, out of sight, and they have to come and find V (Spawn/Hunt.reds).
   // These were 42 to 50 m, which is behind you rather than coming for you.
   public static func HitSquadMinSpawnDistance() -> Float = 85.0
@@ -1946,6 +1964,11 @@ public abstract class CBConfig {
   // town), how far off it is at least, the chance the one who owes pays when leaned on (more the more the street fears V,
   // never past 0.9), and the standing V loses with the gang for killing them.
   public static func FavourGiverChance() -> Float = 0.3
+  // How much you hear (2.6.5, UI/PhoneMessages.reds): chatter let through an in-game hour on Less chatter, and the sim
+  // seconds between lines overheard in passing on Less chatter and on Only what matters.
+  public static func ChatterPerHour() -> Int32 = 2
+  public static func OverheardGapLess() -> Float = 45.0
+  public static func OverheardGapQuiet() -> Float = 150.0
   public static func FavourGangRestHours() -> Float = 3.0
   public static func FavourDebtLifeTicks() -> Int32 = 2400
   public static func FavourDebtMinDistance() -> Float = 120.0

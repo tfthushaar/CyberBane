@@ -170,9 +170,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-CarsOnFoot-Desc", "Lets gangs, Rivals and apex squads drive to you while you are on foot, pull up and get out. Off, they only drive while you are driving and otherwise walk in out of sight. Turning it off takes effect at once.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all: phone, cards, notices and overheard lines. Off changes nothing about the way the mod plays. The answer to a button you press on the Hub or here still shows. Two things have settings of their own: the line at the top of the screen (Hunt line on the HUD, under General) and the bars under it (Rival and apex bars, under Messages and HUD).");
     this.Text("Cyberbane-Settings-MessageHold-Desc", "How long Cyberbane's words stay on screen, as a percentage: messages, the phone's pop-ups, what you overhear, and every line of a conversation, including what people tell you. Longer lines stay longer on their own; this stretches them all. A message waits for the one before it to finish, so none is cut short.");
-    this.Text("Cyberbane-Settings-RivalsPerDay-Desc", "How many Rivals can catch up with you in one in-game day, counted separately from crews and apex squads. 0 stops them coming.");
-    this.Text("Cyberbane-Settings-HitSquadsPerDay-Desc", "How many gang crews can be sent after you in one in-game day. 0 stops them coming.");
-    this.Text("Cyberbane-Settings-ApexPerDay-Desc", "How many apex squads can be sent after you in one in-game day. 0 stops them coming.");
     this.Text("Cyberbane-Settings-EncounterGap-Desc", "How long the city leaves you alone after a fight before arranging the next of that kind. Rivals, crews and apex squads rest separately.");
     this.Text("Cyberbane-Settings-TurfWars-Desc", "Hurting a gang weakens it, most of all on its own streets. A broken gang loses its districts to its enemies next door, and they stay taken until somebody takes them back. Off keeps every gang on its own streets.");
     this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "Every crew a gang sends is led by its apex squad: a heavy, a shooter, a blade and a netrunner. Off sends the crew alone.");
@@ -184,7 +181,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous a gang's apex squad is, as a percentage of a full boss build. 100 matches the game's own set piece enforcers; 55 is hard but fair. They are also measured against you: each takes a few seconds of your best weapon's fire to put down, longer the higher this is, hits hard enough to get through your armour, and scales with your level the way Adam Smasher does, a share of his strength each (more the higher this is). No single hit takes more than a set part of their health. Rivals have their own slider, under Rivals.");
     this.Text("Cyberbane-Settings-RivalStrength-Desc", "How dangerous a Rival is, as a percentage of a full boss build. A new Rival gets part of it and grows into the rest with every escape, mercy and kill, and running a crew adds a little. 55 is hard but fair. Your menace and the game's difficulty scale it further.");
     this.Text("Cyberbane-Settings-LootDrops-Desc", "Anyone Cyberbane sends who you put down leaves you something, straight into your inventory. The higher they ranked, the better it is.");
-    this.Text("Cyberbane-Settings-Pacing-Desc", "Timetable sends trouble inside daily windows. Unpredictable: any minute might be the one. Reactive: only when you give a gang a reason. The per-day limits apply in every mode.");
     this.Text("Cyberbane-Settings-Scouts-Desc", "A gang that cannot find you sends one scout ahead of the crew. Put the scout down, pay them to keep quiet (with Pay the street on, under Street talk), or stay out of their sight until they lose you, and the crew never comes.");
     this.Text("Cyberbane-Settings-DistrictLine-Desc", "Where you stand in the district you are in, shown on the hunt line while nobody is after you. Always: it stays up. Briefly: it shows when you arrive somewhere and when your standing there changes, then clears. Off: never shown.");
     this.Text("Cyberbane-Settings-DistrictLineSeconds-Desc", "How long the district line stays up, when it is set to Briefly.");
@@ -285,6 +281,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Enabled-Desc", "Turns Cyberbane on or off. Off stops every reaction and reverts temporary changes; your reputation is kept.");
     this.Text("Cyberbane-Settings-Preset", "Preset");
     this.Text("Cyberbane-Settings-MessageDelivery", "Where messages go");
+    this.Text("Cyberbane-Settings-MessageAmount", "How much you hear");
+    this.Text("Cyberbane-Settings-MessageAmount-Desc", "How much of the street's chatter reaches you: word going round about you and lines overheard in passing. Less chatter lets a little through; Only what matters keeps just the warnings, demands, offers, your crew and answers to what you did. Those always come through.");
     this.Text("Cyberbane-Settings-PhoneSound", "Message tone");
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");
     this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who carries a Cyberbane marker on your map and minimap: gold for a Rival, purple for an apex squad, white for everybody else (a crew, a bagman, somebody a favour is about). Everyone: all of them. Named only: Rivals, apex squads, and the people a favour or a bagman is about. Off leaves you to find them.");
@@ -315,7 +313,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Tribute", "Tribute");
     this.Text("Cyberbane-Settings-TributeMult", "Tribute amount");
     this.Text("Cyberbane-Settings-HitSquads", "Hit squads");
-    this.Text("Cyberbane-Settings-HitSquadFreq", "Hit squad frequency");
+    this.Text("Cyberbane-Settings-HitSquadFreq", "How eager gangs are");
+    this.Text("Cyberbane-Settings-ApexOn", "Apex squads");
+    this.Text("Cyberbane-Settings-ApexOn-Desc", "Whether a gang that has earned it sends its best after you. Off, nobody ever sends an apex squad.");
 
     // ---- Settings: factions (1.9.1) -------------------------------------
     this.Text("Cyberbane-Settings-FactionOn-TygerClaws", "Tyger Claws");
@@ -361,7 +361,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalTeamUps", "Rivals team up");
     this.Text("Cyberbane-Settings-RivalTeamSize", "Rivals per team-up");
     this.Text("Cyberbane-Settings-PsychoBreaks", "Cyberpsychotic breaks");
-    this.Text("Cyberbane-Settings-RivalFreq", "Rival frequency");
+    this.Text("Cyberbane-Settings-RivalFreq", "How eager Rivals are");
 
     // ---- Settings: interface --------------------------------------------
     this.Text("Cyberbane-Settings-Whispers", "Whispers");
@@ -378,7 +378,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-CarAmbushes-Desc", "A gang sworn against you can park a car up the road and pull out as you drive past, more often where you're known to go; the Wraiths do it on Badlands roads whatever their grudge. On foot with a job tracked far away, a crew may wait for you near it instead, outside the job itself. A lookout you paid to keep watch warns you.");
     this.Text("Cyberbane-Settings-LootDrops", "Loot from the people sent after you");
     this.Text("Cyberbane-Settings-Bounties", "Rewards for kills");
-    this.Text("Cyberbane-Settings-Pacing", "When they come");
     this.Text("Cyberbane-Settings-Scouts", "Scouts before crews");
     this.Text("Cyberbane-Settings-ShowCountdowns", "Show countdowns");
     this.Text("Cyberbane-Settings-HudLine", "Hunt line on the HUD");
@@ -402,9 +401,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-BrutalConduct", "Melee kills cost Conduct");
     this.Text("Cyberbane-Settings-BrutalConduct-Desc", "Whether killing with a blade, bare hands or a takedown counts against your Conduct. Witnessed kills only.");
     this.Text("Cyberbane-Settings-EncounterGap", "Minutes between encounters");
-    this.Text("Cyberbane-Settings-RivalsPerDay", "Rivals per day");
-    this.Text("Cyberbane-Settings-HitSquadsPerDay", "Hit squads per day");
-    this.Text("Cyberbane-Settings-ApexPerDay", "Apex squads per day");
     this.Text("Cyberbane-Settings-MessageHold", "How long words stay on screen");
     this.Text("Cyberbane-Settings-WordTravel", "Word travels (in-game minutes)");
     this.Text("Cyberbane-Settings-WordTravel-Desc", "How long news of what you did (a body, a dead Rival, a payout, a crew changing hands) takes to get round where it happened. From further away it takes longer, a district at a time, and nothing reaches you in the middle of a fight. The same story is only told once while it gets around. 0 sends it as soon as the fight is over.");

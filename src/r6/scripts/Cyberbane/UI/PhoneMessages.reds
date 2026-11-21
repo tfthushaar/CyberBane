@@ -110,6 +110,11 @@ public func CBMessageDelivery() -> ECBMessageDelivery {
 // to something V just did in a menu (CBMenuNote). Nothing about the gameplay changes either -
 // they still come, and the Hub still brokers peace - so silence costs the player nothing except
 // being told, which is the point.
+public func CBMessageAmount() -> ECBMessageAmount {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().messageAmount : ECBMessageAmount.LessChatter;
+}
+
 public func CBMessagesOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.IsEnabled() {
@@ -224,6 +229,9 @@ public class CBPhone {
   private let m_toldKey: array<CName>;
   private let m_toldAt: array<Float>;
   private let m_lastWordReal: Float;       // sim seconds the last story was let out
+  // Chatter let through lately (2.6.5, How much you hear): game seconds each was queued, and when V last overheard anything.
+  private let m_chatterAt: array<Float>;
+  private let m_lastOverheard: Float;
 
   // The phone in V's hand, and the messenger panel if one of ours is open in it. Weak, and
   // checked on every use: the HUD is rebuilt on every load and fast travel.
@@ -418,10 +426,21 @@ public class CBPhone {
   }
 
   // Something said within earshot. Safe from any hook; shown on the next settled tick.
-  public func Overhear(game: GameInstance, speaker: String, line: String) -> Void {
+  public func Overhear(game: GameInstance, speaker: String, line: String, opt important: Bool) -> Void {
     this.m_game = game;
     if StrLen(line) == 0 {
       return;
+    }
+    // In passing, at most every so often (2.6.5, How much you hear). A line said to V as it happens always comes.
+    if !important {
+      let amount = CBMessageAmount();
+      let gap = Equals(amount, ECBMessageAmount.WhatMatters) ? CBConfig.OverheardGapQuiet()
+              : (Equals(amount, ECBMessageAmount.LessChatter) ? CBConfig.OverheardGapLess() : 0.0);
+      let nowReal = CBTalkNow(game);
+      if gap > 0.0 && this.m_lastOverheard > 0.0 && nowReal >= this.m_lastOverheard && nowReal - this.m_lastOverheard < gap {
+        return;
+      }
+      this.m_lastOverheard = nowReal;
     }
     this.m_subNewSpeaker = speaker;
     this.m_subNewLine = line;
@@ -498,6 +517,32 @@ public class CBPhone {
           return;   // V heard this one not long ago
         }
         t += 1;
+      }
+    }
+    // Chatter, word with nothing in it for V to answer, by How much you hear (2.6.5). None at all on Only what matters, a
+    // couple an in-game hour on Less chatter; a gang's offer or demand always comes.
+    if !IsNameValid(offerFaction) {
+      let amount = CBMessageAmount();
+      if Equals(amount, ECBMessageAmount.WhatMatters) {
+        return;
+      }
+      if Equals(amount, ECBMessageAmount.LessChatter) {
+        let hour = CBConfig.SecondsPerHour();
+        let recent = 0;
+        let c = ArraySize(this.m_chatterAt) - 1;
+        while c >= 0 {
+          if now < this.m_chatterAt[c] || now - this.m_chatterAt[c] >= hour {
+            ArrayErase(this.m_chatterAt, c);
+          } else {
+            recent += 1;
+          }
+          c -= 1;
+        }
+        if recent >= CBConfig.ChatterPerHour() {
+          CBLog.Info(n"UI", s"Word let go (Less chatter) from \(sender): \(body)");
+          return;
+        }
+        ArrayPush(this.m_chatterAt, now);
       }
     }
     // A full queue is a busy hour, and the stories already waiting are the older news; the new
@@ -1516,7 +1561,7 @@ public func CBOverheardSeconds() -> Float {
 }
 
 // Something V overheard. Never a text and never in the phone; see CBPhone.Overhear.
-public func CBOverheard(game: GameInstance, speaker: String, line: String) -> Void {
+public func CBOverheard(game: GameInstance, speaker: String, line: String, opt important: Bool) -> Void {
   if !CBMessagesOn() {
     return;
   }
@@ -1529,7 +1574,7 @@ public func CBOverheard(game: GameInstance, speaker: String, line: String) -> Vo
   if !IsDefined(sys) {
     return;
   }
-  sys.GetPhone().Overhear(game, speaker, line);
+  sys.GetPhone().Overhear(game, speaker, line, important);
 }
 
 // ---- The one door everything goes through ---------------------------------

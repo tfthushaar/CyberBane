@@ -441,22 +441,14 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // A provoked gang does not wait for the timetable: what V just did is the reason they are
     // coming. The day's allowance and the rest below still apply.
     let provoked = lane == CBLaneSquad() && NotEquals(sys.GetProvoked(), n"");
+    // Somebody's grudge has run out of patience (2.6.5, Spawn/Grudge.reds): no timetable and no day's allowance any more.
     let slotDue = CBPacingDue(sys, game, lane);
     if !slotDue && !provoked {
       return;
     }
-    // Off the timetable, only the gang that was provoked may answer. Without this a provocation
-    // could open the lane for whichever gang happened to score highest.
+    // Only the gang that was provoked may answer out of turn. Without this a provocation could open the lane for whichever
+    // gang happened to score highest.
     provokedOnly = !slotDue;
-    // The timetable is built from the per-day setting, so this should never bite. It is here
-    // because the setting is the player's instruction and a scheduling bug must not be able to
-    // exceed it: whatever the plan says, the count is the ceiling.
-    if CBLaneBudgetLeft(sys, game, lane) <= 0 {
-      if lane == CBLaneApex() {
-        CBApexLaneNote(sys, game, "today's apex squads have all been sent");
-      }
-      return;
-    }
     // The spacing floor still applies on top. At default settings the slots are about an hour
     // of real play apart and it never binds; it only matters if the per-day sliders are pushed
     // high enough that two windows in one sector crowd each other.
@@ -534,7 +526,8 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
       // the bug that hollowed out the nemesis loop in the first place.
       // And the one test the lane's re-check asks (CBRivalQueueable), so nobody is picked who would be
       // let go again on the next tick.
-      if IsDefined(r) && r.huntTicks <= 0 && CBRivalQueueable(sys, r.id) {
+      // And whose own patience has run out (2.6.5, CBRivalReady).
+      if IsDefined(r) && r.huntTicks <= 0 && CBRivalQueueable(sys, r.id) && CBRivalReady(sys, game, r) {
         let s = CBConfig.QueueScoreRival()
               + Cast<Float>(r.rank) * 8.0
               + Cast<Float>(r.escapes) * 4.0
@@ -578,11 +571,13 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
         let hate = ClampF((-CBActingStanding(fs.id, fs.standing) / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
         let s = 0.0;
         if lane == CBLaneApex() {
-          if CBApexEligible(sys, fs) {
+          if CBApexReady(sys, fs) {
             s = CBConfig.QueueScoreApex() + hate * 20.0;
           }
         } else {
-          let offCooldown = fs.lastHitSquadAt <= 0.0 || (now - fs.lastHitSquadAt) >= factionCooldown;
+          // Their patience run out (2.6.5, CBGangReady: their grudge, a fresh wound, how broken they are, their fear of V,
+          // their own war, distance, a mask, their code, the hour), or V has just provoked them.
+          let offCooldown = CBGangReady(sys, game, fs) || Equals(fs.id, sys.GetProvoked());
           // A crew needs a reason to come today, not only a grudge (CBCrewReason).
           let reason = CBCrewReason(sys, fs, posture, ArrayContains(turf, fs.id), now);
           // Knowing V well enough to send people is a given for a gang set by hand to come for V (2.1.0).
@@ -790,23 +785,16 @@ public func CBHitSquadsOn() -> Bool {
 // player stayed in one. A day now has a shape: a few Rivals, a couple of crews, a couple of
 // apex squads, and once a lane has spent its allowance it is quiet until tomorrow. The gap
 // below still applies on top, so the day's allowance cannot all arrive at once.
+// No day's allowance any more (2.6.5, Spawn/Grudge.reds): every gang and Rival comes on its own grudge's clock. Kept for
+// the places that ask whether a kind is on at all: more than zero when it is, zero when it is switched off.
 public func CBLaneDailyCap(lane: Int32) -> Int32 {
-  let rt = CyberbaneRuntime.Get();
-  if !IsDefined(rt) || !rt.HasSettings() {
-    if lane == CBLaneRival() { return CBConfig.RivalsPerDayDefault(); }
-    if lane == CBLaneApex() { return CBConfig.ApexSquadsPerDayDefault(); }
-    return CBConfig.HitSquadsPerDayDefault();
-  }
-  let s = rt.GetSettings();
-  if lane == CBLaneRival() { return s.rivalsPerDay; }
-  if lane == CBLaneApex() { return s.apexSquadsPerDay; }
-  return s.hitSquadsPerDay;
+  if lane == CBLaneRival() { return CBRivalsOn() ? 99 : 0; }
+  if lane == CBLaneApex() { return CBHitSquadsOn() && CBApexOnSetting() ? 99 : 0; }
+  return CBHitSquadsOn() ? 99 : 0;
 }
 
-// How many this lane has left today.
 public func CBLaneBudgetLeft(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Int32 {
-  let left = CBLaneDailyCap(lane) - sys.LaneSentToday(lane, CBGameDay(game));
-  return left < 0 ? 0 : left;
+  return CBLaneDailyCap(lane);
 }
 
 // How long this lane still has to rest before it may pick anybody, in ticks. Zero when it is
@@ -1195,16 +1183,31 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 // the times can be turned into words (UI/Hud.reds, CBTimeText).
 
 public func CBPacing() -> ECBPacing {
+  return ECBPacing.Timetable;
+}
+
+public func CBPacingSetting() -> ECBPacing {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.HasSettings() {
     return ECBPacing.Timetable;
   }
-  return rt.GetSettings().pacing;
+  return ECBPacing.Timetable;
 }
 
 // Is this lane allowed to pick somebody this tick? The day's allowance, the rest between
 // encounters and the reasons a gang needs are all still checked by the caller.
+// Is anybody's grudge ready for this lane (2.6.5)? Asked every few ticks, not every one: it walks every gang.
 public func CBPacingDue(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Bool {
+  if sys.GetTickCount() % 5 != lane % 5 {
+    return false;
+  }
+  let who: CName;
+  let rid: Int32;
+  return CBGrudgeNextIn(sys, game, lane, who, rid) == 0.0;
+}
+
+// The timetable's own test (until 2.6.5), kept for reference and no longer asked.
+public func CBPacingDueOld(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Bool {
   let mode = CBPacing();
   if Equals(mode, ECBPacing.Timetable) {
     return CBSlotDue(sys, game, lane);

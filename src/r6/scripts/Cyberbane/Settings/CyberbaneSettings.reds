@@ -66,6 +66,16 @@ enum ECBCrewOnJobs {
 // and keeps Cyberbane out of the phone, and the gameplay is untouched: they still come, the
 // Hub still brokers peace, and the HUD line is its own setting (ECBHudLine) for anyone who
 // wants the warning without the texts.
+// How much of the street's chatter reaches V (2.6.5): "there is too much message spam because of all the notifications and
+// messages you get". Chatter is word going round (who is calling V what, who went under the knife, what people saw) and lines
+// overheard in passing. Never touched: a hunt's warnings, a gang's demands and offers, replies to what V just did, V's
+// crew, and a line said by somebody in front of V as it happens.
+enum ECBMessageAmount {
+  Everything = 0,
+  LessChatter = 1,
+  WhatMatters = 2,
+}
+
 enum ECBMessageDelivery {
   Phone = 0,
   Cards = 1,
@@ -164,6 +174,16 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
   @runtimeProperty("ModSettings.category.order", "1")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageAmount")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageAmount-Desc")
+  @runtimeProperty("ModSettings.displayValues.Everything", "Everything")
+  @runtimeProperty("ModSettings.displayValues.LessChatter", "Less chatter")
+  @runtimeProperty("ModSettings.displayValues.WhatMatters", "Only what matters")
+  public let messageAmount: ECBMessageAmount = ECBMessageAmount.LessChatter;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
+  @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
   @runtimeProperty("ModSettings.displayValues.HuntsOnly", "Hunts only")
@@ -189,13 +209,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
   @runtimeProperty("ModSettings.category.order", "2")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Pacing")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Pacing-Desc")
-  public let pacing: ECBPacing = ECBPacing.Timetable;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
-  @runtimeProperty("ModSettings.category.order", "2")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EncounterGap")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EncounterGap-Desc")
   @runtimeProperty("ModSettings.min", "2")
@@ -203,35 +216,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "1")
   public let encounterGapMinutes: Int32 = 10;
 
+  // Apex squads at all (2.6.5): the per-day slider at 0 used to be the only way to stop them.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
   @runtimeProperty("ModSettings.category.order", "2")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalsPerDay")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalsPerDay-Desc")
-  @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "20")
-  @runtimeProperty("ModSettings.step", "1")
-  public let rivalsPerDay: Int32 = 8;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
-  @runtimeProperty("ModSettings.category.order", "2")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HitSquadsPerDay")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HitSquadsPerDay-Desc")
-  @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "20")
-  @runtimeProperty("ModSettings.step", "1")
-  public let hitSquadsPerDay: Int32 = 5;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
-  @runtimeProperty("ModSettings.category.order", "2")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexPerDay")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexPerDay-Desc")
-  @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "20")
-  @runtimeProperty("ModSettings.step", "1")
-  public let apexSquadsPerDay: Int32 = 4;
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ApexOn")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ApexOn-Desc")
+  public let apexSquadsOn: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")

@@ -682,7 +682,7 @@ public class CBStreetLife {
     if CBMessagesOn() {
       CBOverheard(game, "Owes money", CBLineOf(["Pay those thieves? Come and take it, then.",
                                                 "I'm not paying. You want it, earn it.",
-                                                "Fists, then. Winner keeps the money."]));
+                                                "Fists, then. Winner keeps the money."]), true);
     }
   }
 

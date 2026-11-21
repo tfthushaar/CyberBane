@@ -5766,47 +5766,35 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     if StrLen(nobody) > 0 {
       return label + "   " + nobody;
     }
-    // When the day's timetable next has room for this kind, in the player's own minutes. The
-    // schedule is kept in in-game hours because that is what the sectors are made of; nobody
-    // reading a Hub wants to be told "in 3 game hours", so it is converted here.
-    // Without a timetable there is no next window to name.
-    if !Equals(CBPacing(), ECBPacing.Timetable) {
-      if CBLaneBudgetLeft(sys, game, lane) <= 0 {
-        return label + "   done for today" + CBHudBudgetTail(sys, game, lane);
-      }
-      if Equals(CBPacing(), ECBPacing.Reactive) && lane == CBLaneSquad() {
-        return label + "   only if you give them a reason" + CBHudBudgetTail(sys, game, lane);
-      }
-      return label + "   no telling when" + CBHudBudgetTail(sys, game, lane);
+    // Whose grudge runs out first, and when (2.6.5, Spawn/Grudge.reds), in the player's own minutes.
+    if StrLen(held) > 0 {
+      return label + "   waiting: " + held;
     }
-    let hrs = CBHoursUntilNextSlot(sys, game, lane);
-    if hrs < 0.0 {
-      return label + "   done for today" + CBHudBudgetTail(sys, game, lane);
+    let rest = CBLaneRestLeft(sys, lane);
+    if rest > 0 {
+      return label + "   breather, " + CBTimeText(rest);
     }
-    // Due now but nothing queued means the timetable has room and nobody qualifies: no gang
-    // has taken enough losses to send their best, or no Rival is off their cooldown. Saying
-    // "next in 0s" was true and told the player nothing, and a zero that never counts down
-    // reads as a stuck clock.
-    if hrs <= 0.0 {
-      // A lane that is due can still be resting: the gap after its last encounter runs on its
-      // own clock and has nothing to do with who is on the books. Saying "nobody qualifies"
-      // then is simply untrue, and it sent a player hunting for a bug in a Rival list that was
-      // eleven names long and working perfectly.
-      // Nor does anybody get picked while arrivals are held, so "nobody qualifies" was untrue then too.
-      if StrLen(held) > 0 {
-        return label + "   due, waiting: " + held + CBHudBudgetTail(sys, game, lane);
-      }
-      let rest = CBLaneRestLeft(sys, lane);
-      if rest > 0 {
-        return label + "   breather, " + CBTimeText(rest) + CBHudBudgetTail(sys, game, lane);
-      }
-      // Every Rival V has is lying low after their last fight, which is a reason, not nobody.
+    let soonest: CName;
+    let soonestRival: Int32;
+    let inSecs = CBGrudgeNextIn(sys, game, lane, soonest, soonestRival);
+    if inSecs < 0.0 {
       if lane == CBLaneRival() && sys.CountActiveRivals() > 0 && CBRivalsAllLyingLow(sys) {
-        return label + "   due, every Rival is lying low" + CBHudBudgetTail(sys, game, lane);
+        return label + "   every Rival is lying low";
       }
-      return label + "   due, nobody qualifies yet" + CBHudBudgetTail(sys, game, lane);
+      return label + (lane == CBLaneApex() ? "   nobody has earned it" : "   nobody holds a grudge");
     }
-    return label + "   next " + (CBShowCountdowns() ? "in " + CBHudRealFromGameHours(hrs) : "later today") + CBHudBudgetTail(sys, game, lane);
+    let whose = "";
+    if soonestRival > 0 {
+      let sr = sys.FindRivalById(soonestRival);
+      whose = IsDefined(sr) ? CBRivalDisplayName(sys.GetContent(), sr) : "";
+    } else {
+      whose = NotEquals(soonest, n"") ? CBFactionLabel(soonest) : "";
+    }
+    if inSecs <= 0.0 {
+      return label + "   " + (StrLen(whose) > 0 ? CBCapFirst(whose) + " is ready to move" : "ready");
+    }
+    return label + "   " + (StrLen(whose) > 0 ? CBCapFirst(whose) + " moves " : "next ")
+         + (CBShowCountdowns() ? "in about " + CBHudRealFromGameHours(inSecs / CBConfig.SecondsPerHour()) : "before long");
   }
   if StrLen(held) > 0 {
     return label + "   " + who + "  waiting: " + held + CBHudBudgetTail(sys, game, lane);
@@ -5863,13 +5851,9 @@ func CBHudRealFromGameHours(hrs: Float) -> String {
 
 // "  (2 of 3 today)". Shown so the pacing is something the player can see rather than guess
 // at: each kind has its own daily allowance and this is what is left of it.
+// No day's allowance since 2.6.5 (Spawn/Grudge.reds): nothing to count.
 func CBHudBudgetTail(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> String {
-  let cap = CBLaneDailyCap(lane);
-  if cap <= 0 {
-    return "   (off)";
-  }
-  let sent = sys.LaneSentToday(lane, CBGameDay(game));
-  return s"   (\(sent) of \(cap) today)";
+  return CBLaneDailyCap(lane) <= 0 ? "   (off)" : "";
 }
 
 func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
