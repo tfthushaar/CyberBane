@@ -69,11 +69,12 @@ enum ECBCrewOnJobs {
 // How much of the street's chatter reaches V (2.6.5): "there is too much message spam because of all the notifications and
 // messages you get". Chatter is word going round (who is calling V what, who went under the knife, what people saw) and lines
 // overheard in passing. Never touched: a hunt's warnings, a gang's demands and offers, replies to what V just did, V's
-// crew, and a line said by somebody in front of V as it happens.
+// crew, and a line said by somebody in front of V as it happens. Chatter is only ever spaced out, never silenced: the player
+// wants it, less often.
 enum ECBMessageAmount {
   Everything = 0,
   LessChatter = 1,
-  WhatMatters = 2,
+  Rarely = 2,
 }
 
 enum ECBMessageDelivery {
@@ -178,7 +179,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageAmount-Desc")
   @runtimeProperty("ModSettings.displayValues.Everything", "Everything")
   @runtimeProperty("ModSettings.displayValues.LessChatter", "Less chatter")
-  @runtimeProperty("ModSettings.displayValues.WhatMatters", "Only what matters")
+  @runtimeProperty("ModSettings.displayValues.Rarely", "Rarely")
   public let messageAmount: ECBMessageAmount = ECBMessageAmount.LessChatter;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")

@@ -282,7 +282,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Preset", "Preset");
     this.Text("Cyberbane-Settings-MessageDelivery", "Where messages go");
     this.Text("Cyberbane-Settings-MessageAmount", "How much you hear");
-    this.Text("Cyberbane-Settings-MessageAmount-Desc", "How much of the street's chatter reaches you: word going round about you and lines overheard in passing. Less chatter lets a little through; Only what matters keeps just the warnings, demands, offers, your crew and answers to what you did. Those always come through.");
+    this.Text("Cyberbane-Settings-MessageAmount-Desc", "How often the street's chatter reaches you: word going round about you and lines overheard in passing. Less chatter spaces them out, Rarely spaces them out further. Warnings, demands, offers, your crew and answers to what you did always come through.");
     this.Text("Cyberbane-Settings-PhoneSound", "Message tone");
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");
     this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who carries a Cyberbane marker on your map and minimap: gold for a Rival, purple for an apex squad, white for everybody else (a crew, a bagman, somebody a favour is about). Everyone: all of them. Named only: Rivals, apex squads, and the people a favour or a bagman is about. Off leaves you to find them.");

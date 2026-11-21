@@ -434,7 +434,7 @@ public class CBPhone {
     // In passing, at most every so often (2.6.5, How much you hear). A line said to V as it happens always comes.
     if !important {
       let amount = CBMessageAmount();
-      let gap = Equals(amount, ECBMessageAmount.WhatMatters) ? CBConfig.OverheardGapQuiet()
+      let gap = Equals(amount, ECBMessageAmount.Rarely) ? CBConfig.OverheardGapQuiet()
               : (Equals(amount, ECBMessageAmount.LessChatter) ? CBConfig.OverheardGapLess() : 0.0);
       let nowReal = CBTalkNow(game);
       if gap > 0.0 && this.m_lastOverheard > 0.0 && nowReal >= this.m_lastOverheard && nowReal - this.m_lastOverheard < gap {
@@ -519,15 +519,14 @@ public class CBPhone {
         t += 1;
       }
     }
-    // Chatter, word with nothing in it for V to answer, by How much you hear (2.6.5). None at all on Only what matters, a
-    // couple an in-game hour on Less chatter; a gang's offer or demand always comes.
+    // Chatter, word with nothing in it for V to answer, spaced out by How much you hear (2.6.5): a couple an in-game hour on
+    // Less chatter, one every two on Rarely, never none. A gang's offer or demand always comes.
     if !IsNameValid(offerFaction) {
       let amount = CBMessageAmount();
-      if Equals(amount, ECBMessageAmount.WhatMatters) {
-        return;
-      }
-      if Equals(amount, ECBMessageAmount.LessChatter) {
-        let hour = CBConfig.SecondsPerHour();
+      if !Equals(amount, ECBMessageAmount.Everything) {
+        let rarely = Equals(amount, ECBMessageAmount.Rarely);
+        let hour = CBConfig.SecondsPerHour() * (rarely ? 2.0 : 1.0);
+        let allowed = rarely ? 1 : CBConfig.ChatterPerHour();
         let recent = 0;
         let c = ArraySize(this.m_chatterAt) - 1;
         while c >= 0 {
@@ -538,8 +537,8 @@ public class CBPhone {
           }
           c -= 1;
         }
-        if recent >= CBConfig.ChatterPerHour() {
-          CBLog.Info(n"UI", s"Word let go (Less chatter) from \(sender): \(body)");
+        if recent >= allowed {
+          CBLog.Info(n"UI", s"Word let go (How much you hear) from \(sender): \(body)");
           return;
         }
         ArrayPush(this.m_chatterAt, now);
