@@ -1473,6 +1473,20 @@ public abstract class CBConfig {
   public static func ApexArmourAnswer() -> Float = 0.5
   public static func ApexMatchHealthCeiling() -> Float = 15.0
   public static func ApexMatchDamageCeiling() -> Float = 2.5
+  // Adam Smasher's scaling, shared out (2.6.1, CBSmasherScale): an apex squad member gets this share of his health and
+  // damage multipliers at the lowest and the highest Apex strength; a Rival this share, times how far up they are. Never
+  // more than SmasherCeilingShare of Smasher himself; his damage curve is taken at his own 0.7. No single hit takes more
+  // than this percent of their health, from the lowest to the highest strength, and down to RivalHitCapTop at the top
+  // of a Rival's climb.
+  public static func ApexSmasherShareMin() -> Float = 0.15
+  public static func ApexSmasherShareMax() -> Float = 0.4
+  public static func RivalSmasherShareMin() -> Float = 0.2
+  public static func RivalSmasherShareMax() -> Float = 0.5
+  public static func SmasherCeilingShare() -> Float = 0.6
+  public static func SmasherDamageScale() -> Float = 0.7
+  public static func ApexHitCapAtMin() -> Float = 25.0
+  public static func ApexHitCapAtMax() -> Float = 10.0
+  public static func RivalHitCapTop() -> Float = 8.0
   public static func ApexArmorMultCeiling() -> Float = 1.8
   public static func ApexDamageMultCeiling() -> Float = 1.6
   public static func ApexCritChanceCeiling() -> Float = 15.0

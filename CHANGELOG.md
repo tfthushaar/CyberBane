@@ -33,8 +33,12 @@ the next unless a version says otherwise.
   game itself: your level and attributes, your health and armour, your best weapon and your chrome. Each lasts a few
   seconds of your own fire (longer at a higher strength setting) and hits hard enough to get through your armour, and
   they come ready for how you fight: ICE against a netrunner, blocks and dodges against blades, eyes that see through
-  camo against stealth, their own dodges against a Sandevistan or Kerenzikov, and cover against a marksman. Always
-  beatable.
+  camo against stealth, their own dodges against a Sandevistan or Kerenzikov, and cover against a marksman.
+- **Built like Adam Smasher, at your level.** On top of that, apex squads, Rivals and hunters scale the way the game
+  scales its last boss: his own health and damage curves at their level, which follows yours, a share of his strength
+  each (an apex member up to two fifths of him at the highest Apex strength, a Rival at the top of their climb up to
+  half), and like him, no single hit takes more than a set part of their health, so an endgame build cannot delete
+  them in one burst. Still beatable: the share and that limit are the settings' to turn down.
 - **Pick a side.** A street fight between two gangs squares up first. Walk up to either side and tell them you're
   with them: they take you in, the others turn on you, and if your side takes the street they pay you and remember it.
 - **Hangouts.** On a gang's own streets where none of theirs are about, a few of them now hang out nearby now and then,

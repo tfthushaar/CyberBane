@@ -324,18 +324,47 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
                                         || desMatch.IsTagged(matchId, n"CB_Bounty"));
   let counters = "";
   let measure: ref<CBVMeasure>;
+  let npcDamageMult = 1.0;
+  let hitCap = 0.0;
   if isApex || isRival {
     measure = CBMeasureV(game);
     let npcId = Cast<StatsObjectID>(matchId);
-    let seconds = (isRival ? CBConfig.RivalMatchSeconds() : CBConfig.ApexMatchSeconds()) * (0.5 + ClampF(strength, 0.0, 1.0));
+    let level = ClampF(strength, 0.0, 1.0);
+    let seconds = (isRival ? CBConfig.RivalMatchSeconds() : CBConfig.ApexMatchSeconds()) * (0.5 + level);
     let matchHp = CBMatchHealthMult(measure, stats.GetStatValue(npcId, gamedataStatType.Health), seconds);
     let matchDmg = CBMatchDamageMult(measure, CBConfig.ApexArmourAnswer() * (isRival ? ClampF(grade, 0.4, 1.0) : 1.0));
-    if matchHp > 0.0 {
-      hpMult = ClampF(MaxF(hpMult, matchHp), 1.0, CBConfig.ApexMatchHealthCeiling());
+    // Adam Smasher's own scaling (2.6.2-style, here in 2.6.1): the game keeps its last boss a fight for an endgame V with
+    // curves on his power level (characters/npcs/records/gameplay/bosses.tweak, Main_boss_adam_smasher_stats): health by
+    // smasher_level_to_health, damage by smasher_level_to_dps_mult, times 0.7. Read from the game at this one's power level,
+    // which in the open world follows V's own, and a share of it given to them: an apex squad's people a share each, a
+    // Rival more as they climb. No fixed ceiling under it any more: the ceiling is a share of Smasher himself.
+    let sm = CBSmasherScale(game, stats.GetStatValue(npcId, gamedataStatType.PowerLevel));
+    let share = isRival ? (CBConfig.RivalSmasherShareMin() + (CBConfig.RivalSmasherShareMax() - CBConfig.RivalSmasherShareMin()) * level) * ClampF(grade, 0.25, 1.0)
+                        : CBConfig.ApexSmasherShareMin() + (CBConfig.ApexSmasherShareMax() - CBConfig.ApexSmasherShareMin()) * level;
+    let smHp = sm.X > 0.0 ? 1.0 + (sm.X - 1.0) * share : 0.0;
+    let smDmg = sm.Y > 0.0 ? 1.0 + MaxF(sm.Y * CBConfig.SmasherDamageScale() - 1.0, 0.0) * share : 0.0;
+    let hpCeiling = sm.X > 0.0 ? MaxF(CBConfig.ApexMatchHealthCeiling(), sm.X * CBConfig.SmasherCeilingShare()) : CBConfig.ApexMatchHealthCeiling();
+    let dmgCeiling = sm.Y > 0.0 ? MaxF(CBConfig.ApexMatchDamageCeiling(), sm.Y * CBConfig.SmasherDamageScale() * CBConfig.SmasherCeilingShare()) : CBConfig.ApexMatchDamageCeiling();
+    hpMult = ClampF(MaxF(hpMult, MaxF(matchHp, smHp)), 1.0, hpCeiling);
+    // Their hits: the most of their own build, V's armour answered, and Smasher's share, on the damage multiplier this
+    // build has always used for their weapons; and the same share on NPCDamage, which is what their burning and bleeding
+    // is made of (primary_stats.tweak, NPCDoTDPS). The two never meet on one hit.
+    dmgMult = ClampF(MaxF(dmgMult, MaxF(matchDmg, smDmg)), 1.0, dmgCeiling);
+    npcDamageMult = smDmg > 1.0 ? ClampF(smDmg, 1.0, dmgCeiling) : 1.0;
+    // And no burst kills (statPoolsManager.script: MaxPercentDamageTakenPerHit, 7 on Smasher): no single hit takes more
+    // than this share of their health. The game applies it to bosses alone, so Cyberbane applies it to these (CBHitCap).
+    hitCap = CBConfig.ApexHitCapAtMin() + (CBConfig.ApexHitCapAtMax() - CBConfig.ApexHitCapAtMin()) * level;
+    if isRival {
+      hitCap = MaxF(hitCap, CBConfig.ApexHitCapAtMin() - (CBConfig.ApexHitCapAtMin() - CBConfig.RivalHitCapTop()) * ClampF(grade, 0.0, 1.0));
     }
-    dmgMult = ClampF(MaxF(dmgMult, matchDmg), 1.0, CBConfig.ApexMatchDamageCeiling());
     counters = CBCounterV(sys, game, puppet, measure, isRival ? ClampF(grade, 0.0, 1.0) : 1.0);
-    CBLog.Info(n"Spawn", s"Measured you for this one: level \(measure.level), best weapon \(measure.bestDps) DPS (\(measure.Dps()) with crits), armour \(measure.armour), health \(measure.health); you fight as \(measure.Styles()); they bring \(counters).");
+    // Smasher's footing: hit reactions and takedowns do not stop them as they stop a ganger.
+    if level >= 0.4 && (isApex || grade >= 0.6) {
+      CBGrantAbility(puppet as NPCPuppet, t"Ability.HasExtendedHitReactionImmunity");
+      CBGrantAbility(puppet as NPCPuppet, t"Ability.HasMeleeHitReactionAndTakedownResistance");
+      counters += "Smasher's footing ";
+    }
+    CBLog.Info(n"Spawn", s"Measured you for this one: level \(measure.level), best weapon \(measure.bestDps) DPS (\(measure.Dps()) with crits), armour \(measure.armour), health \(measure.health); you fight as \(measure.Styles()); they bring \(counters). Smasher at their power level: health x\(sm.X), damage x\(sm.Y); their share \(share): health x\(hpMult), NPC damage x\(npcDamageMult), no more than \(hitCap)% a hit.");
   }
   critChance = ClampF(critChance, 0.0, CBConfig.ApexCritChanceCeiling());
   critDamage = ClampF(critDamage, 0.0, CBConfig.ApexCritDamageCeiling());
@@ -347,6 +376,8 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   // Hitting back. A boss that only soaks damage is a chore; one that can actually kill you is
   // the event this is supposed to be.
   CBAddMult(stats, id, gamedataStatType.PhysicalDamage, dmgMult);
+  CBAddMult(stats, id, gamedataStatType.NPCDamage, npcDamageMult);   // Smasher's share (2.6.1), 1 for anybody else
+  puppet.cbHitCap = hitCap;
   CBAddFlat(stats, id, gamedataStatType.CritChance, critChance);
   CBAddFlat(stats, id, gamedataStatType.CritDamage, critDamage);
   CBAddFlat(stats, id, gamedataStatType.PowerLevel, power);
@@ -364,6 +395,53 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   if IsDefined(pools) {
     pools.RequestSettingStatPoolMaxValue(id, gamedataStatPoolType.Health, null);
   }
+}
+
+// Adam Smasher's health and damage multipliers at this power level, read from the game's own curves (Main_boss_adam_smasher_stats):
+// X health, Y damage before his 0.7. Zeros when the curves cannot be read.
+public func CBSmasherScale(game: GameInstance, powerLevel: Float) -> Vector4 {
+  let sds = GameInstance.GetStatsDataSystem(game);
+  if !IsDefined(sds) || powerLevel <= 0.0 {
+    return new Vector4(0.0, 0.0, 0.0, 0.0);
+  }
+  let hp = sds.GetValueFromCurve(n"puppet_powerLevelToHealth", powerLevel, n"smasher_level_to_health");
+  let dps = sds.GetValueFromCurve(n"boss_power_level_to_dps_mult", powerLevel, n"smasher_level_to_dps_mult");
+  return new Vector4(MaxF(hp, 0.0), MaxF(dps, 0.0), 0.0, 0.0);
+}
+
+// No single hit takes more than this share of an apex's or a Rival's health (2.6.1): the rule the game keeps for its bosses
+// (StatPoolsManager.ApplyDamage, MaxPercentDamageTakenPerHit), for the people Cyberbane builds to that grade. Per projectile
+// for a shotgun, as the game's own is; never on a finisher.
+@addField(ScriptedPuppet)
+public let cbHitCap: Float;
+
+@wrapMethod(StatPoolsManager)
+public static func ApplyDamage(hitEvent: ref<gameHitEvent>, forReal: Bool, out valuesLost: array<SDamageDealt>) -> Void {
+  let p = IsDefined(hitEvent) ? hitEvent.target as ScriptedPuppet : null;
+  if IsDefined(p) && p.cbHitCap > 0.0 && !p.IsDead() {
+    let instigator = hitEvent.attackData.GetInstigator();
+    if !IsDefined(instigator) || !instigator.GetIsInFastFinisher() {
+      let stats = GameInstance.GetStatsSystem(p.GetGame());
+      let ceiling = p.cbHitCap / 100.0 * stats.GetStatValue(Cast<StatsObjectID>(p.GetEntityID()), gamedataStatType.Health);
+      let weapon = hitEvent.attackData.GetWeapon();
+      if IsDefined(weapon) {
+        let per = stats.GetStatValue(Cast<StatsObjectID>(weapon.GetEntityID()), gamedataStatType.ProjectilesPerShot);
+        if per > 0.0 {
+          ceiling /= per;
+        }
+      }
+      if ceiling > 0.0 {
+        let values = hitEvent.attackComputed.GetAttackValues();
+        let i = 0;
+        while i < ArraySize(values) {
+          values[i] = ClampF(values[i], 0.0, ceiling);
+          i += 1;
+        }
+        hitEvent.attackComputed.SetAttackValues(values);
+      }
+    }
+  }
+  wrappedMethod(hitEvent, forReal, valuesLost);
 }
 
 // The fight, read for the build ([U3], 2.3.2): a gang at full strength holds nothing back and a bled one has less
