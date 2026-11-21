@@ -70,6 +70,15 @@ public class CBWarBook extends ScriptableSystem {
   public let ransomGang: CName;
   public let ransomAmount: Int32;
   public let ransomTick: Int32;
+  // Where the ransom is paid (2.6.5, Spawn/StreetStories.reds): the drop in the gang's own district, by when, how much,
+  // whether it is a trap, and its pin. Session only, as the ransom itself is.
+  public let dropAt: Vector4;
+  public let dropGang: CName;
+  public let dropAmount: Int32;
+  public let dropUntil: Float;
+  public let dropBetray: Bool;
+  public let dropPin: NewMappinID;
+  public let dropPinned: Bool;
   public let lieGang: CName;
   public let lieUntil: Float;
   public let parleyOpen: Bool;

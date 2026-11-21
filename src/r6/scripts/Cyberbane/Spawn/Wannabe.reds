@@ -100,6 +100,7 @@ public func CBWannabeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
     }
     if age % 4 == 1 && !p.cbTalkPartner {
       CBWannabeWalkTo(p, player.GetWorldPosition());
+      CBWannabeFriendsWalk(sys, game, des, player);
     }
     return;
   }
@@ -142,10 +143,12 @@ func CBWannabeMaybe(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBS
     return;
   }
   book.wannabeNext = now + CBConfig.WannabeGapHours() * CBConfig.SecondsPerHour() * (0.75 + RandF() * 0.5);
-  if RandF() >= CBConfig.WannabeChance() {
+  let district = sys.GetCurrentDistrict();
+  // Where V's name is newest (2.6.5): talked about but not yet a legend, the kids want it most; where nobody knows V
+  // there is nothing to win, and where V is a legend few dare.
+  if RandF() >= CBConfig.WannabeChance() * CBWannabeDistrictPull(sys, district) {
     return;
   }
-  let district = sys.GetCurrentDistrict();
   let record = CBWannabeRecord(district);
   if !TDBID.IsValid(record) {
     return;
@@ -156,8 +159,54 @@ func CBWannabeMaybe(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBS
     book.wannabeTick = sys.GetTickCount();
     book.wannabeStage = CBWannabeWalking();
     book.wannabeDistrict = district;
-    CBLog.Info(n"Street", "A wannabe is coming to make a name off V.");
+    // Friends to watch (2.6.5), who carry the story whichever way it goes. Only with room to spare.
+    let friends = 0;
+    if CBSpawnRoom(game) > CBConfig.WannabeFriends() + CBConfig.TurfPatrolKeepRoom() {
+      let friendBody: EntityID;
+      friends = CBSpawnGroup(game, record, n"", CBConfig.WannabeFriends(), n"CB_Wannabe", CBConfig.TurfPatrolDistance(), friendBody, n"CB_WannabeFriend");
+    }
+    CBLog.Info(n"Street", s"A wannabe is coming to make a name off V\(friends > 0 ? s", with \(friends) friends to watch" : "").");
   }
+}
+
+// How much more likely a wannabe is here (2.6.5), by how V's name stands in the district.
+func CBWannabeDistrictPull(sys: ref<CyberbaneSystem>, district: CName) -> Float {
+  let ds = IsDefined(sys) && NotEquals(district, n"") ? sys.FindDistrict(district) : null;
+  let renown = IsDefined(ds) ? ds.renown : 0.0;
+  if renown < 10.0 {
+    return 0.5;
+  }
+  if renown < 55.0 {
+    return 1.6;
+  }
+  return renown < 80.0 ? 1.0 : 0.4;
+}
+
+// The friends keep up, and stop where they can see (2.6.5).
+func CBWannabeFriendsWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>) -> Void {
+  for id in des.GetTaggedIDs(n"CB_WannabeFriend") {
+    let f = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if CBNpcSafe(sys, f) && CBStillStanding(f) && !CBNpcInCombat(f) && !f.cbTalkPartner {
+      CBStreetWalkNear(f, player.GetWorldPosition(), 9.0);
+    }
+  }
+}
+
+// How many friends are still watching, and send them off with what they saw.
+func CBWannabeFriendsLeave(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int32 {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return 0;
+  }
+  let n = 0;
+  for id in des.GetTaggedIDs(n"CB_WannabeFriend") {
+    let f = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if CBNpcSafe(sys, f) && CBStillStanding(f) {
+      n += 1;
+      CBWannabeStandDown(game, f);
+    }
+  }
+  return n;
 }
 
 func CBWannabeWalkTo(p: ref<ScriptedPuppet>, to: Vector4) -> Void {
@@ -212,8 +261,14 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
     }
     return;
   }
-  CBApplyDistrictRenown(sys, book.wannabeDistrict, CBConfig.WannabeRenown());
+  // Friends who watched carry it further (2.6.5).
+  let watched = CBWannabeFriendsLeave(sys, game);
+  CBApplyDistrictRenown(sys, book.wannabeDistrict, CBConfig.WannabeRenown() * (watched > 0 ? 1.5 : 1.0));
   CBFileLog(sys, n"WannabeBeaten", now, CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
+  if watched > 0 && CBMessagesOn() && IsDefined(p) && !p.IsDead() {
+    CBOverheard(game, "Wannabe's friend", CBPick3("Get up! ...He's not getting up. Let's go.", "Told him. Told him it was a bad idea.",
+                                                  "Nobody's gonna believe this. I barely believe it."), true);
+  }
   // Dead, said as dead (2.5.5): a kid V beat to death with fists or a blade was told as "out cold".
   if CBMessagesOn() && IsDefined(p) && p.IsDead() {
     CBHearsayFromStreet(game, CBPick2("That kid who squared up to you didn't get up. Ever. Half the block saw it.",
@@ -230,6 +285,9 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
 func CBWannabeLost(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStreetBook>, p: ref<ScriptedPuppet>) -> Void {
   book.wannabeStage = CBWannabeDone();
   CBWannabeStandDown(game, p);
+  if CBWannabeFriendsLeave(sys, game) > 0 && CBMessagesOn() {
+    CBOverheard(game, "Wannabe's friend", CBPick2("You see that? You SEE that? Wait till everybody hears.", "Legend my ass. Come on, let's tell the block."), true);
+  }
   CBWannabeDent(sys, book.wannabeDistrict, CBConfig.WannabeRenown());
   CBFileLog(sys, n"WannabeLost", CBGameSeconds(game), CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
   if CBMessagesOn() {
@@ -242,6 +300,7 @@ func CBWannabeLost(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBSt
 func CBWannabeWalked(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStreetBook>, p: ref<ScriptedPuppet>) -> Void {
   book.wannabeStage = CBWannabeDone();
   CBWannabeStandDown(game, p);
+  CBWannabeFriendsLeave(sys, game);
   CBWannabeDent(sys, book.wannabeDistrict, CBConfig.WannabeRenown() * 0.34);
   CBFileLog(sys, n"WannabeWalked", CBGameSeconds(game), CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
   if CBMessagesOn() {

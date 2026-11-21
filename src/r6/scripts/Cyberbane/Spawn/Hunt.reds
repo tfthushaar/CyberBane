@@ -1324,7 +1324,7 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
 // sweep leaves them to whatever they belong to, which clears them when it ends. Not the help (CB_Ally),
 // who fight beside V. One list, so a new kind joins every rule at once.
 public func CBStreetTags() -> array<CName> {
-  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event", n"CB_Ambush", n"CB_Hangout", n"CB_Debtor"];
+  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event", n"CB_Ambush", n"CB_Hangout", n"CB_Debtor", n"CB_Witness"];
 }
 
 // Is anybody of ours still in the fight with V: close, or able to see V?

@@ -526,11 +526,28 @@ func CBRansomTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   p.cbSurrendered = false;
   CBTalkReleaseHold(p);
   CBOrderFlee(game, p);
+  // Paid at a drop in their own district (2.6.5): money that came in the same breath as the answer, wherever V stood, was no
+  // deal anybody would make. Now and then the drop is a trap, and their people are waiting instead.
   if pays {
-    let ts = GameInstance.GetTransactionSystem(game);
-    if IsDefined(ts) {
-      ts.GiveItem(player, ItemID.FromTDBID(t"Items.money"), amount);
+    let at: Vector4;
+    let where: CName;
+    if CBGangDropPlace(sys, game, player, gang, CBConfig.BagmanDropMin(), CBConfig.BagmanDropMax() * 2.0, at, where) {
+      CBRansomDropEnd(game, war);
+      war.dropAt = at;
+      war.dropGang = gang;
+      war.dropAmount = amount;
+      war.dropUntil = now + CBConfig.RansomDropHours() * CBConfig.SecondsPerHour();
+      war.dropBetray = RandF() < CBConfig.RansomDropTrap() * MaxF(CBCodeNerve(gang), 0.5);
+      war.dropPinned = CBPinPlace(game, at, s"\(CBCapFirst(CBPossessive(CBFactionLabel(gang)))) drop: the ransom", war.dropPin);
+      CBWarSpend(game, gang, Cast<Float>(amount));
+      let place = NotEquals(where, n"") ? CBDistrictLabel(where) : "a few blocks over";
+      if CBMessagesOn() {
+        CBPhoneFromGang(game, gang, s"\(amount)eb, left at our drop in \(place). Let them walk first. Come alone.");
+      }
+      return;
     }
+    // Nowhere for a drop: paid as before.
+    CBStreetGiveMoney(game, amount);
     CBWarSpend(game, gang, Cast<Float>(amount));
     CBFileLog(sys, n"RansomPaid", now, CBEventDistrict(sys, game), gang, Cast<Float>(amount));
     if CBMessagesOn() {
@@ -868,6 +885,7 @@ public func CBAlliesTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   }
   CBCrewTick(sys, game, war, player);
   CBRansomTick(sys, game, war, player);
+  CBRansomDropTick(sys, game, war, player);   // the drop (2.6.5, Spawn/StreetStories.reds)
   if CBStreetTalkOn() || war.parleyOpen {
     CBParleyTick(sys, game, war, player);
   }

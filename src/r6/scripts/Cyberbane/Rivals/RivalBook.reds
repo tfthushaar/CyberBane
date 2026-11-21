@@ -59,6 +59,15 @@ public class CBRivalBook extends ScriptableSystem {
   public let lairSeen: Int32;
   public let lairWarnBody: EntityID;
   public let lairWarnTick: Int32;
+  // The lead's witness (2.6.5, Spawn/StreetStories.reds): whose lead, the body, whether they ran to warn and how it ended,
+  // and whether they showed V the way in nobody watches. Session only, like the alarm.
+  public let witnessFor: Int32;
+  public let witnessId: EntityID;
+  public let witnessPlaced: Bool;
+  public let witnessWarned: Bool;
+  public let witnessWarnTick: Int32;
+  public let witnessDone: Bool;
+  public let lairQuiet: Bool;
 
   public func ResetLairAlarm() -> Void {
     let none: EntityID;

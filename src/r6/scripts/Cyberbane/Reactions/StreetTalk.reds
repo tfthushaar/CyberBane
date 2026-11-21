@@ -335,6 +335,10 @@ func CBTalkUnhush(npc: ref<ScriptedPuppet>) -> Void {
 // both count, as the favour says. Only Intimidate counted, so a favour done by starting something with the
 // one who owed never paid.
 func CBTalkNoteLeaned(game: GameInstance, npc: ref<ScriptedPuppet>) -> Void {
+  // A Rival's witness leaned on runs ahead to warn them (2.6.5, Spawn/StreetStories.reds).
+  if IsDefined(npc) && npc.cbLeadWitnessFor > 0 {
+    npc.cbLeadWitnessScared = true;
+  }
   if !IsDefined(npc) || !npc.cbFavourMark {
     return;
   }
@@ -1686,6 +1690,9 @@ public class CBStreetTalk {
     }
     if CBTalkActIsFacedown(choice) {
       return CBRivalFacedownAnswer(sys, game, player, t, choice);
+    }
+    if choice == CBTalkActLeadWitnessAsk() || choice == CBTalkActLeadWitnessPay() {
+      return CBLeadWitnessAnswer(sys, game, player, t, choice);   // Spawn/StreetStories.reds, 2.6.5
     }
     if CBTalkActIsAlly(choice) {
       return CBAllyTalkAnswer(sys, game, player, t, choice);
@@ -3081,6 +3088,13 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
     ArrayPush(out, wl);
   }
   // Allies, ransom and the lie (Reactions/Allies.reds, 2.4.5).
+  // Somebody who saw a Rival V is after (2.6.5).
+  let witnessLines: array<ref<CBTalkLine>>;
+  if CBLeadWitnessTalkLines(game, t, witnessLines) {
+    for wl in witnessLines {
+      ArrayPush(out, wl);
+    }
+  }
   for al in CBAllyTalkLines(sys, game, t) {
     ArrayPush(out, al);
   }

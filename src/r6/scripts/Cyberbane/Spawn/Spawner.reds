@@ -1259,7 +1259,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     return;
   }
   // The one who owes a gang money (Spawn/LivingStreet.reds, 2.6.4): minding their own business until V leans on them.
-  if des.IsTagged(id, n"CB_Debtor") {
+  if des.IsTagged(id, n"CB_Debtor") || des.IsTagged(id, n"CB_Witness") {
     CBSetUpStreet(sys, game, puppet, false);
     return;
   }

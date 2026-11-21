@@ -1967,6 +1967,20 @@ public abstract class CBConfig {
   // How much you hear (2.6.5, UI/PhoneMessages.reds): chatter let through an in-game hour on Less chatter, and the sim
   // seconds between lines overheard in passing on Less chatter and on Only what matters.
   public static func ChatterPerHour() -> Int32 = 2
+  // The street's stories (2.6.5, Spawn/StreetStories.reds): a debtor giving up another name, how far a bagman's drop may be,
+  // how long his walk may take, how near a witness is met, what they cost, a ransom's drop (reach, how long it waits, the
+  // chance it is a trap), wannabes' friends, and how much a crashed sit-down angers the side it hurt most.
+  public static func FavourChainChance() -> Float = 0.35
+  public static func BagmanDropMin() -> Float = 100.0
+  public static func BagmanDropMax() -> Float = 400.0
+  public static func BagmanRouteLifeTicks() -> Int32 = 720
+  public static func WitnessRange() -> Float = 170.0
+  public static func WitnessPayBase() -> Float = 300.0
+  public static func RansomDropReach() -> Float = 12.0
+  public static func RansomDropHours() -> Float = 24.0
+  public static func RansomDropTrap() -> Float = 0.25
+  public static func WannabeFriends() -> Int32 = 2
+  public static func MeetReasonAnger() -> Float = 4.0
   public static func OverheardGapLess() -> Float = 45.0
   public static func OverheardGapQuiet() -> Float = 150.0
   public static func FavourGangRestHours() -> Float = 3.0

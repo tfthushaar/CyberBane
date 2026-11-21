@@ -486,6 +486,7 @@ public func CBWhereaboutsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   if tick % 3 == 0 {
     CBLeadPinTick(sys, game, on);
+    CBLeadWitnessTick(sys, game, player);   // somebody who saw them, on the way there (2.6.5, Spawn/StreetStories.reds)
   }
   // Calm: on foot, out of combat, nowhere the story or a job has the stage, a settled world.
   let calm = on && CBWorldStable(game) && !IsDefined(player.GetMountedVehicle()) && !player.IsInCombat()
@@ -1215,6 +1216,11 @@ func CBLairAlarm(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
       CBLairRelocate(sys, game, r, intel.GuardIds());
       return true;
     }
+    return false;
+  }
+  // The witness showed V the way in nobody watches, or was paid to forget V (2.6.5): nobody here sees V coming.
+  if book.lairQuiet {
+    book.lairSeen = 0;
     return false;
   }
   // Does any of them have V in sight?

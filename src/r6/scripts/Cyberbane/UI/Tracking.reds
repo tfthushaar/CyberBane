@@ -213,7 +213,10 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     return StrLen(owed) > 0 ? "Owes " + owed + " money" : "Owes a gang money";
   }
   if des.IsTagged(id, n"CB_Wannabe") {
-    return "Wannabe";
+    return des.IsTagged(id, n"CB_WannabeFriend") ? "Wannabe's friend" : "Wannabe";
+  }
+  if puppet.cbLeadWitnessFor > 0 || des.IsTagged(id, n"CB_Witness") {
+    return "Saw your Rival";
   }
   let what = "";
   if des.IsTagged(id, n"CB_Bagman") { what = "bagman"; }
@@ -254,8 +257,14 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   if des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") {
     return "Gang business. Crash it, or leave them to it.";
   }
+  if des.IsTagged(id, n"CB_WannabeFriend") {
+    return "Here to watch, and to tell everybody how it went.";
+  }
   if des.IsTagged(id, n"CB_Wannabe") {
     return "Out to make a name off you. Fists only.";
+  }
+  if puppet.cbLeadWitnessFor > 0 || des.IsTagged(id, n"CB_Witness") {
+    return "Saw your Rival. Ask them, pay them, or they may run ahead and warn them.";
   }
   if des.IsTagged(id, n"CB_Patrol") {
     return "Walking their turf.";

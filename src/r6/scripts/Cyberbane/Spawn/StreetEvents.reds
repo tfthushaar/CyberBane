@@ -103,6 +103,8 @@ public class CBStreetEvent {
   // Where each of `ids` walks to once in the world (2.6.3), beside `ids`: the zero vector for one placed on the spot.
   // Somebody placed further out, out of V's sight, walks in, because V was standing at the place or looking at it.
   public let walkAt: array<Vector4>;
+  // What a sit-down is about (2.6.5): 1 money the first gang owes the second, 2 a killing, 3 a street both work, 4 V.
+  public let reason: Int32;
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -359,6 +361,7 @@ public class CBEventEngine {
     if Equals(kind, CBEvSitDown()) {
       ev.from = now + RandRangeF(1.0, 2.0) * 3600.0;
       ev.until = ev.from + CBConfig.MeetWindowSeconds();
+      ev.reason = CBMeetReasonFor(sys, a, b);
     } else {
       ev.from = now + RandRangeF(CBConfig.EventLeadMinHours(), CBConfig.EventLeadMaxHours()) * 3600.0;
       ev.until = ev.from + CBConfig.EventWindowSeconds();
@@ -372,8 +375,9 @@ public class CBEventEngine {
       this.m_partyFor = n"";
     }
     this.KeepPin(game);
+    // A message, not word going round (2.6.5): something V can go to is never held back as chatter.
     if CBMessagesOn() {
-      CBHearsayFromDistrict(game, district, CBEventWordLine(ev), n"");
+      CBPhoneFromDistrict(game, district, CBEventWordLine(ev));
     }
     CBLog.Info(n"Street", s"A \(NameToString(kind)) is set: \(NameToString(a)) \(NameToString(b)).");
     CBEmit(StringToName("Cyberbane/StreetEvent/" + NameToString(kind)), a, 0.0);   // [91], 2.4.6
@@ -659,6 +663,87 @@ public func CBEventCaption(ev: ref<CBStreetEvent>) -> String {
   return CBEventCaptionOf(ev.kind, ev.a, ev.b);
 }
 
+// What a sit-down is about (2.6.5): two gangs both after V talk about V half the time; otherwise money, a killing or a street.
+func CBMeetReasonFor(sys: ref<CyberbaneSystem>, a: CName, b: CName) -> Int32 {
+  let score = sys.GetScore();
+  if IsDefined(score) {
+    let pa = score.GetPosture(a);
+    let pb = score.GetPosture(b);
+    let aAfter = Equals(pa, ECBPosture.Hostile) || Equals(pa, ECBPosture.Vendetta);
+    let bAfter = Equals(pb, ECBPosture.Hostile) || Equals(pb, ECBPosture.Vendetta);
+    if aAfter && bAfter && RandF() < 0.5 {
+      return 4;
+    }
+  }
+  return RandRange(1, 4);
+}
+
+func CBMeetReasonWords(ev: ref<CBStreetEvent>) -> String {
+  let a = CBFactionLabel(ev.a);
+  let b = CBFactionLabel(ev.b);
+  switch ev.reason {
+    case 1: return s"over money \(a) owe \(b)";
+    case 2: return s"over one of \(CBPossessive(a)) people \(b) killed";
+    case 3: return "over a street they both want";
+    case 4: return "and the talk is about you";
+    default: return "over old business";
+  }
+}
+
+// Crashed: who it hurt most. The money owed, the blood owed, the street's holder; talk about V hurts both, and is off.
+func CBMeetCrashAngrier(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> CName {
+  if ev.reason == 1 {
+    return ev.b;
+  }
+  if ev.reason == 2 {
+    return ev.a;
+  }
+  if ev.reason == 3 {
+    return Equals(CBTurfHolder(sys, game, ev.district), ev.b) ? ev.b : ev.a;
+  }
+  if ev.reason == 4 {
+    CBTalkSlight(sys, game, ev.b, CBConfig.MeetReasonAnger());
+    return ev.a;
+  }
+  return n"";
+}
+
+// Left alone: they made their deal, and what it was decides what changed.
+func CBMeetSettled(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
+  let a = CBCapFirst(CBFactionLabel(ev.a));
+  let b = CBFactionLabel(ev.b);
+  let line = s"\(a) and \(b) made their deal. Nobody stopped them.";
+  if ev.reason == 1 {
+    CBWarSpend(game, ev.a, CBConfig.WarDealValue());
+    CBWarEarn(game, ev.b, CBConfig.WarDealValue());
+    line = s"\(a) paid \(b) what they owed. Their war chest is lighter for it.";
+  }
+  if ev.reason == 2 {
+    if RandF() < 0.5 {
+      line = s"\(a) and \(b) settled the killing with money. For now.";
+    } else {
+      CBWeakenGang(sys, game, ev.a, CBConfig.MeetGangLoss() * 0.5);
+      CBWeakenGang(sys, game, ev.b, CBConfig.MeetGangLoss() * 0.5);
+      line = s"The sit-down over the killing went bad. \(a) and \(b) bled each other on the way out.";
+    }
+  }
+  if ev.reason == 3 {
+    CBBolsterGang(sys, game, RandF() < 0.5 ? ev.a : ev.b, CBEventBolster(CBEvRecruitment()) * 0.5);
+    line = s"\(a) and \(b) carved up the street between them.";
+  }
+  if ev.reason == 4 {
+    let war = CBWarBook.Get(game);
+    if CBCommonEnemyOn() && IsDefined(war) {
+      let now = CBGameSeconds(game);
+      war.SetTruce(ev.a, ev.b, now + CBConfig.SecondsPerDay());
+      line = s"\(a) and \(b) came out of it with a deal about you. They're working together for a while.";
+    }
+  }
+  if CBMessagesOn() {
+    CBHearsayFromStreet(game, line, n"");
+  }
+}
+
 // The same from what is kept of it, for a place the map remembers (UI/MapPins.reds, 2.5.0).
 public func CBEventCaptionOf(kind: CName, gangA: CName, gangB: CName) -> String {
   let a = CBCapFirst(CBFactionLabel(gangA));
@@ -679,7 +764,7 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
   let a = CBCapFirst(CBFactionLabel(ev.a));
   let when = CBWhenWord(GetGameInstance(), ev.from);
   if Equals(ev.kind, CBEvSitDown()) {
-    return s"\(a) and \(CBFactionLabel(ev.b)) are sitting down near here around \(when). Crash it, and they both feel it.";
+    return s"\(a) and \(CBFactionLabel(ev.b)) are sitting down near here around \(when), \(CBMeetReasonWords(ev)). Crash it, and they both feel it.";
   }
   if Equals(ev.kind, CBEvFuneral()) {
     // "The one you put down" only when V did (2.6.0): a funeral is also owed for one of theirs killed by somebody else, a
@@ -771,8 +856,15 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
     CBTalkFear(sys, game, ev.b, CBConfig.WordKeptFear());
     sys.AddRenownPoints(CBConfig.MeetRenown() * mult);
     CBFileLog(sys, n"MeetCrashed", now, where, ev.a, 0.0);
+    // Who walks out angrier, by what it was about (2.6.5).
+    let angrier = CBMeetCrashAngrier(sys, game, ev);
+    if NotEquals(angrier, n"") {
+      CBTalkSlight(sys, game, angrier, CBConfig.MeetReasonAnger());
+    }
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"You crashed the sit-down between \(a) and \(CBFactionLabel(ev.b)). Neither of them will forget it.", n"");
+      CBHearsayFromStreet(game, NotEquals(angrier, n"")
+        ? s"You crashed the sit-down between \(a) and \(CBFactionLabel(ev.b)). \(CBCapFirst(CBFactionLabel(angrier))) took it worst."
+        : s"You crashed the sit-down between \(a) and \(CBFactionLabel(ev.b)). Neither of them will forget it.", n"");
     }
     CBLog.Info(n"Street", "V crashed a sit-down.");
     return;
@@ -834,9 +926,7 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
     return;
   }
   if Equals(ev.kind, CBEvSitDown()) {
-    if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"\(CBCapFirst(a)) and \(CBFactionLabel(ev.b)) made their deal. Nobody stopped them.", n"");
-    }
+    CBMeetSettled(sys, game, ev);   // what the deal was, and what came of it (2.6.5)
     return;
   }
   if Equals(ev.kind, CBEvFuneral()) {

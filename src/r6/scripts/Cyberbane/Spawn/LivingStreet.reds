@@ -240,6 +240,11 @@ public class CBStreetLife {
   private let m_bagTick: Int32;
   private let m_bagNext: Int32;
   private let m_bagDone: Bool;
+  // Where he is walking the take (2.6.5): his gang's drop, pinned.
+  private let m_bagDrop: Vector4;
+  private let m_bagHasDrop: Bool;
+  private let m_bagDropPin: NewMappinID;
+  private let m_bagDropPinned: Bool;
   // A favour.
   private let m_favFaction: CName;
   private let m_favKind: Int32;        // 1 a lookout to run off, 2 somebody to lean on
@@ -262,6 +267,8 @@ public class CBStreetLife {
   // A gang that has just handed out a favour has no more for a while (2.6.4). Session only, like the favour.
   private let m_favRestGang: array<CName>;
   private let m_favRestUntil: array<Float>;
+  // How many names down a chain of debts this one is (2.6.5): a debtor who pays may give up somebody else who owes.
+  private let m_favChain: Int32;
   // The sit-down and the rest of gang life's events (Spawn/StreetEvents.reds, 2.3.3).
   private let m_events: ref<CBEventEngine>;
   // While you were out.
@@ -314,6 +321,7 @@ public class CBStreetLife {
   public func Reset(game: GameInstance) -> Void {
     this.m_bagFaction = n"";
     this.m_bagDone = false;
+    this.BagUnpin(game);
     this.FavourEnd(game);
     this.m_favLeaned = false;
     this.Events().Reset(game);
@@ -376,12 +384,34 @@ public class CBStreetLife {
       // Their round, and again after V has stopped one of them for a word (2.1.0): the conversation's hold
       // took the place of the walk (CBTalkHold).
       if age == 4 || (age > 4 && CBTalkWalkOnDue(game, des, n"CB_Bagman")) {
-        CBPatrolWalk(sys, game, des, player, n"CB_Bagman");
+        if this.m_bagHasDrop {
+          // To the drop (2.6.5), he and whoever watches his back.
+          for bid in des.GetTaggedIDs(n"CB_Bagman") {
+            let walker = GameInstance.FindEntityByID(game, bid) as ScriptedPuppet;
+            if CBNpcSafe(sys, walker) && CBStillStanding(walker) && !CBNpcInCombat(walker) {
+              CBStreetWalkNear(walker, this.m_bagDrop, 2.5);
+            }
+          }
+        } else {
+          CBPatrolWalk(sys, game, des, player, n"CB_Bagman");
+        }
+      }
+      // The take reached the drop: gone where V cannot follow it.
+      if this.m_bagHasDrop && !this.m_bagDone && IsDefined(p) && CBStillStanding(p)
+         && Vector4.Distance(p.GetWorldPosition(), this.m_bagDrop) <= 8.0 {
+        this.m_bagDone = true;
+        if CBMessagesOn() {
+          CBPhoneFromDistrict(game, sys.GetCurrentDistrict(), s"\(CBCapFirst(CBPossessive(CBFactionLabel(this.m_bagFaction)))) take made it to the drop. Next week, maybe.");
+        }
+        CBLog.Info(n"Street", "A bagman reached his drop.");
       }
       let near = IsDefined(p) && Vector4.Distance(p.GetWorldPosition(), player.GetWorldPosition()) <= CBConfig.TurfPatrolLeaveDistance();
-      if age >= CBConfig.BagmanLifeTicks() || (age > 10 && !near && !des.IsSpawning(this.m_bagBody)) || !CBStreetLifeOn(n"bagmen") {
+      let life = this.m_bagHasDrop ? Max(CBConfig.BagmanLifeTicks(), CBConfig.BagmanRouteLifeTicks()) : CBConfig.BagmanLifeTicks();
+      if age >= life || (age > 10 && !near && !des.IsSpawning(this.m_bagBody)) || !CBStreetLifeOn(n"bagmen")
+         || (this.m_bagDone && this.m_bagHasDrop) {
         CBDeleteTaggedSafe(game, n"CB_Bagman", true, true);
         this.m_bagFaction = n"";
+        this.BagUnpin(game);
       }
       return;
     }
@@ -427,13 +457,31 @@ public class CBStreetLife {
       this.m_bagBody = body;
       this.m_bagTick = now;
       this.m_bagDone = false;
-      if CBMessagesOn() {
-        CBHearsayFromDistrict(game, sys.GetCurrentDistrict(),
-          // The lookout only when one came (2.5.5): a crowded street can leave room for the bagman alone.
-          s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder)))) bagman is doing the rounds near you with the week's take. \(placed > 1 ? "One lookout." : "Nobody watching their back.") Heavy pockets.", n"");
+      // Where he is taking it (2.6.5): his gang's drop, a place of theirs further off, pinned, so robbing him is a plan.
+      let drop: Vector4;
+      let dropDistrict: CName;
+      this.BagUnpin(game);
+      this.m_bagHasDrop = CBGangDropPlace(sys, game, player, holder, CBConfig.BagmanDropMin(), CBConfig.BagmanDropMax(), drop, dropDistrict);
+      if this.m_bagHasDrop {
+        this.m_bagDrop = drop;
+        this.m_bagDropPinned = CBPinPlace(game, drop, s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder)))) drop: the take is headed here", this.m_bagDropPin);
       }
-      CBLog.Info(n"Street", s"A \(NameToString(holder)) bagman is out near V.");
+      // A message, not word going round (2.6.5): something V can act on is never held back as chatter.
+      if CBMessagesOn() {
+        let watch = placed > 1 ? "One lookout." : "Nobody watching his back.";   // only when one came (2.5.5)
+        CBPhoneFromDistrict(game, sys.GetCurrentDistrict(), this.m_bagHasDrop
+          ? s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder)))) bagman is walking the week's take to their drop. \(watch) Heavy pockets. I marked the drop."
+          : s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder)))) bagman is doing the rounds near you with the week's take. \(watch) Heavy pockets.");
+      }
+      CBLog.Info(n"Street", s"A \(NameToString(holder)) bagman is out near V\(this.m_bagHasDrop ? ", walking to their drop" : "").");
     }
+  }
+
+  private func BagUnpin(game: GameInstance) -> Void {
+    if this.m_bagDropPinned {
+      CBUnpinPlace(game, this.m_bagDropPin);
+    }
+    this.m_bagDropPinned = false;
   }
 
   private func Robbed(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
@@ -586,31 +634,41 @@ public class CBStreetLife {
       }
     }
     // Somebody somewhere else who owes them (2.6.4): a place, a pin, and the one who owes put there when V arrives.
-    let at: Vector4;
-    let where: CName;
-    if this.DebtPlace(sys, game, player, at, where) {
-      this.m_favFaction = t.faction;
-      this.m_favKind = 2;
-      this.m_favAt = at;
-      this.m_favDistrict = where;
-      this.m_favPlaced = false;
-      this.m_favFight = 0;
-      this.m_favLeaned = false;
-      this.m_favTarget = null;
-      this.m_favUntil = now + CBConfig.FavourDebtLifeTicks();
-      let place = NotEquals(where, n"") && NotEquals(where, sys.GetCurrentDistrict()) ? CBDistrictLabel(where) : "a few blocks over";
-      this.FavourPin(game, at, s"A favour for \(CBFactionLabel(t.faction)): collect a debt in \(place)");
-      this.RestGang(game, t.faction);
+    let place = this.StartDebt(sys, game, player, t.faction, now);
+    if StrLen(place) > 0 {
+      this.m_favChain = 0;
       if IsDefined(t.npc) {
         t.npc.cbFavourRoll = 2;
       }
-      CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): collect a debt in \(NameToString(where)).");
       return CBTalkSay(s"Somebody in \(place) owes us and keeps forgetting. Go and collect. Lean on them, and if they swing, fists only: nobody pays from a body bag. I marked it for you.", n"");
     }
     return CBTalkSay("Nothing that needs you today. Ask me again sometime.", n"");
   }
 
   // V leaned on somebody (Reactions/StreetTalk.reds, Intimidate and Antagonize): was it the one who owes?
+  // A debt to collect, for this gang, somewhere else (2.6.4); the place's name, or "" when there was nowhere.
+  private func StartDebt(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, faction: CName, now: Int32) -> String {
+    let at: Vector4;
+    let where: CName;
+    if !this.DebtPlace(sys, game, player, at, where) {
+      return "";
+    }
+    this.m_favFaction = faction;
+    this.m_favKind = 2;
+    this.m_favAt = at;
+    this.m_favDistrict = where;
+    this.m_favPlaced = false;
+    this.m_favFight = 0;
+    this.m_favLeaned = false;
+    this.m_favTarget = null;
+    this.m_favUntil = now + CBConfig.FavourDebtLifeTicks();
+    let place = NotEquals(where, n"") && NotEquals(where, sys.GetCurrentDistrict()) ? CBDistrictLabel(where) : "a few blocks over";
+    this.FavourPin(game, at, s"A favour for \(CBFactionLabel(faction)): collect a debt in \(place)");
+    this.RestGang(game, faction);
+    CBLog.Info(n"Street", s"A favour for \(NameToString(faction)): collect a debt in \(NameToString(where)).");
+    return place;
+  }
+
   // Frightened enough of V and they pay; otherwise they would sooner find out with their fists (2.6.4). The more the street
   // fears V, the likelier the first.
   public func NoteLeaned(npc: ref<ScriptedPuppet>) -> Void {
@@ -808,7 +866,18 @@ public class CBStreetLife {
                                             : s"Saw what you did. \(pay)eb, and you've got friends here.\(tip)");
     }
     CBLog.Info(n"Street", s"A favour for \(NameToString(faction)) done; \(pay)eb.");
+    let chainable = this.m_favKind == 2 && this.m_favChain < 2;
     this.FavourEnd(game);
+    // A name given up (2.6.5): somebody else who owes them, somewhere else, two links at most.
+    if chainable && RandF() < CBConfig.FavourChainChance() {
+      let next = this.StartDebt(sys, game, player, faction, sys.GetTickCount());
+      if StrLen(next) > 0 {
+        this.m_favChain += 1;
+        if CBMessagesOn() {
+          CBPhoneFromAlly(game, faction, s"They gave up a name before they paid: somebody in \(next) owes us too. Same deal. I marked it.");
+        }
+      }
+    }
   }
 
   private func FavourPin(game: GameInstance, at: Vector4, text: String) -> Void {
