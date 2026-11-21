@@ -613,6 +613,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let ppos = player.GetWorldPosition();
   let fwd = player.GetWorldForward();
   let openAir = CBArrivalOpenAir(game, ppos);
+  // On V's side (2.6.5, CBSafeAreaBlocksSpawn): V's crew and people lent to V go where their own gate lets them.
+  let side = Equals(squadTag, n"CB_Own") || Equals(squadTag, n"CB_Ally");
 
   // Where the group forms up. The navmesh anchor is the good answer; the flat offset behind V
   // is the old one, kept because interiors and some streamed-in areas have no navmesh and a
@@ -645,7 +647,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       // The rest of a group form up near the first, because a squad that arrives together reads
       // as a squad, and every one of them has to be joined to the group (CBPointArrivable).
       let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at)
-               && !CBSafeAreaBlocksSpawn(game, at);
+               && !CBSafeAreaBlocksSpawn(game, at, side);
       // Nobody appears where the player is looking. Only the first body of a group is tested:
       // the rest form up within SpawnGroupRadius of it, so if the lead is out of frame so are
       // they, and a squad that arrives together is the point of forming up at all.
@@ -695,7 +697,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let snapped: Vector4;
       let standing: Vector4;
       if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
-         && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing)
+         && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing, side)
          && (ArraySize(used) > 0 || inSightOk || CBPointOutOfSight(game, ppos, fwd, standing))
          && CBPointArrivable(game, standing, used, ppos, openAir) {
         if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned, extraTag) {
@@ -728,7 +730,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       // An apartment, a bar, a clinic. The game forces V's hands empty in there, so an
       // arrival is a fight the player cannot have (spec §16). Off unless they ask for it.
       // Nested rather than skipped with a continue, which redscript does not have.
-      if !CBSafeAreaBlocksSpawn(game, new Vector4(px, py, ppos.Z, 1.0)) {
+      if !CBSafeAreaBlocksSpawn(game, new Vector4(px, py, ppos.Z, 1.0), side) {
         // A floor far above or below V is another level entirely - a roof, the bottom of a
         // shaft - so it is refused and the point moves in rather than dropping someone there.
         let stand: Vector4;
@@ -778,7 +780,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         // The one test not asked here is the roof. This is the last place anybody can be put, close
         // to V and joined to V, and a street under a walkway should not be able to stop an arrival
         // outright: a gate that refuses everywhere is how this mod has gone silent before.
-        if !CBSafeAreaBlocksSpawn(game, fallback)
+        if !CBSafeAreaBlocksSpawn(game, fallback, side)
            && (inSightOk || CBPointOutOfSight(game, ppos, fwd, fallback))
            && CBPointIsFree(used, fallback)
            && CBPointArrivable(game, fallback, used, ppos, false)

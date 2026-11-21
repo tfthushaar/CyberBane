@@ -386,7 +386,7 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
   if book.fdState != 0 {
     let r = sys.FindRivalById(book.fdRival);
     let body = GameInstance.FindEntityByID(game, book.fdBody) as ScriptedPuppet;
-    if !IsDefined(r) || !CBFacedownOn() || !CBWorldStable(game) || CBArrivalsHeld(sys, game) {
+    if !IsDefined(r) || !CBFacedownOn() || !CBWorldStable(game) || CBWordsHeld(sys, game) {
       CBFacedownRelease(sys, game, book, true);
       return;
     }
@@ -416,7 +416,7 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
     }
     return;
   }
-  if !CBFacedownOn() || player.IsInCombat() || CBArrivalsHeld(sys, game) || sys.IsInSafeZone()
+  if !CBFacedownOn() || player.IsInCombat() || CBWordsHeld(sys, game) || sys.IsInSafeZone()
      || IsDefined(player.GetMountedVehicle()) || tick % 2 != 0 {
     return;
   }

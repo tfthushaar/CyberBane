@@ -199,7 +199,7 @@ func CBWatchMyBack(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWar
   let fs = sys.FindFaction(t.faction);
   let base = CBGangTemplate(sys, t.faction);   // their own people even if V has never fought one of them (2.5.0)
   // Never on top of a Rival who came to help ("Nobody kills you but me" shares the CB_Ally tag and its clean-up).
-  if !TDBID.IsValid(base) || CBSpawnRoom(game) < 3 || CBArrivalsHeld(sys, game) || CBLiveTaggedPresent(game, n"CB_Ally") {
+  if !TDBID.IsValid(base) || CBSpawnRoom(game) < 3 || CBCrewHeldReason(sys, game) > 0 || CBLiveTaggedPresent(game, n"CB_Ally") {
     return CBTalkSay(CBPick2("Not now. Everybody's busy.", "Can't spare anybody right now."), n"");
   }
   let count = IsDefined(score) && Equals(score.GetPosture(t.faction), ECBPosture.Allied) ? CBConfig.CrewAllied() : CBConfig.CrewFriendly();
@@ -294,7 +294,9 @@ func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBoo
   if far && sys.GetTickCount() % 5 == 0 {
     why = "Lost you. We'll catch up some other time.";
   }
-  if CBArrivalsHeld(sys, game) {
+  // On V's side, so the crew's gate (2.6.5): the story, a scene, a safe place, a job by Your crew on jobs. It was the hunters'
+  // (CBArrivalsHeld), so a gang's people lent to V went home the moment V stepped onto a gig or a gang's turf.
+  if CBCrewHeldReason(sys, game) > 0 {
     why = "Looks like you've got business. We'll leave you to it.";
   }
   // Run with a crew switched off while they are out (2.5.6): they walk home now, without a text ("-"), rather than

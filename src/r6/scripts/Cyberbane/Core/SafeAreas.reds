@@ -294,6 +294,14 @@ public func CBComputeOnJob(game: GameInstance) -> Bool {
 // and never while the story has the stage (Core/StoryHold.reds). While this is false the lanes do
 // not count down and the HUD does not say TRACKED: counting down to an arrival that will only be
 // refused is what kept TRACKED coming back at home.
+// Words already being had (2.6.5): a Rival's facedown, under way. Only what makes talk itself impossible ends one: the
+// story, a scene, somewhere safe. "A Rival offered to talk, but his bodyguards got hostile so I could never talk": the
+// facedown opened at their place and was let go four seconds later, everybody hostile, because V was "on a job" there
+// (CBArrivalsHeld), which is a rule about sending people after V, not about people already standing in front of V.
+public func CBWordsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  return !IsDefined(sys) || sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game) || sys.IsInSanctuary();
+}
+
 public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   if !IsDefined(sys) {
     return true;
@@ -410,7 +418,13 @@ public func CBPlayerZoneLabel(game: GameInstance) -> String {
 // no-combat restriction under it. A player who asked to be found in their apartment had, without
 // knowing it, asked to be found in the middle of every quest too. Each group now answers only to
 // its own switch.
-public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
+// `onVsSide` (2.6.5): somebody coming to fight beside V, V's crew or a gang's people lent to V. They skip the job and
+// hostile-zone rules (3 below), which are the arrivals' rules for the people sent against V and the "Stay out of quest
+// areas" switch's. The crew's own gate already decides where they come (CBCrewHeldWhy: Your crew on jobs, the main story,
+// scenes, safe places), and 2.6.3 opened gigs, side jobs and gang turf to them there, while every point on the way was still
+// refused here on a job or in a gang's zone: "my crew member refused again", each time "nowhere to put them". The story,
+// V's hands forced empty and the game's own no-spawn areas still hold.
+public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide: Bool) -> Bool {
   // 1. The story has the stage: V is not V, a scene is playing, the story is directing what V
   //    can do, or somebody from the story is walking with V. No setting opens this up.
   if CBStoryHoldNow(game) {
@@ -429,7 +443,7 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   }
   // 3. On a job, or in a restricted or dangerous zone, when V asked Cyberbane to stay out of them -
   //    the quest-area switch's own question, which the safe-area opt-in has nothing to do with.
-  if CBPlayerInQuestArea(game) || (IsDefined(sysQ) && sysQ.IsOnJob()) {
+  if !onVsSide && (CBPlayerInQuestArea(game) || (IsDefined(sysQ) && sysQ.IsOnJob())) {
     // The quest area also holds restricted and dangerous zones; the Hub names which it was, as
     // CBArrivalsHeldWhy does, instead of calling a gang's compound a job.
     let onJob = (IsDefined(sysQ) && sysQ.IsOnJob()) || CBPlayerInScene(game)
@@ -440,7 +454,7 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4) -> Bool {
   }
   // And never placed at the job itself, wherever V is standing. Checking only V's position let a
   // crew be placed inside the job area while V stood just outside it.
-  if IsDefined(sysQ) && sysQ.NearQuestPins(at, CBConfig.QuestSpawnClearance()) {
+  if !onVsSide && IsDefined(sysQ) && sysQ.NearQuestPins(at, CBConfig.QuestSpawnClearance()) {
     CBNoteSpawnBlock(CBBlockQuestArea());
     return true;
   }

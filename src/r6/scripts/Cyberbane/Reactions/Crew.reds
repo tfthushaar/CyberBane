@@ -1296,7 +1296,10 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
   }
   if sent == 0 {
     if sold == 0 {
-      CBLog.Info(n"Crew", s"V's crew was not called: nowhere to put them on any ring round V, out to \(RoundF(CBConfig.MyCrewFarSpawnDistance())) m (\(CBSpawnRoomNote(game))).");
+      // The last spot's refusal too (2.6.5): "nowhere to put them" alone never said it was the job rule every time.
+      let rtWhy = CyberbaneRuntime.Get();
+      let lastWhy = IsDefined(rtWhy) ? CBBlockLabel(rtWhy.GetLastSpawnBlock()) : "";
+      CBLog.Info(n"Crew", s"V's crew was not called: nowhere to put them on any ring round V, out to \(RoundF(CBConfig.MyCrewFarSpawnDistance())) m; the last spot refused for \(StrLen(lastWhy) > 0 ? lastWhy : "no ground") (\(CBSpawnRoomNote(game))).");
     }
     return sold > 0 ? "" : "Nobody could get through to you. Try again somewhere more open.";
   }
