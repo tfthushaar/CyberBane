@@ -49,6 +49,9 @@ the next unless a version says otherwise.
   you can still talk to them as they go, even while the fight goes on around you.
 - A line you pick counts even when the game has cleared the list for a moment, which some places do many times a
   second.
+- **On a gang's restricted ground, talk says so.** The game turns its people on you for trespassing there however a
+  conversation goes, so offering one only led to lines that flickered and then a fight. Now the greyed prompt says
+  **On their ground: step out first**. Ordinary passers-by, anybody down at your feet and anybody who gave up still talk.
 - **Walk up to a gang at war with you and talk.** After their warning they hold fire while your hands are empty and
   you're not fighting, from as far off as they warn you. It used to be only within 20 metres, so walking up from
   further away got you shot before you were close enough to say anything.

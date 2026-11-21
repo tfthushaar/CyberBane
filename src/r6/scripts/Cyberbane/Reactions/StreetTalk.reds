@@ -2352,6 +2352,7 @@ func CBTalkParleyCrew(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>) -> Int32 
 
 // The reason a hostile person gives, kept as one string so the refusal line can recognise it.
 public func CBTalkWhyHostile() -> String = "they are hostile to V"
+public func CBTalkWhyTurf() -> String = "V is on their restricted ground, where the game's own rules turn them on V"
 
 // The reasons V is told about (CBTalkWhyHint), each kept as one string for the same reason.
 public func CBTalkWhySentAfterV() -> String = "one of Cyberbane's own, here for V (a crew, a Rival or a hunter)"
@@ -2488,6 +2489,13 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   }
   if Equals(CBClassifyFaction(npc), n"MaxTac") {
     return "MaxTac";
+  }
+  // On a gang's restricted ground (2.6.3), whoever is not one of the crowd belongs to it, and the game's own trespass rules
+  // turn them on V however a conversation goes: the list came up, the game cleared it over and over ("the game took the
+  // prompt off the screen 35 times"), and they opened fire eight seconds in. Said in the greyed prompt instead, so V knows
+  // to step out first. Somebody down at V's feet or who gave up is out of it, and still talks.
+  if CBPlayerInHostileZone(game) && !npc.IsCrowd() && !CBTalkDownAtFeet(npc) && !npc.cbGaveUp {
+    return CBTalkWhyTurf();
   }
   // Hostile to V by the game's say (its gangs' own compounds, another mod) and not fighting: words are
   // still possible outside a compound (1.9.8), and the conversation ends the moment a fight starts. In a
@@ -2880,6 +2888,7 @@ public func CBTalkNoteWords(why: String) -> String {
   if Equals(why, "they are in a fight") { return "Busy fighting"; }
   if Equals(why, "they are running from V") { return "Running from you"; }
   if Equals(why, CBTalkWhyJob()) || Equals(why, CBTalkWhyTracked()) { return "Part of a job"; }
+  if Equals(why, CBTalkWhyTurf()) { return "On their ground: step out first"; }
   return "";
 }
 
