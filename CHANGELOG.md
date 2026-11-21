@@ -30,12 +30,22 @@ the next unless a version says otherwise.
   trouble turns up, the round ends on its own.
 - When they can't come, they say exactly why: a scene, the story, somewhere safe, your car, a crowd, or everybody hurt.
 - **Call your crew (key)** under Your crew in Mod Settings: one key to call them, or send them home. Not set at first.
+- **Your crew fights whoever is fighting you.** They followed you, but only ever took on the people Cyberbane itself
+  had sent: anybody else hostile to you was nobody to them, so they walked around until one of them shot them.
+- **A crew member who goes down says so,** and when the fight is over tells you they'll live and how long they're out.
+  The game keeps a follower on the ground where anybody else would die, so one seen falling read as dead, with only
+  "Hurt" on their card.
 
 **Fixed: talk that shows up**
 - With a weapon in your hand, the person in front of you shows a greyed **Holster to talk** where Talk would be, every
   time. It was a hint once per game launch, and after that nothing at all. The same greyed prompt says **Just spoke to
   them**, **Busy fighting**, **Running from you** or **Part of a job** when that is why. It shows even with messages off,
   and never over one of the game's own prompts.
+- **Somebody who gives up stays out of the fight.** A ganger who said "I'm done" and was let go was turned on you
+  again the moment you came close, by their gang's war with you. Now they walk off at peace unless you hurt them, and
+  you can still talk to them as they go, even while the fight goes on around you.
+- A line you pick counts even when the game has cleared the list for a moment, which some places do many times a
+  second.
 
 **Fixed: words you can read**
 - Conversation lines, and what people tell you, stay up as long as they take to read. They were up for 2.4 and 4

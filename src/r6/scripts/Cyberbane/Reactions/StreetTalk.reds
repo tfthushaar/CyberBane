@@ -695,6 +695,9 @@ public class CBStreetTalk {
   // Keeping the list on screen (OnFrame): the chain's token, and how often the game wiped it.
   private let m_frameGen: Int32;
   private let m_wipes: Int32;
+  // When the list was last on screen (sim time, 2.6.3): a press within TalkPressGrace of it counts, because a game that
+  // keeps clearing the list leaves it gone for a frame at a time, and a press landing in one of those frames was dropped.
+  private let m_shownAt: Float;
 
   // What the keys asked for, carried out on the next tick, never inside the key callback.
   private let m_wantOpen: Bool;
@@ -973,8 +976,12 @@ public class CBStreetTalk {
     // one conversation), and the give-up only shut out people standing chatting together. Counted for the log.
     // Never over a prompt of the game's (2.5.3): that is not a wipe but something else on F, waited out above.
     if !foreign && !this.Shown(game) {
+      this.NoteWipe(game);
       this.Push(game);
-      this.m_wipes += 1;
+    } else {
+      if !foreign {
+        this.m_shownAt = CBTalkNow(game);
+      }
     }
     // The lines up and nothing said yet: what the game's interface holds, three times (2.5.7). Reported as "I pressed Talk
     // and no lines came" with the log saying the lines were up; this says what was in front of them.
@@ -1026,8 +1033,8 @@ public class CBStreetTalk {
     // Waiting for an answer, nothing is up on purpose; the chain only keeps going.
     if (this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen())
        && !this.Shown(game) && !CBGameDialogueUp(game) && !this.YieldsToGamePrompt(game) {
+      this.NoteWipe(game);
       this.Push(game);
-      this.m_wipes += 1;
     }
     this.NextFrame(game);
   }
@@ -1335,6 +1342,7 @@ public class CBStreetTalk {
     this.m_dealPrice = 0;
     this.m_dealKind = CBTalkDealLead();
     this.m_wipes = 0;
+    this.m_shownAt = 0.0;
     this.m_frameGen += 1;
     this.m_engaged = false;
     this.m_applyPressed = false;
@@ -1458,12 +1466,30 @@ public class CBStreetTalk {
     if !IsDefined(this.m_target) {
       return;
     }
+    this.m_shownAt = CBTalkNow(game);
     if this.m_stage == CBTalkStageOffered() {
       CBTalkPushOffer(game, CBTalkTitle(this.m_target));
       return;
     }
     CBTalkClearOffer(game);
     CBTalkPushHub(game, CBTalkTitle(this.m_target), this.m_lines, this.m_index);
+  }
+
+  // The game took the list off the screen (2.6.3): counted, and what it put there instead said in the log, at the 5th and
+  // the 30th time in one conversation. "I couldn't talk to a Barghest" came with the list wiped 61 times in 13 seconds
+  // and nothing to say by what.
+  private func NoteWipe(game: GameInstance) -> Void {
+    this.m_wipes += 1;
+    if this.m_wipes == 5 || this.m_wipes == 30 {
+      let player = GetPlayer(game);
+      let fighting = IsDefined(player) && player.IsInCombat();
+      CBLog.Info(n"Talk", s"Wiped (\(this.m_wipes)): \(CBTalkScreenNote(game)); \(CBNativePromptWords(game)); V in combat \(fighting); stage \(this.m_stage).");
+    }
+  }
+
+  private func ShownJustNow(game: GameInstance) -> Bool {
+    let now = CBTalkNow(game);
+    return this.m_shownAt > 0.0 && now >= this.m_shownAt && now - this.m_shownAt <= CBConfig.TalkPressGrace();
   }
 
   private func Shown(game: GameInstance) -> Bool {
@@ -2146,7 +2172,7 @@ public class CBStreetTalk {
     if confirm {
       // Only a list V can see can be answered (1.9.7). F pressed at somebody whose list the game had
       // wiped said a line V never saw.
-      if push && this.Shown(this.m_game) {
+      if push && (this.Shown(this.m_game) || this.ShownJustNow(this.m_game)) {
         if this.m_stage == CBTalkStageOffered() {
           this.m_wantOpen = true;
         } else {
@@ -2339,7 +2365,7 @@ public func CBTalkWhyVInCombat() -> String = "V is in combat"
 // Somebody a fight is for, who can be spoken to in the middle of it (2.5.7): down at V's feet for the mercy choice, hands
 // up, or standing for a facedown or a parley. Our own fields only.
 public func CBTalkMidFight(npc: wref<ScriptedPuppet>) -> Bool {
-  return IsDefined(npc) && (npc.cbMercyOpen || npc.cbSurrendered || npc.cbFacedownOpen);
+  return IsDefined(npc) && (npc.cbMercyOpen || npc.cbSurrendered || npc.cbGaveUp || npc.cbFacedownOpen);
 }
 
 // What V is told when somebody will not talk for a reason V cannot see (2.1.0), "" for the rest: a fight, a
@@ -2407,7 +2433,8 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   // made them give up (Reactions/Morale.reds, CBMoraleBreak), and a Rival who ran and was put down after is down at
   // V's feet. Both were turned away here as running, before the checks below that let them talk (2.5.1), so nobody
   // with their hands up could ever be held for ransom, and a Rival who had run once could not be spared in words.
-  if npc.cbTalkSent || (npc.cbMoraleBroken && !mercy && !npc.cbSurrendered) {
+  // One who gave up and was let go is walking off, and will still talk (2.6.3): "thought I could talk to him".
+  if npc.cbTalkSent || (npc.cbMoraleBroken && !mercy && !npc.cbSurrendered && !npc.cbGaveUp) {
     return "they are running from V";
   }
   if Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > range {
@@ -2433,7 +2460,8 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   }
   let desT = GameInstance.GetDynamicEntitySystem();
   // A scout who has not called it in yet can be talked to (Spawn/Hunted.reds, [68]).
-  if CBSentAfterV(desT, npc) && !CBIsScoutBody(sys, npc) {
+  // Nor one of ours who gave up to V (2.6.3): out of it, and theirs to talk to.
+  if CBSentAfterV(desT, npc) && !CBIsScoutBody(sys, npc) && !npc.cbGaveUp {
     // Called off, or let go with their hands up (CB_Orphan): no longer here for V, and on their way out.
     if desT.IsTagged(npc.GetEntityID(), n"CB_Orphan") {
       return "stood down and on their way out";
@@ -2446,7 +2474,8 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   }
   // Somebody down at V's feet or with their hands up is out of it, whatever the game still has them down as (2.5.7):
   // mercy now opens the moment a Rival goes down, while the rest of the fight goes on around them.
-  if CBNpcInCombat(npc) && !CBTalkDownAtFeet(npc) {
+  // One who gave up is out of it too (2.6.3), whatever the game's own combat state still says for a while after.
+  if CBNpcInCombat(npc) && !CBTalkDownAtFeet(npc) && !npc.cbGaveUp {
     return "they are in a fight";
   }
   // Somebody standing at a job of V's: a gig's target, a contact. Close to the marker only (1.9.5): sixty
@@ -2880,6 +2909,12 @@ public func CBTalkPushNote(game: GameInstance, words: String) -> Void {
   vis.activeVisId = hub.id;
   ArrayPush(vis.visIds, hub.id);
   bb.SetVariant(defs.VisualizersInfo, ToVariant(vis), true);
+}
+
+// Sim seconds, for talk's own short clocks (2.6.3).
+public func CBTalkNow(game: GameInstance) -> Float {
+  let ts = GameInstance.GetTimeSystem(game);
+  return IsDefined(ts) ? EngineTime.ToFloat(ts.GetSimTime()) : 0.0;
 }
 
 public func CBTalkOfferShown(game: GameInstance) -> Bool {

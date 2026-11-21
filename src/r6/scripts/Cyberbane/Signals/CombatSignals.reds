@@ -194,6 +194,7 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   // a real gang's standing or send a VR enemy back as a Rival (Core/StoryHold.reds).
   if IsDefined(instigator) && instigator.IsPlayer() && CBPlayerIsVHere(instigator as PlayerPuppet) {
     puppet.cbDamagedByPlayer = true;
+    puppet.cbGaveUp = false;   // shot after giving up: back in it, and the game decides what they do (2.6.3)
     puppet.cbLastHitByOther = false;
     puppet.cbLastHitVehicle = CBNoEntity();
     puppet.cbLastAttackType = evt.attackData.GetAttackType();

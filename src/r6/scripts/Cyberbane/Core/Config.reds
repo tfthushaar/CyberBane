@@ -770,6 +770,8 @@ public abstract class CBConfig {
   public static func MyCrewSpawnReserve() -> Int32 = 3
   public static func MyCrewCallSeconds() -> Float = 900.0
   public static func MyCrewNoShowTicks() -> Int32 = 30
+  // How far from V the crew takes on whoever is fighting V (2.6.3, CBCrewHostilityTick).
+  public static func MyCrewFightRange() -> Float = 45.0
   public static func MyCrewSpawnDistance() -> Float = 24.0
   public static func MyCrewQuietTicks() -> Int32 = 60
   public static func MyCrewDriveTicks() -> Int32 = 4
@@ -2018,6 +2020,9 @@ public abstract class CBConfig {
   // Reading time for a spoken line (2.6.3, CBTalkReadSeconds): this much, and this much a letter, before the hold.
   public static func ReadSecondsBase() -> Float = 1.5
   public static func ReadSecondsPerChar() -> Float = 0.06
+  // A press on the lines counts this long after the list was last seen on screen (2.6.3, StreetTalk ShownJustNow): a
+  // game that keeps clearing the list leaves it gone a frame at a time, and presses landing then were lost.
+  public static func TalkPressGrace() -> Float = 0.6
   public static func TalkReplySeconds() -> Float = 4.0
   // Who is afraid: a ganger whose fear of V beats their nerve by this much, a civilian this afraid. A
   // civilian who knows V and V is this well known (or keeps a code) is glad to meet V.

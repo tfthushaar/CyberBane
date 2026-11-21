@@ -428,7 +428,8 @@ public class CBReactionDirector {
     }
     // Never somebody out of it (2.5.7): hands up, down for V's mercy, in a conversation with V, or standing for a
     // facedown. Asked every pass, a vendetta gang's ganger who had just given up was turned on V again by this.
-    if npc.cbSurrendered || npc.cbMercyOpen || npc.cbFacedownOpen || npc.cbFacedownHeld || npc.cbFacedownWait
+    // Nor anybody who gave up to V and was let walk (cbGaveUp, 2.6.3).
+    if npc.cbSurrendered || npc.cbGaveUp || npc.cbMercyOpen || npc.cbFacedownOpen || npc.cbFacedownHeld || npc.cbFacedownWait
        || (npc.cbTalkPartner && !npc.cbHostileByCyberbane) {
       return false;
     }

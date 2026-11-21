@@ -95,6 +95,12 @@ public let cbFavourMark: Bool;
 @addField(ScriptedPuppet)
 public let cbSurrendered: Bool;
 
+// Gave up to V, and kept when they are let go (2.6.3). cbSurrendered ends when the hold does, and with it everything
+// that kept them out of the fight: a Scav who said "I'm done" and was let walk was turned on V again by the vendetta's
+// hostility on sight the moment V came close to talk. Only V hurting them again ends it (Signals/CombatSignals.reds).
+@addField(ScriptedPuppet)
+public let cbGaveUp: Bool;
+
 // Set up a moment after attaching, like everybody else of ours (Spawn/Spawner.reds, CBApplySpawnSetup).
 // A favour's lookout is hostile; a bagman, their lookout and the people at a sit-down leave V be unless their
 // gang is at war with V.
@@ -632,6 +638,7 @@ public class CBStreetLife {
     // Held where they kneel for as long as a hold always was here: the conversation's own holds are short now (2.5.1).
     CBTalkHold(npc, CBConfig.SurrenderHoldSeconds());
     npc.cbSurrendered = true;
+    npc.cbGaveUp = true;
     CBSayVoiced(sys, npc, n"fear_beg");   // in their own voice (Narrative/Telling.reds, [79], 2.4.6)
     npc.SetScannerDirty(true);   // the scanner says so (UI/ScannerName.reds)
     ArrayPush(this.m_gaveUp, npc);

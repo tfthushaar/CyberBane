@@ -1410,6 +1410,15 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
         near = true;
       } else {
         if IsDefined(p) && CBIsDown(p) && !p.IsDead() {
+          // Down, not dead (2.6.3): the game's follower role drops a follower the way it drops its own companions,
+          // where anybody else would die. Said at once, so a body on the ground is not read as a death nobody mentions.
+          if !book.outDown[k] && book.outSeen[k] && CBMessagesOn() {
+            let downM = book.Find(book.outMember[k]);
+            if IsDefined(downM) {
+              CBCrewText(sys, game, downM, CBLineOf(["I'm down! Still breathing. Finish them.", "Hit bad. I'm down, not out. Keep going.",
+                                                     "Can't get up. Don't let them finish me."]));
+            }
+          }
           book.outDown[k] = true;
           if p.IsAttached() && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.MyCrewLeaveDistance() {
             near = true;   // lying where the fight is, not lost
@@ -1447,6 +1456,10 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
       }
       return;
     }
+  }
+  // Anybody fighting V is their enemy too (2.6.3): the follower role alone left them blind to it.
+  if up > 0 && tick % 2 == 0 {
+    CBCrewHostilityTick(sys, game, book, player);
   }
   let trouble = CBCrewTrouble(sys, game);
   if trouble {
@@ -1530,6 +1543,10 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
         let stayed = IsDefined(p) && p.IsAttached() && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.MyCrewStayedDistance();
         if stayed {
           CBCrewLoyalty(m, CBConfig.MyCrewStayedLoyalty(), CBCrewWhyNone());
+          // Alive, and how long they are out (2.6.3): the card only said HURT, so a crew member seen falling read as dead.
+          if CBMessagesOn() {
+            CBCrewText(sys, game, m, s"You stayed with me. I'll live. Out for \(RoundF(CBConfig.MyCrewHurtDays() * 24.0)) hours while they patch me up.");
+          }
         } else {
           CBCrewLoyalty(m, -CBConfig.MyCrewLeftLyingLoyalty(), CBCrewWhyLeftLying());
           leftLying = m;
@@ -1553,6 +1570,13 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
       CBEndFollower(p);
       CBCrewFriendlyToV(game, p);
       CBOrderFlee(game, p, true);   // walking home, as the comment above says (2.5.1); a sprint read as running away
+    } else {
+      // Down on the follower role: off it too (2.6.3), or the game stands them back up as a companion who follows V, in
+      // sight, so the sweep that takes them home never can and the crew reads "on their way home" for good.
+      if CBNpcSafe(sys, p) && !p.IsDead() {
+        CBEndFollower(p);
+        CBCrewFriendlyToV(game, p);
+      }
     }
     i += 1;
   }
@@ -1596,6 +1620,71 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
   }
   if IsDefined(leftLying) {
     CBCrewText(sys, game, leftLying, CBLineOf(["You left me lying there. I'll remember that.", "Woke up alone on the pavement. Thanks for nothing."]));
+  }
+}
+
+// Somebody V's crew was set against (CBCrewHostilityTick), so the pair can be stood down again when they stop being V's
+// enemy: their hands up, talked round, paid.
+@addField(ScriptedPuppet)
+public let cbCrewPaired: Bool;
+
+// V's crew against whoever is fighting V (2.6.3). The game's follower role puts them in V's attitude group and squad,
+// and the people who turn on V are mostly hostile to V alone: one agent towards another, the way the game's gangs turn on
+// a trespasser and the way Cyberbane turns its own. To the follower they were nobody, so "he's just walking around",
+// until a Barghest shot him while V's back was turned. Every other tick while they are out, anybody standing near V who
+// is hostile to V and in a fight is made hostile to each of them, and they to it, pair by pair, the way
+// CBMakeHostileToCompanions sets Cyberbane's own against V's companions. Nobody on V's side is touched, and a pair whose
+// reason has gone (V's enemy no longer hostile to V) goes back to neutral both ways.
+func CBCrewHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, player: ref<PlayerPuppet>) -> Void {
+  let reg = sys.GetRegistry();
+  let pagent = player.GetAttitudeAgent();
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(reg) || !IsDefined(pagent) || !IsDefined(des) {
+    return;
+  }
+  let crew: array<ref<ScriptedPuppet>>;
+  let i = 0;
+  while i < book.OutCount() {
+    let c = GameInstance.FindEntityByID(game, book.outBody[i]) as ScriptedPuppet;
+    if CBNpcSafe(sys, c) && CBStillStanding(c) && IsDefined(c.GetAttitudeAgent()) {
+      ArrayPush(crew, c);
+    }
+    i += 1;
+  }
+  if ArraySize(crew) == 0 {
+    return;
+  }
+  let ppos = player.GetWorldPosition();
+  let vFighting = player.IsInCombat();
+  for p in reg.GetAll() {
+    if CBNpcSafe(sys, p) && !p.IsDead() && CBStillStanding(p)
+       && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.MyCrewFightRange()
+       && !ScriptedPuppet.IsPlayerCompanion(p) && !des.IsTagged(p.GetEntityID(), n"CB_Own") {
+      let agent = p.GetAttitudeAgent();
+      if IsDefined(agent) {
+        let enemy = Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) && (vFighting || CBNpcInCombat(p));
+        if enemy || p.cbCrewPaired {
+          for c in crew {
+            let cagent = c.GetAttitudeAgent();
+            if IsDefined(cagent) && NotEquals(c.GetEntityID(), p.GetEntityID()) {
+              if enemy {
+                if NotEquals(agent.GetAttitudeTowards(cagent), EAIAttitude.AIA_Hostile)
+                   || NotEquals(cagent.GetAttitudeTowards(agent), EAIAttitude.AIA_Hostile) {
+                  CBTrace("attitude: V's crew and somebody fighting V");
+                  agent.SetAttitudeTowards(cagent, EAIAttitude.AIA_Hostile);
+                  cagent.SetAttitudeTowards(agent, EAIAttitude.AIA_Hostile);
+                }
+              } else {
+                CBTrace("attitude: V's crew and somebody who stopped fighting V");
+                agent.SetAttitudeTowards(cagent, EAIAttitude.AIA_Neutral);
+                cagent.SetAttitudeTowards(agent, EAIAttitude.AIA_Neutral);
+              }
+            }
+          }
+          p.cbCrewPaired = enemy;
+        }
+      }
+    }
   }
 }
 
