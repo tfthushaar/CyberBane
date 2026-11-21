@@ -211,7 +211,8 @@ func CBWatchMyBack(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWar
   let k = 0;
   while k < count && k < ArraySize(records) {
     let body: EntityID;
-    if CBSpawnGroup(game, records[k], n"", 1, n"CB_Ally", CBConfig.CrewSpawnDistance(), body, n"CB_Follower") > 0 {
+    let ring = 0;
+    if CBSpawnOnSide(game, records[k], n"", n"CB_Ally", CBConfig.CrewSpawnDistance(), body, ring, n"CB_Follower") > 0 {
       ArrayPush(war.crewIds, body);
       sent += 1;
     }

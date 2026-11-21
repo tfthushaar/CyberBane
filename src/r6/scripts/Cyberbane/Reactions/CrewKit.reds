@@ -1131,7 +1131,8 @@ func CBCrewSparStart(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCr
     record = CBGangTemplate(sys, m.faction);
   }
   let body: EntityID;
-  if !TDBID.IsValid(record) || CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.CrewSparSpawnDistance(), body, n"CB_Spar") == 0 {
+  let ring = 0;
+  if CBSpawnOnSide(game, record, m.look, n"CB_Own", CBConfig.CrewSparSpawnDistance(), body, ring, n"CB_Spar") == 0 {
     CBMenuNote(game, "no spar: they could not get to you.", 4.0);
     return;
   }

@@ -1274,11 +1274,12 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
         record = CBGangTemplate(sys, m.faction);
       }
       let body: EntityID;
-      // Out of V's sight first, as everybody; failing that, anywhere V might see them walk up (2.6.3): "nowhere to put them
-      // near V out of sight" refused the crew with nobody else of ours in the world.
-      let placedOut = TDBID.IsValid(record) && CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.MyCrewSpawnDistance(), body) > 0;
-      if !placedOut && TDBID.IsValid(record) {
-        placedOut = CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.MyCrewSpawnDistance(), body, n"", true) > 0;
+      // From further out when nowhere close will take them (2.6.4, CBSpawnOnSide), the way every hunter comes: "nowhere to
+      // put them near V out of sight" refused the crew in the middle of a fight that an apex squad had walked into.
+      let ring = 0;
+      let placedOut = CBSpawnOnSide(game, record, m.look, n"CB_Own", CBConfig.MyCrewSpawnDistance(), body, ring) > 0;
+      if placedOut && ring > 1 {
+        CBLog.Info(n"Crew", s"One of V's crew placed from \(CBSpawnRingWords(ring)).");
       }
       if placedOut {
         // Their wait between calls starts when they are seen standing (CBMyCrewTick), not here: the engine can take a
@@ -1295,7 +1296,7 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
   }
   if sent == 0 {
     if sold == 0 {
-      CBLog.Info(n"Crew", s"V's crew was not called: nowhere to put them near V out of sight (\(CBSpawnRoomNote(game))).");
+      CBLog.Info(n"Crew", s"V's crew was not called: nowhere to put them on any ring round V, out to \(RoundF(CBConfig.MyCrewFarSpawnDistance())) m (\(CBSpawnRoomNote(game))).");
     }
     return sold > 0 ? "" : "Nobody could get through to you. Try again somewhere more open.";
   }

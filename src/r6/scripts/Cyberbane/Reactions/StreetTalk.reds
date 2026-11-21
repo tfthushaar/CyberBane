@@ -868,19 +868,22 @@ public class CBStreetTalk {
       notNow = "";
     }
     if StrLen(notNow) > 0 {
-      this.HideNote(game);   // whatever it said is not the reason now (2.6.3)
       this.StandDown(game, notNow);
       // Said in the log when V is facing somebody; not looked for at all while talk is off, the world
       // is loading or V is driving.
+      let facing: ref<ScriptedPuppet>;
       if CBStreetTalkOn() && CBWorldStable(game) && !VehicleComponent.IsMountedToVehicle(game, player.GetEntityID()) {
-        // Nor in a fight, where nobody expects a prompt and the look-up (the targeting system, then the
-        // registry) would run five times a second for a line nobody needs.
-        let facing: ref<ScriptedPuppet>;
-        if !player.IsInCombat() {
+        // In a fight only with empty hands and no aim (2.6.4). The game counts V in combat for as long as anybody is
+        // after V, a hunt searching the next street included, and V walking up to somebody with nothing drawn got no
+        // prompt, no greyed reason and no line in the log: "could not talk to this NPC". With a weapon out or aimed,
+        // nobody expects a prompt, and the look-up is not made.
+        if !player.IsInCombat() || (!IsDefined(GameObject.GetActiveWeapon(player)) && !CBPlayerAiming(game)) {
           facing = this.LookedAt(game, player);
         }
         this.NoteWhyNot(game, dt, facing, notNow);
       }
+      // The greyed reason when it is one V can act on or wait out, else nothing (whatever it said is not the reason now).
+      this.ShowNote(game, player, facing, notNow, this.m_whyFor >= CBConfig.TalkDwell() * 2.0);
       return;
     }
     // Once a session, on its first settled tick: the hands lock is a state-machine setting, and one
@@ -1944,7 +1947,8 @@ public class CBStreetTalk {
   // aiming or fighting, and only after V has looked at them a moment, so walking a street armed puts up nothing.
   private func ShowNote(game: GameInstance, player: ref<PlayerPuppet>, npc: ref<ScriptedPuppet>, why: String, dwelled: Bool) -> Void {
     let words = CBTalkNoteWords(why);
-    if !IsDefined(npc) || !IsDefined(player) || StrLen(words) == 0 || !dwelled || player.IsInCombat() || CBPlayerAiming(game)
+    if !IsDefined(npc) || !IsDefined(player) || StrLen(words) == 0 || !dwelled || CBPlayerAiming(game)
+       || (player.IsInCombat() && !Equals(why, CBTalkWhyVInCombat()))
        || Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > CBConfig.TalkRange()
        || (!this.m_noteUp && CBNativePromptKind(game) != CBPromptNone()) {
       this.HideNote(game);
@@ -2886,6 +2890,7 @@ public func CBTalkNoteWords(why: String) -> String {
   if Equals(why, "a weapon is in V's hands") { return "Holster to talk"; }
   if Equals(why, "V spoke to them a moment ago") { return "Just spoke to them"; }
   if Equals(why, "they are in a fight") { return "Busy fighting"; }
+  if Equals(why, CBTalkWhyVInCombat()) { return "Not while you're in a fight"; }
   if Equals(why, "they are running from V") { return "Running from you"; }
   if Equals(why, CBTalkWhyJob()) || Equals(why, CBTalkWhyTracked()) { return "Part of a job"; }
   if Equals(why, CBTalkWhyTurf()) { return "On their ground: step out first"; }

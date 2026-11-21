@@ -773,6 +773,10 @@ public abstract class CBConfig {
   // How far from V the crew takes on whoever is fighting V (2.6.3, CBCrewHostilityTick).
   public static func MyCrewFightRange() -> Float = 45.0
   public static func MyCrewSpawnDistance() -> Float = 24.0
+  // Further out when nowhere that close will take them (2.6.4, CBSpawnOnSide): the middle ring, then the distance every
+  // hunter is sent from (HitSquadMinSpawnDistance), where there is always somewhere out of V's sight.
+  public static func MyCrewMidSpawnDistance() -> Float = 50.0
+  public static func MyCrewFarSpawnDistance() -> Float = 85.0
   public static func MyCrewQuietTicks() -> Int32 = 60
   public static func MyCrewDriveTicks() -> Int32 = 4
   public static func MyCrewLeaveDistance() -> Float = 120.0

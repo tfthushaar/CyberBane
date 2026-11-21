@@ -526,6 +526,52 @@ func CBSpawnBearing(attempt: Int32) -> Float {
   return -2.36;
 }
 
+// One person on V's side, brought to V (2.6.4): V's crew answering a call, one called out to spar, a gang's people lent to
+// V. They were placed only within 14 to 38 metres of V, and where that ring had nowhere out of V's sight that could also be
+// walked to V, nobody came: "if the apex squad could come to me, why can't my crew?" Everybody sent against V starts 80
+// metres out or more (HitSquadMinSpawnDistance, RivalSpawnDistance, ApexSpawnDistance), where there always is such a place,
+// and walks or drives in. Now the same rings in order: close and out of sight, the middle ring out of sight, close where V
+// may see them walk up, and the hunters' distance. Followers run to V, and the crew is not counted lost inside
+// MyCrewLeaveDistance (120 m). Returns how many were placed (0 or 1) and which ring did it, for the log.
+public func CBSpawnOnSide(game: GameInstance, record: TweakDBID, appearance: CName, squadTag: CName, nearDist: Float,
+                          out body: EntityID, out ring: Int32, opt extraTag: CName) -> Int32 {
+  ring = 0;
+  if !TDBID.IsValid(record) {
+    return 0;
+  }
+  if CBSpawnGroup(game, record, appearance, 1, squadTag, nearDist, body, extraTag) > 0 {
+    ring = 1;
+    return 1;
+  }
+  // Nothing more to try when the reason is not the place: no room, the world busy, the story.
+  if CBSpawnRoom(game) <= 0 || !CBWorldStable(game) || CBStoryHoldNow(game) {
+    return 0;
+  }
+  if CBSpawnGroup(game, record, appearance, 1, squadTag, MaxF(nearDist, CBConfig.MyCrewMidSpawnDistance()), body, extraTag) > 0 {
+    ring = 2;
+    return 1;
+  }
+  if CBSpawnGroup(game, record, appearance, 1, squadTag, nearDist, body, extraTag, true) > 0 {
+    ring = 3;
+    return 1;
+  }
+  if CBSpawnGroup(game, record, appearance, 1, squadTag, MaxF(nearDist, CBConfig.MyCrewFarSpawnDistance()), body, extraTag) > 0 {
+    ring = 4;
+    return 1;
+  }
+  return 0;
+}
+
+public func CBSpawnRingWords(ring: Int32) -> String {
+  switch ring {
+    case 1: return "close by, out of sight";
+    case 2: return "the middle ring, out of sight";
+    case 3: return "close by, where V may see them walk up";
+    case 4: return "the hunters' distance, walking in";
+    default: return "nowhere";
+  }
+}
+
 // `inSightOk` (2.6.3): V's own crew only, on a second try when nowhere out of V's sight would take them. The engine still
 // waits for V to look away before they appear (spawnInView), so it is the walk up that V may see, never the appearing.
 public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, wanted: Int32, squadTag: CName, baseDist: Float, out lastSpawned: EntityID, opt extraTag: CName, opt inSightOk: Bool) -> Int32 {

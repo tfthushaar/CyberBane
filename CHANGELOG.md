@@ -22,6 +22,16 @@ the next unless a version says otherwise.
   in the middle of fights. Now only real story moments send anybody away.
 - When your crew does leave, they tell you why: the story, a scene, a safe place, or a job.
 
+**Fixed: your crew not coming in tight places**
+- In a crowded, closed-in spot your crew answered "Nobody could get through to you" even while an apex squad walked
+  straight in. Your crew only looked for a place to start within a few dozen metres of you, out of your sight; the
+  people hunting you start much further out. Now your crew does too when nothing closer works, and runs the rest of
+  the way. The same goes for a crew member you call out to spar and for people a friendly gang lends you.
+
+**Fixed: talk going quiet while you're being hunted**
+- While anyone is still after you, the game counts you as being in a fight, even with your hands empty and nobody in
+  sight, and walking up to somebody showed nothing at all. Now the greyed prompt says **Not while you're in a fight**.
+
 **Fixed: a first Rival nobody could kill**
 - Since 2.6.1 every Rival and apex squad carried part of Adam Smasher's toughness, whatever your level. A level 2 V
   could empty every magazine into a brand-new Rival and barely mark them. That toughness now grows with your level:
