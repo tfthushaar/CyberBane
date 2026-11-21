@@ -533,10 +533,12 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   // apex squad, escorts and a Rival is a lot of fully simulated NPCs for the game to stream in
   // at one spot, and nothing about the fight needs every one of them at the same moment.
   // Counting anybody still spawning as well, so groups asked for in the same tick share it.
-  let room = CBSpawnRoom(game);
+  // Everybody but V's own crew leaves the crew's places free while they could be called (2.6.3, CBCrewRoomKept): the
+  // crew used to need room the fight had already taken, so it could never come to the fights it was for.
+  let room = CBSpawnRoom(game) - (Equals(squadTag, n"CB_Own") ? 0 : CBCrewRoomKept(game));
   let count = wanted < room ? wanted : room;
   if room <= 0 {
-    CBLog.Info(n"Spawn", s"Already \(CBConfig.MaxLiveSpawns()) of ours in the world; nobody else is sent until some are gone.");
+    CBLog.Info(n"Spawn", s"No room: \(CBConfig.MaxLiveSpawns() - CBSpawnRoom(game)) of ours in the world, \(Equals(squadTag, n"CB_Own") ? 0 : CBCrewRoomKept(game)) places kept for V's crew; nobody else is sent until some are gone.");
     return 0;
   }
   if !TDBID.IsValid(record) || count <= 0 || !CBRecordIsPerson(record) {

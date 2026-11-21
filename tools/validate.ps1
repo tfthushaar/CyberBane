@@ -33,6 +33,7 @@ foreach ($p in @($scc, $vanilla, $cwScripts, $msDir)) {
 }
 
 & (Join-Path $PSScriptRoot 'check_removed.ps1')
+& (Join-Path $PSScriptRoot 'check_abilities.ps1')
 
 $sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ("cyberbane-validate-" + [Guid]::NewGuid().ToString('N'))
 $scripts = Join-Path $sandbox 'scripts'

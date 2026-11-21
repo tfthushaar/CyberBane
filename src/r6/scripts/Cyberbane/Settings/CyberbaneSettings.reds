@@ -43,6 +43,14 @@ enum ECBMarkerScope {
   Everyone = 2,
 }
 
+// Where V's crew comes when called (2.6.3, Reactions/Crew.reds CBCrewHeldWhy). They were held by every arrival rule, so
+// never at a gig or in a gang's compound. The story, a scene and a safe place keep them out whatever this says.
+enum ECBCrewOnJobs {
+  Never = 0,
+  GigsAndSideJobs = 1,
+  EverywhereButStory = 2,
+}
+
 // Where Cyberbane's messages go (spec 12.2).
 //
 // Phone is the default: each sender is a contact in V's own phone, a new message arrives as the
@@ -487,6 +495,24 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewComeOnOwn-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
   public let crewComeOnOwn: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewOnJobs")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewOnJobs-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  @runtimeProperty("ModSettings.displayValues.GigsAndSideJobs", "Gigs and side jobs")
+  @runtimeProperty("ModSettings.displayValues.EverywhereButStory", "Everywhere but the story")
+  public let crewOnJobs: ECBCrewOnJobs = ECBCrewOnJobs.GigsAndSideJobs;   // 2.6.3
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewCallKey")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewCallKey-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let crewCallKey: EInputKey = EInputKey.IK_None;   // 2.6.3, unset: the player picks one
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -1278,6 +1304,18 @@ public class CyberbaneSettings {
 
 
   // ---- Messages and HUD --------------------------------------------------------------------------
+  // First on the page (2.6.3): "I was hoping there was a setting for it but I didn't see one." Same field, so the value a
+  // player set is kept; it now reaches conversations and the street's intel too (CBTalkReadSeconds).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "15")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageHold")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageHold-Desc")
+  @runtimeProperty("ModSettings.min", "100")
+  @runtimeProperty("ModSettings.max", "400")
+  @runtimeProperty("ModSettings.step", "25")
+  public let messageHold: Int32 = 175;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1308,16 +1346,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.max", "300")
   @runtimeProperty("ModSettings.step", "5")
   public let inboxGapSeconds: Int32 = 90;
-
-  @runtimeProperty("ModSettings.mod", "Cyberbane")
-  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
-  @runtimeProperty("ModSettings.category.order", "15")
-  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageHold")
-  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageHold-Desc")
-  @runtimeProperty("ModSettings.min", "100")
-  @runtimeProperty("ModSettings.max", "400")
-  @runtimeProperty("ModSettings.step", "25")
-  public let messageHold: Int32 = 175;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")

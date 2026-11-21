@@ -352,6 +352,10 @@ public class CBStreetLife {
     else { if CBPlayerIndoors(game) { bagWhy = "V is indoors"; }
     else { if CBHuntersOut(sys, game) { bagWhy = "somebody is out hunting V"; }
     else { if CBHuntPending(sys) { bagWhy = "somebody is on their way for V"; } } } } } }
+    // Nor before V's district is known (2.6.3): the roll found nobody holding "None" and spent its clock.
+    if StrLen(bagWhy) == 0 && Equals(sys.GetCurrentDistrict(), n"") {
+      bagWhy = "V's district is not known yet";
+    }
     if StrLen(bagWhy) > 0 {
       CBStreetWhyNot(game, "bagman", bagWhy);
       return;

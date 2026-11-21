@@ -89,6 +89,13 @@ public class CBThreatBar {
     // rows, or a shrunken stack would leave gaps where the spacing used to be.
     let scale = CBHudScale(this.m_game);
     stride *= scale;
+    // The last session's, taken up again (2.6.3): each load built a new line and set of bars beside the hidden ones, a
+    // few more widgets on the HUD layer every reload for the rest of the game (crash rule 11: nothing builds up).
+    if this.Adopt(win, scale, stride, width) {
+      CBLog.Info(n"UI", "Threat bars taken up again from the HUD layer.");
+      this.m_built = true;
+      return;
+    }
 
     let status = new inkText();
     status.SetName(n"cyberbaneHuntStatus");
@@ -155,6 +162,67 @@ public class CBThreatBar {
       i += 1;
     }
     this.m_built = true;
+  }
+
+  // The line and bars of an earlier session, still on the HUD layer, made ours again: the shape Build makes (a canvas per
+  // row holding its text, track and fill, in that order), laid out again for this screen. False, and nothing kept,
+  // unless the whole set is there.
+  private func Adopt(win: wref<inkCompoundWidget>, scale: Float, stride: Float, width: Float) -> Bool {
+    let status: ref<inkText>;
+    let roots: array<ref<inkCanvas>>;
+    let count = win.GetNumChildren();
+    let i = 0;
+    while i < count {
+      let child = win.GetWidgetByIndex(i);
+      if IsDefined(child) {
+        if !IsDefined(status) && Equals(child.GetName(), n"cyberbaneHuntStatus") {
+          status = child as inkText;
+        }
+        if ArraySize(roots) < CBConfig.ThreatBarRows() && Equals(child.GetName(), n"cyberbaneThreatRow") {
+          let canvas = child as inkCanvas;
+          if IsDefined(canvas) && canvas.GetNumChildren() >= 3 {
+            ArrayPush(roots, canvas);
+          }
+        }
+      }
+      i += 1;
+    }
+    if !IsDefined(status) || ArraySize(roots) < CBConfig.ThreatBarRows() {
+      return false;
+    }
+    let rows: array<ref<CBThreatRow>>;
+    let r = 0;
+    while r < ArraySize(roots) {
+      let root = roots[r];
+      let text = root.GetWidgetByIndex(0) as inkText;
+      let fill = root.GetWidgetByIndex(2) as inkRectangle;
+      if !IsDefined(text) || !IsDefined(fill) {
+        return false;
+      }
+      let row = new CBThreatRow();
+      row.root = root;
+      row.fill = fill;
+      row.text = text;
+      ArrayPush(rows, row);
+      r += 1;
+    }
+    status.SetMargin(new inkMargin(0.0, MaxF(CBConfig.ThreatBarTopMargin() - 34.0, 8.0) * scale, 0.0, 0.0));
+    status.SetScale(new Vector2(scale, scale));
+    status.SetText("");
+    status.SetVisible(false);
+    this.m_status = status;
+    r = 0;
+    while r < ArraySize(rows) {
+      let root = rows[r].root;
+      root.SetMargin(new inkMargin(0.0, CBConfig.ThreatBarTopMargin() * scale + Cast<Float>(r) * stride, 0.0, 0.0));
+      root.SetSize(new Vector2(width, stride));
+      root.SetScale(new Vector2(scale, scale));
+      root.SetVisible(false);
+      rows[r].text.SetText("");
+      ArrayPush(this.m_rows, rows[r]);
+      r += 1;
+    }
+    return true;
   }
 
   // Put somebody on the stack, or update the line they already have.

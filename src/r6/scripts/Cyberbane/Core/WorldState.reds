@@ -86,6 +86,47 @@ public func CBWorldStable(game: GameInstance) -> Bool {
   return true;
 }
 
+// Which of CBWorldStable's tests failed, in a few words, "" when none did (2.6.3). Every failure used to be logged and
+// told as "the world is loading, paused or in photo mode", including a grapple, a workspot, a scene and any open menu.
+// The same tests in the same order, reading the same things.
+public func CBWorldStableWhy(game: GameInstance) -> String {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return "The world is still loading.";
+  }
+  if CBVDown(game) {
+    return "You're down.";
+  }
+  let ts = GameInstance.GetTimeSystem(game);
+  if IsDefined(ts) && ts.IsPausedState() {
+    return "The game is paused.";
+  }
+  let pms = GameInstance.GetPhotoModeSystem(game);
+  if IsDefined(pms) && pms.IsPhotoModeActive() {
+    return "You're in photo mode.";
+  }
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  if !IsDefined(bbs) {
+    return "The world is still loading.";
+  }
+  let ui = bbs.Get(GetAllBlackboardDefs().UI_System);
+  if IsDefined(ui) && ui.GetBool(GetAllBlackboardDefs().UI_System.IsInMenu) {
+    return "A menu is open.";
+  }
+  let ws = GameInstance.GetWorkspotSystem(game);
+  if IsDefined(ws) && ws.IsActorInWorkspot(player) {
+    return "You're busy with something (sitting, a grab, a machine).";
+  }
+  let psm = CBPlayerPSM(game);
+  if IsDefined(psm) {
+    let tier = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.SceneTier);
+    if tier != EnumInt(GameplayTier.Undefined) && tier != EnumInt(GameplayTier.Tier1_FullGameplay) {
+      return "You're in the middle of a scene.";
+    }
+  }
+  return "";
+}
+
 // Is the player standing in a zone the game itself treats as safe?
 //
 // The engine tags apartments, clinics, bars, memorials and the like as safe areas, and

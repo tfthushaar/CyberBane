@@ -92,6 +92,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MyCrew-Desc", "People can end up working for you: a Rival you spared before and beat down again, a ganger you frightened badly enough, a solo a broker offers, or one lent by a Friendly or Allied gang. Call them from the phone or the Hub when somebody comes for you. Off, and nobody offers, nobody joins, and nobody comes.");
     this.Text("Cyberbane-Settings-CrewComeOnOwn", "Come on their own");
     this.Text("Cyberbane-Settings-CrewComeOnOwn-Desc", "The most loyal of your crew turn up unasked when an ambush springs on you. Off, and they only come when you call.");
+    this.Text("Cyberbane-Settings-CrewOnJobs", "Your crew on jobs");
+    this.Text("Cyberbane-Settings-CrewOnJobs-Desc", "Where your crew comes when you call. Gigs and side jobs: everywhere except the main story's own missions. Never: not near any job on the map. Everywhere but the story: any job, but never into the story itself. A cutscene or a safe place like your apartment always keeps them out.");
+    this.Text("Cyberbane-Settings-CrewCallKey", "Call your crew (key)");
+    this.Text("Cyberbane-Settings-CrewCallKey-Desc", "A key that calls your crew, or sends them home when they are with you. Not set at first: pick a key nothing else uses. It only works out in the game, never in a menu. The phone (My crew, Need you. Now.) and the Hub's Crew page do the same.");
     this.Text("Cyberbane-Settings-CrewBetrayal", "Betrayal");
     this.Text("Cyberbane-Settings-CrewBetrayal-Desc", "Somebody whose loyalty you let run low may sell you to the people hunting you, or come when called and turn on you in the fight, and live on as a Rival. The crew page and their texts always warn you first. Off, and nobody ever betrays you.");
     this.Text("Cyberbane-Settings-CrewFrightJoin", "Frightened into joining");
@@ -163,7 +167,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-WhisperCooldown-Desc", "The gap between overheard lines.");
     this.Text("Cyberbane-Settings-CarsOnFoot-Desc", "Lets gangs, Rivals and apex squads drive to you while you are on foot, pull up and get out. Off, they only drive while you are driving and otherwise walk in out of sight. Turning it off takes effect at once.");
     this.Text("Cyberbane-Settings-Toasts-Desc", "Whether Cyberbane says anything on screen at all: phone, cards, notices and overheard lines. Off changes nothing about the way the mod plays. The answer to a button you press on the Hub or here still shows. Two things have settings of their own: the line at the top of the screen (Hunt line on the HUD, under General) and the bars under it (Rival and apex bars, under Messages and HUD).");
-    this.Text("Cyberbane-Settings-MessageHold-Desc", "How long on-screen messages stay up, as a percentage. Never less than five seconds.");
+    this.Text("Cyberbane-Settings-MessageHold-Desc", "How long Cyberbane's words stay on screen, as a percentage: messages, the phone's pop-ups, what you overhear, and every line of a conversation, including what people tell you. Longer lines stay longer on their own; this stretches them all. A message waits for the one before it to finish, so none is cut short.");
     this.Text("Cyberbane-Settings-RivalsPerDay-Desc", "How many Rivals can catch up with you in one in-game day, counted separately from crews and apex squads. 0 stops them coming.");
     this.Text("Cyberbane-Settings-HitSquadsPerDay-Desc", "How many gang crews can be sent after you in one in-game day. 0 stops them coming.");
     this.Text("Cyberbane-Settings-ApexPerDay-Desc", "How many apex squads can be sent after you in one in-game day. 0 stops them coming.");
@@ -398,7 +402,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalsPerDay", "Rivals per day");
     this.Text("Cyberbane-Settings-HitSquadsPerDay", "Hit squads per day");
     this.Text("Cyberbane-Settings-ApexPerDay", "Apex squads per day");
-    this.Text("Cyberbane-Settings-MessageHold", "Message hold");
+    this.Text("Cyberbane-Settings-MessageHold", "How long words stay on screen");
     this.Text("Cyberbane-Settings-WordTravel", "Word travels (in-game minutes)");
     this.Text("Cyberbane-Settings-WordTravel-Desc", "How long news of what you did (a body, a dead Rival, a payout, a crew changing hands) takes to get round where it happened. From further away it takes longer, a district at a time, and nothing reaches you in the middle of a fight. The same story is only told once while it gets around. 0 sends it as soon as the fight is over.");
     this.Text("Cyberbane-Settings-InboxGap", "Gap between messages (seconds)");

@@ -565,6 +565,11 @@ public class CBPhone {
       // At most two districts' more (CBConfig.WordMaxHops): across the city it takes longer, never so long the story
       // stops mattering.
       let hops = i < ArraySize(this.m_hsFrom) ? Min(CBDistrictHops(game, this.m_hsFrom[i], here), CBConfig.WordMaxHops()) : 0;
+      // Either end unknown (V's district right after a load, or news from nowhere on the map) is one district's travel,
+      // never none (2.6.3): CBDistrictHops reads an unknown district as the same one.
+      if i < ArraySize(this.m_hsFrom) && (CBDistrictIndex(this.m_hsFrom[i]) < 0 || CBDistrictIndex(here) < 0) {
+        hops = 1;
+      }
       let span = i < ArraySize(this.m_hsSpan) ? this.m_hsSpan[i] : 0.0;
       let due = this.m_hsDue[i] + span * Cast<Float>(hops);
       if due <= now && (pick < 0 || due < pickDue) {
@@ -1127,7 +1132,7 @@ public class CBPhone {
     let ourTalk = IsDefined(talk) && talk.Busy();
     if this.m_subDirty && !gameTalk {
       this.m_subDirty = false;
-      this.m_subLeft = CBOverheardSeconds();
+      this.m_subLeft = MaxF(CBTalkReadSeconds(this.m_subNewLine, CBConfig.OverheardSeconds()), CBConfig.OverheardFloor());
       this.m_subShown = 0.0;
       this.ShowOverheardLine(game);
       let tsSub = GameInstance.GetTimeSystem(game);
@@ -1441,6 +1446,11 @@ public func CBShowGameSubtitle(game: GameInstance, slot: Int32, speaker: String,
   // that is comes down (see CBSubtitleLineId).
   let id = slot;
   let rt = CyberbaneRuntime.Get();
+  // The answer goes up and V's own line comes down (2.6.3): with lines held for as long as they take to read, the two
+  // would otherwise share the space.
+  if slot == 3 {
+    CBHideGameSubtitle(game, 2);
+  }
   if (slot == 2 || slot == 3) && IsDefined(rt) {
     let up = rt.SubtitleUp(slot);
     id = up == slot ? slot + 2 : slot;
@@ -1489,6 +1499,15 @@ func CBHideSubtitleId(game: GameInstance, slot: Int32) -> Void {
   let ids: array<CRUID>;
   ArrayPush(ids, CBSubtitleLineId(slot));
   bb.SetVariant(GetAllBlackboardDefs().UIGameData.HideDialogLine, ToVariant(ids), true);
+}
+
+// How long a spoken line stays up (2.6.3): long enough to read it, times How long words stay on screen. The old fixed
+// times are the floor (2.4 s for V's line, 4 for an answer), and a long answer gets about a second for every sixteen
+// letters. Conversations and the street's intel held their lines for the fixed time whatever was in them, and ignored the
+// setting altogether: "I couldn't even read the info I got out of them."
+public func CBTalkReadSeconds(text: String, base: Float) -> Float {
+  let read = CBConfig.ReadSecondsBase() + Cast<Float>(StrLen(text)) * CBConfig.ReadSecondsPerChar();
+  return MaxF(base, read) * CBMessageHold();
 }
 
 // How long an overheard line stays. Shorter than a card: it is one sentence somebody said.
@@ -1638,7 +1657,7 @@ public func CBSystemNote(game: GameInstance, body: String, duration: Float) -> V
 // forgotten, a lead that could not be bought. Shown whatever the silence switches say, because it is the only sign
 // the button did anything (2.5.1, split from CBSystemNote).
 public func CBMenuNote(game: GameInstance, body: String, duration: Float) -> Void {
-  CBShowMessage(game, "Cyberbane: " + body, duration);
+  CBShowMessage(game, "Cyberbane: " + body, duration, true);   // first in line, never dropped (2.6.3)
 }
 
 // ---- Word that has to get round first --------------------------------------

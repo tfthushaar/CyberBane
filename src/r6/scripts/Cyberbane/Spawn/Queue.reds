@@ -1273,7 +1273,9 @@ public func CBArrivalTicks(sys: ref<CyberbaneSystem>, game: GameInstance, factio
 // A Rival comes from their own district, where they keep their place.
 public func CBRivalArrivalTicks(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, base: Int32) -> Int32 {
   let hops = IsDefined(r) && IsDefined(sys) ? CBDistrictHops(game, r.origin, sys.GetCurrentDistrict()) : -1;
-  if IsDefined(r) && CBDistrictIndex(r.origin) < 0 {
+  // Nowhere known at either end is no distance at all, never "here" (2.6.3): CBDistrictHops reads an unknown district as
+  // the same one, so a Rival sent while V's district was not yet known after a load arrived at home-turf speed.
+  if !IsDefined(r) || !IsDefined(sys) || CBDistrictIndex(r.origin) < 0 || CBDistrictIndex(sys.GetCurrentDistrict()) < 0 {
     hops = -1;
   }
   return Max(1, RoundF(Cast<Float>(CBWarningTicks(base)) * CBArrivalDistanceMult(hops)));
@@ -1422,7 +1424,8 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
   // so the text could promise twenty and eighteen at most could ever turn up; this is the one
   // number both the text and the spawn use, so it is the number that arrives.
   size += sys.WornPerk().crewDelta;
-  let ceiling = CBConfig.MaxLiveSpawns() - (CBCrewApexOn() ? CBConfig.ApexStrikeTeamSize() : 0);
+  // And V's own crew's places, kept free while they could be called (2.6.3, CBCrewRoomKept).
+  let ceiling = CBConfig.MaxLiveSpawns() - (CBCrewApexOn() ? CBConfig.ApexStrikeTeamSize() : 0) - CBCrewRoomKept(GetGameInstance());
   return Min(size, Max(2, ceiling));
 }
 

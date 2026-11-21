@@ -469,7 +469,14 @@ public class CyberbaneSystem extends ScriptableSystem {
       return;   // not available yet - a later call will register
     }
     cbs.RegisterCallback(n"Entity/Attached", this, n"OnCBEntityAttached");
+    // The crew's key (2.6.3), Codeware's raw key event: every press passes through, so the handler is a settings read
+    // and a comparison, and it only ever asks (CBCrewKeyInput).
+    cbs.RegisterCallback(n"Input/Key", this, n"OnCBKeyInput");
     this.m_callbacksRegistered = true;
+  }
+
+  private cb func OnCBKeyInput(evt: ref<KeyInputEvent>) -> Void {
+    CBCrewKeyInput(this.GetGameInstance(), evt);
   }
 
   // Session start (spec §5.3): build runtime objects, register the entity callback
@@ -524,6 +531,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     let rtTwr = CyberbaneRuntime.Get();
     if IsDefined(rtTwr) {
       rtTwr.ClearTwrHostility();
+      rtTwr.ClearCards();   // cards waiting from the last session are about a world that is gone (2.6.3)
     }
 
     // Nothing asked for on a Hub in another session is carried into this one.
@@ -1170,13 +1178,22 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_tickCount % 10 == 0 && !heavyStreaming {
       CBRefreshLiveInputs(this, game);
       CBUpdateMenace(this, game);
+    }
+    // Where V is (2.6.3). This was read only when streaming was light, and a busy street keeps it heavy for minutes after
+    // a load, so the district stayed unknown ("None") while bagmen, sit-downs, front lines and recruitment rolled, found
+    // nobody holding "None" and spent their clocks: the log's line after every load. It is one read of a district the
+    // game already keeps, so while it is unknown it is asked every other tick whatever the streaming; and an interior or
+    // a corner with no district of its own no longer wipes the one V walked in from.
+    if (this.m_tickCount % 10 == 0 && !heavyStreaming) || (Equals(this.m_currentDistrict, n"") && this.m_tickCount % 2 == 1) {
       // Changing district is a thing that happens to the player - walking across a boundary,
       // stepping off a fast travel - so it is worth one message from whoever works the new
       // part of town if V's name got there first. Compared before the write, since the write
       // is what makes it the current one.
       let arrivedIn = CBCurrentDistrict(game);
       let movedOn = NotEquals(arrivedIn, n"") && NotEquals(arrivedIn, this.m_currentDistrict);
-      this.m_currentDistrict = arrivedIn;
+      if NotEquals(arrivedIn, n"") {
+        this.m_currentDistrict = arrivedIn;
+      }
       if movedOn {
         CBGrapevineOnArrival(this, game, arrivedIn, CBGameSeconds(game));
       }
@@ -1184,7 +1201,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       // there crosses into the next word. Noted here rather than where the line is drawn,
       // because the thing that draws it runs every tick and a render path must never write
       // state (UI/ThreatBar.reds).
-      let standing = CBDistrictRenownWord(this, arrivedIn);
+      let standing = CBDistrictRenownWord(this, this.m_currentDistrict);
       if movedOn || NotEquals(standing, this.m_districtWord) {
         this.m_districtWord = standing;
         this.m_districtNewsTick = this.m_tickCount;

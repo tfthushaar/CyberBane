@@ -283,6 +283,39 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_lastMessageAt = v;
   }
 
+  // The cards waiting behind the one on screen (2.6.3, UI/Notify.reds): their words, their asked-for time, when they were
+  // asked for (sim time), and the sim time the card up now ends. On the service, like the stamp above, so a load can leave
+  // them behind: CBShowMessage drops anything whose clock reads from another session.
+  public let cardText: array<String>;
+  public let cardSeconds: array<Float>;
+  public let cardAt: array<Float>;
+  public let cardUrgent: array<Bool>;   // a menu's answer: first in line, never dropped for room
+  public let cardUntil: Float;
+  public let cardPumpAt: Float;
+
+  public func CardCount() -> Int32 {
+    return Min(Min(ArraySize(this.cardText), ArraySize(this.cardSeconds)), Min(ArraySize(this.cardAt), ArraySize(this.cardUrgent)));
+  }
+
+  public func ClearCards() -> Void {
+    ArrayClear(this.cardText);
+    ArrayClear(this.cardSeconds);
+    ArrayClear(this.cardAt);
+    ArrayClear(this.cardUrgent);
+    this.cardUntil = 0.0;
+    this.cardPumpAt = 0.0;
+  }
+
+  public func DropCard(i: Int32) -> Void {
+    if i < 0 || i >= this.CardCount() {
+      return;
+    }
+    ArrayErase(this.cardText, i);
+    ArrayErase(this.cardSeconds, i);
+    ArrayErase(this.cardAt, i);
+    ArrayErase(this.cardUrgent, i);
+  }
+
   public func GetClockRatio() -> Float {
     return this.m_clockRatio;
   }

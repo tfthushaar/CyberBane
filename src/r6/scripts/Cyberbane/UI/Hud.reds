@@ -2124,10 +2124,17 @@ public class CBHud {
     if this.m_tab == CBHudCrewTab() {
       let crew = CBCrewBook.Get(game);
       if IsDefined(crew) {
-        if crew.reqCall {
-          crew.reqCall = false;
+        // Out with V: the button sends them home (2.6.3). Otherwise it asks for the call, which the first settled tick
+        // back in the game carries out; the menu leaves the world's readiness out of its question (fromMenu), since
+        // every menu makes the world read as not ready and the button could never be pressed.
+        if crew.OutCount() > 0 && !crew.leaving {
+          crew.reqHome = !crew.reqHome;
         } else {
-          crew.reqCall = StrLen(CBCrewCallBlocked(sys, game, false)) == 0;
+          if crew.reqCall {
+            crew.reqCall = false;
+          } else {
+            crew.reqCall = StrLen(CBCrewCallBlocked(sys, game, false, true)) == 0;
+          }
         }
       }
       this.Render(sys, game);
@@ -4650,13 +4657,22 @@ public class CBHud {
     // What can be done: call them, pay the cut, the picked one's orders or the solo hired, and the crew itself.
     let why = "";
     if book.Count() > 0 {
-      if book.reqCall {
-        this.SetAction("Calling them. Click to take it back", true);
+      if book.OutCount() > 0 && !book.leaving {
+        this.SetAction(book.reqHome ? "Sending them home. Click to take it back" : "Send them home", true);
       } else {
-        let blocked = CBCrewCallBlocked(sys, game, false);
-        this.SetAction("Need you. Now.", StrLen(blocked) == 0);
-        if StrLen(blocked) > 0 {
-          why = "Can't call them now: " + StrLower(StrLeft(blocked, 1)) + StrRight(blocked, StrLen(blocked) - 1) + "\n";
+        if book.reqCall {
+          this.SetAction("Calling them. Click to take it back", true);
+          why = "They'll answer once you're back in the game.\n";
+        } else {
+          let blocked = CBCrewCallBlocked(sys, game, false, true);
+          this.SetAction("Need you. Now.", StrLen(blocked) == 0);
+          if StrLen(blocked) > 0 {
+            why = "Can't call them now: " + StrLower(StrLeft(blocked, 1)) + StrRight(blocked, StrLen(blocked) - 1) + "\n";
+          } else {
+            if !CBCrewTrouble(sys, game) {
+              why = "Nothing on you right now: two will come and walk with you until you send them home.\n";
+            }
+          }
         }
       }
     }

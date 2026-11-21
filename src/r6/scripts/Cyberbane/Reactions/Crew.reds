@@ -127,6 +127,15 @@ public class CBCrewBook extends ScriptableSystem {
   public let outBody: array<EntityID>;
   public let outMember: array<Int32>;
   public let outDown: array<Bool>;
+  // Seen standing at least once this call, and the tick they were asked for (2.6.3): a member counts as having come,
+  // and their wait between calls starts, only once the game has put them in the world. A spawn the engine took and
+  // never placed used to spend the call, say "Lost you" and count a win.
+  public let outSeen: array<Bool>;
+  public let outTick: array<Int32>;
+  // Called with nothing to fight (2.6.3): they walk with V until sent home, a car, or a place that holds them, and a
+  // fight on the way does not send them home once it is over.
+  public let escort: Bool;
+  public let fought: Bool;
   public let leaving: Bool;
   public let quiet: Int32;
   public let driving: Int32;
@@ -146,6 +155,7 @@ public class CBCrewBook extends ScriptableSystem {
   // Asked for on the Hub, which is a paused menu: carried out on the first tick back in the game (CBCrewServiceHub),
   // the way every other Hub action is. Asked again before then, taken back.
   public let reqCall: Bool;
+  public let reqHome: Bool;   // sent home from the Hub, the phone or the key (2.6.3)
   public let reqPay: Bool;
   public let reqHire: Bool;
   public let reqLetGo: Int32;
@@ -167,6 +177,10 @@ public class CBCrewBook extends ScriptableSystem {
     ArrayClear(this.outBody);
     ArrayClear(this.outMember);
     ArrayClear(this.outDown);
+    ArrayClear(this.outSeen);
+    ArrayClear(this.outTick);
+    this.escort = false;
+    this.fought = false;
     this.leaving = false;
     this.quiet = 0;
     this.driving = 0;
@@ -184,6 +198,7 @@ public class CBCrewBook extends ScriptableSystem {
     this.offerHaggled = false;
     this.offerUntil = 0.0;
     this.reqCall = false;
+    this.reqHome = false;
     this.reqPay = false;
     this.reqHire = false;
     this.reqLetGo = 0;
@@ -384,14 +399,17 @@ public class CBCrewBook extends ScriptableSystem {
 
   // ---- Who is out now (session) ----
 
-  public func AddOut(body: EntityID, member: Int32) -> Void {
+  public func AddOut(body: EntityID, member: Int32, tick: Int32) -> Void {
     ArrayPush(this.outBody, body);
     ArrayPush(this.outMember, member);
     ArrayPush(this.outDown, false);
+    ArrayPush(this.outSeen, false);
+    ArrayPush(this.outTick, tick);
   }
 
   public func OutCount() -> Int32 {
-    return Min(Min(ArraySize(this.outBody), ArraySize(this.outMember)), ArraySize(this.outDown));
+    return Min(Min(Min(ArraySize(this.outBody), ArraySize(this.outMember)), Min(ArraySize(this.outDown), ArraySize(this.outSeen))),
+               ArraySize(this.outTick));
   }
 
   public func DropOut(i: Int32) -> Void {
@@ -401,6 +419,8 @@ public class CBCrewBook extends ScriptableSystem {
     ArrayErase(this.outBody, i);
     ArrayErase(this.outMember, i);
     ArrayErase(this.outDown, i);
+    ArrayErase(this.outSeen, i);
+    ArrayErase(this.outTick, i);
   }
 
   public func OutIndexOf(body: EntityID) -> Int32 {
@@ -632,6 +652,7 @@ public func CBCrewHurt(m: ref<CBCrewMember>, now: Float) -> Bool {
 
 public func CBCrewReady(book: ref<CBCrewBook>, m: ref<CBCrewMember>, now: Float) -> Bool {
   return IsDefined(m) && !CBCrewHurt(m, now) && !book.IsOut(m.id) && !CBCrewAway(GetGameInstance(), m.id, now)
+      && !CBCrewSparring(GetGameInstance(), m.id)
       && (m.calledAt <= 0.0 || now - m.calledAt >= CBConfig.MyCrewCallSeconds());
 }
 
@@ -1024,8 +1045,58 @@ public func CBCrewTrouble(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool
   return player.IsInCombat();
 }
 
+// The crew's key (2.6.3, Mod Settings > Your crew > Call your crew): the call, or home when they are out. It only
+// asks, as the Hub and the phone do, and the next settled tick carries it out and texts back why if it cannot
+// (CBCrewServiceHub). Never in a menu: the Hub's name box takes typing, and nothing here may act from a menu.
+public func CBCrewKeyInput(game: GameInstance, evt: ref<KeyInputEvent>) -> Void {
+  if !IsDefined(evt) || NotEquals(evt.GetAction(), EInputAction.IACT_Release) {
+    return;
+  }
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.HasSettings() || !rt.IsEnabled() || !CBMyCrewOn() {
+    return;
+  }
+  let key = rt.GetSettings().crewCallKey;
+  if Equals(key, EInputKey.IK_None) || NotEquals(evt.GetKey(), key) {
+    return;
+  }
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  let ui = IsDefined(bbs) ? bbs.Get(GetAllBlackboardDefs().UI_System) : null;
+  if !IsDefined(ui) || ui.GetBool(GetAllBlackboardDefs().UI_System.IsInMenu) {
+    return;
+  }
+  let book = CBCrewBook.Get(game);
+  if !IsDefined(book) || book.Count() == 0 {
+    return;
+  }
+  if book.OutCount() > 0 && !book.leaving {
+    book.reqHome = true;
+  } else {
+    book.reqCall = true;
+  }
+}
+
+// The places every other spawn of Cyberbane's leaves free for V's own crew (2.6.3): as many as come to a call, while
+// anybody is on the roster and nobody is out yet. The crew needed five of the shared eighteen free, and a big fight, the
+// one they were for, never left that many. Now the fight leaves them theirs.
+public func CBCrewRoomKept(game: GameInstance) -> Int32 {
+  if !CBMyCrewOn() {
+    return 0;
+  }
+  let book = CBCrewBook.Get(game);
+  if !IsDefined(book) || book.Count() == 0 || book.OutCount() > 0 {
+    return 0;
+  }
+  return Min(CBConfig.MyCrewSpawnReserve(), book.Count());
+}
+
 // Can the crew be called right now? "" when yes, otherwise why not, in V's words.
-public func CBCrewCallBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: Bool) -> String {
+//
+// `fromMenu`: asked by the Hub or the phone, which only record the call; the next settled tick back in the world carries
+// it out and asks again (2.6.3). The world's own readiness is left out of a menu's question, because every menu makes
+// CBWorldStable false (UI_System.IsInMenu): the Hub's "Need you. Now." could never be pressed, and an answer sent from
+// the full Messages menu was always refused with "They can't get to you here".
+public func CBCrewCallBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: Bool, opt fromMenu: Bool) -> String {
   let book = CBCrewBook.Get(game);
   let player = GetPlayer(game);
   if !CBMyCrewOn() || !IsDefined(book) || !IsDefined(player) {
@@ -1037,19 +1108,88 @@ public func CBCrewCallBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, una
   if book.OutCount() > 0 {
     return book.leaving ? "They're on their way home. Give them a minute." : "They're already with you.";
   }
-  if !unasked && !CBCrewTrouble(sys, game) {
-    return "Nothing to call them for.";
+  // A round with one of them is on (2.6.3): V is in a fight with their body, so a call went, and sent a second of the
+  // same person with two others to fight the first.
+  let kb = CBCrewKitBook.Get(game);
+  if IsDefined(kb) && kb.sparMember > 0 {
+    return "Finish the round first.";
   }
-  if CBArrivalsHeld(sys, game) || !CBWorldStable(game) || IsDefined(player.GetMountedVehicle()) {
-    return "They can't get to you here.";
+  if !fromMenu && !CBWorldStable(game) {
+    return CBWorldStableWhy(game);
   }
-  if CBSpawnRoom(game) - CBConfig.MyCrewSpawnReserve() <= 0 {
+  if IsDefined(player.GetMountedVehicle()) {
+    return "Not while you're driving. Get out and call.";
+  }
+  let held = CBCrewHeldWhy(sys, game);
+  if StrLen(held) > 0 {
+    return held;
+  }
+  // Only room for one is needed now (2.6.3): they needed five of the shared places, which a big fight never left free,
+  // and every other lane keeps room for them instead (CBCrewRoomKept, Spawn/Spawner.reds).
+  if CBSpawnRoom(game) <= 0 {
     return "Too many people around. They can't get close.";
   }
   if ArraySize(CBCrewReadyOrder(book, CBGameSeconds(game), 0)) == 0 {
-    return "Everybody's hurt or just got back.";
+    return "Everybody's hurt, busy or just got back.";
   }
   return "";
+}
+
+// Where V is, for the crew (2.6.3): "" when they can come here, otherwise why not. The story, a scene and a safe place
+// always keep them out; a job does by the setting (Your crew on jobs), and the game's hostile zones no longer do. They
+// used to be held by every arrival rule: within 80 m of any objective's pin (so never at a gig) and in any gang's
+// compound, the places V fights most, all under one "They can't get to you here".
+public func CBCrewHeldWhy(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
+  if !IsDefined(sys) {
+    return "Nobody's answering.";
+  }
+  if sys.GetStoryHold() != CBStoryNone() {
+    return "Not into the story. Call when it's done.";
+  }
+  if CBPlayerInScene(game) {
+    return "You're in the middle of something. Call after.";
+  }
+  if sys.IsInSanctuary() {
+    return "Somewhere safe. They'll wait for you outside.";
+  }
+  let jobs = CBCrewOnJobs();
+  if Equals(jobs, ECBCrewOnJobs.Never) && sys.IsOnJob() {
+    return "You're on a job. They stay out of those.";
+  }
+  if Equals(jobs, ECBCrewOnJobs.GigsAndSideJobs) && CBOnMainStoryJob(sys, game) {
+    return "That's no gig. They stay out of the big story.";
+  }
+  return "";
+}
+
+public func CBCrewOnJobs() -> ECBCrewOnJobs {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().crewOnJobs : ECBCrewOnJobs.GigsAndSideJobs;
+}
+
+// Close to the tracked objective of a main-story quest: the game's own quests, where people the story needs stand. A gig,
+// a side job, a cyberpsycho or a street story is not this. The objective's quest is found the way the game's own hub
+// menu finds it (hubMenuGameController.script): the objective, its phase, its quest.
+public func CBOnMainStoryJob(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  let player = GetPlayer(game);
+  if !IsDefined(sys) || !IsDefined(player) || !sys.NearTrackedPins(player.GetWorldPosition(), CBQuestAreaRadius()) {
+    return false;
+  }
+  let jm = GameInstance.GetJournalManager(game);
+  if !IsDefined(jm) {
+    return false;
+  }
+  let entry = jm.GetTrackedEntry();
+  let steps = 0;
+  while IsDefined(entry) && steps < 4 {
+    let quest = entry as JournalQuest;
+    if IsDefined(quest) {
+      return Equals(quest.GetType(), gameJournalQuestType.MainQuest);
+    }
+    entry = jm.GetParentEntry(entry);
+    steps += 1;
+  }
+  return false;
 }
 
 // Would this one sell V out, called now? Low loyalty, and lower still when the people after V are their old gang.
@@ -1080,7 +1220,10 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
   }
   let book = CBCrewBook.Get(game);
   let now = CBGameSeconds(game);
-  let want = Min(CBConfig.MyCrewOut(), CBSpawnRoom(game) - CBConfig.MyCrewSpawnReserve());
+  // Called with nothing to fight, they walk with V (2.6.3): two of them, until V sends them home. Up to then the call
+  // was only ever "Nothing to call them for" outside a fight.
+  let escort = !unasked && !CBCrewTrouble(sys, game);
+  let want = Min(escort ? CBConfig.MyCrewEscortOut() : CBConfig.MyCrewOut(), CBSpawnRoom(game));
   let order = CBCrewReadyOrder(book, now, unasked ? CBConfig.MyCrewOwnLoyalty() : 0);
   let sent = 0;
   let sold = 0;
@@ -1106,14 +1249,15 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
       }
       let body: EntityID;
       if TDBID.IsValid(record) && CBSpawnGroup(game, record, m.look, 1, n"CB_Own", CBConfig.MyCrewSpawnDistance(), body) > 0 {
-        book.AddOut(body, m.id);
-        m.calledAt = now;
+        // Their wait between calls starts when they are seen standing (CBMyCrewTick), not here: the engine can take a
+        // spawn and never place it.
+        book.AddOut(body, m.id, sys.GetTickCount());
         sent += 1;
         if turns {
           book.turnMember = m.id;
           book.turnTicks = 0;
         }
-        CBCrewText(sys, game, m, CBCrewOnTheWay(sys, game, m, unasked));
+        CBCrewText(sys, game, m, CBCrewOnTheWay(sys, game, m, unasked, escort));
       }
     }
   }
@@ -1121,20 +1265,26 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
     if sold == 0 {
       CBLog.Info(n"Crew", s"V's crew was not called: nowhere to put them near V out of sight (\(CBSpawnRoomNote(game))).");
     }
-    return sold > 0 ? "" : "Nobody could get to you.";
+    return sold > 0 ? "" : "Nobody could get through to you. Try again somewhere more open.";
   }
   book.leaving = false;
   book.quiet = 0;
   book.driving = 0;
+  book.escort = escort;
+  book.fought = !escort;
   CBFileLog(sys, n"CrewCalled", now, CBEventDistrict(sys, game), n"", Cast<Float>(sent));
-  CBLog.Info(n"Crew", s"V's crew is coming: \(sent).");
+  CBLog.Info(n"Crew", s"V's crew is coming: \(sent)" + (escort ? ", to walk with V." : "."));
   return "";
 }
 
-func CBCrewOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, unasked: Bool) -> String {
+func CBCrewOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, unasked: Bool, escort: Bool) -> String {
   let here = CBHere(sys);
   let hunters = sys.GetHuntFaction();
   let who = NotEquals(hunters, n"") ? CBFactionLabel(hunters) : "whoever it is";
+  if escort {
+    return CBLineOf([s"Coming to \(here). We'll walk with you till you say otherwise.", "On my way. Tell me when you want us gone.",
+                     "Quiet day? Fine by me. Coming to keep you company."]);
+  }
   if unasked {
     return CBLineOf([s"Heard \(who) were waiting for you. Already on my way.", s"Don't call, don't need to. Coming to \(here)."]);
   }
@@ -1160,6 +1310,14 @@ public func CBSetUpCrewMember(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     return;
   }
   let m = book.MemberOfBody(puppet.GetEntityID());
+  // A body that came too late, after its call let go of it (CBMyCrewTick, 2.6.3): nobody's, so it follows nobody. It
+  // walks off at peace with V, and the sweep takes it once V is away.
+  let desUp = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(m) && IsDefined(desUp) && desUp.IsTagged(puppet.GetEntityID(), n"CB_Orphan") {
+    CBCrewFriendlyToV(game, puppet);
+    CBOrderFlee(game, puppet, true);
+    return;
+  }
   CBDisarmGodMode(game, puppet);
   if IsDefined(m) {
     CBKitApexSeat(puppet, m.seat);
@@ -1223,6 +1381,8 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     return;
   }
   let ppos = player.GetWorldPosition();
+  let tick = sys.GetTickCount();
+  let now = CBGameSeconds(game);
   let up = 0;
   let coming = 0;
   let near = false;
@@ -1232,11 +1392,20 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     if CBStillStanding(p) {
       up += 1;
       book.outDown[k] = false;
+      // Here at last (2.6.3): they have come, and their wait between calls starts now, never at the asking.
+      if !book.outSeen[k] {
+        book.outSeen[k] = true;
+        let seenM = book.Find(book.outMember[k]);
+        if IsDefined(seenM) {
+          seenM.calledAt = now;
+        }
+      }
       if Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.MyCrewLeaveDistance() {
         near = true;
       }
     } else {
-      if des.IsSpawning(book.outBody[k]) {
+      // Still on the way: the engine building them, or asked for a moment ago and not in the world yet.
+      if des.IsSpawning(book.outBody[k]) || (!book.outSeen[k] && tick - book.outTick[k] <= CBConfig.MyCrewNoShowTicks()) {
         coming += 1;
         near = true;
       } else {
@@ -1250,7 +1419,39 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     }
     k += 1;
   }
+  // Taken by the engine and never put in the world (2.6.3): let go with no wait and nothing counted. Each one used to
+  // spend the member's hour, text "Lost you" and, when the others fought, count a win for a fight they never saw. Walked
+  // from the end, so nothing moves under the walk. A body the engine does place later is nobody's: CB_Orphan, so set-up
+  // leaves it be and the sweep takes it.
+  let noShows = 0;
+  let back = book.OutCount() - 1;
+  while back >= 0 {
+    let gone = book.outBody[back];
+    if !book.outSeen[back] && tick - book.outTick[back] > CBConfig.MyCrewNoShowTicks() && !des.IsSpawning(gone)
+       && !IsDefined(GameInstance.FindEntityByID(game, gone)) {
+      if des.IsTagged(gone, n"Cyberbane") && !des.IsTagged(gone, n"CB_Orphan") {
+        des.AssignTag(gone, n"CB_Orphan");
+      }
+      book.DropOut(back);
+      noShows += 1;
+    }
+    back -= 1;
+  }
+  if noShows > 0 {
+    CBLog.Info(n"Crew", s"\(noShows) of V's crew never made it into the world; let go with no wait.");
+    if book.OutCount() == 0 {
+      book.escort = false;
+      book.fought = false;
+      if CBMessagesOn() {
+        CBCrewText(sys, game, null, "Couldn't get through to you. Call again.");
+      }
+      return;
+    }
+  }
   let trouble = CBCrewTrouble(sys, game);
+  if trouble {
+    book.fought = true;
+  }
   book.quiet = trouble ? 0 : book.quiet + 1;
   book.driving = IsDefined(player.GetMountedVehicle()) ? book.driving + 1 : 0;
   // The one set to turn does it once the fight has them in it ([C7]).
@@ -1262,15 +1463,34 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   }
   let why = -1;
   if book.quiet >= CBConfig.MyCrewQuietTicks() {
-    why = 0;
+    if !book.escort {
+      why = 0;
+    } else {
+      // Walking with V (2.6.3): a fight on the way, over, is a win for whoever is standing, and they stay. Anybody down is
+      // carried home, and the call ends as a fight's does.
+      if book.fought {
+        if CBCrewAnyDown(book) {
+          why = 0;
+        } else {
+          CBCrewEscortWin(sys, game, book);
+          book.fought = false;
+        }
+      }
+    }
+  }
+  // Sent home on the Hub, the phone or the key (2.6.3).
+  if book.reqHome {
+    book.reqHome = false;
+    why = 6;
   }
   if book.driving >= CBConfig.MyCrewDriveTicks() {
     why = 1;
   }
-  if !near && sys.GetTickCount() % 5 == 0 {
+  if !near && tick % 5 == 0 {
     why = 2;
   }
-  if CBArrivalsHeld(sys, game) {
+  // The crew's own gates (2.6.3), the ones the call asks: the story, a scene, a safe place, a job by the setting.
+  if StrLen(CBCrewHeldWhy(sys, game)) > 0 {
     why = 3;
   }
   if up == 0 && coming == 0 && !trouble {
@@ -1291,7 +1511,8 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
 func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, why: Int32) -> Void {
   let player = GetPlayer(game);
   let now = CBGameSeconds(game);
-  let won = why == 0 && !CBHuntersOut(sys, game);
+  // A win needs a fight: a walk that went quiet without one is no win (2.6.3).
+  let won = why == 0 && book.fought && !CBHuntersOut(sys, game);
   let ppos = IsDefined(player) ? player.GetWorldPosition() : new Vector4(0.0, 0.0, 0.0, 1.0);
   let speaker: ref<CBCrewMember>;
   let promoted: ref<CBCrewMember>;
@@ -1301,7 +1522,8 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
   while i < book.OutCount() {
     let p = GameInstance.FindEntityByID(game, book.outBody[i]) as ScriptedPuppet;
     let m = book.Find(book.outMember[i]);
-    if IsDefined(m) {
+    // Only the ones who came: nothing is counted for, or said by, somebody still on the way (2.6.3).
+    if IsDefined(m) && book.outSeen[i] {
       if book.outDown[i] {
         m.scars += 1;
         m.hurtUntil = now + CBConfig.MyCrewHurtDays() * CBConfig.SecondsPerDay();
@@ -1337,6 +1559,8 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
   book.leaving = true;
   book.turnMember = 0;
   book.turnTicks = 0;
+  book.escort = false;
+  book.fought = false;
   if won {
     CBFileLog(sys, n"CrewWon", now, CBEventDistrict(sys, game), n"", 0.0);
   }
@@ -1357,7 +1581,10 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
       CBCrewText(sys, game, speaker, s"Lost you. Heading back to \(home).");
     }
     if why == 3 {
-      CBCrewText(sys, game, speaker, "Not our kind of place. We're gone.");
+      CBCrewText(sys, game, speaker, sys.IsInSanctuary() ? "You're safe in there. We'll head back." : "Not our kind of place. We're gone.");
+    }
+    if why == 6 {
+      CBCrewText(sys, game, speaker, CBLineOf([s"Heading back to \(home). Call when you need us.", "Going. You know where to find us."]));
     }
   }
   if IsDefined(promoted) {
@@ -1369,6 +1596,60 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
   }
   if IsDefined(leftLying) {
     CBCrewText(sys, game, leftLying, CBLineOf(["You left me lying there. I'll remember that.", "Woke up alone on the pavement. Thanks for nothing."]));
+  }
+}
+
+func CBCrewAnyDown(book: ref<CBCrewBook>) -> Bool {
+  let i = 0;
+  while i < book.OutCount() {
+    if book.outDown[i] {
+      return true;
+    }
+    i += 1;
+  }
+  return false;
+}
+
+// A fight on the walk is over and nobody is down (2.6.3): a win for each of them standing, as a call's end counts it, and
+// they stay with V.
+func CBCrewEscortWin(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
+  if CBHuntersOut(sys, game) {
+    return;   // not over while somebody is still hunting V
+  }
+  let now = CBGameSeconds(game);
+  let speaker: ref<CBCrewMember>;
+  let promoted: ref<CBCrewMember>;
+  let promotedFrom = 0;
+  let i = 0;
+  while i < book.OutCount() {
+    let m = book.Find(book.outMember[i]);
+    if IsDefined(m) && book.outSeen[i] && !book.outDown[i] {
+      let before = CBCrewRankOf(game, m);
+      m.wins += 1;
+      CBCrewLoyalty(m, CBConfig.MyCrewWinLoyalty(), CBCrewWhyNone());
+      if CBCrewRankOf(game, m) > before {
+        promoted = m;
+        promotedFrom = before;
+      }
+      if !IsDefined(speaker) || m.loyalty > speaker.loyalty {
+        speaker = m;
+      }
+    }
+    i += 1;
+  }
+  CBFileLog(sys, n"CrewWon", now, CBEventDistrict(sys, game), n"", 0.0);
+  CBLog.Info(n"Crew", "A fight on the walk is won; V's crew stays with V.");
+  if !CBMessagesOn() {
+    return;
+  }
+  if IsDefined(speaker) {
+    CBCrewText(sys, game, speaker, CBLineOf(["Clean. Still with you.", "That's handled. Lead on.", "Anybody else want some? Didn't think so."]));
+  }
+  if IsDefined(promoted) {
+    let rank = CBCrewRankOf(game, promoted);
+    CBCrewText(sys, game, null, rank >= 3 && promotedFrom < 3
+      ? s"The street's calling \(CBCrewFirst(sys, promoted)) \"\(CBCrewNickname(promoted.seat, promoted.seed))\" now. Earned it."
+      : s"\(CBCrewFirst(sys, promoted)) is getting good at this. \(CBCrewRankWord(rank)) now.");
   }
 }
 
@@ -1873,6 +2154,7 @@ public func CBPhoneRowRecruit() -> Int32 = 22
 public func CBPhoneRowHire() -> Int32 = 23
 public func CBPhoneRowHireHaggle() -> Int32 = 24
 public func CBPhoneRowHirePass() -> Int32 = 25
+public func CBPhoneRowSendHome() -> Int32 = 26   // 2.6.3
 
 // A Debtor's thread, by the name it carries, while there is room on the crew.
 public func CBPhoneThreadDebtor(sys: ref<CyberbaneSystem>, store: ref<CBPhone>, thread: Int32) -> ref<CBRival> {
@@ -1924,6 +2206,10 @@ public func CBCrewPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, kind:
     if book.Count() > 0 && book.OutCount() == 0 {
       ArrayPush(out, CBPhoneRowCallCrew());
     }
+    // Out with V: sent home from the thread too (2.6.3).
+    if book.OutCount() > 0 && !book.leaving {
+      ArrayPush(out, CBPhoneRowSendHome());
+    }
     if book.CutOwed() > 0 {
       ArrayPush(out, CBPhoneRowPayCut());
     }
@@ -1944,6 +2230,7 @@ public func CBCrewPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, kind:
 public func CBCrewPhoneRowText(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32) -> String {
   let book = CBCrewBook.Get(game);
   if row == CBPhoneRowCallCrew() { return "Need you. Now."; }
+  if row == CBPhoneRowSendHome() { return "Go home. I've got this."; }
   if row == CBPhoneRowPayCut() { return IsDefined(book) ? s"Here's the cut: \(book.CutOwed())eb" : "Here's the cut"; }
   if row == CBPhoneRowRecruit() { return "Work for me."; }
   if row == CBPhoneRowHire() { return IsDefined(book) ? s"Deal: \(book.offerPrice)eb" : "Deal"; }
@@ -1958,11 +2245,15 @@ public func CBCrewPhoneReply(sys: ref<CyberbaneSystem>, game: GameInstance, stor
     return;
   }
   store.Reply(game, thread, CBCrewPhoneRowText(sys, game, row));
+  // The call and the send-home are only asked for here (2.6.3), as on the Hub: the next settled tick back in the world
+  // carries them out and texts back why if it cannot (CBCrewServiceHub). Called from inside the messenger's own answer,
+  // the call spawned from a UI event, and from the full Messages menu, a menu, it was always refused.
   if row == CBPhoneRowCallCrew() {
-    let why = CBCrewCall(sys, game, false);
-    if StrLen(why) > 0 {
-      CBCrewText(sys, game, null, why);
-    }
+    book.reqCall = true;
+    return;
+  }
+  if row == CBPhoneRowSendHome() {
+    book.reqHome = true;
     return;
   }
   if row == CBPhoneRowPayCut() {
@@ -2171,6 +2462,10 @@ func CBCrewServiceHub(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
     if StrLen(why) > 0 {
       CBCrewText(sys, game, null, why);
     }
+  }
+  // Nobody out to send home any more (they went on their own, or are already walking): nothing to carry out.
+  if book.reqHome && (book.OutCount() == 0 || book.leaving) {
+    book.reqHome = false;
   }
 }
 

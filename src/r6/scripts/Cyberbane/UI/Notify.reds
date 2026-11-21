@@ -18,36 +18,131 @@ func CBMessageHold() -> Float {
   return ClampF(Cast<Float>(rt.GetSettings().messageHold) / 100.0, 0.5, 5.0);
 }
 
-public func CBShowMessage(game: GameInstance, text: String, duration: Float) -> Void {
-  // One at a time.
-  //
-  // This channel shows a single message, so two sent together means the first is replaced
-  // before it can be read and the player sees a flicker and half a sentence. Three or four in
-  // a row happens easily: a Rival arriving, a crew being sent and a gang turning hostile are
-  // separate events that can land in the same second. A short floor between them means each
-  // one is actually readable. Dropped rather than queued, because a queue would still be
-  // showing the first message long after the thing it describes has happened.
+// One card at a time, each kept for its whole time (2.6.3).
+//
+// This channel shows a single message. Up to 2.6.2 a card that came within 3.5 s of the last was dropped, and one that
+// came after replaced it, whatever the card on screen had asked for: at the default hold a card meant for nine seconds
+// could be gone after three and a half ("the texts go away way too fast"), and a menu's answer was lost whenever anything
+// had shown a moment before. Now a card that comes while another is up waits behind it, at most three in line, each
+// dropped once it has waited CardStaleSeconds (so nothing shows long after the thing it describes), and a menu's answer
+// (`urgent`, CBMenuNote) goes to the front and is never dropped for room.
+public func CBShowMessage(game: GameInstance, text: String, duration: Float, opt urgent: Bool) -> Void {
   let rt = CyberbaneRuntime.Get();
   let ts = GameInstance.GetTimeSystem(game);
-  let stamp = -1.0;
-  if IsDefined(rt) && IsDefined(ts) {
-    let now = EngineTime.ToFloat(ts.GetSimTime());
-    stamp = now;
-    // The stamp lives on a service, which outlasts a load, and the sim clock need not. Read without
-    // the first test, a clock behind the stamp is a gap that looks negative and so always too small.
-    if now >= rt.GetLastMessageAt() && now - rt.GetLastMessageAt() < CBConfig.MessageMinGapSeconds() {
+  if !IsDefined(rt) || !IsDefined(ts) {
+    CBPutCard(game, text, duration, -1.0);
+    return;
+  }
+  let now = EngineTime.ToFloat(ts.GetSimTime());
+  // The service outlasts a load and the sim clock need not: a card "up" past any card's length, or a line of cards asked
+  // for in the future, is from another session.
+  if rt.cardUntil > now + CBConfig.MessageMaxSeconds() {
+    rt.ClearCards();
+  }
+  CBDropStaleCards(rt, now);
+  if now >= rt.cardUntil {
+    CBShowCardNow(game, rt, text, duration, now);
+    return;
+  }
+  // Waiting behind the one up. Room for three: the oldest that is not a menu's answer makes way.
+  if rt.CardCount() >= CBConfig.CardQueueCap() {
+    let i = 0;
+    let dropped = false;
+    while i < rt.CardCount() && !dropped {
+      if !rt.cardUrgent[i] {
+        rt.DropCard(i);
+        dropped = true;
+      }
+      i += 1;
+    }
+    if !dropped && !urgent {
       return;
     }
-    rt.SetLastMessageAt(now);
   }
+  let at = urgent ? 0 : rt.CardCount();
+  if urgent {
+    while at < rt.CardCount() && rt.cardUrgent[at] {
+      at += 1;   // behind the menu answers already waiting, in the order they came
+    }
+  }
+  ArrayInsert(rt.cardText, at, text);
+  ArrayInsert(rt.cardSeconds, at, duration);
+  ArrayInsert(rt.cardAt, at, now);
+  ArrayInsert(rt.cardUrgent, at, urgent);
+  CBCardPumpAt(game, rt, rt.cardUntil, now);
+}
+
+func CBDropStaleCards(rt: ref<CyberbaneRuntime>, now: Float) -> Void {
+  let i = rt.CardCount() - 1;
+  while i >= 0 {
+    let age = now - rt.cardAt[i];
+    if age < 0.0 || (!rt.cardUrgent[i] && age > CBConfig.CardStaleSeconds()) {
+      rt.DropCard(i);
+    }
+    i -= 1;
+  }
+}
+
+func CBShowCardNow(game: GameInstance, rt: ref<CyberbaneRuntime>, text: String, duration: Float, now: Float) -> Void {
+  rt.SetLastMessageAt(now);
+  let shown = CBPutCard(game, text, duration, now);
+  if shown <= 0.0 {
+    return;
+  }
+  rt.cardUntil = now + shown;
+  if rt.CardCount() > 0 {
+    CBCardPumpAt(game, rt, rt.cardUntil, now);
+  }
+}
+
+// The next card in line once the one up has had its time. One pump per end time.
+func CBCardPumpAt(game: GameInstance, rt: ref<CyberbaneRuntime>, until: Float, now: Float) -> Void {
+  if rt.cardPumpAt >= until && rt.cardPumpAt <= until + 0.01 {
+    return;   // already due then
+  }
+  let ds = GameInstance.GetDelaySystem(game);
+  if !IsDefined(ds) {
+    return;
+  }
+  rt.cardPumpAt = until;
+  let cb = new CBCardPumpCallback();
+  ds.DelayCallback(cb, MaxF(until - now, 0.1) + 0.1, false);
+}
+
+public class CBCardPumpCallback extends DelayCallback {
+  public func Call() -> Void {
+    let game = GetGameInstance();
+    let rt = CyberbaneRuntime.Get();
+    let ts = GameInstance.GetTimeSystem(game);
+    if !IsDefined(rt) || !IsDefined(ts) {
+      return;
+    }
+    let now = EngineTime.ToFloat(ts.GetSimTime());
+    if now + 0.05 < rt.cardUntil {
+      return;   // a card went up since, and its own pump comes after it
+    }
+    CBDropStaleCards(rt, now);
+    if rt.CardCount() == 0 {
+      return;
+    }
+    let text = rt.cardText[0];
+    let seconds = rt.cardSeconds[0];
+    rt.DropCard(0);
+    CBShowCardNow(game, rt, text, seconds, now);
+  }
+}
+
+// The card on the screen, and its clear (2.5.6, CBCardClearCallback). How long it stays, in seconds; 0 when it could not
+// be shown. `stamp` is the sim time it went up, -1 when unknown.
+func CBPutCard(game: GameInstance, text: String, duration: Float, stamp: Float) -> Float {
   // The blackboard system is null during world transitions; dereferencing it then crashes.
   let bbs = GameInstance.GetBlackboardSystem(game);
   if !IsDefined(bbs) {
-    return;
+    return 0.0;
   }
   let bb = bbs.Get(GetAllBlackboardDefs().UI_Notifications);
   if !IsDefined(bb) {
-    return;
+    return 0.0;
   }
   let msg: SimpleScreenMessage;
   msg.isShown = true;
@@ -62,6 +157,7 @@ public func CBShowMessage(game: GameInstance, text: String, duration: Float) -> 
     cb.stamp = stamp;
     ds.DelayCallback(cb, msg.duration + CBConfig.MessageClearSlackSeconds(), false);
   }
+  return msg.duration;
 }
 
 // The card put away when its time is up (2.5.6). The game's own on-screen message is meant to fade by itself after

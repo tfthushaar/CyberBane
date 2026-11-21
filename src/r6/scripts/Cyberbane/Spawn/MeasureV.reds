@@ -166,9 +166,10 @@ public func CBCounterV(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: re
   if m.Quick() {
     CBGrantAbility(npc, t"Ability.HasDodge");
     CBGrantAbility(npc, t"Ability.CanCatchUp");
-    if grade >= 0.75 {
-      CBGrantAbility(npc, t"Ability.HasKerenzikov");
-    }
+    // A share of V's hits that do nothing, the game's own evasion roll. 2.6.1 gave a Kerenzikov here from grade 0.75,
+    // to every apex member and most senior Rivals against a quick V: cyberware on characters the game never built for
+    // it, the shape of the crash rule 5 was written after, and the likeliest cause of "CTD when Rivals are close".
+    CBAddFlat(stats, id, gamedataStatType.Evasion, CBConfig.CounterEvasion() * grade);
     said += "quick ";
   }
   if m.Tank() {

@@ -199,6 +199,14 @@ public class CBEventEngine {
       }
       return;
     }
+    // Not before V's district is known (2.6.3): every roll in the first minutes after a load found nobody holding
+    // "None" and spent its clock on it, so a short session saw no gang life at all.
+    if Equals(sys.GetCurrentDistrict(), n"") {
+      if nowT >= this.m_next && (CBGatheringsOn() || CBDealsOn() || CBGangFightsOn()) {
+        CBStreetWhyNot(game, "gang life", "V's district is not known yet");
+      }
+      return;
+    }
     // The sit-down, on its own clock and chance, as before.
     if nowT >= this.m_meetNext && CBStreetLifeOn(n"sitDowns") {
       this.m_meetNext = nowT + CBJitter(CBConfig.MeetGapTicks(), 0.4);

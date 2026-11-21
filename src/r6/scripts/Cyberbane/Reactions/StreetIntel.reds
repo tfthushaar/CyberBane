@@ -543,7 +543,7 @@ func CBPlayerAiming(game: GameInstance) -> Bool {
 
 func CBIntelSay(game: GameInstance, slot: Int32, speaker: String, line: String, seconds: Float) -> Void {
   if CBGameSubtitlesOn(game) {
-    CBShowGameSubtitle(game, slot, speaker, line, seconds);
+    CBShowGameSubtitle(game, slot, speaker, line, CBTalkReadSeconds(line, seconds));   // long enough to read (2.6.3)
   } else {
     CBOverheard(game, speaker, line);
   }

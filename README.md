@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.6.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.6.3.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -40,6 +40,12 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.6
 
+- **A crew that comes when you call (2.6.3).** Call them from the phone, the Hub or a key of your own, to gigs, side
+  jobs and gang turf, and with nothing to fight they walk with you until you send them home. When they can't come,
+  they say exactly why.
+- **Words you can read (2.6.3).** Conversations and messages stay up as long as they take to read, one after another,
+  and **How long words stay on screen** stretches them all. A weapon in your hand shows **Holster to talk** where Talk
+  would be.
 - **Enemies measured against you.** Apex squads, Rivals and bounty hunters read your level, attributes, armour, best
   weapon and chrome from the game, and come ready for how you fight.
 - **A crew that can outgrow an apex squad**, with its rank and the way to the next one on every card, and Cyberbane's
@@ -147,15 +153,20 @@ lives in your saves: a save made while the mod is removed loses it.
   spar with them, or send them to work or to war; **Name, colours, the fallen** is for the crew itself.
   **Show as a list** on a page turns its cards into a list.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
-  a line. Reach for a weapon and the conversation ends. Vendors, joytoys, fixers and ripperdocs keep the
-  game's own conversations.
-- **Calling your crew:** in any fight, open the **My crew** thread on your phone and pick **Need you. Now.**, or press
-  it on the Hub's Crew page. Up to three come. If they can't, they say why.
+  a line. Reach for a weapon and the conversation ends. With a weapon in your hand, the prompt shows
+  **Holster to talk** instead, and a greyed prompt also says when somebody just spoke to you, is busy
+  fighting or is part of a job. Vendors, joytoys, fixers and ripperdocs keep the game's own conversations.
+- **Calling your crew:** open the **My crew** thread on your phone and pick **Need you. Now.**, press it on the Hub's
+  Crew page, or set a key for it (Mod Settings > Cyberbane > Your crew > **Call your crew (key)**). In a fight, up to
+  three come and go home once it is over; with nothing to fight, two come and walk with you until you send them home
+  (**Go home. I've got this.** on the phone, **Send them home** on the Hub, or the same key). They come to gigs and side
+  jobs; **Your crew on jobs** changes that. Cutscenes, the main story's own missions and safe places like your
+  apartment keep them out. If they can't come, they say why.
 - **Recruiting a Rival:** beat a Rival without killing them, look at them where they lie and press F, and spare them.
   The next time you put that Rival down, the same talk offers **[Recruit] You owe me. Work for me.** A Rival you have
   spared twice may also text you, and you can ask them in the thread. Crouching over somebody down is for questioning
   their people; a Rival on the ground is talked to.
-- Cyberbane adds no keys of its own.
+- Cyberbane sets no keys of its own. The only one it offers, for calling your crew, is yours to choose.
 
 ## Settings
 
@@ -166,6 +177,9 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
 **Advanced** at the bottom.
 
 - **Fewer interruptions:** set **Where messages go** to Off. Nothing about how the mod plays changes.
+- **Words gone before you can read them:** raise **How long words stay on screen**, first on the
+  **Messages and HUD** page. It covers messages, phone pop-ups, what you overhear and every line of a
+  conversation.
 - **Set how the gangs see you:** **How gangs see you** puts every gang, or any one of them, at Allied,
   Friendly, Neutral, Hostile or Vendetta, whatever you have done. **Earned in play** puts it back.
 - **Leave a gang alone:** switch it off under **Factions**. Cyberbane stops reacting for that gang

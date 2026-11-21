@@ -111,6 +111,10 @@ public class CBCrewKitBook extends ScriptableSystem {
   public let sparBody: EntityID;
   public let sparStart: Int32;     // the tick it was asked for
   public let sparSeen: Int32;      // the tick their body was first in the world, 0 before
+  // The body of a round just over, walking off (2.6.3): its member is not called again until it is gone, or two of the
+  // same person stand in the street.
+  public let sparLeftMember: Int32;
+  public let sparLeftBody: EntityID;
   // Asked for on the Hub: a spar on the next tick (CBCrewKitService), the rest at once (CBCrewKitDoNow).
   public let asks: array<ref<CBCrewKitAsk>>;
   // Texts from orders carried out while the Hub is open, sent on the next tick (CBCrewText). Session only.
@@ -131,6 +135,8 @@ public class CBCrewKitBook extends ScriptableSystem {
     this.sparBody = none;
     this.sparStart = 0;
     this.sparSeen = 0;
+    this.sparLeftMember = 0;
+    this.sparLeftBody = none;
     ArrayClear(this.asks);
     this.deferTexts = false;
     ArrayClear(this.laterWho);
@@ -173,6 +179,7 @@ public class CBCrewKitBook extends ScriptableSystem {
     this.m_warsWon = 0;
     this.m_earnDay = 0;
     this.sparMember = 0;
+    this.sparLeftMember = 0;
     ArrayClear(this.asks);
   }
 
@@ -465,8 +472,9 @@ public func CBCrewChromeChoices(game: GameInstance) -> array<ItemID> {
 //   damage, the armour multiplier becomes armour;
 // - the rest is V's own (RAM, zoom, stamina, healing items) and does nothing for anybody else, so a piece with only that
 //   is not offered.
-// An implant that is a power to use (a Sandevistan, a Kerenzikov, a second heart, optical camo, Berserk, a biomonitor,
-// a pain editor) gives the ability the game gives its own people who have one (gmpl_abilities/abilities.tweak). The
+// An implant that is a power to use (a Sandevistan, a Kerenzikov, a second heart, optical camo, Berserk, a biomonitor)
+// gives what the power does in a fight, as stats (CBCrewChromeAbilities, 2.6.3), never the game's own cyberware ability:
+// those fire on characters the game never built for them (crash rule 5). A pain editor's ability is stats only. The
 // effects inside an implant's packages are never applied to them: those set quest facts, drive V's detection meter and
 // play V's sounds, and what an implant does only under a condition (low health, a kill) lives in those effects, so it
 // is never given for good either.
@@ -629,48 +637,56 @@ func CBCrewChromeStatWord(stat: gamedataStatType) -> String {
   return "";
 }
 
-// The power an implant is, as the game gives it to its own people, by the implant's cyberwareType (the key the game
-// itself asks of an implant: rpgManager.script, player.script).
+// What an implant's power is worth to one of the crew, by the implant's cyberwareType (the key the game itself asks of
+// an implant: rpgManager.script, player.script).
+//
+// 2.6.0 gave them the game's own powers for these: a Sandevistan, a Kerenzikov, a Second Heart, optical camo, Berserk,
+// a biomonitor. Each is a flag the game's NPC AI reads to fire time dilation, a dodge, a revive, a rage, a shader or a
+// heal, on characters it never built for them, and crash rule 5 has kept them off Cyberbane's people since 1.5.0 after
+// a crash of exactly that shape (2.6.3). So each is given as what it does in a fight, in stats the game rolls for every
+// target (damageSystem.script: ProcessEvasion, the health and armour pools) and the attack speed that already becomes
+// damage here. The pain editor is a stat package only and stays as it is.
 func CBCrewChromeAbilities(e: ref<CBCrewChromeEffect>, kind: CName, quality: Float) -> Void {
   switch kind {
     case n"Sandevistan":
-      ArrayPush(e.abilities, t"Ability.HasSandevistan");
-      if quality <= 1.0 {
-        ArrayPush(e.abilities, t"Ability.HasSandevistanTier1");
-      } else {
-        if quality <= 3.0 {
-          ArrayPush(e.abilities, t"Ability.HasSandevistanTier2");
-        } else {
-          ArrayPush(e.abilities, t"Ability.HasSandevistanTier3");
-        }
-      }
-      e.Say("a Sandevistan of their own");
+      ArrayPush(e.abilities, t"Ability.HasDodge");   // the game's own dodge, behaviour only
+      CBCrewChromeStat(e, gamedataStatType.Evasion, gameStatModifierType.Additive, 4.0 + 2.0 * quality);
+      e.speed += 0.10 + 0.05 * quality;
+      e.Say("a Sandevistan's speed: harder to hit, more damage");
       break;
     case n"Kerenzikov":
-      ArrayPush(e.abilities, t"Ability.HasKerenzikov");
-      e.Say("Kerenzikov dodges");
+      ArrayPush(e.abilities, t"Ability.HasDodge");
+      CBCrewChromeStat(e, gamedataStatType.Evasion, gameStatModifierType.Additive, 5.0 + 2.0 * quality);
+      e.Say("Kerenzikov reflexes: harder to hit");
       break;
     case n"SecondHeart":
-      ArrayPush(e.abilities, t"Ability.HasSecondHeart");
-      e.Say("a second heart");
+      CBCrewChromeStat(e, gamedataStatType.Health, gameStatModifierType.Multiplier, 1.2 + 0.05 * quality);
+      e.Say("a second heart: more health");
       break;
     case n"OpticalCamo":
-      ArrayPush(e.abilities, t"Ability.CanUseOpticalCamo");
-      e.Say("optical camo");
+      CBCrewChromeStat(e, gamedataStatType.Evasion, gameStatModifierType.Additive, 3.0 + quality);
+      e.Say("optical camo: harder to hit");
       break;
     case n"Berserk":
-      ArrayPush(e.abilities, t"Ability.HasBerserk");
-      e.Say("Berserk");
+      e.armourMult += 0.10 + 0.03 * quality;
+      e.speed += 0.08 + 0.03 * quality;
+      e.Say("Berserk: more armour, more damage");
       break;
     case n"HealthMonitor":
-      ArrayPush(e.abilities, t"Ability.HasHealthMonitor");
-      e.Say("a biomonitor that patches them up");
+      CBCrewChromeStat(e, gamedataStatType.Health, gameStatModifierType.Multiplier, 1.1 + 0.03 * quality);
+      e.Say("a biomonitor: more health");
       break;
     case n"PainReductor":
       ArrayPush(e.abilities, t"Ability.HasPainEditor");
       e.Say("no flinching");
       break;
   }
+}
+
+func CBCrewChromeStat(e: ref<CBCrewChromeEffect>, stat: gamedataStatType, modType: gameStatModifierType, value: Float) -> Void {
+  ArrayPush(e.stats, stat);
+  ArrayPush(e.types, modType);
+  ArrayPush(e.values, value);
 }
 
 // What one implant does for a crew member. Empty for anything that is not chrome, or does nothing for anybody but V.
@@ -908,7 +924,9 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
     CBGrantAbility(npc, t"Ability.CanUseAntiStun");
   }
   if rank >= 6 {
-    CBGrantAbility(npc, t"Ability.HasKerenzikov");
+    // Dodging as the game's evasion roll, never a Kerenzikov: cyberware abilities stay off Cyberbane's people (crash
+    // rule 5), which 2.6.2 broke here.
+    CBAddFlat(stats, id, gamedataStatType.Evasion, CBConfig.CrewLegendEvasion());
     CBGrantAbility(npc, t"Ability.CanGuardBreak");
   }
   CBAddMult(stats, id, gamedataStatType.Health, ClampF(health, 1.0, healthCeiling));
@@ -1038,6 +1056,27 @@ public func CBCrewKitDoNow(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
 
 // ---- A spar --------------------------------------------------------------------------------------
 
+// In a round with V, or their round's body still walking off (2.6.3): not to be called, or two of them stand in the street.
+public func CBCrewSparring(game: GameInstance, id: Int32) -> Bool {
+  let kb = CBCrewKitBook.Get(game);
+  if !IsDefined(kb) || id <= 0 {
+    return false;
+  }
+  if kb.sparMember == id {
+    return true;
+  }
+  if kb.sparLeftMember != id || !EntityID.IsDefined(kb.sparLeftBody) {
+    return false;
+  }
+  if CBStillStanding(GameInstance.FindEntityByID(game, kb.sparLeftBody) as ScriptedPuppet) {
+    return true;
+  }
+  kb.sparLeftMember = 0;
+  let none: EntityID;
+  kb.sparLeftBody = none;
+  return false;
+}
+
 public func CBCrewSparDayOf(now: Float) -> Int32 {
   return Cast<Int32>(now / CBConfig.SecondsPerDay()) + 1;
 }
@@ -1157,6 +1196,12 @@ func CBCrewSparTick(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
     CBCrewSparEnd(sys, game, kb, m, p, kb.sparSeen > 0 ? 3 : 0);
     return;
   }
+  // Real trouble on the way (2.6.3): the round is off, and the crew can be called. Nothing is scored for it.
+  if CBHuntersOut(sys, game) || CBHuntPending(sys) {
+    CBCrewSparEnd(sys, game, kb, m, p, 0);
+    CBCrewText(sys, game, m, "Real trouble coming. Round's off. Call us if you need us.");
+    return;
+  }
   if kb.sparSeen == 0 {
     if CBNpcSafe(sys, p) && CBStillStanding(p) {
       kb.sparSeen = tick;
@@ -1211,6 +1256,9 @@ func CBCrewSparEnd(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrew
       des.AssignTag(kb.sparBody, n"CB_Orphan");
     }
   }
+  // Walking off now: their member is not called again until this body is gone (CBCrewSparring).
+  kb.sparLeftMember = IsDefined(m) ? m.id : 0;
+  kb.sparLeftBody = kb.sparBody;
   kb.sparMember = 0;
   let none: EntityID;
   kb.sparBody = none;
@@ -1437,6 +1485,25 @@ func CBCrewKitReturns(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   }
 }
 
+// A gang's own ground, for what happens on it away from V: the first district it holds, else the first its profile names,
+// else where V is.
+public func CBGangHomeDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> CName {
+  let i = 0;
+  while i < CBDistrictCount() {
+    let d = CBDistrictAt(i);
+    i += 1;
+    if Equals(CBTurfHolder(sys, game, d), gang) {
+      return d;
+    }
+  }
+  let content = IsDefined(sys) ? sys.GetContent() : null;
+  let prof = IsDefined(content) ? content.GetFaction(gang) : null;
+  if IsDefined(prof) && ArraySize(prof.turf) > 0 {
+    return prof.turf[0];
+  }
+  return CBEventDistrict(sys, game);
+}
+
 // How a war a crew member started went. True when they did not come back (the roster changed).
 func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, book: ref<CBCrewBook>,
                       m: ref<CBCrewMember>, k: ref<CBCrewKit>, gang: CName, now: Float) -> Bool {
@@ -1452,6 +1519,8 @@ func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   chance += CBConfig.CrewStandWarWeight() * Cast<Float>(CBCrewStandingWith(game, gang)) / 100.0;
   chance = ClampF(chance, 0.15, 0.9);
   let label = CBFactionLabel(gang);
+  // Where the war was: on their streets, not wherever V happens to be standing when word comes back (2.6.3).
+  let where = CBGangHomeDistrict(sys, game, gang);
   if RandF() < chance {
     CBWeakenGang(sys, game, gang, CBConfig.CrewWarGangLoss());
     CBTalkSlight(sys, game, gang, CBConfig.CrewWarStanding());
@@ -1462,7 +1531,7 @@ func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
     m.wins += 2;
     m.loyalty = Min(100, m.loyalty + 5);
     kb.NoteWarWon();
-    CBFileLog(sys, n"CrewWarWon", now, CBEventDistrict(sys, game), gang, Cast<Float>(m.id));
+    CBFileLog(sys, n"CrewWarWon", now, where, gang, Cast<Float>(m.id));
     CBCrewText(sys, game, m, s"It's done. \(CBCapFirst(label)) lost corners, people and nerve. They know whose crew did it, so watch yourself.");
     CBLog.Info(n"Crew", s"A crew member's war on \(NameToString(gang)) was won.");
     return false;
@@ -1470,13 +1539,13 @@ func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   CBCrewStandingShift(game, gang, -CBConfig.CrewStandWarLost());
   if RandF() < CBConfig.CrewWarDeathShare() {
     let name = CBCrewName(sys, m);
-    CBFileLog(sys, n"CrewWarLost", now, CBEventDistrict(sys, game), gang, Cast<Float>(m.id));
+    CBFileLog(sys, n"CrewWarLost", now, where, gang, Cast<Float>(m.id));
     let bb = CBCrewBannerBook.Get(game);
     if IsDefined(bb) {
       bb.fallCause = CBCrewFellAtWar();   // for the memorial
       bb.fallGang = gang;
     }
-    book.Remove(m, CBCrewEndFell(), 0, CBEventDistrict(sys, game), now);
+    book.Remove(m, CBCrewEndFell(), 0, where, now);
     if CBMessagesOn() {
       CBPhoneSendTinted(game, CBCapFirst(label), s"\(name) came for us. \(name) isn't coming back.", CBHudRed());
     }

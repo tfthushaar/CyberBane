@@ -732,6 +732,10 @@ public class CBStreetTalk {
   // them without it (1.9.5): one line in the log per reason, so a report can say exactly what stopped it.
   private let m_whyLogged: String;
   private let m_whyFor: Float;
+  // The greyed prompt saying why somebody will not talk (2.6.3, ShowNote): up or not, for whom, and its words.
+  private let m_noteUp: Bool;
+  private let m_noteFor: EntityID;
+  private let m_noteText: String;
   private let m_whyLogAt: Float;
   // When V was last told why somebody would not talk (Explain), in game time. 0 = not yet this session.
   private let m_explainedAt: Float;
@@ -861,6 +865,7 @@ public class CBStreetTalk {
       notNow = "";
     }
     if StrLen(notNow) > 0 {
+      this.HideNote(game);   // whatever it said is not the reason now (2.6.3)
       this.StandDown(game, notNow);
       // Said in the log when V is facing somebody; not looked for at all while talk is off, the world
       // is loading or V is driving.
@@ -1122,6 +1127,7 @@ public class CBStreetTalk {
       this.SetCandidate(null);
       this.m_dwell = 0.0;
       this.NoteWhyNot(game, dt, npc, why);
+      this.ShowNote(game, player, npc, why, this.m_whyFor >= CBConfig.TalkDwell() * 2.0);
       this.Explain(game, npc, why);
       // A ganger or a cop who will not talk says so, once, instead of nothing (1.9.6).
       if IsDefined(npc) && Equals(why, CBTalkWhyHostile()) && this.m_whyFor >= CBConfig.TalkDwell() * 2.0 {
@@ -1142,6 +1148,9 @@ public class CBStreetTalk {
     npc.cbTalkHeldTick = tick;
     if armed {
       this.NoteWhyNot(game, dt, npc, "a weapon is in V's hands");
+      // Every time now, in the prompt itself (2.6.3): the hint below came once a launch, and after it a gun in hand meant
+      // nothing on F and no word why, which is most of the times "the dialogue doesn't show up" with a ganger.
+      this.ShowNote(game, player, npc, "a weapon is in V's hands", this.m_dwell >= CBConfig.TalkArmedHintDwell());
       let rt = CyberbaneRuntime.Get();
       if this.m_dwell >= CBConfig.TalkArmedHintDwell() && IsDefined(rt) && !rt.GetTalkHolsterHinted() {
         rt.SetTalkHolsterHinted(true);
@@ -1149,6 +1158,8 @@ public class CBStreetTalk {
       }
       return;
     }
+    // Talkable now: whatever the greyed prompt said is no longer so (2.6.3).
+    this.HideNote(game);
     // Their own talk off from the moment V settles on them with empty hands, so the game's prompt never comes up
     // over the offer (2.5.1).
     this.HushCandidate(npc);
@@ -1309,6 +1320,7 @@ public class CBStreetTalk {
     if !IsDefined(t) {
       return;
     }
+    this.m_noteUp = false;   // the offer goes up in the greyed prompt's place (2.6.3)
     this.m_target = t;
     this.m_exchanges = 0;
     this.m_lostFor = 0.0;
@@ -1468,9 +1480,10 @@ public class CBStreetTalk {
     if line.inactive {
       return;
     }
-    if CBGameSubtitlesOn(game)
-       && CBShowGameSubtitle(game, 2, "V", CBTalkWords(line.text), CBConfig.TalkLineSeconds()) {
-      this.m_vLineLeft = CBConfig.TalkLineSeconds();
+    let vWords = CBTalkWords(line.text);
+    let vSecs = CBTalkReadSeconds(vWords, CBConfig.TalkLineSeconds());
+    if CBGameSubtitlesOn(game) && CBShowGameSubtitle(game, 2, "V", vWords, vSecs) {
+      this.m_vLineLeft = vSecs;
     }
     if line.act == CBTalkActLeave() {
       this.End(game, "V left it there");
@@ -1547,8 +1560,9 @@ public class CBStreetTalk {
     // never lost (UI/PhoneMessages.reds, CBOverheard).
     if IsDefined(a) && StrLen(a.line) > 0 {
       if CBGameSubtitlesOn(game) {
-        if CBShowGameSubtitle(game, 3, t.speaker, a.line, CBConfig.TalkReplySeconds()) {
-          this.m_replyLeft = CBConfig.TalkReplySeconds();
+        let aSecs = CBTalkReadSeconds(a.line, CBConfig.TalkReplySeconds());
+        if CBShowGameSubtitle(game, 3, t.speaker, a.line, aSecs) {
+          this.m_replyLeft = aSecs;
         }
       } else {
         CBOverheard(game, t.speaker, a.line);
@@ -1717,8 +1731,9 @@ public class CBStreetTalk {
       speaker = "Ganger";
     }
     if CBGameSubtitlesOn(game) {
-      if CBShowGameSubtitle(game, 3, speaker, line, CBConfig.TalkReplySeconds()) {
-        this.m_replyLeft = CBConfig.TalkReplySeconds();
+      let rSecs = CBTalkReadSeconds(line, CBConfig.TalkReplySeconds());
+      if CBShowGameSubtitle(game, 3, speaker, line, rSecs) {
+        this.m_replyLeft = rSecs;
       }
     } else {
       CBOverheard(game, speaker, line);
@@ -1827,7 +1842,9 @@ public class CBStreetTalk {
       return "Talk to people is off in Mod Settings, or Cyberbane is off";
     }
     if !CBWorldStable(game) {
-      return "the world is loading, paused or in photo mode";
+      // Which of its tests it was (2.6.3): a grapple read as "loading". Without its full stop: the log adds its own.
+      let unready = StrLower(CBWorldStableWhy(game));
+      return StrEndsWith(unready, ".") ? StrLeft(unready, StrLen(unready) - 1) : unready;
     }
     if CBPlayerInScene(game) {
       return "V is in a scene";
@@ -1895,9 +1912,42 @@ public class CBStreetTalk {
   // talk is not one V can see (CBTalkWhyHint, 2.1.0). Until then it went to the log alone, and to a player it
   // looked like talk working for one person and not the next. Said once per person, and never more often than
   // every TalkExplainGapSeconds.
+  // Why this person will not talk, greyed in the prompt where "Talk" would be (2.6.3): "Holster to talk", "Just spoke to
+  // them". The game greys its own prompts the same way (a device V lacks the skill for, baseDeviceActions.script). It is
+  // a prompt, not a message, so it shows with messages off; it never goes over a prompt of the game's, never while V is
+  // aiming or fighting, and only after V has looked at them a moment, so walking a street armed puts up nothing.
+  private func ShowNote(game: GameInstance, player: ref<PlayerPuppet>, npc: ref<ScriptedPuppet>, why: String, dwelled: Bool) -> Void {
+    let words = CBTalkNoteWords(why);
+    if !IsDefined(npc) || !IsDefined(player) || StrLen(words) == 0 || !dwelled || player.IsInCombat() || CBPlayerAiming(game)
+       || Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > CBConfig.TalkRange()
+       || (!this.m_noteUp && CBNativePromptKind(game) != CBPromptNone()) {
+      this.HideNote(game);
+      return;
+    }
+    if this.m_noteUp && Equals(this.m_noteFor, npc.GetEntityID()) && Equals(this.m_noteText, words) && CBTalkOfferShown(game) {
+      return;   // still up, as it was
+    }
+    // Something of the game's took the place since: it has the screen, and ours does not go back over it.
+    if this.m_noteUp && !CBTalkOfferShown(game) && CBNativePromptKind(game) != CBPromptNone() {
+      this.m_noteUp = false;
+      return;
+    }
+    CBTalkPushNote(game, words);
+    this.m_noteUp = true;
+    this.m_noteFor = npc.GetEntityID();
+    this.m_noteText = words;
+  }
+
+  private func HideNote(game: GameInstance) -> Void {
+    if this.m_noteUp {
+      this.m_noteUp = false;
+      CBTalkClearOffer(game);
+    }
+  }
+
   private func Explain(game: GameInstance, npc: ref<ScriptedPuppet>, why: String) -> Void {
-    // Where messages go set to Off is silence, and this is a message.
-    if !IsDefined(npc) || npc.cbTalkExplained || this.m_whyFor < CBConfig.TalkDwell() * 2.0 || !CBMessagesOn() {
+    // Where messages go set to Off is silence, and this is a message. Nor when the greyed prompt says it already (2.6.3).
+    if !IsDefined(npc) || npc.cbTalkExplained || this.m_whyFor < CBConfig.TalkDwell() * 2.0 || !CBMessagesOn() || this.m_noteUp {
       return;
     }
     let line = CBTalkWhyHint(why);
@@ -2785,6 +2835,45 @@ public func CBTalkPushOffer(game: GameInstance, title: String) -> Void {
   hub.id = CBConfig.TalkHubId();
   hub.active = true;
   hub.title = title;
+  ArrayPush(hub.choices, c);
+  bb.SetVariant(defs.InteractionChoiceHub, ToVariant(hub), true);
+  let vis: VisualizersInfo;
+  vis.activeVisId = hub.id;
+  ArrayPush(vis.visIds, hub.id);
+  bb.SetVariant(defs.VisualizersInfo, ToVariant(vis), true);
+}
+
+// What the greyed prompt says for a reason somebody will not talk (2.6.3, ShowNote), "" for a reason it keeps quiet about:
+// only the ones V can do something about, or wait out. Story people, vendors and the game's own business never get one.
+public func CBTalkNoteWords(why: String) -> String {
+  if Equals(why, "a weapon is in V's hands") { return "Holster to talk"; }
+  if Equals(why, "V spoke to them a moment ago") { return "Just spoke to them"; }
+  if Equals(why, "they are in a fight") { return "Busy fighting"; }
+  if Equals(why, "they are running from V") { return "Running from you"; }
+  if Equals(why, CBTalkWhyJob()) || Equals(why, CBTalkWhyTracked()) { return "Part of a job"; }
+  return "";
+}
+
+// The greyed prompt itself: "Talk"'s place, one inactive choice, the way the game greys a device's prompt V cannot use
+// (baseDeviceActions.script). Taken down by CBTalkClearOffer like the offer, since it is the same hub.
+public func CBTalkPushNote(game: GameInstance, words: String) -> Void {
+  let bbs = GameInstance.GetBlackboardSystem(game);
+  let defs = GetAllBlackboardDefs().UIInteractions;
+  let bb = IsDefined(bbs) ? bbs.Get(defs) : null;
+  if !IsDefined(bb) {
+    return;
+  }
+  let c: InteractionChoiceData;
+  c.inputAction = n"Choice1";
+  c.localizedName = words;
+  ChoiceTypeWrapper.SetType(c.type, gameinteractionsChoiceType.Inactive);   // greyed by interactionsUIChoiceItem.script
+  let icon = TweakDBInterface.GetChoiceCaptionIconPartRecord(t"ChoiceCaptionParts.TalkIcon");
+  if IsDefined(icon) {
+    InteractionChoiceCaption.AddPartFromRecord(c.captionParts, icon);
+  }
+  let hub: InteractionChoiceHubData;
+  hub.id = CBConfig.TalkHubId();
+  hub.active = true;
   ArrayPush(hub.choices, c);
   bb.SetVariant(defs.InteractionChoiceHub, ToVariant(hub), true);
   let vis: VisualizersInfo;

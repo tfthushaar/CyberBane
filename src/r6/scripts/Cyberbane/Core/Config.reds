@@ -605,6 +605,8 @@ public abstract class CBConfig {
   public static func CrewPastApex() -> Float = 1.1
   public static func CrewHitCapRookie() -> Float = 30.0
   public static func CrewHitCapLegend() -> Float = 9.0
+  // A Legend's dodging, as evasion (2.6.3): rank 6 brought a Kerenzikov in 2.6.2, which crash rule 5 forbids.
+  public static func CrewLegendEvasion() -> Float = 8.0
   // Training: the first costs this, each one after it more; away this many game hours, more each time; at most this many.
   public static func CrewTrainCostBase() -> Int32 = 2500
   public static func CrewTrainHoursBase() -> Float = 8.0
@@ -749,20 +751,25 @@ public abstract class CBConfig {
   public static func CredOpenSeason() -> Int32 = 250
   public static func CredHunterPerPlace() -> Int32 = 15
   public static func CredLadderTop() -> Int32 = 400
-  // A crew of V's own (Reactions/Crew.reds, 2.5.0). Five on the roster, three out at once, always leaving four places
-  // under the live ceiling for whoever is after V; each can be called once an hour, and they arrive 24 m out. Home a
+  // A crew of V's own (Reactions/Crew.reds, 2.5.0). Five on the roster, three out at once (two to walk with V when there
+  // is nothing to fight); every other spawn leaves three places under the live ceiling for them while they could be
+  // called (CBCrewRoomKept, 2.6.3, where it used to be the crew that left four for everybody else); each can be called
+  // once a quarter of a game hour from the moment they arrived (an hour, from the asking, up to 2.6.2), and they arrive
+  // 24 m out; one the engine has not placed in 30 ticks is let go with no wait. Home a
   // minute after the fight, after 4 seconds in a car, or past 120 m. One set to turn does it 10 seconds into the fight
   // and runs 35 seconds after that. Loyalty starts at 80 owed, 65 lent, 60 paid, 35 frightened; restless under 40;
   // below 25 a call can go wrong (35 when the hunters are their old gang), 25% plus 3 a point under, at most 85%. Come
   // on their own: 70 and up. A win is 3, standing over one who went down 5, leaving them lying 10, a dead friend 6, a
   // fair cut 5 (8 for a solo); fear wears 3 a day, an unpaid cut 4 (8 for a solo), and 2 for each of their old gang V
-  // kills, at most 10 a day. Hurt for a day. The cut: 250 a week, 600 for a solo, 100 more a rank. A solo costs 1000 and
+  // kills, at most 10 a day. Hurt for six game hours (a whole day up to 2.6.2). The cut: 250 a week, 600 for a solo, 100 more a rank. A solo costs 1000 and
   // 400 a renown tier to sign, offered 15% of days from Known Merc. A Rival says yes 80% of the time, before traits.
   // Five renown points for each who joins. The last twelve who left are remembered.
   public static func MyCrewRoster() -> Int32 = 5
   public static func MyCrewOut() -> Int32 = 3
-  public static func MyCrewSpawnReserve() -> Int32 = 4
-  public static func MyCrewCallSeconds() -> Float = 3600.0
+  public static func MyCrewEscortOut() -> Int32 = 2
+  public static func MyCrewSpawnReserve() -> Int32 = 3
+  public static func MyCrewCallSeconds() -> Float = 900.0
+  public static func MyCrewNoShowTicks() -> Int32 = 30
   public static func MyCrewSpawnDistance() -> Float = 24.0
   public static func MyCrewQuietTicks() -> Int32 = 60
   public static func MyCrewDriveTicks() -> Int32 = 4
@@ -790,7 +797,7 @@ public abstract class CBConfig {
   public static func MyCrewUnpaidDrift() -> Int32 = 4
   public static func MyCrewUnpaidDriftPaid() -> Int32 = 8
   public static func MyCrewOldGangHurt() -> Int32 = 2
-  public static func MyCrewHurtDays() -> Float = 1.0
+  public static func MyCrewHurtDays() -> Float = 0.25
   public static func MyCrewCutBase() -> Int32 = 250
   public static func MyCrewCutPaid() -> Int32 = 600
   public static func MyCrewCutPerRank() -> Int32 = 100
@@ -1337,10 +1344,13 @@ public abstract class CBConfig {
   // Percent of the requested duration, used before settings have loaded.
   public static func MessageHoldDefault() -> Int32 = 175
   // Nothing is shown for less than this, however short the caller asked for.
-  // Shortest gap between two on-screen messages. The channel holds one at a time, so anything
-  // closer than this replaces a message the player was still reading.
-  public static func MessageMinGapSeconds() -> Float = 3.5
   public static func MessageMinSeconds() -> Float = 5.0
+  // The card on screen keeps its whole time and the next waits behind it (2.6.3, UI/Notify.reds): at most this many in
+  // line, each dropped once it has waited this long; and no card is ever up longer than this, so a clock that reads
+  // past it is from before a load. Up to 2.6.2 a card was dropped within 3.5 s of the last and replaced after it.
+  public static func CardQueueCap() -> Int32 = 3
+  public static func CardStaleSeconds() -> Float = 20.0
+  public static func MessageMaxSeconds() -> Float = 60.0
   // A card is taken down this long after the game should have faded it, if it has not (UI/Notify.reds, 2.5.6).
   public static func MessageClearSlackSeconds() -> Float = 2.0   // past the game's own fade, so a card that did go is never cut short
 
@@ -1480,6 +1490,10 @@ public abstract class CBConfig {
   public static func RivalMatchSeconds() -> Float = 10.0
   // ICE an enemy brings against a netrunner V, at a full answer.
   public static func CounterIce() -> Float = 30.0
+  // Evasion (the share of hits that do nothing at all, which the game rolls for every target, damageSystem.script
+  // ProcessEvasion) an enemy brings against a quick V, at a full answer. It stands where a Kerenzikov stood in 2.6.1:
+  // cyberware the game never built its NPCs to fire, which crash rule 5 keeps off every one of Cyberbane's people.
+  public static func CounterEvasion() -> Float = 8.0
   public static func ApexArmourAnswer() -> Float = 0.5
   public static func ApexMatchHealthCeiling() -> Float = 15.0
   public static func ApexMatchDamageCeiling() -> Float = 2.5
@@ -2001,6 +2015,9 @@ public abstract class CBConfig {
   // The exchange: V's line, a beat, then theirs.
   public static func TalkAnswerDelay() -> Float = 1.2
   public static func TalkLineSeconds() -> Float = 2.4
+  // Reading time for a spoken line (2.6.3, CBTalkReadSeconds): this much, and this much a letter, before the hold.
+  public static func ReadSecondsBase() -> Float = 1.5
+  public static func ReadSecondsPerChar() -> Float = 0.06
   public static func TalkReplySeconds() -> Float = 4.0
   // Who is afraid: a ganger whose fear of V beats their nerve by this much, a civilian this afraid. A
   // civilian who knows V and V is this well known (or keeps a code) is glad to meet V.

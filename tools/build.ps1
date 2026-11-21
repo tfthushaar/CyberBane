@@ -45,6 +45,8 @@ if ($offenders) {
 # --- nothing the mod ever shipped may go missing ----------------------------
 # An old copy left on an install is compiled with everything else (see check_removed.ps1).
 & (Join-Path $PSScriptRoot 'check_removed.ps1')
+# No NPC of ours carries a cyberware power (crash rule 5, see check_abilities.ps1).
+& (Join-Path $PSScriptRoot 'check_abilities.ps1')
 
 # --- stamp the version -----------------------------------------------------
 # Read/write as UTF-8 without BOM via .NET so the file's encoding is preserved

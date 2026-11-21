@@ -3,6 +3,57 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.6.3 (21 November 2026)
+
+**Fixed: crashes with Rivals and apex squads close by**
+- Since 2.6.1, apex squads and senior Rivals sent against a fast build (a Sandevistan, a Kerenzikov or high Reflexes)
+  carried a Kerenzikov of their own, and since 2.6.0 your crew could carry a Sandevistan, a Kerenzikov, a Second
+  Heart, optical camo, Berserk or a biomonitor. The game never made its street people to use those powers, and
+  Cyberbane had kept them off everybody it sends since 1.5.0 for exactly this reason. They are gone. What each stood
+  for is now plain toughness: a share of your shots that miss the quick ones, more health for a second heart or a
+  biomonitor, more armour and damage for Berserk. Your crew's cards say what each implant really does for them.
+
+**Fixed: calling your crew**
+- **Need you. Now.** on the Hub's Crew page could never be pressed, and the same answer sent from the full Messages
+  menu was always refused. Both work now: your crew sets off once you are back in the game.
+- Your crew comes to gigs, side jobs and a gang's own turf. The new setting **Your crew on jobs** picks Gigs and side
+  jobs (the default), Never, or Everywhere but the story. Cutscenes, the main story's own missions and safe places
+  like your apartment still keep them out.
+- A big fight always leaves room for them: everybody else Cyberbane sends keeps their places free.
+- Called with nothing to fight, two of them come and walk with you until you send them home: **Send them home** on the
+  Hub, **Go home. I've got this.** on the phone. A fight on the way counts as a win for them, and they stay.
+- One who could not be placed near you is let go at once with "Couldn't get through to you. Call again." That used to
+  cost them an hour's wait, a "Lost you" text, and a win for a fight they never saw.
+- Shorter waits: each can be called again a quarter of an in-game hour after they arrived, and one who went down is
+  back in six in-game hours (it was an hour, and a whole day).
+- Calling during a spar sent a second copy of the person you were sparring with. Finish the round first; when real
+  trouble turns up, the round ends on its own.
+- When they can't come, they say exactly why: a scene, the story, somewhere safe, your car, a crowd, or everybody hurt.
+- **Call your crew (key)** under Your crew in Mod Settings: one key to call them, or send them home. Not set at first.
+
+**Fixed: talk that shows up**
+- With a weapon in your hand, the person in front of you shows a greyed **Holster to talk** where Talk would be, every
+  time. It was a hint once per game launch, and after that nothing at all. The same greyed prompt says **Just spoke to
+  them**, **Busy fighting**, **Running from you** or **Part of a job** when that is why. It shows even with messages off,
+  and never over one of the game's own prompts.
+
+**Fixed: words you can read**
+- Conversation lines, and what people tell you, stay up as long as they take to read. They were up for 2.4 and 4
+  seconds whatever they said.
+- A message waits for the one on screen to finish. It used to replace it after three and a half seconds. Up to three
+  wait in line, one that has waited too long is dropped, and the answer to a button you pressed always shows.
+- The setting is now **How long words stay on screen**, first on the Messages and HUD page, and it covers messages,
+  phone pop-ups, what you overhear and conversations. The value you set carries over.
+
+**Fixed: the rest**
+- For the first minutes after loading on a busy street, Cyberbane did not know which district you were in, and
+  bagmen, recruitment, sit-downs and front lines spent their chance on nobody, so a short session saw no gang life.
+  They wait for the district now, and an interior keeps the district you walked in from.
+- Each reload left a few hidden pieces of the threat bars behind. The bars are reused now.
+- A crew member's war is filed in History under the gang's district.
+
+Your progress carries over.
+
 ## 2.6.2 (21 November 2026)
 
 **New**
