@@ -689,6 +689,7 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
        && Vector4.Distance(at, ppos) >= CBConfig.LairMinDistance()
        && !CBSafeAreaBlocksSpawn(game, at)
        && CBPointHiddenFrom(game, ppos, fwd, at)
+       && CBStandsWith(game, at, center, 8.0)
        && CBPointReachable(game, at, ppos) {
       // Facing anywhere but at V: they are minding their own business.
       let yaw = RandRangeF(0.0, 6.2831);
@@ -1329,7 +1330,8 @@ func CBLairSecondPlace(sys: ref<CyberbaneSystem>, game: GameInstance, from: Vect
     let snapped: Vector4;
     let spot: Vector4;
     if CBNavSnap(game, from.X + CosF(ang) * reach, from.Y + SinF(ang) * reach, from.Z, snapped)
-       && CBSettleOnGround(game, snapped, spot) && CBLairPointUsable(sys, game, spot) {
+       && CBSettleOnGround(game, snapped, spot) && CBLairPointUsable(sys, game, spot)
+       && CBStandsWith(game, spot, from, 8.0) {
       to = spot;
       return true;
     }
@@ -1352,7 +1354,8 @@ func CBSpotOutside(sys: ref<CyberbaneSystem>, game: GameInstance, door: Vector4,
     let snapped: Vector4;
     let spot: Vector4;
     if CBNavSnap(game, door.X + CosF(ang) * reach, door.Y + SinF(ang) * reach, door.Z, snapped)
-       && CBSettleOnGround(game, snapped, spot) && CBLairPointUsable(sys, game, spot) {
+       && CBSettleOnGround(game, snapped, spot) && CBLairPointUsable(sys, game, spot)
+       && CBStandsWith(game, spot, door, CBConfig.GroundMaxDrop()) {
       to = spot;
       return true;
     }

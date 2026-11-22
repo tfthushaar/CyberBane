@@ -526,7 +526,8 @@ public class CBEventEngine {
         let snapped: Vector4;
         let at: Vector4;
         if CBNavSnap(game, ev.at.X + CosF(ang) * radius, ev.at.Y + SinF(ang) * radius, ev.at.Z, snapped)
-           && CBSettleOnGround(game, snapped, at) && CBPointHiddenFrom(game, ppos, fwd, at) {
+           && CBSettleOnGround(game, snapped, at) && CBPointHiddenFrom(game, ppos, fwd, at)
+           && CBStandsWith(game, at, ev.at, CBConfig.GroundMaxDrop()) && CBLairPointUsable(sys, game, at) {
           let facing = Quaternion.BuildFromDirectionVector(new Vector4(-CosF(ang), -SinF(ang), 0.0, 0.0));
           let n = ArraySize(ev.ids);
           let sideGang = ev.SideOf(n) == 0 ? gangA : gangB;
@@ -561,7 +562,8 @@ public class CBEventEngine {
         let snappedOut: Vector4;
         let atOut: Vector4;
         if CBNavSnap(game, ev.at.X + CosF(angOut) * far, ev.at.Y + SinF(angOut) * far, ev.at.Z, snappedOut)
-           && CBSettleOnGround(game, snappedOut, atOut) && CBPointHiddenFrom(game, ppos, fwd, atOut) {
+           && CBSettleOnGround(game, snappedOut, atOut) && CBPointHiddenFrom(game, ppos, fwd, atOut)
+           && CBStandsWith(game, atOut, ev.at, CBConfig.GroundMaxDrop()) && CBLairPointUsable(sys, game, atOut) {
           let n2 = ArraySize(ev.ids);
           let sideGang2 = ev.SideOf(n2) == 0 ? gangA : gangB;
           let chair2 = lone > 0 ? (n2 < lone ? apexPerSide : n2 - lone) : n2 / sides;

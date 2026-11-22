@@ -159,7 +159,7 @@ public class CBLootDropCallback extends DelayCallback {
           again.position = this.position;
           again.tier = this.tier;
           again.iconicChance = this.iconicChance;
-          again.waits = this.waits + 1;
+          again.waits = this.waits + (CBWaitCounts(game) ? 1 : 0);
           ds.DelayCallback(again, CBConfig.LootDelaySeconds(), false);
         }
       }

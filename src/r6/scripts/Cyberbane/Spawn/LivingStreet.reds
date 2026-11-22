@@ -718,7 +718,7 @@ public class CBStreetLife {
       let spot: Vector4;
       if CBNavSnap(game, px, py, center.Z, snapped) && CBSettleOnGround(game, snapped, spot)
          && Vector4.Distance(spot, ppos) >= CBConfig.LairMinDistance() && !CBSafeAreaBlocksSpawn(game, spot)
-         && CBPointHiddenFrom(game, ppos, fwd, spot) && CBPointReachable(game, spot, ppos) {
+         && CBPointHiddenFrom(game, ppos, fwd, spot) && CBStandsWith(game, spot, center, 8.0) && CBPointReachable(game, spot, ppos) {
         let yaw = RandRangeF(0.0, 6.2831);
         let facing = Quaternion.BuildFromDirectionVector(new Vector4(CosF(yaw), SinF(yaw), 0.0, 0.0));
         let body: EntityID;

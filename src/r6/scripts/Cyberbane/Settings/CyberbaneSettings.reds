@@ -1316,6 +1316,17 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "25")
   public let messageHold: Int32 = 175;
 
+  // How big the message cards under the health bar and Cyberbane's own subtitle line are drawn (2.6.5), in percent.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "15")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageSize")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageSize-Desc")
+  @runtimeProperty("ModSettings.min", "80")
+  @runtimeProperty("ModSettings.max", "200")
+  @runtimeProperty("ModSettings.step", "10")
+  public let messageSize: Int32 = 100;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1773,8 +1784,7 @@ public class CyberbaneSettings {
 
   // ---- Registration & lifecycle ----------------------------------------
   public func Register() -> Void {
-    ModSettings.RegisterListenerToClass(this);
-    ModSettings.RegisterListenerToModifications(this);
+    CBModSettingsListen(this);   // only when Mod Settings is installed (Settings/ModSettingsBridge.reds, 2.6.5)
     // What was just read back is the choice already made, along with whatever was tuned after it.
     // m_appliedPreset is not saved, so on every launch a saved Subtle or Dramatic looked newly
     // picked and wrote its numbers over the sliders the note above says are kept.
@@ -1783,8 +1793,7 @@ public class CyberbaneSettings {
   }
 
   public func Unregister() -> Void {
-    ModSettings.UnregisterListenerToClass(this);
-    ModSettings.UnregisterListenerToModifications(this);
+    CBModSettingsUnlisten(this);
   }
 
   public cb func OnModSettingsChange() -> Void {

@@ -1025,7 +1025,7 @@ public class CBAmbushWatchCallback extends DelayCallback {
     let game = GetGameInstance();
     if !CBWorldStable(game) {
       if this.waits < CBConfig.CallbackStableWaits() {
-        this.Again(game, this.polls, this.waits + 1);
+        this.Again(game, this.polls, this.waits + (CBWaitCounts(game) ? 1 : 0));
       }
       return;
     }
@@ -1100,7 +1100,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
         let again = new CBArrivalDismountCallback();
         again.carId = this.carId;
         again.tries = this.tries;
-        again.waits = this.waits + 1;
+        again.waits = this.waits + (CBWaitCounts(game) ? 1 : 0);
         again.target = this.target;
         again.retargets = this.retargets;
         again.slot = this.slot;
@@ -1329,7 +1329,7 @@ public class CBArrivalDriveCallback extends DelayCallback {
       if this.waits < CBConfig.CallbackStableWaits() {
         let again = new CBArrivalDriveCallback();
         again.carId = this.carId;
-        again.waits = this.waits + 1;
+        again.waits = this.waits + (CBWaitCounts(game) ? 1 : 0);
         let dsW = GameInstance.GetDelaySystem(game);
         if IsDefined(dsW) {
           dsW.DelayCallback(again, CBConfig.CarStartDelay(), false);
@@ -1414,7 +1414,7 @@ public class CBConvoyBoardCallback extends DelayCallback {
       if this.waits < CBConfig.CallbackStableWaits() {
         let again = new CBConvoyBoardCallback();
         again.carId = this.carId;
-        again.waits = this.waits + 1;
+        again.waits = this.waits + (CBWaitCounts(game) ? 1 : 0);
         let ds = GameInstance.GetDelaySystem(game);
         if IsDefined(ds) {
           ds.DelayCallback(again, CBConfig.ConvoyStepDelay(), false);
@@ -1447,7 +1447,7 @@ public class CBConvoyMountCallback extends DelayCallback {
       if this.waits < CBConfig.CallbackStableWaits() {
         let again = new CBConvoyMountCallback();
         again.puppetId = this.puppetId;
-        again.waits = this.waits + 1;
+        again.waits = this.waits + (CBWaitCounts(game) ? 1 : 0);
         let ds = GameInstance.GetDelaySystem(game);
         if IsDefined(ds) {
           ds.DelayCallback(again, CBConfig.ConvoyStepDelay(), false);

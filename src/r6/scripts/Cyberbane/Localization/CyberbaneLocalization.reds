@@ -282,6 +282,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Preset", "Preset");
     this.Text("Cyberbane-Settings-MessageDelivery", "Where messages go");
     this.Text("Cyberbane-Settings-MessageAmount", "How much you hear");
+    this.Text("Cyberbane-Settings-MessageSize", "Message size");
+    this.Text("Cyberbane-Settings-MessageSize-Desc", "How big the message cards under your health bar, and Cyberbane's own subtitle line, are drawn. 100 is the usual size.");
     this.Text("Cyberbane-Settings-MessageAmount-Desc", "How often the street's chatter reaches you: word going round about you and lines overheard in passing. Less chatter spaces them out, Rarely spaces them out further. Warnings, demands, offers, your crew and answers to what you did always come through.");
     this.Text("Cyberbane-Settings-PhoneSound", "Message tone");
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");

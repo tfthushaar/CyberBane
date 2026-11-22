@@ -61,6 +61,29 @@ the next unless a version says otherwise.
 - While anyone is still after you, the game counts you as being in a fight, even with your hands empty and nobody in
   sight, and walking up to somebody showed nothing at all. Now the greyed prompt says **Not while you're in a fight**.
 
+**Fixed: Rivals standing frozen**
+- A Rival or crew that arrived while you were in a shop, a conversation or a long menu could stay frozen: standing
+  still, easy to walk up behind, until a fight nearby woke them. They now always get ready once you're back. The same
+  went for a car's crew getting out and loot from a fallen Rival, which could be lost the same way.
+
+**Fixed: gangs bringing the police back on you**
+- While the NCPD are after you, gangs no longer turn on you at sight and nobody new is sent after you. A ganger starting
+  a fight while you hid from the police got the fight reported, and the search started again right where you were.
+  Gangers already turned on you who aren't fighting stand down until the stars are gone.
+
+**Fixed: people stuck inside the scenery**
+- People at gang meetings and events could be placed in sealed spots, like under a raised road. Everybody placed around
+  a spot now has to be able to walk to it, on the same level. The same goes for a Rival's bodyguards, the place a warned
+  Rival moves to, and the spot outside a ripperdoc's.
+
+**New: Message size**
+- A **Message size** setting on the Messages and HUD page makes the message cards under your health bar, and
+  Cyberbane's own subtitle line, bigger or smaller.
+
+**Changed: Mod Settings is no longer required**
+- Without Mod Settings, Cyberbane now runs on its default settings instead of failing to load. Mod Settings is still
+  how you change them.
+
 Your progress carries over.
 
 ## 2.6.4 (22 November 2026)

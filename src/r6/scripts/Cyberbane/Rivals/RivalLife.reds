@@ -288,7 +288,8 @@ public func CBLairGuards(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref
     k += 1;
     let snapped: Vector4;
     let spot: Vector4;
-    if CBNavSnap(game, at.X + CosF(ang) * 2.6, at.Y + SinF(ang) * 2.6, at.Z, snapped) && CBSettleOnGround(game, snapped, spot) {
+    if CBNavSnap(game, at.X + CosF(ang) * 2.6, at.Y + SinF(ang) * 2.6, at.Z, snapped) && CBSettleOnGround(game, snapped, spot)
+       && CBStandsWith(game, spot, at, CBConfig.GroundMaxDrop()) {
       let facing = Quaternion.BuildFromDirectionVector(new Vector4(CosF(ang), SinF(ang), 0.0, 0.0));
       let gid: EntityID;
       if CBCreateSpawn(des, fs.sampleRecord, n"", spot, facing, n"CB_Lair", gid) {

@@ -50,7 +50,7 @@ func CBDetectTwr() -> Bool {
   // and the name match is what catches it.
   let found = CBTwrModulePresent();
   if !found {
-    let mods = ModSettings.GetMods();
+    let mods = CBModSettingsMods();
     if ArraySize(mods) == 0 {
       return false;   // not ready yet; ask again next time rather than caching a guess
     }

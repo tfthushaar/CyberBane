@@ -107,7 +107,7 @@ public func CBDifficultyLevel() -> Int32 {
 // list, the same way They Will Remember and Street Sense are found. A mod that does not register
 // settings there is not seen, and the apex strength slider is the way to tune for it.
 public func CBCombatOverhaulActive() -> Bool {
-  let mods = ModSettings.GetMods();
+  let mods = CBModSettingsMods();
   for mod in mods {
     let name = NameToString(mod);
     if StrContains(name, "Immersive Shooting") || StrContains(name, "ImmersiveShooting") {

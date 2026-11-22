@@ -134,7 +134,7 @@ public func CBWannabeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
 func CBWannabeMaybe(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStreetBook>, player: ref<PlayerPuppet>) -> Void {
   let now = CBGameSeconds(game);
   if !CBWannabesOn() || now < book.wannabeNext || player.IsInCombat() || IsDefined(player.GetMountedVehicle())
-     || CBPlayerIndoors(game) || CBPlayerMasked(game) || CBHuntersOut(sys, game) || CBHuntPending(sys)
+     || CBPlayerIndoors(game) || CBPlayerMasked(game) || CBHuntersOut(sys, game) || CBHuntPending(sys) || CBPoliceOnV(sys)
      || CBSpawnRoom(game) < 1 + CBConfig.TurfPatrolKeepRoom() {
     return;
   }

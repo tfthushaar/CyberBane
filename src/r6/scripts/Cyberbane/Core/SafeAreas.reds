@@ -307,7 +307,17 @@ public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Boo
     return true;
   }
   return sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game)
-      || sys.GetStoryHold() != CBStoryNone();
+      || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys);
+}
+
+// The NCPD after V: any wanted level (2.6.5). The gangs lie low while the cops swarm. "When hiding from the NCPD, if a
+// gang member spots you, the pursuit triggers all over again, as if an NCPD officer had seen you": a ganger Cyberbane turned
+// on V at sight, or a crew arriving, started a fight, and the game's own crowd reports a fight to the police, which moves the
+// search to wherever V is (PreventionSystem.OnCrimeWitnessRequest). Nobody is turned and nobody new is sent while V has
+// stars; whoever Cyberbane turned and is not already fighting stands down until the stars are gone.
+public func CBPoliceOnV(sys: ref<CyberbaneSystem>) -> Bool {
+  let score = IsDefined(sys) ? sys.GetScore() : null;
+  return IsDefined(score) && score.GetHeatStage() > 0;
 }
 
 // Why, in a few words, or "" when nothing is held. The same questions as above, so the Hub can never
@@ -330,6 +340,9 @@ public func CBArrivalsHeldWhy(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   if sys.IsInQuestArea() {
     return CBPlayerInHostileZone(game) ? "you are on somebody else's turf" : "you are on a job";
+  }
+  if CBPoliceOnV(sys) {
+    return "the NCPD are after you";
   }
   return "";
 }

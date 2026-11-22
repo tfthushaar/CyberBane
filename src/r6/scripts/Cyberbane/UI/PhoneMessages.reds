@@ -110,6 +110,13 @@ public func CBMessageDelivery() -> ECBMessageDelivery {
 // to something V just did in a menu (CBMenuNote). Nothing about the gameplay changes either -
 // they still come, and the Hub still brokers peace - so silence costs the player nothing except
 // being told, which is the point.
+// Message size, as a scale (2.6.5): 1.0 at 100.
+public func CBMessageSize() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  let pct = IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().messageSize : 100;
+  return ClampF(Cast<Float>(pct) / 100.0, 0.8, 2.0);
+}
+
 public func CBMessageAmount() -> ECBMessageAmount {
   let rt = CyberbaneRuntime.Get();
   return IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().messageAmount : ECBMessageAmount.LessChatter;
@@ -232,6 +239,9 @@ public class CBPhone {
   // Chatter let through lately (2.6.5, How much you hear): game seconds each was queued, and when V last overheard anything.
   private let m_chatterAt: array<Float>;
   private let m_lastOverheard: Float;
+  // The size the cards were last laid out at (2.6.5, Message size), so a change in Mod Settings shows at once.
+  private let m_laidSize: Float;
+  private let m_laidScale: Float;
 
   // The phone in V's hand, and the messenger panel if one of ours is open in it. Weak, and
   // checked on every use: the HUD is rebuilt on every load and fast travel.
@@ -379,6 +389,32 @@ public class CBPhone {
     }
     this.BuildOverheard(win, font, scale);
     this.m_built = true;
+    this.LayOut();
+  }
+
+  // Where each card sits and how big, by the screen's scale and Message size (2.6.5). The cards stack down from under
+  // the health bar, so a bigger card pushes the next one further down.
+  private func LayOut() -> Void {
+    let scale = CBHudScale(this.m_game);
+    let size = CBMessageSize();
+    this.m_laidSize = size;
+    this.m_laidScale = scale;
+    let height = CBConfig.PhoneCardHeight();
+    let i = 0;
+    while i < ArraySize(this.m_rows) {
+      let root = this.m_rows[i].root;
+      if IsDefined(root) {
+        root.SetMargin(new inkMargin(CBConfig.PhoneCardLeft() * scale,
+                                     (CBConfig.PhoneCardTop() + Cast<Float>(i) * (height + CBConfig.PhoneCardGap()) * size) * scale,
+                                     0.0, 0.0));
+        root.SetScale(new Vector2(scale * size, scale * size));
+      }
+      i += 1;
+    }
+    if IsDefined(this.m_subRoot) {
+      this.m_subRoot.SetMargin(new inkMargin(0.0, 0.0, 0.0, CBConfig.OverheardBottom() * scale));
+      this.m_subRoot.SetScale(new Vector2(scale * size, scale * size));
+    }
   }
 
   // Cyberbane's own subtitle line, for when the game's subtitles are switched off (1.9.5): a speaker
@@ -1058,6 +1094,9 @@ public class CBPhone {
     }
 
     let shown = hubOpen ? 0 : ArraySize(this.m_sender);
+    if shown > 0 && (AbsF(this.m_laidSize - CBMessageSize()) > 0.001 || AbsF(this.m_laidScale - CBHudScale(this.m_game)) > 0.001) {
+      this.LayOut();   // Message size changed in Mod Settings, or the screen did
+    }
     let r = 0;
     while r < ArraySize(this.m_rows) {
       let row = this.m_rows[r];

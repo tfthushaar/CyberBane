@@ -86,6 +86,14 @@ func CBPointReachable(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
       && walk <= Vector4.Distance(from, to) * CBConfig.PathDetourMax() + CBConfig.PathDetourSlack();
 }
 
+// Does somebody put here stand with the spot they belong to (2.6.5)? On its level, within `rise` metres, and joined to it by a
+// real walk (CBPointReachable). Snapping to the nearest navmesh and asking only that V cannot see the point picks exactly the
+// places nobody should be: "all but one of them spawned out of bounds under a raised section of road" at a sit-down, inside a
+// pocket under the deck that has navmesh and that nobody can see into. Every placement round a spot asks this.
+public func CBStandsWith(game: GameInstance, at: Vector4, anchor: Vector4, rise: Float) -> Bool {
+  return AbsF(at.Z - anchor.Z) <= rise && CBPointReachable(game, at, anchor);
+}
+
 // Is there a ceiling over this point?
 //
 // The game has no way to ask whether a point is indoors: IsEntityInInteriorArea needs an entity,
@@ -1086,9 +1094,11 @@ public class CBSpawnSetupCallback extends DelayCallback {
           again.entityId = this.entityId;
           again.riding = this.riding;
           again.tries = this.tries;
-          again.waits = this.waits + 1;
+          again.waits = this.waits + (CBWaitCounts(game) ? 1 : 0);
           ds.DelayCallback(again, CBConfig.SpawnSetupRetrySeconds(), false);
         }
+      } else {
+        CBSetupGiveBack(game, this.entityId);
       }
       return;
     }
@@ -1110,7 +1120,10 @@ public class CBSpawnSetupCallback extends DelayCallback {
       if this.tries < CBConfig.SpawnSetupMaxTries() {
         CBRetrySpawnSetup(game, this);
       } else {
-        CBLog.Info(n"Spawn", "A spawned enemy never finished initialising; it will behave as its own kind.");
+        // Back to the sweep, which asks again on a later settled tick (2.6.5): left marked as queued, it was never set
+        // up at all and stood there as whatever it was spawned as.
+        CBSetupGiveBack(game, this.entityId);
+        CBLog.Info(n"Spawn", "A spawned enemy was not ready to set up; trying again shortly.");
       }
       return;
     }
@@ -1119,6 +1132,14 @@ public class CBSpawnSetupCallback extends DelayCallback {
       return;
     }
     CBApplySpawnSetup(sys, game, puppet, this.riding);
+  }
+}
+
+// A setup that could not finish hands its body back to the missed-setup sweep (CBRescueMissedSetup) (2.6.5).
+func CBSetupGiveBack(game: GameInstance, id: EntityID) -> Void {
+  let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+  if IsDefined(p) {
+    p.cbSetupQueued = false;
   }
 }
 

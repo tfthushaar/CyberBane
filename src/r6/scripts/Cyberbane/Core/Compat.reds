@@ -56,7 +56,7 @@ public func CBExternalMoraleOwner() -> Bool {
 // the settings menu is steadier than a module path we cannot verify without the mod in hand.
 // Returns false while Mod Settings is still registering, and that answer is not cached.
 public func CBDetectStreetSense() -> Bool {
-  let mods = ModSettings.GetMods();
+  let mods = CBModSettingsMods();
   if ArraySize(mods) == 0 {
     return false;
   }

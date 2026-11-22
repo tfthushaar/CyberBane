@@ -22,6 +22,16 @@
 @addField(ScriptedPuppet)
 public let cbSeenTick: Int32;
 
+// Does a callback waiting for a settled world count this wait towards giving up (2.6.5)? Only while the world is really
+// going away: no player (a load or a fast travel), no blackboards, or V down (a load or a death alternative is coming). A
+// menu, a pause, photo mode, a workspot or a conversation is a hold the player chose, for as long as they like. Every wait
+// used to count, so 60 of them (24 seconds) in a shop's dialogue or a long look at a vendor's guns gave up on whatever was
+// waiting: a Rival spawned just before was never made hostile or sent at V ("they just stand still, you can walk behind
+// them"), a car's crew never got out, a drop never came.
+public func CBWaitCounts(game: GameInstance) -> Bool {
+  return !IsDefined(GetPlayer(game)) || CBVDown(game) || !IsDefined(GameInstance.GetBlackboardSystem(game));
+}
+
 public func CBWorldStable(game: GameInstance) -> Bool {
   // No controllable player means a teleport / load / fast travel is in flight.
   let player = GetPlayer(game);
