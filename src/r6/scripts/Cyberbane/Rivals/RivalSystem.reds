@@ -1195,6 +1195,29 @@ func CBRetireRivalBody(sys: ref<CyberbaneSystem>, game: GameInstance, body: wref
   if IsDefined(rival) {
     sys.NoteFormerRivalBody(id, rival.id);
   }
+  // Alive and their encounter over (2.6.8): they are out of it, and leave. "No matter how far I ran she kept following me,
+  // even after breaking morale once": a Rival who ran far enough was put down as got away, her body was untagged and left
+  // as it was, hostile, and once her run ended the game's own fight took her straight back after V, with nothing of
+  // Cyberbane's ordering her any more. Neutral to V and V's companions, what she saw of V forgotten, and walking off; the
+  // orphan sweep takes her once V cannot see her. Hurt her again and the game makes it a fight, as with anybody.
+  if CBNpcSafe(sys, body) && CBStillStanding(body) && !body.IsDead() {
+    let player = GetPlayer(game);
+    let agent = body.GetAttitudeAgent();
+    let pagent = IsDefined(player) ? player.GetAttitudeAgent() : null;
+    if IsDefined(agent) && IsDefined(pagent) && Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
+      CBTrace("attitude: a Rival whose encounter is over stands down and leaves");
+      agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
+      let senses = body.GetSensesComponent();
+      if IsDefined(senses) {
+        senses.ResetDetection(player.GetEntityID());
+      }
+    }
+    CBCalmTowardCompanions(sys, body);
+    body.cbFacedownHeld = false;
+    body.cbFacedownWait = false;
+    CBCancelMove(body);
+    CBOrderFlee(game, body, true);
+  }
 }
 
 // Forget every Rival on this save. Offered because a mod update mid-playthrough can leave

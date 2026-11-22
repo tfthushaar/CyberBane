@@ -669,8 +669,11 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
 // Does any hunter know where V is? 2 for certain, 1 for a sighting, 0 for nothing.
 func CBHuntAnyoneSeesPlayer(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
                             player: ref<PlayerPuppet>, ppos: Vector4) -> Int32 {
-  // Noise: a kill or a firefight carries a long way, and a hunter within earshot comes to look.
-  let loud = sys.GetRecentKills() > 0 || player.IsInCombat();
+  // Noise: a kill carries a long way, and a hunter within earshot comes to look. Not V merely being in combat (2.6.8): the
+  // game counts V in combat for as long as anybody hostile is after V, the hunters themselves included, so a chase was
+  // always "loud", everybody within seventy metres always "heard" V, and V could never get away. Gunfire is the game's
+  // own to hear: a hunter who hears it is in combat, and counted below by what they can see.
+  let loud = sys.GetRecentKills() > 0;
   let sense = CBHuntSenseScale(sys, game);
   let best = CBHuntTagSees(sys, game, des, n"CB_Rival", player, ppos, loud, sense);
   if best < 2 {
@@ -699,8 +702,11 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
     i += 1;
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
       let d = Vector4.Distance(p.GetWorldPosition(), ppos);
-      // Already fighting V: they know exactly where V is.
-      if CBNpcInCombat(p) && d <= CBConfig.HuntCombatKnowsDistance() {
+      // Fighting V, and V in sight or close: they know exactly where V is. In a fight alone was not enough to know
+      // (2.6.8): the game keeps somebody in combat for a while after V has gone round a corner, and with "in a fight within
+      // eighty metres" the hunt was handed V's exact place the whole time.
+      if CBNpcInCombat(p) && d <= CBConfig.HuntCombatKnowsDistance()
+         && (d <= CBConfig.HuntSpotDistance() || CBWitnessCanSee(p, player)) {
         return 2;
       }
       // Heard it.

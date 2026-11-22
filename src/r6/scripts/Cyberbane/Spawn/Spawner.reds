@@ -844,10 +844,21 @@ public func CBOrderHunt(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void
   let cmd = new AIMoveToCommand();
   let dest: AIPositionSpec;
   let wp: WorldPosition;
-  WorldPosition.SetVector4(wp, player.GetWorldPosition());
+  // Where V was last seen, not where V is (2.6.8). "No matter how far I ran from a Rival she kept following me": this
+  // followed V's own entity, so a hunter sprinted after wherever V really was, round every corner and out of every line of
+  // sight, kept V in view the whole way, and the hunt never lost V. While somebody sees V the last seen place is where V
+  // is (CBHuntTick sets it every tick), and the order is renewed as V moves; once nobody does, they go to where V was, and
+  // search from there. With no hunt on record, where V is now, which whoever called this has just seen.
+  let sysHunt = CyberbaneSystem.Get(game);
+  let target = player.GetWorldPosition();
+  if IsDefined(sysHunt) && sysHunt.GetHuntState() != CBHuntNone() {
+    let lkp = sysHunt.GetHuntLkp();
+    if lkp.X != 0.0 || lkp.Y != 0.0 || lkp.Z != 0.0 {
+      target = lkp;
+    }
+  }
+  WorldPosition.SetVector4(wp, target);
   AIPositionSpec.SetWorldPosition(dest, wp);
-  // Following the entity rather than the position means they keep coming if V moves off.
-  AIPositionSpec.SetEntity(dest, player);
   cmd.movementTarget = dest;
   cmd.movementType = moveMovementType.Sprint;
   cmd.ignoreInCombat = true;

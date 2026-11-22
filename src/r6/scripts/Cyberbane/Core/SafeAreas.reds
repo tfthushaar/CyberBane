@@ -188,6 +188,17 @@ public func CBComputeQuestArea(game: GameInstance) -> Bool {
       && sys.NearTrackedPins(player.GetWorldPosition(), CBQuestAreaRadius());
 }
 
+// V at the job V is tracking (2.6.8), as "Stay out of quest areas" reads it: its own pins only, and not the gangs' ground,
+// which CBComputeQuestArea also counts.
+public func CBAtTrackedJob(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  let rtQ = CyberbaneRuntime.Get();
+  if IsDefined(rtQ) && rtQ.HasSettings() && !rtQ.GetSettings().respectQuestAreas {
+    return false;
+  }
+  let player = GetPlayer(game);
+  return IsDefined(sys) && IsDefined(player) && sys.NearTrackedPins(player.GetWorldPosition(), CBQuestAreaRadius());
+}
+
 // The player's chosen size of a quest area, in metres.
 public func CBQuestAreaRadius() -> Float {
   let rt = CyberbaneRuntime.Get();

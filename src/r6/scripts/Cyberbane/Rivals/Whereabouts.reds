@@ -1181,10 +1181,8 @@ public func CBOfferRivalLead(sys: ref<CyberbaneSystem>, game: GameInstance, id: 
     case 1: line = s"\(name)? We know where. \(price)eb, and you didn't get it from us."; break;
     default: line = s"Word is you want \(name). \(price)eb buys you an address."; break;
   }
-  CBPhoneSendTinted(game, sender, line, CBHudCyan());
-  if !sys.GetPhone().OfferLead(sender, r.id, price, tipster) {
-    return false;
-  }
+  // The lead opens under the text as it lands (2.6.8, CBPhonePost).
+  CBPhonePost(game, sender, line, CBHudCyan(), false, 3, tipster, r.id, price);
   CBLog.Info(n"Rivals", s"Put the word out for rival \(id); offered for \(price)eb by text.");
   return true;
 }

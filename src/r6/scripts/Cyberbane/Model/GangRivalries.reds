@@ -174,7 +174,7 @@ public func CBAllyTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, attacker
     let posture = score.GetPosture(ally);
     if (Equals(posture, ECBPosture.Allied) || Equals(posture, ECBPosture.Friendly))
        && CBFactionFieldsSquads(ally) {
-      CBPhoneFromAlly(game, ally, s"Heads up. \(label) just sent people your way. Watch the road.");
+      CBPhoneSendUrgent(game, CBPhoneGangSender(ally), s"Heads up. \(label) just sent people your way. Watch the road.", CBHudCyan());
       return true;   // one warning is enough
     }
   }

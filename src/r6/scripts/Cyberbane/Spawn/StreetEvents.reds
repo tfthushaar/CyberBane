@@ -105,6 +105,12 @@ public class CBStreetEvent {
   public let walkAt: array<Vector4>;
   // What a sit-down is about (2.6.5): 1 money the first gang owes the second, 2 a killing, 3 a street both work, 4 V.
   public let reason: Int32;
+  // The place settled onto the street once V is near enough for it to be in the world (2.6.8, CBEventSettlePlace), and
+  // whether its being held back has been said in the log.
+  public let anchored: Bool;
+  public let heldSaid: Bool;
+  // The name of the place, when it is a data terminal's (2.6.8): what the word on it calls it. "" for one near V.
+  public let placeName: String;
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -341,9 +347,13 @@ public class CBEventEngine {
         return false;
       }
     }
+    // Somewhere to go to (2.6.8): "the places of street events are still close to me, it can be in the same district but I
+    // want to travel". One of the data terminals V has found in V's district, a walk or a drive off; failing that, as
+    // before, somewhere near V.
     let spot: Vector4;
-    if !CBWhereaboutsSpot(sys, game, player, spot) {
-      this.m_why = "no place for it near V, out of sight and reachable";
+    let placeName = "";
+    if !CBEventFarPlace(sys, game, player, spot, placeName) && !CBWhereaboutsSpot(sys, game, player, spot) {
+      this.m_why = "no place for it in this district, clear of jobs and safe places";
       return false;
     }
     let now = CBGameSeconds(game);
@@ -357,6 +367,7 @@ public class CBEventEngine {
       this.m_huntFor = n"";
     }
     ev.at = spot;
+    ev.placeName = placeName;
     ev.district = district;
     if Equals(kind, CBEvSitDown()) {
       ev.from = now + RandRangeF(1.0, 2.0) * 3600.0;
@@ -390,9 +401,26 @@ public class CBEventEngine {
     this.KeepPin(game);
     let dist = Vector4.Distance(player.GetWorldPosition(), ev.at);
     // Their time has come and V is on the way in, not yet looking: put them there. Never while the story has the
-    // stage, V is at a job or in a scene (2.4.2): an event already planned placed its people whatever V was doing,
-    // and a crew lying in wait near V's job (an ambush) walked in on the job itself.
-    let storyBusy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game);
+    // stage, V is in a scene or at the job V is tracking, or a job has come up at the place since (2.4.2): an event
+    // already planned placed its people whatever V was doing, and a crew lying in wait near V's job (an ambush) walked in on
+    // the job itself.
+    //
+    // About the place, not about V's ground (2.6.8): "I went to the meeting between Barghest and Militech at 3:10, it was
+    // supposed to be at 3:00, and there was nothing there." It asked whether V stood on a gang's restricted or hostile
+    // ground (IsInQuestArea), which is where a gang meets, and whether V was within eighty metres of any job (IsOnJob),
+    // while the place had been chosen only sixty metres clear of one: a meeting on Barghest's own streets could never be
+    // put there, and nothing said why.
+    let storyBusy = sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game) || CBAtTrackedJob(sys, game)
+                 || sys.NearQuestPins(ev.at, CBConfig.QuestSpawnClearance());
+    if storyBusy && !ev.placed && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() && !ev.heldSaid {
+      ev.heldSaid = true;
+      CBStreetWhyNot(game, NameToString(ev.kind), sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game)
+        ? "the story has the stage" : "a job is at the place, or V is at the job V is tracking");
+    }
+    // The place onto the street it stands on, once it is in the world: a data terminal stands against a wall.
+    if !ev.anchored && dist <= CBConfig.MeetSpawnDistance() {
+      ev.anchored = CBEventSettlePlace(game, ev);
+    }
     // V already at the place counts too (2.6.3): it asked for V to be 25 m off at least, so a V waiting on the spot for
     // the time on the pin was never given anybody ("I went there and there's nothing"). Whoever cannot be put there out
     // of V's sight comes from further off and walks in (Place).
@@ -622,6 +650,79 @@ public class CBEventEngine {
 
 // ---- The table ---------------------------------------------------------------------------------------
 
+// A place to go to for a gathering (2.6.8): one of the data terminals V has found, in V's own district, between
+// EventPlaceMin and EventPlaceMax away, clear of jobs and safe places (CBLairPointUsable). Each terminal is a named place
+// on a street, its district the game's own (FastTravelPoint_Record), and its pin's position is the terminal's.
+func CBEventFarPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, out spot: Vector4,
+                     out name: String) -> Bool {
+  let district = sys.GetCurrentDistrict();
+  let container = GameInstance.GetScriptableSystemsContainer(game);
+  let fts = IsDefined(container) ? container.Get(n"FastTravelSystem") as FastTravelSystem : null;
+  let ms = GameInstance.GetMappinSystem(game);
+  if Equals(district, n"") || !IsDefined(fts) || !IsDefined(ms) || !IsDefined(player) {
+    return false;
+  }
+  let ppos = player.GetWorldPosition();
+  let points = fts.GetFastTravelPoints();
+  let picks: array<Vector4>;
+  let names: array<String>;
+  for pt in points {
+    if IsDefined(pt) {
+      let rec = TweakDBInterface.GetFastTravelPointRecord(pt.GetPointRecord());
+      let dRec = IsDefined(rec) ? rec.District() : null;
+      // Not a metro station's: its point can be on the platform, under the street.
+      if IsDefined(dRec) && !rec.SubwayStation() && Equals(CBMapGameDistrict(dRec.EnumName()), district) {
+        let pin = ms.GetMappin(pt.mappinID);
+        if IsDefined(pin) {
+          let at = pin.GetWorldPosition();
+          let away = Vector4.Distance(ppos, at);
+          if away >= CBConfig.EventPlaceMin() && away <= CBConfig.EventPlaceMax() && CBLairPointUsable(sys, game, at) {
+            ArrayPush(picks, at);
+            ArrayPush(names, GetLocalizedText(rec.DisplayName()));
+          }
+        }
+      }
+    }
+  }
+  let n = ArraySize(picks);
+  if n == 0 {
+    return false;
+  }
+  let k = RandRange(0, n);
+  spot = picks[k];
+  name = names[k];
+  return true;
+}
+
+// Where it is, in the word on it (2.6.8): by the place's name when it has one, else near here.
+public func CBEventWhere(ev: ref<CBStreetEvent>) -> String {
+  return IsDefined(ev) && StrLen(ev.placeName) > 0 ? "by " + ev.placeName : "near here";
+}
+
+// The place onto the street beside it (2.6.8): the nearest walkable ground within a few metres. Asked once V is near
+// enough for the street to be in the world; until it answers, the place is where its pin is.
+func CBEventSettlePlace(game: GameInstance, ev: ref<CBStreetEvent>) -> Bool {
+  let ring = 0;
+  while ring < 4 {
+    let radius = Cast<Float>(ring) * 1.5;
+    let slots = ring == 0 ? 1 : 8;
+    let k = 0;
+    while k < slots {
+      let ang = Cast<Float>(k) * 6.28318 / Cast<Float>(slots);
+      let snapped: Vector4;
+      let ground: Vector4;
+      if CBNavSnap(game, ev.at.X + CosF(ang) * radius, ev.at.Y + SinF(ang) * radius, ev.at.Z, snapped)
+         && CBSettleOnGround(game, snapped, ground) {
+        ev.at = ground;
+        return true;
+      }
+      k += 1;
+    }
+    ring += 1;
+  }
+  return false;
+}
+
 public func CBEventPerSide(kind: CName) -> Int32 {
   if Equals(kind, CBEvSitDown()) { return CBSitDownPerGang(); }
   if Equals(kind, CBEvFuneral()) { return 6; }
@@ -765,46 +866,48 @@ public func CBEventCaptionOf(kind: CName, gangA: CName, gangB: CName) -> String 
 public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
   let a = CBCapFirst(CBFactionLabel(ev.a));
   let when = CBWhenWord(GetGameInstance(), ev.from);
+  let where = CBEventWhere(ev);
+  let past = StrLen(ev.placeName) > 0 ? "past " + ev.placeName : "past here";
   if Equals(ev.kind, CBEvSitDown()) {
-    return s"\(a) and \(CBFactionLabel(ev.b)) are sitting down near here around \(when), \(CBMeetReasonWords(ev)). Crash it, and they both feel it.";
+    return s"\(a) and \(CBFactionLabel(ev.b)) are sitting down \(where) around \(when), \(CBMeetReasonWords(ev)). Crash it, and they both feel it.";
   }
   if Equals(ev.kind, CBEvFuneral()) {
     // "The one you put down" only when V did (2.6.0): a funeral is also owed for one of theirs killed by somebody else, a
     // Rival another Rival finished off screen, or one of V's own crew who came from them.
     let whose = ev.byV ? " The one you put down." : "";
-    return CBLineOf([s"\(a) are burying one of theirs near here around \(when).\(whose)",
-                     s"Funeral for one of \(CBFactionLabel(ev.a)) near here, \(when). Go pay your respects. Or don't."]);
+    return CBLineOf([s"\(a) are burying one of theirs \(where) around \(when).\(whose)",
+                     s"Funeral for one of \(CBFactionLabel(ev.a)) \(where), \(when). Go pay your respects. Or don't."]);
   }
   if Equals(ev.kind, CBEvCelebration()) {
-    return CBLineOf([s"\(a) are celebrating near here around \(when). They took some streets and they want everybody to know.",
-                     s"Party near here, \(when). \(a) are drinking to a win."]);
+    return CBLineOf([s"\(a) are celebrating \(where) around \(when). They took some streets and they want everybody to know.",
+                     s"Party \(where), \(when). \(a) are drinking to a win."]);
   }
   if Equals(ev.kind, CBEvInitiation()) {
-    return CBLineOf([s"\(a) are blooding new recruits near here around \(when). Somebody's going to get hurt.",
-                     s"Initiation near here, \(when). \(a) want their new kids to prove something."]);
+    return CBLineOf([s"\(a) are blooding new recruits \(where) around \(when). Somebody's going to get hurt.",
+                     s"Initiation \(where), \(when). \(a) want their new kids to prove something."]);
   }
   if Equals(ev.kind, CBEvRecruitment()) {
-    return CBLineOf([s"\(a) are signing up new blood near here around \(when). More of them on these streets after.",
-                     s"Recruiting drive near here, \(when). \(a) want bodies."]);
+    return CBLineOf([s"\(a) are signing up new blood \(where) around \(when). More of them on these streets after.",
+                     s"Recruiting drive \(where), \(when). \(a) want bodies."]);
   }
   if Equals(ev.kind, CBEvArmsDeal()) {
-    return CBLineOf([s"\(a) are buying guns from \(CBFactionLabel(ev.b)) near here around \(when). Crash it and the crate is yours.",
-                     s"Arms deal near here, \(when): \(a) and \(CBFactionLabel(ev.b)). Heavy crates, light guard."]);
+    return CBLineOf([s"\(a) are buying guns from \(CBFactionLabel(ev.b)) \(where) around \(when). Crash it and the crate is yours.",
+                     s"Arms deal \(where), \(when): \(a) and \(CBFactionLabel(ev.b)). Heavy crates, light guard."]);
   }
   if Equals(ev.kind, CBEvExecution()) {
-    return CBLineOf([s"\(a) caught one of \(CBFactionLabel(ev.b)), and the poor soul gets a bullet near here around \(when). Stop it, or don't.",
-                     s"Execution near here, \(when). \(a) want everybody to watch one of \(CBFactionLabel(ev.b)) die."]);
+    return CBLineOf([s"\(a) caught one of \(CBFactionLabel(ev.b)), and the poor soul gets a bullet \(where) around \(when). Stop it, or don't.",
+                     s"Execution \(where), \(when). \(a) want everybody to watch one of \(CBFactionLabel(ev.b)) die."]);
   }
   if Equals(ev.kind, CBEvFrontLine()) {
-    return CBLineOf([s"\(a) and \(CBFactionLabel(ev.b)) are going to war on a street near here around \(when). Whoever wins takes ground.",
-                     s"Street fight near here, \(when): \(a) against \(CBFactionLabel(ev.b)). Pick a side, or keep your head down."]);
+    return CBLineOf([s"\(a) and \(CBFactionLabel(ev.b)) are going to war on a street \(where) around \(when). Whoever wins takes ground.",
+                     s"Street fight \(where), \(when): \(a) against \(CBFactionLabel(ev.b)). Pick a side, or keep your head down."]);
   }
   if Equals(ev.kind, CBEvFugitive()) {
-    return CBLineOf([s"\(a) are hunting somebody of \(CBFactionLabel(ev.b)) who crossed them. The runner comes past here around \(when).",
-                     s"Somebody's running from \(a) near here, \(when). Help the runner, or let them have their way."]);
+    return CBLineOf([s"\(a) are hunting somebody of \(CBFactionLabel(ev.b)) who crossed them. The runner comes \(past) around \(when).",
+                     s"Somebody's running from \(a) \(where), \(when). Help the runner, or let them have their way."]);
   }
-  return CBLineOf([s"Word is \(a) run a racket near here, collecting around \(when). Hit it and take the cash.",
-                   s"\(a) collect their take near here around \(when). Nobody's ever robbed them. Yet."]);
+  return CBLineOf([s"Word is \(a) run a racket \(where), collecting around \(when). Hit it and take the cash.",
+                   s"\(a) collect their take \(where) around \(when). Nobody's ever robbed them. Yet."]);
 }
 
 // A line for an overheard conversation while an event is coming and V is in its district ([32]).

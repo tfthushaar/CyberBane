@@ -152,10 +152,11 @@ public func CBWatcherTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, who: 
   let book = CBStreetBook.Get(game);
   let name = StrLen(book.WatchName()) > 0 ? book.WatchName() : "Lookout";
   let coming = StrLen(who) > 0 ? who : "Trouble";
-  CBPhoneSend(game, name, CBPick4(
+  // A moment, not a while (2.6.8): they are on V now.
+  CBPhoneSendUrgent(game, name, CBPick4(
     coming + " just turned onto the block. Looking for you.",
     "Heads up. " + coming + ", headed your way.",
     "You paid me to watch. I'm watching " + coming + " walk right up to you. Move.",
-    "Saw " + coming + " asking about you two minutes ago. Thought you'd want to know."));
+    "Saw " + coming + " asking about you two minutes ago. Thought you'd want to know."), CBHudCyan());
   return true;
 }

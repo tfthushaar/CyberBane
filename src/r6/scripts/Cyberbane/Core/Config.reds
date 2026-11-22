@@ -1896,6 +1896,19 @@ public abstract class CBConfig {
   // How long street talk's list holds through the game's own clears without talk's tick renewing it (2.6.7). Five ticks:
   // talk renews it every tick, so this only runs out if talk itself has stopped.
   public static func TalkListHoldSeconds() -> Float = 1.0
+  // How long a text takes to land (2.6.8, UI/PhoneMessages.reds, CBPhone.Post), in real seconds. An answer to V: a base and
+  // a little more for each letter, between the two bounds. Anything else: a reaction. A warning about something on V now:
+  // a moment. Never two closer together than the gap.
+  public static func TextTypingBase() -> Float = 3.0
+  public static func TextTypingPerChar() -> Float = 0.06
+  public static func TextTypingMin() -> Float = 4.0
+  public static func TextTypingMax() -> Float = 16.0
+  public static func TextReactMin() -> Float = 8.0
+  public static func TextReactMax() -> Float = 25.0
+  public static func TextUrgentMin() -> Float = 2.0
+  public static func TextUrgentMax() -> Float = 5.0
+  public static func TextGapMin() -> Float = 3.0
+  public static func TextGapMax() -> Float = 7.0
   // How far from V the people of the gang V is talking to hold their fire while the talking lasts (2.6.7,
   // Reactions/TalkTruce.reds): as far as a gang's people warn from and shoot from in a street.
   public static func TruceRadius() -> Float = 40.0
@@ -2003,6 +2016,9 @@ public abstract class CBConfig {
   public static func MeetChance() -> Float = 0.5
   public static func MeetSpawnDistance() -> Float = 90.0
   public static func MeetWindowSeconds() -> Float = 5400.0
+  // How far from V a gathering's place is (2.6.8, CBEventFarPlace), in metres: in V's district, a walk or a drive off.
+  public static func EventPlaceMin() -> Float = 300.0
+  public static func EventPlaceMax() -> Float = 1500.0
   public static func MeetGangLoss() -> Float = 4.0
   public static func MeetRenown() -> Float = 30.0
   public static func SurrenderShare() -> Float = 0.35

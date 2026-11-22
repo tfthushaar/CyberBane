@@ -3,6 +3,38 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.6.8 (22 November 2026)
+
+**Fixed: gang meetings that never happened**
+- A sit-down or other gathering could fail to show up when you got there on time, with nothing to say why. It wouldn't
+  start while you stood on a gang's restricted ground, which is where gangs meet, or anywhere within 80 m of a job, while
+  the place itself only had to be 60 m clear of one. Now only the story, a scene, the job you're tracking, or a job at
+  the place itself holds it back, and the log says when that happens.
+
+**Changed: gang life is somewhere to go**
+- Gatherings and sit-downs now take place by one of the data terminals you've found in your district, 300 m to 1.5 km
+  away, and the text names the place. With none of those to hand, they still happen near you.
+
+**Fixed: Rivals who would not stop chasing you**
+- A Rival could follow you however far you ran. The hunt sent its people after where you actually were, round every
+  corner and out of sight, and counted any of them in a fight within 80 m as knowing exactly where you were. Now they
+  go where they last saw you, and only know where you are while they can see you or are close. Break line of sight and
+  keep going, and they lose you.
+- A Rival who broke and ran far enough was marked as gone, but stayed hostile with nobody steering her, so the game's
+  own fight took her straight back after you. A Rival whose encounter is over now stands down and walks off.
+
+**Changed: texts take their time**
+- Texts no longer land the instant something happens. An answer to your reply takes a few seconds to type, longer for
+  a longer one, and anything else comes a little after the moment it's about. Two texts never land at the same time. A
+  lookout or ally warning you that someone is on you right now still gets through in seconds.
+
+**Fixed, smaller**
+- A family member taking a fallen Rival's place was announced by the gang under one surname and then texted you under
+  the family's. The announcement now uses the family name.
+- When your crew can't come, the message says who, why and when they'll be ready, instead of one line for all of it.
+
+Your progress carries over.
+
 ## 2.6.7 (22 November 2026)
 
 **Fixed: "32758 of 2 ready to call"**

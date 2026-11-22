@@ -113,8 +113,11 @@ func CBRivalBirth(sys: ref<CyberbaneSystem>, game: GameInstance, b: ref<CBPendin
     CBLog.Info(n"Rivals", s"A Rival from \(NameToString(b.faction)) died before the fight was over; nobody comes back.");
     return;
   }
+  // Family is announced after it has the family's name (2.6.8): the gang texted "Tomas Castillo has your name now" and a
+  // moment later Tomas Morales, the same Rival under the slain one's surname, texted V.
+  let kinDead = b.kinOf > 0 ? sys.FindRivalById(b.kinOf) : null;
   let r = CBCreateRival(sys, game, b.faction, b.record, b.appearance, IntEnum<ECBRivalSource>(b.source),
-                        b.origin, b.at, false, true);
+                        b.origin, b.at, IsDefined(kinDead), true);
   if !IsDefined(r) {
     return;   // refused: the roster is full, the faction is switched off, a story record
   }
@@ -150,6 +153,7 @@ func CBRivalBirth(sys: ref<CyberbaneSystem>, game: GameInstance, b: ref<CBPendin
   }
   let name = CBRivalDisplayName(CBContent(game), r);
   if IsDefined(dead) {
+    CBPhoneFromGang(game, b.faction, name + " has your name now. That is on you.");
     CBPhoneSendTinted(game, name, s"You put \(b.predecessor) in the ground. Family doesn't forget. I know how you fight now.", CBHudRed());
     return;
   }

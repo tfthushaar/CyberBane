@@ -213,6 +213,22 @@ public class CBPhone {
   // When V last answered each thread (game seconds), -1 when what it last said is still unanswered.
   private let m_thAnsweredAt: array<Float>;
 
+  // Texts on their way to V (2.6.8). "The texts happen instantly, so it kinda defeats immersiveness": a Rival's answer
+  // landed the second V's reply went, a gang's threat the second V killed one of theirs, two contacts at once. Every text
+  // now takes the time somebody takes to read what happened and thumb out an answer (CBPhonePost), and two never land
+  // together. Sim seconds, so a menu holds them; session only, like the threads. What a text opens or closes in its
+  // thread (V's answers to it) travels with it and happens when it lands, never before it.
+  private let m_postSender: array<String>;
+  private let m_postBody: array<String>;
+  private let m_postAccent: array<HDRColor>;
+  private let m_postDue: array<Float>;
+  private let m_postAnswer: array<Bool>;     // their answer to something V just said: it does not open the thread again
+  private let m_postThen: array<Int32>;      // 0 nothing, 1 asks nothing back, 2 a gang's price on V (peace), 3 a lead
+  private let m_postFaction: array<CName>;   // the gang for 2, the tipster for 3
+  private let m_postRival: array<Int32>;
+  private let m_postPrice: array<Int32>;
+  private let m_postLastDue: Float;
+
   // Word that has not reached V yet (Hearsay). Anything a third party tells V about what V did -
   // a body, a Rival in the ground, a crew taking over, a payout - used to arrive in the same tick
   // as the deed, so the city knew before the smoke cleared, and a long fight filed one copy per
@@ -488,7 +504,7 @@ public class CBPhone {
 
   // A message arrives. Safe from any hook: this only touches our own arrays. It is filed in
   // its sender's thread straight away and delivered on the next settled tick.
-  public func Send(game: GameInstance, sender: String, body: String, accent: HDRColor) -> Void {
+  public func Send(game: GameInstance, sender: String, body: String, accent: HDRColor, opt isAnswer: Bool) -> Void {
     this.m_game = game;
     if StrLen(body) == 0 {
       return;
@@ -505,8 +521,10 @@ public class CBPhone {
       }
       this.m_thLastBody[thread] = body;
       this.m_thLastAt[thread] = now;
-      // Something new from them, not their answer to what V just said: it can be answered again.
-      if thread < ArraySize(this.m_thAnsweredAt) && this.m_thAnsweredAt[thread] >= 0.0 && now - this.m_thAnsweredAt[thread] > 1.0 {
+      // Something new from them, not their answer to what V just said: it can be answered again. Their answer arrives a
+      // while after V's reply now (Post), so it says so itself (isAnswer) rather than by arriving in the same second.
+      if !isAnswer && thread < ArraySize(this.m_thAnsweredAt) && this.m_thAnsweredAt[thread] >= 0.0
+         && now - this.m_thAnsweredAt[thread] > 1.0 {
         this.m_thAnsweredAt[thread] = -1.0;
       }
       this.File(game, thread, body, false);
@@ -523,6 +541,115 @@ public class CBPhone {
       ArrayErase(this.m_pendAccent, 0);
     }
     CBLog.Info(n"UI", s"Message from \(sender): \(body)");
+  }
+
+  // ---- Texts on their way (2.6.8) ----------------------------------------------
+
+  // Which thread is this sender's, without starting one.
+  private func FindThread(sender: String) -> Int32 {
+    let i = 0;
+    while i < ArraySize(this.m_thName) {
+      if Equals(this.m_thName[i], sender) {
+        return i;
+      }
+      i += 1;
+    }
+    return -1;
+  }
+
+  // A text is written now and lands a little later. An answer to what V just said takes the time to type it, longer for a
+  // longer one; anything else the time it takes to hear what happened and react; a warning that something is on V right
+  // now (urgent) only a moment. Each lands a few seconds after the one before it, never on top of it.
+  public func Post(game: GameInstance, sender: String, body: String, accent: HDRColor, urgent: Bool, then: Int32,
+                   faction: CName, rival: Int32, price: Int32) -> Void {
+    this.m_game = game;
+    if StrLen(body) == 0 {
+      return;
+    }
+    let now = CBTalkNow(game);
+    let thread = this.FindThread(sender);
+    let gameNow = CBGameSeconds(game);
+    let answer = thread >= 0 && thread < ArraySize(this.m_thAnsweredAt) && this.m_thAnsweredAt[thread] >= 0.0
+              && gameNow >= this.m_thAnsweredAt[thread] && gameNow - this.m_thAnsweredAt[thread] <= 1.0;
+    let delay = 0.0;
+    if answer {
+      delay = ClampF(CBConfig.TextTypingBase() + CBConfig.TextTypingPerChar() * Cast<Float>(StrLen(body)),
+                     CBConfig.TextTypingMin(), CBConfig.TextTypingMax()) * RandRangeF(0.8, 1.25);
+    } else {
+      if urgent {
+        delay = RandRangeF(CBConfig.TextUrgentMin(), CBConfig.TextUrgentMax());
+      } else {
+        delay = RandRangeF(CBConfig.TextReactMin(), CBConfig.TextReactMax());
+      }
+    }
+    let due = now + delay;
+    // A stamp from another session's clock (it starts again with a load) is forgotten.
+    if this.m_postLastDue > now + 600.0 {
+      this.m_postLastDue = 0.0;
+    }
+    if !urgent && this.m_postLastDue > 0.0 && due < this.m_postLastDue + CBConfig.TextGapMin() {
+      due = this.m_postLastDue + RandRangeF(CBConfig.TextGapMin(), CBConfig.TextGapMax());
+    }
+    if !urgent {
+      this.m_postLastDue = MaxF(this.m_postLastDue, due);
+    }
+    ArrayPush(this.m_postSender, sender);
+    ArrayPush(this.m_postBody, body);
+    ArrayPush(this.m_postAccent, accent);
+    ArrayPush(this.m_postDue, due);
+    ArrayPush(this.m_postAnswer, answer);
+    ArrayPush(this.m_postThen, then);
+    ArrayPush(this.m_postFaction, faction);
+    ArrayPush(this.m_postRival, rival);
+    ArrayPush(this.m_postPrice, price);
+  }
+
+  // The text whose time has come, one a tick, and whatever it opens or closes in its thread.
+  private func ReleasePosts(game: GameInstance) -> Void {
+    if ArraySize(this.m_postBody) == 0 {
+      return;
+    }
+    let now = CBTalkNow(game);
+    let pick = -1;
+    let i = 0;
+    while i < ArraySize(this.m_postDue) {
+      // Due, or stamped from another session's clock (far ahead of now): land it.
+      let due = this.m_postDue[i];
+      if (due <= now || due > now + 600.0) && (pick < 0 || due < this.m_postDue[pick]) {
+        pick = i;
+      }
+      i += 1;
+    }
+    if pick < 0 {
+      return;
+    }
+    let sender = this.m_postSender[pick];
+    let body = this.m_postBody[pick];
+    let accent = this.m_postAccent[pick];
+    let answer = this.m_postAnswer[pick];
+    let then = this.m_postThen[pick];
+    let faction = this.m_postFaction[pick];
+    let rival = this.m_postRival[pick];
+    let price = this.m_postPrice[pick];
+    ArrayErase(this.m_postSender, pick);
+    ArrayErase(this.m_postBody, pick);
+    ArrayErase(this.m_postAccent, pick);
+    ArrayErase(this.m_postDue, pick);
+    ArrayErase(this.m_postAnswer, pick);
+    ArrayErase(this.m_postThen, pick);
+    ArrayErase(this.m_postFaction, pick);
+    ArrayErase(this.m_postRival, pick);
+    ArrayErase(this.m_postPrice, pick);
+    CBPhoneDeliverNow(game, sender, body, accent, answer);
+    if then == 1 {
+      this.Settle(game, sender);
+    }
+    if then == 2 {
+      CBPhoneOfferPeace(game, faction);
+    }
+    if then == 3 {
+      this.OfferLead(sender, rival, price, faction);
+    }
   }
 
   // ---- Word getting around ------------------------------------------------
@@ -684,7 +811,8 @@ public class CBPhone {
     }
     // Through the ordinary door, so the silence switches and the delivery mode are asked about
     // now, when it arrives, not back when it was queued.
-    CBPhoneSendTinted(game, sender, IsNameValid(faction) ? CBPhoneDemandText(game, faction, body, false) : body, accent);
+    // It has had its own time getting round, so it lands now (CBPhoneDeliverNow), not after a second wait.
+    CBPhoneDeliverNow(game, sender, IsNameValid(faction) ? CBPhoneDemandText(game, faction, body, false) : body, accent, false);
     if IsNameValid(faction) {
       CBPhoneOfferPeace(game, faction);
     }
@@ -1044,6 +1172,7 @@ public class CBPhone {
   // setting and a card's life is in seconds the player can read.
   public func Update(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     this.m_game = game;
+    this.ReleasePosts(game);  // texts whose time has come (2.6.8)
     this.ReleaseWord(game);   // before Deliver, so a story let out this tick is shown this tick
     this.Deliver(game);
     // Built on the first settled tick of a session whether or not a card is ever shown, because
@@ -1626,15 +1755,41 @@ public func CBPhoneSend(game: GameInstance, sender: String, body: String) -> Voi
   CBPhoneSendTinted(game, sender, body, CBHudCyan());
 }
 
-// As above, with the accent a card uses to say what kind of message this is.
+// As above, with the accent a card uses to say what kind of message this is. Written now, it lands a little later
+// (2.6.8, CBPhone.Post): nobody texts back the instant something happens.
 public func CBPhoneSendTinted(game: GameInstance, sender: String, body: String,
                               accent: HDRColor) -> Void {
+  CBPhonePost(game, sender, body, accent, false, 0, n"", 0, 0);
+}
+
+// Something is on V right now (a lookout, an ally's heads-up): a moment, not a while.
+public func CBPhoneSendUrgent(game: GameInstance, sender: String, body: String, accent: HDRColor) -> Void {
+  CBPhonePost(game, sender, body, accent, true, 0, n"", 0, 0);
+}
+
+// Every text goes through here (2.6.8), with what it opens or closes in its thread when it lands: `then` 1 asks nothing
+// back, 2 a gang's price on V (`faction`), 3 a lead on a Rival (`rival`, `price`, the tipster in `faction`).
+public func CBPhonePost(game: GameInstance, sender: String, body: String, accent: HDRColor, urgent: Bool, then: Int32,
+                        faction: CName, rival: Int32, price: Int32) -> Void {
   // Either silence switch covers every surface, so a player who wants quiet gets it.
   if !CBMessagesOn() {
     return;
   }
+  // Heard as it is written, so the same line is not picked again while this one is on its way.
   CBLineHeard(body);
-  // Anyone who would rather have the old centre-screen line keeps it.
+  let sys = CyberbaneSystem.Get(game);
+  if !IsDefined(sys) {
+    return;
+  }
+  sys.GetPhone().Post(game, sender, body, accent, urgent, then, faction, rival, price);
+}
+
+// It lands: the phone, or the old centre-screen line for anybody who keeps it. The silence switches and the delivery mode
+// are asked now, when it arrives.
+public func CBPhoneDeliverNow(game: GameInstance, sender: String, body: String, accent: HDRColor, isAnswer: Bool) -> Void {
+  if !CBMessagesOn() {
+    return;
+  }
   if Equals(CBMessageDelivery(), ECBMessageDelivery.Notices) {
     CBShowMessage(game, sender + ": " + body, CBConfig.PhoneHoldSeconds());
     return;
@@ -1643,17 +1798,13 @@ public func CBPhoneSendTinted(game: GameInstance, sender: String, body: String,
   if !IsDefined(sys) {
     return;
   }
-  sys.GetPhone().Send(game, sender, body, accent);
+  sys.GetPhone().Send(game, sender, body, accent, isAnswer);
 }
 
 // A text that asks nothing back (2.5.6): filed and shown as any other, and the thread offers no answers under it.
 // For somebody whose other texts can be answered, a Rival above all, when this one is not a threat.
 public func CBPhoneSendAside(game: GameInstance, sender: String, body: String, accent: HDRColor) -> Void {
-  CBPhoneSendTinted(game, sender, body, accent);
-  let sys = CyberbaneSystem.Get(game);
-  if IsDefined(sys) && IsDefined(sys.GetPhone()) {
-    sys.GetPhone().Settle(game, sender);
-  }
+  CBPhonePost(game, sender, body, accent, false, 1, n"", 0, 0);   // settled as it lands (2.6.8)
 }
 
 // The gang is talking to you. Red, because they are not getting in touch to be friendly. Nothing to answer: news,
@@ -1668,8 +1819,8 @@ public func CBPhoneFromGang(game: GameInstance, faction: CName, body: String) ->
 // the message (CBPhoneDemandText), so every answer under it answers something they said. `priced`: the body names
 // the price already.
 public func CBPhoneDemandFromGang(game: GameInstance, faction: CName, body: String, opt priced: Bool) -> Void {
-  CBPhoneSendTinted(game, CBPhoneGangSender(faction), CBPhoneDemandText(game, faction, body, priced), CBHudRed());
-  CBPhoneOfferPeace(game, faction);
+  // The answers open under it as it lands (2.6.8), not under whatever the thread said before.
+  CBPhonePost(game, CBPhoneGangSender(faction), CBPhoneDemandText(game, faction, body, priced), CBHudRed(), false, 2, faction, 0, 0);
 }
 
 // A threat's words as they go out: as written when they name the price, when nobody can answer them, or when an offer

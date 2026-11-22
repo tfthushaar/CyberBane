@@ -1131,9 +1131,45 @@ public func CBCrewCallBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, una
   }
   let readyList = CBCrewReadyOrder(book, CBGameSeconds(game), 0);   // a named list: ArraySize of a call's result reads garbage
   if ArraySize(readyList) == 0 {
-    return "Everybody's hurt, busy or just got back.";
+    return CBCrewNobodyReadyWhy(sys, game, book);
   }
   return "";
+}
+
+// Nobody can come: who, why, and when they can (2.6.8). "Everybody's hurt, busy or just got back" said nothing a player
+// could check, and was all a report had to go on when the crew would not come twice in a row.
+func CBCrewNobodyReadyWhy(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> String {
+  let now = CBGameSeconds(game);
+  let parts = "";
+  let i = 0;
+  while i < book.Count() && i < 3 {
+    let m = book.At(i);
+    i += 1;
+    if IsDefined(m) {
+      let who = CBCrewFirst(sys, m);
+      let why = "";
+      if CBCrewHurt(m, now) {
+        why = s"\(who)'s still patched up, about \(CeilF((m.hurtUntil - now) / CBConfig.SecondsPerHour()))h";
+      } else {
+        let away = CBCrewAwayWord(game, m.id, now);
+        if StrLen(away) > 0 {
+          why = s"\(who)'s \(StrLower(away))";
+        } else {
+          if CBCrewSparring(game, m.id) {
+            why = s"\(who)'s sparring with you";
+          } else {
+            if m.calledAt > 0.0 && now - m.calledAt < CBConfig.MyCrewCallSeconds() {
+              why = s"\(who) just got back, give it \(CeilF((CBConfig.MyCrewCallSeconds() - (now - m.calledAt)) / 60.0)) minutes";
+            }
+          }
+        }
+      }
+      if StrLen(why) > 0 {
+        parts += (StrLen(parts) > 0 ? "; " : "") + why;
+      }
+    }
+  }
+  return StrLen(parts) > 0 ? "Nobody can come yet: " + parts + "." : "Everybody's hurt, busy or just got back.";
 }
 
 // Where V is, for the crew (2.6.3): "" when they can come here, otherwise why not. The story, a scene and a safe place

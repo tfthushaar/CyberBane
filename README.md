@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.6.7.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.6.8.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -83,8 +83,9 @@ Everything added since 2.3.0, in one place. The fixes in each update are in [CHA
 **The gangs**
 - **A code for each gang.** Every gang respects, forgives and fights in its own way, talks like itself, and
   adapts to how you fight it. The Hub tells you each code as you learn it.
-- **Gang life.** Funerals, celebrations, initiations, recruiting drives, arms deals and rackets happen near you
-  at a set time. Crash them, pay your respects, or let the gang grow stronger.
+- **Gang life.** Funerals, celebrations, initiations, recruiting drives, arms deals and rackets happen at a set time
+  somewhere in your district, by one of the data terminals you've found, and the place is pinned on your map. Get
+  there, then crash them, pay your respects, or let the gang grow stronger.
 - **Gangs fight gangs.** Executions, street fights and hunts you can step into, power struggles where you decide
   who runs a gang, and rival gangers clashing on contested streets.
 - **The turf war has money in it.** Gangs have war chests and manpower; back one for a weekly cut, set two on
