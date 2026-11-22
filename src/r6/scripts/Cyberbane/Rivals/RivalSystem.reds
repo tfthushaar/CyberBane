@@ -128,7 +128,8 @@ func CBRivalPickFreeEpithet(sys: ref<CyberbaneSystem>, content: ref<CyberbaneCon
   if !IsDefined(sys) || !IsDefined(content) || !IsDefined(rival) || rival.epithet < 0 {
     return;
   }
-  let n = ArraySize(CBEpithetsForSource(content, rival.source));
+  let epithets = CBEpithetsForSource(content, rival.source);
+  let n = ArraySize(epithets);
   let start = rival.epithet;
   // First one nobody on this save has ever had (1.8.5), written down in the same book as the names;
   // then, once a long playthrough has used those up, one nobody on the roster has now.

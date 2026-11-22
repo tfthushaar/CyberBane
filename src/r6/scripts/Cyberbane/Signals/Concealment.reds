@@ -519,8 +519,16 @@ public class CBEqExProbe {
       if IsDefined(type) {
         let active = type.GetFunction(n"IsActive");
         let used = type.GetFunction(n"GetUsedSlots");
+        let activeParams: array<ref<ReflectionProp>>;
+        let usedParams: array<ref<ReflectionProp>>;
+        if IsDefined(active) {
+          activeParams = active.GetParameters();
+        }
+        if IsDefined(used) {
+          usedParams = used.GetParameters();
+        }
         if IsDefined(active) && IsDefined(used)
-           && ArraySize(active.GetParameters()) == 0 && ArraySize(used.GetParameters()) == 0
+           && ArraySize(activeParams) == 0 && ArraySize(usedParams) == 0
            && CBReflectReturns(active, n"Bool") && CBReflectReturns(used, n"array:TweakDBID") {
           this.isActive = active;
           this.usedSlots = used;
@@ -739,7 +747,11 @@ public func CBTwrDisguiseClass() -> CName = n"TheyWillRemember.Disguise.Disguise
 
 // A function taking nothing and handing back exactly this type, or nothing.
 func CBReflectNoArgs(fn: ref<ReflectionMemberFunc>, typeName: CName) -> ref<ReflectionMemberFunc> {
-  if !IsDefined(fn) || ArraySize(fn.GetParameters()) != 0 || !CBReflectReturns(fn, typeName) {
+  if !IsDefined(fn) {
+    return null;
+  }
+  let params = fn.GetParameters();
+  if ArraySize(params) != 0 || !CBReflectReturns(fn, typeName) {
     return null;
   }
   return fn;

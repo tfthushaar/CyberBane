@@ -87,7 +87,8 @@ public func CBRealPhoneFill(contact: ref<ContactData>) -> Void {
   let unread = store.ThreadUnread(thread);
   contact.lastMesssagePreview = store.ThreadPreview(thread);
   contact.playerIsLastSender = store.ThreadPreviewMine(thread);
-  contact.playerCanReply = ArraySize(CBRealPhoneChoices(contact.hash)) > 0;
+  let choices = CBRealPhoneChoices(contact.hash);
+  contact.playerCanReply = ArraySize(choices) > 0;
   contact.repliesCount = contact.playerCanReply ? 2 : 0;
   contact.messagesCount = store.ThreadSize(thread);
   contact.unreadMessegeCount = unread;
@@ -116,7 +117,12 @@ public func CBRealPhoneContacts(includeRead: Bool) -> array<ref<IScriptable>> {
     let hash = CBPhoneThreadHash(i);
     // Whether V can answer is only asked when it decides anything: it prices a pay-off and a lead,
     // and the row is filled with it again just below (CBRealPhoneFill).
-    if store.ThreadSize(i) > 0 && (includeRead || store.ThreadUnread(i) > 0 || ArraySize(CBRealPhoneChoices(hash)) > 0) {
+    let shown = store.ThreadSize(i) > 0 && (includeRead || store.ThreadUnread(i) > 0);
+    if !shown && store.ThreadSize(i) > 0 {
+      let choices = CBRealPhoneChoices(hash);
+      shown = ArraySize(choices) > 0;
+    }
+    if shown {
       let c = new ContactData();
       c.id = "cyberbane_thread_" + IntToString(i);
       c.contactId = c.id;

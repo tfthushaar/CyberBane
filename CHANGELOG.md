@@ -5,6 +5,11 @@ the next unless a version says otherwise.
 
 ## 2.6.7 (22 November 2026)
 
+**Fixed: "32758 of 2 ready to call"**
+- The Standing page could show a nonsense number for how many of your crew were ready. The same miscount could also let
+  a crew call go ahead when nobody was ready, and affected a few other counts: which phone threads you can reply to, the
+  "Just you and me" choice, a Rival's epithets and how many seats a car has. All of them count correctly now.
+
 **Fixed: talk lines only showing after the scanner**
 - After pressing Talk, the lines could stay off the screen until you opened and closed the scanner, and again after
   every line you picked. The game clears its dialog list several times a second while you stand at somebody, and each

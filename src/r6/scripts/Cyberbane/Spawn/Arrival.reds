@@ -196,7 +196,8 @@ public func CBArrivalVehicle(factionId: CName, needed: Int32, roll: Int32, out s
   let bestSeats = 0;
   let i = 0;
   while i < ArraySize(pool) {
-    let seats = Min(ArraySize(CBVehicleSeatNames(pool[i])), CBConfig.CarMaxSeats());
+    let seatNames = CBVehicleSeatNames(pool[i]);
+    let seats = Min(ArraySize(seatNames), CBConfig.CarMaxSeats());
     if seats >= want {
       seatsOut = seats;
       return pool[i];

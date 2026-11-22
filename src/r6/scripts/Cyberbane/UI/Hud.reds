@@ -2768,7 +2768,9 @@ public class CBHud {
     let crew = CBCrewBook.Get(game);
     if CBMyCrewOn() && IsDefined(crew) && crew.Count() > 0 {
       let out = crew.OutCount();
-      let ready = ArraySize(CBCrewReadyOrder(crew, CBGameSeconds(game), 0));
+      // Into a named list first (2.6.7): ArraySize read straight off the call showed "32758 of 2 ready to call".
+      let readyList = CBCrewReadyOrder(crew, CBGameSeconds(game), 0);
+      let ready = ArraySize(readyList);
       let what = out > 0 ? (crew.leaving ? "Heading home" : s"\(out) with you now") : s"\(ready) of \(crew.Count()) ready to call";
       this.SetRow(row, CBHudLayoutLanes(), out > 0 ? CBHudGreen() : CBHudCyan(), false, false, "Your crew", what, "", "", "",
                   crew.CutOwed() > 0 ? s"owed \(crew.CutOwed())eb" : "");

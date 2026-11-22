@@ -667,11 +667,12 @@ func CBFacedownStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref
 // The Rival is nearly finished in a fair fight (2.6.7): their people break their word and come in, all of them at once, the
 // ones standing further off included, and say so.
 func CBFacedownStepIn(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, r: ref<CBRival>) -> Void {
-  let stepping = ArraySize(book.fdEscorts) + ArraySize(CBFacedownStragglers(game, book));
+  let stragglers = CBFacedownStragglers(game, book);
+  let stepping = ArraySize(book.fdEscorts) + ArraySize(stragglers);
   for id in book.fdEscorts {
     CBFacedownHostile(sys, game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet);
   }
-  for id in CBFacedownStragglers(game, book) {
+  for id in stragglers {
     CBFacedownHostile(sys, game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet);
   }
   ArrayClear(book.fdEscorts);
@@ -732,7 +733,8 @@ public func CBRivalFacedownLines(sys: ref<CyberbaneSystem>, game: GameInstance, 
   ArrayPush(out, CBTalkMakeLine("[Stare them down] Look at me. Think hard about this.", CBTalkActStare(), t"ChoiceCaptionParts.GrappleIcon"));
   ArrayPush(out, CBTalkMakeLine("[Draw] Let's go.", CBTalkActDraw(), TDBID.None()));
   ArrayPush(out, CBTalkMakeLine("[Walk away] Not today.", CBTalkActWalkAway(), t"ChoiceCaptionParts.BackOutIcon"));
-  if ArraySize(CBRivalBookEscorts(game)) > 0 {
+  let escorts = CBRivalBookEscorts(game);
+  if ArraySize(escorts) > 0 {
     ArrayPush(out, CBTalkMakeLine("[Just you and me] Tell your people to stay out of it.", CBTalkActOneOnOne(), TDBID.None()));
   }
   // [64] One who owes V, or is afraid of V, can be talked out of it.

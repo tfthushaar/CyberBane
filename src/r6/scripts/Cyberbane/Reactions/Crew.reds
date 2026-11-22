@@ -1129,7 +1129,8 @@ public func CBCrewCallBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, una
   if CBSpawnRoom(game) <= 0 {
     return "Too many people around. They can't get close.";
   }
-  if ArraySize(CBCrewReadyOrder(book, CBGameSeconds(game), 0)) == 0 {
+  let readyList = CBCrewReadyOrder(book, CBGameSeconds(game), 0);   // a named list: ArraySize of a call's result reads garbage
+  if ArraySize(readyList) == 0 {
     return "Everybody's hurt, busy or just got back.";
   }
   return "";
@@ -2380,8 +2381,11 @@ public func CBCrewPhoneKind(sys: ref<CyberbaneSystem>, game: GameInstance, store
   if !CBMyCrewOn() || !IsDefined(book) || StrLen(name) == 0 {
     return CBPhoneAnswerNone();
   }
-  if Equals(name, CBCrewSender()) && ArraySize(CBCrewPhoneRows(sys, game, CBPhoneAnswerCrew())) > 0 {
-    return CBPhoneAnswerCrew();
+  if Equals(name, CBCrewSender()) {
+    let rows = CBCrewPhoneRows(sys, game, CBPhoneAnswerCrew());
+    if ArraySize(rows) > 0 {
+      return CBPhoneAnswerCrew();
+    }
   }
   if book.offerSeed != 0 && book.offerUntil >= CBGameSeconds(game) && Equals(name, book.offerSender) && book.HasRoom() {
     return CBPhoneAnswerHire();
