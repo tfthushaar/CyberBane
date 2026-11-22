@@ -514,14 +514,14 @@ public func OnExit(stateContext: ref<StateContext>, scriptInterface: ref<StateGa
 
 @wrapMethod(ScriptedPuppet)
 protected cb func OnScanningEvent(evt: ref<ScanningEvent>) -> Bool {
-  let result = wrappedMethod(evt);
+  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
   if IsDefined(evt) && Equals(evt.state, gameScanningState.Complete) && !this.cbIntelScanned {
     let intel = CBStreetIntelFor(this.GetGame());
     if IsDefined(intel) {
       intel.NoteScan(this);
     }
   }
-  return result;
+  return true;
 }
 
 @addField(ScriptedPuppet)

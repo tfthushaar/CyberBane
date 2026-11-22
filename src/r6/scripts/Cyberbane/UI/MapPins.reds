@@ -62,14 +62,14 @@ public func CreateMappinUIProfile(mappin: wref<IMappin>, mappinVariant: gamedata
 // having to find the box first. Never on the fast travel map, which keeps its own filters.
 @wrapMethod(WorldMapMenuGameController)
 protected cb func OnInitialize() -> Bool {
-  let result = wrappedMethod();
+  wrappedMethod();   // as a statement (2.6.8): never typed off what the game's event returns
   let book = CBMapBook.Get(GetGameInstance());
   if IsDefined(book) && !book.FilterSeeded() && CBMapFilterReady() && !this.IsFastTravelEnabled() {
     this.SetCustomFilter(CBMapFilterType());
     book.MarkFilterSeeded();
     CBLog.Info(n"UI", "The map's CYBERBANE box was ticked for this playthrough.");
   }
-  return result;
+  return true;
 }
 
 // ---- The map remembering ([85]) -------------------------------------------------------------------------------------

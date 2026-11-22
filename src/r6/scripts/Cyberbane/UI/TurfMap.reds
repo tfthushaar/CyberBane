@@ -9,9 +9,11 @@
 protected cb func OnGangListItemSpawned(gangWidget: ref<inkWidget>, userData: ref<IScriptable>) -> Bool {
   let moved = CBMapGangInstead(GetGameInstance(), this.m_currentHoveredDistrict, userData as Affiliation_Record);
   if IsDefined(moved) {
-    return wrappedMethod(gangWidget, moved);
+    wrappedMethod(gangWidget, moved);
+    return true;
   }
-  return wrappedMethod(gangWidget, userData);
+  wrappedMethod(gangWidget, userData);
+  return true;
 }
 
 func CBMapGangInstead(game: GameInstance, hovered: gamedataDistrict, listed: ref<Affiliation_Record>) -> ref<Affiliation_Record> {

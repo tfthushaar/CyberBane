@@ -509,14 +509,14 @@ public class CBOpenThreadAction extends GenericNotificationBaseAction {
 // Keep hold of the phone when the HUD builds it. Weak, and re-checked on every use.
 @wrapMethod(NewHudPhoneGameController)
 protected cb func OnPlayerAttach(playerPuppet: ref<GameObject>) -> Bool {
-  let result = wrappedMethod(playerPuppet);
+  wrappedMethod(playerPuppet);   // as a statement (2.6.8): never typed off what the game's event returns
   if IsDefined(playerPuppet) {
     let sys = CyberbaneSystem.Get(playerPuppet.GetGame());
     if IsDefined(sys) {
       sys.GetPhone().SetPhoneController(this);
     }
   }
-  return result;
+  return true;
 }
 
 // And let go of it the moment the HUD tears it down. Texts never go to a controller that is on
@@ -528,7 +528,8 @@ protected cb func OnUninitialize() -> Bool {
   if IsDefined(store) {
     store.ReleasePhoneController(this);
   }
-  return wrappedMethod();
+  wrappedMethod();
+  return true;
 }
 
 @wrapMethod(NewHudPhoneGameController)
@@ -537,7 +538,8 @@ protected cb func OnPlayerDetach(playerPuppet: ref<GameObject>) -> Bool {
   if IsDefined(store) {
     store.ReleasePhoneController(this);
   }
-  return wrappedMethod(playerPuppet);
+  wrappedMethod(playerPuppet);
+  return true;
 }
 
 // A new message from one of ours. Called from CBPhone.Deliver, on a settled tick.
@@ -871,7 +873,8 @@ protected cb func OnUninitialize() -> Bool {
   if IsDefined(store) {
     store.ReleaseOpenDialog(this);
   }
-  return wrappedMethod();
+  wrappedMethod();
+  return true;
 }
 
 // The game refreshes the panel whenever anything in the journal's phone section changes. While
@@ -897,7 +900,8 @@ protected cb func OnDelayedJournalUpdate(evt: ref<DelayedJournalUpdate>) -> Bool
     }
     return true;
   }
-  return wrappedMethod(evt);
+  wrappedMethod(evt);
+  return true;
 }
 
 // The reply controls, pointed at Cyberbane's answers while one of its threads is up. Moving
@@ -929,7 +933,8 @@ protected cb func OnPlayerReplyActivated(index: Int32, target: ref<ListItemContr
     this.CBActivateChoice(index);
     return true;
   }
-  return wrappedMethod(index, target);
+  wrappedMethod(index, target);
+  return true;
 }
 
 // A line of ours, in the game's message bubble: the contact's on the left, V's on the right.

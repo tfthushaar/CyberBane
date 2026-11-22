@@ -40,9 +40,9 @@ public let cbLastHitByOther: Bool;
 
 @wrapMethod(ScriptedPuppet)
 protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
-  let result = wrappedMethod(evt);
+  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
   CBOnPuppetHit(this, evt);
-  return result;
+  return true;
 }
 
 // A death is worked through on the next frame, not here.
@@ -55,9 +55,9 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 // already runs, so every change to Cyberbane's state from a fight happens one at a time.
 @wrapMethod(ScriptedPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-  let result = wrappedMethod(evt);
+  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
   CBQueueDeath(this);
-  return result;
+  return true;
 }
 
 public class CBDeathCallback extends DelayCallback {
@@ -153,9 +153,9 @@ public class CBHitFollowUpCallback extends DelayCallback {
 // Ledger and Killer-Rival creation land in M5 (spec §10.8).
 @wrapMethod(PlayerPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-  let result = wrappedMethod(evt);
+  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
   CBOnPlayerDeath(this);
-  return result;
+  return true;
 }
 
 func CBOnPlayerDeath(player: ref<PlayerPuppet>) -> Void {

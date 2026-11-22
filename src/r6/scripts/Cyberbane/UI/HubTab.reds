@@ -114,20 +114,20 @@ private let m_cbHub: ref<CBHud>;
 // whichever comes second is the one that finds both.
 @wrapMethod(StatsMainGameController)
 protected cb func OnSetUserData(userData: ref<IScriptable>) -> Bool {
-  let result = wrappedMethod(userData);
+  wrappedMethod(userData);   // as a statement (2.6.8): never typed off what the game's event returns
   if IsDefined(userData as CBHubTabData) {
     this.m_cbHubWanted = true;
     this.CBBringHub();
   }
-  return result;
+  return true;
 }
 
 @wrapMethod(StatsMainGameController)
 protected cb func OnInitialize() -> Bool {
-  let result = wrappedMethod();
+  wrappedMethod();   // as a statement (2.6.8): never typed off what the game's event returns
   this.m_cbHubReady = true;
   this.CBBringHub();
-  return result;
+  return true;
 }
 
 // Callbacks go back while the widgets still exist, as the pause menu's do (crash rule 9).
@@ -141,7 +141,8 @@ protected cb func OnUninitialize() -> Bool {
     this.m_cbHub.Detach();
     this.m_cbHub = null;
   }
-  return wrappedMethod();
+  wrappedMethod();
+  return true;
 }
 
 @addMethod(StatsMainGameController)

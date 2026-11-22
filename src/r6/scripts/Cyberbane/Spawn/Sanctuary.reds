@@ -127,7 +127,8 @@ protected cb func OnApproachingAreaResponseEvent(evt: ref<AIApproachingAreaRespo
   if IsDefined(evt) && evt.isPassingThrough && CBDoorTurnsAway(this, evt.sender as ScriptedPuppet) {
     return false;
   }
-  return wrappedMethod(evt);
+  wrappedMethod(evt);
+  return true;
 }
 
 func CBDoorTurnsAway(door: ref<GameObject>, npc: ref<ScriptedPuppet>) -> Bool {

@@ -127,12 +127,12 @@ private let m_cbGeneration: Int32;
 
 @wrapMethod(PauseMenuGameController)
 protected cb func OnInitialize() -> Bool {
-  let result = wrappedMethod();
+  wrappedMethod();   // as a statement (2.6.8): never typed off what the game's event returns
   let sys = CyberbaneSystem.Get(GetGameInstance());
   if IsDefined(sys) {
     this.m_cbGeneration = sys.PauseMenuOpened(this);
   }
-  return result;
+  return true;
 }
 
 // Callbacks are handed back while every widget they point at still exists: before the wrapped
@@ -148,7 +148,8 @@ protected cb func OnUninitialize() -> Bool {
   if IsDefined(sys) {
     sys.PauseMenuClosed(this.m_cbGeneration);
   }
-  return wrappedMethod();
+  wrappedMethod();
+  return true;
 }
 
 // Show the Hub page over this menu's list. Safe to call when it is already up (it redraws).
@@ -229,5 +230,6 @@ protected cb func OnBack() -> Bool {
   if IsDefined(sys) && sys.HideHubPage() {
     return true;
   }
-  return wrappedMethod();
+  wrappedMethod();
+  return true;
 }

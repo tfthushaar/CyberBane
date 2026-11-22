@@ -28,6 +28,11 @@ the next unless a version says otherwise.
   a longer one, and anything else comes a little after the moment it's about. Two texts never land at the same time. A
   lookout or ally warning you that someone is on you right now still gets through in seconds.
 
+**Fixed: "Cyberbane has a script error" on some setups**
+- On some installs the game refused to start with "pool error: unexpected entry: void type" in StreetTalk.reds, depending
+  on the redscript version or on another mod changing the same game event. Cyberbane no longer relies on what the game's
+  events hand back, so it compiles either way.
+
 **Fixed, smaller**
 - A family member taking a fallen Rival's place was announced by the gang under one surname and then texted you under
   the family's. The announcement now uses the family name.

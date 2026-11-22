@@ -255,7 +255,7 @@ public let cbReturnHushed: Bool;
 
 @wrapMethod(ScriptedPuppet)
 protected cb func OnInteractionActivated(evt: ref<InteractionActivationEvent>) -> Bool {
-  let r = wrappedMethod(evt);
+  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
   if IsDefined(evt) && IsDefined(evt.activator) && evt.activator.IsPlayer() {
     let on = Equals(evt.eventType, gameinteractionsEInteractionEventType.EIET_activate);
     if Equals(evt.layerData.tag, n"GenericTalk") {
@@ -270,7 +270,7 @@ protected cb func OnInteractionActivated(evt: ref<InteractionActivationEvent>) -
       CBLog.Info(n"Talk", s"Their prompt layer \(NameToString(evt.layerData.tag)) \(on ? "came up" : "went down").");
     }
   }
-  return r;
+  return true;
 }
 
 // Whether a bystander's own talk on F may be switched off while V settles on somebody beside them (2.5.2): only
@@ -477,7 +477,8 @@ protected cb func OnEventReceived(stimEvent: ref<StimuliEvent>) -> Bool {
       return false;
     }
   }
-  return wrappedMethod(stimEvent);
+  wrappedMethod(stimEvent);
+  return true;
 }
 
 // The settled tick V last had the prompt up on this person, or was waiting on their answer (1.9.5). The
@@ -3140,28 +3141,34 @@ protected cb func OnDialogsData(value: Variant) -> Bool {
   if ArraySize(data.choiceHubs) == 0 {
     let held: DialogChoiceHubs;
     if CBTalkHeldList(held) {
-      return wrappedMethod(ToVariant(held));
+      wrappedMethod(ToVariant(held));
+      return true;
     }
   }
-  return wrappedMethod(value);
+  wrappedMethod(value);
+  return true;
 }
 
 // Which list is the live one: the game clears it to none with the rest.
 @wrapMethod(dialogWidgetGameController)
 protected cb func OnDialogsActivateHub(activeHubId: Int32) -> Bool {
   if activeHubId == -1 && CBTalkListHeldNow() {
-    return wrappedMethod(CBConfig.TalkHubId());
+    wrappedMethod(CBConfig.TalkHubId());
+    return true;
   }
-  return wrappedMethod(activeHubId);
+  wrappedMethod(activeHubId);
+  return true;
 }
 
 // The line picked, while talk's list is the live one.
 @wrapMethod(dialogWidgetGameController)
 protected cb func OnDialogsSelectIndex(index: Int32) -> Bool {
   if this.m_activeHubID == CBConfig.TalkHubId() && CBTalkListHeldNow() {
-    return wrappedMethod(CBTalkHeldIndex());
+    wrappedMethod(CBTalkHeldIndex());
+    return true;
   }
-  return wrappedMethod(index);
+  wrappedMethod(index);
+  return true;
 }
 
 // Who they are, and how they take V, over the choices.
