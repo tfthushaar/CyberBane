@@ -27,6 +27,8 @@ the next unless a version says otherwise.
 **Changed: Mod Settings is no longer required**
 - Without Mod Settings, Cyberbane now runs on its default settings instead of failing to load. Mod Settings is still
   how you change them.
+- Works with **Mod Configuration Menu**. MCM shows Cyberbane's settings through Mod Settings, so keep Mod Settings
+  installed alongside it to change them there.
 
 Your progress carries over.
 

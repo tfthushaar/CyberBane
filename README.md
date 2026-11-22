@@ -131,7 +131,8 @@ Install these first:
 - [Codeware](https://www.nexusmods.com/cyberpunk2077/mods/7780)
 
 Recommended: [Mod Settings](https://www.nexusmods.com/cyberpunk2077/mods/4885), to change Cyberbane's settings. Without it
-Cyberbane runs on its default settings.
+Cyberbane runs on its default settings. Mod Configuration Menu also works: it shows Cyberbane's settings through Mod
+Settings, so keep Mod Settings installed with it.
 
 Optional: [TweakXL](https://www.nexusmods.com/cyberpunk2077/mods/4197) gives Cyberbane's map pins their own
 CYBERBANE box in the map's custom filters. Everything else works without it.
