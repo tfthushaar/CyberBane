@@ -228,6 +228,8 @@ public class CBReactionDirector {
     // The NCPD after V (2.6.5, CBPoliceOnV): the gangs lie low. Whoever Cyberbane turned on V and is not fighting stands
     // down, and nobody is turned below until the stars are gone.
     let policeOnV = CBPoliceOnV(sys);
+    // Nor while Adam Smasher is after V (Compat/SmasherEncounters.reds): one fight at a time.
+    let smasherOut = CBSmasherEventOn(game);
     if policeOnV {
       this.RevertHostileNotFighting(game);
     }
@@ -352,7 +354,7 @@ public class CBReactionDirector {
           // any fear. Everyone else - civilians, gangers, cops - can read how dangerous V
           // looks and flee (spec §9.2), capped per tick.
           let turnedHostile = false;
-          if !npc.IsCrowd() && gangOn && hostileOnSight && recognized && !policeOnV {
+          if !npc.IsCrowd() && gangOn && hostileOnSight && recognized && !policeOnV && !smasherOut {
             turnedHostile = this.TryGangHostile(score, player, npc, faction, tick, dist);
           }
           // Somebody of a gang hostile to V who Cyberbane did not turn (1.9.1), read now and then.

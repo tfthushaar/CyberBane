@@ -221,6 +221,8 @@ Each playthrough keeps its own record, and nothing one character does reaches an
   **They Will Remember / Night City Remembers** to Off under **Advanced** to let Cyberbane decide instead.
 - **Much Better AI, Street Sense, New Game Plus:** detected automatically; Cyberbane steps back
   where they already cover something.
+- **Smasher Encounters:** detected automatically. While Smasher is after you, Cyberbane sends nobody new and turns nobody
+  on you at sight, and his Arasaka backup doesn't break and run. Your crew still comes when called.
 - **Equipment-EX and other outfit mods:** your outfit is read as it looks on V.
 - **Phone Extension:** works alongside.
 - **Companions** (the game's and modded ones) fight the people Cyberbane sends after you.

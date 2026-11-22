@@ -229,6 +229,15 @@ public func CBNpcInCombat(npc: wref<ScriptedPuppet>) -> Bool {
   return NPCPuppet.IsInCombat(npc);
 }
 
+// Their health in percent, 100 when it cannot be read (2.6.7). Only of somebody in the world.
+public func CBHealthPercent(game: GameInstance, npc: wref<ScriptedPuppet>) -> Float {
+  if !IsDefined(npc) || !npc.IsAttached() {
+    return 100.0;
+  }
+  let sps = GameInstance.GetStatPoolsSystem(game);
+  return IsDefined(sps) ? sps.GetStatPoolValue(Cast<StatsObjectID>(npc.GetEntityID()), gamedataStatPoolType.Health, true) : 100.0;
+}
+
 public func CBNpcSafe(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(npc) || !npc.IsAttached() {
     return false;

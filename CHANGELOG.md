@@ -10,6 +10,11 @@ the next unless a version says otherwise.
   every line you picked. The game clears its dialog list several times a second while you stand at somebody, and each
   clear threw Cyberbane's lines away before they could fade in. They now stay up for as long as the conversation lasts.
 
+**New: works with Smasher Encounters**
+- While Adam Smasher is after you, Cyberbane sends nobody new and turns nobody on you at sight, so his fight isn't
+  buried under a crew or a Rival. His Arasaka backup stands its ground instead of breaking and running from your name.
+  Your own crew still comes when you call. Nothing to set: Cyberbane notices it on its own.
+
 **Fixed: Night City Remembers**
 - Night City Remembers is now detected, like They Will Remember. It wasn't, because it has no Mod Settings page, so
   both mods ran their own hostility and Cyberbane offered Talk to gangers the other mod had hostile on sight, who then
@@ -27,6 +32,14 @@ the next unless a version says otherwise.
   asks you to step out first.
 - When the talking is over, everybody is back how they were, unless the talk changed that: a parley, a deal or a toll.
   Hurt one of them while they hold and the hold is off for all of them.
+
+**Fixed: bodyguards shooting during "Just you and me"**
+- A Rival who agreed to a fair fight still had their bodyguards open fire the moment you hurt the Rival. The game turns
+  a squad on whoever hurts one of them, and that overrode their word. Now they stay out of it, and only step in, with a
+  shout, once the Rival is close to beaten. Hurt one of them, or use explosives or quickhacks, and they come in at once.
+- The same goes for everybody else Cyberbane holds out of a fight: people waiting for a facedown, a sergeant's crew while
+  he talks, the people holding their fire while you talk, and the person you're talking to. The game no longer turns them
+  on you, or on your companions, until you hurt one of them.
 
 **Fixed: a Rival's people after a facedown**
 - A Rival's people who were too far off to be held when a facedown opened stood calm through the fight that followed,

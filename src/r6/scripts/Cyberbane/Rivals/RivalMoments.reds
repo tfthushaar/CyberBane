@@ -406,7 +406,11 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
       }
       return;
     }
-    // Just you and me: over when the Rival is down or gone; their people step in if V breaks the terms.
+    // Just you and me: over when the Rival is down or gone; their people step in if V breaks the terms, or when the Rival is
+    // all but beaten (2.6.7): "I told him to leave his people out of it, he said okay, and his bodyguards still started
+    // shooting." They were held neutral, and the game turned them anyway the moment their boss was hurt in front of them
+    // (AIActionHelper.TryChangingAttitudeToHostile, squad mate in danger), which now leaves alone anybody held out of a
+    // fight (CBHeldOutOfFight). Their word holds until the Rival is nearly finished; then they cannot stand and watch.
     if !CBNpcSafe(sys, body) || !CBStillStanding(body) {
       CBFacedownDuelOver(sys, game, book, r, IsDefined(body) && CBIsDown(body));
       return;
@@ -414,6 +418,10 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
     if CBFacedownEscortHit(game, book) || sys.GetTruce().Broken() || CBMethodHas(body.cbLastMethodMask, CBMethodExplosive())
        || CBMethodHas(body.cbLastMethodMask, CBMethodQuickhack()) {
       CBFacedownTermsBroken(sys, game, book, r);
+      return;
+    }
+    if CBHealthPercent(game, body) <= CBConfig.DuelStepInHealth() {
+      CBFacedownStepIn(sys, game, book, r);
     }
     return;
   }
@@ -654,6 +662,31 @@ func CBFacedownStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref
     p.cbFacedownWait = false;
     CBOrderFlee(game, p);
   }
+}
+
+// The Rival is nearly finished in a fair fight (2.6.7): their people break their word and come in, all of them at once, the
+// ones standing further off included, and say so.
+func CBFacedownStepIn(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, r: ref<CBRival>) -> Void {
+  let stepping = ArraySize(book.fdEscorts) + ArraySize(CBFacedownStragglers(game, book));
+  for id in book.fdEscorts {
+    CBFacedownHostile(sys, game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet);
+  }
+  for id in CBFacedownStragglers(game, book) {
+    CBFacedownHostile(sys, game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet);
+  }
+  ArrayClear(book.fdEscorts);
+  book.fdState = 0;
+  book.fdRival = 0;
+  sys.GetTruce().End(sys, game, CBTruceFacedown());
+  if stepping > 0 {
+    let name = CBRivalDisplayName(sys.GetContent(), r);
+    CBIntelSay(game, 3, CBIntelSpeaker(r.faction), CBLineOf([
+      "Boss is going down! Forget the deal, take them!",
+      s"Nobody puts \(name) in the ground. Light them up!",
+      "That's enough. Fair's over. Get them!",
+      "We said we'd stay out. We lied. Drop them!"]), 3.0);
+  }
+  CBLog.Info(n"Rivals", s"Rival \(r.id) was nearly beaten one on one; \(stepping) of their people stepped in.");
 }
 
 func CBFacedownTermsBroken(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, r: ref<CBRival>) -> Void {

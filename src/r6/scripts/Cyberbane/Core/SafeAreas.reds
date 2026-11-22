@@ -307,7 +307,7 @@ public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Boo
     return true;
   }
   return sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game)
-      || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys);
+      || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys) || CBSmasherEventOn(game);
 }
 
 // The NCPD after V: any wanted level (2.6.5). The gangs lie low while the cops swarm. "When hiding from the NCPD, if a
@@ -343,6 +343,9 @@ public func CBArrivalsHeldWhy(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   if CBPoliceOnV(sys) {
     return "the NCPD are after you";
+  }
+  if CBSmasherEventOn(game) {
+    return CBSmasherHeldWhy();
   }
   return "";
 }

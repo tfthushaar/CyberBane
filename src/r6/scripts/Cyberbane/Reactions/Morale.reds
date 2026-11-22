@@ -383,6 +383,10 @@ public func CBHoldsGround(npc: wref<ScriptedPuppet>) -> Bool {
   if des.IsTagged(id, n"CB_Apex") || CBIsMeetApex(des, id) {
     return true;
   }
+  // Nobody of Arasaka runs with Adam Smasher in the fight (2.6.7, Compat/SmasherEncounters.reds).
+  if npc.IsAttached() && CBSmasherEventOn(npc.GetGame()) && Equals(CBClassifyFaction(npc), n"Arasaka") {
+    return true;
+  }
   if des.IsTagged(id, n"CB_Rival") {
     let sys = CyberbaneSystem.Get(npc.GetGame());
     if IsDefined(sys) {

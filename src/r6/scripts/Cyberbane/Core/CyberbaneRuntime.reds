@@ -263,6 +263,16 @@ public class CyberbaneRuntime extends ScriptableService {
     return this.m_twrHostileAsked ? this.m_twrHostileWhy : "it has not been asked yet this session";
   }
 
+  // Smasher Encounters' word on whether Smasher is out (2.6.7, Compat/SmasherEncounters.reds).
+  private let m_smasherProbe: ref<CBSmasherProbe>;
+
+  public func GetSmasherProbe() -> ref<CBSmasherProbe> {
+    if !IsDefined(this.m_smasherProbe) {
+      this.m_smasherProbe = new CBSmasherProbe();
+    }
+    return this.m_smasherProbe;
+  }
+
   public func GetTwrDisguiseProbe() -> ref<CBTwrDisguiseProbe> {
     if !IsDefined(this.m_twrDisguiseProbe) {
       this.m_twrDisguiseProbe = new CBTwrDisguiseProbe();

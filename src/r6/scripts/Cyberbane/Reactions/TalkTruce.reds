@@ -324,6 +324,43 @@ public class CBTalkTruce {
 // ReprimandEscalation: regeneration on) and drains it when V backs off (DeescalateReprimand: regeneration off, decay on),
 // and its guard acts when it is full or empty. Both off, it stays where it is: the warning waits for the talking to end.
 // The same two modifiers the game sets, through the same calls; the game's own event sets it filling again (Release).
+// Held out of a fight with V by Cyberbane's word (2.6.7): a Rival's people at a facedown or standing back from a fair fight,
+// those walking up calm for one, a crew sergeant's people while he talks, anybody holding while V talks to one of theirs, and
+// the person V is talking to. Not once V has hurt them: then it is their fight.
+public func CBHeldOutOfFight(p: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(p) || p.cbDamagedByPlayer {
+    return false;
+  }
+  return p.cbFacedownHeld || p.cbFacedownWait || p.cbTruceHeld || (p.cbTalkPartner && p.cbTalkLinesUp);
+}
+
+// The game turns people on V by this one door (aiActionHelper.script): somebody seeing a squad mate in danger, a hit nearby,
+// a threat on their tracker, a stim. Anybody neutral and aggressive it makes hostile to V and to V's whole group, which is
+// how a Rival's bodyguards, held neutral for a fair fight, opened fire the moment V hurt the Rival. For anybody Cyberbane has
+// held out of a fight with V, it does not change them, and they stay as they are; everybody else, and anybody the target of
+// which is not V, goes through as the game has it. Cyberbane turns its own people when the word is broken (CBFacedownHostile).
+@wrapMethod(AIActionHelper)
+public static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>, target: ref<GameObject>) -> Bool {
+  // V, or one of V's companions: the game makes them hostile to the whole of the target's group, which is V's.
+  if IsDefined(owner) && IsDefined(target) && CBHeldOutOfFight(owner)
+     && (target.IsPlayer() || ScriptedPuppet.IsPlayerCompanion(target)) {
+    return false;
+  }
+  return wrappedMethod(owner, target);
+}
+
+// The game's other door, when it hands somebody a combat target (aiActionHelper.script SetCommandCombatTarget, a combat
+// target picked in aiCoreTasks.script): the same rule.
+@wrapMethod(GameObject)
+public static func ChangeAttitudeToHostile(owner: wref<GameObject>, target: wref<GameObject>) -> Void {
+  let held = owner as ScriptedPuppet;
+  if IsDefined(held) && IsDefined(target) && CBHeldOutOfFight(held)
+     && (target.IsPlayer() || ScriptedPuppet.IsPlayerCompanion(target)) {
+    return;
+  }
+  wrappedMethod(owner, target);
+}
+
 public func CBTruceStopMeter(pools: ref<StatPoolsSystem>, sid: StatsObjectID) -> Void {
   let regen: StatPoolModifier;
   pools.GetModifier(sid, gamedataStatPoolType.ReprimandEscalation, gameStatPoolModificationTypes.Regeneration, regen);

@@ -669,6 +669,8 @@ public abstract class CBConfig {
   public static func DuelBase() -> Float = 0.45
   public static func DuelGangBonus() -> Float = 0.3
   public static func DuelFear() -> Float = 8.0
+  // How low the Rival's health goes in a fair fight before their people break their word and step in (2.6.7), in percent.
+  public static func DuelStepInHealth() -> Float = 15.0
   public static func CallEvenBase() -> Float = 0.3
   public static func HumiliateFear() -> Float = 10.0
   public static func HumiliateQuitChance() -> Float = 0.5
