@@ -316,6 +316,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-TributeMult", "Tribute amount");
     this.Text("Cyberbane-Settings-HitSquads", "Hit squads");
     this.Text("Cyberbane-Settings-HitSquadFreq", "How eager gangs are");
+    this.Text("Cyberbane-Settings-EarlyGrace", "Before you're known");
+    this.Text("Cyberbane-Settings-EarlyGrace-Desc", "Until your Street Cred reaches 20, around the time of the Heist, the street has barely heard of you. Your name grows more slowly, gangs and Rivals take longer to come for you, fewer people swear to get even, and no gang sends its best before Street Cred 15. It all eases off as your Street Cred climbs. Off, the street treats you as known from your first day.");
     this.Text("Cyberbane-Settings-ApexOn", "Apex squads");
     this.Text("Cyberbane-Settings-ApexOn-Desc", "Whether a gang that has earned it sends its best after you. Off, nobody ever sends an apex squad.");
 

@@ -655,6 +655,11 @@ public class CBEventEngine {
 // on a street, its district the game's own (FastTravelPoint_Record), and its pin's position is the terminal's.
 func CBEventFarPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, out spot: Vector4,
                      out name: String) -> Bool {
+  // Never while a load or a fast travel is under way (2.7.0): the crash came during a quickload, with the travel points and
+  // their records being put back.
+  if !CBWorldStable(game) {
+    return false;
+  }
   let district = sys.GetCurrentDistrict();
   let container = GameInstance.GetScriptableSystemsContainer(game);
   let fts = IsDefined(container) ? container.Get(n"FastTravelSystem") as FastTravelSystem : null;
@@ -668,10 +673,22 @@ func CBEventFarPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
   let names: array<String>;
   for pt in points {
     if IsDefined(pt) {
-      let rec = TweakDBInterface.GetFastTravelPointRecord(pt.GetPointRecord());
-      let dRec = IsDefined(rec) ? rec.District() : null;
-      // Not a metro station's: its point can be on the platform, under the street.
-      if IsDefined(dRec) && !rec.SubwayStation() && Equals(CBMapGameDistrict(dRec.EnumName()), district) {
+      let pointId = pt.GetPointRecord();
+      let rec = TDBID.IsValid(pointId) ? TweakDBInterface.GetFastTravelPointRecord(pointId) : null;
+      // Its district read as an id and looked up by the null-safe getter, never through the record's own District()
+      // (2.7.0): that one dereferences whatever its link resolves to, and a point whose district is missing (added by a
+      // mod such as FastTravelFromAnywhereToAnyFastTravelPoint, or not ready during a load) took the game down inside it,
+      // before any check here could run. Not a metro station's either: its point can be on the platform, under the street.
+      let dRec: ref<District_Record>;
+      if IsDefined(rec) && !rec.SubwayStation() {
+        let flat = pointId;
+        TDBID.Append(flat, t".district");   // the point's own district link, as an id
+        let districtId = TweakDBInterface.GetForeignKey(flat, TDBID.None());
+        if TDBID.IsValid(districtId) {
+          dRec = TweakDBInterface.GetDistrictRecord(districtId);
+        }
+      }
+      if IsDefined(dRec) && Equals(CBMapGameDistrict(dRec.EnumName()), district) {
         let pin = ms.GetMappin(pt.mappinID);
         if IsDefined(pin) {
           let at = pin.GetWorldPosition();

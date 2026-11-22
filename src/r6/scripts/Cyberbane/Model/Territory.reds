@@ -265,7 +265,23 @@ public func CBTurfShares(sys: ref<CyberbaneSystem>, game: GameInstance, district
   }
 }
 
-// Who holds the district: the largest share. n"" when no gang has streets there.
+// Each share by its gang's claim to run the district (2.7.0, turfClaim), in step with `ids`: who holds it and who can take
+// it. "The Mox control Watson": the shares were all a holder was read from, and a gang V had never fought led every district
+// it shared once V had worn the others down, whether or not it had ever run more than a few blocks. Where each gang is on
+// its own streets (CBTurfGangsIn) still reads the shares themselves.
+func CBTurfClaims(sys: ref<CyberbaneSystem>, ids: array<CName>, shares: array<Float>) -> array<Float> {
+  let out: array<Float>;
+  let content = IsDefined(sys) ? sys.GetContent() : null;
+  let k = 0;
+  while k < ArraySize(ids) && k < ArraySize(shares) {
+    let prof = IsDefined(content) ? content.GetFaction(ids[k]) : null;
+    ArrayPush(out, shares[k] * (IsDefined(prof) ? ClampF(prof.turfClaim, 0.0, 1.0) : 1.0));
+    k += 1;
+  }
+  return out;
+}
+
+// Who holds the district: the largest claim. n"" when no gang has streets there.
 public func CBTurfHolder(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName) -> CName {
   let book = CBTurfWarsOn() ? CBTurfBook.Get(game) : null;
   if IsDefined(book) {
@@ -277,7 +293,8 @@ public func CBTurfHolder(sys: ref<CyberbaneSystem>, game: GameInstance, district
   let ids: array<CName>;
   let shares: array<Float>;
   CBTurfShares(sys, game, district, ids, shares);
-  return CBTurfLeader(ids, shares);
+  let claims = CBTurfClaims(sys, ids, shares);
+  return CBTurfLeader(ids, claims);
 }
 
 func CBTurfLeader(ids: array<CName>, shares: array<Float>) -> CName {
@@ -422,7 +439,9 @@ func CBTurfTickDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
   if ArraySize(ids) == 0 {
     return;
   }
-  let leader = CBTurfLeader(ids, shares);
+  // By claim (2.7.0): a gang that guards a corner leads the district only once those who run it are bled white.
+  let claims = CBTurfClaims(sys, ids, shares);
+  let leader = CBTurfLeader(ids, claims);
   let held = book.Holder(i);
   if Equals(held, n"") {
     book.StartHolding(i, leader, now);
@@ -438,7 +457,7 @@ func CBTurfTickDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
     return;
   }
   if Equals(leader, held)
-     || CBTurfShareOf(ids, shares, leader) < CBTurfShareOf(ids, shares, held) * CBConfig.TurfFlipMargin() {
+     || CBTurfShareOf(ids, claims, leader) < CBTurfShareOf(ids, claims, held) * CBConfig.TurfFlipMargin() {
     book.ClearChallenge(i);
   } else {
     if NotEquals(book.Challenger(i), leader) {

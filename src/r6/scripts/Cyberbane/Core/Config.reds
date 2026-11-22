@@ -965,6 +965,15 @@ public abstract class CBConfig {
   public static func GrudgeSlowHours() -> Float = 24.0       // just over the line into Hostile
   public static func GrudgeFastHours() -> Float = 3.0        // the bottom of Vendetta
   public static func GrudgeFloorHours() -> Float = 1.5
+  // Before V is known (2.7.0, CBMercStanding): the Street Cred at which V's name carries in full, about where the Heist
+  // falls; what share of renown V earns, how much longer gangs and Rivals wait, and what share of the Rivals that would
+  // be made are made, at Street Cred 0, each easing to the full amount by StandingFullCred; and the Street Cred before
+  // which no gang sends its best.
+  public static func StandingFullCred() -> Float = 20.0
+  public static func EarlyRenownShare() -> Float = 0.4
+  public static func EarlyPatienceMult() -> Float = 2.0
+  public static func EarlyRivalShare() -> Float = 0.5
+  public static func ApexMinStreetCred() -> Float = 15.0
   public static func GrudgeFreshHours() -> Float = 6.0
   public static func GrudgeFreshMult() -> Float = 0.5
   public static func GrudgeBrokenWeight() -> Float = 3.0     // a gang with nobody left waits up to four times as long
@@ -2162,7 +2171,9 @@ public abstract class CBConfig {
   // ---- Turf wars (Model/Territory.reds) -----------------------------------
   // What V costs a gang: each of their people put down, an officer or elite, a boss, a Rival of
   // theirs, a crew wiped out, their apex squad wiped out. Knocked out counts half.
-  public static func GangLossMember() -> Float = 0.8
+  // A ganger on the corner is the easiest thing in Night City to replace (2.7.0): 0.8 broke Maelstrom and the Scavengers
+  // in one evening of scanner jobs in Watson. The people who lead them still cost what they did.
+  public static func GangLossMember() -> Float = 0.5
   public static func GangLossOfficer() -> Float = 3.0
   public static func GangLossBoss() -> Float = 8.0
   public static func GangLossRival() -> Float = 6.0

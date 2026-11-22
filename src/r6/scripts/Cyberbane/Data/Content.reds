@@ -36,6 +36,10 @@ public class CBFactionProfile {
   // How hard they push for their own streets, against a gang that shares them (2.6.4): 1 for a gang that runs its district,
   // less for one that lives in the cracks of somebody else's (the Scrappers in Barghest's Dogtown).
   public let turfHold: Float;
+  // How ready they are to run a whole district (2.7.0), as against holding their own blocks in it: 1 for a gang that runs
+  // its streets, less for one that only guards a corner (the Mox in Kabuki) or holds no streets at all (the Scavengers).
+  // Only who holds the district reads it (CBTurfClaims); where each gang is on its own streets is turfHold's.
+  public let turfClaim: Float;
   public let isGang: Bool;                    // tribute/hit-squad eligibility
   public let canBeBought: Bool;               // broker-peace eligibility (corps cannot)
   public let displayKey: String;
@@ -500,6 +504,7 @@ public func CBMakeFaction(
   f.canBeBought = canBeBought;
   f.displayKey = displayKey;
   f.turfHold = 1.0;
+  f.turfClaim = 1.0;
   ArrayResize(f.respectWeights, CBArchetypeCount());
   return f;
 }

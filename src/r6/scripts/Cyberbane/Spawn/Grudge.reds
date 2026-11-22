@@ -121,6 +121,8 @@ public func CBGangPatienceHours(sys: ref<CyberbaneSystem>, game: GameInstance, f
   // Their code, and the hour.
   hours /= MaxF(CBCodeCrew(fs.id), 0.25);
   hours *= CBGrudgeHourOfNight(game);
+  // A merc they have barely heard of (2.7.0): finding out who it was, and whether they are worth a crew, takes longer.
+  hours *= CBConfig.EarlyPatienceMult() - (CBConfig.EarlyPatienceMult() - 1.0) * CBMercStanding(game);
   // The player's say.
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() {
@@ -190,6 +192,8 @@ public func CBRivalPatienceHours(sys: ref<CyberbaneSystem>, game: GameInstance, 
     hours *= CBConfig.GrudgeMaskMult();
   }
   hours *= CBGrudgeHourOfNight(game);
+  // Finding a merc with no name yet takes longer (2.7.0).
+  hours *= CBConfig.EarlyPatienceMult() - (CBConfig.EarlyPatienceMult() - 1.0) * CBMercStanding(game);
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() {
     hours /= MaxF(rt.GetSettings().rivalFrequencyMult, 0.05);

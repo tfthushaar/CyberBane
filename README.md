@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.6.8.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.7.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -20,7 +20,11 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   squad, by car or on foot. You can pay them off.
 - **Rivals.** Enemies who escape you, or whom you beat and leave alive, come back later with a name,
   a rank, scars from how you hurt them, and their own people. Spare them, kill them, or let them climb.
-- **Turf wars.** A gang you keep hurting loses its streets to the gang at war with it.
+- **Turf wars.** A gang you keep hurting loses its streets to the gang at war with it. Small outfits like the Mox
+  guard their own blocks and only take over a district once everyone else there has been bled dry.
+- **A name you earn.** Before the Heist you're a merc few people have heard of. Gangs and Rivals take longer to come
+  for you, and no gang sends its apex squad until your Street Cred reaches 15. It grows into the full thing by Street
+  Cred 20.
 - **Messages in your phone.** Gangs, Rivals and street contacts text you, and some threads let you
   answer: pay a gang off, or haggle over where a Rival is hiding.
 - **The Hub.** A Cyberbane tab in the game menu shows your standing, every gang, who holds each
@@ -202,7 +206,8 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
   and keeps your standing for later. The NCPD can be switched off the same way.
 - **How often you are hunted:** each gang comes by its own grudge against you, and Rivals by theirs. **How eager gangs
   are** and **How eager Rivals are** under **How often they come** stretch or shorten every wait, **Apex squads** turns
-  those off, and **Encounter gap** is the breather after each fight.
+  those off, and **Encounter gap** is the breather after each fight. **Before you're known**, on the same page, keeps
+  the early game gentler until your Street Cred reaches 20; switch it off to be known from day one.
 - **Fewer messages:** **How much you hear**, on the first page, spaces out the street's chatter (word going round and
   lines overheard). Warnings, demands, offers, your crew and answers to what you did always come through.
 - **Start over:** **Reset all Cyberbane data** under **Advanced** (or Start over on the Hub's History

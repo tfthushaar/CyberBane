@@ -217,6 +217,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "1")
   public let encounterGapMinutes: Int32 = 10;
 
+  // Before V is known (2.7.0, CBMercStanding): until Street Cred 20, about the Heist, V's name carries less far.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EarlyGrace")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EarlyGrace-Desc")
+  public let earlyGrace: Bool = true;
+
   // Apex squads at all (2.6.5): the per-day slider at 0 used to be the only way to stop them.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")

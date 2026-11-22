@@ -115,13 +115,35 @@ public func CBLootRoll(tier: Int32, out ids: array<TweakDBID>, out counts: array
   }
 }
 
-// One iconic, if the dice say so: one that exists, is an iconic, is not a quest item, and has not
-// already dropped this session. TDBID.None() otherwise.
+// The iconics of the list V carries now (2.7.0), each remembered in the save, so one V has had never drops again even once
+// it is in the stash, sold or given away. The stash itself can only be read while V's apartment is loaded.
+public func CBLootNoteCarriedIconics(sys: ref<CyberbaneSystem>, pool: array<TweakDBID>) -> Void {
+  let game = sys.GetGameInstance();
+  let player = GetPlayer(game);
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !IsDefined(player) || !IsDefined(ts) {
+    return;
+  }
+  let items: array<wref<gameItemData>>;
+  ts.GetItemListByTag(player, n"Weapon", items);
+  for d in items {
+    if IsDefined(d) {
+      let rid = ItemID.GetTDBID(d.GetID());
+      if ArrayContains(pool, rid) {
+        sys.NoteIconicGiven(rid);
+      }
+    }
+  }
+}
+
+// One iconic, if the dice say so: one that exists, is an iconic, is not a quest item, and V has never had, from Cyberbane
+// or anywhere else V was seen carrying it (2.7.0). TDBID.None() otherwise.
 public func CBLootIconicRoll(sys: ref<CyberbaneSystem>, chance: Float) -> TweakDBID {
   if !IsDefined(sys) || chance <= 0.0 || RandF() >= chance {
     return TDBID.None();
   }
   let pool = CBLootIconics();
+  CBLootNoteCarriedIconics(sys, pool);
   let usable: array<TweakDBID>;
   let i = 0;
   while i < ArraySize(pool) {

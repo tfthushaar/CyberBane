@@ -797,6 +797,8 @@ public func CBRivalOdds(sys: ref<CyberbaneSystem>, base: Float, recordID: TweakD
   }
   if IsDefined(sys) {
     odds = odds / (1.0 + Cast<Float>(sys.RecentRivalsMade(CBConfig.RivalBurstTicks())));
+    // Fewer swear to get even with a merc nobody has heard of (2.7.0).
+    odds *= CBStandingScale(sys.GetGameInstance(), CBConfig.EarlyRivalShare());
   }
   return ClampF(odds, 0.0, CBConfig.RivalOddsCeiling());
 }

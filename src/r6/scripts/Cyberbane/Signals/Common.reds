@@ -47,6 +47,32 @@ public func CBPlayerStreetCred(game: GameInstance) -> Float {
   return stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.StreetCred);
 }
 
+// How far V's name carries yet (2.7.0), 0 to 1, by the game's own Street Cred: 0 for a merc new to the street, 1 from
+// StandingFullCred (about the Heist) on. "Apex squads and Rivals are brutal early, and V gets known far too fast before the
+// Heist": a merc doing gigs with Jackie is a name in a few bars, and no gang spends its best on one. 1 always with
+// "Before you're known" off.
+public func CBMercStanding(game: GameInstance) -> Float {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().earlyGrace {
+    return 1.0;
+  }
+  return ClampF(CBPlayerStreetCred(game) / CBConfig.StandingFullCred(), 0.0, 1.0);
+}
+
+// A share at Street Cred 0 that eases to the whole of it as V becomes known.
+public func CBStandingScale(game: GameInstance, share: Float) -> Float {
+  return share + (1.0 - share) * CBMercStanding(game);
+}
+
+// No gang sends its best after a merc it has barely heard of (2.7.0). False with "Before you're known" off.
+public func CBTooUnknownForApex(game: GameInstance) -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().earlyGrace {
+    return false;
+  }
+  return CBPlayerStreetCred(game) < CBConfig.ApexMinStreetCred();
+}
+
 // Which life V started from (1.8.3): EnumInt(gamedataLifePath), or -1 when it cannot be read.
 // It is saved with V and can never change inside a playthrough, which is what lets it tell two
 // characters apart (CyberbaneSystem.VerifyPlaythroughOwner). The game's own getter answers

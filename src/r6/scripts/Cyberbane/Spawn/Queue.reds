@@ -993,6 +993,10 @@ public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -
   if CBGangViewVendetta(fs.id) {
     return true;
   }
+  // Not after a merc they have barely heard of (2.7.0, Before you're known).
+  if CBTooUnknownForApex(sys.GetGameInstance()) {
+    return false;
+  }
   // A gang whose code never sends its best (the Mox), or whose grudge stays at home (Data/GangCodes.reds).
   if !CBCodeSendsApex(fs.id) || !CBCodeAtHome(sys, fs.id) {
     return false;
@@ -1045,11 +1049,20 @@ public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState
   if CBCorpHiresKillers(fs.id) {
     return "they hire killers instead of sending their own";
   }
+  // Nothing to count towards for a gang with no best to send (2.7.0): one whose code never sends them (the Mox), one with no
+  // apex records, or with Apex squads off. Each of them was promised "apex squad in 20 kills".
+  if !CBApexOnSetting() || !CBCodeSendsApex(fs.id) || !CBFactionFieldsSquads(fs.id) || !TDBID.IsValid(CBApexRecordFor(fs)) {
+    return "";
+  }
   if CBApexEligible(sys, fs) {
     // Ready is only ready if the lane can send them. Everything that stops it is said here, in the
     // lane's own order, so the Hub never promises a squad that is not coming (CBApexBlocker).
     let why = CBApexBlocker(sys, sys.GetGameInstance(), fs);
     return StrLen(why) == 0 ? "ready to send their best" : "their best waits: " + why;
+  }
+  if CBTooUnknownForApex(sys.GetGameInstance()) {
+    let cred = RoundF(CBConfig.ApexMinStreetCred());
+    return s"their best come once your Street Cred reaches \(cred)";
   }
   let since = fs.kills - fs.apexAtKills;
   let toApex = CBConfig.ApexKillThreshold() - since;
@@ -1086,7 +1099,8 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
               StrLen(crewLabel) > 0 ? s"Heard you dealt with that crew of \(crewLabel)." : "Heard you dealt with that crew.");
   // Only promise what can follow: a gang that fields an apex, while the apex lane is on and
   // nothing is already on its way.
-  if !CBToastsOn() || !CBHitSquadsOn() || CBLaneDailyCap(CBLaneApex()) <= 0
+  // Nor from a gang whose code never sends its best, or with Apex squads off (2.7.0).
+  if !CBToastsOn() || !CBHitSquadsOn() || CBLaneDailyCap(CBLaneApex()) <= 0 || !CBApexOnSetting() || !CBCodeSendsApex(faction)
      || !TDBID.IsValid(CBApexRecordFor(fs)) || NotEquals(sys.GetPendingApexFaction(), n"") {
     return;
   }
@@ -1478,7 +1492,8 @@ public func CBApexBlocker(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref
   if !CBHitSquadsOn() {
     return CBRememberSendsCrews() ? CBRememberModName() + " sends the gangs" : "crews are off in Mod Settings";
   }
-  if CBLaneDailyCap(CBLaneApex()) <= 0 {
+  // The switch as well as the per-day slider (2.7.0): with Apex squads off the Hub still said "ready to send their best".
+  if !CBApexOnSetting() || CBLaneDailyCap(CBLaneApex()) <= 0 {
     return "apex squads are off in Mod Settings";
   }
   let queued = sys.GetLaneTarget(CBLaneApex());

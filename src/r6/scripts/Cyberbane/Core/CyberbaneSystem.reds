@@ -277,8 +277,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Pay the bounty for this apex squad once, when the last of them goes down.
   private let m_apexBountyArmed: Bool;
   private let m_apexBountyFaction: CName;
-  // Iconic weapons already handed out this session, so the same one does not drop twice.
-  private let m_iconicsGiven: array<TweakDBID>;
+  // Iconic weapons V has had, from Cyberbane or seen on V (2.7.0: kept in the save). "Two Comrade's Hammers": the list
+  // lived for a session only, and V's own copy was never looked at, so a load or a stashed one let the same weapon drop.
+  private persistent let m_iconicsGiven: array<TweakDBID>;
   // The hunt's presentation and its finer states (Spawn/Hunt.reds). Session only.
   private let m_huntGrade: String;
   private let m_huntEndLine: String;
@@ -2851,7 +2852,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   public func NoteIconicGiven(id: TweakDBID) -> Void {
-    ArrayPush(this.m_iconicsGiven, id);
+    if !ArrayContains(this.m_iconicsGiven, id) {
+      ArrayPush(this.m_iconicsGiven, id);
+    }
   }
 
   public func GetHuntGrade() -> String {
@@ -3562,6 +3565,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
     CBTurfTick(this, game);         // a district changing hands is news (Model/Territory.reds)
+    // An iconic V picked up anywhere is remembered while V carries it (2.7.0), so it never drops again after it goes in
+    // the stash, is sold or is handed to the crew (Spawn/Loot.reds).
+    CBLootNoteCarriedIconics(this, CBLootIconics());
     CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
 
@@ -4691,7 +4697,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     if CBReputationFrozen() {
       return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
     }
-    this.m_renownPoints = MaxF(0.0, this.m_renownPoints + delta);
+    // Before V is known (2.7.0): what V does carries less far, all of it, until Street Cred puts a name to it.
+    let gain = delta;
+    if gain > 0.0 {
+      gain *= CBStandingScale(this.GetGameInstance(), CBConfig.EarlyRenownShare());
+    }
+    this.m_renownPoints = MaxF(0.0, this.m_renownPoints + gain);
     this.GetScore().MarkDirty();
   }
   public func AddKillDreadPoints(delta: Float) -> Void {

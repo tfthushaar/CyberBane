@@ -659,8 +659,11 @@ func CBClassifyVictim(puppet: ref<ScriptedPuppet>, faction: CName) -> Int32 {
   if Equals(faction, n"NCPD") {
     return EnumInt(ECBVictimClass.Cop);
   }
-  // Somebody with no gang whom the game itself reacts to as a civilian is one, crowd or not (1.9.3).
-  if puppet.IsCrowd() || (Equals(faction, n"") && puppet.IsCharacterCivilian()) {
+  // Somebody with no gang whom the game itself reacts to as a civilian is one, crowd or not (1.9.3). Never one of a gang
+  // (2.7.0): "why does killing a bunch of criminals with explosives worsen my Conduct?" The game puts plenty of gangers in
+  // its crowd (the ones loitering at a hangout or a crime scene), and every one of them caught in a blast was booked as a
+  // civilian killed, five points of Conduct each. A ganger is a ganger, crowd or not.
+  if Equals(faction, n"") && (puppet.IsCrowd() || puppet.IsCharacterCivilian()) {
     return EnumInt(ECBVictimClass.Civilian);
   }
   if Equals(faction, n"Arasaka") || Equals(faction, n"Militech") || Equals(faction, n"KangTao") {

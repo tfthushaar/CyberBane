@@ -2903,7 +2903,7 @@ public class CBHud {
 
     this.SetBipolarBar(3, "Conduct", s"\(RoundF(code))   \(CBCodeLabel(code))",
       code, code < 0.0 ? CBHudRed() : CBHudGreen(),
-      "Clean and controlled, or one bad night from going over. Runs both ways from the middle.");
+      "Leaving people alive raises it. Killing bystanders, shooting someone with their hands up and gory kills in front of witnesses lower it.");
   }
 
   // The gangs, the ones that want you dead first.

@@ -196,6 +196,7 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   // has lost somebody to them.
   f.rivalFactions = [n"Valentinos", n"Maelstrom", n"Mox", n"SixthStreet"];
   f.turf = [n"Watson"];
+  f.turfClaim = 0.3;   // they harvest people out of the ruins; they have never run a district (2.7.0)
   c.AddFaction(f);
 
   f = CBMakeFaction(n"Mox", 5.0, -0.05, 1.1, 0.2, true, true, "Cyberbane-Faction-Mox");
@@ -206,6 +207,9 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f.SetRespect(ECBArchetype.Professional, 0.3);
   f.rivalFactions = [n"TygerClaws", n"Scavengers"];
   f.turf = [n"Watson", n"Westbrook"];
+  // They protect their own blocks of Kabuki and the people who work them; they run a district only once everybody else in
+  // it has been bled white (2.7.0). "The Mox control Watson."
+  f.turfClaim = 0.3;
   c.AddFaction(f);
 
   f = CBMakeFaction(n"Wraiths", -5.0, 0.05, 1.0, 0.0, true, true, "Cyberbane-Faction-Wraiths");

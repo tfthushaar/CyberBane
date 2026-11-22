@@ -3,6 +3,49 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.7.0 (23 November 2026)
+
+**Fixed: a crash when loading a save**
+- The game could crash while loading a save, most often with a fast travel mod installed, because a fast travel point
+  had no district. Cyberbane now checks that safely, and never looks at fast travel points while a load is under way.
+
+**Fixed: enemies that couldn't be killed**
+- Some people Cyberbane put in the world could come from characters the game protects from dying. That could include
+  a bagman, a debtor, people at a sit-down or gang event, turf patrols, or someone who came back into view after a
+  fight. Bullets did nothing to them. Every one of them can be killed now.
+
+**Fixed: Conduct dropping when you fight gangs**
+- Gangers standing around a hangout or crime scene were sometimes counted as bystanders, so a grenade into a group of
+  them cost you Conduct as if you'd killed civilians. They count as gangers now. The Conduct bar on the Hub also
+  explains what moves it: leaving people alive raises it, and killing bystanders, shooting people with their hands up,
+  and gory kills in front of witnesses lower it.
+
+**Changed: the early game, before the Heist**
+- You start as a merc few people have heard of. Until your Street Cred reaches 20, about the time of the Heist, your
+  name grows more slowly, gangs and Rivals take longer to come after you, and fewer of the people you beat swear
+  revenge. No gang sends its apex squad until Street Cred 15, and the Gangs page tells you so. It eases into the full
+  game as your Street Cred climbs.
+- New setting: **Before you're known**, under **How often they come**. On by default. Switch it off to be known from day
+  one. A gang you set to Vendetta by hand still comes for you at full strength.
+
+**Changed: turf wars feel more like Night City**
+- The Mox could end up running all of Watson once you had worn down Maelstrom and the Tyger Claws. The Mox and the
+  Scavengers still hold their own blocks, but they only take over a whole district once the gangs that really run it
+  have been bled dry. If they already hold a district in your save, the bigger gang takes it back as it recovers.
+- Gangs lose strength more slowly from ordinary gangers going down, since street muscle is easy to replace. Killing their
+  officers, bosses and Rivals, and wiping out their crews, hurts them as much as before. A night of NCPD jobs in Watson
+  no longer breaks Maelstrom or the Scavengers.
+
+**Fixed: the same iconic weapon twice**
+- An iconic weapon could drop again after you loaded a save, or after you put yours in the stash. Cyberbane now
+  remembers every iconic you've had, from its drops or found anywhere else, and never drops one of those again.
+
+**Fixed, smaller**
+- The Gangs page no longer counts down to an apex squad for a gang that never sends one, like the Mox, or when Apex
+  squads are switched off.
+
+Your progress carries over.
+
 ## 2.6.8 (22 November 2026)
 
 **Fixed: gang meetings that never happened**

@@ -1241,6 +1241,12 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     return;
   }
   let id = puppet.GetEntityID();
+  // Never one the game will not let die (2.7.0), whoever they are and however they came back into the world. The record's
+  // god mode is put back every time a body is built, and only some of ours had it taken off: the main path, the crew, allies,
+  // hunters and scouts did, while the street's people (a bagman, a debtor, a sit-down, a gang event, a wannabe), the turf
+  // patrols and an ended encounter's body streaming back in kept it, so an enemy from such a record could not be killed.
+  // First, before anything decides what they are; V's own crew are protected again by their own setup when the setting says.
+  CBDisarmGodMode(game, puppet);
   // Knocked out and streamed back in. Made hostile, told to chase V and marked, they used to be:
   // a body on the ground with an order it could not carry out and a pin that stayed until it died.
   if !CBStillStanding(puppet) {
