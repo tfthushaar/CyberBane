@@ -367,6 +367,11 @@ public func CBPlayerInScene(game: GameInstance) -> Bool {
 // inside one of these the whole time, whether or not the game has decided a stealth situation
 // is live, so an arrival now holds off for the duration rather than only while V is crouched
 // and already spotted-but-not-seen.
+// Hostile ground alone (2.6.7): where the game turns its people on V on sight. Restricted ground warns first.
+public func CBPlayerInDangerZone(game: GameInstance) -> Bool {
+  return CBPlayerZone(game) == EnumInt(gamePSMZones.Dangerous);
+}
+
 public func CBPlayerInHostileZone(game: GameInstance) -> Bool {
   let zone = CBPlayerZone(game);
   return zone == EnumInt(gamePSMZones.Restricted) || zone == EnumInt(gamePSMZones.Dangerous);

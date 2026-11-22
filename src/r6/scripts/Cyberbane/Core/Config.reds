@@ -1894,6 +1894,9 @@ public abstract class CBConfig {
   // How long street talk's list holds through the game's own clears without talk's tick renewing it (2.6.7). Five ticks:
   // talk renews it every tick, so this only runs out if talk itself has stopped.
   public static func TalkListHoldSeconds() -> Float = 1.0
+  // How far from V the people of the gang V is talking to hold their fire while the talking lasts (2.6.7,
+  // Reactions/TalkTruce.reds): as far as a gang's people warn from and shoot from in a street.
+  public static func TruceRadius() -> Float = 40.0
   public static func TalkRange() -> Float = 3.5
   public static func TalkKeepRange() -> Float = 5.5
   public static func TalkDwell() -> Float = 0.4

@@ -167,6 +167,9 @@ lives in your saves: a save made while the mod is removed loses it.
   a line. Reach for a weapon and the conversation ends. With a weapon in your hand, the prompt shows
   **Holster to talk** instead, and a greyed prompt also says when somebody just spoke to you, is busy
   fighting or is part of a job. Vendors, joytoys, fixers and ripperdocs keep the game's own conversations.
+  While you talk to one of a gang, their people nearby hold their fire, and on a gang's restricted ground the warning to
+  leave waits until you are done. Afterwards they are as they were, unless the talk changed that. Hurt one of them and
+  the hold is off. On hostile ground, where they shoot on sight, step out first.
 - **Calling your crew:** open the **My crew** thread on your phone and pick **Need you. Now.**, press it on the Hub's
   Crew page, or set a key for it (Mod Settings > Cyberbane > Your crew > **Call your crew (key)**). In a fight, up to
   three come and go home once it is over; with nothing to fight, two come and walk with you until you send them home

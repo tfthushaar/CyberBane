@@ -400,7 +400,8 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
       if CBTalkEngaged(sys, body) {
         book.fdTick = tick;
       }
-      if body.cbDamagedByPlayer || CBFacedownEscortHit(game, book) || tick - book.fdTick > CBConfig.FacedownTicks() {
+      if body.cbDamagedByPlayer || CBFacedownEscortHit(game, book) || sys.GetTruce().Broken()
+         || tick - book.fdTick > CBConfig.FacedownTicks() {
         CBFacedownFight(sys, game, book, r, body, false);
       }
       return;
@@ -410,7 +411,7 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
       CBFacedownDuelOver(sys, game, book, r, IsDefined(body) && CBIsDown(body));
       return;
     }
-    if CBFacedownEscortHit(game, book) || CBMethodHas(body.cbLastMethodMask, CBMethodExplosive())
+    if CBFacedownEscortHit(game, book) || sys.GetTruce().Broken() || CBMethodHas(body.cbLastMethodMask, CBMethodExplosive())
        || CBMethodHas(body.cbLastMethodMask, CBMethodQuickhack()) {
       CBFacedownTermsBroken(sys, game, book, r);
     }
@@ -461,6 +462,9 @@ func CBFacedownOpen(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
     }
   }
   body.cbFacedownOpen = true;
+  // Everybody else of theirs nearby holds too, the ones walking up included (2.6.7, Reactions/TalkTruce.reds): "a Rival
+  // was offering to talk but his bodyguards started shooting". Only the escorts standing close at the start held.
+  sys.GetTruce().Begin(sys, game, CBTruceFacedown(), r.faction, body);
   let name = CBRivalDisplayName(sys.GetContent(), r);
   CBIntelSay(game, 3, name, CBFacedownOpener(sys, game, r), 4.0);
   if CBToastsOn() && !book.fdHinted {
@@ -549,11 +553,33 @@ func CBFacedownEscortHit(game: GameInstance, book: ref<CBRivalBook>) -> Bool {
   return false;
 }
 
+// The Rival's people still walking up calm who were not close enough to be held when it opened (2.6.7). Whatever the
+// facedown does with the people it holds, it does with them too: they turned on V once their wait ran out, which in a
+// fight held for as long as V was fighting (CBFacedownWaitTick), so they stood calm through it, and after V was let go
+// or won the duel they turned hostile later on their own.
+func CBFacedownStragglers(game: GameInstance, book: ref<CBRivalBook>) -> array<EntityID> {
+  let out: array<EntityID>;
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) {
+    return out;
+  }
+  for id in des.GetTaggedIDs(n"CB_Escort") {
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if IsDefined(p) && p.cbFacedownWait && !ArrayContains(book.fdEscorts, id) {
+      ArrayPush(out, id);
+    }
+  }
+  return out;
+}
+
 // A fight after all: everybody hostile again. `drop` gives V the first shots (the Rival's aim off for a moment).
 func CBFacedownFight(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, r: ref<CBRival>,
                      body: ref<ScriptedPuppet>, drop: Bool) -> Void {
   CBFacedownHostile(sys, game, body);
   for id in book.fdEscorts {
+    CBFacedownHostile(sys, game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet);
+  }
+  for id in CBFacedownStragglers(game, book) {
     CBFacedownHostile(sys, game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet);
   }
   if drop && IsDefined(body) {
@@ -577,6 +603,7 @@ func CBFacedownRelease(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
   book.fdState = 0;
   book.fdRival = 0;
   ArrayClear(book.fdEscorts);
+  sys.GetTruce().End(sys, game, CBTruceFacedown());
 }
 
 // They let V go, once: everybody walks off and the encounter is closed, the way a crew called off is.
@@ -584,6 +611,9 @@ func CBFacedownLetGo(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
                      body: ref<ScriptedPuppet>) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   for id in book.fdEscorts {
+    CBFacedownStandDown(sys, game, des, id);
+  }
+  for id in CBFacedownStragglers(game, book) {
     CBFacedownStandDown(sys, game, des, id);
   }
   if IsDefined(body) {
@@ -599,6 +629,7 @@ func CBFacedownLetGo(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
   book.fdState = 0;
   book.fdRival = 0;
   ArrayClear(book.fdEscorts);
+  sys.GetTruce().End(sys, game, CBTruceFacedown());
 }
 
 // One of their people stands down for good, the way a crew called off does (CBCallOffGang): no longer a hunter by tag,
@@ -620,6 +651,7 @@ func CBFacedownStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref
     CBTalkReleaseHold(p);
     CBCalmTowardCompanions(sys, p);
     p.cbFacedownHeld = false;
+    p.cbFacedownWait = false;
     CBOrderFlee(game, p);
   }
 }
@@ -628,9 +660,13 @@ func CBFacedownTermsBroken(sys: ref<CyberbaneSystem>, game: GameInstance, book: 
   for id in book.fdEscorts {
     CBFacedownHostile(sys, game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet);
   }
+  for id in CBFacedownStragglers(game, book) {
+    CBFacedownHostile(sys, game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet);
+  }
   ArrayClear(book.fdEscorts);
   book.fdState = 0;
   book.fdRival = 0;
+  sys.GetTruce().End(sys, game, CBTruceFacedown());
   CBIntelSay(game, 3, CBIntelSpeaker(r.faction), CBPick2("That's not how this works! Get them!", "No rules then. Light them up!"), 3.0);
 }
 
@@ -640,9 +676,13 @@ func CBFacedownDuelOver(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
   for id in book.fdEscorts {
     CBFacedownStandDown(sys, game, des, id);
   }
+  for id in CBFacedownStragglers(game, book) {
+    CBFacedownStandDown(sys, game, des, id);
+  }
   book.fdState = 0;
   book.fdRival = 0;
   ArrayClear(book.fdEscorts);
+  sys.GetTruce().End(sys, game, CBTruceFacedown());
   if won {
     CBTalkFear(sys, game, r.faction, CBConfig.DuelFear());
     CBFileLog(sys, n"DuelWon", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));

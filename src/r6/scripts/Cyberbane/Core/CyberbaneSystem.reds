@@ -51,6 +51,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_director: ref<CBReactionDirector>;
   // Talking to people in the street (Reactions/StreetTalk.reds, 1.9.5). Session only.
   private let m_talk: ref<CBStreetTalk>;
+  // The hold on a gang's fire while V talks to one of them (2.6.7, Reactions/TalkTruce.reds).
+  private let m_truce: ref<CBTalkTruce>;
   private let m_sessionStarted: Bool;
   private let m_tickGeneration: Int32;
   private let m_playerAttachCbId: Uint32;
@@ -555,6 +557,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.ScheduleFastTick();
     // And street talk's own, faster one (1.9.5). It stands still until the first settled tick.
     this.m_talk.Start(this.GetGameInstance());
+    this.GetTruce().Reset();
   }
 
   private cb func OnCBEntityAttached(event: ref<EntityLifecycleEvent>) -> Void {
@@ -3572,6 +3575,13 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   public func GetStreetTalk() -> ref<CBStreetTalk> {
     return this.m_talk;
+  }
+
+  public func GetTruce() -> ref<CBTalkTruce> {
+    if !IsDefined(this.m_truce) {
+      this.m_truce = new CBTalkTruce();
+    }
+    return this.m_truce;
   }
 
   // ---- Titles (spec §12.1, Appendix G) ----------------------------------

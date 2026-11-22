@@ -730,7 +730,9 @@ func CBParleyTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     if CBNpcSafe(sys, s) && CBTalkEngaged(sys, s) {
       war.parleyTick = tick;
     }
-    if !CBNpcSafe(sys, s) || !CBStillStanding(s) || s.cbDamagedByPlayer || crewHit || tick - war.parleyTick > CBConfig.FacedownTicks() {
+    // Or anybody of his crew holding further off (2.6.7, the truce broken).
+    if !CBNpcSafe(sys, s) || !CBStillStanding(s) || s.cbDamagedByPlayer || crewHit || sys.GetTruce().Broken()
+       || tick - war.parleyTick > CBConfig.FacedownTicks() {
       CBParleyFight(sys, game, war);
     }
     return;
@@ -791,6 +793,9 @@ func CBParleyOpen(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     }
   }
   s.cbFacedownOpen = true;
+  // His whole crew holds while he talks (2.6.7, Reactions/TalkTruce.reds), the ones further off and walking up included:
+  // only those within a few metres of him were calmed, and the rest came on shooting while he said "Hold your fire".
+  sys.GetTruce().Begin(sys, game, CBTruceParley(), faction, s);
   CBSayVoiced(sys, s, n"enemy_warning");
   let crewSize = ArraySize(war.parleyCrew);
   CBIntelSay(game, 3, "Crew sergeant", CBLineOf([s"Hold it! Nobody shoot. \(crewSize) of us and one of you, \(CBYou(sys, game)). Let's hear what you've got to say.",
@@ -809,6 +814,7 @@ func CBParleyFight(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWar
   }
   ArrayClear(war.parleyCrew);
   war.parleyOpen = false;
+  sys.GetTruce().End(sys, game, CBTruceParley());
 }
 
 public func CBParleyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> array<ref<CBTalkLine>> {
@@ -846,6 +852,7 @@ public func CBParleyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, player
       war.parleyOpen = false;
       ArrayClear(war.parleyCrew);
       CBCallOffGang(sys, game, gang);
+      sys.GetTruce().End(sys, game, CBTruceParley());
       CBFileLog(sys, n"ParleyPaid", CBGameSeconds(game), CBEventDistrict(sys, game), gang, Cast<Float>(price));
       return CBTalkSay(CBPick2("Pleasure. We never saw you.", "Money talks. Boys, we're done here."), n"");
     }
@@ -865,6 +872,7 @@ public func CBParleyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, player
       war.parleyOpen = false;
       ArrayClear(war.parleyCrew);
       CBCallOffGang(sys, game, gang);
+      sys.GetTruce().End(sys, game, CBTruceParley());
       CBTalkFear(sys, game, gang, CBConfig.StareFear());
       CBFileLog(sys, n"ParleyScared", CBGameSeconds(game), CBEventDistrict(sys, game), gang, 0.0);
       return CBTalkSay(CBPick2("...Not worth it. We're out.", "Fine. FINE. Nobody's paying us enough for this."), n"");

@@ -815,6 +815,11 @@ public class CBStreetTalk {
     ds.DelayCallback(cb, CBConfig.TalkTickSeconds(), false);
   }
 
+  // V pressed Talk and the conversation is still on (2.6.7, the truce's owner check).
+  public func InConversation() -> Bool {
+    return this.m_engaged && this.m_stage != CBTalkStageIdle();
+  }
+
   public func IsShown() -> Bool {
     return this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen();
   }
@@ -849,6 +854,8 @@ public class CBStreetTalk {
     let tick = Max(sys.GetTickCount(), 1);
     // Bystanders V has moved on from get their own talk back (2.5.2). Returns at once when there are none.
     this.RestoreNear(player, false);
+    // Their people holding their fire while V talks (2.6.7): the ones walking up are held as they come.
+    sys.GetTruce().Tick(sys, game);
     this.GetIntel().Tick(sys, game, player, dt);
     // A line said: the answer comes after a beat, only with the world settled.
     if this.m_stage == CBTalkStageWaiting() {
@@ -1454,6 +1461,11 @@ public class CBStreetTalk {
     this.m_holdAge = 0.0;
     let npc = t.npc;
     npc.cbTalkLinesUp = true;
+    // Their people hold their fire while V talks to one of them (2.6.7, Reactions/TalkTruce.reds).
+    let sysTruce = CyberbaneSystem.Get(player.GetGame());
+    if IsDefined(sysTruce) && !t.cop {
+      sysTruce.GetTruce().Begin(sysTruce, player.GetGame(), CBTruceTalk(), t.faction, npc);
+    }
     if CBTalkStopWalkersOn() && !t.atWork && t.rivalId == 0 {
       if npc.IsCrowd() {
         let crowd = npc.GetCrowdMemberComponent();
@@ -1787,6 +1799,10 @@ public class CBStreetTalk {
   // something was said (TalkCooldownTicks), and the log says why it ended.
   private func End(game: GameInstance, why: String) -> Void {
     let wasOn = this.m_stage != CBTalkStageIdle();
+    let sysTruce = CyberbaneSystem.Get(game);
+    if IsDefined(sysTruce) {
+      sysTruce.GetTruce().End(sysTruce, game, CBTruceTalk());
+    }
     if this.m_stage == CBTalkStageOffered() || this.m_stage == CBTalkStageOpen() {
       CBTalkClearHub(game);
       CBTalkClearOffer(game);
@@ -2369,7 +2385,7 @@ func CBTalkParleyCrew(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>) -> Int32 
 
 // The reason a hostile person gives, kept as one string so the refusal line can recognise it.
 public func CBTalkWhyHostile() -> String = "they are hostile to V"
-public func CBTalkWhyTurf() -> String = "V is on their restricted ground, where the game's own rules turn them on V"
+public func CBTalkWhyTurf() -> String = "V is on their hostile ground, where the game turns them on V on sight"
 
 // Their gang hostile to V on sight in the other mod's record (2.6.7).
 public func CBTalkWhyGrudge() -> String {
@@ -2525,7 +2541,9 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   // turn them on V however a conversation goes: the list came up, the game cleared it over and over ("the game took the
   // prompt off the screen 35 times"), and they opened fire eight seconds in. Said in the greyed prompt instead, so V knows
   // to step out first. Somebody down at V's feet or who gave up is out of it, and still talks.
-  if CBPlayerInHostileZone(game) && !npc.IsCrowd() && !CBTalkDownAtFeet(npc) && !npc.cbGaveUp {
+  // Restricted ground talks (2.6.7): there the game warns V off before anything happens, and while V talks the warning
+  // holds (Reactions/TalkTruce.reds). Its hostile ground is where they open fire on sight, warning or not.
+  if CBPlayerInDangerZone(game) && !npc.IsCrowd() && !CBTalkDownAtFeet(npc) && !npc.cbGaveUp {
     return CBTalkWhyTurf();
   }
   // Their gang hostile to V on sight by They Will Remember's or Night City Remembers' record (2.6.7, CBTwrGangHostile, asked
@@ -2546,7 +2564,7 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   let agent = npc.GetAttitudeAgent();
   let pagent = player.GetAttitudeAgent();
   if IsDefined(agent) && IsDefined(pagent) && Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile)
-     && CBPlayerInHostileZone(game) {
+     && CBPlayerInDangerZone(game) {
     return CBTalkWhyHostile();
   }
   return "";
@@ -2937,7 +2955,7 @@ public func CBTalkNoteWords(why: String) -> String {
   if Equals(why, CBTalkWhyVInCombat()) { return "Not while you're in a fight"; }
   if Equals(why, "they are running from V") { return "Running from you"; }
   if Equals(why, CBTalkWhyJob()) || Equals(why, CBTalkWhyTracked()) { return "Part of a job"; }
-  if Equals(why, CBTalkWhyTurf()) { return "On their ground: step out first"; }
+  if Equals(why, CBTalkWhyTurf()) { return "Hostile ground: step out first"; }
   if Equals(why, CBTalkWhyGrudge()) { return "Hostile to you"; }
   return "";
 }

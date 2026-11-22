@@ -1683,7 +1683,7 @@ public func CBRearmTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
       if IsDefined(p) && p.cbArmTick > 0 && tick - p.cbArmTick <= CBConfig.RearmWatchTicks()
          && p.IsAttached() && CBStillStanding(p) && !p.cbMoraleBroken && !p.cbSurrendered && !p.cbGaveUp && !p.cbFacedownHeld
-         && !p.cbFacedownWait {
+         && !p.cbFacedownWait && !p.cbTruceHeld {
         let agent = p.GetAttitudeAgent();
         if IsDefined(agent) && NotEquals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) {
           CBTrace("attitude: one of ours came up neutral; hostile again");

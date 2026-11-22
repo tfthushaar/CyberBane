@@ -604,6 +604,7 @@ func CBHuntEngageTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
     // Nor anybody held for a facedown, or standing back from a fight one on one (Rivals/RivalMoments.reds, 2.4.4).
     if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p) && !p.cbFacedownHeld
        && !p.cbFacedownWait   // nor anybody walking up calm for one (2.5.0)
+       && !p.cbTruceHeld      // nor anybody holding while V talks to one of theirs (2.6.7)
        && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID())
        && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.HuntEngageDistance() {
       CBEngageV(game, p);
@@ -619,7 +620,7 @@ func CBHuntOrderTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyna
     let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
     // Somebody broken and running is left to run; somebody still in a car is the car's.
-    if CBStillStanding(puppet) && CBNpcSafe(sys, puppet) && !puppet.cbMoraleBroken
+    if CBStillStanding(puppet) && CBNpcSafe(sys, puppet) && !puppet.cbMoraleBroken && !puppet.cbTruceHeld
        && !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) && !CBNpcInCombat(puppet) {
       let away = Vector4.Distance(puppet.GetWorldPosition(), ppos);
       let searching = sys.GetHuntState() != CBHuntLocated();

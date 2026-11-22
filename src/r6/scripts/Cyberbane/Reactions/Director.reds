@@ -400,7 +400,7 @@ public class CBReactionDirector {
       let player = GetPlayer(game);
       let agent = npc.GetAttitudeAgent();
       let pagent = IsDefined(player) ? player.GetAttitudeAgent() : null;
-      if IsDefined(agent) && IsDefined(pagent) && !CBNpcInCombat(npc) && npc.cbHoldState != 1
+      if IsDefined(agent) && IsDefined(pagent) && !CBNpcInCombat(npc) && npc.cbHoldState != 1 && !npc.cbTruceHeld
          && Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Neutral) {
         CBTrace("attitude: the toll ran out; back to how the game had them");
         agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
@@ -435,8 +435,9 @@ public class CBReactionDirector {
     // Never somebody out of it (2.5.7): hands up, down for V's mercy, in a conversation with V, or standing for a
     // facedown. Asked every pass, a vendetta gang's ganger who had just given up was turned on V again by this.
     // Nor anybody who gave up to V and was let walk (cbGaveUp, 2.6.3).
+    // Nor anybody holding their fire while V talks to one of theirs (2.6.7, cbTruceHeld).
     if npc.cbSurrendered || npc.cbGaveUp || npc.cbMercyOpen || npc.cbFacedownOpen || npc.cbFacedownHeld || npc.cbFacedownWait
-       || (npc.cbTalkPartner && !npc.cbHostileByCyberbane) {
+       || npc.cbTruceHeld || (npc.cbTalkPartner && !npc.cbHostileByCyberbane) {
       return false;
     }
     if CBTwrActive() {

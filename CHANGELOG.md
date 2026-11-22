@@ -18,6 +18,21 @@ the next unless a version says otherwise.
   you, so Cyberbane's crews still come. The same goes for They Will Remember's hostility.
 - The setting under **Advanced** is now called **They Will Remember / Night City Remembers**.
 
+**New: they hold their fire while you talk**
+- While you talk to one of a gang, their people nearby hold their fire, including any who walk up mid-conversation. A
+  Rival's bodyguards hold too while the Rival offers to talk, all of them now, not only the ones standing closest when
+  it started. The same goes for a crew whose sergeant stops to talk: his whole crew holds, not only the ones at his side.
+- You can talk to people on a gang's restricted ground (the yellow trespassing warning). The warning to leave waits
+  while you talk, and picks up where it left off when you're done. Only hostile ground, where they shoot on sight, still
+  asks you to step out first.
+- When the talking is over, everybody is back how they were, unless the talk changed that: a parley, a deal or a toll.
+  Hurt one of them while they hold and the hold is off for all of them.
+
+**Fixed: a Rival's people after a facedown**
+- A Rival's people who were too far off to be held when a facedown opened stood calm through the fight that followed,
+  and turned on you later after the Rival let you go or lost a fair duel. They now fight, walk off or stand down with the
+  rest.
+
 Your progress carries over.
 
 ## 2.6.6 (22 November 2026)
