@@ -188,7 +188,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-ShowCountdowns-Desc", "Show exact times on the Hub and the HUD line. Off says soon, any moment or later instead.");
     this.Text("Cyberbane-Settings-Bounties-Desc", "Putting down a Rival, a crew or an apex squad earns you eddies, paid by a gang at war with theirs. This is a reward to you, not the price on your head (that is A price on your head, under Being hunted).");
     this.Text("Cyberbane-Settings-ApexTraits-Desc", "Each apex gets two traits of its own, so no two fight the same way. Stands down on its own when New Game Plus is installed.");
-    this.Text("Cyberbane-Settings-TwrCompat-Desc", "Auto or On: They Will Remember decides who is hostile to you and how well a disguise works, and Cyberbane follows both: every gang it has hostile is hostile here, and crews and hostility on sight are left to it. Off: Cyberbane decides; turn hostility off in They Will Remember's own settings so the two do not disagree.");
+    this.Text("Cyberbane-Settings-TwrCompat-Desc", "Auto or On: They Will Remember or Night City Remembers decides who is hostile to you, and Cyberbane follows it: every gang it has hostile is hostile here, hostility on sight is left to it, and nobody it has hostile offers you a word. They Will Remember also takes over crews and disguises. Night City Remembers sends nobody after you, so Cyberbane's crews still come. Off: Cyberbane decides; turn hostility off in the other mod's own settings so the two do not disagree.");
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising for a bug report.");
     this.Text("Cyberbane-Settings-FreezeReputation-Desc", "Stops your reputation changing. Everything already earned keeps working.");
     this.Text("Cyberbane-Settings-HudScale-Desc", "Size of Cyberbane's own screens and bars, on top of the scaling it already does for your resolution.");
@@ -374,7 +374,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-CarsPerArrival-Desc", "How many cars one crew or apex squad can arrive in. A group too big for one car comes in several, one after another, each picked to seat as many as it can; past this many, the rest walk in.");
 
     // ---- Settings: compatibility ----------------------------------------
-    this.Text("Cyberbane-Settings-TwrCompat", "They Will Remember compatibility");
+    this.Text("Cyberbane-Settings-TwrCompat", "They Will Remember / Night City Remembers");
     this.Text("Cyberbane-Settings-VehicleArrivals", "Arrive by car");
     this.Text("Cyberbane-Settings-CarAmbushes", "Gangs lie in wait");
     this.Text("Cyberbane-Settings-CarAmbushes-Desc", "A gang sworn against you can park a car up the road and pull out as you drive past, more often where you're known to go; the Wraiths do it on Badlands roads whatever their grudge. On foot with a job tracked far away, a crew may wait for you near it instead, outside the job itself. A lookout you paid to keep watch warns you.");

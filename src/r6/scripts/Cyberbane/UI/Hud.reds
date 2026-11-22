@@ -2940,7 +2940,7 @@ public class CBHud {
           let posture = score.GetPosture(fs.id);
           let hostile = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) || twr > 0;
           if CBTwrOwnsHostility(fs.id) && CBTwrGangHostile(sys.GetGameInstance(), fs.id) == 0 {
-            hostile = false;   // They Will Remember decides, and it says not
+            hostile = false;   // They Will Remember or Night City Remembers decides, and it says not
           }
           if (sweep == 0 && hostile) || (sweep == 1 && !hostile) {
             ArrayPush(order, fs);
@@ -2996,7 +2996,7 @@ public class CBHud {
       if off {
         postureText = "Off: hostile";
       } else {
-        postureText = twrHostile == 2 ? "TWR: Hostile" : "Seen hostile";
+        postureText = twrHostile == 2 ? CBRememberModShort() + ": Hostile" : "Seen hostile";
       }
     }
     // They Will Remember decides who is hostile (1.9.4), and since 2.4.2 the posture itself follows it
@@ -3004,9 +3004,9 @@ public class CBHud {
     if !off && !CBGangViewSet(fs.id) && CBTwrOwnsHostility(fs.id) {
       let says = CBTwrGangHostile(sys.GetGameInstance(), fs.id);
       if says >= 0 {
-        postureText = CBPostureName(posture) + " (TWR)";
+        postureText = CBPostureName(posture) + " (" + CBRememberModShort() + ")";
       } else {
-        postureText = CBPostureName(posture) + " (TWR?)";
+        postureText = CBPostureName(posture) + " (" + CBRememberModShort() + "?)";
       }
     }
     let right = CBHudGangStatus(sys, fs);
@@ -3094,21 +3094,21 @@ public class CBHud {
     let foreign = CBForeignHostile(sys, game, id);
     if isOn && !CBGangViewSet(id) && CBTwrOwnsHostility(id) {
       if CBTwrGangHostile(game, id) >= 0 {
-        out += "They Will Remember decides whether they are hostile, and Cyberbane follows it.\n";
+        out += CBRememberModName() + " decides whether they are hostile, and Cyberbane follows it.\n";
       } else {
-        out += "They Will Remember decides whether they are hostile, but could not be asked (" + CBTwrHostilityWhy() + "),\n"
+        out += CBRememberModName() + " decides whether they are hostile, but could not be asked (" + CBTwrHostilityWhy() + "),\n"
              + "so Cyberbane goes by what their people do: hostile while they have lately been hostile to you on\n"
              + "sight, and otherwise its own standing, until it answers.\n";
       }
       foreign = 0;   // said just now; the two records are one here
     }
     if foreign == 2 {
-      out += "They Will Remember has them hostile on sight: their people attack you when they know you.\n"
+      out += CBRememberModName() + " has them hostile on sight: their people attack you when they know you.\n"
            + "That is its own record, kept apart from your standing here, and nothing here changes it.\n";
     } else {
       if foreign == 1 {
         out += "Their people have been hostile to you on sight, and Cyberbane did not make them so:\n"
-             + "They Will Remember, another mod or the game has them that way. Nothing here changes it.\n";
+             + "They Will Remember, Night City Remembers, another mod or the game has them that way. Nothing here changes it.\n";
       }
     }
     // Who runs them, which the gang's box on the web said in small type until 2.5.0.
@@ -7013,7 +7013,7 @@ func CBHudWornLine(sys: ref<CyberbaneSystem>) -> String {
   if worn.twrRead {
     line += " (They Will Remember's reading.)";
   } else {
-    if CBTwrActive() {
+    if CBRememberReadsDisguises() {
       let rtWhy = CyberbaneRuntime.Get();
       let why = IsDefined(rtWhy) ? rtWhy.TwrDisguiseWhy() : "";
       if StrLen(why) > 0 {

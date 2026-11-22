@@ -45,10 +45,12 @@ func CBDetectTwr() -> Bool {
     }
   }
   // The compiler already knows, and that answer is exact: ModuleExists asks whether They
-  // Will Remember's own scripts are in this build. The settings-page scan below stays as the
-  // fallback, because Night City Remembers is a separate rewrite with its own module name
-  // and the name match is what catches it.
-  let found = CBTwrModulePresent();
+  // Will Remember's own scripts are in this build, or Night City Remembers' (2.6.7). The settings-page
+  // scan below was all that looked for Night City Remembers until then, and it never could: its
+  // settings are in Redscript Config Framework, not Mod Settings, so it was never in that list. "I have
+  // Night City Remembers, I tried talking to a Tyger Claw and she was hostile and started combat": both
+  // mods ran hostility of their own, and Cyberbane offered words to somebody the other had hostile on sight.
+  let found = CBTwrModulePresent() || CBNcrModulePresent();
   if !found {
     let mods = CBModSettingsMods();
     if ArraySize(mods) == 0 {
@@ -66,7 +68,12 @@ func CBDetectTwr() -> Bool {
   // What is detected, not what is done about it: the compatibility setting decides that, and this is
   // also asked with it on Off (CBTwrGangHostile, 1.9.1).
   if found {
-    CBLog.Info(n"Core", "They Will Remember detected. With its compatibility setting on Auto, Cyberbane leaves it hostility on sight, hit squads and faction disguises.");
+    // Asked of the modules directly: CBRememberMod asks this function when neither is there.
+    if CBNcrModulePresent() && !CBTwrModulePresent() {
+      CBLog.Info(n"Core", "Night City Remembers detected. With its compatibility setting on Auto, Cyberbane leaves it hostility on sight; Cyberbane's crews and disguises run as usual, since it sends nobody and reads no disguise.");
+    } else {
+      CBLog.Info(n"Core", "They Will Remember detected. With its compatibility setting on Auto, Cyberbane leaves it hostility on sight, hit squads and faction disguises.");
+    }
   } else {
     CBLog.Info(n"Core", "They Will Remember not detected; Cyberbane is running its own hostility, hit squad and disguise systems.");
   }
@@ -102,6 +109,53 @@ func CBTwrModulePresent() -> Bool {
 @if(!ModuleExists("TheyWillRemember"))
 func CBTwrModulePresent() -> Bool {
   return false;
+}
+
+// Is Night City Remembers (2.6.7)? Its scripts are module NightCityRemembers.
+@if(ModuleExists("NightCityRemembers"))
+func CBNcrModulePresent() -> Bool {
+  return true;
+}
+
+@if(!ModuleExists("NightCityRemembers"))
+func CBNcrModulePresent() -> Bool {
+  return false;
+}
+
+// Which of the two keeps the gangs' memory (2.6.7): 1 They Will Remember, 2 Night City Remembers, 0 neither. They overlap
+// Cyberbane in different places. Both decide who is hostile to V on sight, and Cyberbane follows that (CBTwrActive). Only
+// They Will Remember sends crews after V and reads disguises; Night City Remembers sends nobody and reads no clothes, so
+// with it Cyberbane's crews still come and its own disguise reading stands. A settings page named for remembering, found
+// with neither module (CBDetectTwr), is taken for They Will Remember, which is what that scan was written for.
+public func CBRememberMod() -> Int32 {
+  if CBTwrModulePresent() {
+    return 1;
+  }
+  if CBNcrModulePresent() {
+    return 2;
+  }
+  return CBDetectTwr() ? 1 : 0;
+}
+
+// Its name, for the Hub, the log and the reasons Cyberbane gives.
+public func CBRememberModName() -> String {
+  return CBRememberMod() == 2 ? "Night City Remembers" : "They Will Remember";
+}
+
+// With compatibility on, the other mod sends the gangs after V and Cyberbane's crews and apex squads stand down: They Will
+// Remember only.
+public func CBRememberSendsCrews() -> Bool {
+  return CBTwrActive() && CBRememberMod() == 1;
+}
+
+// With compatibility on, the other mod's disguise reading is Cyberbane's: They Will Remember only.
+public func CBRememberReadsDisguises() -> Bool {
+  return CBTwrActive() && CBRememberMod() == 1;
+}
+
+// Short, for the Gangs screen's posture column.
+public func CBRememberModShort() -> String {
+  return CBRememberMod() == 2 ? "NCR" : "TWR";
 }
 
 // They Will Remember's own word on this gang (1.9.0): 1 hostile on sight, 0 not, -1 nobody to ask.
@@ -222,7 +276,11 @@ func CBReflectParamNames(params: array<ref<ReflectionProp>>) -> String {
   return out;
 }
 
-public func CBTwrAttitudeClass() -> CName = n"TheyWillRemember.Factions.AttitudeManager"
+// Whose system is asked who is hostile on sight. Night City Remembers' (2.6.7) answers the same question by the same shape,
+// IsFactionHostile with one gang number in and yes or no out, from its own saved record.
+public func CBTwrAttitudeClass() -> CName {
+  return CBRememberMod() == 2 ? n"NightCityRemembers.NCRSystem" : n"TheyWillRemember.Factions.AttitudeManager";
+}
 
 public func CBTwrRefreshHostility(game: GameInstance) -> Void {
   let rt = CyberbaneRuntime.Get();
@@ -278,10 +336,11 @@ public func CBTwrHostilityWhy() -> String {
 
 // In the log whenever how asking They Will Remember went changes. Empty means it answered.
 func CBTwrProbeNote(why: String) -> Void {
+  let name = CBRememberModName();
   if StrLen(why) == 0 {
-    CBLog.Info(n"Core", "They Will Remember answers who is hostile on sight, and Cyberbane follows it.");
+    CBLog.Info(n"Core", s"\(name) answers who is hostile on sight, and Cyberbane follows it.");
   } else {
-    CBLog.Info(n"Core", s"They Will Remember could not be asked who is hostile on sight: \(why). Cyberbane goes by its own standing until it answers.");
+    CBLog.Info(n"Core", s"\(name) could not be asked who is hostile on sight: \(why). Cyberbane goes by its own standing until it answers.");
   }
 }
 
@@ -317,8 +376,11 @@ func CBTwrFactionIndex(faction: CName) -> Int32 {
   if Equals(faction, n"Wraiths") { return 11; }
   if Equals(faction, n"Barghest") { return 12; }
   if Equals(faction, n"NCPD") { return 13; }
-  if Equals(faction, n"Aldecaldos") { return 14; }   // They Will Remember 3.0 tracks them too
-  if Equals(faction, n"Mox") { return 15; }
+  // They Will Remember 3.0 tracks the Aldecaldos too, at 14, and the Mox at 15. Night City Remembers numbers them the other
+  // way round (NCRFactions.GetIndex, 2.6.7).
+  let ncr = CBRememberMod() == 2;
+  if Equals(faction, n"Aldecaldos") { return ncr ? 15 : 14; }
+  if Equals(faction, n"Mox") { return ncr ? 14 : 15; }
   return -1;
 }
 
@@ -338,8 +400,8 @@ func CBTwrFactionAt(index: Int32) -> CName {
     case 11: return n"Wraiths";
     case 12: return n"Barghest";
     case 13: return n"NCPD";
-    case 14: return n"Aldecaldos";
-    case 15: return n"Mox";
+    case 14: return CBRememberMod() == 2 ? n"Mox" : n"Aldecaldos";
+    case 15: return CBRememberMod() == 2 ? n"Aldecaldos" : n"Mox";
   }
   return n"";
 }

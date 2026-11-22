@@ -799,6 +799,8 @@ public class CBStreetTalk {
     this.m_explainedAt = 0.0;
     // Talk bubbles from before a load are the old world's (Reactions/StreetIntel.reds).
     this.GetIntel().ClearBubbles(game);
+    // Nor is a list held through the game's clears (2.6.7).
+    CBTalkDropList();
     this.Schedule(game);
   }
 
@@ -990,6 +992,9 @@ public class CBStreetTalk {
         this.m_shownAt = CBTalkNow(game);
       }
     }
+    if this.m_stage == CBTalkStageOpen() {
+      CBTalkKeepList(game);
+    }
     // The lines up and nothing said yet: what the game's interface holds, three times (2.5.7). Reported as "I pressed Talk
     // and no lines came" with the log saying the lines were up; this says what was in front of them.
     if this.m_stage == CBTalkStageOpen() && this.m_exchanges == 0 && this.m_diagCount < 3 {
@@ -1144,7 +1149,8 @@ public class CBStreetTalk {
       this.ShowNote(game, player, npc, why, this.m_whyFor >= CBConfig.TalkDwell() * 2.0);
       this.Explain(game, npc, why);
       // A ganger or a cop who will not talk says so, once, instead of nothing (1.9.6).
-      if IsDefined(npc) && Equals(why, CBTalkWhyHostile()) && this.m_whyFor >= CBConfig.TalkDwell() * 2.0 {
+      if IsDefined(npc) && (Equals(why, CBTalkWhyHostile()) || Equals(why, CBTalkWhyGrudge()))
+         && this.m_whyFor >= CBConfig.TalkDwell() * 2.0 {
         this.Refuse(game, npc);
       }
       return;
@@ -2365,6 +2371,20 @@ func CBTalkParleyCrew(sys: ref<CyberbaneSystem>, t: ref<CBTalkTarget>) -> Int32 
 public func CBTalkWhyHostile() -> String = "they are hostile to V"
 public func CBTalkWhyTurf() -> String = "V is on their restricted ground, where the game's own rules turn them on V"
 
+// Their gang hostile to V on sight in the other mod's record (2.6.7).
+public func CBTalkWhyGrudge() -> String {
+  return CBRememberModName() + " has their gang hostile to V on sight";
+}
+
+// Standing with V: V's crew, a follower, an ally lent by a gang (2.6.7).
+func CBTalkOnVsSide(des: ref<DynamicEntitySystem>, npc: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(des) || !IsDefined(npc) {
+    return false;
+  }
+  let id = npc.GetEntityID();
+  return des.IsTagged(id, n"CB_Own") || des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Follower");
+}
+
 // The reasons V is told about (CBTalkWhyHint), each kept as one string for the same reason.
 public func CBTalkWhySentAfterV() -> String = "one of Cyberbane's own, here for V (a crew, a Rival or a hunter)"
 public func CBTalkWhyJob() -> String = "they are at one of V's jobs"
@@ -2507,6 +2527,18 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   // to step out first. Somebody down at V's feet or who gave up is out of it, and still talks.
   if CBPlayerInHostileZone(game) && !npc.IsCrowd() && !CBTalkDownAtFeet(npc) && !npc.cbGaveUp {
     return CBTalkWhyTurf();
+  }
+  // Their gang hostile to V on sight by They Will Remember's or Night City Remembers' record (2.6.7, CBTwrGangHostile, asked
+  // whenever either is installed, whatever the compatibility setting). That mod turns them on V once they know V, and a
+  // conversation does not change its record: "I tried talking to a Tyger Claw and she was hostile and started combat". Night
+  // City Remembers turns a gang's people hostile as they recognise V, so the person in front of V can still look calm when
+  // the list goes up. Said in the greyed prompt instead. Somebody down at V's feet or who gave up is out of it and still
+  // talks, as is anybody standing with V (a crew, a lent ally), and the crowd, who run from a fight and never start one.
+  if !npc.IsCrowd() && !CBTalkDownAtFeet(npc) && !npc.cbGaveUp && !CBTalkOnVsSide(desT, npc) {
+    let gang = CBClassifyFaction(npc);
+    if NotEquals(gang, n"") && CBTwrGangHostile(game, gang) == 1 {
+      return CBTalkWhyGrudge();
+    }
   }
   // Hostile to V by the game's say (its gangs' own compounds, another mod) and not fighting: words are
   // still possible outside a compound (1.9.8), and the conversation ends the moment a fight starts. In a
@@ -2847,6 +2879,7 @@ public func CBTalkPushHub(game: GameInstance, title: String, lines: array<ref<CB
   ArrayPush(list, hub);
   let hubs: DialogChoiceHubs;
   hubs.choiceHubs = list;
+  CBTalkHoldList(game, hubs, index);
   bb.SetVariant(defs.DialogChoiceHubs, ToVariant(hubs), true);
   bb.SetInt(defs.ActiveChoiceHubID, hub.id, true);
   bb.SetInt(defs.SelectedIndex, index, true);
@@ -2860,6 +2893,10 @@ public func CBTalkSelect(game: GameInstance, index: Int32) -> Void {
   let defs = GetAllBlackboardDefs().UIInteractions;
   let bb = bbs.Get(defs);
   if IsDefined(bb) {
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) && rt.talkListHeld {
+      rt.talkListIndex = index;
+    }
     bb.SetInt(defs.SelectedIndex, index, true);
   }
 }
@@ -2901,6 +2938,7 @@ public func CBTalkNoteWords(why: String) -> String {
   if Equals(why, "they are running from V") { return "Running from you"; }
   if Equals(why, CBTalkWhyJob()) || Equals(why, CBTalkWhyTracked()) { return "Part of a job"; }
   if Equals(why, CBTalkWhyTurf()) { return "On their ground: step out first"; }
+  if Equals(why, CBTalkWhyGrudge()) { return "Hostile to you"; }
   return "";
 }
 
@@ -2977,6 +3015,7 @@ public func CBTalkClearOffer(game: GameInstance) -> Void {
 
 // Down again, only if what is up is still Cyberbane's: anything of the game's that replaced it stays.
 public func CBTalkClearHub(game: GameInstance) -> Void {
+  let wasHeld = CBTalkDropList();
   let bbs = GameInstance.GetBlackboardSystem(game);
   if !IsDefined(bbs) {
     return;
@@ -2987,13 +3026,124 @@ public func CBTalkClearHub(game: GameInstance) -> Void {
     return;
   }
   let current = FromVariant<DialogChoiceHubs>(bb.GetVariant(defs.DialogChoiceHubs));
-  if ArraySize(current.choiceHubs) == 1 && current.choiceHubs[0].id == CBConfig.TalkHubId() {
+  let ours = ArraySize(current.choiceHubs) == 1 && current.choiceHubs[0].id == CBConfig.TalkHubId();
+  if ours || (wasHeld && ArraySize(current.choiceHubs) == 0) {
     let empty: DialogChoiceHubs;
     bb.SetVariant(defs.DialogChoiceHubs, ToVariant(empty), true);
   }
-  if bb.GetInt(defs.ActiveChoiceHubID) == CBConfig.TalkHubId() {
+  let active = bb.GetInt(defs.ActiveChoiceHubID);
+  if active == CBConfig.TalkHubId() || (wasHeld && active == -1) {
     bb.SetInt(defs.ActiveChoiceHubID, -1, true);
   }
+}
+
+// ---- The list through the game's own clears (2.6.7) ------------------------------------------------------
+//
+// "The conversation options only show up on the HUD after using the scanner. It's annoying to press Tab every time you
+// pick a dialog option." While V stands at somebody, the game writes out its whole dialog state several times a second,
+// an empty list among it, with nothing of its own to show (the log: "Wiped (30): lists [], active list -1; game prompt
+// down id -1"). Talk put its list back the next frame. That was enough for "Talk", whose widget keeps its lines and only
+// hides them (interactionsUI.script), but not for the list: the game's dialog widget throws a list's lines away when it is
+// emptied and builds them again when it comes back, a frame or more later, each fading in from nothing (dialogUI.script:
+// AdjustHubsCount, AsyncSpawnFromLocal, 'line_intro'). Cleared again before that was done, they never showed. The scanner
+// stops the game's interaction prompts, so the clears stopped, the lines finished coming in, and Tab was the only way to
+// see them.
+//
+// While talk's list is up, an empty list from the game reaches the widget as talk's, which is what the blackboard holds
+// again a frame later anyway. Only an empty one: a list of the game's own always shows, and talk gives way to it (Keep).
+// The hold is renewed on talk's tick and runs out a second after talk stops renewing it, and it is let go before talk takes
+// its list down (CBTalkClearHub), so nothing of talk's is ever kept on screen by it.
+
+// Held from the moment it is written (CBTalkPushHub).
+public func CBTalkHoldList(game: GameInstance, hubs: DialogChoiceHubs, index: Int32) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) {
+    return;
+  }
+  rt.talkList = hubs;
+  rt.talkListIndex = index;
+  rt.talkListHeld = true;
+  rt.talkListUntil = CBTalkNow(game) + CBConfig.TalkListHoldSeconds();
+}
+
+// Still up: held a while longer (talk's tick, Keep).
+public func CBTalkKeepList(game: GameInstance) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.talkListHeld {
+    rt.talkListUntil = CBTalkNow(game) + CBConfig.TalkListHoldSeconds();
+  }
+}
+
+// Let go. True when it was held.
+public func CBTalkDropList() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.talkListHeld {
+    return false;
+  }
+  let none: DialogChoiceHubs;
+  rt.talkList = none;
+  rt.talkListHeld = false;
+  rt.talkListUntil = 0.0;
+  return true;
+}
+
+// Is talk's list held right now? Not past its time, and not stamped from another session's clock: the sim clock starts again
+// with a session, and this service outlives it, so a stamp far ahead of now is an old one.
+public func CBTalkListHeldNow() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.talkListHeld {
+    return false;
+  }
+  let left = rt.talkListUntil - CBTalkNow(GetGameInstance());
+  if left < 0.0 || left > CBConfig.TalkListHoldSeconds() + 0.5 {
+    CBTalkDropList();
+    return false;
+  }
+  return true;
+}
+
+public func CBTalkHeldList(out hubs: DialogChoiceHubs) -> Bool {
+  if !CBTalkListHeldNow() {
+    return false;
+  }
+  hubs = CyberbaneRuntime.Get().talkList;
+  return ArraySize(hubs.choiceHubs) > 0;
+}
+
+public func CBTalkHeldIndex() -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) ? rt.talkListIndex : 0;
+}
+
+// The game's dialog widgets, and the interaction prompt beside them, read the list here (interactionUIBase.script).
+@wrapMethod(InteractionUIBase)
+protected cb func OnDialogsData(value: Variant) -> Bool {
+  let data = FromVariant<DialogChoiceHubs>(value);
+  if ArraySize(data.choiceHubs) == 0 {
+    let held: DialogChoiceHubs;
+    if CBTalkHeldList(held) {
+      return wrappedMethod(ToVariant(held));
+    }
+  }
+  return wrappedMethod(value);
+}
+
+// Which list is the live one: the game clears it to none with the rest.
+@wrapMethod(dialogWidgetGameController)
+protected cb func OnDialogsActivateHub(activeHubId: Int32) -> Bool {
+  if activeHubId == -1 && CBTalkListHeldNow() {
+    return wrappedMethod(CBConfig.TalkHubId());
+  }
+  return wrappedMethod(activeHubId);
+}
+
+// The line picked, while talk's list is the live one.
+@wrapMethod(dialogWidgetGameController)
+protected cb func OnDialogsSelectIndex(index: Int32) -> Bool {
+  if this.m_activeHubID == CBConfig.TalkHubId() && CBTalkListHeldNow() {
+    return wrappedMethod(CBTalkHeldIndex());
+  }
+  return wrappedMethod(index);
 }
 
 // Who they are, and how they take V, over the choices.

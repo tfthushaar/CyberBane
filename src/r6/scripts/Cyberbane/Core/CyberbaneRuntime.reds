@@ -21,6 +21,12 @@ public class CyberbaneRuntime extends ScriptableService {
   // bodies are set up after the seed has moved on, and read their names from here (Spawn/ApexSquad.reds, CBApexMemberName).
   public let lastApexFaction: CName;
   public let lastApexSeed: Int32;
+  // Street talk's list, held on screen through the game's own clears (2.6.7, Reactions/StreetTalk.reds, CBTalkHeldList):
+  // what it is, the line picked, and until when it holds (sim seconds), renewed by talk's own tick while it is up.
+  public let talkList: DialogChoiceHubs;
+  public let talkListIndex: Int32;
+  public let talkListHeld: Bool;
+  public let talkListUntil: Float;
   // Which playthrough that reset is for, and which one is loaded now. This service outlives every
   // save, so a request parked here used to survive a Load Game from the pause menu and wipe
   // whichever save was loaded next, even one from another playthrough. n"" means none is loaded:

@@ -3,6 +3,23 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.6.7 (22 November 2026)
+
+**Fixed: talk lines only showing after the scanner**
+- After pressing Talk, the lines could stay off the screen until you opened and closed the scanner, and again after
+  every line you picked. The game clears its dialog list several times a second while you stand at somebody, and each
+  clear threw Cyberbane's lines away before they could fade in. They now stay up for as long as the conversation lasts.
+
+**Fixed: Night City Remembers**
+- Night City Remembers is now detected, like They Will Remember. It wasn't, because it has no Mod Settings page, so
+  both mods ran their own hostility and Cyberbane offered Talk to gangers the other mod had hostile on sight, who then
+  started a fight. With it installed, Cyberbane follows its word on who is hostile, the Gangs page marks those gangs
+  "(NCR)", and somebody whose gang it has hostile shows a greyed "Hostile to you" instead of Talk. It sends nobody after
+  you, so Cyberbane's crews still come. The same goes for They Will Remember's hostility.
+- The setting under **Advanced** is now called **They Will Remember / Night City Remembers**.
+
+Your progress carries over.
+
 ## 2.6.6 (22 November 2026)
 
 **Fixed: Rivals standing frozen**

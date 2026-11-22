@@ -750,7 +750,8 @@ func CBReflectNoArgs(fn: ref<ReflectionMemberFunc>, typeName: CName) -> ref<Refl
 func CBReadTwrDisguise(game: GameInstance, worn: ref<CBWornRead>) -> Void {
   worn.twrRead = false;
   worn.twrFace = -1.0;
-  if !CBTwrActive() {
+  // They Will Remember's alone (2.6.7): Night City Remembers has no disguise reading.
+  if !CBRememberReadsDisguises() {
     return;
   }
   let rt = CyberbaneRuntime.Get();

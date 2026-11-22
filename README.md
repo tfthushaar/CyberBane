@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.6.6.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.6.7.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -211,9 +211,11 @@ Each playthrough keeps its own record, and nothing one character does reaches an
 
 ## Compatibility
 
-- **They Will Remember / Night City Remembers:** detected automatically. Cyberbane lets it decide
-  who is hostile to you and how well a disguise works, and follows both: the Gangs page marks the
-  gangs it decides with "(TWR)". Set **They Will Remember compatibility** to Off under **Advanced** to let Cyberbane decide instead.
+- **They Will Remember / Night City Remembers:** detected automatically, nothing to set. Cyberbane lets it decide
+  who is hostile to you, and the Gangs page marks the gangs it decides with "(TWR)" or "(NCR)". Somebody whose gang
+  it has hostile won't talk to you; the prompt says so. They Will Remember also takes over crews and disguises.
+  Night City Remembers sends nobody after you, so Cyberbane's crews still come. Set
+  **They Will Remember / Night City Remembers** to Off under **Advanced** to let Cyberbane decide instead.
 - **Much Better AI, Street Sense, New Game Plus:** detected automatically; Cyberbane steps back
   where they already cover something.
 - **Equipment-EX and other outfit mods:** your outfit is read as it looks on V.

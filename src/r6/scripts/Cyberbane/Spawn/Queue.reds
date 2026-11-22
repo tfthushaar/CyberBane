@@ -380,7 +380,7 @@ public func CBLaneNobodyWhy(sys: ref<CyberbaneSystem>, lane: Int32) -> String {
     return "nobody has a grudge against you yet";
   }
   if !CBHitSquadsOn() {
-    return CBTwrActive() ? "They Will Remember sends the gangs' people" : "crews are off in Mod Settings";
+    return CBRememberSendsCrews() ? CBRememberModName() + " sends the gangs' people" : "crews are off in Mod Settings";
   }
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) {
@@ -556,7 +556,7 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
   } else {
     if !CBHitSquadsOn() {
       if lane == CBLaneApex() {
-        CBApexLaneNote(sys, game, CBTwrActive() ? "They Will Remember sends the gangs' people" : "crews are off in Mod Settings");
+        CBApexLaneNote(sys, game, CBRememberSendsCrews() ? CBRememberModName() + " sends the gangs' people" : "crews are off in Mod Settings");
       }
       return;
     }
@@ -775,7 +775,9 @@ public func CBHitSquadsOn() -> Bool {
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().hitSquads {
     return false;
   }
-  return !CBTwrActive();
+  // Only for a mod that sends crews of its own (2.6.7): Night City Remembers sends nobody, and standing down for it would have
+  // left nobody coming after V at all.
+  return !CBRememberSendsCrews();
 }
 
 // How many encounters this lane is allowed to send in one in-game day.
@@ -1474,7 +1476,7 @@ public func CBApexBlocker(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref
     return "";
   }
   if !CBHitSquadsOn() {
-    return CBTwrActive() ? "They Will Remember sends the gangs" : "crews are off in Mod Settings";
+    return CBRememberSendsCrews() ? CBRememberModName() + " sends the gangs" : "crews are off in Mod Settings";
   }
   if CBLaneDailyCap(CBLaneApex()) <= 0 {
     return "apex squads are off in Mod Settings";

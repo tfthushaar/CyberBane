@@ -564,7 +564,7 @@ public class CBReactionDirector {
       return;
     }
     if sys.NoteSeenHostile(faction) {
-      CBLog.Info(n"Model", s"\(NameToString(faction)): their people are hostile to you, and not by Cyberbane's doing (They Will Remember, another mod or the game).");
+      CBLog.Info(n"Model", s"\(NameToString(faction)): their people are hostile to you, and not by Cyberbane's doing (They Will Remember, Night City Remembers, another mod or the game).");
     }
   }
 
