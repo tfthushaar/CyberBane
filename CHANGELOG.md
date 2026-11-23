@@ -3,6 +3,36 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.7.3 (23 November 2026)
+
+**Fixed: a gang meeting you went to never happened**
+- The time on a gang event's message and map pin left out the minutes: one due at 04:50 said "around 04:00". You turned
+  up at four and nothing came for most of an hour. The time is now given to the minute, and every event starts on the
+  quarter hour it names.
+- Turn up early and a note tells you when they are due, and that keeping out of sight works.
+- A meeting by a tall building or under a walkway counted you as far away while you stood close by on another level.
+  Distance to the place is now measured along the ground.
+- In tight streets its people could find nowhere out of your sight to come in from. They now also look for hidden spots
+  round the place the way the game itself does, and wait while the ground there is still loading instead of giving up.
+
+**Fixed: crews that could not reach you**
+- When the first spot near you did not work, a crew member stopped looking after one wrong spot instead of trying the
+  next. In Dogtown's narrow streets that was most of the time, and the log called it "the game refused the spawn". They
+  now try every direction. Your own crew answering a call is helped by the same fix.
+- While you drive, people on foot come in ahead of you, further ahead the faster you go, instead of behind the car.
+- The people at a gang's home, your guards and a stronghold's garrison also look for hidden spots the game's way when
+  every usual spot is in view.
+
+**Changed: loot from crews**
+- Ordinary crew members, escorts and scouts no longer put loot straight into your inventory on top of what their bodies
+  drop. Their bodies carry their loot, and wiping out a crew still pays its bounty. Rivals, apex squads and a gang's best
+  still leave their extra.
+
+**For translators:** one new line, `Cyberbane-StreetEvents-YouAreEarly`, in `DefineGangHomes` before
+`Cyberbane-StreetEvents-SpottedYouWatching`. Changed in English: `Cyberbane-Settings-LootDrops-Desc`.
+
+Your progress carries over.
+
 ## 2.7.2 (23 November 2026)
 
 **Fixed: a Rival who could not be killed**

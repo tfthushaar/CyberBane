@@ -282,7 +282,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-VehicleArrivals-Desc", "Rivals, crews and apex squads drive to you whenever a car can be sent, and give chase if you are driving. If a car cannot get through, they come on foot.");
     this.Text("Cyberbane-Settings-ApexStrength-Desc", "How dangerous a gang's apex squad is, as a percentage of a full boss build. 100 matches the game's own set piece enforcers; 55 is hard but fair. They are also measured against you: each takes a few seconds of your best weapon's fire to put down, longer the higher this is, hits hard enough to get through your armour, and scales with your level the way Adam Smasher does, a share of his strength each (more the higher this is). No single hit takes more than a set part of their health. Rivals have their own slider, under Rivals.");
     this.Text("Cyberbane-Settings-RivalStrength-Desc", "How dangerous a Rival is, as a percentage of a full boss build. A new Rival gets part of it and grows into the rest with every escape, mercy and kill, and running a crew adds a little. 55 is hard but fair. Your menace and the game's difficulty scale it further.");
-    this.Text("Cyberbane-Settings-LootDrops-Desc", "Anyone Cyberbane sends who you put down leaves you something, straight into your inventory. The higher they ranked, the better it is.");
+    this.Text("Cyberbane-Settings-LootDrops-Desc", "Rivals, apex squads and a gang's best leave you something extra when you put them down, straight into your inventory, on top of what is on their bodies: the higher they ranked, the better it is. The rank and file carry only what the game gives them, on their bodies.");
     this.Text("Cyberbane-Settings-Scouts-Desc", "A gang that cannot find you sends one scout ahead of the crew. Put the scout down, pay them to keep quiet (with Pay the street on, under Street talk), or stay out of their sight until they lose you, and the crew never comes.");
     this.Text("Cyberbane-Settings-DistrictLine-Desc", "Where you stand in the district you are in, shown on the hunt line while nobody is after you. Always: it stays up. Briefly: it shows when you arrive somewhere and when your standing there changes, then clears. Off: never shown.");
     this.Text("Cyberbane-Settings-DistrictLineSeconds-Desc", "How long the district line stays up, when it is set to Briefly.");
@@ -5086,6 +5086,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-GangHomes-PinTitle", "{0}: {1}");
     // {0} is the gang ("the Mox").
     // A gang event V watched for, whose people never came: {0} is the gang ("The Mox").
+    // A note when V reaches an event's place before its time (2.7.3). {0} is the time it starts ("04:45").
+    this.Text("Cyberbane-StreetEvents-YouAreEarly", "you're early: they're due here at {0}. Keep out of sight and they'll walk in.");
     this.Text("Cyberbane-StreetEvents-SpottedYouWatching", "{0} spotted somebody watching and took it somewhere else.");
     this.Text("Cyberbane-GangHomes-PinDesc", "Where {0} hang out. Come by and some of them will be around.");
   }

@@ -495,6 +495,31 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
 // to navmesh, retry at a few distances, sweep some bearings. All of it was reinventing, badly,
 // a function the game already exports - which is why an encounter could be refused for minutes
 // while the NCPD put a squad on the same street without difficulty.
+// Is the walkable ground at a place loaded yet? The game's NavigationSystem answers it; a place still streaming in has
+// no navmesh to stand on, and every spot asked of it fails until it arrives (2.7.3).
+public func CBNavmeshReady(game: GameInstance, at: Vector4) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  return IsDefined(nav) && nav.IsNavmeshStreamedInLocation(at, CBConfig.NavReadyTolerance());
+}
+
+// Standing points round a place rather than round V, out of V's sight by the navmesh's own visibility (2.7.3): the
+// same question the game asks for a pursuit, with the place as its origin. For people who gather somewhere (a street
+// event, a stronghold) when the rings round the place find nothing hidden.
+public func CBPursuitPointsAround(game: GameInstance, ppos: Vector4, around: Vector4, count: Int32, minR: Float, maxR: Float,
+                                  out pts: array<Vector4>) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  if !IsDefined(nav) || count <= 0 {
+    return false;
+  }
+  let results: array<Vector4>;
+  let fallback: array<Vector4>;
+  let away = new Vector4(around.X - ppos.X, around.Y - ppos.Y, 0.0, 0.0);
+  let dir = Vector4.Length(away) > 0.1 ? Vector4.Normalize(away) : new Vector4(1.0, 0.0, 0.0, 0.0);
+  nav.FindPursuitPointsRange(ppos, around, dir, minR, maxR, count, true, NavGenAgentSize.Human, results, fallback);
+  pts = results;
+  return ArraySize(pts) > 0;
+}
+
 public func CBPursuitPoints(game: GameInstance, ppos: Vector4, fwd: Vector4, count: Int32,
                             minR: Float, maxR: Float, out pts: array<Vector4>) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
@@ -646,7 +671,21 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   // The game's own answer first. If the navmesh offers places to stand, use them and skip the
   // hand-rolled probing entirely; it is only there for when this comes back with nothing.
   let navPts: array<Vector4>;
-  if CBPursuitPoints(game, ppos, fwd, count, dist * 0.6, dist * 1.6, navPts) {
+  // V driving (2.7.3): people on foot are looked for ahead of the car, further ahead the faster it goes, the way the
+  // game's own police pick where to look for theirs. Behind a moving car they were left standing in the road.
+  let car = player.GetMountedVehicle() as VehicleObject;
+  let speed = IsDefined(car) ? AbsF(car.GetCurrentSpeed()) : 0.0;
+  let foundPts = false;
+  if speed > CBConfig.SpawnAheadMinSpeed() {
+    let cf = car.GetWorldForward();
+    let lead = CBConfig.SpawnAheadNear() + (CBConfig.SpawnAheadFar() - CBConfig.SpawnAheadNear()) * ClampF(speed / 30.0, 0.0, 1.0);
+    let ahead = new Vector4(ppos.X + cf.X * lead, ppos.Y + cf.Y * lead, ppos.Z, 1.0);
+    foundPts = CBPursuitPointsAround(game, ppos, ahead, count, 4.0, 30.0, navPts);
+  }
+  if !foundPts {
+    foundPts = CBPursuitPoints(game, ppos, fwd, count, dist * 0.6, dist * 1.6, navPts);
+  }
+  if foundPts {
     let n = 0;
     while n < ArraySize(navPts) && spawned < count {
       let p = navPts[n];
@@ -744,17 +783,25 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         let stand: Vector4;
         if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop()
            && CBStandOnNavmesh(game, px, py, gz, stand) {
-          if CBPointIsFree(used, stand)
-             && (ArraySize(used) > 0 || inSightOk || CBPointOutOfSight(game, ppos, fwd, stand))
-             && CBPointArrivable(game, stand, used, ppos, openAir)
-             && CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned, extraTag) {
-            spawned += 1;
-            ArrayPush(used, stand);
+          // Only a usable point ends this lane: placed, or the engine itself turned it down (2.7.3). A point taken,
+          // in V's sight or with no way to V is the wrong point, not a refusal, so the next bearing is tried. Before,
+          // the first such point ended the lane under "the game refused the spawn", which in Dogtown's tight streets
+          // was most of them.
+          if ArraySize(used) == 0 && !inSightOk && !CBPointOutOfSight(game, ppos, fwd, stand) {
+            CBNoteSpawnBlock(CBBlockInView());
           } else {
-            CBNoteSpawnBlock(CBBlockEngineRefused());
+            if !CBPointIsFree(used, stand) || !CBPointArrivable(game, stand, used, ppos, openAir) {
+              CBNoteSpawnBlock(CBBlockNoGround());
+            } else {
+              if CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned, extraTag) {
+                spawned += 1;
+                ArrayPush(used, stand);
+              } else {
+                CBNoteSpawnBlock(CBBlockEngineRefused());
+              }
+              placed = true;
+            }
           }
-          placed = true;
-          break;   // this lane is placed, or the engine refused it; either way stop retrying
         }
       }
       attempt += 1;

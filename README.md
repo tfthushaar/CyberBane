@@ -44,6 +44,10 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.7
 
+- **On time, and on their way (2.7.3).** A gang event's time is given to the minute and it starts when it says; turn up
+  early and you are told when they are due. Crews and your own crew find their way to you in tight streets, people on
+  foot come in ahead of you while you drive, and ordinary crew members leave their loot on their bodies, not in your
+  pockets.
 - **Nobody is unkillable (2.7.2).** However tough a Rival, an apex squad or a hunter gets, Cyberbane keeps them within
   reach of your own weapons, counting their armour, and nothing it sends heals while you are hurting it.
 - **Places to find a gang (2.7.2).** The Mox at Lizzie's Bar, Maelstrom at Totentanz, the Valentinos at El Coyote Cojo,

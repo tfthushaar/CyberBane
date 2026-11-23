@@ -445,12 +445,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     if IsDefined(desE) && puppet.cbDamagedByPlayer && CBIsMeetApex(desE, puppet.GetEntityID()) {
       CBScheduleLoot(sysE, game, puppet, CBLootTierApex(), CBConfig.LootIconicChanceApex());
     }
-    // Crew and escorts carry a little.
-    if IsDefined(desE) && puppet.cbDamagedByPlayer
-       && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desE.IsTagged(puppet.GetEntityID(), n"CB_Escort")
-           || desE.IsTagged(puppet.GetEntityID(), n"CB_Scout")) {
-      CBScheduleLoot(sysE, game, puppet, CBLootTierCrew(), 0.0);
-    }
+    // Crew, escorts and scouts carry what the game gives any ganger, on their bodies (2.7.3): "I was getting loot into
+    // my inventory, and their bodies were dropping loot as well." Their reward is the body and the crew's bounty; the
+    // extra into V's pockets is for the ones who matter (Rivals, apex squads, a gang's best).
     // The last of a crew: their gang's best is next (Spawn/Queue.reds). Counted without this
     // body, which may or may not read as dead yet inside its own death event. A crew that came
     // with its apex squad is one hit squad, and it is beaten when the last of either half goes

@@ -183,6 +183,19 @@ func CBPlaceOneAt(sys: ref<CyberbaneSystem>, game: GameInstance, record: TweakDB
     }
     ring += 1;
   }
+  // Nowhere hidden that close: the navmesh's own hidden points near the spot, one query (2.7.3, Spawn/Spawner.reds).
+  let pts: array<Vector4>;
+  if CBPursuitPointsAround(game, ppos, at, 2, 3.0, CBConfig.PlaceAroundPursuitMax(), pts) {
+    for p in pts {
+      if CBPointHiddenFrom(game, ppos, fwd, p) && CBStandsWith(game, p, at, CBConfig.GroundMaxDrop()) {
+        let toward = new Vector4(at.X - p.X, at.Y - p.Y, 0.0, 0.0);
+        let face = Quaternion.BuildFromDirectionVector(Vector4.Length(toward) > 0.1 ? Vector4.Normalize(toward) : fwd);
+        if CBCreateSpawn(des, record, look, p, face, tag, body) {
+          return true;
+        }
+      }
+    }
+  }
   return false;
 }
 

@@ -113,6 +113,14 @@ public class CBStreetEvent {
   public let placeName: String;
   // V was close enough to see it, after its time, while its people could not yet be put in the world (2.7.2).
   public let watched: Bool;
+  // V came to the place before its time and was told when it starts (2.7.3).
+  public let earlySaid: Bool;
+  // The closest V came to the place, for the log when it ends without happening (2.7.3).
+  public let nearest: Float;
+  // Ticks spent waiting for the ground at the place to load, V near and its time come (2.7.3).
+  public let groundWait: Int32;
+  // The tick its people may next be tried, after a try that found nowhere out of V's sight (2.7.3).
+  public let nextTry: Int32;
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -372,11 +380,11 @@ public class CBEventEngine {
     ev.placeName = placeName;
     ev.district = district;
     if Equals(kind, CBEvSitDown()) {
-      ev.from = now + RandRangeF(1.0, 2.0) * 3600.0;
+      ev.from = CBQuarterUp(now + RandRangeF(1.0, 2.0) * 3600.0);
       ev.until = ev.from + CBConfig.MeetWindowSeconds();
       ev.reason = CBMeetReasonFor(sys, a, b);
     } else {
-      ev.from = now + RandRangeF(CBConfig.EventLeadMinHours(), CBConfig.EventLeadMaxHours()) * 3600.0;
+      ev.from = CBQuarterUp(now + RandRangeF(CBConfig.EventLeadMinHours(), CBConfig.EventLeadMaxHours()) * 3600.0);
       ev.until = ev.from + CBConfig.EventWindowSeconds();
     }
     this.m_ev = ev;
@@ -401,7 +409,21 @@ public class CBEventEngine {
     let ev = this.m_ev;
     let now = CBGameSeconds(game);
     this.KeepPin(game);
-    let dist = Vector4.Distance(player.GetWorldPosition(), ev.at);
+    // How far V is from the place, along the ground (2.7.3): a meeting under an overpass or beside a tower block is near
+    // V on the walkway above it too. Straight-line distance only once the levels are a building apart.
+    let ppos = player.GetWorldPosition();
+    let dist = AbsF(ppos.Z - ev.at.Z) <= CBConfig.EventSameLevel() ? Vector4.Distance2D(ppos, ev.at) : Vector4.Distance(ppos, ev.at);
+    if ev.nearest <= 0.0 || dist < ev.nearest {
+      ev.nearest = dist;
+    }
+    // Early (2.7.3): V at the place before its time is told when it starts, once, and that keeping out of sight works.
+    if !ev.placed && !ev.earlySaid && now < ev.from && dist <= CBConfig.MeetSpawnDistance() && !Equals(ev.kind, CBEvAmbush()) {
+      ev.earlySaid = true;
+      CBLog.Info(n"Street", s"V is at the \(NameToString(ev.kind)) place \(RoundF((ev.from - now) / 60.0)) game minutes early.");
+      if CBMessagesOn() {
+        CBSystemNote(game, CBTf(n"Cyberbane-StreetEvents-YouAreEarly", [CBClockWord(ev.from)]), 6.0);
+      }
+    }
     // Their time has come and V is on the way in, not yet looking: put them there. Never while the story has the
     // stage, V is in a scene or at the job V is tracking, or a job has come up at the place since (2.4.2): an event
     // already planned placed its people whatever V was doing, and a crew lying in wait near V's job (an ambush) walked in on
@@ -426,10 +448,25 @@ public class CBEventEngine {
     // V already at the place counts too (2.6.3): it asked for V to be 25 m off at least, so a V waiting on the spot for
     // the time on the pin was never given anybody ("I went there and there's nothing"). Whoever cannot be put there out
     // of V's sight comes from further off and walks in (Place).
-    if !ev.placed && !storyBusy && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() {
+    // The ground there has to be loaded before anybody can stand on it (2.7.3, the game's own NavigationSystem asks it
+    // before a path): until it is, wait, and say so once, rather than fail to place and count it.
+    // A place already settled onto the street has its ground; the wait is bounded, so a place the question gets wrong
+    // is still tried as before.
+    // Asked only when it matters: V near, its time come, nobody placed yet.
+    let due = !ev.placed && !storyBusy && now >= ev.from && dist <= CBConfig.MeetSpawnDistance();
+    let groundReady = !due || ev.anchored || ev.groundWait >= CBConfig.EventGroundWaitTicks() || CBNavmeshReady(game, ev.at);
+    if due && !groundReady {
+      ev.groundWait += 1;
+      CBStreetWhyNot(game, NameToString(ev.kind), "the ground at the place has not loaded yet");
+    }
+    // A try that found nowhere hidden is tried again a few ticks later, not every tick: each try asks the navmesh and
+    // casts rays for a hundred and more spots, and V a few steps on sees the place differently (2.7.3).
+    if !ev.placed && !storyBusy && groundReady && now >= ev.from && dist <= CBConfig.MeetSpawnDistance()
+       && sys.GetTickCount() >= ev.nextTry {
       ev.watched = true;
       ev.placed = this.Place(sys, game, des, player, ev);
       ev.placedTick = sys.GetTickCount();
+      ev.nextTry = sys.GetTickCount() + CBConfig.EventRetryTicks();
       if !ev.placed {
         CBStreetWhyNot(game, NameToString(ev.kind), "nowhere near the place out of V's sight to put its people yet");
       }
@@ -479,6 +516,9 @@ public class CBEventEngine {
     }
     if now >= ev.until || !CBEventKindOn(ev.kind) {
       if CBEventKindOn(ev.kind) {
+        if !ev.placed {
+          CBLog.Info(n"Street", s"The \(NameToString(ev.kind)) ended without its people placed: the closest V came was \(RoundF(ev.nearest)) m (they come within \(RoundF(CBConfig.MeetSpawnDistance())) m, from \(CBClockWord(ev.from))).");
+        }
         CBEventMissed(sys, game, ev);
       }
       this.End(game);
@@ -624,12 +664,56 @@ public class CBEventEngine {
         }
       }
     }
+    // Third (2.7.3): the navmesh's own hidden points round the place, the question the game asks for a pursuit, when
+    // the rings found too few out of V's sight (tight streets, a place below a walkway). One query, only when needed.
+    if ArraySize(ev.ids) < want {
+      let pts: array<Vector4>;
+      if CBPursuitPointsAround(game, ppos, ev.at, want - ArraySize(ev.ids), CBConfig.EventPursuitMin(), CBConfig.EventPursuitMax(), pts) {
+        for p in pts {
+          if ArraySize(ev.ids) < want && Vector4.Distance(ppos, p) <= CBConfig.MeetWalkInReach()
+             && CBPointHiddenFrom(game, ppos, fwd, p) && CBStandsWith(game, p, ev.at, CBConfig.GroundMaxDrop())
+             && CBLairPointUsable(sys, game, p) {
+            this.PutOne(des, ev, p, tag, gangA, gangB, recA, recB, lone, sides, apexPerSide);
+          }
+        }
+      }
+    }
     let placed = ArraySize(ev.ids);
     // Said once, when it is in place: a try that placed nobody is tried again next tick.
     if placed >= 2 && placed < full {
       CBLog.Info(n"Street", s"A \(NameToString(ev.kind)) placed \(placed) of \(full) people.");
     }
     return placed >= Max(2, lone + 1);
+  }
+
+  // One of the event's people at a point away from the place, facing it, walking in to a spot by it (2.7.3, for the
+  // pursuit points; the rings above do the same inline).
+  private func PutOne(des: ref<DynamicEntitySystem>, ev: ref<CBStreetEvent>, at: Vector4, tag: CName, gangA: CName, gangB: CName,
+                      recA: TweakDBID, recB: TweakDBID, lone: Int32, sides: Int32, apexPerSide: Int32) -> Bool {
+    let n = ArraySize(ev.ids);
+    let sideGang = ev.SideOf(n) == 0 ? gangA : gangB;
+    let chair = lone > 0 ? (n < lone ? apexPerSide : n - lone) : n / Max(sides, 1);
+    let rec = ev.SideOf(n) == 0 ? recA : recB;
+    let role = n"";
+    if chair < apexPerSide {
+      let best = CBApexRosterRecord(sideGang, chair);
+      if TDBID.IsValid(best) {
+        rec = best;
+        role = CBApexRoleTag(chair);
+      }
+    }
+    let toward = new Vector4(ev.at.X - at.X, ev.at.Y - at.Y, 0.0, 0.0);
+    let facing = Quaternion.BuildFromDirectionVector(Vector4.Length(toward) > 0.1 ? Vector4.Normalize(toward) : new Vector4(1.0, 0.0, 0.0, 0.0));
+    let id: EntityID;
+    if !CBCreateSpawn(des, rec, n"", at, facing, tag, id, role) {
+      return false;
+    }
+    ArrayPush(ev.ids, id);
+    let outward = new Vector4(at.X - ev.at.X, at.Y - ev.at.Y, 0.0, 0.0);
+    let unit = Vector4.Length(outward) > 0.1 ? Vector4.Normalize(outward) : new Vector4(1.0, 0.0, 0.0, 0.0);
+    let spot = 2.2 + Cast<Float>(n % 3) * 1.6;
+    ArrayPush(ev.walkAt, new Vector4(ev.at.X + unit.X * spot, ev.at.Y + unit.Y * spot, ev.at.Z, 1.0));
+    return true;
   }
 
   public func End(game: GameInstance) -> Void {

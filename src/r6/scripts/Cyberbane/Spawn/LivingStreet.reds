@@ -207,9 +207,18 @@ func CBStreetGiveMoney(game: GameInstance, amount: Int32) -> Void {
   }
 }
 
+// The time on the clock, to the minute (2.7.3). It gave the hour alone, so a meeting due at 04:50 was "around 04:00":
+// V turned up at four, and nothing came for fifty minutes.
 func CBClockWord(gameSeconds: Float) -> String {
-  let h = (Cast<Int32>(gameSeconds / 3600.0)) % 24;
-  return h < 10 ? s"0\(h):00" : s"\(h):00";
+  let total = Cast<Int32>(gameSeconds / 60.0);
+  let h = (total / 60) % 24;
+  let m = total % 60;
+  return (h < 10 ? "0" : "") + IntToString(h) + ":" + (m < 10 ? "0" : "") + IntToString(m);
+}
+
+// A start time on the quarter hour, the way people name one, so the time V is told is the time it starts.
+public func CBQuarterUp(gameSeconds: Float) -> Float {
+  return Cast<Float>(CeilF(gameSeconds / 900.0)) * 900.0;
 }
 
 // The hour and which day (2.6.1): "21:00 today", "03:00 tomorrow", "now" once it has started. The hour alone left a

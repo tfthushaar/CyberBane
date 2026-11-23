@@ -238,6 +238,23 @@ public func CBPlaceAround(sys: ref<CyberbaneSystem>, game: GameInstance, record:
     }
     ring += 1;
   }
+  // Too few hidden round the place: the navmesh's own hidden points near it, one query (2.7.3, Spawn/Spawner.reds).
+  if placed < want {
+    let pts: array<Vector4>;
+    if CBPursuitPointsAround(game, ppos, at, want - placed, 3.0, CBConfig.PlaceAroundPursuitMax(), pts) {
+      for p in pts {
+        if placed < want && CBPointHiddenFrom(game, ppos, fwd, p) && CBStandsWith(game, p, at, CBConfig.GroundMaxDrop())
+           && CBLairPointUsable(sys, game, p) {
+          let toward = new Vector4(at.X - p.X, at.Y - p.Y, 0.0, 0.0);
+          let face = Quaternion.BuildFromDirectionVector(Vector4.Length(toward) > 0.1 ? Vector4.Normalize(toward) : fwd);
+          let pid: EntityID;
+          if CBCreateSpawn(des, record, n"", p, face, tag, pid) {
+            placed += 1;
+          }
+        }
+      }
+    }
+  }
   return placed;
 }
 

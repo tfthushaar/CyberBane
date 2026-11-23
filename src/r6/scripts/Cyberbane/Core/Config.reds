@@ -2128,6 +2128,23 @@ public abstract class CBConfig {
   // placed no further than MeetWalkInReach from V (Spawn/StreetEvents.reds, Place).
   public static func MeetSpawnDistance() -> Float = 130.0
   public static func MeetWalkInReach() -> Float = 140.0
+  // Street events, made sturdier from the game's own navigation (2.7.3): within this height of the place, its distance is
+  // read along the ground; how far round a navmesh point counts as loaded; how many ticks V waits near a place whose
+  // ground has not loaded before it is tried anyway; the ring of the navmesh's hidden points round the place; and the
+  // ticks between tries when nowhere was out of sight.
+  public static func EventSameLevel() -> Float = 30.0
+  public static func NavReadyTolerance() -> Float = 6.0
+  public static func EventGroundWaitTicks() -> Int32 = 20
+  public static func EventPursuitMin() -> Float = 8.0
+  public static func EventPursuitMax() -> Float = 45.0
+  public static func EventRetryTicks() -> Int32 = 3
+  // How far from a home, a guard's post or a stronghold the navmesh's hidden points may be, when the rings find none.
+  public static func PlaceAroundPursuitMax() -> Float = 25.0
+  // V driving faster than this (m/s): people on foot are looked for ahead of the car, this far at a crawl and this far at
+  // 30 m/s and over (the game's police look 20 to 60 m ahead).
+  public static func SpawnAheadMinSpeed() -> Float = 5.0
+  public static func SpawnAheadNear() -> Float = 20.0
+  public static func SpawnAheadFar() -> Float = 60.0
   public static func MeetWindowSeconds() -> Float = 5400.0
   // How far from V a gathering's place is (2.6.8, CBEventFarPlace), in metres: in V's district, a walk or a drive off.
   public static func EventPlaceMin() -> Float = 300.0
