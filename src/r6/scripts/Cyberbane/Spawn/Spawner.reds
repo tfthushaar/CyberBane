@@ -1236,6 +1236,19 @@ public func CBQueueSpawnSetup(game: GameInstance, des: ref<DynamicEntitySystem>,
 // Everything that makes one of ours behave like one of ours.
 public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
                               puppet: ref<ScriptedPuppet>, riding: Bool) -> Void {
+  CBSpawnSetupBody(sys, game, puppet, riding);
+  // A build is recorded by the body's health when it is built, and what the set-up puts on after it (a Rival's traits,
+  // the kit V gave them, the ceiling in Spawn/Killable.reds) changes that health. Recorded again now, with all of it on,
+  // a body that streams out and back in is known for built and is not built a second time on top of the first.
+  if IsDefined(sys) && IsDefined(puppet) && CBStillStanding(puppet) {
+    let stats = GameInstance.GetStatsSystem(game);
+    if IsDefined(stats) {
+      sys.NoteRebuilt(puppet.GetEntityID(), stats.GetStatValue(Cast<StatsObjectID>(puppet.GetEntityID()), gamedataStatType.Health));
+    }
+  }
+}
+
+func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, riding: Bool) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !IsDefined(puppet) {
     return;

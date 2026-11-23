@@ -54,6 +54,15 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   door and car park while you are home. Near your stash, you can give one of them a gun from it, and it stays in the
   stash with all its mods. Talk to any of your crew to ask how they are holding up, what their old gang was like, and
   whether they know anything about a Rival from it.
+- **Crew jobs and the kitty (2.7.2).** Send one of your crew on a hit on one of your Rivals or after a gang's bag, with
+  their chance shown before you pick. What the crew brings in goes into a kitty that pays their cut; take it when you
+  are home, or have one of them run it to your place. The Tyger Claws and the Valentinos sometimes challenge your crew,
+  one of theirs against one of yours, and a robbed bag can hold goods to sell to another gang.
+- **Rivals worth their names (2.7.2).** A Rival who climbs comes back as one of their gang's signature fighters: mantis
+  blades, gorilla arms, a heavy machine gun, a netrunner's deck. A top Rival may take over a place you cleared on a gig,
+  with lieutenants and a squad, and wait there for you; kill them and the gang loses it.
+- **Meetings you can watch (2.7.2).** Turn up early to a sit-down or a deal and watch: they walk in from further out
+  now, and if they spot you watching, the street tells you.
 - **Home ground (2.7.1).** The building around each of your apartments counts as home: the lobby, the corridors and the
   car park. Nobody Cyberbane sends comes for you there, people already looking for you don't find you there, and no
   bagmen, gang events or street fights start there. A fight that followed you in carries on. Cyberbane learns each home
@@ -216,6 +225,11 @@ lives in your saves: a save made while the mod is removed loses it.
   in and out of the apartment and parked there, they know where. Stand near your stash and **Give them a weapon** lists
   its guns too. Talk to one of your crew (look at them, press F) for **How are you holding up?**, **Tell me about** their
   old gang and **Heard anything?**
+- **Jobs, the kitty and challenges:** on a member's **Orders**, **Send them on a job** lists the Rivals they can go
+  after (from Veteran) and the gangs whose bag they can take (from Soldier), each with their chance. The kitty, and a
+  challenge waiting for an answer, are on the Crew page under **Name, colours, the fallen**; the kitty is taken when you
+  are on home ground. **Running the money** is a kind of work on the Work row. Goods from a robbed bag are sold by
+  talking to somebody of another gang.
 - **Finding a gang:** ask one of theirs **Where do your people hang out?**, or just go. A gang's home goes on the map
   the first time you are there, hidden while that gang is hostile to you.
 - **Recruiting a Rival:** beat a Rival without killing them, look at them where they lie and press F, and spare them.
@@ -252,6 +266,9 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
   the metro or going home after a gang has sent people can make them lose you before they arrive.
 - **Gang homes and guards:** **Gang homes** under **Gang life** switches the gangs' places off. **Guards at home**,
   under **Your crew**, sets how many can watch the house (0 to 3, 0 for none).
+- **Crew jobs, Rivals' chrome and strongholds:** **Crew jobs and the kitty** and **Challenges to your crew** are under
+  **Your crew**, **Goods in stolen bags** under **Gang life**, and **Signature chrome** and **Strongholds** under
+  **Rivals**. All are on by default.
 - **Fewer messages:** **How much you hear**, on the first page, spaces out the street's chatter (word going round and
   lines overheard). Warnings, demands, offers, your crew and answers to what you did always come through.
 - **Start over:** **Reset all Cyberbane data** under **Advanced** (or Start over on the Hub's History

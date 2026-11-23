@@ -44,6 +44,8 @@ public class CBBaseBook extends ScriptableSystem {
   private persistent let m_rollDay: Int32;
   // Session: the stronghold whose garrison is in the world now (its base's hash), 0 for none.
   public let placedBase: Int32;
+  // The tick the garrison may next be tried, after a try every spot of which was in V's sight.
+  public let nextTryTick: Int32;
 
   public static func Get(game: GameInstance) -> ref<CBBaseBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -52,6 +54,7 @@ public class CBBaseBook extends ScriptableSystem {
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.placedBase = 0;
+    this.nextTryTick = 0;
   }
 
   public func WatchCount() -> Int32 {
@@ -68,7 +71,7 @@ public class CBBaseBook extends ScriptableSystem {
     ArrayPush(this.m_wX, at.X);
     ArrayPush(this.m_wY, at.Y);
     ArrayPush(this.m_wZ, at.Z);
-    while ArraySize(this.m_wHash) > 30 {
+    while this.WatchCount() > 30 {
       this.Unwatch(0);
     }
   }
@@ -141,16 +144,15 @@ public class CBBaseBook extends ScriptableSystem {
     return false;
   }
 
+  // A hold on the dropped base is ended by CBStrongholdTick (its base is gone), which also takes its pin off the map.
   public func DropBase(i: Int32) -> Void {
     if i >= 0 && i < this.BaseCount() {
-      let hash = this.m_bHash[i];
       ArrayErase(this.m_bHash, i);
       ArrayErase(this.m_bX, i);
       ArrayErase(this.m_bY, i);
       ArrayErase(this.m_bZ, i);
       ArrayErase(this.m_bDistrict, i);
       ArrayErase(this.m_bFails, i);
-      this.EndHold(this.HoldIndexOfBase(hash));
     }
   }
 
@@ -193,11 +195,10 @@ public class CBBaseBook extends ScriptableSystem {
     ArrayPush(this.m_sUntil, until);
   }
 
+  // The placed base is kept when its hold ends: whoever is still standing there leaves with the rest, by the leave check in
+  // CBStrongholdTick (V walks away, or the base is gone), and nothing new is placed until they have.
   public func EndHold(i: Int32) -> Void {
     if i >= 0 && i < this.HoldCount() {
-      if this.m_sBase[i] == this.placedBase {
-        this.placedBase = 0;
-      }
       ArrayErase(this.m_sBase, i);
       ArrayErase(this.m_sRival, i);
       ArrayErase(this.m_sGang, i);
@@ -304,6 +305,22 @@ func CBDistrictAtPoint(sys: ref<CyberbaneSystem>, game: GameInstance, at: Vector
 
 // ---- Taking one ------------------------------------------------------------------------------------------------------
 
+// Holding a stronghold, a Rival sits there and waits for V: the Rival lane does not send them (Spawn/Queue.reds).
+public func CBRivalHoldsBase(game: GameInstance, id: Int32) -> Bool {
+  let book = CBBaseBook.Get(game);
+  return CBStrongholdsOn() && IsDefined(book) && book.HoldIndexOfRival(id) >= 0;
+}
+
+// Their garrison is in the world right now, with them in it: a hideout (Rivals/Whereabouts.reds) does not place them twice.
+public func CBRivalHoldPlaced(game: GameInstance, id: Int32) -> Bool {
+  let book = CBBaseBook.Get(game);
+  if !IsDefined(book) || book.placedBase == 0 {
+    return false;
+  }
+  let h = book.HoldIndexOfBase(book.placedBase);
+  return h >= 0 && book.HoldRivalAt(h) == id;
+}
+
 func CBStrongholdRivalFree(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
   if !IsDefined(r) || r.rank < CBConfig.StrongholdMinRank() {
     return false;
@@ -313,7 +330,7 @@ func CBStrongholdRivalFree(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
     return false;
   }
   let jb = CBCrewJobBook.Get(game);
-  return r.id != sys.GetActiveRivalId() && r.id != sys.GetLairRivalId() && !sys.RivalKeptByCrew(r.id)
+  return r.id != sys.GetActiveRivalId() && !(sys.IsLairActive() && r.id == sys.GetLairRivalId()) && !sys.RivalKeptByCrew(r.id)
       && (!IsDefined(jb) || !jb.RivalTargeted(r.id));
 }
 
@@ -422,6 +439,7 @@ public func CBStrongholdTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     }
   }
   // Each stronghold: still held, cleared, given up, or run out.
+  let score = sys.GetScore();
   let i = book.HoldCount() - 1;
   while i >= 0 {
     let rid = book.HoldRivalAt(i);
@@ -445,7 +463,10 @@ public func CBStrongholdTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
         CBStrongholdUnpin(game, rid);
         book.EndHold(i);
       } else {
-        if now > book.HoldUntilAt(i) && book.placedBase != hash {
+        // A gang V has made peace with, or come round to, has no reason to sit in V's old job waiting for V.
+        let posture = IsDefined(score) ? score.GetPosture(gang) : ECBPosture.Neutral;
+        let stillAgainst = Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
+        if (now > book.HoldUntilAt(i) || !stillAgainst) && book.placedBase != hash {
           if CBMessagesOn() {
             CBHearsayFromStreet(game, CBTf(n"Cyberbane-Strongholds-MovedOn", [CBRivalDisplayName(sys.GetContent(), r), place]), n"");
           }
@@ -470,7 +491,7 @@ public func CBStrongholdTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     }
     return;
   }
-  if tick % 2 != 0 || !CBWorldStable(game) || sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game) || sys.IsOnJob()
+  if tick % 2 != 0 || tick < book.nextTryTick || !CBWorldStable(game) || sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game) || sys.IsOnJob()
      || IsDefined(player.GetMountedVehicle()) || sys.GetActiveRivalId() > 0 || sys.IsLairActive()
      || CBSpawnRoom(game) - CBCrewRoomKept(game) < CBConfig.StrongholdMinRoom() {
     return;
@@ -510,9 +531,8 @@ func CBStrongholdPlace(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
   book.SetBaseAt(bi, ground);
   let body: EntityID;
   if !CBPlaceOneAt(sys, game, r.recordID, r.appearance, ground, n"CB_Hold", body) {
-    if book.BaseFailed(bi) {
-      CBStrongholdUnpin(game, r.id);
-    }
+    // Every spot was in V's sight: the place is fine, so try again shortly rather than count it against the base.
+    book.nextTryTick = sys.GetTickCount() + 6;
     CBLog.Info(n"Rivals", "A stronghold's Rival could not be placed out of V's sight yet.");
     return;
   }

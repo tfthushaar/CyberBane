@@ -210,6 +210,9 @@ public func CBGuardTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !CBGuardsOn() || here < 0 || (gb.home > 0 && gb.home != here + 1) {
     if gb.BodyCount() > 0 {
       CBDeleteTaggedSafe(game, n"CB_Guard", false, true);
+    } else {
+      // The last home's watch is gone: the home V is at now posts its own.
+      gb.home = 0;
     }
     if here < 0 {
       gb.home = 0;
@@ -595,7 +598,8 @@ public func CBCrewTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
     return CBTalkSay(CBCrewGangLore(m.faction, m.seed + (again ? 1 : 0)) + CBCrewLoreTail(m), n"");
   }
   if choice == CBTalkActCrewHeard() {
-    return CBTalkSay(CBCrewHeardLine(sys, game, m), n"");
+    // One weak spot per talk: asking again straight away does not empty their head of every one they know.
+    return CBTalkSay(again ? CBT(n"Cyberbane-TalkTopics-SameAsFiveMinutesAgo") : CBCrewHeardLine(sys, game, m), n"");
   }
   return null;
 }

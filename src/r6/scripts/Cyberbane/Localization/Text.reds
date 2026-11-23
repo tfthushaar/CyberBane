@@ -22,6 +22,12 @@ public func CBT(key: CName) -> String {
   return NameToString(key);
 }
 
+// Text worked out once and kept (a title's name, a trait's), shown now: still a key if it was kept before the game's
+// localization had loaded, so it is looked up again (2.7.2).
+public func CBDisplay(kept: String) -> String {
+  return StrBeginsWith(kept, "Cyberbane-") ? CBT(StringToName(kept)) : kept;
+}
+
 public func CBTf(key: CName, slots: array<String>) -> String {
   let out = CBT(key);
   let i = 0;

@@ -347,6 +347,10 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
   if IsDefined(book) && book.WordSent(r.id) {
     return false;
   }
+  // Holding a stronghold (Rivals/Strongholds.reds): they wait there for V, and their place is on V's map.
+  if CBRivalHoldsBase(sys.GetGameInstance(), r.id) {
+    return false;
+  }
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
 }
 

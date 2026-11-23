@@ -633,7 +633,9 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
     return CBLairMissNone();
   }
   let r = CBSightingRival(sys, lead);
-  if !IsDefined(r) || !CBTipEligible(sys, game, r) || !TDBID.IsValid(r.recordID) || !CBRecordIsPerson(r.recordID) {
+  // Their stronghold's garrison is in the world with them in it (Rivals/Strongholds.reds): never a second body.
+  if !IsDefined(r) || !CBTipEligible(sys, game, r) || !TDBID.IsValid(r.recordID) || !CBRecordIsPerson(r.recordID)
+     || CBRivalHoldPlaced(game, r.id) {
     return CBLairMissNone();
   }
   // Somebody with a chair keeps hours: home by night, out by day, unless they named the place for V (2.4.4, [U10]).

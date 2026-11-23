@@ -37,11 +37,75 @@ the next unless a version says otherwise.
   **Tell me about** their old gang (what it was like from the inside, told the way somebody who joined you would tell
   it), and **Heard anything?** (a Rival from that gang whose weak spot they know, once).
 
+**New: crew jobs and the kitty**
+- On a member's **Orders**, **Send them on a job**: a hit on one of your Rivals (Veteran and up) or a gang's bag
+  (Soldier and up). Their chance is shown before you pick, and they are away a few hours. A hit can kill the Rival,
+  wound them and leave them holed up on your map for you to finish, or go wrong: the Rival climbs, and your member comes
+  back hurt, or not at all. A bag goes into the kitty and costs the gang; sometimes somebody saw who took it.
+- What your crew brings in, from work and from jobs, goes into the **kitty**. It pays their weekly cut by itself. Take
+  it from the Hub when you are home (Crew page, **Name, colours, the fallen**), or put a member on **running the money**,
+  a new kind of work, and they bring it to your place every couple of days, unless a gang that hates your crew jumps them.
+- New settings under **Your crew**: **Crew jobs and the kitty** and **Challenges to your crew**, both on by default.
+  With crew jobs off, earnings come straight to you as before.
+
+**New: challenges**
+- Now and then the Tyger Claws or the Valentinos challenge your crew: one of theirs against one of yours. Answer within
+  a day on the Hub (Crew page, **Name, colours, the fallen**) by picking who fights, with their chance shown, or turn it
+  down. A win earns their respect and their fear. Turning it down, or not answering, costs face.
+
+**New: goods in stolen bags**
+- Sometimes a bagman's bag holds the gang's goods instead of cash. Talk to somebody of another gang and **[Deal]** sells
+  them: their enemies pay best and the owners hear of it. Or sell them back to the owners for less. Goods go stale after
+  a few days.
+- New setting: **Goods in stolen bags**, under **Gang life**, on by default.
+
+**New: Rivals worth their names**
+- **Signature chrome.** A Rival who climbs to rank 3 comes back as one of their gang's own signature fighters: mantis
+  blades for Maelstrom, the Mox and Arasaka, gorilla arms for the Tyger Claws, the Wraiths, Militech and Barghest, a
+  heavy machine gun, a Voodoo Boys netrunner, a Valentino with a pistol in each hand, and more. The street tells you
+  first, their page says how they fight now, they get a boss bar, and they are likelier to drop an iconic. They keep
+  the body you have seen them in, man or woman.
+- **Strongholds.** Finish a gig with Cyberbane installed and its place is remembered. A gang that hates you may put one
+  of its top Rivals there with two lieutenants and a squad; the street tells you, and it goes on your map. While they
+  hold it, that Rival waits there instead of coming after you. Kill them and the gang loses the place and ground in the
+  district, and there are 5,000 eddies inside. Left alone, they move on after a week, or sooner once that gang is no
+  longer hostile to you.
+- New settings under **Rivals**: **Signature chrome** and **Strongholds**, both on by default.
+
+**Fixed: a gang meeting you watch never happened**
+- Turn up early to a sit-down or a deal, watch from nearby, and nobody came; an hour later the street said the meeting
+  had happened. They had to arrive somewhere you could not see, and close by there was nowhere. Now they walk in from
+  further out, up to 70 metres away, and start coming once you are within about 130 metres. If they really cannot get
+  there unseen, the street tells you they spotted somebody watching and took it somewhere else.
+
+**Fixed: everything else found going over the whole mod**
+- When a stronghold ended while you were near it, the people in it could be left standing there with nothing to clear
+  them away.
+- Walking up to a stronghold in plain sight could make it disappear for good. Its people now wait until you look away.
+- A Rival holding a stronghold could also come after you somewhere else, or turn up at a hideout at the same time.
+- A Rival or apex who went out of sight and came back could be built a second time on top of the first, and get tougher.
+- One of your crew away on a job showed nothing on their card if you had never given them gear.
+- Crew on **Watch the house** never took up their posts at a second home if you went straight there from the first.
+- Asking one of your crew **Heard anything?** over and over gave away every weak spot they knew at once. Asking again
+  straight away now gets nothing new.
+- A challenge still waiting when you switch challenges off no longer counts against you.
+- Text that named an option wrongly now uses its real name: **Civilian reactions**, **Clothes and masks count**,
+  **Hit squads**, **Gangers surrender**, **Crew jobs and the kitty**.
+- A gang's challenge no longer talks about the Hub; a note tells you where to answer it.
+- **How often** under **Gang life** said one event every forty minutes; it is about one every thirty-five.
+- One of your crew's stories about Barghest said they traded in people. Hansen trades guns, chrome and information.
+- A title or a trait named before the game's language had loaded could show as an internal key starting
+  `Cyberbane-`. Names are looked up again when they are shown.
+
 **Fixed**
 - Giving one of your crew a weapon showed their reply in English whatever your language.
 
-**For translators:** new lines are in `DefineGangHomes`, `DefineCrewHome`, and two at the end of `DefineCrewHome` for
-giving a weapon (`Cyberbane-CrewKit-SeriousPiece`, `Cyberbane-CrewKit-PutItToWork`).
+**For translators:** new lines are in `DefineGangHomes` (with `Cyberbane-StreetEvents-SpottedYouWatching` at its
+end), `DefineCrewHome`, `DefineCrewJobs` and `DefineRivalPlaces`, and two at the end of `DefineCrewHome` for giving a
+weapon (`Cyberbane-CrewKit-SeriousPiece`, `Cyberbane-CrewKit-PutItToWork`). Changed in English:
+`Cyberbane-Hud-RightNowCrowdReactionsAreSwitched`, `Cyberbane-Hud-ClothesAreNotReadModSettings`,
+`Cyberbane-Queue-CrewsAreOffInModSettings`, `Cyberbane-Settings-Ransom-Desc`, `Cyberbane-Settings-GangLifeOften-Desc` and
+`Cyberbane-Settings-MapRemembers-Desc`.
 
 Your progress carries over.
 

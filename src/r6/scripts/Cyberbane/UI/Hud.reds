@@ -6534,7 +6534,7 @@ func CBHudTitles(sys: ref<CyberbaneSystem>, id: CName) -> String {
   }
   let def = content.GetTitle(shown);
   if IsDefined(def) && StrLen(def.effect) > 0 {
-    out += CBTf(n"Cyberbane-Hud-WHATITDOES", [def.effect]);
+    out += CBTf(n"Cyberbane-Hud-WHATITDOES", [CBDisplay(def.effect)]);
   }
   out += CBTitlesDoThings() ? CBT(n"Cyberbane-Hud-OnlyTheTitleYouGoBy") : CBT(n"Cyberbane-Hud-TitleEffectsAreSwitchedOffIn");
   return out;
@@ -7151,7 +7151,7 @@ func CBRivalTraitList(content: ref<CyberbaneContent>, r: ref<CBRival>, weaknesse
   let n = 0;
   for t in content.GetTraits() {
     if IsDefined(t) && Equals(t.isWeakness, weaknesses) && n < limit && CBRivalHasTrait(r, t.id) {
-      out += (n > 0 ? ", " : "") + t.display;
+      out += (n > 0 ? ", " : "") + CBDisplay(t.display);
       n += 1;
     }
   }

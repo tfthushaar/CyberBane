@@ -313,7 +313,7 @@ public func CBCrewHitTarget(sys: ref<CyberbaneSystem>, game: GameInstance, r: re
      || r.state == EnumInt(ECBRivalState.Debtor) {
     return false;
   }
-  if r.id == sys.GetActiveRivalId() || r.id == sys.GetLairRivalId() || sys.RivalKeptByCrew(r.id) {
+  if r.id == sys.GetActiveRivalId() || (sys.IsLairActive() && r.id == sys.GetLairRivalId()) || sys.RivalKeptByCrew(r.id) {
     return false;
   }
   let jb = CBCrewJobBook.Get(game);
@@ -424,8 +424,15 @@ public func CBCrewJobsTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: 
       }
     }
   }
-  if NotEquals(jb.ChallengeGang(), n"") && now > jb.ChallengeUntil() {
-    CBCrewChallengeRefused(sys, game, jb, false);
+  if NotEquals(jb.ChallengeGang(), n"") {
+    if !CBCrewDuelsOn() {
+      // Switched off while one was waiting: nobody can answer it, so nobody is shamed for it.
+      jb.ClearChallenge();
+    } else {
+      if now > jb.ChallengeUntil() {
+        CBCrewChallengeRefused(sys, game, jb, false);
+      }
+    }
   }
   CBKittyRun(sys, game, jb, book, now);
 }
@@ -590,6 +597,7 @@ func CBCrewChallengeRoll(sys: ref<CyberbaneSystem>, game: GameInstance, jb: ref<
                       now + CBConfig.CrewDuelGapDays() * CBConfig.SecondsPerDay());
       if CBMessagesOn() {
         CBPhoneFromGang(game, g, CBT(n"Cyberbane-CrewJobs-Challenge"));
+        CBSystemNote(game, CBT(n"Cyberbane-CrewJobs-ChallengeWhere"), 7.0);
       }
       CBLog.Info(n"Crew", s"\(NameToString(g)) challenged V's crew: one of theirs against one of V's.");
     }

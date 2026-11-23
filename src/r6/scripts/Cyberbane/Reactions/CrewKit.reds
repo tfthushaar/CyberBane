@@ -772,14 +772,15 @@ public func CBCrewAway(game: GameInstance, id: Int32, now: Float) -> Bool {
 public func CBCrewAwayWord(game: GameInstance, id: Int32, now: Float) -> String {
   let kb = CBCrewKitBook.Get(game);
   let k = IsDefined(kb) ? kb.Find(id) : null;
+  // A job is kept in its own book, so a member with no kit of their own can still be away on one.
+  if CBCrewJobAway(game, id, now) {
+    return CBTf(n"Cyberbane-CrewJobs-ONAJOBH", [s"\(CBCrewJobHoursLeft(game, id, now))"]);
+  }
   if !IsDefined(k) {
     return "";
   }
   if k.trainUntil > now {
     return CBTf(n"Cyberbane-CrewKit-TRAININGH", [s"\(CeilF((k.trainUntil - now) / CBConfig.SecondsPerHour()))"]);
-  }
-  if CBCrewJobAway(game, id, now) {
-    return CBTf(n"Cyberbane-CrewJobs-ONAJOBH", [s"\(CBCrewJobHoursLeft(game, id, now))"]);
   }
   if k.warUntil > now {
     return CBTf(n"Cyberbane-CrewKit-ATWARH", [s"\(CeilF((k.warUntil - now) / CBConfig.SecondsPerHour()))"]);

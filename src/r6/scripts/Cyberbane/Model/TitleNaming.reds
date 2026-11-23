@@ -216,7 +216,7 @@ public func CBTitleDisplay(sys: ref<CyberbaneSystem>, def: ref<CBTitleDef>) -> S
   }
   let token = CBTitleToken(sys, def.id);
   if Equals(token, "") {
-    return def.display;
+    return CBDisplay(def.display);
   }
   if Equals(def.id, n"T_BUTCHER_OF") { return CBTf(n"Cyberbane-TitleNaming-ButcherOf", [token]); }
   if Equals(def.id, n"T_GHOST_OF") { return CBTf(n"Cyberbane-TitleNaming-GhostOf", [token]); }
@@ -224,7 +224,7 @@ public func CBTitleDisplay(sys: ref<CyberbaneSystem>, def: ref<CBTitleDef>) -> S
   if Equals(def.id, n"T_MERC_FROM") { return CBTf(n"Cyberbane-TitleNaming-TheMercFrom", [token]); }
   if Equals(def.id, n"T_FACTION_NIGHTMARE") { return CBTf(n"Cyberbane-TitleNaming-Nightmare", [CBCapFirst(CBPossessive(token))]); }
   if Equals(def.id, n"T_FACTION_FRIEND") { return CBTf(n"Cyberbane-TitleNaming-FriendOf", [token]); }
-  return def.display;
+  return CBDisplay(def.display);
 }
 
 // For the display sites that only hold the id.

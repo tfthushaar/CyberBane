@@ -207,7 +207,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-OneOfTheirs", "One of theirs");
     this.Text("Cyberbane-Settings-OneOfTheirs-Desc", "A gang that is Allied with you may offer to make you one of its own. Say yes to any of its people and you count as wearing their colours everywhere, their enemies know you as one of them, their people greet you, and once a week they ask a favour that costs standing if you ignore it. You can leave whenever you like, at a cost. Off, and nobody makes the offer.");
     this.Text("Cyberbane-Settings-Ransom", "Ransom");
-    this.Text("Cyberbane-Settings-Ransom-Desc", "Talk to a ganger who has given up: hold them for their gang's money, which they pay or come to take back by force, or hand them to a gang at war with theirs. Needs Surrender on. Off, and you can only let them go.");
+    this.Text("Cyberbane-Settings-Ransom-Desc", "Talk to a ganger who has given up: hold them for their gang's money, which they pay or come to take back by force, or hand them to a gang at war with theirs. Needs Gangers surrender on. Off, and you can only let them go.");
     this.Text("Cyberbane-Settings-TalkLies", "Feed the street a lie");
     this.Text("Cyberbane-Settings-TalkLies-Desc", "Tell a talkative passer-by or a frightened ganger that you have left town, and whoever is after you starts looking in the wrong place and cools off for a while. A bad liar, or a listener who lies for a living, sells you out instead. Off, and the line is not offered.");
     this.Text("Cyberbane-Settings-RivalChrome", "Rivals get chrome");
@@ -374,7 +374,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-PowerStruggles", "Power struggles");
     this.Text("Cyberbane-Settings-PowerStruggles-Desc", "When a gang's leader falls and two of their lieutenants want the chair, both text you for help. Kill one and the other takes the chair and owes you; kill both and the gang tears itself apart. Sparing one decides nothing.");
     this.Text("Cyberbane-Settings-GangLifeOften", "How often gangs get together");
-    this.Text("Cyberbane-Settings-GangLifeOften-Desc", "How often gatherings, deals and rackets come up. At 1.0, about one every forty minutes of play when there's a gang around; sit-downs keep their own pace.");
+    this.Text("Cyberbane-Settings-GangLifeOften-Desc", "How often gatherings, deals and rackets come up. At 1.0, about one every thirty-five minutes of play when there's a gang around; sit-downs keep their own pace.");
     this.Text("Cyberbane-Settings-LifepathHeadStart", "A head start from your lifepath");
     this.Text("Cyberbane-Settings-LifepathHeadStart-Desc", "When Cyberbane starts a playthrough (a new game, or Start over) your past counts: a Nomad starts known and liked by the Aldecaldos and disliked by the Wraiths, a Street Kid known to the Valentinos and Heywood, a Corpo known to Arasaka and not kindly. A playthrough Cyberbane already knows is never changed.");
 
@@ -391,7 +391,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MapMarkers", "Mark them on the map");
     this.Text("Cyberbane-Settings-MapMarkers-Desc", "Who carries a Cyberbane marker on your map and minimap: gold for a Rival, purple for an apex squad, white for everybody else (a crew, a bagman, somebody a favour is about). Everyone: all of them. Named only: Rivals, apex squads, and the people a favour or a bagman is about. Off leaves you to find them.");
     this.Text("Cyberbane-Settings-MapRemembers", "The map remembers");
-    this.Text("Cyberbane-Settings-MapRemembers-Desc", "For a day after something big happens, a pin marks the spot: where a Rival fell, a gathering you crashed, a district that changed hands, one of your crew you lost. Hover it for who and when. With TweakXL installed, every Cyberbane pin also gets its own CYBERBANE box in the map's custom filters. Off when Mark them on the map is off.");
+    this.Text("Cyberbane-Settings-MapRemembers-Desc", "For a day after something big happens, a pin marks the spot: where a Rival fell, a gathering you crashed, a district that changed hands, one of your crew you lost. A gang's home and a Rival's stronghold stay pinned for as long as they last. Hover a pin for who and when. With TweakXL installed, every Cyberbane pin also gets its own CYBERBANE box in the map's custom filters. Off when Mark them on the map is off.");
     this.Text("Cyberbane-MapFilter", "Cyberbane");
     this.Text("Cyberbane-Settings-PhoneSound-Desc", "Plays the phone's own text message tone when a message arrives.");
     this.Text("Cyberbane-Settings-MessageDelivery-Desc", "Phone puts everyone who gets in touch into your phone as a contact. Cards draws them on the left instead and keeps Cyberbane out of the phone. Notices is the old centre screen line. Off is silence, and changes nothing about the way the mod plays.");
@@ -3677,7 +3677,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Queue-NobodyHasAGrudgeAgainstYou", "nobody has a grudge against you yet");
     // {0} CBRememberModName()
     this.Text("Cyberbane-Queue-SendsTheGangsPeople", "{0} sends the gangs' people");
-    this.Text("Cyberbane-Queue-CrewsAreOffInModSettings", "crews are off in Mod Settings");
+    this.Text("Cyberbane-Queue-CrewsAreOffInModSettings", "crews are off in Mod Settings (Hit squads)");
     this.Text("Cyberbane-Queue-NoGangIsAngryEnoughTo", "no gang is angry enough to send its best");
     this.Text("Cyberbane-Queue-NoGangIsAfterYou", "no gang is after you");
     this.Text("Cyberbane-Queue-APEXSQUAD", "APEX SQUAD");
@@ -4442,7 +4442,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-M", "{0}m");
     this.Text("Cyberbane-Hud-Off-3", "   (off)");
     this.Text("Cyberbane-Hud-RightNowCyberbaneIsSwitchedOff", "Right now: Cyberbane is switched off in Mod Settings (Enabled, under General), so nothing reacts.");
-    this.Text("Cyberbane-Hud-RightNowCrowdReactionsAreSwitched", "Right now: crowd reactions are switched off in Mod Settings.");
+    this.Text("Cyberbane-Hud-RightNowCrowdReactionsAreSwitched", "Right now: Civilian reactions is switched off in Mod Settings (under Crowds and morale).");
     this.Text("Cyberbane-Hud-RightNowTheGameCallsThis", "Right now: the game calls this a safe area, so nobody here reacts. Step outside.");
     this.Text("Cyberbane-Hud-RightNowCyberbaneIsNotTracking", "Right now: Cyberbane is not tracking anybody nearby, so nobody can react yet.");
     // {0} reg.Count()
@@ -4902,7 +4902,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-AtLarge", "at large");
     this.Text("Cyberbane-Hud-OwesYouTheirLife", "owes you their life");
     this.Text("Cyberbane-Hud-Quiet-2", "quiet");
-    this.Text("Cyberbane-Hud-ClothesAreNotReadModSettings", "Clothes are not read (Mod Settings), so all your chrome shows.");
+    this.Text("Cyberbane-Hud-ClothesAreNotReadModSettings", "Clothes and masks count is off in Mod Settings, so all your chrome shows.");
     this.Text("Cyberbane-Hud-WhatAStrangerClocksFromAcross", "What a stranger clocks from across the street. Arms read loudest.");
     this.Text("Cyberbane-Hud-Arms", "arms");
     // {0} parts
@@ -5142,7 +5142,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-CrewHome-LoreScavengers2", "They never stay anywhere long. Leave a place hot, find another.");
     this.Text("Cyberbane-CrewHome-LoreBarghest0", "Barghest is Kurt Hansen's army, and Dogtown is his country.");
     this.Text("Cyberbane-CrewHome-LoreBarghest1", "Checkpoints, discipline, and a toll on everything that moves.");
-    this.Text("Cyberbane-CrewHome-LoreBarghest2", "Hansen deals with anybody who's buying: guns, chrome, people.");
+    this.Text("Cyberbane-CrewHome-LoreBarghest2", "Hansen deals with anybody who's buying: guns, chrome, information.");
     this.Text("Cyberbane-CrewHome-LoreScrappers0", "Scrappers live off what the war left lying in Dogtown. If it's still in one piece, somebody's selling it.");
     this.Text("Cyberbane-CrewHome-LoreScrappers1", "No flags, no boss worth the name. Just crews who got there first.");
     this.Text("Cyberbane-CrewHome-LoreScrappers2", "They stay out of Barghest's way, mostly. The ones who don't, don't last.");
@@ -5178,7 +5178,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-BagGoods-Desc", "Now and then a bagman's bag holds the gang's goods instead of cash. Sell them to somebody of another gang (their enemies pay best and the owners hear of it), or back to the owners for less. Goods go stale in a few days.");
     // Orders and the Hub.
     this.Text("Cyberbane-CrewJobs-SendThemOnAJob", "Send them on a job");
-    this.Text("Cyberbane-CrewJobs-JobsOff", "Crew jobs are off in Mod Settings");
+    this.Text("Cyberbane-CrewJobs-JobsOff", "Off in Mod Settings (Crew jobs and the kitty)");
     this.Text("Cyberbane-CrewJobs-OnAJob", "On a job");
     this.Text("Cyberbane-CrewJobs-AHitOrABag", "A Rival's hit, or a gang's bag");
     // The card, upper case like the others. {0} is hours.
@@ -5232,7 +5232,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-CrewJobs-DuelLost", "Your {0} went down in front of everybody. Send somebody better next time.");
     // {0} is the gang's, possessive.
     this.Text("Cyberbane-CrewJobs-DuelLostMember", "Lost to {0} best. I'll live. I want a rematch.");
-    this.Text("Cyberbane-CrewJobs-Challenge", "One of yours against one of ours. Send your best, and everybody will know who won. Tell us on the Hub by tomorrow.");
+    this.Text("Cyberbane-CrewJobs-Challenge", "One of yours against one of ours. Send your best, and everybody will know who won. You've got till tomorrow.");
+    // A note after the challenge text: where V answers it.
+    this.Text("Cyberbane-CrewJobs-ChallengeWhere", "a challenge for your crew: answer it or turn it down on the Hub's Crew page, under Name, colours, the fallen, within a day.");
     this.Text("Cyberbane-CrewJobs-ChallengeRefused", "Nobody to send? We thought so.");
     this.Text("Cyberbane-CrewJobs-ChallengeIgnored", "No answer. Your crew's scared of us, and now everybody knows.");
     // {0} is eddies.
@@ -5243,7 +5245,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-CrewJobs-RunJumped", "{0} jumped me on the way to your place. Lost {1}. The rest is still in the kitty.");
     this.Text("Cyberbane-CrewJobs-RunDelivered", "Dropped {0} at your place. Count it if you like.");
     // A note. {0} is the gang's, possessive; {1} eddies.
-    this.Text("Cyberbane-CrewJobs-BagWasGoods", "the bag isn't cash: it's {0} goods, worth about {1} eddies. Somebody of another gang will buy it.");
+    this.Text("Cyberbane-CrewJobs-BagWasGoods", "the bag isn't cash: it's {0} goods, worth about {1} eddies. Another gang will pay for them, or the owners will buy them back for less.");
     this.Text("Cyberbane-CrewJobs-GoodsWentStale", "goods you were holding went stale. Nobody will touch them now.");
     // Talk.
     this.Text("Cyberbane-CrewJobs-SellBack", "[Deal] I've got something of yours. Want it back?");
@@ -5259,7 +5261,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalSignature", "Signature chrome");
     this.Text("Cyberbane-Settings-RivalSignature-Desc", "Rivals who climb high enough come back on their gang's signature fighters: mantis blades for Maelstrom and the Mox, gorilla arms for the Tyger Claws and the Wraiths, heavy machine guns, a Voodoo Boys netrunner. The street tells you first, their file says how they fight now, they get a boss bar, and they are likelier to drop an iconic.");
     this.Text("Cyberbane-Settings-Strongholds", "Strongholds");
-    this.Text("Cyberbane-Settings-Strongholds-Desc", "A gang that hates you may put one of its top Rivals in a place you cleared on a gig, with lieutenants and a full squad. The street tells you where and it goes on your map. Kill the Rival to take it down for good: the gang loses the place and ground in the district, and you get paid. Left alone, they move on after a week. Only gigs finished with Cyberbane installed count.");
+    this.Text("Cyberbane-Settings-Strongholds-Desc", "A gang that hates you may put one of its top Rivals in a place you cleared on a gig, with lieutenants and a full squad. The street tells you where and it goes on your map. While they hold it, that Rival waits there instead of coming after you. Kill them to take it down for good: the gang loses the place and ground in the district, and you get paid. Left alone, they move on after a week, or sooner once that gang is no longer hostile to you. Only gigs finished with Cyberbane installed count.");
     // Said on the street. {0} is the Rival, {1} what they fight with now ("mantis blades").
     this.Text("Cyberbane-Signature-WordIs", "Word is {0} is back, with {1}.");
     this.Text("Cyberbane-Signature-Mantis", "mantis blades");
