@@ -23,7 +23,15 @@
 // Nor does a faction the player has switched off under Factions in Mod Settings (1.9.1). This is the
 // test every crew, apex squad, scout, lookout, patrol, provocation, bounty and gang text already asks,
 // so the switch reaches all of them from here.
+//
+// Read from the faction's profile since 2.7.4 (Data/FactionProfiles.reds: the law's two are the ones that do not); an id
+// with no profile (the game's Police) answers by name as it always did.
 public func CBFactionFieldsSquads(faction: CName) -> Bool {
+  let content = CyberbaneContent.Get();
+  let p = IsDefined(content) && NotEquals(faction, n"") ? content.GetFaction(faction) : null;
+  if IsDefined(p) {
+    return p.fieldsSquads && CBFactionOn(faction);
+  }
   return NotEquals(faction, n"NCPD")
       && NotEquals(faction, n"Police")
       && NotEquals(faction, n"MaxTac")

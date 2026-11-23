@@ -239,6 +239,11 @@ public func CBPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
 }
 
 func CBRealPhoneAnswerKind(sys: ref<CyberbaneSystem>, game: GameInstance, store: ref<CBPhone>, thread: Int32) -> Int32 {
+  // An add-on's question waiting in this thread (API/Requests.reds, 2.7.4).
+  let asks = CBApiAsks.Get(game);
+  if IsDefined(asks) && asks.Pending(store.ThreadName(thread)) {
+    return CBPhoneAnswerApi();
+  }
   let lead = store.ThreadLead(thread);
   if lead > 0 {
     let r = sys.FindRivalById(lead);
@@ -288,6 +293,9 @@ public func CBRealPhoneChoices(hash: Int32) -> array<String> {
   let store = sys.GetPhone();
   let thread = CBPhoneThreadOf(hash);
   let kind = CBRealPhoneAnswerKind(sys, game, store, thread);
+  if kind == CBPhoneAnswerApi() {
+    return CBApiAskChoices(game, store.ThreadName(thread));
+  }
   if kind == CBPhoneAnswerLead() {
     ArrayPush(out, CBTf(n"Cyberbane-Crew-DealEb", [s"\(store.ThreadLeadPrice(thread))"]));
     if !store.ThreadLeadHaggled(thread) && CBTalkHaggleOn() {
@@ -327,6 +335,10 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   let store = sys.GetPhone();
   let thread = CBPhoneThreadOf(hash);
   let kind = CBRealPhoneAnswerKind(sys, game, store, thread);
+  if kind == CBPhoneAnswerApi() {
+    CBApiAskReply(game, store, thread, store.ThreadName(thread), choice);
+    return;
+  }
   if kind == CBPhoneAnswerLead() {
     CBRealPhoneLeadReply(sys, game, store, thread, choice, ArraySize(choices));
     return;

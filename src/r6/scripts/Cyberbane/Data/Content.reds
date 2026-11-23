@@ -20,6 +20,40 @@ public func CBContent(game: GameInstance) -> ref<CyberbaneContent> {
 
 // ---- Record classes -------------------------------------------------------
 
+// A faction's code (2.7.4, Data/FactionProfiles.reds): what Data/GangCodes.reds used to spell out in chains of names, as
+// values on the profile. The defaults are the neutral answers, so a faction without a code (or an add-on's) behaves like
+// any gang with none.
+public class CBGangCode {
+  public let mercy: Float = 1.0;
+  public let shotHands: Float = 1.0;
+  public let nerve: Float = 1.0;
+  public let surrender: Float = 1.0;
+  public let peace: Float = 1.0;
+  public let insult: Float = 1.0;
+  public let crew: Float = 1.0;
+  public let forgive: Float = 1.0;
+  public let toughness: Float = 0.0;
+  public let kin: Float = 1.0;
+  public let sendsApex: Bool = true;
+  public let soldiers: Bool = false;
+  public let everybodysEnemy: Bool = false;
+  public let seesChrome: Float = 0.0;
+  // How a kill weighs on their grudge: every kill, one up close (fists, blunt, a finisher), one with a gun, a finisher.
+  public let grudgeAll: Float = 1.0;
+  public let grudgeClose: Float = 1.0;
+  public let grudgeGun: Float = 1.0;
+  public let grudgeFinisher: Float = 1.0;
+  // The district whose people they guard, and the districts their grudge keeps to (none: anywhere).
+  public let guards: CName;
+  public let homes: array<CName>;
+  // The Hub's words for it: what they respect, never forgive, how they fight, how they make peace, where they keep to.
+  public let respectKey: CName;
+  public let neverKey: CName;
+  public let fightKey: CName;
+  public let peaceKey: CName;
+  public let homeKey: CName;
+}
+
 public class CBFactionProfile {
   public let id: CName;
   public let affiliations: array<CName>;      // game gamedataAffiliation names mapped to this id (filled in S-01)
@@ -43,6 +77,21 @@ public class CBFactionProfile {
   public let isGang: Bool;                    // tribute/hit-squad eligibility
   public let canBeBought: Bool;               // broker-peace eligibility (corps cannot)
   public let displayKey: String;
+  // 2.7.4 (Data/FactionProfiles.reds): its code, whether it fields people at all, and the cars it comes in (its own kind,
+  // its own colours, and the one a lone rider takes). Built each session, never saved.
+  public let code: ref<CBGangCode>;
+  public let fieldsSquads: Bool = true;
+  public let cars: array<TweakDBID>;
+  public let paintedCars: array<TweakDBID>;
+  public let loneRide: TweakDBID;
+  // What its people are called, as a key (gang, clan, raffen, corporation, law, army), and the label its Hub card wears
+  // when that is not "gang" in the lore's own word (2.7.4: Clan, Raffen). Keys, never compared as text.
+  public let nounKey: CName = n"Cyberbane-Faction-NounGang";
+  public let cardLabelKey: CName;
+  // A faction an add-on registered that keeps a standing with V and never sends anybody (2.7.4, CyberbaneAPI.RegisterFaction),
+  // and whether anybody in the world is filed under it.
+  public let standingOnly: Bool;
+  public let hasBodies: Bool = true;
 
   public func SetRespect(archetype: ECBArchetype, weight: Float) -> Void {
     if ArraySize(this.respectWeights) == CBArchetypeCount() {
@@ -240,6 +289,7 @@ public class CyberbaneContent extends ScriptableService {
     }
     this.m_built = true;   // set first so re-entrant Add* calls don't loop
     CBSeedFactions(this);
+    CBSeedFactionProfiles(this);   // codes, cars, who fields people (2.7.4)
     CBSeedDistricts(this);
     CBSeedImplants(this);
     CBSeedLooks(this);

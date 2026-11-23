@@ -275,7 +275,9 @@ public func CBWebBoxLine(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CN
   // One word (2.5.0): the standing's number, the streets held and the leader are in the panel under the picture,
   // where the gang's box sent them as three lines of 11 px text.
   let out = StrUpper(CBPostureName(score.GetPosture(gang)));
-  return out;
+  // A clan or raffen says so (2.7.4): "CLAN  ·  HOSTILE".
+  let label = CBFactionCardLabel(gang);
+  return StrLen(label) > 0 ? StrUpper(label) + "  ·  " + out : out;
 }
 
 public func CBWebLeader(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> String {

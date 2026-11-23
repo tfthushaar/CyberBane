@@ -236,4 +236,231 @@ public abstract class CyberbaneAPI {
     }
     return false;
   }
+
+  // ---- Extension API, level 1 (2.7.4) -------------------------------------
+  //
+  // Guard every call below with @if(ModuleExists("Cyberbane.Api")). An API function is never removed or renamed; a
+  // later level adds its own marker module (Cyberbane.Api2 ...). See README, "For mod authors".
+
+  public static func ApiLevel() -> Int32 {
+    return CBApiLevel();
+  }
+
+  // Told on Cyberbane's tick, never inside a game event (API/Listeners.reds). Register each session.
+  public static func RegisterListener(game: GameInstance, listener: ref<CBListener>) -> Void {
+    let book = CBApiBook.Get(game);
+    if IsDefined(book) {
+      book.Add(listener);
+    }
+  }
+
+  public static func UnregisterListener(game: GameInstance, listener: ref<CBListener>) -> Void {
+    let book = CBApiBook.Get(game);
+    if IsDefined(book) {
+      book.Remove(listener);
+    }
+  }
+
+  // How many times this playthrough has been started over; kept in the save. Data keyed by a Rival id belongs to the
+  // epoch it was written in.
+  public static func PlaythroughEpoch(game: GameInstance) -> Int32 {
+    let book = CBApiBook.Get(game);
+    return IsDefined(book) ? book.Epoch() : 0;
+  }
+
+  // ---- Read-only settings: follow Cyberbane's switches rather than ask the player twice.
+  public static func IsEnabled() -> Bool {
+    let rt = CyberbaneRuntime.Get();
+    return IsDefined(rt) && rt.IsEnabled();
+  }
+
+  // Where messages go: 0 the phone, 1 cards, 2 notices, 3 off (ECBMessageDelivery).
+  public static func MessagesMode() -> Int32 {
+    return EnumInt(CBMessageDelivery());
+  }
+
+  // How much you hear: 0 everything, 1 less chatter, 2 rarely (ECBMessageAmount).
+  public static func HowMuchYouHear() -> Int32 {
+    return EnumInt(CBMessageAmount());
+  }
+
+  public static func FactionOn(faction: CName) -> Bool {
+    return CBFactionOn(faction);
+  }
+
+  // The preset: 0 Subtle, 1 Default, 2 Dramatic, 3 Custom, 4 Nemesis, 5 Turf war, 6 Quiet life (ECBPreset).
+  public static func Preset() -> Int32 {
+    let rt = CyberbaneRuntime.Get();
+    return IsDefined(rt) && rt.HasSettings() ? EnumInt(rt.GetSettings().preset) : EnumInt(ECBPreset.Default);
+  }
+
+  // True while "Before you're known" still holds V back (Street Cred under the full mark, with the setting on).
+  public static func BeforeYoureKnownHolds(game: GameInstance) -> Bool {
+    return CBMercStanding(game) < 1.0;
+  }
+
+  public static func GangCodesOn() -> Bool {
+    return CBGangCodesOn();
+  }
+
+  // ---- People (API/Requests.reds): a handle, or 0 with the reason from GroupWhyNot.
+  public static func RequestGroup(game: GameInstance, spec: ref<CBSpawnSpec>) -> Int32 {
+    return CBApiRequestGroup(game, spec);
+  }
+
+  public static func GroupWhyNot(game: GameInstance, handle: Int32) -> String {
+    let reg = CBApiRequests.Get(game);
+    return handle == 0 && IsDefined(reg) ? reg.LastWhy() : "";
+  }
+
+  public static func GroupAlive(game: GameInstance, handle: Int32) -> Int32 {
+    return CBApiGroupAlive(game, handle);
+  }
+
+  public static func GroupBodies(game: GameInstance, handle: Int32, out bodies: array<EntityID>) -> Int32 {
+    return CBApiGroupBodies(game, handle, bodies);
+  }
+
+  // Removed the safe way: never in V's sight, never from a seat; anybody still in view walks off first.
+  public static func ReleaseGroup(game: GameInstance, handle: Int32) -> Void {
+    CBApiReleaseGroup(game, handle);
+  }
+
+  // ---- Map pins, in the CYBERBANE filter box. untilGameSeconds 0 keeps it until Unpin. 0 when markers are off.
+  public static func PinPlace(game: GameInstance, captionKey: CName, pos: Vector4, untilGameSeconds: Float) -> Int32 {
+    return CBApiPinPlace(game, captionKey, pos, untilGameSeconds);
+  }
+
+  public static func Unpin(game: GameInstance, id: Int32) -> Bool {
+    let reg = CBApiRequests.Get(game);
+    return IsDefined(reg) && reg.RemovePin(game, id);
+  }
+
+  // ---- Texts from a contact of the add-on's own (never a story character).
+  public static func RegisterSender(game: GameInstance, id: CName, nameKey: CName) -> Void {
+    let reg = CBApiRequests.Get(game);
+    if IsDefined(reg) && IsNameValid(id) && IsNameValid(nameKey) {
+      reg.AddSender(id, nameKey);
+    }
+  }
+
+  // A text that asks nothing, through the hearsay queue and the player's message settings. False when it was not sent.
+  public static func SendAside(game: GameInstance, sender: CName, text: String) -> Bool {
+    return CBApiSendAside(game, sender, text);
+  }
+
+  // ---- Standing with a reason: honours Freeze reputation and the faction switch; the reason key goes into the History.
+  public static func AdjustStanding(game: GameInstance, faction: CName, delta: Float, reasonKey: CName) -> Bool {
+    return CBApiAdjustStanding(game, faction, delta, reasonKey);
+  }
+
+  // ---- Factions of an add-on's own. A profile to fill in: a gang (crews, codes, cars on the profile) or standing-only
+  // (standing, decay and posture with V, never anybody sent). displayKey is the add-on's localization key for its name.
+  public static func MakeFactionProfile(id: CName, displayKey: String, isGang: Bool, standingOnly: Bool) -> ref<CBFactionProfile> {
+    let p = CBMakeFaction(id, 0.0, 0.0, 1.0, 0.0, isGang && !standingOnly, false, displayKey);
+    p.standingOnly = standingOnly;
+    p.fieldsSquads = !standingOnly;
+    p.hasBodies = !standingOnly;
+    p.code = new CBGangCode();
+    return p;
+  }
+
+  // Appended after Cyberbane's own factions, never among them (their order seeds the turf drift), once per id. Its
+  // standing is kept in the save by id like any faction's. Mod Settings cannot grow a switch for it: the add-on's own
+  // settings page gives one. False when the id is taken or the profile is empty.
+  public static func RegisterFaction(profile: ref<CBFactionProfile>) -> Bool {
+    let content = CyberbaneContent.Get();   // built first, so a registered faction always comes after the rest
+    if !IsDefined(content) || !IsDefined(profile) || !IsNameValid(profile.id) || IsDefined(content.GetFaction(profile.id)) {
+      return false;
+    }
+    if profile.standingOnly {
+      profile.fieldsSquads = false;
+      profile.isGang = false;
+    }
+    if !IsDefined(profile.code) {
+      profile.code = new CBGangCode();
+    }
+    content.AddFaction(profile);
+    CBLog.Info(n"Model", s"An add-on registered a faction: \(NameToString(profile.id)).");
+    return true;
+  }
+
+  // A question with answers, the first one priced (0 for free), answered in the contact's thread on the phone. The add-on
+  // hears the answer on its listener with this token. False when messages do not go to the phone, or nothing to ask.
+  public static func AskPriced(game: GameInstance, sender: CName, text: String, options: array<String>, price: Int32,
+                               token: Int32, listener: ref<CBApiAnswerListener>) -> Bool {
+    return CBApiAskPriced(game, sender, text, options, price, token, listener);
+  }
+
+  // ---- A convoy that travels (API/Convoy.reds): on paper along its route until V is near, then on the road. A handle,
+  // or 0 with the reason from ConvoyWhyNot. State: 0 on paper, 1 boarding, 2 driving, 3 in a fight, 4 done.
+  public static func RequestConvoy(game: GameInstance, spec: ref<CBConvoySpec>) -> Int32 {
+    return CBApiRequestConvoy(game, spec);
+  }
+
+  public static func ConvoyWhyNot(game: GameInstance) -> String {
+    let reg = CBApiConvoys.Get(game);
+    return IsDefined(reg) ? reg.LastWhy() : "";
+  }
+
+  public static func ConvoyState(game: GameInstance, handle: Int32) -> Int32 {
+    let reg = CBApiConvoys.Get(game);
+    let run = IsDefined(reg) ? reg.Find(handle) : null;
+    return IsDefined(run) ? run.state : CBConvoyDone();
+  }
+
+  public static func ConvoyWhere(game: GameInstance, handle: Int32) -> Vector4 {
+    let reg = CBApiConvoys.Get(game);
+    let run = IsDefined(reg) ? reg.Find(handle) : null;
+    return IsDefined(run) ? CBConvoyWhere(game, run) : new Vector4(0.0, 0.0, 0.0, 0.0);
+  }
+
+  // Off the road the safe way: crews unseated first, nobody removed in V's sight.
+  public static func ReleaseConvoy(game: GameInstance, handle: Int32) -> Void {
+    let reg = CBApiConvoys.Get(game);
+    let run = IsDefined(reg) ? reg.Find(handle) : null;
+    if IsDefined(run) {
+      run.releasing = true;
+    }
+  }
+
+  // ---- Hub cards (API/HubCards.reds): data the Hub draws in the Gangs page's list. A click on an action is told to the
+  // listener on the next settled tick. Keep the card objects and change them as you like; the Hub reads them as it draws.
+  public static func RegisterGangsRow(game: GameInstance, card: ref<CBHubCardSpec>, listener: ref<CBHubActionListener>) -> Bool {
+    let hub = CBApiHub.Get(game);
+    return IsDefined(hub) && hub.Add(card, listener, n"");
+  }
+
+  // A page of cards, listed under its title (the Hub's tabs are the game's own, so a page gets no tab of its own).
+  public static func RegisterPage(game: GameInstance, page: ref<CBHubPageSpec>, listener: ref<CBHubActionListener>) -> Bool {
+    let hub = CBApiHub.Get(game);
+    if !IsDefined(hub) || !IsDefined(page) {
+      return false;
+    }
+    let any = false;
+    for card in page.cards {
+      if hub.Add(card, listener, page.titleKey) {
+        any = true;
+      }
+    }
+    return any;
+  }
+
+  // ---- Event kinds (API/EventKinds.reds): registered each session, started into Cyberbane's one event slot.
+  public static func RegisterEventKind(game: GameInstance, kind: CName, handler: ref<CBEventKindHandler>, captionKey: CName) -> Bool {
+    let reg = CBApiEventKinds.Get(game);
+    return IsDefined(reg) && reg.Register(kind, handler, captionKey);
+  }
+
+  public static func SetEventKindOn(game: GameInstance, kind: CName, on: Bool) -> Void {
+    let reg = CBApiEventKinds.Get(game);
+    if IsDefined(reg) {
+      reg.SetOn(kind, on);
+    }
+  }
+
+  // False when another event (Cyberbane's or an add-on's) already has the slot, or the kind is unknown or off.
+  public static func StartEvent(game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float) -> Bool {
+    return CBApiStartEvent(game, kind, side, at, inGameSeconds);
+  }
 }

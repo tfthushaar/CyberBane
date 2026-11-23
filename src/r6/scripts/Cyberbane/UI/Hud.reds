@@ -2187,6 +2187,16 @@ public class CBHud {
       this.Render(sys, game);
       return;
     }
+    // An add-on's card: the click is recorded, and the add-on hears it on the next settled tick (API/HubCards.reds).
+    if this.m_tab == CBHudFactionsTab() && IsDefined(CBApiCardOfRowId(game, this.m_pickFaction)) {
+      let apiPick = CBApiCardOfRowId(game, this.m_pickFaction);
+      let hubA = CBApiHub.Get(game);
+      if IsDefined(hubA) && ArraySize(apiPick.actions) > 0 {
+        hubA.Request(apiPick.id, 0);
+      }
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudFactionsTab() {
       // Money leaves V's pocket, so it asks first: the first click turns the button into a
       // confirmation, the second pays. A payment already chosen can be taken back in one.
@@ -2247,6 +2257,15 @@ public class CBHud {
   // The buttons under the first. Only the Rivals have them: forget this one, and forget them all.
   // Neither is carried out from here, for the reason given above ActionClicked.
   private func ExtraClicked(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
+    if this.m_tab == CBHudFactionsTab() && IsDefined(CBApiCardOfRowId(game, this.m_pickFaction)) {
+      let apiExtra = CBApiCardOfRowId(game, this.m_pickFaction);
+      let hubE = CBApiHub.Get(game);
+      if IsDefined(hubE) && slot >= 1 && slot < ArraySize(apiExtra.actions) {
+        hubE.Request(apiExtra.id, slot);
+      }
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudCrewTab() && this.m_crewMode == 4 {
       if slot == 1 {
         this.m_crewMode = 7;   // Cancel: the name stays as it was
@@ -2985,15 +3004,27 @@ public class CBHud {
       }
       k += 1;
     }
+    // An add-on's cards come after the factions (API/HubCards.reds, 2.7.4), picked by an id no faction has.
+    let hub = CBApiHub.Get(sys.GetGameInstance());
+    let apiCount = IsDefined(hub) ? hub.Count() : 0;
+    if !pickedOn && IsDefined(CBApiCardOfRowId(sys.GetGameInstance(), this.m_pickFaction)) {
+      pickedOn = true;
+    }
     if !pickedOn {
       this.m_pickFaction = n"";
     }
-    let top = this.ListWindow(ArraySize(order), CBHudListRows());
+    let total = ArraySize(order) + apiCount;
+    let top = this.ListWindow(total, CBHudListRows());
     let row = 0;
-    while row < CBHudListRows() && top + row < ArraySize(order) {
-      let shownFs = order[top + row];
-      this.RenderFactionRow(sys, score, shownFs, score.GetPosture(shownFs.id), row,
-                            Equals(shownFs.id, this.m_pickFaction), orderTwr[top + row]);
+    while row < CBHudListRows() && top + row < total {
+      let at = top + row;
+      if at < ArraySize(order) {
+        let shownFs = order[at];
+        this.RenderFactionRow(sys, score, shownFs, score.GetPosture(shownFs.id), row,
+                              Equals(shownFs.id, this.m_pickFaction), orderTwr[at]);
+      } else {
+        this.RenderApiCardRow(hub, at - ArraySize(order), row);
+      }
       row += 1;
     }
   }
@@ -3058,6 +3089,26 @@ public class CBHud {
   }
 
   // The panel under the gangs: the one you clicked, and the button to buy them off.
+  // An add-on's card as a row of the Gangs list (API/HubCards.reds, 2.7.4): its title, its page and subtitle, its colour,
+  // and its pips as a bar.
+  private func RenderApiCardRow(hub: ref<CBApiHub>, i: Int32, row: Int32) -> Void {
+    let card = IsDefined(hub) ? hub.At(i) : null;
+    if !IsDefined(card) {
+      return;
+    }
+    let rowId = CBApiCardRowId(card);
+    let page = hub.PageTitleAt(i);
+    let sub = IsNameValid(page) ? CBT(page) + (StrLen(card.subtitle) > 0 ? "  ·  " + card.subtitle : "") : card.subtitle;
+    let tint = CBApiCardTint(card.colour);
+    this.SetRow(row, CBHudLayoutGangs(), tint, true, Equals(rowId, this.m_pickFaction), CBApiCardTitle(card), sub, "", "", "", "");
+    if row < ArraySize(this.m_rowFaction) {
+      this.m_rowFaction[row] = rowId;
+    }
+    if card.pips > 0 {
+      this.SetRowBar(row, CBHudGangBarX(), CBHudGangBarW(), ClampF(Cast<Float>(card.pips) / 5.0, 0.0, 1.0), tint);
+    }
+  }
+
   private func RenderFactionDetail(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let top = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
     if this.m_webShown {
@@ -3073,6 +3124,20 @@ public class CBHud {
       return;
     }
     let id = this.m_pickFaction;
+    // An add-on's card: its lines, and its actions on the page's buttons (API/HubCards.reds, 2.7.4).
+    let apiCard = CBApiCardOfRowId(game, id);
+    if IsDefined(apiCard) {
+      let text = "";
+      for l in apiCard.lines {
+        text += (StrLen(text) > 0 ? "\n" : "") + l;
+      }
+      let acts = ArraySize(apiCard.actions);
+      this.SetAction(acts > 0 ? apiCard.actions[0] : "", acts > 0);
+      this.SetExtra(1, acts > 1 ? apiCard.actions[1] : "", acts > 1);
+      this.SetExtra(2, acts > 2 ? apiCard.actions[2] : "", acts > 2);
+      this.SetBody(CBHudMarginX(), top, width, text, CBHudMaxLinesFor(this.m_tab));
+      return;
+    }
     let fs = sys.FindFaction(id);
     let score = sys.GetScore();
     // A gang V has never crossed has no record (only a kill or a pay-off files one), and the web can pick it: said so,
@@ -4828,7 +4893,9 @@ public class CBHud {
           ArrayPush(this.m_pickItems, c);
         }
       }
-      let i = 0;
+      // Through the list window (2.7.4), so a bag of more than one screen scrolls like every other list: it stopped at the
+      // first ten.
+      let i = this.ListWindow(ArraySize(this.m_pickItems), CBHudListRows());
       while i < ArraySize(this.m_pickItems) && row < CBHudListRows() {
         let id = this.m_pickItems[i];
         let data = this.m_crewMode == 1 ? CBCrewItemData(game, id) : (IsDefined(ts) && IsDefined(player) ? ts.GetItemData(player, id) : null);
@@ -4854,7 +4921,7 @@ public class CBHud {
     }
     if this.m_crewMode == 3 {
       this.m_pickGangs = CBCrewWarTargets(sys);
-      let g = 0;
+      let g = this.ListWindow(ArraySize(this.m_pickGangs), CBHudListRows());
       while g < ArraySize(this.m_pickGangs) && row < CBHudListRows() {
         let gang = this.m_pickGangs[g];
         let stand = CBCrewStandingWith(game, gang);
@@ -4984,35 +5051,43 @@ public class CBHud {
     ArrayClear(this.m_pickJobGang);
     let now = CBGameSeconds(game);
     let rank = CBCrewRankOf(game, m);
-    let row = 0;
+    // Every target first, then a window of them (2.7.4): the list stopped at the first ten rows.
     if rank >= CBConfig.CrewHitMinRank() {
       for r in sys.GetRivals() {
-        if row < CBHudListRows() && CBCrewHitTarget(sys, game, r) {
-          let odds = CBCrewHitOdds(game, m, r, now);
-          this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBRivalDisplayName(sys.GetContent(), r),
-                      CBT(n"Cyberbane-CrewJobs-AHit"), "", CBTf(n"Cyberbane-Hud-AwayHours", [s"\(RoundF(CBConfig.CrewHitHoursBase() + 2.0 * Cast<Float>(r.rank)))"]),
-                      "", s"\(RoundF(odds * 100.0))%");
+        if CBCrewHitTarget(sys, game, r) {
           ArrayPush(this.m_pickJobRival, r.id);
           ArrayPush(this.m_pickJobGang, r.faction);
-          this.m_rowCrew[row] = row + 1;
-          row += 1;
         }
       }
     }
     for g in CBCrewBagTargets(sys) {
-      if row < CBHudListRows() {
+      ArrayPush(this.m_pickJobRival, 0);
+      ArrayPush(this.m_pickJobGang, g);
+    }
+    let total = Min(ArraySize(this.m_pickJobRival), ArraySize(this.m_pickJobGang));
+    let row = 0;
+    let i = this.ListWindow(total, CBHudListRows());
+    while i < total && row < CBHudListRows() {
+      let rid = this.m_pickJobRival[i];
+      let r = rid > 0 ? sys.FindRivalById(rid) : null;
+      if IsDefined(r) {
+        let odds = CBCrewHitOdds(game, m, r, now);
+        this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBRivalDisplayName(sys.GetContent(), r),
+                    CBT(n"Cyberbane-CrewJobs-AHit"), "", CBTf(n"Cyberbane-Hud-AwayHours", [s"\(RoundF(CBConfig.CrewHitHoursBase() + 2.0 * Cast<Float>(r.rank)))"]),
+                    "", s"\(RoundF(odds * 100.0))%");
+      } else {
+        let g = this.m_pickJobGang[i];
         let oddsBag = CBCrewBagOdds(sys, game, m, g, now);
         this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCapFirst(CBFactionLabel(g)),
                     CBT(n"Cyberbane-CrewJobs-TheirBag"), "", CBTf(n"Cyberbane-Hud-AwayHours", [s"\(RoundF(CBConfig.CrewBagHours()))"]),
                     "", s"\(RoundF(oddsBag * 100.0))%");
-        ArrayPush(this.m_pickJobRival, 0);
-        ArrayPush(this.m_pickJobGang, g);
-        this.m_rowCrew[row] = row + 1;
-        row += 1;
       }
+      this.m_rowCrew[row] = i + 1;
+      row += 1;
+      i += 1;
     }
-    let intro = row == 0 ? CBT(n"Cyberbane-CrewJobs-NoTargets")
-                         : CBTf(n"Cyberbane-CrewJobs-PickAJob", [CBCrewName(sys, m), CBCrewRankWord(CBConfig.CrewHitMinRank())]);
+    let intro = total == 0 ? CBT(n"Cyberbane-CrewJobs-NoTargets")
+                           : CBTf(n"Cyberbane-CrewJobs-PickAJob", [CBCrewName(sys, m), CBCrewRankWord(CBConfig.CrewHitMinRank())]);
     this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
@@ -5070,6 +5145,9 @@ public class CBHud {
       return;
     }
     let noItem: ItemID;
+    if code == CBCrewAskGive() || code == CBCrewAskChrome() || code == CBCrewAskWar() || code == CBCrewAskJob() {
+      this.m_listTop = 0;   // a pick list opens at its top
+    }
     if code == CBCrewAskGive() { this.m_crewMode = 1; }
     if code == CBCrewAskChrome() { this.m_crewMode = 2; }
     if code == CBCrewAskWar() { this.m_crewMode = 3; }
@@ -6472,7 +6550,7 @@ func CBHudRivalWhere(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiv
     let from = IsNameValid(lead.tipFaction) ? CBFactionLabel(lead.tipFaction) : CBT(n"Cyberbane-Hud-TheStreet");
     let ago = CBHudSince(CBGameSeconds(game), lead.seenAt);
     let when = StrLen(ago) > 0 ? CBTf(n"Cyberbane-Hud-Ago", [ago]) : "";
-    return CBTf(n"Cyberbane-Hud-WordFromSeenGoOnFoot", [s"\(from)", s"\(CBPlacePhrase(lead.district))", s"\(when)"]);
+    return CBTf(n"Cyberbane-Hud-WordFromSeenGoOnFoot", [s"\(from)", s"\(CBPlacePhrase(lead.district, CBSightingPos(lead)))", s"\(when)"]);
   }
   let why = CBWhereaboutsForSale(sys, game, r);
   if why == 0 {
@@ -7019,6 +7097,11 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
   if Equals(e.kind, n"RivalDied") {
     line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-ARankRivalFromDiedAnd", [s"\(RoundF(e.value))", s"\(gang)"])
                             : CBTf(n"Cyberbane-Hud-ARankRivalDiedAndNot", [s"\(RoundF(e.value))"]);
+  }
+  // An add-on's reason (CyberbaneAPI.AdjustStanding, 2.7.4): its key is the entry's kind, and reads as its own text.
+  // Cyberbane's own kinds never carry a dash.
+  if StrLen(line) == 0 && StrContains(NameToString(e.kind), "-") {
+    line = CBT(e.kind);
   }
   let place = CBDistrictLabel(e.district);
   if StrLen(place) > 0 {

@@ -1376,6 +1376,18 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     return;
   }
 
+  // An add-on's convoy crew (API/Convoy.reds, 2.7.4): set up, then seated in their car.
+  if des.IsTagged(id, n"CB_Convoy") {
+    CBApiConvoySetUp(sys, game, puppet);
+    return;
+  }
+
+  // An add-on's group (API/Requests.reds, 2.7.4).
+  if des.IsTagged(id, n"CB_Api") {
+    CBApiSetUpBody(sys, game, puppet);
+    return;
+  }
+
   // One of V's crew at a post at home (Reactions/CrewHome.reds, 2.7.2).
   if des.IsTagged(id, n"CB_Guard") {
     CBSetUpGuard(sys, game, puppet);

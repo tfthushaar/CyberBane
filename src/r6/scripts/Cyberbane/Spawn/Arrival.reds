@@ -105,60 +105,28 @@ public func CBArrivalVehicle(factionId: CName, needed: Int32, roll: Int32, out s
   let mackinaw = t"Vehicle.cs_savable_thorton_mackinaw";
   let alvarado = t"Vehicle.cs_savable_villefort_alvarado";
 
-  // Their own first, in an order that varies a little from one arrival to the next.
+  // Their own first, in an order that varies a little from one arrival to the next, then their colours (1.9.9): the game
+  // has gang-painted versions of these cars, and a lone Tyger Claw comes on a Claws Kusanagi. Read from the faction's
+  // profile since 2.7.4 (Data/FactionProfiles.reds), where the Aldecaldos, the Wraiths and the corporations have their own
+  // painted cars too; a faction with none comes in the plain city trio. A record this patch lacks seats nobody and is
+  // passed over.
+  let content = CyberbaneContent.Get();
+  let profile = IsDefined(content) ? content.GetFaction(factionId) : null;
   let own: array<TweakDBID>;
-  if Equals(factionId, n"Wraiths") || Equals(factionId, n"Aldecaldos")
-     || Equals(factionId, n"Animals") || Equals(factionId, n"Scavengers")
-     || Equals(factionId, n"Barghest") || Equals(factionId, n"Scrappers") {
-    ArrayPush(own, galena);
-    ArrayPush(own, mackinaw);
-    ArrayPush(own, colby);
-  } else {
-    if Equals(factionId, n"Maelstrom") || Equals(factionId, n"SixthStreet") {
-      ArrayPush(own, colby);
-      ArrayPush(own, columbus);
-      ArrayPush(own, mackinaw);
-    } else {
-      if Equals(factionId, n"TygerClaws") || Equals(factionId, n"Valentinos") {
-        ArrayPush(own, shion);
-        ArrayPush(own, alvarado);
-        ArrayPush(own, quartz);
-      } else {
-        ArrayPush(own, quartz);
-        ArrayPush(own, thrax);
-        ArrayPush(own, hella);
-      }
-    }
-  }
-  // Their own colours first (1.9.9): the game has gang-painted versions of these cars, and a lone Tyger
-  // Claw comes on a Claws Kusanagi. A record this patch lacks seats nobody and is passed over.
   let painted: array<TweakDBID>;
-  if Equals(factionId, n"TygerClaws") {
-    if needed <= 1 {
-      ArrayPush(painted, t"Vehicle.v_sportbike1_yaiba_kusanagi_tyger");
+  if IsDefined(profile) {
+    own = profile.cars;
+    if needed <= 1 && TDBID.IsValid(profile.loneRide) {
+      ArrayPush(painted, profile.loneRide);
     }
-    ArrayPush(painted, t"Vehicle.cs_savable_mizutani_shion_tyger");
-    ArrayPush(painted, t"Vehicle.cs_savable_archer_quartz_tyger");
-    ArrayPush(painted, t"Vehicle.cs_savable_villefort_columbus_tyger");
+    for pcar in profile.paintedCars {
+      ArrayPush(painted, pcar);
+    }
   }
-  if Equals(factionId, n"Valentinos") {
-    ArrayPush(painted, t"Vehicle.cs_savable_villefort_alvarado_valentinos");
-    ArrayPush(painted, t"Vehicle.cs_savable_thorton_colby_valentinos");
-    ArrayPush(painted, t"Vehicle.cs_savable_chevalier_thrax_valentino");
-    ArrayPush(painted, t"Vehicle.cs_savable_thorton_mackinaw_valentinos");
-  }
-  if Equals(factionId, n"Maelstrom") {
-    ArrayPush(painted, t"Vehicle.cs_savable_thorton_galena_maelstrom");
-    ArrayPush(painted, t"Vehicle.cs_savable_chevalier_thrax_maelstrom");
-  }
-  if Equals(factionId, n"SixthStreet") {
-    ArrayPush(painted, t"Vehicle.cs_savable_thorton_mackinaw_sixth_street");
-    ArrayPush(painted, t"Vehicle.cs_savable_villefort_columbus_sixth_street");
-    ArrayPush(painted, t"Vehicle.cs_savable_archer_hella_sixth_street");
-  }
-  if Equals(factionId, n"VoodooBoys") {
-    ArrayPush(painted, t"Vehicle.cs_savable_mahir_voodoo_boys");
-    ArrayPush(painted, t"Vehicle.cs_savable_thorton_galena_voodoo_boys");
+  if ArraySize(own) == 0 {
+    ArrayPush(own, quartz);
+    ArrayPush(own, thrax);
+    ArrayPush(own, hella);
   }
   let pool: array<TweakDBID>;
   let pc = 0;

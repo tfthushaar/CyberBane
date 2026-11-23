@@ -413,6 +413,9 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       // smaller number is a better one; the first look of a session only records where they
       // are, so a load does not replay every friendship V already had.
       let before = sys.SwapSeenPosture(fs.id, EnumInt(posture));
+      if before >= 0 && before != EnumInt(posture) {
+        CBApiNote(CBApiQPosture(), fs.id, before, EnumInt(posture));   // extension API (2.7.4)
+      }
       if !quiet && before >= 0 && EnumInt(posture) < before && EnumInt(posture) <= EnumInt(ECBPosture.Friendly) {
         CBAnnounceWarming(sys, game, fs.id, Equals(posture, ECBPosture.Allied));
       }

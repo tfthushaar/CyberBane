@@ -1392,6 +1392,7 @@ public func CBSetUpCrewMember(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     return;
   }
   CBDisarmGodMode(game, puppet);
+  CBCrewKeepLook(sys, m, puppet);
   if IsDefined(m) {
     CBKitApexSeat(puppet, m.seat);
     CBCrewApplyKit(sys, game, puppet, m);   // rank, gear, the weapon handed over, chrome (Reactions/CrewKit.reds, 2.6.0)
@@ -1402,6 +1403,29 @@ public func CBSetUpCrewMember(sys: ref<CyberbaneSystem>, game: GameInstance, pup
 }
 
 // [C5] With Come on their own: an ambush has sprung on V, and the most loyal are already coming.
+// A member looks the way they did the first time they turned up (2.7.4): "they look different each time I summon them."
+// A member made from a Rival or a ganger V talked to keeps that body's look from the start; one lent by a gang, offered
+// by a broker or re-seated by a new weapon had none, so the game rolled a new appearance for every body. The first body
+// to come now gives its look to the record, and every body after it is made with that look. A member whose record could
+// not be used (a template stood in) takes the template's record too, so record and look always belong together.
+public func CBCrewKeepLook(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>, puppet: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(m) || !CBNpcSafe(sys, puppet) {
+    return;
+  }
+  let rec = puppet.GetRecordID();
+  if (!TDBID.IsValid(m.record) || !CBRecordIsPerson(m.record)) && TDBID.IsValid(rec) && CBRecordIsPerson(rec) {
+    m.record = rec;
+    m.look = n"";
+  }
+  if Equals(m.look, n"") && rec == m.record {
+    let look = puppet.GetCurrentAppearanceName();
+    if IsNameValid(look) && NotEquals(look, n"default") {
+      m.look = look;
+      CBLog.Info(n"Crew", "One of the crew keeps the look they turned up in.");
+    }
+  }
+}
+
 func CBCrewAmbushSprung(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
   let player = GetPlayer(game);

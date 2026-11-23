@@ -287,6 +287,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     puppet.cbDamagedByPlayer = false;
     CBLog.Info(n"Signals", "Somebody V had hurt was killed by somebody else: not counted as V's kill.");
   }
+  // Extension API (2.7.4): written down here, told on Cyberbane's tick; the faction read only when somebody listens.
+  if CBApiListening(game) {
+    CBApiNote(CBApiQKilled(), CBClassifyFaction(puppet), puppet.cbDamagedByPlayer ? 1 : 0, 0);
+  }
   CBUntrackOnMap(game, puppet);   // no marker left hanging over a body
   // Shot with their hands up (Spawn/LivingStreet.reds, experimental surrender).
   if puppet.cbSurrendered && puppet.cbDamagedByPlayer {

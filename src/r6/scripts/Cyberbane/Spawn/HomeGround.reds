@@ -58,6 +58,14 @@ public func CBHomeKindOf(districtName: String) -> Int32 {
 }
 
 // The district of the game's V is standing in, by its enum name, unfolded: "" when the game has not said.
+// The game's own name for the part of a district V stands in ("Rocky Ridge"), in the player's language; "" when none.
+public func CBSubDistrictLabel(game: GameInstance) -> String {
+  let prev = CBGetSystem(game, n"PreventionSystem") as PreventionSystem;
+  let district = IsDefined(prev) ? prev.GetCurrentDistrict() : null;
+  let rec = IsDefined(district) ? district.GetDistrictRecord() : null;
+  return IsDefined(rec) ? GetLocalizedText(rec.LocalizedName()) : "";
+}
+
 public func CBSubDistrictName(game: GameInstance) -> String {
   let prev = CBGetSystem(game, n"PreventionSystem") as PreventionSystem;
   if !IsDefined(prev) {

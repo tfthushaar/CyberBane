@@ -588,7 +588,8 @@ public abstract class CBConfig {
 
   // ---- Kitting out the crew (Reactions/CrewKit.reds, 2.6.0) ----
   public static func CrewNameMaxLength() -> Int32 = 24
-  public static func CrewPickListMax() -> Int32 = 10
+  // How many weapons or pieces of chrome a pick list holds (2.7.4: 60, scrolled ten at a time; it was 10 and stopped there).
+  public static func CrewPickListMax() -> Int32 = 60
   // Each rank above Rookie (1 to 6): this much more health, armour and damage.
   public static func CrewRankHealthStep() -> Float = 0.12
   public static func CrewRankArmourStep() -> Float = 0.08
@@ -1631,6 +1632,16 @@ public abstract class CBConfig {
   public static func StrongholdLtGrade() -> Float = 0.8
   // A cleared stronghold's stash is laid once the fight is over and V is this close to where they kept it (2.7.3).
   public static func StrongholdStashReach() -> Float = 60.0
+  // How near V a spot has to be for the Badlands part V stands in to name it (2.7.4, CBPlacePhrase).
+  public static func SubDistrictNear() -> Float = 400.0
+  // An add-on's convoy (API/Convoy.reds, 2.7.4): put on the road once V is this near where it is on paper; a route point
+  // counts as reached this close; escorts this far behind the lead (each further one four metres more); and the ticks
+  // its crews have to board before it drives anyway.
+  public static func ConvoyReach() -> Float = 300.0
+  public static func ConvoyPointReach() -> Float = 25.0
+  public static func ConvoyGapMin() -> Float = 6.0
+  public static func ConvoyGapMax() -> Float = 18.0
+  public static func ConvoyBoardTicks() -> Int32 = 20
   public static func GoodsShare() -> Float = 0.3
   public static func GoodsWorthMult() -> Float = 1.4
   public static func GoodsStalePerDay() -> Float = 0.2

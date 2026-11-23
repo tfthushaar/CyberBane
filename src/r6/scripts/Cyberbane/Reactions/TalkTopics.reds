@@ -658,7 +658,7 @@ public func CBTalkGiveLead(sys: ref<CyberbaneSystem>, game: GameInstance, player
   CBMarkLeadTold(sys, s, t.faction, now);
   CBFileLog(sys, n"Informant", now, CBEventDistrict(sys, game), t.faction, Cast<Float>(r.id));
   CBLog.Info(n"Talk", s"Rival \(r.id) given up in the street (paid: \(paid)).");
-  let place = CBPlacePhrase(s.district);
+  let place = CBPlacePhrase(s.district, CBSightingPos(s));
   let pin = CBMapMarkersOn() ? CBT(n"Cyberbane-StreetIntel-ItSOnYourMap") : "";
   return CBPick3(CBTf(n"Cyberbane-TalkTopics-SHoledUp", [s"\(name)", s"\(place)", s"\(pin)"]), CBTf(n"Cyberbane-TalkTopics-LyingLowDonTSayWhere", [s"\(name)", s"\(place)", s"\(pin)"]),
                         CBTf(n"Cyberbane-TalkTopics-SawLastNight", [s"\(name)", s"\(place)", s"\(pin)"]));

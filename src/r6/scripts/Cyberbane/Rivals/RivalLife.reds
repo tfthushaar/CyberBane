@@ -206,7 +206,7 @@ public func CBSendWord(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
     sys.ClearLane(CBLaneRival());
   }
   let name = CBRivalDisplayName(sys.GetContent(), r);
-  let place = CBPlacePhrase(s.district);
+  let place = CBPlacePhrase(s.district, CBSightingPos(s));
   let pin = CBMapMarkersOn() ? CBT(n"Cyberbane-StreetIntel-ItSOnYourMap") : "";
   let meant = StrLen(why) > 0 ? " " + why : "";
   let line = calledOut ? CBTf(n"Cyberbane-RivalLife-YouAndMeILlBe", [s"\(CBCapFirst(place))", s"\(meant)", s"\(pin)", s"\(CBRivalCatchphrase(r))"])

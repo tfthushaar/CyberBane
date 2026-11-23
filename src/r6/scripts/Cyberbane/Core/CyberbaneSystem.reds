@@ -1111,6 +1111,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_headStartDue && this.HasContent() {
       this.m_headStartDue = false;
       CBLifepathHeadStart(this, this.m_headStartPath);
+      CBApiNote(CBApiQBorn(), n"", this.m_headStartPath, 0);   // a playthrough begun, for add-ons (2.7.4)
     }
     // And the first look at what V has fitted and is wearing, now that the load is over and V's own
     // body is the one in the world (StartSession, 1.9.5).
@@ -1259,6 +1260,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
     CBGuardTick(this, game);            // and at home, watching the house (2.7.2)
+    CBApiTick(game);                    // add-ons told what happened since the last tick (API/Listeners.reds, 2.7.4)
+    CBApiRequestsTick(game);            // and their pins taken down when due (API/Requests.reds)
+    CBApiConvoyTick(this, game);        // add-ons' convoys, on paper or on the road (API/Convoy.reds)
+    CBApiHubTick(game);                 // and the clicks on their Hub cards, told once the world has settled
     CBStrongholdTick(this, game);       // cleared gig bases a Rival holds (Rivals/Strongholds.reds, 2.7.2)
     if this.m_tickCount % 5 == 2 {
       CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.0)
@@ -3856,6 +3861,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   // live encounters and sweeps spawned entities, and neither is safe to do mid-transition.
   public func HardReset() -> Void {
     let game = this.GetGameInstance();
+    // Add-ons hear of it before any Rival id is used again (API/Listeners.reds, 2.7.4); the epoch is kept in the save.
+    let apiBook = CBApiBook.Get(game);
+    if IsDefined(apiBook) {
+      CBApiNote(CBApiQReset(), n"", apiBook.BumpEpoch(), 0);
+    }
 
     // Anything Cyberbane put in the world goes first, along with its markers, so the reset
     // cannot leave an orphaned hunter or a pin behind. Every marker on the system's list, not those of

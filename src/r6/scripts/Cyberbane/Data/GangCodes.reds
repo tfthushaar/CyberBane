@@ -18,7 +18,8 @@
 //   forgive    how fast a grudge fades (Model/Decay.reds): the Aldecaldos remember
 //   toughness  extra health on their crews (Spawn/FactionApex.reds, the crew build): the Animals
 //   kin        how often a fallen Rival's family takes their place (the Valentinos)
-//   home       a district their grudge stays in (Barghest and the Scrappers: Dogtown)
+//   home       the districts their grudge stays in (Barghest and the Scrappers: Dogtown; the Wraiths: the
+//              Badlands and where the city meets it, 2.7.4)
 //   guards     a district whose ordinary people they guard (6th Street: Santo Domingo; the Mox: Westbrook,
 //              Jig-Jig Street)
 //   everybody  killing them is a favour to every other gang (the Scavengers), who also make no Rivals
@@ -32,158 +33,146 @@ public func CBGangCodesOn() -> Bool {
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().gangCodes;
 }
 
+// Since 2.7.4 every number below is read from the faction's profile (Data/FactionProfiles.reds, generated from the
+// chains of names these functions used to be, and checked against them faction by faction), so a new faction, or an
+// add-on's, is one block of data. Each function still answers with the neutral value when Gang codes is off.
+
+// A faction's code, from its profile; nothing for a faction without one.
+public func CBCodeOf(f: CName) -> ref<CBGangCode> {
+  let content = CyberbaneContent.Get();
+  let p = IsDefined(content) && NotEquals(f, n"") ? content.GetFaction(f) : null;
+  return IsDefined(p) ? p.code : null;
+}
+
+// What one group's people are called (2.7.4), as a key for CBT: "gang" for most, "clan" for the Aldecaldos, "raffen" for
+// the Wraiths, "corporation", "law", "army". For lines that name a group's own people; rule lines that speak of gangs in
+// general stay as they are.
+public func CBFactionNoun(f: CName) -> CName {
+  let content = CyberbaneContent.Get();
+  let p = IsDefined(content) && NotEquals(f, n"") ? content.GetFaction(f) : null;
+  return IsDefined(p) && IsNameValid(p.nounKey) ? p.nounKey : n"Cyberbane-Faction-NounGang";
+}
+
+// The label a faction's Hub card wears, "" for none (Clan on the Aldecaldos', Raffen on the Wraiths').
+public func CBFactionCardLabel(f: CName) -> String {
+  let content = CyberbaneContent.Get();
+  let p = IsDefined(content) && NotEquals(f, n"") ? content.GetFaction(f) : null;
+  return IsDefined(p) && IsNameValid(p.cardLabelKey) ? CBT(p.cardLabelKey) : "";
+}
+
 public func CBCodeMercy(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"Valentinos") { return 1.6; }
-  if Equals(f, n"Mox") { return 1.4; }
-  if Equals(f, n"Aldecaldos") { return 1.3; }
-  if Equals(f, n"Animals") { return 0.7; }
-  if Equals(f, n"Barghest") { return 0.6; }
-  if Equals(f, n"Maelstrom") { return 0.7; }
-  if Equals(f, n"Scrappers") { return 1.3; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.mercy : 1.0;
 }
 
 // Standing lost for one of theirs, by how V did it.
 public func CBCodeGrudge(f: CName, info: ref<CBKillInfo>) -> Float {
-  if !CBGangCodesOn() || !IsDefined(info) { return 1.0; }
-  if Equals(f, n"Animals") {
-    if info.mFists || info.mBlunt || info.mFinisher { return 0.6; }
-    if info.mFirearm { return 1.25; }
-  }
-  if Equals(f, n"Aldecaldos") { return 1.3; }
-  if Equals(f, n"Valentinos") && info.mFinisher { return 0.9; }   // face to face is still a fair fight
+  let c = CBCodeOf(f);
+  if !CBGangCodesOn() || !IsDefined(info) || !IsDefined(c) { return 1.0; }
+  if (info.mFists || info.mBlunt || info.mFinisher) && c.grudgeClose != 1.0 { return c.grudgeClose; }
+  if info.mFirearm && c.grudgeGun != 1.0 { return c.grudgeGun; }
+  if c.grudgeAll != 1.0 { return c.grudgeAll; }
+  if info.mFinisher && c.grudgeFinisher != 1.0 { return c.grudgeFinisher; }
   return 1.0;
 }
 
 public func CBCodeShotHands(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"Valentinos") { return 2.0; }
-  if Equals(f, n"Aldecaldos") || Equals(f, n"Mox") || Equals(f, n"Scrappers") { return 1.5; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.shotHands : 1.0;
 }
 
 // Multiplies how likely their people are to break, run, or hold back from V.
 public func CBCodeNerve(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"Barghest") { return 0.0; }
-  if Equals(f, n"Animals") { return 0.5; }
-  if Equals(f, n"SixthStreet") { return 0.8; }
-  if Equals(f, n"Scavengers") { return 1.4; }
-  if Equals(f, n"Mox") { return 1.2; }
-  if Equals(f, n"Scrappers") { return 1.3; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.nerve : 1.0;
 }
 
 public func CBCodeSurrender(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"Barghest") { return 0.0; }
-  if Equals(f, n"Animals") { return 0.3; }
-  if Equals(f, n"Maelstrom") { return 0.6; }
-  if Equals(f, n"SixthStreet") { return 0.7; }
-  if Equals(f, n"Valentinos") || Equals(f, n"Wraiths") || Equals(f, n"Aldecaldos") { return 0.8; }
-  if Equals(f, n"Mox") { return 1.6; }
-  if Equals(f, n"Scavengers") { return 1.5; }
-  if Equals(f, n"Scrappers") { return 1.4; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.surrender : 1.0;
 }
 
 public func CBCodePeace(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"TygerClaws") { return 0.75; }
-  if Equals(f, n"Barghest") { return 1.4; }
-  if Equals(f, n"Valentinos") { return 1.15; }
-  if Equals(f, n"Scavengers") || Equals(f, n"Scrappers") { return 0.8; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.peace : 1.0;
 }
 
 public func CBCodeInsult(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"TygerClaws") { return 1.6; }
-  if Equals(f, n"Valentinos") { return 1.3; }
-  if Equals(f, n"Scavengers") { return 0.7; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.insult : 1.0;
 }
 
 public func CBCodeCrew(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"Mox") { return 0.7; }
-  if Equals(f, n"VoodooBoys") { return 0.75; }
-  if Equals(f, n"Barghest") { return 1.2; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.crew : 1.0;
 }
 
 public func CBCodeSendsApex(f: CName) -> Bool {
-  return !CBGangCodesOn() || !Equals(f, n"Mox");
+  let c = CBCodeOf(f);
+  return !CBGangCodesOn() || !IsDefined(c) || c.sendsApex;
 }
 
 // How fast a grudge against V fades: 1.0 as it always did, lower is longer.
 public func CBCodeForgive(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"Aldecaldos") { return 0.5; }
-  if Equals(f, n"Valentinos") { return 0.7; }
-  if Equals(f, n"Scavengers") { return 1.5; }
-  if Equals(f, n"Scrappers") { return 1.3; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.forgive : 1.0;
 }
 
 // Extra health on their crews, as a fraction (the crew build, Spawn/FactionApex.reds).
 public func CBCodeToughness(f: CName) -> Float {
-  if !CBGangCodesOn() { return 0.0; }
-  if Equals(f, n"Animals") { return 0.25; }
-  if Equals(f, n"Barghest") { return 0.15; }
-  return 0.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.toughness : 0.0;
 }
 
 public func CBCodeKin(f: CName) -> Float {
-  if !CBGangCodesOn() { return 1.0; }
-  if Equals(f, n"Valentinos") { return 1.5; }
-  if Equals(f, n"Aldecaldos") { return 1.3; }
-  return 1.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.kin : 1.0;
 }
 
-// The one district this gang's grudge reaches, or n"" for anywhere.
+// The districts their grudge keeps to (2.7.4: more than one; the Wraiths keep to the Badlands and the city's edge), empty
+// for a gang that comes anywhere.
+public func CBCodeHomes(f: CName) -> array<CName> {
+  let none: array<CName>;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.homes : none;
+}
+
+// The first of them, n"" for none (kept for anything that names one home).
 public func CBCodeHome(f: CName) -> CName {
-  if CBGangCodesOn() && (Equals(f, n"Barghest") || Equals(f, n"Scrappers")) { return n"Dogtown"; }
-  return n"";
+  let homes = CBCodeHomes(f);
+  return ArraySize(homes) > 0 ? homes[0] : n"";
 }
 
-// Is V where this gang's grudge reaches? Always, for a gang with no home of its own.
+// V is somewhere their grudge reaches: anywhere for most, one of their homes for a gang that keeps to them.
 public func CBCodeAtHome(sys: ref<CyberbaneSystem>, f: CName) -> Bool {
-  let home = CBCodeHome(f);
-  return Equals(home, n"") || !IsDefined(sys) || Equals(sys.GetCurrentDistrict(), home);
+  let homes = CBCodeHomes(f);
+  return ArraySize(homes) == 0 || !IsDefined(sys) || ArrayContains(homes, sys.GetCurrentDistrict());
 }
 
-// Does this gang guard the ordinary people of this district?
+// They guard this district's ordinary people.
 public func CBCodeGuards(f: CName, district: CName) -> Bool {
-  if !CBGangCodesOn() || Equals(district, n"") { return false; }
-  if Equals(f, n"SixthStreet") { return Equals(district, n"SantoDomingo"); }
-  if Equals(f, n"Mox") { return Equals(district, n"Westbrook"); }
-  return false;
+  let c = CBCodeOf(f);
+  if !CBGangCodesOn() || Equals(district, n"") || !IsDefined(c) || Equals(c.guards, n"") { return false; }
+  return Equals(district, c.guards);
 }
 
-// They fight like soldiers: the corps' crew kit (Spawn/ApexSquad.reds, CBKitSquadMember).
 public func CBCodeSoldiers(f: CName) -> Bool {
-  return CBGangCodesOn() && (Equals(f, n"SixthStreet") || Equals(f, n"Barghest"));
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) && c.soldiers;
 }
 
-// Killing them is a favour to every other gang, and they make no Rivals (they run).
 public func CBCodeEverybodysEnemy(f: CName) -> Bool {
-  return CBGangCodesOn() && Equals(f, n"Scavengers");
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) && c.everybodysEnemy;
 }
 
-// How much more easily they place V by chrome under clothes, as a chance added to recognition.
 public func CBCodeSeesChrome(f: CName) -> Float {
-  if CBGangCodesOn() && Equals(f, n"Maelstrom") { return 0.15; }
-  return 0.0;
+  let c = CBCodeOf(f);
+  return CBGangCodesOn() && IsDefined(c) ? c.seesChrome : 0.0;
 }
 
-// ---- What the Hub says ([21]) -----------------------------------------------------------------------
-//
-// Two short lines under a gang's price on the Hub: what they respect, which the street says from the start, and
-// what V has learnt the hard way: what they never forgive once V has hurt them, how they fight once V has beaten
-// a crew of theirs or killed a few, how to make peace once there has been a peace, a tribute or a mercy.
-
+// The Hub's gang page: what V has learnt of their code, a line at a time (respect from the start; the rest once V has
+// killed one of theirs, beaten a crew, or made peace).
 public func CBCodeLines(sys: ref<CyberbaneSystem>, f: CName) -> String {
   if !CBGangCodesOn() || !IsDefined(sys) {
     return "";
@@ -197,6 +186,10 @@ public func CBCodeLines(sys: ref<CyberbaneSystem>, f: CName) -> String {
   let learnt = "";
   if IsDefined(fs) && fs.kills > 0 {
     learnt += CBTf(n"Cyberbane-GangCodes-NeverForgive", [CBCodeNeverShort(f)]);
+    let c = CBCodeOf(f);
+    if IsDefined(c) && IsNameValid(c.homeKey) {
+      learnt += CBT(c.homeKey) + " ";
+    }
   }
   if IsDefined(fs) && (fs.kills >= 5 || sys.CrewBeaten(f)) {
     learnt += CBTf(n"Cyberbane-GangCodes-Fight", [CBCodeFightShort(f)]);
@@ -207,66 +200,26 @@ public func CBCodeLines(sys: ref<CyberbaneSystem>, f: CName) -> String {
   return StrLen(learnt) > 0 ? out + "\n" + learnt : out;
 }
 
+func CBCodeWords(key: CName) -> String {
+  return IsNameValid(key) ? CBT(key) : "";
+}
+
 func CBCodeRespectShort(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return CBT(n"Cyberbane-GangCodes-HonourFamilyAndAFairFight"); }
-  if Equals(f, n"TygerClaws") { return CBT(n"Cyberbane-GangCodes-BusinessAndFace"); }
-  if Equals(f, n"Maelstrom") { return CBT(n"Cyberbane-GangCodes-ChromeTheMoreOnShowThe"); }
-  if Equals(f, n"SixthStreet") { return CBT(n"Cyberbane-GangCodes-TheNeighbourhoodAndItsPeople"); }
-  if Equals(f, n"Animals") { return CBT(n"Cyberbane-GangCodes-StrengthFistsOverGuns"); }
-  if Equals(f, n"VoodooBoys") { return CBT(n"Cyberbane-GangCodes-Information"); }
-  if Equals(f, n"Mox") { return CBT(n"Cyberbane-GangCodes-LookingAfterTheirOwn"); }
-  if Equals(f, n"Scavengers") { return CBT(n"Cyberbane-GangCodes-NothingAndNobodyMissesThem"); }
-  if Equals(f, n"Wraiths") { return CBT(n"Cyberbane-GangCodes-TheRoad"); }
-  if Equals(f, n"Aldecaldos") { return CBT(n"Cyberbane-GangCodes-FamilyAFavourRepaidAHarm"); }
-  if Equals(f, n"Barghest") { return CBT(n"Cyberbane-GangCodes-Discipline"); }
-  if Equals(f, n"Scrappers") { return CBT(n"Cyberbane-GangCodes-AGoodHaulAndAChance"); }
-  return "";
+  let c = CBCodeOf(f);
+  return IsDefined(c) ? CBCodeWords(c.respectKey) : "";
 }
 
 func CBCodeNeverShort(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return CBT(n"Cyberbane-GangCodes-AShotSurrenderDouble"); }
-  if Equals(f, n"TygerClaws") { return CBT(n"Cyberbane-GangCodes-AnInsult"); }
-  if Equals(f, n"Maelstrom") { return CBT(n"Cyberbane-GangCodes-HiddenChrome"); }
-  if Equals(f, n"SixthStreet") { return CBT(n"Cyberbane-GangCodes-HurtingSantoDomingoSPeople"); }
-  if Equals(f, n"Animals") { return CBT(n"Cyberbane-GangCodes-ACowardWithAGun"); }
-  if Equals(f, n"VoodooBoys") { return CBT(n"Cyberbane-GangCodes-AnyoneTheyCanTTrace"); }
-  if Equals(f, n"Mox") { return CBT(n"Cyberbane-GangCodes-HurtingJigJigStreetSPeople"); }
-  if Equals(f, n"Scavengers") { return CBT(n"Cyberbane-GangCodes-MuchTheyRunAndNeverCome"); }
-  if Equals(f, n"Wraiths") { return CBT(n"Cyberbane-GangCodes-AnyoneOnTheirRoad"); }
-  if Equals(f, n"Aldecaldos") { return CBT(n"Cyberbane-GangCodes-HarmToFamilyTwiceAsLong"); }
-  if Equals(f, n"Barghest") { return CBT(n"Cyberbane-GangCodes-AnythingButOnlyInDogtown"); }
-  if Equals(f, n"Scrappers") { return CBT(n"Cyberbane-GangCodes-AShotSurrenderButOnlyIn"); }
-  return "";
+  let c = CBCodeOf(f);
+  return IsDefined(c) ? CBCodeWords(c.neverKey) : "";
 }
 
 func CBCodeFightShort(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return CBT(n"Cyberbane-GangCodes-TogetherAndKinTakeAFallen"); }
-  if Equals(f, n"TygerClaws") { return CBT(n"Cyberbane-GangCodes-FastAndTheyDRatherPay"); }
-  if Equals(f, n"Maelstrom") { return CBT(n"Cyberbane-GangCodes-ForYourChrome"); }
-  if Equals(f, n"SixthStreet") { return CBT(n"Cyberbane-GangCodes-LikeSoldiers"); }
-  if Equals(f, n"Animals") { return CBT(n"Cyberbane-GangCodes-JuicedAndBarelyAfraid"); }
-  if Equals(f, n"VoodooBoys") { return CBT(n"Cyberbane-GangCodes-ThroughTheNetFewInPerson"); }
-  if Equals(f, n"Mox") { return CBT(n"Cyberbane-GangCodes-InSmallCrewsNeverTheirBest"); }
-  if Equals(f, n"Scavengers") { return CBT(n"Cyberbane-GangCodes-WhenYouReHurtTheyBreak"); }
-  if Equals(f, n"Wraiths") { return CBT(n"Cyberbane-GangCodes-OnTheRoad"); }
-  if Equals(f, n"Aldecaldos") { return CBT(n"Cyberbane-GangCodes-AsOneFamily"); }
-  if Equals(f, n"Barghest") { return CBT(n"Cyberbane-GangCodes-InNumbersNeverBreakingOrSurrendering"); }
-  if Equals(f, n"Scrappers") { return CBT(n"Cyberbane-GangCodes-InTheRuinsTheyKnowAnd"); }
-  return "";
+  let c = CBCodeOf(f);
+  return IsDefined(c) ? CBCodeWords(c.fightKey) : "";
 }
 
 func CBCodePeaceShort(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return CBT(n"Cyberbane-GangCodes-SpareTheirsItCountsMoreThan"); }
-  if Equals(f, n"TygerClaws") { return CBT(n"Cyberbane-GangCodes-PayTheyReCheapest"); }
-  if Equals(f, n"Maelstrom") { return CBT(n"Cyberbane-GangCodes-Pay"); }
-  if Equals(f, n"SixthStreet") { return CBT(n"Cyberbane-GangCodes-PayAndLeaveTheirNeighbourhoodAlone"); }
-  if Equals(f, n"Animals") { return CBT(n"Cyberbane-GangCodes-Pay"); }
-  if Equals(f, n"VoodooBoys") { return CBT(n"Cyberbane-GangCodes-Pay"); }
-  if Equals(f, n"Mox") { return CBT(n"Cyberbane-GangCodes-LeaveTheirPeopleAloneSpareThe"); }
-  if Equals(f, n"Scavengers") { return CBT(n"Cyberbane-GangCodes-CheapAndNobodyElseMinds"); }
-  if Equals(f, n"Wraiths") { return CBT(n"Cyberbane-GangCodes-PayAndStayOffTheirRoad"); }
-  if Equals(f, n"Aldecaldos") { return CBT(n"Cyberbane-GangCodes-SpareTheFamily"); }
-  if Equals(f, n"Barghest") { return CBT(n"Cyberbane-GangCodes-PayALotOrStayOut"); }
-  if Equals(f, n"Scrappers") { return CBT(n"Cyberbane-GangCodes-CheapAndSpareTheOnesWho"); }
-  return "";
+  let c = CBCodeOf(f);
+  return IsDefined(c) ? CBCodeWords(c.peaceKey) : "";
 }

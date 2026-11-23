@@ -121,6 +121,8 @@ public class CBStreetEvent {
   public let groundWait: Int32;
   // The tick its people may next be tried, after a try that found nowhere out of V's sight (2.7.3).
   public let nextTry: Int32;
+  // The group an add-on's kind placed (API/EventKinds.reds, 2.7.4), 0 for none.
+  public let apiHandle: Int32;
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -448,6 +450,13 @@ public class CBEventEngine {
     // V already at the place counts too (2.6.3): it asked for V to be 25 m off at least, so a V waiting on the spot for
     // the time on the pin was never given anybody ("I went there and there's nothing"). Whoever cannot be put there out
     // of V's sight comes from further off and walks in (Place).
+    // An add-on's kind (API/EventKinds.reds, 2.7.4): everything above is the engine's (the pin, the early note, the holds,
+    // the place settled onto the street); from here its handler places, watches and hears the end.
+    let api = CBApiEventHandler(game, ev.kind);
+    if IsDefined(api) {
+      this.RunApi(sys, game, ev, api, storyBusy, dist, now);
+      return;
+    }
     // The ground there has to be loaded before anybody can stand on it (2.7.3, the game's own NavigationSystem asks it
     // before a path): until it is, wait, and say so once, rather than fail to place and count it.
     // A place already settled onto the street has its ground; the wait is bounded, so a place the question gets wrong
@@ -716,6 +725,64 @@ public class CBEventEngine {
     return true;
   }
 
+  // An add-on's kind, once the engine's part of the tick is done: placed when due and V is near (retried a few ticks apart),
+  // watched while it lasts, and ended when its handler says so, when its window closes or when its kind is switched off.
+  // Its people are the handler's group, released the safe way after the handler hears the end.
+  private func RunApi(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>, api: ref<CBEventKindHandler>,
+                      storyBusy: Bool, dist: Float, now: Float) -> Void {
+    let over = now >= ev.until || !CBApiEventOn(game, ev.kind);
+    if !over && !ev.placed && !storyBusy && now >= ev.from && dist <= CBConfig.MeetSpawnDistance()
+       && sys.GetTickCount() >= ev.nextTry && CBWorldStable(game) {
+      ev.nextTry = sys.GetTickCount() + CBConfig.EventRetryTicks();
+      ev.watched = true;
+      ev.apiHandle = api.Place(game, ev);
+      ev.placed = ev.apiHandle > 0;
+      if ev.placed {
+        ev.placedTick = sys.GetTickCount();
+        CBLog.Info(n"Street", s"An add-on's \(NameToString(ev.kind)) is in place (group \(ev.apiHandle)).");
+      }
+    }
+    if !over && ev.placed && api.Watch(game, ev, ev.apiHandle) {
+      over = true;
+    }
+    if over {
+      api.Ended(game, ev, ev.placed);
+      if ev.apiHandle > 0 {
+        CBApiReleaseGroup(game, ev.apiHandle);
+      }
+      CBLog.Info(n"Street", s"An add-on's \(NameToString(ev.kind)) ended (placed: \(ev.placed)).");
+      this.End(game);
+    }
+  }
+
+  // An add-on's kind takes the one event slot (API/EventKinds.reds): set where it says, starting on the quarter hour, its
+  // window as long as a gathering's, announced in the handler's words from the district.
+  public func StartApi(sys: ref<CyberbaneSystem>, game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float) -> Bool {
+    if IsDefined(this.m_ev) {
+      return false;
+    }
+    let api = CBApiEventHandler(game, kind);
+    if !IsDefined(api) {
+      return false;
+    }
+    let now = CBGameSeconds(game);
+    let ev = new CBStreetEvent();
+    ev.kind = kind;
+    ev.a = side;
+    ev.at = at;
+    ev.district = sys.GetCurrentDistrict();
+    ev.from = CBQuarterUp(now + MaxF(inGameSeconds, 0.0));
+    ev.until = ev.from + CBConfig.EventWindowSeconds();
+    this.m_ev = ev;
+    this.KeepPin(game);
+    let text = api.Announce(game, ev);
+    if StrLen(text) > 0 && CBMessagesOn() {
+      CBPhoneFromDistrict(game, ev.district, text);
+    }
+    CBLog.Info(n"Street", s"An add-on's \(NameToString(kind)) is set for \(CBClockWord(ev.from)).");
+    return true;
+  }
+
   public func End(game: GameInstance) -> Void {
     let ev = this.m_ev;
     if !IsDefined(ev) {
@@ -873,6 +940,11 @@ func CBDealPartner(sys: ref<CyberbaneSystem>, a: CName) -> CName {
 }
 
 public func CBEventCaption(ev: ref<CBStreetEvent>) -> String {
+  // An add-on's kind captions itself (API/EventKinds.reds, 2.7.4).
+  let own = CBApiEventCaption(GetGameInstance(), ev.kind);
+  if StrLen(own) > 0 {
+    return own;
+  }
   return CBEventCaptionOf(ev.kind, ev.a, ev.b);
 }
 

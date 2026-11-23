@@ -366,7 +366,7 @@ public func CBIntelGive(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
       CBFileLog(sys, n"Informant", now, CBEventDistrict(sys, game), faction, Cast<Float>(lead.id));
       out.kind = CBIntelLead();
       out.name = CBRivalDisplayName(content, lead);
-      out.place = CBPlacePhrase(s.district);
+      out.place = CBPlacePhrase(s.district, CBSightingPos(s));
       out.pin = CBMapMarkersOn() ? CBT(n"Cyberbane-StreetIntel-ItSOnYourMap") : "";
       CBLog.Info(n"Intel", s"Rival \(lead.id) given up by the street.");
       return out;

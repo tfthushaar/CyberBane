@@ -70,6 +70,19 @@ public func CBRivalGenerateName(content: ref<CyberbaneContent>, rival: ref<CBRiv
 // Looks through every combination the gang's lists can make, starting from that pick, so a name is
 // only refused when it has really been used. First for one whose first name nobody else of this gang
 // on the roster has, then, if a long roster has used those up, for any name that is still new.
+// A given name that would read as one of the game's own characters (2.7.4): Santiago leads the Aldecaldos in nomad lore,
+// Nash is a raffen in Panam's story. Never given to a new Rival; never taken out of the lists either, because a Rival is
+// saved as a position in them and removing one would rename every Rival after it in every save.
+func CBNameSkipped(faction: CName, name: String) -> Bool {
+  if Equals(name, "Santiago") {
+    return Equals(faction, n"Aldecaldos") || Equals(faction, n"Valentinos");
+  }
+  if Equals(name, "Nash") {
+    return Equals(faction, n"Militech");
+  }
+  return false;
+}
+
 public func CBRivalPickFreeName(game: GameInstance, sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Void {
   if !IsDefined(sys) || !IsDefined(content) || !IsDefined(rival) {
     return;
@@ -98,7 +111,7 @@ public func CBRivalPickFreeName(game: GameInstance, sys: ref<CyberbaneSystem>, c
     let f = 0;
     while f < firsts {
       rival.firstName = (startFirst + f) % firsts;
-      if pass == 1 || !CBRivalGangHasFirstName(sys, rival) {
+      if !CBNameSkipped(rival.faction, pool.firstNames[rival.firstName]) && (pass == 1 || !CBRivalGangHasFirstName(sys, rival)) {
         let l = 0;
         while l < surnames {
           if lasts > 0 && startLast >= 0 {
@@ -923,6 +936,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     CBPhoneFromGang(game, faction, CBTf(n"Cyberbane-Births-HasYourNameNowThatIs", [CBRivalDisplayName(content, r)]));
   }
   CBLog.Info(n"Rivals", s"Rival created id=\(r.id) faction=\(NameToString(faction)).");
+  CBApiRivalEvent(r, n"Made");   // extension API (2.7.4)
   return r;
 }
 
@@ -932,6 +946,7 @@ public func CBPromoteRival(rival: ref<CBRival>, content: ref<CyberbaneContent>, 
   }
   rival.rank += 1;
   CBRivalAddTrait(content, rival);
+  CBApiRivalEvent(rival, n"Climbed");
 }
 
 // --- State transitions (spec §10.6) ------------------------------------
@@ -942,6 +957,7 @@ public func CBRivalEscaped(rival: ref<CBRival>, content: ref<CyberbaneContent>, 
   }
   rival.escapes += 1;
   rival.lastSeenAt = at;
+  CBApiRivalEvent(rival, n"Escaped");
   CBPromoteRival(rival, content, at);
   // Getting away half dead leaves a mark, and getting away half dead twice leaves one that does
   // not heal right.
@@ -958,6 +974,7 @@ public func CBRivalKilledV(rival: ref<CBRival>, content: ref<CyberbaneContent>, 
     return;
   }
   rival.killedV += 1;
+  CBApiRivalEvent(rival, n"KilledV");
   CBRivalTakeTrait(rival, n"Shaken");
   CBRivalGiveTrait(rival, n"Confident");
   CBPromoteRival(rival, content, at);
@@ -969,6 +986,7 @@ public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>
     return false;
   }
   rival.sparedByV += 1;
+  CBApiRivalEvent(rival, n"Spared");
   // Being let go by the person you came to kill stays with you.
   CBRivalGiveTrait(rival, n"Shaken");
   if rival.sparedByV >= 2 && RandF() < 0.5 {
@@ -1331,6 +1349,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   }
   rival.state = EnumInt(ECBRivalState.Slain);
   rival.lastSeenAt = at;
+  CBApiRivalEvent(rival, n"Slain");
 
   if byV {
     let stats = sys.GetStats();

@@ -278,6 +278,7 @@ public func CBSetUpGuard(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: 
   }
   let m = book.Find(gb.MemberOfBody(puppet.GetEntityID()));
   CBDisarmGodMode(game, puppet);
+  CBCrewKeepLook(sys, m, puppet);
   if IsDefined(m) {
     CBKitApexSeat(puppet, m.seat);
     CBCrewApplyKit(sys, game, puppet, m);

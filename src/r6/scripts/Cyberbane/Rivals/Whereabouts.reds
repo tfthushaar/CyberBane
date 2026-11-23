@@ -261,8 +261,22 @@ func CBTipEligible(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   return true;
 }
 
-public func CBPlacePhrase(district: CName) -> String {
+public func CBPlacePhrase(district: CName, opt at: Vector4) -> String {
   let place = CBDistrictLabel(district);
+  // Out in the Badlands, a place by its own name (2.7.4): "out past Rocky Ridge" rather than "in the Badlands", one huge
+  // district with twenty named parts. The game names only where V stands, so it is said only of a spot near V.
+  if Equals(district, n"Badlands") && (at.X != 0.0 || at.Y != 0.0) {
+    let game = GetGameInstance();
+    let sys = CyberbaneSystem.Get(game);
+    let player = GetPlayer(game);
+    if IsDefined(sys) && IsDefined(player) && Equals(sys.GetCurrentDistrict(), district)
+       && Vector4.Distance(player.GetWorldPosition(), at) <= CBConfig.SubDistrictNear() {
+      let sub = CBSubDistrictLabel(game);
+      if StrLen(sub) > 0 && NotEquals(sub, place) {
+        return CBTf(n"Cyberbane-Whereabouts-OutPast", [sub]);
+      }
+    }
+  }
   return StrLen(place) > 0 ? CBTf(n"Cyberbane-Whispers-In", [place]) : CBT(n"Cyberbane-Whereabouts-AroundTown");
 }
 
@@ -1111,7 +1125,7 @@ public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance,
   let tipster = agreedPrice > 0 ? dealTipster : CBPickTipster(sys, r.faction);
   CBMarkLeadTold(sys, s, tipster, CBGameSeconds(game));
   let name = CBRivalDisplayName(sys.GetContent(), r);
-  let line = CBTipLine(name, CBPlacePhrase(s.district), IsNameValid(tipster), CBMapMarkersOn());
+  let line = CBTipLine(name, CBPlacePhrase(s.district, CBSightingPos(s)), IsNameValid(tipster), CBMapMarkersOn());
   // A deal made by text is answered in the same thread it was made in.
   if agreedPrice > 0 && StrLen(dealSender) > 0 {
     CBPhoneSendTinted(game, dealSender, line, CBHudCyan());

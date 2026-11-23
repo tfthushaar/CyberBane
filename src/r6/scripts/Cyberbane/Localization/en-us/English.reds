@@ -712,6 +712,21 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} CBCodeFightShort(f)
     this.Text("Cyberbane-GangCodes-Fight", "Fight {0}. ");
     // {0} CBCodePeaceShort(f)
+    // A gang whose grudge keeps to some districts, on its Hub page once V has killed one of theirs (2.7.4, the Wraiths).
+    // What one group's people are called (2.7.4, CBFactionNoun), and the label on a clan's or raffen's Hub card.
+    // Where something is, out in the Badlands, by the game's own name for that part of it (2.7.4). {0} is the name ("Rocky Ridge").
+    this.Text("Cyberbane-Whereabouts-OutPast", "out past {0}");
+    // V's line when an add-on's priced answer costs more than V has (2.7.4, CyberbaneAPI.AskPriced).
+    this.Text("Cyberbane-Api-CannotPay", "Don't have that on me.");
+    this.Text("Cyberbane-Faction-NounGang", "gang");
+    this.Text("Cyberbane-Faction-NounClan", "clan");
+    this.Text("Cyberbane-Faction-NounRaffen", "raffen");
+    this.Text("Cyberbane-Faction-NounCorporation", "corporation");
+    this.Text("Cyberbane-Faction-NounLaw", "law");
+    this.Text("Cyberbane-Faction-NounArmy", "army");
+    this.Text("Cyberbane-Faction-CardClan", "Clan");
+    this.Text("Cyberbane-Faction-CardRaffen", "Raffen");
+    this.Text("Cyberbane-GangCodes-OnlyTheDesert", "They only come for you out in the desert, or where the city meets it.");
     this.Text("Cyberbane-GangCodes-Peace", "Peace: {0}.");
     this.Text("Cyberbane-GangCodes-HonourFamilyAndAFairFight", "honour, family and a fair fight, and mercy most of all");
     this.Text("Cyberbane-GangCodes-BusinessAndFace", "business and face");
@@ -2632,6 +2647,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-StreetTalk-TheyArePartOfAJob", "they are part of a job, so they will not talk.");
     this.Text("Cyberbane-StreetTalk-TheyBelongToAStorySo", "they belong to a story, so Cyberbane leaves them be.");
     this.Text("Cyberbane-StreetTalk-MaxTacDoesNotTalk", "MaxTac does not talk.");
+    // On screen when V looks at a downed ganger (2.7.4).
+    this.Text("Cyberbane-StreetTalk-DownCrouchToQuestion", "They're down. Crouch beside them and they may talk: a Rival's hideout, a weakness, who's coming.");
     this.Text("Cyberbane-StreetTalk-TheyOrSomethingBesideThemHave", "they, or something beside them, have a prompt of their own on F (their own conversation, a door, a seat, an item). Use it, or step to one side and look at them again.");
     // {0} prompt.title, {1} first, {2} ArraySize(prompt.choices)
     this.Text("Cyberbane-StreetTalk-ChoiceS", "\"{0}\" / \"{1}\", {2} choice(s)");

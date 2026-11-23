@@ -469,7 +469,7 @@ func CBCrewHitResolve(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
     let s = IsDefined(player) ? CBRivalHideout(sys, game, player, r) : null;
     if IsDefined(s) {
       CBMarkLeadTold(sys, s, m.faction, now);
-      CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewJobs-HitWounded", [name, CBPlacePhrase(s.district)]));
+      CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewJobs-HitWounded", [name, CBPlacePhrase(s.district, CBSightingPos(s))]));
     } else {
       CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewJobs-HitWoundedLost", [name]));
     }

@@ -3,6 +3,47 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.7.4 (23 November 2026)
+
+**Fixed: a crash with a translation installed**
+- Installing a translation of Cyberbane (a Polish one was the first) crashed the game as soon as it loaded its texts.
+  Cyberbane made the translation's package the wrong way. It is made the way Codeware itself makes one now, and a
+  translation that is set up wrong is ignored instead of crashing anything.
+
+**Fixed: your crew**
+- Giving one of your crew a weapon, chrome or a war only ever listed the first ten. The lists now hold up to sixty and
+  scroll like every other list on the Hub, and so does the list of jobs.
+- Your crew kept looking different every time you called them. Each one now keeps the look they turned up in the first
+  time, at home on watch too.
+
+**Fixed: talking to somebody who is down**
+- Crouched beside a Rival you put down, or somebody with their hands up, you couldn't talk to them; you can now.
+- An ordinary ganger you put down is questioned by crouching beside them, not talked to. Nothing said so; looking at one
+  now tells you.
+
+**New: the clans and the Wraiths in their own colours**
+- The Aldecaldos and the Wraiths come in their own painted cars, and so do Arasaka, Militech and Kang Tao. Every car is
+  one the game itself sends gangs in.
+- The Wraiths keep to the Badlands and the edges of the city where it meets the desert; they no longer turn up in City
+  Center. Their page on the Hub says so once you have crossed them.
+- The Aldecaldos' card on the Hub says **Clan**, the Wraiths' **Raffen**.
+- Out in the Badlands, word about somewhere near you names the place ("out past Rocky Ridge") instead of "the Badlands".
+- New Rivals are never named Santiago among the Aldecaldos and the Valentinos, or Nash at Militech, names that read as the
+  game's own characters. Rivals you already have keep their names.
+
+**For mod authors: an extension API**
+- Cyberbane now has a versioned API for add-ons (README, **For mod authors**): listening to what happens (kills, Rivals,
+  standing, Start over), asking for people, convoys, map pins, texts and questions by text, standing changes, event kinds,
+  cards on the Hub and factions of their own, all through Cyberbane's own gates and limits. Nothing changes for players
+  until an add-on uses it.
+
+**For translators:** new lines `Cyberbane-StreetTalk-DownCrouchToQuestion`, `Cyberbane-GangCodes-OnlyTheDesert`,
+`Cyberbane-Whereabouts-OutPast`, `Cyberbane-Api-CannotPay` and the `Cyberbane-Faction-Noun*` and `Cyberbane-Faction-Card*`
+lines (in `DefineGangCodes`, except the first, which is in `DefineStreetTalk`). A translation now loads without crashing; the
+class name is still `CyberbaneText_<language>`.
+
+Your progress carries over.
+
 ## 2.7.3 (23 November 2026)
 
 **Fixed: a gang meeting you went to never happened**

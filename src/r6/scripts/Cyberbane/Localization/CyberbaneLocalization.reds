@@ -51,6 +51,12 @@ public class CBLocalizationProvider extends ModLocalizationProvider {
 
 // The translation for a language, if one is installed: a package class whose name ends in CyberbaneText_<language>. Asked of
 // the classes that extend Codeware's package, by their full name first, the one a module gives Codeware's classes.
+//
+// Made as a handle (2.7.4). It was made with MakeInstance, which hands back the object inside a Variant, and read out as a
+// ref<ModLocalizationPackage>: the Variant held the translator's own class, not a handle of Codeware's, and reading it as
+// one crashed the game the moment a translation was installed (a Polish package, CyberbaneText_pl_pl). MakeHandle makes the
+// object as a handle, the way Codeware itself makes one by name, and `as` hands back nothing for a class that is not a
+// package, so a misnamed translation is ignored, never a crash.
 func CBFindTranslation(language: CName) -> ref<ModLocalizationPackage> {
   let want = "CyberbaneText_" + StrReplaceAll(NameToString(language), "-", "_");
   let classes = Reflection.GetDerivedClasses(n"Codeware.Localization.ModLocalizationPackage");
@@ -58,9 +64,9 @@ func CBFindTranslation(language: CName) -> ref<ModLocalizationPackage> {
     classes = Reflection.GetDerivedClasses(n"ModLocalizationPackage");
   }
   for cls in classes {
-    if IsDefined(cls) && !cls.IsAbstract() && StrEndsWith(NameToString(cls.GetName()), want) {
-      let made = cls.MakeInstance();
-      let pkg = FromVariant<ref<ModLocalizationPackage>>(made);
+    if IsDefined(cls) && !cls.IsAbstract() && !cls.IsNative() && StrEndsWith(NameToString(cls.GetName()), want)
+       && (cls.IsA(n"Codeware.Localization.ModLocalizationPackage") || cls.IsA(n"ModLocalizationPackage")) {
+      let pkg = cls.MakeHandle() as ModLocalizationPackage;
       if IsDefined(pkg) {
         return pkg;
       }

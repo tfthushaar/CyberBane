@@ -44,6 +44,9 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.7
 
+- **Your crew, as you know them (2.7.4).** Each of your crew keeps the look they turned up in, pick lists scroll past ten,
+  and you can talk to somebody down at your feet while crouched. The Aldecaldos and the Wraiths come in their own painted
+  cars, and the Wraiths keep to the Badlands. Translations no longer crash the game.
 - **On time, and on their way (2.7.3).** A gang event's time is given to the minute and it starts when it says; turn up
   early and you are told when they are due. Crews and your own crew find their way to you in tight streets, people on
   foot come in ahead of you while you drive, and ordinary crew members leave their loot on their bodies, not in your
@@ -283,6 +286,26 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
   were last seen and how hard you had hit each gang are gone either way.
 
 Each playthrough keeps its own record, and nothing one character does reaches another.
+
+## For mod authors
+
+Cyberbane has an extension API (2.7.4), so an add-on can use it without calling Cyberbane's internals, which change
+between releases. Everything is on the `CyberbaneAPI` class; guard each call with `@if(ModuleExists("Cyberbane.Api"))`.
+A later level adds its own marker module (`Cyberbane.Api2`, ...), so an add-on built for a newer level compiles to nothing
+on an older Cyberbane instead of breaking every script mod on the install.
+
+- **API level 1 (`Cyberbane.Api`, 2.7.4):**
+  - Listen: extend `CBListener` (kills, Rival events, posture changes, the world settling, Start over with its epoch, a new
+    playthrough) and `RegisterListener` each session. Calls arrive on Cyberbane's tick, never inside a game event.
+  - Read: `ApiLevel`, `IsEnabled`, `MessagesMode`, `HowMuchYouHear`, `FactionOn`, `Preset`, `BeforeYoureKnownHolds`,
+    `GangCodesOn`, `PlaythroughEpoch`, and the older `GetRenown`, `GetDread`, `GetStanding`.
+  - Ask: `RequestGroup` (people, through Cyberbane's gates and its 18-spawn ceiling), `RequestConvoy` (a convoy that travels
+    a route), `PinPlace`, `RegisterSender` + `SendAside` and `AskPriced` (texts and priced questions), `AdjustStanding` with
+    a reason, `RegisterEventKind` + `StartEvent` (Cyberbane's one event slot, its clock and holds), `RegisterGangsRow` and
+    `RegisterPage` (cards on the Hub, as data), `MakeFactionProfile` + `RegisterFaction`.
+- An API function is never removed or renamed; a retired one stays and does nothing. Every change is compiled on the
+  game patches Cyberbane supports.
+- Keep your own saved data in your own `ScriptableSystem`, your own localization prefix, and your own settings page.
 
 ## Compatibility
 

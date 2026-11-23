@@ -892,6 +892,15 @@ public class CBStreetTalk {
     if Equals(notNow, CBTalkWhyVInCombat()) && this.MidFightTalk(sys, game, player) {
       notNow = "";
     }
+    // Crouched beside somebody down at V's feet (2.7.4): a Rival V put down, or somebody with their hands up, is talked to
+    // wherever V's knees are. Crouching only keeps talk off everybody else (it is how V questions a downed ganger). "I
+    // can't get the dialogue to open with a downed enemy": V had usually crouched by them.
+    if Equals(notNow, CBTalkWhyCrouched()) {
+      let atFeet = this.LookedAt(game, player);
+      if IsDefined(atFeet) && CBTalkDownAtFeet(atFeet) {
+        notNow = "";
+      }
+    }
     if StrLen(notNow) > 0 {
       this.StandDown(game, notNow);
       // Said in the log when V is facing somebody; not looked for at all while talk is off, the world
@@ -1952,7 +1961,7 @@ public class CBStreetTalk {
     // prompt came up instead, and V's hands were held while it was up. Crouched only (2.5.1), not the game's
     // stealth state, which is also on with V standing in the open (CBPlayerCrouched).
     if CBPlayerCrouched(game) {
-      return "V is crouched";
+      return CBTalkWhyCrouched();
     }
     return "";
   }
@@ -2429,6 +2438,9 @@ public func CBTalkWhyStory() -> String = "part of a story or a job (a quest char
 public func CBTalkWhyTracked() -> String = "at the job V is tracking"
 public func CBTalkWhyLair() -> String = "a Rival at their place, or one of their people"
 public func CBTalkWhyGamePrompt() -> String = "one of the game's own prompts is up"
+public func CBTalkWhyCrouched() -> String = "V is crouched"
+// Down and breathing, and not a Rival at V's mercy (2.7.4): questioned by crouching beside them (Reactions/StreetIntel.reds).
+public func CBTalkWhyDowned() -> String = "they are down: questioned by crouching beside them"
 public func CBTalkWhyVInCombat() -> String = "V is in combat"
 
 // Somebody a fight is for, who can be spoken to in the middle of it (2.5.7): down at V's feet for the mercy choice, hands
@@ -2462,6 +2474,9 @@ public func CBTalkWhyHint(why: String) -> String {
   if Equals(why, CBTalkWhyGamePrompt()) {
     return CBT(n"Cyberbane-StreetTalk-TheyOrSomethingBesideThemHave");
   }
+  if Equals(why, CBTalkWhyDowned()) {
+    return CBT(n"Cyberbane-StreetTalk-DownCrouchToQuestion");
+  }
   return "";
 }
 
@@ -2488,7 +2503,8 @@ public func CBTalkWhyNot(sys: ref<CyberbaneSystem>, game: GameInstance, player: 
   // A Rival V has put down can be talked to where they lie (Rivals/RivalLife.reds, 1.9.9).
   let mercy = npc.cbMercyOpen;
   if !mercy && (ScriptedPuppet.IsDefeated(npc) || !CBStillStanding(npc)) {
-    return "they are down or gone";
+    // A downed ganger who is still breathing is questioned, not talked to: said so (2.7.4), since nothing on screen did.
+    return ScriptedPuppet.IsDefeated(npc) && !npc.IsDead() && npc.IsHuman() ? CBTalkWhyDowned() : "they are down or gone";
   }
   if !npc.IsHuman() || npc.IsMechanical() {
     return "not a person";
@@ -3707,7 +3723,7 @@ func CBTalkFriendTip(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
         let name = CBRivalDisplayName(sys.GetContent(), r);
         let pin = CBMapMarkersOn() ? CBT(n"Cyberbane-StreetTalk-PutItOnYourMap") : "";
         CBLog.Info(n"Talk", s"A friend of \(NameToString(t.faction)) gave up rival \(r.id).");
-        return CBTf(n"Cyberbane-StreetTalk-SinceYouReHereHasBeen", [s"\(name)", s"\(CBPlacePhrase(s.district))", s"\(pin)"]);
+        return CBTf(n"Cyberbane-StreetTalk-SinceYouReHereHasBeen", [s"\(name)", s"\(CBPlacePhrase(s.district, CBSightingPos(s)))", s"\(pin)"]);
       }
     }
   }
@@ -3893,7 +3909,7 @@ func CBTalkInform(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pla
   CBFileLog(sys, n"Informant", now, CBEventDistrict(sys, game), t.faction, Cast<Float>(r.id));
   CBLog.Info(n"Talk", s"Leaned on one of \(NameToString(t.faction)): rival \(r.id) is \(NameToString(s.district)).");
   let name = CBRivalDisplayName(sys.GetContent(), r);
-  let place = CBPlacePhrase(s.district);
+  let place = CBPlacePhrase(s.district, CBSightingPos(s));
   let pin = CBMapMarkersOn() ? CBT(n"Cyberbane-StreetIntel-ItSOnYourMap") : "";
   return CBPick3(
     CBTf(n"Cyberbane-StreetTalk-FineSLyingLowYouDidn", [s"\(name)", s"\(place)", s"\(pin)"]),
