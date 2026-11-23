@@ -812,7 +812,8 @@ public func CBGoodsSell(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
   }
   // Sold to another gang: more to the owner's sworn enemies, and the owner hears of it when it was taken by force or
   // went to those enemies.
-  let sworn = ArrayContains(CBGangRivalsOf(sys.GetContent(), t.faction), owner);
+  let buyersRivals = CBGangRivalsOf(sys.GetContent(), t.faction);   // held first: never an array straight from a call (crash rule)
+  let sworn = ArrayContains(buyersRivals, owner);
   let price = RoundF(Cast<Float>(worth) * (sworn ? CBConfig.GoodsEnemyMult() : 1.0));
   CBStreetGiveMoney(game, price);
   CBTalkWarm(sys, game, t.faction, CBConfig.GoodsBuyerStanding(), 60.0);

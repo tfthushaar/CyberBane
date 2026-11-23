@@ -66,10 +66,17 @@ func CBFindTranslation(language: CName) -> ref<ModLocalizationPackage> {
   for cls in classes {
     if IsDefined(cls) && !cls.IsAbstract() && !cls.IsNative() && StrEndsWith(NameToString(cls.GetName()), want)
        && (cls.IsA(n"Codeware.Localization.ModLocalizationPackage") || cls.IsA(n"ModLocalizationPackage")) {
+      // The compiler warns this cast "cannot succeed" (2.7.5, the nomad expansion's R2): MakeHandle is declared to hand back
+      // an ISerializable, and the two patches' scripts disagree on how IScriptable relates to it (2.5 calls them unrelated,
+      // 2.31 calls a cast between them redundant), so no static cast is quiet on both. `as` is checked at run time against
+      // the object's own class, which is the translator's package, so it holds; the log says either way, for the first
+      // translation anybody tests.
       let pkg = cls.MakeHandle() as ModLocalizationPackage;
       if IsDefined(pkg) {
+        FTLog(s"[Cyberbane][Localization] Translation for \(NameToString(language)) loaded from \(NameToString(cls.GetName())).");
         return pkg;
       }
+      FTLog(s"[Cyberbane][Localization] Translation class \(NameToString(cls.GetName())) found for \(NameToString(language)), but it could not be made: English stays.");
     }
   }
   return null;

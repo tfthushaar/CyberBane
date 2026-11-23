@@ -88,6 +88,10 @@ public class CBFactionProfile {
   // when that is not "gang" in the lore's own word (2.7.4: Clan, Raffen). Keys, never compared as text.
   public let nounKey: CName = n"Cyberbane-Faction-NounGang";
   public let cardLabelKey: CName;
+  // An add-on's faction's name ("Wraiths") and label ("the Wraiths"), as keys (2.7.5, API level 2); without them its
+  // displayKey names it. Cyberbane's own are named by CBFactionName and CBFactionLabel.
+  public let nameKey: CName;
+  public let labelKey: CName;
   // A faction an add-on registered that keeps a standing with V and never sends anybody (2.7.4, CyberbaneAPI.RegisterFaction),
   // and whether anybody in the world is filed under it.
   public let standingOnly: Bool;

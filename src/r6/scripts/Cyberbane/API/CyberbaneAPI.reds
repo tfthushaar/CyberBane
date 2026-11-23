@@ -406,7 +406,11 @@ public abstract class CyberbaneAPI {
   public static func ConvoyState(game: GameInstance, handle: Int32) -> Int32 {
     let reg = CBApiConvoys.Get(game);
     let run = IsDefined(reg) ? reg.Find(handle) : null;
-    return IsDefined(run) ? run.state : CBConvoyDone();
+    if IsDefined(run) {
+      return run.state;
+    }
+    // Off the road now: done if it is remembered, -1 for a handle it never had or lost with a load (2.7.5).
+    return IsDefined(reg) && reg.Outcome(handle) != CBConvoyOutcomeUnknown() ? CBConvoyDone() : -1;
   }
 
   public static func ConvoyWhere(game: GameInstance, handle: Int32) -> Vector4 {
@@ -462,5 +466,142 @@ public abstract class CyberbaneAPI {
   // False when another event (Cyberbane's or an add-on's) already has the slot, or the kind is unknown or off.
   public static func StartEvent(game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float) -> Bool {
     return CBApiStartEvent(game, kind, side, at, inGameSeconds);
+  }
+
+  // ======== API level 2 (2.7.5): guard each call with @if(ModuleExists("Cyberbane.Api2")) ========
+
+  // ---- Clocks and the world. OnTick on CBListener comes every couple of seconds on the settled tick.
+  public static func WorldStable(game: GameInstance) -> Bool {
+    return CBWorldStable(game);
+  }
+
+  // A time of day the way Cyberbane writes one in a text ("04:45"), for an add-on announcing its own event.
+  public static func ClockWord(gameSeconds: Float) -> String {
+    return CBClockWord(gameSeconds);
+  }
+
+  // ---- Where V is: Cyberbane's district id (n"" before it knows), and the game's name for the part of town ("Rocky Ridge").
+  public static func CurrentDistrict(game: GameInstance) -> CName {
+    let sys = CyberbaneSystem.Get(game);
+    return IsDefined(sys) ? sys.GetCurrentDistrict() : n"";
+  }
+
+  public static func PlaceName(game: GameInstance) -> String {
+    return CBSubDistrictLabel(game);
+  }
+
+  // Fast-travel points of a district (n"" for V's own) between two distances from V, where somebody can stand: the
+  // places Cyberbane holds its street events. How many were found.
+  public static func FindPlaces(game: GameInstance, district: CName, minDistance: Float, maxDistance: Float,
+                                out positions: array<Vector4>, out names: array<String>) -> Int32 {
+    return CBApiFindPlaces(game, district, minDistance, maxDistance, positions, names);
+  }
+
+  // ---- An event announced by the add-on's own contact (one registered with RegisterSender); n"" for whoever works V's
+  // district, as StartEvent does.
+  public static func StartEventFrom(game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float,
+                                    sender: CName) -> Bool {
+    return CBApiStartEvent(game, kind, side, at, inGameSeconds, sender);
+  }
+
+  // ---- Two sides towards each other, body to body, kept as people arrive and taken back when either side is released.
+  // Hostile for a raid; neutral for two crews who should leave each other alone. False when either side is not there.
+  public static func SetGroupsHostile(game: GameInstance, groupA: Int32, groupB: Int32) -> Bool {
+    return CBApiSetSides(game, CBApiSideGroup(), groupA, CBApiSideGroup(), groupB, true);
+  }
+
+  public static func SetGroupsNeutral(game: GameInstance, groupA: Int32, groupB: Int32) -> Bool {
+    return CBApiSetSides(game, CBApiSideGroup(), groupA, CBApiSideGroup(), groupB, false);
+  }
+
+  public static func SetGroupConvoyHostile(game: GameInstance, group: Int32, convoy: Int32) -> Bool {
+    return CBApiSetSides(game, CBApiSideGroup(), group, CBApiSideConvoy(), convoy, true);
+  }
+
+  public static func SetGroupConvoyNeutral(game: GameInstance, group: Int32, convoy: Int32) -> Bool {
+    return CBApiSetSides(game, CBApiSideGroup(), group, CBApiSideConvoy(), convoy, false);
+  }
+
+  // ---- A vehicle with nobody in it, placed out of V's sight; wrecked lays the game's visual damage on it. A handle, or 0
+  // with the reason from VehicleWhyNot. Removed the safe way by ReleaseVehicle, never from under V.
+  public static func RequestVehicle(game: GameInstance, record: TweakDBID, at: Vector4, wrecked: Bool) -> Int32 {
+    return CBApiRequestVehicle(game, record, at, wrecked);
+  }
+
+  public static func VehicleWhyNot(game: GameInstance) -> String {
+    let reg = CBApiVehicles.Get(game);
+    return IsDefined(reg) ? reg.LastWhy() : "";
+  }
+
+  public static func ReleaseVehicle(game: GameInstance, handle: Int32) -> Void {
+    CBApiReleaseVehicle(game, handle);
+  }
+
+  // ---- Loot in the game's drop bag at a point near V, scaled to V's level: tier 1 (a crew's) to 5 (the best a Rival
+  // carries). The add-on never moves items into V's pockets itself. False when nothing was laid.
+  public static func DropLoot(game: GameInstance, pos: Vector4, tier: Int32) -> Bool {
+    return CBApiDropLoot(game, pos, tier);
+  }
+
+  // ---- A convoy: how it ended (0 running, 1 arrived, 2 broken, 3 got away, 4 released, -1 unknown, as after a load),
+  // and its people.
+  public static func ConvoyOutcome(game: GameInstance, handle: Int32) -> Int32 {
+    let reg = CBApiConvoys.Get(game);
+    return IsDefined(reg) ? reg.Outcome(handle) : CBConvoyOutcomeUnknown();
+  }
+
+  public static func ConvoyAlive(game: GameInstance, handle: Int32) -> Int32 {
+    return CBApiConvoyAlive(game, handle);
+  }
+
+  public static func ConvoyBodies(game: GameInstance, handle: Int32, out bodies: array<EntityID>) -> Int32 {
+    return CBApiConvoyBodies(game, handle, bodies);
+  }
+
+  // ---- A faction's name in the player's language ("Tyger Claws"), and as a label ("the Tyger Claws"). Registered
+  // factions answer from their profile's keys.
+  public static func FactionName(id: CName) -> String {
+    return CBFactionName(id);
+  }
+
+  public static func FactionLabel(id: CName) -> String {
+    return CBFactionLabel(id);
+  }
+
+  // ---- A pin moved to where its subject is now, instead of taken down and put up again.
+  public static func MovePin(game: GameInstance, id: Int32, pos: Vector4) -> Bool {
+    return CBApiMovePin(game, id, pos);
+  }
+
+  // ---- Rivals, read only. Ids start again after Start over (OnPlaythroughReset): key by id together with the epoch.
+  public static func RivalIds(game: GameInstance) -> array<Int32> {
+    return CBApiRivalIds(game);
+  }
+
+  public static func RivalFaction(game: GameInstance, id: Int32) -> CName {
+    let r = CBApiRival(game, id);
+    return IsDefined(r) ? r.faction : n"";
+  }
+
+  // 1 to 4; 0 for an id Cyberbane does not know.
+  public static func RivalRank(game: GameInstance, id: Int32) -> Int32 {
+    let r = CBApiRival(game, id);
+    return IsDefined(r) ? r.rank : 0;
+  }
+
+  public static func RivalName(game: GameInstance, id: Int32) -> String {
+    return CBApiRivalName(game, id);
+  }
+
+  // Still breathing: not slain (one who left town is alive).
+  public static func RivalAlive(game: GameInstance, id: Int32) -> Bool {
+    let r = CBApiRival(game, id);
+    return IsDefined(r) && r.state != EnumInt(ECBRivalState.Slain);
+  }
+
+  // ---- A line in the History that moves no standing: a promise kept or broken. The key is the add-on's localization key
+  // (it must carry a dash, as every key does); faction n"" for none. False when not filed.
+  public static func FileHistory(game: GameInstance, faction: CName, reasonKey: CName) -> Bool {
+    return CBApiFileHistory(game, faction, reasonKey);
   }
 }

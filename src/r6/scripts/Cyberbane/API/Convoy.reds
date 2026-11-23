@@ -22,6 +22,14 @@ public func CBConvoyDriving() -> Int32 = 2
 public func CBConvoyContact() -> Int32 = 3
 public func CBConvoyDone() -> Int32 = 4
 
+// How it ended (2.7.5, API level 2, ConvoyOutcome): kept a while after it is off the road.
+public func CBConvoyOutcomeRunning() -> Int32 = 0
+public func CBConvoyOutcomeArrived() -> Int32 = 1
+public func CBConvoyOutcomeBroken() -> Int32 = 2
+public func CBConvoyOutcomeGotAway() -> Int32 = 3
+public func CBConvoyOutcomeReleased() -> Int32 = 4
+public func CBConvoyOutcomeUnknown() -> Int32 = -1
+
 public class CBConvoySpec {
   public let faction: CName;
   public let vehicles: array<TweakDBID>;   // lead first; empty: the faction's own cars (CBArrivalVehicle)
@@ -48,6 +56,9 @@ public class CBConvoyRun {
   public let crewCar: array<Int32>;
   public let crewSeat: array<CName>;
   public let releasing: Bool;
+  public let outcome: Int32;
+  // Ticks V has been out of reach of it while it was in a fight (R4).
+  public let awayTicks: Int32;
 
   public func Tag() -> CName {
     return StringToName("CB_Convoy" + IntToString(this.handle));
@@ -58,6 +69,8 @@ public class CBApiConvoys extends ScriptableSystem {
   private let m_runs: array<ref<CBConvoyRun>>;
   private let m_next: Int32;
   private let m_lastWhy: String;
+  private let m_doneHandles: array<Int32>;
+  private let m_doneOutcomes: array<Int32>;
 
   public static func Get(game: GameInstance) -> ref<CBApiConvoys> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -91,6 +104,24 @@ public class CBApiConvoys extends ScriptableSystem {
 
   public func Remove(run: ref<CBConvoyRun>) -> Void {
     ArrayRemove(this.m_runs, run);
+    if IsDefined(run) {
+      ArrayPush(this.m_doneHandles, run.handle);
+      ArrayPush(this.m_doneOutcomes, run.outcome);
+      while ArraySize(this.m_doneHandles) > 32 {
+        ArrayErase(this.m_doneHandles, 0);
+        ArrayErase(this.m_doneOutcomes, 0);
+      }
+    }
+  }
+
+  // Running, how it ended, or unknown (a handle from before a load, or never given).
+  public func Outcome(handle: Int32) -> Int32 {
+    let run = this.Find(handle);
+    if IsDefined(run) {
+      return run.outcome;
+    }
+    let i = ArrayFindFirst(this.m_doneHandles, handle);
+    return i >= 0 && i < ArraySize(this.m_doneOutcomes) ? this.m_doneOutcomes[i] : CBConvoyOutcomeUnknown();
   }
 
   // The one a body belongs to, by its convoy tag.
@@ -411,7 +442,7 @@ func CBConvoyStep(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBApiC
     let pos: Vector4;
     let leg = 1;
     if !CBConvoyPaperPos(run, now, pos, leg) {
-      run.state = CBConvoyDone();
+      CBConvoyFinish(run, CBConvoyOutcomeArrived());
       CBLog.Info(n"Spawn", s"An add-on's convoy got where it was going on paper; V never came near (handle \(run.handle)).");
       reg.Remove(run);
       return;
@@ -442,7 +473,12 @@ func CBConvoyStep(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBApiC
     }
     return;
   }
-  // Somebody of theirs is fighting: contact, once.
+  // Somebody of theirs is fighting: contact, once. Everybody down before any of them fought (one rocket from range) is
+  // the end of it too (2.7.5, R3): it stayed "driving" behind a lead that would never get anywhere.
+  if run.state == CBConvoyDriving() && CBConvoyCrewAlive(game, run) == 0 {
+    CBConvoyFinish(run, CBConvoyOutcomeBroken());
+    CBLog.Info(n"Spawn", s"An add-on's convoy lost everybody on board while it drove (handle \(run.handle)).");
+  }
   if run.state == CBConvoyDriving() {
     for id in run.crewIds {
       let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
@@ -460,7 +496,7 @@ func CBConvoyStep(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBApiC
       run.leg += 1;
       if run.leg >= ArraySize(run.spec.route) {
         CBLog.Info(n"Spawn", s"An add-on's convoy reached its end (handle \(run.handle)).");
-        run.state = CBConvoyDone();
+        CBConvoyFinish(run, CBConvoyOutcomeArrived());
       } else {
         CBConvoyDriveLead(game, run);
       }
@@ -486,12 +522,33 @@ func CBConvoyStep(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBApiC
       i += 1;
     }
     if CBConvoyCrewAlive(game, run) == 0 {
-      run.state = CBConvoyDone();
+      CBConvoyFinish(run, CBConvoyOutcomeBroken());
+    } else {
+      // The two other ways a fight ends (2.7.5, R4): the lead got to its end, or V left it behind.
+      let leadC = ArraySize(run.cars) > 0 ? GameInstance.FindEntityByID(game, run.cars[0]) as VehicleObject : null;
+      let last = ArraySize(run.spec.route) - 1;
+      if IsDefined(leadC) && last >= 0 && Vector4.Distance(leadC.GetWorldPosition(), run.spec.route[last]) <= CBConfig.ConvoyPointReach() {
+        CBConvoyFinish(run, CBConvoyOutcomeArrived());
+        CBLog.Info(n"Spawn", s"An add-on's convoy got through its fight to its end (handle \(run.handle)).");
+      } else {
+        run.awayTicks = Vector4.Distance(ppos, CBConvoyWhere(game, run)) > CBConfig.ConvoyReach() ? run.awayTicks + 1 : 0;
+        if run.awayTicks >= CBConfig.ConvoyGotAwayTicks() {
+          CBConvoyFinish(run, CBConvoyOutcomeGotAway());
+          CBLog.Info(n"Spawn", s"An add-on's convoy got away from V (handle \(run.handle)).");
+        }
+      }
     }
   }
   // Over, and V well away: gone the safe way.
   if run.state == CBConvoyDone() && Vector4.Distance(ppos, CBConvoyWhere(game, run)) > CBConfig.ConvoyReach() {
     run.releasing = true;
+  }
+}
+
+func CBConvoyFinish(run: ref<CBConvoyRun>, outcome: Int32) -> Void {
+  run.state = CBConvoyDone();
+  if run.outcome == CBConvoyOutcomeRunning() {
+    run.outcome = outcome;
   }
 }
 
@@ -510,6 +567,11 @@ public func CBConvoyWhere(game: GameInstance, run: ref<CBConvoyRun>) -> Vector4 
 
 // Crews out of their seats first (crash rule: nobody removed from a seat), then everybody, never in V's sight.
 func CBConvoyRelease(game: GameInstance, reg: ref<CBApiConvoys>, run: ref<CBConvoyRun>) -> Void {
+  if run.outcome == CBConvoyOutcomeRunning() {
+    run.outcome = CBConvoyOutcomeReleased();
+  }
+  // Set against a group (SetGroupConvoyHostile): taken back before anybody of it goes.
+  CBApiPairsRelease(game, CBApiSideConvoy(), run.handle);
   let seated = 0;
   for id in run.crewIds {
     if VehicleComponent.IsMountedToVehicle(game, id) {
@@ -526,4 +588,23 @@ func CBConvoyRelease(game: GameInstance, reg: ref<CBApiConvoys>, run: ref<CBConv
   CBDeleteTaggedSafe(game, run.Tag(), true, true);
   reg.Remove(run);
   CBLog.Info(n"Spawn", s"An add-on's convoy was taken off the road (handle \(run.handle)).");
+}
+
+// Its people still standing, and their bodies (2.7.5, API level 2: ConvoyAlive, ConvoyBodies).
+public func CBApiConvoyAlive(game: GameInstance, handle: Int32) -> Int32 {
+  let reg = CBApiConvoys.Get(game);
+  let run = IsDefined(reg) ? reg.Find(handle) : null;
+  return IsDefined(run) ? CBConvoyCrewAlive(game, run) : 0;
+}
+
+public func CBApiConvoyBodies(game: GameInstance, handle: Int32, out bodies: array<EntityID>) -> Int32 {
+  ArrayClear(bodies);
+  let reg = CBApiConvoys.Get(game);
+  let run = IsDefined(reg) ? reg.Find(handle) : null;
+  if IsDefined(run) {
+    for id in run.crewIds {
+      ArrayPush(bodies, id);
+    }
+  }
+  return ArraySize(bodies);
 }

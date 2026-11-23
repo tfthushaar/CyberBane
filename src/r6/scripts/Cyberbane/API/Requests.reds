@@ -78,6 +78,20 @@ public class CBApiRequests extends ScriptableSystem {
     return 0;
   }
 
+  public func Known(handle: Int32) -> Bool {
+    return handle > 0 && ArrayContains(this.m_handles, handle);
+  }
+
+  // Any group asked for on V's side still held: the crew's pairing looks for their people only then (R6).
+  public func AnySide() -> Bool {
+    for s in this.m_side {
+      if s {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public func SideOf(handle: Int32) -> Bool {
     let i = ArrayFindFirst(this.m_handles, handle);
     return i >= 0 && i < ArraySize(this.m_side) && this.m_side[i];
@@ -109,6 +123,16 @@ public class CBApiRequests extends ScriptableSystem {
     ArrayErase(this.m_pinIds, i);
     ArrayErase(this.m_pins, i);
     ArrayErase(this.m_pinUntil, i);
+    return true;
+  }
+
+  // The pin moved where it stands, the game's own call (2.7.5, API level 2: MovePin).
+  public func MovePin(ms: ref<MappinSystem>, id: Int32, pos: Vector4) -> Bool {
+    let i = ArrayFindFirst(this.m_pinIds, id);
+    if i < 0 || i >= ArraySize(this.m_pins) {
+      return false;
+    }
+    ms.SetMappinPosition(this.m_pins[i], pos);
     return true;
   }
 
@@ -276,6 +300,8 @@ public func CBApiReleaseGroup(game: GameInstance, handle: Int32) -> Void {
   if handle <= 0 {
     return;
   }
+  // Set against another side (SetGroupsHostile): taken back first, while its people still carry the group's tag.
+  CBApiPairsRelease(game, CBApiSideGroup(), handle);
   CBDeleteTaggedSafe(game, CBApiGroupTag(handle), true, true);
   if IsDefined(reg) {
     reg.Drop(handle);
@@ -315,7 +341,7 @@ public func CBApiAdjustStanding(game: GameInstance, faction: CName, delta: Float
     return false;
   }
   fs.standing = ClampF(fs.standing + delta, -100.0, 100.0);
-  if IsNameValid(reasonKey) {
+  if CBApiReasonKeyOk(reasonKey) {
     CBFileLog(sys, reasonKey, CBGameSeconds(game), CBEventDistrict(sys, game), faction, delta);
   }
   return true;
@@ -326,6 +352,17 @@ public func CBApiRequestsTick(game: GameInstance) -> Void {
   if IsDefined(reg) {
     reg.ExpirePins(game);
   }
+  // V's answers to an add-on's questions, told here and not from the phone's own handler (2.7.5, R7).
+  let asks = CBApiAsks.Get(game);
+  if IsDefined(asks) {
+    asks.DeliverAnswers(game);
+  }
+  // Level 2 (2.7.5): sides kept set against each other, and wrecks dressed once they are in the world.
+  let sys = CyberbaneSystem.Get(game);
+  if IsDefined(sys) && sys.GetTickCount() % 2 == 1 {
+    CBApiPairsTick(sys, game);
+  }
+  CBApiVehiclesTick(game);
 }
 
 // ---- Questions by text (AskPriced): an add-on's contact asks, V answers in the thread like any of Cyberbane's own.
@@ -350,6 +387,11 @@ public class CBApiAsks extends ScriptableSystem {
   private let m_prices: array<Int32>;
   private let m_tokens: array<Int32>;
   private let m_listeners: array<ref<CBApiAnswerListener>>;
+  // Answers waiting for the tick (R7).
+  private let m_qListener: array<ref<CBApiAnswerListener>>;
+  private let m_qToken: array<Int32>;
+  private let m_qChoice: array<Int32>;
+  private let m_qPaid: array<Bool>;
 
   public static func Get(game: GameInstance) -> ref<CBApiAsks> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -402,6 +444,38 @@ public class CBApiAsks extends ScriptableSystem {
     return i >= 0 ? this.m_listeners[i] : null;
   }
 
+  public func QueueAnswer(listener: ref<CBApiAnswerListener>, token: Int32, choice: Int32, paid: Bool) -> Void {
+    if !IsDefined(listener) {
+      return;
+    }
+    ArrayPush(this.m_qListener, listener);
+    ArrayPush(this.m_qToken, token);
+    ArrayPush(this.m_qChoice, choice);
+    ArrayPush(this.m_qPaid, paid);
+  }
+
+  public func DeliverAnswers(game: GameInstance) -> Void {
+    let n = Min(Min(ArraySize(this.m_qListener), ArraySize(this.m_qToken)), Min(ArraySize(this.m_qChoice), ArraySize(this.m_qPaid)));
+    if n == 0 {
+      return;
+    }
+    let listeners = this.m_qListener;
+    let tokens = this.m_qToken;
+    let choices = this.m_qChoice;
+    let paids = this.m_qPaid;
+    ArrayClear(this.m_qListener);
+    ArrayClear(this.m_qToken);
+    ArrayClear(this.m_qChoice);
+    ArrayClear(this.m_qPaid);
+    let i = 0;
+    while i < n {
+      if IsDefined(listeners[i]) {
+        listeners[i].OnAnswer(game, tokens[i], choices[i], paids[i]);
+      }
+      i += 1;
+    }
+  }
+
   public func Forget(name: String) -> Void {
     let i = this.IndexOf(name);
     if i >= 0 {
@@ -447,7 +521,9 @@ public func CBApiAskChoices(game: GameInstance, name: String) -> array<String> {
   return out;
 }
 
-// V answered: V's line into the thread, the price taken for the first answer, then the add-on told.
+// V answered: V's line into the thread, the price taken for the first answer, then the add-on told on the next tick
+// (2.7.5, R7): this runs inside the phone's reply handler, and an add-on that starts something in the world from an answer
+// must never do it from there.
 public func CBApiAskReply(game: GameInstance, store: ref<CBPhone>, thread: Int32, name: String, choice: Int32) -> Void {
   let asks = CBApiAsks.Get(game);
   if !IsDefined(asks) || !asks.Pending(name) {
@@ -473,7 +549,5 @@ public func CBApiAskReply(game: GameInstance, store: ref<CBPhone>, thread: Int32
   let token = asks.Token(name);
   let listener = asks.Listener(name);
   asks.Forget(name);
-  if IsDefined(listener) {
-    listener.OnAnswer(game, token, choice, paid);
-  }
+  asks.QueueAnswer(listener, token, choice, paid);
 }

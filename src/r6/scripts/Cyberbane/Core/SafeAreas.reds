@@ -333,7 +333,7 @@ public func CBArrivalsHeldBase(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     return true;
   }
   return sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game)
-      || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys) || CBSmasherEventOn(game);
+      || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys) || CBSmasherEventOn(game) || CBMbcContractFight(game);
 }
 
 // The NCPD after V: any wanted level (2.6.5). The gangs lie low while the cops swarm. "When hiding from the NCPD, if a
@@ -372,6 +372,9 @@ public func CBArrivalsHeldWhy(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   if CBSmasherEventOn(game) {
     return CBSmasherHeldWhy();
+  }
+  if CBMbcContractFight(game) {
+    return CBT(n"Cyberbane-Compat-AContractSFight");
   }
   if CBHomeHoldsAll(sys) {
     return CBT(n"Cyberbane-Held-HomeGround");

@@ -24,6 +24,9 @@ public abstract class CBListener extends IScriptable {
   public func OnPlaythroughReset(game: GameInstance, epoch: Int32) -> Void {}
   // A playthrough Cyberbane had never seen began (or began again after Start over): the game's gamedataLifePath value.
   public func OnPlaythroughBorn(game: GameInstance, lifepath: Int32) -> Void {}
+  // API level 2 (2.7.5): every couple of seconds on Cyberbane's settled tick, for an add-on's own clocks. Never during a
+  // load, a scene, a menu or the settle after a fast travel; CyberbaneAPI.WorldStable answers the same question.
+  public func OnTick(game: GameInstance) -> Void {}
 }
 
 public func CBApiQKilled() -> Int32 = 1
@@ -42,6 +45,7 @@ public class CBApiBook extends ScriptableSystem {
   private let m_qA: array<Int32>;
   private let m_qB: array<Int32>;
   private let m_settled: Bool;
+  private let m_ticks: Int32;
 
   public static func Get(game: GameInstance) -> ref<CBApiBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -74,6 +78,11 @@ public class CBApiBook extends ScriptableSystem {
 
   public func HasListeners() -> Bool { return ArraySize(this.m_listeners) > 0; }
 
+  // The tick stood down (a load, a scene, a menu, the settle after a fast travel): the next settled tick says so again.
+  // Drain runs only on a settled tick, so it could never see the world go: OnSettled came after a load and never after a
+  // scene or a fast travel (2.7.5).
+  public func Unsettle() -> Void { this.m_settled = false; }
+
   public func Queue(kind: Int32, name: CName, a: Int32, b: Int32) -> Void {
     if ArraySize(this.m_listeners) == 0 {
       return;
@@ -99,9 +108,22 @@ public class CBApiBook extends ScriptableSystem {
     }
     this.m_settled = stable;
     let n = Min(Min(ArraySize(this.m_qKind), ArraySize(this.m_qName)), Min(ArraySize(this.m_qA), ArraySize(this.m_qB)));
-    if n == 0 {
-      return;
+    if n > 0 {
+      this.Tell(game, n);
     }
+    // OnTick (2.7.5): its own count, so it keeps its pace whatever else was told.
+    this.m_ticks += 1;
+    if stable && this.m_ticks % CBConfig.ApiListenerTickEvery() == 0 {
+      let ticking = this.m_listeners;
+      for l in ticking {
+        if IsDefined(l) {
+          l.OnTick(game);
+        }
+      }
+    }
+  }
+
+  private func Tell(game: GameInstance, n: Int32) -> Void {
     let kinds = this.m_qKind;
     let names = this.m_qName;
     let avals = this.m_qA;
@@ -146,12 +168,20 @@ public func CBApiRivalEvent(r: ref<CBRival>, kind: CName) -> Void {
   }
 }
 
-// The API level this Cyberbane offers (API/ApiModule.reds says the same to compile-time guards).
-public func CBApiLevel() -> Int32 = 1
+// The API level this Cyberbane offers (API/ApiModule.reds and API/Api2Module.reds say the same to compile-time guards).
+public func CBApiLevel() -> Int32 = 2
 
 public func CBApiListening(game: GameInstance) -> Bool {
   let book = CBApiBook.Get(game);
   return IsDefined(book) && book.HasListeners();
+}
+
+// The tick stood down this time round (Core/CyberbaneSystem.reds, OnFastTick): no native read, a flag on the book.
+public func CBApiWorldBusy(game: GameInstance) -> Void {
+  let book = CBApiBook.Get(game);
+  if IsDefined(book) {
+    book.Unsettle();
+  }
 }
 
 public func CBApiTick(game: GameInstance) -> Void {

@@ -1561,10 +1561,8 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
       return;
     }
   }
-  // Anybody fighting V is their enemy too (2.6.3): the follower role alone left them blind to it.
-  if up > 0 && tick % 2 == 0 {
-    CBCrewHostilityTick(sys, game, book, player);
-  }
+  // Anybody fighting V is their enemy too (2.6.3): the follower role alone left them blind to it. Asked on Cyberbane's own
+  // tick since 2.7.5 (CBVsSideHostilityTick), with an add-on's people on V's side, so it runs with no crew out too.
   let trouble = CBCrewTrouble(sys, game);
   if trouble {
     book.fought = true;
@@ -1739,6 +1737,16 @@ public let cbCrewPaired: Bool;
 // is hostile to V and in a fight is made hostile to each of them, and they to it, pair by pair, the way
 // CBMakeHostileToCompanions sets Cyberbane's own against V's companions. Nobody on V's side is touched, and a pair whose
 // reason has gone (V's enemy no longer hostile to V) goes back to neutral both ways.
+// Everybody on V's side Cyberbane put out (2.7.5, R6): V's own crew while they are out with V (not walking off), and an
+// add-on's people asked for on V's side. Every other tick, from Cyberbane's tick.
+public func CBVsSideHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let player = GetPlayer(game);
+  if !IsDefined(sys) || !IsDefined(player) || sys.GetTickCount() % 2 != 0 {
+    return;
+  }
+  CBCrewHostilityTick(sys, game, CBCrewBook.Get(game), player);
+}
+
 func CBCrewHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, player: ref<PlayerPuppet>) -> Void {
   let reg = sys.GetRegistry();
   let pagent = player.GetAttitudeAgent();
@@ -1748,13 +1756,14 @@ func CBCrewHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   }
   let crew: array<ref<ScriptedPuppet>>;
   let i = 0;
-  while i < book.OutCount() {
+  while IsDefined(book) && !book.leaving && i < book.OutCount() {
     let c = GameInstance.FindEntityByID(game, book.outBody[i]) as ScriptedPuppet;
     if CBNpcSafe(sys, c) && CBStillStanding(c) && IsDefined(c.GetAttitudeAgent()) {
       ArrayPush(crew, c);
     }
     i += 1;
   }
+  CBApiSideBodies(sys, game, crew);
   if ArraySize(crew) == 0 {
     return;
   }
@@ -1763,7 +1772,7 @@ func CBCrewHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   for p in reg.GetAll() {
     if CBNpcSafe(sys, p) && !p.IsDead() && CBStillStanding(p)
        && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.MyCrewFightRange()
-       && !ScriptedPuppet.IsPlayerCompanion(p) && !des.IsTagged(p.GetEntityID(), n"CB_Own") {
+       && !ScriptedPuppet.IsPlayerCompanion(p) && !des.IsTagged(p.GetEntityID(), n"CB_Own") && !ArrayContains(crew, p) {
       let agent = p.GetAttitudeAgent();
       if IsDefined(agent) {
         let enemy = Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) && (vFighting || CBNpcInCombat(p));

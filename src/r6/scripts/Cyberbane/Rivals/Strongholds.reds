@@ -108,6 +108,15 @@ public class CBBaseBook extends ScriptableSystem {
     if this.BaseIndex(hash) >= 0 {
       return;
     }
+    // One place is one base (2.7.5): a gig played again (Much Better Contracts replays a gig as a quest of its own) is a
+    // new journal entry at the same building, and two entries there let two gangs hold the one place.
+    let k = 0;
+    while k < this.BaseCount() {
+      if Vector4.Distance(this.BaseAt(k), at) <= CBConfig.StrongholdSameSite() {
+        return;
+      }
+      k += 1;
+    }
     ArrayPush(this.m_bHash, hash);
     ArrayPush(this.m_bX, at.X);
     ArrayPush(this.m_bY, at.Y);
@@ -522,8 +531,14 @@ func CBStrongholdPlace(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
   // Onto walkable ground near the pin, the first time (a gig's pin can be on a desk or a rooftop).
   let ground: Vector4;
   let snapped: Vector4;
+  // A job active at the place (a gig played again there) is a wait, not a broken place (2.7.5): counted as a failure, two
+  // tries during it threw the base away.
+  if sys.NearQuestPins(base, CBConfig.QuestSpawnClearance()) {
+    book.nextTryTick = sys.GetTickCount() + 30;
+    return;
+  }
   if !CBNavSnap(game, base.X, base.Y, base.Z, snapped) || !CBSettleOnGround(game, snapped, ground)
-     || !CBLairPointUsable(sys, game, ground) || sys.NearQuestPins(ground, CBConfig.QuestSpawnClearance()) {
+     || !CBLairPointUsable(sys, game, ground) {
     if book.BaseFailed(bi) {
       CBStrongholdUnpin(game, r.id);
       CBLog.Info(n"Rivals", "A stronghold's base could not be used twice; dropped.");
@@ -673,17 +688,44 @@ func CBHoldStashTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
   CBHoldStashDrop(sys, game, player, at, hash);
 }
 
-// The items, scaled to V's level the way loot is; then the bag. True when the bag was laid.
+// The stash: two tiers of loot in the game's drop bag (CBLootBagAt), and a line saying where. True when the bag was laid.
 func CBHoldStashDrop(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, at: Vector4, hash: Int32) -> Bool {
+  let tiers: array<Int32> = [CBLootTierApex(), CBLootTierApex() + 1];
+  let laid = CBLootBagAt(sys, game, player, at, tiers);
+  if laid == 0 {
+    return false;
+  }
+  let place = CBBaseName(game, hash);
+  if laid > 0 {
+    CBLog.Info(n"Rivals", s"A cleared stronghold's stash was laid: \(laid) kinds of item in a bag.");
+    if CBMessagesOn() {
+      CBSystemNote(game, CBTf(n"Cyberbane-Strongholds-Stash", [place]), 7.0);
+    }
+  } else {
+    CBLog.Info(n"Rivals", "The game would not lay a stronghold's stash; its things stay with V.");
+    if CBMessagesOn() {
+      CBSystemNote(game, CBTf(n"Cyberbane-Strongholds-StashKept", [place]), 7.0);
+    }
+  }
+  return laid > 0;
+}
+
+// Loot of these tiers, scaled to V's level the way loot is, laid in the game's own drop bag at a point (2.7.3's stash,
+// shared with the API's DropLoot in 2.7.5). The game's bag takes items from its owner (LootManager.SpawnItemDropOfManyItems
+// with V as owner, the way V's own dropped items go), so each is given to V first, and only general items and consumables
+// go in the bag. The kinds of item laid; 0 when there was nothing to lay, -1 when the game would not lay it (they stay
+// with V).
+func CBLootBagAt(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, at: Vector4, tiers: array<Int32>) -> Int32 {
   let ts = GameInstance.GetTransactionSystem(game);
   let lm = GameInstance.GetLootManager(game);
-  if !IsDefined(ts) || !IsDefined(lm) {
-    return false;
+  if !IsDefined(ts) || !IsDefined(lm) || !IsDefined(player) {
+    return 0;
   }
   let ids: array<TweakDBID>;
   let counts: array<Int32>;
-  CBLootRoll(CBLootTierApex(), ids, counts);
-  CBLootRoll(CBLootTierApex() + 1, ids, counts);
+  for t in tiers {
+    CBLootRoll(t, ids, counts);
+  }
   let scale = CBLootLevelScale(game) * sys.WornPerk().lootMult;
   let bag: array<DropInstruction>;
   let i = 0;
@@ -698,24 +740,11 @@ func CBHoldStashDrop(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
     }
     i += 1;
   }
-  let place = CBBaseName(game, hash);
   if ArraySize(bag) == 0 {
-    return false;
+    return 0;
   }
   let ground: Vector4;
   let snapped: Vector4;
   let spot = CBNavSnap(game, at.X, at.Y, at.Z, snapped) && CBSettleOnGround(game, snapped, ground) ? ground : at;
-  let laid = lm.SpawnItemDropOfManyItems(player, bag, n"playerDropBag", new Vector4(spot.X, spot.Y, spot.Z + 0.3, 1.0));
-  if laid {
-    CBLog.Info(n"Rivals", s"A cleared stronghold's stash was laid: \(ArraySize(bag)) kinds of item in a bag.");
-    if CBMessagesOn() {
-      CBSystemNote(game, CBTf(n"Cyberbane-Strongholds-Stash", [place]), 7.0);
-    }
-  } else {
-    CBLog.Info(n"Rivals", "The game would not lay a stronghold's stash; its things stay with V.");
-    if CBMessagesOn() {
-      CBSystemNote(game, CBTf(n"Cyberbane-Strongholds-StashKept", [place]), 7.0);
-    }
-  }
-  return laid;
+  return lm.SpawnItemDropOfManyItems(player, bag, n"playerDropBag", new Vector4(spot.X, spot.Y, spot.Z + 0.3, 1.0)) ? ArraySize(bag) : -1;
 }

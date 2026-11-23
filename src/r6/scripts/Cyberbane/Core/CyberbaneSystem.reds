@@ -982,6 +982,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     let player = GetPlayer(game);
     if !IsDefined(player) {
       this.m_streamSettleTicks = CBConfig.FloodSettleTicks();
+      CBApiWorldBusy(game);             // add-ons hear OnSettled again once it is over (API/Listeners.reds)
       this.ScheduleFastTick();
       return;
     }
@@ -999,6 +1000,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         this.GetThreatBar().Conceal();
         this.GetPhone().Conceal();
       }
+      CBApiWorldBusy(game);
       this.ScheduleFastTick();
       return;
     }
@@ -1053,6 +1055,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       // from the mod being broken, because an appointment that never approaches never arrives.
       CBTickClocksOnly(this);
       this.SetHuntHoldReason(CBHoldWorldBusy());
+      CBApiWorldBusy(game);
       this.ScheduleFastTick();
       return;
     }
@@ -1260,11 +1263,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
     CBGuardTick(this, game);            // and at home, watching the house (2.7.2)
+    CBVsSideHostilityTick(this, game);  // V's crew and an add-on's people on V's side against V's enemies (2.7.5)
     CBApiTick(game);                    // add-ons told what happened since the last tick (API/Listeners.reds, 2.7.4)
     CBApiRequestsTick(game);            // and their pins taken down when due (API/Requests.reds)
     CBApiConvoyTick(this, game);        // add-ons' convoys, on paper or on the road (API/Convoy.reds)
     CBApiHubTick(game);                 // and the clicks on their Hub cards, told once the world has settled
     CBStrongholdTick(this, game);       // cleared gig bases a Rival holds (Rivals/Strongholds.reds, 2.7.2)
+    CBMbcTick(this, game);              // Much Better Contracts' finished contracts are finished jobs (2.7.5)
     if this.m_tickCount % 5 == 2 {
       CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.0)
     }

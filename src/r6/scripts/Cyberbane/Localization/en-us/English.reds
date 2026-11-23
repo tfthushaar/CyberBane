@@ -717,6 +717,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // Where something is, out in the Badlands, by the game's own name for that part of it (2.7.4). {0} is the name ("Rocky Ridge").
     this.Text("Cyberbane-Whereabouts-OutPast", "out past {0}");
     // V's line when an add-on's priced answer costs more than V has (2.7.4, CyberbaneAPI.AskPriced).
+    // Why nobody of Cyberbane's is coming: a Much Better Contracts contract is running and V is fighting (2.7.5).
+    this.Text("Cyberbane-Compat-AContractSFight", "a contract's fight is on");
     this.Text("Cyberbane-Api-CannotPay", "Don't have that on me.");
     this.Text("Cyberbane-Faction-NounGang", "gang");
     this.Text("Cyberbane-Faction-NounClan", "clan");

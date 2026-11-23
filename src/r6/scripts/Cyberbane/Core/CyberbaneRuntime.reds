@@ -266,6 +266,15 @@ public class CyberbaneRuntime extends ScriptableService {
   // Smasher Encounters' word on whether Smasher is out (2.6.7, Compat/SmasherEncounters.reds).
   private let m_smasherProbe: ref<CBSmasherProbe>;
 
+  private let m_mbcProbe: ref<CBMbcProbe>;
+
+  public func GetMbcProbe() -> ref<CBMbcProbe> {
+    if !IsDefined(this.m_mbcProbe) {
+      this.m_mbcProbe = new CBMbcProbe();
+    }
+    return this.m_mbcProbe;
+  }
+
   public func GetSmasherProbe() -> ref<CBSmasherProbe> {
     if !IsDefined(this.m_smasherProbe) {
       this.m_smasherProbe = new CBSmasherProbe();

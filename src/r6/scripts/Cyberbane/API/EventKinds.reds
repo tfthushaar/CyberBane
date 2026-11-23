@@ -97,8 +97,9 @@ public func CBApiEventOn(game: GameInstance, kind: CName) -> Bool {
   return IsDefined(reg) && reg.IsOn(kind);
 }
 
-// Starting one: the one event slot must be free, the kind registered and on, and Cyberbane on.
-public func CBApiStartEvent(game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float) -> Bool {
+// Starting one: the one event slot must be free, the kind registered and on, and Cyberbane on. Announced by the add-on's
+// own contact when it names one registered with RegisterSender (2.7.5, R8), else by whoever works V's district.
+public func CBApiStartEvent(game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float, opt sender: CName) -> Bool {
   let sys = CyberbaneSystem.Get(game);
   let life = CBStreetLifeFor(game);
   let rt = CyberbaneRuntime.Get();
@@ -106,5 +107,5 @@ public func CBApiStartEvent(game: GameInstance, kind: CName, side: CName, at: Ve
      || !CBApiEventOn(game, kind) {
     return false;
   }
-  return life.Events().StartApi(sys, game, kind, side, at, inGameSeconds);
+  return life.Events().StartApi(sys, game, kind, side, at, inGameSeconds, sender);
 }

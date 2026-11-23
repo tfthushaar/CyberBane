@@ -44,6 +44,9 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.7
 
+- **Much Better Contracts, side by side (2.7.5).** Detected on its own. Its contracts are jobs to Cyberbane, it sends
+  nobody into a fight while one is running, and each contract you are paid for counts as a finished job. A car you took
+  from a gang is never deleted with you in it.
 - **Your crew, as you know them (2.7.4).** Each of your crew keeps the look they turned up in, pick lists scroll past ten,
   and you can talk to somebody down at your feet while crouched. The Aldecaldos and the Wraiths come in their own painted
   cars, and the Wraiths keep to the Badlands. Translations no longer crash the game.
@@ -303,6 +306,18 @@ on an older Cyberbane instead of breaking every script mod on the install.
     a route), `PinPlace`, `RegisterSender` + `SendAside` and `AskPriced` (texts and priced questions), `AdjustStanding` with
     a reason, `RegisterEventKind` + `StartEvent` (Cyberbane's one event slot, its clock and holds), `RegisterGangsRow` and
     `RegisterPage` (cards on the Hub, as data), `MakeFactionProfile` + `RegisterFaction`.
+- **API level 2 (`Cyberbane.Api2`, 2.7.5):**
+  - Clocks and place: `CBListener.OnTick` (every couple of seconds on the settled tick), `WorldStable`, `ClockWord`,
+    `CurrentDistrict`, `PlaceName`, `FindPlaces` (fast-travel points of a district between two distances from V).
+  - Sides: `SetGroupsHostile`, `SetGroupsNeutral`, `SetGroupConvoyHostile`, `SetGroupConvoyNeutral`, body to body, kept as
+    people arrive and taken back when either side is released. Groups asked for on V's side fight V's enemies.
+  - Things in the world: `RequestVehicle` (empty, out of V's sight, optionally wrecked) + `VehicleWhyNot` +
+    `ReleaseVehicle`; `DropLoot` (the game's drop bag near V, tier 1 to 5); `MovePin`.
+  - Convoys: `ConvoyOutcome` (arrived, broken, got away, released, unknown), `ConvoyAlive`, `ConvoyBodies`;
+    `ConvoyState` answers -1 for a handle it does not know.
+  - Names and records: `FactionName`, `FactionLabel` (a registered faction's `nameKey` and `labelKey`), `RivalIds`,
+    `RivalFaction`, `RivalRank`, `RivalName`, `RivalAlive`, `FileHistory` (a History line that moves no standing; keys
+    carry a dash), `StartEventFrom` (an event announced by your own contact).
 - An API function is never removed or renamed; a retired one stays and does nothing. Every change is compiled on the
   game patches Cyberbane supports.
 - Keep your own saved data in your own `ScriptableSystem`, your own localization prefix, and your own settings page.
@@ -316,6 +331,10 @@ on an older Cyberbane instead of breaking every script mod on the install.
   **They Will Remember / Night City Remembers** to Off under **Advanced** to let Cyberbane decide instead.
 - **Much Better AI, Street Sense, New Game Plus:** detected automatically; Cyberbane steps back
   where they already cover something.
+- **Much Better Contracts (Repeatable Gigs):** detected automatically. Its contracts are jobs to Cyberbane: nobody
+  Cyberbane sends comes for you at a contract's site, and while a contract is running Cyberbane sends nobody new into a
+  fight. Each contract it pays you for counts as a finished job for your Renown; its pay is its own, with no gig bonus on
+  top.
 - **Smasher Encounters:** detected automatically. While Smasher is after you, Cyberbane sends nobody new and turns nobody
   on you at sight, and his Arasaka backup doesn't break and run. Your crew still comes when called.
 - **Equipment-EX and other outfit mods:** your outfit is read as it looks on V.

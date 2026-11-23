@@ -1632,6 +1632,8 @@ public abstract class CBConfig {
   public static func StrongholdLtGrade() -> Float = 0.8
   // A cleared stronghold's stash is laid once the fight is over and V is this close to where they kept it (2.7.3).
   public static func StrongholdStashReach() -> Float = 60.0
+  // Two cleared gigs this close are one place (2.7.5): a gig played again is not a second base.
+  public static func StrongholdSameSite() -> Float = 40.0
   // How near V a spot has to be for the Badlands part V stands in to name it (2.7.4, CBPlacePhrase).
   public static func SubDistrictNear() -> Float = 400.0
   // An add-on's convoy (API/Convoy.reds, 2.7.4): put on the road once V is this near where it is on paper; a route point
@@ -1642,6 +1644,16 @@ public abstract class CBConfig {
   public static func ConvoyGapMin() -> Float = 6.0
   public static func ConvoyGapMax() -> Float = 18.0
   public static func ConvoyBoardTicks() -> Int32 = 20
+  // A convoy in a fight that V has been out of reach of for this many ticks got away (2.7.5).
+  public static func ConvoyGotAwayTicks() -> Int32 = 60
+  // API level 2 (2.7.5): CBListener.OnTick every this many settled ticks (about two seconds); add-on vehicles out at once;
+  // how near V an add-on's loot can be laid, metres.
+  public static func ApiListenerTickEvery() -> Int32 = 2
+  public static func ApiVehicleMax() -> Int32 = 4
+  public static func ApiLootReach() -> Float = 100.0
+  // Much Better Contracts (2.7.5): at most this many of its completed contracts counted as jobs at one look, so a count
+  // that jumps for any other reason (its own history repair) cannot pour Renown in.
+  public static func MbcJobsPerLook() -> Int32 = 3
   public static func GoodsShare() -> Float = 0.3
   public static func GoodsWorthMult() -> Float = 1.4
   public static func GoodsStalePerDay() -> Float = 0.2

@@ -1065,6 +1065,14 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
     if crewSeated {
       return false;
     }
+    // Never the car V is sitting in (2.7.5): a gang's car V took after its crew went down still carries Cyberbane's tags,
+    // and whatever ended the thing it came with (a convoy released, Start over, an event over) deleted it from under V.
+    // It waits as an orphan, and goes once V has left it and cannot see it.
+    let player = GetPlayer(game);
+    let vCar = IsDefined(player) ? player.GetMountedVehicle() : null;
+    if IsDefined(vCar) && Equals(vCar.GetEntityID(), id) {
+      return false;
+    }
   } else {
     let p = ent as ScriptedPuppet;
     if IsDefined(p) {

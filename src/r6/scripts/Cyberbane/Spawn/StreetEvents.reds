@@ -757,7 +757,8 @@ public class CBEventEngine {
 
   // An add-on's kind takes the one event slot (API/EventKinds.reds): set where it says, starting on the quarter hour, its
   // window as long as a gathering's, announced in the handler's words from the district.
-  public func StartApi(sys: ref<CyberbaneSystem>, game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float) -> Bool {
+  public func StartApi(sys: ref<CyberbaneSystem>, game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float,
+                       sender: CName) -> Bool {
     if IsDefined(this.m_ev) {
       return false;
     }
@@ -776,8 +777,14 @@ public class CBEventEngine {
     this.m_ev = ev;
     this.KeepPin(game);
     let text = api.Announce(game, ev);
+    let reqs = CBApiRequests.Get(game);
+    let senderKey = IsNameValid(sender) && IsDefined(reqs) ? reqs.SenderKey(sender) : n"";
     if StrLen(text) > 0 && CBMessagesOn() {
-      CBPhoneFromDistrict(game, ev.district, text);
+      if IsNameValid(senderKey) {
+        CBPhoneSendTinted(game, CBT(senderKey), text, CBHudCyan());
+      } else {
+        CBPhoneFromDistrict(game, ev.district, text);
+      }
     }
     CBLog.Info(n"Street", s"An add-on's \(NameToString(kind)) is set for \(CBClockWord(ev.from)).");
     return true;
@@ -815,22 +822,40 @@ public class CBEventEngine {
 // on a street, its district the game's own (FastTravelPoint_Record), and its pin's position is the terminal's.
 func CBEventFarPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, out spot: Vector4,
                      out name: String) -> Bool {
+  if !IsDefined(player) {
+    return false;
+  }
+  let picks: array<Vector4>;
+  let names: array<String>;
+  let n = CBFastTravelPlaces(sys, game, sys.GetCurrentDistrict(), player.GetWorldPosition(), CBConfig.EventPlaceMin(),
+                             CBConfig.EventPlaceMax(), picks, names);
+  if n == 0 {
+    return false;
+  }
+  let k = RandRange(0, n);
+  spot = picks[k];
+  name = names[k];
+  return true;
+}
+
+// The fast-travel points of a district between two distances from a point, where somebody can stand, with their names:
+// where the street's events are held, and what an add-on's FindPlaces answers (2.7.5).
+func CBFastTravelPlaces(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName, from: Vector4, minDistance: Float,
+                        maxDistance: Float, out picks: array<Vector4>, out names: array<String>) -> Int32 {
+  ArrayClear(picks);
+  ArrayClear(names);
   // Never while a load or a fast travel is under way (2.7.0): the crash came during a quickload, with the travel points and
   // their records being put back.
   if !CBWorldStable(game) {
-    return false;
+    return 0;
   }
-  let district = sys.GetCurrentDistrict();
   let container = GameInstance.GetScriptableSystemsContainer(game);
   let fts = IsDefined(container) ? container.Get(n"FastTravelSystem") as FastTravelSystem : null;
   let ms = GameInstance.GetMappinSystem(game);
-  if Equals(district, n"") || !IsDefined(fts) || !IsDefined(ms) || !IsDefined(player) {
-    return false;
+  if Equals(district, n"") || !IsDefined(fts) || !IsDefined(ms) {
+    return 0;
   }
-  let ppos = player.GetWorldPosition();
   let points = fts.GetFastTravelPoints();
-  let picks: array<Vector4>;
-  let names: array<String>;
   for pt in points {
     if IsDefined(pt) {
       let pointId = pt.GetPointRecord();
@@ -852,8 +877,8 @@ func CBEventFarPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
         let pin = ms.GetMappin(pt.mappinID);
         if IsDefined(pin) {
           let at = pin.GetWorldPosition();
-          let away = Vector4.Distance(ppos, at);
-          if away >= CBConfig.EventPlaceMin() && away <= CBConfig.EventPlaceMax() && CBLairPointUsable(sys, game, at) {
+          let away = Vector4.Distance(from, at);
+          if away >= minDistance && away <= maxDistance && CBLairPointUsable(sys, game, at) {
             ArrayPush(picks, at);
             ArrayPush(names, GetLocalizedText(rec.DisplayName()));
           }
@@ -861,14 +886,7 @@ func CBEventFarPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
       }
     }
   }
-  let n = ArraySize(picks);
-  if n == 0 {
-    return false;
-  }
-  let k = RandRange(0, n);
-  spot = picks[k];
-  name = names[k];
-  return true;
+  return ArraySize(picks);
 }
 
 // Where it is, in the word on it (2.6.8): by the place's name when it has one, else near here.

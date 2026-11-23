@@ -27,6 +27,24 @@ public func CBDistrictLabel(id: CName) -> String {
   return "";
 }
 
+// A faction Cyberbane does not name itself (an add-on's, CyberbaneAPI.RegisterFaction): named from its profile (2.7.5, the
+// nomad expansion's R1: a registered nation showed as a row with no title, and every text that named it said nothing).
+// The label ("the Wraiths") or the name ("Wraiths"), each falling back to the display key it was registered with.
+public func CBFactionProfileName(id: CName, label: Bool) -> String {
+  let content = CyberbaneContent.Get();
+  let p = IsDefined(content) && NotEquals(id, n"") ? content.GetFaction(id) : null;
+  if !IsDefined(p) {
+    return "";
+  }
+  if label && IsNameValid(p.labelKey) {
+    return CBT(p.labelKey);
+  }
+  if !label && IsNameValid(p.nameKey) {
+    return CBT(p.nameKey);
+  }
+  return StrLen(p.displayKey) > 0 ? CBT(StringToName(p.displayKey)) : "";
+}
+
 public func CBFactionLabel(id: CName) -> String {
   if Equals(id, n"Maelstrom") { return CBT(n"Cyberbane-TitleNaming-Maelstrom"); }
   if Equals(id, n"TygerClaws") { return CBT(n"Cyberbane-TitleNaming-TheTygerClaws"); }
@@ -45,7 +63,7 @@ public func CBFactionLabel(id: CName) -> String {
   if Equals(id, n"KangTao") { return CBT(n"Cyberbane-TitleNaming-KangTao"); }
   if Equals(id, n"NCPD") { return CBT(n"Cyberbane-TitleNaming-TheNCPD"); }
   if Equals(id, n"MaxTac") { return CBT(n"Cyberbane-TitleNaming-MaxTac"); }
-  return "";
+  return CBFactionProfileName(id, true);
 }
 
 // A gang's name on its own, with no article: a phone contact, a bar over a head (2.7.1). Said where a stripped label used to
@@ -68,7 +86,7 @@ public func CBFactionName(id: CName) -> String {
   if Equals(id, n"KangTao") { return CBT(n"Cyberbane-TitleNaming-KangTao"); }
   if Equals(id, n"NCPD") { return CBT(n"Cyberbane-TitleNaming-NCPD"); }
   if Equals(id, n"MaxTac") { return CBT(n"Cyberbane-TitleNaming-MaxTac"); }
-  return "";
+  return CBFactionProfileName(id, false);
 }
 
 // The same, to start a sentence with: "the Tyger Claws" opens with a small letter.

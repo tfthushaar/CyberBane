@@ -3,6 +3,40 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.7.5 (23 November 2026)
+
+**New: works with Much Better Contracts (Repeatable Gigs)**
+- Detected automatically; nothing to set.
+- Its contracts are jobs to Cyberbane, like any gig: nobody Cyberbane sends comes for you at a contract's site, and the
+  people there are left alone.
+- While one of its contracts is running and you are in a fight, Cyberbane sends nobody new into it. Its own pursuit is
+  all you face.
+- Each contract it pays you for counts as a finished job, the way a gig does, for your Renown and your name as a
+  professional. Its pay is left as it set it: Cyberbane's gig bonus is not added on top.
+- A gig played again is still one stronghold base, not two gangs holding the same building. A job running at a base makes
+  the Rival there wait instead of losing the base.
+
+**Fixed**
+- A car you took from a gang could be deleted from under you, with you sitting in it, when whatever it came with ended.
+  Cyberbane never removes the car you are in now; it waits until you have left it and it is out of sight.
+- Selling your crew's goods to another gang made a check the crash rules forbid. It is done the safe way now.
+- Whether a translation loaded is written to the log now, so a translator can see it at once.
+
+**For mod authors: API level 2**
+- New calls, guarded by the `Cyberbane.Api2` module: a regular `OnTick`, `WorldStable`, where V is (`CurrentDistrict`,
+  `PlaceName`), places near V (`FindPlaces`), two groups or a group and a convoy set hostile or neutral to each other, an
+  empty vehicle (wrecked if you like), loot in the world, how a convoy ended and its people, faction names, moving a pin,
+  Rivals to read, a History line of your own, and events announced by your own contact. See README, **For mod authors**.
+- Fixed in level 1: a registered faction had no name anywhere (the Gangs page showed a blank row). A convoy whose people
+  all died while it drove, or that you left behind in a fight, never ended. People asked for on your side stood and
+  watched your enemies shoot you; they fight them now, the way your crew does. An answer to a question by text reached the
+  add-on inside the phone's handler; it arrives on Cyberbane's tick now. `OnSettled` came after a load but never after a
+  scene or a fast travel; it comes after all three.
+
+**For translators:** one new line, `Cyberbane-Compat-AContractSFight` (in `DefineGangCodes`).
+
+Your progress carries over.
+
 ## 2.7.4 (23 November 2026)
 
 **Fixed: a crash with a translation installed**
