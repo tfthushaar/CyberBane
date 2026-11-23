@@ -2592,7 +2592,7 @@ public func CBCrewSummary(sys: ref<CyberbaneSystem>, game: GameInstance) -> Stri
     // lends one as soon as it is Friendly (2.5.0), not only when it "would die for you".
     return CBT(n"Cyberbane-Crew-NobodyWorksForYouYetFour");
   }
-  let out = CBTf(n"Cyberbane-Crew-OfOnTheRoster", [s"\(book.Count())", s"\(CBConfig.MyCrewRoster())"]);
+  let out = CBTf(n"Cyberbane-Crew-OfOnTheRoster", [s"\(book.Count())", s"\(CBConfig.MyCrewRoster())"]) + CBCrewMoneyLine(game);
   if book.CutOwed() > 0 {
     out += CBTf(n"Cyberbane-Crew-TheyAreOwedEb", [s"\(book.CutOwed())"]);
   } else {

@@ -340,6 +340,7 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 }
 
 func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Bool {
+  CBRivalTakeSignature(sys, game, r);   // high enough, they come back chromed (Rivals/Signature.reds, 2.7.2)
   // By car whenever a car can be sent, on foot only when it cannot. They get out when the car
   // reaches V, or keep chasing if V is driving.
   if CBRivalByCar(sys, game, r) {

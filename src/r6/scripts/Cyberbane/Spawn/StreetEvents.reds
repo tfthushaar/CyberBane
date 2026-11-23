@@ -111,6 +111,8 @@ public class CBStreetEvent {
   public let heldSaid: Bool;
   // The name of the place, when it is a data terminal's (2.6.8): what the word on it calls it. "" for one near V.
   public let placeName: String;
+  // V was close enough to see it, after its time, while its people could not yet be put in the world (2.7.2).
+  public let watched: Bool;
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -425,6 +427,7 @@ public class CBEventEngine {
     // the time on the pin was never given anybody ("I went there and there's nothing"). Whoever cannot be put there out
     // of V's sight comes from further off and walks in (Place).
     if !ev.placed && !storyBusy && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() {
+      ev.watched = true;
       ev.placed = this.Place(sys, game, des, player, ev);
       ev.placedTick = sys.GetTickCount();
       if !ev.placed {
@@ -579,10 +582,16 @@ public class CBEventEngine {
       ring += 1;
     }
     // V at the place, or looking at it (2.6.3): the rest come from further out, out of sight, and walk to their spot.
+    // Out to 70 m (2.7.2): a player watching the place from across the street had every point within 30 m of it in
+    // view, so nobody could be put in the world, the time came and went, and the word said later it had happened. Points
+    // that far out are behind something, and the people placed there walk in while V watches. Never further from V
+    // than MeetWalkInReach, which is as far as the world round V is sure to be loaded.
+    let rings: array<Float> = [12.0, 18.0, 24.0, 30.0, 42.0, 56.0, 70.0];
     let outer = 0;
-    while outer < 4 && ArraySize(ev.ids) < want {
-      let far = 12.0 + Cast<Float>(outer) * 6.0;
-      let slotsOut = 10 + outer * 2;
+    while outer < ArraySize(rings) && ArraySize(ev.ids) < want {
+      let far = rings[outer];
+      let slotsOut = Min(10 + outer * 2, 18);
+      outer += 1;
       let o = 0;
       while o < slotsOut && ArraySize(ev.ids) < want {
         let angOut = Cast<Float>(o) * 6.28318 / Cast<Float>(slotsOut);
@@ -590,6 +599,7 @@ public class CBEventEngine {
         let snappedOut: Vector4;
         let atOut: Vector4;
         if CBNavSnap(game, ev.at.X + CosF(angOut) * far, ev.at.Y + SinF(angOut) * far, ev.at.Z, snappedOut)
+           && Vector4.Distance(ppos, snappedOut) <= CBConfig.MeetWalkInReach()
            && CBSettleOnGround(game, snappedOut, atOut) && CBPointHiddenFrom(game, ppos, fwd, atOut)
            && CBStandsWith(game, atOut, ev.at, CBConfig.GroundMaxDrop()) && CBLairPointUsable(sys, game, atOut) {
           let n2 = ArraySize(ev.ids);
@@ -613,7 +623,6 @@ public class CBEventEngine {
           }
         }
       }
-      outer += 1;
     }
     let placed = ArraySize(ev.ids);
     // Said once, when it is in place: a try that placed nobody is tried again next tick.
@@ -1046,6 +1055,11 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
       CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-WhateverStartedNearThereItFizzled", [s"\(a)"]));
     }
     return;
+  }
+  // V was watching the place and its people could never be put in the world unseen: they saw V first and took it
+  // somewhere else, which is what V saw happen (2.7.2).
+  if ev.watched && !ev.placed {
+    CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-SpottedYouWatching", [s"\(CBCapFirst(a))"]));
   }
   if Equals(ev.kind, CBEvSitDown()) {
     CBMeetSettled(sys, game, ev);   // what the deal was, and what came of it (2.6.5)

@@ -598,6 +598,22 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
   @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewJobs")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewJobs-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let crewJobs: Bool = true;   // 2.7.2
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewDuels")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewDuels-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let crewDuels: Bool = true;   // 2.7.2
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewFrightJoin")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewFrightJoin-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
@@ -1225,6 +1241,27 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangHomes")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangHomes-Desc")
   public let gangHomes: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalSignature")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalSignature-Desc")
+  public let rivalSignature: Bool = true;   // 2.7.2
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
+  @runtimeProperty("ModSettings.category.order", "3")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Strongholds")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Strongholds-Desc")
+  public let strongholds: Bool = true;   // 2.7.2
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-BagGoods")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-BagGoods-Desc")
+  public let bagGoods: Bool = true;   // 2.7.2
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")

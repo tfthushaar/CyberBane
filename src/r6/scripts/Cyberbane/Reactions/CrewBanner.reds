@@ -481,6 +481,10 @@ public func CBCrewWorkOf(game: GameInstance, id: Int32) -> Int32 {
   if IsDefined(gb) && gb.IsGuard(id) {
     return CBCrewWorkGuard();
   }
+  let jb = CBCrewJobBook.Get(game);
+  if IsDefined(jb) && jb.IsRunner(id) {
+    return CBCrewWorkRunner();
+  }
   if CBCrewIsRecruiter(game, id) {
     return 2;
   }
@@ -504,7 +508,13 @@ public func CBCrewNextWork(game: GameInstance, id: Int32) -> Int32 {
   }
   if now == 1 || now == 2 {
     let gb = CBGuardBook.Get(game);
-    return CBGuardsOn() && IsDefined(gb) && gb.Count() < CBGuardsMax() ? CBCrewWorkGuard() : 0;
+    if CBGuardsOn() && IsDefined(gb) && gb.Count() < CBGuardsMax() {
+      return CBCrewWorkGuard();
+    }
+  }
+  // Then running the money to V (2.7.2).
+  if now != CBCrewWorkRunner() && CBCrewJobsOn() {
+    return CBCrewWorkRunner();
   }
   return 0;
 }
@@ -513,6 +523,7 @@ public func CBCrewWorkWord(work: Int32) -> String {
   if work == 1 { return CBT(n"Cyberbane-CrewBanner-Earning"); }
   if work == 2 { return CBT(n"Cyberbane-CrewBanner-Recruiting"); }
   if work == 3 { return CBT(n"Cyberbane-CrewHome-WatchingTheHouse"); }
+  if work == 4 { return CBT(n"Cyberbane-CrewJobs-RunningTheMoney"); }
   return CBT(n"Cyberbane-CrewBanner-None");
 }
 
@@ -540,6 +551,15 @@ public func CBCrewSetWork(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<
   } else {
     CBGuardStandDown(game, m.id);
   }
+  let jb = CBCrewJobBook.Get(game);
+  if IsDefined(jb) {
+    if next == CBCrewWorkRunner() {
+      jb.AddRunner(m.id);
+      CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewJobs-IllRunTheMoney"));
+    } else {
+      jb.RemoveRunner(m.id);
+    }
+  }
   if next == 1 {
     CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewBanner-ILlWorkTheStreetFor"));
   }
@@ -559,6 +579,10 @@ public func CBCrewBannerLeaves(game: GameInstance, id: Int32) -> Void {
     bb.SetRecruiter(0);
   }
   CBGuardStandDown(game, id);
+  let jb = CBCrewJobBook.Get(game);
+  if IsDefined(jb) {
+    jb.Forget(id);
+  }
 }
 
 // ---- On the tick ----------------------------------------------------------------------------------------------------

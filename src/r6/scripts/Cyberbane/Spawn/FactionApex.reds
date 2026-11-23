@@ -318,10 +318,11 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   // how V fights. A Rival lasts longer than one of a squad, and grows into it: a new one brings part of it.
   let desMatch = GameInstance.GetDynamicEntitySystem();
   let matchId = puppet.GetEntityID();
-  let isApex = IsDefined(desMatch) && desMatch.IsTagged(matchId, n"CB_Apex");
+  let isApex = IsDefined(desMatch) && (desMatch.IsTagged(matchId, n"CB_Apex") || desMatch.IsTagged(matchId, n"CB_HoldLt"));
   // A named bounty hunter is measured as a Rival is, at their rank on the ladder.
   let isRival = IsDefined(desMatch) && (desMatch.IsTagged(matchId, n"CB_Rival") || desMatch.IsTagged(matchId, n"CB_Lair")
-                                        || desMatch.IsTagged(matchId, n"CB_Bounty"));
+                                        || desMatch.IsTagged(matchId, n"CB_Bounty")
+                                        || (desMatch.IsTagged(matchId, n"CB_Hold") && !desMatch.IsTagged(matchId, n"CB_HoldLt")));
   let counters = "";
   let measure: ref<CBVMeasure>;
   let npcDamageMult = 1.0;

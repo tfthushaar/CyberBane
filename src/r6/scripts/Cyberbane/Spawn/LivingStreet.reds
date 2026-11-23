@@ -493,6 +493,19 @@ public class CBStreetLife {
 
   private func Robbed(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let take = CBConfig.BagmanTakeBase() + RandRange(0, CBConfig.BagmanTakeBase() + 1);
+    // Now and then it is the gang's goods instead of cash (Reactions/CrewJobs.reds, 2.7.2). Taken quietly (the bagman
+    // only knocked out, and no fight on) the gang has to hear of it first.
+    let bagman = GameInstance.FindEntityByID(game, this.m_bagBody) as ScriptedPuppet;
+    let player = GetPlayer(game);
+    let quiet = IsDefined(bagman) && !bagman.IsDead() && IsDefined(player) && !player.IsInCombat();
+    if CBGoodsFromBag(sys, game, this.m_bagFaction, take, quiet) {
+      if !quiet || RandF() < CBConfig.CrewBagKnownChance() {
+        CBTalkSlight(sys, game, this.m_bagFaction, CBConfig.BagmanStandingLoss());
+      }
+      CBWeakenGang(sys, game, this.m_bagFaction, CBConfig.BagmanGangLoss());
+      CBFileLog(sys, n"BagmanRobbed", CBGameSeconds(game), CBEventDistrict(sys, game), this.m_bagFaction, 0.0);
+      return;
+    }
     CBStreetGiveMoney(game, take);
     CBWarSpend(game, this.m_bagFaction, Cast<Float>(take) * CBConfig.BagmanChestShare());   // the week's take (2.4.0)
     CBWeakenGang(sys, game, this.m_bagFaction, CBConfig.BagmanGangLoss());

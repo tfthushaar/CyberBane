@@ -177,7 +177,7 @@ public class CBMapBook extends ScriptableSystem {
     while ArraySize(this.m_memories) >= CBConfig.MapMemoryKept() {
       let oldest = 0;
       while oldest < ArraySize(this.m_memories) - 1 && IsDefined(this.m_memories[oldest])
-            && this.m_memories[oldest].kind == CBMemGangHome() {
+            && (this.m_memories[oldest].kind == CBMemGangHome() || this.m_memories[oldest].kind == CBMemStronghold()) {
         oldest += 1;
       }
       ArrayErase(this.m_memories, oldest);
@@ -334,7 +334,7 @@ public func CBMapMemoryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   while i >= 0 {
     let m = book.At(i);
     i -= 1;
-    if IsDefined(m) && m.kind != CBMemGangHome() && now - m.at > life {
+    if IsDefined(m) && m.kind != CBMemGangHome() && m.kind != CBMemStronghold() && now - m.at > life {
       book.Unpin(ms, m.id);
       book.Forget(m);
     }
@@ -345,7 +345,8 @@ public func CBMapMemoryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     let m = book.At(i);
     i += 1;
     if IsDefined(m) {
-      let show = m.kind == CBMemGangHome() ? CBGangHomeShown(sys, game, m.a) : remember;
+      let show = m.kind == CBMemGangHome() ? CBGangHomeShown(sys, game, m.a)
+                 : (m.kind == CBMemStronghold() ? CBStrongholdShown(game, m.subject) : remember);
       if !show && book.IsPinned(m.id) {
         book.Unpin(ms, m.id);
       } else {
@@ -384,6 +385,9 @@ public func CBMapMemoryTitle(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   if m.kind == CBMemGangHome() {
     return CBGangHomePinTitle(m);
   }
+  if m.kind == CBMemStronghold() {
+    return CBStrongholdPinTitle(sys, m);
+  }
   if m.kind == CBMemEventCrashed() {
     return CBEventCaptionOf(m.what, m.a, m.b);
   }
@@ -404,6 +408,9 @@ public func CBMapMemoryDesc(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   }
   if m.kind == CBMemGangHome() {
     return CBGangHomePinDesc(sys, m);
+  }
+  if m.kind == CBMemStronghold() {
+    return CBStrongholdPinDesc(sys, m);
   }
   let ago = CBMapAgo(game, m.at);
   if m.kind == CBMemRivalFell() {
@@ -434,6 +441,7 @@ public func CBMapMemoryPart(sys: ref<CyberbaneSystem>, id: Int32) -> CName {
   let m = IsDefined(book) ? book.Find(id) : null;
   if IsDefined(m) && m.kind == CBMemEventCrashed() { return n"dynamic_event"; }
   if IsDefined(m) && m.kind == CBMemTakeover() { return n"outpost"; }
+  if IsDefined(m) && m.kind == CBMemStronghold() { return n"outpost"; }
   return n"";
 }
 
@@ -445,5 +453,6 @@ public func CBMapMemoryTint(sys: ref<CyberbaneSystem>, id: Int32) -> HDRColor {
   if IsDefined(m) && m.kind == CBMemTakeover() { return CBHudCyan(); }
   if IsDefined(m) && m.kind == CBMemCrewFell() { return CBHudGreen(); }
   if IsDefined(m) && m.kind == CBMemGangHome() { return CBHudCyan(); }
+  if IsDefined(m) && m.kind == CBMemStronghold() { return CBHudRed(); }
   return CBHudRed();
 }

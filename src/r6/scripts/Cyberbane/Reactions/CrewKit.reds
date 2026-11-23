@@ -90,7 +90,8 @@ public class CBCrewKitAsk {
   public let member: Int32;
   public let what: Int32;     // CBCrewAskGive .. CBCrewAskWork
   public let item: ItemID;    // the weapon or the chrome
-  public let gang: CName;     // the war's gang
+  public let gang: CName;     // the war's gang, or a job's
+  public let rival: Int32;    // a hit's Rival (2.7.2)
 }
 
 public func CBCrewAskGive() -> Int32 = 1
@@ -184,7 +185,7 @@ public class CBCrewKitBook extends ScriptableSystem {
   }
 
   // An order for a member, in place of any of the same kind already asked for them.
-  public func Ask(member: Int32, what: Int32, item: ItemID, gang: CName) -> Void {
+  public func Ask(member: Int32, what: Int32, item: ItemID, gang: CName, opt rival: Int32) -> Void {
     if member <= 0 {
       return;
     }
@@ -194,6 +195,7 @@ public class CBCrewKitBook extends ScriptableSystem {
     a.what = what;
     a.item = item;
     a.gang = gang;
+    a.rival = rival;
     ArrayPush(this.asks, a);
   }
 
@@ -763,7 +765,7 @@ public func CBCrewTrainHours(k: ref<CBCrewKit>) -> Float {
 public func CBCrewAway(game: GameInstance, id: Int32, now: Float) -> Bool {
   let kb = CBCrewKitBook.Get(game);
   let k = IsDefined(kb) ? kb.Find(id) : null;
-  return IsDefined(k) && (k.trainUntil > now || k.warUntil > now);
+  return (IsDefined(k) && (k.trainUntil > now || k.warUntil > now)) || CBCrewJobAway(game, id, now);
 }
 
 // "TRAINING, 6H" or "AT WAR, 12H" for the card, "" when here.
@@ -775,6 +777,9 @@ public func CBCrewAwayWord(game: GameInstance, id: Int32, now: Float) -> String 
   }
   if k.trainUntil > now {
     return CBTf(n"Cyberbane-CrewKit-TRAININGH", [s"\(CeilF((k.trainUntil - now) / CBConfig.SecondsPerHour()))"]);
+  }
+  if CBCrewJobAway(game, id, now) {
+    return CBTf(n"Cyberbane-CrewJobs-ONAJOBH", [s"\(CBCrewJobHoursLeft(game, id, now))"]);
   }
   if k.warUntil > now {
     return CBTf(n"Cyberbane-CrewKit-ATWARH", [s"\(CeilF((k.warUntil - now) / CBConfig.SecondsPerHour()))"]);
@@ -1015,6 +1020,7 @@ public func CBCrewKitService(sys: ref<CyberbaneSystem>, game: GameInstance, book
   CBCrewKitReturns(sys, game, kb, book, now);
   CBCrewSparTick(sys, game, kb, book, now);
   CBCrewEarnTick(sys, game, kb, book, now);
+  CBCrewJobsTick(sys, game, book, now);   // jobs, the kitty, challenges and goods (Reactions/CrewJobs.reds, 2.7.2)
   CBCrewBannerTick(sys, game, now);
 }
 
@@ -1036,6 +1042,13 @@ func CBCrewKitCarryOut(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CB
   if a.what == CBCrewAskWar() { CBCrewSendToWar(sys, game, kb, m, a.gang, now); }
   if a.what == CBCrewAskSpar() { CBCrewSparStart(sys, game, kb, m, now); }
   if a.what == CBCrewAskWork() { CBCrewSetWork(sys, game, m); }   // earning, recruiting, or none (CrewBanner.reds)
+  // A job (2.7.2): a Rival's hit, or a gang's bag; and the answer to a challenge.
+  if a.what == CBCrewAskJob() {
+    CBCrewSendOnJob(sys, game, m, a.rival > 0 ? CBCrewJobHit() : CBCrewJobBag(), a.rival, a.gang);
+  }
+  if a.what == CBCrewAskDuel() {
+    CBCrewChallengeAccept(sys, game, m);
+  }
 }
 
 // What the Hub asked that touches nothing but V's bag and the crew's own books, done while the menu is still open
@@ -1352,8 +1365,14 @@ func CBCrewEarnTick(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
   if total <= 0 {
     return;
   }
-  CBStreetGiveMoney(game, total);
-  let note = CBTf(n"Cyberbane-CrewKit-YourCrewSWorkBroughtIn", [s"\(total)"]);
+  let jb = CBCrewJobBook.Get(game);
+  let toKitty = CBCrewJobsOn() && IsDefined(jb);
+  if toKitty {
+    jb.AddKitty(total);
+  } else {
+    CBStreetGiveMoney(game, total);
+  }
+  let note = toKitty ? CBTf(n"Cyberbane-CrewJobs-WorkIntoTheKitty", [s"\(total)"]) : CBTf(n"Cyberbane-CrewKit-YourCrewSWorkBroughtIn", [s"\(total)"]);
   if StrLen(hurt) > 0 {
     note += CBTf(n"Cyberbane-CrewKit-GotHurtDoingIt", [s"\(hurt)"]);
   }

@@ -1668,6 +1668,9 @@ public class CBStreetTalk {
     if choice == CBTalkActAskHome() {
       return CBTalkAnswerHome(sys, game, t, again);
     }
+    if choice == CBTalkActSellGoods() {
+      return CBGoodsSell(sys, game, t);
+    }
     if choice == CBTalkActCrewHolding() || choice == CBTalkActCrewGang() || choice == CBTalkActCrewHeard() {
       return CBCrewTalkAnswer(sys, game, t, choice, again);
     }
@@ -3306,6 +3309,11 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   // Business (1.9.7): what a gang at war with V will sell. Only when there is something to sell.
   if gang && CBTalkHasBusiness(sys, game, t) {
     ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-StreetTalk-DealLetSTalkBusiness"), CBTalkActBusiness(), t"ChoiceCaptionParts.PayIcon"));
+  }
+  // Goods from a robbed bag, to sell (Reactions/CrewJobs.reds, 2.7.2).
+  let goodsLine = gang ? CBGoodsTalkLine(sys, game, t) : null;
+  if IsDefined(goodsLine) {
+    ArrayPush(out, goodsLine);
   }
   // The line only this V has with them.
   let life = CBTalkLifepathLine(game, t);

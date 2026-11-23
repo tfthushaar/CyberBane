@@ -1310,6 +1310,12 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     return;
   }
   // One of V's own crew (Reactions/Crew.reds, 2.5.0): kitted for their seat, on the game's own follower role.
+  // A stronghold's garrison (Rivals/Strongholds.reds, 2.7.2).
+  if des.IsTagged(id, n"CB_Hold") {
+    CBSetUpHold(sys, game, puppet);
+    return;
+  }
+
   // One of V's crew at a post at home (Reactions/CrewHome.reds, 2.7.2).
   if des.IsTagged(id, n"CB_Guard") {
     CBSetUpGuard(sys, game, puppet);
@@ -1449,6 +1455,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     }
     // Their name in the scanner (UI/ScannerName.reds).
     CBMarkRivalBody(puppet, who);
+    CBRivalNoteBody(game, who, puppet);   // the body's sex, for a signature record (Rivals/Signature.reds, 2.7.2)
     // A named enemy that never uses cover or chrome is a ganger with a nameplate. A cyberpsycho
     // takes the lighter kit, which adds no armour on top of what they already have.
     // A Rival after a cyberpsychotic break fights like one (1.9.0).
@@ -1464,7 +1471,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
       CBApplyRivalApexBuff(sys, game, puppet, who, CBRivalRole(sys, who));
       // The bar says somebody is on you. One waiting at their place gets it when the fight
       // starts (CBLairPromote), not before.
-      if !isLair && CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() {
+      if !isLair && (CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() || CBRivalSignatureKind(who) > 0) {
         CBShowBossBar(puppet);
       }
     }

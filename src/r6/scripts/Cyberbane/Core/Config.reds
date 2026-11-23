@@ -1569,6 +1569,75 @@ public abstract class CBConfig {
   // The crew at home (2.7.2, Reactions/CrewHome.reds): the stash counts as the armory within ArmoryReach of V, and the
   // watch takes up a fight of Cyberbane's within GuardDefendRange of its post.
   public static func ArmoryReach() -> Float = 25.0
+  // The crew at work (2.7.2, Reactions/CrewJobs.reds). Odds: a base, plus CrewJobPerRank for each of the member's ranks
+  // and a little for gear, chrome, training and a spar's edge; a hit loses CrewHitPerRivalRank for each of the Rival's
+  // ranks and gains CrewHitFlawBonus when the crew knows the weak spot. Hours away; a hit that misses leaves the Rival
+  // wounded CrewHitWoundShare of the time; a job gone wrong kills the member up to CrewJobDeathBase (less by rank).
+  public static func CrewJobPerRank() -> Float = 0.06
+  public static func CrewHitBase() -> Float = 0.30
+  public static func CrewHitPerRivalRank() -> Float = 0.08
+  public static func CrewHitFlawBonus() -> Float = 0.15
+  public static func CrewHitMinRank() -> Int32 = 3
+  public static func CrewHitHoursBase() -> Float = 4.0
+  public static func CrewHitWoundShare() -> Float = 0.45
+  public static func CrewJobDeathBase() -> Float = 0.40
+  public static func CrewJobHurtHours() -> Float = 12.0
+  public static func CrewBagBase() -> Float = 0.40
+  public static func CrewBagMinRank() -> Int32 = 2
+  public static func CrewBagHours() -> Float = 3.0
+  public static func CrewBagTakeBase() -> Int32 = 600
+  public static func CrewBagTakePerRank() -> Int32 = 250
+  public static func CrewBagMemberShare() -> Float = 0.2
+  public static func CrewBagKnownChance() -> Float = 0.4
+  public static func CrewBagDeathChance() -> Float = 0.1
+  public static func CrewDuelBase() -> Float = 0.35
+  public static func CrewDuelHours() -> Float = 2.0
+  public static func CrewDuelFear() -> Float = 4.0
+  public static func CrewDuelStanding() -> Float = 4.0
+  public static func CrewDuelStandingCeiling() -> Float = 50.0
+  public static func CrewDuelChancePerDay() -> Float = 0.25
+  public static func CrewDuelAnswerHours() -> Float = 24.0
+  public static func CrewDuelGapDays() -> Float = 3.0
+  public static func CrewDuelRefuseFear() -> Float = 3.0
+  // The money run: every CrewRunDays, jumped CrewRunJumpBase of the time, more when a gang thinks CrewRunHatedBelow or
+  // worse of the crew, less for each runner beyond the first.
+  public static func CrewRunDays() -> Float = 2.0
+  public static func CrewRunJumpBase() -> Float = 0.10
+  public static func CrewRunHatedBelow() -> Int32 = -40
+  public static func CrewRunJumpHated() -> Float = 0.15
+  public static func CrewRunJumpPerExtra() -> Float = 0.05
+  // Goods (2.7.2): GoodsShare of robbed bags, worth GoodsWorthMult of the cash, losing GoodsStalePerDay of it a day and
+  // gone after GoodsLifeDays. Sold back to their owners for GoodsSellBackShare, to their sworn enemies for GoodsEnemyMult.
+  // Signature chrome (2.7.2, Rivals/Signature.reds): from this rank a Rival comes back on one of their gang's signature
+  // records, and is that much likelier to drop an iconic.
+  public static func SignatureRank() -> Int32 = 3
+  public static func LootIconicSignatureBonus() -> Float = 0.10
+  // Strongholds (2.7.2, Rivals/Strongholds.reds): a Rival of StrongholdMinRank or more takes a cleared base, at most
+  // StrongholdMax in the city, for StrongholdDays; the garrison is placed within StrongholdReach and goes past
+  // StrongholdLeave; StrongholdSize in all, only with StrongholdMinRoom free. Cleared, the gang loses StrongholdGangLoss
+  // (a Rival's own death is six) and ground in the district, and V is paid.
+  public static func StrongholdMinRank() -> Int32 = 3
+  public static func StrongholdMax() -> Int32 = 2
+  public static func StrongholdDays() -> Float = 7.0
+  public static func StrongholdChancePerDay() -> Float = 0.25
+  public static func StrongholdReach() -> Float = 150.0
+  public static func StrongholdLeave() -> Float = 250.0
+  public static func StrongholdMinRoom() -> Int32 = 6
+  public static func StrongholdSize() -> Int32 = 8
+  public static func StrongholdBaseCap() -> Int32 = 60
+  public static func StrongholdGangLoss() -> Float = 8.0
+  public static func StrongholdTurfLoss() -> Float = 25.0
+  public static func StrongholdPay() -> Int32 = 5000
+  public static func StrongholdLtGrade() -> Float = 0.8
+  public static func GoodsShare() -> Float = 0.3
+  public static func GoodsWorthMult() -> Float = 1.4
+  public static func GoodsStalePerDay() -> Float = 0.2
+  public static func GoodsLifeDays() -> Float = 4.0
+  public static func GoodsSellBackShare() -> Float = 0.5
+  public static func GoodsEnemyMult() -> Float = 1.5
+  public static func GoodsBackStanding() -> Float = 4.0
+  public static func GoodsBuyerStanding() -> Float = 3.0
+  public static func GoodsOwnerStanding() -> Float = 3.0
   public static func GuardDefendRange() -> Float = 40.0
   public static func KillableRivalSecondsLow() -> Float = 15.0
   public static func KillableRivalSecondsTop() -> Float = 30.0
@@ -2055,7 +2124,10 @@ public abstract class CBConfig {
   // more of play, before asking for a gang at war with the one holding the district.
   public static func MeetGapTicks() -> Int32 = 1800
   public static func MeetChance() -> Float = 0.5
-  public static func MeetSpawnDistance() -> Float = 90.0
+  // 2.7.2: 130 m, from 90: somebody watching from across the street or a roof never set a meeting off. Its people are
+  // placed no further than MeetWalkInReach from V (Spawn/StreetEvents.reds, Place).
+  public static func MeetSpawnDistance() -> Float = 130.0
+  public static func MeetWalkInReach() -> Float = 140.0
   public static func MeetWindowSeconds() -> Float = 5400.0
   // How far from V a gathering's place is (2.6.8, CBEventFarPlace), in metres: in V's district, a walk or a drive off.
   public static func EventPlaceMin() -> Float = 300.0

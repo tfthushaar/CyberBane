@@ -604,6 +604,11 @@ public class CBHud {
   private let m_crewCardShown: Bool;
   private let m_pickItems: array<ItemID>;
   private let m_pickGangs: array<CName>;
+  // A job's targets (screen 8, 2.7.2): a Rival's id for a hit, else the gang whose bag; and who can answer a challenge
+  // (screen 9).
+  private let m_pickJobRival: array<Int32>;
+  private let m_pickJobGang: array<CName>;
+  private let m_pickDuel: array<Int32>;
   private let m_nameInput: ref<HubTextInput>;
   private let m_rowNames: array<CName>;
   private let m_rowLayout: Int32;
@@ -2053,6 +2058,24 @@ public class CBHud {
       this.Render(sys, game);
       return;
     }
+    if this.m_tab == CBHudCrewTab() && (this.m_crewMode == 8 || this.m_crewMode == 9) {
+      // A job's target, or who answers a challenge (2.7.2): asked, carried out here and now like the other orders.
+      let pickJob = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] - 1 : -1;
+      let kbJob = CBCrewKitBook.Get(game);
+      let noJobItem: ItemID;
+      if IsDefined(kbJob) && pickJob >= 0 {
+        if this.m_crewMode == 8 && this.m_pickCrew > 0 && pickJob < ArraySize(this.m_pickJobRival) && pickJob < ArraySize(this.m_pickJobGang) {
+          kbJob.Ask(this.m_pickCrew, CBCrewAskJob(), noJobItem, this.m_pickJobGang[pickJob], this.m_pickJobRival[pickJob]);
+        }
+        if this.m_crewMode == 9 && pickJob < ArraySize(this.m_pickDuel) {
+          kbJob.Ask(this.m_pickDuel[pickJob], CBCrewAskDuel(), noJobItem, n"");
+        }
+        CBCrewKitDoNow(sys, game);
+      }
+      this.m_crewMode = this.m_crewMode == 8 ? 6 : 7;
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudCrewTab() && this.m_crewMode >= 5 {
       let code = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] : 0;
       if this.m_crewMode == 5 {
@@ -2120,7 +2143,7 @@ public class CBHud {
           CBLog.Info(n"Crew", s"V named the crew: \(kbName.Name()).");
         }
       }
-      this.m_crewMode = mode >= 1 && mode <= 3 ? 6 : (mode == 4 || mode == 5 ? 7 : 0);
+      this.m_crewMode = (mode >= 1 && mode <= 3) || mode == 8 ? 6 : (mode == 4 || mode == 5 || mode == 9 ? 7 : 0);
       this.m_pickFallen = 0;
       this.Render(sys, game);
       return;
@@ -4754,7 +4777,7 @@ public class CBHud {
     let w = CBHudContentW();
     let top = CBHudContentTop();
     let m = this.m_pickCrew > 0 ? book.Find(this.m_pickCrew) : null;
-    let forMember = (this.m_crewMode >= 1 && this.m_crewMode <= 3) || this.m_crewMode == 6;
+    let forMember = (this.m_crewMode >= 1 && this.m_crewMode <= 3) || this.m_crewMode == 6 || this.m_crewMode == 8;
     if forMember && !IsDefined(m) {
       this.m_crewMode = 0;
       return false;
@@ -4779,6 +4802,14 @@ public class CBHud {
     }
     if this.m_crewMode == 7 {
       this.RenderCrewRecord(sys, game, book);
+      return true;
+    }
+    if this.m_crewMode == 8 {
+      this.RenderCrewJobs(sys, game, book, m);
+      return true;
+    }
+    if this.m_crewMode == 9 {
+      this.RenderCrewDuel(sys, game, book);
       return true;
     }
     this.PlaceRows(CBHudLayoutCrew());
@@ -4904,14 +4935,36 @@ public class CBHud {
     let work = CBCrewWorkOf(game, m.id);
     let next = CBCrewNextWork(game, m.id);
     asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskWork());
-    let workLabel = next == 1 ? CBT(n"Cyberbane-Hud-PutThemToWorkEarning") : (next == 2 ? CBT(n"Cyberbane-Hud-PutThemToRecruiting") : CBT(n"Cyberbane-Hud-StopTheirWork"));
+    let workLabel = CBT(n"Cyberbane-Hud-StopTheirWork");
+    if next == 1 { workLabel = CBT(n"Cyberbane-Hud-PutThemToWorkEarning"); }
+    if next == 2 { workLabel = CBT(n"Cyberbane-Hud-PutThemToRecruiting"); }
+    if next == 3 { workLabel = CBT(n"Cyberbane-CrewHome-PutThemOnWatch"); }
+    if next == 4 { workLabel = CBT(n"Cyberbane-CrewJobs-PutThemOnTheMoney"); }
     this.CrewOrderRow(5, CBCrewAskWork(), asked ? CBT(n"Cyberbane-Hud-TellingThem") : workLabel, free || asked, asked,
                       CBTf(n"Cyberbane-Hud-Now", [s"\(CBCrewWorkWord(work))"]), work == 1 ? CBTf(n"Cyberbane-Hud-EBADAY", [s"\(CBConfig.CrewEarnPerRank() * rank)"]) : "");
+    // A job (2.7.2): a Rival's hit or a gang's bag, from Soldier up.
+    let onJob = CBCrewJobAway(game, m.id, now);
+    if !CBCrewJobsOn() {
+      this.CrewOrderRow(6, CBCrewAskJob(), CBT(n"Cyberbane-CrewJobs-SendThemOnAJob"), false, false, CBT(n"Cyberbane-CrewJobs-JobsOff"), "");
+    } else {
+      if onJob {
+        this.CrewOrderRow(6, CBCrewAskJob(), CBT(n"Cyberbane-CrewJobs-OnAJob"), false, false,
+                          CBTf(n"Cyberbane-Hud-AwayHours", [s"\(CBCrewJobHoursLeft(game, m.id, now))"]), "");
+      } else {
+        if rank < CBConfig.CrewBagMinRank() {
+          this.CrewOrderRow(6, CBCrewAskJob(), CBT(n"Cyberbane-CrewJobs-SendThemOnAJob"), false, false,
+                            CBTf(n"Cyberbane-Hud-Needs", [s"\(CBCrewRankWord(CBConfig.CrewBagMinRank()))"]), "");
+        } else {
+          this.CrewOrderRow(6, CBCrewAskJob(), CBT(n"Cyberbane-CrewJobs-SendThemOnAJob"), free && !hurt, false,
+                            hurt ? CBT(n"Cyberbane-Hud-HurtNotYet") : CBT(n"Cyberbane-CrewJobs-AHitOrABag"), "");
+        }
+      }
+    }
     // Letting them go, asked twice.
     if book.reqLetGo == m.id {
-      this.CrewOrderRow(6, CBHudCrewOrderLetGo(), CBT(n"Cyberbane-Hud-KeepThem"), true, true, CBT(n"Cyberbane-Hud-LeavingYourCrew"), "");
+      this.CrewOrderRow(7, CBHudCrewOrderLetGo(), CBT(n"Cyberbane-Hud-KeepThem"), true, true, CBT(n"Cyberbane-Hud-LeavingYourCrew"), "");
     } else {
-      this.CrewOrderRow(6, CBHudCrewOrderLetGo(), this.m_letGoArmed == m.id ? CBT(n"Cyberbane-Hud-ClickAgainToLetGo") : CBT(n"Cyberbane-Hud-LetThemGo"), !out, false,
+      this.CrewOrderRow(7, CBHudCrewOrderLetGo(), this.m_letGoArmed == m.id ? CBT(n"Cyberbane-Hud-ClickAgainToLetGo") : CBT(n"Cyberbane-Hud-LetThemGo"), !out, false,
                         out ? CBT(n"Cyberbane-Hud-WithYouWait") : "", "");
     }
     let text = CBTf(n"Cyberbane-Hud-OrdersHappenAsYouPickThem", [CBCrewFile(sys, game, book, m, false), CBCrewKitLines(sys, game, m)]);
@@ -4919,8 +4972,78 @@ public class CBHud {
       text = CBTf(n"Cyberbane-Hud-WithYouNowOrdersWaitUntil", [text]);
     }
     this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
-    let bodyTop = CBHudContentTop() + 7.0 * CBHudRowHeight() + 24.0;
+    let bodyTop = CBHudContentTop() + 8.0 * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
+  }
+
+  // A job's targets (2.7.2): the Rivals V knows that the crew can go after, from Veteran up, then the gangs whose bags they
+  // can take, with the odds each.
+  private func RenderCrewJobs(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>) -> Void {
+    this.PlaceRows(CBHudLayoutCrew());
+    ArrayClear(this.m_pickJobRival);
+    ArrayClear(this.m_pickJobGang);
+    let now = CBGameSeconds(game);
+    let rank = CBCrewRankOf(game, m);
+    let row = 0;
+    if rank >= CBConfig.CrewHitMinRank() {
+      for r in sys.GetRivals() {
+        if row < CBHudListRows() && CBCrewHitTarget(sys, game, r) {
+          let odds = CBCrewHitOdds(game, m, r, now);
+          this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBRivalDisplayName(sys.GetContent(), r),
+                      CBT(n"Cyberbane-CrewJobs-AHit"), "", CBTf(n"Cyberbane-Hud-AwayHours", [s"\(RoundF(CBConfig.CrewHitHoursBase() + 2.0 * Cast<Float>(r.rank)))"]),
+                      "", s"\(RoundF(odds * 100.0))%");
+          ArrayPush(this.m_pickJobRival, r.id);
+          ArrayPush(this.m_pickJobGang, r.faction);
+          this.m_rowCrew[row] = row + 1;
+          row += 1;
+        }
+      }
+    }
+    for g in CBCrewBagTargets(sys) {
+      if row < CBHudListRows() {
+        let oddsBag = CBCrewBagOdds(sys, game, m, g, now);
+        this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCapFirst(CBFactionLabel(g)),
+                    CBT(n"Cyberbane-CrewJobs-TheirBag"), "", CBTf(n"Cyberbane-Hud-AwayHours", [s"\(RoundF(CBConfig.CrewBagHours()))"]),
+                    "", s"\(RoundF(oddsBag * 100.0))%");
+        ArrayPush(this.m_pickJobRival, 0);
+        ArrayPush(this.m_pickJobGang, g);
+        this.m_rowCrew[row] = row + 1;
+        row += 1;
+      }
+    }
+    let intro = row == 0 ? CBT(n"Cyberbane-CrewJobs-NoTargets")
+                         : CBTf(n"Cyberbane-CrewJobs-PickAJob", [CBCrewName(sys, m), CBCrewRankWord(CBConfig.CrewHitMinRank())]);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
+    let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
+    this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
+  }
+
+  // Who answers a challenge (2.7.2): anybody here and not hurt, with the odds each.
+  private func RenderCrewDuel(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
+    this.PlaceRows(CBHudLayoutCrew());
+    ArrayClear(this.m_pickDuel);
+    let jb = CBCrewJobBook.Get(game);
+    let gang = IsDefined(jb) ? jb.ChallengeGang() : n"";
+    let now = CBGameSeconds(game);
+    let row = 0;
+    let i = 0;
+    while i < book.Count() && row < CBHudListRows() && NotEquals(gang, n"") {
+      let m = book.At(i);
+      i += 1;
+      if IsDefined(m) && !book.IsOut(m.id) && !CBCrewHurt(m, now) && !CBCrewAway(game, m.id, now) && !CBGuardPosted(game, m.id) {
+        let odds = CBCrewDuelOdds(sys, game, m, gang, now);
+        this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCrewName(sys, m), CBCrewRankWord(CBCrewRankOf(game, m)), "", "",
+                    "", s"\(RoundF(odds * 100.0))%");
+        ArrayPush(this.m_pickDuel, m.id);
+        this.m_rowCrew[row] = row + 1;
+        row += 1;
+      }
+    }
+    let intro = Equals(gang, n"") ? CBT(n"Cyberbane-CrewJobs-NoChallenge")
+                                  : (row == 0 ? CBT(n"Cyberbane-CrewJobs-NobodyToSend") : CBTf(n"Cyberbane-CrewJobs-PickForTheChallenge", [CBFactionLabel(gang)]));
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
+    let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
+    this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
   }
 
   private func CrewOrderRow(row: Int32, code: Int32, label: String, clickable: Bool, asked: Bool, detail: String, right: String) -> Void {
@@ -4950,6 +5073,7 @@ public class CBHud {
     if code == CBCrewAskGive() { this.m_crewMode = 1; }
     if code == CBCrewAskChrome() { this.m_crewMode = 2; }
     if code == CBCrewAskWar() { this.m_crewMode = 3; }
+    if code == CBCrewAskJob() { this.m_crewMode = 8; }
     if code == CBCrewAskTakeBack() || code == CBCrewAskTrain() || code == CBCrewAskSpar() || code == CBCrewAskWork() {
       kb.Ask(id, code, noItem, n"");
       CBCrewKitDoNow(CyberbaneSystem.Get(game), game);   // all but a spar, here and now
@@ -4984,9 +5108,33 @@ public class CBHud {
     this.m_rowCrew[1] = 2;
     let fallen = IsDefined(bb) ? bb.FallenCount() : 0;
     this.SetRow(2, CBHudLayoutCrew(), fallen > 0 ? CBHudLabel() : CBHudDim(), fallen > 0, false, CBT(n"Cyberbane-Hud-RememberTheFallen"), "", "",
-                fallen > 0 ? s"\(fallen) \(fallen == 1 ? "name" : "names")" : CBT(n"Cyberbane-Hud-NobodyYet"), "", "");
+                fallen > 0 ? (fallen == 1 ? CBT(n"Cyberbane-Hud-OneName") : CBTf(n"Cyberbane-Hud-Names", [s"\(fallen)"])) : CBT(n"Cyberbane-Hud-NobodyYet"), "", "");
     this.m_rowCrew[2] = 3;
     let row = 3;
+    // The kitty (2.7.2): taken at home.
+    let jbRec = CBCrewJobBook.Get(game);
+    if IsDefined(jbRec) && CBCrewJobsOn() {
+      let kitty = jbRec.Kitty();
+      let home = CBOnHomeGround(game);
+      this.SetRow(row, CBHudLayoutCrew(), kitty > 0 && home ? CBHudLabel() : CBHudDim(), kitty > 0 && home, false,
+                  CBT(n"Cyberbane-CrewJobs-TakeTheKitty"), "", "",
+                  kitty <= 0 ? CBT(n"Cyberbane-CrewJobs-KittyEmpty") : (home ? "" : CBT(n"Cyberbane-CrewJobs-AtHomeOnly")),
+                  "", CBTf(n"Cyberbane-Hud-EB", [s"\(kitty)"]));
+      this.m_rowCrew[row] = 4;
+      row += 1;
+      // A challenge waiting for an answer.
+      let chGang = jbRec.ChallengeGang();
+      if NotEquals(chGang, n"") {
+        this.SetRow(row, CBHudLayoutCrew(), CBHudAmber(), true, false, CBTf(n"Cyberbane-CrewJobs-AnswerChallenge", [CBPossessive(CBFactionLabel(chGang))]), "", "",
+                    CBTf(n"Cyberbane-CrewJobs-ChallengeHoursLeft", [s"\(Max(1, CeilF((jbRec.ChallengeUntil() - CBGameSeconds(game)) / CBConfig.SecondsPerHour())))"]), "", "");
+        this.m_rowCrew[row] = 5;
+        row += 1;
+        this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBT(n"Cyberbane-CrewJobs-TurnItDown"), "", "",
+                    CBT(n"Cyberbane-CrewJobs-TheyWillSayYouAreScared"), "", "");
+        this.m_rowCrew[row] = 6;
+        row += 1;
+      }
+    }
     // Its standing, worst first.
     let order: array<Int32>;
     let n = IsDefined(bb) ? bb.StandCount() : 0;
@@ -5026,6 +5174,25 @@ public class CBHud {
   }
 
   private func CrewRecordClicked(game: GameInstance, code: Int32) -> Void {
+    // The kitty, a challenge answered or turned down (2.7.2).
+    if code == 4 {
+      let took = CBKittyTake(game);
+      if took > 0 {
+        CBMenuNote(game, CBTf(n"Cyberbane-CrewJobs-YouTookTheKitty", [s"\(took)"]), 4.0);
+      }
+      return;
+    }
+    if code == 5 {
+      this.m_crewMode = 9;
+      return;
+    }
+    if code == 6 {
+      let jbNo = CBCrewJobBook.Get(game);
+      if IsDefined(jbNo) {
+        CBCrewChallengeRefused(CyberbaneSystem.Get(game), game, jbNo, true);
+      }
+      return;
+    }
     if code == 1 {
       this.m_crewMode = 4;
     }
@@ -6245,6 +6412,15 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
     let chrome = CBRivalChromeWords(r);
     if StrLen(chrome) > 0 {
       out += CBTf(n"Cyberbane-Hud-Chrome", [chrome]);
+    }
+    let signature = CBRivalSignatureKind(r);
+    if signature > 0 {
+      out += CBSignatureCardLine(signature) + "\n";
+    }
+    let holdBook = CBBaseBook.Get(game);
+    let holdAt = IsDefined(holdBook) ? holdBook.HoldIndexOfRival(r.id) : -1;
+    if holdAt >= 0 {
+      out += CBTf(n"Cyberbane-Strongholds-CardLine", [CBBaseName(game, holdBook.HoldBaseAt(holdAt))]);
     }
     let rivalBook = CBRivalBook.Get(game);
     let bondId = IsDefined(rivalBook) ? rivalBook.BondWith(r.id) : 0;

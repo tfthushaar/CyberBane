@@ -35,6 +35,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.DefineHomeGround();
     this.DefineGangHomes();
     this.DefineCrewHome();
+    this.DefineCrewJobs();
+    this.DefineRivalPlaces();
     this.DefineCyberbaneAPI();
     this.DefineSmasherEncounters();
     this.DefineCyberbaneRuntime();
@@ -5083,6 +5085,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // The map pin: {0} is the gang's name ("Mox"), {1} the place.
     this.Text("Cyberbane-GangHomes-PinTitle", "{0}: {1}");
     // {0} is the gang ("the Mox").
+    // A gang event V watched for, whose people never came: {0} is the gang ("The Mox").
+    this.Text("Cyberbane-StreetEvents-SpottedYouWatching", "{0} spotted somebody watching and took it somewhere else.");
     this.Text("Cyberbane-GangHomes-PinDesc", "Where {0} hang out. Come by and some of them will be around.");
   }
 
@@ -5162,6 +5166,135 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // Giving one of the crew a weapon of yours. {0} is the weapon.
     this.Text("Cyberbane-CrewKit-SeriousPiece", "{0}. That's a serious piece. I'll bring it back in one piece.");
     this.Text("Cyberbane-CrewKit-PutItToWork", "{0}. I'll put it to work.");
+  }
+
+  // Crew jobs, the kitty, challenges and goods (2.7.2, Reactions/CrewJobs.reds).
+  protected func DefineCrewJobs() -> Void {
+    this.Text("Cyberbane-Settings-CrewJobs", "Crew jobs and the kitty");
+    this.Text("Cyberbane-Settings-CrewJobs-Desc", "Send one of your crew on a job from their Orders: a hit on one of your Rivals (from Veteran up) or a gang's bag (from Soldier up). They are away a few hours and the odds decide how it goes, shown before you pick. What the crew brings in, from work and jobs, goes into the kitty: it pays their weekly cut by itself, you can take it from the Hub when you are home, and a member running the money drops it at your place every couple of days. Off: no jobs, and earnings come straight to you as before.");
+    this.Text("Cyberbane-Settings-CrewDuels", "Challenges to your crew");
+    this.Text("Cyberbane-Settings-CrewDuels-Desc", "Now and then the Tyger Claws or the Valentinos send a challenge: one of theirs against one of yours. Pick somebody on the Hub (Name, colours, the fallen) to win respect and fear, or turn it down and lose face with them.");
+    this.Text("Cyberbane-Settings-BagGoods", "Goods in stolen bags");
+    this.Text("Cyberbane-Settings-BagGoods-Desc", "Now and then a bagman's bag holds the gang's goods instead of cash. Sell them to somebody of another gang (their enemies pay best and the owners hear of it), or back to the owners for less. Goods go stale in a few days.");
+    // Orders and the Hub.
+    this.Text("Cyberbane-CrewJobs-SendThemOnAJob", "Send them on a job");
+    this.Text("Cyberbane-CrewJobs-JobsOff", "Crew jobs are off in Mod Settings");
+    this.Text("Cyberbane-CrewJobs-OnAJob", "On a job");
+    this.Text("Cyberbane-CrewJobs-AHitOrABag", "A Rival's hit, or a gang's bag");
+    // The card, upper case like the others. {0} is hours.
+    this.Text("Cyberbane-CrewJobs-ONAJOBH", "ON A JOB, {0}H");
+    this.Text("Cyberbane-CrewJobs-AHit", "A hit");
+    this.Text("Cyberbane-CrewJobs-TheirBag", "Their bag");
+    this.Text("Cyberbane-CrewJobs-NoTargets", "Nothing for them to go after: no Rival they can reach, and no gang whose bag they would take.");
+    // {0} is the member, {1} the rank a hit needs.
+    this.Text("Cyberbane-CrewJobs-PickAJob", "Pick a job for {0}. A hit on a Rival needs {1} or better; a bag needs less. The number is their chance. A hit that misses can still leave the Rival wounded and holed up for you to finish; a job gone wrong can cost you {0}.");
+    this.Text("Cyberbane-CrewJobs-RunningTheMoney", "running the money");
+    this.Text("Cyberbane-CrewJobs-PutThemOnTheMoney", "Put them on running the money");
+    this.Text("Cyberbane-CrewHome-PutThemOnWatch", "Put them on watching the house");
+    this.Text("Cyberbane-CrewJobs-TakeTheKitty", "Take the kitty");
+    this.Text("Cyberbane-CrewJobs-KittyEmpty", "empty");
+    this.Text("Cyberbane-CrewJobs-AtHomeOnly", "when you are home");
+    // {0} is the gang's, possessive (the Valentinos').
+    this.Text("Cyberbane-CrewJobs-AnswerChallenge", "Answer {0} challenge");
+    this.Text("Cyberbane-CrewJobs-ChallengeHoursLeft", "{0}h to answer");
+    this.Text("Cyberbane-CrewJobs-TurnItDown", "Turn it down");
+    this.Text("Cyberbane-CrewJobs-TheyWillSayYouAreScared", "they'll say your crew is scared of them");
+    this.Text("Cyberbane-CrewJobs-YouTookTheKitty", "you took {0} eddies out of the kitty.");
+    this.Text("Cyberbane-CrewJobs-NoChallenge", "Nobody is challenging your crew right now.");
+    this.Text("Cyberbane-CrewJobs-NobodyToSend", "Nobody to send: everybody is out with you, away, hurt or on watch.");
+    this.Text("Cyberbane-CrewJobs-PickForTheChallenge", "Pick who fights for your crew against one of {0}. The number is their chance. A win earns respect and fear; a loss and they crow about it.");
+    // Added to the crew summary; each starts with a space.
+    this.Text("Cyberbane-CrewJobs-KittyLine", " The kitty holds {0} eddies.");
+    this.Text("Cyberbane-CrewJobs-GoodsLine", " You are holding goods from {0} bag(s), worth about {1} eddies.");
+    this.Text("Cyberbane-Hud-OneName", "1 name");
+    this.Text("Cyberbane-Hud-Names", "{0} names");
+    // Texts from the crew. {0} is a Rival's name.
+    this.Text("Cyberbane-CrewJobs-OnMyWayToHit", "Going after {0}. Don't wait up.");
+    // {0} is the gang's, possessive ("the Mox's").
+    this.Text("Cyberbane-CrewJobs-GoingForTheBag", "Going for {0} bag. Back in a few hours.");
+    this.Text("Cyberbane-CrewJobs-IllTakeTheirBest", "I'll take their best. Tell {0} I'm coming.");
+    this.Text("Cyberbane-CrewJobs-AlreadyGone", "Got there and they were already gone. Somebody beat me to it, or they skipped town.");
+    this.Text("Cyberbane-CrewJobs-HitDone", "It's done. {0} won't be coming for you again.");
+    // {0} is the Rival, {1} where they are ("in Kabuki").
+    this.Text("Cyberbane-CrewJobs-HitWounded", "Put a round in {0}, but they got away. Holed up {1}. It's on your map. Finish it.");
+    this.Text("Cyberbane-CrewJobs-HitWoundedLost", "Put a round in {0}, but they got away. Lost them after that.");
+    // Sent from the Rival. {0} is your crew member.
+    this.Text("Cyberbane-CrewJobs-HitKilledMember", "Your {0} came for me. Your {0} is not coming home.");
+    this.Text("Cyberbane-CrewJobs-HitFailed", "{0} was ready for me. I got out, barely. They'll be worse now.");
+    // {0} is the gang's, possessive; {1} eddies; {2} the gang.
+    this.Text("Cyberbane-CrewJobs-BagDoneKnown", "Took {0} bag. {1} in the kitty. Somebody saw me, so {2} know it was us.");
+    this.Text("Cyberbane-CrewJobs-BagDone", "Took {0} bag. {1} in the kitty, and nobody saw a thing.");
+    // Sent from the gang. {0} is your crew member.
+    this.Text("Cyberbane-CrewJobs-BagKilledMember", "{0} came for our money. {0} is not coming back.");
+    this.Text("Cyberbane-CrewJobs-BagFailed", "{0} were waiting. Had to run for it. I'll heal.");
+    // Sent from the gang. {0} is your crew member's first name.
+    this.Text("Cyberbane-CrewJobs-DuelWon", "Your {0} fought clean and won. We'll remember that.");
+    this.Text("Cyberbane-CrewJobs-DuelLost", "Your {0} went down in front of everybody. Send somebody better next time.");
+    // {0} is the gang's, possessive.
+    this.Text("Cyberbane-CrewJobs-DuelLostMember", "Lost to {0} best. I'll live. I want a rematch.");
+    this.Text("Cyberbane-CrewJobs-Challenge", "One of yours against one of ours. Send your best, and everybody will know who won. Tell us on the Hub by tomorrow.");
+    this.Text("Cyberbane-CrewJobs-ChallengeRefused", "Nobody to send? We thought so.");
+    this.Text("Cyberbane-CrewJobs-ChallengeIgnored", "No answer. Your crew's scared of us, and now everybody knows.");
+    // {0} is eddies.
+    this.Text("Cyberbane-CrewJobs-KittyPaidTheCut", "Paid the crew's cut out of the kitty: {0}. Everybody's square.");
+    this.Text("Cyberbane-CrewJobs-WorkIntoTheKitty", "The crew's work brought in {0} eddies today. It's in the kitty.");
+    this.Text("Cyberbane-CrewJobs-IllRunTheMoney", "I'll run the kitty to your place every couple of days.");
+    // {0} is the gang, {1} eddies.
+    this.Text("Cyberbane-CrewJobs-RunJumped", "{0} jumped me on the way to your place. Lost {1}. The rest is still in the kitty.");
+    this.Text("Cyberbane-CrewJobs-RunDelivered", "Dropped {0} at your place. Count it if you like.");
+    // A note. {0} is the gang's, possessive; {1} eddies.
+    this.Text("Cyberbane-CrewJobs-BagWasGoods", "the bag isn't cash: it's {0} goods, worth about {1} eddies. Somebody of another gang will buy it.");
+    this.Text("Cyberbane-CrewJobs-GoodsWentStale", "goods you were holding went stale. Nobody will touch them now.");
+    // Talk.
+    this.Text("Cyberbane-CrewJobs-SellBack", "[Deal] I've got something of yours. Want it back?");
+    this.Text("Cyberbane-CrewJobs-SellTo", "[Deal] I've got {0} goods. Interested?");
+    this.Text("Cyberbane-CrewJobs-NothingToSell", "You got nothing I want.");
+    this.Text("Cyberbane-CrewJobs-BoughtBack", "That's ours. {0}, and be glad it's that much.");
+    this.Text("Cyberbane-CrewJobs-BoughtGladly", "{0} stuff? With pleasure. {1}, and their faces when they hear.");
+    this.Text("Cyberbane-CrewJobs-Bought", "{0} for the lot. Pleasure doing business.");
+  }
+
+  // Signature chrome and strongholds (2.7.2, Rivals/Signature.reds, Rivals/Strongholds.reds).
+  protected func DefineRivalPlaces() -> Void {
+    this.Text("Cyberbane-Settings-RivalSignature", "Signature chrome");
+    this.Text("Cyberbane-Settings-RivalSignature-Desc", "Rivals who climb high enough come back on their gang's signature fighters: mantis blades for Maelstrom and the Mox, gorilla arms for the Tyger Claws and the Wraiths, heavy machine guns, a Voodoo Boys netrunner. The street tells you first, their file says how they fight now, they get a boss bar, and they are likelier to drop an iconic.");
+    this.Text("Cyberbane-Settings-Strongholds", "Strongholds");
+    this.Text("Cyberbane-Settings-Strongholds-Desc", "A gang that hates you may put one of its top Rivals in a place you cleared on a gig, with lieutenants and a full squad. The street tells you where and it goes on your map. Kill the Rival to take it down for good: the gang loses the place and ground in the district, and you get paid. Left alone, they move on after a week. Only gigs finished with Cyberbane installed count.");
+    // Said on the street. {0} is the Rival, {1} what they fight with now ("mantis blades").
+    this.Text("Cyberbane-Signature-WordIs", "Word is {0} is back, with {1}.");
+    this.Text("Cyberbane-Signature-Mantis", "mantis blades");
+    this.Text("Cyberbane-Signature-Gorilla", "gorilla arms");
+    this.Text("Cyberbane-Signature-Heavy", "a heavy machine gun");
+    this.Text("Cyberbane-Signature-Netrunner", "a netrunner's deck");
+    this.Text("Cyberbane-Signature-Blade", "a blade, and the speed to use it");
+    this.Text("Cyberbane-Signature-Pistols", "a pistol in each hand");
+    this.Text("Cyberbane-Signature-Shotgun", "a shotgun");
+    this.Text("Cyberbane-Signature-Juice", "bare fists and a body full of Juice");
+    this.Text("Cyberbane-Signature-Sniper", "a sniper rifle");
+    // On a Rival's file.
+    this.Text("Cyberbane-Signature-CardMantis", "Mantis blades. Fights up close.");
+    this.Text("Cyberbane-Signature-CardGorilla", "Gorilla arms. Hits hard enough to break a guard.");
+    this.Text("Cyberbane-Signature-CardHeavy", "A heavy machine gun. Keep moving, keep cover.");
+    this.Text("Cyberbane-Signature-CardNetrunner", "A netrunner. Expect quickhacks; get to them fast.");
+    this.Text("Cyberbane-Signature-CardBlade", "A blade. Fights up close, and fast.");
+    this.Text("Cyberbane-Signature-CardPistols", "A pistol in each hand. Close the distance.");
+    this.Text("Cyberbane-Signature-CardShotgun", "A shotgun. Deadly up close; stay out of reach.");
+    this.Text("Cyberbane-Signature-CardJuice", "Bare fists and Juice. Keep them at range.");
+    this.Text("Cyberbane-Signature-CardSniper", "A sniper rifle. Close in under cover.");
+    // When the journal has no title for the gig.
+    this.Text("Cyberbane-Strongholds-AnOldJob", "a place from one of your old jobs");
+    // {0} is the Rival, {1} the place (a gig's title), {2} the district.
+    this.Text("Cyberbane-Strongholds-TookOver", "Word is {0} has taken over {1} in {2}, with half their crew. It's on your map.");
+    this.Text("Cyberbane-Strongholds-PinTitle", "{0}'s stronghold");
+    // {0} is the place, {1} the gang ("The Valentinos").
+    this.Text("Cyberbane-Strongholds-PinDesc", "{0}, held by {1}. Kill the one running it and the place falls.");
+    this.Text("Cyberbane-Strongholds-Emptied", "{0} cleared out of {1}. Whoever ran it is gone.");
+    // {0} is the Rival, {1} the place.
+    this.Text("Cyberbane-Strongholds-MovedOn", "Word is {0} moved on from {1}.");
+    // A note. {0} is the place, {1} the gang, {2} eddies.
+    this.Text("Cyberbane-Strongholds-Cleared", "you took {0} off {1}. They lost the place and the ground around it, and there were {2} eddies inside.");
+    // On the Rival's file, with a line break at the end. {0} is the place.
+    this.Text("Cyberbane-Strongholds-CardLine", "Holding {0} with half their crew.\n");
   }
 
   protected func DefineTracking() -> Void {

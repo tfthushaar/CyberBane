@@ -1259,6 +1259,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
     CBGuardTick(this, game);            // and at home, watching the house (2.7.2)
+    CBStrongholdTick(this, game);       // cleared gig bases a Rival holds (Rivals/Strongholds.reds, 2.7.2)
     if this.m_tickCount % 5 == 2 {
       CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.0)
     }
@@ -3977,6 +3978,22 @@ public class CyberbaneSystem extends ScriptableSystem {
     let armoryBook = CBArmoryBook.Get(game);
     if IsDefined(armoryBook) {
       armoryBook.Clear(); // nor fights with a gun from the stash (2.7.2)
+    }
+    let jobBook = CBCrewJobBook.Get(game);
+    if IsDefined(jobBook) {
+      jobBook.Clear();    // nor is anybody on a job, and the kitty is empty (2.7.2)
+    }
+    let goodsBook = CBGoodsBook.Get(game);
+    if IsDefined(goodsBook) {
+      goodsBook.Clear();  // and V holds nobody's goods (2.7.2)
+    }
+    let baseBook = CBBaseBook.Get(game);
+    if IsDefined(baseBook) {
+      baseBook.Clear();   // no cleared base is known, and nobody holds one (2.7.2)
+    }
+    let bodyBook = CBRivalBodyBook.Get(game);
+    if IsDefined(bodyBook) {
+      bodyBook.Clear();   // nor what any Rival looks like (2.7.2)
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);

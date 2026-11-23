@@ -402,6 +402,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         if puppet.cbDamagedByPlayer {
           CBPayRivalBounty(sysE, game, slain, slainRole);
           let rivalIconic = (slain.rank >= 4 || slainRole == CBRoleLeader()) ? CBConfig.LootIconicChanceRival() : 0.0;
+          if CBRivalSignatureKind(slain) > 0 {
+            rivalIconic += CBConfig.LootIconicSignatureBonus();   // 2.7.2
+          }
           CBScheduleLoot(sysE, game, puppet, CBLootTierRival(slain, slainRole), rivalIconic);
           // And V caught them before they knew V was there: an ambush, on top of the kill.
           if caughtWaiting {
