@@ -583,7 +583,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Held-HomeGround", "you are on home ground");
     // {0} is how much longer, in real time ("40m", "2h").
     this.Text("Cyberbane-Held-SleepPeace", "you slept at home: quiet for about {0} more");
-    // When a gang sends people, once a day at most. {0} is the district V is in.
+    // On the Standing page, a lane lined up but waiting out everybody's rest after another fight. {0} the lane ("A gang crew"),
+  // {1} who, {2} how long.
+  this.Text("Cyberbane-Hud-WaitingOutTheBreather", "{0}   {1}  waiting out the breather, {2}");
+  // When a gang sends people, once a day at most. {0} is the district V is in.
     this.Text("Cyberbane-Slip-Hint", "they only know roughly where you are. Change how you look, put a mask on or get out of {0} before they get here, and they may lose you.");
     this.Text("Cyberbane-Slip-HintNoDistrict", "they only know roughly where you are. Change how you look, put a mask on or get somewhere else before they get here, and they may lose you.");
     // They lost V before they set off. {0} is the gang.
@@ -3587,7 +3590,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-LivingStreet-LastYouHeard", "Last you heard: {0}");
     // {0} CBCapFirst(CBPossessive(CBFactionLabel(this.m_bagFaction)))
     this.Text("Cyberbane-LivingStreet-TakeMadeItToTheDrop", "{0} take made it to the drop. Next week, maybe.");
-    this.Text("Cyberbane-LivingStreet-VIsSomewhereTheStoryA", "V is somewhere the story, a job or a safe place keeps quiet");
+    this.Text("Cyberbane-LivingStreet-VIsSomewhereTheStoryA", "V is somewhere the story, a job, a safe place or home ground keeps quiet");
     this.Text("Cyberbane-LivingStreet-VIsInAFight", "V is in a fight");
     this.Text("Cyberbane-LivingStreet-VIsInACar", "V is in a car");
     this.Text("Cyberbane-LivingStreet-VIsIndoors", "V is indoors");
@@ -4272,7 +4275,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-CallingThemClickToTakeIt", "Calling them. Click to take it back");
     this.Text("Cyberbane-Hud-TheyLlAnswerOnceYouRe", "They'll answer once you're back in the game.\n");
     // {0} StrLower(StrLeft(blocked, 1)), {1} StrRight(blocked, StrLen(blocked) - 1)
-    this.Text("Cyberbane-Hud-CanTCallThemNow", "Can't call them now: {0}{1}\n");
+    this.Text("Cyberbane-Hud-CanTCallThemNow", "Can't call them now: {0}\n");
     this.Text("Cyberbane-Hud-NothingOnYouRightNowTwo", "Nothing on you right now: two will come and walk with you until you send them home.\n");
     this.Text("Cyberbane-Hud-PayingClickToTakeItBack", "Paying. Click to take it back");
     // {0} book.CutOwed()

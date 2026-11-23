@@ -2781,8 +2781,8 @@ public class CBHud {
 
   private func LaneRow(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32, lane: Int32, label: String) -> Int32 {
     let text = CBHudLaneLine(sys, game, lane, "");
-    if StrLen(text) > 3 {
-      text = StrRight(text, StrLen(text) - 3);   // the line starts after its label's gap
+    while StrLen(text) > 0 && Equals(StrLeft(text, 1), " ") {
+      text = StrRight(text, StrLen(text) - 1);   // the line starts after its (empty) label's gap
     }
     let tail = "";
     let cut = StrFindFirst(text, "   (");
@@ -4698,7 +4698,7 @@ public class CBHud {
           let blocked = CBCrewCallBlocked(sys, game, false, true);
           this.SetAction(CBT(n"Cyberbane-Crew-NeedYouNow"), StrLen(blocked) == 0);
           if StrLen(blocked) > 0 {
-            why = CBTf(n"Cyberbane-Hud-CanTCallThemNow", [StrLower(StrLeft(blocked, 1)), StrRight(blocked, StrLen(blocked) - 1)]);
+            why = CBTf(n"Cyberbane-Hud-CanTCallThemNow", [CBLowFirst(blocked)]);
           } else {
             if !CBCrewTrouble(sys, game) {
               why = CBT(n"Cyberbane-Hud-NothingOnYouRightNowTwo");
@@ -5792,6 +5792,13 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   if StrLen(held) > 0 {
     return CBTf(n"Cyberbane-Hud-Waiting-2", [label, who, held, CBHudBudgetTail(sys, game, lane)]);
   }
+  // Lined up, and waiting out everybody's rest after another fight (2.7.1, CBLaneRestLeft): their clock stands still, so say
+  // why instead of showing it. A Rival who has already said they are coming is not held by it.
+  let warnedQ = lane == CBLaneRival() && sys.GetRivalWarned() > 0 && sys.GetRivalWarned() == sys.GetLaneRivalId(lane);
+  let restQ = CBRestTogether() && !warnedQ ? CBLaneRestLeft(sys, lane) : 0;
+  if restQ > 0 {
+    return CBTf(n"Cyberbane-Hud-WaitingOutTheBreather", [label, who, CBTimeText(restQ)]);
+  }
   let ticks = sys.GetLaneTicks(lane);
   if ticks <= 0 {
     let why = CBBlockLabel(CBLastSpawnBlock());
@@ -6758,7 +6765,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
 // file read "RivalCreated (CityCenter) 12", where 12 was a Rival's id.
 func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> String {
   let gang = CBFactionLabel(e.faction);
-  let gangCap = StrLen(gang) > 0 ? StrUpper(StrMid(gang, 0, 1)) + StrMid(gang, 1, StrLen(gang) - 1) : "";
+  let gangCap = CBCapFirst(gang);
   let line = "";
   if Equals(e.kind, n"RivalCreated") {
     let r = sys.FindRivalById(RoundF(e.value));

@@ -87,6 +87,18 @@ public func CBCapFirst(s: String) -> String {
   return StrUpper(first) + StrMid(s, 1, StrLen(s) - 1);
 }
 
+// The other way round, to carry on a sentence: only a plain A to Z is lowered, for the same reason (2.7.1).
+public func CBLowFirst(s: String) -> String {
+  if StrLen(s) == 0 {
+    return s;
+  }
+  let first = StrMid(s, 0, 1);
+  if !StrContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", first) {
+    return s;
+  }
+  return StrLower(first) + StrMid(s, 1, StrLen(s) - 1);
+}
+
 // "Maelstrom's", "the Mox's", "the Tyger Claws'". Every label here that ends in an s is a plural.
 public func CBPossessive(s: String) -> String {
   if StrLen(s) == 0 {

@@ -116,10 +116,6 @@ public class CBHomeBook extends ScriptableSystem {
     return new Vector4(this.m_x[i], this.m_y[i], this.m_z[i], 1.0);
   }
 
-  public func Kind(i: Int32) -> Int32 {
-    return this.m_kind[i];
-  }
-
   public func HereIndex() -> Int32 {
     return this.m_here - 1;
   }
@@ -223,10 +219,6 @@ public class CBHomeBook extends ScriptableSystem {
       this.m_parkY[i] = at.Y;
       this.m_parkZ[i] = at.Z;
     }
-  }
-
-  public func SetPeaceUntil(t: Float) -> Void {
-    this.m_peaceUntil = t;
   }
 
   // Once a tick (CyberbaneSystem), from the main tick's settled part.

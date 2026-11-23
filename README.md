@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.7.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.7.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -41,6 +41,25 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   they name, bodyguards, and mercy as your choice.
 - **A living street.** Bagmen to rob, favours for friendly gangs, and sit-downs between gangs at war
   that you can crash (now under **Gang life** in Mod Settings).
+
+### New in 2.7
+
+- **Home ground (2.7.1).** The building around each of your apartments counts as home: the lobby, the corridors and the
+  car park. Nobody Cyberbane sends comes for you there, people already looking for you don't find you there, and no
+  bagmen, gang events or street fights start there. A fight that followed you in carries on. Cyberbane learns each home
+  the first time you are inside it or sleep there. **Home ground** under **How often they come** sets it, and can let a
+  gang at Vendetta through.
+- **A moment of peace (2.7.1).** After any fight, everybody rests: no Rival, crew or apex squad is lined up until the
+  breather is over, and **Minutes between encounters** now goes up to 120. A night in your own bed buys a few quiet
+  hours as well.
+- **Lose them before they get there (2.7.1).** Once a gang has sent people, changing how you look, putting a mask on,
+  leaving the district, riding the metro or going home breaks the trail. One of those and they come in looking in the
+  wrong place; two or more and they may lose you before they set off. A gang at Vendetta, one with a tracker on you,
+  one you have just hurt and one whose streets you are standing on still know where you are.
+- **What your mask does (2.7.1).** The Standing page says what a mask or a gang's colours are doing for you. It works
+  with or without They Will Remember.
+- **Ready to translate (2.7.1).** Every line Cyberbane shows is in one file, and a translation installs as a download of
+  its own. See [Translating](#translating).
 
 ### New in 2.6
 
@@ -206,8 +225,14 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
   and keeps your standing for later. The NCPD can be switched off the same way.
 - **How often you are hunted:** each gang comes by its own grudge against you, and Rivals by theirs. **How eager gangs
   are** and **How eager Rivals are** under **How often they come** stretch or shorten every wait, **Apex squads** turns
-  those off, and **Encounter gap** is the breather after each fight. **Before you're known**, on the same page, keeps
-  the early game gentler until your Street Cred reaches 20; switch it off to be known from day one.
+  those off, and **Minutes between encounters** is the breather after each fight, up to two hours of play. With
+  **Everybody rests after a fight** on, that breather holds back Rivals, crews and apex squads alike. **Quiet after a
+  night at home** keeps them away for a few game hours after you sleep in your own bed, and **Home ground** keeps the
+  building around your apartments quiet. **Before you're known**, on the same page, keeps the early game gentler until
+  your Street Cred reaches 20; switch it off to be known from day one.
+- **Hiding from a crew:** a mask makes every gang slower to find you, and their colours make their people slower to pick
+  you out. With **Lie low** on (under **Being hunted**), changing how you look, masking up, leaving the district, riding
+  the metro or going home after a gang has sent people can make them lose you before they arrive.
 - **Fewer messages:** **How much you hear**, on the first page, spaces out the street's chatter (word going round and
   lines overheard). Warnings, demands, offers, your crew and answers to what you did always come through.
 - **Start over:** **Reset all Cyberbane data** under **Advanced** (or Start over on the Hub's History
@@ -234,7 +259,23 @@ Each playthrough keeps its own record, and nothing one character does reaches an
 - **Companions** (the game's and modded ones) fight the people Cyberbane sends after you.
 - **Story characters, quest NPCs, AMM and romance mods** are never touched.
 - **Safe areas:** nothing happens in apartments, clinics, bars and other places the game treats as
-  safe. Two switches under **Safe areas and jobs** change that.
+  safe. Two switches under **Safe areas and jobs** change that. The building around your apartments is home ground
+  (see Settings).
+
+## Translating
+
+Every line Cyberbane shows is in `r6\scripts\Cyberbane\Localization\en-us\English.reds`. To translate it:
+
+1. Copy that file into a folder of your own beside Cyberbane's, for example `r6\scripts\Cyberbane_de\German.reds`, so
+   updating Cyberbane never overwrites your work.
+2. In your copy, rename `CBLocalizationEnUs` to `CyberbaneText_` and your game language with its dash as an underscore:
+   `CyberbaneText_de_de`, `CyberbaneText_fr_fr`, `CyberbaneText_pt_br` and so on. Change the `module` line to one of your
+   own.
+3. Translate the second text in each line and leave the first, the key, as it is. `{0}` and `{1}` are filled in by the
+   game and can go wherever your language needs them.
+
+The top of the file explains the rest. Lines you have not translated yet show in English, and the changelog says which
+lines each release adds. Share your translation as a mod of its own on Nexus, with Cyberbane as a requirement.
 
 ## Reporting a bug
 

@@ -3,6 +3,49 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.7.1 (23 November 2026)
+
+**New: home ground**
+- The building around each of your apartments counts as home: the lobby, the corridors and the car park, about a hundred
+  metres around the apartment at any height. While you are there nobody Cyberbane sends comes for you, people already
+  looking for you hold back instead of finding you, and no bagmen, gang events, street fights, wannabes, patrols, hangouts
+  or bounty hunters start there. A fight that followed you in carries on, and your own crew comes as usual.
+- Cyberbane learns each of your homes the first time you are inside it or sleep in its bed, and says so once.
+- New setting: **Home ground**, under **How often they come**. Quiet (the default), Quiet except a vendetta (a gang at
+  Vendetta may still come for you there), or Open (as before).
+
+**New: a moment of peace**
+- **Minutes between encounters** goes up to 120, in real minutes of play.
+- New setting: **Everybody rests after a fight**, on by default. After any fight with Cyberbane's people, Rivals, crews
+  and apex squads all wait out that breather before the next one is lined up, and nobody new is lined up while a fight
+  is on. Before, each of the three rested on its own, so a Rival, a crew and an apex squad could come one after another
+  even with the breather at its longest. A Rival who has already texted that they are coming keeps their word.
+- New setting: **Quiet after a night at home**, 6 game hours by default. Sleep in one of your own beds and nobody new
+  is sent after you for that long. Anybody already on their way still comes.
+- The Standing page says when a Rival, crew or apex squad is waiting out the breather, or waiting because you are home
+  or slept there.
+
+**Changed: you can lose a crew before it gets to you**
+- Until now, once a gang had sent people, they arrived around you wherever you had gone in the meantime. Now changing how
+  you look, putting a mask on, leaving the district, riding the metro or going home breaks the trail. One of those and
+  they come in looking where you were, and are slower to pick you out; two or more and they may lose you before they
+  set off, and that gang takes a while to pick up your trail again.
+- A gang at Vendetta, one that has a tracker on you, one you have just hurt and one whose streets you are standing on
+  still know where you are.
+- The first time a gang sends people each day, a short note says what helps. It is part of **Lie low** (under **Being
+  hunted**).
+- The Standing page's chrome line now says what a mask does: gangs take longer to find you, and a crew on its way can
+  lose you. A gang's colours make their people slower to pick you out. None of this needs They Will Remember.
+
+**New: Cyberbane can be translated**
+- Every line Cyberbane shows is now in one file, `Localization\en-us\English.reds`, and every value in its Mod Settings
+  dropdowns too. A translation is a file of its own, installed beside Cyberbane, so an update never overwrites it. The
+  README's new **Translating** part says how. Logs stay in English for bug reports, and Rival and crew names stay as
+  they are.
+- English reads exactly as before.
+
+Your progress carries over.
+
 ## 2.7.0 (23 November 2026)
 
 **Fixed: a crash when loading a save**

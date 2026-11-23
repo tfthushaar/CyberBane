@@ -952,12 +952,14 @@ func CBTrackedBy(sys: ref<CyberbaneSystem>) -> String {
   let near = CBConfig.TrackedShowTicks();
   let apex = sys.GetLaneTarget(CBLaneApex());
   let apexTicks = sys.GetLaneTicks(CBLaneApex());
-  if NotEquals(apex, n"") && apexTicks > 0 && apexTicks <= near {
+  // A lane waiting out everybody's rest is not counting down either (2.7.1, CBLaneRestLeft).
+  let resting = CBRestTogether();
+  if NotEquals(apex, n"") && apexTicks > 0 && apexTicks <= near && !(resting && CBLaneRestLeft(sys, CBLaneApex()) > 0) {
     return CBBarFactionLabel(apex);
   }
   let crew = sys.GetLaneTarget(CBLaneSquad());
   let crewTicks = sys.GetLaneTicks(CBLaneSquad());
-  if NotEquals(crew, n"") && crewTicks > 0 && crewTicks <= near {
+  if NotEquals(crew, n"") && crewTicks > 0 && crewTicks <= near && !(resting && CBLaneRestLeft(sys, CBLaneSquad()) > 0) {
     return CBBarFactionLabel(crew);
   }
   if NotEquals(sys.GetScoutFaction(), n"") {
@@ -965,7 +967,8 @@ func CBTrackedBy(sys: ref<CyberbaneSystem>) -> String {
   }
   let rid = sys.GetLaneRivalId(CBLaneRival());
   let rivalTicks = sys.GetLaneTicks(CBLaneRival());
-  if rid > 0 && sys.GetRivalWarned() != rid && rivalTicks > 0 && rivalTicks <= near {
+  if rid > 0 && sys.GetRivalWarned() != rid && rivalTicks > 0 && rivalTicks <= near
+     && !(resting && CBLaneRestLeft(sys, CBLaneRival()) > 0) {
     let r = sys.FindRivalById(rid);
     if IsDefined(r) {
       return StrUpper(CBRivalDisplayName(sys.GetContent(), r));

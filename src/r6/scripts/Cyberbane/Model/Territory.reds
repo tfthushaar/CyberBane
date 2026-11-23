@@ -121,7 +121,7 @@ public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
   if StrLen(label) == 0 {
     return;
   }
-  let cap = StrUpper(StrMid(label, 0, 1)) + StrMid(label, 1, StrLen(label) - 1);
+  let cap = CBCapFirst(label);
   if before >= CBConfig.GangBrokenStrength() && after < CBConfig.GangBrokenStrength() {
     CBHearsayFromStreet(game, CBTf(n"Cyberbane-Territory-AreBrokenHalfTheirCornersAre", [s"\(cap)"]), n"");
   } else {
@@ -545,7 +545,7 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
   if StrLen(place) == 0 || StrLen(w) == 0 || StrLen(l) == 0 || !IsDefined(content) {
     return;
   }
-  let wCap = StrUpper(StrMid(w, 0, 1)) + StrMid(w, 1, StrLen(w) - 1);
+  let wCap = CBCapFirst(w);
   let prof = content.GetFaction(winner);
   let home = IsDefined(prof) && ArrayContains(prof.turf, district);
   if home {
@@ -561,7 +561,7 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
   let score = sys.GetScore();
   let posture = IsDefined(score) ? score.GetPosture(winner) : ECBPosture.Neutral;
   if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
-    let lCap = StrUpper(StrMid(l, 0, 1)) + StrMid(l, 1, StrLen(l) - 1);
+    let lCap = CBCapFirst(l);
     CBHearsayFromAlly(game, winner, CBTf(n"Cyberbane-Territory-IsOursNowCouldNotHold", [s"\(place)", s"\(lCap)"]), n"");
   } else {
     CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-Territory-MovedIntoTheMomentCouldNot", [s"\(wCap)", s"\(place)", s"\(l)"]), n"");

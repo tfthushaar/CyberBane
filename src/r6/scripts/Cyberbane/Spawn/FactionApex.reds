@@ -755,8 +755,9 @@ public func CBApexMusterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     sys.ClearApexMuster();
     return;
   }
-  if sys.GetStoryHold() != CBStoryNone() || CBStealthEncounterNearby(sys, game) {
-    return;   // wait for the stage, or the quiet job, to be over
+  // Nor onto home ground (2.7.1, Spawn/HomeGround.reds): no spot there would take them anyway.
+  if sys.GetStoryHold() != CBStoryNone() || CBStealthEncounterNearby(sys, game) || CBHomeHolds(sys, faction) {
+    return;   // wait for the stage, the quiet job or home ground to be over
   }
   if sys.GetTickCount() % 3 != 0 {
     return;   // a few seconds between tries is plenty, and keeps the probing cheap

@@ -206,7 +206,7 @@ public class CBEventEngine {
     }
     if busy || player.IsInCombat() {
       if nowT >= this.m_next && (CBGatheringsOn() || CBDealsOn() || CBGangFightsOn()) {
-        CBStreetWhyNot(game, "gang life", busy ? "V is somewhere the story, a job or a safe place keeps quiet" : "V is in a fight");
+        CBStreetWhyNot(game, "gang life", busy ? "V is somewhere the story, a job, a safe place or home ground keeps quiet" : "V is in a fight");
       }
       return;
     }

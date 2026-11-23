@@ -171,8 +171,10 @@ public class CBMapBook extends ScriptableSystem {
       }
       i -= 1;
     }
+    // The oldest goes by its place in the list. Check above has already let go of any empty entry, and erasing by place
+    // means this loop cannot spin whatever the list holds.
     while ArraySize(this.m_memories) >= CBConfig.MapMemoryKept() {
-      this.Forget(this.m_memories[0]);
+      ArrayErase(this.m_memories, 0);
     }
     if this.m_nextId <= 0 {
       this.m_nextId = 1;
