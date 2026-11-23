@@ -367,6 +367,20 @@ public func CBGrantAbility(npc: ref<NPCPuppet>, id: TweakDBID) -> Void {
   if !IsDefined(glp) {
     return;
   }
+  // Never one the body already carries from its own record or archetype (2.7.2). The game applies those itself, and
+  // the check below only sees packages applied from script, so a Scavs heavy, whose archetype already has the game's
+  // subdermal armour, got it a second time from a Rival's implants. That package adds to HasSubdermalArmor and then
+  // multiplies armour and bonus health by it, so two of them compound: a Rival who shrugged off 3k crits. Any tier of
+  // subdermal armour on the body, from anywhere, keeps another tier off.
+  if CBRecordCarriesAbility(npc, ability) {
+    return;
+  }
+  if CBIsSubdermalAbility(id) {
+    let stats = GameInstance.GetStatsSystem(npc.GetGame());
+    if IsDefined(stats) && stats.GetStatValue(Cast<StatsObjectID>(npc.GetEntityID()), gamedataStatType.HasSubdermalArmor) > 0.0 {
+      return;
+    }
+  }
   let packageID = package.GetID();
   let applied: array<TweakDBID>;
   glp.GetAppliedPackages(npc, applied);

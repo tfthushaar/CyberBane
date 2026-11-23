@@ -33,6 +33,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   protected func DefineTexts() -> Void {
     this.DefineSettings();
     this.DefineHomeGround();
+    this.DefineGangHomes();
+    this.DefineCrewHome();
     this.DefineCyberbaneAPI();
     this.DefineSmasherEncounters();
     this.DefineCyberbaneRuntime();
@@ -5064,6 +5066,104 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   }
 
   // ---- Tracking --------------------------------------------------------------------------------------------
+  // Gang homes (2.7.2, Spawn/GangHomes.reds). The places' own names come from the game, already in your language.
+  protected func DefineGangHomes() -> Void {
+    this.Text("Cyberbane-Settings-GangHomes", "Gang homes");
+    this.Text("Cyberbane-Settings-GangHomes-Desc", "Some gangs have a place of their own: the Mox at Lizzie's Bar, Maelstrom at Totentanz, the Valentinos at El Coyote Cojo, the Tyger Claws at Wakako's pachinko parlor, the Voodoo Boys at their chapel in Pacifica and the Animals at the Grand Imperial Mall. The first time you are there, it goes on your map (hidden while that gang is hostile to you), and when you come by and none of them are about, a few of them are there to talk to, once a day. Anybody of theirs will tell you where it is.");
+    // A note when V first stands at one. {0} is the place (the game's name for it), {1} the gang ("the Mox").
+    this.Text("Cyberbane-GangHomes-Learned", "{0} is where {1} hang out. It's on your map now.");
+    this.Text("Cyberbane-GangHomes-AskWhereDoYourPeople", "[Ask] Where do your people hang out?");
+    this.Text("Cyberbane-GangHomes-NowhereYouDBeWelcome", "Nowhere you'd be welcome.");
+    this.Text("Cyberbane-GangHomes-NotTellingYou", "Like I'd tell you.");
+    // {0} is the place, {1} the district it is in, both the game's names.
+    this.Text("Cyberbane-GangHomes-FriendlyAnswer", "{0}, in {1}. Come by, ask for anybody.");
+    this.Text("Cyberbane-GangHomes-PlainAnswer", "{0}, in {1}. Mind your manners when you get there.");
+    // Added after either answer when V has not been there yet; starts with a space.
+    this.Text("Cyberbane-GangHomes-GoAndSee", " Go and see for yourself.");
+    // The map pin: {0} is the gang's name ("Mox"), {1} the place.
+    this.Text("Cyberbane-GangHomes-PinTitle", "{0}: {1}");
+    // {0} is the gang ("the Mox").
+    this.Text("Cyberbane-GangHomes-PinDesc", "Where {0} hang out. Come by and some of them will be around.");
+  }
+
+  // The crew at home (2.7.2, Reactions/CrewHome.reds).
+  protected func DefineCrewHome() -> Void {
+    this.Text("Cyberbane-Settings-CrewGuards", "Guards at home");
+    this.Text("Cyberbane-Settings-CrewGuards-Desc", "How many of your crew can take Watch the house on their Work row. While you are on home ground, they stand at the building's door and its car park (learned from where you come and go), out of your way, ready to talk and to fight anybody of Cyberbane's who starts something there. They leave once you do. 0 switches it off.");
+    // The Work row, lower case like the others.
+    this.Text("Cyberbane-CrewHome-WatchingTheHouse", "watching the house");
+    this.Text("Cyberbane-CrewHome-IllKeepAnEyeOnTheHouse", "I'll keep an eye on the house. Door and car park.");
+    this.Text("Cyberbane-CrewHome-TroubleAtTheHouse", "Trouble at the house. We've got it.");
+    this.Text("Cyberbane-CrewHome-TheyGotMeAtTheDoor", "They got me at the door. I'll live. Give me a few hours.");
+    // {0} is the weapon.
+    this.Text("Cyberbane-CrewHome-FromTheLocker", "The {0} in your stash. I'll know where it is when I need it.");
+    this.Text("Cyberbane-CrewHome-SomebodyClearedMyGun", "Somebody cleared my gun out of the locker, boss.");
+    this.Text("Cyberbane-CrewHome-AskHowAreYouHoldingUp", "[Ask] How are you holding up?");
+    // {0} is their old gang ("the Mox").
+    this.Text("Cyberbane-CrewHome-AskTellMeAbout", "[Ask] Tell me about {0}.");
+    this.Text("Cyberbane-CrewHome-AskHeardAnything", "[Ask] Heard anything?");
+    this.Text("Cyberbane-CrewHome-DismissBackToIt", "[Dismiss] Back to it.");
+    this.Text("Cyberbane-CrewHome-HoldingBest", "Never better. Wherever you're going, I'm going.");
+    this.Text("Cyberbane-CrewHome-HoldingGood", "Good. Work's steady, the crew's solid.");
+    this.Text("Cyberbane-CrewHome-HoldingFine", "Doing the job. Ask me again next week.");
+    this.Text("Cyberbane-CrewHome-HoldingBad", "Honestly? I've been thinking about walking.");
+    // Added after their answer; starts with a space. {0} is what last cost their loyalty ("the cut you owe them").
+    this.Text("Cyberbane-CrewHome-WhatEatsAtMe", " [On their mind: {0}.]");
+    // Added after their answer when the crew's cut is owed; starts with a space.
+    this.Text("Cyberbane-CrewHome-AndTheCut", " And the cut's late, boss.");
+    // Their old gang from the inside, one line at a time.
+    this.Text("Cyberbane-CrewHome-LoreMox0", "The Mox started at Lizzie's, after one of their own was murdered and nobody did a thing about it.");
+    this.Text("Cyberbane-CrewHome-LoreMox1", "We look after the dolls and the joytoys, the people nobody else looks out for. Hurt one of them and the whole bar knows by morning.");
+    this.Text("Cyberbane-CrewHome-LoreMox2", "Susie Q runs Lizzie's. She's fair, right up until you cross her.");
+    this.Text("Cyberbane-CrewHome-LoreMaelstrom0", "Maelstrom thinks flesh is a phase you grow out of. More chrome, louder voice.");
+    this.Text("Cyberbane-CrewHome-LoreMaelstrom1", "Totentanz is where they drink. Northside is where they work: the old All Foods plant, anything with metal worth taking.");
+    this.Text("Cyberbane-CrewHome-LoreMaelstrom2", "Nobody runs Maelstrom for long. There's always somebody with more chrome and fewer friends.");
+    this.Text("Cyberbane-CrewHome-LoreValentinos0", "Valentinos are family first. Heywood born, Heywood buried.");
+    this.Text("Cyberbane-CrewHome-LoreValentinos1", "Gold, saints and honor. Disrespect somebody's mother and you'd better be fast.");
+    this.Text("Cyberbane-CrewHome-LoreValentinos2", "Even the Valentinos keep it quiet at El Coyote Cojo. That's Mama Welles' place.");
+    this.Text("Cyberbane-CrewHome-LoreTygerClaws0", "The Claws run Japantown: the clubs, the dolls, the pachinko and the protection on all of it.");
+    this.Text("Cyberbane-CrewHome-LoreTygerClaws1", "Bikes and blades. A Claw would rather cut you than shoot you.");
+    this.Text("Cyberbane-CrewHome-LoreTygerClaws2", "Some of the money goes up the hill, to people in suits. Nobody says whose.");
+    this.Text("Cyberbane-CrewHome-LoreSixthStreet0", "6th Street started as vets keeping Santo Domingo safe after the war. Then they started charging for it.");
+    this.Text("Cyberbane-CrewHome-LoreSixthStreet1", "Flags, guns and rules. Everybody drills, everybody pays in.");
+    this.Text("Cyberbane-CrewHome-LoreSixthStreet2", "They hate the Valentinos almost as much as they hate corpos.");
+    this.Text("Cyberbane-CrewHome-LoreAnimals0", "The Animals don't trust chrome. Muscle, and whatever the doc pumps in to grow more of it.");
+    this.Text("Cyberbane-CrewHome-LoreAnimals1", "You fight your way in and you fight your way up. Nothing else counts.");
+    this.Text("Cyberbane-CrewHome-LoreAnimals2", "They hire out as muscle: bouncers, guards, anybody who pays.");
+    this.Text("Cyberbane-CrewHome-LoreVoodooBoys0", "The Voodoo Boys are netrunners first. Pacifica is theirs because everybody else gave up on it.");
+    this.Text("Cyberbane-CrewHome-LoreVoodooBoys1", "They're after something on the far side of the Blackwall. Most of them never say what out loud.");
+    this.Text("Cyberbane-CrewHome-LoreVoodooBoys2", "Outsiders get nothing from them. You'd have to be family from the islands to be trusted.");
+    this.Text("Cyberbane-CrewHome-LoreScavengers0", "Scavs take people apart for whatever sells: chrome, organs, anything.");
+    this.Text("Cyberbane-CrewHome-LoreScavengers1", "Nobody's loyal in the Scavs. You're one bad week from being parts yourself.");
+    this.Text("Cyberbane-CrewHome-LoreScavengers2", "They never stay anywhere long. Leave a place hot, find another.");
+    this.Text("Cyberbane-CrewHome-LoreBarghest0", "Barghest is Kurt Hansen's army, and Dogtown is his country.");
+    this.Text("Cyberbane-CrewHome-LoreBarghest1", "Checkpoints, discipline, and a toll on everything that moves.");
+    this.Text("Cyberbane-CrewHome-LoreBarghest2", "Hansen deals with anybody who's buying: guns, chrome, people.");
+    this.Text("Cyberbane-CrewHome-LoreScrappers0", "Scrappers live off what the war left lying in Dogtown. If it's still in one piece, somebody's selling it.");
+    this.Text("Cyberbane-CrewHome-LoreScrappers1", "No flags, no boss worth the name. Just crews who got there first.");
+    this.Text("Cyberbane-CrewHome-LoreScrappers2", "They stay out of Barghest's way, mostly. The ones who don't, don't last.");
+    this.Text("Cyberbane-CrewHome-LoreAldecaldos0", "The Aldecaldos are family. You're in for life, and so are your kids.");
+    this.Text("Cyberbane-CrewHome-LoreAldecaldos1", "Home is the convoy, and whoever's sitting next to you at the fire.");
+    this.Text("Cyberbane-CrewHome-LoreAldecaldos2", "They don't love the city. They come in when there's work, and they leave.");
+    this.Text("Cyberbane-CrewHome-LoreWraiths0", "The Wraiths are raffen shiv: nomads who threw out every rule the clans live by.");
+    this.Text("Cyberbane-CrewHome-LoreWraiths1", "They raid the roads in the Badlands and sell whatever they catch.");
+    this.Text("Cyberbane-CrewHome-LoreWraiths2", "Nobody trusts a Wraith. Not even another Wraith.");
+    this.Text("Cyberbane-CrewHome-LoreNone", "Never ran with anybody. Never wanted to.");
+    // Added after the lore by how they came to V; each starts with a space.
+    this.Text("Cyberbane-CrewHome-TailOwed", " Anyway. You let me walk away. I don't forget that.");
+    this.Text("Cyberbane-CrewHome-TailFrightened", " Don't tell them I said any of this.");
+    this.Text("Cyberbane-CrewHome-TailPaid", " That's what you're paying me for, right?");
+    this.Text("Cyberbane-CrewHome-TailLent", " They lent me to you. Don't make them sorry.");
+    // {0} is the Rival, {1} the story of their weak spot (a sentence), {2} what finishes them ("a blade").
+    this.Text("Cyberbane-CrewHome-HeardFlaw", "{0}? I know them from the old days. {1} Bring {2}.");
+    // {0} is the Rival.
+    this.Text("Cyberbane-CrewHome-HeardNothingOn", "{0}'s still out there. No weak spot I ever saw.");
+    this.Text("Cyberbane-CrewHome-HeardNothing", "Nothing worth your time, boss.");
+    // Giving one of the crew a weapon of yours. {0} is the weapon.
+    this.Text("Cyberbane-CrewKit-SeriousPiece", "{0}. That's a serious piece. I'll bring it back in one piece.");
+    this.Text("Cyberbane-CrewKit-PutItToWork", "{0}. I'll put it to work.");
+  }
+
   protected func DefineTracking() -> Void {
     this.Text("Cyberbane-Tracking-BountyHunter", "Bounty hunter");
     // {0} owed

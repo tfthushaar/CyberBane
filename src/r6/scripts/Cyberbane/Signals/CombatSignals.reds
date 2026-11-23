@@ -270,7 +270,7 @@ func CBOnVsSide(game: GameInstance, p: wref<ScriptedPuppet>) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
   if IsDefined(des) {
     let id = p.GetEntityID();
-    if des.IsTagged(id, n"CB_Ally") || (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned")) {
+    if des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Guard") || (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned")) {
       return true;
     }
   }
@@ -313,6 +313,11 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let desD = GameInstance.GetDynamicEntitySystem();
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
     sysE.NoteDeadOurs(puppet.GetEntityID());
+  }
+  // One of the crew at a post at home (Reactions/CrewHome.reds, 2.7.2): hurt, never a kill of their old gang's.
+  if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Guard") {
+    CBGuardBodyDied(sysE, game, puppet);
+    return;
   }
   // One of V's own crew (Reactions/Crew.reds, 2.5.0): theirs to handle, and never a kill of their old gang's. One who
   // turned on V goes on through the rest, as anybody does (a Rival's death, if they became one).

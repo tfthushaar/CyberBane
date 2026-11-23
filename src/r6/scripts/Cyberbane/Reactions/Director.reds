@@ -187,7 +187,11 @@ public class CBReactionDirector {
     if sys.GetTickCount() % 3 == 0 {
       CBClearedStreetsTick(sys, game);
     }
-    // Hangouts (Spawn/Hangouts.reds, 2.6.1): a gang's people somewhere to be found on its own streets.
+    // Hangouts (Spawn/Hangouts.reds, 2.6.1): a gang's people somewhere to be found on its own streets. A gang's home is
+    // learned when V stands in it (Spawn/GangHomes.reds, 2.7.2).
+    if sys.GetTickCount() % 2 == 0 {
+      CBGangHomeTick(sys, game);
+    }
     if sys.GetTickCount() % 5 == 0 {
       CBHangoutTick(sys, game);
     }

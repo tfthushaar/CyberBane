@@ -19,6 +19,10 @@ public class CBHangoutState extends ScriptableSystem {
   public let doneGang: array<CName>;
   public let doneDay: array<Int32>;
   public let lookedTick: Int32;
+  // A gang's home V was last inside (Spawn/GangHomes.reds), one up, and where and when: session only.
+  public let homeInside: Int32;
+  public let homeInsideAt: Vector4;
+  public let homeInsideWhen: Float;
 
   public static func Get(game: GameInstance) -> ref<CBHangoutState> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -77,6 +81,18 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   if !IsDefined(score) || !IsDefined(reg) {
     return;
   }
+  // A gang's home V is close to (2.7.2, Spawn/GangHomes.reds): somebody is there, whatever the dice say, once a day.
+  let homeAt: Vector4;
+  let home = CBGangHomesOn() ? CBGangHomeNear(game, player.GetWorldPosition(), CBConfig.GangHomeReach(), homeAt) : -1;
+  if home >= 0 {
+    let hg = CBGangHomeGang(home);
+    if CBFactionOn(hg) && CBFactionFieldsSquads(hg) && !st.DoneToday(hg, day) && CBGangHomeShown(sys, game, hg)
+       && CBHangoutScarce(sys, game, reg, hg) {
+      st.MarkDone(hg, day);
+      CBHangoutStart(sys, game, st, hg, now, homeAt);
+      return;
+    }
+  }
   for g in CBTurfGangsHere(sys) {
     let posture = score.GetPosture(g);
     if CBFactionOn(g) && CBFactionFieldsSquads(g) && !st.DoneToday(g, day)
@@ -103,19 +119,28 @@ func CBHangoutScarce(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBN
   return true;
 }
 
-func CBHangoutStart(sys: ref<CyberbaneSystem>, game: GameInstance, st: ref<CBHangoutState>, gang: CName, now: Float) -> Void {
+func CBHangoutStart(sys: ref<CyberbaneSystem>, game: GameInstance, st: ref<CBHangoutState>, gang: CName, now: Float,
+                    opt home: Vector4) -> Void {
   let record = CBGangTemplate(sys, gang);
   if !TDBID.IsValid(record) {
     return;
   }
-  let body: EntityID;
-  if CBSpawnGroup(game, record, n"", CBConfig.HangoutSize(), n"CB_Hangout", CBConfig.HangoutDistance(), body) <= 0 {
-    return;
+  // At their home when there is one to go to (2.7.2), else a street or two from V.
+  let atHome = home.X != 0.0 || home.Y != 0.0;
+  if atHome {
+    if CBPlaceAround(sys, game, record, home, CBConfig.HangoutSize(), n"CB_Hangout") <= 0 {
+      return;
+    }
+  } else {
+    let body: EntityID;
+    if CBSpawnGroup(game, record, n"", CBConfig.HangoutSize(), n"CB_Hangout", CBConfig.HangoutDistance(), body) <= 0 {
+      return;
+    }
   }
   let rt = CyberbaneRuntime.Get();
   st.gang = gang;
   st.since = now;
-  st.at = IsDefined(rt) ? rt.lastSpawnAt : GetPlayer(game).GetWorldPosition();
+  st.at = atHome ? home : (IsDefined(rt) ? rt.lastSpawnAt : GetPlayer(game).GetWorldPosition());
   let ms = GameInstance.GetMappinSystem(game);
   // A place pin only where their own markers would not show (Mark them on the map at Named only): with Everyone, each of
   // them already wears one, and a pin on top was the same thing twice.

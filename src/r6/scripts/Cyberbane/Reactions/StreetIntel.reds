@@ -618,7 +618,8 @@ public class CBStreetIntel {
             let cur = pools.GetStatPoolValue(sid, gamedataStatPoolType.Health, true);
             // Read as a percentage, so written as one (the last flag): without it this set that many hit
             // points, and a Rival at 80% dropped to 65 hit points the moment one of their people fell.
-            pools.RequestSettingStatPoolValue(sid, gamedataStatPoolType.Health, MaxF(cur - CBConfig.GuardNerveLoss(), 10.0), GetPlayer(game), true);
+            // Never up: a Rival already under the floor stays where V put them.
+            pools.RequestSettingStatPoolValue(sid, gamedataStatPoolType.Health, MinF(cur, MaxF(cur - CBConfig.GuardNerveLoss(), 10.0)), GetPlayer(game), true);
           }
           CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), r),
                      CBPick3(CBT(n"Cyberbane-StreetIntel-YouLlPayForThat"), CBT(n"Cyberbane-StreetIntel-NoGetThemGetThem"), CBT(n"Cyberbane-StreetIntel-ThatSItNowItS")), 3.0);

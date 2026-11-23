@@ -125,6 +125,10 @@ public func CBTalkQuestionLines(sys: ref<CyberbaneSystem>, game: GameInstance, t
   let c = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-AskAnyoneLookingForMe"), CBTalkActAskComing(), t"ChoiceCaptionParts.ReinforcementIcon");
   c.said = CBMaskHas(done, CBTalkActAskComing());
   ArrayPush(out, c);
+  let home = CBGangHomeTalkLine(t);
+  if IsDefined(home) {
+    ArrayPush(out, home);
+  }
   ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-BackSomethingElse"), CBTalkActMenuBack(), TDBID.None()));
   return out;
 }

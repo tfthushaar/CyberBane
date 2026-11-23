@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.7.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.7.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -44,6 +44,16 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.7
 
+- **Nobody is unkillable (2.7.2).** However tough a Rival, an apex squad or a hunter gets, Cyberbane keeps them within
+  reach of your own weapons, counting their armour, and nothing it sends heals while you are hurting it.
+- **Places to find a gang (2.7.2).** The Mox at Lizzie's Bar, Maelstrom at Totentanz, the Valentinos at El Coyote Cojo,
+  the Tyger Claws at Wakako's, the Voodoo Boys at their chapel and the Animals at the Grand Imperial Mall. The first time
+  you are there it goes on your map, and when you come by and none of them are about, a few are there to talk to.
+  Anybody of theirs will tell you where it is.
+- **The crew at home (2.7.2).** Put up to three of your crew on **Watch the house** and they stand at your building's
+  door and car park while you are home. Near your stash, you can give one of them a gun from it, and it stays in the
+  stash with all its mods. Talk to any of your crew to ask how they are holding up, what their old gang was like, and
+  whether they know anything about a Rival from it.
 - **Home ground (2.7.1).** The building around each of your apartments counts as home: the lobby, the corridors and the
   car park. Nobody Cyberbane sends comes for you there, people already looking for you don't find you there, and no
   bagmen, gang events or street fights start there. A fight that followed you in carries on. Cyberbane learns each home
@@ -201,6 +211,13 @@ lives in your saves: a save made while the mod is removed loses it.
   jobs; **Your crew on jobs** changes that. Cutscenes, the main story's own missions and safe places like your
   apartment keep them out. If they can't come, or have to leave, they say why. They can be killed like anybody else, and the fallen go
   on the memorial; turn off **Your crew can die** and the game protects them the way it protects its own companions.
+- **Your crew at home:** on a member's **Orders**, the Work row goes through earning, recruiting and **Watch the
+  house**. Members on watch stand at your building's door and car park while you are on home ground: once you have gone
+  in and out of the apartment and parked there, they know where. Stand near your stash and **Give them a weapon** lists
+  its guns too. Talk to one of your crew (look at them, press F) for **How are you holding up?**, **Tell me about** their
+  old gang and **Heard anything?**
+- **Finding a gang:** ask one of theirs **Where do your people hang out?**, or just go. A gang's home goes on the map
+  the first time you are there, hidden while that gang is hostile to you.
 - **Recruiting a Rival:** beat a Rival without killing them, look at them where they lie and press F, and spare them.
   The next time you put that Rival down, the same talk offers **[Recruit] You owe me. Work for me.** A Rival you have
   spared twice may also text you, and you can ask them in the thread. Crouching over somebody down is for questioning
@@ -233,6 +250,8 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
 - **Hiding from a crew:** a mask makes every gang slower to find you, and their colours make their people slower to pick
   you out. With **Lie low** on (under **Being hunted**), changing how you look, masking up, leaving the district, riding
   the metro or going home after a gang has sent people can make them lose you before they arrive.
+- **Gang homes and guards:** **Gang homes** under **Gang life** switches the gangs' places off. **Guards at home**,
+  under **Your crew**, sets how many can watch the house (0 to 3, 0 for none).
 - **Fewer messages:** **How much you hear**, on the first page, spaces out the street's chatter (word going round and
   lines overheard). Warnings, demands, offers, your crew and answers to what you did always come through.
 - **Start over:** **Reset all Cyberbane data** under **Advanced** (or Start over on the Hub's History

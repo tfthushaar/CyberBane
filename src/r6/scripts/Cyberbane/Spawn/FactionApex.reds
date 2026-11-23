@@ -372,6 +372,9 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   critDamage = ClampF(critDamage, 0.0, CBConfig.ApexCritDamageCeiling());
   let power = ClampF(tPower, 0.0, CBConfig.ApexPowerLevelCeiling());
 
+  // The ceiling on the finished body (2.7.2, Spawn/Killable.reds), taken before this build's terms go on.
+  CBSetKillLimit(game, puppet, isRival ? CBKillableSecondsRival(grade)
+                                       : (isApex ? CBConfig.KillableApexSeconds() : CBConfig.KillableCrewSeconds()), measure);
   let id = Cast<StatsObjectID>(puppet.GetEntityID());
   CBAddMult(stats, id, gamedataStatType.Health, hpMult);
   CBAddMult(stats, id, gamedataStatType.Armor, armourMult);
@@ -387,6 +390,7 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   // Logged because the numbers are the thing that keeps being wrong, and a player who reports
   // an unkillable enemy can now send a line that says exactly what was built.
   CBLog.Info(n"Spawn", s"Built at grade \(grade): health x\(hpMult), armour x\(armourMult), damage x\(dmgMult), +\(power) power.");
+  CBKeepKillable(game, puppet, false);
   if IsDefined(sys) {
     sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
   }
@@ -443,7 +447,15 @@ public static func ApplyDamage(hitEvent: ref<gameHitEvent>, forReal: Bool, out v
       }
     }
   }
+  let watched = forReal && IsDefined(p) && p.cbKillLimit > 0.0 && !p.IsDead()
+                && CBKillableHitter(hitEvent.attackData.GetInstigator());
+  if watched {
+    CBKillableWatchBefore(p, hitEvent);
+  }
   wrappedMethod(hitEvent, forReal, valuesLost);
+  if watched {
+    CBKillableWatchAfter(p, hitEvent, valuesLost);
+  }
 }
 
 // The fight, read for the build ([U3], 2.3.2): a gang at full strength holds nothing back and a bled one has less
@@ -481,6 +493,7 @@ public func CBApplyCrewBuild(sys: ref<CyberbaneSystem>, game: GameInstance, pupp
   if !IsDefined(puppet) || !puppet.IsAttached() || puppet.IsDead() || puppet.cbBuffed {
     return;
   }
+  CBSetKillLimit(game, puppet, CBConfig.KillableCrewSeconds());
   let gang = CBClassifyFaction(puppet);
   let health = ClampF(CBCodeToughness(gang) + CBAdaptHealth(game, gang), 0.0, CBConfig.CrewBuildHealthCeiling());
   let armour = ClampF(CBAdaptArmour(game, gang), 0.0, CBConfig.CrewBuildArmourCeiling());
@@ -501,6 +514,7 @@ public func CBApplyCrewBuild(sys: ref<CyberbaneSystem>, game: GameInstance, pupp
   CBAddMult(stats, id, gamedataStatType.Armor, 1.0 + armour);
   CBAddFlat(stats, id, gamedataStatType.HackingResistance, ice);
   CBLog.Info(n"Spawn", s"Crew built by their code and preparation: health x\(1.0 + health), armour x\(1.0 + armour), +\(ice) ICE.");
+  CBKeepKillable(game, puppet, false);
   if IsDefined(sys) {
     sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
   }

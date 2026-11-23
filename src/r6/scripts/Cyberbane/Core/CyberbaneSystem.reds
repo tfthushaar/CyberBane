@@ -1258,6 +1258,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts (2.4.4)
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
+    CBGuardTick(this, game);            // and at home, watching the house (2.7.2)
     if this.m_tickCount % 5 == 2 {
       CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.0)
     }
@@ -3658,6 +3659,18 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
+  // A body already on the record whose health changed after the build (Spawn/Killable.reds); bodies never built stay off.
+  public func NoteRebuilt(id: EntityID, health: Float) -> Void {
+    let i = 0;
+    while i < ArraySize(this.m_builtIds) {
+      if Equals(this.m_builtIds[i], id) {
+        this.m_builtHealth[i] = health;
+        return;
+      }
+      i += 1;
+    }
+  }
+
   public func GetUnlockedTitles() -> array<CName> {
     return this.m_titles;
   }
@@ -3956,6 +3969,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     let clearBook = CBClearBook.Get(game);
     if IsDefined(clearBook) {
       clearBook.Clear();  // and no street is cleared of anybody (2.6.1)
+    }
+    let guardBook = CBGuardBook.Get(game);
+    if IsDefined(guardBook) {
+      guardBook.Clear();  // and nobody watches the house (2.7.2)
+    }
+    let armoryBook = CBArmoryBook.Get(game);
+    if IsDefined(armoryBook) {
+      armoryBook.Clear(); // nor fights with a gun from the stash (2.7.2)
     }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);

@@ -475,8 +475,12 @@ public func CBCrewIsRecruiter(game: GameInstance, id: Int32) -> Bool {
   return IsDefined(bb) && id > 0 && bb.Recruiter() == id;
 }
 
-// What a member's work is: 0 none, 1 earning, 2 recruiting.
+// What a member's work is: 0 none, 1 earning, 2 recruiting, 3 watching the house (2.7.2).
 public func CBCrewWorkOf(game: GameInstance, id: Int32) -> Int32 {
+  let gb = CBGuardBook.Get(game);
+  if IsDefined(gb) && gb.IsGuard(id) {
+    return CBCrewWorkGuard();
+  }
   if CBCrewIsRecruiter(game, id) {
     return 2;
   }
@@ -485,7 +489,8 @@ public func CBCrewWorkOf(game: GameInstance, id: Int32) -> Int32 {
   return IsDefined(k) && k.earning ? 1 : 0;
 }
 
-// The next work, as the Hub's Work row asks for it: none, then earning, then recruiting (when nobody else is), then none.
+// The next work, as the Hub's Work row asks for it: none, then earning, then recruiting (when nobody else is), then
+// watching the house (while the watch has room), then none.
 public func CBCrewNextWork(game: GameInstance, id: Int32) -> Int32 {
   let now = CBCrewWorkOf(game, id);
   if now == 0 {
@@ -493,7 +498,13 @@ public func CBCrewNextWork(game: GameInstance, id: Int32) -> Int32 {
   }
   if now == 1 {
     let bb = CBCrewBannerBook.Get(game);
-    return IsDefined(bb) && bb.Recruiter() > 0 && bb.Recruiter() != id ? 0 : 2;
+    if !IsDefined(bb) || bb.Recruiter() <= 0 || bb.Recruiter() == id {
+      return 2;
+    }
+  }
+  if now == 1 || now == 2 {
+    let gb = CBGuardBook.Get(game);
+    return CBGuardsOn() && IsDefined(gb) && gb.Count() < CBGuardsMax() ? CBCrewWorkGuard() : 0;
   }
   return 0;
 }
@@ -501,6 +512,7 @@ public func CBCrewNextWork(game: GameInstance, id: Int32) -> Int32 {
 public func CBCrewWorkWord(work: Int32) -> String {
   if work == 1 { return CBT(n"Cyberbane-CrewBanner-Earning"); }
   if work == 2 { return CBT(n"Cyberbane-CrewBanner-Recruiting"); }
+  if work == 3 { return CBT(n"Cyberbane-CrewHome-WatchingTheHouse"); }
   return CBT(n"Cyberbane-CrewBanner-None");
 }
 
@@ -521,6 +533,13 @@ public func CBCrewSetWork(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<
       bb.SetRecruiter(0);
     }
   }
+  let gb = CBGuardBook.Get(game);
+  if next == CBCrewWorkGuard() && IsDefined(gb) {
+    gb.Add(m.id);
+    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewHome-IllKeepAnEyeOnTheHouse"));
+  } else {
+    CBGuardStandDown(game, m.id);
+  }
   if next == 1 {
     CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewBanner-ILlWorkTheStreetFor"));
   }
@@ -533,12 +552,13 @@ public func CBCrewSetWork(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<
   CBLog.Info(n"Crew", s"One of the crew was put to work: \(CBCrewWorkWord(next)).");
 }
 
-// Off the roster: no longer recruiting.
+// Off the roster: no longer recruiting, nor watching the house.
 public func CBCrewBannerLeaves(game: GameInstance, id: Int32) -> Void {
   let bb = CBCrewBannerBook.Get(game);
   if IsDefined(bb) && bb.Recruiter() == id {
     bb.SetRecruiter(0);
   }
+  CBGuardStandDown(game, id);
 }
 
 // ---- On the tick ----------------------------------------------------------------------------------------------------

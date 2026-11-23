@@ -652,7 +652,7 @@ public func CBCrewHurt(m: ref<CBCrewMember>, now: Float) -> Bool {
 
 public func CBCrewReady(book: ref<CBCrewBook>, m: ref<CBCrewMember>, now: Float) -> Bool {
   return IsDefined(m) && !CBCrewHurt(m, now) && !book.IsOut(m.id) && !CBCrewAway(GetGameInstance(), m.id, now)
-      && !CBCrewSparring(GetGameInstance(), m.id)
+      && !CBCrewSparring(GetGameInstance(), m.id) && !CBGuardPosted(GetGameInstance(), m.id)
       && (m.calledAt <= 0.0 || now - m.calledAt >= CBConfig.MyCrewCallSeconds());
 }
 

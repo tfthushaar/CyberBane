@@ -205,6 +205,17 @@ public class CBHomeBook extends ScriptableSystem {
     ArrayResize(this.m_parkZ, n);
   }
 
+  // The crew's posts at a home (Reactions/CrewHome.reds); all zero is not learned yet.
+  public func DoorAt(i: Int32) -> Vector4 {
+    return i >= 0 && i < this.Count() ? new Vector4(this.m_doorX[i], this.m_doorY[i], this.m_doorZ[i], 1.0)
+                                      : new Vector4(0.0, 0.0, 0.0, 0.0);
+  }
+
+  public func ParkAt(i: Int32) -> Vector4 {
+    return i >= 0 && i < this.Count() ? new Vector4(this.m_parkX[i], this.m_parkY[i], this.m_parkZ[i], 1.0)
+                                      : new Vector4(0.0, 0.0, 0.0, 0.0);
+  }
+
   public func SetDoor(i: Int32, at: Vector4) -> Void {
     if i >= 0 && i < this.Count() {
       this.m_doorX[i] = at.X;

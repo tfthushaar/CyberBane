@@ -173,8 +173,14 @@ public class CBMapBook extends ScriptableSystem {
     }
     // The oldest goes by its place in the list. Check above has already let go of any empty entry, and erasing by place
     // means this loop cannot spin whatever the list holds.
+    // A gang's home (Spawn/GangHomes.reds) is never the one to go: the oldest of the rest is.
     while ArraySize(this.m_memories) >= CBConfig.MapMemoryKept() {
-      ArrayErase(this.m_memories, 0);
+      let oldest = 0;
+      while oldest < ArraySize(this.m_memories) - 1 && IsDefined(this.m_memories[oldest])
+            && this.m_memories[oldest].kind == CBMemGangHome() {
+        oldest += 1;
+      }
+      ArrayErase(this.m_memories, oldest);
     }
     if this.m_nextId <= 0 {
       this.m_nextId = 1;
@@ -320,34 +326,34 @@ public func CBMapMemoryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   if !IsDefined(book) || !IsDefined(ms) {
     return;
   }
-  if !CBMapRemembersOn() {
-    if book.PinnedCount() > 0 {
-      book.UnpinAll(ms);
-    }
-    return;
-  }
+  // What happened fades and goes; a gang's home (2.7.2) stays, shown or hidden by its own switch and that gang's standing.
+  let remember = CBMapRemembersOn();
   let now = CBGameSeconds(game);
   let life = CBConfig.MapMemoryHours() * CBConfig.SecondsPerHour();
   let i = book.Count() - 1;
   while i >= 0 {
     let m = book.At(i);
     i -= 1;
-    if IsDefined(m) && now - m.at > life {
+    if IsDefined(m) && m.kind != CBMemGangHome() && now - m.at > life {
       book.Unpin(ms, m.id);
       book.Forget(m);
     }
   }
   book.DropStrays(ms);
-  if !CBWorldStable(game) {
-    return;
-  }
   i = 0;
   while i < book.Count() {
     let m = book.At(i);
     i += 1;
-    if IsDefined(m) && !book.IsPinned(m.id) {
-      CBTrace("map: a pin where something happened");
-      book.SetPin(m.id, ms.RegisterMappin(CBPlacePinData(CBMemoryPinCaption(m.id)), new Vector4(m.x, m.y, m.z, 1.0)));
+    if IsDefined(m) {
+      let show = m.kind == CBMemGangHome() ? CBGangHomeShown(sys, game, m.a) : remember;
+      if !show && book.IsPinned(m.id) {
+        book.Unpin(ms, m.id);
+      } else {
+        if show && !book.IsPinned(m.id) && CBWorldStable(game) {
+          CBTrace("map: a pin where something happened");
+          book.SetPin(m.id, ms.RegisterMappin(CBPlacePinData(CBMemoryPinCaption(m.id)), new Vector4(m.x, m.y, m.z, 1.0)));
+        }
+      }
     }
   }
 }
@@ -375,6 +381,9 @@ public func CBMapMemoryTitle(sys: ref<CyberbaneSystem>, id: Int32) -> String {
     let r = sys.FindRivalById(m.subject);
     return IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : CBT(n"Cyberbane-MapPins-ARival");
   }
+  if m.kind == CBMemGangHome() {
+    return CBGangHomePinTitle(m);
+  }
   if m.kind == CBMemEventCrashed() {
     return CBEventCaptionOf(m.what, m.a, m.b);
   }
@@ -392,6 +401,9 @@ public func CBMapMemoryDesc(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   let m = IsDefined(book) ? book.Find(id) : null;
   if !IsDefined(m) {
     return "";
+  }
+  if m.kind == CBMemGangHome() {
+    return CBGangHomePinDesc(sys, m);
   }
   let ago = CBMapAgo(game, m.at);
   if m.kind == CBMemRivalFell() {
@@ -432,5 +444,6 @@ public func CBMapMemoryTint(sys: ref<CyberbaneSystem>, id: Int32) -> HDRColor {
   if IsDefined(m) && m.kind == CBMemEventCrashed() { return CBHudAmber(); }
   if IsDefined(m) && m.kind == CBMemTakeover() { return CBHudCyan(); }
   if IsDefined(m) && m.kind == CBMemCrewFell() { return CBHudGreen(); }
+  if IsDefined(m) && m.kind == CBMemGangHome() { return CBHudCyan(); }
   return CBHudRed();
 }

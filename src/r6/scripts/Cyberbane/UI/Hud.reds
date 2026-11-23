@@ -4800,7 +4800,7 @@ public class CBHud {
       let i = 0;
       while i < ArraySize(this.m_pickItems) && row < CBHudListRows() {
         let id = this.m_pickItems[i];
-        let data = IsDefined(ts) && IsDefined(player) ? ts.GetItemData(player, id) : null;
+        let data = this.m_crewMode == 1 ? CBCrewItemData(game, id) : (IsDefined(ts) && IsDefined(player) ? ts.GetItemData(player, id) : null);
         let kind = "";
         let tier = "";
         if IsDefined(data) {

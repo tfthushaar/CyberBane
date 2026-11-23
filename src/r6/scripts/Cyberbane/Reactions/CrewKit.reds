@@ -434,6 +434,12 @@ public func CBCrewWeaponChoices(game: GameInstance) -> array<ItemID> {
       ArrayPush(out, d.GetID());
     }
   }
+  // And the stash's, when V is at it (Reactions/CrewHome.reds, 2.7.2).
+  for s in CBArmoryChoices(game) {
+    if ArraySize(out) < CBConfig.CrewPickListMax() {
+      ArrayPush(out, s);
+    }
+  }
   return out;
 }
 
@@ -932,11 +938,13 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
     CBAddFlat(stats, id, gamedataStatType.Evasion, CBConfig.CrewLegendEvasion());
     CBGrantAbility(npc, t"Ability.CanGuardBreak");
   }
+  CBSetKillLimit(game, puppet, CBConfig.KillableApexSeconds());
   CBAddMult(stats, id, gamedataStatType.Health, ClampF(health, 1.0, healthCeiling));
   CBAddMult(stats, id, gamedataStatType.Armor, ClampF(armour, 1.0, CBConfig.CrewMultCeiling()));
   CBAddMult(stats, id, gamedataStatType.PhysicalDamage, ClampF(damage, 1.0, damageCeiling));
   CBAddMult(stats, id, gamedataStatType.NPCDamage, ClampF(npcDamage, 1.0, damageCeiling));
   puppet.cbHitCap = hitCap;   // no single hit takes more than this share of them (Spawn/FactionApex.reds, ApplyDamage)
+  CBKeepKillable(game, puppet, false);
   // Topped up to the new maximum, the way the game refills a pool.
   let pools = GameInstance.GetStatPoolsSystem(game);
   if IsDefined(pools) {
@@ -953,6 +961,10 @@ public func CBCrewReturnWeapon(game: GameInstance, k: ref<CBCrewKit>) -> Bool {
   if !IsDefined(k) || !k.hasWeapon || !IsDefined(player) || !IsDefined(ts) {
     return false;
   }
+  // One from the stash never left it (2.7.2).
+  if CBArmoryReturn(game, k) {
+    return true;
+  }
   ts.GiveItem(player, k.weapon, 1);
   k.hasWeapon = false;
   k.weaponTier = 0;
@@ -966,7 +978,9 @@ public func CBCrewKitLeaves(game: GameInstance, id: Int32) -> Void {
   if !IsDefined(k) {
     return;
   }
-  if CBCrewReturnWeapon(game, k) && CBMessagesOn() {
+  let ab = CBArmoryBook.Get(game);
+  let fromStash = IsDefined(ab) && ab.Has(id);
+  if CBCrewReturnWeapon(game, k) && CBMessagesOn() && !fromStash {
     CBHearsayFromStreet(game, CBT(n"Cyberbane-CrewKit-SomebodyDroppedOffAWeaponOf"), n"");
   }
   kb.Forget(id);
@@ -1353,6 +1367,11 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   if !IsDefined(player) || !IsDefined(ts) || !ItemID.IsValid(item) {
     return;
   }
+  // From the stash V is at: it stays there (Reactions/CrewHome.reds, 2.7.2).
+  if CBArmoryFromStash(game, item) {
+    CBArmoryGive(sys, game, kb, m, item);
+    return;
+  }
   let data = ts.GetItemData(player, item);
   if !IsDefined(data) || RPGManager.IsItemEquipped(player, item) {
     CBMenuNote(game, CBT(n"Cyberbane-CrewKit-ThatWeaponIsNotInYour"), 4.0);
@@ -1395,7 +1414,7 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
     }
   }
   let what = CBCrewItemName(ItemID.GetTDBID(item));
-  CBCrewText(sys, game, m, s"\(what). \(tier >= 3 ? "That's a serious piece. I'll bring it back in one piece." : "I'll put it to work.")");
+  CBCrewText(sys, game, m, tier >= 3 ? CBTf(n"Cyberbane-CrewKit-SeriousPiece", [what]) : CBTf(n"Cyberbane-CrewKit-PutItToWork", [what]));
   CBLog.Info(n"Crew", s"V gave one of the crew a weapon (\(CBCrewSeatWord(seat)), tier \(tier)).");
 }
 

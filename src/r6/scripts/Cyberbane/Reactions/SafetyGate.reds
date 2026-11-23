@@ -70,7 +70,8 @@ public abstract class CBSafetyGate {
     // or a friendly gang's people lent to V (Reactions/Crew.reds, Reactions/Allies.reds). Hurt by V on the way, they
     // were taken for anybody V had put down, and could come back as a Rival (2.5.0).
     let desGate = GameInstance.GetDynamicEntitySystem();
-    if IsDefined(desGate) && (desGate.IsTagged(puppet.GetEntityID(), n"CB_Own") || desGate.IsTagged(puppet.GetEntityID(), n"CB_Follower")) {
+    if IsDefined(desGate) && (desGate.IsTagged(puppet.GetEntityID(), n"CB_Own") || desGate.IsTagged(puppet.GetEntityID(), n"CB_Follower")
+                              || desGate.IsTagged(puppet.GetEntityID(), n"CB_Guard")) {
       return false;
     }
     if puppet.IsVendor() {

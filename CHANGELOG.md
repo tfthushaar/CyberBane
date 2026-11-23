@@ -3,6 +3,48 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.7.2 (23 November 2026)
+
+**Fixed: a Rival who could not be killed**
+- A Scavs Rival with subdermal armour shrugged off 3,000-point crits and seemed to heal. The game's heavier gangers already
+  have subdermal armour, and a Rival's implants gave them a second set. The two multiply each other, so armour and health
+  went up many times over, and then Cyberbane's own toughness went on top. A Rival's implants never add a second set now,
+  and no ability Cyberbane gives is added to somebody who already has it.
+- Every enemy Cyberbane builds now has a limit on how long your own weapons take to put them down, counting their armour.
+  They are still tough, and the toughest Rivals still take a real fight, but none of them can outlast your damage.
+- While you are hurting one of Cyberbane's people, nothing heals them. If something does (another mod, or the game's
+  own protection on a character), Cyberbane takes it off and the damage you did goes back on.
+- A Rival whose bodyguard you put down could get a little health back. Not any more.
+
+**New: places to find a gang**
+- The Mox at Lizzie's Bar, Maelstrom at Totentanz, the Valentinos at El Coyote Cojo, the Tyger Claws at Wakako's
+  pachinko parlor, the Voodoo Boys at their chapel in Pacifica and the Animals at the Grand Imperial Mall.
+- The first time you are at one of them it goes on your map, in the CYBERBANE box, hidden while that gang is Hostile or
+  at Vendetta with you.
+- Come within about 150 metres and, if none of them are about, a few of them are there to talk to, once a day.
+- Ask anybody of theirs **Where do your people hang out?** and they tell you.
+- New setting: **Gang homes**, under **Gang life**, on by default.
+
+**New: the crew at home**
+- **Watch the house** is a new kind of work on a member's Work row. While you are on home ground, members on watch stand
+  at your building's door and its car park, learned from where you come and go. They can be talked to, and they fight
+  anybody of Cyberbane's who starts something there. One who goes down is hurt for a while, not lost.
+- New setting: **Guards at home**, under **Your crew**: how many can watch the house, 0 to 3 (2 by default).
+- Your stash is the crew's armory. Near it, **Give them a weapon** lists the stash's guns too. A gun given from the stash
+  stays in it with all its mods, and they fight with its kind and quality. If you sell it or take it out, they lose it
+  the next time you are at the stash.
+- Talk to one of your crew: **How are you holding up?** (their loyalty, what has been eating at them, the cut),
+  **Tell me about** their old gang (what it was like from the inside, told the way somebody who joined you would tell
+  it), and **Heard anything?** (a Rival from that gang whose weak spot they know, once).
+
+**Fixed**
+- Giving one of your crew a weapon showed their reply in English whatever your language.
+
+**For translators:** new lines are in `DefineGangHomes`, `DefineCrewHome`, and two at the end of `DefineCrewHome` for
+giving a weapon (`Cyberbane-CrewKit-SeriousPiece`, `Cyberbane-CrewKit-PutItToWork`).
+
+Your progress carries over.
+
 ## 2.7.1 (23 November 2026)
 
 **New: home ground**

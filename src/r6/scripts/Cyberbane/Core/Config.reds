@@ -1557,6 +1557,28 @@ public abstract class CBConfig {
   public static func ApexHitCapAtMax() -> Float = 10.0
   public static func RivalHitCapTop() -> Float = 8.0
   public static func ApexArmorMultCeiling() -> Float = 1.8
+  // Nobody Cyberbane sends is beyond V's reach (2.7.2, Spawn/Killable.reds): the finished body carries no more effective
+  // health (health, and what armour multiplies it by) than this many seconds of V's measured damage, from the lowest to
+  // the highest Rival, for an apex squad, and for anybody else Cyberbane builds; KillableBlindMult times what it carried
+  // before the build when V's damage cannot be read. Armour never divides a hit by more than KillableArmourFactor. While
+  // V lands hits, once they add up to KillableWatchWindow of the body's health, and KillableUndoneShare of it has come
+  // back, whatever brought it back comes off. Hits closer together than KillableBurstSeconds count as one burst.
+  // A gang's home (2.7.2, Spawn/GangHomes.reds): somebody is placed there when V comes this close.
+  public static func GangHomeReach() -> Float = 150.0
+  public static func GangHomeStepOut() -> Float = 60.0
+  // The crew at home (2.7.2, Reactions/CrewHome.reds): the stash counts as the armory within ArmoryReach of V, and the
+  // watch takes up a fight of Cyberbane's within GuardDefendRange of its post.
+  public static func ArmoryReach() -> Float = 25.0
+  public static func GuardDefendRange() -> Float = 40.0
+  public static func KillableRivalSecondsLow() -> Float = 15.0
+  public static func KillableRivalSecondsTop() -> Float = 30.0
+  public static func KillableApexSeconds() -> Float = 24.0
+  public static func KillableCrewSeconds() -> Float = 12.0
+  public static func KillableBlindMult() -> Float = 4.0
+  public static func KillableArmourFactor() -> Float = 4.0
+  public static func KillableWatchWindow() -> Float = 0.5
+  public static func KillableUndoneShare() -> Float = 0.5
+  public static func KillableBurstSeconds() -> Float = 0.1
   public static func ApexDamageMultCeiling() -> Float = 1.6
   public static func ApexCritChanceCeiling() -> Float = 15.0
   public static func ApexCritDamageCeiling() -> Float = 40.0

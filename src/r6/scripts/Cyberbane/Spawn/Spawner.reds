@@ -1247,6 +1247,9 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
   // patrols and an ended encounter's body streaming back in kept it, so an enemy from such a record could not be killed.
   // First, before anything decides what they are; V's own crew are protected again by their own setup when the setting says.
   CBDisarmGodMode(game, puppet);
+  // And nothing brings them back from V's damage (2.7.2, Spawn/Killable.reds): every body Cyberbane puts in the world is
+  // watched while V lands hits. One that gets built takes its ceiling again then; this one only keeps what it came with.
+  CBSetKillLimit(game, puppet, CBConfig.KillableCrewSeconds());
   // Knocked out and streamed back in. Made hostile, told to chase V and marked, they used to be:
   // a body on the ground with an order it could not carry out and a pin that stayed until it died.
   if !CBStillStanding(puppet) {
@@ -1307,6 +1310,12 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
     return;
   }
   // One of V's own crew (Reactions/Crew.reds, 2.5.0): kitted for their seat, on the game's own follower role.
+  // One of V's crew at a post at home (Reactions/CrewHome.reds, 2.7.2).
+  if des.IsTagged(id, n"CB_Guard") {
+    CBSetUpGuard(sys, game, puppet);
+    return;
+  }
+
   if des.IsTagged(id, n"CB_Own") {
     CBSetUpCrewMember(sys, game, puppet);
     return;

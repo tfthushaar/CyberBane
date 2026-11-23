@@ -587,6 +587,17 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
   @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewGuards")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewGuards-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "3")
+  @runtimeProperty("ModSettings.step", "1")
+  public let crewGuards: Int32 = 2;   // 2.7.2
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewFrightJoin")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewFrightJoin-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
@@ -1207,6 +1218,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Gatherings")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Gatherings-Desc")
   public let gatherings: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangHomes")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangHomes-Desc")
+  public let gangHomes: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")

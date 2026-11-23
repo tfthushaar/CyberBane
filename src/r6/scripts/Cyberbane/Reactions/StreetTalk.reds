@@ -77,11 +77,18 @@ public let cbTalkDone: Int32;
 @addField(ScriptedPuppet)
 public let cbTalkDoneHigh: Int32;
 
+// And 62 to 92 (2.7.2): the crew's own lines start at 62, one past what the second could hold.
+@addField(ScriptedPuppet)
+public let cbTalkDoneHigher: Int32;
+
 public func CBTalkDid(npc: wref<ScriptedPuppet>, act: Int32) -> Bool {
   if !IsDefined(npc) {
     return false;
   }
-  return act <= 30 ? CBMaskHas(npc.cbTalkDone, act) : CBMaskHas(npc.cbTalkDoneHigh, act - 31);
+  if act <= 30 {
+    return CBMaskHas(npc.cbTalkDone, act);
+  }
+  return act <= 61 ? CBMaskHas(npc.cbTalkDoneHigh, act - 31) : CBMaskHas(npc.cbTalkDoneHigher, act - 62);
 }
 
 public func CBTalkSetDid(npc: wref<ScriptedPuppet>, act: Int32) -> Void {
@@ -91,7 +98,11 @@ public func CBTalkSetDid(npc: wref<ScriptedPuppet>, act: Int32) -> Void {
   if act <= 30 {
     npc.cbTalkDone = CBMaskSet(npc.cbTalkDone, act);
   } else {
-    npc.cbTalkDoneHigh = CBMaskSet(npc.cbTalkDoneHigh, act - 31);
+    if act <= 61 {
+      npc.cbTalkDoneHigh = CBMaskSet(npc.cbTalkDoneHigh, act - 31);
+    } else {
+      npc.cbTalkDoneHigher = CBMaskSet(npc.cbTalkDoneHigher, act - 62);
+    }
   }
 }
 
@@ -1654,6 +1665,12 @@ public class CBStreetTalk {
     if choice == CBTalkActAskComing() {
       return CBTalkAnswerComing(sys, game, t, again);
     }
+    if choice == CBTalkActAskHome() {
+      return CBTalkAnswerHome(sys, game, t, again);
+    }
+    if choice == CBTalkActCrewHolding() || choice == CBTalkActCrewGang() || choice == CBTalkActCrewHeard() {
+      return CBCrewTalkAnswer(sys, game, t, choice, again);
+    }
     if choice == CBTalkActAskRival() {
       return this.Offer(CBTalkAskRival(sys, game, player, t, again), CBTalkDealLead());
     }
@@ -2399,7 +2416,7 @@ func CBTalkOnVsSide(des: ref<DynamicEntitySystem>, npc: wref<ScriptedPuppet>) ->
     return false;
   }
   let id = npc.GetEntityID();
-  return des.IsTagged(id, n"CB_Own") || des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Follower");
+  return des.IsTagged(id, n"CB_Own") || des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Follower") || des.IsTagged(id, n"CB_Guard");
 }
 
 // The reasons V is told about (CBTalkWhyHint), each kept as one string for the same reason.
@@ -3199,6 +3216,11 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   }
   if t.rivalId > 0 {
     return t.facedown ? CBRivalFacedownLines(sys, game, t) : CBRivalMercyLines(sys, game, t);
+  }
+  // One of V's own (Reactions/CrewHome.reds, 2.7.2).
+  let crewLines = CBCrewTalkLines(sys, game, t);
+  if ArraySize(crewLines) > 0 {
+    return crewLines;
   }
   let out: array<ref<CBTalkLine>>;
   let gang = NotEquals(t.faction, n"") && !t.cop;

@@ -142,7 +142,8 @@ public func CBSpawnRoomNote(game: GameInstance) -> String {
   }
   let tags: array<CName> = [n"CB_Squad", n"CB_Escort", n"CB_Apex", n"CB_Rival", n"CB_Lair", n"CB_Orphan", n"CB_Scout",
                             n"CB_Bounty", n"CB_Own", n"CB_Ally", n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Event",
-                            n"CB_Patrol", n"CB_Ambush", n"CB_Wannabe", n"CB_Hangout", n"CB_Debtor", n"CB_Witness"];
+                            n"CB_Patrol", n"CB_Ambush", n"CB_Wannabe", n"CB_Hangout", n"CB_Debtor", n"CB_Witness",
+                            n"CB_Guard"];
   let counts: array<Int32>;
   for t in tags {
     ArrayPush(counts, 0);
