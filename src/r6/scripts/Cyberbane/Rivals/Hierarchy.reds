@@ -20,20 +20,20 @@ public func CBRoleLeader() -> Int32 = 2
 // takes most of it. CBRoleName stays long for messages.
 public func CBRoleShort(role: Int32) -> String {
   if role == CBRoleLeader() {
-    return "LEADER";
+    return CBT(n"Cyberbane-Hierarchy-LEADER");
   }
   if role == CBRoleLieutenant() {
-    return "LT";
+    return CBT(n"Cyberbane-Hierarchy-LT");
   }
   return "";
 }
 
 public func CBRoleName(role: Int32) -> String {
   if role == CBRoleLeader() {
-    return "LEADER";
+    return CBT(n"Cyberbane-Hierarchy-LEADER");
   }
   if role == CBRoleLieutenant() {
-    return "LIEUTENANT";
+    return CBT(n"Cyberbane-Hierarchy-LIEUTENANT");
   }
   return "";
 }
@@ -242,8 +242,7 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
     let heir = sys.FindRivalById(fs.leaderRivalId);
     if IsDefined(heir) && CBMessagesOn() {
       let content = CBContent(game);
-      CBHearsayFromGangFinal(game, rival.faction, CBRivalDisplayName(content, heir)
-        + " runs us now. Nothing about you has changed.", n"");
+      CBHearsayFromGangFinal(game, rival.faction, CBTf(n"Cyberbane-Hierarchy-RunsUsNowNothingAboutYou", [CBRivalDisplayName(content, heir)]), n"");
     }
   }
 }
@@ -268,16 +267,16 @@ public func CBScarLabel(mask: Int32) -> String {
     return "";
   }
   if CBMaskHas(mask, CBScarBurned()) {
-    return "burned";
+    return CBT(n"Cyberbane-Hierarchy-Burned");
   }
   if CBMaskHas(mask, CBScarFried()) {
-    return "fried";
+    return CBT(n"Cyberbane-Hierarchy-Fried");
   }
   if CBMaskHas(mask, CBScarCut()) {
-    return "cut up";
+    return CBT(n"Cyberbane-Hierarchy-CutUp");
   }
   if CBMaskHas(mask, CBScarShot()) {
-    return "shot up";
+    return CBT(n"Cyberbane-Hierarchy-ShotUp");
   }
   return "";
 }

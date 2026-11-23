@@ -33,7 +33,7 @@ public func CBTurfPatrolTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
   let now = sys.GetTickCount();
   let here = sys.GetCurrentDistrict();
   let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || sys.IsInSanctuary()
-          || sys.IsInSafeZone() || CBStealthEncounterNearby(sys, game) || CBPoliceOnV(sys);
+          || sys.IsInSafeZone() || CBStealthEncounterNearby(sys, game) || CBPoliceOnV(sys) || CBHomeKeepsOut(sys);
   if sys.IsInSanctuary() {
     CBSanctuaryHoldTag(sys, game, des, player, n"CB_Patrol", false);
   }

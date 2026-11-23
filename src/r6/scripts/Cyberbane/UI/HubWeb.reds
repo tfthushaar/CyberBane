@@ -157,31 +157,48 @@ public func CBWebPostureColour(posture: ECBPosture) -> HDRColor {
 }
 
 // The word on V's line to this gang: what is live between them, the most pressing first, or "".
+// The words that mean trouble, one function each so the tint below asks the same words the box shows (2.7.1).
+func CBWebWordOpenSeason() -> String {
+  return CBT(n"Cyberbane-HubWeb-OPENSEASON");
+}
+
+func CBWebWordTracker() -> String {
+  return CBT(n"Cyberbane-HubWeb-TRACKER");
+}
+
+func CBWebWordPrice() -> String {
+  return CBT(n"Cyberbane-HubWeb-APRICEONYOU");
+}
+
+func CBWebWordPayUp() -> String {
+  return CBT(n"Cyberbane-HubWeb-PAYUP");
+}
+
 public func CBWebVWord(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> String {
   if CBOpenSeasonFor(game, gang) {
-    return "OPEN SEASON";
+    return CBWebWordOpenSeason();
   }
   if Equals(CBTrackerGang(game), gang) {
-    return "TRACKER";
+    return CBWebWordTracker();
   }
   let book = CBHuntBook.Get(game);
   if IsDefined(book) && CBBountyUp(game) > 0 && Equals(CBBountyGang(sys, book.BountyBy()), gang) {
-    return "A PRICE ON YOU";
+    return CBWebWordPrice();
   }
   let war = CBWarBook.Get(game);
   let now = CBGameSeconds(game);
   if IsDefined(war) && Equals(gang, n"TygerClaws") && war.ProtectDue() > now {
-    return "PAY UP";
+    return CBWebWordPayUp();
   }
   if IsDefined(war) && CBBackingOn() && Equals(war.Backed(), gang) {
-    return "BACKED";
+    return CBT(n"Cyberbane-HubWeb-BACKED");
   }
   if sys.TollActive(gang, now) {
-    return "SAFE PASSAGE";
+    return CBT(n"Cyberbane-HubWeb-SAFEPASSAGE");
   }
   let fs = sys.FindFaction(gang);
   if IsDefined(fs) && fs.lastPeaceAt > 0.0 && now - fs.lastPeaceAt < CBConfig.WebPeaceDays() * CBConfig.SecondsPerDay() {
-    return "PEACE PAID";
+    return CBT(n"Cyberbane-HubWeb-PEACEPAID");
   }
   return "";
 }
@@ -249,7 +266,7 @@ public func CBWebAtWar(sys: ref<CyberbaneSystem>, game: GameInstance, a: CName, 
 
 public func CBWebBoxLine(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> String {
   if !CBFactionOn(gang) {
-    return "OFF";
+    return CBT(n"Cyberbane-HubWeb-OFF");
   }
   let score = sys.GetScore();
   if !IsDefined(score) {
@@ -280,18 +297,18 @@ public func CBWebRelationWords(sys: ref<CyberbaneSystem>, game: GameInstance, ga
       let name = CBFactionLabel(other);
       let said = "";
       if kind == CBWebPairClash() {
-        said = s"Fought \(name) in the street today.";
+        said = CBTf(n"Cyberbane-HubWeb-FoughtInTheStreetToday", [s"\(name)"]);
       }
       if kind == CBWebPairWar() {
-        said = s"At war with \(name) over a district.";
+        said = CBTf(n"Cyberbane-HubWeb-AtWarWithOverADistrict", [s"\(name)"]);
       }
       if kind == CBWebPairTruce() {
         let war = CBWarBook.Get(game);
         let left = IsDefined(war) ? CBWebTruceHours(war, gang, other, now) : 0;
-        said = left > 0 ? s"In a truce with \(name) against you, \(left) hours left." : s"In a truce with \(name) against you.";
+        said = left > 0 ? CBTf(n"Cyberbane-HubWeb-InATruceWithAgainstYou", [s"\(name)", s"\(left)"]) : CBTf(n"Cyberbane-HubWeb-InATruceWithAgainstYou-2", [s"\(name)"]);
       }
       if kind == CBWebPairIncite() {
-        said = s"Set on \(name) by a lie of yours.";
+        said = CBTf(n"Cyberbane-HubWeb-SetOnByALieOf", [s"\(name)"]);
       }
       if StrLen(said) > 0 {
         out += (StrLen(out) > 0 ? " " : "") + said;
@@ -311,17 +328,17 @@ func CBWebTruceHours(war: ref<CBWarBook>, a: CName, b: CName, now: Float) -> Int
 }
 
 public func CBWebLegend() -> String {
-  return "Each card is a gang: what they think of you, and the bar from red (out for blood) to green (on your side). The ones after you come first.\nClick a gang to see how every other gang stands with it, what it thinks of you, and to pay it off.";
+  return CBT(n"Cyberbane-HubWeb-EachCardIsAGangWhat");
 }
 
 // How a gang stands with the one picked, on its card (2.5.0).
 public func CBCardPairWords(kind: Int32, other: String) -> String {
-  if kind == CBWebPairClash() { return "Fought " + other + " today"; }
-  if kind == CBWebPairWar() { return "At war with " + other; }
-  if kind == CBWebPairTruce() { return "Truce with " + other + " against you"; }
-  if kind == CBWebPairIncite() { return "You set them on " + other; }
-  if kind == CBWebPairFeud() { return "Old feud with " + other; }
-  return "No quarrel with " + other;
+  if kind == CBWebPairClash() { return CBTf(n"Cyberbane-HubWeb-FoughtToday", [other]); }
+  if kind == CBWebPairWar() { return CBTf(n"Cyberbane-HubWeb-AtWarWith", [other]); }
+  if kind == CBWebPairTruce() { return CBTf(n"Cyberbane-HubWeb-TruceWithAgainstYou", [other]); }
+  if kind == CBWebPairIncite() { return CBTf(n"Cyberbane-HubWeb-YouSetThemOn", [other]); }
+  if kind == CBWebPairFeud() { return CBTf(n"Cyberbane-HubWeb-OldFeudWith", [other]); }
+  return CBTf(n"Cyberbane-HubWeb-NoQuarrelWith", [other]);
 }
 
 public func CBCardPairTint(kind: Int32) -> HDRColor {
@@ -350,7 +367,8 @@ public func CBCardRank(score: ref<CBScoreEngine>, gang: CName) -> Float {
 // The word under a gang's name in its box, what is live between them and V (CBWebVWord), coloured by whether it is
 // trouble or help.
 public func CBWebVWordTint(word: String) -> HDRColor {
-  if Equals(word, "OPEN SEASON") || Equals(word, "TRACKER") || Equals(word, "A PRICE ON YOU") || Equals(word, "PAY UP") {
+  if Equals(word, CBWebWordOpenSeason()) || Equals(word, CBWebWordTracker()) || Equals(word, CBWebWordPrice())
+     || Equals(word, CBWebWordPayUp()) {
     return CBHudRed();
   }
   return CBHudGreen();

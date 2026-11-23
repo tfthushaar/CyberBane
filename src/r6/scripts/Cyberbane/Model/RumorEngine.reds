@@ -77,9 +77,9 @@ func CBBraindanceGoesRound(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
   if CBToastsOn() {
     let where = CBDistrictLabel(r.origin);
     CBHearsayFromStreet(game, CBPick3(
-      "Somebody had a recorder running. What you did" + (StrLen(where) > 0 ? " in " + where : "") + " is on every BD stall from Kabuki to Pacifica.",
-      "It's a braindance now. Kids in Japantown are playing your night on repeat.",
-      "Every scroller in the city has the footage. Your face, frame by frame."), n"");
+      CBTf(n"Cyberbane-RumorEngine-SomebodyHadARecorderRunningWhat", [(StrLen(where) > 0 ? CBTf(n"Cyberbane-RumorEngine-In", [where]) : "")]),
+      CBT(n"Cyberbane-RumorEngine-ItSABraindanceNowKids"),
+      CBT(n"Cyberbane-RumorEngine-EveryScrollerInTheCityHas")), n"");
   }
 }
 

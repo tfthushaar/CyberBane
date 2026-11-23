@@ -47,32 +47,32 @@ public func CBContactMessage(game: GameInstance, body: String) -> Void {
 func CBGrapevineNamedLine(kind: CName, where: String, seed: Int32) -> String {
   if Equals(kind, n"BossKill") {
     return CBLineOf([
-      "Heard what you did to their boss. " + where + " is talking about it.",
-      "Boss of theirs, down. " + where + " can't shut up about it, and they're using your name.",
-      "Every bar in " + where + " is drinking to that boss of theirs tonight. Or to you. Depends on the bar."]);
+      CBTf(n"Cyberbane-Grapevine-HeardWhatYouDidToTheir", [where]),
+      CBTf(n"Cyberbane-Grapevine-BossOfTheirsDownCanT", [where]),
+      CBTf(n"Cyberbane-Grapevine-EveryBarInIsDrinkingTo", [where])]);
   }
   if Equals(kind, n"Massacre") {
     return CBLineOf([
-      "Word out of " + where + " is you left a mess. People are repeating it.",
-      "What you left in " + where + "? The ambulances are still counting.",
-      "People in " + where + " are describing it to each other in detail. Your name keeps coming up."]);
+      CBTf(n"Cyberbane-Grapevine-WordOutOfIsYouLeft", [where]),
+      CBTf(n"Cyberbane-Grapevine-WhatYouLeftInTheAmbulances", [where]),
+      CBTf(n"Cyberbane-Grapevine-PeopleInAreDescribingItTo", [where])]);
   }
   return CBLineOf([
-    "Your name came up in " + where + " today. Thought you should know.",
-    "They are talking about you in " + where + ". Not quietly.",
-    "Heard about " + where + ". Word travels faster than you do.",
-    "Somebody in " + where + " knows your name now. Make of that what you will.",
-    "Your name's doing the rounds in " + where + ". Fixers, bartenders, the lot."]);
+    CBTf(n"Cyberbane-Grapevine-YourNameCameUpInToday", [where]),
+    CBTf(n"Cyberbane-Grapevine-TheyAreTalkingAboutYouIn", [where]),
+    CBTf(n"Cyberbane-Grapevine-HeardAboutWordTravelsFasterThan", [where]),
+    CBTf(n"Cyberbane-Grapevine-SomebodyInKnowsYourNameNow", [where]),
+    CBTf(n"Cyberbane-Grapevine-YourNameSDoingTheRounds", [where])]);
 }
 
 // Word with nobody's name on it, because nobody lived close enough to supply one.
 func CBGrapevineAnonLine(where: String, seed: Int32) -> String {
   return CBLineOf([
-    "Bodies turning up in " + where + " and nobody can say whose work it is.",
-    "Something is working " + where + ". No name on it. People are nervous.",
-    "Heard " + where + " has a problem nobody can describe. Know anything?",
-    "Whatever happened in " + where + ", no witnesses walked. Street is spooked.",
-    "People in " + where + " are locking their doors and not saying why."]);
+    CBTf(n"Cyberbane-Grapevine-BodiesTurningUpInAndNobody", [where]),
+    CBTf(n"Cyberbane-Grapevine-SomethingIsWorkingNoNameOn", [where]),
+    CBTf(n"Cyberbane-Grapevine-HeardHasAProblemNobodyCan", [where]),
+    CBTf(n"Cyberbane-Grapevine-WhateverHappenedInNoWitnessesWalked", [where]),
+    CBTf(n"Cyberbane-Grapevine-PeopleInAreLockingTheirDoors", [where])]);
 }
 
 // Called when a rumor reaches a district it had not touched before.
@@ -104,7 +104,7 @@ public func CBGrapevineOnReach(sys: ref<CyberbaneSystem>, game: GameInstance, r:
   // CBDistrictLabel lives in Model/TitleNaming.reds and returns "" for an unknown id.
   let where = CBDistrictLabel(districtId);
   if Equals(where, "") {
-    where = "out there";
+    where = CBT(n"Cyberbane-Grapevine-OutThere");
   }
   let seed = Cast<Int32>(RandF() * 4.0);
   if seed > 3 {
@@ -178,7 +178,7 @@ public func CBGrapevineOnArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   let from = CBDistrictLabel(loudest.origin);
   if Equals(from, "") {
-    from = "across town";
+    from = CBT(n"Cyberbane-Grapevine-AcrossTown");
   }
   CBPhoneFromDistrict(game, districtId, CBGrapevineArrivalLine(loudest, from,
                                                                RandRange(0, 4)));
@@ -192,24 +192,24 @@ public func CBGrapevineOnArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
 func CBGrapevineArrivalLine(r: ref<CBRumor>, from: String, seed: Int32) -> String {
   if !r.witnessed {
     return CBLineOf([
-      "You are a long way from " + from + ". Whatever happened there followed you here anyway.",
-      "Word came in from " + from + " before you did. No name on it. Still made people careful.",
-      "Something out of " + from + " has people here talking. You would not know anything about it.",
-      "People here heard about " + from + ". Nobody can say who. Welcome to the neighbourhood."]);
+      CBTf(n"Cyberbane-Grapevine-YouAreALongWayFrom", [from]),
+      CBTf(n"Cyberbane-Grapevine-WordCameInFromBeforeYou", [from]),
+      CBTf(n"Cyberbane-Grapevine-SomethingOutOfHasPeopleHere", [from]),
+      CBTf(n"Cyberbane-Grapevine-PeopleHereHeardAboutNobodyCan", [from])]);
   }
   if Equals(r.kind, n"BossKill") {
     return CBLineOf([
-      "They know about the boss you put down in " + from + ". That story got here before you.",
-      "The boss in " + from + "? Everybody here has heard. Not all of them are sorry."]);
+      CBTf(n"Cyberbane-Grapevine-TheyKnowAboutTheBossYou", [from]),
+      CBTf(n"Cyberbane-Grapevine-TheBossInEverybodyHereHas", [from])]);
   }
   if Equals(r.kind, n"Massacre") {
     return CBLineOf([
-      "What you left in " + from + " is being repeated on this side of town. Word for word.",
-      "They've heard about " + from + " here. Some people moved their kids indoors."]);
+      CBTf(n"Cyberbane-Grapevine-WhatYouLeftInIsBeing", [from]),
+      CBTf(n"Cyberbane-Grapevine-TheyVeHeardAboutHereSome", [from])]);
   }
   return CBLineOf([
-    "Your name is already in circulation here. Came up from " + from + ".",
-    "You are known on this side of town now. Word travelled out of " + from + ".",
-    "Heard about " + from + " before you ever walked in here. People notice.",
-    "They were talking about " + from + " here before you arrived. You should know that."]);
+    CBTf(n"Cyberbane-Grapevine-YourNameIsAlreadyInCirculation", [from]),
+    CBTf(n"Cyberbane-Grapevine-YouAreKnownOnThisSide", [from]),
+    CBTf(n"Cyberbane-Grapevine-HeardAboutBeforeYouEverWalked", [from]),
+    CBTf(n"Cyberbane-Grapevine-TheyWereTalkingAboutHereBefore", [from])]);
 }

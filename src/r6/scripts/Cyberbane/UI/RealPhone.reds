@@ -289,24 +289,24 @@ public func CBRealPhoneChoices(hash: Int32) -> array<String> {
   let thread = CBPhoneThreadOf(hash);
   let kind = CBRealPhoneAnswerKind(sys, game, store, thread);
   if kind == CBPhoneAnswerLead() {
-    ArrayPush(out, s"Deal: \(store.ThreadLeadPrice(thread))eb");
+    ArrayPush(out, CBTf(n"Cyberbane-Crew-DealEb", [s"\(store.ThreadLeadPrice(thread))"]));
     if !store.ThreadLeadHaggled(thread) && CBTalkHaggleOn() {
-      ArrayPush(out, "Too much");
+      ArrayPush(out, CBT(n"Cyberbane-Crew-TooMuch"));
     }
-    ArrayPush(out, "Forget it");
+    ArrayPush(out, CBT(n"Cyberbane-RealPhone-ForgetIt"));
     return out;
   }
   // A gang's offer and a Rival's thread (2.4.6, [U13]): the rows from CBPhoneRows, in its order.
   for row in CBPhoneRows(sys, game, store, thread, kind) {
-    if row == CBPhoneRowPay() { ArrayPush(out, s"Pay \(CBPeaceQuote(sys, game, store.ThreadOffer(thread)))eb to call it off"); }
-    if row == CBPhoneRowHaggle() { ArrayPush(out, "Too much"); }
-    if row == CBPhoneRowStall() { ArrayPush(out, "Give me a day"); }
-    if row == CBPhoneRowThreaten() { ArrayPush(out, "Back off, or else"); }
-    if row == CBPhoneRowInsult() { ArrayPush(out, "Come and try it"); }
-    if row == CBPhoneRowRefuse() { ArrayPush(out, "Not paying"); }
-    if row == CBPhoneRowComeOn() { ArrayPush(out, "Come and find me"); }
-    if row == CBPhoneRowNamePlace() { ArrayPush(out, "Name the place"); }
-    if row == CBPhoneRowTaunt() { ArrayPush(out, "You'll lose again"); }
+    if row == CBPhoneRowPay() { ArrayPush(out, CBTf(n"Cyberbane-RealPhone-PayEbToCallItOff", [s"\(CBPeaceQuote(sys, game, store.ThreadOffer(thread)))"])); }
+    if row == CBPhoneRowHaggle() { ArrayPush(out, CBT(n"Cyberbane-Crew-TooMuch")); }
+    if row == CBPhoneRowStall() { ArrayPush(out, CBT(n"Cyberbane-RealPhone-GiveMeADay")); }
+    if row == CBPhoneRowThreaten() { ArrayPush(out, CBT(n"Cyberbane-RealPhone-BackOffOrElse")); }
+    if row == CBPhoneRowInsult() { ArrayPush(out, CBT(n"Cyberbane-RealPhone-ComeAndTryIt")); }
+    if row == CBPhoneRowRefuse() { ArrayPush(out, CBT(n"Cyberbane-RealPhone-NotPaying")); }
+    if row == CBPhoneRowComeOn() { ArrayPush(out, CBT(n"Cyberbane-RealPhone-ComeAndFindMe")); }
+    if row == CBPhoneRowNamePlace() { ArrayPush(out, CBT(n"Cyberbane-RealPhone-NameThePlace")); }
+    if row == CBPhoneRowTaunt() { ArrayPush(out, CBT(n"Cyberbane-RealPhone-YouLlLoseAgain")); }
     if row >= CBPhoneRowCallCrew() { ArrayPush(out, CBCrewPhoneRowText(sys, game, row)); }
   }
   return out;
@@ -352,11 +352,11 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   }
   // "Too much": the offer stays, at whatever price they come back with.
   if row == CBPhoneRowHaggle() {
-    store.Reply(game, thread, CBPick2("Too much.", "For that? Come on."));
+    store.Reply(game, thread, CBPick2(CBT(n"Cyberbane-RealPhone-TooMuch"), CBT(n"Cyberbane-RealPhone-ForThatComeOn")));
     if CBPeaceHaggle(sys, game, faction) {
-      CBPhoneDemandFromGang(game, faction, s"Fine. \(CBPeaceQuote(sys, game, faction))eb, and that's the last time we move.", true);
+      CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-RealPhone-FineEbAndThatSThe", [s"\(CBPeaceQuote(sys, game, faction))"]), true);
     } else {
-      CBPhoneDemandFromGang(game, faction, s"The price is \(cost)eb. Take it or don't.", true);
+      CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-RealPhone-ThePriceIsEbTakeIt", [s"\(cost)"]), true);
     }
     return;
   }
@@ -368,13 +368,13 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
     let ts = GameInstance.GetTransactionSystem(game);
     let enough = IsDefined(player) && IsDefined(ts)
                  && ts.GetItemQuantity(player, ItemID.FromTDBID(t"Items.money")) >= cost;
-    store.Reply(game, thread, enough ? s"\(cost)eb. Call it off." : "I don't have that on me.");
+    store.Reply(game, thread, enough ? CBTf(n"Cyberbane-RealPhone-EbCallItOff", [s"\(cost)"]) : CBT(n"Cyberbane-RealPhone-IDonTHaveThatOn"));
     // Pays, clears the vendetta and anything on its way, and has the gang confirm it. If V
     // cannot cover it, the gang says so and the offer stays open.
     CBBrokerPeace(sys, game, faction);
   } else {
-    store.Reply(game, thread, "Not paying. Send whoever you want.");
-    CBPhoneFromGangFinal(game, faction, "Then we will be seeing you.");
+    store.Reply(game, thread, CBT(n"Cyberbane-RealPhone-NotPayingSendWhoeverYouWant"));
+    CBPhoneFromGangFinal(game, faction, CBT(n"Cyberbane-RealPhone-ThenWeWillBeSeeingYou"));
   }
 }
 
@@ -387,23 +387,23 @@ func CBRealPhoneLeadReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: 
   let sender = store.ThreadName(thread);
   if choice == 0 {
     if CBTalkMoney(game) < price {
-      store.Reply(game, thread, "I don't have that on me.");
-      CBPhoneSendTinted(game, sender, "Then get it. The offer won't wait forever.", CBHudCyan());
+      store.Reply(game, thread, CBT(n"Cyberbane-RealPhone-IDonTHaveThatOn"));
+      CBPhoneSendTinted(game, sender, CBT(n"Cyberbane-RealPhone-ThenGetItTheOfferWon"), CBHudCyan());
       return;
     }
-    store.Reply(game, thread, s"Deal. \(price)eb.");
+    store.Reply(game, thread, CBTf(n"Cyberbane-RealPhone-DealEb", [s"\(price)"]));
     store.ClearLead(thread);
     sys.RequestRivalDeal(id, price, tipster, sender);
     return;
   }
   if choice == count - 1 {
     store.ClearLead(thread);
-    store.Reply(game, thread, "Forget it.");
-    CBPhoneSendTinted(game, sender, CBPick2("Your loss.", "Suit yourself. Offer's gone."), CBHudCyan());
+    store.Reply(game, thread, CBT(n"Cyberbane-RealPhone-ForgetIt-2"));
+    CBPhoneSendTinted(game, sender, CBPick2(CBT(n"Cyberbane-StreetTalk-YourLoss"), CBT(n"Cyberbane-RealPhone-SuitYourselfOfferSGone")), CBHudCyan());
     return;
   }
   // Too much: a gang that likes V comes down more readily, and V's Cool helps.
-  store.Reply(game, thread, CBPick2("Too much.", "For that? Come on."));
+  store.Reply(game, thread, CBPick2(CBT(n"Cyberbane-RealPhone-TooMuch"), CBT(n"Cyberbane-RealPhone-ForThatComeOn")));
   let chance = CBConfig.PhoneLeadHaggleBase();
   let score = sys.GetScore();
   if IsNameValid(tipster) && IsDefined(score) {
@@ -422,11 +422,11 @@ func CBRealPhoneLeadReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: 
   if RandF() < chance {
     let lower = Max(100, RoundF(Cast<Float>(price) * CBConfig.TalkHaggleCut() / 50.0) * 50);
     store.SetLeadPrice(thread, lower);
-    CBPhoneSendTinted(game, sender, CBPick2(s"Fine. \(lower)eb. Last offer.", s"\(lower)eb, because I like you. Don't tell anyone."), CBHudCyan());
+    CBPhoneSendTinted(game, sender, CBPick2(CBTf(n"Cyberbane-RealPhone-FineEbLastOffer", [s"\(lower)"]), CBTf(n"Cyberbane-RealPhone-EbBecauseILikeYouDon", [s"\(lower)"])), CBHudCyan());
     return;
   }
   store.SetLeadPrice(thread, price);
-  CBPhoneSendTinted(game, sender, CBPick2("Price is the price. Take it or don't.", s"\(price)eb. Not a cent less."), CBHudCyan());
+  CBPhoneSendTinted(game, sender, CBPick2(CBT(n"Cyberbane-RealPhone-PriceIsThePriceTakeIt"), CBTf(n"Cyberbane-RealPhone-EbNotACentLess", [s"\(price)"])), CBHudCyan());
 }
 
 public func CBRealPhoneThreadBodies(hash: Int32) -> array<String> {
@@ -971,17 +971,17 @@ func CBPhoneOfferAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
   let war = CBWarBook.Get(game);
   let you = CBYou(sys, game);
   if row == CBPhoneRowStall() {
-    store.Reply(game, thread, CBPick2("Give me a day. I'm thinking about it.", "I need time to get it together. Hold your people."));
+    store.Reply(game, thread, CBPick2(CBT(n"Cyberbane-RealPhone-GiveMeADayIM"), CBT(n"Cyberbane-RealPhone-INeedTimeToGetIt")));
     if IsDefined(war) {
       war.phoneStalled = faction;
     }
     sys.SetPendingSquad(faction, sys.GetPendingSquadTicks() + CBConfig.PhoneStallTicks());
-    CBPhoneDemandFromGang(game, faction, CBPick2(s"An hour, \(you). Then we stop asking.", "You've got a little time. Don't waste it."), true);
+    CBPhoneDemandFromGang(game, faction, CBPick2(CBTf(n"Cyberbane-RealPhone-AnHourThenWeStopAsking", [s"\(you)"]), CBT(n"Cyberbane-RealPhone-YouVeGotALittleTime")), true);
     return;
   }
   if row == CBPhoneRowThreaten() {
-    store.Reply(game, thread, CBPick2("Call them off, or I start with whoever you send and work my way up.",
-                                      "You've seen what I do to your people. Back off."));
+    store.Reply(game, thread, CBPick2(CBT(n"Cyberbane-RealPhone-CallThemOffOrIStart"),
+                                      CBT(n"Cyberbane-RealPhone-YouVeSeenWhatIDo")));
     if IsDefined(war) {
       war.phoneThreatDay = CBGameDay(game) + 1;
     }
@@ -998,24 +998,24 @@ func CBPhoneOfferAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
       CBFileLog(sys, n"PhoneThreatWorked", CBGameSeconds(game), CBEventDistrict(sys, game), faction, 0.0);
       // Settled: nothing left to answer, so the thread closes here (2.5.0). It used to open the offer again, and
       // "Not paying" then got "We will be seeing you" straight after they had backed down.
-      CBPhoneFromGangFinal(game, faction, CBPick2("...Fine. We'll leave you be. This time.", "We'll leave it. For now."));
+      CBPhoneFromGangFinal(game, faction, CBPick2(CBT(n"Cyberbane-RealPhone-FineWeLlLeaveYouBe"), CBT(n"Cyberbane-RealPhone-WeLlLeaveItForNow")));
     } else {
       // Called their bluff the wrong way: they are coming, and there is nothing left to answer (2.5.0).
       store.ClearOffer(thread);
       CBProvoke(sys, game, faction);
-      CBPhoneFromGangFinal(game, faction, CBPick2(s"Threats? From you? We're coming, \(you).", "Wrong answer."));
+      CBPhoneFromGangFinal(game, faction, CBPick2(CBTf(n"Cyberbane-RealPhone-ThreatsFromYouWeReComing", [s"\(you)"]), CBT(n"Cyberbane-RealPhone-WrongAnswer")));
     }
     return;
   }
   // An insult.
-  store.Reply(game, thread, CBPick3("Come and try it. Bring more than last time.", s"I'm in \(CBHere(sys)). Come and find me, if you've got the guts.",
-                                    "Keep your price. You'll need it for funerals."));
+  store.Reply(game, thread, CBPick3(CBT(n"Cyberbane-RealPhone-ComeAndTryItBringMore"), CBTf(n"Cyberbane-RealPhone-IMInComeAndFind", [s"\(CBHere(sys))"]),
+                                    CBT(n"Cyberbane-RealPhone-KeepYourPriceYouLlNeed")));
   store.ClearOffer(thread);
   CBTalkSlight(sys, game, faction, CBConfig.PhoneInsultStanding());
   CBProvoke(sys, game, faction);
   CBApplyDistrictRenown(sys, sys.GetCurrentDistrict(), CBConfig.PhoneInsultRenown());
   CBFileLog(sys, n"PhoneInsult", CBGameSeconds(game), CBEventDistrict(sys, game), faction, 0.0);
-  CBPhoneFromGangFinal(game, faction, CBPick2("You'll regret that.", "Every one of us just read that. Every one."));
+  CBPhoneFromGangFinal(game, faction, CBPick2(CBT(n"Cyberbane-RealPhone-YouLlRegretThat"), CBT(n"Cyberbane-RealPhone-EveryOneOfUsJustRead")));
 }
 
 // A Rival's thread: come sooner, name a place (send word), or a taunt that may shake them or set them off.
@@ -1026,28 +1026,28 @@ func CBPhoneRivalReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: ref
   }
   let name = CBRivalDisplayName(sys.GetContent(), r);
   if row == CBPhoneRowComeOn() {
-    store.Reply(game, thread, CBPick2(s"I'm in \(CBHere(sys)). Stop texting and come.", "You know where I am. Come and find me."));
+    store.Reply(game, thread, CBPick2(CBTf(n"Cyberbane-RealPhone-IMInStopTextingAnd", [s"\(CBHere(sys))"]), CBT(n"Cyberbane-RealPhone-YouKnowWhereIAmCome")));
     r.huntTicks = Min(r.huntTicks, CBConfig.PhoneComeOnTicks());
-    CBPhoneSendTinted(game, name, CBRivalCatchphrase(r) + " On my way.", CBHudRed());
+    CBPhoneSendTinted(game, name, CBTf(n"Cyberbane-RealPhone-OnMyWay", [CBRivalCatchphrase(r)]), CBHudRed());
     return;
   }
   if row == CBPhoneRowNamePlace() {
-    store.Reply(game, thread, "You want me? Pick a place.");
+    store.Reply(game, thread, CBT(n"Cyberbane-RealPhone-YouWantMePickAPlace"));
     if !CBSendWord(sys, game, r, false) {
-      CBPhoneSendTinted(game, name, "Not around here. I'll find you myself.", CBHudRed());
+      CBPhoneSendTinted(game, name, CBT(n"Cyberbane-RealPhone-NotAroundHereILlFind"), CBHudRed());
     }
     return;
   }
   // A taunt, with what V knows of them in it.
-  let jab = r.escapes > 0 ? s"You've run from me \(r.escapes == 1 ? "once" : s"\(r.escapes) times"). You'll run again."
-          : (r.sparedByV > 0 ? "I let you live once. I won't make that mistake twice." : "You'll lose. Same as everybody else.");
+  let jab = r.escapes > 0 ? CBTf(n"Cyberbane-RealPhone-YouVeRunFromMeYou", [r.escapes == 1 ? CBT(n"Cyberbane-RivalMoments-Once") : CBTf(n"Cyberbane-RivalMoments-Times", [s"\(r.escapes)"])])
+          : (r.sparedByV > 0 ? CBT(n"Cyberbane-RealPhone-ILetYouLiveOnceI") : CBT(n"Cyberbane-RealPhone-YouLlLoseSameAsEverybody"));
   store.Reply(game, thread, jab);
   if CBRivalHasTrait(r, n"HardToScare") || CBRivalHasTrait(r, n"GrudgeBearer") || RandF() >= CBConfig.PhoneTauntShake() {
     CBRivalGiveTrait(r, n"GrudgeBearer");
     r.huntTicks = Min(r.huntTicks, CBConfig.PhoneComeOnTicks());
-    CBPhoneSendTinted(game, name, CBPick2("Keep talking. It makes this easier.", "You'll be saying that with a mouthful of blood."), CBHudRed());
+    CBPhoneSendTinted(game, name, CBPick2(CBT(n"Cyberbane-RealPhone-KeepTalkingItMakesThisEasier"), CBT(n"Cyberbane-RealPhone-YouLlBeSayingThatWith")), CBHudRed());
   } else {
     CBRivalGiveTrait(r, n"Shaken");
-    CBPhoneSendTinted(game, name, CBPick2("...We'll see.", "Big talk. We'll see who's right."), CBHudRed());
+    CBPhoneSendTinted(game, name, CBPick2(CBT(n"Cyberbane-RealPhone-WeLlSee"), CBT(n"Cyberbane-RealPhone-BigTalkWeLlSeeWho")), CBHudRed());
   }
 }

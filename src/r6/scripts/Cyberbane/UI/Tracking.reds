@@ -203,33 +203,34 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   // what they are doing (2.5.4). Everybody of no gang was "Crew".
   if des.IsTagged(id, n"CB_Bounty") {
     let hunter = CBBountyScannerName(puppet);
-    return StrLen(hunter) > 0 ? hunter : "Bounty hunter";
+    return StrLen(hunter) > 0 ? hunter : CBT(n"Cyberbane-Tracking-BountyHunter");
   }
   let gang = CBCapFirst(CBFactionLabel(CBClassifyFaction(puppet)));
   if puppet.cbFavourMark || des.IsTagged(id, n"CB_Debtor") {
     let life = CBStreetLifeFor(game);
     let owed = IsDefined(life) ? CBFactionLabel(life.FavourFaction()) : "";
     // Money, said as money (2.5.5): "Owes the Valentinos" alone read as easily as a contract on them as a debt.
-    return StrLen(owed) > 0 ? "Owes " + owed + " money" : "Owes a gang money";
+    return StrLen(owed) > 0 ? CBTf(n"Cyberbane-Tracking-OwesMoney", [owed]) : CBT(n"Cyberbane-Tracking-OwesAGangMoney");
   }
   if des.IsTagged(id, n"CB_Wannabe") {
-    return des.IsTagged(id, n"CB_WannabeFriend") ? "Wannabe's friend" : "Wannabe";
+    return des.IsTagged(id, n"CB_WannabeFriend") ? CBT(n"Cyberbane-Wannabe-WannabeSFriend") : CBT(n"Cyberbane-Wannabe-Wannabe");
   }
   if puppet.cbLeadWitnessFor > 0 || des.IsTagged(id, n"CB_Witness") {
-    return "Saw your Rival";
+    return CBT(n"Cyberbane-Tracking-SawYourRival");
   }
   let what = "";
-  if des.IsTagged(id, n"CB_Bagman") { what = "bagman"; }
-  if des.IsTagged(id, n"CB_Favour") { what = "lookout"; }
-  if des.IsTagged(id, n"CB_Patrol") { what = "patrol"; }
-  if des.IsTagged(id, n"CB_Hangout") { what = "hanging out"; }
-  if des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") { what = "gathering"; }
-  if des.IsTagged(id, n"CB_Apex") { what = "apex squad"; }
-  if StrLen(what) == 0 {
-    what = "crew";
+  if des.IsTagged(id, n"CB_Bagman") { what = CBT(n"Cyberbane-Tracking-Bagman"); }
+  if des.IsTagged(id, n"CB_Favour") { what = CBT(n"Cyberbane-Tracking-Lookout"); }
+  if des.IsTagged(id, n"CB_Patrol") { what = CBT(n"Cyberbane-Tracking-Patrol"); }
+  if des.IsTagged(id, n"CB_Hangout") { what = CBT(n"Cyberbane-Tracking-HangingOut"); }
+  if des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") { what = CBT(n"Cyberbane-Tracking-Gathering"); }
+  if des.IsTagged(id, n"CB_Apex") { what = CBT(n"Cyberbane-Tracking-ApexSquad"); }
+  let crew = StrLen(what) == 0;
+  if crew {
+    what = CBT(n"Cyberbane-Tracking-Crew");
   }
   if StrLen(gang) == 0 {
-    return CBCapFirst(Equals(what, "crew") ? "hunter" : what);
+    return CBCapFirst(crew ? CBT(n"Cyberbane-Tracking-Hunter") : what);
   }
   return gang + " " + what;
 }
@@ -243,34 +244,34 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   let id = puppet.GetEntityID();
   if puppet.cbFavourMark || des.IsTagged(id, n"CB_Debtor") {
     // What does it, said plainly (2.6.4): words first, fists if they swing, never a body.
-    return "A debt to collect: talk them into paying (Intimidate or Antagonize). If they put their fists up, beat it out of them, but leave them breathing: nobody pays from a body bag.";
+    return CBT(n"Cyberbane-Tracking-ADebtToCollectTalkThem");
   }
   if des.IsTagged(id, n"CB_Lair") {
-    return "At their place, not looking for you. Yet.";
+    return CBT(n"Cyberbane-Tracking-AtTheirPlaceNotLookingFor");
   }
   if des.IsTagged(id, n"CB_Bagman") {
-    return "Carrying the take. Rob them, or let them walk.";
+    return CBT(n"Cyberbane-Tracking-CarryingTheTakeRobThemOr");
   }
   if des.IsTagged(id, n"CB_Favour") {
-    return "A favour: watching your friends' corner. They will fight. Put them down or make them run.";
+    return CBT(n"Cyberbane-Tracking-AFavourWatchingYourFriendsCorner");
   }
   if des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") {
-    return "Gang business. Crash it, or leave them to it.";
+    return CBT(n"Cyberbane-Tracking-GangBusinessCrashItOrLeave");
   }
   if des.IsTagged(id, n"CB_WannabeFriend") {
-    return "Here to watch, and to tell everybody how it went.";
+    return CBT(n"Cyberbane-Tracking-HereToWatchAndToTell");
   }
   if des.IsTagged(id, n"CB_Wannabe") {
-    return "Out to make a name off you. Fists only.";
+    return CBT(n"Cyberbane-Tracking-OutToMakeANameOff");
   }
   if puppet.cbLeadWitnessFor > 0 || des.IsTagged(id, n"CB_Witness") {
-    return "Saw your Rival. Ask them, pay them, or they may run ahead and warn them.";
+    return CBT(n"Cyberbane-Tracking-SawYourRivalAskThemPay");
   }
   if des.IsTagged(id, n"CB_Patrol") {
-    return "Walking their turf.";
+    return CBT(n"Cyberbane-Tracking-WalkingTheirTurf");
   }
   if des.IsTagged(id, n"CB_Hangout") {
-    return "Hanging out on their own streets. Somebody of theirs to talk to.";
+    return CBT(n"Cyberbane-Tracking-HangingOutOnTheirOwnStreets");
   }
   return "";
 }

@@ -702,7 +702,7 @@ public class CBTwrDisguiseProbe {
       this.why = "";
       let type = Reflection.GetClass(CBTwrDisguiseClass());
       if !IsDefined(type) {
-        this.why = "its disguise class is not in this build";
+        this.why = CBT(n"Cyberbane-Concealment-ItsDisguiseClassIsNotIn");
         CBLog.Info(n"Signals", "They Will Remember's disguise class was not found; Cyberbane reads disguises itself.");
       } else {
         this.ready = CBReflectNoArgs(type.GetFunction(n"IsDisguiseReady"), n"Bool");
@@ -712,12 +712,12 @@ public class CBTwrDisguiseProbe {
         this.cover = CBReflectNoArgs(type.GetFunction(n"Cover"), n"Int32");
         this.coverScore = CBReflectNoArgs(type.GetFunction(n"CoverScore"), n"Float");
         let missing = "";
-        if !IsDefined(this.ready) { missing += " IsDisguiseReady"; }
-        if !IsDefined(this.faceOn) { missing += " IsFaceDisguiseEnabled"; }
-        if !IsDefined(this.gangOn) { missing += " IsAffiliationDisguiseEnabled"; }
-        if !IsDefined(this.face) { missing += " DisguiseScore"; }
-        if !IsDefined(this.cover) { missing += " Cover"; }
-        if !IsDefined(this.coverScore) { missing += " CoverScore"; }
+        if !IsDefined(this.ready) { missing += CBT(n"Cyberbane-Concealment-IsDisguiseReady"); }
+        if !IsDefined(this.faceOn) { missing += CBT(n"Cyberbane-Concealment-IsFaceDisguiseEnabled"); }
+        if !IsDefined(this.gangOn) { missing += CBT(n"Cyberbane-Concealment-IsAffiliationDisguiseEnabled"); }
+        if !IsDefined(this.face) { missing += CBT(n"Cyberbane-Concealment-DisguiseScore"); }
+        if !IsDefined(this.cover) { missing += CBT(n"Cyberbane-Concealment-Cover"); }
+        if !IsDefined(this.coverScore) { missing += CBT(n"Cyberbane-Concealment-CoverScore"); }
         let faceOk = IsDefined(this.face);
         let gangOk = IsDefined(this.cover) && IsDefined(this.coverScore);
         if faceOk || gangOk {
@@ -728,7 +728,7 @@ public class CBTwrDisguiseProbe {
             CBLog.Info(n"Signals", "They Will Remember's disguises found: its face and gang readings are Cyberbane's too.");
           }
         } else {
-          this.why = "it has neither a face reading nor a gang reading Cyberbane can ask for (missing:" + missing + ")";
+          this.why = CBTf(n"Cyberbane-Concealment-ItHasNeitherAFaceReading", [missing]);
           CBLog.Info(n"Signals", "They Will Remember's disguise system is not the shape Cyberbane reads (missing:" + missing + "); Cyberbane reads disguises itself.");
         }
       }
@@ -778,12 +778,12 @@ func CBReadTwrDisguise(game: GameInstance, worn: ref<CBWornRead>) -> Void {
   }
   let disguise = container.Get(CBTwrDisguiseClass());
   if !IsDefined(disguise) {
-    rt.SetTwrDisguiseWhy("its disguise system is not running");
+    rt.SetTwrDisguiseWhy(CBT(n"Cyberbane-Concealment-ItsDisguiseSystemIsNotRunning"));
     return;
   }
   let none: array<Variant>;
   if IsDefined(probe.ready) && !FromVariant<Bool>(probe.ready.Call(disguise, none)) {
-    rt.SetTwrDisguiseWhy("it has not read your outfit yet");
+    rt.SetTwrDisguiseWhy(CBT(n"Cyberbane-Concealment-ItHasNotReadYourOutfit"));
     return;
   }
   rt.SetTwrDisguiseWhy("");

@@ -29,23 +29,23 @@ public func CBTraitBit(id: CName) -> Int32 {
 
 public func CBSeedTraits(c: ref<CyberbaneContent>) -> Void {
   // Traits.
-  c.AddTrait(CBMakeTrait(n"Tough",        "Tough",         false));
-  c.AddTrait(CBMakeTrait(n"Armored",      "Armored",       false));
-  c.AddTrait(CBMakeTrait(n"Deadeye",      "Deadeye",       false));
-  c.AddTrait(CBMakeTrait(n"Quick",        "Quick",         false));
-  c.AddTrait(CBMakeTrait(n"PackLeader",   "Pack Leader",   false));
-  c.AddTrait(CBMakeTrait(n"GrudgeBearer", "Grudge-Bearer", false));
-  c.AddTrait(CBMakeTrait(n"HardToScare",  "Hard to Scare", false));
-  c.AddTrait(CBMakeTrait(n"ChromedOut",   "Chromed-Out",   false));
-  c.AddTrait(CBMakeTrait(n"Scarred",      "Scarred",       false));
-  c.AddTrait(CBMakeTrait(n"Confident",    "Confident",     false));
-  c.AddTrait(CBMakeTrait(n"Humiliated",   "Humiliated",    false));
+  c.AddTrait(CBMakeTrait(n"Tough",        CBT(n"Cyberbane-Traits-Tough"),         false));
+  c.AddTrait(CBMakeTrait(n"Armored",      CBT(n"Cyberbane-Traits-Armored"),       false));
+  c.AddTrait(CBMakeTrait(n"Deadeye",      CBT(n"Cyberbane-Traits-Deadeye"),       false));
+  c.AddTrait(CBMakeTrait(n"Quick",        CBT(n"Cyberbane-Traits-Quick"),         false));
+  c.AddTrait(CBMakeTrait(n"PackLeader",   CBT(n"Cyberbane-Traits-PackLeader"),   false));
+  c.AddTrait(CBMakeTrait(n"GrudgeBearer", CBT(n"Cyberbane-Traits-GrudgeBearer"), false));
+  c.AddTrait(CBMakeTrait(n"HardToScare",  CBT(n"Cyberbane-Traits-HardToScare"), false));
+  c.AddTrait(CBMakeTrait(n"ChromedOut",   CBT(n"Cyberbane-Traits-ChromedOut"),   false));
+  c.AddTrait(CBMakeTrait(n"Scarred",      CBT(n"Cyberbane-Traits-Scarred"),       false));
+  c.AddTrait(CBMakeTrait(n"Confident",    CBT(n"Cyberbane-Traits-Confident"),     false));
+  c.AddTrait(CBMakeTrait(n"Humiliated",   CBT(n"Cyberbane-Traits-Humiliated"),    false));
 
   // Weaknesses.
-  c.AddTrait(CBMakeTrait(n"Shaken",       "Shaken",        true));
-  c.AddTrait(CBMakeTrait(n"OldWound",     "Old Wound",     true));
-  c.AddTrait(CBMakeTrait(n"Reckless",     "Reckless",      true));
+  c.AddTrait(CBMakeTrait(n"Shaken",       CBT(n"Cyberbane-Traits-Shaken"),        true));
+  c.AddTrait(CBMakeTrait(n"OldWound",     CBT(n"Cyberbane-Traits-OldWound"),     true));
+  c.AddTrait(CBMakeTrait(n"Reckless",     CBT(n"Cyberbane-Traits-Reckless"),      true));
 
   // Earned, never rolled (CBRivalAddTrait leaves it out): a top-rank Rival who broke (1.9.0).
-  c.AddTrait(CBMakeTrait(n"Broken",       "Cyberpsycho",   false));
+  c.AddTrait(CBMakeTrait(n"Broken",       CBT(n"Cyberbane-Traits-Cyberpsycho"),   false));
 }

@@ -56,17 +56,17 @@ public func CBStealthEncounterNearby(sys: ref<CyberbaneSystem>, game: GameInstan
 public func CBStealthHoldReason(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   // The story first: it is the one hold no setting changes, and the one most worth explaining.
   if IsDefined(sys) && sys.GetStoryHold() != CBStoryNone() {
-    return "Holding off: " + CBStoryLabel(sys.GetStoryHold()) + ". Nobody walks in on the story.";
+    return CBTf(n"Cyberbane-StealthState-HoldingOffNobodyWalksInOn", [CBStoryLabel(sys.GetStoryHold())]);
   }
   if CBPlayerInHostileZone(game) {
     let zone = CBPlayerZoneLabel(game);
     if StrLen(zone) == 0 {
-      zone = "somebody else's territory";
+      zone = CBT(n"Cyberbane-StealthState-SomebodyElseSTerritory");
     }
-    return "Holding off: the game calls this a " + zone + ". Nobody walks in on you there.";
+    return CBTf(n"Cyberbane-StealthState-HoldingOffTheGameCallsThis", [zone]);
   }
   if CBStealthEncounterNearby(sys, game) {
-    return "Holding off while you are working quietly. They will not walk in on a stealth job.";
+    return CBT(n"Cyberbane-StealthState-HoldingOffWhileYouAreWorking");
   }
   return "";
 }
@@ -86,22 +86,22 @@ public func CBHoldStory() -> Int32 = 6
 // What the Hub says while the clocks are stopped.
 public func CBHoldLabel(reason: Int32) -> String {
   if reason == CBHoldQuietWork() {
-    return "holding off, quiet job";
+    return CBT(n"Cyberbane-StealthState-HoldingOffQuietJob");
   }
   if reason == CBHoldOneAlreadyOut() {
-    return "waiting their turn";
+    return CBT(n"Cyberbane-StealthState-WaitingTheirTurn");
   }
   if reason == CBHoldInCombat() {
-    return "holding off, you are busy";
+    return CBT(n"Cyberbane-StealthState-HoldingOffYouAreBusy");
   }
   if reason == CBHoldNoRoom() {
-    return "cannot reach you here";
+    return CBT(n"Cyberbane-StealthState-CannotReachYouHere");
   }
   if reason == CBHoldWorldBusy() {
-    return "holding, world is loading";
+    return CBT(n"Cyberbane-StealthState-HoldingWorldIsLoading");
   }
   if reason == CBHoldStory() {
-    return "holding off, story";
+    return CBT(n"Cyberbane-StealthState-HoldingOffStory");
   }
   return "";
 }

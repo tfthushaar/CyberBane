@@ -139,16 +139,16 @@ public func CBAnnounceWarming(sys: ref<CyberbaneSystem>, game: GameInstance, fac
   }
   if allied {
     if StrLen(enemyLabel) > 0 {
-      CBPhoneFromAlly(game, faction, s"You have done more to \(enemyLabel) than half our own crew. Our streets are yours. Prices too.");
+      CBPhoneFromAlly(game, faction, CBTf(n"Cyberbane-GangRivalries-YouHaveDoneMoreToThan", [s"\(enemyLabel)"]));
     } else {
-      CBPhoneFromAlly(game, faction, "You have earned it. Our streets are yours. Prices too.");
+      CBPhoneFromAlly(game, faction, CBT(n"Cyberbane-GangRivalries-YouHaveEarnedItOurStreets"));
     }
     return;
   }
   if StrLen(enemyLabel) > 0 {
-    CBPhoneFromAlly(game, faction, s"Word is you have been making life hard for \(enemyLabel). You are welcome on our streets.");
+    CBPhoneFromAlly(game, faction, CBTf(n"Cyberbane-GangRivalries-WordIsYouHaveBeenMaking", [s"\(enemyLabel)"]));
   } else {
-    CBPhoneFromAlly(game, faction, "You are all right by us. You are welcome on our streets.");
+    CBPhoneFromAlly(game, faction, CBT(n"Cyberbane-GangRivalries-YouAreAllRightByUs"));
   }
 }
 
@@ -174,7 +174,7 @@ public func CBAllyTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, attacker
     let posture = score.GetPosture(ally);
     if (Equals(posture, ECBPosture.Allied) || Equals(posture, ECBPosture.Friendly))
        && CBFactionFieldsSquads(ally) {
-      CBPhoneSendUrgent(game, CBPhoneGangSender(ally), s"Heads up. \(label) just sent people your way. Watch the road.", CBHudCyan());
+      CBPhoneSendUrgent(game, CBPhoneGangSender(ally), CBTf(n"Cyberbane-GangRivalries-HeadsUpJustSentPeopleYour", [s"\(label)"]), CBHudCyan());
       return true;   // one warning is enough
     }
   }

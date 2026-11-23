@@ -29,7 +29,7 @@ public class CBHubTabData {
 // An identifier the game's own list will never use: its items stop at HubMenuItems.Count.
 public func CBHubTabId() -> Int32 = 7731
 public func CBHubTabScreen() -> CName = n"temp_stats"
-public func CBHubTabLabel() -> String = "CYBERBANE"
+public func CBHubTabLabel() -> String = CBT(n"Cyberbane-HubTab-CYBERBANE")
 
 public func CBHubAsGameMenuTab() -> Bool {
   let rt = CyberbaneRuntime.Get();

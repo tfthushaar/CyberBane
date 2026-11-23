@@ -446,12 +446,12 @@ public func CBNoteKnownBy(game: GameInstance, info: ref<CBKillInfo>) -> Void {
   if TDBID.IsValid(car) && newFight {
     book.lastCarNoteAt = now;
     if book.Note(0, car, now) == CBConfig.CarKnownAfter() && CBToastsOn() {
-      CBHearsayFromStreet(game, "People have started noticing what you drive. Turn up in it again and a mask won't help.", n"");
+      CBHearsayFromStreet(game, CBT(n"Cyberbane-StreetBook-PeopleHaveStartedNoticingWhatYou"), n"");
     }
   }
   if info.mFirearm && TDBID.IsValid(info.weaponRecord)
      && book.Note(1, info.weaponRecord, now) == CBConfig.GunKnownAfter() && CBToastsOn() {
-    CBHearsayFromStreet(game, "That gun of yours has a reputation now. Use it with your face covered and they'll still know it's you.", n"");
+    CBHearsayFromStreet(game, CBT(n"Cyberbane-StreetBook-ThatGunOfYoursHasA"), n"");
   }
 }
 
@@ -497,19 +497,19 @@ public func CBKnownByLine(game: GameInstance) -> String {
   let carName = CBVehicleName(car);
   let gunName = CBItemName(gun);
   if StrLen(carName) > 0 && StrLen(gunName) > 0 {
-    return s"They know your \(carName) and your \(gunName). A mask won't hide you with either.";
+    return CBTf(n"Cyberbane-StreetBook-TheyKnowYourAndYourA", [s"\(carName)", s"\(gunName)"]);
   }
   if StrLen(carName) > 0 {
-    return s"They know your \(carName). A mask won't hide you in it.";
+    return CBTf(n"Cyberbane-StreetBook-TheyKnowYourAMaskWon", [s"\(carName)"]);
   }
   if StrLen(gunName) > 0 {
-    return s"They know your \(gunName). A mask won't hide you with it in your hands.";
+    return CBTf(n"Cyberbane-StreetBook-TheyKnowYourAMaskWon-2", [s"\(gunName)"]);
   }
   if TDBID.IsValid(car) {
-    return "They know the car you drive. A mask won't hide you in it.";
+    return CBT(n"Cyberbane-StreetBook-TheyKnowTheCarYouDrive");
   }
   if TDBID.IsValid(gun) {
-    return "They know your gun. A mask won't hide you with it in your hands.";
+    return CBT(n"Cyberbane-StreetBook-TheyKnowYourGunAMask");
   }
   return "";
 }

@@ -54,15 +54,15 @@ public func CBYou(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let score = IsDefined(sys) ? sys.GetScore() : null;
   let tier = IsDefined(score) ? EnumInt(score.GetTier()) : 0;
   if tier >= EnumInt(ECBRenownTier.Infamous) {
-    return "the merc everybody's talking about";
+    return CBT(n"Cyberbane-Telling-TheMercEverybodySTalkingAbout");
   }
-  return tier >= EnumInt(ECBRenownTier.KnownMerc) ? "merc" : "choom";
+  return tier >= EnumInt(ECBRenownTier.KnownMerc) ? CBT(n"Cyberbane-Telling-Merc") : CBT(n"Cyberbane-Telling-Choom");
 }
 
 // Where V is, in the street's words.
 public func CBHere(sys: ref<CyberbaneSystem>) -> String {
   if !IsDefined(sys) || Equals(sys.GetCurrentDistrict(), n"") {
-    return "around here";
+    return CBT(n"Cyberbane-Telling-AroundHere");
   }
   return CBDistrictLabel(sys.GetCurrentDistrict());
 }
@@ -70,9 +70,9 @@ public func CBHere(sys: ref<CyberbaneSystem>) -> String {
 // The hour and the weather, as a speaker would put it, or "".
 public func CBWhenWords(game: GameInstance) -> String {
   if CBRainLevel(game) >= 2 {
-    return CBIsNight(game) ? "in the rain, in the middle of the night" : "in the pouring rain";
+    return CBIsNight(game) ? CBT(n"Cyberbane-Telling-InTheRainInTheMiddle") : CBT(n"Cyberbane-Telling-InThePouringRain");
   }
-  return CBIsNight(game) ? "in the middle of the night" : "";
+  return CBIsNight(game) ? CBT(n"Cyberbane-Telling-InTheMiddleOfTheNight") : "";
 }
 
 // The same, with a space before it when there is anything to say: for the middle of a sentence.
@@ -145,11 +145,11 @@ public func CBPanicInDark(sys: ref<CyberbaneSystem>, game: GameInstance, dead: r
     return;
   }
   if CBMessagesOn() {
-    let gone = StrLen(name) > 0 ? name : "Somebody";
+    let gone = StrLen(name) > 0 ? name : CBT(n"Cyberbane-Telling-Somebody");
     let line = book.darkKills <= 1
-      ? CBLineOf([gone + "? " + gone + ", talk to me!", "Where'd they go?! Anybody see them?", gone + "'s not answering."])
-      : CBLineOf([s"That's \(book.darkKills) of us! Where ARE they?!", "I can't see them, I can't see anything!",
-                  gone + " too? We need to get out of here.", "Stay together! Backs to the wall!"]);
+      ? CBLineOf([CBTf(n"Cyberbane-Telling-TalkToMe", [gone, gone]), CBT(n"Cyberbane-Telling-WhereDTheyGoAnybodySee"), CBTf(n"Cyberbane-Telling-SNotAnswering", [gone])])
+      : CBLineOf([CBTf(n"Cyberbane-Telling-ThatSOfUsWhereARE", [s"\(book.darkKills)"]), CBT(n"Cyberbane-Telling-ICanTSeeThemI"),
+                  CBTf(n"Cyberbane-Telling-TooWeNeedToGetOut", [gone]), CBT(n"Cyberbane-Telling-StayTogetherBacksToTheWall")]);
     CBIntelSay(game, 4, CBIntelSpeaker(faction), line, 3.0);
   }
   CBSayVoiced(sys, speaker, n"enemy_warning");
@@ -220,7 +220,7 @@ public func CBMorningBriefTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
       }
     }
   }
-  let out = night == 0 ? "Quiet night. Nobody's said your name." : (StrLen(worst) > 0 ? "Overnight: " + worst : s"Busy night: \(night) things the street's talking about.");
+  let out = night == 0 ? CBT(n"Cyberbane-Telling-QuietNightNobodySSaidYour") : (StrLen(worst) > 0 ? CBTf(n"Cyberbane-Telling-Overnight", [worst]) : CBTf(n"Cyberbane-Telling-BusyNightThingsTheStreetS", [s"\(night)"]));
   let after = "";
   let hunters = 0;
   for r in sys.GetRivals() {
@@ -229,22 +229,22 @@ public func CBMorningBriefTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     }
   }
   if hunters > 0 {
-    after += hunters == 1 ? " One of your Rivals is out looking for you." : s" \(hunters) of your Rivals are out looking.";
+    after += hunters == 1 ? CBT(n"Cyberbane-Telling-OneOfYourRivalsIsOut") : CBTf(n"Cyberbane-Telling-OfYourRivalsAreOutLooking", [s"\(hunters)"]);
   }
   let price = CBBountyUp(game);
   if price > 0 {
-    after += s" There's still \(price) on your head.";
+    after += CBTf(n"Cyberbane-Telling-ThereSStillOnYourHead", [s"\(price)"]);
   }
   let open = CBOpenSeasonGang(game);
   if NotEquals(open, n"") {
-    after += s" \(CBCapFirst(CBFactionLabel(open))) are still in open season on you.";
+    after += CBTf(n"Cyberbane-Telling-AreStillInOpenSeasonOn", [s"\(CBCapFirst(CBFactionLabel(open)))"]);
   }
   let life = CBStreetLifeFor(game);
   let ev = IsDefined(life) ? life.Events().Live() : null;
   if IsDefined(ev) && !ev.placed {
     after += " " + CBEventWordLine(ev);
   }
-  CBPhoneSendTinted(game, "Morning brief", out + after + s" Stay sharp, \(CBYou(sys, game)).", CBHudCyan());
+  CBPhoneSendTinted(game, CBT(n"Cyberbane-Telling-MorningBrief"), CBTf(n"Cyberbane-Telling-StaySharp", [out, after, s"\(CBYou(sys, game))"]), CBHudCyan());
 }
 
 // ---- [81] [82] The screamsheet and the legend ---------------------------------------------------------------------
@@ -275,28 +275,28 @@ public func CBHeadline(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>) -> String 
   let where = StrUpper(CBDistrictLabel(e.district));
   // Somewhere the file has no district for (a death outside the eight, a load before the first sample): the city.
   if StrLen(where) == 0 {
-    where = "NIGHT CITY";
+    where = CBT(n"Cyberbane-Telling-NIGHTCITY");
   }
   // And a story about a gang the file has no name for, told about a gang.
   if StrLen(gang) == 0 && (Equals(e.kind, n"BossKill") || Equals(e.kind, n"TurfTaken") || Equals(e.kind, n"OpenSeasonSurvived")
      || Equals(e.kind, n"StreetClash") || Equals(e.kind, n"RivalFeud") || Equals(e.kind, n"ApexBeaten")) {
-    gang = "A GANG";
+    gang = CBT(n"Cyberbane-Telling-AGANG");
   }
-  if Equals(e.kind, n"RivalSlain") { return StrLen(gang) > 0 ? s"MERC PUTS \(gang) NAME IN THE GROUND IN \(where)" : s"NAMED KILLER DIES IN \(where)"; }
-  if Equals(e.kind, n"RivalDied") { return StrLen(gang) > 0 ? s"\(gang) LOSE A NAME IN \(where)" : s"NAMED KILLER DIES IN \(where)"; }
-  if Equals(e.kind, n"BossKill") { return s"\(gang) LOSE THEIR BIG FISH IN \(where)"; }
-  if Equals(e.kind, n"MeetCrashed") { return s"SIT-DOWN TURNS BLOODBATH IN \(where)"; }
-  if Equals(e.kind, n"TurfTaken") { return s"\(where) CHANGES HANDS: \(gang) MOVE IN"; }
-  if Equals(e.kind, n"BountyPosted") { return s"PRICE ON MERC'S HEAD: \(RoundF(e.value)) EDDIES"; }
-  if Equals(e.kind, n"HunterKilled") { return s"RANK \(RoundF(e.value)) BOUNTY HUNTER FOUND DEAD IN \(where)"; }
-  if Equals(e.kind, n"LadderRank") { return RoundF(e.value) == 1 ? "NEW NUMBER ONE ON THE HUNTERS' BOARD" : s"MERC CLIMBS TO NUMBER \(RoundF(e.value))"; }
-  if Equals(e.kind, n"OpenSeasonSurvived") { return s"\(gang) OPEN SEASON ENDS: MERC STILL BREATHING"; }
-  if Equals(e.kind, n"StreetClash") { return s"GANG WAR IN \(where): \(gang) WALK AWAY WINNERS"; }
-  if Equals(e.kind, n"RivalReturned") { return "DEAD MAN WALKING: KILLER BACK FROM THE GRAVE"; }
-  if Equals(e.kind, n"RivalFeud") { return s"\(gang) STAR TAKES OUT A RIVAL'S NAME"; }
-  if Equals(e.kind, n"Massacre") { return s"BLOODBATH IN \(where)"; }
-  if Equals(e.kind, n"ApexBeaten") { return s"\(gang) BEST WIPED OUT IN \(where)"; }
-  if Equals(e.kind, n"OwnStreet") { return s"\(where) BELONGS TO ONE MERC NOW"; }
+  if Equals(e.kind, n"RivalSlain") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Telling-MERCPUTSNAMEINTHEGROUND", [s"\(gang)", s"\(where)"]) : CBTf(n"Cyberbane-Telling-NAMEDKILLERDIESIN", [s"\(where)"]); }
+  if Equals(e.kind, n"RivalDied") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Telling-LOSEANAMEIN", [s"\(gang)", s"\(where)"]) : CBTf(n"Cyberbane-Telling-NAMEDKILLERDIESIN", [s"\(where)"]); }
+  if Equals(e.kind, n"BossKill") { return CBTf(n"Cyberbane-Telling-LOSETHEIRBIGFISHIN", [s"\(gang)", s"\(where)"]); }
+  if Equals(e.kind, n"MeetCrashed") { return CBTf(n"Cyberbane-Telling-SITDOWNTURNSBLOODBATHIN", [s"\(where)"]); }
+  if Equals(e.kind, n"TurfTaken") { return CBTf(n"Cyberbane-Telling-CHANGESHANDSMOVEIN", [s"\(where)", s"\(gang)"]); }
+  if Equals(e.kind, n"BountyPosted") { return CBTf(n"Cyberbane-Telling-PRICEONMERCSHEADEDDIES", [s"\(RoundF(e.value))"]); }
+  if Equals(e.kind, n"HunterKilled") { return CBTf(n"Cyberbane-Telling-RANKBOUNTYHUNTERFOUNDDEADIN", [s"\(RoundF(e.value))", s"\(where)"]); }
+  if Equals(e.kind, n"LadderRank") { return RoundF(e.value) == 1 ? CBT(n"Cyberbane-Telling-NEWNUMBERONEONTHEHUNTERS") : CBTf(n"Cyberbane-Telling-MERCCLIMBSTONUMBER", [s"\(RoundF(e.value))"]); }
+  if Equals(e.kind, n"OpenSeasonSurvived") { return CBTf(n"Cyberbane-Telling-OPENSEASONENDSMERCSTILLBREATHING", [s"\(gang)"]); }
+  if Equals(e.kind, n"StreetClash") { return CBTf(n"Cyberbane-Telling-GANGWARINWALKAWAYWINNERS", [s"\(where)", s"\(gang)"]); }
+  if Equals(e.kind, n"RivalReturned") { return CBT(n"Cyberbane-Telling-DEADMANWALKINGKILLERBACKFROM"); }
+  if Equals(e.kind, n"RivalFeud") { return CBTf(n"Cyberbane-Telling-STARTAKESOUTARIVALS", [s"\(gang)"]); }
+  if Equals(e.kind, n"Massacre") { return CBTf(n"Cyberbane-Telling-BLOODBATHIN", [s"\(where)"]); }
+  if Equals(e.kind, n"ApexBeaten") { return CBTf(n"Cyberbane-Telling-BESTWIPEDOUTIN", [s"\(gang)", s"\(where)"]); }
+  if Equals(e.kind, n"OwnStreet") { return CBTf(n"Cyberbane-Telling-BELONGSTOONEMERCNOW", [s"\(where)"]); }
   return "";
 }
 
@@ -308,32 +308,32 @@ public func CBLegendTold(sys: ref<CyberbaneSystem>, game: GameInstance) -> Strin
     return "";
   }
   let you = CBYou(sys, game);
-  let out = s"They call you \(you). ";
+  let out = CBTf(n"Cyberbane-Telling-TheyCallYou", [s"\(you)"]);
   let tier = EnumInt(score.GetTier());
   if tier <= EnumInt(ECBRenownTier.LocalName) {
-    out += "Most of Night City has never heard of you, and the ones who have are still deciding what to make of it.";
+    out += CBT(n"Cyberbane-Telling-MostOfNightCityHasNever");
   } else {
-    out += s"Your name is known in \(CBTopDistrictWords(sys)), and it was not always.";
+    out += CBTf(n"Cyberbane-Telling-YourNameIsKnownInAnd", [s"\(CBTopDistrictWords(sys))"]);
   }
   if stats.rivalsSlain > 0 {
-    out += s" You have put \(stats.rivalsSlain) of your Rivals in the ground";
-    out += stats.apexKills > 0 ? s", and \(stats.apexKills) of the gangs' best with them." : ".";
+    out += CBTf(n"Cyberbane-Telling-YouHavePutOfYourRivals", [s"\(stats.rivalsSlain)"]);
+    out += stats.apexKills > 0 ? CBTf(n"Cyberbane-Telling-AndOfTheGangsBestWith", [s"\(stats.apexKills)"]) : ".";
   }
   let nightmare = CBTopEnemyGang(sys);
   if NotEquals(nightmare, n"") {
-    out += s" \(CBCapFirst(CBFactionLabel(nightmare))) hate you more than anybody, and they have reason to.";
+    out += CBTf(n"Cyberbane-Telling-HateYouMoreThanAnybodyAnd", [s"\(CBCapFirst(CBFactionLabel(nightmare)))"]);
   }
   let book = CBHuntBook.Get(game);
   if IsDefined(book) && book.LadderRank() > 0 {
-    out += book.LadderRank() == 1 ? " On the hunters' board you are number one, and every solo with a gun knows it."
-                                  : s" On the hunters' board you are number \(book.LadderRank()).";
+    out += book.LadderRank() == 1 ? CBT(n"Cyberbane-Telling-OnTheHuntersBoardYouAre")
+                                  : CBTf(n"Cyberbane-Telling-OnTheHuntersBoardYouAre-2", [s"\(book.LadderRank())"]);
   }
   let mine = CBOneOfTheirsGang(game);
   if NotEquals(mine, n"") {
-    out += s" \(CBCapFirst(CBFactionLabel(mine))) call you one of their own.";
+    out += CBTf(n"Cyberbane-Telling-CallYouOneOfTheirOwn", [s"\(CBCapFirst(CBFactionLabel(mine)))"]);
   }
   if stats.nonLethal > stats.rivalsSlain * 10 && stats.nonLethal >= 20 {
-    out += " For all of it, you leave more people breathing than most would, and the street has noticed.";
+    out += CBT(n"Cyberbane-Telling-ForAllOfItYouLeave");
   }
   return out;
 }
@@ -347,7 +347,7 @@ func CBTopDistrictWords(sys: ref<CyberbaneSystem>) -> String {
       best = d.id;
     }
   }
-  return NotEquals(best, n"") ? CBDistrictLabel(best) : "a few streets";
+  return NotEquals(best, n"") ? CBDistrictLabel(best) : CBT(n"Cyberbane-Telling-AFewStreets");
 }
 
 func CBTopEnemyGang(sys: ref<CyberbaneSystem>) -> CName {
@@ -370,26 +370,26 @@ public func CBRivalStory(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<C
   }
   let out = CBRivalSourceStory(r);
   if r.encounters > 0 {
-    out += r.encounters == 1 ? " You have met once since." : s" You have met \(r.encounters) times since.";
+    out += r.encounters == 1 ? CBT(n"Cyberbane-Telling-YouHaveMetOnceSince") : CBTf(n"Cyberbane-Telling-YouHaveMetTimesSince", [s"\(r.encounters)"]);
   }
   if r.escapes > 0 {
-    out += r.escapes == 1 ? " They got away from you once." : s" They have got away from you \(r.escapes) times.";
+    out += r.escapes == 1 ? CBT(n"Cyberbane-Telling-TheyGotAwayFromYouOnce") : CBTf(n"Cyberbane-Telling-TheyHaveGotAwayFromYou", [s"\(r.escapes)"]);
   }
   if r.sparedByV > 0 {
-    out += r.sparedByV == 1 ? " You let them live once." : s" You have let them live \(r.sparedByV) times.";
+    out += r.sparedByV == 1 ? CBT(n"Cyberbane-Telling-YouLetThemLiveOnce") : CBTf(n"Cyberbane-Telling-YouHaveLetThemLiveTimes", [s"\(r.sparedByV)"]);
   }
   if r.killedV > 0 {
-    out += r.killedV == 1 ? " They have put you down once." : s" They have put you down \(r.killedV) times.";
+    out += r.killedV == 1 ? CBT(n"Cyberbane-Telling-TheyHavePutYouDownOnce") : CBTf(n"Cyberbane-Telling-TheyHavePutYouDownTimes", [s"\(r.killedV)"]);
   }
   if CBRivalReturned(r) {
-    out += " You killed them once. They came back.";
+    out += CBT(n"Cyberbane-Telling-YouKilledThemOnceTheyCame");
   }
   if CBRivalWasHumiliated(r) {
-    out += " You humiliated them where they lay, and they have not forgotten.";
+    out += CBT(n"Cyberbane-Telling-YouHumiliatedThemWhereTheyLay");
   }
   let s = CBSightingFor(sys, r);
   if IsDefined(s) && NotEquals(s.district, n"") {
-    out += s" Last seen in \(CBDistrictLabel(s.district)).";
+    out += CBTf(n"Cyberbane-Telling-LastSeenIn", [s"\(CBDistrictLabel(s.district))"]);
   }
   return out;
 }
@@ -397,23 +397,23 @@ public func CBRivalStory(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<C
 func CBRivalSourceStory(r: ref<CBRival>) -> String {
   // " in Watson", or nothing for a Rival made somewhere the eight districts do not cover.
   let place = CBDistrictLabel(r.origin);
-  let inPlace = StrLen(place) > 0 ? " in " + place : "";
+  let inPlace = StrLen(place) > 0 ? CBTf(n"Cyberbane-RumorEngine-In", [place]) : "";
   if r.source == EnumInt(ECBRivalSource.Spared) {
-    return StrLen(place) > 0 ? s"You put them down and walked away, back in \(place)." : "You put them down and walked away.";
+    return StrLen(place) > 0 ? CBTf(n"Cyberbane-Telling-YouPutThemDownAndWalked", [s"\(place)"]) : CBT(n"Cyberbane-Telling-YouPutThemDownAndWalked-2");
   }
   if r.source == EnumInt(ECBRivalSource.Survivor) {
-    return s"They ran from you\(inPlace) and lived.";
+    return CBTf(n"Cyberbane-Telling-TheyRanFromYouAndLived", [s"\(inPlace)"]);
   }
   if r.source == EnumInt(ECBRivalSource.Killer) {
-    return s"They are the one who put you down\(inPlace).";
+    return CBTf(n"Cyberbane-Telling-TheyAreTheOneWhoPut", [s"\(inPlace)"]);
   }
   if r.source == EnumInt(ECBRivalSource.Avenger) {
-    return s"You killed somebody of theirs\(inPlace), and they swore on it.";
+    return CBTf(n"Cyberbane-Telling-YouKilledSomebodyOfTheirsAnd", [s"\(inPlace)"]);
   }
   if r.source == EnumInt(ECBRivalSource.Betrayer) {
-    return s"They ran with your crew, and turned on you\(inPlace). They know where you sleep.";
+    return CBTf(n"Cyberbane-Telling-TheyRanWithYourCrewAnd", [s"\(inPlace)"]);
   }
-  return StrLen(place) > 0 ? s"They came after you for the money, out of \(place)." : "They came after you for the money.";
+  return StrLen(place) > 0 ? CBTf(n"Cyberbane-Telling-TheyCameAfterYouForThe", [s"\(place)"]) : CBT(n"Cyberbane-Telling-TheyCameAfterYouForThe-2");
 }
 
 // ---- [U14] The scanner tells the story --------------------------------------------------------------------------------
@@ -431,12 +431,12 @@ public func CBScannerStance(npc: ref<NPCPuppet>) -> String {
   }
   let p = score.GetPosture(faction);
   let word = "";
-  if Equals(p, ECBPosture.Vendetta) { word = "SWORN AGAINST YOU"; }
-  if Equals(p, ECBPosture.Hostile) { word = "HOSTILE TO YOU"; }
-  if Equals(p, ECBPosture.Friendly) { word = "FRIENDLY TO YOU"; }
-  if Equals(p, ECBPosture.Allied) { word = "ALLIED WITH YOU"; }
+  if Equals(p, ECBPosture.Vendetta) { word = CBT(n"Cyberbane-Telling-SWORNAGAINSTYOU"); }
+  if Equals(p, ECBPosture.Hostile) { word = CBT(n"Cyberbane-Telling-HOSTILETOYOU"); }
+  if Equals(p, ECBPosture.Friendly) { word = CBT(n"Cyberbane-Telling-FRIENDLYTOYOU"); }
+  if Equals(p, ECBPosture.Allied) { word = CBT(n"Cyberbane-Telling-ALLIEDWITHYOU"); }
   // "ONE OF YOURS" read like V's own crew, whose line is YOUR CREW (2.5.5): this is the gang V belongs to.
-  if Equals(CBOneOfTheirsGang(npc.GetGame()), faction) { word = "YOUR GANG"; }
+  if Equals(CBOneOfTheirsGang(npc.GetGame()), faction) { word = CBT(n"Cyberbane-Telling-YOURGANG"); }
   return word;
 }
 

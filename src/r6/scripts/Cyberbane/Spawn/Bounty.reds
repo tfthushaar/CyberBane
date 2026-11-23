@@ -62,11 +62,11 @@ public func CBHunterKind(seed: Int32) -> Int32 = CBHashIndex(seed, 17, 5)
 
 public func CBHunterKindWord(seed: Int32) -> String {
   switch CBHunterKind(seed) {
-    case 1: return "a blade";
-    case 2: return "heavy guns";
-    case 3: return "a cyberdeck";
-    case 4: return "a long rifle";
-    default: return "a pistol and patience";
+    case 1: return CBT(n"Cyberbane-StreetIntel-ABlade");
+    case 2: return CBT(n"Cyberbane-Bounty-HeavyGuns");
+    case 3: return CBT(n"Cyberbane-Bounty-ACyberdeck");
+    case 4: return CBT(n"Cyberbane-Bounty-ALongRifle");
+    default: return CBT(n"Cyberbane-Bounty-APistolAndPatience");
   }
 }
 
@@ -75,10 +75,10 @@ public func CBHunterTrait(seed: Int32) -> Int32 = CBHashIndex(seed, 23, 4)
 
 public func CBHunterTraitWord(seed: Int32) -> String {
   switch CBHunterTrait(seed) {
-    case 0: return "patient";
-    case 1: return "reckless";
-    case 2: return "works nights";
-    default: return "a professional";
+    case 0: return CBT(n"Cyberbane-Bounty-Patient");
+    case 1: return CBT(n"Cyberbane-Bounty-Reckless");
+    case 2: return CBT(n"Cyberbane-Bounty-WorksNights");
+    default: return CBT(n"Cyberbane-Bounty-AProfessional");
   }
 }
 
@@ -177,7 +177,7 @@ public func CBBountyPosterName(sys: ref<CyberbaneSystem>, game: GameInstance, by
   let rid = CBBountyRivalId(by);
   if rid > 0 {
     let r = IsDefined(sys) ? sys.FindRivalById(rid) : null;
-    return IsDefined(r) ? CBRivalDisplayName(CBContent(game), r) : "a Rival";
+    return IsDefined(r) ? CBRivalDisplayName(CBContent(game), r) : CBT(n"Cyberbane-RivalSystem-ARival-2");
   }
   return CBFactionLabel(by);
 }
@@ -240,31 +240,31 @@ func CBBountyEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBHunt
     return;
   }
   if Equals(how, n"poster") {
-    CBHearsayFromStreet(game, CBPick2(s"Whoever put the price on you is dead. \(CBCapFirst(who))'s money died with them. The board's clean.",
-                                      s"No more price on your head: \(who) isn't around to pay it."), n"");
+    CBHearsayFromStreet(game, CBPick2(CBTf(n"Cyberbane-Bounty-WhoeverPutThePriceOnYou", [s"\(CBCapFirst(who))"]),
+                                      CBTf(n"Cyberbane-Bounty-NoMorePriceOnYourHead", [s"\(who)"])), n"");
     return;
   }
   if Equals(how, n"paid") {
-    CBPhoneSend(game, CBBountyContact(by), CBPick2("Paid. Your name's off the board. Anybody still coming is coming on their own time.",
-                                                   "Money talks. The contract's withdrawn."));
+    CBPhoneSend(game, CBBountyContact(by), CBPick2(CBT(n"Cyberbane-Bounty-PaidYourNameSOffThe"),
+                                                   CBT(n"Cyberbane-Bounty-MoneyTalksTheContractSWithdrawn")));
     return;
   }
-  CBHearsayFromStreet(game, CBPick2(s"The price \(who) put on you is gone. Nobody's collecting.",
-                                    "Your name's off the board. Whoever was paying stopped paying."), n"");
+  CBHearsayFromStreet(game, CBPick2(CBTf(n"Cyberbane-Bounty-ThePricePutOnYouIs", [s"\(who)"]),
+                                    CBT(n"Cyberbane-Bounty-YourNameSOffTheBoard")), n"");
 }
 
 // Who texts about a price: the corporation's own fixer, or the board itself.
 public func CBBountyContact(by: CName) -> String {
   if Equals(by, n"Arasaka") {
-    return "Arasaka liaison";
+    return CBT(n"Cyberbane-Bounty-ArasakaLiaison");
   }
   if Equals(by, n"Militech") {
-    return "Militech procurement";
+    return CBT(n"Cyberbane-Bounty-MilitechProcurement");
   }
   if Equals(by, n"KangTao") {
-    return "Kang Tao representative";
+    return CBT(n"Cyberbane-Bounty-KangTaoRepresentative");
   }
-  return "The board";
+  return CBT(n"Cyberbane-Bounty-TheBoard");
 }
 
 // From the slow tick: somebody may put a price on V. One price at a time.
@@ -340,17 +340,17 @@ func CBBountyPost(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBHun
   }
   let who = CBBountyPosterName(sys, game, by);
   if CBIsCorpFaction(by) {
-    let warned = Equals(book.CorpBy(), by) ? "We told you to stop. " : "";
+    let warned = Equals(book.CorpBy(), by) ? CBT(n"Cyberbane-Bounty-WeToldYouToStop") : "";
     CBPhoneSendTinted(game, CBBountyContact(by),
-      warned + s"A contract has been opened on you. \(amount) eddies, payable to whoever closes it. It can also be withdrawn, for a price. Think about which you'd rather.", CBHudRed());
+      CBTf(n"Cyberbane-Bounty-AContractHasBeenOpenedOn", [warned, s"\(amount)"]), CBHudRed());
     return;
   }
   let you = CBYou(sys, game);
   let here = CBHere(sys);
-  CBHearsayFromStreet(game, CBLineOf([s"There's a price on your head, \(you). \(amount) eddies from \(who), and the board's already arguing about who takes it.",
-                                      s"\(CBCapFirst(who)) put \(amount)eb on you. Every solo in \(here) just read your name off the board.",
-                                      s"Word is \(who) would pay \(amount) to see you dead. Watch who's watching you in \(here).",
-                                      s"\(amount) eddies on \(you). That's more than most people see in a year, and every gun for hire knows it."]), n"");
+  CBHearsayFromStreet(game, CBLineOf([CBTf(n"Cyberbane-Bounty-ThereSAPriceOnYour", [s"\(you)", s"\(amount)", s"\(who)"]),
+                                      CBTf(n"Cyberbane-Bounty-PutEbOnYouEverySolo", [s"\(CBCapFirst(who))", s"\(amount)", s"\(here)"]),
+                                      CBTf(n"Cyberbane-Bounty-WordIsWouldPayToSee", [s"\(who)", s"\(amount)", s"\(here)"]),
+                                      CBTf(n"Cyberbane-Bounty-EddiesOnThatSMoreThan", [s"\(amount)", s"\(you)"])]), n"");
 }
 
 // Chosen on the Hub, carried out on the next tick back in the game; false takes it back.
@@ -377,7 +377,7 @@ func CBBountyPayNow(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBH
   // The Hub only offers it with the eddies in V's pocket; spent between the click and the game, the button's answer is
   // said rather than lost.
   if !CBTalkTakeMoney(game, player, price) {
-    CBMenuNote(game, s"not enough eddies to clear the price any more. It costs \(price)eb.", 5.0);
+    CBMenuNote(game, CBTf(n"Cyberbane-Bounty-NotEnoughEddiesToClearThe", [s"\(price)"]), 5.0);
     return;
   }
   let gang = CBBountyGang(sys, book.BountyBy());
@@ -490,8 +490,9 @@ public func CBBountyTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   }
   let now = CBGameSeconds(game);
   // On their way: the clock holds while V cannot be reached, as a crew's does.
+  // Home ground holds them as anybody sent after V; the quiet a night at home bought does not: they had already set off.
   if book.comingSlot > 0 {
-    if CBArrivalsHeld(sys, game) || sys.IsInSafeZone() {
+    if CBArrivalsHeldBase(sys, game) || CBHomeKeepsOut(sys) || sys.IsInSafeZone() {
       return;
     }
     if book.comingTicks > 0 {
@@ -506,7 +507,7 @@ public func CBBountyTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     return;
   }
   // The next of them, in their own time.
-  if now < book.HunterNext() || sys.GetTickCount() % 5 != 0 || CBArrivalsHeld(sys, game) || sys.IsInSafeZone()
+  if now < book.HunterNext() || sys.GetTickCount() % 5 != 0 || CBArrivalsHeld(sys, game) || CBHomeKeepsOut(sys) || sys.IsInSafeZone()
      || CBHuntersOut(sys, game) || CBHuntPending(sys) {
     return;
   }
@@ -538,21 +539,21 @@ public func CBBountyTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     warn = warn / 3;
   }
   book.comingTicks = CBWarningTicks(warn);
-  sys.SetHuntGrade("BOUNTY HUNTER");
+  sys.SetHuntGrade(CBT(n"Cyberbane-Bounty-BOUNTYHUNTER"));
   CBHuntBegin(sys, game, CBBountyGang(sys, book.BountyBy()));
   if CBMessagesOn() {
     let rank = book.HunterRank(next);
-    let pair = book.comingPair > 0 ? " Brought a friend." : "";
+    let pair = book.comingPair > 0 ? CBT(n"Cyberbane-Bounty-BroughtAFriend") : "";
     let you = CBYou(sys, game);
     let vRank = book.LadderRank();
-    let standing = vRank == 0 ? "You're not even on the board yet. After you, I'm one step higher."
-                 : (vRank < rank ? s"You're number \(vRank). I'm number \(rank). That changes tonight." : s"Number \(vRank) on the board. Somebody has to take it off you.");
+    let standing = vRank == 0 ? CBT(n"Cyberbane-Bounty-YouReNotEvenOnThe")
+                 : (vRank < rank ? CBTf(n"Cyberbane-Bounty-YouReNumberIMNumber", [s"\(vRank)", s"\(rank)"]) : CBTf(n"Cyberbane-Bounty-NumberOnTheBoardSomebodyHas", [s"\(vRank)"]));
     let when = CBWhenWords(game);
-    CBPhoneSendTinted(game, CBHunterName(seed) + s" (rank \(rank))", CBLineOf([
-      s"\(book.BountyAmount()) eddies says I find you, \(you). Nothing personal. \(standing)\(pair)",
-      s"I took \(CBPossessive(CBBountyPosterName(sys, game, book.BountyBy()))) contract. I work \(CBHunterTraitWord(seed)), with \(CBHunterKindWord(seed)). You'll see.\(pair)",
-      s"Don't bother leaving \(CBHere(sys)). I've got your face and \(book.BountyAmount()) reasons.\(pair)",
-      (StrLen(when) > 0 ? s"I like working \(when). See you soon, \(you).\(pair)" : s"See you soon, \(you). \(standing)\(pair)")]), CBHudRed());
+    CBPhoneSendTinted(game, CBTf(n"Cyberbane-Bounty-Rank", [CBHunterName(seed), s"\(rank)"]), CBLineOf([
+      CBTf(n"Cyberbane-Bounty-EddiesSaysIFindYouNothing", [s"\(book.BountyAmount())", s"\(you)", s"\(standing)", s"\(pair)"]),
+      CBTf(n"Cyberbane-Bounty-ITookContractIWorkWith", [s"\(CBPossessive(CBBountyPosterName(sys, game, book.BountyBy())))", s"\(CBHunterTraitWord(seed))", s"\(CBHunterKindWord(seed))", s"\(pair)"]),
+      CBTf(n"Cyberbane-Bounty-DonTBotherLeavingIVe", [s"\(CBHere(sys))", s"\(book.BountyAmount())", s"\(pair)"]),
+      (StrLen(when) > 0 ? CBTf(n"Cyberbane-Bounty-ILikeWorkingSeeYouSoon", [s"\(when)", s"\(you)", s"\(pair)"]) : CBTf(n"Cyberbane-Bounty-SeeYouSoon", [s"\(you)", s"\(standing)", s"\(pair)"]))]), CBHudRed());
   }
   CBLog.Info(n"Spawn", s"Bounty hunter on the way: rank \(book.HunterRank(next)).");
 }
@@ -708,19 +709,19 @@ func CBHunterBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBH
     return;
   }
   if after == 1 && before != 1 {
-    CBHearsayFromStreet(game, CBPick2(s"\(name) was number one on the hunters' ladder. Now you are. The most dangerous merc in Night City, and every solo with a gun knows it.",
-                                      "Top of the board. Nobody in this city is worth more to kill, or harder to."), n"");
+    CBHearsayFromStreet(game, CBPick2(CBTf(n"Cyberbane-Bounty-WasNumberOneOnTheHunters", [s"\(name)"]),
+                                      CBT(n"Cyberbane-Bounty-TopOfTheBoardNobodyIn")), n"");
     return;
   }
   if after != before {
-    CBHearsayFromStreet(game, CBLineOf([s"\(name) came for you in \(CBHere(sys)) and lost. You're number \(after) on the hunters' ladder now.",
-                                        s"The board's been rewritten: you took \(CBHunterHandle(seed))'s place. Number \(after).",
-                                        s"Solos are talking. You beat a rank \(rank)\(CBWhenTail(game)), and that makes you one.",
-                                        s"\(CBCapFirst(CBHunterHandle(seed))) won't be collecting anything now. Number \(after) on the board is you."]), n"");
+    CBHearsayFromStreet(game, CBLineOf([CBTf(n"Cyberbane-Bounty-CameForYouInAndLost", [s"\(name)", s"\(CBHere(sys))", s"\(after)"]),
+                                        CBTf(n"Cyberbane-Bounty-TheBoardSBeenRewrittenYou", [s"\(CBHunterHandle(seed))", s"\(after)"]),
+                                        CBTf(n"Cyberbane-Bounty-SolosAreTalkingYouBeatA", [s"\(rank)", s"\(CBWhenTail(game))"]),
+                                        CBTf(n"Cyberbane-Bounty-WonTBeCollectingAnythingNow", [s"\(CBCapFirst(CBHunterHandle(seed)))", s"\(after)"])]), n"");
     return;
   }
   if turned {
-    CBHearsayFromStreet(game, s"You left \(name) breathing. They're off the board: word is they've signed on with \(CBFactionLabel(gang)) under a new name, and they want you for themselves.", n"");
+    CBHearsayFromStreet(game, CBTf(n"Cyberbane-Bounty-YouLeftBreathingTheyReOff", [s"\(name)", s"\(CBFactionLabel(gang))"]), n"");
   }
 }
 
@@ -801,7 +802,7 @@ public func CBBountyScannerName(npc: ref<ScriptedPuppet>) -> String {
 }
 
 public func CBBountyScannerNote(npc: ref<ScriptedPuppet>) -> String {
-  return IsDefined(npc) && npc.cbBountySeed != 0 && !npc.IsDead() ? s"BOUNTY HUNTER, RANK \(npc.cbBountyRank)" : "";
+  return IsDefined(npc) && npc.cbBountySeed != 0 && !npc.IsDead() ? CBTf(n"Cyberbane-Bounty-BOUNTYHUNTERRANK", [s"\(npc.cbBountyRank)"]) : "";
 }
 
 // For the HUD line: the one on their way or out after V, by name, or "".
@@ -834,13 +835,13 @@ public func CBBountyHubLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> St
   let out = "";
   let amount = CBBountyUp(game);
   if amount > 0 {
-    out = s"A price on your head: \(amount) eddies from \(CBBountyPosterName(sys, game, book.BountyBy())). Pay \(CBBountyPayOff(sys, game))eb to have it withdrawn, or kill whoever put it up.";
+    out = CBTf(n"Cyberbane-Bounty-APriceOnYourHeadEddies", [s"\(amount)", s"\(CBBountyPosterName(sys, game, book.BountyBy()))", s"\(CBBountyPayOff(sys, game))"]);
   }
   let v = book.LadderRank();
   if v > 0 || amount > 0 {
     let next = CBLadderNext(book);
-    let place = v > 0 ? s"You are number \(v) on the hunters' ladder." : "You are not on the hunters' ladder yet.";
-    let who = next >= 0 ? s" Next to come for you: \(CBHunterName(book.HunterSeed(next))), rank \(book.HunterRank(next)), \(CBHunterTraitWord(book.HunterSeed(next))), with \(CBHunterKindWord(book.HunterSeed(next)))." : "";
+    let place = v > 0 ? CBTf(n"Cyberbane-Bounty-YouAreNumberOnTheHunters", [s"\(v)"]) : CBT(n"Cyberbane-Bounty-YouAreNotOnTheHunters");
+    let who = next >= 0 ? CBTf(n"Cyberbane-Bounty-NextToComeForYouRank", [s"\(CBHunterName(book.HunterSeed(next)))", s"\(book.HunterRank(next))", s"\(CBHunterTraitWord(book.HunterSeed(next)))", s"\(CBHunterKindWord(book.HunterSeed(next)))"]) : "";
     out += (StrLen(out) > 0 ? " " : "") + place + (amount > 0 ? who : "");
   }
   return out;
@@ -893,8 +894,8 @@ public func CBCorpInterestRoll(sys: ref<CyberbaneSystem>, game: GameInstance, da
     book.SetCorp(corp, now);
     CBFileLog(sys, n"CorpWarned", now, CBEventDistrict(sys, game), corp, 0.0);
     CBPhoneSendTinted(game, CBBountyContact(corp), CBPick2(
-      "You've cost us more this month than our security budget allows. This is the only courtesy call you get. Stop.",
-      "We know your name. We'd rather not have to put a price on it. Keep away from our people."), CBHudAmber());
+      CBT(n"Cyberbane-Bounty-YouVeCostUsMoreThis"),
+      CBT(n"Cyberbane-Bounty-WeKnowYourNameWeD")), CBHudAmber());
     return;
   }
   // Otherwise a job: a gang's leader they want gone, a gang V has trouble with first.
@@ -918,7 +919,7 @@ public func CBCorpInterestRoll(sys: ref<CyberbaneSystem>, game: GameInstance, da
   book.SetCorp(StringToName(NameToString(corp) + ":" + NameToString(target)), now);
   CBFileLog(sys, n"CorpOffer", now, CBEventDistrict(sys, game), target, Cast<Float>(pay));
   CBPhoneSendTinted(game, CBBountyContact(corp),
-    s"A proposal for \(CBYou(sys, game)). \(leaderName) of \(CBFactionLabel(target)) has become an obstacle to our interests. Kill them yourself within the week and \(pay) eddies are yours. We were never in touch.", CBHudCyan());
+    CBTf(n"Cyberbane-Bounty-AProposalForOfHasBecome", [s"\(CBYou(sys, game))", s"\(leaderName)", s"\(CBFactionLabel(target))", s"\(pay)"]), CBHudCyan());
 }
 
 // The leader they wanted gone is dead by V's hand: paid.
@@ -944,6 +945,6 @@ func CBCorpContractSlain(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   }
   CBFileLog(sys, n"CorpContractDone", CBGameSeconds(game), CBEventDistrict(sys, game), corp, Cast<Float>(pay));
   if CBToastsOn() {
-    CBPhoneSend(game, CBBountyContact(corp), s"Satisfactory. \(pay) eddies have been transferred. We may call again.");
+    CBPhoneSend(game, CBBountyContact(corp), CBTf(n"Cyberbane-Bounty-SatisfactoryEddiesHaveBeenTransferredWe", [s"\(pay)"]));
   }
 }

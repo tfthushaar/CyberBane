@@ -180,7 +180,7 @@ public func CBSpawnRoomNote(game: GameInstance) -> String {
     }
     k += 1;
   }
-  return s"\(spawning + standing) of \(CBConfig.MaxLiveSpawns()) taken: \(spawning) still spawning, \(standing) standing [\(parts)]";
+  return CBTf(n"Cyberbane-Queue-OfTakenStillSpawningStanding", [s"\(spawning + standing)", s"\(CBConfig.MaxLiveSpawns())", s"\(spawning)", s"\(standing)", s"\(parts)"]);
 }
 
 // ---- A hit squad is an apex squad and a crew ------------------------------------------
@@ -221,14 +221,14 @@ public func CBCrewBringsApex(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>)
 // What a gang says is coming, in its own words: the crew's number, and its best leading them.
 public func CBCrewComingLine(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>) -> String {
   if !IsDefined(sys) || !IsDefined(fs) {
-    return "Our people are on their way.";
+    return CBT(n"Cyberbane-Queue-OurPeopleAreOnTheirWay");
   }
   let count = CBNumberWord(CBCrewSizeFor(sys, fs, CBCrewIsInfamous(sys)));
   if CBCrewBringsApex(sys, fs) {
     let name = CBApexName(CBContent(game), fs.id, fs.apexAtKills);
-    return s"\(name) and three of our best are on their way. \(count) more of ours with them.";
+    return CBTf(n"Cyberbane-Queue-AndThreeOfOurBestAre", [s"\(name)", s"\(count)"]);
   }
-  return s"\(count) of ours are on their way.";
+  return CBTf(n"Cyberbane-Queue-OfOursAreOnTheirWay", [s"\(count)"]);
 }
 
 // Is anyone wearing this tag still alive?
@@ -362,7 +362,7 @@ public func CBLaneNobodyWhy(sys: ref<CyberbaneSystem>, lane: Int32) -> String {
   }
   if lane == CBLaneRival() {
     if !CBRivalsOn() {
-      return "Rivals are off in Mod Settings";
+      return CBT(n"Cyberbane-Queue-RivalsAreOffInModSettings");
     }
     for r in sys.GetRivals() {
       if IsDefined(r) && CBRivalQueueable(sys, r.id) {
@@ -370,17 +370,17 @@ public func CBLaneNobodyWhy(sys: ref<CyberbaneSystem>, lane: Int32) -> String {
       }
     }
     if sys.CountActiveRivals() > 0 {
-      return "none of your Rivals can come right now";
+      return CBT(n"Cyberbane-Queue-NoneOfYourRivalsCanCome");
     }
     for fs in sys.GetFactionStates() {
       if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) && CBFactionFieldsSquads(fs.id) && fs.kills > 0 {
         return "";
       }
     }
-    return "nobody has a grudge against you yet";
+    return CBT(n"Cyberbane-Queue-NobodyHasAGrudgeAgainstYou");
   }
   if !CBHitSquadsOn() {
-    return CBRememberSendsCrews() ? CBRememberModName() + " sends the gangs' people" : "crews are off in Mod Settings";
+    return CBRememberSendsCrews() ? CBTf(n"Cyberbane-Queue-SendsTheGangsPeople", [CBRememberModName()]) : CBT(n"Cyberbane-Queue-CrewsAreOffInModSettings");
   }
   for fs in sys.GetFactionStates() {
     if IsDefined(fs) {
@@ -395,7 +395,7 @@ public func CBLaneNobodyWhy(sys: ref<CyberbaneSystem>, lane: Int32) -> String {
       }
     }
   }
-  return lane == CBLaneApex() ? "no gang is angry enough to send its best" : "no gang is after you";
+  return lane == CBLaneApex() ? CBT(n"Cyberbane-Queue-NoGangIsAngryEnoughTo") : CBT(n"Cyberbane-Queue-NoGangIsAfterYou");
 }
 
 func CBAnotherLaneJustFired(sys: ref<CyberbaneSystem>, lane: Int32) -> Bool {
@@ -486,6 +486,13 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     return;
   }
   if sys.GetLaneTicks(lane) > 0 || NotEquals(sys.GetLaneTarget(lane), n"") || sys.GetLaneRivalId(lane) > 0 {
+    // With everybody resting together, somebody already lined up waits out the rest of another lane's fight too, instead of
+    // following it straight in (2.7.1). Their clock has not been told to anybody yet: only the Hub shows it. A Rival who has
+    // already texted that they are coming keeps their word.
+    let warnedRival = lane == CBLaneRival() && sys.GetRivalWarned() > 0 && sys.GetRivalWarned() == sys.GetLaneRivalId(lane);
+    if CBRestTogether() && !warnedRival && CBLaneRestLeft(sys, lane) > 0 {
+      return;
+    }
     if sys.TickDownLane(lane) > 0 {
       return;
     }
@@ -516,7 +523,8 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
   let turf = CBTurfGangsHere(sys);
 
   if lane == CBLaneRival() {
-    if !CBRivalsOn() {
+    // No Rival is picked while V is on home ground, under either Quiet setting (2.7.1, Spawn/HomeGround.reds).
+    if !CBRivalsOn() || CBHomeKeepsOut(sys) {
       return;
     }
     for r in sys.GetRivals() {
@@ -556,7 +564,7 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
   } else {
     if !CBHitSquadsOn() {
       if lane == CBLaneApex() {
-        CBApexLaneNote(sys, game, CBRememberSendsCrews() ? CBRememberModName() + " sends the gangs' people" : "crews are off in Mod Settings");
+        CBApexLaneNote(sys, game, CBRememberSendsCrews() ? CBTf(n"Cyberbane-Queue-SendsTheGangsPeople", [CBRememberModName()]) : CBT(n"Cyberbane-Queue-CrewsAreOffInModSettings"));
       }
       return;
     }
@@ -565,7 +573,8 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
       // An apex squad is built from the gang's apex records (CBApexRecordFor), which CBApexEligible
       // already asks for. Demanding the crew template as well kept a gang the Hub called ready out
       // of the apex lane for good whenever it had no crew template on file.
-      if IsDefined(fs) && CBFactionFieldsSquads(fs.id)
+      // On home ground under Quiet except a vendetta, only a gang at Vendetta is picked (2.7.1, CBHomeHolds).
+      if IsDefined(fs) && CBFactionFieldsSquads(fs.id) && !CBHomeHolds(sys, fs.id)
          && (lane == CBLaneApex() || TDBID.IsValid(fs.sampleRecord)) {
         let posture = score.GetPosture(fs.id);
         let hate = ClampF((-CBActingStanding(fs.id, fs.standing) / 100.0) * (fs.renown / 100.0), 0.0, 1.0);
@@ -702,7 +711,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     if IsDefined(r) && sys.GetRivalWarned() != r.id {
       sys.SetRivalWarned(r.id);
       sys.SetLaneTicks(lane, CBRivalArrivalTicks(sys, game, r, CBConfig.RivalWarningTicks()));
-      sys.SetHuntGrade("RIVAL");
+      sys.SetHuntGrade(CBT(n"Cyberbane-Whereabouts-RIVAL"));
       CBHuntBegin(sys, game, r.faction);
       CBRivalWarning(sys, game, r);
       return;
@@ -739,9 +748,10 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     CBHuntBegin(sys, game, faction);
     if lane == CBLaneApex() {
       sys.SetPendingApex(faction, CBArrivalTicks(sys, game, faction, CBConfig.ApexWarningTicks()));
-      sys.SetHuntGrade("APEX SQUAD");
+      sys.SetHuntGrade(CBT(n"Cyberbane-Queue-APEXSQUAD"));
       sys.ClearCrewBeaten(faction);   // the beaten crew has been answered
       CBApexOnTheWay(sys, game, faction);
+      CBSlipBegin(sys, game, faction);   // what V does before they get here counts (2.7.1, Spawn/Slip.reds)
     } else {
       // A gang that does not know where V is may send one person to look first (Spawn/Hunt.reds).
       // The crew then only comes if the scout finds V.
@@ -749,6 +759,7 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
         sys.SetPendingSquad(faction, CBArrivalTicks(sys, game, faction, CBConfig.CrewWarningTicks()));
         sys.SetHuntGrade(CBCrewGrade(sys, faction));
         CBCrewWarning(sys, game, faction);
+        CBSlipBegin(sys, game, faction);
       }
     }
     sys.SetLaneLastFaction(lane, faction);
@@ -807,11 +818,22 @@ public func CBLaneBudgetLeft(sys: ref<CyberbaneSystem>, game: GameInstance, lane
 // ago" and sat out the full gap - ten real minutes of silence after every single load, in all
 // three lanes, with the Hub reporting that the lane was due and nobody qualified while eleven
 // Rivals waited their turn. A lane that has never been busy has nothing to rest from.
+// Everybody rests after a fight (2.7.1, on by default): every lane rests from the end of the last fight of any kind, and,
+// because a busy lane is stamped every tick it is busy (CyberbaneSystem.MarkLaneBusy), nobody new is lined up while any
+// fight is on. "I set it to max and they still hunt me one after another (rival, apex) without rest": each lane rested
+// only from its own last fight.
 public func CBLaneRestLeft(sys: ref<CyberbaneSystem>, lane: Int32) -> Int32 {
-  if !IsDefined(sys) || sys.GetLaneFreed(lane) <= 0 {
+  if !IsDefined(sys) {
     return 0;
   }
-  let left = CBEncounterGapTicks() - (sys.GetTickCount() - sys.GetLaneFreed(lane));
+  let freed = sys.GetLaneFreed(lane);
+  if CBRestTogether() {
+    freed = Max(freed, Max(sys.GetLaneFreed(CBLaneRival()), Max(sys.GetLaneFreed(CBLaneSquad()), sys.GetLaneFreed(CBLaneApex()))));
+  }
+  if freed <= 0 {
+    return 0;
+  }
+  let left = CBEncounterGapTicks() - (sys.GetTickCount() - freed);
   return left > 0 ? left : 0;
 }
 
@@ -1047,7 +1069,7 @@ public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState
   }
   // A corporation sends nobody: it pays the ladder (Spawn/Bounty.reds, 2.4.3).
   if CBCorpHiresKillers(fs.id) {
-    return "they hire killers instead of sending their own";
+    return CBT(n"Cyberbane-Queue-TheyHireKillersInsteadOfSending");
   }
   // Nothing to count towards for a gang with no best to send (2.7.0): one whose code never sends them (the Mox), one with no
   // apex records, or with Apex squads off. Each of them was promised "apex squad in 20 kills".
@@ -1058,20 +1080,20 @@ public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState
     // Ready is only ready if the lane can send them. Everything that stops it is said here, in the
     // lane's own order, so the Hub never promises a squad that is not coming (CBApexBlocker).
     let why = CBApexBlocker(sys, sys.GetGameInstance(), fs);
-    return StrLen(why) == 0 ? "ready to send their best" : "their best waits: " + why;
+    return StrLen(why) == 0 ? CBT(n"Cyberbane-Queue-ReadyToSendTheirBest") : CBTf(n"Cyberbane-Queue-TheirBestWaits", [why]);
   }
   if CBTooUnknownForApex(sys.GetGameInstance()) {
     let cred = RoundF(CBConfig.ApexMinStreetCred());
-    return s"their best come once your Street Cred reaches \(cred)";
+    return CBTf(n"Cyberbane-Queue-TheirBestComeOnceYourStreet", [s"\(cred)"]);
   }
   let since = fs.kills - fs.apexAtKills;
   let toApex = CBConfig.ApexKillThreshold() - since;
   if toApex > 0 {
-    return s"apex squad in \(toApex) kills";
+    return CBTf(n"Cyberbane-Queue-ApexSquadInKills", [s"\(toApex)"]);
   }
   // Enough bodies, no beaten crew yet.
   let toMassacre = CBConfig.ApexKillThreshold() * CBConfig.ApexMassacreMultiplier() - since;
-  return s"beat a crew, or \(toMassacre) more kills";
+  return CBTf(n"Cyberbane-Queue-BeatACrewOrMoreKills", [s"\(toMassacre)"]);
 }
 
 // A crew of this gang has just been wiped out. Remember it, so their best comes next, and let
@@ -1096,7 +1118,7 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   // Somebody is glad to see that crew gone, and pays for it (Spawn/Loot.reds).
   let crewLabel = CBFactionLabel(faction);
   CBPayBounty(sys, game, faction, RoundF(Cast<Float>(CBConfig.BountyCrew()) * CBLootLevelScale(game) / 50.0) * 50,
-              StrLen(crewLabel) > 0 ? s"Heard you dealt with that crew of \(crewLabel)." : "Heard you dealt with that crew.");
+              StrLen(crewLabel) > 0 ? CBTf(n"Cyberbane-Queue-HeardYouDealtWithThatCrew", [s"\(crewLabel)"]) : CBT(n"Cyberbane-Queue-HeardYouDealtWithThatCrew-2"));
   // Only promise what can follow: a gang that fields an apex, while the apex lane is on and
   // nothing is already on its way.
   // Nor from a gang whose code never sends its best, or with Apex squads off (2.7.0).
@@ -1106,9 +1128,9 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   }
   let name = CBApexName(CBContent(game), faction, fs.apexAtKills);
   if CBApexEligible(sys, fs) {
-    CBHearsayFromGang(game, faction, s"That was our crew. Next time it is \(name), and three more like them.", n"");
+    CBHearsayFromGang(game, faction, CBTf(n"Cyberbane-Queue-ThatWasOurCrewNextTime", [s"\(name)"]), n"");
   } else {
-    CBHearsayFromGang(game, faction, s"That was our crew. Keep it up and you meet \(name).", n"");
+    CBHearsayFromGang(game, faction, CBTf(n"Cyberbane-Queue-ThatWasOurCrewKeepIt", [s"\(name)"]), n"");
   }
 }
 
@@ -1177,7 +1199,7 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     sys.SetTurfWatch(n"", now);
     CBLog.Info(n"Spawn", s"The \(NameToString(owner)) lookout was dealt with.");
     if CBToastsOn() {
-      CBHearsayFromStreet(game, s"\(CBCapFirst(CBFactionLabel(owner))) had somebody watching for you. Not any more.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-Queue-HadSomebodyWatchingForYouNot", [s"\(CBCapFirst(CBFactionLabel(owner)))"]), n"");
     }
     return;
   }
@@ -1367,15 +1389,15 @@ public func CBTrackingNotice(sys: ref<CyberbaneSystem>, game: GameInstance, lane
   }
   let line = "";
   if lane == CBLaneApex() {
-    line = CBCapFirst(who) + " are asking about you, and not their usual people.";
+    line = CBTf(n"Cyberbane-Queue-AreAskingAboutYouAndNot", [CBCapFirst(who)]);
   } else {
     if lane == CBLaneRival() {
-      line = s"\(who) has been asking around about you.";
+      line = CBTf(n"Cyberbane-Queue-HasBeenAskingAroundAboutYou", [s"\(who)"]);
     } else {
       switch RandRange(0, 3) {
-        case 0: line = s"Somebody from \(who) was asking where you drink."; break;
-        case 1: line = CBCapFirst(who) + " are asking questions about you."; break;
-        default: line = s"Your name came up with \(who). They want to know where you are."; break;
+        case 0: line = CBTf(n"Cyberbane-Queue-SomebodyFromWasAskingWhereYou", [s"\(who)"]); break;
+        case 1: line = CBTf(n"Cyberbane-Queue-AreAskingQuestionsAboutYou", [CBCapFirst(who)]); break;
+        default: line = CBTf(n"Cyberbane-Queue-YourNameCameUpWithThey", [s"\(who)"]); break;
       }
     }
   }
@@ -1390,7 +1412,7 @@ public func CBTrackingNotice(sys: ref<CyberbaneSystem>, game: GameInstance, lane
       CBPhoneFromStreet(game, line);
     }
   } else {
-    CBOverheard(game, "Passer-by", line);
+    CBOverheard(game, CBT(n"Cyberbane-Whispers-PasserBy"), line);
   }
 }
 
@@ -1456,26 +1478,26 @@ func CBCrewIsInfamous(sys: ref<CyberbaneSystem>) -> Bool {
 // One word for how bad this is, shown on the HUD line and the Hub.
 public func CBCrewGrade(sys: ref<CyberbaneSystem>, faction: CName) -> String {
   if !IsDefined(sys) {
-    return "CREW";
+    return CBT(n"Cyberbane-Queue-CREW");
   }
   let fs = sys.FindFaction(faction);
   if CBCrewBringsApex(sys, fs) {
-    return "APEX CREW";
+    return CBT(n"Cyberbane-Queue-APEXCREW");
   }
   let size = CBCrewSizeFor(sys, fs, CBCrewIsInfamous(sys));
-  return size >= 5 ? "HEAVY CREW" : "CREW";
+  return size >= 5 ? CBT(n"Cyberbane-Queue-HEAVYCREW") : CBT(n"Cyberbane-Queue-CREW");
 }
 
 public func CBNumberWord(n: Int32) -> String {
   switch n {
-    case 1: return "One";
-    case 2: return "Two";
-    case 3: return "Three";
-    case 4: return "Four";
-    case 5: return "Five";
-    case 6: return "Six";
-    case 7: return "Seven";
-    case 8: return "Eight";
+    case 1: return CBT(n"Cyberbane-Queue-One");
+    case 2: return CBT(n"Cyberbane-Queue-Two");
+    case 3: return CBT(n"Cyberbane-Queue-Three");
+    case 4: return CBT(n"Cyberbane-Queue-Four");
+    case 5: return CBT(n"Cyberbane-Queue-Five");
+    case 6: return CBT(n"Cyberbane-Queue-Six");
+    case 7: return CBT(n"Cyberbane-Queue-Seven");
+    case 8: return CBT(n"Cyberbane-Queue-Eight");
     default: return s"\(n)";
   }
 }
@@ -1490,24 +1512,24 @@ public func CBApexBlocker(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref
     return "";
   }
   if !CBHitSquadsOn() {
-    return CBRememberSendsCrews() ? CBRememberModName() + " sends the gangs" : "crews are off in Mod Settings";
+    return CBRememberSendsCrews() ? CBTf(n"Cyberbane-Queue-SendsTheGangs", [CBRememberModName()]) : CBT(n"Cyberbane-Queue-CrewsAreOffInModSettings");
   }
   // The switch as well as the per-day slider (2.7.0): with Apex squads off the Hub still said "ready to send their best".
   if !CBApexOnSetting() || CBLaneDailyCap(CBLaneApex()) <= 0 {
-    return "apex squads are off in Mod Settings";
+    return CBT(n"Cyberbane-Queue-ApexSquadsAreOffInMod");
   }
   let queued = sys.GetLaneTarget(CBLaneApex());
   if NotEquals(queued, n"") && NotEquals(queued, fs.id) {
-    return "another gang's best goes first";
+    return CBT(n"Cyberbane-Queue-AnotherGangSBestGoesFirst");
   }
   if CBLaneBusy(sys, game, CBLaneApex()) {
-    return "one squad is already out";
+    return CBT(n"Cyberbane-Queue-OneSquadIsAlreadyOut");
   }
   if CBArrivalsHeld(sys, game) {
-    return "held while " + CBArrivalsHeldWhy(sys, game);
+    return CBTf(n"Cyberbane-Queue-HeldWhile", [CBArrivalsHeldWhy(sys, game)]);
   }
   if CBLaneBudgetLeft(sys, game, CBLaneApex()) <= 0 {
-    return "none left today";
+    return CBT(n"Cyberbane-Queue-NoneLeftToday");
   }
   return "";
 }

@@ -118,18 +118,18 @@ public func CBAllyTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: re
   let friendly = Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied);
   // [67] One who gave up.
   if gang && t.npc.cbSurrendered && CBRansomOn() && !IsDefined(war.ransomNpc) {
-    let r = CBTalkMakeLine("[Ransom] Your people can have you back. For a price.", CBTalkActRansom(), t"ChoiceCaptionParts.PayIcon");
+    let r = CBTalkMakeLine(CBT(n"Cyberbane-Allies-RansomYourPeopleCanHaveYou"), CBTalkActRansom(), t"ChoiceCaptionParts.PayIcon");
     r.important = true;
     ArrayPush(out, r);
     let buyer = CBHandOverBuyer(sys, game, t.faction);
     if NotEquals(buyer, n"") {
-      ArrayPush(out, CBTalkMakeLine(s"[Hand over] \(CBCapFirst(CBFactionLabel(buyer))) will want a word with you.", CBTalkActHandOver(), TDBID.None()));
+      ArrayPush(out, CBTalkMakeLine(CBTf(n"Cyberbane-Allies-HandOverWillWantAWord", [s"\(CBCapFirst(CBFactionLabel(buyer)))"]), CBTalkActHandOver(), TDBID.None()));
     }
     return out;
   }
   // [65] Watch my back.
   if gang && friendly && CBRunWithCrewOn() && ArraySize(war.crewIds) == 0 && war.crewDay != CBGameDay(game) + 1 {
-    ArrayPush(out, CBTalkMakeLine("[Watch my back] Some of yours could ride with me for a while.", CBTalkActWatchBack(), t"ChoiceCaptionParts.ReinforcementIcon"));
+    ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-Allies-WatchMyBackSomeOfYours"), CBTalkActWatchBack(), t"ChoiceCaptionParts.ReinforcementIcon"));
   }
   // [C4] One of theirs on V's crew for good (Reactions/Crew.reds, 2.5.0).
   if gang {
@@ -141,10 +141,10 @@ public func CBAllyTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: re
   // [66] One of theirs: join when offered, leave when in.
   if gang && CBOneOfTheirsOn() {
     if Equals(war.OneOfTheirs(), t.faction) {
-      ArrayPush(out, CBTalkMakeLine("[Quit the gang] I'm out. Tell them I'm done.", CBTalkActLeaveGang(), t"ChoiceCaptionParts.BackOutIcon"));
+      ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-Allies-QuitTheGangIMOut"), CBTalkActLeaveGang(), t"ChoiceCaptionParts.BackOutIcon"));
     } else {
       if Equals(posture, ECBPosture.Allied) && Equals(war.joinOffer, t.faction) && Equals(war.OneOfTheirs(), n"") {
-        let j = CBTalkMakeLine("[Join] Tell them yes. I'm one of yours.", CBTalkActJoin(), t"ChoiceCaptionParts.HandshakeIcon");
+        let j = CBTalkMakeLine(CBT(n"Cyberbane-Allies-JoinTellThemYesIM"), CBTalkActJoin(), t"ChoiceCaptionParts.HandshakeIcon");
         j.important = true;
         ArrayPush(out, j);
       }
@@ -154,7 +154,7 @@ public func CBAllyTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: re
   let after = CBLieTargetGang(sys, game);
   if CBTalkLiesOn() && NotEquals(after, n"") && !Equals(after, t.faction) && (!gang || t.mood == CBTalkAfraid())
      && war.lieUntil < CBGameSeconds(game) {
-    ArrayPush(out, CBTalkMakeLine(s"[Lie] If \(CBFactionLabel(after)) ask, I left for \(CBLieDistrictLabel(sys)).", CBTalkActSpreadLie(), TDBID.None()));
+    ArrayPush(out, CBTalkMakeLine(CBTf(n"Cyberbane-Allies-LieIfAskILeftFor", [s"\(CBFactionLabel(after))", s"\(CBLieDistrictLabel(sys))"]), CBTalkActSpreadLie(), TDBID.None()));
   }
   return out;
 }
@@ -172,13 +172,13 @@ public func CBAllyTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, play
     war.SetOneOfTheirs(t.faction);
     war.joinOffer = n"";
     CBFileLog(sys, n"OneOfTheirs", CBGameSeconds(game), CBEventDistrict(sys, game), t.faction, 0.0);
-    return CBTalkSay(CBPick2("Welcome to the family. Don't make us regret it.", "You're one of us now. Act like it."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-WelcomeToTheFamilyDonT"), CBT(n"Cyberbane-Allies-YouReOneOfUsNow")), n"");
   }
   if choice == CBTalkActLeaveGang() {
     war.SetOneOfTheirs(n"");
     CBTalkSlight(sys, game, t.faction, CBConfig.LeaveGangStanding());
     CBFileLog(sys, n"LeftGang", CBGameSeconds(game), CBEventDistrict(sys, game), t.faction, 0.0);
-    return CBTalkSay(CBPick2("Just like that? Fine. Don't come crying to us.", "Out's out. Nobody here owes you anything now."), n"bump");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-JustLikeThatFineDonT"), CBT(n"Cyberbane-Allies-OutSOutNobodyHereOwes")), n"bump");
   }
   if choice == CBTalkActRansom() {
     return CBRansomAsk(sys, game, war, t);
@@ -200,7 +200,7 @@ func CBWatchMyBack(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWar
   let base = CBGangTemplate(sys, t.faction);   // their own people even if V has never fought one of them (2.5.0)
   // Never on top of a Rival who came to help ("Nobody kills you but me" shares the CB_Ally tag and its clean-up).
   if !TDBID.IsValid(base) || CBSpawnRoom(game) < 3 || CBCrewHeldReason(sys, game) > 0 || CBLiveTaggedPresent(game, n"CB_Ally") {
-    return CBTalkSay(CBPick2("Not now. Everybody's busy.", "Can't spare anybody right now."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-NotNowEverybodySBusy"), CBT(n"Cyberbane-Allies-CanTSpareAnybodyRightNow")), n"");
   }
   let count = IsDefined(score) && Equals(score.GetPosture(t.faction), ECBPosture.Allied) ? CBConfig.CrewAllied() : CBConfig.CrewFriendly();
   let records: array<TweakDBID>;
@@ -219,7 +219,7 @@ func CBWatchMyBack(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWar
     k += 1;
   }
   if sent == 0 {
-    return CBTalkSay("Nobody can get here. Try again later.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-Allies-NobodyCanGetHereTryAgain"), n"");
   }
   let now = CBGameSeconds(game);
   war.crewGang = t.faction;
@@ -230,9 +230,9 @@ func CBWatchMyBack(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWar
   CBFileLog(sys, n"CrewLent", now, CBEventDistrict(sys, game), t.faction, Cast<Float>(sent));
   let here = CBHere(sys);
   let you = CBYou(sys, game);
-  return CBTalkSay(sent == 1 ? s"One of ours is on the way to \(here). Keep them breathing, \(you)."
-                             : CBLineOf([s"\(sent) of ours are on their way to \(here). Bring them back in one piece.",
-                                         s"For you, \(you)? \(sent) of ours. They'll stick with you for an hour. Don't waste them."]), n"");
+  return CBTalkSay(sent == 1 ? CBTf(n"Cyberbane-Allies-OneOfOursIsOnThe", [s"\(here)", s"\(you)"])
+                             : CBLineOf([CBTf(n"Cyberbane-Allies-OfOursAreOnTheirWay", [s"\(sent)", s"\(here)"]),
+                                         CBTf(n"Cyberbane-Allies-ForYouOfOursTheyLl", [s"\(you)", s"\(sent)"])]), n"");
 }
 
 func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>, player: ref<PlayerPuppet>) -> Void {
@@ -286,18 +286,18 @@ func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBoo
   }
   let why = "";
   if now >= war.crewUntil {
-    why = "Time's up. We're heading back.";
+    why = CBT(n"Cyberbane-Allies-TimeSUpWeReHeading");
   }
   if war.crewAway >= CBConfig.CrewAwayTicks() {
-    why = "This isn't our part of town. We're going home.";
+    why = CBT(n"Cyberbane-Allies-ThisIsnTOurPartOf");
   }
   if far && sys.GetTickCount() % 5 == 0 {
-    why = "Lost you. We'll catch up some other time.";
+    why = CBT(n"Cyberbane-Allies-LostYouWeLlCatchUp");
   }
   // On V's side, so the crew's gate (2.6.5): the story, a scene, a safe place, a job by Your crew on jobs. It was the hunters'
   // (CBArrivalsHeld), so a gang's people lent to V went home the moment V stepped onto a gig or a gang's turf.
   if CBCrewHeldReason(sys, game) > 0 {
-    why = "Looks like you've got business. We'll leave you to it.";
+    why = CBT(n"Cyberbane-Allies-LooksLikeYouVeGotBusiness");
   }
   // Run with a crew switched off while they are out (2.5.6): they walk home now, without a text ("-"), rather than
   // following V for the rest of the hour, and are removed once V cannot see them, as any going home is.
@@ -308,7 +308,7 @@ func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBoo
     why = "-";
   }
   if shot {
-    why = "You shot one of us. We're done here.";
+    why = CBT(n"Cyberbane-Allies-YouShotOneOfUsWe");
     if !CBReputationFrozen() {
       CBTalkSlight(sys, game, war.crewGang, CBConfig.CrewShotStanding());
     }
@@ -398,7 +398,7 @@ public func CBAlliesDaily(sys: ref<CyberbaneSystem>, game: GameInstance, days: F
       war.SetOneOfTheirs(n"");
       CBFileLog(sys, n"LeftGang", now, CBEventDistrict(sys, game), mine, 0.0);
       if CBMessagesOn() {
-        CBPhoneFromGang(game, mine, "You're not one of ours any more. You know why.");
+        CBPhoneFromGang(game, mine, CBT(n"Cyberbane-Allies-YouReNotOneOfOurs"));
       }
       return;
     }
@@ -413,8 +413,8 @@ public func CBAlliesDaily(sys: ref<CyberbaneSystem>, game: GameInstance, days: F
     if IsDefined(fs) && CBFactionFieldsSquads(fs.id) && !CBIsCorpFaction(fs.id) && Equals(score.GetPosture(fs.id), ECBPosture.Allied) {
       war.joinOffer = fs.id;
       let st = CBReadStreet(sys, game, fs.id);
-      let deed = IsDefined(st) && st.kills > 0 ? "You've bled for us" : "You've done right by us";
-      CBPhoneFromAlly(game, fs.id, s"\(deed), \(CBYou(sys, game)), more than once. Want to be one of ours? Say so to any of us on the street.");
+      let deed = IsDefined(st) && st.kills > 0 ? CBT(n"Cyberbane-Allies-YouVeBledForUs") : CBT(n"Cyberbane-Allies-YouVeDoneRightByUs");
+      CBPhoneFromAlly(game, fs.id, CBTf(n"Cyberbane-Allies-MoreThanOnceWantToBe", [s"\(deed)", s"\(CBYou(sys, game))"]));
       return;
     }
   }
@@ -434,12 +434,12 @@ func CBGangDuty(sys: ref<CyberbaneSystem>, game: GameInstance, mine: CName, now:
     if done {
       CBTalkWarm(sys, game, mine, CBConfig.DutyStanding(), 100.0);
       if CBMessagesOn() {
-        CBPhoneFromAlly(game, mine, "You did what we asked. That's what family does.");
+        CBPhoneFromAlly(game, mine, CBT(n"Cyberbane-Allies-YouDidWhatWeAskedThat"));
       }
     } else {
       CBTalkSlight(sys, game, mine, CBConfig.DutyStanding());
       if CBMessagesOn() {
-        CBPhoneFromGang(game, mine, "We asked, you didn't come through. People are noticing.");
+        CBPhoneFromGang(game, mine, CBT(n"Cyberbane-Allies-WeAskedYouDidnTCome"));
       }
     }
   }
@@ -453,7 +453,7 @@ func CBGangDuty(sys: ref<CyberbaneSystem>, game: GameInstance, mine: CName, now:
     if IsDefined(efs) && CBFactionFieldsSquads(e) {
       CBFileLog(sys, n"DutyAsked", now, CBEventDistrict(sys, game), e, Cast<Float>(efs.kills));
       if CBMessagesOn() {
-        CBPhoneFromAlly(game, mine, s"Family business, \(CBYou(sys, game)): \(CBFactionLabel(e)) are getting comfortable. Put down five of them this week, dead or out cold. We'll know.");
+        CBPhoneFromAlly(game, mine, CBTf(n"Cyberbane-Allies-FamilyBusinessAreGettingComfortablePut", [s"\(CBYou(sys, game))", s"\(CBFactionLabel(e))"]));
       }
       return;
     }
@@ -500,10 +500,10 @@ func CBRansomAsk(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBo
   war.ransomAmount = amount;
   war.ransomTick = sys.GetTickCount();
   if CBMessagesOn() {
-    CBPhoneFromGang(game, t.faction, CBLineOf([s"We hear you've got one of ours in \(CBHere(sys)). \(amount)eb, you say? We'll see.",
-                                               s"\(amount) for one of ours. You've got some nerve, \(CBYou(sys, game)). Give us a minute."]));
+    CBPhoneFromGang(game, t.faction, CBLineOf([CBTf(n"Cyberbane-Allies-WeHearYouVeGotOne", [s"\(CBHere(sys))", s"\(amount)"]),
+                                               CBTf(n"Cyberbane-Allies-ForOneOfOursYouVe", [s"\(amount)", s"\(CBYou(sys, game))"])]));
   }
-  return CBTalkSay(CBPick2("They'll pay. They'd better pay.", "You think they care enough to pay? ...They'd better."), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-TheyLlPayTheyDBetter"), CBT(n"Cyberbane-Allies-YouThinkTheyCareEnoughTo")), n"");
 }
 
 func CBRansomTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>, player: ref<PlayerPuppet>) -> Void {
@@ -539,11 +539,11 @@ func CBRansomTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
       war.dropAmount = amount;
       war.dropUntil = now + CBConfig.RansomDropHours() * CBConfig.SecondsPerHour();
       war.dropBetray = RandF() < CBConfig.RansomDropTrap() * MaxF(CBCodeNerve(gang), 0.5);
-      war.dropPinned = CBPinPlace(game, at, s"\(CBCapFirst(CBPossessive(CBFactionLabel(gang)))) drop: the ransom", war.dropPin);
+      war.dropPinned = CBPinPlace(game, at, CBTf(n"Cyberbane-Allies-DropTheRansom", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(gang))))"]), war.dropPin);
       CBWarSpend(game, gang, Cast<Float>(amount));
-      let place = NotEquals(where, n"") ? CBDistrictLabel(where) : "a few blocks over";
+      let place = NotEquals(where, n"") ? CBDistrictLabel(where) : CBT(n"Cyberbane-Allies-AFewBlocksOver");
       if CBMessagesOn() {
-        CBPhoneFromGang(game, gang, s"\(amount)eb, left at our drop in \(place). Let them walk first. Come alone.");
+        CBPhoneFromGang(game, gang, CBTf(n"Cyberbane-Allies-EbLeftAtOurDropIn", [s"\(amount)", s"\(place)"]));
       }
       return;
     }
@@ -552,7 +552,7 @@ func CBRansomTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     CBWarSpend(game, gang, Cast<Float>(amount));
     CBFileLog(sys, n"RansomPaid", now, CBEventDistrict(sys, game), gang, Cast<Float>(amount));
     if CBMessagesOn() {
-      CBPhoneFromGang(game, gang, s"\(amount)eb. Now let them walk, and we never did business.");
+      CBPhoneFromGang(game, gang, CBTf(n"Cyberbane-Allies-EbNowLetThemWalkAnd", [s"\(amount)"]));
     }
     return;
   }
@@ -560,7 +560,7 @@ func CBRansomTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   CBProvoke(sys, game, gang);
   CBFileLog(sys, n"RansomRefused", now, CBEventDistrict(sys, game), gang, 0.0);
   if CBMessagesOn() {
-    CBPhoneFromGang(game, gang, "We don't pay for our people. We come and get them.");
+    CBPhoneFromGang(game, gang, CBT(n"Cyberbane-Allies-WeDonTPayForOur"));
   }
 }
 
@@ -577,9 +577,9 @@ func CBHandOver(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarg
   CBTalkReleaseHold(t.npc);
   CBOrderFlee(game, t.npc);
   if CBMessagesOn() {
-    CBPhoneFromAlly(game, buyer, "We'll take it from here. Good doing business.");
+    CBPhoneFromAlly(game, buyer, CBT(n"Cyberbane-Allies-WeLlTakeItFromHere"));
   }
-  return CBTalkSay(CBPick2("No. No, not them, anybody but them...", "You're handing me to THEM? You're worse than they say."), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-NoNoNotThemAnybodyBut"), CBT(n"Cyberbane-Allies-YouReHandingMeToTHEM")), n"");
 }
 
 // ---- [69] Feed the street a lie --------------------------------------------------------------------------------------
@@ -605,7 +605,7 @@ func CBSpreadLie(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
                  t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let gang = CBLieTargetGang(sys, game);
   if Equals(gang, n"") {
-    return CBTalkSay("Who'd I even tell?", n"");
+    return CBTalkSay(CBT(n"Cyberbane-Allies-WhoDIEvenTell"), n"");
   }
   let stats = GameInstance.GetStatsSystem(game);
   let cool = IsDefined(stats) ? stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.Cool) : 3.0;
@@ -623,12 +623,12 @@ func CBSpreadLie(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     }
     CBFileLog(sys, n"LieSpread", now, CBEventDistrict(sys, game), gang, 0.0);
     let away = CBLieDistrictLabel(sys);
-    return CBTalkSay(CBLineOf([s"Gone to \(away). Got it. That's what \(CBFactionLabel(gang)) will hear.",
-                               s"Sure. You were never in \(CBHere(sys)). Left for \(away), I'll tell them."]), n"");
+    return CBTalkSay(CBLineOf([CBTf(n"Cyberbane-Allies-GoneToGotItThatS", [s"\(away)", s"\(CBFactionLabel(gang))"]),
+                               CBTf(n"Cyberbane-Allies-SureYouWereNeverInLeft", [s"\(CBHere(sys))", s"\(away)"])]), n"");
   }
   CBProvoke(sys, game, gang);
   CBFileLog(sys, n"LieSold", now, CBEventDistrict(sys, game), gang, 0.0);
-  return CBTalkSay(CBPick2("Funny. Pretty sure they'll pay more for where you really are.", "Sure, sure. ...Hey, I know who'd love to hear from me."), n"bump");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-FunnyPrettySureTheyLlPay"), CBT(n"Cyberbane-Allies-SureSureHeyIKnowWho")), n"bump");
 }
 
 // A lie that is out there for this gang, taken once by the next hunt that starts (Spawn/Hunt.reds, CBHuntBegin):
@@ -656,13 +656,13 @@ public func CBInformantsLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
   while i < book.InformantCount() {
     let rid = book.InformantRival(i);
     let r = rid > 0 ? sys.FindRivalById(rid) : null;
-    let who = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "somebody in " + CBFactionLabel(book.InformantFaction(i));
+    let who = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : CBTf(n"Cyberbane-Allies-SomebodyIn", [CBFactionLabel(book.InformantFaction(i))]);
     let tips = book.InformantTips(i);
-    out += (StrLen(out) > 0 ? "; " : "") + who + (tips == 1 ? ", one tip left" : s", \(tips) tips left");
+    out += (StrLen(out) > 0 ? "; " : "") + who + (tips == 1 ? CBT(n"Cyberbane-Allies-OneTipLeft") : CBTf(n"Cyberbane-Allies-TipsLeft", [s"\(tips)"]));
     i += 1;
   }
   // Named for what they are (2.5.5): "Who owes you" read as a list of debts.
-  return "Your informants: " + out + ".";
+  return CBTf(n"Cyberbane-Allies-YourInformants", [out]);
 }
 
 // Once a game day: an informant's gang may find out, and hunt them through the street (the event engine's hunt).
@@ -684,10 +684,10 @@ public func CBInformantsDaily(sys: ref<CyberbaneSystem>, game: GameInstance, day
   if CBMessagesOn() {
     let rid = book.InformantRival(i);
     let r = rid > 0 ? sys.FindRivalById(rid) : null;
-    CBPhoneSend(game, IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "Your informant",
+    CBPhoneSend(game, IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : CBT(n"Cyberbane-Allies-YourInformant"),
                 // When it really is (2.5.6): the hunt may start an in-game hour from now at the soonest (OweInformantHunt),
                 // then waits for the street's next event and its lead time, so a few hours; "within the hour" was never true.
-                s"They know. \(CBCapFirst(CBFactionLabel(gang))) know I've been talking to you. They're coming for me in the next few hours, and I'll run your way. If you want me alive, be ready.");
+                CBTf(n"Cyberbane-Allies-TheyKnowKnowIVeBeen", [s"\(CBCapFirst(CBFactionLabel(gang)))"]));
   }
 }
 
@@ -798,9 +798,9 @@ func CBParleyOpen(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   sys.GetTruce().Begin(sys, game, CBTruceParley(), faction, s);
   CBSayVoiced(sys, s, n"enemy_warning");
   let crewSize = ArraySize(war.parleyCrew);
-  CBIntelSay(game, 3, "Crew sergeant", CBLineOf([s"Hold it! Nobody shoot. \(crewSize) of us and one of you, \(CBYou(sys, game)). Let's hear what you've got to say.",
-                                                 s"Easy. \(CBCapFirst(CBFactionLabel(faction))) talk first. Then we'll see.",
-                                                 "Hold your fire! I want to hear this before we start."]), 3.5);
+  CBIntelSay(game, 3, CBT(n"Cyberbane-Allies-CrewSergeant"), CBLineOf([CBTf(n"Cyberbane-Allies-HoldItNobodyShootOfUs", [s"\(crewSize)", s"\(CBYou(sys, game))"]),
+                                                 CBTf(n"Cyberbane-Allies-EasyTalkFirstThenWeLl", [s"\(CBCapFirst(CBFactionLabel(faction)))"]),
+                                                 CBT(n"Cyberbane-Allies-HoldYourFireIWantTo")]), 3.5);
   CBLog.Info(n"Talk", s"A crew sergeant of \(NameToString(faction)) stops to talk.");
 }
 
@@ -821,11 +821,11 @@ public func CBParleyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   let out: array<ref<CBTalkLine>>;
   let war = CBWarBook.Get(game);
   let price = IsDefined(war) ? CBParleyPrice(sys, game, war.parleyGang) : 0;
-  let pay = CBTalkMakeLine(s"[Pay] \(price)eb, and you tell them you never found me.", CBTalkActParleyPay(), t"ChoiceCaptionParts.PayIcon");
+  let pay = CBTalkMakeLine(CBTf(n"Cyberbane-Allies-PayEbAndYouTellThem", [s"\(price)"]), CBTalkActParleyPay(), t"ChoiceCaptionParts.PayIcon");
   pay.inactive = CBTalkMoney(game) < price;
   ArrayPush(out, pay);
-  ArrayPush(out, CBTalkMakeLine("[Threaten] Walk away while you still can.", CBTalkActParleyScare(), t"ChoiceCaptionParts.GrappleIcon"));
-  ArrayPush(out, CBTalkMakeLine("[Draw] Talk's over.", CBTalkActParleyDraw(), TDBID.None()));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-Allies-ThreatenWalkAwayWhileYouStill"), CBTalkActParleyScare(), t"ChoiceCaptionParts.GrappleIcon"));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-Allies-DrawTalkSOver"), CBTalkActParleyDraw(), TDBID.None()));
   return out;
 }
 
@@ -854,10 +854,10 @@ public func CBParleyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, player
       CBCallOffGang(sys, game, gang);
       sys.GetTruce().End(sys, game, CBTruceParley());
       CBFileLog(sys, n"ParleyPaid", CBGameSeconds(game), CBEventDistrict(sys, game), gang, Cast<Float>(price));
-      return CBTalkSay(CBPick2("Pleasure. We never saw you.", "Money talks. Boys, we're done here."), n"");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-PleasureWeNeverSawYou"), CBT(n"Cyberbane-Allies-MoneyTalksBoysWeReDone")), n"");
     }
     CBParleyFight(sys, game, war);
-    return CBTalkSay("You can't cover that. Your loss.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-Allies-YouCanTCoverThatYour"), n"");
   }
   if choice == CBTalkActParleyScare() {
     let score = sys.GetScore();
@@ -875,13 +875,13 @@ public func CBParleyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, player
       sys.GetTruce().End(sys, game, CBTruceParley());
       CBTalkFear(sys, game, gang, CBConfig.StareFear());
       CBFileLog(sys, n"ParleyScared", CBGameSeconds(game), CBEventDistrict(sys, game), gang, 0.0);
-      return CBTalkSay(CBPick2("...Not worth it. We're out.", "Fine. FINE. Nobody's paying us enough for this."), n"");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-NotWorthItWeReOut"), CBT(n"Cyberbane-Allies-FineFINENobodySPayingUs")), n"");
     }
     CBParleyFight(sys, game, war);
-    return CBTalkSay(CBPick2("Big words. Light them up!", "Is that a threat? Take them!"), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-BigWordsLightThemUp"), CBT(n"Cyberbane-Allies-IsThatAThreatTakeThem")), n"");
   }
   CBParleyFight(sys, game, war);
-  return CBTalkSay("Your call.", n"");
+  return CBTalkSay(CBT(n"Cyberbane-Allies-YourCall"), n"");
 }
 
 // ---- Every tick ---------------------------------------------------------------------------------------------------
@@ -909,7 +909,7 @@ public func CBOneOfTheirsGreet(sys: ref<CyberbaneSystem>, game: GameInstance, fa
   }
   war.greetTick = tick;
   let st = CBReadStreet(sys, game, faction);
-  let you = StrLen(st.title) > 0 ? st.title : "family";
-  CBOverheard(game, CBWhisperSpeaker(faction), CBLineOf(["Hey, " + you + ". Good to see you.", "That's one of ours. Make room.",
-                                                         "Anybody bothering you round here, you tell us.", "Looking sharp, " + you + "."]));
+  let you = StrLen(st.title) > 0 ? st.title : CBT(n"Cyberbane-Allies-Family");
+  CBOverheard(game, CBWhisperSpeaker(faction), CBLineOf([CBTf(n"Cyberbane-Allies-HeyGoodToSeeYou", [you]), CBT(n"Cyberbane-Allies-ThatSOneOfOursMake"),
+                                                         CBT(n"Cyberbane-Allies-AnybodyBotheringYouRoundHereYou"), CBTf(n"Cyberbane-Allies-LookingSharp", [you])]));
 }

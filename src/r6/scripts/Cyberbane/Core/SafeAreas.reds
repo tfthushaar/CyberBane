@@ -32,6 +32,7 @@ public func CBBlockNoRecord() -> Int32 = 8
 public func CBBlockInView() -> Int32 = 9
 public func CBBlockHostileArea() -> Int32 = 10
 public func CBBlockStory() -> Int32 = 11
+public func CBBlockHomeGround() -> Int32 = 12
 
 public func CBNoteSpawnBlock(reason: Int32) -> Void {
   let rt = CyberbaneRuntime.Get();
@@ -43,37 +44,40 @@ public func CBNoteSpawnBlock(reason: Int32) -> Void {
 // Short, plain description for the Hub.
 public func CBBlockLabel(reason: Int32) -> String {
   if reason == CBBlockWorldBusy() {
-    return "world still loading";
+    return CBT(n"Cyberbane-SafeAreas-WorldStillLoading");
   }
   if reason == CBBlockCannotFight() {
-    return "you cannot draw here";
+    return CBT(n"Cyberbane-SafeAreas-YouCannotDrawHere");
   }
   if reason == CBBlockQuestArea() {
-    return "you are on a job";
+    return CBT(n"Cyberbane-SafeAreas-YouAreOnAJob");
   }
   if reason == CBBlockProtectedZone() {
-    return "protected area";
+    return CBT(n"Cyberbane-SafeAreas-ProtectedArea");
   }
   if reason == CBBlockSafeArea() {
-    return "safe area";
+    return CBT(n"Cyberbane-SafeAreas-SafeArea");
   }
   if reason == CBBlockNoGround() {
-    return "no ground to stand on";
+    return CBT(n"Cyberbane-SafeAreas-NoGroundToStandOn");
   }
   if reason == CBBlockEngineRefused() {
-    return "the game refused the spawn";
+    return CBT(n"Cyberbane-SafeAreas-TheGameRefusedTheSpawn");
   }
   if reason == CBBlockNoRecord() {
-    return "no gang member on file";
+    return CBT(n"Cyberbane-SafeAreas-NoGangMemberOnFile");
   }
   if reason == CBBlockInView() {
-    return "nowhere out of your sight";
+    return CBT(n"Cyberbane-SafeAreas-NowhereOutOfYourSight");
   }
   if reason == CBBlockHostileArea() {
-    return "you are inside somebody else's turf";
+    return CBT(n"Cyberbane-SafeAreas-YouAreInsideSomebodyElseS");
   }
   if reason == CBBlockStory() {
-    return "the story has the stage";
+    return CBT(n"Cyberbane-SafeAreas-TheStoryHasTheStage");
+  }
+  if reason == CBBlockHomeGround() {
+    return CBT(n"Cyberbane-Held-HomeGround");
   }
   return "";
 }
@@ -317,6 +321,17 @@ public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Boo
   if !IsDefined(sys) {
     return true;
   }
+  // Home ground under Quiet, and the quiet a night at home bought (2.7.1, Spawn/HomeGround.reds): the lanes, bounty hunters
+  // and street fights wait. V's own crew does not ask this (CBArrivalsHeldBase): a spar at home is V's choice.
+  return CBArrivalsHeldBase(sys, game) || CBHomeHoldsAll(sys) || CBSleepPeace(game);
+}
+
+// The holds that keep any fight from starting, Cyberbane's people or V's own (a spar): the story, a scene, a job, somewhere
+// safe, the police, another mod's event.
+public func CBArrivalsHeldBase(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
+  if !IsDefined(sys) {
+    return true;
+  }
   return sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game)
       || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys) || CBSmasherEventOn(game);
 }
@@ -338,25 +353,33 @@ public func CBArrivalsHeldWhy(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
     return "";
   }
   if sys.GetStoryHold() != CBStoryNone() {
-    return "the story has the stage";
+    return CBT(n"Cyberbane-SafeAreas-TheStoryHasTheStage");
   }
   if sys.IsInSanctuary() {
-    return "you are somewhere safe";
+    return CBT(n"Cyberbane-SafeAreas-YouAreSomewhereSafe");
   }
   if CBPlayerInScene(game) {
-    return "you are in a scene";
+    return CBT(n"Cyberbane-SafeAreas-YouAreInAScene");
   }
   if sys.IsOnJob() {
-    return "you are on a job";
+    return CBT(n"Cyberbane-SafeAreas-YouAreOnAJob");
   }
   if sys.IsInQuestArea() {
-    return CBPlayerInHostileZone(game) ? "you are on somebody else's turf" : "you are on a job";
+    return CBPlayerInHostileZone(game) ? CBT(n"Cyberbane-SafeAreas-YouAreOnSomebodyElseS") : CBT(n"Cyberbane-SafeAreas-YouAreOnAJob");
   }
   if CBPoliceOnV(sys) {
-    return "the NCPD are after you";
+    return CBT(n"Cyberbane-SafeAreas-TheNCPDAreAfterYou");
   }
   if CBSmasherEventOn(game) {
     return CBSmasherHeldWhy();
+  }
+  if CBHomeHoldsAll(sys) {
+    return CBT(n"Cyberbane-Held-HomeGround");
+  }
+  if CBSleepPeace(game) {
+    let book = CBHomeBook.Get(game);
+    let left = IsDefined(book) ? MaxF(0.0, book.PeaceUntil() - CBGameSeconds(game)) / CBConfig.SecondsPerHour() : 0.0;
+    return CBTf(n"Cyberbane-Held-SleepPeace", [CBHudRealFromGameHours(left)]);
   }
   return "";
 }
@@ -410,16 +433,16 @@ public func CBPlayerZone(game: GameInstance) -> Int32 {
 public func CBPlayerZoneLabel(game: GameInstance) -> String {
   let zone = CBPlayerZone(game);
   if zone == EnumInt(gamePSMZones.Safe) {
-    return "safe area";
+    return CBT(n"Cyberbane-SafeAreas-SafeArea");
   }
   if zone == EnumInt(gamePSMZones.Restricted) {
-    return "restricted area";
+    return CBT(n"Cyberbane-SafeAreas-RestrictedArea");
   }
   if zone == EnumInt(gamePSMZones.Dangerous) {
-    return "dangerous area";
+    return CBT(n"Cyberbane-SafeAreas-DangerousArea");
   }
   if zone == EnumInt(gamePSMZones.Public) {
-    return "open city";
+    return CBT(n"Cyberbane-SafeAreas-OpenCity");
   }
   return "";
 }
@@ -488,6 +511,12 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide:
   // crew be placed inside the job area while V stood just outside it.
   if !onVsSide && IsDefined(sysQ) && sysQ.NearQuestPins(at, CBConfig.QuestSpawnClearance()) {
     CBNoteSpawnBlock(CBBlockQuestArea());
+    return true;
+  }
+  // Home ground under Quiet (2.7.1, Spawn/HomeGround.reds): the building round V's apartment, whatever the safe-area
+  // settings say, for anybody against V. V's own crew and people lent to V come there as anywhere.
+  if !onVsSide && CBHomePointQuiet(game, at) {
+    CBNoteSpawnBlock(CBBlockHomeGround());
     return true;
   }
   // 4. Safe areas, and the places the game keeps free of police. This is all the opt-in opens.

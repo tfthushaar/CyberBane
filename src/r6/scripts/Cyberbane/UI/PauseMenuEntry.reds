@@ -112,7 +112,7 @@ private func PopulateMenuItemList() {
 // What the entry is called. A plain string rather than a localization key: the key would have to
 // resolve through Codeware's provider at the moment the pause menu is built, and a key that does
 // not resolve shows as the key itself in the middle of the game's own menu.
-public func CBPauseMenuLabel() -> String = "Cyberbane"
+public func CBPauseMenuLabel() -> String = CBT(n"Cyberbane-Titles-Cyberbane")
 
 // ---- The page's lifetime ----------------------------------------------------------------------
 

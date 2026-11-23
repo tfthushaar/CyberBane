@@ -260,7 +260,7 @@ public class CyberbaneRuntime extends ScriptableService {
   }
 
   public func TwrHostilityWhy() -> String {
-    return this.m_twrHostileAsked ? this.m_twrHostileWhy : "it has not been asked yet this session";
+    return this.m_twrHostileAsked ? this.m_twrHostileWhy : CBT(n"Cyberbane-CyberbaneRuntime-ItHasNotBeenAskedYet");
   }
 
   // Smasher Encounters' word on whether Smasher is out (2.6.7, Compat/SmasherEncounters.reds).

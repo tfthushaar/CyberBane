@@ -12,36 +12,36 @@
 // they must stay readable on their own.
 
 public func CBSeedTitles(c: ref<CyberbaneContent>) -> Void {
-  c.AddTitle(CBMakeTitle(n"T_CYBERBANE",         "Cyberbane",                100, true));
-  c.AddTitle(CBMakeTitle(n"T_LIVING_LEGEND",     "Living Legend",             90, false));
-  c.AddTitle(CBMakeTitle(n"T_FACTION_NIGHTMARE", "A Faction's Nightmare",     60, false));
-  c.AddTitle(CBMakeTitle(n"T_FACTION_FRIEND",    "Friend of a Faction",       55, false));
-  c.AddTitle(CBMakeTitle(n"T_BUTCHER_OF",        "Butcher of the District",   50, false));
-  c.AddTitle(CBMakeTitle(n"T_GHOST_OF",          "Ghost of the District",     50, false));
-  c.AddTitle(CBMakeTitle(n"T_RIVAL_BREAKER",     "Rival-Breaker",             45, false));
-  c.AddTitle(CBMakeTitle(n"T_DISTRICT_PROBLEM",  "The District's Problem",    45, false));
-  c.AddTitle(CBMakeTitle(n"T_CHROME_SAINT",      "Chrome Saint",              40, false));
-  c.AddTitle(CBMakeTitle(n"T_GLITCH",            "Glitch in the System",      40, false));
-  c.AddTitle(CBMakeTitle(n"T_FIST",              "Fist of Night City",        40, false));
-  c.AddTitle(CBMakeTitle(n"T_PSYCHO_WHISPERER",  "Psycho Whisperer",          40, false));
-  c.AddTitle(CBMakeTitle(n"T_PSYCHO_HUNTER",     "Psycho Hunter",             40, false));
-  c.AddTitle(CBMakeTitle(n"T_UNTOUCHABLE",       "Untouchable",               35, true));
-  c.AddTitle(CBMakeTitle(n"T_RED_TIDE",          "Red Tide",                  35, true));
-  c.AddTitle(CBMakeTitle(n"T_MAXTAC_PROBLEM",    "MaxTac's Problem",          35, true));
-  c.AddTitle(CBMakeTitle(n"T_MERCIFUL",          "The Merciful",              35, true));
+  c.AddTitle(CBMakeTitle(n"T_CYBERBANE",         CBT(n"Cyberbane-Titles-Cyberbane"),                100, true));
+  c.AddTitle(CBMakeTitle(n"T_LIVING_LEGEND",     CBT(n"Cyberbane-Titles-LivingLegend"),             90, false));
+  c.AddTitle(CBMakeTitle(n"T_FACTION_NIGHTMARE", CBT(n"Cyberbane-Titles-AFactionSNightmare"),     60, false));
+  c.AddTitle(CBMakeTitle(n"T_FACTION_FRIEND",    CBT(n"Cyberbane-Titles-FriendOfAFaction"),       55, false));
+  c.AddTitle(CBMakeTitle(n"T_BUTCHER_OF",        CBT(n"Cyberbane-Titles-ButcherOfTheDistrict"),   50, false));
+  c.AddTitle(CBMakeTitle(n"T_GHOST_OF",          CBT(n"Cyberbane-Titles-GhostOfTheDistrict"),     50, false));
+  c.AddTitle(CBMakeTitle(n"T_RIVAL_BREAKER",     CBT(n"Cyberbane-Titles-RivalBreaker"),             45, false));
+  c.AddTitle(CBMakeTitle(n"T_DISTRICT_PROBLEM",  CBT(n"Cyberbane-Titles-TheDistrictSProblem"),    45, false));
+  c.AddTitle(CBMakeTitle(n"T_CHROME_SAINT",      CBT(n"Cyberbane-Titles-ChromeSaint"),              40, false));
+  c.AddTitle(CBMakeTitle(n"T_GLITCH",            CBT(n"Cyberbane-Titles-GlitchInTheSystem"),      40, false));
+  c.AddTitle(CBMakeTitle(n"T_FIST",              CBT(n"Cyberbane-Titles-FistOfNightCity"),        40, false));
+  c.AddTitle(CBMakeTitle(n"T_PSYCHO_WHISPERER",  CBT(n"Cyberbane-Titles-PsychoWhisperer"),          40, false));
+  c.AddTitle(CBMakeTitle(n"T_PSYCHO_HUNTER",     CBT(n"Cyberbane-Titles-PsychoHunter"),             40, false));
+  c.AddTitle(CBMakeTitle(n"T_UNTOUCHABLE",       CBT(n"Cyberbane-Titles-Untouchable"),               35, true));
+  c.AddTitle(CBMakeTitle(n"T_RED_TIDE",          CBT(n"Cyberbane-Titles-RedTide"),                  35, true));
+  c.AddTitle(CBMakeTitle(n"T_MAXTAC_PROBLEM",    CBT(n"Cyberbane-Titles-MaxTacSProblem"),          35, true));
+  c.AddTitle(CBMakeTitle(n"T_MERCIFUL",          CBT(n"Cyberbane-Titles-TheMerciful"),              35, true));
   // Dropped from this table once and given a condition in 1.2.0, which nothing could reach with the
   // title not listed here. The Heist still awarded it, as the raw id: "Heard them calling you
   // T_KONPEKI_GHOST today."
-  c.AddTitle(CBMakeTitle(n"T_KONPEKI_GHOST",     "Konpeki Ghost",             35, false));
-  c.AddTitle(CBMakeTitle(n"T_LANDLORD",          "Feared Landlord",           30, true));
-  c.AddTitle(CBMakeTitle(n"T_MERC_FROM",         "The Merc from the District", 20, false));
+  c.AddTitle(CBMakeTitle(n"T_KONPEKI_GHOST",     CBT(n"Cyberbane-Titles-KonpekiGhost"),             35, false));
+  c.AddTitle(CBMakeTitle(n"T_LANDLORD",          CBT(n"Cyberbane-Titles-FearedLandlord"),           30, true));
+  c.AddTitle(CBMakeTitle(n"T_MERC_FROM",         CBT(n"Cyberbane-Titles-TheMercFromTheDistrict"), 20, false));
   // 2.4.6 ([U15]): the ladder, the war, gang life, trophies and the gang V belongs to (Narrative/Telling.reds).
-  c.AddTitle(CBMakeTitle(n"T_NUMBER_ONE",        "Number One",                70, true));
-  c.AddTitle(CBMakeTitle(n"T_WARLORD",           "Warlord",                   65, true));
-  c.AddTitle(CBMakeTitle(n"T_SEASON_SURVIVOR",   "Open Season Survivor",      45, true));
-  c.AddTitle(CBMakeTitle(n"T_PARTY_CRASHER",     "Party Crasher",             38, false));
-  c.AddTitle(CBMakeTitle(n"T_TROPHY_HUNTER",     "Trophy Hunter",             38, false));
-  c.AddTitle(CBMakeTitle(n"T_MADE",              "Made",                      36, false));
+  c.AddTitle(CBMakeTitle(n"T_NUMBER_ONE",        CBT(n"Cyberbane-Titles-NumberOne"),                70, true));
+  c.AddTitle(CBMakeTitle(n"T_WARLORD",           CBT(n"Cyberbane-Titles-Warlord"),                   65, true));
+  c.AddTitle(CBMakeTitle(n"T_SEASON_SURVIVOR",   CBT(n"Cyberbane-Titles-OpenSeasonSurvivor"),      45, true));
+  c.AddTitle(CBMakeTitle(n"T_PARTY_CRASHER",     CBT(n"Cyberbane-Titles-PartyCrasher"),             38, false));
+  c.AddTitle(CBMakeTitle(n"T_TROPHY_HUNTER",     CBT(n"Cyberbane-Titles-TrophyHunter"),             38, false));
+  c.AddTitle(CBMakeTitle(n"T_MADE",              CBT(n"Cyberbane-Titles-Made"),                      36, false));
   CBSeedTitlePerks(c);
 }
 
@@ -60,95 +60,95 @@ func CBPerkOf(c: ref<CyberbaneContent>, id: CName, effect: String) -> ref<CBTitl
 // what the player reads, so a number changed here has to be changed in the sentence too.
 func CBSeedTitlePerks(c: ref<CyberbaneContent>) -> Void {
   // 2.4.6 ([U15]).
-  let n1 = CBPerkOf(c, n"T_NUMBER_ONE", "Rewards for kills pay 25% more, and people read you as 10% more frightening.");
+  let n1 = CBPerkOf(c, n"T_NUMBER_ONE", CBT(n"Cyberbane-Titles-RewardsForKillsPay25More"));
   n1.bountyMult = 1.25;
   n1.crowdMult = 1.1;
-  let wl = CBPerkOf(c, n"T_WARLORD", "Enemies are 15% more likely to break.");
+  let wl = CBPerkOf(c, n"T_WARLORD", CBT(n"Cyberbane-Titles-EnemiesAre15MoreLikelyTo"));
   wl.breakMult = 1.15;
-  let ss = CBPerkOf(c, n"T_SEASON_SURVIVOR", "Enemies are 10% more likely to break.");
+  let ss = CBPerkOf(c, n"T_SEASON_SURVIVOR", CBT(n"Cyberbane-Titles-EnemiesAre10MoreLikelyTo"));
   ss.breakMult = 1.1;
-  let pc = CBPerkOf(c, n"T_PARTY_CRASHER", "Rewards for kills pay 10% more.");
+  let pc = CBPerkOf(c, n"T_PARTY_CRASHER", CBT(n"Cyberbane-Titles-RewardsForKillsPay10More"));
   pc.bountyMult = 1.1;
-  let th = CBPerkOf(c, n"T_TROPHY_HUNTER", "Rewards for kills pay 15% more.");
+  let th = CBPerkOf(c, n"T_TROPHY_HUNTER", CBT(n"Cyberbane-Titles-RewardsForKillsPay15More"));
   th.bountyMult = 1.15;
-  let md = CBPerkOf(c, n"T_MADE", "People read you as 10% more frightening.");
+  let md = CBPerkOf(c, n"T_MADE", CBT(n"Cyberbane-Titles-PeopleReadYouAs10More"));
   md.crowdMult = 1.1;
-  let t = CBPerkOf(c, n"T_CYBERBANE", "Enemies are 25% more likely to break and people read you as 15% more frightening. Rewards for kills pay 25% more. Crews send one extra.");
+  let t = CBPerkOf(c, n"T_CYBERBANE", CBT(n"Cyberbane-Titles-EnemiesAre25MoreLikelyTo"));
   t.breakMult = 1.25;
   t.crowdMult = 1.15;
   t.bountyMult = 1.25;
   t.crewDelta = 1;
 
-  t = CBPerkOf(c, n"T_LIVING_LEGEND", "You earn an extra 10% on every job and vendors charge 5% less. 10% more people recognise you.");
+  t = CBPerkOf(c, n"T_LIVING_LEGEND", CBT(n"Cyberbane-Titles-YouEarnAnExtra10On"));
   t.gigBonus = 0.10;
   t.priceMod = -0.05;
   t.recognitionAdd = 0.10;
 
-  t = CBPerkOf(c, n"T_FACTION_NIGHTMARE", "Enemies are 20% more likely to break. Paying a gang off costs 25% more.");
+  t = CBPerkOf(c, n"T_FACTION_NIGHTMARE", CBT(n"Cyberbane-Titles-EnemiesAre20MoreLikelyTo"));
   t.breakMult = 1.2;
   t.peaceMult = 1.25;
 
-  t = CBPerkOf(c, n"T_FACTION_FRIEND", "Paying a gang off costs 30% less, and each kill costs you 25% less standing with that gang.");
+  t = CBPerkOf(c, n"T_FACTION_FRIEND", CBT(n"Cyberbane-Titles-PayingAGangOffCosts30"));
   t.peaceMult = 0.7;
   t.standingLossMult = 0.75;
 
-  t = CBPerkOf(c, n"T_BUTCHER_OF", "Your kills hurt a gang's hold on its streets 30% more. Each kill costs you 25% more standing.");
+  t = CBPerkOf(c, n"T_BUTCHER_OF", CBT(n"Cyberbane-Titles-YourKillsHurtAGangS"));
   t.turfMult = 1.3;
   t.standingLossMult = 1.25;
 
-  t = CBPerkOf(c, n"T_GHOST_OF", "Hunters find you 20% less easily, and 10% fewer people recognise you.");
+  t = CBPerkOf(c, n"T_GHOST_OF", CBT(n"Cyberbane-Titles-HuntersFindYou20LessEasily"));
   t.senseMult = 0.8;
   t.recognitionAdd = -0.10;
 
-  t = CBPerkOf(c, n"T_RIVAL_BREAKER", "Rewards for kills pay 40% more.");
+  t = CBPerkOf(c, n"T_RIVAL_BREAKER", CBT(n"Cyberbane-Titles-RewardsForKillsPay40More"));
   t.bountyMult = 1.4;
 
-  t = CBPerkOf(c, n"T_DISTRICT_PROBLEM", "Vendors charge 6% less to keep you happy. 5% more people recognise you.");
+  t = CBPerkOf(c, n"T_DISTRICT_PROBLEM", CBT(n"Cyberbane-Titles-VendorsCharge6LessToKeep"));
   t.priceMod = -0.06;
   t.recognitionAdd = 0.05;
 
-  t = CBPerkOf(c, n"T_CHROME_SAINT", "People read you as 15% more frightening, and enemies are 10% more likely to break.");
+  t = CBPerkOf(c, n"T_CHROME_SAINT", CBT(n"Cyberbane-Titles-PeopleReadYouAs15More"));
   t.crowdMult = 1.15;
   t.breakMult = 1.1;
 
-  t = CBPerkOf(c, n"T_GLITCH", "Hunters give up on you 25% sooner.");
+  t = CBPerkOf(c, n"T_GLITCH", CBT(n"Cyberbane-Titles-HuntersGiveUpOnYou25"));
   t.giveUpMult = 0.75;
 
-  t = CBPerkOf(c, n"T_FIST", "Enemies are 15% more likely to break, and kills earn you 10% more Renown.");
+  t = CBPerkOf(c, n"T_FIST", CBT(n"Cyberbane-Titles-EnemiesAre15MoreLikelyTo-2"));
   t.breakMult = 1.15;
   t.renownMult = 1.1;
 
-  t = CBPerkOf(c, n"T_PSYCHO_WHISPERER", "Sparing people earns 50% more goodwill with their gang.");
+  t = CBPerkOf(c, n"T_PSYCHO_WHISPERER", CBT(n"Cyberbane-Titles-SparingPeopleEarns50MoreGoodwill"));
   t.mercyMult = 1.5;
 
-  t = CBPerkOf(c, n"T_PSYCHO_HUNTER", "Rewards for kills pay 20% more.");
+  t = CBPerkOf(c, n"T_PSYCHO_HUNTER", CBT(n"Cyberbane-Titles-RewardsForKillsPay20More"));
   t.bountyMult = 1.2;
 
-  t = CBPerkOf(c, n"T_UNTOUCHABLE", "Hunters find you 15% less easily and give up on you 15% sooner.");
+  t = CBPerkOf(c, n"T_UNTOUCHABLE", CBT(n"Cyberbane-Titles-HuntersFindYou15LessEasily"));
   t.senseMult = 0.85;
   t.giveUpMult = 0.85;
 
-  t = CBPerkOf(c, n"T_RED_TIDE", "Enemies are 20% more likely to break. 10% more people recognise you.");
+  t = CBPerkOf(c, n"T_RED_TIDE", CBT(n"Cyberbane-Titles-EnemiesAre20MoreLikelyTo-2"));
   t.breakMult = 1.2;
   t.recognitionAdd = 0.10;
 
-  t = CBPerkOf(c, n"T_MAXTAC_PROBLEM", "Crews, Rivals and apex squads leave 25% more loot.");
+  t = CBPerkOf(c, n"T_MAXTAC_PROBLEM", CBT(n"Cyberbane-Titles-CrewsRivalsAndApexSquadsLeave"));
   t.lootMult = 1.25;
 
-  t = CBPerkOf(c, n"T_MERCIFUL", "Sparing people earns twice the goodwill and paying a gang off costs 20% less. People find you 25% less frightening.");
+  t = CBPerkOf(c, n"T_MERCIFUL", CBT(n"Cyberbane-Titles-SparingPeopleEarnsTwiceTheGoodwill"));
   t.mercyMult = 2.0;
   t.peaceMult = 0.8;
   t.crowdMult = 0.75;
 
-  t = CBPerkOf(c, n"T_KONPEKI_GHOST", "Hunters find you 25% less easily and 15% fewer people recognise you. Kills earn you 10% less Renown.");
+  t = CBPerkOf(c, n"T_KONPEKI_GHOST", CBT(n"Cyberbane-Titles-HuntersFindYou25LessEasily"));
   t.senseMult = 0.75;
   t.recognitionAdd = -0.15;
   t.renownMult = 0.9;
 
-  t = CBPerkOf(c, n"T_LANDLORD", "Tribute pays 50% more.");
+  t = CBPerkOf(c, n"T_LANDLORD", CBT(n"Cyberbane-Titles-TributePays50More"));
   t.tributeMult = 1.5;
 
-  t = CBPerkOf(c, n"T_MERC_FROM", "You earn an extra 5% on every job and vendors charge 2% less.");
+  t = CBPerkOf(c, n"T_MERC_FROM", CBT(n"Cyberbane-Titles-YouEarnAnExtra5On"));
   t.gigBonus = 0.05;
   t.priceMod = -0.02;
 }

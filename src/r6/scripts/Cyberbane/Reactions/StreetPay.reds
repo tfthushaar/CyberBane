@@ -53,12 +53,12 @@ public func CBStreetPayLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   }
   if (CBIsTeller(game, t.npc) || CBIsLookout(t.npc)) && !t.npc.cbWitnessHushed {
     let price = CBHushPrice(sys);
-    let pay = CBTalkMakeLine(s"[Pay] \(price)eb. You didn't see anything.", CBTalkActHushPay(), t"ChoiceCaptionParts.PayIcon");
+    let pay = CBTalkMakeLine(CBTf(n"Cyberbane-StreetPay-PayEbYouDidnTSee", [s"\(price)"]), CBTalkActHushPay(), t"ChoiceCaptionParts.PayIcon");
     pay.inactive = CBTalkMoney(game) < price;
     pay.important = true;
     ArrayPush(out, pay);
     let body = CBTalkStat(game, gamedataStatType.Strength) >= CBConfig.TalkAttributeCheck();
-    ArrayPush(out, CBTalkMakeLine((body ? "[Body] " : "[Intimidate] ") + "Nobody hears about this. Understand?",
+    ArrayPush(out, CBTalkMakeLine(CBTf(n"Cyberbane-StreetPay-NobodyHearsAboutThisUnderstand", [(body ? CBT(n"Cyberbane-StreetPay-Body") : CBT(n"Cyberbane-StreetPay-Intimidate"))]),
                                   CBTalkActHushLean(), t"ChoiceCaptionParts.GrappleIcon"));
     return out;
   }
@@ -66,7 +66,7 @@ public func CBStreetPayLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   if Equals(t.faction, n"") && t.mood != CBTalkHostile() && !CBWatchedHere(sys, game)
      && !CBTalkDid(t.npc, CBTalkActWatch()) {
     let price = CBWatchPrice();
-    let w = CBTalkMakeLine(s"[Pay] \(price)eb. Keep an eye out for me.", CBTalkActWatch(), t"ChoiceCaptionParts.PayIcon");
+    let w = CBTalkMakeLine(CBTf(n"Cyberbane-StreetPay-PayEbKeepAnEyeOut", [s"\(price)"]), CBTalkActWatch(), t"ChoiceCaptionParts.PayIcon");
     w.inactive = CBTalkMoney(game) < price;
     ArrayPush(out, w);
   }
@@ -79,19 +79,19 @@ public func CBStreetPayAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
   let npc = t.npc;
   if choice == CBTalkActHushPay() {
     if !CBIsTeller(game, npc) && !CBIsLookout(npc) {
-      return CBTalkSay("Already told you. I saw nothing.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-StreetPay-AlreadyToldYouISawNothing"), n"");
     }
     if !CBTalkTakeMoney(game, player, CBHushPrice(sys)) {
-      return CBTalkSay(CBPick2("That's not enough to forget a face.", "Come back with the eddies. Or don't."), n"");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetPay-ThatSNotEnoughToForget"), CBT(n"Cyberbane-StreetPay-ComeBackWithTheEddiesOr")), n"");
     }
     npc.cbWitnessHushed = true;
     CBFileLog(sys, n"WitnessHushed", CBGameSeconds(game), CBEventDistrict(sys, game), n"", 0.0);
-    return CBTalkSay(CBPick4("Saw what? I was looking at my phone.", "Never seen you before in my life.",
-                             "Eddies spend the same as gang money. Better, even.", "I've got a bad memory. Always have."), n"");
+    return CBTalkSay(CBPick4(CBT(n"Cyberbane-StreetPay-SawWhatIWasLookingAt"), CBT(n"Cyberbane-StreetPay-NeverSeenYouBeforeInMy"),
+                             CBT(n"Cyberbane-StreetPay-EddiesSpendTheSameAsGang"), CBT(n"Cyberbane-StreetPay-IVeGotABadMemory")), n"");
   }
   if choice == CBTalkActHushLean() {
     if !CBIsTeller(game, npc) && !CBIsLookout(npc) {
-      return CBTalkSay("I'm not saying anything to anybody!", n"fear_beg");
+      return CBTalkSay(CBT(n"Cyberbane-StreetPay-IMNotSayingAnythingTo"), n"fear_beg");
     }
     let chance = CBTalkNerveGap(t) * CBConfig.TalkIntimidateScale() + CBConfig.TalkIntimidateBase() + CBConfig.HushLeanBonus();
     if CBTalkStat(game, gamedataStatType.Strength) >= CBConfig.TalkAttributeCheck() {
@@ -100,8 +100,8 @@ public func CBStreetPayAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
     chance = ClampF(chance * sys.WornPerk().breakMult, CBConfig.TalkIntimidateMin(), CBConfig.TalkIntimidateMax());
     if RandF() < chance {
       npc.cbWitnessHushed = true;
-      return CBTalkSay(CBPick4("Okay! Okay. I didn't see a thing.", "I swear, I'm not telling anybody.",
-                               "Please. I've got kids. I saw nothing.", "Understood. Understood!"), n"fear_beg");
+      return CBTalkSay(CBPick4(CBT(n"Cyberbane-StreetPay-OkayOkayIDidnTSee"), CBT(n"Cyberbane-StreetPay-ISwearIMNotTelling"),
+                               CBT(n"Cyberbane-StreetPay-PleaseIVeGotKidsI"), CBT(n"Cyberbane-StreetPay-UnderstoodUnderstood")), n"fear_beg");
     }
     // They bolt: whoever they were going to tell hears now.
     let book = CBStreetBook.Get(game);
@@ -112,29 +112,29 @@ public func CBStreetPayAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
     if CBIsLookout(npc) {
       sys.SetTurfWatch(npc.cbLookoutFor, sys.GetTickCount() - CBConfig.TurfLingerTicks());
     }
-    return CBTalkSay(CBPick3("Get away from me! They'll hear about this!", "You don't scare me. They will.",
-                             "Touch me and everybody hears it twice as fast."), n"bump");
+    return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetPay-GetAwayFromMeTheyLl"), CBT(n"Cyberbane-StreetPay-YouDonTScareMeThey"),
+                             CBT(n"Cyberbane-StreetPay-TouchMeAndEverybodyHearsIt")), n"bump");
   }
   if choice == CBTalkActWatch() {
     let price = CBWatchPrice();
     let book = CBStreetBook.Get(game);
     if !IsDefined(book) || !CBTalkTakeMoney(game, player, price) {
-      return CBTalkSay(CBPick2("Eyes cost money, choom.", "Come back when you can pay."), n"");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetPay-EyesCostMoneyChoom"), CBT(n"Cyberbane-StreetPay-ComeBackWhenYouCanPay")), n"");
     }
     let now = CBGameSeconds(game);
     book.SetWatch(sys.GetCurrentDistrict(), now + CBConfig.WatchHours() * CBConfig.SecondsPerHour(), CBTalkSpeakerName(t));
     CBFileLog(sys, n"KeepWatch", now, CBEventDistrict(sys, game), n"", Cast<Float>(price));
     let hours = RoundF(CBConfig.WatchHours());
-    return CBTalkSay(CBPick3(s"Deal. Anybody comes looking for you round here in the next \(hours) hours, you'll hear it from me first.",
-                             "I see everything on this block anyway. Now you'll see it too.",
-                             "You got it. I'll text you the second somebody bad turns the corner."), n"");
+    return CBTalkSay(CBPick3(CBTf(n"Cyberbane-StreetPay-DealAnybodyComesLookingForYou", [s"\(hours)"]),
+                             CBT(n"Cyberbane-StreetPay-ISeeEverythingOnThisBlock"),
+                             CBT(n"Cyberbane-StreetPay-YouGotItILlText")), n"");
   }
   return null;
 }
 
 // Who V paid, as their messages will be signed.
 func CBTalkSpeakerName(t: ref<CBTalkTarget>) -> String {
-  return StrLen(t.speaker) > 0 ? t.speaker : "Lookout";
+  return StrLen(t.speaker) > 0 ? t.speaker : CBT(n"Cyberbane-Whispers-Lookout");
 }
 
 // More warning when somebody is watching for V here.
@@ -150,13 +150,13 @@ public func CBWatcherTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, who: 
     return false;
   }
   let book = CBStreetBook.Get(game);
-  let name = StrLen(book.WatchName()) > 0 ? book.WatchName() : "Lookout";
-  let coming = StrLen(who) > 0 ? who : "Trouble";
+  let name = StrLen(book.WatchName()) > 0 ? book.WatchName() : CBT(n"Cyberbane-Whispers-Lookout");
+  let coming = StrLen(who) > 0 ? who : CBT(n"Cyberbane-StreetPay-Trouble");
   // A moment, not a while (2.6.8): they are on V now.
   CBPhoneSendUrgent(game, name, CBPick4(
-    coming + " just turned onto the block. Looking for you.",
-    "Heads up. " + coming + ", headed your way.",
-    "You paid me to watch. I'm watching " + coming + " walk right up to you. Move.",
-    "Saw " + coming + " asking about you two minutes ago. Thought you'd want to know."), CBHudCyan());
+    CBTf(n"Cyberbane-StreetPay-JustTurnedOntoTheBlockLooking", [coming]),
+    CBTf(n"Cyberbane-StreetPay-HeadsUpHeadedYourWay", [coming]),
+    CBTf(n"Cyberbane-StreetPay-YouPaidMeToWatchI", [coming]),
+    CBTf(n"Cyberbane-StreetPay-SawAskingAboutYouTwoMinutes", [coming])), CBHudCyan());
   return true;
 }

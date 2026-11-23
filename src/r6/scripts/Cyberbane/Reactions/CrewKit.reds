@@ -323,7 +323,7 @@ public func CBCrewNextRankLine(game: GameInstance, m: ref<CBCrewMember>) -> Stri
   }
   let rank = CBCrewRankOf(game, m);
   if rank >= 6 {
-    return "Legend: the top of the climb.";
+    return CBT(n"Cyberbane-CrewKit-LegendTheTopOfTheClimb");
   }
   let kb = CBCrewKitBook.Get(game);
   let k = IsDefined(kb) ? kb.Find(m.id) : null;
@@ -333,26 +333,26 @@ public func CBCrewNextRankLine(game: GameInstance, m: ref<CBCrewMember>) -> Stri
   let winRank = CBCrewRank(m.wins);
   if winRank < 4 {
     let need = Max(1, CBCrewWinsFor(winRank + 1) - m.wins);
-    ways = need == 1 ? "1 more fight won" : s"\(need) more fights won";
+    ways = need == 1 ? CBT(n"Cyberbane-CrewKit-1MoreFightWon") : CBTf(n"Cyberbane-CrewKit-MoreFightsWon", [s"\(need)"]);
   }
   if trained < CBConfig.CrewTrainMax() {
     let left = CBConfig.CrewSparsPerTraining() - spars % CBConfig.CrewSparsPerTraining();
-    let train = s"a training (\(left) more spar" + (left == 1 ? "" : "s") + " count as one)";
-    ways = StrLen(ways) > 0 ? ways + ", or " + train : train;
+    let train = CBTf(n"Cyberbane-CrewKit-ATrainingMoreSparCountAs", [s"\(left)", (left == 1 ? "" : "s")]);
+    ways = StrLen(ways) > 0 ? CBTf(n"Cyberbane-CrewKit-Or", [ways, train]) : train;
   }
   if StrLen(ways) == 0 {
     return "";
   }
-  return s"Next, \(CBCrewRankWord(rank + 1)): \(ways).";
+  return CBTf(n"Cyberbane-CrewKit-Next", [s"\(CBCrewRankWord(rank + 1))", s"\(ways)"]);
 }
 
 public func CBCrewRankWord(rank: Int32) -> String {
-  if rank >= 6 { return "Legend"; }
-  if rank == 5 { return "Enforcer"; }
-  if rank == 4 { return "Lieutenant"; }
-  if rank == 3 { return "Veteran"; }
-  if rank == 2 { return "Soldier"; }
-  return "Rookie";
+  if rank >= 6 { return CBT(n"Cyberbane-CrewKit-Legend"); }
+  if rank == 5 { return CBT(n"Cyberbane-CrewKit-Enforcer"); }
+  if rank == 4 { return CBT(n"Cyberbane-CrewKit-Lieutenant"); }
+  if rank == 3 { return CBT(n"Cyberbane-CrewKit-Veteran"); }
+  if rank == 2 { return CBT(n"Cyberbane-CrewKit-Soldier"); }
+  return CBT(n"Cyberbane-CrewKit-Rookie");
 }
 
 // ---- Weapons and chrome, read from V's inventory --------------------------------------------------
@@ -393,7 +393,7 @@ public func CBCrewSeatForWeapon(t: gamedataItemType) -> Int32 {
 
 // 0 common .. 4 legendary or iconic, read off the quality's name so every "Plus" lands with its own.
 public func CBCrewTierOf(q: gamedataQuality) -> Int32 {
-  let n = EnumValueToString("gamedataQuality", Cast<Int64>(EnumInt(q)));
+  let n = EnumValueToString(CBT(n"Cyberbane-CrewKit-GamedataQuality"), Cast<Int64>(EnumInt(q)));
   if StrContains(n, "Legendary") || StrContains(n, "Iconic") { return 4; }
   if StrContains(n, "Epic") { return 3; }
   if StrContains(n, "Rare") { return 2; }
@@ -402,20 +402,20 @@ public func CBCrewTierOf(q: gamedataQuality) -> Int32 {
 }
 
 public func CBCrewTierWord(tier: Int32) -> String {
-  if tier >= 4 { return "legendary"; }
-  if tier == 3 { return "epic"; }
-  if tier == 2 { return "rare"; }
-  if tier == 1 { return "uncommon"; }
-  return "common";
+  if tier >= 4 { return CBT(n"Cyberbane-CrewKit-Legendary"); }
+  if tier == 3 { return CBT(n"Cyberbane-CrewKit-Epic"); }
+  if tier == 2 { return CBT(n"Cyberbane-CrewKit-Rare"); }
+  if tier == 1 { return CBT(n"Cyberbane-CrewKit-Uncommon"); }
+  return CBT(n"Cyberbane-CrewKit-Common");
 }
 
 public func CBCrewItemName(id: TweakDBID) -> String {
   let rec = TweakDBInterface.GetItemRecord(id);
   if !IsDefined(rec) {
-    return "something";
+    return CBT(n"Cyberbane-CrewKit-Something");
   }
   let n = GetLocalizedTextByKey(rec.DisplayName());
-  return StrLen(n) > 0 ? n : "something";
+  return StrLen(n) > 0 ? n : CBT(n"Cyberbane-CrewKit-Something");
 }
 
 // What V carries that a crew member could use: unequipped weapons of a kind people fight with, never a quest item.
@@ -577,27 +577,27 @@ func CBCrewChromeTake(e: ref<CBCrewChromeEffect>, mod: wref<StatModifier_Record>
   switch stat {
     case gamedataStatType.CritChance:
       e.critChance += value;
-      e.Say("more damage");
+      e.Say(CBT(n"Cyberbane-CrewKit-MoreDamage"));
       return;
     case gamedataStatType.CritDamage:
       e.critDamage += value;
-      e.Say("more damage");
+      e.Say(CBT(n"Cyberbane-CrewKit-MoreDamage"));
       return;
     case gamedataStatType.HeadshotDamageMultiplier:
       e.headshot += multiplied ? value - 1.0 : value;
-      e.Say("more damage");
+      e.Say(CBT(n"Cyberbane-CrewKit-MoreDamage"));
       return;
     case gamedataStatType.WeakspotDamageMultiplier:
       e.weakspot += multiplied ? value - 1.0 : value;
-      e.Say("more damage");
+      e.Say(CBT(n"Cyberbane-CrewKit-MoreDamage"));
       return;
     case gamedataStatType.AttackSpeed:
       e.speed += multiplied ? value - 1.0 : value;
-      e.Say("more damage");
+      e.Say(CBT(n"Cyberbane-CrewKit-MoreDamage"));
       return;
     case gamedataStatType.ArmorMultBonus:
       e.armourMult += value;
-      e.Say("more armour");
+      e.Say(CBT(n"Cyberbane-CrewKit-MoreArmour"));
       return;
   }
   // What the game reads for anybody in a fight, as it is.
@@ -614,25 +614,25 @@ func CBCrewChromeTake(e: ref<CBCrewChromeEffect>, mod: wref<StatModifier_Record>
 // The stats the game reads for anybody in a fight, in words; "" for one it reads for V alone.
 func CBCrewChromeStatWord(stat: gamedataStatType) -> String {
   switch stat {
-    case gamedataStatType.Armor: return "more armour";
-    case gamedataStatType.Health: return "more health";
-    case gamedataStatType.MitigationChance: return "shrugging off hits";
-    case gamedataStatType.MitigationStrength: return "shrugging off hits";
-    case gamedataStatType.BonusDamageAgainstMechanicals: return "harder hits on drones, mechs and robots";
-    case gamedataStatType.ThermalResistance: return "fire resistance";
-    case gamedataStatType.ChemicalResistance: return "resistance to chemicals";
-    case gamedataStatType.ElectricResistance: return "shock resistance";
-    case gamedataStatType.ExplosionResistance: return "blast resistance";
-    case gamedataStatType.MeleeResistance: return "resistance to blades and fists";
-    case gamedataStatType.QuickhackResistance: return "resistance to quickhacks";
-    case gamedataStatType.DamageOverTimeResistance: return "resistance to bleeding and burning";
-    case gamedataStatType.BossResistance: return "resistance to the big ones";
-    case gamedataStatType.MechResistance: return "resistance to machines";
-    case gamedataStatType.BurningImmunity: return "fireproof";
-    case gamedataStatType.ElectrocuteImmunity: return "shockproof";
-    case gamedataStatType.EMPImmunity: return "shockproof";
-    case gamedataStatType.BleedingImmunity: return "no bleeding";
-    case gamedataStatType.PoisonImmunity: return "poison-proof";
+    case gamedataStatType.Armor: return CBT(n"Cyberbane-CrewKit-MoreArmour");
+    case gamedataStatType.Health: return CBT(n"Cyberbane-CrewKit-MoreHealth");
+    case gamedataStatType.MitigationChance: return CBT(n"Cyberbane-CrewKit-ShruggingOffHits");
+    case gamedataStatType.MitigationStrength: return CBT(n"Cyberbane-CrewKit-ShruggingOffHits");
+    case gamedataStatType.BonusDamageAgainstMechanicals: return CBT(n"Cyberbane-CrewKit-HarderHitsOnDronesMechsAnd");
+    case gamedataStatType.ThermalResistance: return CBT(n"Cyberbane-CrewKit-FireResistance");
+    case gamedataStatType.ChemicalResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToChemicals");
+    case gamedataStatType.ElectricResistance: return CBT(n"Cyberbane-CrewKit-ShockResistance");
+    case gamedataStatType.ExplosionResistance: return CBT(n"Cyberbane-CrewKit-BlastResistance");
+    case gamedataStatType.MeleeResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToBladesAndFists");
+    case gamedataStatType.QuickhackResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToQuickhacks");
+    case gamedataStatType.DamageOverTimeResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToBleedingAndBurning");
+    case gamedataStatType.BossResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToTheBigOnes");
+    case gamedataStatType.MechResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToMachines");
+    case gamedataStatType.BurningImmunity: return CBT(n"Cyberbane-CrewKit-Fireproof");
+    case gamedataStatType.ElectrocuteImmunity: return CBT(n"Cyberbane-CrewKit-Shockproof");
+    case gamedataStatType.EMPImmunity: return CBT(n"Cyberbane-CrewKit-Shockproof");
+    case gamedataStatType.BleedingImmunity: return CBT(n"Cyberbane-CrewKit-NoBleeding");
+    case gamedataStatType.PoisonImmunity: return CBT(n"Cyberbane-CrewKit-PoisonProof");
   }
   return "";
 }
@@ -652,33 +652,33 @@ func CBCrewChromeAbilities(e: ref<CBCrewChromeEffect>, kind: CName, quality: Flo
       ArrayPush(e.abilities, t"Ability.HasDodge");   // the game's own dodge, behaviour only
       CBCrewChromeStat(e, gamedataStatType.Evasion, gameStatModifierType.Additive, 4.0 + 2.0 * quality);
       e.speed += 0.10 + 0.05 * quality;
-      e.Say("a Sandevistan's speed: harder to hit, more damage");
+      e.Say(CBT(n"Cyberbane-CrewKit-ASandevistanSSpeedHarderTo"));
       break;
     case n"Kerenzikov":
       ArrayPush(e.abilities, t"Ability.HasDodge");
       CBCrewChromeStat(e, gamedataStatType.Evasion, gameStatModifierType.Additive, 5.0 + 2.0 * quality);
-      e.Say("Kerenzikov reflexes: harder to hit");
+      e.Say(CBT(n"Cyberbane-CrewKit-KerenzikovReflexesHarderToHit"));
       break;
     case n"SecondHeart":
       CBCrewChromeStat(e, gamedataStatType.Health, gameStatModifierType.Multiplier, 1.2 + 0.05 * quality);
-      e.Say("a second heart: more health");
+      e.Say(CBT(n"Cyberbane-CrewKit-ASecondHeartMoreHealth"));
       break;
     case n"OpticalCamo":
       CBCrewChromeStat(e, gamedataStatType.Evasion, gameStatModifierType.Additive, 3.0 + quality);
-      e.Say("optical camo: harder to hit");
+      e.Say(CBT(n"Cyberbane-CrewKit-OpticalCamoHarderToHit"));
       break;
     case n"Berserk":
       e.armourMult += 0.10 + 0.03 * quality;
       e.speed += 0.08 + 0.03 * quality;
-      e.Say("Berserk: more armour, more damage");
+      e.Say(CBT(n"Cyberbane-CrewKit-BerserkMoreArmourMoreDamage"));
       break;
     case n"HealthMonitor":
       CBCrewChromeStat(e, gamedataStatType.Health, gameStatModifierType.Multiplier, 1.1 + 0.03 * quality);
-      e.Say("a biomonitor: more health");
+      e.Say(CBT(n"Cyberbane-CrewKit-ABiomonitorMoreHealth"));
       break;
     case n"PainReductor":
       ArrayPush(e.abilities, t"Ability.HasPainEditor");
-      e.Say("no flinching");
+      e.Say(CBT(n"Cyberbane-CrewKit-NoFlinching"));
       break;
   }
 }
@@ -733,7 +733,7 @@ public func CBCrewChromeWords(e: ref<CBCrewChromeEffect>, most: Int32) -> String
   let i = 0;
   while i < n {
     if i > 0 {
-      out += i == n - 1 ? " and " : ", ";
+      out += i == n - 1 ? CBT(n"Cyberbane-CrewKit-And") : ", ";
     }
     out += e.words[i];
     i += 1;
@@ -768,10 +768,10 @@ public func CBCrewAwayWord(game: GameInstance, id: Int32, now: Float) -> String 
     return "";
   }
   if k.trainUntil > now {
-    return s"TRAINING, \(CeilF((k.trainUntil - now) / CBConfig.SecondsPerHour()))H";
+    return CBTf(n"Cyberbane-CrewKit-TRAININGH", [s"\(CeilF((k.trainUntil - now) / CBConfig.SecondsPerHour()))"]);
   }
   if k.warUntil > now {
-    return s"AT WAR, \(CeilF((k.warUntil - now) / CBConfig.SecondsPerHour()))H";
+    return CBTf(n"Cyberbane-CrewKit-ATWARH", [s"\(CeilF((k.warUntil - now) / CBConfig.SecondsPerHour()))"]);
   }
   return "";
 }
@@ -909,7 +909,7 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
     health = MaxF(health, underFire);
     healthCeiling = MaxF(healthCeiling, underFire);
     hitCap = CBConfig.CrewHitCapRookie() - (CBConfig.CrewHitCapRookie() - CBConfig.CrewHitCapLegend()) * climb;
-    said = s" Smasher x\(sm.X) health, x\(sm.Y) damage at their level; their share \(share); no more than \(hitCap)% a hit.";
+    said = CBTf(n"Cyberbane-CrewKit-SmasherXHealthXDamageAt", [s"\(sm.X)", s"\(sm.Y)", s"\(share)", s"\(hitCap)"]);
   }
   // What a rank brings with it, the game's own abilities (gmpl_abilities/abilities.tweak).
   let npc = puppet as NPCPuppet;
@@ -967,7 +967,7 @@ public func CBCrewKitLeaves(game: GameInstance, id: Int32) -> Void {
     return;
   }
   if CBCrewReturnWeapon(game, k) && CBMessagesOn() {
-    CBHearsayFromStreet(game, "Somebody dropped off a weapon of yours. Said it was what they were carrying for you.", n"");
+    CBHearsayFromStreet(game, CBT(n"Cyberbane-CrewKit-SomebodyDroppedOffAWeaponOf"), n"");
   }
   kb.Forget(id);
 }
@@ -1012,7 +1012,7 @@ func CBCrewKitCarryOut(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CB
     return;
   }
   if book.IsOut(m.id) || CBCrewAway(game, m.id, now) {
-    CBMenuNote(game, s"\(CBCrewName(sys, m)) is not here for that: out with you, training or at war.", 4.0);
+    CBMenuNote(game, CBTf(n"Cyberbane-CrewKit-IsNotHereForThatOut", [s"\(CBCrewName(sys, m))"]), 4.0);
     return;
   }
   if a.what == CBCrewAskTakeBack() { CBCrewTakeBack(sys, game, kb, m); }
@@ -1090,32 +1090,32 @@ public func CBCrewSparBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, m: 
   let kb = CBCrewKitBook.Get(game);
   let book = CBCrewBook.Get(game);
   if !IsDefined(player) || !IsDefined(kb) || !IsDefined(book) || !IsDefined(m) {
-    return "nobody to spar with";
+    return CBT(n"Cyberbane-CrewKit-NobodyToSparWith");
   }
   if kb.sparMember > 0 {
-    return "a round is already on";
+    return CBT(n"Cyberbane-CrewKit-ARoundIsAlreadyOn");
   }
   if book.OutCount() > 0 {
-    return "your crew is out with you";
+    return CBT(n"Cyberbane-CrewKit-YourCrewIsOutWithYou");
   }
   if book.IsOut(m.id) || CBCrewAway(game, m.id, now) {
-    return "they are not here";
+    return CBT(n"Cyberbane-CrewKit-TheyAreNotHere");
   }
   if CBCrewHurt(m, now) {
-    return "they are hurt";
+    return CBT(n"Cyberbane-CrewKit-TheyAreHurt");
   }
   let k = kb.Find(m.id);
   if IsDefined(k) && k.sparDay == CBCrewSparDayOf(now) {
-    return "once a day each";
+    return CBT(n"Cyberbane-CrewKit-OnceADayEach");
   }
-  if player.IsInCombat() || CBArrivalsHeld(sys, game) || IsDefined(player.GetMountedVehicle()) || sys.IsInSafeZone() {
-    return "not here, not now";
+  if player.IsInCombat() || CBArrivalsHeldBase(sys, game) || IsDefined(player.GetMountedVehicle()) || sys.IsInSafeZone() {
+    return CBT(n"Cyberbane-CrewKit-NotHereNotNow");
   }
   if CBHuntersOut(sys, game) || CBHuntPending(sys) {
-    return "somebody is hunting you";
+    return CBT(n"Cyberbane-CrewKit-SomebodyIsHuntingYou");
   }
   if CBSpawnRoom(game) < 1 {
-    return "too many people around";
+    return CBT(n"Cyberbane-CrewKit-TooManyPeopleAround");
   }
   return "";
 }
@@ -1123,7 +1123,7 @@ public func CBCrewSparBlocked(sys: ref<CyberbaneSystem>, game: GameInstance, m: 
 func CBCrewSparStart(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, m: ref<CBCrewMember>, now: Float) -> Void {
   let blocked = CBCrewSparBlocked(sys, game, m, now);
   if StrLen(blocked) > 0 {
-    CBMenuNote(game, s"no spar: \(blocked).", 4.0);
+    CBMenuNote(game, CBTf(n"Cyberbane-CrewKit-NoSpar", [s"\(blocked)"]), 4.0);
     return;
   }
   let record = m.record;
@@ -1133,14 +1133,14 @@ func CBCrewSparStart(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCr
   let body: EntityID;
   let ring = 0;
   if CBSpawnOnSide(game, record, m.look, n"CB_Own", CBConfig.CrewSparSpawnDistance(), body, ring, n"CB_Spar") == 0 {
-    CBMenuNote(game, "no spar: they could not get to you.", 4.0);
+    CBMenuNote(game, CBT(n"Cyberbane-CrewKit-NoSparTheyCouldNotGet"), 4.0);
     return;
   }
   kb.sparMember = m.id;
   kb.sparBody = body;
   kb.sparStart = sys.GetTickCount();
   kb.sparSeen = 0;
-  CBCrewText(sys, game, m, "On my way. Hands up when I get there. Don't hold back, I won't.");
+  CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewKit-OnMyWayHandsUpWhen"));
   CBLog.Info(n"Crew", "V called one of the crew out for a spar.");
 }
 
@@ -1196,14 +1196,14 @@ func CBCrewSparTick(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
   // The story, a scene, a job or a safe place takes over mid-round: the bell goes (or the round is called off before it
   // began). The round's body is hostile to V, and nothing hostile of ours stays while those hold; it was only asked
   // when the round was set up (CBCrewSparBlocked).
-  if sys.GetStoryHold() != CBStoryNone() || CBArrivalsHeld(sys, game) {
+  if sys.GetStoryHold() != CBStoryNone() || CBArrivalsHeldBase(sys, game) {
     CBCrewSparEnd(sys, game, kb, m, p, kb.sparSeen > 0 ? 3 : 0);
     return;
   }
   // Real trouble on the way (2.6.3): the round is off, and the crew can be called. Nothing is scored for it.
   if CBHuntersOut(sys, game) || CBHuntPending(sys) {
     CBCrewSparEnd(sys, game, kb, m, p, 0);
-    CBCrewText(sys, game, m, "Real trouble coming. Round's off. Call us if you need us.");
+    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewKit-RealTroubleComingRoundSOff"));
     return;
   }
   if kb.sparSeen == 0 {
@@ -1280,10 +1280,10 @@ func CBCrewSparEnd(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrew
     k.trained += 1;
     levelled = true;
   }
-  let line = how == 1 ? "You got me. Good round. I'll be sharper for it."
-           : (how == 2 ? "Told you I wouldn't hold back. Again tomorrow?" : "Time. Not bad, either of us.");
+  let line = how == 1 ? CBT(n"Cyberbane-CrewKit-YouGotMeGoodRoundI")
+           : (how == 2 ? CBT(n"Cyberbane-CrewKit-ToldYouIWouldnTHold") : CBT(n"Cyberbane-CrewKit-TimeNotBadEitherOfUs"));
   if levelled {
-    line += s" That's the work of a \(StrLower(CBCrewRankWord(CBCrewRankOf(game, m)))) now.";
+    line += CBTf(n"Cyberbane-CrewKit-ThatSTheWorkOfA", [s"\(StrLower(CBCrewRankWord(CBCrewRankOf(game, m))))"]);
   }
   CBCrewText(sys, game, m, line);
   CBLog.Info(n"Crew", s"A spar ended (\(how)); spars \(k.spars), trained \(k.trained).");
@@ -1300,7 +1300,7 @@ public func CBCrewSparBodyDied(sys: ref<CyberbaneSystem>, game: GameInstance, id
   let m = book.Find(kb.sparMember);
   if IsDefined(m) {
     m.hurtUntil = CBGameSeconds(game) + CBConfig.CrewWarHurtHours() * CBConfig.SecondsPerHour();
-    CBCrewText(sys, game, m, "That went too far. I'll live. Give me a couple of days.");
+    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewKit-ThatWentTooFarILl"));
   }
   kb.sparMember = 0;
   let none: EntityID;
@@ -1339,9 +1339,9 @@ func CBCrewEarnTick(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
     return;
   }
   CBStreetGiveMoney(game, total);
-  let note = s"Your crew's work brought in \(total)eb.";
+  let note = CBTf(n"Cyberbane-CrewKit-YourCrewSWorkBroughtIn", [s"\(total)"]);
   if StrLen(hurt) > 0 {
-    note += s" \(hurt) got hurt doing it.";
+    note += CBTf(n"Cyberbane-CrewKit-GotHurtDoingIt", [s"\(hurt)"]);
   }
   CBCrewText(sys, game, null, note);
   CBLog.Info(n"Crew", s"The crew's earners brought in \(total)eb.");
@@ -1355,7 +1355,7 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   }
   let data = ts.GetItemData(player, item);
   if !IsDefined(data) || RPGManager.IsItemEquipped(player, item) {
-    CBMenuNote(game, "that weapon is not in your bag any more.", 4.0);
+    CBMenuNote(game, CBT(n"Cyberbane-CrewKit-ThatWeaponIsNotInYour"), 4.0);
     return;
   }
   let seat = CBCrewSeatForWeapon(data.GetItemType());
@@ -1402,7 +1402,7 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
 func CBCrewTakeBack(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, m: ref<CBCrewMember>) -> Void {
   let k = kb.Find(m.id);
   if CBCrewReturnWeapon(game, k) {
-    CBMenuNote(game, s"\(CBCrewName(sys, m)) handed your weapon back.", 4.0);
+    CBMenuNote(game, CBTf(n"Cyberbane-CrewKit-HandedYourWeaponBack", [s"\(CBCrewName(sys, m))"]), 4.0);
   }
 }
 
@@ -1414,23 +1414,23 @@ func CBCrewInstallChrome(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<
   }
   let k = kb.Kit(m.id);
   if k.ChromeCount() >= CBCrewChromeSlots() {
-    CBMenuNote(game, s"\(CBCrewName(sys, m)) has no room for more chrome.", 4.0);
+    CBMenuNote(game, CBTf(n"Cyberbane-CrewKit-HasNoRoomForMoreChrome", [s"\(CBCrewName(sys, m))"]), 4.0);
     return;
   }
   let rec = ItemID.GetTDBID(item);
   let e = CBCrewChromeRead(rec);
   if !e.Any() {
-    CBMenuNote(game, "that implant would do nothing for them in a fight.", 4.0);
+    CBMenuNote(game, CBT(n"Cyberbane-CrewKit-ThatImplantWouldDoNothingFor"), 4.0);
     return;
   }
   if RPGManager.IsItemEquipped(player, item) || !ts.RemoveItem(player, item, 1) {
-    CBMenuNote(game, "that implant is not in your bag any more.", 4.0);
+    CBMenuNote(game, CBT(n"Cyberbane-CrewKit-ThatImplantIsNotInYour"), 4.0);
     return;
   }
   k.AddChrome(rec);
   // What it really does for them, in their words (CBCrewChromeRead): a Mechatronic Core is harder hits on machines.
   let what = CBCrewChromeWords(e, 3);
-  CBCrewText(sys, game, m, s"Got the \(CBCrewItemName(rec)) put in. Feel it already. \(CBCapFirst(what)), next time you call.");
+  CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-GotThePutInFeelIt", [s"\(CBCrewItemName(rec))", s"\(CBCapFirst(what))"]));
   CBLog.Info(n"Crew", s"V had chrome put in one of the crew: \(CBCrewItemName(rec)) (\(CBCrewChromeWords(e, 6))).");
 }
 
@@ -1443,13 +1443,13 @@ func CBCrewSendTraining(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<C
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
   if !IsDefined(player) || !IsDefined(ts) || ts.GetItemQuantity(player, ItemID.FromTDBID(t"Items.money")) < cost {
-    CBMenuNote(game, s"training costs \(cost)eb.", 4.0);
+    CBMenuNote(game, CBTf(n"Cyberbane-CrewKit-TrainingCostsEb", [s"\(cost)"]), 4.0);
     return;
   }
   ts.RemoveItem(player, ItemID.FromTDBID(t"Items.money"), cost);
   let hours = CBCrewTrainHours(k);
   k.trainUntil = now + hours * CBConfig.SecondsPerHour();
-  CBCrewText(sys, game, m, s"Heading out. Give me \(RoundF(hours)) hours, and I'll come back worth more.");
+  CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-HeadingOutGiveMeHoursAnd", [s"\(RoundF(hours))"]));
   CBLog.Info(n"Crew", s"One of the crew went to train (level \(k.trained + 1), \(cost)eb).");
 }
 
@@ -1460,7 +1460,7 @@ func CBCrewSendToWar(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCr
   let k = kb.Kit(m.id);
   k.warOn = gang;
   k.warUntil = now + CBConfig.CrewWarHours() * CBConfig.SecondsPerHour();
-  CBCrewText(sys, game, m, s"\(CBCapFirst(CBFactionLabel(gang))). Consider it started. You won't hear from me for a while.");
+  CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-ConsiderItStartedYouWonT", [s"\(CBCapFirst(CBFactionLabel(gang)))"]));
   CBLog.Info(n"Crew", s"One of the crew went to start a war on \(NameToString(gang)).");
 }
 
@@ -1475,7 +1475,7 @@ func CBCrewKitReturns(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
       k.trainUntil = 0.0;
       k.trained += 1;
       m.loyalty = Min(100, m.loyalty + CBConfig.CrewTrainLoyalty());
-      CBCrewText(sys, game, m, s"Back. \(CBCrewRankWord(CBCrewRankOf(game, m))) now, better gear, and they put in some field chrome. Call me.");
+      CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-BackNowBetterGearAndThey", [s"\(CBCrewRankWord(CBCrewRankOf(game, m)))"]));
       CBLog.Info(n"Crew", "One of the crew is back from training.");
     }
     if IsDefined(k) && k.warUntil > 0.0 && now >= k.warUntil {
@@ -1536,7 +1536,7 @@ func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
     m.loyalty = Min(100, m.loyalty + 5);
     kb.NoteWarWon();
     CBFileLog(sys, n"CrewWarWon", now, where, gang, Cast<Float>(m.id));
-    CBCrewText(sys, game, m, s"It's done. \(CBCapFirst(label)) lost corners, people and nerve. They know whose crew did it, so watch yourself.");
+    CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-ItSDoneLostCornersPeople", [s"\(CBCapFirst(label))"]));
     CBLog.Info(n"Crew", s"A crew member's war on \(NameToString(gang)) was won.");
     return false;
   }
@@ -1551,14 +1551,14 @@ func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
     }
     book.Remove(m, CBCrewEndFell(), 0, where, now);
     if CBMessagesOn() {
-      CBPhoneSendTinted(game, CBCapFirst(label), s"\(name) came for us. \(name) isn't coming back.", CBHudRed());
+      CBPhoneSendTinted(game, CBCapFirst(label), CBTf(n"Cyberbane-CrewKit-CameForUsIsnTComing", [s"\(name)", s"\(name)"]), CBHudRed());
     }
     CBLog.Info(n"Crew", s"A crew member died in their war on \(NameToString(gang)).");
     return true;
   }
   m.hurtUntil = now + CBConfig.CrewWarHurtHours() * CBConfig.SecondsPerHour();
   CBTalkSlight(sys, game, gang, CBConfig.CrewWarStanding() * 0.5);
-  CBCrewText(sys, game, m, s"\(CBCapFirst(label)) were ready for me. I got out, barely. I need a few days.");
+  CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-WereReadyForMeIGot", [s"\(CBCapFirst(label))"]));
   CBLog.Info(n"Crew", s"A crew member's war on \(NameToString(gang)) was lost; they came back hurt.");
   return false;
 }
@@ -1571,10 +1571,10 @@ public func CBCrewKitLines(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref
   let kb = CBCrewKitBook.Get(game);
   let k = IsDefined(kb) ? kb.Find(m.id) : null;
   let rank = CBCrewRankOf(game, m);
-  let out = s"Rank: \(CBCrewRankWord(rank)) (\(rank) of 6).";
+  let out = CBTf(n"Cyberbane-CrewKit-RankOf6", [s"\(CBCrewRankWord(rank))", s"\(rank)"]);
   if IsDefined(k) {
     if k.hasWeapon {
-      out += s" Carrying your \(CBCrewItemName(ItemID.GetTDBID(k.weapon))) (\(CBCrewTierWord(k.weaponTier))): they fight as a \(CBCrewSeatWord(m.seat)).";
+      out += CBTf(n"Cyberbane-CrewKit-CarryingYourTheyFightAsA", [s"\(CBCrewItemName(ItemID.GetTDBID(k.weapon)))", s"\(CBCrewTierWord(k.weaponTier))", s"\(CBCrewSeatWord(m.seat))"]);
     }
     if k.ChromeCount() > 0 {
       let parts = "";
@@ -1586,10 +1586,10 @@ public func CBCrewKitLines(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref
           parts += (StrLen(parts) > 0 ? ", " : "") + CBCrewItemName(c);
         }
       }
-      out += s" Chrome: \(parts).";
+      out += CBTf(n"Cyberbane-CrewKit-Chrome", [s"\(parts)"]);
     }
     if k.trained > 0 {
-      out += s" Trained \(k.trained) of \(CBConfig.CrewTrainMax()) times.";
+      out += CBTf(n"Cyberbane-CrewKit-TrainedOfTimes", [s"\(k.trained)", s"\(CBConfig.CrewTrainMax())"]);
     }
     let away = CBCrewAwayWord(game, m.id, CBGameSeconds(game));
     if StrLen(away) > 0 {
@@ -1597,23 +1597,23 @@ public func CBCrewKitLines(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref
     }
   }
   if IsDefined(k) && k.sharpUntil > CBGameSeconds(game) {
-    out += " Sharp from a spar.";
+    out += CBT(n"Cyberbane-CrewKit-SharpFromASpar");
   }
   if IsDefined(k) && k.earning {
-    out += " Working the street for you.";
+    out += CBT(n"Cyberbane-CrewKit-WorkingTheStreetForYou");
   }
   if CBCrewIsRecruiter(game, m.id) {
-    out += " Recruiting for the crew: the broker's solos come more often, cheaper, and with fights behind them.";
+    out += CBT(n"Cyberbane-CrewKit-RecruitingForTheCrewTheBroker");
     let roster = CBCrewBook.Get(game);
     if IsDefined(roster) && !roster.HasRoom() {
-      out += " Your crew is full, so they have nobody to bring until somebody leaves.";
+      out += CBT(n"Cyberbane-CrewKit-YourCrewIsFullSoThey");
     }
   }
   if IsDefined(k) && k.spars > 0 {
-    out += s" Sparred \(k.spars) times.";
+    out += CBTf(n"Cyberbane-CrewKit-SparredTimes", [s"\(k.spars)"]);
   }
   if rank < CBConfig.CrewWarMinRank() {
-    out += s" At \(CBCrewRankWord(CBConfig.CrewWarMinRank())) they can be sent to start a war.";
+    out += CBTf(n"Cyberbane-CrewKit-AtTheyCanBeSentTo", [s"\(CBCrewRankWord(CBConfig.CrewWarMinRank()))"]);
   }
   return out;
 }

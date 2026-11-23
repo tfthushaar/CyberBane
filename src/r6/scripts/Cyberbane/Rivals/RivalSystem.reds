@@ -293,7 +293,7 @@ public func CBRivalMaybeBreak(sys: ref<CyberbaneSystem>, game: GameInstance, r: 
   CBRivalPickBrokenEpithet(sys, content, r);
   CBRivalGiveTrait(r, n"Broken");
   if CBMessagesOn() && IsDefined(content) {
-    CBHearsayFromStreet(game, s"Word is \(CBRivalDisplayName(content, r)) went back under the knife after you and came out wrong. Cyberpsycho now. Watch yourself.", n"");
+    CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalSystem-WordIsWentBackUnderThe", [s"\(CBRivalDisplayName(content, r))"]), n"");
   }
   CBLog.Info(n"Rivals", s"Rival \(r.id) broke: cyberpsycho (chance \(RoundF(chance * 100.0))%).");
   return true;
@@ -359,7 +359,7 @@ func CBFallbackHandle(id: Int32) -> String {
 
 public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> String {
   if !IsDefined(rival) {
-    return "A rival";
+    return CBT(n"Cyberbane-RivalSystem-ARival");
   }
   // Somebody the city already has a name for keeps it.
   let known = CBCyberpsychoName(rival.recordID);
@@ -814,7 +814,7 @@ public func CBRivalRoll(sys: ref<CyberbaneSystem>, what: String, base: Float, re
   }
   let odds = CBRivalOdds(sys, base, recordID, byRank);
   let hit = RandF() < odds;
-  let outcome = hit ? "a Rival" : "not this time";
+  let outcome = hit ? CBT(n"Cyberbane-RivalSystem-ARival-2") : CBT(n"Cyberbane-RivalSystem-NotThisTime");
   CBLog.Info(n"Rivals", s"Rival roll, \(what): \(RoundF(odds * 100.0))%, \(outcome).");
   return hit;
 }
@@ -920,7 +920,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
   CBLogRival(sys, n"RivalCreated", at, origin, faction, Cast<Float>(r.id), r.id);
   if CBMessagesOn() && !quiet {
-    CBPhoneFromGang(game, faction, CBRivalDisplayName(content, r) + " has your name now. That is on you.");
+    CBPhoneFromGang(game, faction, CBTf(n"Cyberbane-Births-HasYourNameNowThatIs", [CBRivalDisplayName(content, r)]));
   }
   CBLog.Info(n"Rivals", s"Rival created id=\(r.id) faction=\(NameToString(faction)).");
   return r;
@@ -1354,9 +1354,9 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   let content = CBContent(game);
   if CBMessagesOn() {
     if byV {
-      CBHearsayFromStreet(game, CBRivalDisplayName(content, rival) + " is dead and everybody knows who did it.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalSystem-IsDeadAndEverybodyKnowsWho", [CBRivalDisplayName(content, rival)]), n"");
     } else {
-      CBHearsayFromStreet(game, CBRivalDisplayName(content, rival) + " is dead. Somebody got to them before you did.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalSystem-IsDeadSomebodyGotToThem", [CBRivalDisplayName(content, rival)]), n"");
     }
   }
   if !byV {
@@ -1420,7 +1420,7 @@ public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance
           cd.lastPromotionAt = now;
         }
         if CBMessagesOn() {
-          CBHearsayFromStreet(game, CBRivalDisplayName(content, r) + " has moved up while you were busy elsewhere.", n"");
+          CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalSystem-HasMovedUpWhileYouWere", [CBRivalDisplayName(content, r)]), n"");
         }
         return;
       }

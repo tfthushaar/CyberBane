@@ -66,18 +66,34 @@ public func CBGangStrength(sys: ref<CyberbaneSystem>, faction: CName) -> Float {
   return ClampF(p.strength + days * CBConfig.GangRecoverPerDay(), CBConfig.GangStrengthFloor(), 100.0);
 }
 
-// One word for it, for the Hub and the texts.
-public func CBGangStrengthWord(strength: Float) -> String {
+// Which band it is in: 0 broken, 1 bleeding, 2 hurting, 3 strong. Code asks this; only the player reads the word (2.7.1:
+// a comparison with the word would stop working the moment the word was translated).
+public func CBGangStrengthBand(strength: Float) -> Int32 {
   if strength < CBConfig.GangBrokenStrength() {
-    return "broken";
+    return 0;
   }
   if strength < CBConfig.GangBleedingStrength() {
-    return "bleeding";
+    return 1;
   }
   if strength < 85.0 {
-    return "hurting";
+    return 2;
   }
-  return "strong";
+  return 3;
+}
+
+// One word for it, for the Hub and the texts.
+public func CBGangStrengthWord(strength: Float) -> String {
+  let band = CBGangStrengthBand(strength);
+  if band == 0 {
+    return CBT(n"Cyberbane-Territory-Broken");
+  }
+  if band == 1 {
+    return CBT(n"Cyberbane-Territory-Bleeding");
+  }
+  if band == 2 {
+    return CBT(n"Cyberbane-Territory-Hurting");
+  }
+  return CBT(n"Cyberbane-Territory-Strong");
 }
 
 // V has cost this gang something. Settled callers only (the kill path, a Rival's death, a crew
@@ -107,10 +123,10 @@ public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
   }
   let cap = StrUpper(StrMid(label, 0, 1)) + StrMid(label, 1, StrLen(label) - 1);
   if before >= CBConfig.GangBrokenStrength() && after < CBConfig.GangBrokenStrength() {
-    CBHearsayFromStreet(game, s"\(cap) are broken. Half their corners are empty, and everybody knows who emptied them.", n"");
+    CBHearsayFromStreet(game, CBTf(n"Cyberbane-Territory-AreBrokenHalfTheirCornersAre", [s"\(cap)"]), n"");
   } else {
     if before >= CBConfig.GangBleedingStrength() && after < CBConfig.GangBleedingStrength() {
-      CBHearsayFromStreet(game, s"\(cap) are bleeding. Their corners have been thin since you started on them.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-Territory-AreBleedingTheirCornersHaveBeen", [s"\(cap)"]), n"");
     }
   }
 }
@@ -373,10 +389,10 @@ public func CBTurfHudWord(sys: ref<CyberbaneSystem>, game: GameInstance, distric
     return "";
   }
   if NotEquals(book.Challenger(index), n"") {
-    return "CONTESTED - ";
+    return CBT(n"Cyberbane-Territory-CONTESTED");
   }
   let holder = CBBarFactionLabel(book.Holder(index));
-  return StrLen(holder) > 0 ? "HELD BY " + holder + " - " : "";
+  return StrLen(holder) > 0 ? CBTf(n"Cyberbane-Territory-HELDBY", [holder]) : "";
 }
 
 public func CBTurfGangsIn(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName) -> array<CName> {
@@ -501,7 +517,7 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   let o = CBFactionLabel(old);
   let h = CBFactionLabel(holder);
   if CBMessagesOn() && StrLen(place) > 0 && StrLen(o) > 0 && StrLen(h) > 0 {
-    CBHearsayFromDistrict(game, district, s"\(CBCapFirst(o)) hit \(h) in \(place) last night. They want it back.", n"");
+    CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-Territory-HitInLastNightTheyWant", [s"\(CBCapFirst(o))", s"\(h)", s"\(place)"]), n"");
   }
 }
 
@@ -534,9 +550,9 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
   let home = IsDefined(prof) && ArrayContains(prof.turf, district);
   if home {
     if tookBack {
-      CBHearsayFromDistrict(game, district, s"\(wCap) have taken \(place) back from \(l).", n"");
+      CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-Territory-HaveTakenBackFrom", [s"\(wCap)", s"\(place)", s"\(l)"]), n"");
     } else {
-      CBHearsayFromDistrict(game, district, s"\(wCap) have pushed \(l) out of \(place). It's their streets now.", n"");
+      CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-Territory-HavePushedOutOfItS", [s"\(wCap)", s"\(l)", s"\(place)"]), n"");
     }
     return;
   }
@@ -546,8 +562,8 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
   let posture = IsDefined(score) ? score.GetPosture(winner) : ECBPosture.Neutral;
   if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
     let lCap = StrUpper(StrMid(l, 0, 1)) + StrMid(l, 1, StrLen(l) - 1);
-    CBHearsayFromAlly(game, winner, s"\(place) is ours now. \(lCap) could not hold it after what you did to them. We remember who to thank.", n"");
+    CBHearsayFromAlly(game, winner, CBTf(n"Cyberbane-Territory-IsOursNowCouldNotHold", [s"\(place)", s"\(lCap)"]), n"");
   } else {
-    CBHearsayFromDistrict(game, district, s"\(wCap) moved into \(place) the moment \(l) could not hold it. Everybody knows who broke them.", n"");
+    CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-Territory-MovedIntoTheMomentCouldNot", [s"\(wCap)", s"\(place)", s"\(l)"]), n"");
   }
 }

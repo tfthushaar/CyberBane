@@ -74,7 +74,8 @@ func CBLairPointUsable(sys: ref<CyberbaneSystem>, game: GameInstance, at: Vector
   if IsDefined(sam) && sam.IsPointInSafeArea(at) {
     return false;
   }
-  return true;
+  // Nor V's own building (2.7.1, Spawn/HomeGround.reds).
+  return !CBHomePointKept(game, at);
 }
 
 // This Rival was standing here, alive, as an encounter ended. Called from the places where one
@@ -262,21 +263,21 @@ func CBTipEligible(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
 
 public func CBPlacePhrase(district: CName) -> String {
   let place = CBDistrictLabel(district);
-  return StrLen(place) > 0 ? "in " + place : "around town";
+  return StrLen(place) > 0 ? CBTf(n"Cyberbane-Whispers-In", [place]) : CBT(n"Cyberbane-Whereabouts-AroundTown");
 }
 
 func CBTipLine(name: String, inPlace: String, fromGang: Bool, pinned: Bool) -> String {
-  let pin = pinned ? " It's on your map." : "";
+  let pin = pinned ? CBT(n"Cyberbane-StreetIntel-ItSOnYourMap") : "";
   if fromGang {
     switch RandRange(0, 3) {
-      case 0: return s"Heard you got beef with \(name). Our people saw them \(inPlace) not long ago.\(pin)";
-      case 1: return s"\(name) has been seen \(inPlace). You want them, they are yours. Nobody here will miss them.\(pin)";
-      default: return s"Word from our corners: \(name) is lying low \(inPlace). Do us all a favour.\(pin)";
+      case 0: return CBTf(n"Cyberbane-Whereabouts-HeardYouGotBeefWithOur", [s"\(name)", s"\(inPlace)", s"\(pin)"]);
+      case 1: return CBTf(n"Cyberbane-Whereabouts-HasBeenSeenYouWantThem", [s"\(name)", s"\(inPlace)", s"\(pin)"]);
+      default: return CBTf(n"Cyberbane-Whereabouts-WordFromOurCornersIsLying", [s"\(name)", s"\(inPlace)", s"\(pin)"]);
     }
   }
   switch RandRange(0, 2) {
-    case 0: return s"Saw \(name) \(inPlace) earlier. Heard they have it in for you.\(pin)";
-    default: return s"Your friend \(name) is holed up \(inPlace). You did not hear it from me.\(pin)";
+    case 0: return CBTf(n"Cyberbane-Whereabouts-SawEarlierHeardTheyHaveIt", [s"\(name)", s"\(inPlace)", s"\(pin)"]);
+    default: return CBTf(n"Cyberbane-Whereabouts-YourFriendIsHoledUpYou", [s"\(name)", s"\(inPlace)", s"\(pin)"]);
   }
 }
 
@@ -455,7 +456,7 @@ func CBLeadExpiryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
   let k = 0;
   while k < ArraySize(staleName) {
-    let line = s"\(staleName[k]) moved on from \(CBPlacePhrase(staleWhere[k])). Took too long.";
+    let line = CBTf(n"Cyberbane-Whereabouts-MovedOnFromTookTooLong", [s"\(staleName[k])", s"\(CBPlacePhrase(staleWhere[k]))"]);
     if IsNameValid(staleFrom[k]) {
       CBPhoneFromAlly(game, staleFrom[k], line);
     } else {
@@ -599,15 +600,15 @@ func CBLairHintTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
     return;
   }
   sys.SetLairHinted(lead.rivalId);
-  let line = "nobody at the place yet. They only show while you cannot see the spot: back off a little and look away.";
+  let line = CBT(n"Cyberbane-Whereabouts-NobodyAtThePlaceYetThey");
   if miss == CBLairMissNotCalm() {
-    line = "nobody at the place yet. Come on foot, out of a fight and off any job, and give it a moment.";
+    line = CBT(n"Cyberbane-Whereabouts-NobodyAtThePlaceYetCome");
   }
   if miss == CBLairMissBusy() {
-    line = "nobody at the place yet. They will not show while somebody else is after you.";
+    line = CBT(n"Cyberbane-Whereabouts-NobodyAtThePlaceYetThey-2");
   }
   if miss == CBLairMissDaytime() {
-    line = "nobody home. They keep hours: out by day, back here after dark.";
+    line = CBT(n"Cyberbane-Whereabouts-NobodyHomeTheyKeepHoursOut");
   }
   CBSystemNote(game, line, 6.0);
 }
@@ -853,7 +854,7 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   if IsDefined(cd) {
     cd.lastRivalEncounterAt = now;
   }
-  sys.SetHuntGrade("RIVAL");
+  sys.SetHuntGrade(CBT(n"Cyberbane-Whereabouts-RIVAL"));
   if CBRivalGrade(r) >= CBConfig.RivalBossBarGrade() {
     CBShowBossBar(body);
   }
@@ -865,13 +866,13 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   if IsDefined(svc) {
     svc.DropSighting(sys.GetPlaythroughId(), r.id);
   }
-  let line = "So somebody sold me out. Fine. Come and get it.";
+  let line = CBT(n"Cyberbane-Whereabouts-SoSomebodySoldMeOutFine");
   let bookW = CBIntelBook.Get(game);
   if IsDefined(bookW) && bookW.WordSent(r.id) {
-    line = "You came. Good. " + CBRivalCatchphrase(r);
+    line = CBTf(n"Cyberbane-Whereabouts-YouCameGood", [CBRivalCatchphrase(r)]);
   } else {
   if r.killedV > 0 {
-    line = "Came to finish it yourself? Good. Saves me the trip.";
+    line = CBT(n"Cyberbane-Whereabouts-CameToFinishItYourselfGood");
   }
   }
   CBPhoneSendTinted(game, CBRivalDisplayName(sys.GetContent(), r), line, CBHudRed());
@@ -960,9 +961,9 @@ public func CBLairAmbushed(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
   }
   let name = CBRivalDisplayName(sys.GetContent(), r);
   if IsNameValid(from) {
-    CBHearsayFromAlly(game, from, s"Heard about \(name). Never saw you coming. Clean work.", n"");
+    CBHearsayFromAlly(game, from, CBTf(n"Cyberbane-Whereabouts-HeardAboutNeverSawYouComing", [s"\(name)"]), n"");
   } else {
-    CBHearsayFromStreet(game, s"Word is \(name) never saw it coming.", n"");
+    CBHearsayFromStreet(game, CBTf(n"Cyberbane-Whereabouts-WordIsNeverSawItComing", [s"\(name)"]), n"");
   }
   CBLog.Info(n"Rivals", s"Rival \(r.id) ambushed at their place.");
 }
@@ -1095,12 +1096,12 @@ public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance,
   let price = agreedPrice > 0 ? agreedPrice : CBWhereaboutsPrice(r);
   let money = ItemID.FromTDBID(t"Items.money");
   if ts.GetItemQuantity(player, money) < price {
-    CBMenuNote(game, s"not enough eddies for that. It costs \(price)eb.", 4.0);
+    CBMenuNote(game, CBTf(n"Cyberbane-Whereabouts-NotEnoughEddiesForThatIt", [s"\(price)"]), 4.0);
     return false;
   }
   let s = CBRivalHideout(sys, game, player, r);
   if !IsDefined(s) {
-    CBMenuNote(game, "nobody could find them from here. Try again somewhere else.", 5.0);
+    CBMenuNote(game, CBT(n"Cyberbane-Whereabouts-NobodyCouldFindThemFromHere"), 5.0);
     CBLog.Info(n"Rivals", s"Whereabouts of rival \(id): no usable place near V; nothing paid.");
     return false;
   }
@@ -1177,9 +1178,9 @@ public func CBOfferRivalLead(sys: ref<CyberbaneSystem>, game: GameInstance, id: 
   let name = CBRivalDisplayName(sys.GetContent(), r);
   let line = "";
   switch RandRange(0, 3) {
-    case 0: line = s"Heard you're asking after \(name). I know where they sleep. \(price)eb and it's yours."; break;
-    case 1: line = s"\(name)? We know where. \(price)eb, and you didn't get it from us."; break;
-    default: line = s"Word is you want \(name). \(price)eb buys you an address."; break;
+    case 0: line = CBTf(n"Cyberbane-Whereabouts-HeardYouReAskingAfterI", [s"\(name)", s"\(price)"]); break;
+    case 1: line = CBTf(n"Cyberbane-Whereabouts-WeKnowWhereEbAndYou", [s"\(name)", s"\(price)"]); break;
+    default: line = CBTf(n"Cyberbane-Whereabouts-WordIsYouWantEbBuys", [s"\(name)", s"\(price)"]); break;
   }
   // The lead opens under the text as it lands (2.6.8, CBPhonePost).
   CBPhonePost(game, sender, line, CBHudCyan(), false, 3, tipster, r.id, price);
@@ -1247,9 +1248,9 @@ func CBLairAlarm(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   // Seen long enough: they run to tell.
   book.lairWarnBody = spotter.GetEntityID();
   book.lairWarnTick = Max(tick, 1);
-  CBIntelSay(game, 3, CBIntelSpeaker(r.faction), CBLineOf([s"Company! \(CBCapFirst(CBYou(sys, game))) is here!",
-                                                         "We've been made. Go, go, tell them!",
-                                                         s"That's \(CBYou(sys, game)). I'm out of here."]), 3.0);
+  CBIntelSay(game, 3, CBIntelSpeaker(r.faction), CBLineOf([CBTf(n"Cyberbane-Whereabouts-CompanyIsHere", [s"\(CBCapFirst(CBYou(sys, game)))"]),
+                                                         CBT(n"Cyberbane-Whereabouts-WeVeBeenMadeGoGo"),
+                                                         CBTf(n"Cyberbane-Whereabouts-ThatSIMOutOf", [s"\(CBYou(sys, game))"])]), 3.0);
   CBSayVoiced(sys, spotter, n"enemy_warning");
   CBOrderFlee(game, spotter);
   CBLog.Info(n"Rivals", s"One of Rival \(r.id)'s people saw V and ran to warn them.");
@@ -1299,14 +1300,14 @@ func CBLairRelocate(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiva
       moved.tippedAt = now;   // still V's lead: the people who told V where to look know where they went
       moved.tipFaction = tipster;
     }
-    line = CBLineOf([s"One of \(CBPossessive(name)) people saw you coming and ran to warn them. They've moved, not far.",
-                     s"\(name) knows you're coming now: their lookout got away. They're holed up a few streets over."]);
+    line = CBLineOf([CBTf(n"Cyberbane-Whereabouts-OneOfPeopleSawYouComing", [s"\(CBPossessive(name))"]),
+                     CBTf(n"Cyberbane-Whereabouts-KnowsYouReComingNowTheir", [s"\(name)"])]);
     if CBMapMarkersOn() {
-      line += " It's on your map.";
+      line += CBT(n"Cyberbane-StreetIntel-ItSOnYourMap");
     }
   } else {
     svc.DropSighting(sys.GetPlaythroughId(), r.id);
-    line = s"\(name) got warned and went to ground. Nobody knows where now.";
+    line = CBTf(n"Cyberbane-Whereabouts-GotWarnedAndWentToGround", [s"\(name)"]);
   }
   CBFileLog(sys, n"LairMoved", now, district, r.faction, Cast<Float>(r.id));
   if IsNameValid(tipster) {
@@ -1431,13 +1432,13 @@ public func CBRipperdocLead(sys: ref<CyberbaneSystem>, game: GameInstance, r: re
   lead.tipFaction = tipster;
   sys.SetLastTipAt(now);
   let name = CBRivalDisplayName(sys.GetContent(), r);
-  let line = CBLineOf([s"\(name) is in a ripperdoc's chair right now, getting \(implant) put in for you. Catch them outside when they walk out.",
-                       s"Word is \(name) went under the knife: \(implant). They're laid up by the ripperdoc's, if you hurry."]);
+  let line = CBLineOf([CBTf(n"Cyberbane-Whereabouts-IsInARipperdocSChair", [s"\(name)", s"\(implant)"]),
+                       CBTf(n"Cyberbane-Whereabouts-WordIsWentUnderTheKnife", [s"\(name)", s"\(implant)"])]);
   if CBRivalKeepsHours(game, r) {
-    line += " They'll be there after dark.";
+    line += CBT(n"Cyberbane-Whereabouts-TheyLlBeThereAfterDark");
   }
   if CBMapMarkersOn() {
-    line += " It's on your map.";
+    line += CBT(n"Cyberbane-StreetIntel-ItSOnYourMap");
   }
   if IsNameValid(tipster) {
     CBPhoneFromAlly(game, tipster, line);

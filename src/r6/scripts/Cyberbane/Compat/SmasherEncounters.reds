@@ -72,4 +72,4 @@ public func CBSmasherEventOn(game: GameInstance) -> Bool {
 }
 
 // Why arrivals are held, for the Hub's lane line.
-public func CBSmasherHeldWhy() -> String = "Adam Smasher is after you"
+public func CBSmasherHeldWhy() -> String = CBT(n"Cyberbane-SmasherEncounters-AdamSmasherIsAfterYou")

@@ -51,6 +51,15 @@ enum ECBCrewOnJobs {
   EverywhereButStory = 2,
 }
 
+// The building around V's apartments (2.7.1, Spawn/HomeGround.reds): "M10 is no longer a safe place for my V other than the
+// apartment itself." Open is how it was. Quiet keeps everybody Cyberbane sends, and the street's own life, off it. Quiet
+// except a vendetta lets a gang at Vendetta come for V there now and then; nobody else.
+enum ECBHomeGround {
+  Open = 0,
+  Quiet = 1,
+  QuietButVendetta = 2,
+}
+
 // Where Cyberbane's messages go (spec 12.2).
 //
 // Phone is the default: each sender is a contact in V's own phone, a new message arrives as the
@@ -161,8 +170,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Preset")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Preset-Desc")
-  @runtimeProperty("ModSettings.displayValues.TurfWar", "Turf war")
-  @runtimeProperty("ModSettings.displayValues.QuietLife", "Quiet life")
+  @runtimeProperty("ModSettings.displayValues.Subtle", "Cyberbane-Settings-Value-Preset-Subtle")
+  @runtimeProperty("ModSettings.displayValues.Default", "Cyberbane-Settings-Value-Preset-Default")
+  @runtimeProperty("ModSettings.displayValues.Dramatic", "Cyberbane-Settings-Value-Preset-Dramatic")
+  @runtimeProperty("ModSettings.displayValues.Custom", "Cyberbane-Settings-Value-Preset-Custom")
+  @runtimeProperty("ModSettings.displayValues.Nemesis", "Cyberbane-Settings-Value-Preset-Nemesis")
+  @runtimeProperty("ModSettings.displayValues.TurfWar", "Cyberbane-Settings-Value-Preset-TurfWar")
+  @runtimeProperty("ModSettings.displayValues.QuietLife", "Cyberbane-Settings-Value-Preset-QuietLife")
   public let preset: ECBPreset = ECBPreset.Default;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -170,6 +184,10 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageDelivery")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageDelivery-Desc")
+  @runtimeProperty("ModSettings.displayValues.Phone", "Cyberbane-Settings-Value-MessageDelivery-Phone")
+  @runtimeProperty("ModSettings.displayValues.Cards", "Cyberbane-Settings-Value-MessageDelivery-Cards")
+  @runtimeProperty("ModSettings.displayValues.Notices", "Cyberbane-Settings-Value-MessageDelivery-Notices")
+  @runtimeProperty("ModSettings.displayValues.Off", "Cyberbane-Settings-Value-MessageDelivery-Off")
   public let messageDelivery: ECBMessageDelivery = ECBMessageDelivery.Phone;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -177,9 +195,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MessageAmount")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageAmount-Desc")
-  @runtimeProperty("ModSettings.displayValues.Everything", "Everything")
-  @runtimeProperty("ModSettings.displayValues.LessChatter", "Less chatter")
-  @runtimeProperty("ModSettings.displayValues.Rarely", "Rarely")
+  @runtimeProperty("ModSettings.displayValues.Everything", "Cyberbane-Settings-Value-MessageAmount-Everything")
+  @runtimeProperty("ModSettings.displayValues.LessChatter", "Cyberbane-Settings-Value-MessageAmount-LessChatter")
+  @runtimeProperty("ModSettings.displayValues.Rarely", "Cyberbane-Settings-Value-MessageAmount-Rarely")
   public let messageAmount: ECBMessageAmount = ECBMessageAmount.LessChatter;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -187,7 +205,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HudLine")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HudLine-Desc")
-  @runtimeProperty("ModSettings.displayValues.HuntsOnly", "Hunts only")
+  @runtimeProperty("ModSettings.displayValues.Everything", "Cyberbane-Settings-Value-HudLine-Everything")
+  @runtimeProperty("ModSettings.displayValues.HuntsOnly", "Cyberbane-Settings-Value-HudLine-HuntsOnly")
+  @runtimeProperty("ModSettings.displayValues.Off", "Cyberbane-Settings-Value-HudLine-Off")
   public let hudLine: ECBHudLine = ECBHudLine.HuntsOnly;   // 2.6.1: less on screen while nothing is after V
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -195,7 +215,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "1")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MapMarkers")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MapMarkers-Desc")
-  @runtimeProperty("ModSettings.displayValues.NamedOnly", "Named only")
+  @runtimeProperty("ModSettings.displayValues.Off", "Cyberbane-Settings-Value-MarkerScope-Off")
+  @runtimeProperty("ModSettings.displayValues.NamedOnly", "Cyberbane-Settings-Value-MarkerScope-NamedOnly")
+  @runtimeProperty("ModSettings.displayValues.Everyone", "Cyberbane-Settings-Value-MarkerScope-Everyone")
   public let mapMarkers: ECBMarkerScope = ECBMarkerScope.Everyone;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -213,9 +235,40 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EncounterGap")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EncounterGap-Desc")
   @runtimeProperty("ModSettings.min", "2")
-  @runtimeProperty("ModSettings.max", "30")
+  @runtimeProperty("ModSettings.max", "120")
   @runtimeProperty("ModSettings.step", "1")
   public let encounterGapMinutes: Int32 = 10;
+
+  // One rest for every lane (2.7.1): "I set it to max and they still hunt me one after another (rival, apex) without rest."
+  // The gap above was a rest per lane, so a Rival, a crew and an apex squad could each come off their own clock in a row.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RestTogether")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RestTogether-Desc")
+  public let restTogether: Bool = true;
+
+  // A night in V's own bed buys some quiet (2.7.1, Spawn/HomeGround.reds), in game hours. 0 is off.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SleepPeace")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SleepPeace-Desc")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "12")
+  @runtimeProperty("ModSettings.step", "1")
+  public let sleepPeaceHours: Int32 = 6;
+
+  // The building around V's apartments (2.7.1, Spawn/HomeGround.reds).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HomeGround")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HomeGround-Desc")
+  @runtimeProperty("ModSettings.displayValues.Open", "Cyberbane-Settings-Value-HomeGround-Open")
+  @runtimeProperty("ModSettings.displayValues.Quiet", "Cyberbane-Settings-Value-HomeGround-Quiet")
+  @runtimeProperty("ModSettings.displayValues.QuietButVendetta", "Cyberbane-Settings-Value-HomeGround-QuietButVendetta")
+  public let homeGround: ECBHomeGround = ECBHomeGround.Quiet;
 
   // Before V is known (2.7.0, CBMercStanding): until Street Cred 20, about the Heist, V's name carries less far.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -502,8 +555,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewOnJobs")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewOnJobs-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
-  @runtimeProperty("ModSettings.displayValues.GigsAndSideJobs", "Gigs and side jobs")
-  @runtimeProperty("ModSettings.displayValues.EverywhereButStory", "Everywhere but the story")
+  @runtimeProperty("ModSettings.displayValues.Never", "Cyberbane-Settings-Value-CrewOnJobs-Never")
+  @runtimeProperty("ModSettings.displayValues.GigsAndSideJobs", "Cyberbane-Settings-Value-CrewOnJobs-GigsAndSideJobs")
+  @runtimeProperty("ModSettings.displayValues.EverywhereButStory", "Cyberbane-Settings-Value-CrewOnJobs-EverywhereButStory")
   public let crewOnJobs: ECBCrewOnJobs = ECBCrewOnJobs.GigsAndSideJobs;   // 2.6.3
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1388,6 +1442,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "15")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-DistrictLine")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-DistrictLine-Desc")
+  @runtimeProperty("ModSettings.displayValues.Always", "Cyberbane-Settings-Value-DistrictLine-Always")
+  @runtimeProperty("ModSettings.displayValues.Briefly", "Cyberbane-Settings-Value-DistrictLine-Briefly")
+  @runtimeProperty("ModSettings.displayValues.Off", "Cyberbane-Settings-Value-DistrictLine-Off")
   public let districtLine: ECBDistrictLine = ECBDistrictLine.Briefly;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1625,7 +1682,12 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-GangViewAll")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangViewAll-Desc")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangViewAll-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangViewAll-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangViewAll-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangViewAll-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangViewAll-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangViewAll-Vendetta")
   public let gangViewAll: ECBGangViewAll = ECBGangViewAll.Earned;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1633,8 +1695,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-TygerClaws")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewTygerClaws: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1642,8 +1709,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Maelstrom")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewMaelstrom: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1651,8 +1723,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Valentinos")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewValentinos: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1660,8 +1737,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-SixthStreet")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewSixthStreet: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1669,8 +1751,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Animals")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewAnimals: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1678,8 +1765,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-VoodooBoys")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewVoodooBoys: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1687,8 +1779,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Scavengers")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewScavengers: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1696,8 +1793,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Mox")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewMox: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1705,8 +1807,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Wraiths")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewWraiths: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1714,8 +1821,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Aldecaldos")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewAldecaldos: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1723,8 +1835,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Barghest")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewBarghest: ECBGangView = ECBGangView.AllGangs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1732,8 +1849,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "18")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-FactionOn-Scrappers")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-GangView-Desc")
-  @runtimeProperty("ModSettings.displayValues.AllGangs", "Same as All gangs")
-  @runtimeProperty("ModSettings.displayValues.Earned", "Earned in play")
+  @runtimeProperty("ModSettings.displayValues.AllGangs", "Cyberbane-Settings-Value-GangView-AllGangs")
+  @runtimeProperty("ModSettings.displayValues.Earned", "Cyberbane-Settings-Value-GangView-Earned")
+  @runtimeProperty("ModSettings.displayValues.Allied", "Cyberbane-Settings-Value-GangView-Allied")
+  @runtimeProperty("ModSettings.displayValues.Friendly", "Cyberbane-Settings-Value-GangView-Friendly")
+  @runtimeProperty("ModSettings.displayValues.Neutral", "Cyberbane-Settings-Value-GangView-Neutral")
+  @runtimeProperty("ModSettings.displayValues.Hostile", "Cyberbane-Settings-Value-GangView-Hostile")
+  @runtimeProperty("ModSettings.displayValues.Vendetta", "Cyberbane-Settings-Value-GangView-Vendetta")
   public let viewScrappers: ECBGangView = ECBGangView.AllGangs;
 
 
@@ -1743,6 +1865,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "19")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TwrCompat")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TwrCompat-Desc")
+  @runtimeProperty("ModSettings.displayValues.Auto", "Cyberbane-Settings-Value-TwrCompat-Auto")
+  @runtimeProperty("ModSettings.displayValues.On", "Cyberbane-Settings-Value-TwrCompat-On")
+  @runtimeProperty("ModSettings.displayValues.Off", "Cyberbane-Settings-Value-TwrCompat-Off")
   public let twrCompat: ECBTwrCompat = ECBTwrCompat.Auto;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -1750,6 +1875,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "19")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-LogLevel")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-LogLevel-Desc")
+  @runtimeProperty("ModSettings.displayValues.Off", "Cyberbane-Settings-Value-LogLevel-Off")
+  @runtimeProperty("ModSettings.displayValues.Info", "Cyberbane-Settings-Value-LogLevel-Info")
+  @runtimeProperty("ModSettings.displayValues.Verbose", "Cyberbane-Settings-Value-LogLevel-Verbose")
   public let logLevel: ECBLogLevel = ECBLogLevel.Info;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")

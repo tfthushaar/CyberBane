@@ -216,8 +216,8 @@ public func CBLeadWitnessTick(sys: ref<CyberbaneSystem>, game: GameInstance, pla
     CBTalkReleaseHold(w);
     CBOrderFlee(game, w);
     if CBMessagesOn() {
-      CBIntelSay(game, 3, "Witness", CBLineOf([s"I'm telling \(CBRivalDisplayName(sys.GetContent(), r)) you're coming!",
-                                               "You'll never find them now!"]), 3.0);
+      CBIntelSay(game, 3, CBT(n"Cyberbane-Witnesses-Witness"), CBLineOf([CBTf(n"Cyberbane-StreetStories-IMTellingYouReComing", [s"\(CBRivalDisplayName(sys.GetContent(), r))"]),
+                                               CBT(n"Cyberbane-StreetStories-YouLlNeverFindThemNow")]), 3.0);
     }
   }
   if book.witnessWarned && !book.witnessDone {
@@ -249,7 +249,7 @@ func CBLeadWitnessMoveLead(sys: ref<CyberbaneSystem>, game: GameInstance, lead: 
   }
   CBDropLead(sys, game);   // the pin goes up again where they went
   if CBMessagesOn() {
-    CBPhoneFromStreet(game, s"Whoever you leaned on ran ahead. \(CBRivalDisplayName(sys.GetContent(), r)) moved, and not far. The pin's where they went.");
+    CBPhoneFromStreet(game, CBTf(n"Cyberbane-StreetStories-WhoeverYouLeanedOnRanAhead", [s"\(CBRivalDisplayName(sys.GetContent(), r))"]));
   }
   CBLog.Info(n"Rivals", s"A witness warned Rival \(r.id); the lead moved.");
 }
@@ -264,11 +264,11 @@ public func CBLeadWitnessTalkLines(game: GameInstance, t: ref<CBTalkTarget>, out
     return false;
   }
   let name = CBRivalDisplayName(sys.GetContent(), r);
-  let ask = CBTalkMakeLine(s"[Ask] You saw \(name). Where?", CBTalkActLeadWitnessAsk(), t"ChoiceCaptionParts.GangWatchIcon");
+  let ask = CBTalkMakeLine(CBTf(n"Cyberbane-StreetStories-AskYouSawWhere", [s"\(name)"]), CBTalkActLeadWitnessAsk(), t"ChoiceCaptionParts.GangWatchIcon");
   ask.important = true;
   ArrayPush(lines, ask);
   let price = CBLeadWitnessPrice(game);
-  let pay = CBTalkMakeLine(s"[Pay \(price)eb] You never saw me.", CBTalkActLeadWitnessPay(), t"ChoiceCaptionParts.PayIcon");
+  let pay = CBTalkMakeLine(CBTf(n"Cyberbane-StreetStories-PayEbYouNeverSawMe", [s"\(price)"]), CBTalkActLeadWitnessPay(), t"ChoiceCaptionParts.PayIcon");
   pay.inactive = CBPlayerMoney(game) < price;
   ArrayPush(lines, pay);
   return true;
@@ -285,21 +285,21 @@ public func CBLeadWitnessAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, p
     let price = CBLeadWitnessPrice(game);
     let ts = GameInstance.GetTransactionSystem(game);
     if !IsDefined(ts) || CBPlayerMoney(game) < price {
-      return CBTalkSay("Then I remember everything.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-StreetStories-ThenIRememberEverything"), n"");
     }
     ts.RemoveItem(player, ItemID.FromTDBID(t"Items.money"), price);
     book.lairQuiet = true;
     t.npc.cbLeadWitnessFor = 0;
     CBTalkMarkSent(game, t.npc);
-    return CBTalkSay(CBPick2("Never saw you. Never saw them either.", "What face? I'm bad with faces."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetStories-NeverSawYouNeverSawThem"), CBT(n"Cyberbane-StreetStories-WhatFaceIMBadWith")), n"");
   }
   // Asked: the way in nobody watches, and the lead holds a while longer.
   book.lairQuiet = true;
   if IsDefined(lead) {
     CBMarkLeadTold(sys, lead, lead.tipFaction, CBGameSeconds(game));
   }
-  return CBTalkSay(CBPick2("Round the back, past the bins. Their lookouts watch the front. Go quiet and nobody sees you coming.",
-                           "They're there, all right. Come at it from the side street: their people only watch the main way in."), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetStories-RoundTheBackPastTheBins"),
+                           CBT(n"Cyberbane-StreetStories-TheyReThereAllRightCome")), n"");
 }
 
 // V's money, for a price shown greyed when it is more than V has.
@@ -320,7 +320,7 @@ public func CBRansomDropTick(sys: ref<CyberbaneSystem>, game: GameInstance, war:
   let gang = war.dropGang;
   if now > war.dropUntil {
     if CBMessagesOn() {
-      CBPhoneFromGang(game, gang, "Nobody came for it. The money's back where it belongs.");
+      CBPhoneFromGang(game, gang, CBT(n"Cyberbane-StreetStories-NobodyCameForItTheMoney"));
     }
     CBRansomDropEnd(game, war);
     return;
@@ -332,12 +332,12 @@ public func CBRansomDropTick(sys: ref<CyberbaneSystem>, game: GameInstance, war:
     CBProvoke(sys, game, gang);
     CBFileLog(sys, n"RansomBetrayed", now, CBEventDistrict(sys, game), gang, 0.0);
     if CBMessagesOn() {
-      CBPhoneFromGang(game, gang, CBPick2("There was never any money. Look around.", "You really came. We're coming too."));
+      CBPhoneFromGang(game, gang, CBPick2(CBT(n"Cyberbane-StreetStories-ThereWasNeverAnyMoneyLook"), CBT(n"Cyberbane-StreetStories-YouReallyCameWeReComing")));
     }
   } else {
     CBStreetGiveMoney(game, war.dropAmount);
     CBFileLog(sys, n"RansomPaid", now, CBEventDistrict(sys, game), gang, Cast<Float>(war.dropAmount));
-    CBSystemNote(game, s"the bag was where they said: \(war.dropAmount)eb.", 5.0);
+    CBSystemNote(game, CBTf(n"Cyberbane-StreetStories-TheBagWasWhereTheySaid", [s"\(war.dropAmount)"]), 5.0);
   }
   CBRansomDropEnd(game, war);
 }

@@ -361,7 +361,7 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
     // one-line answer and another evening of guessing.
     let why = CBBlockLabel(CBLastSpawnBlock());
     if StrLen(why) == 0 {
-      why = "no reason recorded";
+      why = CBT(n"Cyberbane-FactionApex-NoReasonRecorded");
     }
     CBLog.Info(n"Spawn", s"Rival \(r.id) could not be placed: \(why).");
     return false;
@@ -490,44 +490,44 @@ func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
 // you let go sounds different from the one who put you down.
 func CBRivalArrivalLine(r: ref<CBRival>) -> String {
   if CBRivalHasTrait(r, n"Broken") {
-    return "Can't stop hearing you. Can't stop. Coming now.";
+    return CBT(n"Cyberbane-RivalEncounter-CanTStopHearingYouCan");
   }
   if r.killedV > 0 {
-    return "Found you again. You know how this went last time.";
+    return CBT(n"Cyberbane-RivalEncounter-FoundYouAgainYouKnowHow");
   }
   if r.sparedByV > 0 {
-    return "You should have finished it when you had the chance. I'm close.";
+    return CBT(n"Cyberbane-RivalEncounter-YouShouldHaveFinishedItWhen");
   }
   if r.escapes > 0 {
-    return "You let me walk. I came back. I'm close.";
+    return CBT(n"Cyberbane-RivalEncounter-YouLetMeWalkICame");
   }
-  return "Found you. Look around.";
+  return CBT(n"Cyberbane-RivalEncounter-FoundYouLookAround");
 }
 
 // What a Rival texts when V has given them the slip.
 func CBRivalLostLine(r: ref<CBRival>) -> String {
   if r.killedV > 0 {
-    return "Run, then. I found you once and I will find you again.";
+    return CBT(n"Cyberbane-RivalEncounter-RunThenIFoundYouOnce");
   }
   if r.rank >= 4 {
-    return "Every time you run I get better at this. Think about that.";
+    return CBT(n"Cyberbane-RivalEncounter-EveryTimeYouRunIGet");
   }
   switch RandRange(0, 3) {
-    case 0: return "Lost me. For now.";
-    case 1: return "Keep running. I know where you sleep.";
-    default: return "Next time I bring more.";
+    case 0: return CBT(n"Cyberbane-RivalEncounter-LostMeForNow");
+    case 1: return CBT(n"Cyberbane-RivalEncounter-KeepRunningIKnowWhereYou");
+    default: return CBT(n"Cyberbane-RivalEncounter-NextTimeIBringMore");
   }
 }
 
 // What a Rival texts after getting away from V.
 func CBRivalGotAwayLine(r: ref<CBRival>) -> String {
   if CBRivalHasTrait(r, n"OldWound") {
-    return "Same place as last time. It still hurts. You are going to pay for that.";
+    return CBT(n"Cyberbane-RivalEncounter-SamePlaceAsLastTimeIt");
   }
   if CBRivalHasTrait(r, n"Scarred") {
-    return "You left a mark. I will remember it every time I look.";
+    return CBT(n"Cyberbane-RivalEncounter-YouLeftAMarkIWill");
   }
-  return "Close. Not close enough. See you soon.";
+  return CBT(n"Cyberbane-RivalEncounter-CloseNotCloseEnoughSeeYou");
 }
 
 // Rivals who come together (1.9.0; on by default since the 1.9.0 bug pass).
@@ -634,7 +634,7 @@ public func CBRivalBringPartners(sys: ref<CyberbaneSystem>, game: GameInstance, 
       brought += 1;
       if IsDefined(content) {
         let who = CBRivalDisplayName(content, r);
-        names = StrLen(names) == 0 ? who : names + " and " + who;
+        names = StrLen(names) == 0 ? who : CBTf(n"Cyberbane-RivalEncounter-And", [names, who]);
       }
     }
   }
@@ -643,7 +643,7 @@ public func CBRivalBringPartners(sys: ref<CyberbaneSystem>, game: GameInstance, 
   }
   // One word from the one leading, naming who came with them.
   if CBToastsOn() && IsDefined(content) && StrLen(names) > 0 {
-    CBPhoneSendTinted(game, CBRivalDisplayName(content, lead), "Not coming alone this time. " + names + " wanted a piece of you too.", CBHudRed());
+    CBPhoneSendTinted(game, CBRivalDisplayName(content, lead), CBTf(n"Cyberbane-RivalEncounter-NotComingAloneThisTimeWanted", [names]), CBHudRed());
   }
   CBLog.Info(n"Spawn", s"Rival \(lead.id) brings \(brought) more of \(NameToString(lead.faction))'s Rivals.");
 }

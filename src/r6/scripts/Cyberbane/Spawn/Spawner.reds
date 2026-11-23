@@ -1521,7 +1521,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   CBDeleteTaggedSafe(game, n"CB_Apex", false, true);
   CBDeleteTaggedSafe(game, n"CB_Escort", false, true);
   CBDeleteTaggedSafe(game, n"CB_Scout", false, true);
-  sys.SetHuntEnd("LOST THEM", CBConfig.HuntEndLineTicks());
+  sys.SetHuntEnd(CBT(n"Cyberbane-Spawner-LOSTTHEM"), CBConfig.HuntEndLineTicks());
   // A trail gone cold (Spawn/Hunted.reds, 2.4.1) is V lying low, not V running: no cost, and the street says it.
   if crewLost && NotEquals(ranFrom, n"") && !cold {
     let fs = sys.FindFaction(ranFrom);
@@ -1533,7 +1533,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
       fs.lastHitSquadAt = CBGameSeconds(game);
     }
     if CBToastsOn() && CBFactionFieldsSquads(ranFrom) {
-      CBPhoneFromGangFinal(game, ranFrom, "Ran, did you. Everybody is going to hear about that.");
+      CBPhoneFromGangFinal(game, ranFrom, CBT(n"Cyberbane-Spawner-RanDidYouEverybodyIsGoing"));
     }
   }
   // Take the bars down with them, rather than leaving them up for the tick it would take the
@@ -1542,7 +1542,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   sys.SetActiveRivalId(0);
   sys.SetActiveSquadFaction(n"");
   if CBToastsOn() && !crewLost && !cold {
-    CBPhoneFromStreet(game, "They lost you. Do not go back the way you came.");
+    CBPhoneFromStreet(game, CBT(n"Cyberbane-Spawner-TheyLostYouDoNotGo"));
   }
   CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");
 }

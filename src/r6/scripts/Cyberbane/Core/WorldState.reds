@@ -102,36 +102,36 @@ public func CBWorldStable(game: GameInstance) -> Bool {
 public func CBWorldStableWhy(game: GameInstance) -> String {
   let player = GetPlayer(game);
   if !IsDefined(player) {
-    return "The world is still loading.";
+    return CBT(n"Cyberbane-WorldState-TheWorldIsStillLoading");
   }
   if CBVDown(game) {
-    return "You're down.";
+    return CBT(n"Cyberbane-WorldState-YouReDown");
   }
   let ts = GameInstance.GetTimeSystem(game);
   if IsDefined(ts) && ts.IsPausedState() {
-    return "The game is paused.";
+    return CBT(n"Cyberbane-WorldState-TheGameIsPaused");
   }
   let pms = GameInstance.GetPhotoModeSystem(game);
   if IsDefined(pms) && pms.IsPhotoModeActive() {
-    return "You're in photo mode.";
+    return CBT(n"Cyberbane-WorldState-YouReInPhotoMode");
   }
   let bbs = GameInstance.GetBlackboardSystem(game);
   if !IsDefined(bbs) {
-    return "The world is still loading.";
+    return CBT(n"Cyberbane-WorldState-TheWorldIsStillLoading");
   }
   let ui = bbs.Get(GetAllBlackboardDefs().UI_System);
   if IsDefined(ui) && ui.GetBool(GetAllBlackboardDefs().UI_System.IsInMenu) {
-    return "A menu is open.";
+    return CBT(n"Cyberbane-WorldState-AMenuIsOpen");
   }
   let ws = GameInstance.GetWorkspotSystem(game);
   if IsDefined(ws) && ws.IsActorInWorkspot(player) {
-    return "You're busy with something (sitting, a grab, a machine).";
+    return CBT(n"Cyberbane-WorldState-YouReBusyWithSomethingSitting");
   }
   let psm = CBPlayerPSM(game);
   if IsDefined(psm) {
     let tier = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.SceneTier);
     if tier != EnumInt(GameplayTier.Undefined) && tier != EnumInt(GameplayTier.Tier1_FullGameplay) {
-      return "You're in the middle of a scene.";
+      return CBT(n"Cyberbane-WorldState-YouReInTheMiddleOf");
     }
   }
   return "";

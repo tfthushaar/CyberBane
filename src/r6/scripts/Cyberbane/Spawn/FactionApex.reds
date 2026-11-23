@@ -30,7 +30,7 @@ public func CBApexName(content: ref<CyberbaneContent>, faction: CName, seed: Int
       }
     }
   }
-  return "Their best";
+  return CBT(n"Cyberbane-FactionApex-TheirBest");
 }
 
 // Make a spawned apex actually feel like one. The base record is a gang elite, which is not a
@@ -854,7 +854,7 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         let name = CBApexName(CBContent(game), fs.id, fs.apexAtKills);
         // One voice (2.6.1, CBCrewWarning): a friendly gang's word, or theirs.
         if !CBAllyTipOff(sys, game, fs.id) && CBMessagesOn() {
-          CBPhoneDemandFromGang(game, fs.id, s"\(name) is coming for you, and not alone. Four of ours.");
+          CBPhoneDemandFromGang(game, fs.id, CBTf(n"Cyberbane-FactionApex-IsComingForYouAndNot", [s"\(name)"]));
         }
         CBLog.Info(n"Spawn", s"Faction apex inbound for \(NameToString(fs.id)).");
         return;   // only ever one gang at a time
@@ -941,6 +941,19 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) called off.");
     return;
   }
+  // What V did while they were on their way, and home ground (2.7.1, Spawn/Slip.reds, Spawn/HomeGround.reds). Not for a
+  // car that delivered nobody: that squad set off already.
+  if !carFailed {
+    if CBSlipResolve(sys, game, fs.id) {
+      return;
+    }
+    if CBHomeHolds(sys, fs.id) {
+      if sys.AgePendingApexHold() {
+        sys.ClearApexMuster();
+      }
+      return;
+    }
+  }
   let record = CBApexRecordFor(fs);
   if !TDBID.IsValid(record) {
     sys.SetPendingApex(n"", 0);
@@ -988,7 +1001,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     // reschedule, so a squad that can never be placed cannot block every later one.
     let why = CBBlockLabel(CBLastSpawnBlock());
     if StrLen(why) == 0 {
-      why = "no reason recorded";
+      why = CBT(n"Cyberbane-FactionApex-NoReasonRecorded");
     }
     CBLog.Info(n"Spawn", s"Apex squad for \(NameToString(faction)) could not be placed: \(why).");
     if sys.AgePendingApexHold() {

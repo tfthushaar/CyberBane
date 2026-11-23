@@ -159,12 +159,12 @@ public func CBRivalPinSubtitle(mappin: wref<IMappin>) -> String {
   }
   // A gathering's pin said "Cyberbane Rival. Last seen here." up to 2.5.0.
   if CBIsEventPin(mappin) {
-    return "Gang business. It starts around the time on the pin. Crash it, or leave them to it.";
+    return CBT(n"Cyberbane-RivalPin-GangBusinessItStartsAroundThe");
   }
   if CBIsMarkedPin(mappin) {
     return CBMarkedPinPart(mappin, true);
   }
-  return CBIsHunterPin(mappin) ? "Hunting you." : "Cyberbane Rival. Last seen here.";
+  return CBIsHunterPin(mappin) ? CBT(n"Cyberbane-RivalPin-HuntingYou") : CBT(n"Cyberbane-RivalPin-CyberbaneRivalLastSeenHere");
 }
 
 // Draw Cyberbane's mark on this controller's icon, if the pin is ours. Safe on any controller: the

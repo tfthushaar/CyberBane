@@ -52,40 +52,40 @@
 // the street who knows things, never as a quest-giver. Written the way the phone writes a
 // contact's name; the cards put them in capitals themselves.
 
+// The sender a message has when nobody in particular sent it. One function, so whatever compares a sender with it
+// agrees with whatever wrote it, in any language (2.7.1).
+public func CBPhoneUnknownSender() -> String {
+  return CBT(n"Cyberbane-PhoneMessages-UnknownNumber");
+}
+
 // The gang itself, when the message is the gang speaking.
 public func CBPhoneGangSender(faction: CName) -> String {
-  let label = CBFactionLabel(faction);
-  if StrLen(label) == 0 {
-    return "Unknown Number";
-  }
-  if StrBeginsWith(label, "the ") {
-    return StrMid(label, 4, StrLen(label) - 4);
-  }
-  return label;
+  let name = CBFactionName(faction);
+  return StrLen(name) > 0 ? name : CBPhoneUnknownSender();
 }
 
 // The local information broker, one per district, so the same handle keeps turning up in the
 // same part of town. This is what makes the grapevine read as people rather than as a feed:
 // word out of Watson arrives from the person who works Watson.
 public func CBPhoneDistrictSender(district: CName) -> String {
-  if Equals(district, n"Watson") { return "Salt"; }
-  if Equals(district, n"Westbrook") { return "Mira"; }
-  if Equals(district, n"CityCenter") { return "Glasswork"; }
-  if Equals(district, n"Heywood") { return "Tio Benny"; }
-  if Equals(district, n"Pacifica") { return "Low Tide"; }
-  if Equals(district, n"SantoDomingo") { return "Radiator"; }
-  if Equals(district, n"Badlands") { return "Dust"; }
-  if Equals(district, n"Dogtown") { return "Split Lip"; }
-  return "Unknown Number";
+  if Equals(district, n"Watson") { return CBT(n"Cyberbane-PhoneMessages-Salt"); }
+  if Equals(district, n"Westbrook") { return CBT(n"Cyberbane-PhoneMessages-Mira"); }
+  if Equals(district, n"CityCenter") { return CBT(n"Cyberbane-PhoneMessages-Glasswork"); }
+  if Equals(district, n"Heywood") { return CBT(n"Cyberbane-PhoneMessages-TioBenny"); }
+  if Equals(district, n"Pacifica") { return CBT(n"Cyberbane-PhoneMessages-LowTide"); }
+  if Equals(district, n"SantoDomingo") { return CBT(n"Cyberbane-PhoneMessages-Radiator"); }
+  if Equals(district, n"Badlands") { return CBT(n"Cyberbane-PhoneMessages-Dust"); }
+  if Equals(district, n"Dogtown") { return CBT(n"Cyberbane-PhoneMessages-SplitLip"); }
+  return CBPhoneUnknownSender();
 }
 
 // For word that is not about anywhere in particular.
 public func CBPhoneStreetSender(seed: Int32) -> String {
   let s = seed % 4;
-  if s == 0 { return "Unknown Number"; }
-  if s == 1 { return "Broker"; }
-  if s == 2 { return "Ripperdoc"; }
-  return "No Caller ID";
+  if s == 0 { return CBPhoneUnknownSender(); }
+  if s == 1 { return CBT(n"Cyberbane-Crew-Broker"); }
+  if s == 2 { return CBT(n"Cyberbane-PhoneMessages-Ripperdoc"); }
+  return CBT(n"Cyberbane-PhoneMessages-NoCallerID");
 }
 
 // ---- How messages are delivered -------------------------------------------
@@ -1395,7 +1395,7 @@ public class CBPhone {
       let body = this.m_pendBody[k];
       let sender = this.ThreadName(thread);
       if StrLen(sender) == 0 {
-        sender = "Unknown Number";
+        sender = CBPhoneUnknownSender();
       }
       // The phone, when there is one to hand it to and the message has a thread to open.
       // Anything else falls back to a card rather than being lost.
@@ -1884,14 +1884,14 @@ public func CBSystemNote(game: GameInstance, body: String, duration: Float) -> V
   if !CBMessagesOn() {
     return;
   }
-  CBShowMessage(game, "Cyberbane: " + body, duration);
+  CBShowMessage(game, CBTf(n"Cyberbane-PhoneMessages-Cyberbane", [body]), duration);
 }
 
 // The answer to something V just did in a menu (the Hub's buttons, Mod Settings): a reputation wiped, Rivals
 // forgotten, a lead that could not be bought. Shown whatever the silence switches say, because it is the only sign
 // the button did anything (2.5.1, split from CBSystemNote).
 public func CBMenuNote(game: GameInstance, body: String, duration: Float) -> Void {
-  CBShowMessage(game, "Cyberbane: " + body, duration, true);   // first in line, never dropped (2.6.3)
+  CBShowMessage(game, CBTf(n"Cyberbane-PhoneMessages-Cyberbane", [body]), duration, true);   // first in line, never dropped (2.6.3)
 }
 
 // ---- Word that has to get round first --------------------------------------

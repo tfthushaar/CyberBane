@@ -10,180 +10,180 @@
 // A street warning from one of theirs, before they draw (the Director's warning, Narrative/Whispers.reds).
 public func CBGangWarnLine(f: CName) -> String {
   if Equals(f, n"Valentinos") {
-    return CBLineOf(["This is Valentino blood's street. Walk away, and we let you keep your face.",
-                     "Por la familia, I'm giving you one chance. Turn around.",
-                     "You disrespect this barrio, you disrespect all of us. Go."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-ThisIsValentinoBloodSStreet"),
+                     CBT(n"Cyberbane-GangVoice-PorLaFamiliaIMGiving"),
+                     CBT(n"Cyberbane-GangVoice-YouDisrespectThisBarrioYouDisrespect")]);
   }
   if Equals(f, n"TygerClaws") {
-    return CBLineOf(["This street pays the Claws. You don't. Leave.",
-                     "Bad for business, you being here. Worse for you.",
-                     "Walk away now and nobody loses face. Stay and you lose more."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-ThisStreetPaysTheClawsYou"),
+                     CBT(n"Cyberbane-GangVoice-BadForBusinessYouBeingHere"),
+                     CBT(n"Cyberbane-GangVoice-WalkAwayNowAndNobodyLoses")]);
   }
   if Equals(f, n"Maelstrom") {
-    return CBLineOf(["Nice chrome. Be a shame if we peeled it off you.",
-                     "Meat like you doesn't walk Maelstrom streets. Run.",
-                     "Keep walking, or leave your implants on the way out."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-NiceChromeBeAShameIf"),
+                     CBT(n"Cyberbane-GangVoice-MeatLikeYouDoesnTWalk"),
+                     CBT(n"Cyberbane-GangVoice-KeepWalkingOrLeaveYourImplants")]);
   }
   if Equals(f, n"SixthStreet") {
-    return CBLineOf(["This is a 6th Street neighbourhood. We keep it safe. Move along.",
-                     "We've done tours that'd break you. Don't make this one.",
-                     "Patrol's watching you, merc. Keep it peaceful or keep walking."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-ThisIsA6thStreetNeighbourhood"),
+                     CBT(n"Cyberbane-GangVoice-WeVeDoneToursThatD"),
+                     CBT(n"Cyberbane-GangVoice-PatrolSWatchingYouMercKeep")]);
   }
   if Equals(f, n"Animals") {
-    return CBLineOf(["You looking for a beating? Keep walking this way.",
-                     "Small thing like you on Animal ground. Cute. Go.",
-                     "Put the gun down and I'll show you what strong is. Or leave."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-YouLookingForABeatingKeep"),
+                     CBT(n"Cyberbane-GangVoice-SmallThingLikeYouOnAnimal"),
+                     CBT(n"Cyberbane-GangVoice-PutTheGunDownAndI")]);
   }
   if Equals(f, n"VoodooBoys") {
-    return CBLineOf(["We already know everything about you. Leave before we use it.",
-                     "Your ICE is paper, merc. Don't make us prove it.",
-                     "Loa are watching you. So are we. Walk."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-WeAlreadyKnowEverythingAboutYou"),
+                     CBT(n"Cyberbane-GangVoice-YourICEIsPaperMercDon"),
+                     CBT(n"Cyberbane-GangVoice-LoaAreWatchingYouSoAre")]);
   }
   if Equals(f, n"Mox") {
-    return CBLineOf(["Nobody hurts anyone on our street. That includes you. Go.",
-                     "We look after our own here. You're not ours.",
-                     "Leave the girls alone and walk on. Last time I say it."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-NobodyHurtsAnyoneOnOurStreet"),
+                     CBT(n"Cyberbane-GangVoice-WeLookAfterOurOwnHere"),
+                     CBT(n"Cyberbane-GangVoice-LeaveTheGirlsAloneAndWalk")]);
   }
   if Equals(f, n"Scavengers") {
-    return CBLineOf(["Nice parts. Walk away before we take them.",
-                     "Keep moving, unless you wanna end up in a bathtub.",
-                     "Everything on you has a price. Don't make us collect."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-NicePartsWalkAwayBeforeWe"),
+                     CBT(n"Cyberbane-GangVoice-KeepMovingUnlessYouWannaEnd"),
+                     CBT(n"Cyberbane-GangVoice-EverythingOnYouHasAPrice")]);
   }
   if Equals(f, n"Wraiths") {
-    return CBLineOf(["This is Wraith road. Turn your car around.",
-                     "Out here nobody hears you scream. Leave.",
-                     "The desert takes everyone. Don't hurry it."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-ThisIsWraithRoadTurnYour"),
+                     CBT(n"Cyberbane-GangVoice-OutHereNobodyHearsYouScream"),
+                     CBT(n"Cyberbane-GangVoice-TheDesertTakesEveryoneDonT")]);
   }
   if Equals(f, n"Aldecaldos") {
-    return CBLineOf(["You're near the family's camp. Show some respect and move on.",
-                     "We don't want trouble. Don't bring any.",
-                     "Family looks after family. You're not family. Keep going."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-YouReNearTheFamilyS"),
+                     CBT(n"Cyberbane-GangVoice-WeDonTWantTroubleDon"),
+                     CBT(n"Cyberbane-GangVoice-FamilyLooksAfterFamilyYouRe")]);
   }
   if Equals(f, n"Barghest") {
-    return CBLineOf(["Restricted zone. Leave the area.",
-                     "This is your only warning, civilian. Turn back.",
-                     "You are being tracked. Comply and withdraw."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-RestrictedZoneLeaveTheArea"),
+                     CBT(n"Cyberbane-GangVoice-ThisIsYourOnlyWarningCivilian"),
+                     CBT(n"Cyberbane-GangVoice-YouAreBeingTrackedComplyAnd")]);
   }
   if Equals(f, n"Scrappers") {
-    return CBLineOf(["This pile's spoken for. Find your own.",
-                     "Walk on, choom. Nothing here worth bleeding for.",
-                     "We pull what we pull. Don't make us pull you apart."]);
+    return CBLineOf([CBT(n"Cyberbane-GangVoice-ThisPileSSpokenForFind"),
+                     CBT(n"Cyberbane-GangVoice-WalkOnChoomNothingHereWorth"),
+                     CBT(n"Cyberbane-GangVoice-WePullWhatWePullDon")]);
   }
   return "";
 }
 
 // A crew on its way, in their own words, around how many and where (CBCrewWarning, Spawn/Hunt.reds).
 public func CBGangCrewText(f: CName, where: String, coming: String, vendetta: Bool, onTheirTurf: Bool) -> String {
-  let place = StrLen(where) > 0 ? where : "Night City";   // after "in" and "to" below
+  let place = StrLen(where) > 0 ? where : CBT(n"Cyberbane-GangVoice-NightCity");   // after "in" and "to" below
   if Equals(f, n"Valentinos") {
-    return CBLineOf([s"You hurt the family. Now the family comes for you in \(place). \(coming)",
-                     s"We know you're in \(place). Pray to whoever you pray to. \(coming)",
-                     s"Honour says we tell you first: we're coming, \(place). \(coming)"]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-YouHurtTheFamilyNowThe", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-WeKnowYouReInPray", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-HonourSaysWeTellYouFirst", [s"\(place)", s"\(coming)"])]);
   }
   if Equals(f, n"TygerClaws") {
-    return CBLineOf([s"You cost us face. That's a debt. We're collecting in \(place). \(coming)",
-                     s"Business is business. You're bad for ours. \(coming) \(place).",
-                     s"We found you in \(place). \(coming) Try not to embarrass yourself."]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-YouCostUsFaceThatS", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-BusinessIsBusinessYouReBad", [s"\(coming)", s"\(place)"]),
+                     CBTf(n"Cyberbane-GangVoice-WeFoundYouInTryNot", [s"\(place)", s"\(coming)"])]);
   }
   if Equals(f, n"Maelstrom") {
-    return CBLineOf([s"We want those implants, choom. Coming to \(place) to get them. \(coming)",
-                     s"Heard you're in \(place). Hope your chrome's worth it. \(coming)",
-                     s"Your arms'd look better on one of us. \(coming) See you in \(place)."]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-WeWantThoseImplantsChoomComing", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-HeardYouReInHopeYour", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-YourArmsDLookBetterOn", [s"\(coming)", s"\(place)"])]);
   }
   if Equals(f, n"SixthStreet") {
-    return CBLineOf([s"Squad's rolling out to \(place). You don't get to hurt our people and walk. \(coming)",
-                     s"Target confirmed in \(place). \(coming)",
-                     s"We protect this city from people like you. \(coming) \(place)."]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-SquadSRollingOutToYou", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-TargetConfirmedIn", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-WeProtectThisCityFromPeople", [s"\(coming)", s"\(place)"])]);
   }
   if Equals(f, n"Animals") {
-    return CBLineOf([s"You think you're strong? We're coming to \(place) to find out. \(coming)",
-                     s"Juiced up and headed your way in \(place). \(coming)",
-                     s"Gonna break you in half, merc. \(place). \(coming)"]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-YouThinkYouReStrongWe", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-JuicedUpAndHeadedYourWay", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-GonnaBreakYouInHalfMerc", [s"\(place)", s"\(coming)"])]);
   }
   if Equals(f, n"VoodooBoys") {
-    return CBLineOf([s"We traced you to \(place) before you knew we were looking. \(coming)",
-                     s"Your location is \(place). Your time is short. \(coming)",
-                     s"The Net told us where you are: \(place). \(coming)"]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-WeTracedYouToBeforeYou", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-YourLocationIsYourTimeIs", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-TheNetToldUsWhereYou", [s"\(place)", s"\(coming)"])]);
   }
   if Equals(f, n"Mox") {
-    return CBLineOf([s"You hurt one of ours. We don't let that go. \(coming) \(place).",
-                     s"Coming to \(place). This is for her. \(coming)",
-                     s"We protect our own, and you made it personal. \(coming)"]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-YouHurtOneOfOursWe", [s"\(coming)", s"\(place)"]),
+                     CBTf(n"Cyberbane-GangVoice-ComingToThisIsForHer", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-WeProtectOurOwnAndYou", [s"\(coming)"])]);
   }
   if Equals(f, n"Scavengers") {
-    return CBLineOf([s"Fresh parts walking round \(place). We're coming shopping. \(coming)",
-                     s"Price on your organs just went up. \(coming) \(place).",
-                     s"Found you in \(place). Hold still. \(coming)"]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-FreshPartsWalkingRoundWeRe", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-PriceOnYourOrgansJustWent", [s"\(coming)", s"\(place)"]),
+                     CBTf(n"Cyberbane-GangVoice-FoundYouInHoldStill", [s"\(place)", s"\(coming)"])]);
   }
   if Equals(f, n"Wraiths") {
-    return CBLineOf([s"You're on our road now, \(place). \(coming)",
-                     s"Engines are running. \(place). \(coming)",
-                     s"Out here nobody comes to help. \(coming) \(place)."]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-YouReOnOurRoadNow", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-EnginesAreRunning", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-OutHereNobodyComesToHelp", [s"\(coming)", s"\(place)"])]);
   }
   if Equals(f, n"Aldecaldos") {
-    return CBLineOf([s"You hurt family. The clan doesn't forget. \(coming) \(place).",
-                     s"We'd rather not do this. You gave us no choice. \(place). \(coming)",
-                     s"Family's coming for you in \(place). \(coming)"]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-YouHurtFamilyTheClanDoesn", [s"\(coming)", s"\(place)"]),
+                     CBTf(n"Cyberbane-GangVoice-WeDRatherNotDoThis", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-FamilySComingForYouIn", [s"\(place)", s"\(coming)"])]);
   }
   if Equals(f, n"Barghest") {
-    return CBLineOf([s"Hostile located in \(place). Unit deployed. \(coming)",
-                     s"Engaging target in \(place). \(coming)",
-                     s"You were warned. Strike team inbound to \(place). \(coming)"]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-HostileLocatedInUnitDeployed", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-EngagingTargetIn", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-YouWereWarnedStrikeTeamInbound", [s"\(place)", s"\(coming)"])]);
   }
   if Equals(f, n"Scrappers") {
-    return CBLineOf([s"Everything you've got is salvage now. Coming to \(place) to strip it. \(coming)",
-                     s"We know every hole in \(place). You don't. \(coming)",
-                     s"You took from us. We're coming to take it back, \(place). \(coming)"]);
+    return CBLineOf([CBTf(n"Cyberbane-GangVoice-EverythingYouVeGotIsSalvage", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-WeKnowEveryHoleInYou", [s"\(place)", s"\(coming)"]),
+                     CBTf(n"Cyberbane-GangVoice-YouTookFromUsWeRe", [s"\(place)", s"\(coming)"])]);
   }
   return "";
 }
 
 // One of theirs won't talk (StreetTalk.Refuse).
 public func CBGangRefuseLine(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return CBLineOf(["No tengo nada para ti. Walk.", "You don't talk to family like you've earned it.", "Not one word, pendejo."]); }
-  if Equals(f, n"TygerClaws") { return CBLineOf(["You can't afford my time.", "Talk costs. You're broke to me.", "Make an appointment. Never."]); }
-  if Equals(f, n"Maelstrom") { return CBLineOf(["Talk's for meat. Move.", "I don't talk to you. I take from you.", "Your voice is ugly. Shut it."]); }
-  if Equals(f, n"SixthStreet") { return CBLineOf(["Move along, merc.", "Nothing to discuss. Keep walking.", "You're not cleared to talk to me."]); }
-  if Equals(f, n"Animals") { return CBLineOf(["Words are for the weak.", "Talk to my fists.", "Not interested. Walk."]); }
-  if Equals(f, n"VoodooBoys") { return CBLineOf(["We have nothing to say to you.", "You're not worth the bandwidth.", "Go. The Net's watching you."]); }
-  if Equals(f, n"Mox") { return CBLineOf(["Not talking to you, sweetie.", "You lost the right to talk to us.", "Keep walking."]); }
-  if Equals(f, n"Scavengers") { return CBLineOf(["What, you want a discount on your kidneys?", "Talk's cheap. You're not.", "Beat it."]); }
-  if Equals(f, n"Wraiths") { return CBLineOf(["Road's this way. Take it.", "Nothing to say to you.", "Get lost, desert's big enough."]); }
-  if Equals(f, n"Aldecaldos") { return CBLineOf(["Not now. Not to you.", "You know what you did.", "Family doesn't talk to you anymore."]); }
-  if Equals(f, n"Barghest") { return CBLineOf(["Move along, civilian.", "No comment.", "This conversation is over before it started."]); }
-  if Equals(f, n"Scrappers") { return CBLineOf(["Busy. This won't strip itself.", "Got nothing to sell you.", "Talk to somebody who cares."]); }
+  if Equals(f, n"Valentinos") { return CBLineOf([CBT(n"Cyberbane-GangVoice-NoTengoNadaParaTiWalk"), CBT(n"Cyberbane-GangVoice-YouDonTTalkToFamily"), CBT(n"Cyberbane-GangVoice-NotOneWordPendejo")]); }
+  if Equals(f, n"TygerClaws") { return CBLineOf([CBT(n"Cyberbane-GangVoice-YouCanTAffordMyTime"), CBT(n"Cyberbane-GangVoice-TalkCostsYouReBrokeTo"), CBT(n"Cyberbane-GangVoice-MakeAnAppointmentNever")]); }
+  if Equals(f, n"Maelstrom") { return CBLineOf([CBT(n"Cyberbane-GangVoice-TalkSForMeatMove"), CBT(n"Cyberbane-GangVoice-IDonTTalkToYou"), CBT(n"Cyberbane-GangVoice-YourVoiceIsUglyShutIt")]); }
+  if Equals(f, n"SixthStreet") { return CBLineOf([CBT(n"Cyberbane-GangVoice-MoveAlongMerc"), CBT(n"Cyberbane-GangVoice-NothingToDiscussKeepWalking"), CBT(n"Cyberbane-GangVoice-YouReNotClearedToTalk")]); }
+  if Equals(f, n"Animals") { return CBLineOf([CBT(n"Cyberbane-GangVoice-WordsAreForTheWeak"), CBT(n"Cyberbane-GangVoice-TalkToMyFists"), CBT(n"Cyberbane-GangVoice-NotInterestedWalk")]); }
+  if Equals(f, n"VoodooBoys") { return CBLineOf([CBT(n"Cyberbane-GangVoice-WeHaveNothingToSayTo"), CBT(n"Cyberbane-GangVoice-YouReNotWorthTheBandwidth"), CBT(n"Cyberbane-GangVoice-GoTheNetSWatchingYou")]); }
+  if Equals(f, n"Mox") { return CBLineOf([CBT(n"Cyberbane-GangVoice-NotTalkingToYouSweetie"), CBT(n"Cyberbane-GangVoice-YouLostTheRightToTalk"), CBT(n"Cyberbane-GangVoice-KeepWalking")]); }
+  if Equals(f, n"Scavengers") { return CBLineOf([CBT(n"Cyberbane-GangVoice-WhatYouWantADiscountOn"), CBT(n"Cyberbane-GangVoice-TalkSCheapYouReNot"), CBT(n"Cyberbane-GangVoice-BeatIt")]); }
+  if Equals(f, n"Wraiths") { return CBLineOf([CBT(n"Cyberbane-GangVoice-RoadSThisWayTakeIt"), CBT(n"Cyberbane-GangVoice-NothingToSayToYou"), CBT(n"Cyberbane-GangVoice-GetLostDesertSBigEnough")]); }
+  if Equals(f, n"Aldecaldos") { return CBLineOf([CBT(n"Cyberbane-GangVoice-NotNowNotToYou"), CBT(n"Cyberbane-GangVoice-YouKnowWhatYouDid"), CBT(n"Cyberbane-GangVoice-FamilyDoesnTTalkToYou")]); }
+  if Equals(f, n"Barghest") { return CBLineOf([CBT(n"Cyberbane-GangVoice-MoveAlongCivilian"), CBT(n"Cyberbane-GangVoice-NoComment"), CBT(n"Cyberbane-GangVoice-ThisConversationIsOverBeforeIt")]); }
+  if Equals(f, n"Scrappers") { return CBLineOf([CBT(n"Cyberbane-GangVoice-BusyThisWonTStripItself"), CBT(n"Cyberbane-GangVoice-GotNothingToSellYou"), CBT(n"Cyberbane-GangVoice-TalkToSomebodyWhoCares")]); }
   return "";
 }
 
 // Their scout stopped answering (CBScoutSilenced).
 public func CBGangScoutLostLine(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return CBLineOf(["Our hermano stopped answering. We'll find you another way.", "You took our eyes. The family still sees."]); }
-  if Equals(f, n"TygerClaws") { return CBLineOf(["Our man went quiet. Costly for you, later.", "Lost a scout. We have more money than you have luck."]); }
-  if Equals(f, n"Maelstrom") { return CBLineOf(["Spotter's offline. We'll track you by your chrome.", "Killed our eyes? We'll grow new ones."]); }
-  if Equals(f, n"SixthStreet") { return CBLineOf(["Lost contact with our recon. We'll regroup.", "Scout's down. Doesn't matter. We'll find you."]); }
-  if Equals(f, n"Animals") { return CBLineOf(["Our guy's not answering. Lucky you. For now.", "You got our boy. Next one's bigger."]); }
-  if Equals(f, n"VoodooBoys") { return CBLineOf(["You cut one thread. The web is still here.", "Our eyes went dark. The Net didn't."]); }
-  if Equals(f, n"Mox") { return CBLineOf(["She stopped answering. You'd better pray she's alright.", "Lost our lookout. We'll be back."]); }
-  if Equals(f, n"Scavengers") { return CBLineOf(["Lost our guy. Whatever, there's always another.", "He's not answering. More parts for us, then."]); }
-  if Equals(f, n"Wraiths") { return CBLineOf(["Rider's gone quiet. The road remembers you.", "Lost our spotter. Desert's still ours."]); }
-  if Equals(f, n"Aldecaldos") { return CBLineOf(["Our cousin's not answering. If he's hurt, you'll answer for it.", "Lost our scout. We'll find you."]); }
-  if Equals(f, n"Barghest") { return CBLineOf(["Recon unit lost. Adjusting.", "Forward observer down. Mission continues."]); }
-  if Equals(f, n"Scrappers") { return CBLineOf(["Our lookout went quiet. We'll dig you up some other way.", "Lost our eyes in the ruins. Plenty more where he came from."]); }
+  if Equals(f, n"Valentinos") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OurHermanoStoppedAnsweringWeLl"), CBT(n"Cyberbane-GangVoice-YouTookOurEyesTheFamily")]); }
+  if Equals(f, n"TygerClaws") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OurManWentQuietCostlyFor"), CBT(n"Cyberbane-GangVoice-LostAScoutWeHaveMore")]); }
+  if Equals(f, n"Maelstrom") { return CBLineOf([CBT(n"Cyberbane-GangVoice-SpotterSOfflineWeLlTrack"), CBT(n"Cyberbane-GangVoice-KilledOurEyesWeLlGrow")]); }
+  if Equals(f, n"SixthStreet") { return CBLineOf([CBT(n"Cyberbane-GangVoice-LostContactWithOurReconWe"), CBT(n"Cyberbane-GangVoice-ScoutSDownDoesnTMatter")]); }
+  if Equals(f, n"Animals") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OurGuySNotAnsweringLucky"), CBT(n"Cyberbane-GangVoice-YouGotOurBoyNextOne")]); }
+  if Equals(f, n"VoodooBoys") { return CBLineOf([CBT(n"Cyberbane-GangVoice-YouCutOneThreadTheWeb"), CBT(n"Cyberbane-GangVoice-OurEyesWentDarkTheNet")]); }
+  if Equals(f, n"Mox") { return CBLineOf([CBT(n"Cyberbane-GangVoice-SheStoppedAnsweringYouDBetter"), CBT(n"Cyberbane-GangVoice-LostOurLookoutWeLlBe")]); }
+  if Equals(f, n"Scavengers") { return CBLineOf([CBT(n"Cyberbane-GangVoice-LostOurGuyWhateverThereS"), CBT(n"Cyberbane-GangVoice-HeSNotAnsweringMoreParts")]); }
+  if Equals(f, n"Wraiths") { return CBLineOf([CBT(n"Cyberbane-GangVoice-RiderSGoneQuietTheRoad"), CBT(n"Cyberbane-GangVoice-LostOurSpotterDesertSStill")]); }
+  if Equals(f, n"Aldecaldos") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OurCousinSNotAnsweringIf"), CBT(n"Cyberbane-GangVoice-LostOurScoutWeLlFind")]); }
+  if Equals(f, n"Barghest") { return CBLineOf([CBT(n"Cyberbane-GangVoice-ReconUnitLostAdjusting"), CBT(n"Cyberbane-GangVoice-ForwardObserverDownMissionContinues")]); }
+  if Equals(f, n"Scrappers") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OurLookoutWentQuietWeLl"), CBT(n"Cyberbane-GangVoice-LostOurEyesInTheRuins")]); }
   return "";
 }
 
 // Hands up, in their own words (Spawn/LivingStreet.reds, TrySurrender).
 public func CBGangSurrenderLine(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return CBLineOf(["Okay! Okay. I yield, on my mother.", "Basta! It's over, I'm done!", "Por favor! I give up!"]); }
-  if Equals(f, n"TygerClaws") { return CBLineOf(["Enough! I'll pay you, just stop!", "I yield! Bad business, this!", "Stop! You win, you win!"]); }
-  if Equals(f, n"Maelstrom") { return CBLineOf(["Fine! Fine! Take whatever, I'm out!", "My chrome's fried, I'm done!", "Don't scrap me! I quit!"]); }
-  if Equals(f, n"SixthStreet") { return CBLineOf(["I'm out! Hands where you can see them!", "Stand down, stand down! I'm done!", "Surrendering! Don't shoot!"]); }
-  if Equals(f, n"Animals") { return CBLineOf(["Okay, you're stronger! I'm done!", "Enough! You win this one!"]); }
-  if Equals(f, n"VoodooBoys") { return CBLineOf(["I'm disconnecting! I'm out!", "Enough! You've made your point!", "Stop! I yield!"]); }
-  if Equals(f, n"Mox") { return CBLineOf(["Okay! Okay, I'm done, please!", "I give up! Don't hurt me!", "Enough! I'm out of this!"]); }
-  if Equals(f, n"Scavengers") { return CBLineOf(["Don't shoot! I'll go, I'll go!", "Okay! Take the parts, I'm out!", "Please! I'm done!"]); }
-  if Equals(f, n"Wraiths") { return CBLineOf(["Alright! Road's yours! I'm done!", "Enough! I give!"]); }
-  if Equals(f, n"Aldecaldos") { return CBLineOf(["Okay! For the family's sake, I'm done!", "Stop! I yield, I yield!"]); }
-  if Equals(f, n"Scrappers") { return CBLineOf(["Take it! Take the haul, I'm out!", "Okay! Not worth dying over junk!", "I'm done! I'm walking!"]); }
-  return CBPick3("Okay! Okay! I'm done!", "Don't shoot! I give up!", "Enough! It's over, I'm out!");
+  if Equals(f, n"Valentinos") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OkayOkayIYieldOnMy"), CBT(n"Cyberbane-GangVoice-BastaItSOverIM"), CBT(n"Cyberbane-GangVoice-PorFavorIGiveUp")]); }
+  if Equals(f, n"TygerClaws") { return CBLineOf([CBT(n"Cyberbane-GangVoice-EnoughILlPayYouJust"), CBT(n"Cyberbane-GangVoice-IYieldBadBusinessThis"), CBT(n"Cyberbane-GangVoice-StopYouWinYouWin")]); }
+  if Equals(f, n"Maelstrom") { return CBLineOf([CBT(n"Cyberbane-GangVoice-FineFineTakeWhateverIM"), CBT(n"Cyberbane-GangVoice-MyChromeSFriedIM"), CBT(n"Cyberbane-GangVoice-DonTScrapMeIQuit")]); }
+  if Equals(f, n"SixthStreet") { return CBLineOf([CBT(n"Cyberbane-GangVoice-IMOutHandsWhereYou"), CBT(n"Cyberbane-GangVoice-StandDownStandDownIM"), CBT(n"Cyberbane-GangVoice-SurrenderingDonTShoot")]); }
+  if Equals(f, n"Animals") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OkayYouReStrongerIM"), CBT(n"Cyberbane-GangVoice-EnoughYouWinThisOne")]); }
+  if Equals(f, n"VoodooBoys") { return CBLineOf([CBT(n"Cyberbane-GangVoice-IMDisconnectingIMOut"), CBT(n"Cyberbane-GangVoice-EnoughYouVeMadeYourPoint"), CBT(n"Cyberbane-GangVoice-StopIYield")]); }
+  if Equals(f, n"Mox") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OkayOkayIMDonePlease"), CBT(n"Cyberbane-GangVoice-IGiveUpDonTHurt"), CBT(n"Cyberbane-GangVoice-EnoughIMOutOfThis")]); }
+  if Equals(f, n"Scavengers") { return CBLineOf([CBT(n"Cyberbane-GangVoice-DonTShootILlGo"), CBT(n"Cyberbane-GangVoice-OkayTakeThePartsIM"), CBT(n"Cyberbane-GangVoice-PleaseIMDone")]); }
+  if Equals(f, n"Wraiths") { return CBLineOf([CBT(n"Cyberbane-GangVoice-AlrightRoadSYoursIM"), CBT(n"Cyberbane-GangVoice-EnoughIGive")]); }
+  if Equals(f, n"Aldecaldos") { return CBLineOf([CBT(n"Cyberbane-GangVoice-OkayForTheFamilySSake"), CBT(n"Cyberbane-GangVoice-StopIYieldIYield")]); }
+  if Equals(f, n"Scrappers") { return CBLineOf([CBT(n"Cyberbane-GangVoice-TakeItTakeTheHaulI"), CBT(n"Cyberbane-GangVoice-OkayNotWorthDyingOverJunk"), CBT(n"Cyberbane-GangVoice-IMDoneIMWalking")]); }
+  return CBPick3(CBT(n"Cyberbane-GangVoice-OkayOkayIMDone"), CBT(n"Cyberbane-GangVoice-DonTShootIGiveUp"), CBT(n"Cyberbane-GangVoice-EnoughItSOverIM"));
 }

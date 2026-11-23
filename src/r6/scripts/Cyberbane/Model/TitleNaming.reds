@@ -16,41 +16,75 @@
 // CBTrimRumors is indexing a getter's result inside a single statement, which this never does.
 
 public func CBDistrictLabel(id: CName) -> String {
-  if Equals(id, n"Watson") { return "Watson"; }
-  if Equals(id, n"Westbrook") { return "Westbrook"; }
-  if Equals(id, n"CityCenter") { return "City Center"; }
-  if Equals(id, n"Heywood") { return "Heywood"; }
-  if Equals(id, n"SantoDomingo") { return "Santo Domingo"; }
-  if Equals(id, n"Pacifica") { return "Pacifica"; }
-  if Equals(id, n"Dogtown") { return "Dogtown"; }
-  if Equals(id, n"Badlands") { return "the Badlands"; }
+  if Equals(id, n"Watson") { return CBT(n"Cyberbane-TitleNaming-Watson"); }
+  if Equals(id, n"Westbrook") { return CBT(n"Cyberbane-TitleNaming-Westbrook"); }
+  if Equals(id, n"CityCenter") { return CBT(n"Cyberbane-TitleNaming-CityCenter"); }
+  if Equals(id, n"Heywood") { return CBT(n"Cyberbane-TitleNaming-Heywood"); }
+  if Equals(id, n"SantoDomingo") { return CBT(n"Cyberbane-TitleNaming-SantoDomingo"); }
+  if Equals(id, n"Pacifica") { return CBT(n"Cyberbane-TitleNaming-Pacifica"); }
+  if Equals(id, n"Dogtown") { return CBT(n"Cyberbane-TitleNaming-Dogtown"); }
+  if Equals(id, n"Badlands") { return CBT(n"Cyberbane-TitleNaming-TheBadlands"); }
   return "";
 }
 
 public func CBFactionLabel(id: CName) -> String {
-  if Equals(id, n"Maelstrom") { return "Maelstrom"; }
-  if Equals(id, n"TygerClaws") { return "the Tyger Claws"; }
-  if Equals(id, n"Valentinos") { return "the Valentinos"; }
-  if Equals(id, n"SixthStreet") { return "6th Street"; }
-  if Equals(id, n"Animals") { return "the Animals"; }
-  if Equals(id, n"VoodooBoys") { return "the Voodoo Boys"; }
-  if Equals(id, n"Scavengers") { return "the Scavs"; }
-  if Equals(id, n"Mox") { return "the Mox"; }
-  if Equals(id, n"Barghest") { return "Barghest"; }
-  if Equals(id, n"Scrappers") { return "the Scrappers"; }
-  if Equals(id, n"Aldecaldos") { return "the Aldecaldos"; }
-  if Equals(id, n"Wraiths") { return "the Wraiths"; }
-  if Equals(id, n"Arasaka") { return "Arasaka"; }
-  if Equals(id, n"Militech") { return "Militech"; }
-  if Equals(id, n"KangTao") { return "Kang Tao"; }
-  if Equals(id, n"NCPD") { return "the NCPD"; }
-  if Equals(id, n"MaxTac") { return "MaxTac"; }
+  if Equals(id, n"Maelstrom") { return CBT(n"Cyberbane-TitleNaming-Maelstrom"); }
+  if Equals(id, n"TygerClaws") { return CBT(n"Cyberbane-TitleNaming-TheTygerClaws"); }
+  if Equals(id, n"Valentinos") { return CBT(n"Cyberbane-TitleNaming-TheValentinos"); }
+  if Equals(id, n"SixthStreet") { return CBT(n"Cyberbane-TitleNaming-6thStreet"); }
+  if Equals(id, n"Animals") { return CBT(n"Cyberbane-TitleNaming-TheAnimals"); }
+  if Equals(id, n"VoodooBoys") { return CBT(n"Cyberbane-TitleNaming-TheVoodooBoys"); }
+  if Equals(id, n"Scavengers") { return CBT(n"Cyberbane-TitleNaming-TheScavs"); }
+  if Equals(id, n"Mox") { return CBT(n"Cyberbane-TitleNaming-TheMox"); }
+  if Equals(id, n"Barghest") { return CBT(n"Cyberbane-TitleNaming-Barghest"); }
+  if Equals(id, n"Scrappers") { return CBT(n"Cyberbane-TitleNaming-TheScrappers"); }
+  if Equals(id, n"Aldecaldos") { return CBT(n"Cyberbane-TitleNaming-TheAldecaldos"); }
+  if Equals(id, n"Wraiths") { return CBT(n"Cyberbane-TitleNaming-TheWraiths"); }
+  if Equals(id, n"Arasaka") { return CBT(n"Cyberbane-TitleNaming-Arasaka"); }
+  if Equals(id, n"Militech") { return CBT(n"Cyberbane-TitleNaming-Militech"); }
+  if Equals(id, n"KangTao") { return CBT(n"Cyberbane-TitleNaming-KangTao"); }
+  if Equals(id, n"NCPD") { return CBT(n"Cyberbane-TitleNaming-TheNCPD"); }
+  if Equals(id, n"MaxTac") { return CBT(n"Cyberbane-TitleNaming-MaxTac"); }
+  return "";
+}
+
+// A gang's name on its own, with no article: a phone contact, a bar over a head (2.7.1). Said where a stripped label used to
+// be ("the Tyger Claws" less "the "), which only works in English.
+public func CBFactionName(id: CName) -> String {
+  if Equals(id, n"Maelstrom") { return CBT(n"Cyberbane-TitleNaming-Maelstrom"); }
+  if Equals(id, n"TygerClaws") { return CBT(n"Cyberbane-TitleNaming-TygerClaws"); }
+  if Equals(id, n"Valentinos") { return CBT(n"Cyberbane-TitleNaming-Valentinos"); }
+  if Equals(id, n"SixthStreet") { return CBT(n"Cyberbane-TitleNaming-6thStreet"); }
+  if Equals(id, n"Animals") { return CBT(n"Cyberbane-TitleNaming-Animals"); }
+  if Equals(id, n"VoodooBoys") { return CBT(n"Cyberbane-TitleNaming-VoodooBoys"); }
+  if Equals(id, n"Scavengers") { return CBT(n"Cyberbane-TitleNaming-Scavs"); }
+  if Equals(id, n"Mox") { return CBT(n"Cyberbane-TitleNaming-Mox"); }
+  if Equals(id, n"Barghest") { return CBT(n"Cyberbane-TitleNaming-Barghest"); }
+  if Equals(id, n"Scrappers") { return CBT(n"Cyberbane-TitleNaming-Scrappers"); }
+  if Equals(id, n"Aldecaldos") { return CBT(n"Cyberbane-TitleNaming-Aldecaldos"); }
+  if Equals(id, n"Wraiths") { return CBT(n"Cyberbane-TitleNaming-Wraiths"); }
+  if Equals(id, n"Arasaka") { return CBT(n"Cyberbane-TitleNaming-Arasaka"); }
+  if Equals(id, n"Militech") { return CBT(n"Cyberbane-TitleNaming-Militech"); }
+  if Equals(id, n"KangTao") { return CBT(n"Cyberbane-TitleNaming-KangTao"); }
+  if Equals(id, n"NCPD") { return CBT(n"Cyberbane-TitleNaming-NCPD"); }
+  if Equals(id, n"MaxTac") { return CBT(n"Cyberbane-TitleNaming-MaxTac"); }
   return "";
 }
 
 // The same, to start a sentence with: "the Tyger Claws" opens with a small letter.
+//
+// Only a plain a to z is raised (2.7.1). A translation can start a line with a letter the game writes in more than one byte
+// (é, ü, д, あ), and taking the first one alone would cut it in half and garble the line; such a line is left as written,
+// which a translator can capitalise in the text itself.
 public func CBCapFirst(s: String) -> String {
-  return StrLen(s) > 0 ? StrUpper(StrMid(s, 0, 1)) + StrMid(s, 1, StrLen(s) - 1) : s;
+  if StrLen(s) == 0 {
+    return s;
+  }
+  let first = StrMid(s, 0, 1);
+  if !StrContains("abcdefghijklmnopqrstuvwxyz", first) {
+    return s;
+  }
+  return StrUpper(first) + StrMid(s, 1, StrLen(s) - 1);
 }
 
 // "Maelstrom's", "the Mox's", "the Tyger Claws'". Every label here that ends in an s is a plural.
@@ -58,7 +92,7 @@ public func CBPossessive(s: String) -> String {
   if StrLen(s) == 0 {
     return s;
   }
-  return StrEndsWith(s, "s") ? s + "'" : s + "'s";
+  return StrEndsWith(s, "s") ? s + "'" : CBTf(n"Cyberbane-TitleNaming-S", [s]);
 }
 
 // mode 0 = most lethal/brutal work (Butcher), 1 = most quiet work (Ghost), 2 = best known.
@@ -172,12 +206,12 @@ public func CBTitleDisplay(sys: ref<CyberbaneSystem>, def: ref<CBTitleDef>) -> S
   if Equals(token, "") {
     return def.display;
   }
-  if Equals(def.id, n"T_BUTCHER_OF") { return "Butcher of " + token; }
-  if Equals(def.id, n"T_GHOST_OF") { return "Ghost of " + token; }
-  if Equals(def.id, n"T_DISTRICT_PROBLEM") { return CBCapFirst(CBPossessive(token)) + " Problem"; }
-  if Equals(def.id, n"T_MERC_FROM") { return "The Merc from " + token; }
-  if Equals(def.id, n"T_FACTION_NIGHTMARE") { return CBCapFirst(CBPossessive(token)) + " Nightmare"; }
-  if Equals(def.id, n"T_FACTION_FRIEND") { return "Friend of " + token; }
+  if Equals(def.id, n"T_BUTCHER_OF") { return CBTf(n"Cyberbane-TitleNaming-ButcherOf", [token]); }
+  if Equals(def.id, n"T_GHOST_OF") { return CBTf(n"Cyberbane-TitleNaming-GhostOf", [token]); }
+  if Equals(def.id, n"T_DISTRICT_PROBLEM") { return CBTf(n"Cyberbane-TitleNaming-Problem", [CBCapFirst(CBPossessive(token))]); }
+  if Equals(def.id, n"T_MERC_FROM") { return CBTf(n"Cyberbane-TitleNaming-TheMercFrom", [token]); }
+  if Equals(def.id, n"T_FACTION_NIGHTMARE") { return CBTf(n"Cyberbane-TitleNaming-Nightmare", [CBCapFirst(CBPossessive(token))]); }
+  if Equals(def.id, n"T_FACTION_FRIEND") { return CBTf(n"Cyberbane-TitleNaming-FriendOf", [token]); }
   return def.display;
 }
 

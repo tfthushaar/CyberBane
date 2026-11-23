@@ -116,43 +116,43 @@ public func CBTalkStat(game: GameInstance, stat: gamedataStatType) -> Float {
 public func CBTalkQuestionLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> array<ref<CBTalkLine>> {
   let out: array<ref<CBTalkLine>>;
   let done = IsDefined(t.npc) ? t.npc.cbTalkDone : 0;
-  let w = CBTalkMakeLine("[Ask] What's the word on the street?", CBTalkActAskWord(), t"ChoiceCaptionParts.ClueIcon");
+  let w = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-AskWhatSTheWordOn"), CBTalkActAskWord(), t"ChoiceCaptionParts.ClueIcon");
   w.said = CBMaskHas(done, CBTalkActAskWord());
   ArrayPush(out, w);
-  let tf = CBTalkMakeLine("[Ask] Who runs these streets?", CBTalkActAskTurf(), t"ChoiceCaptionParts.GangWatchIcon");
+  let tf = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-AskWhoRunsTheseStreets"), CBTalkActAskTurf(), t"ChoiceCaptionParts.GangWatchIcon");
   tf.said = CBMaskHas(done, CBTalkActAskTurf());
   ArrayPush(out, tf);
-  let c = CBTalkMakeLine("[Ask] Anyone looking for me?", CBTalkActAskComing(), t"ChoiceCaptionParts.ReinforcementIcon");
+  let c = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-AskAnyoneLookingForMe"), CBTalkActAskComing(), t"ChoiceCaptionParts.ReinforcementIcon");
   c.said = CBMaskHas(done, CBTalkActAskComing());
   ArrayPush(out, c);
-  ArrayPush(out, CBTalkMakeLine("[Back] Something else.", CBTalkActMenuBack(), TDBID.None()));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-BackSomethingElse"), CBTalkActMenuBack(), TDBID.None()));
   return out;
 }
 
 // The deal on the table. Pay is greyed when V cannot cover it.
 public func CBTalkDealLines(game: GameInstance, t: ref<CBTalkTarget>, price: Int32, haggled: Bool, kind: Int32) -> array<ref<CBTalkLine>> {
   let out: array<ref<CBTalkLine>>;
-  let what = s"[Pay] \(price)eb.";
+  let what = CBTf(n"Cyberbane-TalkTopics-PayEb", [s"\(price)"]);
   if kind == CBTalkDealToll() {
-    what = s"[Pay] \(price)eb for safe passage.";
+    what = CBTf(n"Cyberbane-TalkTopics-PayEbForSafePassage", [s"\(price)"]);
   } else {
     if kind == CBTalkDealCallOff() {
-      what = s"[Pay] \(price)eb. Make the call.";
+      what = CBTf(n"Cyberbane-TalkTopics-PayEbMakeTheCall", [s"\(price)"]);
     }
   }
   let pay = CBTalkMakeLine(what, CBTalkActDealPay(), t"ChoiceCaptionParts.PayIcon");
   pay.inactive = CBTalkMoney(game) < price;
   ArrayPush(out, pay);
   if !haggled {
-    ArrayPush(out, CBTalkMakeLine("[Haggle] That's too much.", CBTalkActDealHaggle(), t"ChoiceCaptionParts.HandshakeIcon"));
+    ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-HaggleThatSTooMuch"), CBTalkActDealHaggle(), t"ChoiceCaptionParts.HandshakeIcon"));
   }
   // Leaning on somebody for a name works; nobody can be frightened into calling off a crew.
   if kind == CBTalkDealLead() {
     let body = CBTalkStat(game, gamedataStatType.Strength) >= CBConfig.TalkAttributeCheck();
-    ArrayPush(out, CBTalkMakeLine((body ? "[Body] " : "[Intimidate] ") + "Or you could just tell me.", CBTalkActDealLean(),
+    ArrayPush(out, CBTalkMakeLine(CBTf(n"Cyberbane-TalkTopics-OrYouCouldJustTellMe", [(body ? CBT(n"Cyberbane-StreetPay-Body") : CBT(n"Cyberbane-StreetPay-Intimidate"))]), CBTalkActDealLean(),
                                   t"ChoiceCaptionParts.GrappleIcon"));
   }
-  ArrayPush(out, CBTalkMakeLine("[Forget it] Never mind.", CBTalkActDealForget(), t"ChoiceCaptionParts.BackOutIcon"));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-ForgetItNeverMind"), CBTalkActDealForget(), t"ChoiceCaptionParts.BackOutIcon"));
   return out;
 }
 
@@ -209,42 +209,42 @@ public func CBTalkBusinessLines(sys: ref<CyberbaneSystem>, game: GameInstance, t
   let out: array<ref<CBTalkLine>>;
   let done = IsDefined(t.npc) ? t.npc.cbTalkDone : 0;
   if CBTalkTollPrice(sys, game, t) > 0 {
-    let toll = CBTalkMakeLine("[Pay] What does it cost to walk your streets?", CBTalkActDealToll(), t"ChoiceCaptionParts.PayIcon");
+    let toll = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-PayWhatDoesItCostTo"), CBTalkActDealToll(), t"ChoiceCaptionParts.PayIcon");
     toll.said = CBMaskHas(done, CBTalkActDealToll());
     ArrayPush(out, toll);
   }
   if CBTalkCallOffPrice(sys, game, t) > 0 {
-    let off = CBTalkMakeLine("[Pay] Call off the crew you sent after me.", CBTalkActDealCallOff(), t"ChoiceCaptionParts.ReinforcementIcon");
+    let off = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-PayCallOffTheCrewYou"), CBTalkActDealCallOff(), t"ChoiceCaptionParts.ReinforcementIcon");
     off.said = CBMaskHas(done, CBTalkActDealCallOff());
     off.important = !off.said;
     ArrayPush(out, off);
   }
-  ArrayPush(out, CBTalkMakeLine("[Back] Something else.", CBTalkActMenuBack(), TDBID.None()));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-BackSomethingElse"), CBTalkActMenuBack(), TDBID.None()));
   return out;
 }
 
 public func CBTalkAnswerBusiness(t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   if t.mood == CBTalkAfraid() {
-    return CBTalkSay(CBPick2("Business. Yeah. Business is good. What do you need?", "Anything. Name it."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-BusinessYeahBusinessIsGoodWhat"), CBT(n"Cyberbane-TalkTopics-AnythingNameIt")), n"");
   }
-  return CBTalkSay(CBPick3("Money talks. Go on.", "I'm listening.", "Business with you? Depends what it pays."), n"");
+  return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-MoneyTalksGoOn"), CBT(n"Cyberbane-TalkTopics-IMListening"), CBT(n"Cyberbane-TalkTopics-BusinessWithYouDependsWhatIt")), n"");
 }
 
 public func CBTalkAskToll(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> ref<CBTalkOffer> {
   let o = new CBTalkOffer();
   let price = CBTalkTollPrice(sys, game, t);
   if price <= 0 {
-    o.answer = CBTalkSay("Nothing to sell you. Not today.", n"");
+    o.answer = CBTalkSay(CBT(n"Cyberbane-TalkTopics-NothingToSellYouNotToday"), n"");
     return o;
   }
   if CBTalkTemper(t.npc) == CBTalkTemperLoyal() && t.mood == CBTalkHostile() {
-    o.answer = CBTalkSay(CBPick2("Your money's no good here.", "You can't buy your way out of what you did."), n"bump");
+    o.answer = CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-YourMoneySNoGoodHere"), CBT(n"Cyberbane-TalkTopics-YouCanTBuyYourWay")), n"bump");
     return o;
   }
   o.price = price;
   let hours = RoundF(CBConfig.TalkTollHours());
-  o.answer = CBTalkSay(CBPick2(s"\(price)eb, and nobody of ours touches you. \(hours) hours. After that you're fair game again.",
-                                     s"Walk our streets in one piece? \(price)eb. Buys you \(hours) hours."), n"");
+  o.answer = CBTalkSay(CBPick2(CBTf(n"Cyberbane-TalkTopics-EbAndNobodyOfOursTouches", [s"\(price)", s"\(hours)"]),
+                                     CBTf(n"Cyberbane-TalkTopics-WalkOurStreetsInOnePiece", [s"\(price)", s"\(hours)"])), n"");
   return o;
 }
 
@@ -252,16 +252,16 @@ public func CBTalkAskCallOff(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   let o = new CBTalkOffer();
   let price = CBTalkCallOffPrice(sys, game, t);
   if price <= 0 {
-    o.answer = CBTalkSay("What crew? Nobody's coming. Not from us.", n"");
+    o.answer = CBTalkSay(CBT(n"Cyberbane-TalkTopics-WhatCrewNobodySComingNot"), n"");
     return o;
   }
   if CBTalkTemper(t.npc) == CBTalkTemperLoyal() && t.mood != CBTalkAfraid() {
-    o.answer = CBTalkSay(CBPick2("Those are my people. Hope they find you.", "Call them off? I'd rather watch."), n"bump");
+    o.answer = CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-ThoseAreMyPeopleHopeThey"), CBT(n"Cyberbane-TalkTopics-CallThemOffIDRather")), n"bump");
     return o;
   }
   o.price = price;
-  o.answer = CBTalkSay(CBPick2(s"They're already moving. \(price)eb and I make a call.",
-                                     s"\(price)eb, and I tell them you were somewhere else."), n"");
+  o.answer = CBTalkSay(CBPick2(CBTf(n"Cyberbane-TalkTopics-TheyReAlreadyMovingEbAnd", [s"\(price)"]),
+                                     CBTf(n"Cyberbane-TalkTopics-EbAndITellThemYou", [s"\(price)"])), n"");
   return o;
 }
 
@@ -277,7 +277,7 @@ public func CBTalkTakeMoney(game: GameInstance, player: ref<PlayerPuppet>, price
 public func CBTalkDealPayToll(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
                               t: ref<CBTalkTarget>, price: Int32) -> ref<CBTalkAnswer> {
   if !CBTalkTakeMoney(game, player, price) {
-    return CBTalkSay(CBPick2("Come back when you've got it.", "That's not the number, choom."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-ComeBackWhenYouVeGot"), CBT(n"Cyberbane-TalkTopics-ThatSNotTheNumberChoom")), n"");
   }
   let now = CBGameSeconds(game);
   sys.AddToll(t.faction, now + CBConfig.TalkTollHours() * 3600.0);
@@ -285,17 +285,17 @@ public func CBTalkDealPayToll(sys: ref<CyberbaneSystem>, game: GameInstance, pla
   CBLog.Info(n"Talk", s"V bought safe passage from \(NameToString(t.faction)) for \(price)eb.");
   // Starting with the one V paid, here and now; the rest of theirs as V passes them (Reactions/Director.reds, KeepCalm).
   CBCalmTowardsV(game, t.npc, 2);
-  return CBTalkSay(CBPick2("Done. Word goes round: you walk, nobody of ours stops you. For a while.",
-                                  "Pleasure. Keep your head down and nobody of ours will lift a finger."), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-DoneWordGoesRoundYouWalk"),
+                                  CBT(n"Cyberbane-TalkTopics-PleasureKeepYourHeadDownAnd")), n"");
 }
 
 public func CBTalkDealPayCallOff(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
                                  t: ref<CBTalkTarget>, price: Int32) -> ref<CBTalkAnswer> {
   if !CBTalkCrewComing(sys, t.faction) {
-    return CBTalkSay("Too late, or they never left. Keep your eddies.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-TalkTopics-TooLateOrTheyNeverLeft"), n"");
   }
   if !CBTalkTakeMoney(game, player, price) {
-    return CBTalkSay(CBPick2("Come back when you've got it.", "That's not the number, choom."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-ComeBackWhenYouVeGot"), CBT(n"Cyberbane-TalkTopics-ThatSNotTheNumberChoom")), n"");
   }
   // The same calling-off a pay-off does (Economy/Peace.reds), for the one crew; the grudge stays.
   if Equals(sys.GetPendingSquadFaction(), t.faction) {
@@ -307,8 +307,8 @@ public func CBTalkDealPayCallOff(sys: ref<CyberbaneSystem>, game: GameInstance, 
   CBFileLog(sys, n"TalkCallOff", CBGameSeconds(game), CBEventDistrict(sys, game), t.faction, Cast<Float>(price));
   CBLog.Info(n"Talk", s"V paid one of \(NameToString(t.faction)) \(price)eb to call off their crew.");
   CBCalmTowardsV(game, t.npc, 1);   // the one who took V's money is not the one to draw on V (2.6.0)
-  return CBTalkSay(CBPick2("Alright. I'll tell them you weren't where they thought. Don't make me regret it.",
-                                  "Done. They'll turn around. Next time I can't help you."), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-AlrightILlTellThemYou"),
+                                  CBT(n"Cyberbane-TalkTopics-DoneTheyLlTurnAroundNext")), n"");
 }
 
 // The line only this V has with this person, or null: lifepath, shown with the game's lifepath icon.
@@ -318,13 +318,13 @@ public func CBTalkLifepathLine(game: GameInstance, t: ref<CBTalkTarget>) -> ref<
   let gang = NotEquals(f, n"") && !t.cop;
   let line: ref<CBTalkLine>;
   if lp == EnumInt(gamedataLifePath.StreetKid) && gang && !CBTalkIsCorp(f) {
-    line = CBTalkMakeLine("[Street Kid] Came up on these streets myself.", CBTalkActLifepath(), t"ChoiceCaptionParts.LifepathStreetKid");
+    line = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-StreetKidCameUpOnThese"), CBTalkActLifepath(), t"ChoiceCaptionParts.LifepathStreetKid");
   }
   if lp == EnumInt(gamedataLifePath.Nomad) && (Equals(f, n"Aldecaldos") || Equals(f, n"Wraiths")) {
-    line = CBTalkMakeLine("[Nomad] Out in the Badlands, we look after our own.", CBTalkActLifepath(), t"ChoiceCaptionParts.LifepathNomad");
+    line = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-NomadOutInTheBadlandsWe"), CBTalkActLifepath(), t"ChoiceCaptionParts.LifepathNomad");
   }
   if lp == EnumInt(gamedataLifePath.Corporate) && CBTalkIsCorp(f) {
-    line = CBTalkMakeLine("[Corpo] I know how your bosses think.", CBTalkActLifepath(), t"ChoiceCaptionParts.LifepathCorpo");
+    line = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-CorpoIKnowHowYourBosses"), CBTalkActLifepath(), t"ChoiceCaptionParts.LifepathCorpo");
   }
   if IsDefined(line) && IsDefined(t.npc) {
     line.said = CBMaskHas(t.npc.cbTalkDone, CBTalkActLifepath());
@@ -350,24 +350,24 @@ public func CBTalkMoney(game: GameInstance) -> Int32 {
 // "Got a minute?": how they take being asked.
 public func CBTalkAnswerMenuAsk(t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   if t.cop {
-    return CBTalkSay(CBPick2("Make it quick, citizen.", "Depends what you're asking."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-MakeItQuickCitizen"), CBT(n"Cyberbane-TalkTopics-DependsWhatYouReAsking")), n"");
   }
   if t.mood == CBTalkFriendly() {
-    return CBTalkSay(CBPick3("Sure, choom. What do you need?", "For you? Always.", "Shoot."), n"greeting");
+    return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-SureChoomWhatDoYouNeed"), CBT(n"Cyberbane-TalkTopics-ForYouAlways"), "Shoot."), n"greeting");
   }
   if t.mood == CBTalkAfraid() {
-    return CBTalkSay(CBPick3("W-what do you want to know?", "I don't know anything. I mean, ask.", "Okay. Okay. What?"), n"fear_beg");
+    return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-WWhatDoYouWantTo"), CBT(n"Cyberbane-TalkTopics-IDonTKnowAnythingI"), CBT(n"Cyberbane-TalkTopics-OkayOkayWhat")), n"fear_beg");
   }
   if t.mood == CBTalkHostile() {
-    return CBTalkSay(CBPick2("Talk fast.", "You've got a minute. Less."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-TalkFast"), CBT(n"Cyberbane-TalkTopics-YouVeGotAMinuteLess")), n"");
   }
-  return CBTalkSay(CBPick3("Make it quick.", "Depends.", "What about?"), n"");
+  return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-MakeItQuick"), "Depends.", CBT(n"Cyberbane-TalkTopics-WhatAbout")), n"");
 }
 
 // "What's the word on the street?"
 public func CBTalkAnswerWord(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkAnswer> {
   if again {
-    return CBTalkSay("Told you already. That's all I've got.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-TalkTopics-ToldYouAlreadyThatSAll"), n"");
   }
   let r = CBWhisperRumor(sys, game);
   if IsDefined(r) {
@@ -376,15 +376,15 @@ public func CBTalkAnswerWord(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   // Where V is standing, if it remembers something (Model/StreetBook.reds, 2.3.1).
   let st = CBReadStreet(sys, game, t.faction);
   if Equals(st.placeKind, n"Massacre") {
-    return CBTalkSay(CBPick2("You're standing on it. That's where they found them all. Still gives me chills.",
-                             "Right here. Bodies everywhere, not long ago. Nobody's been the same."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-YouReStandingOnItThat"),
+                             CBT(n"Cyberbane-TalkTopics-RightHereBodiesEverywhereNotLong")), n"");
   }
   if Equals(st.placeKind, n"BossKill") && StrLen(CBFactionLabel(st.placeGang)) > 0 {
-    return CBTalkSay(s"This corner? \(CBCapFirst(CBFactionLabel(st.placeGang))) lost their boss right there. Still raw.", n"");
+    return CBTalkSay(CBTf(n"Cyberbane-TalkTopics-ThisCornerLostTheirBossRight", [s"\(CBCapFirst(CBFactionLabel(st.placeGang)))"]), n"");
   }
   if st.wounded {
-    return CBTalkSay(CBPick2("Word is you're bleeding, choom. Get that seen to before somebody finishes the job.",
-                             "The word is there's blood on your jacket. People notice that."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-WordIsYouReBleedingChoom"),
+                             CBT(n"Cyberbane-TalkTopics-TheWordIsThereSBlood")), n"");
   }
   let district = sys.GetCurrentDistrict();
   let book = CBTurfBook.Get(game);
@@ -392,39 +392,39 @@ public func CBTalkAnswerWord(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   if IsDefined(book) && index >= 0 && NotEquals(book.Challenger(index), n"") {
     let who = CBFactionLabel(book.Challenger(index));
     if StrLen(who) > 0 {
-      return CBTalkSay(s"\(CBCapFirst(who)) are pushing in round here. Won't be quiet much longer.", n"");
+      return CBTalkSay(CBTf(n"Cyberbane-TalkTopics-ArePushingInRoundHereWon", [s"\(CBCapFirst(who))"]), n"");
     }
   }
   if CBIsLayingLow(sys, CBGameSeconds(game)) {
-    return CBTalkSay(CBPick2("Quiet lately. Too quiet.", "Nothing. People keep waiting for something to happen."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-QuietLatelyTooQuiet"), CBT(n"Cyberbane-TalkTopics-NothingPeopleKeepWaitingForSomething")), n"");
   }
-  return CBTalkSay(CBPick3("Same old Night City. Somebody's always bleeding.", "Nothing worth the breath.", "Corpos up top, the rest of us down here. Same as always."), n"");
+  return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-SameOldNightCitySomebodyS"), CBT(n"Cyberbane-TalkTopics-NothingWorthTheBreath"), CBT(n"Cyberbane-TalkTopics-CorposUpTopTheRestOf")), n"");
 }
 
 // "Who runs these streets?"
 public func CBTalkAnswerTurf(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkAnswer> {
   if again {
-    return CBTalkSay("Same as five minutes ago.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-TalkTopics-SameAsFiveMinutesAgo"), n"");
   }
   let district = sys.GetCurrentDistrict();
   let holder = NotEquals(district, n"") ? CBTurfHolder(sys, game, district) : n"";
   let label = CBFactionLabel(holder);
   if StrLen(label) == 0 {
-    return CBTalkSay(CBPick2("Nobody owns these streets. Not really.", "Depends who's got the most guns tonight."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-NobodyOwnsTheseStreetsNotReally"), CBT(n"Cyberbane-TalkTopics-DependsWhoSGotTheMost")), n"");
   }
   let line = "";
   if Equals(holder, t.faction) {
-    line = CBPick2("We do. Don't forget it.", "You're standing on ours.");
+    line = CBPick2(CBT(n"Cyberbane-TalkTopics-WeDoDonTForgetIt"), CBT(n"Cyberbane-TalkTopics-YouReStandingOnOurs"));
   } else {
-    line = s"\(CBCapFirst(label)) run it.";
+    line = CBTf(n"Cyberbane-TalkTopics-RunIt", [s"\(CBCapFirst(label))"]);
   }
   if CBTurfWarsOn() {
-    let word = CBGangStrengthWord(CBGangStrength(sys, holder));
-    if Equals(word, "broken") {
-      line += " What's left of them, anyway.";
+    let band = CBGangStrengthBand(CBGangStrength(sys, holder));
+    if band == 0 {
+      line += CBT(n"Cyberbane-TalkTopics-WhatSLeftOfThemAnyway");
     } else {
-      if Equals(word, "bleeding") {
-        line += " They're bleeding, though. Everybody can see it.";
+      if band == 1 {
+        line += CBT(n"Cyberbane-TalkTopics-TheyReBleedingThoughEverybodyCan");
       }
     }
     let book = CBTurfBook.Get(game);
@@ -432,7 +432,7 @@ public func CBTalkAnswerTurf(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
     if IsDefined(book) && index >= 0 && NotEquals(book.Challenger(index), n"") {
       let who = CBFactionLabel(book.Challenger(index));
       if StrLen(who) > 0 {
-        line += s" \(CBCapFirst(who)) want it.";
+        line += CBTf(n"Cyberbane-TalkTopics-WantIt", [s"\(CBCapFirst(who))"]);
       }
     }
   }
@@ -440,10 +440,10 @@ public func CBTalkAnswerTurf(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   if IsDefined(score) && NotEquals(holder, t.faction) {
     let posture = score.GetPosture(holder);
     if Equals(posture, ECBPosture.Allied) || Equals(posture, ECBPosture.Friendly) {
-      line += " They like you, far as I hear.";
+      line += CBT(n"Cyberbane-TalkTopics-TheyLikeYouFarAsI");
     } else {
       if Equals(posture, ECBPosture.Vendetta) {
-        line += " And they want you dead, so.";
+        line += CBT(n"Cyberbane-TalkTopics-AndTheyWantYouDeadSo");
       }
     }
   }
@@ -454,53 +454,53 @@ public func CBTalkAnswerTurf(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
 // out hunting.
 public func CBTalkAnswerComing(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkAnswer> {
   if again {
-    return CBTalkSay("Like I said. Watch yourself.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-TalkTopics-LikeISaidWatchYourself"), n"");
   }
   let content = sys.GetContent();
   let ownGang = NotEquals(t.faction, n"") && !t.cop;
   // A crew already on its way.
   let squad = sys.GetPendingSquadFaction();
   if NotEquals(squad, n"") {
-    return CBTalkSay(CBTalkComingLine(t, squad, "A crew of %g is on its way to you. Minutes, maybe less.", ownGang), n"");
+    return CBTalkSay(CBTalkComingLine(t, squad, CBT(n"Cyberbane-TalkTopics-ACrewOfGIsOn"), ownGang), n"");
   }
   let apex = sys.GetPendingApexFaction();
   if NotEquals(apex, n"") {
-    return CBTalkSay(CBTalkComingLine(t, apex, "%G are sending their best after you. Real soon.", ownGang), n"");
+    return CBTalkSay(CBTalkComingLine(t, apex, CBT(n"Cyberbane-TalkTopics-GAreSendingTheirBestAfter"), ownGang), n"");
   }
   // One getting ready.
   let laneGang = sys.GetLaneTarget(CBLaneSquad());
   if NotEquals(laneGang, n"") {
-    let when = sys.GetLaneTicks(CBLaneSquad()) <= 120 ? "Any minute now." : "Soon.";
-    return CBTalkSay(CBTalkComingLine(t, laneGang, "%G are putting a crew together for you. " + when, ownGang), n"");
+    let when = sys.GetLaneTicks(CBLaneSquad()) <= 120 ? CBT(n"Cyberbane-TalkTopics-AnyMinuteNow") : "Soon.";
+    return CBTalkSay(CBTalkComingLine(t, laneGang, CBTf(n"Cyberbane-TalkTopics-GArePuttingACrewTogether", [when]), ownGang), n"");
   }
   let laneRival = sys.GetLaneRivalId(CBLaneRival());
   if laneRival > 0 {
     let r = sys.FindRivalById(laneRival);
     if IsDefined(r) {
-      return CBTalkSay(s"\(CBRivalDisplayName(content, r)) is getting ready to come for you.", n"");
+      return CBTalkSay(CBTf(n"Cyberbane-TalkTopics-IsGettingReadyToComeFor", [s"\(CBRivalDisplayName(content, r))"]), n"");
     }
   }
   // A Rival out looking.
   for r in sys.GetRivals() {
     if IsDefined(r) && r.state == EnumInt(ECBRivalState.Hunting) {
-      return CBTalkSay(CBPick2(s"\(CBRivalDisplayName(content, r)) is out looking for you. Asking around.",
-                                     s"Heard \(CBRivalDisplayName(content, r)) wants a word with you. Not a nice one."), n"");
+      return CBTalkSay(CBPick2(CBTf(n"Cyberbane-TalkTopics-IsOutLookingForYouAsking", [s"\(CBRivalDisplayName(content, r))"]),
+                                     CBTf(n"Cyberbane-TalkTopics-HeardWantsAWordWithYou", [s"\(CBRivalDisplayName(content, r))"])), n"");
     }
   }
-  return CBTalkSay(CBPick3("Nobody I've heard of. Lucky you.", "Not that I know. Doesn't mean nobody is.", "Quiet, far as I hear."), n"");
+  return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-NobodyIVeHeardOfLucky"), CBT(n"Cyberbane-TalkTopics-NotThatIKnowDoesnT"), CBT(n"Cyberbane-TalkTopics-QuietFarAsIHear")), n"");
 }
 
 // A gang's name put into a line (%g lower case, %G capitalised); a ganger of that gang says it their way.
 func CBTalkComingLine(t: ref<CBTalkTarget>, gang: CName, line: String, ownGang: Bool) -> String {
   let label = CBFactionLabel(gang);
   if StrLen(label) == 0 {
-    label = "somebody";
+    label = CBT(n"Cyberbane-TalkTopics-Somebody");
   }
   if ownGang && Equals(gang, t.faction) {
     if t.mood == CBTalkAfraid() || t.mood == CBTalkFriendly() {
-      return "Ours are coming for you. You didn't hear it from me.";
+      return CBT(n"Cyberbane-TalkTopics-OursAreComingForYouYou");
     }
-    return "You'll find out.";
+    return CBT(n"Cyberbane-TalkTopics-YouLlFindOut");
   }
   return StrReplaceAll(StrReplaceAll(line, "%G", CBCapFirst(label)), "%g", label);
 }
@@ -574,19 +574,19 @@ public func CBTalkAskRival(sys: ref<CyberbaneSystem>, game: GameInstance, player
                            t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkOffer> {
   let o = new CBTalkOffer();
   if again {
-    o.answer = CBTalkSay("I said what I said.", n"");
+    o.answer = CBTalkSay(CBT(n"Cyberbane-TalkTopics-ISaidWhatISaid"), n"");
     return o;
   }
   let r = CBTalkRivalFor(sys, game, t);
   if !IsDefined(r) {
-    o.answer = CBTalkSay(CBPick2("Haven't heard a thing worth selling.", "Nobody's talking about them. Not to me."), n"");
+    o.answer = CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-HavenTHeardAThingWorth"), CBT(n"Cyberbane-TalkTopics-NobodySTalkingAboutThemNot")), n"");
     return o;
   }
   let content = sys.GetContent();
   let name = CBRivalDisplayName(content, r);
   let tally = CBTalkTallyFor(sys, game, t.faction);
   if !IsDefined(tally) || tally.leaks >= CBConfig.TalkLeaksPerDay() {
-    o.answer = CBTalkSay(CBPick2("Already said too much today.", "Ask me tomorrow. Too many ears around."), n"");
+    o.answer = CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-AlreadySaidTooMuchToday"), CBT(n"Cyberbane-TalkTopics-AskMeTomorrowTooManyEars")), n"");
     return o;
   }
   let temper = CBTalkTemper(t.npc);
@@ -595,11 +595,11 @@ public func CBTalkAskRival(sys: ref<CyberbaneSystem>, game: GameInstance, player
   if ownGang && temper == CBTalkTemperLoyal() && t.mood != CBTalkAfraid() {
     if RandF() < CBConfig.TalkLoyalWarnChance() && r.state != EnumInt(ECBRivalState.Hunting) {
       r.state = EnumInt(ECBRivalState.Hunting);
-      CBPhoneSendTinted(game, name, CBPick2("Heard you've been asking about me. Here I am. Come find out.",
-                                                   "One of mine says you were asking. Bad idea."), CBHudRed());
+      CBPhoneSendTinted(game, name, CBPick2(CBT(n"Cyberbane-TalkTopics-HeardYouVeBeenAskingAbout"),
+                                                   CBT(n"Cyberbane-TalkTopics-OneOfMineSaysYouWere")), CBHudRed());
       CBLog.Info(n"Talk", s"A loyal ganger warned rival \(r.id) that V was asking.");
     }
-    o.answer = CBTalkSay(CBPick3("I don't sell out my own.", "Ask me again and see what happens.", "You think I'd rat? Walk away."), n"bump");
+    o.answer = CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-IDonTSellOutMy"), CBT(n"Cyberbane-TalkTopics-AskMeAgainAndSeeWhat"), CBT(n"Cyberbane-TalkTopics-YouThinkIDRatWalk")), n"bump");
     return o;
   }
   // Afraid enough, or a fan of V's who has nothing to lose by it: they just say it.
@@ -613,12 +613,12 @@ public func CBTalkAskRival(sys: ref<CyberbaneSystem>, game: GameInstance, player
   o.price = CBTalkLeadPrice(sys, t, r);
   let p = o.price;
   if temper == CBTalkTemperGreedy() {
-    o.answer = CBTalkSay(CBPick2(s"For you? \(p). Eddies first.", s"\(p) and I remember everything."), n"");
+    o.answer = CBTalkSay(CBPick2(CBTf(n"Cyberbane-TalkTopics-ForYouEddiesFirst", [s"\(p)"]), CBTf(n"Cyberbane-TalkTopics-AndIRememberEverything", [s"\(p)"])), n"");
   } else {
     if ownGang {
-      o.answer = CBTalkSay(CBPick2(s"Selling out my own costs. \(p).", s"\(p), and you never heard my name."), n"");
+      o.answer = CBTalkSay(CBPick2(CBTf(n"Cyberbane-TalkTopics-SellingOutMyOwnCosts", [s"\(p)"]), CBTf(n"Cyberbane-TalkTopics-AndYouNeverHeardMyName", [s"\(p)"])), n"");
     } else {
-      o.answer = CBTalkSay(CBPick3(s"\(name)? Yeah, I know where. \(p).", s"That one? \(p) and they're yours.", s"\(p). Worth every eddie, trust me."), n"");
+      o.answer = CBTalkSay(CBPick3(CBTf(n"Cyberbane-TalkTopics-YeahIKnowWhere", [s"\(name)", s"\(p)"]), CBTf(n"Cyberbane-TalkTopics-ThatOneAndTheyReYours", [s"\(p)"]), CBTf(n"Cyberbane-TalkTopics-WorthEveryEddieTrustMe", [s"\(p)"])), n"");
     }
   }
   return o;
@@ -641,23 +641,23 @@ public func CBTalkGiveLead(sys: ref<CyberbaneSystem>, game: GameInstance, player
     if IsDefined(ds) {
       let cb = new CBTalkLiarCallback();
       cb.game = game;
-      cb.body = s"That one who sold you \(name)'s hiding place? Sold you a story. Nobody's been there.";
+      cb.body = CBTf(n"Cyberbane-TalkTopics-ThatOneWhoSoldYouS", [s"\(name)"]);
       ds.DelayCallback(cb, CBConfig.TalkLiarRevealSeconds(), false);
     }
     CBLog.Info(n"Talk", s"A liar sold V a story about rival \(r.id).");
-    return CBPick2(s"\(name)'s holed up \(CBPlacePhrase(fake)). Swear it.", s"Last I heard, \(name) was \(CBPlacePhrase(fake)). Go look.");
+    return CBPick2(CBTf(n"Cyberbane-TalkTopics-SHoledUpSwearIt", [s"\(name)", s"\(CBPlacePhrase(fake))"]), CBTf(n"Cyberbane-TalkTopics-LastIHeardWasGoLook", [s"\(name)", s"\(CBPlacePhrase(fake))"]));
   }
   let s = CBRivalHideout(sys, game, player, r);
   if !IsDefined(s) {
-    return "They move around. Can't pin them for you, not today.";
+    return CBT(n"Cyberbane-TalkTopics-TheyMoveAroundCanTPin");
   }
   CBMarkLeadTold(sys, s, t.faction, now);
   CBFileLog(sys, n"Informant", now, CBEventDistrict(sys, game), t.faction, Cast<Float>(r.id));
   CBLog.Info(n"Talk", s"Rival \(r.id) given up in the street (paid: \(paid)).");
   let place = CBPlacePhrase(s.district);
-  let pin = CBMapMarkersOn() ? " It's on your map." : "";
-  return CBPick3(s"\(name)'s holed up \(place).\(pin)", s"\(name)? Lying low \(place). Don't say where you heard it.\(pin)",
-                        s"Saw \(name) \(place). Last night.\(pin)");
+  let pin = CBMapMarkersOn() ? CBT(n"Cyberbane-StreetIntel-ItSOnYourMap") : "";
+  return CBPick3(CBTf(n"Cyberbane-TalkTopics-SHoledUp", [s"\(name)", s"\(place)", s"\(pin)"]), CBTf(n"Cyberbane-TalkTopics-LyingLowDonTSayWhere", [s"\(name)", s"\(place)", s"\(pin)"]),
+                        CBTf(n"Cyberbane-TalkTopics-SawLastNight", [s"\(name)", s"\(place)", s"\(pin)"]));
 }
 
 public class CBTalkLiarCallback extends DelayCallback {
@@ -686,9 +686,9 @@ public func CBTalkTipHint(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
     return "";
   }
   let name = CBRivalDisplayName(sys.GetContent(), r);
-  return CBPick3(s"Heard you're after \(name). I might know where they're lying low. For a price.",
-                        s"You're the one looking for \(name), right? I know a thing or two. Costs, though.",
-                        s"Word is you want \(name). I could help with that, if you make it worth my while.");
+  return CBPick3(CBTf(n"Cyberbane-TalkTopics-HeardYouReAfterIMight", [s"\(name)"]),
+                        CBTf(n"Cyberbane-TalkTopics-YouReTheOneLookingFor", [s"\(name)"]),
+                        CBTf(n"Cyberbane-TalkTopics-WordIsYouWantICould", [s"\(name)"]));
 }
 
 // [Pay]: only what V can cover, taken once the lead is good.
@@ -696,14 +696,14 @@ public func CBTalkDealPay(sys: ref<CyberbaneSystem>, game: GameInstance, player:
                           t: ref<CBTalkTarget>, rivalId: Int32, price: Int32) -> ref<CBTalkAnswer> {
   let r = sys.FindRivalById(rivalId);
   if !IsDefined(r) || CBWhereaboutsForSale(sys, game, r) != 0 {
-    return CBTalkSay("Forget it. Nothing to sell anymore.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-TalkTopics-ForgetItNothingToSellAnymore"), n"");
   }
   if CBTalkMoney(game) < price {
-    return CBTalkSay(CBPick2("Come back when you've got it.", "That's not the number, choom."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-ComeBackWhenYouVeGot"), CBT(n"Cyberbane-TalkTopics-ThatSNotTheNumberChoom")), n"");
   }
   let ts = GameInstance.GetTransactionSystem(game);
   if !IsDefined(ts) {
-    return CBTalkSay("Not now.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-War-NotNow"), n"");
   }
   ts.RemoveItem(player, ItemID.FromTDBID(t"Items.money"), price);
   CBFileLog(sys, n"TalkBought", CBGameSeconds(game), CBEventDistrict(sys, game), t.faction, Cast<Float>(price));
@@ -741,21 +741,21 @@ public func CBTalkDealHaggle(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   if RandF() < chance {
     h.price = Max(100, RoundF(Cast<Float>(price) * CBConfig.TalkHaggleCut() / 50.0) * 50);
     let p = h.price;
-    h.answer = CBTalkSay(CBPick3(s"Fine. \(p). Don't push it.", s"Alright, alright. \(p).", s"\(p). Final offer."), n"");
+    h.answer = CBTalkSay(CBPick3(CBTf(n"Cyberbane-TalkTopics-FineDonTPushIt", [s"\(p)"]), CBTf(n"Cyberbane-TalkTopics-AlrightAlright", [s"\(p)"]), CBTf(n"Cyberbane-TalkTopics-FinalOffer", [s"\(p)"])), n"");
     return h;
   }
   if round > 0 && RandF() < 0.4 {
     h.walked = true;
-    h.answer = CBTalkSay(CBPick2("Forget it. Deal's off.", "You know what? Find out yourself."), n"");
+    h.answer = CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-ForgetItDealSOff"), CBT(n"Cyberbane-TalkTopics-YouKnowWhatFindOutYourself")), n"");
     return h;
   }
   if temper == CBTalkTemperGreedy() {
     h.price = RoundF(Cast<Float>(price) * 1.2 / 50.0) * 50;
     let p = h.price;
-    h.answer = CBTalkSay(s"Now it's \(p). Want to try again?", n"");
+    h.answer = CBTalkSay(CBTf(n"Cyberbane-TalkTopics-NowItSWantToTry", [s"\(p)"]), n"");
     return h;
   }
-  h.answer = CBTalkSay(CBPick2("Take it or leave it.", "That's the price. Not a cent less."), n"");
+  h.answer = CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-TakeItOrLeaveIt"), CBT(n"Cyberbane-TalkTopics-ThatSThePriceNotA")), n"");
   return h;
 }
 
@@ -764,7 +764,7 @@ public func CBTalkDealLean(sys: ref<CyberbaneSystem>, game: GameInstance, player
                            t: ref<CBTalkTarget>, rivalId: Int32) -> ref<CBTalkAnswer> {
   let r = sys.FindRivalById(rivalId);
   if !IsDefined(r) {
-    return CBTalkSay("Nothing to tell anymore.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-TalkTopics-NothingToTellAnymore"), n"");
   }
   let npc = t.npc;
   let chance = CBTalkNerveGap(t) * CBConfig.TalkIntimidateScale() + CBConfig.TalkIntimidateBase();
@@ -778,7 +778,7 @@ public func CBTalkDealLean(sys: ref<CyberbaneSystem>, game: GameInstance, player
     return CBTalkSay(CBTalkGiveLead(sys, game, player, t, r, false), n"fear_beg");
   }
   CBTalkFear(sys, game, t.faction, -CBConfig.TalkLostFace());
-  return CBTalkSay(CBPick3("Nice try. Price just went to nothing, because you get nothing.", "Threaten me again. Go on.", "That's not how this works."), n"bump");
+  return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-NiceTryPriceJustWentTo"), CBT(n"Cyberbane-TalkTopics-ThreatenMeAgainGoOn"), CBT(n"Cyberbane-TalkTopics-ThatSNotHowThisWorks")), n"bump");
 }
 
 // The lifepath line's answer and what it does.
@@ -787,16 +787,16 @@ public func CBTalkAnswerLifepath(sys: ref<CyberbaneSystem>, game: GameInstance, 
   let f = t.faction;
   if lp == EnumInt(gamedataLifePath.Nomad) && Equals(f, n"Wraiths") {
     CBTalkSlight(sys, game, f, CBConfig.TalkInsultCost() * CBCodeInsult(f) * 0.5);
-    return CBTalkSay(CBPick2("A nomad. Should've guessed from the smell.", "Your clan isn't welcome here, nomad."), n"bump");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-ANomadShouldVeGuessedFrom"), CBT(n"Cyberbane-TalkTopics-YourClanIsnTWelcomeHere")), n"bump");
   }
   CBTalkWarm(sys, game, f, CBConfig.TalkLifepathWarmth(), CBConfig.PostureAllied() - 1.0);
   if lp == EnumInt(gamedataLifePath.StreetKid) {
-    return CBTalkSay(CBPick3("Yeah? Then you know how it works round here.", "Huh. Thought you looked familiar.", "Street kid, huh. Respect."), n"greeting");
+    return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-YeahThenYouKnowHowIt"), CBT(n"Cyberbane-TalkTopics-HuhThoughtYouLookedFamiliar"), CBT(n"Cyberbane-TalkTopics-StreetKidHuhRespect")), n"greeting");
   }
   if lp == EnumInt(gamedataLifePath.Nomad) {
-    return CBTalkSay(CBPick2("Family's family. You need anything, you come to us.", "The road brought you back, huh? Good."), n"greeting");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-FamilySFamilyYouNeedAnything"), CBT(n"Cyberbane-TalkTopics-TheRoadBroughtYouBackHuh")), n"greeting");
   }
-  return CBTalkSay(CBPick2("Then you know they'd sell us both out for a quarter point. Fine. We talk.", "Ex-corpo. Didn't think you'd get it. Maybe you do."), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-ThenYouKnowTheyDSell"), CBT(n"Cyberbane-TalkTopics-ExCorpoDidnTThinkYou")), n"");
 }
 
 // A fan stands V a drink: eddies, twice a day at most across the whole street.

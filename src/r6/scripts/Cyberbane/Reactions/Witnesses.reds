@@ -91,13 +91,13 @@ public func CBWitnessCarries(sys: ref<CyberbaneSystem>, game: GameInstance, info
   if CBToastsOn() {
     let gang = CBFactionLabel(info.faction);
     if StrLen(gang) == 0 {
-      gang = "them";
+      gang = CBT(n"Cyberbane-Witnesses-Them");
     }
-    CBOverheard(game, "Witness", CBPick4(
-      "Oh, that was one of " + gang + ". They're gonna want to know about this.",
-      "I saw that. I saw your face. " + CBCapFirst(gang) + " pay for faces.",
-      "Somebody's got to tell " + gang + ". Might as well be me.",
-      "Nobody saw nothing, right? Wrong. I'm telling " + gang + "."));
+    CBOverheard(game, CBT(n"Cyberbane-Witnesses-Witness"), CBPick4(
+      CBTf(n"Cyberbane-Witnesses-OhThatWasOneOfThey", [gang]),
+      CBTf(n"Cyberbane-Witnesses-ISawThatISawYour", [CBCapFirst(gang)]),
+      CBTf(n"Cyberbane-Witnesses-SomebodySGotToTellMight", [gang]),
+      CBTf(n"Cyberbane-Witnesses-NobodySawNothingRightWrongI", [gang])));
   }
   return true;
 }
@@ -144,8 +144,8 @@ public func CBWitnessTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
     let where = CBDistrictLabel(book.tellerDistrict);
     if StrLen(gang) > 0 {
       CBHearsayFromStreet(game, StrLen(where) > 0
-        ? "Somebody ran to " + gang + ". They know you were in " + where + "."
-        : "Somebody ran to " + gang + ". They know it was you.", n"");
+        ? CBTf(n"Cyberbane-Witnesses-SomebodyRanToTheyKnowYou", [gang, where])
+        : CBTf(n"Cyberbane-Witnesses-SomebodyRanToTheyKnowIt", [gang]), n"");
     }
   }
 }
@@ -175,5 +175,5 @@ public func CBWitnessHudLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     return "";
   }
   let who = CBClip(CBBarFactionLabel(book.tellerFaction), CBConfig.HudNameMaxChars());
-  return "A WITNESS IS RUNNING TO " + (StrLen(who) > 0 ? who : "THEM") + "   -   " + StrUpper(CBTimeText(left));
+  return CBTf(n"Cyberbane-Witnesses-AWITNESSISRUNNINGTO", [(StrLen(who) > 0 ? who : CBT(n"Cyberbane-Witnesses-THEM")), StrUpper(CBTimeText(left))]);
 }

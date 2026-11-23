@@ -214,21 +214,27 @@ func CBClockWord(gameSeconds: Float) -> String {
 
 // The hour and which day (2.6.1): "21:00 today", "03:00 tomorrow", "now" once it has started. The hour alone left a
 // player reading "around 03:00" at midnight unsure whether it meant in three hours or tomorrow night.
+// Is that moment now or already past, the way CBWhenWord says "now"? For code to ask instead of reading the word (2.7.1).
+public func CBWhenIsNow(game: GameInstance, at: Float) -> Bool {
+  let now = CBGameSeconds(game);
+  return now > 0.0 && at <= now;
+}
+
 public func CBWhenWord(game: GameInstance, at: Float) -> String {
   let now = CBGameSeconds(game);
   if now <= 0.0 {
     return CBClockWord(at);
   }
   if at <= now {
-    return "now";
+    return CBT(n"Cyberbane-LivingStreet-Now");
   }
   let dayNow = Cast<Int32>(now / 86400.0);
   let dayAt = Cast<Int32>(at / 86400.0);
   if dayAt == dayNow {
-    return CBClockWord(at) + " today";
+    return CBTf(n"Cyberbane-LivingStreet-Today", [CBClockWord(at)]);
   }
   if dayAt == dayNow + 1 {
-    return CBClockWord(at) + " tomorrow";
+    return CBTf(n"Cyberbane-LivingStreet-Tomorrow", [CBClockWord(at)]);
   }
   return CBClockWord(at);
 }
@@ -298,8 +304,9 @@ public class CBStreetLife {
         CBSanctuaryHoldTag(sys, game, des, player, tag, false, true);
       }
     }
+    // Nor on home ground (2.7.1, Spawn/HomeGround.reds).
     let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || sys.IsInSanctuary()
-            || sys.IsInSafeZone() || CBPlayerInScene(game);
+            || sys.IsInSafeZone() || CBPlayerInScene(game) || CBHomeKeepsOut(sys);
     // The shared room nearly gone: what is holding it, once a game hour (2.5.7).
     if CBSpawnRoom(game) <= 2 {
       let rtRoom = CyberbaneRuntime.Get();
@@ -364,7 +371,7 @@ public class CBStreetLife {
       let e = log[i];
       i -= 1;
       if IsDefined(e) && now - e.at <= CBConfig.SecondsPerDay() && CBWhileOutWorthIt(e.kind) {
-        CBSystemNote(game, "Last you heard: " + CBHudLogLine(sys, e, now), 9.0);
+        CBSystemNote(game, CBTf(n"Cyberbane-LivingStreet-LastYouHeard", [CBHudLogLine(sys, e, now)]), 9.0);
         return;
       }
     }
@@ -401,7 +408,7 @@ public class CBStreetLife {
          && Vector4.Distance(p.GetWorldPosition(), this.m_bagDrop) <= 8.0 {
         this.m_bagDone = true;
         if CBMessagesOn() {
-          CBPhoneFromDistrict(game, sys.GetCurrentDistrict(), s"\(CBCapFirst(CBPossessive(CBFactionLabel(this.m_bagFaction)))) take made it to the drop. Next week, maybe.");
+          CBPhoneFromDistrict(game, sys.GetCurrentDistrict(), CBTf(n"Cyberbane-LivingStreet-TakeMadeItToTheDrop", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(this.m_bagFaction))))"]));
         }
         CBLog.Info(n"Street", "A bagman reached his drop.");
       }
@@ -419,15 +426,15 @@ public class CBStreetLife {
       return;
     }
     let bagWhy = "";
-    if busy { bagWhy = "V is somewhere the story, a job or a safe place keeps quiet"; }
-    else { if player.IsInCombat() { bagWhy = "V is in a fight"; }
-    else { if IsDefined(player.GetMountedVehicle()) { bagWhy = "V is in a car"; }
-    else { if CBPlayerIndoors(game) { bagWhy = "V is indoors"; }
-    else { if CBHuntersOut(sys, game) { bagWhy = "somebody is out hunting V"; }
-    else { if CBHuntPending(sys) { bagWhy = "somebody is on their way for V"; } } } } } }
+    if busy { bagWhy = CBT(n"Cyberbane-LivingStreet-VIsSomewhereTheStoryA"); }
+    else { if player.IsInCombat() { bagWhy = CBT(n"Cyberbane-LivingStreet-VIsInAFight"); }
+    else { if IsDefined(player.GetMountedVehicle()) { bagWhy = CBT(n"Cyberbane-LivingStreet-VIsInACar"); }
+    else { if CBPlayerIndoors(game) { bagWhy = CBT(n"Cyberbane-LivingStreet-VIsIndoors"); }
+    else { if CBHuntersOut(sys, game) { bagWhy = CBT(n"Cyberbane-LivingStreet-SomebodyIsOutHuntingV"); }
+    else { if CBHuntPending(sys) { bagWhy = CBT(n"Cyberbane-LivingStreet-SomebodyIsOnTheirWayFor"); } } } } } }
     // Nor before V's district is known (2.6.3): the roll found nobody holding "None" and spent its clock.
     if StrLen(bagWhy) == 0 && Equals(sys.GetCurrentDistrict(), n"") {
-      bagWhy = "V's district is not known yet";
+      bagWhy = CBT(n"Cyberbane-LivingStreet-VSDistrictIsNotKnown");
     }
     if StrLen(bagWhy) > 0 {
       CBStreetWhyNot(game, "bagman", bagWhy);
@@ -464,14 +471,14 @@ public class CBStreetLife {
       this.m_bagHasDrop = CBGangDropPlace(sys, game, player, holder, CBConfig.BagmanDropMin(), CBConfig.BagmanDropMax(), drop, dropDistrict);
       if this.m_bagHasDrop {
         this.m_bagDrop = drop;
-        this.m_bagDropPinned = CBPinPlace(game, drop, s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder)))) drop: the take is headed here", this.m_bagDropPin);
+        this.m_bagDropPinned = CBPinPlace(game, drop, CBTf(n"Cyberbane-LivingStreet-DropTheTakeIsHeadedHere", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder))))"]), this.m_bagDropPin);
       }
       // A message, not word going round (2.6.5): something V can act on is never held back as chatter.
       if CBMessagesOn() {
-        let watch = placed > 1 ? "One lookout." : "Nobody watching his back.";   // only when one came (2.5.5)
+        let watch = placed > 1 ? CBT(n"Cyberbane-LivingStreet-OneLookout") : CBT(n"Cyberbane-LivingStreet-NobodyWatchingHisBack");   // only when one came (2.5.5)
         CBPhoneFromDistrict(game, sys.GetCurrentDistrict(), this.m_bagHasDrop
-          ? s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder)))) bagman is walking the week's take to their drop. \(watch) Heavy pockets. I marked the drop."
-          : s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder)))) bagman is doing the rounds near you with the week's take. \(watch) Heavy pockets.");
+          ? CBTf(n"Cyberbane-LivingStreet-BagmanIsWalkingTheWeekS", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder))))", s"\(watch)"])
+          : CBTf(n"Cyberbane-LivingStreet-BagmanIsDoingTheRoundsNear", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder))))", s"\(watch)"]));
       }
       CBLog.Info(n"Street", s"A \(NameToString(holder)) bagman is out near V\(this.m_bagHasDrop ? ", walking to their drop" : "").");
     }
@@ -492,9 +499,9 @@ public class CBStreetLife {
     CBTalkSlight(sys, game, this.m_bagFaction, CBConfig.BagmanStandingLoss());
     let now = CBGameSeconds(game);
     CBFileLog(sys, n"BagmanRobbed", now, CBEventDistrict(sys, game), this.m_bagFaction, Cast<Float>(take));
-    CBSystemNote(game, s"you took the bag: \(take)eb.", 5.0);
+    CBSystemNote(game, CBTf(n"Cyberbane-LivingStreet-YouTookTheBagEb", [s"\(take)"]), 5.0);
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"Somebody robbed \(CBPossessive(CBFactionLabel(this.m_bagFaction))) bagman. Word is it was you.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-LivingStreet-SomebodyRobbedBagmanWordIsIt", [s"\(CBPossessive(CBFactionLabel(this.m_bagFaction)))"]), n"");
     }
     CBLog.Info(n"Street", s"V robbed a bagman for \(take)eb.");
   }
@@ -605,7 +612,7 @@ public class CBStreetLife {
   // Asked in a conversation (Reactions/StreetTalk.reds). Starts one and says what it is, or says no.
   public func OfferFavour(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
     if this.FavourOpen() || !CBStreetLifeOn(n"favours") {
-      return CBTalkSay("Not right now. Come back another time.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-LivingStreet-NotRightNowComeBackAnother"), n"");
     }
     let now = sys.GetTickCount();
     // A lookout of a gang at war with theirs, first.
@@ -622,14 +629,14 @@ public class CBStreetLife {
           this.m_favUntil = now + CBConfig.FavourLifeTicks();
           let rt = CyberbaneRuntime.Get();
           if IsDefined(rt) {
-            this.FavourPin(game, rt.lastSpawnAt, s"A favour for \(CBFactionLabel(t.faction)): run off the \(CBFactionLabel(g)) lookout");
+            this.FavourPin(game, rt.lastSpawnAt, CBTf(n"Cyberbane-LivingStreet-AFavourForRunOffThe", [s"\(CBFactionLabel(t.faction))", s"\(CBFactionLabel(g))"]));
           }
           CBLog.Info(n"Street", s"A favour for \(NameToString(t.faction)): run off a \(NameToString(g)) lookout.");
           this.RestGang(game, t.faction);
           if IsDefined(t.npc) {
             t.npc.cbFavourRoll = 2;
           }
-          return CBTalkSay(s"One of \(CBPossessive(CBFactionLabel(g))) lookouts is watching our corner, a couple of streets over. Run them off. Marked it for you.", n"");
+          return CBTalkSay(CBTf(n"Cyberbane-LivingStreet-OneOfLookoutsIsWatchingOur", [s"\(CBPossessive(CBFactionLabel(g)))"]), n"");
         }
       }
     }
@@ -640,9 +647,9 @@ public class CBStreetLife {
       if IsDefined(t.npc) {
         t.npc.cbFavourRoll = 2;
       }
-      return CBTalkSay(s"Somebody in \(place) owes us and keeps forgetting. Go and collect. Lean on them, and if they swing, fists only: nobody pays from a body bag. I marked it for you.", n"");
+      return CBTalkSay(CBTf(n"Cyberbane-LivingStreet-SomebodyInOwesUsAndKeeps", [s"\(place)"]), n"");
     }
-    return CBTalkSay("Nothing that needs you today. Ask me again sometime.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-LivingStreet-NothingThatNeedsYouTodayAsk"), n"");
   }
 
   // V leaned on somebody (Reactions/StreetTalk.reds, Intimidate and Antagonize): was it the one who owes?
@@ -662,8 +669,8 @@ public class CBStreetLife {
     this.m_favLeaned = false;
     this.m_favTarget = null;
     this.m_favUntil = now + CBConfig.FavourDebtLifeTicks();
-    let place = NotEquals(where, n"") && NotEquals(where, sys.GetCurrentDistrict()) ? CBDistrictLabel(where) : "a few blocks over";
-    this.FavourPin(game, at, s"A favour for \(CBFactionLabel(faction)): collect a debt in \(place)");
+    let place = NotEquals(where, n"") && NotEquals(where, sys.GetCurrentDistrict()) ? CBDistrictLabel(where) : CBT(n"Cyberbane-Allies-AFewBlocksOver");
+    this.FavourPin(game, at, CBTf(n"Cyberbane-LivingStreet-AFavourForCollectADebt", [s"\(CBFactionLabel(faction))", s"\(place)"]));
     this.RestGang(game, faction);
     CBLog.Info(n"Street", s"A favour for \(NameToString(faction)): collect a debt in \(NameToString(where)).");
     return place;
@@ -738,9 +745,9 @@ public class CBStreetLife {
     CBGrantAbility(p as NPCPuppet, t"Ability.IsAggressive");
     CBMakeHostileToPlayer(game, p);
     if CBMessagesOn() {
-      CBOverheard(game, "Owes money", CBLineOf(["Pay those thieves? Come and take it, then.",
-                                                "I'm not paying. You want it, earn it.",
-                                                "Fists, then. Winner keeps the money."]), true);
+      CBOverheard(game, CBT(n"Cyberbane-LivingStreet-OwesMoney"), CBLineOf([CBT(n"Cyberbane-LivingStreet-PayThoseThievesComeAndTake"),
+                                                CBT(n"Cyberbane-LivingStreet-IMNotPayingYouWant"),
+                                                CBT(n"Cyberbane-LivingStreet-FistsThenWinnerKeepsTheMoney")]), true);
     }
   }
 
@@ -789,8 +796,8 @@ public class CBStreetLife {
             CBFileLog(sys, n"FavourKilled", CBGameSeconds(game), CBEventDistrict(sys, game), this.m_favFaction, 0.0);
           }
           if CBMessagesOn() {
-            CBPhoneFromAlly(game, this.m_favFaction, byV ? "You killed them? Nobody pays from a body bag. The money's gone, and so is our patience."
-                                                         : "Forget it. Somebody got to them before you did, and a body doesn't pay.");
+            CBPhoneFromAlly(game, this.m_favFaction, byV ? CBT(n"Cyberbane-LivingStreet-YouKilledThemNobodyPaysFrom")
+                                                         : CBT(n"Cyberbane-LivingStreet-ForgetItSomebodyGotToThem"));
           }
           this.FavourEnd(game);
           return;
@@ -812,7 +819,7 @@ public class CBStreetLife {
             if hp >= 0.0 && hp < CBConfig.WannabeLoseHealth() {
               CBWannabeStandDown(game, debtor);
               if CBMessagesOn() {
-                CBPhoneFromAlly(game, this.m_favFaction, "Heard they put you on the ground. Forget the money.");
+                CBPhoneFromAlly(game, this.m_favFaction, CBT(n"Cyberbane-LivingStreet-HeardTheyPutYouOnThe"));
               }
               this.FavourEnd(game);
               return;
@@ -821,7 +828,7 @@ public class CBStreetLife {
                && Vector4.Distance(player.GetWorldPosition(), debtor.GetWorldPosition()) > CBConfig.WannabeWalkAwayDistance() {
               CBWannabeStandDown(game, debtor);
               if CBMessagesOn() {
-                CBPhoneFromAlly(game, this.m_favFaction, "They're still not paying. Forget it.");
+                CBPhoneFromAlly(game, this.m_favFaction, CBT(n"Cyberbane-LivingStreet-TheyReStillNotPayingForget"));
               }
               this.FavourEnd(game);
               return;
@@ -837,8 +844,8 @@ public class CBStreetLife {
     if now >= this.m_favUntil {
       if CBMessagesOn() {
         // What happened, for each kind (2.5.5): "somebody else handled it" fit neither a debt nor a lookout plainly.
-        CBPhoneFromAlly(game, this.m_favFaction, this.m_favKind == 2 ? "Forget it. They paid up before you got to them."
-                                                                     : "Forget it. The lookout's gone. Somebody else ran them off.");
+        CBPhoneFromAlly(game, this.m_favFaction, this.m_favKind == 2 ? CBT(n"Cyberbane-LivingStreet-ForgetItTheyPaidUpBefore")
+                                                                     : CBT(n"Cyberbane-LivingStreet-ForgetItTheLookoutSGone"));
       }
       this.FavourEnd(game);
     }
@@ -857,13 +864,13 @@ public class CBStreetLife {
     if RandF() < CBConfig.FavourTipChance() {
       let i = CBIntelGive(sys, game, player, faction, true);
       if i.kind != CBIntelNone() {
-        tip = " And something extra: " + CBIntelWritten(i);
+        tip = CBTf(n"Cyberbane-LivingStreet-AndSomethingExtra", [CBIntelWritten(i)]);
       }
     }
     CBFileLog(sys, n"Favour", CBGameSeconds(game), CBEventDistrict(sys, game), faction, Cast<Float>(pay));
     if CBMessagesOn() {
-      CBPhoneFromAlly(game, faction, beaten ? s"Heard you had to put them on the ground. They paid. \(pay)eb, and you've got friends here.\(tip)"
-                                            : s"Saw what you did. \(pay)eb, and you've got friends here.\(tip)");
+      CBPhoneFromAlly(game, faction, beaten ? CBTf(n"Cyberbane-LivingStreet-HeardYouHadToPutThem", [s"\(pay)", s"\(tip)"])
+                                            : CBTf(n"Cyberbane-LivingStreet-SawWhatYouDidEbAnd", [s"\(pay)", s"\(tip)"]));
     }
     CBLog.Info(n"Street", s"A favour for \(NameToString(faction)) done; \(pay)eb.");
     let chainable = this.m_favKind == 2 && this.m_favChain < 2;
@@ -874,7 +881,7 @@ public class CBStreetLife {
       if StrLen(next) > 0 {
         this.m_favChain += 1;
         if CBMessagesOn() {
-          CBPhoneFromAlly(game, faction, s"They gave up a name before they paid: somebody in \(next) owes us too. Same deal. I marked it.");
+          CBPhoneFromAlly(game, faction, CBTf(n"Cyberbane-LivingStreet-TheyGaveUpANameBefore", [s"\(next)"]));
         }
       }
     }
@@ -1046,8 +1053,8 @@ public class CBStreetLife {
           CBRivalGiveTrait(ally, n"GrudgeBearer");
         }
         if IsDefined(ally) && CBMessagesOn() {
-          CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), ally), CBPick3("We're square for today. Next time it's you and me.",
-            "Don't thank me. Nobody else gets to kill you. That's mine.", "Enjoy it. The next fight's ours, and I won't be on your side."), 4.0);
+          CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), ally), CBPick3(CBT(n"Cyberbane-LivingStreet-WeReSquareForTodayNext"),
+            CBT(n"Cyberbane-LivingStreet-DonTThankMeNobodyElse"), CBT(n"Cyberbane-LivingStreet-EnjoyItTheNextFightS")), 4.0);
         }
         for id in des.GetTaggedIDs(n"CB_Ally") {
           let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
@@ -1124,9 +1131,9 @@ public class CBStreetLife {
           this.m_allyCalm = 0;
           this.m_allyDay = CBGameDay(game);
           // On V's side for once (2.5.6): no taunts to send back under it.
-          CBPhoneSendAside(game, CBRivalDisplayName(sys.GetContent(), r), "Nobody kills you but me. Keep your head down.", CBHudRed());
+          CBPhoneSendAside(game, CBRivalDisplayName(sys.GetContent(), r), CBT(n"Cyberbane-LivingStreet-NobodyKillsYouButMeKeep"), CBHudRed());
           // And they say so as they arrive, in the street ([E4], 2.4.4).
-          CBAnnounceLater(game, CBRivalDisplayName(sys.GetContent(), r), CBPick2("Nobody kills this one but me!", "Back off! This merc's mine!"), 2.5);
+          CBAnnounceLater(game, CBRivalDisplayName(sys.GetContent(), r), CBPick2(CBT(n"Cyberbane-LivingStreet-NobodyKillsThisOneButMe"), CBT(n"Cyberbane-LivingStreet-BackOffThisMercSMine")), 2.5);
           CBLog.Info(n"Street", s"Rival \(r.id) came to help V against \(NameToString(enemy)).");
           return;
         }

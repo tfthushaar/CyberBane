@@ -25,31 +25,31 @@
 // said whose.
 public func CBWhisperSpeaker(faction: CName) -> String {
   if Equals(faction, n"") || !CBFactionOn(faction) {
-    return CBPick3("Passer-by", "Local", "Someone nearby");
+    return CBPick3(CBT(n"Cyberbane-Whispers-PasserBy"), CBT(n"Cyberbane-Whispers-Local"), CBT(n"Cyberbane-Whispers-SomeoneNearby"));
   }
   let member = CBFactionMemberWord(faction);
-  return StrLen(member) > 0 ? member : CBPick3("Ganger", "Lookout", "Crew member");
+  return StrLen(member) > 0 ? member : CBPick3(CBT(n"Cyberbane-Whispers-Ganger"), CBT(n"Cyberbane-Whispers-Lookout"), CBT(n"Cyberbane-Whispers-CrewMember"));
 }
 
 // One of theirs, the way the street would say it.
 public func CBFactionMemberWord(faction: CName) -> String {
-  if Equals(faction, n"NCPD") { return CBPick2("NCPD Officer", "Patrol Cop"); }
-  if Equals(faction, n"MaxTac") { return "MaxTac"; }
-  if Equals(faction, n"Maelstrom") { return "Maelstromer"; }
-  if Equals(faction, n"TygerClaws") { return "Tyger Claw"; }
-  if Equals(faction, n"Valentinos") { return "Valentino"; }
-  if Equals(faction, n"SixthStreet") { return "6th Street"; }
-  if Equals(faction, n"Animals") { return "Animal"; }
-  if Equals(faction, n"VoodooBoys") { return "Voodoo Boy"; }
-  if Equals(faction, n"Scavengers") { return "Scav"; }
-  if Equals(faction, n"Mox") { return "Mox"; }
-  if Equals(faction, n"Barghest") { return "Barghest"; }
-  if Equals(faction, n"Scrappers") { return "Scrapper"; }
-  if Equals(faction, n"Aldecaldos") { return "Aldecaldo"; }
-  if Equals(faction, n"Wraiths") { return "Wraith"; }
-  if Equals(faction, n"Arasaka") { return "Arasaka Security"; }
-  if Equals(faction, n"Militech") { return "Militech"; }
-  if Equals(faction, n"KangTao") { return "Kang Tao"; }
+  if Equals(faction, n"NCPD") { return CBPick2(CBT(n"Cyberbane-Whispers-NCPDOfficer"), CBT(n"Cyberbane-Whispers-PatrolCop")); }
+  if Equals(faction, n"MaxTac") { return CBT(n"Cyberbane-TitleNaming-MaxTac"); }
+  if Equals(faction, n"Maelstrom") { return CBT(n"Cyberbane-Whispers-Maelstromer"); }
+  if Equals(faction, n"TygerClaws") { return CBT(n"Cyberbane-Whispers-TygerClaw"); }
+  if Equals(faction, n"Valentinos") { return CBT(n"Cyberbane-Whispers-Valentino"); }
+  if Equals(faction, n"SixthStreet") { return CBT(n"Cyberbane-TitleNaming-6thStreet"); }
+  if Equals(faction, n"Animals") { return CBT(n"Cyberbane-Whispers-Animal"); }
+  if Equals(faction, n"VoodooBoys") { return CBT(n"Cyberbane-Whispers-VoodooBoy"); }
+  if Equals(faction, n"Scavengers") { return CBT(n"Cyberbane-Whispers-Scav"); }
+  if Equals(faction, n"Mox") { return CBT(n"Cyberbane-TitleNaming-Mox"); }
+  if Equals(faction, n"Barghest") { return CBT(n"Cyberbane-TitleNaming-Barghest"); }
+  if Equals(faction, n"Scrappers") { return CBT(n"Cyberbane-Whispers-Scrapper"); }
+  if Equals(faction, n"Aldecaldos") { return CBT(n"Cyberbane-Whispers-Aldecaldo"); }
+  if Equals(faction, n"Wraiths") { return CBT(n"Cyberbane-Whispers-Wraith"); }
+  if Equals(faction, n"Arasaka") { return CBT(n"Cyberbane-Whispers-ArasakaSecurity"); }
+  if Equals(faction, n"Militech") { return CBT(n"Cyberbane-TitleNaming-Militech"); }
+  if Equals(faction, n"KangTao") { return CBT(n"Cyberbane-TitleNaming-KangTao"); }
   return "";
 }
 
@@ -86,43 +86,43 @@ public func CBWhisperRumor(sys: ref<CyberbaneSystem>, game: GameInstance) -> ref
 func CBRumorPhrase(sys: ref<CyberbaneSystem>, r: ref<CBRumor>) -> String {
   let where = CBDistrictLabel(r.origin);
   if StrLen(where) == 0 {
-    where = "across town";
+    where = CBT(n"Cyberbane-Grapevine-AcrossTown");
   } else {
-    where = "in " + where;
+    where = CBTf(n"Cyberbane-Whispers-In", [where]);
   }
   let gang = CBFactionLabel(r.faction);
   if Equals(r.kind, n"Massacre") {
     return CBLineOf([
-      "Heard they found a room full of bodies " + where + ".",
-      "Whole crew went quiet " + where + ". Nobody's saying who.",
-      "Word " + where + " is somebody cleared a building on their own.",
-      "Trauma Team wouldn't even go in " + where + ". Nothing left to save.",
-      "Scrollers are saying " + where + " looked like a war zone. One shooter."]);
+      CBTf(n"Cyberbane-Whispers-HeardTheyFoundARoomFull", [where]),
+      CBTf(n"Cyberbane-Whispers-WholeCrewWentQuietNobodyS", [where]),
+      CBTf(n"Cyberbane-Whispers-WordIsSomebodyClearedABuilding", [where]),
+      CBTf(n"Cyberbane-Whispers-TraumaTeamWouldnTEvenGo", [where]),
+      CBTf(n"Cyberbane-Whispers-ScrollersAreSayingLookedLikeA", [where])]);
   }
   if Equals(r.kind, n"BossKill") {
     if StrLen(gang) > 0 {
       return CBPick3(
-        "They put a boss of " + gang + " in the ground " + where + ".",
-        CBCapFirst(gang) + " lost someone who mattered " + where + ".",
-        "Heard " + gang + " are short a boss " + where + ".");
+        CBTf(n"Cyberbane-Whispers-TheyPutABossOfIn", [gang, where]),
+        CBTf(n"Cyberbane-Whispers-LostSomeoneWhoMattered", [CBCapFirst(gang), where]),
+        CBTf(n"Cyberbane-Whispers-HeardAreShortABoss", [gang, where]));
     }
-    return "Somebody took a boss off the board " + where + ".";
+    return CBTf(n"Cyberbane-Whispers-SomebodyTookABossOffThe", [where]);
   }
   if Equals(r.kind, n"Deed") {
     return CBLineOf([
-      "Something went down " + where + ". Street's still chewing on it.",
-      "You hear about that job " + where + "?",
-      "Everyone's talking about what happened " + where + ".",
-      "Fixers " + where + " are calling it the job of the year."]);
+      CBTf(n"Cyberbane-Whispers-SomethingWentDownStreetSStill", [where]),
+      CBTf(n"Cyberbane-Whispers-YouHearAboutThatJob", [where]),
+      CBTf(n"Cyberbane-Whispers-EveryoneSTalkingAboutWhatHappened", [where]),
+      CBTf(n"Cyberbane-Whispers-FixersAreCallingItTheJob", [where])]);
   }
   if StrLen(gang) > 0 {
     return CBLineOf([
-      CBCapFirst(gang) + " are counting bodies " + where + ".",
-      "Another one of " + gang + " down " + where + ".",
-      "Not a good week to be " + gang + ".",
-      CBCapFirst(gang) + " are pulling their people off the corners " + where + ". Scared, if you ask me."]);
+      CBTf(n"Cyberbane-Whispers-AreCountingBodies", [CBCapFirst(gang), where]),
+      CBTf(n"Cyberbane-Whispers-AnotherOneOfDown", [gang, where]),
+      CBTf(n"Cyberbane-Whispers-NotAGoodWeekToBe", [gang]),
+      CBTf(n"Cyberbane-Whispers-ArePullingTheirPeopleOffThe", [CBCapFirst(gang), where])]);
   }
-  return "Word is somebody's been busy " + where + ".";
+  return CBTf(n"Cyberbane-Whispers-WordIsSomebodySBeenBusy", [where]);
 }
 
 // ---- What gets said (1.9.5) -------------------------------------------------------------------------
@@ -149,29 +149,29 @@ public func CBGangBroken(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
 public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
                           faction: CName, mood: CName, topic: CName) -> String {
   let st = CBReadStreet(sys, game, faction);
-  let gang = StrLen(st.factionLabel) > 0 ? st.factionLabel : "that crew";
+  let gang = StrLen(st.factionLabel) > 0 ? st.factionLabel : CBT(n"Cyberbane-Whispers-ThatCrew");
 
   // Topic-specific lines take priority (spec §9.10 topic weighting).
   if Equals(topic, n"bossloss") {
     if StrLen(st.leader) > 0 {
       return CBPick4(
-        "You put down one of our bosses. " + st.leader + " runs things now, and remembers.",
-        "We know what you did to ours. " + st.leader + " has your name on a list.",
-        "That was a boss of " + gang + " you killed. Someone's getting paid for you.",
-        "Every one of us knows your face now. Think about that.");
+        CBTf(n"Cyberbane-Whispers-YouPutDownOneOfOur", [st.leader]),
+        CBTf(n"Cyberbane-Whispers-WeKnowWhatYouDidTo", [st.leader]),
+        CBTf(n"Cyberbane-Whispers-ThatWasABossOfYou", [gang]),
+        CBT(n"Cyberbane-Whispers-EveryOneOfUsKnowsYour"));
     }
     return CBPick4(
-      "You put down one of our bosses. The crew doesn't forget that.",
-      "We know what you did to ours. We're not done.",
-      "That was a boss of " + gang + " you killed. Someone's getting paid for you.",
-      "Every one of us knows your face now. Think about that.");
+      CBT(n"Cyberbane-Whispers-YouPutDownOneOfOur-2"),
+      CBT(n"Cyberbane-Whispers-WeKnowWhatYouDidTo-2"),
+      CBTf(n"Cyberbane-Whispers-ThatWasABossOfYou", [gang]),
+      CBT(n"Cyberbane-Whispers-EveryOneOfUsKnowsYour"));
   }
   if Equals(topic, n"maxtac") {
     return CBPick4(
-      "That's the merc who went up against MaxTac and walked away.",
-      "MaxTac came for that one. MaxTac went home light.",
-      "I've seen the footage. They took on MaxTac and they're still breathing.",
-      "You don't survive MaxTac. That one did.");
+      CBT(n"Cyberbane-Whispers-ThatSTheMercWhoWent"),
+      CBT(n"Cyberbane-Whispers-MaxTacCameForThatOneMaxTac"),
+      CBT(n"Cyberbane-Whispers-IVeSeenTheFootageThey"),
+      CBT(n"Cyberbane-Whispers-YouDonTSurviveMaxTacThat"));
   }
   if Equals(topic, n"warning") {
     // In their own voice, most of the time (Narrative/GangVoice.reds).
@@ -182,15 +182,15 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
     }
     if st.kills >= CBConfig.WarnKnowsYouKills() {
       return CBPick3(
-        "You've put enough of us in the ground. Walk away, or you're next.",
-        CBCapFirst(gang) + " remember every one. Turn around.",
-        "Last warning. After this it's not talking.");
+        CBT(n"Cyberbane-Whispers-YouVePutEnoughOfUs"),
+        CBTf(n"Cyberbane-Whispers-RememberEveryOneTurnAround", [CBCapFirst(gang)]),
+        CBT(n"Cyberbane-Whispers-LastWarningAfterThisItS"));
     }
     return CBPick4(
-      "You've got a lot of nerve showing up here. Walk away while you still can.",
-      "Wrong street, choom. Turn around.",
-      CBCapFirst(gang) + " want you gone. This is the only time we ask nicely.",
-      "You're standing on our block. That's one mistake. Don't make two.");
+      CBT(n"Cyberbane-Whispers-YouVeGotALotOf"),
+      CBT(n"Cyberbane-Whispers-WrongStreetChoomTurnAround"),
+      CBTf(n"Cyberbane-Whispers-WantYouGoneThisIsThe", [CBCapFirst(gang)]),
+      CBT(n"Cyberbane-Whispers-YouReStandingOnOurBlock"));
   }
 
   let bag = new CBLineBag();
@@ -201,8 +201,8 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   // V's own streets (Economy/War.reds, [37]).
   if CBOwnDistrict(game, st.district) && !st.masked {
-    bag.Add(n"own", 3.0, CBLineOf(["These are their streets now. Nobody argues.", "Gangs pay to walk through here now. Pay them, I mean.",
-                                    "That's who runs this place. Not the Claws, not anybody. Them."]));
+    bag.Add(n"own", 3.0, CBLineOf([CBT(n"Cyberbane-Whispers-TheseAreTheirStreetsNowNobody"), CBT(n"Cyberbane-Whispers-GangsPayToWalkThroughHere"),
+                                    CBT(n"Cyberbane-Whispers-ThatSWhoRunsThisPlace")]));
   }
   // Something coming near here (Spawn/StreetEvents.reds, [32]).
   let coming = CBEventWhisper(game);
@@ -249,28 +249,28 @@ func CBWhisperNow(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> Vo
   if st.recentKills >= 3 || st.aura >= 25.0 {
     if Equals(mood, n"respect") {
       bag.Add(n"now", 3.0, CBPick3(
-        "Busy night for that one. Better them than us.",
-        "Still got the fight on them. Give them room.",
-        "Whatever just happened, I'm glad it wasn't me."));
+        CBT(n"Cyberbane-Whispers-BusyNightForThatOneBetter"),
+        CBT(n"Cyberbane-Whispers-StillGotTheFightOnThem"),
+        CBT(n"Cyberbane-Whispers-WhateverJustHappenedIMGlad")));
     } else {
       bag.Add(n"now", 3.0, CBPick4(
-        "Blood's still fresh on that one. Don't look.",
-        "They just did something. You can see it on them.",
-        "Walk. Don't run, just walk.",
-        "Somebody's not going home tonight, and that's who did it."));
+        CBT(n"Cyberbane-Whispers-BloodSStillFreshOnThat"),
+        CBT(n"Cyberbane-Whispers-TheyJustDidSomethingYouCan"),
+        CBT(n"Cyberbane-Whispers-WalkDonTRunJustWalk"),
+        CBT(n"Cyberbane-Whispers-SomebodySNotGoingHomeTonight")));
     }
   }
   if st.heat >= 2 {
     bag.Add(n"heat", 1.5, CBPick3(
-      "NCPD's all over the net looking for that one.",
-      "Cops want that face. I'm not standing next to it.",
-      "Every patrol in the district's got that one's description."));
+      CBT(n"Cyberbane-Whispers-NCPDSAllOverTheNet"),
+      CBT(n"Cyberbane-Whispers-CopsWantThatFaceIM"),
+      CBT(n"Cyberbane-Whispers-EveryPatrolInTheDistrictS")));
   }
   if st.layingLow && st.renown >= 30.0 {
     bag.Add(n"quiet", 1.5, CBPick3(
-      "Haven't heard that one's name in days. Gone quiet.",
-      "Thought they'd skipped town. Guess not.",
-      "Quiet lately. That's when you worry."));
+      CBT(n"Cyberbane-Whispers-HavenTHeardThatOneS"),
+      CBT(n"Cyberbane-Whispers-ThoughtTheyDSkippedTownGuess"),
+      CBT(n"Cyberbane-Whispers-QuietLatelyThatSWhenYou")));
   }
 }
 
@@ -279,58 +279,58 @@ func CBWhisperIdentity(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) 
   if StrLen(st.title) > 0 {
     if Equals(mood, n"respect") {
       bag.Add(n"title", 2.0, CBPick3(
-        "That's " + st.title + ". For real.",
-        "They call that one " + st.title + ". Earned it, too.",
-        st.title + ", right there. Don't make a thing of it."));
+        CBTf(n"Cyberbane-Whispers-ThatSForReal", [st.title]),
+        CBTf(n"Cyberbane-Whispers-TheyCallThatOneEarnedIt", [st.title]),
+        CBTf(n"Cyberbane-Whispers-RightThereDonTMakeA", [st.title])));
     } else {
       if Equals(mood, n"hate") {
         bag.Add(n"title", 2.0, CBPick2(
-          st.title + ". Big name. Bleeds like anybody.",
-          "They call that one " + st.title + ". We call them a target."));
+          CBTf(n"Cyberbane-Whispers-BigNameBleedsLikeAnybody", [st.title]),
+          CBTf(n"Cyberbane-Whispers-TheyCallThatOneWeCall", [st.title])));
       } else {
         bag.Add(n"title", 2.0, CBPick3(
-          "That's " + st.title + ". Eyes down.",
-          "Don't. That's " + st.title + ".",
-          "You know who that is? " + st.title + ". Keep walking."));
+          CBTf(n"Cyberbane-Whispers-ThatSEyesDown", [st.title]),
+          CBTf(n"Cyberbane-Whispers-DonTThatS", [st.title]),
+          CBTf(n"Cyberbane-Whispers-YouKnowWhoThatIsKeep", [st.title])));
       }
     }
   }
   let a = st.archetype;
   if a == EnumInt(ECBArchetype.Butcher) {
     bag.Add(n"style", 2.0, CBPick3(
-      "Heard what that one leaves behind. They hose the place down after.",
-      "That's the one who doesn't stop when it's over.",
-      "Don't end up in a room with that one. Nobody comes out in one piece."));
+      CBT(n"Cyberbane-Whispers-HeardWhatThatOneLeavesBehind"),
+      CBT(n"Cyberbane-Whispers-ThatSTheOneWhoDoesn"),
+      CBT(n"Cyberbane-Whispers-DonTEndUpInA")));
   } else {
     if a == EnumInt(ECBArchetype.Ghost) {
       bag.Add(n"style", 2.0, CBPick3(
-        "Bodies turn up and nobody saw a thing. That's them.",
-        "You don't see that one coming. That's the whole point.",
-        "Half the jobs on the net they never got pinned for."));
+        CBT(n"Cyberbane-Whispers-BodiesTurnUpAndNobodySaw"),
+        CBT(n"Cyberbane-Whispers-YouDonTSeeThatOne"),
+        CBT(n"Cyberbane-Whispers-HalfTheJobsOnTheNet")));
     } else {
       if a == EnumInt(ECBArchetype.Professional) {
         bag.Add(n"style", 2.0, CBPick3(
-          "That one does clean work. In, out, nobody hurt who didn't have to be.",
-          "Fixers love that one. Job done, no mess.",
-          "A real pro. Rare these days."));
+          CBT(n"Cyberbane-Whispers-ThatOneDoesCleanWorkIn"),
+          CBT(n"Cyberbane-Whispers-FixersLoveThatOneJobDone"),
+          CBT(n"Cyberbane-Whispers-ARealProRareTheseDays")));
       } else {
         if a == EnumInt(ECBArchetype.Chromed) {
           bag.Add(n"style", 2.0, CBPick3(
-            "More chrome than meat on that one.",
-            "How much of them is even left under all that?",
-            "Ripperdocs must love that one."));
+            CBT(n"Cyberbane-Whispers-MoreChromeThanMeatOnThat"),
+            CBT(n"Cyberbane-Whispers-HowMuchOfThemIsEven"),
+            CBT(n"Cyberbane-Whispers-RipperdocsMustLoveThatOne")));
         } else {
           if a == EnumInt(ECBArchetype.Netrunner) {
             bag.Add(n"style", 2.0, CBPick3(
-              "Netrunner. Fries you from across the street. Keep your ICE up.",
-              "That one cooks brains for a living.",
-              "Don't jack in near that one. Seriously."));
+              CBT(n"Cyberbane-Whispers-NetrunnerFriesYouFromAcrossThe"),
+              CBT(n"Cyberbane-Whispers-ThatOneCooksBrainsForA"),
+              CBT(n"Cyberbane-Whispers-DonTJackInNearThat")));
           } else {
             if a == EnumInt(ECBArchetype.Brawler) {
               bag.Add(n"style", 2.0, CBPick3(
-                "Saw that one put a guy down with bare hands. One punch.",
-                "Doesn't even need a gun. That's the scary part.",
-                "Fists like that, who needs a piece?"));
+                CBT(n"Cyberbane-Whispers-SawThatOnePutAGuy"),
+                CBT(n"Cyberbane-Whispers-DoesnTEvenNeedAGun"),
+                CBT(n"Cyberbane-Whispers-FistsLikeThatWhoNeedsA")));
             }
           }
         }
@@ -339,14 +339,14 @@ func CBWhisperIdentity(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) 
   }
   if st.tier >= EnumInt(ECBRenownTier.Infamous) {
     bag.Add(n"fame", 1.5, CBPick3(
-      "Wait. Is that really them? On our street?",
-      "Everybody in the city knows that face.",
-      "I'm telling everyone I saw them. Nobody's going to believe me."));
+      CBT(n"Cyberbane-Whispers-WaitIsThatReallyThemOn"),
+      CBT(n"Cyberbane-Whispers-EverybodyInTheCityKnowsThat"),
+      CBT(n"Cyberbane-Whispers-IMTellingEveryoneISaw")));
   } else {
     if st.renown < 15.0 && st.dread >= 40.0 {
       bag.Add(n"fame", 1.5, CBPick2(
-        "Nobody knows who that is. That's worse.",
-        "No name, no face on the net, and people are scared anyway."));
+        CBT(n"Cyberbane-Whispers-NobodyKnowsWhoThatIsThat"),
+        CBT(n"Cyberbane-Whispers-NoNameNoFaceOnThe")));
     }
   }
 }
@@ -355,23 +355,23 @@ func CBWhisperIdentity(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) 
 func CBWhisperConduct(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> Void {
   if st.code <= -40.0 {
     bag.Add(n"conduct", 2.5, CBPick4(
-      "That one's a bad day away from cyberpsycho.",
-      "Heard they shoot whoever's in the way. Civvies too.",
-      "Somebody should call MaxTac before it's too late.",
-      "Look at the eyes. Nobody's home."));
+      CBT(n"Cyberbane-Whispers-ThatOneSABadDay"),
+      CBT(n"Cyberbane-Whispers-HeardTheyShootWhoeverSIn"),
+      CBT(n"Cyberbane-Whispers-SomebodyShouldCallMaxTacBeforeIt"),
+      CBT(n"Cyberbane-Whispers-LookAtTheEyesNobodyS")));
     return;
   }
   if st.code >= 40.0 || (st.mercies >= 10 && st.code > 0.0) {
     if Equals(mood, n"hate") {
       bag.Add(n"conduct", 2.0, CBPick2(
-        "Leaves people breathing. Thinks that makes them a saint.",
-        "Soft. Puts people to sleep instead of finishing it."));
+        CBT(n"Cyberbane-Whispers-LeavesPeopleBreathingThinksThatMakes"),
+        CBT(n"Cyberbane-Whispers-SoftPutsPeopleToSleepInstead")));
     } else {
       bag.Add(n"conduct", 2.5, CBPick4(
-        "That one leaves people breathing. Weird, for a merc.",
-        "Got a code, that one. Doesn't kill who doesn't need killing.",
-        "Put my cousin down once and he woke up. Not a scratch on him.",
-        "Hard, but fair. Not many like that left."));
+        CBT(n"Cyberbane-Whispers-ThatOneLeavesPeopleBreathingWeird"),
+        CBT(n"Cyberbane-Whispers-GotACodeThatOneDoesn"),
+        CBT(n"Cyberbane-Whispers-PutMyCousinDownOnceAnd"),
+        CBT(n"Cyberbane-Whispers-HardButFairNotManyLike")));
     }
   }
 }
@@ -380,16 +380,16 @@ func CBWhisperConduct(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -
 func CBWhisperChrome(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> Void {
   if st.chromeVisible >= 55.0 {
     bag.Add(n"chrome", 2.0, CBPick4(
-      "Look at those arms. Military grade, easy.",
-      "All that chrome out in the open. Nobody's going to try them.",
-      "Don't stare at the chrome. They notice.",
-      "That's not a body. That's a weapon with legs."));
+      CBT(n"Cyberbane-Whispers-LookAtThoseArmsMilitaryGrade"),
+      CBT(n"Cyberbane-Whispers-AllThatChromeOutInThe"),
+      CBT(n"Cyberbane-Whispers-DonTStareAtTheChrome"),
+      CBT(n"Cyberbane-Whispers-ThatSNotABodyThat")));
     return;
   }
   if st.chromeInstalled >= 60.0 && st.armsCovered {
     bag.Add(n"chrome", 1.0, CBPick2(
-      "Something heavy under that jacket. Moves wrong for flesh.",
-      "Dresses plain. Doesn't fool anyone who's looking."));
+      CBT(n"Cyberbane-Whispers-SomethingHeavyUnderThatJacketMoves"),
+      CBT(n"Cyberbane-Whispers-DressesPlainDoesnTFoolAnyone")));
   }
 }
 
@@ -400,14 +400,14 @@ func CBWhisperPlace(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> 
   }
   if st.districtRenown >= 60.0 {
     bag.Add(n"place", 1.5, CBPick3(
-      "Everybody in " + st.districtLabel + " knows that face.",
-      "That one practically runs " + st.districtLabel + " now.",
-      "Ask anyone in " + st.districtLabel + ". They'll tell you about that one."));
+      CBTf(n"Cyberbane-Whispers-EverybodyInKnowsThatFace", [st.districtLabel]),
+      CBTf(n"Cyberbane-Whispers-ThatOnePracticallyRunsNow", [st.districtLabel]),
+      CBTf(n"Cyberbane-Whispers-AskAnyoneInTheyLlTell", [st.districtLabel])));
   } else {
     if st.districtRenown < 10.0 && st.renown >= 40.0 {
       bag.Add(n"place", 1.5, CBPick2(
-        "Not from " + st.districtLabel + ". Heard the name, though.",
-        "What's that one doing in " + st.districtLabel + "?"));
+        CBTf(n"Cyberbane-Whispers-NotFromHeardTheNameThough", [st.districtLabel]),
+        CBTf(n"Cyberbane-Whispers-WhatSThatOneDoingIn", [st.districtLabel])));
     }
   }
   // A district whose gang V has bled dry, from somebody who lives there.
@@ -417,8 +417,8 @@ func CBWhisperPlace(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> 
       let holder = CBFactionLabel(st.turfHolder);
       if StrLen(holder) > 0 {
         bag.Add(n"turf", 2.0, CBPick2(
-          "Half the corners " + CBCapFirst(holder) + " ran are empty now. Guess why.",
-          CBCapFirst(holder) + " don't scare anybody round here any more. That one saw to it."));
+          CBTf(n"Cyberbane-Whispers-HalfTheCornersRanAreEmpty", [CBCapFirst(holder)]),
+          CBTf(n"Cyberbane-Whispers-DonTScareAnybodyRoundHere", [CBCapFirst(holder)])));
       }
     }
   }
@@ -431,77 +431,77 @@ func CBWhisperGang(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName, gang
   }
   if StrLen(st.hunter) > 0 && !st.broken && !Equals(st.posture, ECBPosture.Allied) && !Equals(st.posture, ECBPosture.Friendly) {
     bag.Add(n"hunter", 3.0, CBPick3(
-      st.hunter + "'s coming for you. Everybody on the block knows it.",
-      "Enjoy the walk. " + st.hunter + " has plans for you.",
-      "When " + st.hunter + " finds you, I want a good seat."));
+      CBTf(n"Cyberbane-Whispers-SComingForYouEverybodyOn", [st.hunter]),
+      CBTf(n"Cyberbane-Whispers-EnjoyTheWalkHasPlansFor", [st.hunter]),
+      CBTf(n"Cyberbane-Whispers-WhenFindsYouIWantA", [st.hunter])));
   }
   if Equals(st.posture, ECBPosture.Allied) {
     bag.Add(n"gang", 2.5, CBPick3(
-      "That's a friend of " + gang + ". You hear me? A friend.",
-      "Treat that one like family. Boss's orders.",
-      "One of ours, near enough. Anybody starts something, we finish it."));
+      CBTf(n"Cyberbane-Whispers-ThatSAFriendOfYou", [gang]),
+      CBT(n"Cyberbane-Whispers-TreatThatOneLikeFamilyBoss"),
+      CBT(n"Cyberbane-Whispers-OneOfOursNearEnoughAnybody")));
   } else {
     if Equals(st.posture, ECBPosture.Friendly) {
       bag.Add(n"gang", 2.0, CBPick3(
-        "That one's all right by " + gang + ".",
-        "Good with the crew, that one. Leave it.",
-        "Heard they've been doing us favours. Nod, don't stare."));
+        CBTf(n"Cyberbane-Whispers-ThatOneSAllRightBy", [gang]),
+        CBT(n"Cyberbane-Whispers-GoodWithTheCrewThatOne"),
+        CBT(n"Cyberbane-Whispers-HeardTheyVeBeenDoingUs")));
     } else {
       // A broken gang's people have no threats left in them (1.9.5); CBWhisperBroken speaks for them.
       if !st.broken && (Equals(st.posture, ECBPosture.Hostile) || Equals(st.posture, ECBPosture.Vendetta)) {
         if st.kills >= 20 {
           bag.Add(n"blood", 2.5, CBPick3(
-            "That one's put more of " + gang + " in the ground than the cops ever did.",
-            "Every funeral this month, that one's the reason.",
-            "You know how many of ours? Too many."));
+            CBTf(n"Cyberbane-Whispers-ThatOneSPutMoreOf", [gang]),
+            CBT(n"Cyberbane-Whispers-EveryFuneralThisMonthThatOne"),
+            CBT(n"Cyberbane-Whispers-YouKnowHowManyOfOurs")));
         } else {
           bag.Add(n"blood", 2.0, CBPick2(
-            "We know your face. All of us.",
-            "Keep walking. You're on " + CBPossessive(gang) + " streets."));
+            CBT(n"Cyberbane-Whispers-WeKnowYourFaceAllOf"),
+            CBTf(n"Cyberbane-Whispers-KeepWalkingYouReOnStreets", [CBPossessive(gang)])));
         }
         if StrLen(st.leader) > 0 {
           bag.Add(n"leader", 1.5, CBPick2(
-            st.leader + " runs this crew now. Wants a word with you.",
-            "When " + st.leader + " hears you came by, it's on."));
+            CBTf(n"Cyberbane-Whispers-RunsThisCrewNowWantsA", [st.leader]),
+            CBTf(n"Cyberbane-Whispers-WhenHearsYouCameByIt", [st.leader])));
         }
       } else {
         if st.fear >= 60.0 {
           bag.Add(n"fear", 2.0, CBPick3(
-            "Don't look at them. Just don't.",
-            "Nobody starts anything. Not with that one.",
-            "If they want the corner, they can have it."));
+            CBT(n"Cyberbane-Whispers-DonTLookAtThemJust"),
+            CBT(n"Cyberbane-Whispers-NobodyStartsAnythingNotWithThat"),
+            CBT(n"Cyberbane-Whispers-IfTheyWantTheCornerThey")));
         }
       }
     }
   }
   if st.spared >= 3 && !Equals(st.posture, ECBPosture.Vendetta) {
     bag.Add(n"mercy", 2.0, CBPick2(
-      "That one let some of ours walk. People remember that.",
-      "Could've finished my brother. Didn't. I don't forget."));
+      CBT(n"Cyberbane-Whispers-ThatOneLetSomeOfOurs"),
+      CBT(n"Cyberbane-Whispers-CouldVeFinishedMyBrotherDidn")));
   }
   if st.tributes > 0 {
     bag.Add(n"tribute", 1.5, CBPick2(
-      "Boss pays that one to stay off our backs. Don't make it worse.",
-      "We send them eddies so they leave us alone. Think about that."));
+      CBT(n"Cyberbane-Whispers-BossPaysThatOneToStay"),
+      CBT(n"Cyberbane-Whispers-WeSendThemEddiesSoThey")));
   }
 }
 
 // A gang V has broken, afraid out loud.
 func CBWhisperBroken(bag: ref<CBLineBag>, st: ref<CBStreetRead>, gang: String) -> Void {
   bag.Add(n"broken", 4.0, CBPick4(
-    "Don't. We're done, alright? We're done.",
-    "There's hardly any of us left. Just let us be.",
-    "Whatever the bosses said, I'm not dying for it.",
-    "That's the one who broke " + gang + ". Nobody move."));
+    CBT(n"Cyberbane-Whispers-DonTWeReDoneAlright"),
+    CBT(n"Cyberbane-Whispers-ThereSHardlyAnyOfUs"),
+    CBT(n"Cyberbane-Whispers-WhateverTheBossesSaidIM"),
+    CBTf(n"Cyberbane-Whispers-ThatSTheOneWhoBroke", [gang])));
 }
 
 // Somebody nobody can put a name to.
 func CBWhisperMasked(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
   bag.Add(n"mask", 3.0, CBPick4(
-    "Who's under the mask? Never mind. I don't want to know.",
-    "Can't see a face. Don't need to.",
-    st.night ? "Masked up after dark. That's never good." : "Masked up in the middle of the day. That's never good.",
-    "Somebody who doesn't want to be known. Fine by me."));
+    CBT(n"Cyberbane-Whispers-WhoSUnderTheMaskNever"),
+    CBT(n"Cyberbane-Whispers-CanTSeeAFaceDon"),
+    st.night ? CBT(n"Cyberbane-Whispers-MaskedUpAfterDarkThatS") : CBT(n"Cyberbane-Whispers-MaskedUpInTheMiddleOf"),
+    CBT(n"Cyberbane-Whispers-SomebodyWhoDoesnTWantTo")));
 }
 
 // What everybody can see right now (Model/Moment.reds, 2.3.1): the blood, a fight just over, the hour, the rain.
@@ -509,47 +509,47 @@ func CBWhisperMoment(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) ->
   if st.wounded {
     if Equals(mood, n"hate") {
       bag.Add(n"moment", 3.0, CBLineOf([
-        "Bleeding already? Somebody did us a favour.",
-        "Look who's leaking. Shame if it got worse.",
-        "Hurt and on our street. Bad combination, merc.",
-        "Somebody softened you up. Lucky us."]));
+        CBT(n"Cyberbane-Whispers-BleedingAlreadySomebodyDidUsA"),
+        CBT(n"Cyberbane-Whispers-LookWhoSLeakingShameIf"),
+        CBT(n"Cyberbane-Whispers-HurtAndOnOurStreetBad"),
+        CBT(n"Cyberbane-Whispers-SomebodySoftenedYouUpLuckyUs")]));
     } else {
       if Equals(mood, n"respect") {
         bag.Add(n"moment", 3.0, CBLineOf([
-          "Somebody get that merc to a ripperdoc.",
-          "They're hurt. Give them room, they've earned it.",
-          "Still standing, with all that blood. Respect.",
-          "Whoever did that to them is in worse shape. Count on it."]));
+          CBT(n"Cyberbane-Whispers-SomebodyGetThatMercToA"),
+          CBT(n"Cyberbane-Whispers-TheyReHurtGiveThemRoom"),
+          CBT(n"Cyberbane-Whispers-StillStandingWithAllThatBlood"),
+          CBT(n"Cyberbane-Whispers-WhoeverDidThatToThemIs")]));
       } else {
         bag.Add(n"moment", 3.0, CBLineOf([
-          "They're bleeding. Somebody's going to try their luck tonight.",
-          "Look at that. Even legends leak.",
-          "Hurt and still walking around. Brave or stupid.",
-          "Don't help. Don't look. Just walk.",
-          "That's a lot of blood for somebody still on their feet."]));
+          CBT(n"Cyberbane-Whispers-TheyReBleedingSomebodySGoing"),
+          CBT(n"Cyberbane-Whispers-LookAtThatEvenLegendsLeak"),
+          CBT(n"Cyberbane-Whispers-HurtAndStillWalkingAroundBrave"),
+          CBT(n"Cyberbane-Whispers-DonTHelpDonTLook"),
+          CBT(n"Cyberbane-Whispers-ThatSALotOfBlood")]));
       }
     }
   }
   if st.fresh && st.recentKills < 3 {
     bag.Add(n"moment", 2.5, CBLineOf([
-      "Smell that? Cordite. Something just went down.",
-      "Still shaking off a fight, that one. Don't be the next one.",
-      "Heard the shots a minute ago. Now look who walks by.",
-      "Whatever that was, it just happened. Keep moving."]));
+      CBT(n"Cyberbane-Whispers-SmellThatCorditeSomethingJustWent"),
+      CBT(n"Cyberbane-Whispers-StillShakingOffAFightThat"),
+      CBT(n"Cyberbane-Whispers-HeardTheShotsAMinuteAgo"),
+      CBT(n"Cyberbane-Whispers-WhateverThatWasItJustHappened")]));
   }
   if st.night {
     bag.Add(n"moment", 1.0, CBLineOf([
-      "Out walking at this hour. Course they are.",
-      "Night belongs to people like that.",
-      "Nobody good is out this late. Present company included.",
-      "Lock the door when you get home tonight. Just saying."]));
+      CBT(n"Cyberbane-Whispers-OutWalkingAtThisHourCourse"),
+      CBT(n"Cyberbane-Whispers-NightBelongsToPeopleLikeThat"),
+      CBT(n"Cyberbane-Whispers-NobodyGoodIsOutThisLate"),
+      CBT(n"Cyberbane-Whispers-LockTheDoorWhenYouGet")]));
   }
   if st.rain > 0 {
     bag.Add(n"moment", st.rain == 2 ? 1.5 : 0.8, CBLineOf([
-      "Pouring down and that one doesn't even flinch.",
-      "Wet night, and they're still working.",
-      "Rain washes the blood off the streets. Busy night for the rain.",
-      "Can't see a face in this weather. Didn't need to."]));
+      CBT(n"Cyberbane-Whispers-PouringDownAndThatOneDoesn"),
+      CBT(n"Cyberbane-Whispers-WetNightAndTheyReStill"),
+      CBT(n"Cyberbane-Whispers-RainWashesTheBloodOffThe"),
+      CBT(n"Cyberbane-Whispers-CanTSeeAFaceIn")]));
   }
 }
 
@@ -561,38 +561,38 @@ func CBWhisperRemembered(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName
   // One of the gang that lost people here, standing where they lost them.
   if NotEquals(st.faction, n"") && Equals(st.faction, st.placeGang) && !Equals(mood, n"respect") {
     bag.Add(n"remembered", 3.5, CBLineOf([
-      "This is where you did it. To our people. And you come back here?",
-      "You've got some nerve, standing on this corner of all places.",
-      "We still haven't washed this street. And here you are.",
-      "Right here. My friends, right here. Keep walking before I forget myself."]));
+      CBT(n"Cyberbane-Whispers-ThisIsWhereYouDidIt"),
+      CBT(n"Cyberbane-Whispers-YouVeGotSomeNerveStanding"),
+      CBT(n"Cyberbane-Whispers-WeStillHavenTWashedThis"),
+      CBT(n"Cyberbane-Whispers-RightHereMyFriendsRightHere")]));
     return;
   }
   let theirs = CBFactionLabel(st.placeGang);
   if Equals(st.placeKind, n"Massacre") {
     bag.Add(n"remembered", 2.5, CBLineOf([
-      "This is where they found the bodies. Right here.",
-      "Still can't get the stains out of this pavement. And look who's back.",
-      "Don't stand there. That's where it happened.",
-      "NCPD took a week to bag everybody from this block. Everybody knows whose work it was."]));
+      CBT(n"Cyberbane-Whispers-ThisIsWhereTheyFoundThe"),
+      CBT(n"Cyberbane-Whispers-StillCanTGetTheStains"),
+      CBT(n"Cyberbane-Whispers-DonTStandThereThatS"),
+      CBT(n"Cyberbane-Whispers-NCPDTookAWeekToBag")]));
     return;
   }
   if Equals(st.placeKind, n"BossKill") && StrLen(theirs) > 0 {
     bag.Add(n"remembered", 2.5, CBLineOf([
-      "This is where " + theirs + " lost their boss. Right on this corner.",
-      CBCapFirst(theirs) + " still leave candles on this spot.",
-      "Their boss went down right there. The one who did it is walking past us."]));
+      CBTf(n"Cyberbane-Whispers-ThisIsWhereLostTheirBoss", [theirs]),
+      CBTf(n"Cyberbane-Whispers-StillLeaveCandlesOnThisSpot", [CBCapFirst(theirs)]),
+      CBT(n"Cyberbane-Whispers-TheirBossWentDownRightThere")]));
     return;
   }
   if Equals(st.placeKind, n"ApexDown") && StrLen(theirs) > 0 {
     bag.Add(n"remembered", 2.5, CBLineOf([
-      CBCapFirst(theirs) + " sent their best here. Their best didn't leave.",
-      "This is where " + CBPossessive(theirs) + " heavy hitters came to die. Look who came back to visit."]));
+      CBTf(n"Cyberbane-Whispers-SentTheirBestHereTheirBest", [CBCapFirst(theirs)]),
+      CBTf(n"Cyberbane-Whispers-ThisIsWhereHeavyHittersCame", [CBPossessive(theirs)])]));
     return;
   }
   if Equals(st.placeKind, n"MaxTacDown") {
     bag.Add(n"remembered", 2.5, CBLineOf([
-      "MaxTac lost one of theirs right about here. Nobody believed it till they saw the scorch marks.",
-      "You know what happened on this street? MaxTac happened. And then that one happened to MaxTac."]));
+      CBT(n"Cyberbane-Whispers-MaxTacLostOneOfTheirsRight"),
+      CBT(n"Cyberbane-Whispers-YouKnowWhatHappenedOnThis")]));
   }
 }
 
@@ -600,18 +600,18 @@ func CBWhisperRemembered(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName
 func CBWhisperGivenAway(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
   if st.givenAway == 1 {
     bag.Add(n"knownby", 4.0, CBLineOf([
-      "Mask or no mask, that's their car. Everybody knows that car.",
-      "Nice mask. Shame about the ride.",
-      "You can cover your face. Can't cover that car.",
-      "Same car every time. You'd think a pro would know better."]));
+      CBT(n"Cyberbane-Whispers-MaskOrNoMaskThatS"),
+      CBT(n"Cyberbane-Whispers-NiceMaskShameAboutTheRide"),
+      CBT(n"Cyberbane-Whispers-YouCanCoverYourFaceCan"),
+      CBT(n"Cyberbane-Whispers-SameCarEveryTimeYouD")]));
     return;
   }
   if st.givenAway == 2 {
     bag.Add(n"knownby", 4.0, CBLineOf([
-      "Hide your face all you want. That gun's famous.",
-      "Know that piece anywhere. Only one merc carries it like that.",
-      "The mask's new. The gun isn't.",
-      "Everybody on the block has seen that gun on a scroller. Everybody."]));
+      CBT(n"Cyberbane-Whispers-HideYourFaceAllYouWant"),
+      CBT(n"Cyberbane-Whispers-KnowThatPieceAnywhereOnlyOne"),
+      CBT(n"Cyberbane-Whispers-TheMaskSNewTheGun"),
+      CBT(n"Cyberbane-Whispers-EverybodyOnTheBlockHasSeen")]));
   }
 }
 
@@ -623,36 +623,36 @@ func CBWhisperDistrict(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
   let lines: array<String>;
   switch CBDistrictIndex(st.district) {
     case 0:
-      lines = ["Kabuki's going to be buzzing about this by tonight.", "In Watson you're old news by morning. Not that one, though.",
-               "Somebody'll be selling the story at the market in an hour."];
+      lines = [CBT(n"Cyberbane-Whispers-KabukiSGoingToBeBuzzing"), CBT(n"Cyberbane-Whispers-InWatsonYouReOldNews"),
+               CBT(n"Cyberbane-Whispers-SomebodyLlBeSellingTheStory")];
       break;
     case 1:
-      lines = ["Keep it down. This is Japantown, not Watson.", "Folks round here pay good money not to see things like that.",
-               "Charter Hill doesn't need this kind of attention."];
+      lines = [CBT(n"Cyberbane-Whispers-KeepItDownThisIsJapantown"), CBT(n"Cyberbane-Whispers-FolksRoundHerePayGoodMoney"),
+               CBT(n"Cyberbane-Whispers-CharterHillDoesnTNeedThis")];
       break;
     case 2:
-      lines = ["Don't look. Corpo rule number one: you never saw a thing.", "Somebody call building security. Actually, don't.",
-               "Not in front of the Arasaka tower. Have some class."];
+      lines = [CBT(n"Cyberbane-Whispers-DonTLookCorpoRuleNumber"), CBT(n"Cyberbane-Whispers-SomebodyCallBuildingSecurityActuallyDon"),
+               CBT(n"Cyberbane-Whispers-NotInFrontOfTheArasaka")];
       break;
     case 3:
-      lines = ["My abuela warned me about people like that.", "In Heywood we remember faces. That one's hard to forget.",
-               "The Valentinos hear everything that happens on this street. Everything."];
+      lines = [CBT(n"Cyberbane-Whispers-MyAbuelaWarnedMeAboutPeople"), CBT(n"Cyberbane-Whispers-InHeywoodWeRememberFacesThat"),
+               CBT(n"Cyberbane-Whispers-TheValentinosHearEverythingThatHappens")];
       break;
     case 4:
-      lines = ["Working folks don't need this kind of trouble.", "Arroyo's seen worse. Not much worse.",
-               "Keep walking. We've got shifts to get to."];
+      lines = [CBT(n"Cyberbane-Whispers-WorkingFolksDonTNeedThis"), CBT(n"Cyberbane-Whispers-ArroyoSSeenWorseNotMuch"),
+               CBT(n"Cyberbane-Whispers-KeepWalkingWeVeGotShifts")];
       break;
     case 5:
-      lines = ["Pacifica's seen it all. Still, that one's new.", "Nobody calls the cops in Pacifica. Nobody comes.",
-               "Voodoo Boys'll know about this before it's done happening."];
+      lines = [CBT(n"Cyberbane-Whispers-PacificaSSeenItAllStill"), CBT(n"Cyberbane-Whispers-NobodyCallsTheCopsInPacifica"),
+               CBT(n"Cyberbane-Whispers-VoodooBoysLlKnowAboutThis")];
       break;
     case 6:
-      lines = ["Barghest will know about this before you finish blinking.", "In Dogtown you don't stare. You survive.",
-               "Hansen's people are always watching. Always.", "Scrappers'll have that stripped and sold by morning."];
+      lines = [CBT(n"Cyberbane-Whispers-BarghestWillKnowAboutThisBefore"), CBT(n"Cyberbane-Whispers-InDogtownYouDonTStare"),
+               CBT(n"Cyberbane-Whispers-HansenSPeopleAreAlwaysWatching"), CBT(n"Cyberbane-Whispers-ScrappersLlHaveThatStrippedAnd")];
       break;
     case 7:
-      lines = ["Long way from the city to run into that one.", "Out here you hear a name once and never forget it.",
-               "Clans'll be talking about this round every fire tonight."];
+      lines = [CBT(n"Cyberbane-Whispers-LongWayFromTheCityTo"), CBT(n"Cyberbane-Whispers-OutHereYouHearAName"),
+               CBT(n"Cyberbane-Whispers-ClansLlBeTalkingAboutThis")];
       break;
     default:
       return;
@@ -665,25 +665,25 @@ func CBWhisperGeneric(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -
   CBWhisperDistrict(bag, st);
   if Equals(mood, n"respect") {
     bag.Add(n"generic", 1.0, CBPick4(
-      "Now that's a merc worth knowing. Preem.",
-      "Solid. No mess, no noise.",
-      "I'd take that one on a job any day.",
-      "If you need something doing, that's who you call."));
+      CBT(n"Cyberbane-Whispers-NowThatSAMercWorth"),
+      CBT(n"Cyberbane-Whispers-SolidNoMessNoNoise"),
+      CBT(n"Cyberbane-Whispers-IDTakeThatOneOn"),
+      CBT(n"Cyberbane-Whispers-IfYouNeedSomethingDoingThat")));
     return;
   }
   if Equals(mood, n"hate") {
     bag.Add(n"generic", 1.0, CBPick4(
-      "You've got some nerve showing your face around here.",
-      "Look who crawled onto our street.",
-      "Keep walking. You're not welcome and you know it.",
-      "One day you'll be somewhere without an audience."));
+      CBT(n"Cyberbane-Whispers-YouVeGotSomeNerveShowing"),
+      CBT(n"Cyberbane-Whispers-LookWhoCrawledOntoOurStreet"),
+      CBT(n"Cyberbane-Whispers-KeepWalkingYouReNotWelcome"),
+      CBT(n"Cyberbane-Whispers-OneDayYouLlBeSomewhere")));
     return;
   }
   bag.Add(n"generic", 1.0, CBPick4(
-    "Don't stare, choom. Just keep walking.",
-    "Eyes down. Keep moving.",
-    "I'm not getting involved. Neither are you.",
-    "Whatever that one wants, let them have it."));
+    CBT(n"Cyberbane-Whispers-DonTStareChoomJustKeep"),
+    CBT(n"Cyberbane-Whispers-EyesDownKeepMoving"),
+    CBT(n"Cyberbane-Whispers-IMNotGettingInvolvedNeither"),
+    CBT(n"Cyberbane-Whispers-WhateverThatOneWantsLetThem")));
 }
 
 // V's current title, if they have one worth naming.

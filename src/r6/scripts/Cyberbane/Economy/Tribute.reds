@@ -91,9 +91,9 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
     // hostile gang's tribute used to offer V the chance to pay them, in the message paying V.
     // "As agreed" only once there is an arrangement: the first payment is them making the offer.
     if fs.tributes <= 1 {
-      CBPhoneFromAlly(game, fs.id, s"\(amount)eb. No strings. We would rather pay you than fight you, and there's more where that came from.");
+      CBPhoneFromAlly(game, fs.id, CBTf(n"Cyberbane-Tribute-EbNoStringsWeWouldRather", [s"\(amount)"]));
     } else {
-      CBPhoneFromAlly(game, fs.id, s"\(amount)eb, as agreed. We would rather pay you than fight you.");
+      CBPhoneFromAlly(game, fs.id, CBTf(n"Cyberbane-Tribute-EbAsAgreedWeWouldRather", [s"\(amount)"]));
     }
   }
   CBLog.Info(n"Model", s"Tribute from \(NameToString(fs.id)): \(amount) eddies.");

@@ -393,7 +393,7 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
               e.puppet.cbMercyOpen = true;
               let fallen = CBFindRivalByBody(sys, e.entityId);
               if IsDefined(fallen) {
-                CBSystemNote(game, s"\(CBRivalDisplayName(sys.GetContent(), fallen)) is down. Finish them, walk off to spare them, or put your weapon away and walk up to talk to them.", 8.0);
+                CBSystemNote(game, CBTf(n"Cyberbane-CombatFlee-IsDownFinishThemWalkOff", [s"\(CBRivalDisplayName(sys.GetContent(), fallen))"]), 8.0);
               }
             }
             // Empty hands spare them only from a distance (2.5.1). Talking needs empty hands too, and "put your weapon
@@ -510,7 +510,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
           exiledBook.SetEnding(already.id, CBEndingRetired(), now);   // for where they end up (2.4.4, [61])
         }
         if CBMessagesOn() {
-          CBHearsayFromStreet(game, s"\(CBRivalDisplayName(content, already)) left Night City in the back of a truck. Nobody expects them back.", n"");
+          CBHearsayFromStreet(game, CBTf(n"Cyberbane-CombatFlee-LeftNightCityInTheBack", [s"\(CBRivalDisplayName(content, already))"]), n"");
         }
         CBLog.Info(n"Rivals", s"Rival \(already.id) was run out of Night City.");
         return;
@@ -552,9 +552,9 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       if CBMessagesOn() {
         let name = CBRivalDisplayName(content, already);
         if indebted {
-          CBHearsayFromStreet(game, s"\(name) owes you one now. People like that remember both ways.", n"");
+          CBHearsayFromStreet(game, CBTf(n"Cyberbane-CombatFlee-OwesYouOneNowPeopleLike", [s"\(name)"]), n"");
         } else {
-          CBHearsayFromStreet(game, s"You let \(name) walk again. They came back worse for it.", n"");
+          CBHearsayFromStreet(game, CBTf(n"Cyberbane-CombatFlee-YouLetWalkAgainTheyCame", [s"\(name)"]), n"");
         }
       }
       return;

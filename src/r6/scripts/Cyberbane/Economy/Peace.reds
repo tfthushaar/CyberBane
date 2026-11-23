@@ -139,7 +139,7 @@ public func CBRememberMod() -> Int32 {
 
 // Its name, for the Hub, the log and the reasons Cyberbane gives.
 public func CBRememberModName() -> String {
-  return CBRememberMod() == 2 ? "Night City Remembers" : "They Will Remember";
+  return CBRememberMod() == 2 ? CBT(n"Cyberbane-Peace-NightCityRemembers") : CBT(n"Cyberbane-Peace-TheyWillRemember");
 }
 
 // With compatibility on, the other mod sends the gangs after V and Cyberbane's crews and apex squads stand down: They Will
@@ -155,7 +155,7 @@ public func CBRememberReadsDisguises() -> Bool {
 
 // Short, for the Gangs screen's posture column.
 public func CBRememberModShort() -> String {
-  return CBRememberMod() == 2 ? "NCR" : "TWR";
+  return CBRememberMod() == 2 ? CBT(n"Cyberbane-Peace-NCR") : CBT(n"Cyberbane-Peace-TWR");
 }
 
 // They Will Remember's own word on this gang (1.9.0): 1 hostile on sight, 0 not, -1 nobody to ask.
@@ -214,7 +214,7 @@ public class CBTwrAttitudeProbe {
       this.why = "";
       let type = Reflection.GetClass(CBTwrAttitudeClass());
       if !IsDefined(type) {
-        this.why = "its attitude class is not in this build";
+        this.why = CBT(n"Cyberbane-Peace-ItsAttitudeClassIsNotIn");
       } else {
         let names: array<CName> = [n"IsFactionHostileByIndex", n"IsFactionIndexHostile", n"IsFactionHostile",
                                    n"GetFactionHostileByIndex", n"IsHostileByIndex"];
@@ -240,16 +240,16 @@ public class CBTwrAttitudeProbe {
                 this.state = 1;
               } else {
                 let ret = fn.GetReturnType();
-                let retName = IsDefined(ret) ? NameToString(ret.GetName()) : "nothing";
-                seen += (StrLen(seen) > 0 ? "; " : "") + s"\(NameToString(name)) takes \(CBReflectParamNames(paramList)) and answers \(retName)";
+                let retName = IsDefined(ret) ? NameToString(ret.GetName()) : CBT(n"Cyberbane-Peace-Nothing");
+                seen += CBTf(n"Cyberbane-Peace-TakesAndAnswers", [(StrLen(seen) > 0 ? "; " : ""), s"\(NameToString(name))", s"\(CBReflectParamNames(paramList))", s"\(retName)"]);
               }
             }
           }
         }
         if this.state != 1 {
           this.why = StrLen(seen) > 0
-            ? "its functions are not the shape Cyberbane asks, one gang's number in and yes or no out (" + seen + ")"
-            : "it has none of the functions Cyberbane knows to ask (IsFactionHostileByIndex)";
+            ? CBTf(n"Cyberbane-Peace-ItsFunctionsAreNotTheShape", [seen])
+            : CBT(n"Cyberbane-Peace-ItHasNoneOfTheFunctions");
         }
       }
     }
@@ -266,7 +266,7 @@ public class CBTwrAttitudeProbe {
 // What a function takes, for the why: "Int32", "ScriptedPuppet, Bool", "nothing".
 func CBReflectParamNames(params: array<ref<ReflectionProp>>) -> String {
   if ArraySize(params) == 0 {
-    return "nothing";
+    return CBT(n"Cyberbane-Peace-Nothing");
   }
   let out = "";
   for p in params {
@@ -296,7 +296,7 @@ public func CBTwrRefreshHostility(game: GameInstance) -> Void {
     why = probe.why;
   } else {
     if !IsDefined(manager) {
-      why = "its attitude system is not running";
+      why = CBT(n"Cyberbane-Peace-ItsAttitudeSystemIsNotRunning");
     }
   }
   let i = 0;
@@ -314,7 +314,7 @@ public func CBTwrRefreshHostility(game: GameInstance) -> Void {
           answer = FromVariant<Bool>(said) ? 1 : 0;
         }
       } else {
-        why = "it would not take the question";
+        why = CBT(n"Cyberbane-Peace-ItWouldNotTakeTheQuestion");
       }
     }
     ArrayPush(answers, answer);
@@ -483,9 +483,9 @@ public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionI
 // What a broken gang says when it names its price (1.9.5): less a demand than asking to stop.
 public func CBPeaceBrokenLine(cost: Int32) -> String {
   switch RandRange(0, 3) {
-    case 0: return s"There's hardly any of us left. \(cost)eb to bury our dead, and it's over.";
-    case 1: return s"You made your point. \(cost)eb and nobody of ours comes near you again.";
-    default: return s"We're done fighting you. \(cost)eb and we let it go.";
+    case 0: return CBTf(n"Cyberbane-Peace-ThereSHardlyAnyOfUs", [s"\(cost)"]);
+    case 1: return CBTf(n"Cyberbane-Peace-YouMadeYourPointEbAnd", [s"\(cost)"]);
+    default: return CBTf(n"Cyberbane-Peace-WeReDoneFightingYouEb", [s"\(cost)"]);
   }
 }
 
@@ -493,9 +493,9 @@ public func CBPeaceBrokenLine(cost: Int32) -> String {
 // it answer. V pays them, as the Hub's peace does (2.5.0; "Take Xeb" above read as them paying V).
 public func CBPeaceAskLine(cost: Int32) -> String {
   switch RandRange(0, 3) {
-    case 0: return s"Or pay \(cost)eb and it stops.";
-    case 1: return s"\(cost)eb and we call it off. Your choice.";
-    default: return s"Unless \(cost)eb reaches us first.";
+    case 0: return CBTf(n"Cyberbane-Peace-OrPayEbAndItStops", [s"\(cost)"]);
+    case 1: return CBTf(n"Cyberbane-Peace-EbAndWeCallItOff", [s"\(cost)"]);
+    default: return CBTf(n"Cyberbane-Peace-UnlessEbReachesUsFirst", [s"\(cost)"]);
   }
 }
 
@@ -506,15 +506,15 @@ public func CBPeaceAskLine(cost: Int32) -> String {
 public func CBPeaceDemandLine(cost: Int32, vendetta: Bool) -> String {
   if vendetta {
     switch RandRange(0, 3) {
-      case 0: return s"You are still walking around. \(cost)eb and we let you keep doing it.";
-      case 1: return s"Our price has not changed. \(cost)eb and we call every one of ours off you.";
-      default: return s"\(cost)eb. That is what it costs to stop being our problem.";
+      case 0: return CBTf(n"Cyberbane-Peace-YouAreStillWalkingAroundEb", [s"\(cost)"]);
+      case 1: return CBTf(n"Cyberbane-Peace-OurPriceHasNotChangedEb", [s"\(cost)"]);
+      default: return CBTf(n"Cyberbane-Peace-EbThatIsWhatItCosts", [s"\(cost)"]);
     }
   }
   switch RandRange(0, 3) {
-    case 0: return s"We have not forgotten you. \(cost)eb and we do.";
-    case 1: return s"\(cost)eb settles what is between us. Think about it.";
-    default: return s"You can keep looking over your shoulder, or you can pay \(cost)eb.";
+    case 0: return CBTf(n"Cyberbane-Peace-WeHaveNotForgottenYouEb", [s"\(cost)"]);
+    case 1: return CBTf(n"Cyberbane-Peace-EbSettlesWhatIsBetweenUs", [s"\(cost)"]);
+    default: return CBTf(n"Cyberbane-Peace-YouCanKeepLookingOverYour", [s"\(cost)"]);
   }
 }
 
@@ -534,7 +534,7 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   let money = ItemID.FromTDBID(t"Items.money");
   if ts.GetItemQuantity(player, money) < cost {
     if CBToastsOn() {
-      CBPhoneDemandFromGang(game, factionId, s"\(cost)eb and we forget about you. Come back when you have it.", true);
+      CBPhoneDemandFromGang(game, factionId, CBTf(n"Cyberbane-Peace-EbAndWeForgetAboutYou", [s"\(cost)"]), true);
     }
     return false;
   }
@@ -557,8 +557,8 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   CBFileLog(sys, n"Peace", fs.lastPeaceAt, CBEventDistrict(sys, game), factionId, Cast<Float>(cost));
 
   if CBToastsOn() {
-    let what = Equals(posture, ECBPosture.Vendetta) ? "vendetta" : "hostility";
-    CBPhoneFromGangFinal(game, factionId, s"\(cost)eb received. The \(what) is over. Do not make us revisit it.");
+    let what = Equals(posture, ECBPosture.Vendetta) ? CBT(n"Cyberbane-Peace-Vendetta") : CBT(n"Cyberbane-Peace-Hostility");
+    CBPhoneFromGangFinal(game, factionId, CBTf(n"Cyberbane-Peace-EbReceivedTheIsOverDo", [s"\(cost)", s"\(what)"]));
   }
   CBLog.Info(n"Economy", s"Peace brokered with \(NameToString(factionId)) for \(cost).");
   return true;

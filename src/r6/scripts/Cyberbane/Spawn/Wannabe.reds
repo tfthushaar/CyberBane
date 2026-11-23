@@ -64,7 +64,8 @@ public func CBWannabeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || sys.IsInSanctuary()
           || sys.IsInSafeZone() || CBPlayerInScene(game);
   if book.wannabeStage == CBWannabeNone() {
-    if !busy && sys.GetTickCount() % 5 == 0 {
+    // Not on home ground, nor in the quiet a night at home bought (2.7.1, Spawn/HomeGround.reds).
+    if !busy && !CBHomeKeepsOut(sys) && !CBSleepPeace(game) && sys.GetTickCount() % 5 == 0 {
       CBWannabeMaybe(sys, game, book, player);
     }
     return;
@@ -237,13 +238,13 @@ func CBWannabeChallenge(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
   CBMakeHostileToPlayer(game, p);
   if CBMessagesOn() {
     let st = CBReadStreet(sys, game, n"");
-    let you = StrLen(st.title) > 0 ? st.title : "the merc everybody's talking about";
-    CBOverheard(game, "Wannabe", CBLineOf([
-      "You're " + you + "? Don't look like much. Put 'em up.",
-      "Everybody says you're the real thing. Let's find out. Hands only.",
-      "No guns, no chrome tricks. Just you and me. Come on.",
-      "Beat you and I'm somebody. Ready?",
-      "My crew's watching. Don't make me look bad, legend."]), true);
+    let you = StrLen(st.title) > 0 ? st.title : CBT(n"Cyberbane-Telling-TheMercEverybodySTalkingAbout");
+    CBOverheard(game, CBT(n"Cyberbane-Wannabe-Wannabe"), CBLineOf([
+      CBTf(n"Cyberbane-Wannabe-YouReDonTLookLike", [you]),
+      CBT(n"Cyberbane-Wannabe-EverybodySaysYouReTheReal"),
+      CBT(n"Cyberbane-Wannabe-NoGunsNoChromeTricksJust"),
+      CBT(n"Cyberbane-Wannabe-BeatYouAndIMSomebody"),
+      CBT(n"Cyberbane-Wannabe-MyCrewSWatchingDonT")]), true);
   }
 }
 
@@ -256,8 +257,8 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
     sys.AddCode(-CBConfig.WannabeShotCode());
     CBFileLog(sys, n"WannabeShot", now, CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, CBPick2("A kid came at you with bare fists and you shot them. People saw.",
-                                        "Bringing a gun to a fistfight. With a kid. That's going round."), n"");
+      CBHearsayFromStreet(game, CBPick2(CBT(n"Cyberbane-Wannabe-AKidCameAtYouWith"),
+                                        CBT(n"Cyberbane-Wannabe-BringingAGunToAFistfight")), n"");
     }
     return;
   }
@@ -266,19 +267,19 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
   CBApplyDistrictRenown(sys, book.wannabeDistrict, CBConfig.WannabeRenown() * (watched > 0 ? 1.5 : 1.0));
   CBFileLog(sys, n"WannabeBeaten", now, CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
   if watched > 0 && CBMessagesOn() && IsDefined(p) && !p.IsDead() {
-    CBOverheard(game, "Wannabe's friend", CBPick3("Get up! ...He's not getting up. Let's go.", "Told him. Told him it was a bad idea.",
-                                                  "Nobody's gonna believe this. I barely believe it."), true);
+    CBOverheard(game, CBT(n"Cyberbane-Wannabe-WannabeSFriend"), CBPick3(CBT(n"Cyberbane-Wannabe-GetUpHeSNotGetting"), CBT(n"Cyberbane-Wannabe-ToldHimToldHimItWas"),
+                                                  CBT(n"Cyberbane-Wannabe-NobodySGonnaBelieveThisI")), true);
   }
   // Dead, said as dead (2.5.5): a kid V beat to death with fists or a blade was told as "out cold".
   if CBMessagesOn() && IsDefined(p) && p.IsDead() {
-    CBHearsayFromStreet(game, CBPick2("That kid who squared up to you didn't get up. Ever. Half the block saw it.",
-                                      "A kid wanted a fistfight with you and ended up in a body bag. People are talking."), n"");
+    CBHearsayFromStreet(game, CBPick2(CBT(n"Cyberbane-Wannabe-ThatKidWhoSquaredUpTo"),
+                                      CBT(n"Cyberbane-Wannabe-AKidWantedAFistfightWith")), n"");
     return;
   }
   if CBMessagesOn() {
-    CBHearsayFromStreet(game, CBPick3("That kid who squared up to you? Out cold. Half the block saw it.",
-                                      "Somebody tried to make their name off you. Now they're famous for the wrong reason.",
-                                      "The kid wanted a story. Got one. Lost it."), n"");
+    CBHearsayFromStreet(game, CBPick3(CBT(n"Cyberbane-Wannabe-ThatKidWhoSquaredUpTo-2"),
+                                      CBT(n"Cyberbane-Wannabe-SomebodyTriedToMakeTheirName"),
+                                      CBT(n"Cyberbane-Wannabe-TheKidWantedAStoryGot")), n"");
   }
 }
 
@@ -286,14 +287,14 @@ func CBWannabeLost(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBSt
   book.wannabeStage = CBWannabeDone();
   CBWannabeStandDown(game, p);
   if CBWannabeFriendsLeave(sys, game) > 0 && CBMessagesOn() {
-    CBOverheard(game, "Wannabe's friend", CBPick2("You see that? You SEE that? Wait till everybody hears.", "Legend my ass. Come on, let's tell the block."), true);
+    CBOverheard(game, CBT(n"Cyberbane-Wannabe-WannabeSFriend"), CBPick2(CBT(n"Cyberbane-Wannabe-YouSeeThatYouSEEThat"), CBT(n"Cyberbane-Wannabe-LegendMyAssComeOnLet")), true);
   }
   CBWannabeDent(sys, book.wannabeDistrict, CBConfig.WannabeRenown());
   CBFileLog(sys, n"WannabeLost", CBGameSeconds(game), CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
   if CBMessagesOn() {
-    CBOverheard(game, "Wannabe", CBPick3("That's it? That's the legend? I'm telling everybody.",
-                                         "Stay down. I'm somebody now.",
-                                         "Thought you'd be harder. Thanks for the story."));
+    CBOverheard(game, CBT(n"Cyberbane-Wannabe-Wannabe"), CBPick3(CBT(n"Cyberbane-Wannabe-ThatSItThatSThe"),
+                                         CBT(n"Cyberbane-Wannabe-StayDownIMSomebodyNow"),
+                                         CBT(n"Cyberbane-Wannabe-ThoughtYouDBeHarderThanks")));
   }
 }
 
@@ -304,8 +305,8 @@ func CBWannabeWalked(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
   CBWannabeDent(sys, book.wannabeDistrict, CBConfig.WannabeRenown() * 0.34);
   CBFileLog(sys, n"WannabeWalked", CBGameSeconds(game), CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
   if CBMessagesOn() {
-    CBHearsayFromStreet(game, CBPick2("The kid's telling everybody you wouldn't fight. Nobody who matters believes it.",
-                                      "You walked away from some kid's fistfight. Smart, or scared, depending who's telling it."), n"");
+    CBHearsayFromStreet(game, CBPick2(CBT(n"Cyberbane-Wannabe-TheKidSTellingEverybodyYou"),
+                                      CBT(n"Cyberbane-Wannabe-YouWalkedAwayFromSomeKid")), n"");
   }
 }
 

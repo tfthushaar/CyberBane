@@ -63,6 +63,15 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
     sys.AgePendingSquadHold();
     return;
   }
+  // What V did while they were on their way (2.7.1, Spawn/Slip.reds): they may have lost V before setting off.
+  if CBSlipResolve(sys, game, faction) {
+    return;
+  }
+  // Home ground (2.7.1, Spawn/HomeGround.reds): they wait outside, the way they wait out a safe area.
+  if CBHomeHolds(sys, faction) {
+    sys.AgePendingSquadHold();
+    return;
+  }
   // Time is up. Hold, do not cancel, if this is a bad moment - but not forever.
   if CBStealthEncounterNearby(sys, game) || CBSafeAreaBlocksSpawn(game, player.GetWorldPosition()) {
     sys.AgePendingSquadHold();
@@ -229,7 +238,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     cd.lastHitSquadAt = now;
   }
   // They said they were coming when they set off (CBCrewWarning); arriving is not news.
-  let apexNote = withApex ? s" with their apex squad (\(team))" : "";
+  let apexNote = withApex ? CBTf(n"Cyberbane-HitSquad-WithTheirApexSquad", [s"\(team)"]) : "";
   CBLog.Info(n"Spawn", s"Hit squad from \(NameToString(fs.id)): \(spawned)\(apexNote).");
   return true;
 }

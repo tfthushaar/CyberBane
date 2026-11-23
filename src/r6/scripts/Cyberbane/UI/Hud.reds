@@ -435,20 +435,20 @@ public func CBTimeText(ticks: Int32) -> String {
     return CBHudCountdown(ticks);
   }
   if ticks <= 30 {
-    return "any moment";
+    return CBT(n"Cyberbane-Hud-AnyMoment");
   }
   if ticks <= 120 {
-    return "soon";
+    return CBT(n"Cyberbane-Hud-Soon");
   }
   if ticks <= 600 {
-    return "before long";
+    return CBT(n"Cyberbane-Hud-BeforeLong");
   }
-  return "later";
+  return CBT(n"Cyberbane-Hud-Later");
 }
 
 // "in 2m 05s" with countdowns on, "soon" without: reads right after a noun either way.
 public func CBWhen(ticks: Int32) -> String {
-  return CBShowCountdowns() && ticks > 0 ? "in " + CBHudCountdown(ticks) : CBTimeText(ticks);
+  return CBShowCountdowns() && ticks > 0 ? CBTf(n"Cyberbane-Whispers-In", [CBHudCountdown(ticks)]) : CBTimeText(ticks);
 }
 
 public func CBShowCountdowns() -> Bool {
@@ -458,31 +458,31 @@ public func CBShowCountdowns() -> Bool {
 
 public func CBHudCountdown(ticks: Int32) -> String {
   if ticks <= 0 {
-    return "any moment";
+    return CBT(n"Cyberbane-Hud-AnyMoment");
   }
   let mins = ticks / 60;
   let secs = ticks % 60;
   if mins <= 0 {
-    return s"\(secs)s";
+    return CBTf(n"Cyberbane-Hud-S", [s"\(secs)"]);
   }
   if secs < 10 {
-    return s"\(mins)m 0\(secs)s";
+    return CBTf(n"Cyberbane-Hud-M0S", [s"\(mins)", s"\(secs)"]);
   }
-  return s"\(mins)m \(secs)s";
+  return CBTf(n"Cyberbane-Hud-MS", [s"\(mins)", s"\(secs)"]);
 }
 
 // Plain words: a player opening the Hub for the first time should be able to guess what each
 // screen holds from its name, which is the whole job of a tab label.
 public func CBHudTabName(tab: Int32) -> String {
   switch tab {
-    case 1: return "STANDING";
-    case 2: return "GANGS";
-    case 3: return "TURF";
-    case 4: return "THE CITY";
-    case 5: return "RIVALS";
-    case 6: return "CREW";
-    case 7: return "TITLES";
-    case 8: return "HISTORY";
+    case 1: return CBT(n"Cyberbane-Hud-STANDING");
+    case 2: return CBT(n"Cyberbane-Hud-GANGS");
+    case 3: return CBT(n"Cyberbane-Hud-TURF");
+    case 4: return CBT(n"Cyberbane-Hud-THECITY");
+    case 5: return CBT(n"Cyberbane-Hud-RIVALS");
+    case 6: return CBT(n"Cyberbane-Queue-CREW");
+    case 7: return CBT(n"Cyberbane-Hud-TITLES");
+    case 8: return CBT(n"Cyberbane-Hud-HISTORY");
     default: return "";
   }
 }
@@ -490,14 +490,14 @@ public func CBHudTabName(tab: Int32) -> String {
 // One sentence saying what this screen is for, under the header.
 public func CBHudTabBlurb(tab: Int32) -> String {
   switch tab {
-    case 1: return "Who you are in this city, and what is on its way to you.";
-    case 2: return "What each gang thinks of you. Click one to see more, or to pay them off.";
-    case 3: return "Who holds each district, how firmly, and who is fighting them for it.";
-    case 4: return "Where in Night City your name carries, district by district.";
-    case 5: return "The people who have survived you and are still looking. Click one for their file.";
-    case 6: return "The people who work for you: who is ready, who is restless, and what they are owed.";
-    case 7: return "What the street calls you and what it gets you. Click any title to read it, or go by one you have earned.";
-    case 8: return "The ledger: what you did, where, and who it was.";
+    case 1: return CBT(n"Cyberbane-Hud-WhoYouAreInThisCity");
+    case 2: return CBT(n"Cyberbane-Hud-WhatEachGangThinksOfYou");
+    case 3: return CBT(n"Cyberbane-Hud-WhoHoldsEachDistrictHowFirmly");
+    case 4: return CBT(n"Cyberbane-Hud-WhereInNightCityYourName");
+    case 5: return CBT(n"Cyberbane-Hud-ThePeopleWhoHaveSurvivedYou");
+    case 6: return CBT(n"Cyberbane-Hud-ThePeopleWhoWorkForYou");
+    case 7: return CBT(n"Cyberbane-Hud-WhatTheStreetCallsYouAnd");
+    case 8: return CBT(n"Cyberbane-Hud-TheLedgerWhatYouDidWhere");
     default: return "";
   }
 }
@@ -1328,7 +1328,7 @@ public class CBHud {
     // ---- Title block, top left, the way the menus mark themselves --------
     let header = this.NewText(panel, 28, n"Semibold", CBHudLabel(), n"MainColors.Red");
     header.SetLetterCase(textLetterCase.UpperCase);
-    header.SetText("CYBERBANE");
+    header.SetText(CBT(n"Cyberbane-HubTab-CYBERBANE"));
     header.SetMargin(this.PxAt(x, 10.0));
     header.SetVisible(!this.m_inTab);   // the game's row already says where this is
 
@@ -1427,8 +1427,8 @@ public class CBHud {
     let down = this.NewBox(panel, CBHudListDownName(), x + w - btnW, CBHudContentTop() - 36.0, btnW, 32.0);
     this.m_listUpBg = this.NewListButtonBack(up);
     this.m_listDownBg = this.NewListButtonBack(down);
-    this.m_listUpText = this.NewListButtonText(up, "Up");
-    this.m_listDownText = this.NewListButtonText(down, "Down");
+    this.m_listUpText = this.NewListButtonText(up, CBT(n"Cyberbane-Hud-Up"));
+    this.m_listDownText = this.NewListButtonText(down, CBT(n"Cyberbane-Hud-Down"));
     up.SetVisible(false);
     down.SetVisible(false);
     this.m_listUpBox = up;
@@ -1621,7 +1621,7 @@ public class CBHud {
     // Kept short enough to stop well clear of the Mod Settings button at the right of the same
     // line. It used to also explain Q and E, and ran some way underneath that button; the keys are
     // on the tab bar now, where they are used.
-    footer.SetText(CBHudFit("Click a screen or a row for more      LB / RB on a controller      Esc / B: back",
+    footer.SetText(CBHudFit(CBT(n"Cyberbane-Hud-ClickAScreenOrARow"),
                             w - 260.0 - 40.0, 19, 1));
     footer.SetVisible(!this.m_inTab);   // as a tab, the game's own button hints say all of this
 
@@ -1633,7 +1633,7 @@ public class CBHud {
     settingsText.SetFitToContent(false);
     settingsText.SetSize(this.PxSize(260.0, 26.0));
     settingsText.SetMargin(this.PxAt(0.0, 8.0));
-    settingsText.SetText("Mod Settings");
+    settingsText.SetText(CBT(n"Cyberbane-Hud-ModSettings"));
     settings.SetVisible(!this.m_inTab);   // a screen of the pause menu's, which this is not
     this.m_settingsBox = settings;
     this.m_settingsBg = settingsBg;
@@ -1985,7 +1985,7 @@ public class CBHud {
     if IsDefined(this.m_listMore) {
       if long {
         let last = Min(this.m_listTop + rows, total);
-        this.m_listMore.SetText(s"\(this.m_listTop + 1)-\(last) of \(total)");
+        this.m_listMore.SetText(CBTf(n"Cyberbane-Hud-Of", [s"\(this.m_listTop + 1)", s"\(last)", s"\(total)"]));
       }
       this.m_listMore.SetVisible(long);
     }
@@ -2268,7 +2268,7 @@ public class CBHud {
         this.m_undoArmed = false;
         let undone = sys.UndoLastStartOver();
         if IsNameValid(undone) {
-          CBMenuNote(game, "the last Start over is undone. Load a save from before it, and its reputation, Rivals, crew and titles are back. Where Rivals were last seen and how hard you had hit each gang went with the Start over.", 12.0);
+          CBMenuNote(game, CBT(n"Cyberbane-Hud-TheLastStartOverIsUndone"), 12.0);
         }
       } else {
         this.m_undoArmed = true;
@@ -2762,18 +2762,18 @@ public class CBHud {
     let top = CBHudContentTop() + 2.0 * CBHudTileStride() - 4.0;
     this.PlaceRows(CBHudLayoutLanes(), top);
     let row = 0;
-    row = this.LaneRow(sys, game, row, CBLaneRival(), "A rival");
-    row = this.LaneRow(sys, game, row, CBLaneSquad(), "A gang crew");
-    row = this.LaneRow(sys, game, row, CBLaneApex(), "An apex squad");
+    row = this.LaneRow(sys, game, row, CBLaneRival(), CBT(n"Cyberbane-RivalSystem-ARival"));
+    row = this.LaneRow(sys, game, row, CBLaneSquad(), CBT(n"Cyberbane-Hud-AGangCrew"));
+    row = this.LaneRow(sys, game, row, CBLaneApex(), CBT(n"Cyberbane-Hud-AnApexSquad"));
     let crew = CBCrewBook.Get(game);
     if CBMyCrewOn() && IsDefined(crew) && crew.Count() > 0 {
       let out = crew.OutCount();
       // Into a named list first (2.6.7): ArraySize read straight off the call showed "32758 of 2 ready to call".
       let readyList = CBCrewReadyOrder(crew, CBGameSeconds(game), 0);
       let ready = ArraySize(readyList);
-      let what = out > 0 ? (crew.leaving ? "Heading home" : s"\(out) with you now") : s"\(ready) of \(crew.Count()) ready to call";
-      this.SetRow(row, CBHudLayoutLanes(), out > 0 ? CBHudGreen() : CBHudCyan(), false, false, "Your crew", what, "", "", "",
-                  crew.CutOwed() > 0 ? s"owed \(crew.CutOwed())eb" : "");
+      let what = out > 0 ? (crew.leaving ? CBT(n"Cyberbane-Hud-HeadingHome") : CBTf(n"Cyberbane-Hud-WithYouNow", [s"\(out)"])) : CBTf(n"Cyberbane-Hud-OfReadyToCall", [s"\(ready)", s"\(crew.Count())"]);
+      this.SetRow(row, CBHudLayoutLanes(), out > 0 ? CBHudGreen() : CBHudCyan(), false, false, CBT(n"Cyberbane-CrewBanner-YourCrew"), what, "", "", "",
+                  crew.CutOwed() > 0 ? CBTf(n"Cyberbane-Hud-OwedEb", [s"\(crew.CutOwed())"]) : "");
       row += 1;
     }
     return top + Cast<Float>(row) * CBHudRowHeight();
@@ -2882,28 +2882,28 @@ public class CBHud {
     // While the Street Cred floor holds Renown up (2.5.2), nothing V does moves the number until what Cyberbane has
     // counted passes it, so the tile says so and shows that count: "it never changes" was the floor, unexplained.
     let earned = score.GetEarnedRenown();
-    let renownCaption = "How widely Night City knows your name.";
+    let renownCaption = CBT(n"Cyberbane-Hud-HowWidelyNightCityKnowsYour");
     if renown >= earned + 1.0 {
-      renownCaption = s"Held here by your Street Cred. What you have done counts \(RoundF(earned)) so far.";
+      renownCaption = CBTf(n"Cyberbane-Hud-HeldHereByYourStreetCred", [s"\(RoundF(earned))"]);
     }
-    this.SetBar(0, "Renown", s"\(RoundF(renown))   \(CBTierName(EnumInt(score.GetTier())))",
+    this.SetBar(0, CBT(n"Cyberbane-TitleEngine-Renown"), s"\(RoundF(renown))   \(CBTierName(EnumInt(score.GetTier())))",
       renown / 1000.0, CBHudCyan(), renownCaption);
 
     // The number is Dread; the word is what the street does with it. The second figure is what
     // the street actually reads, which is not the same number and never was - it belongs in the
     // sentence that explains it rather than loose beside the first.
     let civ = score.GetDreadCiv();
-    this.SetBar(1, "Dread", s"\(RoundF(dread))   \(CBDreadWord(civ))",
+    this.SetBar(1, CBT(n"Cyberbane-TitleEngine-Dread"), s"\(RoundF(dread))   \(CBDreadWord(civ))",
       dread / 100.0, CBHudRed(),
-      s"How frightening you are. The street reads it as \(RoundF(civ)): that is what makes people back off.");
+      CBTf(n"Cyberbane-Hud-HowFrighteningYouAreTheStreet", [s"\(RoundF(civ))"]));
 
-    this.SetBar(2, "Visible chrome", s"\(RoundF(chrome))",
+    this.SetBar(2, CBT(n"Cyberbane-Hud-VisibleChrome"), s"\(RoundF(chrome))",
       chrome / 100.0, CBHudAmber(),
       CBHudWornLine(sys));
 
-    this.SetBipolarBar(3, "Conduct", s"\(RoundF(code))   \(CBCodeLabel(code))",
+    this.SetBipolarBar(3, CBT(n"Cyberbane-Hud-Conduct"), s"\(RoundF(code))   \(CBCodeLabel(code))",
       code, code < 0.0 ? CBHudRed() : CBHudGreen(),
-      "Leaving people alive raises it. Killing bystanders, shooting someone with their hands up and gory kills in front of witnesses lower it.");
+      CBT(n"Cyberbane-Hud-LeavingPeopleAliveRaisesItKilling"));
   }
 
   // The gangs, the ones that want you dead first.
@@ -2984,21 +2984,21 @@ public class CBHud {
     let postureText = CBPostureName(posture);
     // Set by hand under How gangs see you in Mod Settings (2.1.0).
     if CBGangViewSet(fs.id) {
-      postureText = postureText + " (set)";
+      postureText = CBTf(n"Cyberbane-Hud-Set", [postureText]);
     }
     // Switched off under Factions in Mod Settings (1.9.1): Cyberbane has no posture for them at all.
     let off = !CBFactionOn(fs.id);
     if off {
-      postureText = "Off";
+      postureText = CBT(n"Cyberbane-Hud-Off");
     }
     // Hostile on sight by somebody else's hand (CBForeignHostile), while Cyberbane's own posture is
     // milder: They Will Remember's record, or seen in the street and not Cyberbane's doing.
     if twrHostile > 0 && !Equals(posture, ECBPosture.Hostile) && !Equals(posture, ECBPosture.Vendetta) {
       pip = CBHudAmber();
       if off {
-        postureText = "Off: hostile";
+        postureText = CBT(n"Cyberbane-Hud-OffHostile");
       } else {
-        postureText = twrHostile == 2 ? CBRememberModShort() + ": Hostile" : "Seen hostile";
+        postureText = twrHostile == 2 ? CBTf(n"Cyberbane-Hud-Hostile", [CBRememberModShort()]) : CBT(n"Cyberbane-Hud-SeenHostile");
       }
     }
     // They Will Remember decides who is hostile (1.9.4), and since 2.4.2 the posture itself follows it
@@ -3013,7 +3013,7 @@ public class CBHud {
     }
     let right = CBHudGangStatus(sys, fs);
     if Equals(sys.GetPendingPeace(), fs.id) {
-      right = "PAYING OFF";
+      right = CBT(n"Cyberbane-Hud-PAYINGOFF");
     }
     // Who this gang is at war with, because that is the one thing on this screen V can act on:
     // hurting a gang warms the gangs that hate it (Model/GangRivalries.reds).
@@ -3021,9 +3021,9 @@ public class CBHud {
     this.SetRow(row, CBHudLayoutGangs(), pip, true, picked,
       CBFactionLabel(fs.id),
       postureText,
-      s"fear \(RoundF(score.GetFactionFear(fs.id)))",
-      StrLen(enemy) > 0 ? "at war: " + enemy : "",
-      s"\(fs.kills) down",
+      CBTf(n"Cyberbane-Hud-Fear", [s"\(RoundF(score.GetFactionFear(fs.id)))"]),
+      StrLen(enemy) > 0 ? CBTf(n"Cyberbane-Hud-AtWar", [enemy]) : "",
+      CBTf(n"Cyberbane-Hud-Down-2", [s"\(fs.kills)"]),
       right);
     this.m_rowFaction[row] = fs.id;
     // Where V stands with them, from the middle: red to the left, green to the right (2.5.0).
@@ -3057,8 +3057,7 @@ public class CBHud {
     if !IsDefined(fs) && IsDefined(score) && this.m_webShown {
       this.SetAction("", false);
       let ties = CBWebRelationWords(sys, game, id);
-      this.SetBody(CBHudMarginX(), top, CBHudContentW(), StrUpper(CBFactionLabel(id)) + "   " + CBPostureName(score.GetPosture(id)) + "\n"
-                   + (StrLen(ties) > 0 ? ties + "\n" : "") + "You have never crossed them, and they have no opinion of you yet.",
+      this.SetBody(CBHudMarginX(), top, CBHudContentW(), CBTf(n"Cyberbane-Hud-YouHaveNeverCrossedThemAnd", [StrUpper(CBFactionLabel(id)), CBPostureName(score.GetPosture(id)), (StrLen(ties) > 0 ? ties + "\n" : "")]),
                    CBHudMaxLinesFor(this.m_tab));
       return;
     }
@@ -3071,24 +3070,22 @@ public class CBHud {
     let posture = score.GetPosture(id);
     let gang = CBFactionLabel(id);
     let isOn = CBFactionOn(id);
-    let out = StrUpper(gang) + "   " + (isOn ? CBPostureName(posture) : "OFF") + "\n";
+    let out = StrUpper(gang) + "   " + (isOn ? CBPostureName(posture) : CBT(n"Cyberbane-HubWeb-OFF")) + "\n";
     // The web says in words what its lines show for this gang (UI/HubWeb.reds, 2.4.3).
     if this.m_webShown && isOn {
       let ties = CBWebRelationWords(sys, game, id);
-      out += (StrLen(ties) > 0 ? ties + " " : "") + s"\(CBPostureName(posture)) to you, \(RoundF(score.GetStanding(id))).\n";
+      out += CBTf(n"Cyberbane-Hud-ToYou", [(StrLen(ties) > 0 ? ties + " " : ""), s"\(CBPostureName(posture))", s"\(RoundF(score.GetStanding(id)))"]);
     }
     let crewLine = isOn ? CBCrewStandingLine(game, id) : "";
     if StrLen(crewLine) > 0 {
       out += crewLine + "\n";   // the crew's own standing with them (2.6.0)
     }
     if !isOn {
-      out += "Switched off under Factions in Mod Settings. Cyberbane leaves them alone: nobody of theirs\n"
-           + "turns on you because of Cyberbane, they send nobody, and your standing is kept for later.\n";
+      out += CBT(n"Cyberbane-Hud-SwitchedOffUnderFactionsInMod");
     } else {
       // Set by hand (2.1.0): what they do, and what V has earned with them underneath.
       if CBGangViewSet(id) {
-        out += "Set to " + CBPostureName(posture) + " under How gangs see you in Mod Settings. What you have\n"
-             + "earned with them is " + CBPostureName(CBPostureFromStanding(fs.standing)) + ", and that comes back with Earned in play.\n";
+        out += CBTf(n"Cyberbane-Hud-SetToUnderHowGangsSee", [CBPostureName(posture), CBPostureName(CBPostureFromStanding(fs.standing))]);
       }
     }
     // Two records, said as two (CBForeignHostile): somebody else's is who shoots on sight, and a pay-off
@@ -3096,43 +3093,39 @@ public class CBHud {
     let foreign = CBForeignHostile(sys, game, id);
     if isOn && !CBGangViewSet(id) && CBTwrOwnsHostility(id) {
       if CBTwrGangHostile(game, id) >= 0 {
-        out += CBRememberModName() + " decides whether they are hostile, and Cyberbane follows it.\n";
+        out += CBTf(n"Cyberbane-Hud-DecidesWhetherTheyAreHostileAnd", [CBRememberModName()]);
       } else {
-        out += CBRememberModName() + " decides whether they are hostile, but could not be asked (" + CBTwrHostilityWhy() + "),\n"
-             + "so Cyberbane goes by what their people do: hostile while they have lately been hostile to you on\n"
-             + "sight, and otherwise its own standing, until it answers.\n";
+        out += CBTf(n"Cyberbane-Hud-DecidesWhetherTheyAreHostileBut", [CBRememberModName(), CBTwrHostilityWhy()]);
       }
       foreign = 0;   // said just now; the two records are one here
     }
     if foreign == 2 {
-      out += CBRememberModName() + " has them hostile on sight: their people attack you when they know you.\n"
-           + "That is its own record, kept apart from your standing here, and nothing here changes it.\n";
+      out += CBTf(n"Cyberbane-Hud-HasThemHostileOnSightTheir", [CBRememberModName()]);
     } else {
       if foreign == 1 {
-        out += "Their people have been hostile to you on sight, and Cyberbane did not make them so:\n"
-             + "They Will Remember, Night City Remembers, another mod or the game has them that way. Nothing here changes it.\n";
+        out += CBT(n"Cyberbane-Hud-TheirPeopleHaveBeenHostileTo");
       }
     }
     // Who runs them, which the gang's box on the web said in small type until 2.5.0.
     let leader = CBWebLeader(sys, game, id);
     if StrLen(leader) > 0 {
-      out += s"Led by \(leader).\n";
+      out += CBTf(n"Cyberbane-Hud-LedBy", [s"\(leader)"]);
     }
     let enemy = CBFactionLabel(CBTopEnemyOf(sys, sys.GetContent(), id));
     if StrLen(enemy) > 0 {
-      out += "At war with " + enemy + ". Hurting " + enemy + " is how this gang comes to like you.\n";
+      out += CBTf(n"Cyberbane-Hud-AtWarWithHurtingIsHow", [enemy, enemy]);
     }
-    out += s"\(fs.kills) of theirs down. They fear you at \(RoundF(score.GetFactionFear(id))) of 100.\n";
+    out += CBTf(n"Cyberbane-Hud-OfTheirsDownTheyFearYou", [s"\(fs.kills)", s"\(RoundF(score.GetFactionFear(id)))"]);
     // Fear against hatred, on their streets (Reactions/Morale.reds, 1.9.5).
     if isOn && CBGangBroken(sys, id) {
-      out += "They are broken. Their people fear you whatever their grudge, they only send anyone when you have just hurt them, and they would settle for less.\n";
+      out += CBT(n"Cyberbane-Hud-TheyAreBrokenTheirPeopleFear");
     } else {
       if isOn && Equals(posture, ECBPosture.Vendetta) && foreign != 2 {
         let held = RoundF(CBHoldBackTypical(sys, id) * 10.0);
         if held > 0 {
-          out += s"About \(held) in 10 of their people are too afraid of you to act on it. Those you can talk to.\n";
+          out += CBTf(n"Cyberbane-Hud-AboutIn10OfTheirPeople", [s"\(held)"]);
         } else {
-          out += "None of them are afraid enough of you to hold back.\n";
+          out += CBT(n"Cyberbane-Hud-NoneOfThemAreAfraidEnough");
         }
       }
     }
@@ -3149,27 +3142,27 @@ public class CBHud {
     }
     if StrLen(status) > 0 || StrLen(war) > 0 {
       let both = StrLen(status) > 0 && StrLen(war) > 0 ? StrLower(status) + "; " + war : StrLower(status) + war;
-      out += "Right now: " + both + ".\n";
+      out += CBTf(n"Cyberbane-Hud-RightNow", [both]);
     }
     out += "\n";
     let quote = CBPeaceQuote(sys, game, id);
     let money = CBHudEddies(game);
     if Equals(sys.GetPendingPeace(), id) {
-      let price = quote >= 0 ? s"\(quote)eb" : "what they ask";
-      out += "You are paying them " + price + ". It goes through in the next few seconds of play,\nand anything they had on its way to you is called off.";
-      this.SetAction("Cancel the payment", true);
+      let price = quote >= 0 ? CBTf(n"Cyberbane-Hud-Eb", [s"\(quote)"]) : CBT(n"Cyberbane-Hud-WhatTheyAsk");
+      out += CBTf(n"Cyberbane-Hud-YouArePayingThemItGoes", [price]);
+      this.SetAction(CBT(n"Cyberbane-Hud-CancelThePayment"), true);
     } else {
       if quote >= 0 {
-        out += s"They will call it off for \(quote)eb. You have \(money)eb.";
+        out += CBTf(n"Cyberbane-Hud-TheyWillCallItOffFor", [s"\(quote)", s"\(money)"]);
         if money >= quote {
           if Equals(this.m_payArmed, id) {
-            out += "\nClick again to pay.";
-            this.SetAction(s"Confirm: pay \(quote)eb", true);
+            out += CBT(n"Cyberbane-Hud-ClickAgainToPay");
+            this.SetAction(CBTf(n"Cyberbane-Hud-ConfirmPayEb", [s"\(quote)"]), true);
           } else {
-            this.SetAction(s"Pay them off: \(quote)eb", true);
+            this.SetAction(CBTf(n"Cyberbane-Hud-PayThemOffEb", [s"\(quote)"]), true);
           }
         } else {
-          this.SetAction("Not enough eddies", false);
+          this.SetAction(CBT(n"Cyberbane-Hud-NotEnoughEddies"), false);
         }
       } else {
         out += CBHudWhyNoPeace(game, id, posture);
@@ -3223,9 +3216,9 @@ public class CBHud {
           dname,
           "",
           s"\(rd)",
-          s"\(d.kills) down",
+          CBTf(n"Cyberbane-Hud-Down-2", [s"\(d.kills)"]),
           "",
-          StrLen(quiet) > 0 ? "quiet " + quiet : "nothing yet");
+          StrLen(quiet) > 0 ? CBTf(n"Cyberbane-Hud-Quiet", [quiet]) : CBT(n"Cyberbane-Hud-NothingYet"));
         this.SetRowBar(shown, CBHudWideBarX(), CBHudWideBarW(), d.renown / 100.0, rd >= 15 ? pip : CBHudCyan());
         shown += 1;
       }
@@ -3421,7 +3414,7 @@ public class CBHud {
     let label = CBBarFactionLabel(faction);
     if StrLen(label) == 0 {
       // Rivals of no gang (2.5.3): an empty name prints as "None"; the cards call the group the same.
-      label = Equals(faction, n"") ? "NO GANG" : StrUpper(NameToString(faction));
+      label = Equals(faction, n"") ? CBT(n"Cyberbane-Hud-NOGANG") : StrUpper(NameToString(faction));
     }
     let strength = CBTurfWarsOn() ? CBGangStrengthWord(CBGangStrength(sys, faction)) : "";
     this.SetRow(row, CBHudLayoutWide(), pip, false, false,
@@ -3430,7 +3423,7 @@ public class CBHud {
       "",
       strength,
       "",
-      n == 1 ? "1 Rival" : s"\(n) Rivals");   // a count, not a claim they are all out looking (2.5.5)
+      n == 1 ? CBT(n"Cyberbane-Hud-1Rival") : CBTf(n"Cyberbane-Hud-Rivals", [s"\(n)"]));   // a count, not a claim they are all out looking (2.5.5)
     this.m_rowRival[row] = 0;
     // How much is left of them, where their Rivals show their rank (2.5.0).
     if CBTurfWarsOn() {
@@ -3449,23 +3442,23 @@ public class CBHud {
     let role = CBRoleShort(CBRivalRole(sys, r));
     let gang = CBFactionLabel(r.faction);
     if Equals(role, "") {
-      role = s"rank \(r.rank)";
+      role = CBTf(n"Cyberbane-Hud-Rank", [s"\(r.rank)"]);
     }
     // Only one Rival is ever on the clock, so only that one shows a countdown.
     let onClock = r.id == sys.GetLaneRivalId(CBLaneRival());
-    let rightCol = "waiting their turn";
+    let rightCol = CBT(n"Cyberbane-StealthState-WaitingTheirTurn");
     if hunting {
-      rightCol = "here now";
+      rightCol = CBT(n"Cyberbane-Hud-HereNow");
       // Not after V: standing where they were seen, for V to come to (Rivals/Whereabouts.reds).
       if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
-        rightCol = "at their place";
+        rightCol = CBT(n"Cyberbane-Hud-AtTheirPlace");
       }
     } else {
       if onClock && sys.GetLaneTicks(CBLaneRival()) > 0 {
-        rightCol = "arrives " + CBWhen(sys.GetLaneTicks(CBLaneRival()));
+        rightCol = CBTf(n"Cyberbane-Hud-Arrives", [CBWhen(sys.GetLaneTicks(CBLaneRival()))]);
       } else {
         if onClock {
-          rightCol = "any moment";
+          rightCol = CBT(n"Cyberbane-Hud-AnyMoment");
         } else {
           if StrLen(this.m_holdLabel) > 0 {
             rightCol = this.m_holdLabel;
@@ -3473,11 +3466,11 @@ public class CBHud {
           // On their cooldown after the last fight (RivalAfterEscapeTicks): nobody picks them until it
           // runs out, which "waiting their turn" did not say.
           if r.huntTicks > 0 {
-            rightCol = "lying low";
+            rightCol = CBT(n"Cyberbane-Hud-LyingLow");
           }
           let lead = CBCurrentLead(sys, sys.GetGameInstance());
           if IsDefined(lead) && lead.rivalId == r.id {
-            rightCol = "you know where";
+            rightCol = CBT(n"Cyberbane-Hud-YouKnowWhere");
           }
         }
       }
@@ -3491,7 +3484,7 @@ public class CBHud {
     // Under their gang's line (RenderGangHead): the leader one step in, everybody else two.
     let indent = CBRivalRole(sys, r) == CBRoleLeader() ? "   " : "      ";
     this.SetRow(row, CBHudLayoutWide(), hunting ? CBHudRed() : CBHudAmber(), true, r.id == this.m_pickRival,
-      indent + (IsDefined(content) ? CBRivalDisplayName(content, r) : "A rival"),
+      indent + (IsDefined(content) ? CBRivalDisplayName(content, r) : CBT(n"Cyberbane-RivalSystem-ARival")),
       gang,
       role,
       marks,
@@ -3515,42 +3508,42 @@ public class CBHud {
     }
     if sys.IsRivalPurgePending() {
       // Where "Forget every rival" was, so taking it back is the same place clicked again.
-      this.SetExtra(3, "Keep them", true);
+      this.SetExtra(3, CBT(n"Cyberbane-Hud-KeepThem"), true);
     } else {
       let id = this.m_pickRival;
       let r = sys.FindRivalById(id);
       // 1. Where they are.
       let pending = sys.GetPendingFind();
       if pending > 0 && pending == id {
-        this.SetAction("Cancel the payment", true);
+        this.SetAction(CBT(n"Cyberbane-Hud-CancelThePayment"), true);
       } else {
         if pending > 0 {
-          this.SetAction("Buying another location", false);
+          this.SetAction(CBT(n"Cyberbane-Hud-BuyingAnotherLocation"), false);
         } else {
           let why = CBWhereaboutsForSale(sys, game, r);
           let price = CBWhereaboutsPrice(r);
           if why == 0 {
             if CBHudEddies(game) >= price {
               if CBPhoneDealsReady() {
-                this.SetAction(this.m_findArmed == id ? "Confirm: put the word out" : s"Ask around: about \(price)eb", true);
+                this.SetAction(this.m_findArmed == id ? CBT(n"Cyberbane-Hud-ConfirmPutTheWordOut") : CBTf(n"Cyberbane-Hud-AskAroundAboutEb", [s"\(price)"]), true);
               } else {
-                this.SetAction(this.m_findArmed == id ? s"Confirm: pay \(price)eb" : s"Ambush them: \(price)eb", true);
+                this.SetAction(this.m_findArmed == id ? CBTf(n"Cyberbane-Hud-ConfirmPayEb", [s"\(price)"]) : CBTf(n"Cyberbane-Hud-AmbushThemEb", [s"\(price)"]), true);
               }
             } else {
-              this.SetAction("Not enough eddies", false);
+              this.SetAction(CBT(n"Cyberbane-Hud-NotEnoughEddies"), false);
             }
           } else {
             if why == 1 {
-              this.SetAction("Hideouts are off", false);
+              this.SetAction(CBT(n"Cyberbane-Hud-HideoutsAreOff"), false);
             } else {
               if why == 2 {
-                this.SetAction("Out after you now", false);
+                this.SetAction(CBT(n"Cyberbane-Hud-OutAfterYouNow"), false);
               } else {
                 if why == 3 {
-                  this.SetAction("You know where they are", false);
+                  this.SetAction(CBT(n"Cyberbane-Hud-YouKnowWhereTheyAre"), false);
                 } else {
                   if why == 5 {
-                    this.SetAction("Their faction is off", false);
+                    this.SetAction(CBT(n"Cyberbane-Hud-TheirFactionIsOff"), false);
                   } else {
                     // Not after V any more (4): nothing to buy. Left unset, the button kept the last
                     // Rival's label and stayed clickable.
@@ -3564,12 +3557,12 @@ public class CBHud {
       }
       // 2. Forget them.
       if sys.IsRivalForgetPending(id) {
-        this.SetExtra(1, "Keep this one", true);
+        this.SetExtra(1, CBT(n"Cyberbane-Hud-KeepThisOne"), true);
       } else {
         if IsDefined(r) && !CBRivalForgettable(sys, r) {
-          this.SetExtra(1, sys.RivalKeptByCrew(r.id) ? "One of your crew" : "On their way: wait", false);
+          this.SetExtra(1, sys.RivalKeptByCrew(r.id) ? CBT(n"Cyberbane-Hud-OneOfYourCrew") : CBT(n"Cyberbane-Hud-OnTheirWayWait"), false);
         } else {
-          this.SetExtra(1, this.m_forgetArmed == id ? "Click again to forget" : "Forget this rival", IsDefined(r));
+          this.SetExtra(1, this.m_forgetArmed == id ? CBT(n"Cyberbane-Hud-ClickAgainToForget") : CBT(n"Cyberbane-Hud-ForgetThisRival"), IsDefined(r));
         }
       }
       // 3. Call them out (1.9.9).
@@ -3578,17 +3571,17 @@ public class CBHud {
         this.SetExtra(2, "", false);
       } else {
         if IsDefined(bookH) && bookH.WordSent(r.id) {
-          this.SetExtra(2, "Word sent", false);
+          this.SetExtra(2, CBT(n"Cyberbane-Hud-WordSent"), false);
         } else {
           if sys.GetPendingWord() == r.id {
-            this.SetExtra(2, "Sending word", false);
+            this.SetExtra(2, CBT(n"Cyberbane-Hud-SendingWord"), false);
           } else {
-            this.SetExtra(2, "Send word", CBWhereaboutsForSale(sys, game, r) == 0);
+            this.SetExtra(2, CBT(n"Cyberbane-Hud-SendWord"), CBWhereaboutsForSale(sys, game, r) == 0);
           }
         }
       }
       // 4. Forget everybody.
-      this.SetExtra(3, this.m_purgeArmed ? s"Click again: forget all \(count)" : "Forget every rival", true);
+      this.SetExtra(3, this.m_purgeArmed ? CBTf(n"Cyberbane-Hud-ClickAgainForgetAll", [s"\(count)"]) : CBT(n"Cyberbane-Hud-ForgetEveryRival"), true);
     }
     this.SetBody(CBHudMarginX(), top, width, CBHudRivals(sys, game, this.m_pickRival, this.m_findArmed, this.m_forgetArmed),
                  CBHudMaxLinesFor(this.m_tab));
@@ -3603,7 +3596,7 @@ public class CBHud {
     let reading = this.m_titlePicked ? this.m_titlePick : chosen;
     let earned = sys.GetUnlockedTitles();
     let onAuto = Equals(chosen, n"");
-    let autoLabel = ArraySize(earned) > 0 ? "Automatic: " + CBHudActiveTitle(sys) : "Automatic";
+    let autoLabel = ArraySize(earned) > 0 ? CBTf(n"Cyberbane-Hud-Automatic", [CBHudActiveTitle(sys)]) : CBT(n"Cyberbane-Hud-Automatic-2");
     // Automatic, then every title V has earned, then the rest, and the page shows a window onto them. There are more
     // titles than rows now (2.5.0), and the last of them had simply fallen off the end.
     let defs: array<ref<CBTitleDef>>;
@@ -3627,16 +3620,16 @@ public class CBHud {
       let def = defs[top + row];
       if !IsDefined(def) {
         this.SetRow(row, CBHudLayoutTitles(), onAuto ? CBHudCyan() : CBHudGrey(), true, Equals(reading, n""),
-          autoLabel, "", "", "", "", onAuto ? "GOING BY" : "");
+          autoLabel, "", "", "", "", onAuto ? CBT(n"Cyberbane-Hud-GOINGBY") : "");
         this.m_rowTitle[row] = n"";
       } else {
         let have = sys.HasTitle(def.id);
         let mine = Equals(def.id, chosen);
-        let status = mine ? "GOING BY" : "EARNED";
+        let status = mine ? CBT(n"Cyberbane-Hud-GOINGBY") : CBT(n"Cyberbane-Hud-EARNED");
         if !have {
           status = CBTitleProgress(sys, def.id);
           if StrLen(status) == 0 {
-            status = "LOCKED";
+            status = CBT(n"Cyberbane-Hud-LOCKED");
           }
         }
         this.SetRow(row, CBHudLayoutTitles(), mine ? CBHudCyan() : (have ? CBHudAmber() : CBHudGrey()), true,
@@ -3857,9 +3850,9 @@ public class CBHud {
     }
     this.m_treeSlotRival[slot] = IsDefined(r) ? r.id : 0;
     let tint = CBHudGrey();
-    let name = "EMPTY CHAIR";
+    let name = CBT(n"Cyberbane-Hud-EMPTYCHAIR");
     // Who steps up, by name without the nickname so it fits whole (2.5.0); said once, in the first empty chair.
-    let line = StrLen(empty) > 0 ? "NEXT: " + StrUpper(CBHudNameNoNick(empty)) : "NOBODY YET";
+    let line = StrLen(empty) > 0 ? CBTf(n"Cyberbane-Hud-NEXT", [StrUpper(CBHudNameNoNick(empty))]) : CBT(n"Cyberbane-Hud-NOBODYYET");
     let lead = "";
     let leadTint = CBHudDim();
     if IsDefined(r) {
@@ -3870,12 +3863,12 @@ public class CBHud {
         let book = CBRivalBook.Get(game);
         let how = IsDefined(book) ? book.Ending(r.id) : CBEndingNone();
         if r.state == EnumInt(ECBRivalState.Retired) {
-          line = "LEFT NIGHT CITY";
+          line = CBT(n"Cyberbane-Hud-LEFTNIGHTCITY");
         } else {
-          line = how == CBEndingNotByV() ? "KILLED, NOT BY YOU" : "DEAD BY YOUR HAND";
+          line = how == CBEndingNotByV() ? CBT(n"Cyberbane-Hud-KILLEDNOTBYYOU") : CBT(n"Cyberbane-Hud-DEADBYYOURHAND");
         }
       } else {
-        line = s"RANK \(r.rank)  " + StrUpper(hunting ? "hunting you" : CBRivalStateName(r.state));
+        line = CBTf(n"Cyberbane-Hud-RANK", [s"\(r.rank)", StrUpper(hunting ? CBT(n"Cyberbane-Hud-HuntingYou") : CBRivalStateName(r.state))]);
         // Who they are to V or to another of theirs, in words (2.5.0): a bond and V's nemesis were lines across the
         // tree from the middle of one box to the middle of another, and showed only as strokes in the air between
         // them. Otherwise what V and they have been through, or that they have never met.
@@ -3883,14 +3876,14 @@ public class CBHud {
         let with = IsDefined(bookT) ? bookT.BondWith(r.id) : 0;
         let partner = with > 0 ? sys.FindRivalById(with) : null;
         if r.id == this.m_treeNemesis {
-          lead = s"Your nemesis: met \(r.encounters) times";
+          lead = CBTf(n"Cyberbane-Hud-YourNemesisMetTimes", [s"\(r.encounters)"]);
           leadTint = CBHudRed();
         } else {
           if IsDefined(partner) && StrLen(CBBondWord(bookT.BondKind(r.id))) > 0 {
             lead = CBCapFirst(CBBondWord(bookT.BondKind(r.id))) + " " + CBHudNameNoNick(CBRivalDisplayName(sys.GetContent(), partner));
             leadTint = CBHudCyan();
           } else {
-            lead = r.encounters > 0 ? s"Met \(r.encounters), ran \(r.escapes), spared \(r.sparedByV)" : "Never met you";
+            lead = r.encounters > 0 ? CBTf(n"Cyberbane-Hud-MetRanSpared", [s"\(r.encounters)", s"\(r.escapes)", s"\(r.sparedByV)"]) : CBT(n"Cyberbane-Hud-NeverMetYou");
           }
         }
       }
@@ -3957,22 +3950,22 @@ public class CBHud {
         this.m_webBoxName[0].SetText("V");
       }
       if IsDefined(this.m_webBoxLine[0]) {
-        this.m_webBoxLine[0].SetText(ArraySize(gangs) > 1 ? "NEXT GANG" : "YOU");
+        this.m_webBoxLine[0].SetText(ArraySize(gangs) > 1 ? CBT(n"Cyberbane-Hud-NEXTGANG") : CBT(n"Cyberbane-Hud-YOU"));
       }
     }
     // Drawn whether or not the gang has a record (2.5.3): this asked for one, and a gang V had never killed one of or paid
     // off had none, so its Rival was in the list and the cards said "No Rivals yet". Without one nobody holds a chair,
     // and every Rival of theirs is in the rest.
     if ArraySize(gangs) == 0 || Equals(gang, n"") {
-      this.PlaceWord(words, 660.0, 200.0, "No Rivals yet", CBHudGrey(), 1.0);
+      this.PlaceWord(words, 660.0, 200.0, CBT(n"Cyberbane-Hud-NoRivalsYet"), CBHudGrey(), 1.0);
       words += 1;
     } else {
       // Rows, each named on the left (2.5.0): the leader, the lieutenants, the rest, the fallen. No lines between them:
       // the chair lines and the bond lines crossed the boxes wherever they were drawn.
-      let gangName = Equals(gang, CBTreeNoGang()) ? "No gang" : CBFactionLabel(gang);
+      let gangName = Equals(gang, CBTreeNoGang()) ? CBT(n"Cyberbane-Hud-NoGang") : CBFactionLabel(gang);
       let label = StrUpper(StrLen(gangName) > 0 ? gangName : NameToString(gang));
       if ArraySize(gangs) > 1 {
-        label += s"  (\(ArrayFindFirst(gangs, gang) + 1) OF \(ArraySize(gangs)))";
+        label += CBTf(n"Cyberbane-Hud-OF", [s"\(ArrayFindFirst(gangs, gang) + 1)", s"\(ArraySize(gangs))"]);
       }
       this.PlaceWord(words, 805.0, 40.0, label, CBHudHead(), 1.0);
       words += 1;
@@ -4013,12 +4006,12 @@ public class CBHud {
       let ch = CBTreeCardH();
       let nextUp = IsDefined(fs) ? CBBestCandidate(sys, fs) : null;
       let nextLt = IsDefined(fs) ? CBBestLieutenant(sys, fs) : null;
-      this.PlaceLabel(words, 0.0, ch / 2.0, "LEADER", CBHudDim());
+      this.PlaceLabel(words, 0.0, ch / 2.0, CBT(n"Cyberbane-Hierarchy-LEADER"), CBHudDim());
       words += 1;
       this.TreeBox(sys, game, 1, leader, IsDefined(nextUp) ? CBRivalDisplayName(sys.GetContent(), nextUp) : "",
                    CBTreeCardX(0), 0.0, cw, ch, false);
       let rowY = ch + CBTreeRowGap();
-      this.PlaceLabel(words, 0.0, rowY + ch / 2.0, "LIEUTENANTS", CBHudDim());
+      this.PlaceLabel(words, 0.0, rowY + ch / 2.0, CBT(n"Cyberbane-Hud-LIEUTENANTS"), CBHudDim());
       words += 1;
       let ltIds: array<Int32> = [lt1Id, lt2Id, lt3Id];
       let named = false;
@@ -4038,7 +4031,7 @@ public class CBHud {
       }
       rowY += ch + CBTreeRowGap();
       if ArraySize(benchIds) > 0 {
-        this.PlaceLabel(words, 0.0, rowY + ch / 2.0, "THE REST", CBHudDim());
+        this.PlaceLabel(words, 0.0, rowY + ch / 2.0, CBT(n"Cyberbane-Hud-THEREST"), CBHudDim());
         words += 1;
         k = 0;
         while k < ArraySize(benchIds) {
@@ -4048,7 +4041,7 @@ public class CBHud {
         rowY += ch + CBTreeRowGap();
       }
       if ArraySize(fallenIds) > 0 {
-        this.PlaceLabel(words, 0.0, rowY + CBTreeFallenH() / 2.0, "THE FALLEN", CBHudDim());
+        this.PlaceLabel(words, 0.0, rowY + CBTreeFallenH() / 2.0, CBT(n"Cyberbane-Hud-THEFALLEN"), CBHudDim());
         words += 1;
         k = 0;
         while k < ArraySize(fallenIds) {
@@ -4170,10 +4163,10 @@ public class CBHud {
     this.DressBox(slot, w, h, small ? CBPicSmallName() : CBPicName(), small ? CBPicSmallLine() : CBPicLine(), CBPicLead(), false);
     let colour = CBCrewColour(game);
     let name = CBCrewNameOf(game);
-    this.BoxText(this.m_webBoxName[slot], StrLen(name) > 0 ? name : "Your crew", w - 24.0, small ? CBPicSmallName() : CBPicName(), CBPicNameLeast(), true);
+    this.BoxText(this.m_webBoxName[slot], StrLen(name) > 0 ? name : CBT(n"Cyberbane-CrewBanner-YourCrew"), w - 24.0, small ? CBPicSmallName() : CBPicName(), CBPicNameLeast(), true);
     let kb = CBCrewKitBook.Get(game);
     let wars = IsDefined(kb) ? kb.WarsWon() : 0;
-    let line = s"\(book.Count()) ON THE ROSTER" + (wars > 0 ? s"  /  \(wars) \(wars == 1 ? "WAR" : "WARS") WON" : "");
+    let line = CBTf(n"Cyberbane-Hud-ONTHEROSTER", [s"\(book.Count())", (wars > 0 ? CBTf(n"Cyberbane-Hud-WON", [s"\(wars)", wars == 1 ? CBT(n"Cyberbane-Hud-WAR") : CBT(n"Cyberbane-Hud-WARS")]) : "")]);
     this.BoxText(this.m_webBoxLine[slot], line, w - 24.0, small ? CBPicSmallLine() : CBPicLine(), CBPicLineLeast(), false);
     if IsDefined(this.m_webBoxLine[slot]) {
       this.m_webBoxLine[slot].SetTintColor(colour);
@@ -4187,7 +4180,7 @@ public class CBHud {
       gang = CBCrewWorstGang(game);
     }
     let v = IsNameValid(gang) ? bb.Standing(gang) : 0;
-    let lead = IsNameValid(gang) ? s"\(CBCrewStandWord(v)) with \(CBPhoneGangSender(gang))" : "No gang holds a grudge yet";
+    let lead = IsNameValid(gang) ? CBTf(n"Cyberbane-Hud-With", [s"\(CBCrewStandWord(v))", s"\(CBPhoneGangSender(gang))"]) : CBT(n"Cyberbane-Hud-NoGangHoldsAGrudgeYet");
     if IsDefined(this.m_webBoxLead[slot]) {
       this.BoxText(this.m_webBoxLead[slot], lead, w - 24.0, CBPicLead(), CBPicLeadLeast(), false);
       this.m_webBoxLead[slot].SetTintColor(IsNameValid(gang) ? CBCrewStandTint(v) : CBHudDim());
@@ -4231,7 +4224,7 @@ public class CBHud {
       if StrLen(tag) == 0 {
         let enemy = CBTopEnemyOf(sys, sys.GetContent(), gang);
         if IsNameValid(enemy) {
-          tag = "At war with " + CBPhoneGangSender(enemy);
+          tag = CBTf(n"Cyberbane-HubWeb-AtWarWith", [CBPhoneGangSender(enemy)]);
           tagTint = CBHudDim();
         }
       }
@@ -4521,23 +4514,23 @@ public class CBHud {
             let posture = score.GetPosture(holder);
             tint = CBWebPostureColour(posture);
             barTint = Equals(posture, ECBPosture.Neutral) ? CBHudCyan() : tint;
-            line = s"\(CBCapFirst(CBPhoneGangSender(holder))) hold \(RoundF(shares[top] * 100.0))%";
+            line = CBTf(n"Cyberbane-Hud-Hold", [s"\(CBCapFirst(CBPhoneGangSender(holder)))", s"\(RoundF(shares[top] * 100.0))"]);
             lead = CBHudTurfStatus(game, content, d, holder, ids, shares, second);
             a = shares[top];
           } else {
-            line = "Nobody holds it";
+            line = CBT(n"Cyberbane-Hud-NobodyHoldsIt");
           }
           if CBOwnDistrict(game, d) {
-            line = "Your streets";
+            line = CBT(n"Cyberbane-Hud-YourStreets");
             tint = CBHudGreen();
           }
         } else {
           let rd = RoundF(renown);
           tint = rd >= 75 ? CBHudRed() : (rd >= 40 ? CBHudAmber() : (rd >= 15 ? CBHudCyan() : CBHudGrey()));
           barTint = rd >= 15 ? tint : CBHudCyan();
-          line = s"Renown \(rd)";
+          line = CBTf(n"Cyberbane-Hud-Renown", [s"\(rd)"]);
           let kills = IsDefined(ds) ? ds.kills : 0;
-          lead = kills > 0 ? (kills == 1 ? "One put down here" : s"\(kills) put down here") : "Nothing yet";
+          lead = kills > 0 ? (kills == 1 ? CBT(n"Cyberbane-Hud-OnePutDownHere") : CBTf(n"Cyberbane-Hud-PutDownHere", [s"\(kills)"])) : CBT(n"Cyberbane-Hud-NothingYet-2");
           a = ClampF(renown / 100.0, 0.0, 1.0);
         }
         this.BoxText(this.m_webBoxName[s], CBDistrictLabel(d), w - 24.0, CBPicName(), CBPicNameLeast(), true);
@@ -4567,10 +4560,10 @@ public class CBHud {
     // Nothing picked: only what the map shows (2.5.0). The page's own words, the gangs you have broken and every
     // district's story, are the list's, where there is room for them.
     if Equals(d, n"") {
-      return turf ? "Each card is a district and the gang holding it, coloured by how they treat you: green friendly, amber hostile, red out for blood. The bar is how firmly they hold it. White frame: you are here.\nClick a district for who else wants it, and how far your name carries there."
-                  : "Each card is a district and how far your name carries there: red a legend, amber known, cyan heard of. The bar is your renown. White frame: you are here.\nClick a district for what you have done there.";
+      return turf ? CBT(n"Cyberbane-Hud-EachCardIsADistrictAnd")
+                  : CBT(n"Cyberbane-Hud-EachCardIsADistrictAnd-2");
     }
-    let out = StrUpper(CBDistrictLabel(d)) + (Equals(d, sys.GetCurrentDistrict()) ? "   (you are here)" : "") + "\n";
+    let out = StrUpper(CBDistrictLabel(d)) + (Equals(d, sys.GetCurrentDistrict()) ? CBT(n"Cyberbane-Hud-YouAreHere") : "") + "\n";
     let ds = sys.FindDistrict(d);
     let renown = IsDefined(ds) ? RoundF(ds.renown) : 0;
     if turf {
@@ -4595,12 +4588,12 @@ public class CBHud {
         list = StrLen(list) > 0 ? list + ", " + part : part;
       }
       if NotEquals(holder, n"") {
-        out += s"\(CBCapFirst(CBFactionLabel(holder))) hold it. ";
+        out += CBTf(n"Cyberbane-Hud-HoldIt", [s"\(CBCapFirst(CBFactionLabel(holder)))"]);
       }
       if StrLen(list) > 0 {
-        out += "Who has streets here: " + list + ".\n";
+        out += CBTf(n"Cyberbane-Hud-WhoHasStreetsHere", [list]);
       } else {
-        out += "No gang has streets here.\n";
+        out += CBT(n"Cyberbane-Hud-NoGangHasStreetsHere");
       }
       let second = -1;
       let top = ArrayFindFirst(ids, holder);
@@ -4618,28 +4611,28 @@ public class CBHud {
         }
       }
       if CBOwnDistrict(game, d) {
-        out += "Nobody runs it but you. The gangs pass through on your say-so.\n";
+        out += CBT(n"Cyberbane-Hud-NobodyRunsItButYouThe");
       }
-      out += s"Your name here: \(renown) of 100.";
+      out += CBTf(n"Cyberbane-Hud-YourNameHereOf100", [s"\(renown)"]);
       return out;
     }
     let peak = IsDefined(ds) ? RoundF(ds.renownPeak) : 0;
-    out += s"Your renown here: \(renown) of 100" + (peak > renown ? s", at its height \(peak)" : "") + ".\n";
+    out += CBTf(n"Cyberbane-Hud-YourRenownHereOf100", [s"\(renown)", (peak > renown ? CBTf(n"Cyberbane-Hud-AtItsHeight", [s"\(peak)"]) : "")]);
     if IsDefined(ds) && ds.kills > 0 {
-      out += ds.kills == 1 ? "One put down here" : s"\(ds.kills) put down here";
+      out += ds.kills == 1 ? CBT(n"Cyberbane-Hud-OnePutDownHere") : CBTf(n"Cyberbane-Hud-PutDownHere", [s"\(ds.kills)"]);
       if ds.lethalOrBrutal > 0 {
-        out += s", \(ds.lethalOrBrutal) of them the hard way";
+        out += CBTf(n"Cyberbane-Hud-OfThemTheHardWay", [s"\(ds.lethalOrBrutal)"]);
       }
       if ds.quietTakedowns > 0 {
-        out += s", \(ds.quietTakedowns) taken down without a sound";
+        out += CBTf(n"Cyberbane-Hud-TakenDownWithoutASound", [s"\(ds.quietTakedowns)"]);
       }
       out += ".\n";
       let quiet = CBHudSince(CBGameSeconds(game), ds.lastIncidentAt);
       if StrLen(quiet) > 0 {
-        out += s"The last trouble here was \(quiet) ago.";
+        out += CBTf(n"Cyberbane-Hud-TheLastTroubleHereWasAgo", [s"\(quiet)"]);
       }
     } else {
-      out += "You have not made any trouble here yet.";
+      out += CBT(n"Cyberbane-Hud-YouHaveNotMadeAnyTrouble");
     }
     return out;
   }
@@ -4696,19 +4689,19 @@ public class CBHud {
     let why = "";
     if book.Count() > 0 {
       if book.OutCount() > 0 && !book.leaving {
-        this.SetAction(book.reqHome ? "Sending them home. Click to take it back" : "Send them home", true);
+        this.SetAction(book.reqHome ? CBT(n"Cyberbane-Hud-SendingThemHomeClickToTake") : CBT(n"Cyberbane-Hud-SendThemHome"), true);
       } else {
         if book.reqCall {
-          this.SetAction("Calling them. Click to take it back", true);
-          why = "They'll answer once you're back in the game.\n";
+          this.SetAction(CBT(n"Cyberbane-Hud-CallingThemClickToTakeIt"), true);
+          why = CBT(n"Cyberbane-Hud-TheyLlAnswerOnceYouRe");
         } else {
           let blocked = CBCrewCallBlocked(sys, game, false, true);
-          this.SetAction("Need you. Now.", StrLen(blocked) == 0);
+          this.SetAction(CBT(n"Cyberbane-Crew-NeedYouNow"), StrLen(blocked) == 0);
           if StrLen(blocked) > 0 {
-            why = "Can't call them now: " + StrLower(StrLeft(blocked, 1)) + StrRight(blocked, StrLen(blocked) - 1) + "\n";
+            why = CBTf(n"Cyberbane-Hud-CanTCallThemNow", [StrLower(StrLeft(blocked, 1)), StrRight(blocked, StrLen(blocked) - 1)]);
           } else {
             if !CBCrewTrouble(sys, game) {
-              why = "Nothing on you right now: two will come and walk with you until you send them home.\n";
+              why = CBT(n"Cyberbane-Hud-NothingOnYouRightNowTwo");
             }
           }
         }
@@ -4716,29 +4709,29 @@ public class CBHud {
     }
     if book.CutOwed() > 0 {
       if book.reqPay {
-        this.SetExtra(1, "Paying. Click to take it back", true);
+        this.SetExtra(1, CBT(n"Cyberbane-Hud-PayingClickToTakeItBack"), true);
       } else {
-        this.SetExtra(1, s"Pay the cut: \(book.CutOwed())eb", CBHudEddies(game) >= book.CutOwed());
+        this.SetExtra(1, CBTf(n"Cyberbane-Hud-PayTheCutEb", [s"\(book.CutOwed())"]), CBHudEddies(game) >= book.CutOwed());
       }
     }
     let m = this.m_pickCrew > 0 ? book.Find(this.m_pickCrew) : null;
     // The picked one's orders on a screen of their own (2.6.0): a button each ran off the bottom of the page.
     if IsDefined(m) {
-      this.SetExtra(2, s"Orders for \(CBCrewFirst(sys, m))", true);
+      this.SetExtra(2, CBTf(n"Cyberbane-Hud-OrdersFor", [s"\(CBCrewFirst(sys, m))"]), true);
     }
     if offer && this.m_pickCrew == -1 {
       if book.reqHire {
-        this.SetExtra(2, "Hiring. Click to take it back", true);
+        this.SetExtra(2, CBT(n"Cyberbane-Hud-HiringClickToTakeItBack"), true);
       } else {
-        this.SetExtra(2, s"Hire the solo: \(book.offerPrice)eb", book.HasRoom() && CBHudEddies(game) >= book.offerPrice);
+        this.SetExtra(2, CBTf(n"Cyberbane-Hud-HireTheSoloEb", [s"\(book.offerPrice)"]), book.HasRoom() && CBHudEddies(game) >= book.offerPrice);
       }
     }
     if offer && this.m_pickCrew != -1 {
-      why += "A solo is on offer: pick them to hire them.\n";
+      why += CBT(n"Cyberbane-Hud-ASoloIsOnOfferPick");
     }
     let bbPage = CBCrewBannerBook.Get(game);
     if book.Count() > 0 || (IsDefined(bbPage) && bbPage.FallenCount() > 0) {
-      this.SetExtra(3, "Name, colours, the fallen", true);
+      this.SetExtra(3, CBT(n"Cyberbane-Hud-NameColoursTheFallen"), true);
     }
     let file = CBCrewFile(sys, game, book, m, this.m_pickCrew == -1);
     if IsDefined(m) && this.m_pickCrew > 0 {
@@ -4748,7 +4741,7 @@ public class CBHud {
     let named = StrLen(crewName) > 0 ? StrUpper(crewName) + "\n" : "";
     let kbWars = CBCrewKitBook.Get(game);
     if IsDefined(kbWars) && kbWars.WarsWon() > 0 {
-      named += s"Wars your crew started and won: \(kbWars.WarsWon()).\n";
+      named += CBTf(n"Cyberbane-Hud-WarsYourCrewStartedAndWon", [s"\(kbWars.WarsWon())"]);
     }
     let text = named + why + (StrLen(file) > 0 ? file + "\n" + CBCrewSummary(sys, game) : CBCrewSummary(sys, game));
     this.SetBody(x, top, anything ? w - CBHudActionW() - 40.0 : w, text, CBHudMaxLinesFor(this.m_tab));
@@ -4769,10 +4762,10 @@ public class CBHud {
     this.HideWeb();
     if this.m_crewMode == 4 {
       this.ShowNameInput(game, x, top);
-      this.SetAction("Save the name", true);
-      this.SetExtra(1, "Cancel", true);
+      this.SetAction(CBT(n"Cyberbane-Hud-SaveTheName"), true);
+      this.SetExtra(1, CBT(n"Cyberbane-Hud-Cancel"), true);
       this.SetBody(x, top + 110.0, w - CBHudActionW() - 40.0,
-        "Type a name for your crew, then save it. Letters, numbers, spaces and - ' . & ! only, up to 24. Save it empty to go without one.",
+        CBT(n"Cyberbane-Hud-TypeANameForYourCrew"),
         CBHudMaxLinesFor(this.m_tab));
       return true;
     }
@@ -4821,11 +4814,11 @@ public class CBHud {
         i += 1;
       }
       intro = this.m_crewMode == 1
-        ? s"Pick a weapon for \(name). Its mods and attachments go back in your bag. From their next call they fight the way it is used, and it adds to their damage by its quality. Take it back any time; it comes back if they leave."
-        : s"Pick chrome for \(name), from what you own and do not wear. It goes in for good and does for them what it does in a fight, by the game's own numbers. Chrome that only helps you (RAM, zoom, stamina) is not listed. Up to \(CBCrewChromeSlots()).";
+        ? CBTf(n"Cyberbane-Hud-PickAWeaponForItsMods", [s"\(name)"])
+        : CBTf(n"Cyberbane-Hud-PickChromeForFromWhatYou", [s"\(name)", s"\(CBCrewChromeSlots())"]);
       if row == 0 {
-        intro = this.m_crewMode == 1 ? "You have no spare weapon to give: everything is equipped, or there is nothing a person could fight with."
-                                     : "You have no spare chrome that would help them in a fight: what you own is installed in you, or only helps you.";
+        intro = this.m_crewMode == 1 ? CBT(n"Cyberbane-Hud-YouHaveNoSpareWeaponTo")
+                                     : CBT(n"Cyberbane-Hud-YouHaveNoSpareChromeThat");
       }
     }
     if this.m_crewMode == 3 {
@@ -4835,17 +4828,17 @@ public class CBHud {
         let gang = this.m_pickGangs[g];
         let stand = CBCrewStandingWith(game, gang);
         this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCapFirst(CBFactionLabel(gang)),
-          CBGangStrengthWord(CBGangStrength(sys, gang)), "", s"your crew: \(StrLower(CBCrewStandWord(stand)))", "", "");
+          CBGangStrengthWord(CBGangStrength(sys, gang)), "", CBTf(n"Cyberbane-Hud-YourCrew", [s"\(StrLower(CBCrewStandWord(stand)))"]), "", "");
         this.m_rowCrew[row] = g + 1;
         row += 1;
         g += 1;
       }
-      intro = s"Pick a gang for \(name) to start a war on. Away \(RoundF(CBConfig.CrewWarHours())) hours. Won, the gang loses ground and blames you; lost, \(name) comes back hurt, or not at all. The weaker the gang, the better the odds, and a gang that already hates your crew is ready for it.";
+      intro = CBTf(n"Cyberbane-Hud-PickAGangForToStart", [s"\(name)", s"\(RoundF(CBConfig.CrewWarHours()))", s"\(name)"]);
       if row == 0 {
-        intro = "No gang to go to war on: every gang that fields people is friendly with you.";
+        intro = CBT(n"Cyberbane-Hud-NoGangToGoToWar");
       }
     }
-    this.SetAction("Back", true);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
     let bodyTop = top + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(x, bodyTop, w - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
     return true;
@@ -4865,68 +4858,67 @@ public class CBHud {
     // A weapon from V's bag, or theirs handed back.
     if IsDefined(k) && k.hasWeapon {
       asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskTakeBack());
-      this.CrewOrderRow(0, CBCrewAskTakeBack(), asked ? "Handing it back..." : "Take your weapon back", free || asked, asked,
+      this.CrewOrderRow(0, CBCrewAskTakeBack(), asked ? CBT(n"Cyberbane-Hud-HandingItBack") : CBT(n"Cyberbane-Hud-TakeYourWeaponBack"), free || asked, asked,
                         CBCrewItemName(ItemID.GetTDBID(k.weapon)), StrUpper(CBCrewTierWord(k.weaponTier)));
     } else {
       asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskGive());
-      this.CrewOrderRow(0, CBCrewAskGive(), asked ? "A weapon on its way..." : "Give them a weapon", free || asked, asked,
-                        "nothing of yours", "");
+      this.CrewOrderRow(0, CBCrewAskGive(), asked ? CBT(n"Cyberbane-Hud-AWeaponOnItsWay") : CBT(n"Cyberbane-Hud-GiveThemAWeapon"), free || asked, asked,
+                        CBT(n"Cyberbane-Hud-NothingOfYours"), "");
     }
     // Chrome.
     let chrome = IsDefined(k) ? k.ChromeCount() : 0;
     let room = chrome < CBCrewChromeSlots();
     asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskChrome());
-    this.CrewOrderRow(1, CBCrewAskChrome(), asked ? "Chrome on its way..." : (room ? "Have chrome put in" : "No room for more chrome"),
-                      (free && room) || asked, asked, s"\(chrome) of \(CBCrewChromeSlots()) fitted", "");
+    this.CrewOrderRow(1, CBCrewAskChrome(), asked ? CBT(n"Cyberbane-Hud-ChromeOnItsWay") : (room ? CBT(n"Cyberbane-Hud-HaveChromePutIn") : CBT(n"Cyberbane-Hud-NoRoomForMoreChrome")),
+                      (free && room) || asked, asked, CBTf(n"Cyberbane-Hud-OfFitted", [s"\(chrome)", s"\(CBCrewChromeSlots())"]), "");
     // Training.
     let trained = IsDefined(k) ? k.trained : 0;
     asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskTrain());
     if trained >= CBConfig.CrewTrainMax() {
-      this.CrewOrderRow(2, CBCrewAskTrain(), "Fully trained", false, false, s"\(trained) of \(CBConfig.CrewTrainMax()) done", "");
+      this.CrewOrderRow(2, CBCrewAskTrain(), CBT(n"Cyberbane-Hud-FullyTrained"), false, false, CBTf(n"Cyberbane-Hud-OfDone", [s"\(trained)", s"\(CBConfig.CrewTrainMax())"]), "");
     } else {
       let cost = CBCrewTrainCost(k);
-      this.CrewOrderRow(2, CBCrewAskTrain(), asked ? "Off to train..." : "Send them to train",
+      this.CrewOrderRow(2, CBCrewAskTrain(), asked ? CBT(n"Cyberbane-Hud-OffToTrain") : CBT(n"Cyberbane-Hud-SendThemToTrain"),
                         (free && !hurt && CBHudEddies(game) >= cost) || asked, asked,
-                        hurt ? "hurt: not yet" : s"away \(RoundF(CBCrewTrainHours(k))) hours", s"\(cost)EB");
+                        hurt ? CBT(n"Cyberbane-Hud-HurtNotYet") : CBTf(n"Cyberbane-Hud-AwayHours", [s"\(RoundF(CBCrewTrainHours(k)))"]), CBTf(n"Cyberbane-Hud-EB", [s"\(cost)"]));
     }
     // A war, from Lieutenant up.
     let rank = CBCrewRankOf(game, m);
     asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskWar());
     if rank < CBConfig.CrewWarMinRank() {
-      this.CrewOrderRow(3, CBCrewAskWar(), "Send them to start a war", false, false,
-                        s"needs \(CBCrewRankWord(CBConfig.CrewWarMinRank()))", "");
+      this.CrewOrderRow(3, CBCrewAskWar(), CBT(n"Cyberbane-Hud-SendThemToStartAWar"), false, false,
+                        CBTf(n"Cyberbane-Hud-Needs", [s"\(CBCrewRankWord(CBConfig.CrewWarMinRank()))"]), "");
     } else {
-      this.CrewOrderRow(3, CBCrewAskWar(), asked ? "Off to war..." : "Send them to start a war", (free && !hurt) || asked, asked,
-                        hurt ? "hurt: not yet" : s"away \(RoundF(CBConfig.CrewWarHours())) hours", "");
+      this.CrewOrderRow(3, CBCrewAskWar(), asked ? CBT(n"Cyberbane-Hud-OffToWar") : CBT(n"Cyberbane-Hud-SendThemToStartAWar"), (free && !hurt) || asked, asked,
+                        hurt ? CBT(n"Cyberbane-Hud-HurtNotYet") : CBTf(n"Cyberbane-Hud-AwayHours", [s"\(RoundF(CBConfig.CrewWarHours()))"]), "");
     }
     // A spar.
     asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskSpar());
     if IsDefined(kb) && kb.sparMember == m.id {
-      this.CrewOrderRow(4, CBCrewAskSpar(), "Sparring now", false, false, "", "");
+      this.CrewOrderRow(4, CBCrewAskSpar(), CBT(n"Cyberbane-Hud-SparringNow"), false, false, "", "");
     } else {
       let sparWhy = asked ? "" : CBCrewSparBlocked(sys, game, m, now);
-      this.CrewOrderRow(4, CBCrewAskSpar(), asked ? "Coming to spar..." : "Spar with them", StrLen(sparWhy) == 0, asked, sparWhy, "");
+      this.CrewOrderRow(4, CBCrewAskSpar(), asked ? CBT(n"Cyberbane-Hud-ComingToSpar") : CBT(n"Cyberbane-Hud-SparWithThem"), StrLen(sparWhy) == 0, asked, sparWhy, "");
     }
     // Work: earning, recruiting, or none.
     let work = CBCrewWorkOf(game, m.id);
     let next = CBCrewNextWork(game, m.id);
     asked = IsDefined(kb) && kb.Asked(m.id, CBCrewAskWork());
-    let workLabel = next == 1 ? "Put them to work earning" : (next == 2 ? "Put them to recruiting" : "Stop their work");
-    this.CrewOrderRow(5, CBCrewAskWork(), asked ? "Telling them..." : workLabel, free || asked, asked,
-                      s"now: \(CBCrewWorkWord(work))", work == 1 ? s"\(CBConfig.CrewEarnPerRank() * rank)EB A DAY" : "");
+    let workLabel = next == 1 ? CBT(n"Cyberbane-Hud-PutThemToWorkEarning") : (next == 2 ? CBT(n"Cyberbane-Hud-PutThemToRecruiting") : CBT(n"Cyberbane-Hud-StopTheirWork"));
+    this.CrewOrderRow(5, CBCrewAskWork(), asked ? CBT(n"Cyberbane-Hud-TellingThem") : workLabel, free || asked, asked,
+                      CBTf(n"Cyberbane-Hud-Now", [s"\(CBCrewWorkWord(work))"]), work == 1 ? CBTf(n"Cyberbane-Hud-EBADAY", [s"\(CBConfig.CrewEarnPerRank() * rank)"]) : "");
     // Letting them go, asked twice.
     if book.reqLetGo == m.id {
-      this.CrewOrderRow(6, CBHudCrewOrderLetGo(), "Keep them", true, true, "leaving your crew", "");
+      this.CrewOrderRow(6, CBHudCrewOrderLetGo(), CBT(n"Cyberbane-Hud-KeepThem"), true, true, CBT(n"Cyberbane-Hud-LeavingYourCrew"), "");
     } else {
-      this.CrewOrderRow(6, CBHudCrewOrderLetGo(), this.m_letGoArmed == m.id ? "Click again to let go" : "Let them go", !out, false,
-                        out ? "with you: wait" : "", "");
+      this.CrewOrderRow(6, CBHudCrewOrderLetGo(), this.m_letGoArmed == m.id ? CBT(n"Cyberbane-Hud-ClickAgainToLetGo") : CBT(n"Cyberbane-Hud-LetThemGo"), !out, false,
+                        out ? CBT(n"Cyberbane-Hud-WithYouWait") : "", "");
     }
-    let text = CBCrewFile(sys, game, book, m, false) + "\n" + CBCrewKitLines(sys, game, m) + "\n"
-             + "Orders happen as you pick them; their texts come once you are back in the game. A spar waits for the game: click it again before then to call it off. One of your crew recruits at a time.";
+    let text = CBTf(n"Cyberbane-Hud-OrdersHappenAsYouPickThem", [CBCrewFile(sys, game, book, m, false), CBCrewKitLines(sys, game, m)]);
     if out {
-      text = "With you now: orders wait until they are home.\n" + text;
+      text = CBTf(n"Cyberbane-Hud-WithYouNowOrdersWaitUntil", [text]);
     }
-    this.SetAction("Back", true);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
     let bodyTop = CBHudContentTop() + 7.0 * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
@@ -4983,16 +4975,16 @@ public class CBHud {
     let kb = CBCrewKitBook.Get(game);
     this.PlaceRows(CBHudLayoutCrew());
     let name = CBCrewNameOf(game);
-    this.SetRow(0, CBHudLayoutCrew(), CBHudLabel(), true, false, StrLen(name) > 0 ? "Rename your crew" : "Name your crew", "", "",
-                StrLen(name) > 0 ? name : "no name yet", "", "");
+    this.SetRow(0, CBHudLayoutCrew(), CBHudLabel(), true, false, StrLen(name) > 0 ? CBT(n"Cyberbane-Hud-RenameYourCrew") : CBT(n"Cyberbane-Hud-NameYourCrew"), "", "",
+                StrLen(name) > 0 ? name : CBT(n"Cyberbane-Hud-NoNameYet"), "", "");
     this.m_rowCrew[0] = 1;
     let colour = CBCrewColourIndex(game);
-    this.SetRow(1, CBHudLayoutCrew(), CBCrewColourTint(colour), true, false, "Change its colours", StrUpper(CBCrewColourWord(colour)), "",
-                "click for the next", "", "");
+    this.SetRow(1, CBHudLayoutCrew(), CBCrewColourTint(colour), true, false, CBT(n"Cyberbane-Hud-ChangeItsColours"), StrUpper(CBCrewColourWord(colour)), "",
+                CBT(n"Cyberbane-Hud-ClickForTheNext"), "", "");
     this.m_rowCrew[1] = 2;
     let fallen = IsDefined(bb) ? bb.FallenCount() : 0;
-    this.SetRow(2, CBHudLayoutCrew(), fallen > 0 ? CBHudLabel() : CBHudDim(), fallen > 0, false, "Remember the fallen", "", "",
-                fallen > 0 ? s"\(fallen) \(fallen == 1 ? "name" : "names")" : "nobody yet", "", "");
+    this.SetRow(2, CBHudLayoutCrew(), fallen > 0 ? CBHudLabel() : CBHudDim(), fallen > 0, false, CBT(n"Cyberbane-Hud-RememberTheFallen"), "", "",
+                fallen > 0 ? s"\(fallen) \(fallen == 1 ? "name" : "names")" : CBT(n"Cyberbane-Hud-NobodyYet"), "", "");
     this.m_rowCrew[2] = 3;
     let row = 3;
     // Its standing, worst first.
@@ -5023,13 +5015,12 @@ public class CBHud {
       }
     }
     let wars = IsDefined(kb) ? kb.WarsWon() : 0;
-    let text = (StrLen(name) > 0 ? StrUpper(name) : "YOUR CREW") + "\n"
-             + s"\(book.Count()) on the roster, \(fallen) fallen" + (wars > 0 ? s", \(wars) \(wars == 1 ? "war" : "wars") won." : ".") + "\n";
+    let text = CBTf(n"Cyberbane-Hud-OnTheRosterFallen", [(StrLen(name) > 0 ? StrUpper(name) : CBT(n"Cyberbane-Hud-YOURCREW")), s"\(book.Count())", s"\(fallen)", (wars > 0 ? CBTf(n"Cyberbane-Hud-Won", [s"\(wars)", wars == 1 ? CBT(n"Cyberbane-Hud-War") : CBT(n"Cyberbane-Hud-Wars")]) : ".")]);
     if shown == 0 {
-      text += "No gang thinks anything of your crew yet.\n";
+      text += CBT(n"Cyberbane-Hud-NoGangThinksAnythingOfYour");
     }
-    text += "Your crew has its own standing with the gangs, apart from yours. A war it starts sets that gang against it, more when it wins, and pleases the gang at war with them. A gang that lends you somebody warms to it; one whose people it scares into joining or kills cools, and so does one that kills one of yours. A gang that hates your crew is ready for its next war. It all eases a little every day.";
-    this.SetAction("Back", true);
+    text += CBT(n"Cyberbane-Hud-YourCrewHasItsOwnStanding");
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
@@ -5073,11 +5064,11 @@ public class CBHud {
       i -= 1;
     }
     let text = IsDefined(picked) ? CBCrewEpitaph(sys, game, picked)
-             : "THE FALLEN\nThe ones who died for your crew, and what they carried. Pick a name to read what is remembered of them.";
+             : CBT(n"Cyberbane-Hud-THEFALLENTheOnesWhoDied");
     if n == 0 {
-      text = "THE FALLEN\nNobody from your crew has died yet.";
+      text = CBT(n"Cyberbane-Hud-THEFALLENNobodyFromYourCrew");
     }
-    this.SetAction("Back", true);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
@@ -5088,7 +5079,7 @@ public class CBHud {
       let input = HubTextInput.Create();
       input.SetName(n"CBCrewNameInput");
       input.SetMaxLength(CBConfig.CrewNameMaxLength());
-      input.SetDefaultText("Name your crew");
+      input.SetDefaultText(CBT(n"Cyberbane-Hud-NameYourCrew"));
       input.Reparent(this.m_panel);
       input.SetText(CBCrewNameOf(game));
       this.m_nameInput = input;
@@ -5124,8 +5115,8 @@ public class CBHud {
     if offer && row < CBHudListRows() {
       let seat = CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed);
       this.SetRow(row, CBHudLayoutCrew(), CBHudGrey(), true, this.m_pickCrew == -1,
-        CBCrewOfferName(sys, game, book), CBCrewSeatWord(seat), "", "a solo on offer", "",
-        s"\(book.offerPrice)EB");
+        CBCrewOfferName(sys, game, book), CBCrewSeatWord(seat), "", CBT(n"Cyberbane-Hud-ASoloOnOffer"), "",
+        CBTf(n"Cyberbane-Hud-EB", [s"\(book.offerPrice)"]));
       this.m_rowCrew[row] = -1;
       row += 1;
     }
@@ -5158,7 +5149,7 @@ public class CBHud {
     let mw = CBCrewCardW();
     let mh = CBCrewCardH();
     let y = 0.0;
-    this.PlaceLabel(words, 0.0, y + 10.0, s"YOUR CREW  (\(book.Count()) OF \(CBConfig.MyCrewRoster()))", CBHudDim());
+    this.PlaceLabel(words, 0.0, y + 10.0, CBTf(n"Cyberbane-Hud-YOURCREWOF", [s"\(book.Count())", s"\(CBConfig.MyCrewRoster())"]), CBHudDim());
     words += 1;
     y += 28.0;
     let k = 0;
@@ -5193,7 +5184,7 @@ public class CBHud {
     }
     if offer {
       let os = 6;
-      this.PlaceLabel(words, 0.0, y + 10.0, s"ON OFFER FROM \(StrUpper(book.offerSender))", CBHudDim());
+      this.PlaceLabel(words, 0.0, y + 10.0, CBTf(n"Cyberbane-Hud-ONOFFERFROM", [s"\(StrUpper(book.offerSender))"]), CBHudDim());
       words += 1;
       y += 28.0;
       let seat = CBCrewSeatOf(CBHunterRecord(book.offerSeed, n""), book.offerSeed);
@@ -5201,10 +5192,10 @@ public class CBHud {
       this.DressBox(os, mw, mh, CBPicName(), CBPicLine(), CBPicLead(), false);
       this.BoxText(this.m_webBoxName[os], CBCrewOfferName(sys, game, book), mw - 24.0, CBPicName(),
                    CBPicNameLeast(), true);
-      this.BoxText(this.m_webBoxLine[os], StrUpper(CBCrewSeatWord(seat)) + s"  /  \(book.offerPrice)EB", mw - 24.0, CBPicLine(),
+      this.BoxText(this.m_webBoxLine[os], CBTf(n"Cyberbane-Hud-EB-2", [StrUpper(CBCrewSeatWord(seat)), s"\(book.offerPrice)"]), mw - 24.0, CBPicLine(),
                    CBPicLineLeast(), false);
       if IsDefined(this.m_webBoxLine[os]) { this.m_webBoxLine[os].SetTintColor(CBHudGrey()); }
-      this.BoxText(this.m_webBoxLead[os], "A solo for hire", mw - 24.0, CBPicLead(), CBPicLeadLeast(), false);
+      this.BoxText(this.m_webBoxLead[os], CBT(n"Cyberbane-Hud-ASoloForHire"), mw - 24.0, CBPicLead(), CBPicLeadLeast(), false);
       if IsDefined(this.m_webBoxLead[os]) {
         this.m_webBoxLead[os].SetVisible(true);
         this.m_webBoxLead[os].SetTintColor(CBHudDim());
@@ -5217,7 +5208,7 @@ public class CBHud {
       y += mh + 20.0;
     }
     if book.PastCount() > 0 {
-      this.PlaceLabel(words, 0.0, y + 10.0, "GONE", CBHudDim());
+      this.PlaceLabel(words, 0.0, y + 10.0, CBT(n"Cyberbane-Hud-GONE"), CBHudDim());
       words += 1;
       y += 28.0;
     }
@@ -5273,7 +5264,7 @@ public class CBHud {
     }
     let score = sys.GetScore();
     let titleName = CBHudActiveTitle(sys);
-    let tier = IsDefined(score) ? CBTierName(EnumInt(score.GetTier())) : "Nobody";
+    let tier = IsDefined(score) ? CBTierName(EnumInt(score.GetTier())) : CBT(n"Cyberbane-Hud-Nobody");
     if IsDefined(this.m_subhead) {
       this.m_subhead.SetText(CBHudFit(titleName + "   |   " + tier, CBHudContentW(), 24, 1));
     }
@@ -5291,7 +5282,7 @@ public class CBHud {
       this.m_webToggle.SetVisible(pictured);
     }
     if IsDefined(this.m_webToggleText) && pictured {
-      this.m_webToggleText.SetText(sys.HubVisual(this.m_tab) ? "Show as a list" : CBHudPictureWord(this.m_tab));
+      this.m_webToggleText.SetText(sys.HubVisual(this.m_tab) ? CBT(n"Cyberbane-Hud-ShowAsAList") : CBHudPictureWord(this.m_tab));
     }
     this.SetAction("", false);
     this.HideExtras();
@@ -5331,12 +5322,12 @@ public class CBHud {
       let proseW = w;
       if payOff > 0 {
         if CBBountyPayPending(game) {
-          this.SetAction("Paying it off. Click to take it back", true);
+          this.SetAction(CBT(n"Cyberbane-Hud-PayingItOffClickToTake"), true);
         } else {
           if this.m_bountyArmed {
-            this.SetAction(s"Click again: pay \(payOff)eb", true);
+            this.SetAction(CBTf(n"Cyberbane-Hud-ClickAgainPayEb", [s"\(payOff)"]), true);
           } else {
-            this.SetAction(s"Pay off the price on you (\(payOff)eb)", CBHudEddies(game) >= payOff);
+            this.SetAction(CBTf(n"Cyberbane-Hud-PayOffThePriceOnYou", [s"\(payOff)"]), CBHudEddies(game) >= payOff);
           }
         }
         proseW = w - CBHudActionW() - 40.0;
@@ -5409,16 +5400,16 @@ public class CBHud {
                 // clothes and build on every sample, so wiping them would mean nothing and they
                 // would be back within the second.
                 if this.m_resetArmed {
-                  this.SetAction("Click again: erase it all", true);
+                  this.SetAction(CBT(n"Cyberbane-Hud-ClickAgainEraseItAll"), true);
                 } else {
-                  this.SetAction("Start over", true);
+                  this.SetAction(CBT(n"Cyberbane-Hud-StartOver"), true);
                 }
                 // Full width, but it stops above the button: run on to the footer, the ledger's last
                 // lines were drawn underneath Start over.
                 // The legend, told (2.4.6, [82]), or the day's headlines (the screamsheet, [81]) over the ledger.
-                this.SetExtra(1, this.m_legendShown ? "Show the ledger" : "Tell my story", true);
+                this.SetExtra(1, this.m_legendShown ? CBT(n"Cyberbane-Hud-ShowTheLedger") : CBT(n"Cyberbane-Hud-TellMyStory"), true);
                 if sys.HasStartOverToUndo() {
-                  this.SetExtra(2, this.m_undoArmed ? "Click again: undo it" : "Undo the last Start over", true);
+                  this.SetExtra(2, this.m_undoArmed ? CBT(n"Cyberbane-Hud-ClickAgainUndoIt") : CBT(n"Cyberbane-Hud-UndoTheLastStartOver"), true);
                 }
                 let page = "";
                 if this.m_legendShown {
@@ -5485,21 +5476,21 @@ func CBForeignOverlays(show: Bool) -> Bool {
 // off the next thing is.
 func CBHudGangStatus(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> String {
   if Equals(sys.GetPendingApexFaction(), fs.id) {
-    return sys.IsPendingApexDriving() ? "APEX SQUAD DRIVING " + CBTimeText(sys.GetPendingApexTicks())
-                                      : "APEX SQUAD " + CBWhen(sys.GetPendingApexTicks());
+    return sys.IsPendingApexDriving() ? CBTf(n"Cyberbane-Hud-APEXSQUADDRIVING", [CBTimeText(sys.GetPendingApexTicks())])
+                                      : CBTf(n"Cyberbane-Hud-APEXSQUAD", [CBWhen(sys.GetPendingApexTicks())]);
   }
   if Equals(sys.GetPendingSquadFaction(), fs.id) {
     if sys.GetPendingSquadTicks() <= 0 {
       let why = CBBlockLabel(CBLastSpawnBlock());
-      return StrLen(why) > 0 ? "HELD: " + why : "CREW HELD UP";
+      return StrLen(why) > 0 ? CBTf(n"Cyberbane-Hud-HELD", [why]) : CBT(n"Cyberbane-Hud-CREWHELDUP");
     }
-    return "CREW INBOUND " + CBTimeText(sys.GetPendingSquadTicks());
+    return CBTf(n"Cyberbane-Hud-CREWINBOUND", [CBTimeText(sys.GetPendingSquadTicks())]);
   }
   if Equals(sys.GetLaneTarget(CBLaneApex()), fs.id) {
-    return "APEX SQUAD " + CBWhen(sys.GetLaneTicks(CBLaneApex()));
+    return CBTf(n"Cyberbane-Hud-APEXSQUAD", [CBWhen(sys.GetLaneTicks(CBLaneApex()))]);
   }
   if Equals(sys.GetLaneTarget(CBLaneSquad()), fs.id) {
-    return "CREW " + CBWhen(sys.GetLaneTicks(CBLaneSquad()));
+    return CBTf(n"Cyberbane-Hud-CREW", [CBWhen(sys.GetLaneTicks(CBLaneSquad()))]);
   }
   return CBApexProgressLine(sys, fs);
 }
@@ -5523,22 +5514,22 @@ func CBHudCanPayOff(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNam
 // Why there is no price on this gang, in the same terms CBPeaceQuote decides it.
 func CBHudWhyNoPeace(game: GameInstance, id: CName, posture: ECBPosture) -> String {
   if !CBFactionOn(id) {
-    return "Switched off under Factions in Mod Settings: Cyberbane leaves them alone, so there is nothing to pay them for.";
+    return CBT(n"Cyberbane-Hud-SwitchedOffUnderFactionsInMod-2");
   }
   if CBGangViewSet(id) {
-    return "How they treat you is set under How gangs see you in Mod Settings, so money changes nothing. Set them to Earned in play to deal.";
+    return CBT(n"Cyberbane-Hud-HowTheyTreatYouIsSet");
   }
   let content = CBContent(game);
   if IsDefined(content) {
     let prof = content.GetFaction(id);
     if IsDefined(prof) && !prof.canBeBought {
-      return "Nobody here takes money to forget you. Corporations and the law cannot be bought off.";
+      return CBT(n"Cyberbane-Hud-NobodyHereTakesMoneyToForget");
     }
   }
   if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) {
-    return "They like you. Friendly gangs cut their prices on their own turf and warn you when their enemies come for you.";
+    return CBT(n"Cyberbane-Hud-TheyLikeYouFriendlyGangsCut");
   }
-  return "They are not hostile, so there is nothing to pay them for.";
+  return CBT(n"Cyberbane-Hud-TheyAreNotHostileSoThere");
 }
 
 // ---- Tab content -----------------------------------------------------------
@@ -5548,7 +5539,7 @@ func CBHudActiveTitle(sys: ref<CyberbaneSystem>) -> String {
   // comes back empty when nothing has been earned at all.
   let id = sys.GetActiveTitle();
   if Equals(id, n"") {
-    return "No title yet";
+    return CBT(n"Cyberbane-Hud-NoTitleYet");
   }
   // Names the district or gang the title is actually about (Model/TitleNaming.reds).
   return CBTitleDisplayById(sys, sys.GetContent(), id);
@@ -5747,10 +5738,10 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     if lane == CBLaneRival() {
       let together = CBRivalsOutTogether(sys, game);
       if together > 1 {
-        return label + "   here now, " + CBNumberWord(together) + " of them together";
+        return CBTf(n"Cyberbane-Hud-HereNowOfThemTogether", [label, CBNumberWord(together)]);
       }
     }
-    return label + "   here now";
+    return CBTf(n"Cyberbane-Hud-HereNow-2", [label]);
   }
   // A lane's clock does not run while nobody can arrive (CBLaneTick), so a countdown shown then stood
   // still with nothing to say why: the stuck clock this screen was built to never show.
@@ -5760,7 +5751,7 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   // the sort of silence that reads as the mod being broken.
   if StrLen(who) == 0 {
     if CBLaneDailyCap(lane) <= 0 {
-      return label + "   off";
+      return CBTf(n"Cyberbane-Hud-Off-2", [label]);
     }
     // Nobody who could come at all (2.5.3): said instead of the next window's time, which on a new game read as a
     // Rival, a crew and an apex squad on their way with nobody against V.
@@ -5770,20 +5761,20 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     }
     // Whose grudge runs out first, and when (2.6.5, Spawn/Grudge.reds), in the player's own minutes.
     if StrLen(held) > 0 {
-      return label + "   waiting: " + held;
+      return CBTf(n"Cyberbane-Hud-Waiting", [label, held]);
     }
     let rest = CBLaneRestLeft(sys, lane);
     if rest > 0 {
-      return label + "   breather, " + CBTimeText(rest);
+      return CBTf(n"Cyberbane-Hud-Breather", [label, CBTimeText(rest)]);
     }
     let soonest: CName;
     let soonestRival: Int32;
     let inSecs = CBGrudgeNextIn(sys, game, lane, soonest, soonestRival);
     if inSecs < 0.0 {
       if lane == CBLaneRival() && sys.CountActiveRivals() > 0 && CBRivalsAllLyingLow(sys) {
-        return label + "   every Rival is lying low";
+        return CBTf(n"Cyberbane-Hud-EveryRivalIsLyingLow", [label]);
       }
-      return label + (lane == CBLaneApex() ? "   nobody has earned it" : "   nobody holds a grudge");
+      return label + (lane == CBLaneApex() ? CBT(n"Cyberbane-Hud-NobodyHasEarnedIt") : CBT(n"Cyberbane-Hud-NobodyHoldsAGrudge"));
     }
     let whose = "";
     if soonestRival > 0 {
@@ -5793,20 +5784,20 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
       whose = NotEquals(soonest, n"") ? CBFactionLabel(soonest) : "";
     }
     if inSecs <= 0.0 {
-      return label + "   " + (StrLen(whose) > 0 ? CBCapFirst(whose) + " is ready to move" : "ready");
+      return label + "   " + (StrLen(whose) > 0 ? CBTf(n"Cyberbane-Hud-IsReadyToMove", [CBCapFirst(whose)]) : CBT(n"Cyberbane-Hud-Ready"));
     }
-    return label + "   " + (StrLen(whose) > 0 ? CBCapFirst(whose) + " moves " : "next ")
-         + (CBShowCountdowns() ? "in about " + CBHudRealFromGameHours(inSecs / CBConfig.SecondsPerHour()) : "before long");
+    return label + "   " + (StrLen(whose) > 0 ? CBTf(n"Cyberbane-Hud-Moves", [CBCapFirst(whose)]) : CBT(n"Cyberbane-Hud-Next"))
+         + (CBShowCountdowns() ? CBTf(n"Cyberbane-Hud-InAbout", [CBHudRealFromGameHours(inSecs / CBConfig.SecondsPerHour())]) : CBT(n"Cyberbane-Hud-BeforeLong"));
   }
   if StrLen(held) > 0 {
-    return label + "   " + who + "  waiting: " + held + CBHudBudgetTail(sys, game, lane);
+    return CBTf(n"Cyberbane-Hud-Waiting-2", [label, who, held, CBHudBudgetTail(sys, game, lane)]);
   }
   let ticks = sys.GetLaneTicks(lane);
   if ticks <= 0 {
     let why = CBBlockLabel(CBLastSpawnBlock());
     let tail = CBHudBudgetTail(sys, game, lane);
-    return StrLen(why) > 0 ? label + "   " + who + "  held: " + why + tail
-                           : label + "   " + who + "  any moment" + tail;
+    return StrLen(why) > 0 ? CBTf(n"Cyberbane-Hud-Held", [label, who, why, tail])
+                           : CBTf(n"Cyberbane-Hud-AnyMoment-2", [label, who, tail]);
   }
   return label + "   " + who + "  " + CBTimeText(ticks) + CBHudBudgetTail(sys, game, lane);
 }
@@ -5843,19 +5834,19 @@ func CBHudRealFromGameHours(hrs: Float) -> String {
   }
   let secs = hrs * 3600.0 / ratio;
   if secs >= 3600.0 {
-    return s"\(RoundF(secs / 3600.0))h";
+    return CBTf(n"Cyberbane-Hud-H", [s"\(RoundF(secs / 3600.0))"]);
   }
   if secs >= 60.0 {
-    return s"\(RoundF(secs / 60.0))m";
+    return CBTf(n"Cyberbane-Hud-M", [s"\(RoundF(secs / 60.0))"]);
   }
-  return s"\(RoundF(secs))s";
+  return CBTf(n"Cyberbane-Hud-S", [s"\(RoundF(secs))"]);
 }
 
 // "  (2 of 3 today)". Shown so the pacing is something the player can see rather than guess
 // at: each kind has its own daily allowance and this is what is left of it.
 // No day's allowance since 2.6.5 (Spawn/Grudge.reds): nothing to count.
 func CBHudBudgetTail(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> String {
-  return CBLaneDailyCap(lane) <= 0 ? "   (off)" : "";
+  return CBLaneDailyCap(lane) <= 0 ? CBT(n"Cyberbane-Hud-Off-3") : "";
 }
 
 func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
@@ -5920,22 +5911,22 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   // outside: a city that ignores you.
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && !rt.IsEnabled() {
-    return "Right now: Cyberbane is switched off in Mod Settings (Enabled, under General), so nothing reacts.";
+    return CBT(n"Cyberbane-Hud-RightNowCyberbaneIsSwitchedOff");
   }
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().civReactions {
-    return "Right now: crowd reactions are switched off in Mod Settings.";
+    return CBT(n"Cyberbane-Hud-RightNowCrowdReactionsAreSwitched");
   }
   if sys.IsInSafeZone() {
-    return "Right now: the game calls this a safe area, so nobody here reacts. Step outside.";
+    return CBT(n"Cyberbane-Hud-RightNowTheGameCallsThis");
   }
   let reg = sys.GetRegistry();
   if !IsDefined(reg) || reg.Count() == 0 {
-    return "Right now: Cyberbane is not tracking anybody nearby, so nobody can react yet.";
+    return CBT(n"Cyberbane-Hud-RightNowCyberbaneIsNotTracking");
   }
   // Say so before anything else, because a masked player reading "nobody backs off yet" would
   // reasonably conclude the mask had done nothing when it is doing all of it.
   if CBCrowdIgnoresPlayer(GetGameInstance()) {
-    return s"Right now: your face is covered, so nobody can place you and nobody reacts. (\(reg.Count()) tracked)";
+    return CBTf(n"Cyberbane-Hud-RightNowYourFaceIsCovered", [s"\(reg.Count())"]);
   }
   let chromeVisible = score.GetChromeVisible();
   // The crowd's own number, from the crowd's own formula, including the intensity slider the
@@ -5944,22 +5935,22 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   let reach = 1.0 + (chromeVisible / 100.0) * CBConfig.ChromeNoticeRangeBonus();
   if eff >= CBConfig.CivFearRun() {
     let r = RoundF(CBConfig.CivFleeRadius() * reach);
-    return s"Right now: people run when you come within \(r) metres. (\(reg.Count()) tracked)";
+    return CBTf(n"Cyberbane-Hud-RightNowPeopleRunWhenYou", [s"\(r)", s"\(reg.Count())"]);
   }
   if eff >= CBConfig.CivFearCower() {
     let r = RoundF(CBConfig.CivCowerRadius() * reach);
-    return s"Right now: people freeze with their hands up within \(r) metres, and step aside further out. (\(reg.Count()) tracked)";
+    return CBTf(n"Cyberbane-Hud-RightNowPeopleFreezeWithTheir", [s"\(r)", s"\(reg.Count())"]);
   }
   if eff >= CBConfig.CivFearStartle() {
     let r = RoundF(CBConfig.CivStartleRadius() * reach);
-    return s"Right now: people flinch and step out of your way within \(r) metres. (\(reg.Count()) tracked)";
+    return CBTf(n"Cyberbane-Hud-RightNowPeopleFlinchAndStep", [s"\(r)", s"\(reg.Count())"]);
   }
   if eff >= CBConfig.CivFearGlance() {
     let r = RoundF(CBConfig.CivGlanceRadius() * reach);
-    return s"Right now: people look over at you within \(r) metres. (\(reg.Count()) tracked)";
+    return CBTf(n"Cyberbane-Hud-RightNowPeopleLookOverAt", [s"\(r)", s"\(reg.Count())"]);
   }
   let need = RoundF(CBConfig.CivFearGlance() - eff);
-  return s"Right now: nobody looks twice yet, about \(need) short. (\(reg.Count()) tracked)";
+  return CBTf(n"Cyberbane-Hud-RightNowNobodyLooksTwiceYet", [s"\(need)", s"\(reg.Count())"]);
 }
 
 // What V is wearing, read again as the Hub opens and on every change of screen.
@@ -6003,46 +5994,45 @@ func CBHudDreadReason(sys: ref<CyberbaneSystem>) -> String {
   let c = score.GetChromeVisible() * CBConfig.DreadWeightC();
   let l = score.GetLook() * CBConfig.DreadWeightL();
 
-  let bestLabel = "nothing in particular yet";
+  let bestLabel = CBT(n"Cyberbane-Hud-NothingInParticularYet");
   let bestHint = "";
   let best = 0.0;
-  if k > best { best = k; bestLabel = "your body count"; bestHint = "It fades while you lie low."; }
-  if c > best { best = c; bestLabel = "all that chrome"; bestHint = "Long sleeves, trousers and a mask hide most of it."; }
-  if l > best { best = l; bestLabel = "the way you carry yourself"; bestHint = "Dress down and it eases."; }
-  if x > best { best = x; bestLabel = "the things you have done"; bestHint = "The stories fade while you lie low."; }
-  if h > best { best = h; bestLabel = "the heat you draw from the law"; bestHint = "Stay off the NCPD's radar and it cools."; }
+  if k > best { best = k; bestLabel = CBT(n"Cyberbane-Hud-YourBodyCount"); bestHint = CBT(n"Cyberbane-Hud-ItFadesWhileYouLieLow"); }
+  if c > best { best = c; bestLabel = CBT(n"Cyberbane-Hud-AllThatChrome"); bestHint = CBT(n"Cyberbane-Hud-LongSleevesTrousersAndAMask"); }
+  if l > best { best = l; bestLabel = CBT(n"Cyberbane-Hud-TheWayYouCarryYourself"); bestHint = CBT(n"Cyberbane-Hud-DressDownAndItEases"); }
+  if x > best { best = x; bestLabel = CBT(n"Cyberbane-Hud-TheThingsYouHaveDone"); bestHint = CBT(n"Cyberbane-Hud-TheStoriesFadeWhileYouLie"); }
+  if h > best { best = h; bestLabel = CBT(n"Cyberbane-Hud-TheHeatYouDrawFromThe"); bestHint = CBT(n"Cyberbane-Hud-StayOffTheNCPDSRadar"); }
 
   if best <= 0.0 {
-    return "People barely know you. Make some noise.";
+    return CBT(n"Cyberbane-Hud-PeopleBarelyKnowYouMakeSome");
   }
   // What it is, then the one thing that brings it down: the question a player looking at this
   // line is asking. One line, so the screen stays as quiet as it was.
-  return "People fear you mostly for " + bestLabel + ". " + bestHint;
+  return CBTf(n"Cyberbane-Hud-PeopleFearYouMostlyFor", [bestLabel, bestHint]);
 }
 
 func CBHudFactions(sys: ref<CyberbaneSystem>) -> String {
   let states = sys.GetFactionStates();
   if ArraySize(states) == 0 {
-    return "No gang has formed an opinion of you yet.\n\nWork in their territory and that changes quickly.";
+    return CBT(n"Cyberbane-Hud-NoGangHasFormedAnOpinion");
   }
-  let out = "Hostile gangs send crews. Vendetta means their people shoot on sight, all but the ones too afraid of you to. Hostile and sworn gangs are listed first.\n\n";
-  out += "To be thought well of: hurt the gang they are at war with, put their people down\n";
-  out += "without killing them, let their names walk, spend time on their streets without\n";
-  out += "trouble, or walk up to their people and greet them. Friendly gangs cut their prices on\n";
-  out += "their own turf and warn you when their enemies come for you. To be feared without a\n";
-  out += "body: intimidate their people. Somebody afraid enough gives up one of their Rivals.\n\n";
-  out += "Click a gang to see more about them, and to pay off one that wants you dead.";
+  let out = CBT(n"Cyberbane-Hud-HostileGangsSendCrewsVendettaMeans");
+  out += CBT(n"Cyberbane-Hud-ToBeThoughtWellOfHurt");
+  out += CBT(n"Cyberbane-Hud-WithoutKillingThemLetTheirNames");
+  out += CBT(n"Cyberbane-Hud-TroubleOrWalkUpToTheir");
+  out += CBT(n"Cyberbane-Hud-TheirOwnTurfAndWarnYou");
+  out += CBT(n"Cyberbane-Hud-BodyIntimidateTheirPeopleSomebodyAfraid");
+  out += CBT(n"Cyberbane-Hud-ClickAGangToSeeMore");
   return out;
 }
 func CBHudDistricts(sys: ref<CyberbaneSystem>) -> String {
   let states = sys.GetDistrictStates();
   if ArraySize(states) == 0 {
-    return "Your name has not travelled to any district yet.";
+    return CBT(n"Cyberbane-Hud-YourNameHasNotTravelledTo");
   }
   // The districts themselves are drawn as rows (RenderCity). This is only the line that says
   // how to read them.
-  let out = "Word spreads outward from where things happened, so you can be a legend in one "
-          + "district and a nobody in the next. The bar is how widely your name carries there.";
+  let out = CBT(n"Cyberbane-Hud-WordSpreadsOutwardFromWhereThings");
   // How the district V is standing in takes things ([6], Data/Districts.reds).
   let temper = CBTemperWords(sys.GetCurrentDistrict());
   if StrLen(temper) > 0 {
@@ -6059,32 +6049,32 @@ func CBHudTurfStatus(game: GameInstance, content: ref<CyberbaneContent>, distric
   }
   let sealedDef = content.GetDistrict(district);
   if IsDefined(sealedDef) && sealedDef.sealed {
-    return "WALLED OFF";
+    return CBT(n"Cyberbane-Hud-WALLEDOFF");
   }
   let book = CBTurfBook.Get(game);
   if IsDefined(book) && NotEquals(book.Challenger(CBDistrictIndex(district)), n"") {
-    return s"\(CBBarFactionLabel(book.Challenger(CBDistrictIndex(district)))) MOVING IN";
+    return CBTf(n"Cyberbane-Hud-MOVINGIN", [s"\(CBBarFactionLabel(book.Challenger(CBDistrictIndex(district))))"]);
   }
   let prof = content.GetFaction(holder);
   let home = IsDefined(prof) && ArrayContains(prof.turf, district);
   if second >= 0 && shares[second] >= CBConfig.TurfPresenceShare()
      && (CBGangsAreRivals(content, holder, ids[second]) || CBGangsAreRivals(content, ids[second], holder)) {
-    return s"VS \(CBBarFactionLabel(ids[second])) \(RoundF(shares[second] * 100.0))%";
+    return CBTf(n"Cyberbane-Hud-VS", [s"\(CBBarFactionLabel(ids[second]))", s"\(RoundF(shares[second] * 100.0))"]);
   }
   if !home {
-    return "MOVED IN";
+    return CBT(n"Cyberbane-Hud-MOVEDIN");
   }
   if second >= 0 && shares[second] >= CBConfig.TurfPresenceShare() {
-    return "SHARED";
+    return CBT(n"Cyberbane-Hud-SHARED");
   }
-  return "HELD";
+  return CBT(n"Cyberbane-Hud-HELD-2");
 }
 
 // The few lines under the districts: which gangs V has hurt, and how badly. Only those, so a
 // player who has hurt nobody reads one sentence instead of a table of full bars.
 func CBHudTurfBody(sys: ref<CyberbaneSystem>) -> String {
   if !CBTurfWarsOn() {
-    return "Turf wars are off in Mod Settings: every gang keeps its own streets whatever you do to it.";
+    return CBT(n"Cyberbane-Hud-TurfWarsAreOffInMod");
   }
   let content = sys.GetContent();
   if !IsDefined(content) {
@@ -6114,9 +6104,9 @@ func CBHudTurfBody(sys: ref<CyberbaneSystem>) -> String {
     n += 1;
   }
   if n == 0 {
-    return "Every gang is at full strength. Hurt one and its grip on its streets slips; break one and the gang at war with it next door moves in.";
+    return CBT(n"Cyberbane-Hud-EveryGangIsAtFullStrength");
   }
-  return out + "They rebuild while you leave them alone, and your work counts double on their own streets. Break one and the gang at war with it next door moves in, and stays until somebody takes it back.";
+  return CBTf(n"Cyberbane-Hud-TheyRebuildWhileYouLeaveThem", [out]);
 }
 
 // A number as a short bar of blocks, for a list where a real widget would be ten more of them.
@@ -6141,24 +6131,24 @@ public func CBHudMeter(value: Float, full: Float, cells: Int32) -> String {
 // two subjects run together ("you beat them down and left them alive, quiet").
 func CBRivalSourceLine(source: Int32) -> String {
   if source == EnumInt(ECBRivalSource.Survivor) {
-    return "They got away from you bleeding.";
+    return CBT(n"Cyberbane-Hud-TheyGotAwayFromYouBleeding");
   }
   if source == EnumInt(ECBRivalSource.Spared) {
-    return "You beat them down and left them alive.";
+    return CBT(n"Cyberbane-Hud-YouBeatThemDownAndLeft");
   }
   if source == EnumInt(ECBRivalSource.Killer) {
-    return "They put you down once.";
+    return CBT(n"Cyberbane-Hud-TheyPutYouDownOnce");
   }
   if source == EnumInt(ECBRivalSource.Avenger) {
-    return "They are avenging someone you killed.";
+    return CBT(n"Cyberbane-Hud-TheyAreAvengingSomeoneYouKilled");
   }
   if source == EnumInt(ECBRivalSource.Hunter) {
-    return "They came for your head and lost you.";
+    return CBT(n"Cyberbane-Hud-TheyCameForYourHeadAnd");
   }
   if source == EnumInt(ECBRivalSource.Betrayer) {
-    return "They ran with your crew, then turned on you.";
+    return CBT(n"Cyberbane-Hud-TheyRanWithYourCrewThen");
   }
-  return "They remember you.";
+  return CBT(n"Cyberbane-Hud-TheyRememberYou");
 }
 
 // Where they stand now, as a sentence for the file, by the same test as their row in the tree (2.5.5): the file
@@ -6166,34 +6156,34 @@ func CBRivalSourceLine(source: Int32) -> String {
 // one read "quiet".
 func CBRivalStateLine(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> String {
   if r.state == EnumInt(ECBRivalState.Slain) {
-    return "They are dead.";
+    return CBT(n"Cyberbane-Hud-TheyAreDead");
   }
   if r.state == EnumInt(ECBRivalState.Retired) {
-    return "They have left Night City.";
+    return CBT(n"Cyberbane-Hud-TheyHaveLeftNightCity");
   }
   if r.id == sys.GetActiveRivalId() || r.state == EnumInt(ECBRivalState.Hunting) {
-    return "They are hunting you.";
+    return CBT(n"Cyberbane-Hud-TheyAreHuntingYou");
   }
   if r.state == EnumInt(ECBRivalState.Debtor) {
-    return "They owe you their life.";
+    return CBT(n"Cyberbane-Hud-TheyOweYouTheirLife");
   }
   if r.state == EnumInt(ECBRivalState.Dormant) {
-    return "They have gone quiet.";
+    return CBT(n"Cyberbane-Hud-TheyHaveGoneQuiet");
   }
   if r.id == sys.GetLaneRivalId(CBLaneRival()) {
-    return "They are at large, and next in line to come for you.";
+    return CBT(n"Cyberbane-Hud-TheyAreAtLargeAndNext");
   }
-  return "They are at large.";
+  return CBT(n"Cyberbane-Hud-TheyAreAtLarge");
 }
 
 func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32, opt findArmed: Int32,
                  opt forgetArmed: Int32) -> String {
   if sys.IsRivalPurgePending() {
-    return "Every rival is forgotten in the next few seconds of play.\n\nThe ones out looking for you stop, and nobody on this list comes after you again.\nIt sticks: quitting now, or loading an older save of this playthrough, forgets them too.\nClick the button again to keep them after all.";
+    return CBT(n"Cyberbane-Hud-EveryRivalIsForgottenInThe");
   }
   let count = sys.CountActiveRivals();
   if count <= 0 {
-    return "No active rivals yet.\n\nLeave someone alive after you put them down, or let a wounded\nenemy get away, and one of them will come back with your name.";
+    return CBT(n"Cyberbane-Hud-NoActiveRivalsYetLeaveSomeone");
   }
   let cap = CBRivalCap();
   let out = "";
@@ -6213,41 +6203,41 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
     let strong = CBRivalTraitList(content, r, false, 6);
     let weak = CBRivalTraitList(content, r, true, 6);
     if StrLen(strong) > 0 {
-      out += "Strengths: " + strong + ".\n";
+      out += CBTf(n"Cyberbane-Hud-Strengths", [strong]);
     }
     if StrLen(weak) > 0 {
-      out += "Weak spots: " + weak + ".\n";
+      out += CBTf(n"Cyberbane-Hud-WeakSpots", [weak]);
     }
     // A fatal flaw (Reactions/StreetIntel.reds): named once the street has told V; hinted at for a Rival
     // senior enough to have one, which is a reason to go and ask.
     let flaw = CBRivalFlaw(r);
     let intelBook = CBIntelBook.Get(game);
     if flaw > 0 && IsDefined(intelBook) && intelBook.KnowsFlaw(r.id) {
-      out += "Fatal flaw: " + CBFlawWord(flaw) + " kills them outright.\n";
+      out += CBTf(n"Cyberbane-Hud-FatalFlawKillsThemOutright", [CBFlawWord(flaw)]);
     } else {
       if CBFlawsOn() && r.rank >= CBConfig.FlawMinRank() {
-        out += "Their people may know a fatal flaw. Squeeze one, scan one, or ask around.\n";
+        out += CBT(n"Cyberbane-Hud-TheirPeopleMayKnowAFatal");
       }
     }
     // What the street says about them, their line, and their family (1.9.9).
-    out += "On the street: " + CBRivalStreetStatus(sys, game, r) + "\n";
-    out += "Says: \"" + CBRivalCatchphrase(r) + "\"\n";
+    out += CBTf(n"Cyberbane-Hud-OnTheStreet", [CBRivalStreetStatus(sys, game, r)]);
+    out += CBTf(n"Cyberbane-Hud-Says", [CBRivalCatchphrase(r)]);
     // Their story, from what is known of them (Narrative/Telling.reds, [84], 2.4.6).
-    out += "Their story: " + CBRivalStory(sys, game, r) + "\n";
+    out += CBTf(n"Cyberbane-Hud-TheirStory", [CBRivalStory(sys, game, r)]);
     let kinBook = CBIntelBook.Get(game);
     let kinOf = IsDefined(kinBook) ? kinBook.KinOf(r.id) : 0;
     let kinDead = kinOf > 0 ? sys.FindRivalById(kinOf) : null;
     if IsDefined(kinDead) {
-      out += "Family of " + CBRivalDisplayName(content, kinDead) + ", whom you killed.\n";
+      out += CBTf(n"Cyberbane-Hud-FamilyOfWhomYouKilled", [CBRivalDisplayName(content, kinDead)]);
     }
     let scars = CBScarLabel(r.scarMask);
     if StrLen(scars) > 0 {
-      out += "Carries your mark: " + scars + ".\n";
+      out += CBTf(n"Cyberbane-Hud-CarriesYourMark", [scars]);
     }
     // Their chrome and their bond (Rivals/RivalMoments.reds, 2.4.4).
     let chrome = CBRivalChromeWords(r);
     if StrLen(chrome) > 0 {
-      out += "Chrome: " + chrome + ".\n";
+      out += CBTf(n"Cyberbane-Hud-Chrome", [chrome]);
     }
     let rivalBook = CBRivalBook.Get(game);
     let bondId = IsDefined(rivalBook) ? rivalBook.BondWith(r.id) : 0;
@@ -6268,9 +6258,9 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
   if StrLen(owed) > 0 {
     out += owed + "\n";
   }
-  out += s"\(count) of a possible \(cap) are still looking for you. They come back a rank higher each time one escapes.";
+  out += CBTf(n"Cyberbane-Hud-OfAPossibleAreStillLooking", [s"\(count)", s"\(cap)"]);
   if count >= cap {
-    out += "\nNobody new can take against you until you clear some, so the ones you have come faster.";
+    out += CBT(n"Cyberbane-Hud-NobodyNewCanTakeAgainstYou");
   }
   return out;
 }
@@ -6278,49 +6268,49 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
 func CBHudRivalWhere(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, findArmed: Int32,
                      forgetArmed: Int32) -> String {
   if sys.IsRivalForgetPending(r.id) {
-    return "Forgotten as soon as you are back in the game, on this save and every other of this playthrough.";
+    return CBT(n"Cyberbane-Hud-ForgottenAsSoonAsYouAre");
   }
   if forgetArmed == r.id {
-    return "Click again to forget them. Until you go back to the game, you can still keep them.";
+    return CBT(n"Cyberbane-Hud-ClickAgainToForgetThemUntil");
   }
   let price = CBWhereaboutsPrice(r);
   if sys.GetPendingFind() == r.id {
     if CBPhoneDealsReady() {
-      return "Putting the word out. Somebody texts you a price as soon as you are back in the game.";
+      return CBT(n"Cyberbane-Hud-PuttingTheWordOutSomebodyTexts");
     }
-    return s"Paying \(price)eb for where they are. It goes through as soon as you are back in the game.";
+    return CBTf(n"Cyberbane-Hud-PayingEbForWhereTheyAre", [s"\(price)"]);
   }
   if sys.IsLairActive() && sys.GetLairRivalId() == r.id {
-    return "Waiting at their place right now, and not expecting you.";
+    return CBT(n"Cyberbane-Hud-WaitingAtTheirPlaceRightNow");
   }
   // Somebody told V where they were seen (Rivals/Whereabouts.reds).
   let lead = CBCurrentLead(sys, game);
   if IsDefined(lead) && lead.rivalId == r.id {
-    let from = IsNameValid(lead.tipFaction) ? CBFactionLabel(lead.tipFaction) : "the street";
+    let from = IsNameValid(lead.tipFaction) ? CBFactionLabel(lead.tipFaction) : CBT(n"Cyberbane-Hud-TheStreet");
     let ago = CBHudSince(CBGameSeconds(game), lead.seenAt);
-    let when = StrLen(ago) > 0 ? ", " + ago + " ago" : "";
-    return s"Word from \(from): seen \(CBPlacePhrase(lead.district))\(when). Go on foot and they may not see you coming.";
+    let when = StrLen(ago) > 0 ? CBTf(n"Cyberbane-Hud-Ago", [ago]) : "";
+    return CBTf(n"Cyberbane-Hud-WordFromSeenGoOnFoot", [s"\(from)", s"\(CBPlacePhrase(lead.district))", s"\(when)"]);
   }
   let why = CBWhereaboutsForSale(sys, game, r);
   if why == 0 {
     if CBPhoneDealsReady() {
       if findArmed == r.id {
-        return "Click again to put the word out for where they are hiding.";
+        return CBT(n"Cyberbane-Hud-ClickAgainToPutTheWord");
       }
-      return s"Put the word out and somebody texts you a price for where they are hiding, about \(price)eb. Answer in the thread: take it, push back once, or walk away. Then go there on foot and catch them unawares. You have \(CBHudEddies(game))eb.";
+      return CBTf(n"Cyberbane-Hud-PutTheWordOutAndSomebody", [s"\(price)", s"\(CBHudEddies(game))"]);
     }
     if findArmed == r.id {
-      return s"Click again to pay \(price)eb for where they are hiding.";
+      return CBTf(n"Cyberbane-Hud-ClickAgainToPayEbFor", [s"\(price)"]);
     }
-    return s"\(price)eb buys where they are hiding. Go there on foot and catch them unawares. You have \(CBHudEddies(game))eb.";
+    return CBTf(n"Cyberbane-Hud-EbBuysWhereTheyAreHiding", [s"\(price)", s"\(CBHudEddies(game))"]);
   }
   if why == 1 {
-    return "Turn on Tips on where Rivals are (under Rivals in Mod Settings) to buy where they are hiding.";
+    return CBT(n"Cyberbane-Hud-TurnOnTipsOnWhereRivals");
   }
   if why == 5 {
-    return "Their faction is switched off under Factions in Mod Settings. Nobody of theirs is sent after you or found for you.";
+    return CBT(n"Cyberbane-Hud-TheirFactionIsSwitchedOffUnder");
   }
-  return "Nobody sells where they are while they are out after you.";
+  return CBT(n"Cyberbane-Hud-NobodySellsWhereTheyAreWhile");
 }
 
 // Whether the whereabouts button may take a click: for sale, affordable, and no other purchase waiting.
@@ -6343,27 +6333,27 @@ func CBHudTitles(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if Equals(id, n"") {
     out += "AUTOMATIC\n";
     if Equals(worn, n"") {
-      return out + "You go by the best title you earn. You have not earned one yet. Click any title to see what it takes and what it does.";
+      return CBTf(n"Cyberbane-Hud-YouGoByTheBestTitle", [out]);
     }
-    out += "You go by the best title you have earned, which is " + CBTitleDisplayById(sys, content, worn) + ".\n";
+    out += CBTf(n"Cyberbane-Hud-YouGoByTheBestTitle-2", [CBTitleDisplayById(sys, content, worn)]);
     shown = worn;
   } else {
     out += StrUpper(CBTitleDisplayById(sys, content, id)) + "\n";
     if sys.HasTitle(id) {
-      out += Equals(id, worn) ? "You go by this.\n" : "Earned.\n";
+      out += Equals(id, worn) ? CBT(n"Cyberbane-Hud-YouGoByThis") : "Earned.\n";
     } else {
-      out += "Not earned yet.\n";
+      out += CBT(n"Cyberbane-Hud-NotEarnedYet");
     }
     let need = CBTitleRequirement(sys, id);
     if StrLen(need) > 0 {
-      out += "\nWHAT IT TAKES\n" + need + "\n";
+      out += CBTf(n"Cyberbane-Hud-WHATITTAKES", [need]);
     }
   }
   let def = content.GetTitle(shown);
   if IsDefined(def) && StrLen(def.effect) > 0 {
-    out += "\nWHAT IT DOES\n" + def.effect + "\n";
+    out += CBTf(n"Cyberbane-Hud-WHATITDOES", [def.effect]);
   }
-  out += CBTitlesDoThings() ? "\nOnly the title you go by has any effect." : "\nTitle effects are switched off in Mod Settings.";
+  out += CBTitlesDoThings() ? CBT(n"Cyberbane-Hud-OnlyTheTitleYouGoBy") : CBT(n"Cyberbane-Hud-TitleEffectsAreSwitchedOffIn");
   return out;
 }
 
@@ -6390,41 +6380,41 @@ public func CBHudSince(now: Float, then: Float) -> String {
   }
   let secs = (now - then) / ratio;
   if secs >= 86400.0 {
-    return s"\(RoundF(secs / 86400.0))d";
+    return CBTf(n"Cyberbane-Hud-D", [s"\(RoundF(secs / 86400.0))"]);
   }
   if secs >= 3600.0 {
-    return s"\(RoundF(secs / 3600.0))h";
+    return CBTf(n"Cyberbane-Hud-H", [s"\(RoundF(secs / 3600.0))"]);
   }
-  return s"\(RoundF(secs / 60.0))m";
+  return CBTf(n"Cyberbane-Hud-M", [s"\(RoundF(secs / 60.0))"]);
 }
 
 func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
   let log = sys.GetLog();
   let n = ArraySize(log);
   if n == 0 {
-    return "STREET FILE // SUBJECT: V\n\nNothing on file. Nobody has anything on you yet.";
+    return CBT(n"Cyberbane-Hud-STREETFILESUBJECTVNothingOn");
   }
-  let out = "STREET FILE // SUBJECT: V\n";
-  out += "Put together from what people saw and passed on. Most recent first.\n";
-  out += "Work nobody witnessed never reaches this page.\n\n";
+  let out = CBT(n"Cyberbane-Hud-STREETFILESUBJECTV");
+  out += CBT(n"Cyberbane-Hud-PutTogetherFromWhatPeopleSaw");
+  out += CBT(n"Cyberbane-Hud-WorkNobodyWitnessedNeverReachesThis");
 
   // The running totals. Every one of these was being counted and shown nowhere, which is the
   // same as not counting it.
   let stats = sys.GetStats();
   if IsDefined(stats) {
-    out += s"TALLY   put down \(stats.deaths) times      recognised \(stats.timesRecognized) times";
-    out += s"      rivals spared \(stats.rivalsSpared)\n";
+    out += CBTf(n"Cyberbane-Hud-TALLYPutDownTimesRecognisedTimes", [s"\(stats.deaths)", s"\(stats.timesRecognized)"]);
+    out += CBTf(n"Cyberbane-Hud-RivalsSpared", [s"\(stats.rivalsSpared)"]);
     // Moved off the Standing screen, where it was three lifetime numbers in the middle of a
     // screen about right now. This is the ledger; it belongs here.
-    out += s"        rivals put down \(stats.rivalsSlain)      apex enforcers killed \(stats.apexKills)";
-    out += s"      never pinned on you \(stats.unattributed)\n";
+    out += CBTf(n"Cyberbane-Hud-RivalsPutDownApexEnforcersKilled", [s"\(stats.rivalsSlain)", s"\(stats.apexKills)"]);
+    out += CBTf(n"Cyberbane-Hud-NeverPinnedOnYou", [s"\(stats.unattributed)"]);
     let spent = CBHudPeaceSpend(sys);
-    out += s"        tribute taken \(stats.tributeEddies)eb      paid out for peace \(spent)eb\n";
+    out += CBTf(n"Cyberbane-Hud-TributeTakenEbPaidOutFor", [s"\(stats.tributeEddies)", s"\(spent)"]);
     // How V fights, in a word. It left the Standing screen with the rest of the lifetime numbers,
     // and it is still worth saying once - this is the screen that says things once.
     let style = CBArchetypeName(sys.GetPrimaryArchetypeIndex());
-    if NotEquals(style, "Undefined") {
-      out += s"        style \(style)\n";
+    if NotEquals(style, CBArchetypeName(-1)) {   // the unknown one's own word, so it holds in any language
+      out += CBTf(n"Cyberbane-Hud-Style", [s"\(style)"]);
     }
     out += "\n";
   }
@@ -6456,28 +6446,28 @@ func CBHudTalkToday(sys: ref<CyberbaneSystem>, faction: CName) -> String {
   }
   let parts: array<String>;
   if t.warmth > 0.05 {
-    ArrayPush(parts, "warmed to you");
+    ArrayPush(parts, CBT(n"Cyberbane-Hud-WarmedToYou"));
   }
   if t.slight >= 0.05 {
-    ArrayPush(parts, "took offence");
+    ArrayPush(parts, CBT(n"Cyberbane-Hud-TookOffence"));
   }
   if t.fear > 0.05 {
-    ArrayPush(parts, "fear you more");
+    ArrayPush(parts, CBT(n"Cyberbane-Hud-FearYouMore"));
   }
   if t.leaks > 0 {
-    ArrayPush(parts, "gave up a Rival");
+    ArrayPush(parts, CBT(n"Cyberbane-Hud-GaveUpARival"));
   }
   if t.taxes > 0 {
-    ArrayPush(parts, "paid you off");
+    ArrayPush(parts, CBT(n"Cyberbane-Hud-PaidYouOff"));
   }
   if ArraySize(parts) == 0 {
     return "";
   }
-  let line = "Today, from talking to their people: they ";
+  let line = CBT(n"Cyberbane-Hud-TodayFromTalkingToTheirPeople");
   let i = 0;
   while i < ArraySize(parts) {
     if i > 0 {
-      line += i == ArraySize(parts) - 1 ? " and " : ", ";
+      line += i == ArraySize(parts) - 1 ? CBT(n"Cyberbane-CrewKit-And") : ", ";
     }
     line += parts[i];
     i += 1;
@@ -6488,150 +6478,150 @@ func CBHudTalkToday(sys: ref<CyberbaneSystem>, faction: CName) -> String {
 // What street talk put in the file (Reactions/StreetTalk.reds, 1.9.5), and the entry's own name for
 // anything this file does not know how to say.
 func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: String) -> String {
-  let who = StrLen(gang) > 0 ? "one of " + gang : "somebody";
+  let who = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-OneOf", [gang]) : CBT(n"Cyberbane-TalkTopics-Somebody");
   if Equals(e.kind, n"Informant") {
     let r = sys.FindRivalById(RoundF(e.value));
-    let name = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "one of their own";
-    return s"You leaned on \(who) until they gave up \(name).";
+    let name = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : CBT(n"Cyberbane-Hud-OneOfTheirOwn");
+    return CBTf(n"Cyberbane-Hud-YouLeanedOnUntilTheyGave", [s"\(who)", s"\(name)"]);
   }
   if Equals(e.kind, n"ShakeDown") {
-    return s"You shook down \(who) for \(RoundF(e.value))eb.";
+    return CBTf(n"Cyberbane-Hud-YouShookDownForEb", [s"\(who)", s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"TalkWarm") {
-    return StrLen(gang) > 0 ? s"Talking to their people warmed \(gang) to you." : "Talking to people warmed them to you.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-TalkingToTheirPeopleWarmedTo", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-TalkingToPeopleWarmedThemTo");
   }
   if Equals(e.kind, n"TalkSlight") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) took offence at how you spoke to their people." : "People took offence at how you spoke to them.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-TookOffenceAtHowYouSpoke", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-PeopleTookOffenceAtHowYou");
   }
   if Equals(e.kind, n"TalkFear") {
-    return StrLen(gang) > 0 ? s"Leaning on their people made \(gang) fear you more." : "Leaning on people made the street fear you more.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-LeaningOnTheirPeopleMadeFear", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-LeaningOnPeopleMadeTheStreet");
   }
   if Equals(e.kind, n"TalkBought") {
-    return s"You paid \(who) \(RoundF(e.value))eb for where a Rival was hiding.";
+    return CBTf(n"Cyberbane-Hud-YouPaidEbForWhereA", [s"\(who)", s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"TalkFan") {
-    return s"A fan stood you a drink: \(RoundF(e.value))eb.";
+    return CBTf(n"Cyberbane-Hud-AFanStoodYouADrink", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"TalkToll") {
-    return StrLen(gang) > 0 ? s"You paid \(gang) \(RoundF(e.value))eb to walk their streets in peace for a few hours."
-                            : s"You paid \(RoundF(e.value))eb for safe passage.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouPaidEbToWalkTheir", [s"\(gang)", s"\(RoundF(e.value))"])
+                            : CBTf(n"Cyberbane-Hud-YouPaidEbForSafePassage", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"BagmanRobbed") {
-    return StrLen(gang) > 0 ? s"You robbed \(CBPossessive(gang)) bagman of \(RoundF(e.value))eb." : s"You robbed a bagman of \(RoundF(e.value))eb.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouRobbedBagmanOfEb", [s"\(CBPossessive(gang))", s"\(RoundF(e.value))"]) : CBTf(n"Cyberbane-Hud-YouRobbedABagmanOfEb", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"Favour") {
-    return StrLen(gang) > 0 ? s"You did \(gang) a favour, for \(RoundF(e.value))eb." : "You did somebody a favour.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouDidAFavourForEb", [s"\(gang)", s"\(RoundF(e.value))"]) : CBT(n"Cyberbane-Hud-YouDidSomebodyAFavour");
   }
   if Equals(e.kind, n"MeetCrashed") {
-    return "You crashed a sit-down between two gangs.";
+    return CBT(n"Cyberbane-Hud-YouCrashedASitDownBetween");
   }
   if Equals(e.kind, n"ShotSurrendered") {
-    return "You shot somebody who had given up.";
+    return CBT(n"Cyberbane-Hud-YouShotSomebodyWhoHadGiven");
   }
   if Equals(e.kind, n"WordSent") {
-    return "You called out a Rival. They named a place.";
+    return CBT(n"Cyberbane-Hud-YouCalledOutARivalThey");
   }
   if Equals(e.kind, n"CalledOut") {
-    return "A Rival called you out and named a place.";
+    return CBT(n"Cyberbane-Hud-ARivalCalledYouOutAnd");
   }
   if Equals(e.kind, n"RivalExiled") {
-    return "You ran a Rival out of Night City.";
+    return CBT(n"Cyberbane-Hud-YouRanARivalOutOf");
   }
   if Equals(e.kind, n"KinSworn") {
-    return "Family of a Rival you killed swore to finish what they started.";
+    return CBT(n"Cyberbane-Hud-FamilyOfARivalYouKilled");
   }
   if Equals(e.kind, n"Squeezed") {
-    return s"You made \(who) talk.";
+    return CBTf(n"Cyberbane-Hud-YouMadeTalk", [s"\(who)"]);
   }
   if Equals(e.kind, n"FlawLearned") {
     let r = sys.FindRivalById(RoundF(e.value));
-    let name = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "a Rival";
-    return s"You learnt \(name)'s fatal flaw.";
+    let name = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : CBT(n"Cyberbane-RivalSystem-ARival-2");
+    return CBTf(n"Cyberbane-Hud-YouLearntSFatalFlaw", [s"\(name)"]);
   }
   if Equals(e.kind, n"FlawKill") {
-    return "A Rival died of the fatal flaw you found.";
+    return CBT(n"Cyberbane-Hud-ARivalDiedOfTheFatal");
   }
   if Equals(e.kind, n"Turned") {
-    return s"You turned \(who) into an informant.";
+    return CBTf(n"Cyberbane-Hud-YouTurnedIntoAnInformant", [s"\(who)"]);
   }
   if Equals(e.kind, n"InformantTip") {
-    return "An informant of yours texted a tip.";
+    return CBT(n"Cyberbane-Hud-AnInformantOfYoursTextedA");
   }
   if Equals(e.kind, n"TalkCallOff") {
-    return s"You paid \(who) \(RoundF(e.value))eb to call off the crew coming for you.";
+    return CBTf(n"Cyberbane-Hud-YouPaidEbToCallOff", [s"\(who)", s"\(RoundF(e.value))"]);
   }
   // 2.3.1: the street.
   if Equals(e.kind, n"WitnessHushed") {
-    return "You paid a witness to forget what they saw.";
+    return CBT(n"Cyberbane-Hud-YouPaidAWitnessToForget");
   }
   if Equals(e.kind, n"KeepWatch") {
-    return s"You paid somebody \(RoundF(e.value))eb to keep watch for you.";
+    return CBTf(n"Cyberbane-Hud-YouPaidSomebodyEbToKeep", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"WannabeBeaten") {
-    return "A kid squared up to you for a name. You put them down.";
+    return CBT(n"Cyberbane-Hud-AKidSquaredUpToYou");
   }
   if Equals(e.kind, n"WannabeLost") {
-    return "A kid squared up to you for a name, and won.";
+    return CBT(n"Cyberbane-Hud-AKidSquaredUpToYou-2");
   }
   if Equals(e.kind, n"WannabeWalked") {
-    return "A kid squared up to you for a name. You walked away.";
+    return CBT(n"Cyberbane-Hud-AKidSquaredUpToYou-3");
   }
   if Equals(e.kind, n"WannabeShot") {
-    return "You shot a kid who came at you with their fists.";
+    return CBT(n"Cyberbane-Hud-YouShotAKidWhoCame");
   }
   // 2.3.2: the codes.
   if Equals(e.kind, n"GuardedHurt") {
-    return StrLen(gang) > 0 ? s"You hurt people \(gang) look after." : "You hurt people somebody looks after.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouHurtPeopleLookAfter", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouHurtPeopleSomebodyLooksAfter");
   }
   if Equals(e.kind, n"LetGo") {
-    return StrLen(gang) > 0 ? s"You let one of \(gang) walk with their hands up." : "You let somebody walk with their hands up.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouLetOneOfWalkWith", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouLetSomebodyWalkWithTheir");
   }
   // 2.4.3: the price on V's head, the ladder and the corporations.
   if Equals(e.kind, n"BountyPosted") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) put a price on your head: \(RoundF(e.value))eb." : s"Somebody put a price on your head: \(RoundF(e.value))eb.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PutAPriceOnYourHead", [s"\(CBCapFirst(gang))", s"\(RoundF(e.value))"]) : CBTf(n"Cyberbane-Hud-SomebodyPutAPriceOnYour", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"BountyPaid") {
-    return "You paid off the price on your head.";
+    return CBT(n"Cyberbane-Hud-YouPaidOffThePriceOn");
   }
   if Equals(e.kind, n"BountyPosterDown") {
-    return "Whoever put the price on your head is dead, and the price with them.";
+    return CBT(n"Cyberbane-Hud-WhoeverPutThePriceOnYour");
   }
   if Equals(e.kind, n"BountyLifted") {
-    return "The price on your head came down.";
+    return CBT(n"Cyberbane-Hud-ThePriceOnYourHeadCame");
   }
   if Equals(e.kind, n"HunterKilled") {
-    return s"You killed a bounty hunter ranked \(RoundF(e.value)) on the ladder.";
+    return CBTf(n"Cyberbane-Hud-YouKilledABountyHunterRanked", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"HunterBeaten") {
-    return s"You beat a bounty hunter ranked \(RoundF(e.value)) and left them breathing.";
+    return CBTf(n"Cyberbane-Hud-YouBeatABountyHunterRanked", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"LadderRank") {
-    return RoundF(e.value) == 1 ? "You reached the top of the hunters' ladder." : s"You climbed to number \(RoundF(e.value)) on the hunters' ladder.";
+    return RoundF(e.value) == 1 ? CBT(n"Cyberbane-Hud-YouReachedTheTopOfThe") : CBTf(n"Cyberbane-Hud-YouClimbedToNumberOnThe", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"CorpWarned") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) warned you off." : "A corporation warned you off.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-WarnedYouOff", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-ACorporationWarnedYouOff");
   }
   if Equals(e.kind, n"CorpOffer") {
-    return StrLen(gang) > 0 ? s"A corporation offered you \(RoundF(e.value))eb to kill the leader of \(gang)." : "A corporation offered you a contract.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-ACorporationOfferedYouEbTo", [s"\(RoundF(e.value))", s"\(gang)"]) : CBT(n"Cyberbane-Hud-ACorporationOfferedYouAContract");
   }
   // 2.4.5: talk and allies.
-  if Equals(e.kind, n"CrewLent") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) sent people to watch your back." : "A gang sent people to watch your back."; }
-  if Equals(e.kind, n"OneOfTheirs") { return StrLen(gang) > 0 ? s"You became one of \(gang)." : "You joined a gang."; }
-  if Equals(e.kind, n"LeftGang") { return StrLen(gang) > 0 ? s"You stopped being one of \(gang)." : "You left a gang."; }
-  if Equals(e.kind, n"DutyAsked") { return StrLen(gang) > 0 ? s"Your gang asked you to put down five of \(gang) in a week." : "Your gang asked a favour."; }
-  if Equals(e.kind, n"DutySettled") { return e.value > 0.5 ? "You came through for your gang." : "You let your gang down."; }
-  if Equals(e.kind, n"RansomPaid") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) paid \(RoundF(e.value))eb to get one of theirs back." : "A gang paid a ransom."; }
-  if Equals(e.kind, n"RansomRefused") { return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) refused your ransom and came for their own." : "A gang refused your ransom."; }
-  if Equals(e.kind, n"HandedOver") { return StrLen(gang) > 0 ? s"You handed a prisoner to \(gang)." : "You handed over a prisoner."; }
-  if Equals(e.kind, n"LieSpread") { return StrLen(gang) > 0 ? s"You fed \(gang) a lie through the street." : "You fed the street a lie."; }
-  if Equals(e.kind, n"LieSold") { return StrLen(gang) > 0 ? s"Somebody sold your lie out to \(gang)." : "Somebody sold you out."; }
-  if Equals(e.kind, n"InformantSaved") { return "You saved an informant from their own gang."; }
-  if Equals(e.kind, n"InformantLost") { return "An informant of yours was run down by their own gang."; }
-  if Equals(e.kind, n"ParleyPaid") { return StrLen(gang) > 0 ? s"You paid a crew of \(gang) to say they never found you." : "You paid off a crew."; }
-  if Equals(e.kind, n"ParleyScared") { return StrLen(gang) > 0 ? s"You talked a crew of \(gang) into walking away." : "You talked a crew down."; }
+  if Equals(e.kind, n"CrewLent") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-SentPeopleToWatchYourBack", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-AGangSentPeopleToWatch"); }
+  if Equals(e.kind, n"OneOfTheirs") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouBecameOneOf", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouJoinedAGang"); }
+  if Equals(e.kind, n"LeftGang") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouStoppedBeingOneOf", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouLeftAGang"); }
+  if Equals(e.kind, n"DutyAsked") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YourGangAskedYouToPut", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YourGangAskedAFavour"); }
+  if Equals(e.kind, n"DutySettled") { return e.value > 0.5 ? CBT(n"Cyberbane-Hud-YouCameThroughForYourGang") : CBT(n"Cyberbane-Hud-YouLetYourGangDown"); }
+  if Equals(e.kind, n"RansomPaid") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PaidEbToGetOneOf", [s"\(CBCapFirst(gang))", s"\(RoundF(e.value))"]) : CBT(n"Cyberbane-Hud-AGangPaidARansom"); }
+  if Equals(e.kind, n"RansomRefused") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-RefusedYourRansomAndCameFor", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-AGangRefusedYourRansom"); }
+  if Equals(e.kind, n"HandedOver") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouHandedAPrisonerTo", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouHandedOverAPrisoner"); }
+  if Equals(e.kind, n"LieSpread") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouFedALieThroughThe", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouFedTheStreetALie"); }
+  if Equals(e.kind, n"LieSold") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-SomebodySoldYourLieOutTo", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-SomebodySoldYouOut"); }
+  if Equals(e.kind, n"InformantSaved") { return CBT(n"Cyberbane-Hud-YouSavedAnInformantFromTheir"); }
+  if Equals(e.kind, n"InformantLost") { return CBT(n"Cyberbane-Hud-AnInformantOfYoursWasRun"); }
+  if Equals(e.kind, n"ParleyPaid") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouPaidACrewOfTo", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouPaidOffACrew"); }
+  if Equals(e.kind, n"ParleyScared") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouTalkedACrewOfInto", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouTalkedACrewDown"); }
   // Answers by text (UI/RealPhone.reds, 2.4.6): written to the file and, until 2.6.0, read out as their own names.
-  if Equals(e.kind, n"PhoneThreatWorked") { return StrLen(gang) > 0 ? s"You threatened \(gang) by text, and they backed down." : "A threat by text made a gang back down."; }
-  if Equals(e.kind, n"PhoneInsult") { return StrLen(gang) > 0 ? s"You told \(gang) to come and try it." : "You dared a gang to come for you."; }
+  if Equals(e.kind, n"PhoneThreatWorked") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouThreatenedByTextAndThey", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-AThreatByTextMadeA"); }
+  if Equals(e.kind, n"PhoneInsult") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouToldToComeAndTry", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouDaredAGangToCome"); }
   // 2.5.0: a crew of V's own (Reactions/Crew.reds).
   let crewLine = CBCrewHistoryLine(sys, e);
   if StrLen(crewLine) > 0 {
@@ -6644,122 +6634,122 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
      || Equals(e.kind, n"UnderTheKnife") || Equals(e.kind, n"FeudSet") || Equals(e.kind, n"RivalFeud")
      || Equals(e.kind, n"LairMoved") || Equals(e.kind, n"RipperdocLead") {
     let rv = sys.FindRivalById(RoundF(e.value));
-    let rn = IsDefined(rv) ? CBRivalDisplayName(sys.GetContent(), rv) : "a Rival";
-    if Equals(e.kind, n"StaredDown") { return s"You stared down \(rn), and their people ran."; }
-    if Equals(e.kind, n"FacedownWalked") { return s"\(CBCapFirst(rn)) let you walk away, once."; }
-    if Equals(e.kind, n"DuelWon") { return s"You beat \(rn) one on one while their people watched."; }
-    if Equals(e.kind, n"CalledEven") { return s"You and \(rn) called it even."; }
-    if Equals(e.kind, n"Humiliated") { return s"You humiliated \(rn) where they lay."; }
-    if Equals(e.kind, n"Trophy") { return s"You took a trophy off \(rn)."; }
-    if Equals(e.kind, n"RivalReturned") { return s"\(CBCapFirst(rn)) came back from the dead."; }
-    if Equals(e.kind, n"BondVengeance") { return s"\(CBCapFirst(rn)) swore vengeance for somebody you killed."; }
-    if Equals(e.kind, n"RivalEndedUp") { return s"\(CBCapFirst(rn)), long gone from Night City, got in touch."; }
-    if Equals(e.kind, n"UnderTheKnife") { return s"\(CBCapFirst(rn)) went under the knife for you."; }
-    if Equals(e.kind, n"FeudSet") { return s"You set a Rival on \(rn)."; }
-    if Equals(e.kind, n"LairMoved") { return s"\(CBCapFirst(rn))'s lookout saw you and got away; they moved."; }
-    if Equals(e.kind, n"RipperdocLead") { return s"You heard which ripperdoc \(rn) was in."; }
-    return s"One Rival killed another: \(rn) is gone.";
+    let rn = IsDefined(rv) ? CBRivalDisplayName(sys.GetContent(), rv) : CBT(n"Cyberbane-RivalSystem-ARival-2");
+    if Equals(e.kind, n"StaredDown") { return CBTf(n"Cyberbane-Hud-YouStaredDownAndTheirPeople", [s"\(rn)"]); }
+    if Equals(e.kind, n"FacedownWalked") { return CBTf(n"Cyberbane-Hud-LetYouWalkAwayOnce", [s"\(CBCapFirst(rn))"]); }
+    if Equals(e.kind, n"DuelWon") { return CBTf(n"Cyberbane-Hud-YouBeatOneOnOneWhile", [s"\(rn)"]); }
+    if Equals(e.kind, n"CalledEven") { return CBTf(n"Cyberbane-Hud-YouAndCalledItEven", [s"\(rn)"]); }
+    if Equals(e.kind, n"Humiliated") { return CBTf(n"Cyberbane-Hud-YouHumiliatedWhereTheyLay", [s"\(rn)"]); }
+    if Equals(e.kind, n"Trophy") { return CBTf(n"Cyberbane-Hud-YouTookATrophyOff", [s"\(rn)"]); }
+    if Equals(e.kind, n"RivalReturned") { return CBTf(n"Cyberbane-Hud-CameBackFromTheDead", [s"\(CBCapFirst(rn))"]); }
+    if Equals(e.kind, n"BondVengeance") { return CBTf(n"Cyberbane-Hud-SworeVengeanceForSomebodyYouKilled", [s"\(CBCapFirst(rn))"]); }
+    if Equals(e.kind, n"RivalEndedUp") { return CBTf(n"Cyberbane-Hud-LongGoneFromNightCityGot", [s"\(CBCapFirst(rn))"]); }
+    if Equals(e.kind, n"UnderTheKnife") { return CBTf(n"Cyberbane-Hud-WentUnderTheKnifeForYou", [s"\(CBCapFirst(rn))"]); }
+    if Equals(e.kind, n"FeudSet") { return CBTf(n"Cyberbane-Hud-YouSetARivalOn", [s"\(rn)"]); }
+    if Equals(e.kind, n"LairMoved") { return CBTf(n"Cyberbane-Hud-SLookoutSawYouAndGot", [s"\(CBCapFirst(rn))"]); }
+    if Equals(e.kind, n"RipperdocLead") { return CBTf(n"Cyberbane-Hud-YouHeardWhichRipperdocWasIn", [s"\(rn)"]); }
+    return CBTf(n"Cyberbane-Hud-OneRivalKilledAnotherIsGone", [s"\(rn)"]);
   }
   if Equals(e.kind, n"StreetClash") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) won a fight with their enemies in the street." : "Two gangs fought in the street.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-WonAFightWithTheirEnemies", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-TwoGangsFoughtInTheStreet");
   }
   if Equals(e.kind, n"CorpContractDone") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) paid you \(RoundF(e.value))eb for a job." : s"A corporation paid you \(RoundF(e.value))eb for a job.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PaidYouEbForAJob", [s"\(CBCapFirst(gang))", s"\(RoundF(e.value))"]) : CBTf(n"Cyberbane-Hud-ACorporationPaidYouEbFor", [s"\(RoundF(e.value))"]);
   }
   // 2.4.2: the hunt grows.
   if Equals(e.kind, n"Tracked") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) planted a tracker on you." : "Somebody planted a tracker on you.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PlantedATrackerOnYou", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-SomebodyPlantedATrackerOnYou");
   }
   if Equals(e.kind, n"OpenSeason") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) declared open season on you." : "A gang declared open season on you.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-DeclaredOpenSeasonOnYou", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-AGangDeclaredOpenSeasonOn");
   }
   if Equals(e.kind, n"OpenSeasonSurvived") {
-    return StrLen(gang) > 0 ? s"You survived \(CBPossessive(gang)) open season." : "You survived open season.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouSurvivedOpenSeason", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouSurvivedOpenSeason-2");
   }
   if Equals(e.kind, n"OpenSeasonEnded") {
-    return StrLen(gang) > 0 ? s"You ended \(CBPossessive(gang)) open season by killing the one who called it." : "You ended an open season by killing the one who called it.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouEndedOpenSeasonByKilling", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouEndedAnOpenSeasonBy");
   }
   if Equals(e.kind, n"AmbushBeaten") {
-    return StrLen(gang) > 0 ? s"You walked through \(CBPossessive(gang)) ambush on the way to a job." : "You walked through an ambush.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouWalkedThroughAmbushOnThe", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouWalkedThroughAnAmbush");
   }
   // 2.4.1: being hunted.
   if Equals(e.kind, n"ScoutBribed") {
-    return StrLen(gang) > 0 ? s"You paid \(CBPossessive(gang)) scout to say they never found you." : "You paid a scout to say they never found you.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouPaidScoutToSayThey", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouPaidAScoutToSay");
   }
   // 2.4.0: the war.
   if Equals(e.kind, n"WeeklyCut") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) paid you your cut: \(RoundF(e.value))eb." : s"You were paid your cut: \(RoundF(e.value))eb.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PaidYouYourCutEb", [s"\(CBCapFirst(gang))", s"\(RoundF(e.value))"]) : CBTf(n"Cyberbane-Hud-YouWerePaidYourCutEb", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"Backed") {
-    return StrLen(gang) > 0 ? s"You threw in with \(gang)." : "You picked a side in the war.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouThrewInWith", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouPickedASideInThe");
   }
   if Equals(e.kind, n"Incited") {
-    return StrLen(gang) > 0 ? s"You set \(gang) on their enemies with a lie." : "You set two gangs on each other with a lie.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouSetOnTheirEnemiesWith", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouSetTwoGangsOnEach");
   }
   if Equals(e.kind, n"Truce") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) made a truce with their enemies, against you." : "Two gangs made a truce against you.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-MadeATruceWithTheirEnemies", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-TwoGangsMadeATruceAgainst");
   }
   if Equals(e.kind, n"OwnStreet") {
-    return "A district became yours.";
+    return CBT(n"Cyberbane-Hud-ADistrictBecameYours");
   }
   if Equals(e.kind, n"OwnToll") {
-    return s"The gangs paid their way through your streets: \(RoundF(e.value))eb.";
+    return CBTf(n"Cyberbane-Hud-TheGangsPaidTheirWayThrough", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"PeaceFavour") {
-    return StrLen(gang) > 0 ? s"You did \(gang) a favour, and they called it off." : "A favour bought you peace.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouDidAFavourAndThey", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-AFavourBoughtYouPeace");
   }
   if Equals(e.kind, n"ProtectionPaid") {
-    return s"You paid the Claws \(RoundF(e.value))eb for protection.";
+    return CBTf(n"Cyberbane-Hud-YouPaidTheClawsEbFor", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"ProtectionRefused") {
-    return "You didn't pay the Claws' protection.";
+    return CBT(n"Cyberbane-Hud-YouDidnTPayTheClaws");
   }
   // 2.3.4: the fights.
   if Equals(e.kind, n"Executed") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) executed somebody, and nobody stopped them." : "Somebody was executed, and nobody stopped it.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-ExecutedSomebodyAndNobodyStoppedThem", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-SomebodyWasExecutedAndNobodyStopped");
   }
   if Equals(e.kind, n"PrisonerSaved") {
-    return StrLen(gang) > 0 ? s"You saved one of \(gang) from an execution." : "You stopped an execution.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouSavedOneOfFromAn", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouStoppedAnExecution");
   }
   if Equals(e.kind, n"FugitiveCaught") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) ran down the one they were hunting." : "A gang ran somebody down.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-RanDownTheOneTheyWere", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-AGangRanSomebodyDown");
   }
   if Equals(e.kind, n"FugitiveSheltered") {
-    return StrLen(gang) > 0 ? s"You saved one of \(gang) from the people hunting them." : "You saved somebody from a gang's hunt.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouSavedOneOfFromThe", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouSavedSomebodyFromAGang");
   }
   if Equals(e.kind, n"FrontLine") {
-    return StrLen(gang) > 0 ? s"\(CBCapFirst(gang)) won a street fight and took ground." : "A street fight decided who holds the ground.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-WonAStreetFightAndTook", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-AStreetFightDecidedWhoHolds");
   }
   if Equals(e.kind, n"StoodWith") {
-    return StrLen(gang) > 0 ? s"You stood with \(gang) in a street fight, and won it with them." : "You picked a side in a street fight, and won.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouStoodWithInAStreet", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouPickedASideInA");
   }
   if Equals(e.kind, n"StoodWithLost") {
-    return StrLen(gang) > 0 ? s"You stood with \(gang) in a street fight, and lost it with them." : "You picked a side in a street fight, and lost.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouStoodWithInAStreet-2", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouPickedASideInA-2");
   }
   if Equals(e.kind, n"StruggleBacked") {
-    return StrLen(gang) > 0 ? s"You decided who runs \(gang)." : "You decided who runs a gang.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouDecidedWhoRuns", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouDecidedWhoRunsAGang");
   }
   if Equals(e.kind, n"StruggleBoth") {
-    return StrLen(gang) > 0 ? s"You killed both of \(CBPossessive(gang)) would-be leaders." : "You killed both would-be leaders.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouKilledBothOfWouldBe", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouKilledBothWouldBeLeaders");
   }
   // 2.3.3: gang life.
   if Equals(e.kind, n"FuneralCrashed") {
-    return StrLen(gang) > 0 ? s"You shot up \(CBPossessive(gang)) funeral." : "You shot up a funeral.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouShotUpFuneral", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouShotUpAFuneral");
   }
   if Equals(e.kind, n"PaidRespects") {
-    return StrLen(gang) > 0 ? s"You paid your respects at \(CBPossessive(gang)) funeral." : "You paid your respects at a funeral.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouPaidYourRespectsAtFuneral", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouPaidYourRespectsAtA");
   }
   if Equals(e.kind, n"DealCrashed") {
-    return StrLen(gang) > 0 ? s"You took the guns \(gang) were buying." : "You hit an arms deal.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouTookTheGunsWereBuying", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouHitAnArmsDeal");
   }
   if Equals(e.kind, n"RacketHit") {
-    return StrLen(gang) > 0 ? s"You hit \(CBPossessive(gang)) racket for \(RoundF(e.value))eb." : s"You hit a racket for \(RoundF(e.value))eb.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouHitRacketForEb", [s"\(CBPossessive(gang))", s"\(RoundF(e.value))"]) : CBTf(n"Cyberbane-Hud-YouHitARacketForEb", [s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"EventCrashed") {
-    return StrLen(gang) > 0 ? s"You broke up something \(gang) had planned." : "You broke up a gang's plans.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouBrokeUpSomethingHadPlanned", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouBrokeUpAGangS");
   }
   if Equals(e.kind, n"ApexBeaten") {
-    return StrLen(gang) > 0 ? s"You beat \(CBPossessive(gang)) apex squad, all four." : "You beat an apex squad, all four.";
+    return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouBeatApexSquadAllFour", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouBeatAnApexSquadAll");
   }
   return NameToString(e.kind);
 }
@@ -6772,52 +6762,52 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
   let line = "";
   if Equals(e.kind, n"RivalCreated") {
     let r = sys.FindRivalById(RoundF(e.value));
-    let who = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "Somebody";
-    line = StrLen(gang) > 0 ? s"\(who) of \(gang) took it personally." : s"\(who) took it personally.";
+    let who = IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : CBT(n"Cyberbane-Telling-Somebody");
+    line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-OfTookItPersonally", [s"\(who)", s"\(gang)"]) : CBTf(n"Cyberbane-Hud-TookItPersonally", [s"\(who)"]);
   } else {
     if Equals(e.kind, n"RivalSlain") {
-      line = StrLen(gang) > 0 ? s"You put down a rank \(RoundF(e.value)) rival from \(gang)."
-                              : s"You put down a rank \(RoundF(e.value)) rival.";
+      line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouPutDownARankRival", [s"\(RoundF(e.value))", s"\(gang)"])
+                              : CBTf(n"Cyberbane-Hud-YouPutDownARankRival-2", [s"\(RoundF(e.value))"]);
     } else {
       if Equals(e.kind, n"RivalAmbushed") {
-        line = StrLen(gang) > 0 ? s"You caught a rank \(RoundF(e.value)) rival from \(gang) where they were lying low. They never saw you."
-                                : s"You caught a rank \(RoundF(e.value)) rival where they were lying low. They never saw you.";
+        line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouCaughtARankRivalFrom", [s"\(RoundF(e.value))", s"\(gang)"])
+                                : CBTf(n"Cyberbane-Hud-YouCaughtARankRivalWhere", [s"\(RoundF(e.value))"]);
       } else {
       if Equals(e.kind, n"Deed") {
-        line = "A job of yours made the rounds.";
+        line = CBT(n"Cyberbane-Hud-AJobOfYoursMadeThe");
       } else {
         if Equals(e.kind, n"Massacre") {
-          line = s"People are still talking about the \(RoundF(e.value)) you left behind.";
+          line = CBTf(n"Cyberbane-Hud-PeopleAreStillTalkingAboutThe", [s"\(RoundF(e.value))"]);
         } else {
           if Equals(e.kind, n"BossKill") {
-            line = StrLen(gang) > 0 ? s"You took down somebody who mattered to \(gang)." : "You took down somebody who mattered.";
+            line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouTookDownSomebodyWhoMattered", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouTookDownSomebodyWhoMattered-2");
           } else {
             if Equals(e.kind, n"ApexDown") {
-              line = StrLen(gang) > 0 ? "You put down one of " + CBPossessive(gang) + " apex squad." : "You put down one of an apex squad.";
+              line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouPutDownOneOfApex", [CBPossessive(gang)]) : CBT(n"Cyberbane-Hud-YouPutDownOneOfAn");
             } else {
               if Equals(e.kind, n"Vendetta") {
-                line = s"\(gangCap) swore a vendetta against you.";
+                line = CBTf(n"Cyberbane-Hud-SworeAVendettaAgainstYou", [s"\(gangCap)"]);
               } else {
                 if Equals(e.kind, n"Peace") {
-                  line = s"You paid \(gang) \(RoundF(e.value))eb to call it off.";
+                  line = CBTf(n"Cyberbane-Hud-YouPaidEbToCallIt", [s"\(gang)", s"\(RoundF(e.value))"]);
                 } else {
                   if Equals(e.kind, n"Tribute") {
-                    line = s"\(gangCap) paid you \(RoundF(e.value))eb to stay on your good side.";
+                    line = CBTf(n"Cyberbane-Hud-PaidYouEbToStayOn", [s"\(gangCap)", s"\(RoundF(e.value))"]);
                   } else {
                     if Equals(e.kind, n"Death") {
-                      line = StrLen(gang) > 0 ? s"\(gangCap) put you down." : "Somebody put you down.";
+                      line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PutYouDown", [s"\(gangCap)"]) : CBT(n"Cyberbane-Hud-SomebodyPutYouDown");
                     } else {
                       if Equals(e.kind, n"Friendly") {
-                        line = s"\(gangCap) decided you are all right.";
+                        line = CBTf(n"Cyberbane-Hud-DecidedYouAreAllRight", [s"\(gangCap)"]);
                       } else {
                         if Equals(e.kind, n"Allied") {
-                          line = s"\(gangCap) started treating you like one of their own.";
+                          line = CBTf(n"Cyberbane-Hud-StartedTreatingYouLikeOneOf", [s"\(gangCap)"]);
                         } else {
                           if Equals(e.kind, n"TurfTaken") {
-                            line = s"\(gangCap) took over the streets.";
+                            line = CBTf(n"Cyberbane-Hud-TookOverTheStreets", [s"\(gangCap)"]);
                           } else {
                             if Equals(e.kind, n"TurfPush") {
-                              line = s"\(gangCap) came back to take their streets.";
+                              line = CBTf(n"Cyberbane-Hud-CameBackToTakeTheirStreets", [s"\(gangCap)"]);
                             } else {
                               line = CBHudTalkLogLine(sys, e, gang);
                             }
@@ -6837,15 +6827,15 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
   }
   // A war one of V's crew started (2.6.0).
   if Equals(e.kind, n"CrewWarWon") {
-    line = StrLen(gang) > 0 ? s"One of your crew started a war on \(gang), and won it." : "One of your crew started a war, and won it.";
+    line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-OneOfYourCrewStartedA", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-OneOfYourCrewStartedA-2");
   }
   if Equals(e.kind, n"CrewWarLost") {
-    line = StrLen(gang) > 0 ? s"One of your crew went to war on \(gang), and did not come back." : "One of your crew went to war, and did not come back.";
+    line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-OneOfYourCrewWentTo", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-OneOfYourCrewWentTo-2");
   }
   // A Rival somebody else killed (2.5.6, CBRivalSlain): before, every Rival's death was written as V's.
   if Equals(e.kind, n"RivalDied") {
-    line = StrLen(gang) > 0 ? s"A rank \(RoundF(e.value)) rival from \(gang) died, and not by your hand."
-                            : s"A rank \(RoundF(e.value)) rival died, and not by your hand.";
+    line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-ARankRivalFromDiedAnd", [s"\(RoundF(e.value))", s"\(gang)"])
+                            : CBTf(n"Cyberbane-Hud-ARankRivalDiedAndNot", [s"\(RoundF(e.value))"]);
   }
   let place = CBDistrictLabel(e.district);
   if StrLen(place) > 0 {
@@ -6853,7 +6843,7 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
   }
   let ago = CBHudSince(now, e.at);
   if StrLen(ago) > 0 {
-    line += ", " + ago + " ago";
+    line += CBTf(n"Cyberbane-Hud-Ago", [ago]);
   }
   return line;
 }
@@ -6884,18 +6874,18 @@ func CBHudPeaceSpend(sys: ref<CyberbaneSystem>) -> Int32 {
 // it is the behaviour the number already drives.
 func CBDreadWord(civ: Float) -> String {
   if civ >= CBConfig.CivTierTerror() {
-    return "people run";
+    return CBT(n"Cyberbane-Hud-PeopleRun");
   }
   if civ >= CBConfig.CivTierAfraid() {
-    return "people are afraid";
+    return CBT(n"Cyberbane-Hud-PeopleAreAfraid");
   }
   if civ >= CBConfig.CivTierUneasy() {
-    return "people are uneasy";
+    return CBT(n"Cyberbane-Hud-PeopleAreUneasy");
   }
   if civ >= CBConfig.CivTierNotice() {
-    return "people notice";
+    return CBT(n"Cyberbane-Hud-PeopleNotice");
   }
-  return "nobody minds";
+  return CBT(n"Cyberbane-Hud-NobodyMinds");
 }
 
 // The civilian intensity slider, as the Director passes it to the crowd (Director.reds:87-106).
@@ -6910,19 +6900,19 @@ func CBCivIntensity() -> Float {
 
 func CBArchetypeName(idx: Int32) -> String {
   switch idx {
-    case 0: return "Butcher";
-    case 1: return "Ghost";
+    case 0: return CBT(n"Cyberbane-Hud-Butcher");
+    case 1: return CBT(n"Cyberbane-Crew-Ghost");
     // "Operator", not "Professional".
     //
     // Conduct's top band was renamed Disciplined in 1.3.2 to break this collision, which only
     // half worked: the mod still told players that sparing people gets them treated like a
     // professional while a readout on the same screen said STYLE Professional and moved on
     // finished gigs instead. Renaming both halves is what actually fixes it.
-    case 2: return "Operator";
-    case 3: return "Chromed";
-    case 4: return "Netrunner";
-    case 5: return "Brawler";
-    default: return "Undefined";
+    case 2: return CBT(n"Cyberbane-Hud-Operator");
+    case 3: return CBT(n"Cyberbane-Hud-Chromed");
+    case 4: return CBT(n"Cyberbane-Hud-Netrunner");
+    case 5: return CBT(n"Cyberbane-Hud-Brawler");
+    default: return CBT(n"Cyberbane-Hud-Undefined");
   }
 }
 
@@ -6935,38 +6925,38 @@ func CBArchetypeName(idx: Int32) -> String {
 // reasonably reads as a bug in one of them.
 func CBCodeLabel(code: Float) -> String {
   if code >= 40.0 {
-    return "Disciplined";
+    return CBT(n"Cyberbane-Hud-Disciplined");
   }
   if code <= -40.0 {
-    return "Cyberpsycho";
+    return CBT(n"Cyberbane-Traits-Cyberpsycho");
   }
-  return "Mixed";
+  return CBT(n"Cyberbane-Hud-Mixed");
 }
 
 func CBPostureName(posture: ECBPosture) -> String {
   switch posture {
-    case ECBPosture.Allied: return "Allied";
-    case ECBPosture.Friendly: return "Friendly";
-    case ECBPosture.Neutral: return "Neutral";
-    case ECBPosture.Hostile: return "Hostile";
-    case ECBPosture.Vendetta: return "Vendetta";
-    default: return "Neutral";
+    case ECBPosture.Allied: return CBT(n"Cyberbane-CrewBanner-Allied");
+    case ECBPosture.Friendly: return CBT(n"Cyberbane-Hud-Friendly");
+    case ECBPosture.Neutral: return CBT(n"Cyberbane-CrewBanner-Neutral");
+    case ECBPosture.Hostile: return CBT(n"Cyberbane-CrewBanner-Hostile");
+    case ECBPosture.Vendetta: return CBT(n"Cyberbane-Hud-Vendetta");
+    default: return CBT(n"Cyberbane-CrewBanner-Neutral");
   }
 }
 
 func CBRivalStateName(state: Int32) -> String {
   if state == EnumInt(ECBRivalState.Hunting) {
-    return "hunting you";
+    return CBT(n"Cyberbane-Hud-HuntingYou");
   }
   if state == EnumInt(ECBRivalState.Active) {
-    return "at large";
+    return CBT(n"Cyberbane-Hud-AtLarge");
   }
   // Said as what they are (2.5.5): one who owes V their life read "quiet", the word for one keeping their head down.
   // Their life, in full: "owes you" alone reads as money.
   if state == EnumInt(ECBRivalState.Debtor) {
-    return "owes you their life";
+    return CBT(n"Cyberbane-Hud-OwesYouTheirLife");
   }
-  return "quiet";
+  return CBT(n"Cyberbane-Hud-Quiet-2");
 }
 
 // A Rival's traits, or their weaknesses, by name: the first `limit` of them, comma separated.
@@ -6989,39 +6979,39 @@ func CBRivalTraitList(content: ref<CyberbaneContent>, r: ref<CBRival>, weaknesse
 // fools whom. "Is there a way to know which clothes affect the gangs?" This is it.
 func CBHudWornLine(sys: ref<CyberbaneSystem>) -> String {
   if !CBClothingCounts() {
-    return "Clothes are not read (Mod Settings), so all your chrome shows.";
+    return CBT(n"Cyberbane-Hud-ClothesAreNotReadModSettings");
   }
   let worn = sys.GetWorn();
   if !IsDefined(worn) {
-    return "What a stranger clocks from across the street. Arms read loudest.";
+    return CBT(n"Cyberbane-Hud-WhatAStrangerClocksFromAcross");
   }
   let parts = "";
-  if worn.arms { parts = "arms"; }
-  if worn.legs { parts = StrLen(parts) > 0 ? parts + ", legs" : "legs"; }
-  if worn.face { parts = StrLen(parts) > 0 ? parts + ", eyes" : "eyes"; }
-  let line = StrLen(parts) > 0 ? "Covered: " + parts + "." : "Nothing you wear covers your chrome.";
+  if worn.arms { parts = CBT(n"Cyberbane-Hud-Arms"); }
+  if worn.legs { parts = StrLen(parts) > 0 ? CBTf(n"Cyberbane-Hud-Legs", [parts]) : CBT(n"Cyberbane-Hud-Legs-2"); }
+  if worn.face { parts = StrLen(parts) > 0 ? CBTf(n"Cyberbane-Hud-Eyes", [parts]) : CBT(n"Cyberbane-Hud-Eyes-2"); }
+  let line = StrLen(parts) > 0 ? CBTf(n"Cyberbane-Hud-Covered", [parts]) : CBT(n"Cyberbane-Hud-NothingYouWearCoversYourChrome");
   if worn.masked {
-    line += " Masked: nobody can place you.";
+    line += CBT(n"Cyberbane-Standing-Masked");
   } else {
     if worn.twrRead && worn.twrFace >= 0.05 {
-      line += s" Face \(RoundF(worn.twrFace * 100.0))% hidden.";
+      line += CBTf(n"Cyberbane-Hud-FaceHidden", [s"\(RoundF(worn.twrFace * 100.0))"]);
     }
   }
   let gang = CBFactionLabel(sys.GetDisguiseFaction());
   if StrLen(gang) > 0 {
-    line += worn.twrRead ? s" Passing for \(gang), \(RoundF(sys.GetDisguiseStrength() * 100.0))%." : " In " + gang + " gear: slower to place you.";
+    line += worn.twrRead ? CBTf(n"Cyberbane-Hud-PassingFor", [s"\(gang)", s"\(RoundF(sys.GetDisguiseStrength() * 100.0))"]) : CBTf(n"Cyberbane-Standing-Colours", [gang]);
   }
   // Whose reading this is, when it is not Cyberbane's own (2.4.2).
   if worn.twrRead {
-    line += " (They Will Remember's reading.)";
+    line += CBT(n"Cyberbane-Hud-TheyWillRememberSReading");
   } else {
     if CBRememberReadsDisguises() {
       let rtWhy = CyberbaneRuntime.Get();
       let why = IsDefined(rtWhy) ? rtWhy.TwrDisguiseWhy() : "";
       if StrLen(why) > 0 {
-        line += " They Will Remember's disguises could not be read (" + why + "); this is Cyberbane's own.";
+        line += CBTf(n"Cyberbane-Hud-TheyWillRememberSDisguisesCould", [why]);
       } else {
-        line += " They Will Remember's disguises could not be read; this is Cyberbane's own.";
+        line += CBT(n"Cyberbane-Hud-TheyWillRememberSDisguisesCould-2");
       }
     }
   }
@@ -7050,15 +7040,15 @@ public func CBHudHasPicture(tab: Int32) -> Bool {
 }
 
 public func CBHudPictureWord(tab: Int32) -> String {
-  return "Show as cards";
+  return CBT(n"Cyberbane-Hud-ShowAsCards");
 }
 
 // One word for a crew member's state, as a colour.
 public func CBCrewStateTint(state: String) -> HDRColor {
-  if Equals(state, "WITH YOU") { return CBHudGreen(); }
-  if StrBeginsWith(state, "HURT") { return CBHudRed(); }
-  if Equals(state, "RESTLESS") { return CBHudAmber(); }
-  if Equals(state, "RESTING") { return CBHudGrey(); }
+  if Equals(state, CBCrewWordWithYou()) { return CBHudGreen(); }
+  if StrBeginsWith(state, CBCrewWordHurt()) { return CBHudRed(); }
+  if Equals(state, CBCrewWordRestless()) { return CBHudAmber(); }
+  if Equals(state, CBCrewWordResting()) { return CBHudGrey(); }
   return CBHudCyan();
 }
 

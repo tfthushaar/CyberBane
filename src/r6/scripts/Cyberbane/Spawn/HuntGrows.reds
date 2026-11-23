@@ -70,13 +70,13 @@ func CBOpenSeasonEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
     sys.AddRenownPoints(CBConfig.OpenSeasonRenown() * mult);
     CBGiveStreetCred(game, CBConfig.CredOpenSeason());   // [87], 2.4.6
     CBFileLog(sys, n"OpenSeasonSurvived", now, CBEventDistrict(sys, game), gang, 0.0);
-    CBEventSay(game, s"You survived \(CBPossessive(CBFactionLabel(gang))) open season. A whole day of their best, and you're still standing. They're scared now.");
+    CBEventSay(game, CBTf(n"Cyberbane-HuntGrows-YouSurvivedOpenSeasonAWhole", [s"\(CBPossessive(CBFactionLabel(gang)))"]));
     return;
   }
   if Equals(how, n"leader") {
     CBTalkFear(sys, game, gang, CBConfig.OpenSeasonFear());
     CBFileLog(sys, n"OpenSeasonEnded", now, CBEventDistrict(sys, game), gang, 0.0);
-    CBEventSay(game, s"You killed the one who called it. \(CBCapFirst(CBPossessive(CBFactionLabel(gang)))) open season is over.");
+    CBEventSay(game, CBTf(n"Cyberbane-HuntGrows-YouKilledTheOneWhoCalled", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(gang))))"]));
     return;
   }
   CBLog.Info(n"Spawn", s"Open season on V by \(NameToString(gang)) is over (\(NameToString(how))).");
@@ -117,7 +117,7 @@ public func CBHuntGrowsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       if fresh {
         CBFileLog(sys, n"Tracked", now, CBEventDistrict(sys, game), hacker, 0.0);
         if CBToastsOn() {
-          CBSystemNote(game, s"something just pinged in your cyberdeck: \(CBFactionLabel(hacker)) planted a tracker. Spend a minute somewhere safe to dig it out.", 7.0);
+          CBSystemNote(game, CBTf(n"Cyberbane-HuntGrows-SomethingJustPingedInYourCyberdeck", [s"\(CBFactionLabel(hacker))"]), 7.0);
         }
       }
     }
@@ -132,7 +132,7 @@ public func CBHuntGrowsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
         if hunt.safeTicks >= CBConfig.TrackedClearTicks() {
           hunt.SetTracked(n"", 0.0);
           if CBToastsOn() {
-            CBSystemNote(game, "the tracker's gone. Nobody knows where you are.", 5.0);
+            CBSystemNote(game, CBT(n"Cyberbane-HuntGrows-TheTrackerSGoneNobodyKnows"), 5.0);
           }
         }
       } else {
@@ -176,7 +176,7 @@ public func CBOpenSeasonRoll(sys: ref<CyberbaneSystem>, game: GameInstance, days
         CBFileLog(sys, n"OpenSeason", now, CBEventDistrict(sys, game), fs.id, 0.0);
         if CBMessagesOn() {
           CBPhoneSendTinted(game, CBRivalDisplayName(CBContent(game), leader),
-            s"Open season. Every one of \(CBFactionLabel(fs.id)) knows your face, and we're coming every hour for the next twenty-four. Run.", CBHudRed());
+            CBTf(n"Cyberbane-HuntGrows-OpenSeasonEveryOneOfKnows", [s"\(CBFactionLabel(fs.id))"]), CBHudRed());
         }
         return;
       }
@@ -212,8 +212,8 @@ public func CBWarnOfWaiting(sys: ref<CyberbaneSystem>, game: GameInstance, gang:
     return;
   }
   let book = CBStreetBook.Get(game);
-  let name = IsDefined(book) && StrLen(book.WatchName()) > 0 ? book.WatchName() : "Lookout";
-  CBPhoneSend(game, name, s"Car full of \(CBFactionLabel(gang)) just parked up the road, engine running. They're waiting for you.");
+  let name = IsDefined(book) && StrLen(book.WatchName()) > 0 ? book.WatchName() : CBT(n"Cyberbane-Whispers-Lookout");
+  CBPhoneSend(game, name, CBTf(n"Cyberbane-HuntGrows-CarFullOfJustParkedUp", [s"\(CBFactionLabel(gang))"]));
 }
 
 // V on foot, a job tracked far away, a gang sworn against V: they may wait for V there. True when they will.

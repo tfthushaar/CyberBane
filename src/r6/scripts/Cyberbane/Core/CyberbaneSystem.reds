@@ -1079,7 +1079,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     let rtReset = CyberbaneRuntime.Get();
     if IsDefined(rtReset) && rtReset.TakeHardResetRequest(this.m_playthroughId) {
       this.HardReset();
-      CBMenuNote(game, "reputation wiped. Night City has never heard of you.", 6.0);
+      CBMenuNote(game, CBT(n"Cyberbane-CyberbaneSystem-ReputationWipedNightCityHasNever"), 6.0);
       this.GetPhone().Clear();
     }
     // "This save is another character" (1.8.3). After the reset, which gives the save a new
@@ -1137,6 +1137,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     // clinic in well under ten seconds, and the reaction systems read this.
     this.m_inSafeZone = CBPlayerInSafeZone(game);
     this.m_inSanctuary = CBComputeSanctuary(this, game);
+    // Home ground and a night at home (2.7.1, Spawn/HomeGround.reds): read every tick, like the safe area, because the
+    // arrivals gate reads it.
+    let homeBook = CBHomeBook.Get(game);
+    if IsDefined(homeBook) {
+      homeBook.Tick(this, game, heavyStreaming);
+    }
     if this.m_tickCount % 30 == 0 {
       CBRefreshJobPins(this, game);       // every active objective's pins, not only the tracked one
     }
@@ -1819,9 +1825,9 @@ public class CyberbaneSystem extends ScriptableSystem {
         svc.NoteForgetRival(this.m_playthroughId, pending, pr.recordID);
       }
     }
-    let note = "this save has its own records now. Nothing another character did follows you here.";
+    let note = CBT(n"Cyberbane-CyberbaneSystem-ThisSaveHasItsOwnRecords");
     if dropped > 0 {
-      note = s"this save has its own records now. \(dropped) Rival(s) from another character's deaths are gone.";
+      note = CBTf(n"Cyberbane-CyberbaneSystem-ThisSaveHasItsOwnRecords-2", [s"\(dropped)"]);
     }
     CBMenuNote(game, note, 6.0);
   }
@@ -2304,7 +2310,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
       this.m_purgeNoted = false;
       let removed = CBPurgeRivals(this, game);
-      CBMenuNote(game, s"cleared \(removed) rivals.", 4.0);
+      CBMenuNote(game, CBTf(n"Cyberbane-CyberbaneSystem-ClearedRivals", [s"\(removed)"]), 4.0);
     }
     if ArraySize(this.m_pendingForgets) > 0 {
       let forgot = 0;
@@ -2318,10 +2324,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
       ArrayClear(this.m_pendingForgets);
       if forgot == 1 {
-        CBMenuNote(game, s"forgot \(lastName).", 4.0);
+        CBMenuNote(game, CBTf(n"Cyberbane-CyberbaneSystem-Forgot", [s"\(lastName)"]), 4.0);
       } else {
         if forgot > 1 {
-          CBMenuNote(game, s"forgot \(forgot) rivals.", 4.0);
+          CBMenuNote(game, CBTf(n"Cyberbane-CyberbaneSystem-ForgotRivals", [s"\(forgot)"]), 4.0);
         }
       }
     }

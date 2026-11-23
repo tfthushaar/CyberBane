@@ -300,14 +300,14 @@ public class CBEventEngine {
       // On their own streets: only where they are, near V.
       let gangsHere = CBTurfGangsHere(sys);   // a local, never a temporary (UI/HubWeb.reds, CBWebPair)
       if !ArrayContains(gangsHere, a) {
-        this.m_why = s"\(NameToString(a)) have no streets here";
+        this.m_why = CBTf(n"Cyberbane-StreetEvents-HaveNoStreetsHere", [s"\(NameToString(a))"]);
         return false;
       }
     } else {
       a = CBTurfHolder(sys, game, district);
     }
     if Equals(a, n"") || !CBFactionFieldsSquads(a) || !CBFactionOn(a) {
-      this.m_why = s"no gang that fields people holds \(NameToString(district))";
+      this.m_why = CBTf(n"Cyberbane-StreetEvents-NoGangThatFieldsPeopleHolds", [s"\(NameToString(district))"]);
       return false;
     }
     // An informant's own gang runs them down: one of theirs, the hunters theirs too (2.4.5, [U12]).
@@ -331,19 +331,19 @@ public class CBEventEngine {
         }
       }
       if Equals(b, n"") {
-        this.m_why = s"\(NameToString(a)) have no rival gang that fields people";
+        this.m_why = CBTf(n"Cyberbane-StreetEvents-HaveNoRivalGangThatFields", [s"\(NameToString(a))"]);
         return false;
       }
       // Two gangs in a truce against V do not fight each other (Economy/War.reds, [36]).
       if CBIsFightKind(kind) && Equals(CBTrucePartner(game, a), b) {
-        this.m_why = s"\(NameToString(a)) and \(NameToString(b)) are in a truce";
+        this.m_why = CBTf(n"Cyberbane-StreetEvents-AndAreInATruce", [s"\(NameToString(a))", s"\(NameToString(b))"]);
         return false;
       }
     }
     if Equals(kind, CBEvArmsDeal()) {
       b = CBDealPartner(sys, a);
       if Equals(b, n"") {
-        this.m_why = s"nobody to deal with \(NameToString(a))";
+        this.m_why = CBTf(n"Cyberbane-StreetEvents-NobodyToDealWith", [s"\(NameToString(a))"]);
         return false;
       }
     }
@@ -353,7 +353,7 @@ public class CBEventEngine {
     let spot: Vector4;
     let placeName = "";
     if !CBEventFarPlace(sys, game, player, spot, placeName) && !CBWhereaboutsSpot(sys, game, player, spot) {
-      this.m_why = "no place for it in this district, clear of jobs and safe places";
+      this.m_why = CBT(n"Cyberbane-StreetEvents-NoPlaceForItInThis");
       return false;
     }
     let now = CBGameSeconds(game);
@@ -508,7 +508,7 @@ public class CBEventEngine {
     }
     // Cyberbane's own pin with TweakXL (UI/MapPins.reds, 2.5.0), and a gathering's own mark (UI/RivalPin.reds).
     // With the hour it starts (2.5.5): the pin goes up when the street hears of it, often an hour before.
-    let around = Equals(when, "now") ? ", now" : ", around " + when;
+    let around = CBWhenIsNow(game, ev.from) ? CBT(n"Cyberbane-StreetEvents-Now") : CBTf(n"Cyberbane-StreetEvents-Around", [when]);
     ev.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(CBEventCaption(ev) + around)), ev.at);
     ev.pinWhen = when;
     ev.pinned = true;
@@ -713,7 +713,7 @@ func CBEventFarPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
 
 // Where it is, in the word on it (2.6.8): by the place's name when it has one, else near here.
 public func CBEventWhere(ev: ref<CBStreetEvent>) -> String {
-  return IsDefined(ev) && StrLen(ev.placeName) > 0 ? "by " + ev.placeName : "near here";
+  return IsDefined(ev) && StrLen(ev.placeName) > 0 ? CBTf(n"Cyberbane-StreetEvents-By", [ev.placeName]) : CBT(n"Cyberbane-StreetEvents-NearHere");
 }
 
 // The place onto the street beside it (2.6.8): the nearest walkable ground within a few metres. Asked once V is near
@@ -802,11 +802,11 @@ func CBMeetReasonWords(ev: ref<CBStreetEvent>) -> String {
   let a = CBFactionLabel(ev.a);
   let b = CBFactionLabel(ev.b);
   switch ev.reason {
-    case 1: return s"over money \(a) owe \(b)";
-    case 2: return s"over one of \(CBPossessive(a)) people \(b) killed";
-    case 3: return "over a street they both want";
-    case 4: return "and the talk is about you";
-    default: return "over old business";
+    case 1: return CBTf(n"Cyberbane-StreetEvents-OverMoneyOwe", [s"\(a)", s"\(b)"]);
+    case 2: return CBTf(n"Cyberbane-StreetEvents-OverOneOfPeopleKilled", [s"\(CBPossessive(a))", s"\(b)"]);
+    case 3: return CBT(n"Cyberbane-StreetEvents-OverAStreetTheyBothWant");
+    case 4: return CBT(n"Cyberbane-StreetEvents-AndTheTalkIsAboutYou");
+    default: return CBT(n"Cyberbane-StreetEvents-OverOldBusiness");
   }
 }
 
@@ -832,31 +832,31 @@ func CBMeetCrashAngrier(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
 func CBMeetSettled(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
   let a = CBCapFirst(CBFactionLabel(ev.a));
   let b = CBFactionLabel(ev.b);
-  let line = s"\(a) and \(b) made their deal. Nobody stopped them.";
+  let line = CBTf(n"Cyberbane-StreetEvents-AndMadeTheirDealNobodyStopped", [s"\(a)", s"\(b)"]);
   if ev.reason == 1 {
     CBWarSpend(game, ev.a, CBConfig.WarDealValue());
     CBWarEarn(game, ev.b, CBConfig.WarDealValue());
-    line = s"\(a) paid \(b) what they owed. Their war chest is lighter for it.";
+    line = CBTf(n"Cyberbane-StreetEvents-PaidWhatTheyOwedTheirWar", [s"\(a)", s"\(b)"]);
   }
   if ev.reason == 2 {
     if RandF() < 0.5 {
-      line = s"\(a) and \(b) settled the killing with money. For now.";
+      line = CBTf(n"Cyberbane-StreetEvents-AndSettledTheKillingWithMoney", [s"\(a)", s"\(b)"]);
     } else {
       CBWeakenGang(sys, game, ev.a, CBConfig.MeetGangLoss() * 0.5);
       CBWeakenGang(sys, game, ev.b, CBConfig.MeetGangLoss() * 0.5);
-      line = s"The sit-down over the killing went bad. \(a) and \(b) bled each other on the way out.";
+      line = CBTf(n"Cyberbane-StreetEvents-TheSitDownOverTheKilling", [s"\(a)", s"\(b)"]);
     }
   }
   if ev.reason == 3 {
     CBBolsterGang(sys, game, RandF() < 0.5 ? ev.a : ev.b, CBEventBolster(CBEvRecruitment()) * 0.5);
-    line = s"\(a) and \(b) carved up the street between them.";
+    line = CBTf(n"Cyberbane-StreetEvents-AndCarvedUpTheStreetBetween", [s"\(a)", s"\(b)"]);
   }
   if ev.reason == 4 {
     let war = CBWarBook.Get(game);
     if CBCommonEnemyOn() && IsDefined(war) {
       let now = CBGameSeconds(game);
       war.SetTruce(ev.a, ev.b, now + CBConfig.SecondsPerDay());
-      line = s"\(a) and \(b) came out of it with a deal about you. They're working together for a while.";
+      line = CBTf(n"Cyberbane-StreetEvents-AndCameOutOfItWith", [s"\(a)", s"\(b)"]);
     }
   }
   if CBMessagesOn() {
@@ -867,16 +867,16 @@ func CBMeetSettled(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStre
 // The same from what is kept of it, for a place the map remembers (UI/MapPins.reds, 2.5.0).
 public func CBEventCaptionOf(kind: CName, gangA: CName, gangB: CName) -> String {
   let a = CBCapFirst(CBFactionLabel(gangA));
-  if Equals(kind, CBEvSitDown()) { return a + " and " + CBFactionLabel(gangB); }
-  if Equals(kind, CBEvFuneral()) { return a + ": a funeral"; }
-  if Equals(kind, CBEvCelebration()) { return a + " celebrating"; }
-  if Equals(kind, CBEvInitiation()) { return a + ": an initiation"; }
-  if Equals(kind, CBEvRecruitment()) { return a + " recruiting"; }
-  if Equals(kind, CBEvArmsDeal()) { return a + " and " + CBFactionLabel(gangB) + ": guns"; }
-  if Equals(kind, CBEvExecution()) { return a + ": an execution"; }
-  if Equals(kind, CBEvFrontLine()) { return a + " against " + CBFactionLabel(gangB); }
-  if Equals(kind, CBEvFugitive()) { return a + ": a hunt"; }
-  return a + ": a racket";
+  if Equals(kind, CBEvSitDown()) { return CBTf(n"Cyberbane-RivalEncounter-And", [a, CBFactionLabel(gangB)]); }
+  if Equals(kind, CBEvFuneral()) { return CBTf(n"Cyberbane-StreetEvents-AFuneral", [a]); }
+  if Equals(kind, CBEvCelebration()) { return CBTf(n"Cyberbane-StreetEvents-Celebrating", [a]); }
+  if Equals(kind, CBEvInitiation()) { return CBTf(n"Cyberbane-StreetEvents-AnInitiation", [a]); }
+  if Equals(kind, CBEvRecruitment()) { return CBTf(n"Cyberbane-StreetEvents-Recruiting", [a]); }
+  if Equals(kind, CBEvArmsDeal()) { return CBTf(n"Cyberbane-StreetEvents-AndGuns", [a, CBFactionLabel(gangB)]); }
+  if Equals(kind, CBEvExecution()) { return CBTf(n"Cyberbane-StreetEvents-AnExecution", [a]); }
+  if Equals(kind, CBEvFrontLine()) { return CBTf(n"Cyberbane-StreetEvents-Against", [a, CBFactionLabel(gangB)]); }
+  if Equals(kind, CBEvFugitive()) { return CBTf(n"Cyberbane-StreetEvents-AHunt", [a]); }
+  return CBTf(n"Cyberbane-StreetEvents-ARacket", [a]);
 }
 
 // Word of what's coming ([32]): what, who, and when.
@@ -884,47 +884,47 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
   let a = CBCapFirst(CBFactionLabel(ev.a));
   let when = CBWhenWord(GetGameInstance(), ev.from);
   let where = CBEventWhere(ev);
-  let past = StrLen(ev.placeName) > 0 ? "past " + ev.placeName : "past here";
+  let past = StrLen(ev.placeName) > 0 ? CBTf(n"Cyberbane-StreetEvents-Past", [ev.placeName]) : CBT(n"Cyberbane-StreetEvents-PastHere");
   if Equals(ev.kind, CBEvSitDown()) {
-    return s"\(a) and \(CBFactionLabel(ev.b)) are sitting down \(where) around \(when), \(CBMeetReasonWords(ev)). Crash it, and they both feel it.";
+    return CBTf(n"Cyberbane-StreetEvents-AndAreSittingDownAroundCrash", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(where)", s"\(when)", s"\(CBMeetReasonWords(ev))"]);
   }
   if Equals(ev.kind, CBEvFuneral()) {
     // "The one you put down" only when V did (2.6.0): a funeral is also owed for one of theirs killed by somebody else, a
     // Rival another Rival finished off screen, or one of V's own crew who came from them.
-    let whose = ev.byV ? " The one you put down." : "";
-    return CBLineOf([s"\(a) are burying one of theirs \(where) around \(when).\(whose)",
-                     s"Funeral for one of \(CBFactionLabel(ev.a)) \(where), \(when). Go pay your respects. Or don't."]);
+    let whose = ev.byV ? CBT(n"Cyberbane-StreetEvents-TheOneYouPutDown") : "";
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AreBuryingOneOfTheirsAround", [s"\(a)", s"\(where)", s"\(when)", s"\(whose)"]),
+                     CBTf(n"Cyberbane-StreetEvents-FuneralForOneOfGoPay", [s"\(CBFactionLabel(ev.a))", s"\(where)", s"\(when)"])]);
   }
   if Equals(ev.kind, CBEvCelebration()) {
-    return CBLineOf([s"\(a) are celebrating \(where) around \(when). They took some streets and they want everybody to know.",
-                     s"Party \(where), \(when). \(a) are drinking to a win."]);
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AreCelebratingAroundTheyTookSome", [s"\(a)", s"\(where)", s"\(when)"]),
+                     CBTf(n"Cyberbane-StreetEvents-PartyAreDrinkingToAWin", [s"\(where)", s"\(when)", s"\(a)"])]);
   }
   if Equals(ev.kind, CBEvInitiation()) {
-    return CBLineOf([s"\(a) are blooding new recruits \(where) around \(when). Somebody's going to get hurt.",
-                     s"Initiation \(where), \(when). \(a) want their new kids to prove something."]);
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AreBloodingNewRecruitsAroundSomebody", [s"\(a)", s"\(where)", s"\(when)"]),
+                     CBTf(n"Cyberbane-StreetEvents-InitiationWantTheirNewKidsTo", [s"\(where)", s"\(when)", s"\(a)"])]);
   }
   if Equals(ev.kind, CBEvRecruitment()) {
-    return CBLineOf([s"\(a) are signing up new blood \(where) around \(when). More of them on these streets after.",
-                     s"Recruiting drive \(where), \(when). \(a) want bodies."]);
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AreSigningUpNewBloodAround", [s"\(a)", s"\(where)", s"\(when)"]),
+                     CBTf(n"Cyberbane-StreetEvents-RecruitingDriveWantBodies", [s"\(where)", s"\(when)", s"\(a)"])]);
   }
   if Equals(ev.kind, CBEvArmsDeal()) {
-    return CBLineOf([s"\(a) are buying guns from \(CBFactionLabel(ev.b)) \(where) around \(when). Crash it and the crate is yours.",
-                     s"Arms deal \(where), \(when): \(a) and \(CBFactionLabel(ev.b)). Heavy crates, light guard."]);
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AreBuyingGunsFromAroundCrash", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(where)", s"\(when)"]),
+                     CBTf(n"Cyberbane-StreetEvents-ArmsDealAndHeavyCratesLight", [s"\(where)", s"\(when)", s"\(a)", s"\(CBFactionLabel(ev.b))"])]);
   }
   if Equals(ev.kind, CBEvExecution()) {
-    return CBLineOf([s"\(a) caught one of \(CBFactionLabel(ev.b)), and the poor soul gets a bullet \(where) around \(when). Stop it, or don't.",
-                     s"Execution \(where), \(when). \(a) want everybody to watch one of \(CBFactionLabel(ev.b)) die."]);
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-CaughtOneOfAndThePoor", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(where)", s"\(when)"]),
+                     CBTf(n"Cyberbane-StreetEvents-ExecutionWantEverybodyToWatchOne", [s"\(where)", s"\(when)", s"\(a)", s"\(CBFactionLabel(ev.b))"])]);
   }
   if Equals(ev.kind, CBEvFrontLine()) {
-    return CBLineOf([s"\(a) and \(CBFactionLabel(ev.b)) are going to war on a street \(where) around \(when). Whoever wins takes ground.",
-                     s"Street fight \(where), \(when): \(a) against \(CBFactionLabel(ev.b)). Pick a side, or keep your head down."]);
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AndAreGoingToWarOn", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(where)", s"\(when)"]),
+                     CBTf(n"Cyberbane-StreetEvents-StreetFightAgainstPickASide", [s"\(where)", s"\(when)", s"\(a)", s"\(CBFactionLabel(ev.b))"])]);
   }
   if Equals(ev.kind, CBEvFugitive()) {
-    return CBLineOf([s"\(a) are hunting somebody of \(CBFactionLabel(ev.b)) who crossed them. The runner comes \(past) around \(when).",
-                     s"Somebody's running from \(a) \(where), \(when). Help the runner, or let them have their way."]);
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AreHuntingSomebodyOfWhoCrossed", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(past)", s"\(when)"]),
+                     CBTf(n"Cyberbane-StreetEvents-SomebodySRunningFromHelpThe", [s"\(a)", s"\(where)", s"\(when)"])]);
   }
-  return CBLineOf([s"Word is \(a) run a racket \(where), collecting around \(when). Hit it and take the cash.",
-                   s"\(a) collect their take \(where) around \(when). Nobody's ever robbed them. Yet."]);
+  return CBLineOf([CBTf(n"Cyberbane-StreetEvents-WordIsRunARacketCollecting", [s"\(a)", s"\(where)", s"\(when)"]),
+                   CBTf(n"Cyberbane-StreetEvents-CollectTheirTakeAroundNobodyS", [s"\(a)", s"\(where)", s"\(when)"])]);
 }
 
 // A line for an overheard conversation while an event is coming and V is in its district ([32]).
@@ -937,16 +937,16 @@ public func CBEventWhisper(game: GameInstance) -> String {
     return "";
   }
   let a = CBFactionLabel(ev.a);
-  if Equals(ev.kind, CBEvFuneral()) { return "You hear " + a + " are burying one of theirs later? Somebody should send flowers."; }
-  if Equals(ev.kind, CBEvCelebration()) { return "Stay off that block later. " + CBCapFirst(a) + " are partying, and they get loud."; }
-  if Equals(ev.kind, CBEvInitiation()) { return "Some kid's getting jumped into " + a + " later. Poor bastard. Or poor whoever."; }
-  if Equals(ev.kind, CBEvRecruitment()) { return CBCapFirst(a) + " are looking for new blood. My cousin's thinking about it."; }
-  if Equals(ev.kind, CBEvArmsDeal()) { return "Crates came in off a truck for " + a + ". Guns, people say."; }
-  if Equals(ev.kind, CBEvRacket()) { return "Don't go near " + CBPossessive(a) + " collection spot later. They count the take there."; }
-  if Equals(ev.kind, CBEvExecution()) { return CBCapFirst(a) + " are executing somebody later. In the open. To make a point."; }
-  if Equals(ev.kind, CBEvFrontLine()) { return "Stay home later. " + CBCapFirst(a) + " and " + CBFactionLabel(ev.b) + " are going to settle it in the street."; }
-  if Equals(ev.kind, CBEvFugitive()) { return "Somebody crossed " + a + ". They're running the poor soul down later."; }
-  return "Heard " + a + " and " + CBFactionLabel(ev.b) + " are meeting. Could go either way.";
+  if Equals(ev.kind, CBEvFuneral()) { return CBTf(n"Cyberbane-StreetEvents-YouHearAreBuryingOneOf", [a]); }
+  if Equals(ev.kind, CBEvCelebration()) { return CBTf(n"Cyberbane-StreetEvents-StayOffThatBlockLaterAre", [CBCapFirst(a)]); }
+  if Equals(ev.kind, CBEvInitiation()) { return CBTf(n"Cyberbane-StreetEvents-SomeKidSGettingJumpedInto", [a]); }
+  if Equals(ev.kind, CBEvRecruitment()) { return CBTf(n"Cyberbane-StreetEvents-AreLookingForNewBloodMy", [CBCapFirst(a)]); }
+  if Equals(ev.kind, CBEvArmsDeal()) { return CBTf(n"Cyberbane-StreetEvents-CratesCameInOffATruck", [a]); }
+  if Equals(ev.kind, CBEvRacket()) { return CBTf(n"Cyberbane-StreetEvents-DonTGoNearCollectionSpot", [CBPossessive(a)]); }
+  if Equals(ev.kind, CBEvExecution()) { return CBTf(n"Cyberbane-StreetEvents-AreExecutingSomebodyLaterInThe", [CBCapFirst(a)]); }
+  if Equals(ev.kind, CBEvFrontLine()) { return CBTf(n"Cyberbane-StreetEvents-StayHomeLaterAndAreGoing", [CBCapFirst(a), CBFactionLabel(ev.b)]); }
+  if Equals(ev.kind, CBEvFugitive()) { return CBTf(n"Cyberbane-StreetEvents-SomebodyCrossedTheyReRunningThe", [a]); }
+  return CBTf(n"Cyberbane-StreetEvents-HeardAndAreMeetingCouldGo", [a, CBFactionLabel(ev.b)]);
 }
 
 // ---- Outcomes ------------------------------------------------------------------------------------------
@@ -959,7 +959,7 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
   }
   if Equals(ev.kind, CBEvAmbush()) {
     CBFileLog(sys, n"AmbushBeaten", CBGameSeconds(game), CBEventDistrict(sys, game), ev.a, 0.0);
-    CBEventSay(game, s"\(CBCapFirst(CBFactionLabel(ev.a))) were waiting for you on the way to your job. You walked through them.");
+    CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-WereWaitingForYouOnThe", [s"\(CBCapFirst(CBFactionLabel(ev.a)))"]));
     return;
   }
   CBWarEventCrashed(sys, game, ev);   // a favour asked for peace (Economy/War.reds, 2.4.0)
@@ -985,8 +985,8 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
     }
     if CBMessagesOn() {
       CBHearsayFromStreet(game, NotEquals(angrier, n"")
-        ? s"You crashed the sit-down between \(a) and \(CBFactionLabel(ev.b)). \(CBCapFirst(CBFactionLabel(angrier))) took it worst."
-        : s"You crashed the sit-down between \(a) and \(CBFactionLabel(ev.b)). Neither of them will forget it.", n"");
+        ? CBTf(n"Cyberbane-StreetEvents-YouCrashedTheSitDownBetween", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(CBCapFirst(CBFactionLabel(angrier)))"])
+        : CBTf(n"Cyberbane-StreetEvents-YouCrashedTheSitDownBetween-2", [s"\(a)", s"\(CBFactionLabel(ev.b))"]), n"");
     }
     CBLog.Info(n"Street", "V crashed a sit-down.");
     return;
@@ -1002,8 +1002,8 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
     }
     sys.AddCode(-CBConfig.FuneralCrashCode());
     CBFileLog(sys, n"FuneralCrashed", now, where, ev.a, 0.0);
-    CBEventSay(game, CBLineOf([s"You shot up a funeral. \(CBCapFirst(a)) will never forgive that. Nobody will forget it.",
-                               s"You hit \(CBPossessive(a)) funeral. Even people who hate them think that was low."]));
+    CBEventSay(game, CBLineOf([CBTf(n"Cyberbane-StreetEvents-YouShotUpAFuneralWill", [s"\(CBCapFirst(a))"]),
+                               CBTf(n"Cyberbane-StreetEvents-YouHitFuneralEvenPeopleWho", [s"\(CBPossessive(a))"])]));
     return;
   }
   if Equals(ev.kind, CBEvArmsDeal()) {
@@ -1014,7 +1014,7 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
       CBScheduleLoot(sys, game, crate, CBLootTierApex(), CBConfig.LootIconicChanceApex());
     }
     CBFileLog(sys, n"DealCrashed", now, where, ev.a, 0.0);
-    CBEventSay(game, s"You took the guns \(a) were buying. The crate's yours, and so is their grudge.");
+    CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-YouTookTheGunsWereBuying", [s"\(a)"]));
     return;
   }
   if Equals(ev.kind, CBEvRacket()) {
@@ -1023,16 +1023,16 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
     CBWarSpend(game, ev.a, Cast<Float>(take) * CBConfig.BagmanChestShare());
     CBTalkSlight(sys, game, ev.a, CBConfig.BagmanStandingLoss());
     CBFileLog(sys, n"RacketHit", now, where, ev.a, Cast<Float>(take));
-    CBSystemNote(game, s"you took their take: \(take)eb.", 5.0);
-    CBEventSay(game, s"You hit \(CBPossessive(a)) racket. Word is they're counting what's left.");
+    CBSystemNote(game, CBTf(n"Cyberbane-StreetEvents-YouTookTheirTakeEb", [s"\(take)"]), 5.0);
+    CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-YouHitRacketWordIsThey", [s"\(CBPossessive(a))"]));
     return;
   }
   if Equals(ev.kind, CBEvInitiation()) {
     sys.AddCode(CBConfig.InitiationStopCode());
   }
   CBFileLog(sys, n"EventCrashed", now, where, ev.a, 0.0);
-  CBEventSay(game, CBLineOf([s"You broke up \(CBPossessive(a)) \(CBEventNoun(ev.kind)). They felt that.",
-                             s"Whatever \(a) had planned near there, you ended it."]));
+  CBEventSay(game, CBLineOf([CBTf(n"Cyberbane-StreetEvents-YouBrokeUpTheyFeltThat", [s"\(CBPossessive(a))", s"\(CBEventNoun(ev.kind))"]),
+                             CBTf(n"Cyberbane-StreetEvents-WhateverHadPlannedNearThereYou", [s"\(a)"])]));
 }
 
 // The window closed without V: the gang had what it came for.
@@ -1043,7 +1043,7 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
   }
   if CBIsFightKind(ev.kind) {
     if ev.placed {
-      CBEventSay(game, s"Whatever \(a) started near there, it fizzled out. Nobody won.");
+      CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-WhateverStartedNearThereItFizzled", [s"\(a)"]));
     }
     return;
   }
@@ -1053,8 +1053,8 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
   }
   if Equals(ev.kind, CBEvFuneral()) {
     if !ev.approached {
-      CBEventSay(game, ev.byV ? s"\(CBCapFirst(a)) buried their dead. They said your name at the grave."
-                              : s"\(CBCapFirst(a)) buried their dead. Quietly, and among their own.");
+      CBEventSay(game, ev.byV ? CBTf(n"Cyberbane-StreetEvents-BuriedTheirDeadTheySaidYour", [s"\(CBCapFirst(a))"])
+                              : CBTf(n"Cyberbane-StreetEvents-BuriedTheirDeadQuietlyAndAmong", [s"\(CBCapFirst(a))"]));
     }
     return;
   }
@@ -1066,17 +1066,17 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
   if Equals(ev.kind, CBEvRacket()) {
     CBWarEarn(game, ev.a, Cast<Float>(CBConfig.RacketTakeBase()) * 3.0);
   }
-  CBEventSay(game, CBLineOf([s"\(CBCapFirst(a)) got their \(CBEventNoun(ev.kind)) done. They're stronger for it.",
-                             s"Nobody stopped \(CBPossessive(a)) \(CBEventNoun(ev.kind)). There are more of them on the street now."]));
+  CBEventSay(game, CBLineOf([CBTf(n"Cyberbane-StreetEvents-GotTheirDoneTheyReStronger", [s"\(CBCapFirst(a))", s"\(CBEventNoun(ev.kind))"]),
+                             CBTf(n"Cyberbane-StreetEvents-NobodyStoppedThereAreMoreOf", [s"\(CBPossessive(a))", s"\(CBEventNoun(ev.kind))"])]));
 }
 
 func CBEventNoun(kind: CName) -> String {
-  if Equals(kind, CBEvCelebration()) { return "party"; }
-  if Equals(kind, CBEvInitiation()) { return "initiation"; }
-  if Equals(kind, CBEvRecruitment()) { return "recruiting"; }
-  if Equals(kind, CBEvArmsDeal()) { return "deal"; }
-  if Equals(kind, CBEvRacket()) { return "collection"; }
-  return "business";
+  if Equals(kind, CBEvCelebration()) { return CBT(n"Cyberbane-StreetEvents-Party"); }
+  if Equals(kind, CBEvInitiation()) { return CBT(n"Cyberbane-StreetEvents-Initiation"); }
+  if Equals(kind, CBEvRecruitment()) { return CBT(n"Cyberbane-CrewBanner-Recruiting"); }
+  if Equals(kind, CBEvArmsDeal()) { return CBT(n"Cyberbane-StreetEvents-Deal"); }
+  if Equals(kind, CBEvRacket()) { return CBT(n"Cyberbane-StreetEvents-Collection"); }
+  return CBT(n"Cyberbane-StreetEvents-Business");
 }
 
 func CBEventBolster(kind: CName) -> Float {
@@ -1116,7 +1116,7 @@ public func CBEventTalkLines(game: GameInstance, t: ref<CBTalkTarget>) -> array<
   }
   // A front line squaring up (2.6.1): either side will take a gun on their side.
   if Equals(ev.kind, CBEvFrontLine()) && !ev.started && ev.vSide == 0 && CBEventSideOf(ev, t.npc) >= 0 {
-    let side = CBTalkMakeLine("[Side] I'm with you.", CBTalkActStandWith(), t"ChoiceCaptionParts.ReinforcementIcon");
+    let side = CBTalkMakeLine(CBT(n"Cyberbane-StreetEvents-SideIMWithYou"), CBTalkActStandWith(), t"ChoiceCaptionParts.ReinforcementIcon");
     side.important = true;
     ArrayPush(out, side);
     return out;
@@ -1124,7 +1124,7 @@ public func CBEventTalkLines(game: GameInstance, t: ref<CBTalkTarget>) -> array<
   if ev.approached || !Equals(ev.kind, CBEvFuneral()) {
     return out;
   }
-  let l = CBTalkMakeLine("[Respects] I'm sorry for your loss.", CBTalkActRespects(), t"ChoiceCaptionParts.HandshakeIcon");
+  let l = CBTalkMakeLine(CBT(n"Cyberbane-StreetEvents-RespectsIMSorryForYour"), CBTalkActRespects(), t"ChoiceCaptionParts.HandshakeIcon");
   l.important = true;
   ArrayPush(out, l);
   return out;
@@ -1134,7 +1134,7 @@ public func CBEventTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
   let life = CBStreetLifeFor(game);
   let ev = IsDefined(life) ? life.Events().Live() : null;
   if !IsDefined(ev) || ev.approached {
-    return CBTalkSay("You already said your piece.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-StreetEvents-YouAlreadySaidYourPiece"), n"");
   }
   ev.approached = true;
   CBCreditMercy(sys, ev.a, CBConfig.RespectsStanding());
@@ -1142,13 +1142,13 @@ public func CBEventTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
   CBFileLog(sys, n"PaidRespects", CBGameSeconds(game), CBEventDistrict(sys, game), ev.a, 0.0);
   // Nerve only when it was V who put them in the ground (2.6.0).
   if !ev.byV {
-    return CBTalkSay(CBLineOf(["Didn't expect you here. Thanks for coming.",
-                               "You didn't have to come. It's noticed.",
-                               "Kind of you. Say your piece and go."]), n"");
+    return CBTalkSay(CBLineOf([CBT(n"Cyberbane-StreetEvents-DidnTExpectYouHereThanks"),
+                               CBT(n"Cyberbane-StreetEvents-YouDidnTHaveToCome"),
+                               CBT(n"Cyberbane-StreetEvents-KindOfYouSayYourPiece")]), n"");
   }
-  return CBTalkSay(CBLineOf(["You've got some nerve. But you came. That counts for something.",
-                             "They'd have spat at you. I won't. Not today.",
-                             "Coming here took guts. Say what you came to say and go."]), n"");
+  return CBTalkSay(CBLineOf([CBT(n"Cyberbane-StreetEvents-YouVeGotSomeNerveBut"),
+                             CBT(n"Cyberbane-StreetEvents-TheyDHaveSpatAtYou"),
+                             CBT(n"Cyberbane-StreetEvents-ComingHereTookGutsSayWhat")]), n"");
 }
 
 // Has V hurt any of this event's people?
@@ -1185,7 +1185,7 @@ public func CBEventStandWith(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   let side = CBEventSideOf(ev, t.npc);
   let player = GetPlayer(game);
   if !IsDefined(ev) || ev.started || ev.vSide > 0 || side < 0 || !IsDefined(player) {
-    return CBTalkSay("Too late for that. Find cover.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-StreetEvents-TooLateForThatFindCover"), n"");
   }
   ev.vSide = side + 1;
   let pagent = player.GetAttitudeAgent();
@@ -1209,9 +1209,9 @@ public func CBEventStandWith(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   let mine = side == 0 ? ev.a : ev.b;
   let theirs = side == 0 ? ev.b : ev.a;
   CBLog.Info(n"Street", s"V stood with \(NameToString(mine)) at a front line against \(NameToString(theirs)).");
-  return CBTalkSay(CBLineOf([s"Then stay close. \(CBCapFirst(CBFactionLabel(theirs))) are about to find out.",
-                             "Good. We hit them now. Don't miss.",
-                             s"With you on our side? \(CBCapFirst(CBFactionLabel(theirs))) are done."]), n"");
+  return CBTalkSay(CBLineOf([CBTf(n"Cyberbane-StreetEvents-ThenStayCloseAreAboutTo", [s"\(CBCapFirst(CBFactionLabel(theirs)))"]),
+                             CBT(n"Cyberbane-StreetEvents-GoodWeHitThemNowDon"),
+                             CBTf(n"Cyberbane-StreetEvents-WithYouOnOurSideAre", [s"\(CBCapFirst(CBFactionLabel(theirs)))"])]), n"");
 }
 
 // A gang owes a funeral (a Rival of theirs slain, or a boss) or a celebration (a district taken). From the death
@@ -1419,7 +1419,7 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
     // The one alone is up while standing at all: running in fear is what the hunted and the condemned do.
     if !IsDefined(lone) || !CBStillStanding(lone) {
       if CBTakenOutByV(lone) {
-        CBEventSay(game, hunt ? s"You put down the one \(a) were hunting. They'll thank you, in their way." : s"You did \(CBPossessive(a)) killing for them.");
+        CBEventSay(game, hunt ? CBTf(n"Cyberbane-StreetEvents-YouPutDownTheOneWere", [s"\(a)"]) : CBTf(n"Cyberbane-StreetEvents-YouDidKillingForThem", [s"\(CBPossessive(a))"]));
         return true;
       }
       CBBolsterGang(sys, game, ev.a, CBConfig.EventBolster());
@@ -1428,7 +1428,7 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
       if ev.informant {
         CBInformantHuntOver(sys, game, ev.a, ev.informantRival, false);
       }
-      CBEventSay(game, hunt ? s"\(CBCapFirst(a)) ran down the one they were after." : s"\(CBCapFirst(a)) executed one of \(b). Everybody saw.");
+      CBEventSay(game, hunt ? CBTf(n"Cyberbane-StreetEvents-RanDownTheOneTheyWere", [s"\(CBCapFirst(a))"]) : CBTf(n"Cyberbane-StreetEvents-ExecutedOneOfEverybodySaw", [s"\(CBCapFirst(a))", s"\(b)"]));
       return true;
     }
     if aUp == 0 && aByV > 0 {
@@ -1443,16 +1443,16 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
       if ev.informant {
         CBInformantHuntOver(sys, game, ev.a, ev.informantRival, true);
       }
-      CBEventSay(game, hunt ? s"You stood between \(a) and the one they were hunting. \(CBCapFirst(b)) heard." : s"You stopped \(CBPossessive(a)) execution. \(CBCapFirst(b)) won't forget it.");
+      CBEventSay(game, hunt ? CBTf(n"Cyberbane-StreetEvents-YouStoodBetweenAndTheOne", [s"\(a)", s"\(CBCapFirst(b))"]) : CBTf(n"Cyberbane-StreetEvents-YouStoppedExecutionWonTForget", [s"\(CBPossessive(a))", s"\(CBCapFirst(b))"]));
       return true;
     }
     if aUp == 0 {
       // Their own fight, won by the one they meant to kill: nothing of V's in it.
-      CBEventSay(game, hunt ? s"The one \(a) were hunting fought them off." : s"\(CBPossessive(CBCapFirst(a))) prisoner turned the tables on them.");
+      CBEventSay(game, hunt ? CBTf(n"Cyberbane-StreetEvents-TheOneWereHuntingFoughtThem", [s"\(a)"]) : CBTf(n"Cyberbane-StreetEvents-PrisonerTurnedTheTablesOnThem", [s"\(CBPossessive(CBCapFirst(a)))"]));
       return true;
     }
     if hunt && IsDefined(lone) && CBStillStanding(lone) && Vector4.Distance(lone.GetWorldPosition(), ev.at) > CBConfig.FugitiveEscapeDistance() {
-      CBEventSay(game, s"The one \(a) were hunting got away. Not your doing.");
+      CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-TheOneWereHuntingGotAway", [s"\(a)"]));
       return true;
     }
     return false;
@@ -1473,15 +1473,15 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
         CBTalkWarm(sys, game, mine, CBConfig.FrontLineSideWarmth(), CBConfig.PostureAllied() + 1.0);
         CBTalkSlight(sys, game, loser, CBConfig.FrontLineSideCost());
         CBFileLog(sys, n"StoodWith", now, where, mine, Cast<Float>(pay));
-        CBEventSay(game, s"You stood with \(CBFactionLabel(mine)), and the street is theirs. \(pay)eb, and friends who saw it.");
+        CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-YouStoodWithAndTheStreet", [s"\(CBFactionLabel(mine))", s"\(pay)"]));
       } else {
         CBTalkSlight(sys, game, winner, CBConfig.FrontLineSideCost());
         CBFileLog(sys, n"StoodWithLost", now, where, mine, 0.0);
-        CBEventSay(game, s"You stood with \(CBFactionLabel(mine)), and they lost the street. \(CBCapFirst(CBFactionLabel(winner))) will remember whose side you were on.");
+        CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-YouStoodWithAndTheyLost", [s"\(CBFactionLabel(mine))", s"\(CBCapFirst(CBFactionLabel(winner)))"]));
       }
       return true;
     }
-    CBEventSay(game, s"\(CBCapFirst(CBFactionLabel(winner))) won the street fight against \(CBFactionLabel(loser)). The ground is theirs.");
+    CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-WonTheStreetFightAgainstThe", [s"\(CBCapFirst(CBFactionLabel(winner)))", s"\(CBFactionLabel(loser))"]));
     return true;
   }
   return false;
@@ -1492,9 +1492,9 @@ func CBEventLoneThanks(game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
   if !CBMessagesOn() {
     return;
   }
-  CBOverheard(game, CBWhisperSpeaker(ev.b), CBLineOf(["I owe you. I owe you my life, merc.",
-                                                      "Don't know why you did that. Thanks.",
-                                                      "I won't forget this. My people won't either."]));
+  CBOverheard(game, CBWhisperSpeaker(ev.b), CBLineOf([CBT(n"Cyberbane-StreetEvents-IOweYouIOweYou"),
+                                                      CBT(n"Cyberbane-StreetEvents-DonTKnowWhyYouDid"),
+                                                      CBT(n"Cyberbane-StreetEvents-IWonTForgetThisMy")]));
 }
 
 // ---- Power struggles ([31]) -----------------------------------------------------------------------------
@@ -1578,7 +1578,7 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
             fs.standing = ClampF(fs.standing - CBConfig.StruggleBackStanding(), -100.0, 100.0);
           }
           CBFileLog(sys, n"StruggleBoth", now, CBEventDistrict(sys, game), slain.faction, 0.0);
-          CBEventSay(game, s"You killed both of them. \(CBCapFirst(CBFactionLabel(slain.faction))) are tearing themselves apart.");
+          CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-YouKilledBothOfThemAre", [s"\(CBCapFirst(CBFactionLabel(slain.faction)))"]));
           book.Clear();
         }
         return;
@@ -1603,7 +1603,7 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
         book.Won(w.id);
         CBFileLog(sys, n"StruggleBacked", now, CBEventDistrict(sys, game), slain.faction, 0.0);
         if CBMessagesOn() {
-          CBPhoneSendAside(game, CBRivalDisplayName(content, w), "The chair's mine. You made that happen. " + CBCapFirst(CBFactionLabel(slain.faction)) + " won't forget it, and neither will I.", CBHudCyan());
+          CBPhoneSendAside(game, CBRivalDisplayName(content, w), CBTf(n"Cyberbane-StreetEvents-TheChairSMineYouMade", [CBCapFirst(CBFactionLabel(slain.faction))]), CBHudCyan());
         }
       }
       return;
@@ -1625,8 +1625,8 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
     let heirName = CBRivalDisplayName(content, heir);
     let rivalName = CBRivalDisplayName(content, rival);
     // Offers, not threats (2.5.6): nothing to answer by text; killing the other one is the answer.
-    CBPhoneSendAside(game, heirName, s"I run \(CBFactionLabel(slain.faction)) now. \(rivalName) doesn't think so. Kill them and I'll remember who helped.", CBHudCyan());
-    CBPhoneSendAside(game, rivalName, s"\(heirName) took a chair that should be mine. Kill them, and \(CBFactionLabel(slain.faction)) are your friends.", CBHudCyan());
+    CBPhoneSendAside(game, heirName, CBTf(n"Cyberbane-StreetEvents-IRunNowDoesnTThink", [s"\(CBFactionLabel(slain.faction))", s"\(rivalName)"]), CBHudCyan());
+    CBPhoneSendAside(game, rivalName, CBTf(n"Cyberbane-StreetEvents-TookAChairThatShouldBe", [s"\(heirName)", s"\(CBFactionLabel(slain.faction))"]), CBHudCyan());
   }
 }
 

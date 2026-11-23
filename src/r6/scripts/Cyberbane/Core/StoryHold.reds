@@ -47,16 +47,16 @@ public func CBStoryNotV() -> Int32 = 4
 // What the Hub and the log say about it.
 public func CBStoryLabel(reason: Int32) -> String {
   if reason == CBStoryScene() {
-    return "a scene is playing";
+    return CBT(n"Cyberbane-StoryHold-ASceneIsPlaying");
   }
   if reason == CBStoryRestricted() {
-    return "the story is directing what you can do";
+    return CBT(n"Cyberbane-StoryHold-TheStoryIsDirectingWhatYou");
   }
   if reason == CBStoryCompanion() {
-    return "somebody from the story is with you";
+    return CBT(n"Cyberbane-StoryHold-SomebodyFromTheStoryIsWith");
   }
   if reason == CBStoryNotV() {
-    return "you are not yourself right now";
+    return CBT(n"Cyberbane-StoryHold-YouAreNotYourselfRightNow");
   }
   return "";
 }
@@ -356,7 +356,7 @@ public func CBStoryStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
   if !anyLeft && sys.GetHuntState() != CBHuntNone() {
     // A ride (the metro, a cab, a seat the story gives V) took V away from them: the street says so (2.4.1, [42]).
     if removed > 0 && sys.GetStoryHold() == CBStoryRestricted() && CBToastsOn() {
-      CBHearsayFromStreet(game, "Whoever was after you lost you on the ride. They're still looking where you were.", n"");
+      CBHearsayFromStreet(game, CBT(n"Cyberbane-StoryHold-WhoeverWasAfterYouLostYou"), n"");
     }
     CBStoryResetHunt(sys);
   }

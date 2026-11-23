@@ -222,7 +222,7 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
               CBRivalKilledV(created, content, entry.at, entry.district);
               if CBMessagesOn() {
                 CBPhoneFromGang(game, entry.killerFaction,
-                  CBRivalDisplayName(content, created) + " put you in the ground once. Remember that next time.");
+                  CBTf(n"Cyberbane-DeathLedger-PutYouInTheGroundOnce", [CBRivalDisplayName(content, created)]));
               }
             }
           }

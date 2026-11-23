@@ -67,7 +67,8 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   st.lookedTick = sys.GetTickCount();
   // Never into the story, a job, a scene, a fight, a safe place or a car; and only with room for them.
   if sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game) || player.IsInCombat()
-     || sys.IsInSafeZone() || IsDefined(player.GetMountedVehicle()) || CBSpawnRoom(game) <= CBConfig.TurfPatrolKeepRoom() {
+     || sys.IsInSafeZone() || IsDefined(player.GetMountedVehicle()) || CBSpawnRoom(game) <= CBConfig.TurfPatrolKeepRoom()
+     || CBHomeKeepsOut(sys) {
     return;
   }
   let day = CBGameDay(game);
@@ -119,12 +120,12 @@ func CBHangoutStart(sys: ref<CyberbaneSystem>, game: GameInstance, st: ref<CBHan
   // A place pin only where their own markers would not show (Mark them on the map at Named only): with Everyone, each of
   // them already wears one, and a pin on top was the same thing twice.
   if IsDefined(ms) && CBMapMarkersOn() && NotEquals(CBMarkerScope(), ECBMarkerScope.Everyone) {
-    st.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(s"\(CBCapFirst(CBFactionLabel(gang))), hanging out")), st.at);
+    st.pin = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(CBTf(n"Cyberbane-Hangouts-HangingOut", [s"\(CBCapFirst(CBFactionLabel(gang)))"]))), st.at);
     st.pinned = true;
   }
   if CBMessagesOn() {
-    CBOverheard(game, "Passer-by", CBLineOf([s"Some of the \(CBFactionLabel(gang)) hang out round the corner, if you're looking for them.",
-                                             s"Looking for \(CBFactionLabel(gang))? A few of them are a street over. Usually are, this time of day."]));
+    CBOverheard(game, CBT(n"Cyberbane-Whispers-PasserBy"), CBLineOf([CBTf(n"Cyberbane-Hangouts-SomeOfTheHangOutRound", [s"\(CBFactionLabel(gang))"]),
+                                             CBTf(n"Cyberbane-Hangouts-LookingForAFewOfThem", [s"\(CBFactionLabel(gang))"])]));
   }
   CBLog.Info(n"Street", s"A few of \(NameToString(gang)) are hanging out near V.");
 }

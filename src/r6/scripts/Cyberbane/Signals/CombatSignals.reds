@@ -303,7 +303,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
       }
       CBFileLog(sysS, n"ShotSurrendered", CBGameSeconds(game), CBEventDistrict(sysS, game), CBClassifyFaction(puppet), 0.0);
       if CBMessagesOn() {
-        CBHearsayFromStreet(game, "You shot somebody with their hands up. People saw.", n"");
+        CBHearsayFromStreet(game, CBT(n"Cyberbane-CombatSignals-YouShotSomebodyWithTheirHands"), n"");
       }
     }
   }
@@ -502,7 +502,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let tierAfter = EnumInt(sys.GetScore().GetTier());
   if tierAfter != tierBefore {
     if tierAfter > tierBefore && CBMessagesOn() {
-      CBHearsayFromContact(game, "People have stopped asking who you are. On the street you are " + CBTierName(tierAfter) + " now.", n"");
+      CBHearsayFromContact(game, CBTf(n"Cyberbane-CombatSignals-PeopleHaveStoppedAskingWhoYou", [CBTierName(tierAfter)]), n"");
     }
     sys.SetLastNotifiedTier(tierAfter);
   }
@@ -514,10 +514,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // Notable kills the city remembers: gang bosses and MaxTac (spec §7, §9.10).
   if info.lethal && CBMessagesOn() {
     if info.victimClass == EnumInt(ECBVictimClass.Boss) {
-      CBHearsayFromStreet(game, "You took down somebody who mattered. That will be around by morning.", n"BossKill");
+      CBHearsayFromStreet(game, CBT(n"Cyberbane-CombatSignals-YouTookDownSomebodyWhoMattered"), n"BossKill");
     } else {
       if info.victimClass == EnumInt(ECBVictimClass.MaxTac) {
-        CBHearsayFromStreet(game, "You put down a MaxTac operative. Nobody does that twice and stays quiet.", n"MaxTacDown");
+        CBHearsayFromStreet(game, CBT(n"Cyberbane-CombatSignals-YouPutDownAMaxTacOperative"), n"MaxTacDown");
       }
     }
   }

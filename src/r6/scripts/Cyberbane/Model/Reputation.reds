@@ -424,7 +424,7 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
         fs.vendettaSince = MaxF(now, 1.0);
         CBFileLog(sys, n"Vendetta", now, CBEventDistrict(sys, game), fs.id, 0.0);
         if CBToastsOn() && CBFactionFieldsSquads(fs.id) && !CBTwrOwnsHostility(fs.id) {
-          CBPhoneDemandFromGang(game, fs.id, "You are dead to us. Every one of ours who sees you will try.");
+          CBPhoneDemandFromGang(game, fs.id, CBT(n"Cyberbane-Reputation-YouAreDeadToUsEvery"));
           // That message already carries the pay-off answer, so this gang has had its say.
           sys.NotePeaceOffered(fs.id);
         }

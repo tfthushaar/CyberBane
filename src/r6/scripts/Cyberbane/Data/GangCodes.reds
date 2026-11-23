@@ -192,81 +192,81 @@ public func CBCodeLines(sys: ref<CyberbaneSystem>, f: CName) -> String {
   if StrLen(respect) == 0 {
     return "";
   }
-  let out = "Their code: they respect " + respect + ".";
+  let out = CBTf(n"Cyberbane-GangCodes-TheirCodeTheyRespect", [respect]);
   let fs = sys.FindFaction(f);
   let learnt = "";
   if IsDefined(fs) && fs.kills > 0 {
-    learnt += "Never forgive " + CBCodeNeverShort(f) + ". ";
+    learnt += CBTf(n"Cyberbane-GangCodes-NeverForgive", [CBCodeNeverShort(f)]);
   }
   if IsDefined(fs) && (fs.kills >= 5 || sys.CrewBeaten(f)) {
-    learnt += "Fight " + CBCodeFightShort(f) + ". ";
+    learnt += CBTf(n"Cyberbane-GangCodes-Fight", [CBCodeFightShort(f)]);
   }
   if IsDefined(fs) && (fs.lastPeaceAt > 0.0 || fs.tributes > 0 || fs.spared > 0) {
-    learnt += "Peace: " + CBCodePeaceShort(f) + ".";
+    learnt += CBTf(n"Cyberbane-GangCodes-Peace", [CBCodePeaceShort(f)]);
   }
   return StrLen(learnt) > 0 ? out + "\n" + learnt : out;
 }
 
 func CBCodeRespectShort(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return "honour, family and a fair fight, and mercy most of all"; }
-  if Equals(f, n"TygerClaws") { return "business and face"; }
-  if Equals(f, n"Maelstrom") { return "chrome, the more on show the better"; }
-  if Equals(f, n"SixthStreet") { return "the neighbourhood and its people"; }
-  if Equals(f, n"Animals") { return "strength: fists over guns"; }
-  if Equals(f, n"VoodooBoys") { return "information"; }
-  if Equals(f, n"Mox") { return "looking after their own"; }
-  if Equals(f, n"Scavengers") { return "nothing, and nobody misses them"; }
-  if Equals(f, n"Wraiths") { return "the road"; }
-  if Equals(f, n"Aldecaldos") { return "family: a favour repaid, a harm remembered"; }
-  if Equals(f, n"Barghest") { return "discipline"; }
-  if Equals(f, n"Scrappers") { return "a good haul, and a chance to walk away"; }
+  if Equals(f, n"Valentinos") { return CBT(n"Cyberbane-GangCodes-HonourFamilyAndAFairFight"); }
+  if Equals(f, n"TygerClaws") { return CBT(n"Cyberbane-GangCodes-BusinessAndFace"); }
+  if Equals(f, n"Maelstrom") { return CBT(n"Cyberbane-GangCodes-ChromeTheMoreOnShowThe"); }
+  if Equals(f, n"SixthStreet") { return CBT(n"Cyberbane-GangCodes-TheNeighbourhoodAndItsPeople"); }
+  if Equals(f, n"Animals") { return CBT(n"Cyberbane-GangCodes-StrengthFistsOverGuns"); }
+  if Equals(f, n"VoodooBoys") { return CBT(n"Cyberbane-GangCodes-Information"); }
+  if Equals(f, n"Mox") { return CBT(n"Cyberbane-GangCodes-LookingAfterTheirOwn"); }
+  if Equals(f, n"Scavengers") { return CBT(n"Cyberbane-GangCodes-NothingAndNobodyMissesThem"); }
+  if Equals(f, n"Wraiths") { return CBT(n"Cyberbane-GangCodes-TheRoad"); }
+  if Equals(f, n"Aldecaldos") { return CBT(n"Cyberbane-GangCodes-FamilyAFavourRepaidAHarm"); }
+  if Equals(f, n"Barghest") { return CBT(n"Cyberbane-GangCodes-Discipline"); }
+  if Equals(f, n"Scrappers") { return CBT(n"Cyberbane-GangCodes-AGoodHaulAndAChance"); }
   return "";
 }
 
 func CBCodeNeverShort(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return "a shot surrender (double)"; }
-  if Equals(f, n"TygerClaws") { return "an insult"; }
-  if Equals(f, n"Maelstrom") { return "hidden chrome"; }
-  if Equals(f, n"SixthStreet") { return "hurting Santo Domingo's people"; }
-  if Equals(f, n"Animals") { return "a coward with a gun"; }
-  if Equals(f, n"VoodooBoys") { return "anyone they can't trace"; }
-  if Equals(f, n"Mox") { return "hurting Jig-Jig Street's people"; }
-  if Equals(f, n"Scavengers") { return "much: they run, and never come back as Rivals"; }
-  if Equals(f, n"Wraiths") { return "anyone on their road"; }
-  if Equals(f, n"Aldecaldos") { return "harm to family, twice as long"; }
-  if Equals(f, n"Barghest") { return "anything, but only in Dogtown"; }
-  if Equals(f, n"Scrappers") { return "a shot surrender, but only in Dogtown"; }
+  if Equals(f, n"Valentinos") { return CBT(n"Cyberbane-GangCodes-AShotSurrenderDouble"); }
+  if Equals(f, n"TygerClaws") { return CBT(n"Cyberbane-GangCodes-AnInsult"); }
+  if Equals(f, n"Maelstrom") { return CBT(n"Cyberbane-GangCodes-HiddenChrome"); }
+  if Equals(f, n"SixthStreet") { return CBT(n"Cyberbane-GangCodes-HurtingSantoDomingoSPeople"); }
+  if Equals(f, n"Animals") { return CBT(n"Cyberbane-GangCodes-ACowardWithAGun"); }
+  if Equals(f, n"VoodooBoys") { return CBT(n"Cyberbane-GangCodes-AnyoneTheyCanTTrace"); }
+  if Equals(f, n"Mox") { return CBT(n"Cyberbane-GangCodes-HurtingJigJigStreetSPeople"); }
+  if Equals(f, n"Scavengers") { return CBT(n"Cyberbane-GangCodes-MuchTheyRunAndNeverCome"); }
+  if Equals(f, n"Wraiths") { return CBT(n"Cyberbane-GangCodes-AnyoneOnTheirRoad"); }
+  if Equals(f, n"Aldecaldos") { return CBT(n"Cyberbane-GangCodes-HarmToFamilyTwiceAsLong"); }
+  if Equals(f, n"Barghest") { return CBT(n"Cyberbane-GangCodes-AnythingButOnlyInDogtown"); }
+  if Equals(f, n"Scrappers") { return CBT(n"Cyberbane-GangCodes-AShotSurrenderButOnlyIn"); }
   return "";
 }
 
 func CBCodeFightShort(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return "together, and kin take a fallen Rival's place"; }
-  if Equals(f, n"TygerClaws") { return "fast, and they'd rather pay than lose"; }
-  if Equals(f, n"Maelstrom") { return "for your chrome"; }
-  if Equals(f, n"SixthStreet") { return "like soldiers"; }
-  if Equals(f, n"Animals") { return "juiced, and barely afraid"; }
-  if Equals(f, n"VoodooBoys") { return "through the Net, few in person"; }
-  if Equals(f, n"Mox") { return "in small crews, never their best"; }
-  if Equals(f, n"Scavengers") { return "when you're hurt; they break when you're not"; }
-  if Equals(f, n"Wraiths") { return "on the road"; }
-  if Equals(f, n"Aldecaldos") { return "as one family"; }
-  if Equals(f, n"Barghest") { return "in numbers, never breaking or surrendering"; }
-  if Equals(f, n"Scrappers") { return "in the ruins they know, and break when it turns"; }
+  if Equals(f, n"Valentinos") { return CBT(n"Cyberbane-GangCodes-TogetherAndKinTakeAFallen"); }
+  if Equals(f, n"TygerClaws") { return CBT(n"Cyberbane-GangCodes-FastAndTheyDRatherPay"); }
+  if Equals(f, n"Maelstrom") { return CBT(n"Cyberbane-GangCodes-ForYourChrome"); }
+  if Equals(f, n"SixthStreet") { return CBT(n"Cyberbane-GangCodes-LikeSoldiers"); }
+  if Equals(f, n"Animals") { return CBT(n"Cyberbane-GangCodes-JuicedAndBarelyAfraid"); }
+  if Equals(f, n"VoodooBoys") { return CBT(n"Cyberbane-GangCodes-ThroughTheNetFewInPerson"); }
+  if Equals(f, n"Mox") { return CBT(n"Cyberbane-GangCodes-InSmallCrewsNeverTheirBest"); }
+  if Equals(f, n"Scavengers") { return CBT(n"Cyberbane-GangCodes-WhenYouReHurtTheyBreak"); }
+  if Equals(f, n"Wraiths") { return CBT(n"Cyberbane-GangCodes-OnTheRoad"); }
+  if Equals(f, n"Aldecaldos") { return CBT(n"Cyberbane-GangCodes-AsOneFamily"); }
+  if Equals(f, n"Barghest") { return CBT(n"Cyberbane-GangCodes-InNumbersNeverBreakingOrSurrendering"); }
+  if Equals(f, n"Scrappers") { return CBT(n"Cyberbane-GangCodes-InTheRuinsTheyKnowAnd"); }
   return "";
 }
 
 func CBCodePeaceShort(f: CName) -> String {
-  if Equals(f, n"Valentinos") { return "spare theirs, it counts more than eddies"; }
-  if Equals(f, n"TygerClaws") { return "pay, they're cheapest"; }
-  if Equals(f, n"Maelstrom") { return "pay"; }
-  if Equals(f, n"SixthStreet") { return "pay, and leave their neighbourhood alone"; }
-  if Equals(f, n"Animals") { return "pay"; }
-  if Equals(f, n"VoodooBoys") { return "pay"; }
-  if Equals(f, n"Mox") { return "leave their people alone, spare the ones who give up"; }
-  if Equals(f, n"Scavengers") { return "cheap, and nobody else minds"; }
-  if Equals(f, n"Wraiths") { return "pay, and stay off their road"; }
-  if Equals(f, n"Aldecaldos") { return "spare the family"; }
-  if Equals(f, n"Barghest") { return "pay a lot, or stay out of Dogtown"; }
-  if Equals(f, n"Scrappers") { return "cheap, and spare the ones who give up"; }
+  if Equals(f, n"Valentinos") { return CBT(n"Cyberbane-GangCodes-SpareTheirsItCountsMoreThan"); }
+  if Equals(f, n"TygerClaws") { return CBT(n"Cyberbane-GangCodes-PayTheyReCheapest"); }
+  if Equals(f, n"Maelstrom") { return CBT(n"Cyberbane-GangCodes-Pay"); }
+  if Equals(f, n"SixthStreet") { return CBT(n"Cyberbane-GangCodes-PayAndLeaveTheirNeighbourhoodAlone"); }
+  if Equals(f, n"Animals") { return CBT(n"Cyberbane-GangCodes-Pay"); }
+  if Equals(f, n"VoodooBoys") { return CBT(n"Cyberbane-GangCodes-Pay"); }
+  if Equals(f, n"Mox") { return CBT(n"Cyberbane-GangCodes-LeaveTheirPeopleAloneSpareThe"); }
+  if Equals(f, n"Scavengers") { return CBT(n"Cyberbane-GangCodes-CheapAndNobodyElseMinds"); }
+  if Equals(f, n"Wraiths") { return CBT(n"Cyberbane-GangCodes-PayAndStayOffTheirRoad"); }
+  if Equals(f, n"Aldecaldos") { return CBT(n"Cyberbane-GangCodes-SpareTheFamily"); }
+  if Equals(f, n"Barghest") { return CBT(n"Cyberbane-GangCodes-PayALotOrStayOut"); }
+  if Equals(f, n"Scrappers") { return CBT(n"Cyberbane-GangCodes-CheapAndSpareTheOnesWho"); }
   return "";
 }

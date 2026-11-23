@@ -90,7 +90,7 @@ public func CBClashTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
   let tick = sys.GetTickCount();
   let busy = !CBStreetClashesOn() || !CBWorldStable(game) || sys.IsInSafeZone() || sys.IsInSanctuary()
-          || CBArrivalsHeld(sys, game) || CBVDown(game);
+          || CBArrivalsHeld(sys, game) || CBHomeKeepsOut(sys) || CBVDown(game);
   if ArraySize(book.fightA) > 0 {
     CBClashWatch(sys, game, book, player, busy, tick);
     return;
@@ -280,10 +280,10 @@ func CBClashEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBo
   let w = CBCapFirst(CBFactionLabel(winner));
   let l = CBFactionLabel(loser);
   let here = CBHere(sys);
-  CBEventSay(game, CBLineOf([s"Did you see that? \(w) and \(l) went at it right here in \(here). \(w) walked away.",
-                             s"\(CBCapFirst(l)) lost a couple on the corner just now. \(w) are pushing into \(here).",
-                             s"Gang trouble in \(here)\(CBWhenTail(game)). \(w) came out of it on top.",
-                             s"That was \(w) and \(l). Whoever holds \(here) next week, it won't be quiet."]));
+  CBEventSay(game, CBLineOf([CBTf(n"Cyberbane-Clashes-DidYouSeeThatAndWent", [s"\(w)", s"\(l)", s"\(here)", s"\(w)"]),
+                             CBTf(n"Cyberbane-Clashes-LostACoupleOnTheCorner", [s"\(CBCapFirst(l))", s"\(w)", s"\(here)"]),
+                             CBTf(n"Cyberbane-Clashes-GangTroubleInCameOutOf", [s"\(here)", s"\(CBWhenTail(game))", s"\(w)"]),
+                             CBTf(n"Cyberbane-Clashes-ThatWasAndWhoeverHoldsNext", [s"\(w)", s"\(l)", s"\(here)"])]));
 }
 
 // For the Hub's web of gangs: a clash between these two lately.

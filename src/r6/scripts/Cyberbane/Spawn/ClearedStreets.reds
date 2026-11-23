@@ -118,8 +118,8 @@ public func CBNoteWipedOut(sys: ref<CyberbaneSystem>, game: GameInstance, gang: 
   book.Add(at, gang, now + CBConfig.ClearDays() * CBConfig.SecondsPerDay());
   CBLog.Info(n"Street", s"V cleared \(NameToString(gang)) off a spot (\(gangBodies) of theirs). They stay away for \(CBConfig.ClearDays()) days.");
   if CBMessagesOn() {
-    CBHearsayFromStreet(game, CBLineOf([s"Nobody from \(CBFactionLabel(gang)) will stand on that corner for a while. Not after what you did there.",
-                                        s"\(CBCapFirst(CBFactionLabel(gang))) are giving that block a wide berth. Can't say I blame them."]), n"Cleared");
+    CBHearsayFromStreet(game, CBLineOf([CBTf(n"Cyberbane-ClearedStreets-NobodyFromWillStandOnThat", [s"\(CBFactionLabel(gang))"]),
+                                        CBTf(n"Cyberbane-ClearedStreets-AreGivingThatBlockAWide", [s"\(CBCapFirst(CBFactionLabel(gang)))"])]), n"Cleared");
   }
 }
 

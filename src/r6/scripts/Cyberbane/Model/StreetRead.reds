@@ -158,11 +158,11 @@ public func CBReadStreet(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
 
 // How the street would put V's style in a few words. "" when there is nothing to say yet.
 public func CBStreetStyleWord(archetype: Int32) -> String {
-  if archetype == EnumInt(ECBArchetype.Butcher) { return "butcher"; }
-  if archetype == EnumInt(ECBArchetype.Ghost) { return "ghost"; }
-  if archetype == EnumInt(ECBArchetype.Professional) { return "professional"; }
-  if archetype == EnumInt(ECBArchetype.Chromed) { return "chromed-up merc"; }
-  if archetype == EnumInt(ECBArchetype.Netrunner) { return "netrunner"; }
-  if archetype == EnumInt(ECBArchetype.Brawler) { return "brawler"; }
+  if archetype == EnumInt(ECBArchetype.Butcher) { return CBT(n"Cyberbane-StreetRead-Butcher"); }
+  if archetype == EnumInt(ECBArchetype.Ghost) { return CBT(n"Cyberbane-StreetRead-Ghost"); }
+  if archetype == EnumInt(ECBArchetype.Professional) { return CBT(n"Cyberbane-StreetRead-Professional"); }
+  if archetype == EnumInt(ECBArchetype.Chromed) { return CBT(n"Cyberbane-StreetRead-ChromedUpMerc"); }
+  if archetype == EnumInt(ECBArchetype.Netrunner) { return CBT(n"Cyberbane-StreetRead-Netrunner"); }
+  if archetype == EnumInt(ECBArchetype.Brawler) { return CBT(n"Cyberbane-StreetRead-Brawler"); }
   return "";
 }

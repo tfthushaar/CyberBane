@@ -299,9 +299,9 @@ func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: C
   CBWarSpend(game, payer, Cast<Float>(amount));   // out of whoever pays (Economy/War.reds, 2.4.0)
   if CBToastsOn() {
     if NotEquals(payer, n"") {
-      CBPhoneFromAlly(game, payer, line + s" \(amount)eb, from us.");
+      CBPhoneFromAlly(game, payer, CBTf(n"Cyberbane-Loot-EbFromUs", [line, s"\(amount)"]));
     } else {
-      CBPhoneFromStreet(game, line + s" Somebody wanted that done. \(amount)eb.");
+      CBPhoneFromStreet(game, CBTf(n"Cyberbane-Loot-SomebodyWantedThatDoneEb", [line, s"\(amount)"]));
     }
   }
   CBLog.Info(n"Loot", s"Bounty paid: \(amount)eb for \(NameToString(victimFaction)).");
@@ -321,8 +321,8 @@ public func CBPayRivalBounty(sys: ref<CyberbaneSystem>, game: GameInstance, r: r
     }
   }
   let content = CBContent(game);
-  let name = IsDefined(content) ? CBRivalDisplayName(content, r) : "That one";
-  CBPayBounty(sys, game, r.faction, amount, s"Heard you put \(name) in the ground.");
+  let name = IsDefined(content) ? CBRivalDisplayName(content, r) : CBT(n"Cyberbane-Loot-ThatOne");
+  CBPayBounty(sys, game, r.faction, amount, CBTf(n"Cyberbane-Loot-HeardYouPutInTheGround", [s"\(name)"]));
 }
 
 // The last of an apex squad is down.
@@ -338,5 +338,5 @@ public func CBPayApexBounty(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   let amount = RoundF(Cast<Float>(CBConfig.BountyApexSquad()) * scale / 50.0) * 50;
   let label = CBFactionLabel(faction);
   CBPayBounty(sys, game, faction, amount,
-              StrLen(label) > 0 ? s"You took apart the best of \(label)." : "You took apart their best.");
+              StrLen(label) > 0 ? CBTf(n"Cyberbane-Loot-YouTookApartTheBestOf", [s"\(label)"]) : CBT(n"Cyberbane-Loot-YouTookApartTheirBest"));
 }

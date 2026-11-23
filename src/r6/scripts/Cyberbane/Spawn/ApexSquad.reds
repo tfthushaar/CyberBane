@@ -157,10 +157,10 @@ public func CBApexSeatRole(npc: ref<ScriptedPuppet>, out role: ECBApexRole) -> B
 
 public func CBRoleName(role: ECBApexRole) -> String {
   switch role {
-    case ECBApexRole.Tank: return "heavy";
-    case ECBApexRole.Blade: return "blade";
-    case ECBApexRole.Netrunner: return "netrunner";
-    default: return "shooter";
+    case ECBApexRole.Tank: return CBT(n"Cyberbane-Crew-Heavy");
+    case ECBApexRole.Blade: return CBT(n"Cyberbane-Crew-Blade");
+    case ECBApexRole.Netrunner: return CBT(n"Cyberbane-StreetRead-Netrunner");
+    default: return CBT(n"Cyberbane-Crew-Shooter");
   };
 }
 

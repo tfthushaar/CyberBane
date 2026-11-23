@@ -47,6 +47,8 @@ if ($offenders) {
 & (Join-Path $PSScriptRoot 'check_removed.ps1')
 # No NPC of ours carries a cyberware power (crash rule 5, see check_abilities.ps1).
 & (Join-Path $PSScriptRoot 'check_abilities.ps1')
+# Every key the code asks for is in the English, with as many slots as it passes (2.7.1, see check_loc.ps1).
+& (Join-Path $PSScriptRoot 'check_loc.ps1')
 
 # --- stamp the version -----------------------------------------------------
 # Read/write as UTF-8 without BOM via .NET so the file's encoding is preserved

@@ -220,11 +220,11 @@ public func CBFlawMethod(kind: Int32) -> Int32 {
 
 public func CBFlawWord(kind: Int32) -> String {
   switch kind {
-    case 1: return "a blade";
-    case 2: return "something heavy";
-    case 3: return "a bare fist";
-    case 4: return "a quickhack";
-    case 5: return "explosives";
+    case 1: return CBT(n"Cyberbane-StreetIntel-ABlade");
+    case 2: return CBT(n"Cyberbane-StreetIntel-SomethingHeavy");
+    case 3: return CBT(n"Cyberbane-StreetIntel-ABareFist");
+    case 4: return CBT(n"Cyberbane-StreetIntel-AQuickhack");
+    case 5: return CBT(n"Cyberbane-StreetIntel-Explosives");
   }
   return "";
 }
@@ -232,11 +232,11 @@ public func CBFlawWord(kind: Int32) -> String {
 // The flaw as a person says it.
 func CBFlawStory(kind: Int32) -> String {
   switch kind {
-    case 1: return "Old knife wound that never closed right. One good cut and they bleed out.";
-    case 2: return "Got a plate in their skull. Hit them with something heavy and that's it.";
-    case 3: return "Glass jaw. Everybody knows. One clean punch and they don't get up.";
-    case 4: return "Cheap chrome, never firewalled. Any netrunner could cook them.";
-    case 5: return "Half their body's scars from the last blast that caught them. One more explosion and they're done.";
+    case 1: return CBT(n"Cyberbane-StreetIntel-OldKnifeWoundThatNeverClosed");
+    case 2: return CBT(n"Cyberbane-StreetIntel-GotAPlateInTheirSkull");
+    case 3: return CBT(n"Cyberbane-StreetIntel-GlassJawEverybodyKnowsOneClean");
+    case 4: return CBT(n"Cyberbane-StreetIntel-CheapChromeNeverFirewalledAnyNetrunner");
+    case 5: return CBT(n"Cyberbane-StreetIntel-HalfTheirBodySScarsFrom");
   }
   return "";
 }
@@ -244,11 +244,11 @@ func CBFlawStory(kind: Int32) -> String {
 // The flaw as a file or a note has it.
 func CBFlawFile(kind: Int32) -> String {
   switch kind {
-    case 1: return "an open knife wound; a blade will finish them";
-    case 2: return "a cracked skull plate; something heavy will finish them";
-    case 3: return "a glass jaw; a clean punch will finish them";
-    case 4: return "unshielded chrome; a quickhack will finish them";
-    case 5: return "old burns; explosives will finish them";
+    case 1: return CBT(n"Cyberbane-StreetIntel-AnOpenKnifeWoundABlade");
+    case 2: return CBT(n"Cyberbane-StreetIntel-ACrackedSkullPlateSomethingHeavy");
+    case 3: return CBT(n"Cyberbane-StreetIntel-AGlassJawACleanPunch");
+    case 4: return CBT(n"Cyberbane-StreetIntel-UnshieldedChromeAQuickhackWillFinish");
+    case 5: return CBT(n"Cyberbane-StreetIntel-OldBurnsExplosivesWillFinishThem");
   }
   return "";
 }
@@ -276,7 +276,7 @@ public func CBFlawCheck(sys: ref<CyberbaneSystem>, game: GameInstance, p: ref<Sc
     book.LearnFlaw(r.id);
   }
   CBFileLog(sys, n"FlawKill", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
-  CBSystemNote(game, s"\(CBRivalDisplayName(sys.GetContent(), r)) had a fatal flaw: \(CBFlawWord(kind)). You found it.", 6.0);
+  CBSystemNote(game, CBTf(n"Cyberbane-StreetIntel-HadAFatalFlawYouFound", [s"\(CBRivalDisplayName(sys.GetContent(), r))", s"\(CBFlawWord(kind))"]), 6.0);
   CBLog.Info(n"Intel", s"Rival \(r.id) killed by their fatal flaw (\(CBFlawWord(kind))).");
 }
 
@@ -319,17 +319,17 @@ func CBIntelComingLine(sys: ref<CyberbaneSystem>, faction: CName) -> String {
     return "";
   }
   if Equals(sys.GetPendingSquadFaction(), faction) {
-    return "Ours are already on their way to you. Minutes.";
+    return CBT(n"Cyberbane-StreetIntel-OursAreAlreadyOnTheirWay");
   }
   if Equals(sys.GetPendingApexFaction(), faction) {
-    return "They're sending their best after you. Soon.";
+    return CBT(n"Cyberbane-StreetIntel-TheyReSendingTheirBestAfter");
   }
   if Equals(sys.GetLaneTarget(CBLaneSquad()), faction) {
-    return "Ours are putting a crew together for you. Won't be long.";
+    return CBT(n"Cyberbane-StreetIntel-OursArePuttingACrewTogether");
   }
   for r in sys.GetRivals() {
     if IsDefined(r) && Equals(r.faction, faction) && r.state == EnumInt(ECBRivalState.Hunting) {
-      return s"\(CBRivalDisplayName(sys.GetContent(), r))'s out looking for you. Asking everybody.";
+      return CBTf(n"Cyberbane-StreetIntel-SOutLookingForYouAsking", [s"\(CBRivalDisplayName(sys.GetContent(), r))"]);
     }
   }
   return "";
@@ -367,7 +367,7 @@ public func CBIntelGive(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
       out.kind = CBIntelLead();
       out.name = CBRivalDisplayName(content, lead);
       out.place = CBPlacePhrase(s.district);
-      out.pin = CBMapMarkersOn() ? " It's on your map." : "";
+      out.pin = CBMapMarkersOn() ? CBT(n"Cyberbane-StreetIntel-ItSOnYourMap") : "";
       CBLog.Info(n"Intel", s"Rival \(lead.id) given up by the street.");
       return out;
     }
@@ -387,14 +387,14 @@ func CBIntelSpoken(i: ref<CBIntel>) -> String {
     return s"\(i.name)? \(CBFlawStory(i.flaw))";
   }
   if i.kind == CBIntelLead() {
-    return CBPick3(s"\(i.name)'s lying low \(i.place). That's all I know!\(i.pin)",
-                          s"Okay! \(i.name), \(i.place). Let go!\(i.pin)",
-                          s"\(i.name) is holed up \(i.place). Please.\(i.pin)");
+    return CBPick3(CBTf(n"Cyberbane-StreetIntel-SLyingLowThatSAll", [s"\(i.name)", s"\(i.place)", s"\(i.pin)"]),
+                          CBTf(n"Cyberbane-StreetIntel-OkayLetGo", [s"\(i.name)", s"\(i.place)", s"\(i.pin)"]),
+                          CBTf(n"Cyberbane-StreetIntel-IsHoledUpPlease", [s"\(i.name)", s"\(i.place)", s"\(i.pin)"]));
   }
   if i.kind == CBIntelComing() {
     return i.coming;
   }
-  return CBPick3("I don't know anything! I swear!", "Nothing! I got nothing!", "I'm nobody, I don't hear anything!");
+  return CBPick3(CBT(n"Cyberbane-StreetIntel-IDonTKnowAnythingI"), CBT(n"Cyberbane-StreetIntel-NothingIGotNothing"), CBT(n"Cyberbane-StreetIntel-IMNobodyIDonT"));
 }
 
 // As a file, a note or a text has it.
@@ -403,7 +403,7 @@ func CBIntelWritten(i: ref<CBIntel>) -> String {
     return s"\(i.name): \(CBFlawFile(i.flaw)).";
   }
   if i.kind == CBIntelLead() {
-    return s"\(i.name) is lying low \(i.place).\(i.pin)";
+    return CBTf(n"Cyberbane-StreetIntel-IsLyingLow", [s"\(i.name)", s"\(i.place)", s"\(i.pin)"]);
   }
   return i.coming;
 }
@@ -444,7 +444,7 @@ public func CBRivalIdOfBody(sys: ref<CyberbaneSystem>, p: wref<ScriptedPuppet>) 
 public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let book = CBIntelBook.Get(game);
   if !IsDefined(book) || Equals(t.faction, n"") {
-    return CBTalkSay("Work for you? No.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-StreetIntel-WorkForYouNo"), n"");
   }
   let temper = CBTalkTemper(t.npc);
   let chance = CBTalkNerveGap(t) * 1.2 + CBConfig.TurnBase();
@@ -463,16 +463,16 @@ public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
     // The question is there for the crew alone when the informants are off (Reactions/StreetTalk.reds, 2.5.0).
     if !CBInformantsOn() {
       CBStandDownFromV(game, t.npc);
-      return CBTalkSay(CBPick2("Work for you? I... no. But I'll stay out of your way. Swear.",
-                               "Not that. Anything but that. I never saw you, alright?"), n"fear_beg");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetIntel-WorkForYouINoBut"),
+                               CBT(n"Cyberbane-StreetIntel-NotThatAnythingButThatI")), n"fear_beg");
     }
     let now = CBGameSeconds(game);
     book.AddInformant(0, t.faction, 2, now + RandRangeF(3.0, 6.0) * 3600.0, RandF() < CBConfig.InformantSetupChance());
     CBFileLog(sys, n"Turned", now, CBEventDistrict(sys, game), t.faction, 0.0);
     CBLog.Info(n"Intel", s"V turned one of \(NameToString(t.faction)) into an informant.");
     CBStandDownFromV(game, t.npc);
-    return CBTalkSay(CBPick2("Okay. Okay. I hear things, I'll text you. Just don't tell anyone.",
-                                    "Fine. I'll keep my ears open. Now get away from me before somebody sees."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetIntel-OkayOkayIHearThingsI"),
+                                    CBT(n"Cyberbane-StreetIntel-FineILlKeepMyEars")), n"");
   }
   // They tell their own instead.
   CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost() * CBCodeInsult(t.faction) * 0.5);
@@ -480,10 +480,10 @@ public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
   if IsDefined(lead) && lead.state != EnumInt(ECBRivalState.Hunting) {
     lead.state = EnumInt(ECBRivalState.Hunting);
     CBPhoneSendTinted(game, CBRivalDisplayName(sys.GetContent(), lead),
-                      "Heard you're trying to buy my people. Come buy me.", CBHudRed());
+                      CBT(n"Cyberbane-StreetIntel-HeardYouReTryingToBuy"), CBHudRed());
   }
   CBLog.Info(n"Intel", s"One of \(NameToString(t.faction)) would not be turned, and told their own.");
-  return CBTalkSay(CBPick2("Rat on my own? I'm telling them you asked.", "You picked the wrong one. Everybody's going to hear about this."), n"bump");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetIntel-RatOnMyOwnIM"), CBT(n"Cyberbane-StreetIntel-YouPickedTheWrongOneEverybody")), n"bump");
 }
 
 // ---- The hooks: who was grabbed, who was scanned ---------------------------------------------------------------
@@ -551,7 +551,7 @@ func CBIntelSay(game: GameInstance, slot: Int32, speaker: String, line: String, 
 
 func CBIntelSpeaker(faction: CName) -> String {
   let w = CBFactionMemberWord(faction);
-  return StrLen(w) > 0 ? w : "Ganger";
+  return StrLen(w) > 0 ? w : CBT(n"Cyberbane-Whispers-Ganger");
 }
 
 // ---- The street, on the talk tick -------------------------------------------------------------------------------
@@ -621,7 +621,7 @@ public class CBStreetIntel {
             pools.RequestSettingStatPoolValue(sid, gamedataStatPoolType.Health, MaxF(cur - CBConfig.GuardNerveLoss(), 10.0), GetPlayer(game), true);
           }
           CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), r),
-                     CBPick3("You'll pay for that!", "No! Get them, get them!", "That's it. Now it's personal."), 3.0);
+                     CBPick3(CBT(n"Cyberbane-StreetIntel-YouLlPayForThat"), CBT(n"Cyberbane-StreetIntel-NoGetThemGetThem"), CBT(n"Cyberbane-StreetIntel-ThatSItNowItS")), 3.0);
         }
       }
       i += 1;
@@ -759,7 +759,7 @@ public class CBStreetIntel {
     let left = Max(0, CeilF(this.m_grabNeed - this.m_grabFor));
     if left > 0 && left != this.m_grabShown {
       this.m_grabShown = left;
-      CBIntelSay(game, 2, "V", s"Talk. Where are your people hiding? (\(left))", 1.3);
+      CBIntelSay(game, 2, "V", CBTf(n"Cyberbane-StreetIntel-TalkWhereAreYourPeopleHiding", [s"\(left)"]), 1.3);
       return;
     }
     if this.m_grabFor < this.m_grabNeed {
@@ -769,7 +769,7 @@ public class CBStreetIntel {
     this.m_grab = null;
     let speaker = CBIntelSpeaker(faction);
     if temper == CBTalkTemperLoyal() {
-      CBIntelSay(game, 3, speaker, CBPick2("Go to hell. I'm not telling you anything.", "Do it, then. I'm not talking."), 5.0);
+      CBIntelSay(game, 3, speaker, CBPick2(CBT(n"Cyberbane-StreetIntel-GoToHellIMNot"), CBT(n"Cyberbane-StreetIntel-DoItThenIMNot")), 5.0);
       CBLog.Info(n"Intel", "A loyal ganger said nothing in V's grip.");
       return;
     }
@@ -798,7 +798,7 @@ public class CBStreetIntel {
       this.m_down = p;
       this.m_downFor = 0.0;
       if !p.IsDead() {
-        CBIntelSay(game, 2, "V", "Who sent you? Talk, and I call you a trauma team.", 3.0);
+        CBIntelSay(game, 2, "V", CBT(n"Cyberbane-StreetIntel-WhoSentYouTalkAndI"), 3.0);
       }
       return;
     }
@@ -813,15 +813,15 @@ public class CBStreetIntel {
       // Only a Rival's body has anything on it worth finding.
       let i = CBIntelGive(sys, game, player, faction, true, CBRivalIdOfBody(sys, p));
       if i.kind == CBIntelNone() {
-        CBSystemNote(game, "Nothing on the body worth having.", 4.0);
+        CBSystemNote(game, CBT(n"Cyberbane-StreetIntel-NothingOnTheBodyWorthHaving"), 4.0);
         return;
       }
-      CBSystemNote(game, "On the body, a burner phone: " + CBIntelWritten(i), 8.0);
+      CBSystemNote(game, CBTf(n"Cyberbane-StreetIntel-OnTheBodyABurnerPhone", [CBIntelWritten(i)]), 8.0);
       CBLog.Info(n"Intel", "A Rival's body carried word of another.");
       return;
     }
     if CBTalkTemper(p) == CBTalkTemperLoyal() {
-      CBIntelSay(game, 3, CBIntelSpeaker(faction), "...go to hell...", 4.0);
+      CBIntelSay(game, 3, CBIntelSpeaker(faction), CBT(n"Cyberbane-StreetIntel-GoToHell"), 4.0);
       return;
     }
     let i = CBIntelGive(sys, game, player, faction, false, CBRivalIdOfBody(sys, p));
@@ -901,7 +901,7 @@ public class CBStreetIntel {
         if gang && RandF() < CBConfig.IntelScanChance() {
           let i = CBIntelGive(sys, game, player, faction, true, CBRivalIdOfBody(sys, p));
           if i.kind != CBIntelNone() {
-            CBSystemNote(game, "Scan: their messages mention " + CBIntelWritten(i), 8.0);
+            CBSystemNote(game, CBTf(n"Cyberbane-StreetIntel-ScanTheirMessagesMention", [CBIntelWritten(i)]), 8.0);
             CBLog.Info(n"Intel", "A scan turned something up.");
           }
         }
@@ -1052,19 +1052,19 @@ public class CBStreetIntel {
     // has bought peace from, come round to V, or switched off. Otherwise the last tip is a real one.
     if last && book.InformantSetup(k) && CBGangMaySend(sys, faction) && Equals(sys.GetPendingSquadFaction(), n"") {
       let fake = CBDistrictAt(RandRange(0, CBDistrictCount()));
-      CBPhoneSendTinted(game, sender, s"Last one, then we're square. Somebody you want is waiting \(CBPlacePhrase(fake)). Go now.", CBHudCyan());
+      CBPhoneSendTinted(game, sender, CBTf(n"Cyberbane-StreetIntel-LastOneThenWeReSquare", [s"\(CBPlacePhrase(fake))"]), CBHudCyan());
       CBHuntBegin(sys, game, faction);
       sys.SetPendingSquad(faction, CBWarningTicks(CBConfig.CrewWarningTicks()));
       sys.SetHuntGrade(CBCrewGrade(sys, faction));
-      CBHearsayFromStreet(game, s"That informant of yours? Sold you to \(CBFactionLabel(faction)). They're coming.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-StreetIntel-ThatInformantOfYoursSoldYou", [s"\(CBFactionLabel(faction))"]), n"");
       CBLog.Info(n"Intel", "An informant's last tip was a set-up.");
       book.RemoveInformant(k);
       return;
     }
     let i = CBIntelGive(sys, game, player, about, false, rivalId);   // never a tip about themselves
-    let body = i.kind == CBIntelNone() ? "Quiet out there. Nothing worth your time yet." : CBIntelWritten(i);
+    let body = i.kind == CBIntelNone() ? CBT(n"Cyberbane-StreetIntel-QuietOutThereNothingWorthYour") : CBIntelWritten(i);
     if last {
-      body += " That's it. We're square.";
+      body += CBT(n"Cyberbane-StreetIntel-ThatSItWeReSquare");
       book.RemoveInformant(k);
     } else {
       book.SpendTip(k, now + RandRangeF(10.0, 24.0) * 3600.0);
@@ -1083,7 +1083,7 @@ func CBInformantSender(sys: ref<CyberbaneSystem>, rivalId: Int32, faction: CName
       return CBRivalDisplayName(sys.GetContent(), r);
     }
   }
-  return CBIntelSpeaker(faction) + " on the inside";
+  return CBTf(n"Cyberbane-StreetIntel-OnTheInside", [CBIntelSpeaker(faction)]);
 }
 
 func CBTalkBubbleIcon() -> TweakDBID {
@@ -1105,7 +1105,7 @@ public func CBIntelDebtor(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<
   book.AddInformant(r.id, r.faction, RandRange(2, 4), now + RandRangeF(4.0, 8.0) * 3600.0,
                     RandF() < CBConfig.InformantSetupChance());
   if CBToastsOn() {
-    CBPhoneSendTinted(game, name, "You let me walk. Twice. I don't forget that. I hear things, and you'll hear them too.", CBHudCyan());
+    CBPhoneSendTinted(game, name, CBT(n"Cyberbane-StreetIntel-YouLetMeWalkTwiceI"), CBHudCyan());
   }
   CBLog.Info(n"Intel", s"Rival \(r.id) owes V and will text tips.");
 }

@@ -939,10 +939,10 @@ func CBSeesThroughDisguise(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>,
     // What they saw through: the mask, or their own colours on V (either may be what covered V).
     let masked = CBPlayerMasked(game);
     CBOverheard(game, CBWhisperSpeaker(faction), masked
-      ? CBPick3("Nice mask. I'd know that walk anywhere.", "You think a scrap of cloth fools me? I know who you are.",
-                "Took me a second. Not two. Hello, merc.")
-      : CBPick3("Wearing our colours doesn't make you one of us. I see you.", "Nice jacket. Shame about who's in it.",
-                "Took me a second. Not two. Hello, merc."));
+      ? CBPick3(CBT(n"Cyberbane-Director-NiceMaskIDKnowThat"), CBT(n"Cyberbane-Director-YouThinkAScrapOfCloth"),
+                CBT(n"Cyberbane-Director-TookMeASecondNotTwo"))
+      : CBPick3(CBT(n"Cyberbane-Director-WearingOurColoursDoesnTMake"), CBT(n"Cyberbane-Director-NiceJacketShameAboutWhoS"),
+                CBT(n"Cyberbane-Director-TookMeASecondNotTwo")));
   }
   return true;
 }

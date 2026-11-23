@@ -108,18 +108,18 @@ public func CBWarWords(game: GameInstance, gang: CName) -> String {
   let out = "";
   if CBWarChestOn() {
     let chest = book.Chest(gang);
-    out = chest < CBConfig.WarChestBroke() ? "broke" : (chest > CBConfig.WarChestFlush() ? "flush" : "counting every eddie");
+    out = chest < CBConfig.WarChestBroke() ? CBT(n"Cyberbane-War-Broke") : (chest > CBConfig.WarChestFlush() ? CBT(n"Cyberbane-War-Flush") : CBT(n"Cyberbane-War-CountingEveryEddie"));
     let men = book.Men(gang);
     if men < 50.0 {
-      out += men < CBConfig.WarMenFloor() ? ", nobody left to send" : ", ranks thin";
+      out += men < CBConfig.WarMenFloor() ? CBT(n"Cyberbane-War-NobodyLeftToSend") : CBT(n"Cyberbane-War-RanksThin");
     }
   }
   if CBBackingOn() && Equals(book.Backed(), gang) {
-    out += StrLen(out) > 0 ? ", and you back them" : "you back them";
+    out += StrLen(out) > 0 ? CBT(n"Cyberbane-War-AndYouBackThem") : CBT(n"Cyberbane-War-YouBackThem");
   }
   let truce = book.TruceWith(gang, CBGameSeconds(game));
   if NotEquals(truce, n"") && CBCommonEnemyOn() {
-    out += ", in a truce with " + CBFactionLabel(truce) + " against you";
+    out += CBTf(n"Cyberbane-War-InATruceWithAgainstYou", [CBFactionLabel(truce)]);
   }
   return out;
 }
@@ -189,8 +189,8 @@ func CBWarBackedCut(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBW
   CBStreetGiveMoney(game, cut);
   CBFileLog(sys, n"WeeklyCut", now, CBEventDistrict(sys, game), gang, Cast<Float>(cut));
   if CBToastsOn() {
-    let plural = streets == 1 ? "district" : "districts";
-    CBPhoneFromAlly(game, gang, s"Your cut for the week: \(cut)eb. \(streets) \(plural) ours, thanks to you.");
+    let plural = streets == 1 ? CBT(n"Cyberbane-War-District") : CBT(n"Cyberbane-War-Districts");
+    CBPhoneFromAlly(game, gang, CBTf(n"Cyberbane-War-YourCutForTheWeekEb", [s"\(cut)", s"\(streets)", s"\(plural)"]));
   }
 }
 
@@ -228,7 +228,7 @@ func CBWarOwnStreets(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
         mask = CBMaskSet(mask, i);
         if !CBMaskHas(book.OwnMask(), i) {
           CBFileLog(sys, n"OwnStreet", now, d, n"", 0.0);
-          CBEventSay(game, s"Nobody runs \(CBDistrictLabel(d)) any more but you. The gangs pass through on your say-so.");
+          CBEventSay(game, CBTf(n"Cyberbane-War-NobodyRunsAnyMoreButYou", [s"\(CBDistrictLabel(d))"]));
         }
       }
     }
@@ -254,7 +254,7 @@ func CBWarOwnStreets(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
     }
     CBStreetGiveMoney(game, toll);
     CBFileLog(sys, n"OwnToll", now, CBEventDistrict(sys, game), n"", Cast<Float>(toll));
-    CBEventSay(game, s"The gangs paid their way through your streets this week: \(toll)eb.");
+    CBEventSay(game, CBTf(n"Cyberbane-War-TheGangsPaidTheirWayThrough", [s"\(toll)"]));
   }
 }
 
@@ -278,7 +278,7 @@ func CBWarTruceRoll(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBW
         if CBTruceReady(score, other) && IsDefined(sys.FindFaction(other)) {
           book.SetTruce(fs.id, other, now + CBConfig.TruceDays() * CBConfig.SecondsPerDay());
           CBFileLog(sys, n"Truce", now, CBEventDistrict(sys, game), fs.id, 0.0);
-          CBEventSay(game, s"\(CBCapFirst(CBFactionLabel(fs.id))) and \(CBFactionLabel(other)) have stopped killing each other. They're coming for you together.");
+          CBEventSay(game, CBTf(n"Cyberbane-War-AndHaveStoppedKillingEachOther", [s"\(CBCapFirst(CBFactionLabel(fs.id)))", s"\(CBFactionLabel(other))"]));
           return;
         }
       }
@@ -343,7 +343,7 @@ public func CBSettlePeace(sys: ref<CyberbaneSystem>, game: GameInstance, gang: C
   CBCallOffGang(sys, game, gang);
   CBFileLog(sys, n"PeaceFavour", fs.lastPeaceAt, CBEventDistrict(sys, game), gang, 0.0);
   if CBToastsOn() {
-    CBPhoneFromAlly(game, gang, "You did what we asked. We're square. For now.");
+    CBPhoneFromAlly(game, gang, CBT(n"Cyberbane-War-YouDidWhatWeAskedWe"));
   }
 }
 
@@ -383,7 +383,7 @@ func CBWarProtection(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
       CBProvoke(sys, game, n"TygerClaws");
       CBFileLog(sys, n"ProtectionRefused", now, CBEventDistrict(sys, game), n"TygerClaws", 0.0);
       if CBToastsOn() {
-        CBPhoneFromGang(game, n"TygerClaws", "You didn't pay. That's bad for business. Yours.");
+        CBPhoneFromGang(game, n"TygerClaws", CBT(n"Cyberbane-War-YouDidnTPayThatS"));
       }
       book.SetProtect(0.0, 0, now);
     }
@@ -397,7 +397,7 @@ func CBWarProtection(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
   let amount = RoundF(CBConfig.ProtectionBase() + score.GetRenown() * CBConfig.ProtectionPerRenown());
   book.SetProtect(now + CBConfig.ProtectionDays() * CBConfig.SecondsPerDay(), amount, now);
   if CBToastsOn() {
-    CBPhoneFromGang(game, n"TygerClaws", s"You work Japantown, you pay the Claws. \(amount)eb, to any of ours on the street, in the next two days. Don't make us come asking.");
+    CBPhoneFromGang(game, n"TygerClaws", CBTf(n"Cyberbane-War-YouWorkJapantownYouPayThe", [s"\(amount)"]));
   }
 }
 
@@ -421,7 +421,7 @@ public func CBWarTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref
   let now = CBGameSeconds(game);
   // Protection money, to any Claw.
   if Equals(t.faction, n"TygerClaws") && book.ProtectDue() > 0.0 {
-    let l = CBTalkMakeLine(s"[Pay] \(book.ProtectAmount())eb. Protection.", CBTalkActProtection(), t"ChoiceCaptionParts.PayIcon");
+    let l = CBTalkMakeLine(CBTf(n"Cyberbane-War-PayEbProtection", [s"\(book.ProtectAmount())"]), CBTalkActProtection(), t"ChoiceCaptionParts.PayIcon");
     l.inactive = CBTalkMoney(game) < book.ProtectAmount();
     l.important = true;
     ArrayPush(out, l);
@@ -429,19 +429,19 @@ public func CBWarTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref
   // Backing them: a gang that likes V, not already backed, a week after the last change of heart.
   if CBBackingOn() && t.mood == CBTalkFriendly() && NotEquals(book.Backed(), t.faction)
      && (Equals(book.Backed(), n"") || now >= book.BackedSince() + 7.0 * CBConfig.SecondsPerDay()) {
-    ArrayPush(out, CBTalkMakeLine("[Side with them] Your war is my war.", CBTalkActBack(), t"ChoiceCaptionParts.HandshakeIcon"));
+    ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-War-SideWithThemYourWarIs"), CBTalkActBack(), t"ChoiceCaptionParts.HandshakeIcon"));
   }
   // The lie: one of a gang at war with somebody, not hostile to V.
   if CBInciteOn() && t.mood != CBTalkHostile() && now >= book.InciteUntil() {
     let enemy = CBWarIncitable(sys, t.faction);
     if NotEquals(enemy, n"") {
-      ArrayPush(out, CBTalkMakeLine("[Lie] " + CBCapFirst(CBFactionLabel(enemy)) + " are planning a hit on you.", CBTalkActIncite(),
+      ArrayPush(out, CBTalkMakeLine(CBTf(n"Cyberbane-War-LieArePlanningAHitOn", [CBCapFirst(CBFactionLabel(enemy))]), CBTalkActIncite(),
                                     t"ChoiceCaptionParts.ClueIcon"));
     }
   }
   // Terms: a gang at war with V that would take a favour instead of eddies.
   if t.mood == CBTalkHostile() && CBPeaceQuote(sys, game, t.faction) >= 0 && NotEquals(book.FavourFor(), t.faction) {
-    ArrayPush(out, CBTalkMakeLine("[Deal] What would it take to end this?", CBTalkActTerms(), t"ChoiceCaptionParts.HandshakeIcon"));
+    ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-War-DealWhatWouldItTakeTo"), CBTalkActTerms(), t"ChoiceCaptionParts.HandshakeIcon"));
   }
   return out;
 }
@@ -463,15 +463,15 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
   let book = CBWarBook.Get(game);
   let now = CBGameSeconds(game);
   if !IsDefined(book) {
-    return CBTalkSay("Not now.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-War-NotNow"), n"");
   }
   if choice == CBTalkActProtection() {
     let amount = book.ProtectAmount();
     if book.ProtectDue() <= 0.0 {
-      return CBTalkSay("You're paid up. Don't worry about it.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-War-YouRePaidUpDonT"), n"");
     }
     if !CBTalkTakeMoney(game, player, amount) {
-      return CBTalkSay("That's short. Come back with all of it.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-War-ThatSShortComeBackWith"), n"");
     }
     book.SetProtect(0.0, 0, now);
     CBWarEarn(game, n"TygerClaws", Cast<Float>(amount));
@@ -481,8 +481,8 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
     }
     CBFileLog(sys, n"ProtectionPaid", now, CBEventDistrict(sys, game), n"TygerClaws", Cast<Float>(amount));
     CBCalmTowardsV(game, t.npc, 1);   // a paying customer is nobody's target, starting with the one paid (2.6.0)
-    return CBTalkSay(CBLineOf(["Pleasure doing business. Japantown's safe for you this week.",
-                               "Smart. Nobody of ours bothers a paying customer."]), n"");
+    return CBTalkSay(CBLineOf([CBT(n"Cyberbane-War-PleasureDoingBusinessJapantownSSafe"),
+                               CBT(n"Cyberbane-War-SmartNobodyOfOursBothersA")]), n"");
   }
   if choice == CBTalkActBack() {
     let old = book.Backed();
@@ -497,38 +497,38 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
     CBFileLog(sys, n"Backed", now, CBEventDistrict(sys, game), t.faction, 0.0);
     CBLog.Info(n"Model", s"V backs \(NameToString(t.faction)) (was \(NameToString(old))).");
     CBCalmTowardsV(game, t.npc, 1);   // on their side now: the one V shook on it with stands down (2.6.0)
-    return CBTalkSay(CBLineOf(["Then you're with us. Hurt our enemies and you'll get your cut.",
-                               "Good. Every street we take, you get a piece.",
-                               "Welcome to the war, choom. Our enemies are yours now."]), n"greeting");
+    return CBTalkSay(CBLineOf([CBT(n"Cyberbane-War-ThenYouReWithUsHurt"),
+                               CBT(n"Cyberbane-War-GoodEveryStreetWeTakeYou"),
+                               CBT(n"Cyberbane-War-WelcomeToTheWarChoomOur")]), n"greeting");
   }
   if choice == CBTalkActIncite() {
     let enemy = CBWarIncitable(sys, t.faction);
     let chance = CBConfig.InciteBase() + (CBTalkStat(game, gamedataStatType.Cool) >= CBConfig.TalkAttributeCheck() ? CBConfig.TalkAttributeBonus() : 0.0);
     if Equals(enemy, n"") {
-      return CBTalkSay("Who? Never heard of them.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-War-WhoNeverHeardOfThem"), n"");
     }
     if RandF() < chance {
       book.SetIncite(t.faction, enemy, now + CBConfig.SecondsPerDay());
       CBWeakenGang(sys, game, t.faction, CBConfig.InciteLoss());
       CBWeakenGang(sys, game, enemy, CBConfig.InciteLoss());
       CBFileLog(sys, n"Incited", now, CBEventDistrict(sys, game), t.faction, 0.0);
-      return CBTalkSay(CBLineOf(["They're what? Then we hit them first.", "I knew it. I knew they'd try something. Thanks, merc.",
-                                 "Everybody's going to hear about this."]), n"");
+      return CBTalkSay(CBLineOf([CBT(n"Cyberbane-War-TheyReWhatThenWeHit"), CBT(n"Cyberbane-War-IKnewItIKnewThey"),
+                                 CBT(n"Cyberbane-War-EverybodySGoingToHearAbout")]), n"");
     }
     CBTalkSlight(sys, game, t.faction, CBConfig.TalkInsultCost() * CBCodeInsult(t.faction));
-    return CBTalkSay(CBLineOf(["Nice try. You want us fighting so you can pick at the bones.", "You think I'm stupid?"]), n"bump");
+    return CBTalkSay(CBLineOf([CBT(n"Cyberbane-War-NiceTryYouWantUsFighting"), CBT(n"Cyberbane-War-YouThinkIMStupid")]), n"bump");
   }
   if choice == CBTalkActTerms() {
     let quote = CBPeaceQuote(sys, game, t.faction);
     let enemy = CBWarIncitable(sys, t.faction);
     if quote < 0 {
-      return CBTalkSay("There's nothing to end.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-War-ThereSNothingToEnd"), n"");
     }
     if Equals(enemy, n"") {
-      return CBTalkSay(s"\(quote)eb. Send it and we're done.", n"");
+      return CBTalkSay(CBTf(n"Cyberbane-War-EbSendItAndWeRe", [s"\(quote)"]), n"");
     }
     book.SetFavour(t.faction, now + CBConfig.FavourDays() * CBConfig.SecondsPerDay());
-    return CBTalkSay(s"Eddies, \(quote) of them. Or do us a favour: break up whatever \(CBFactionLabel(enemy)) have going next near here. Do that and we're square.", n"");
+    return CBTalkSay(CBTf(n"Cyberbane-War-EddiesOfThemOrDoUs", [s"\(quote)", s"\(CBFactionLabel(enemy))"]), n"");
   }
   return null;
 }

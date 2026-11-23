@@ -289,10 +289,10 @@ public func CBHeatWord(game: GameInstance, fs: ref<CBFactionState>) -> String {
     return "";
   }
   if ago < CBConfig.HeatHotHours() * CBConfig.SecondsPerHour() {
-    return "still hot about you";
+    return CBT(n"Cyberbane-Hunted-StillHotAboutYou");
   }
   if ago < CBConfig.HeatCoolHours() * CBConfig.SecondsPerHour() {
-    return "cooling off";
+    return CBT(n"Cyberbane-Hunted-CoolingOff");
   }
   return "";
 }
@@ -304,6 +304,8 @@ public func CBHuntedTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   if !IsDefined(sys) || !IsDefined(book) || !IsDefined(player) {
     return;
   }
+  // A gang's countdown can be slipped too (2.7.1, Spawn/Slip.reds).
+  CBSlipTick(sys, game);
   let tick = sys.GetTickCount();
   if CBHauntsOn() && tick % 10 == 0 {
     book.AddHaunt(CBDistrictIndex(sys.GetCurrentDistrict()), CBConfig.HauntSecondsPerSample());
@@ -340,8 +342,8 @@ public func CBHuntedTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   sys.SetHuntGrade("");
   CBLog.Info(n"Spawn", "The trail went cold.");
   if CBToastsOn() && NotEquals(faction, n"") {
-    CBHearsayFromStreet(game, changedClothes ? "Whoever was after you lost you when you changed. They're looking for somebody else now."
-                                             : "Whoever was after you lost your trail when you crossed over.", n"");
+    CBHearsayFromStreet(game, changedClothes ? CBT(n"Cyberbane-Hunted-WhoeverWasAfterYouLostYou")
+                                             : CBT(n"Cyberbane-Hunted-WhoeverWasAfterYouLostYour"), n"");
   }
 }
 
@@ -419,7 +421,7 @@ public func CBScoutTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
     return out;
   }
   let price = CBScoutBribePrice(sys);
-  let l = CBTalkMakeLine(s"[Pay] \(price)eb. Tell them you didn't find me.", CBTalkActBribeScout(), t"ChoiceCaptionParts.PayIcon");
+  let l = CBTalkMakeLine(CBTf(n"Cyberbane-Hunted-PayEbTellThemYouDidn", [s"\(price)"]), CBTalkActBribeScout(), t"ChoiceCaptionParts.PayIcon");
   l.inactive = CBTalkMoney(game) < price;
   l.important = true;
   ArrayPush(out, l);
@@ -428,11 +430,11 @@ public func CBScoutTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
 
 public func CBScoutTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   if !CBIsScoutBody(sys, t.npc) {
-    return CBTalkSay("Find what? I'm just walking.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-Hunted-FindWhatIMJustWalking"), n"");
   }
   let price = CBScoutBribePrice(sys);
   if !CBTalkTakeMoney(game, player, price) {
-    return CBTalkSay("That doesn't buy my silence.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-Hunted-ThatDoesnTBuyMySilence"), n"");
   }
   let faction = sys.GetScoutFaction();
   sys.ClearScout();
@@ -458,8 +460,8 @@ public func CBScoutTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
     CBOrderFlee(game, t.npc);
   }
   CBFileLog(sys, n"ScoutBribed", CBGameSeconds(game), CBEventDistrict(sys, game), faction, Cast<Float>(price));
-  return CBTalkSay(CBLineOf(["Never saw you. Nobody here but me.", "You were never here. Good doing business.",
-                             "I'll tell them the trail went cold. Don't make me a liar."]), n"");
+  return CBTalkSay(CBLineOf([CBT(n"Cyberbane-Hunted-NeverSawYouNobodyHereBut"), CBT(n"Cyberbane-Hunted-YouWereNeverHereGoodDoing"),
+                             CBT(n"Cyberbane-Hunted-ILlTellThemTheTrail")]), n"");
 }
 
 // ---- [50] Lookouts in the crowd -------------------------------------------------------------------------

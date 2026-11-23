@@ -116,11 +116,11 @@ public func CBRivalImplants(r: ref<CBRival>) -> Int32 {
 
 public func CBImplantName(bit: Int32) -> String {
   switch bit {
-    case 0: return "subdermal armour";
-    case 1: return "dermal plating";
-    case 2: return "a firewall";
-    case 3: return "reinforced tendons";
-    default: return "smoke-filter optics";
+    case 0: return CBT(n"Cyberbane-RivalMoments-SubdermalArmour");
+    case 1: return CBT(n"Cyberbane-RivalMoments-DermalPlating");
+    case 2: return CBT(n"Cyberbane-RivalMoments-AFirewall");
+    case 3: return CBT(n"Cyberbane-RivalMoments-ReinforcedTendons");
+    default: return CBT(n"Cyberbane-RivalMoments-SmokeFilterOptics");
   }
 }
 
@@ -227,42 +227,42 @@ public func CBRivalChromeShort(r: ref<CBRival>) -> String {
 public func CBRivalLastWords(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> String {
   let intel = CBIntelBook.Get(game);
   if IsDefined(intel) && intel.KinOf(r.id) > 0 {
-    return CBRivalPhrase(r, "Couldn't... finish it. For them.", "Tell my family... I tried.", "Same as them. Same... as them.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-CouldnTFinishItForThem"), CBT(n"Cyberbane-RivalMoments-TellMyFamilyITried"), CBT(n"Cyberbane-RivalMoments-SameAsThemSameAsThem"));
   }
   if r.killedV > 0 {
-    return CBRivalPhrase(r, "Beat you once. Nobody... can take that.", "Should've stayed down... the first time.", "Lucky. You got... lucky.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-BeatYouOnceNobodyCanTake"), CBT(n"Cyberbane-RivalMoments-ShouldVeStayedDownTheFirst"), CBT(n"Cyberbane-RivalMoments-LuckyYouGotLucky"));
   }
   if r.escapes >= 2 {
-    return CBRivalPhrase(r, "Ran out of road.", "Thought I'd always... get away.", "Every time... but this one.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-RanOutOfRoad"), CBT(n"Cyberbane-RivalMoments-ThoughtIDAlwaysGetAway"), CBT(n"Cyberbane-RivalMoments-EveryTimeButThisOne"));
   }
   if r.sparedByV > 0 {
-    return CBRivalPhrase(r, "You let me live... should've left it there.", "Second chance... wasted it.", "Mercy... and then this.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-YouLetMeLiveShouldVe"), CBT(n"Cyberbane-RivalMoments-SecondChanceWastedIt"), CBT(n"Cyberbane-RivalMoments-MercyAndThenThis"));
   }
   if CBRivalHasTrait(r, n"Humiliated") {
-    return CBRivalPhrase(r, "At least... nobody's laughing now.", "Worth it... to see your face.", "Told you... I'd come back.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-AtLeastNobodySLaughingNow"), CBT(n"Cyberbane-RivalMoments-WorthItToSeeYourFace"), CBT(n"Cyberbane-RivalMoments-ToldYouIDComeBack"));
   }
-  return CBRivalPhrase(r, "Night City... remembers me.", "Not like this...", "You'll... see me again.");
+  return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-NightCityRemembersMe"), CBT(n"Cyberbane-RivalMoments-NotLikeThis"), CBT(n"Cyberbane-RivalMoments-YouLlSeeMeAgain"));
 }
 
 // Mid-fight, now and then: what they remember of V.
 public func CBRivalTaunt(r: ref<CBRival>) -> String {
   if CBMaskHas(r.scarMask, CBScarBurned()) {
-    return CBRivalPhrase(r, "I still smell the smoke because of you!", "You burned me. I don't burn twice!", "Remember the fire? I do!");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-IStillSmellTheSmokeBecause"), CBT(n"Cyberbane-RivalMoments-YouBurnedMeIDonT"), CBT(n"Cyberbane-RivalMoments-RememberTheFireIDo"));
   }
   if CBMaskHas(r.scarMask, CBScarCut()) {
-    return CBRivalPhrase(r, "Still got your blade marks. Come add some!", "Cut me once. Not again!", "I wear your scars. You'll wear mine!");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-StillGotYourBladeMarksCome"), CBT(n"Cyberbane-RivalMoments-CutMeOnceNotAgain"), CBT(n"Cyberbane-RivalMoments-IWearYourScarsYouLl"));
   }
   if CBMaskHas(r.scarMask, CBScarFried()) {
-    return CBRivalPhrase(r, "Stay out of my head this time!", "Fry me again? Try it!", "I paid for a firewall because of you!");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-StayOutOfMyHeadThis"), CBT(n"Cyberbane-RivalMoments-FryMeAgainTryIt"), CBT(n"Cyberbane-RivalMoments-IPaidForAFirewallBecause"));
   }
   if r.killedV > 0 {
-    return CBRivalPhrase(r, "You remember how this ends!", "Down you go. Again.", "Same as last time, merc!");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-YouRememberHowThisEnds"), CBT(n"Cyberbane-RivalMoments-DownYouGoAgain"), CBT(n"Cyberbane-RivalMoments-SameAsLastTimeMerc"));
   }
   if r.escapes >= 2 {
-    return CBRivalPhrase(r, "Caught you this time!", "No running today!", "You can't lose me!");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-CaughtYouThisTime"), CBT(n"Cyberbane-RivalMoments-NoRunningToday"), CBT(n"Cyberbane-RivalMoments-YouCanTLoseMe"));
   }
   if CBRivalHasTrait(r, n"Humiliated") {
-    return CBRivalPhrase(r, "Nobody laughs at me! Nobody!", "Who's crawling now?!", "Say it again! Say it!");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalMoments-NobodyLaughsAtMeNobody"), CBT(n"Cyberbane-RivalMoments-WhoSCrawlingNow"), CBT(n"Cyberbane-RivalMoments-SayItAgainSayIt"));
   }
   return CBRivalCatchphrase(r);
 }
@@ -271,16 +271,16 @@ public func CBRivalTaunt(r: ref<CBRival>) -> String {
 public func CBRivalRemembers(game: GameInstance, r: ref<CBRival>) -> String {
   let intel = CBIntelBook.Get(game);
   if IsDefined(intel) && intel.KinOf(r.id) > 0 {
-    return "This is for my family.";
+    return CBT(n"Cyberbane-RivalMoments-ThisIsForMyFamily");
   }
   if r.sparedByV > 0 {
-    return "You let me walk last time. Big mistake.";
+    return CBT(n"Cyberbane-RivalMoments-YouLetMeWalkLastTime");
   }
   if r.escapes > 0 {
-    return s"Got away from you \(r.escapes == 1 ? "once" : s"\(r.escapes) times"). Not running today.";
+    return CBTf(n"Cyberbane-RivalMoments-GotAwayFromYouNotRunning", [r.escapes == 1 ? CBT(n"Cyberbane-RivalMoments-Once") : CBTf(n"Cyberbane-RivalMoments-Times", [s"\(r.escapes)"])]);
   }
   if CBMaskHas(r.scarMask, CBScarBurned()) || CBMaskHas(r.scarMask, CBScarCut()) || CBMaskHas(r.scarMask, CBScarShot()) {
-    return "I still have the scars you gave me.";
+    return CBT(n"Cyberbane-RivalMoments-IStillHaveTheScarsYou");
   }
   return "";
 }
@@ -477,7 +477,7 @@ func CBFacedownOpen(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
   CBIntelSay(game, 3, name, CBFacedownOpener(sys, game, r), 4.0);
   if CBToastsOn() && !book.fdHinted {
     book.fdHinted = true;
-    CBSystemNote(game, s"\(name) wants a look at you first. Talk to them to face them down, or draw.", 5.0);
+    CBSystemNote(game, CBTf(n"Cyberbane-RivalMoments-WantsALookAtYouFirst", [s"\(name)"]), 5.0);
   }
   CBLog.Info(n"Rivals", s"Facedown with Rival \(r.id), \(ArraySize(book.fdEscorts)) of their people holding.");
 }
@@ -488,23 +488,23 @@ func CBFacedownOpener(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRi
   let intel = CBIntelBook.Get(game);
   if IsDefined(intel) && intel.KinOf(r.id) > 0 {
     let dead = sys.FindRivalById(intel.KinOf(r.id));
-    let who = IsDefined(dead) ? CBRivalDisplayName(sys.GetContent(), dead) : "my family";
-    return s"Everybody stop. I want to look at the one who killed \(who) before I do this.";
+    let who = IsDefined(dead) ? CBRivalDisplayName(sys.GetContent(), dead) : CBT(n"Cyberbane-RivalMoments-MyFamily");
+    return CBTf(n"Cyberbane-RivalMoments-EverybodyStopIWantToLook", [s"\(who)"]);
   }
   if r.killedV > 0 {
-    return s"Again, \(you)? You remember how this ended last time. Look at me first.";
+    return CBTf(n"Cyberbane-RivalMoments-AgainYouRememberHowThisEnded", [s"\(you)"]);
   }
   if r.sparedByV > 0 {
-    return "You let me walk once. Hold it, everybody. I want to see if that was mercy or a mistake.";
+    return CBT(n"Cyberbane-RivalMoments-YouLetMeWalkOnceHold");
   }
   if r.escapes > 0 {
-    return s"Nobody move. Last time I ran from \(you). Not today. Today we talk first.";
+    return CBTf(n"Cyberbane-RivalMoments-NobodyMoveLastTimeIRan", [s"\(you)"]);
   }
   if r.encounters == 0 {
-    return s"So you're \(you). Don't reach for it yet. I want a look at you first.";
+    return CBTf(n"Cyberbane-RivalMoments-SoYouReDonTReach", [s"\(you)"]);
   }
-  return CBRivalPhrase(r, s"\(CBCapFirst(CBHere(sys))), you and me. Hands where I can see them.", "Don't reach for it yet. Look at me first.",
-                       "Everybody stop. I want to see this one's face.");
+  return CBRivalPhrase(r, CBTf(n"Cyberbane-RivalMoments-YouAndMeHandsWhereI", [s"\(CBCapFirst(CBHere(sys)))"]), CBT(n"Cyberbane-RivalMoments-DonTReachForItYet"),
+                       CBT(n"Cyberbane-RivalMoments-EverybodyStopIWantToSee"));
 }
 
 // Somebody stops where they are and holds off V for a moment: their attitude to V alone, and one hold order.
@@ -682,10 +682,10 @@ func CBFacedownStepIn(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
   if stepping > 0 {
     let name = CBRivalDisplayName(sys.GetContent(), r);
     CBIntelSay(game, 3, CBIntelSpeaker(r.faction), CBLineOf([
-      "Boss is going down! Forget the deal, take them!",
-      s"Nobody puts \(name) in the ground. Light them up!",
-      "That's enough. Fair's over. Get them!",
-      "We said we'd stay out. We lied. Drop them!"]), 3.0);
+      CBT(n"Cyberbane-RivalMoments-BossIsGoingDownForgetThe"),
+      CBTf(n"Cyberbane-RivalMoments-NobodyPutsInTheGroundLight", [s"\(name)"]),
+      CBT(n"Cyberbane-RivalMoments-ThatSEnoughFairSOver"),
+      CBT(n"Cyberbane-RivalMoments-WeSaidWeDStayOut")]), 3.0);
   }
   CBLog.Info(n"Rivals", s"Rival \(r.id) was nearly beaten one on one; \(stepping) of their people stepped in.");
 }
@@ -701,7 +701,7 @@ func CBFacedownTermsBroken(sys: ref<CyberbaneSystem>, game: GameInstance, book: 
   book.fdState = 0;
   book.fdRival = 0;
   sys.GetTruce().End(sys, game, CBTruceFacedown());
-  CBIntelSay(game, 3, CBIntelSpeaker(r.faction), CBPick2("That's not how this works! Get them!", "No rules then. Light them up!"), 3.0);
+  CBIntelSay(game, 3, CBIntelSpeaker(r.faction), CBPick2(CBT(n"Cyberbane-RivalMoments-ThatSNotHowThisWorks"), CBT(n"Cyberbane-RivalMoments-NoRulesThenLightThemUp")), 3.0);
 }
 
 // The Rival is down or gone: their people saw it, and they go.
@@ -721,7 +721,7 @@ func CBFacedownDuelOver(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
     CBTalkFear(sys, game, r.faction, CBConfig.DuelFear());
     CBFileLog(sys, n"DuelWon", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"\(CBRivalDisplayName(sys.GetContent(), r)) asked for a fair fight and got one. Their people watched them lose.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalMoments-AskedForAFairFightAnd", [s"\(CBRivalDisplayName(sys.GetContent(), r))"]), n"");
     }
   }
 }
@@ -730,24 +730,24 @@ func CBFacedownDuelOver(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
 public func CBRivalFacedownLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> array<ref<CBTalkLine>> {
   let out: array<ref<CBTalkLine>>;
   let r = sys.FindRivalById(t.rivalId);
-  ArrayPush(out, CBTalkMakeLine("[Stare them down] Look at me. Think hard about this.", CBTalkActStare(), t"ChoiceCaptionParts.GrappleIcon"));
-  ArrayPush(out, CBTalkMakeLine("[Draw] Let's go.", CBTalkActDraw(), TDBID.None()));
-  ArrayPush(out, CBTalkMakeLine("[Walk away] Not today.", CBTalkActWalkAway(), t"ChoiceCaptionParts.BackOutIcon"));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalMoments-StareThemDownLookAtMe"), CBTalkActStare(), t"ChoiceCaptionParts.GrappleIcon"));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalMoments-DrawLetSGo"), CBTalkActDraw(), TDBID.None()));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalMoments-WalkAwayNotToday"), CBTalkActWalkAway(), t"ChoiceCaptionParts.BackOutIcon"));
   let escorts = CBRivalBookEscorts(game);
   if ArraySize(escorts) > 0 {
-    ArrayPush(out, CBTalkMakeLine("[Just you and me] Tell your people to stay out of it.", CBTalkActOneOnOne(), TDBID.None()));
+    ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalMoments-JustYouAndMeTellYour"), CBTalkActOneOnOne(), TDBID.None()));
   }
   // [64] One who owes V, or is afraid of V, can be talked out of it.
   if IsDefined(r) && (r.sparedByV > 0 || CBRivalHasTrait(r, n"Shaken") || CBRivalHasTrait(r, n"Humiliated")) {
-    ArrayPush(out, CBTalkMakeLine("[Call it even] I let you live once. We're even.", CBTalkActCallEven(), t"ChoiceCaptionParts.HandshakeIcon"));
+    ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalMoments-CallItEvenILetYou"), CBTalkActCallEven(), t"ChoiceCaptionParts.HandshakeIcon"));
     let other = CBTalkRivalForFaction(sys, game, n"", r.id);
     if IsDefined(other) {
-      let w = CBTalkMakeLine("[Ask] Where's " + CBRivalDisplayName(sys.GetContent(), other) + "? Then we're done.",
+      let w = CBTalkMakeLine(CBTf(n"Cyberbane-RivalMoments-AskWhereSThenWeRe", [CBRivalDisplayName(sys.GetContent(), other)]),
                              CBTalkActWhereIs(), t"ChoiceCaptionParts.BountyHuntIcon");
       w.important = true;
       ArrayPush(out, w);
     }
-    ArrayPush(out, CBTalkMakeLine("[Exile] Get out of Night City. Tonight.", CBTalkActLeaveTown(), t"ChoiceCaptionParts.BackOutIcon"));
+    ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalMoments-ExileGetOutOfNightCity"), CBTalkActLeaveTown(), t"ChoiceCaptionParts.BackOutIcon"));
   }
   return out;
 }
@@ -797,7 +797,7 @@ public func CBRivalFacedownAnswer(sys: ref<CyberbaneSystem>, game: GameInstance,
       CBTalkFear(sys, game, r.faction, CBConfig.StareFear());
       CBFileLog(sys, n"StaredDown", now, district, r.faction, Cast<Float>(r.id));
       CBFacedownFight(sys, game, book, r, body, false);
-      return CBTalkSay(CBPick2("...Fine. FINE. Let's get this over with.", "Don't... don't look at me like that."), n"");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-FineFINELetSGetThis"), CBT(n"Cyberbane-RivalMoments-DonTDonTLookAt")), n"");
     }
     for id3 in book.fdEscorts {
       let pe = GameInstance.FindEntityByID(game, id3) as ScriptedPuppet;
@@ -807,15 +807,15 @@ public func CBRivalFacedownAnswer(sys: ref<CyberbaneSystem>, game: GameInstance,
     }
     CBAimFor(game, body, CBConfig.StareBoldAim(), CBConfig.StareSeconds());
     CBFacedownFight(sys, game, book, r, body, false);
-    return CBTalkSay(CBPick2("That's it? That's the look everybody's scared of?", "You blinked. Take them!"), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-ThatSItThatSThe"), CBT(n"Cyberbane-RivalMoments-YouBlinkedTakeThem")), n"");
   }
   if choice == CBTalkActWalkAway() {
     CBFacedownLetGo(sys, game, book, r, body);
     CBFileLog(sys, n"FacedownWalked", now, district, r.faction, Cast<Float>(r.id));
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"\(CBRivalDisplayName(sys.GetContent(), r)) had you and let you walk. Once. The street's talking about why.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalMoments-HadYouAndLetYouWalk", [s"\(CBRivalDisplayName(sys.GetContent(), r))"]), n"");
     }
-    return CBTalkSay(CBPick2("Go on, then. This once. Next time there's no talking.", "Walk. I want everybody to see you walk away from me."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-GoOnThenThisOnceNext"), CBT(n"Cyberbane-RivalMoments-WalkIWantEverybodyToSee")), n"");
   }
   if choice == CBTalkActOneOnOne() {
     let accept = CBConfig.DuelBase() + (CBRivalHasTrait(r, n"Confident") ? 0.15 : 0.0) - (CBRivalHasTrait(r, n"PackLeader") ? 0.2 : 0.0);
@@ -825,11 +825,11 @@ public func CBRivalFacedownAnswer(sys: ref<CyberbaneSystem>, game: GameInstance,
     if RandF() < accept {
       book.fdState = 2;
       CBFacedownHostile(sys, game, body);
-      CBIntelSay(game, 4, CBIntelSpeaker(r.faction), "Nobody touches this one. It's between them.", 3.0);
-      return CBTalkSay(CBPick2("Just you and me, then. Nobody else.", "Fair enough. Back off, all of you. This one's mine."), n"");
+      CBIntelSay(game, 4, CBIntelSpeaker(r.faction), CBT(n"Cyberbane-RivalMoments-NobodyTouchesThisOneItS"), 3.0);
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-JustYouAndMeThenNobody"), CBT(n"Cyberbane-RivalMoments-FairEnoughBackOffAllOf")), n"");
     }
     CBFacedownFight(sys, game, book, r, body, false);
-    return CBTalkSay(CBPick2("Fair fights are for people who can afford to lose.", "Why would I do that? Get them!"), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-FairFightsAreForPeopleWho"), CBT(n"Cyberbane-RivalMoments-WhyWouldIDoThatGet")), n"");
   }
   if choice == CBTalkActCallEven() {
     let chance = CBConfig.CallEvenBase() + 0.25 * Cast<Float>(r.sparedByV) + (CBRivalHasTrait(r, n"Shaken") ? 0.15 : 0.0)
@@ -838,18 +838,18 @@ public func CBRivalFacedownAnswer(sys: ref<CyberbaneSystem>, game: GameInstance,
       r.state = EnumInt(ECBRivalState.Dormant);
       CBFacedownLetGo(sys, game, book, r, body);
       CBFileLog(sys, n"CalledEven", now, district, r.faction, Cast<Float>(r.id));
-      return CBTalkSay(CBPick2("...Even. Fine. Don't come looking for me.", "We're square. I'm done with you."), n"");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-EvenFineDonTComeLooking"), CBT(n"Cyberbane-RivalMoments-WeReSquareIMDone")), n"");
     }
     CBFacedownFight(sys, game, book, r, body, false);
-    return CBTalkSay("Even? You don't get to decide that.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-RivalMoments-EvenYouDonTGetTo"), n"");
   }
   if choice == CBTalkActWhereIs() {
     let i = CBIntelGive(sys, game, player, n"", true, r.id);
     CBFacedownLetGo(sys, game, book, r, body);
     if i.kind == CBIntelNone() {
-      return CBTalkSay("I don't know anything. I swear. Just... let me go.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-RivalMoments-IDonTKnowAnythingI"), n"");
     }
-    return CBTalkSay(CBIntelSpoken(i) + " Now we're done.", n"");
+    return CBTalkSay(CBTf(n"Cyberbane-RivalMoments-NowWeReDone", [CBIntelSpoken(i)]), n"");
   }
   if choice == CBTalkActLeaveTown() {
     let chance = CBConfig.ExileBase() - 0.15 * Cast<Float>(r.rank - 1) + (CBRivalHasTrait(r, n"Shaken") ? 0.2 : 0.0);
@@ -861,15 +861,15 @@ public func CBRivalFacedownAnswer(sys: ref<CyberbaneSystem>, game: GameInstance,
       book.SetEnding(r.id, CBEndingRetired(), now);
       CBFacedownLetGo(sys, game, book, r, body);
       CBFileLog(sys, n"RivalExiled", now, district, r.faction, Cast<Float>(r.id));
-      return CBTalkSay(CBPick2("Okay. I'm gone. You'll never see me again.", "Night City's yours. I'm out."), n"");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-OkayIMGoneYouLl"), CBT(n"Cyberbane-RivalMoments-NightCitySYoursIM")), n"");
     }
     CBRivalGiveTrait(r, n"Humiliated");
     CBFacedownFight(sys, game, book, r, body, false);
-    return CBTalkSay("Run? From you? Never.", n"");
+    return CBTalkSay(CBT(n"Cyberbane-RivalLife-RunFromYouNever"), n"");
   }
   // Draw, and anything else.
   CBFacedownFight(sys, game, book, r, body, true);
-  return CBTalkSay(CBPick2("Your funeral.", "Finally."), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-YourFuneral"), "Finally."), n"");
 }
 
 func CBStareChance(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, r: ref<CBRival>) -> Float {
@@ -946,19 +946,19 @@ public func CBRivalHumiliate(sys: ref<CyberbaneSystem>, game: GameInstance, r: r
   if RandF() < CBConfig.HumiliateQuitChance() {
     r.rank = Max(1, r.rank - 1);
     e.exiled = true;
-    return CBPick2("...I'm done. I'm done with all of it.", "Nobody will ever look at me the same. I'm out.");
+    return CBPick2(CBT(n"Cyberbane-RivalMoments-IMDoneIMDone"), CBT(n"Cyberbane-RivalMoments-NobodyWillEverLookAtMe"));
   }
   CBRivalGiveTrait(r, n"GrudgeBearer");
   // Obsessed enough to go under the knife, asked while they still stand at the top: a break is for the top of the ladder
   // (CBRivalMaybeBreak), and asked after the rank they lose for this, it could never happen.
   CBRivalMaybeBreak(sys, game, r);
   r.rank = Max(1, r.rank - 1);
-  return CBPick2("Laugh. Go on. I'll remember every second of this.", "You'll pay for this. Every word of it.");
+  return CBPick2(CBT(n"Cyberbane-RivalMoments-LaughGoOnILlRemember"), CBT(n"Cyberbane-RivalMoments-YouLlPayForThisEvery"));
 }
 
 // The mocking names a humiliated Rival is known by, from their id.
 public func CBHumiliatedEpithet(r: ref<CBRival>) -> String {
-  let names = ["Kneeler", "Doormat", "Second Place", "the Floor", "Dust Eater", "Lap Dog", "Glass Jaw", "Crawler", "Pushover"];
+  let names = [CBT(n"Cyberbane-RivalMoments-Kneeler"), CBT(n"Cyberbane-RivalMoments-Doormat"), CBT(n"Cyberbane-RivalMoments-SecondPlace"), CBT(n"Cyberbane-RivalMoments-TheFloor"), CBT(n"Cyberbane-RivalMoments-DustEater"), CBT(n"Cyberbane-RivalMoments-LapDog"), CBT(n"Cyberbane-RivalMoments-GlassJaw"), CBT(n"Cyberbane-RivalMoments-Crawler"), CBT(n"Cyberbane-RivalMoments-Pushover")];
   return names[CBHashIndex(r.id, 83, ArraySize(names))];
 }
 
@@ -985,11 +985,11 @@ public func CBRivalSetOn(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<C
   let book = CBRivalBook.Get(game);
   let other = CBFeudTargetFor(sys, game, r);
   if !IsDefined(book) || !IsDefined(other) {
-    return "I don't know who you mean.";
+    return CBT(n"Cyberbane-RivalMoments-IDonTKnowWhoYou");
   }
   book.SetFeud(r.id, other.id, CBGameSeconds(game) + CBConfig.FeudDelayHours() * CBConfig.SecondsPerHour());
   CBFileLog(sys, n"FeudSet", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(other.id));
-  return s"\(CBRivalDisplayName(sys.GetContent(), other))? ...Yeah. I've wanted that one for a long time.";
+  return CBTf(n"Cyberbane-RivalMoments-YeahIVeWantedThatOne", [s"\(CBRivalDisplayName(sys.GetContent(), other))"]);
 }
 
 // ---- When a Rival falls: [63] last words, [60] a trophy, [58] the bond, and how it ended -------------------------------
@@ -1044,7 +1044,7 @@ func CBRivalTrophy(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
       CBFileLog(sys, n"Trophy", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
       if CBToastsOn() {
         let what = GetLocalizedTextByKey(rec.DisplayName());
-        CBSystemNote(game, s"you took \(StrLen(what) > 0 ? what : "their gun") off \(CBRivalDisplayName(sys.GetContent(), r)). Something to remember them by.", 5.0);
+        CBSystemNote(game, CBTf(n"Cyberbane-RivalMoments-YouTookOffSomethingToRemember", [StrLen(what) > 0 ? what : CBT(n"Cyberbane-RivalMoments-TheirGun"), s"\(CBRivalDisplayName(sys.GetContent(), r))"]), 5.0);
       }
       return;
     }
@@ -1067,7 +1067,7 @@ func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
   let now = CBGameSeconds(game);
   if !byV {
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"\(name) buried \(deadName). Whoever did it, it wasn't you, and \(name) knows it.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalMoments-BuriedWhoeverDidItItWasn", [s"\(name)", s"\(deadName)", s"\(name)"]), n"");
     }
     return;
   }
@@ -1075,7 +1075,7 @@ func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
   if kind == CBBondMentor() && RandF() < 0.5 {
     CBRivalGiveTrait(other, n"Shaken");
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"\(name) trained \(deadName). Word is they've gone very quiet since.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalMoments-TrainedWordIsTheyVeGone", [s"\(name)", s"\(deadName)"]), n"");
     }
     return;
   }
@@ -1085,7 +1085,7 @@ func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
     book.SetEnding(other.id, CBEndingRetired(), now);
     CBHierarchyFill(sys, other.faction);
     if CBMessagesOn() {
-      CBHearsayFromStreet(game, s"\(name) packed a bag the night \(deadName) died and left Night City.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalMoments-PackedABagTheNightDied", [s"\(name)", s"\(deadName)"]), n"");
     }
     return;
   }
@@ -1093,21 +1093,21 @@ func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
   other.huntTicks = Min(other.huntTicks, CBConfig.BondVengeanceTicks());
   CBFileLog(sys, n"BondVengeance", now, CBEventDistrict(sys, game), other.faction, Cast<Float>(other.id));
   if CBMessagesOn() {
-    CBPhoneSendTinted(game, name, s"You killed \(deadName). \(CBBondLossLine(kind))", CBHudRed());
+    CBPhoneSendTinted(game, name, CBTf(n"Cyberbane-RivalMoments-YouKilled", [s"\(deadName)", s"\(CBBondLossLine(kind))"]), CBHudRed());
   }
 }
 
 func CBBondLossLine(kind: Int32) -> String {
   if kind == CBBondProtege() {
-    return "They taught me everything. I'm going to use all of it on you.";
+    return CBT(n"Cyberbane-RivalMoments-TheyTaughtMeEverythingIM");
   }
   if kind == CBBondMentor() {
-    return "I made them what they were. Now I'll make you nothing.";
+    return CBT(n"Cyberbane-RivalMoments-IMadeThemWhatTheyWere");
   }
   if kind == CBBondLover() {
-    return "There's nothing left of me but this. I'm coming.";
+    return CBT(n"Cyberbane-RivalMoments-ThereSNothingLeftOfMe");
   }
-  return "We were partners. Now I'm going to finish what we started.";
+  return CBT(n"Cyberbane-RivalMoments-WeWerePartnersNowIM");
 }
 
 // Spared, from the mercy path (Reactions/CombatFlee.reds): where V first beat them, and the bond may put the other in
@@ -1137,7 +1137,7 @@ public func CBRivalSparedMoment(sys: ref<CyberbaneSystem>, game: GameInstance, r
   CBHierarchyFill(sys, other.faction);
   if CBMessagesOn() {
     CBPhoneSendTinted(game, CBRivalDisplayName(sys.GetContent(), other),
-      s"You let \(CBRivalDisplayName(sys.GetContent(), r)) live. I won't forget that. I owe you.", CBHudCyan());
+      CBTf(n"Cyberbane-RivalMoments-YouLetLiveIWonT", [s"\(CBRivalDisplayName(sys.GetContent(), r))"]), CBHudCyan());
   }
 }
 
@@ -1185,10 +1185,10 @@ func CBRivalBondsTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
 
 public func CBBondWord(kind: Int32) -> String {
   switch kind {
-    case 1: return "mentor to";
-    case 2: return "protégé of";
-    case 3: return "in love with";
-    case 4: return "partners with";
+    case 1: return CBT(n"Cyberbane-RivalMoments-MentorTo");
+    case 2: return CBT(n"Cyberbane-RivalMoments-ProtGOf");
+    case 3: return CBT(n"Cyberbane-RivalMoments-InLoveWith");
+    case 4: return CBT(n"Cyberbane-RivalMoments-PartnersWith");
     default: return "";
   }
 }
@@ -1256,8 +1256,8 @@ func CBRivalFeudFight(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
   if CBMessagesOn() {
     let w = CBRivalDisplayName(sys.GetContent(), winner);
     let l = CBRivalDisplayName(sys.GetContent(), loser);
-    CBHearsayFromStreet(game, setByV ? s"You pointed \(CBRivalDisplayName(sys.GetContent(), a)) at \(CBRivalDisplayName(sys.GetContent(), b)). \(w) walked away from it; \(l) didn't."
-                                     : s"\(w) caught up with \(l). Only one of them walked away. One less name after you, and one bigger.", n"");
+    CBHearsayFromStreet(game, setByV ? CBTf(n"Cyberbane-RivalMoments-YouPointedAtWalkedAwayFrom", [s"\(CBRivalDisplayName(sys.GetContent(), a))", s"\(CBRivalDisplayName(sys.GetContent(), b))", s"\(w)", s"\(l)"])
+                                     : CBTf(n"Cyberbane-RivalMoments-CaughtUpWithOnlyOneOf", [s"\(w)", s"\(l)"]), n"");
   }
 }
 
@@ -1286,7 +1286,7 @@ func CBRivalReturnTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
       CBFileLog(sys, n"RivalReturned", now, CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
       if CBMessagesOn() {
         CBPhoneSendTinted(game, CBRivalDisplayName(sys.GetContent(), r),
-          "Miss me? Some back-alley ripperdoc put me back together. More chrome than meat now. I remember everything.", CBHudRed());
+          CBT(n"Cyberbane-RivalMoments-MissMeSomeBackAlleyRipperdoc"), CBHudRed());
       }
       return;
     }
@@ -1299,7 +1299,7 @@ public func CBRivalReturned(r: ref<CBRival>) -> Bool {
 }
 
 public func CBReturnedEpithet(r: ref<CBRival>) -> String {
-  let names = ["Lazarus", "Second Life", "Stitched", "the Revenant", "Back Again", "Patchwork", "Rebuilt"];
+  let names = [CBT(n"Cyberbane-RivalMoments-Lazarus"), CBT(n"Cyberbane-RivalMoments-SecondLife"), CBT(n"Cyberbane-RivalMoments-Stitched"), CBT(n"Cyberbane-RivalMoments-TheRevenant"), CBT(n"Cyberbane-RivalMoments-BackAgain"), CBT(n"Cyberbane-RivalMoments-Patchwork"), CBT(n"Cyberbane-RivalMoments-Rebuilt")];
   return names[CBHashIndex(r.id, 89, ArraySize(names))];
 }
 
@@ -1330,7 +1330,7 @@ func CBRivalEndedUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiva
     let player = GetPlayer(game);
     let i = IsDefined(player) ? CBIntelGive(sys, game, player, n"", true, r.id) : null;
     if IsDefined(i) && i.kind != CBIntelNone() {
-      CBPhoneSendTinted(game, name, "Remember me? I'm out of the life, but I still hear things. " + CBIntelSpoken(i) + " Call it a favour.", CBHudCyan());
+      CBPhoneSendTinted(game, name, CBTf(n"Cyberbane-RivalMoments-RememberMeIMOutOf", [CBIntelSpoken(i)]), CBHudCyan());
       return;
     }
   }
@@ -1339,7 +1339,7 @@ func CBRivalEndedUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiva
   let rt = CyberbaneRuntime.Get();
   let maxRivals = IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().maxRivals : CBConfig.RivalMaxActiveHardCap();
   if roll <= 1 || sys.CountActiveRivals() >= maxRivals || sys.CountActiveFactionRivals(r.faction) >= CBConfig.RivalMaxPerFaction() {
-    CBPhoneSendTinted(game, name, s"Heads up, for old times' sake. \(CBCapFirst(CBFactionLabel(r.faction))) still talk about you. They haven't forgotten. Neither have I, but I'm not coming.", CBHudAmber());
+    CBPhoneSendTinted(game, name, CBTf(n"Cyberbane-RivalMoments-HeadsUpForOldTimesSake", [s"\(CBCapFirst(CBFactionLabel(r.faction)))"]), CBHudAmber());
     return;
   }
   // An invitation to finish it: they come back, and may take a chair that stood empty.
@@ -1347,7 +1347,7 @@ func CBRivalEndedUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiva
   r.huntTicks = CBConfig.RivalAfterEscapeTicks();
   CBRivalGiveTrait(r, n"GrudgeBearer");
   CBHierarchyFill(sys, r.faction);
-  CBPhoneSendTinted(game, name, "Thought I could leave it. I can't. I'm back in Night City, and we're going to finish this.", CBHudRed());
+  CBPhoneSendTinted(game, name, CBT(n"Cyberbane-RivalMoments-ThoughtICouldLeaveItI"), CBHudRed());
 }
 
 // [U9] A climb that came with chrome is something the street hears about.
@@ -1374,7 +1374,7 @@ func CBRivalChromeTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
           CBFileLog(sys, n"UnderTheKnife", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
           // Still in the chair, and somebody knows which (Rivals/Whereabouts.reds, [U9], 2.5.0); or only the news.
           if !CBRipperdocLead(sys, game, r, fresh) && CBMessagesOn() {
-            CBHearsayFromStreet(game, s"\(CBRivalDisplayName(sys.GetContent(), r)) went under the knife. \(CBCapFirst(fresh)), and they're telling everybody it's for you.", n"");
+            CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalMoments-WentUnderTheKnifeAndThey", [s"\(CBRivalDisplayName(sys.GetContent(), r))", s"\(CBCapFirst(fresh))"]), n"");
           }
           return;   // one a day is plenty
         }
@@ -1411,11 +1411,11 @@ public func CBRivalMeaningfulPlace(sys: ref<CyberbaneSystem>, game: GameInstance
   let use = 0;
   if kin > 0 && book.HasPlace(kin) {
     use = kin;
-    why = "Where you put my family in the ground.";
+    why = CBT(n"Cyberbane-RivalMoments-WhereYouPutMyFamilyIn");
   } else {
     if book.HasPlace(r.id) {
       use = r.id;
-      why = "Where you left me lying.";
+      why = CBT(n"Cyberbane-RivalMoments-WhereYouLeftMeLying");
     }
   }
   if use == 0 {

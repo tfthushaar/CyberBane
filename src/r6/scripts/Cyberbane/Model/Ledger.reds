@@ -211,28 +211,28 @@ func CBLedgerSettle(game: GameInstance, book: ref<CBLedgerBook>, gang: CName) ->
 
 func CBAdaptLine(kind: Int32) -> String {
   if kind == CBAdaptGuns() {
-    return CBLineOf(["We heard how you shoot. Our people are wearing plate now.",
-                     "You like your guns. We bought armour. Let's see who wins.",
-                     "Every one of ours is plated up for you, merc."]);
+    return CBLineOf([CBT(n"Cyberbane-Ledger-WeHeardHowYouShootOur"),
+                     CBT(n"Cyberbane-Ledger-YouLikeYourGunsWeBought"),
+                     CBT(n"Cyberbane-Ledger-EveryOneOfOursIsPlated")]);
   }
   if kind == CBAdaptMelee() {
-    return CBLineOf(["You like it up close? We're sending people who can take a hit.",
-                     "Heard you fight with your hands. Ours are tougher now.",
-                     "Next time you get close, you'll find out we got harder."]);
+    return CBLineOf([CBT(n"Cyberbane-Ledger-YouLikeItUpCloseWe"),
+                     CBT(n"Cyberbane-Ledger-HeardYouFightWithYourHands"),
+                     CBT(n"Cyberbane-Ledger-NextTimeYouGetCloseYou")]);
   }
   if kind == CBAdaptHacks() {
-    return CBLineOf(["Our people are running fresh ICE. Your hacks won't land like they used to.",
-                     "We paid a netrunner to lock us down. Try your tricks now.",
-                     "They're bringing ICE for you, merc."]);
+    return CBLineOf([CBT(n"Cyberbane-Ledger-OurPeopleAreRunningFreshICE"),
+                     CBT(n"Cyberbane-Ledger-WePaidANetrunnerToLock"),
+                     CBT(n"Cyberbane-Ledger-TheyReBringingICEForYou")]);
   }
   if kind == CBAdaptBlast() {
-    return CBLineOf(["You and your grenades. We wear heavier now.",
-                     "Blow us up again. See how many of us stay down.",
-                     "We learned from every blast. Come try another."]);
+    return CBLineOf([CBT(n"Cyberbane-Ledger-YouAndYourGrenadesWeWear"),
+                     CBT(n"Cyberbane-Ledger-BlowUsUpAgainSeeHow"),
+                     CBT(n"Cyberbane-Ledger-WeLearnedFromEveryBlastCome")]);
   }
-  return CBLineOf(["Sneaking won't work twice. Every one of ours keeps their eyes open now.",
-                   "You like the shadows? We've got people watching every one.",
-                   "No more bodies with nobody seeing. We're looking for you now."]);
+  return CBLineOf([CBT(n"Cyberbane-Ledger-SneakingWonTWorkTwiceEvery"),
+                   CBT(n"Cyberbane-Ledger-YouLikeTheShadowsWeVe"),
+                   CBT(n"Cyberbane-Ledger-NoMoreBodiesWithNobodySeeing")]);
 }
 
 // What their builds take from it. Fractions on the same terms the builds already use, bounded there.

@@ -198,10 +198,10 @@ public class CBCardClearCallback extends DelayCallback {
 // English Renown-tier labels for interim messages. Full localization arrives with
 // the toast/Hub UI (loc keys Cyberbane-Tier-*).
 public func CBTierName(tier: Int32) -> String {
-  if tier == EnumInt(ECBRenownTier.Legend) { return "Legend"; }
-  if tier == EnumInt(ECBRenownTier.Infamous) { return "Infamous"; }
-  if tier == EnumInt(ECBRenownTier.Notorious) { return "Notorious"; }
-  if tier == EnumInt(ECBRenownTier.KnownMerc) { return "Known Merc"; }
-  if tier == EnumInt(ECBRenownTier.LocalName) { return "Local Name"; }
-  return "Nobody";
+  if tier == EnumInt(ECBRenownTier.Legend) { return CBT(n"Cyberbane-CrewKit-Legend"); }
+  if tier == EnumInt(ECBRenownTier.Infamous) { return CBT(n"Cyberbane-Notify-Infamous"); }
+  if tier == EnumInt(ECBRenownTier.Notorious) { return CBT(n"Cyberbane-Notify-Notorious"); }
+  if tier == EnumInt(ECBRenownTier.KnownMerc) { return CBT(n"Cyberbane-Notify-KnownMerc"); }
+  if tier == EnumInt(ECBRenownTier.LocalName) { return CBT(n"Cyberbane-Notify-LocalName"); }
+  return CBT(n"Cyberbane-Hud-Nobody");
 }

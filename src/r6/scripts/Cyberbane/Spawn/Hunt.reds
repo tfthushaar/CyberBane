@@ -149,7 +149,8 @@ public func CBOrderPursue(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   // Every order on foot comes through here. While V is safe there is nowhere to send anybody
   // (Spawn/Sanctuary.reds), and they are asked again once V is not.
   // Nor onto a job (1.8.4), even once they have found V.
-  if IsDefined(sys) && (sys.IsInSanctuary() || sys.IsOnJob()) {
+  // Nor across home ground (2.7.1, Spawn/HomeGround.reds).
+  if IsDefined(sys) && (sys.IsInSanctuary() || sys.IsOnJob() || CBHomeHolds(sys, sys.GetHuntFaction())) {
     CBCancelMove(puppet);
     puppet.cbSearchGen = 0;
     return;
@@ -419,7 +420,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         sys.SetHuntGrade("");
         sys.SetSpotTicks(0);
         sys.SetHuntIdleTicks(0);
-        sys.SetHuntEnd("THREAT ENDED", CBConfig.HuntEndLineTicks());
+        sys.SetHuntEnd(CBT(n"Cyberbane-Hunt-THREATENDED"), CBConfig.HuntEndLineTicks());
       }
     } else {
       sys.SetHuntIdleTicks(0);
@@ -430,7 +431,8 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       // patience already spent and the ring already closed tight around wherever V stood when the
       // text arrived, gave it a few seconds and left. All of it starts now: from word on where V
       // is today, when they get here.
-      if sys.GetHuntState() == CBHuntSearching() && sys.IsHuntFromTip() {
+      // Unless V has broken the trail since the word went out (2.7.1, Spawn/Slip.reds): then the word stays where V was.
+      if sys.GetHuntState() == CBHuntSearching() && sys.IsHuntFromTip() && !CBSlipBroken(game) {
         let waiting = sys.GetTickCount();
         let vAt = player.GetWorldPosition();
         sys.SetHuntLastSeenTick(waiting);
@@ -451,6 +453,9 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let ppos = player.GetWorldPosition();
   let now = sys.GetTickCount();
 
+  // Home ground (2.7.1, Spawn/HomeGround.reds) holds them the way a job does: nobody is sent looking, nobody is handed V,
+  // and somebody already fighting V close by goes on fighting.
+  let jobLike = sys.IsOnJob() || CBHomeHolds(sys, sys.GetHuntFaction());
   // V got somewhere safe: orders taken back, and nobody who has lost sight of V goes on after them.
   // First, so the question below is asked of people who have already stopped.
   if sys.IsInSanctuary() {
@@ -462,10 +467,11 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // On a job, the same (1.8.4). Search orders already stopped here, but only until somebody had
     // found V: from then on they chased V into the job, which is how a Valentino hunting V walked
     // into a Maelstrom building in the middle of a gig. Anybody who can see V still fights.
-    if sys.IsOnJob() {
+    if jobLike {
       CBSanctuaryHold(sys, game, des, player, true);
       if now % 30 == 0 {
-        CBLog.Info(n"Spawn", "You are on a job: they hold back until you leave it.");
+        CBLog.Info(n"Spawn", sys.IsOnJob() ? "You are on a job: they hold back until you leave it."
+                                           : "You are on home ground: they hold back until you leave it.");
       }
     }
   }
@@ -509,13 +515,14 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // has actually found V nobody is tracking V and V is not in combat - the phone, saving and fast
   // travel all work while they are still looking. Not while the story has the stage.
   if sys.GetHuntState() == CBHuntLocated() && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary()
-     && !sys.IsOnJob() {
+     && !jobLike {
     CBHuntEngage(sys, game, des, ppos);
   }
 
   // The street's word on where V is, while they are still working from the tip. Refreshed only
   // every so often, so it is a rumour that firms up, not a fix (CBHuntSearchCenter).
-  if sys.IsHuntFromTip() && now - sys.GetHuntTipWordTick() >= CBConfig.HuntTipWordTicks() {
+  // Not for a crew that came in looking where V was (2.7.1, Spawn/Slip.reds): their word is stale and stays so.
+  if sys.IsHuntFromTip() && now - sys.GetHuntTipWordTick() >= CBConfig.HuntTipWordTicks() && !CBSlipSlipped(game, sys.GetHuntFaction()) {
     sys.SetHuntTipWord(ppos, now);
   }
 
@@ -528,7 +535,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let leftArea = driving && NotEquals(sys.GetSearchDistrict(), n"")
                    && NotEquals(sys.GetCurrentDistrict(), sys.GetSearchDistrict());
     // A job counts as somewhere safe for this: they lose interest faster, and they do not follow.
-    if sys.IsInSafeZone() || sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || leftArea {
+    if sys.IsInSafeZone() || sys.IsInSanctuary() || sys.IsInQuestArea() || jobLike || leftArea {
       sys.SetHuntLastSeenTick(sys.GetHuntLastSeenTick() - 1);
     }
     let unseen = now - sys.GetHuntLastSeenTick();
@@ -544,7 +551,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // Said in the log every half minute: a search that finds nobody looks exactly like a search
     // that is not happening, and only this can tell the two apart.
     if now % 30 == 0 {
-      let carNote = carComing ? ", a car on its way" : "";
+      let carNote = carComing ? CBT(n"Cyberbane-Hunt-ACarOnItsWay") : "";
       CBLog.Info(n"Spawn", s"Searching: \(unseen)s unseen of \(sys.GetHuntGiveUpTicks()), ring \(RoundF(CBHuntRadius(sys)))m, nearest of ours \(RoundF(nearest))m\(carNote).");
     }
     if !carComing && (unseen >= sys.GetHuntGiveUpTicks()
@@ -569,7 +576,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // no orders at all while the story has the stage, whether or not they had found V: anybody still
   // out is somebody V can see, left alone until they are not (Core/StoryHold.reds).
   if now % every == 0 && !(sys.IsInQuestArea() && sys.GetHuntState() != CBHuntLocated())
-     && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary() && !sys.IsOnJob() {
+     && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary() && !jobLike {
     let done = 0;
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Rival", done);
     CBHuntOrderTag(sys, game, des, ppos, n"CB_Apex", done);
@@ -659,6 +666,10 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
      && Equals(sys.GetDisguiseFaction(), sys.GetHuntFaction()) {
     scale *= CBConfig.DisguiseSenseMult();
   }
+  // A crew that came in looking where V was, not where V is (2.7.1, Spawn/Slip.reds).
+  if IsDefined(sys) && CBSlipSlipped(game, sys.GetHuntFaction()) {
+    scale *= CBConfig.SlipSenseMult();
+  }
   scale *= 1.0 - CBConfig.DifficultySenseStep() * Cast<Float>(CBDifficultyLevel());
   if IsDefined(sys) {
     scale *= sys.WornPerk().senseMult;
@@ -735,7 +746,7 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
 public func CBHuntCrewPulledUp(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let player = GetPlayer(game);
   if !IsDefined(sys) || !IsDefined(player) || sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob()
-     || sys.GetStoryHold() != CBStoryNone() {
+     || CBHomeHolds(sys, sys.GetHuntFaction()) || sys.GetStoryHold() != CBStoryNone() {
     return;
   }
   let was = sys.GetHuntState();
@@ -780,15 +791,15 @@ public func CBDistrictRenownWord(sys: ref<CyberbaneSystem>, id: CName) -> String
   let ds = sys.FindDistrict(id);
   let renown = IsDefined(ds) ? ds.renown : 0.0;
   if renown >= 75.0 {
-    return "A NAME HERE";
+    return CBT(n"Cyberbane-Hunt-ANAMEHERE");
   }
   if renown >= 40.0 {
-    return "KNOWN HERE";
+    return CBT(n"Cyberbane-Hunt-KNOWNHERE");
   }
   if renown >= 15.0 {
-    return "TALKED ABOUT HERE";
+    return CBT(n"Cyberbane-Hunt-TALKEDABOUTHERE");
   }
-  return "UNKNOWN HERE";
+  return CBT(n"Cyberbane-Hunt-UNKNOWNHERE");
 }
 
 // Where V stands in the district they are standing in, for the HUD.
@@ -847,17 +858,17 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     let war = CBWarBook.Get(game);
     if NotEquals(open, n"") && IsDefined(war) {
       let left = RoundF((war.OpenUntil() - CBGameSeconds(game)) / 3600.0);
-      return "OPEN SEASON: " + CBClip(CBBarFactionLabel(open), CBConfig.HudNameMaxChars()) + s"   -   \(Max(left, 1))H LEFT";
+      return CBTf(n"Cyberbane-Hunt-OPENSEASONHLEFT", [CBClip(CBBarFactionLabel(open), CBConfig.HudNameMaxChars()), s"\(Max(left, 1))"]);
     }
     let tracker = CBTrackerGang(game);
     if NotEquals(tracker, n"") {
-      return "A TRACKER ON YOU: " + CBClip(CBBarFactionLabel(tracker), CBConfig.HudNameMaxChars());
+      return CBTf(n"Cyberbane-Hunt-ATRACKERONYOU", [CBClip(CBBarFactionLabel(tracker), CBConfig.HudNameMaxChars())]);
     }
   }
   // A scout with eyes on V, calling it in (Spawn/Hunted.reds, 2.4.1): the moment V can still stop it.
   if NotEquals(sys.GetScoutFaction(), n"") && sys.GetScoutSeenTicks() > 0 {
     let left = Max(1, CBConfig.ScoutCallTicks() - sys.GetScoutSeenTicks());
-    return "A SCOUT HAS SEEN YOU: CALLING IT IN   -   " + StrUpper(CBTimeText(left));
+    return CBTf(n"Cyberbane-Hunt-ASCOUTHASSEENYOUCALLING", [StrUpper(CBTimeText(left))]);
   }
   // A witness on their way to a gang (Reactions/Witnesses.reds, 2.3.1), while nobody is hunting V yet.
   let witness = CBWitnessHudLine(sys, game);
@@ -868,13 +879,13 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
   let hunterWho = CBClip(CBBountyHudWho(game), CBConfig.HudNameMaxChars());
   let hunterEta = CBBountyComingTicks(game);
   if StrLen(hunterWho) > 0 && hunterEta > 0 && !CBHuntersOut(sys, game) {
-    return "A PRICE ON YOUR HEAD: " + hunterWho + "   -   ON THEIR WAY " + StrUpper(CBTimeText(hunterEta));
+    return CBTf(n"Cyberbane-Hunt-APRICEONYOURHEADON", [hunterWho, StrUpper(CBTimeText(hunterEta))]);
   }
   // One short line, never more. Longest first is the name, so the name is what gets clipped.
   let who = CBClip(CBBarFactionLabel(sys.GetHuntFaction()), CBConfig.HudNameMaxChars());
-  let head = StrLen(who) > 0 ? "HUNTED: " + who : "HUNTED";
+  let head = StrLen(who) > 0 ? CBTf(n"Cyberbane-Hunt-HUNTED", [who]) : CBT(n"Cyberbane-Hunt-HUNTED-2");
   if StrLen(hunterWho) > 0 && CBLiveTaggedPresent(game, n"CB_Bounty") {
-    head = "HUNTED: " + hunterWho;
+    head = CBTf(n"Cyberbane-Hunt-HUNTED", [hunterWho]);
   }
   // On the way: the nearest countdown that is running.
   let eta = -1;
@@ -901,9 +912,9 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
   if !out {
     if eta > 0 {
       let grade = sys.GetHuntGrade();
-      let named = StrLen(who) > 0 ? who : "SOMEBODY";
+      let named = StrLen(who) > 0 ? who : CBT(n"Cyberbane-Hunt-SOMEBODY");
       let what = StrLen(grade) > 0 ? named + " " + grade : named;
-      return "HUNTED: " + what + "   -   ON THEIR WAY " + StrUpper(CBTimeText(eta));
+      return CBTf(n"Cyberbane-Hunt-HUNTEDONTHEIRWAY", [what, StrUpper(CBTimeText(eta))]);
     }
     if huntsOnly {
       return "";   // only while somebody is on their way or out looking
@@ -911,22 +922,22 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     // Nobody on the way yet, but somebody is asking around about V.
     let tracker = CBTrackedBy(sys);
     if StrLen(tracker) > 0 {
-      return "TRACKED: " + CBClip(tracker, CBConfig.HudNameMaxChars());
+      return CBTf(n"Cyberbane-Hunt-TRACKED", [CBClip(tracker, CBConfig.HudNameMaxChars())]);
     }
     // How the last hunt ended, for a few seconds.
     return sys.GetHuntEndLine();
   }
   if sys.GetHuntState() == CBHuntLocated() {
-    return head + "   -   THEY HAVE YOU";
+    return CBTf(n"Cyberbane-Hunt-THEYHAVEYOU", [head]);
   }
   if sys.GetSpotTicks() > 0 {
-    return head + "   -   SPOTTED";
+    return CBTf(n"Cyberbane-Hunt-SPOTTED", [head]);
   }
   let unseen = sys.GetTickCount() - sys.GetHuntLastSeenTick();
   if unseen >= sys.GetHuntGiveUpTicks() * 2 / 3 {
-    return head + "   -   LOSING YOUR TRAIL";
+    return CBTf(n"Cyberbane-Hunt-LOSINGYOURTRAIL", [head]);
   }
-  return head + "   -   SEARCHING FOR YOU";
+  return CBTf(n"Cyberbane-Hunt-SEARCHINGFORYOU", [head]);
 }
 
 // Who is asking around about V right now: a crew or apex squad queued and not yet warned, or a
@@ -996,7 +1007,7 @@ public func CBProvoke(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CN
 // A place name every caller puts after "in" or "to": "around here" there read "Heard you are in around here".
 func CBHuntWhereLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let where = CBDistrictLabel(CBEventDistrict(sys, game));
-  return StrLen(where) > 0 ? where : "Night City";
+  return StrLen(where) > 0 ? where : CBT(n"Cyberbane-GangVoice-NightCity");
 }
 
 // The gang tells V a crew is coming, and roughly how much they know.
@@ -1018,18 +1029,18 @@ public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     let own = CBGangCrewText(faction, where, coming, vendetta, onTheirTurf);
     // The Voodoo Boys come through the Net before anybody walks over (Data/GangCodes.reds).
     if Equals(faction, n"VoodooBoys") && CBGangCodesOn() {
-      CBSystemNote(game, "your optics flicker. Somebody is tracing you through the Net.", 4.0);
+      CBSystemNote(game, CBT(n"Cyberbane-Hunt-YourOpticsFlickerSomebodyIsTracing"), 4.0);
     }
     if StrLen(own) > 0 {
       CBPhoneDemandFromGang(game, faction, own);
     } else {
       if vendetta {
-        CBPhoneDemandFromGang(game, faction, s"Everybody we have is coming for you. Somebody saw you in \(where). \(coming)");
+        CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-Hunt-EverybodyWeHaveIsComingFor", [s"\(where)", s"\(coming)"]));
       } else {
         if onTheirTurf {
-          CBPhoneDemandFromGang(game, faction, s"You are on our streets in \(where). \(coming)");
+          CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-Hunt-YouAreOnOurStreetsIn", [s"\(where)", s"\(coming)"]));
         } else {
-          CBPhoneDemandFromGang(game, faction, s"\(coming) We hear you are in \(where).");
+          CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-Hunt-WeHearYouAreIn", [s"\(coming)", s"\(where)"]));
         }
       }
     }
@@ -1040,13 +1051,13 @@ public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 public func CBApexOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
   let fs = sys.FindFaction(faction);
   // One voice per arrival (2.6.1, CBCrewWarning).
-  let told = CBWatcherTipOff(sys, game, "Four of " + CBFactionLabel(faction) + "'s best") || CBAllyTipOff(sys, game, faction);
+  let told = CBWatcherTipOff(sys, game, CBTf(n"Cyberbane-Hunt-FourOfSBest", [CBFactionLabel(faction)])) || CBAllyTipOff(sys, game, faction);
   if CBToastsOn() && IsDefined(fs) && !told {
     let name = CBApexName(CBContent(game), faction, fs.apexAtKills);
     // Their best remember how it went last time ([U4], 2.3.2).
     let beaten = CBApexTimesBeaten(sys, faction);
-    let record = beaten == 1 ? " You beat our best once. That was luck." : (beaten > 1 ? s" You've beaten our best \(beaten) times. Not this one." : "");
-    CBPhoneDemandFromGang(game, faction, s"\(name) and three of ours are on the road. Last we heard you were in \(CBHuntWhereLine(sys, game)).\(record)");
+    let record = beaten == 1 ? CBT(n"Cyberbane-Hunt-YouBeatOurBestOnceThat") : (beaten > 1 ? CBTf(n"Cyberbane-Hunt-YouVeBeatenOurBestTimes", [s"\(beaten)"]) : "");
+    CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-Hunt-AndThreeOfOursAreOn", [s"\(name)", s"\(CBHuntWhereLine(sys, game))", s"\(record)"]));
   }
 }
 
@@ -1060,15 +1071,15 @@ public func CBRivalWarning(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
     return;
   }
   let where = CBHuntWhereLine(sys, game);
-  let line = s"Heard you are in \(where). I am coming.";
+  let line = CBTf(n"Cyberbane-Hunt-HeardYouAreInIAm", [s"\(where)"]);
   if r.killedV > 0 {
-    line = s"I put you down once. Heard you are in \(where). Let's do it again.";
+    line = CBTf(n"Cyberbane-Hunt-IPutYouDownOnceHeard", [s"\(where)"]);
   } else {
     if r.sparedByV > 0 {
-      line = s"You let me live. Bad call. I know you are in \(where).";
+      line = CBTf(n"Cyberbane-Hunt-YouLetMeLiveBadCall", [s"\(where)"]);
     } else {
       if r.escapes > 0 {
-        line = s"Still breathing, both of us. Not for long. You are in \(where), right?";
+        line = CBTf(n"Cyberbane-Hunt-StillBreathingBothOfUsNot", [s"\(where)"]);
       }
     }
   }
@@ -1132,10 +1143,10 @@ public func CBTrySendScout(sys: ref<CyberbaneSystem>, game: GameInstance, factio
     return false;   // could not be placed; the crew comes the usual way
   }
   sys.SetScout(faction, body);
-  sys.SetHuntGrade("SCOUT");
+  sys.SetHuntGrade(CBT(n"Cyberbane-Hunt-SCOUT"));
   if CBToastsOn() {
     let district = sys.GetCurrentDistrict();
-    let line = "Somebody is walking your block asking questions. Just one, for now.";
+    let line = CBT(n"Cyberbane-Hunt-SomebodyIsWalkingYourBlockAsking");
     if NotEquals(district, n"") {
       CBPhoneFromDistrict(game, district, line);
     } else {
@@ -1215,7 +1226,7 @@ func CBScoutSilenced(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNa
   }
   if CBToastsOn() {
     let lost = CBGangScoutLostLine(faction);
-    CBHearsayFromGangFinal(game, faction, StrLen(lost) > 0 ? lost : "Our guy stopped answering. We will find you another way.", n"");
+    CBHearsayFromGangFinal(game, faction, StrLen(lost) > 0 ? lost : CBT(n"Cyberbane-Hunt-OurGuyStoppedAnsweringWeWill"), n"");
   }
 }
 
@@ -1229,8 +1240,8 @@ func CBScoutLostYou(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNam
     fs.lastHitSquadAt = CBGameSeconds(game);
   }
   if CBToastsOn() {
-    CBHearsayFromGangFinal(game, faction, CBLineOf(["Our scout lost you. You won't get that lucky twice.",
-                                                    "Our eyes lost you in the crowd. We'll find you another day."]), n"");
+    CBHearsayFromGangFinal(game, faction, CBLineOf([CBT(n"Cyberbane-Hunt-OurScoutLostYouYouWon"),
+                                                    CBT(n"Cyberbane-Hunt-OurEyesLostYouInThe")]), n"");
   }
   CBLog.Info(n"Spawn", s"V left the \(NameToString(faction)) scout behind before they could call it in.");
 }
@@ -1246,7 +1257,7 @@ func CBScoutCallIn(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
     let fs = sys.FindFaction(faction);
     // One voice per arrival (2.6.1, CBCrewWarning).
     if !CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction))) && !CBAllyTipOff(sys, game, faction) {
-      CBPhoneDemandFromGang(game, faction, s"Our scout has eyes on you. \(CBCrewComingLine(sys, game, fs))");
+      CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-Hunt-OurScoutHasEyesOnYou", [s"\(CBCrewComingLine(sys, game, fs))"]));
     }
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout found you and called in the crew.");
     return;
@@ -1444,8 +1455,8 @@ public func CBCutOffTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
      || !CBWorldStable(game) {
     return;
   }
-  // Waiting outside V's door, or outside V's job, because they were told to is not being stuck.
-  if sys.IsInSanctuary() || sys.IsOnJob() {
+  // Waiting outside V's door, V's job or V's home ground, because they were told to is not being stuck.
+  if sys.IsInSanctuary() || sys.IsOnJob() || CBHomeHolds(sys, sys.GetHuntFaction()) {
     return;
   }
   let budget = CBConfig.CutOffPathsPerPass();

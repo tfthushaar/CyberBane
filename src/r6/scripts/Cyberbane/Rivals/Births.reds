@@ -153,18 +153,18 @@ func CBRivalBirth(sys: ref<CyberbaneSystem>, game: GameInstance, b: ref<CBPendin
   }
   let name = CBRivalDisplayName(CBContent(game), r);
   if IsDefined(dead) {
-    CBPhoneFromGang(game, b.faction, name + " has your name now. That is on you.");
-    CBPhoneSendTinted(game, name, s"You put \(b.predecessor) in the ground. Family doesn't forget. I know how you fight now.", CBHudRed());
+    CBPhoneFromGang(game, b.faction, CBTf(n"Cyberbane-Births-HasYourNameNowThatIs", [name]));
+    CBPhoneSendTinted(game, name, CBTf(n"Cyberbane-Births-YouPutInTheGroundFamily", [s"\(b.predecessor)"]), CBHudRed());
     return;
   }
   if spared {
-    CBHearsayFromStreet(game, s"\(name) walked away from you breathing. They will not forget it.", n"");
+    CBHearsayFromStreet(game, CBTf(n"Cyberbane-Births-WalkedAwayFromYouBreathingThey", [s"\(name)"]), n"");
   } else {
     if survivor {
-      CBHearsayFromStreet(game, s"\(name) got clear of you. You have not seen the last of them.", n"");
+      CBHearsayFromStreet(game, CBTf(n"Cyberbane-Births-GotClearOfYouYouHave", [s"\(name)"]), n"");
     } else {
       if StrLen(b.predecessor) > 0 {
-        CBHearsayFromGangFinal(game, b.faction, name + " picks up where " + b.predecessor + " left off.", n"");
+        CBHearsayFromGangFinal(game, b.faction, CBTf(n"Cyberbane-Births-PicksUpWhereLeftOff", [name, b.predecessor]), n"");
       }
     }
   }

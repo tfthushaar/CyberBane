@@ -207,14 +207,14 @@ public func CBTemperWords(id: CName) -> String {
     return "";
   }
   switch CBDistrictIndex(id) {
-    case 0: return "Watson talks fast and forgets fast.";
-    case 1: return "Westbrook scares easily and keeps it to itself.";
-    case 2: return "City Center sees nothing and says less.";
-    case 3: return "Heywood remembers every name, and tells the Valentinos.";
-    case 4: return "Santo Domingo has seen worse, and looks after its own.";
-    case 5: return "Pacifica has seen everything.";
-    case 6: return "Dogtown is a war zone, and Barghest hears everything.";
-    case 7: return "Out in the Badlands word travels slowly and is never lost.";
+    case 0: return CBT(n"Cyberbane-Districts-WatsonTalksFastAndForgetsFast");
+    case 1: return CBT(n"Cyberbane-Districts-WestbrookScaresEasilyAndKeepsIt");
+    case 2: return CBT(n"Cyberbane-Districts-CityCenterSeesNothingAndSays");
+    case 3: return CBT(n"Cyberbane-Districts-HeywoodRemembersEveryNameAndTells");
+    case 4: return CBT(n"Cyberbane-Districts-SantoDomingoHasSeenWorseAnd");
+    case 5: return CBT(n"Cyberbane-Districts-PacificaHasSeenEverything");
+    case 6: return CBT(n"Cyberbane-Districts-DogtownIsAWarZoneAnd");
+    case 7: return CBT(n"Cyberbane-Districts-OutInTheBadlandsWordTravels");
     default: return "";
   }
 }

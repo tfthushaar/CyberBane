@@ -458,6 +458,16 @@ public abstract class CBConfig {
   public static func TrailLookChange() -> Float = 8.0
   public static func TrailUnseenTicks() -> Int32 = 10
   public static func TrailColdChance() -> Float = 0.35
+  // Slipping the countdown (2.7.1, Spawn/Slip.reds): the chance they lose V before setting off, with two changes and with
+  // three or more; and how much less sharp they are when they come in looking in the wrong place.
+  public static func SlipLoseTwo() -> Float = 0.55
+  public static func SlipLoseMore() -> Float = 0.85
+  public static func SlipSenseMult() -> Float = 0.7
+  // Home ground (2.7.1, Spawn/HomeGround.reds): how far round an apartment, flat on the map, counts as its building; how
+  // close a bed must be to a home already known to be the same one; how many homes are kept.
+  public static func HomeRadius() -> Float = 110.0
+  public static func HomeMergeDistance() -> Float = 60.0
+  public static func HomeMax() -> Int32 = 8
   public static func HauntShare() -> Float = 0.34
   public static func HauntMinSeconds() -> Float = 7200.0
   public static func HauntSecondsPerSample() -> Float = 80.0

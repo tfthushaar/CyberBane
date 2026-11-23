@@ -38,28 +38,28 @@ public func CBRivalCatchphrase(r: ref<CBRival>) -> String {
     return "";
   }
   if CBRivalHasTrait(r, n"Broken") {
-    return CBRivalPhrase(r, "The voices know your name.", "Can't stop. Won't stop. Hear it?", "Everything's so loud. You first.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalLife-TheVoicesKnowYourName"), CBT(n"Cyberbane-RivalLife-CanTStopWonTStop"), CBT(n"Cyberbane-RivalLife-EverythingSSoLoudYouFirst"));
   }
   if r.source == EnumInt(ECBRivalSource.Betrayer) {
-    return CBRivalPhrase(r, "I watched your back. I know where it's soft.", "You never paid me what I was worth.",
-                         "I learned everything from you. Including this.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalLife-IWatchedYourBackIKnow"), CBT(n"Cyberbane-RivalLife-YouNeverPaidMeWhatI"),
+                         CBT(n"Cyberbane-RivalLife-ILearnedEverythingFromYouIncluding"));
   }
   if r.source == EnumInt(ECBRivalSource.Avenger) {
-    return CBRivalPhrase(r, "Blood pays for blood.", "I carry them with me. Every step.", "You took one of ours. I'm taking you.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalLife-BloodPaysForBlood"), CBT(n"Cyberbane-RivalLife-ICarryThemWithMeEvery"), CBT(n"Cyberbane-RivalLife-YouTookOneOfOursI"));
   }
   if r.source == EnumInt(ECBRivalSource.Spared) || r.sparedByV > 0 {
-    return CBRivalPhrase(r, "You should have finished it.", "Mercy's the last mistake you'll make.", "I woke up. You won't.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalLife-YouShouldHaveFinishedIt"), CBT(n"Cyberbane-RivalLife-MercySTheLastMistakeYou"), CBT(n"Cyberbane-RivalLife-IWokeUpYouWonT"));
   }
   if r.killedV > 0 {
-    return CBRivalPhrase(r, "Lie down. You know how this goes.", "Again? Fine. Same ending.", "I've done this before.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalLife-LieDownYouKnowHowThis"), CBT(n"Cyberbane-RivalLife-AgainFineSameEnding"), CBT(n"Cyberbane-RivalLife-IVeDoneThisBefore"));
   }
   if CBRivalHasTrait(r, n"Confident") || CBRivalHasTrait(r, n"PackLeader") {
-    return CBRivalPhrase(r, "Nobody walks away from me twice.", "My street. My rules. My kill.", "You're just a story they tell. I'm the ending.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalLife-NobodyWalksAwayFromMeTwice"), CBT(n"Cyberbane-RivalLife-MyStreetMyRulesMyKill"), CBT(n"Cyberbane-RivalLife-YouReJustAStoryThey"));
   }
   if CBRivalHasTrait(r, n"Scarred") || r.escapes > 0 {
-    return CBRivalPhrase(r, "Still breathing. Bet that bugs you.", "Every scar's a promise.", "I keep coming back. You keep running out of luck.");
+    return CBRivalPhrase(r, CBT(n"Cyberbane-RivalLife-StillBreathingBetThatBugsYou"), CBT(n"Cyberbane-RivalLife-EveryScarSAPromise"), CBT(n"Cyberbane-RivalLife-IKeepComingBackYouKeep"));
   }
-  return CBRivalPhrase(r, "Nothing personal. Just business.", "Night City's too small for both of us.", "You made it personal.");
+  return CBRivalPhrase(r, CBT(n"Cyberbane-RivalLife-NothingPersonalJustBusiness"), CBT(n"Cyberbane-RivalLife-NightCitySTooSmallFor"), CBT(n"Cyberbane-RivalLife-YouMadeItPersonal"));
 }
 
 func CBRivalPhrase(r: ref<CBRival>, a: String, b: String, c: String) -> String {
@@ -78,32 +78,32 @@ public func CBRivalStreetStatus(sys: ref<CyberbaneSystem>, game: GameInstance, r
   }
   let book = CBIntelBook.Get(game);
   if IsDefined(book) && book.WordSent(r.id) {
-    return "Waiting for you at their place, ready. The street knows you called them out.";
+    return CBT(n"Cyberbane-RivalLife-WaitingForYouAtTheirPlace");
   }
   if r.state == EnumInt(ECBRivalState.Debtor) {
-    return "Owes you their life, and knows it. Keeps their head down.";
+    return CBT(n"Cyberbane-RivalLife-OwesYouTheirLifeAndKnows");
   }
   if r.state == EnumInt(ECBRivalState.Retired) {
-    return "Left Night City. Nobody expects them back.";
+    return CBT(n"Cyberbane-RivalLife-LeftNightCityNobodyExpectsThem");
   }
   if r.state == EnumInt(ECBRivalState.Slain) {
-    return "Dead. People still talk about how.";
+    return CBT(n"Cyberbane-RivalLife-DeadPeopleStillTalkAboutHow");
   }
   if r.state == EnumInt(ECBRivalState.Dormant) {
-    return "Gone quiet. Nobody's seen them in a while.";
+    return CBT(n"Cyberbane-RivalLife-GoneQuietNobodySSeenThem");
   }
   if r.id == sys.GetActiveRivalId() || r.state == EnumInt(ECBRivalState.Hunting) {
-    return "Out looking for you. Asking everybody where you sleep.";
+    return CBT(n"Cyberbane-RivalLife-OutLookingForYouAskingEverybody");
   }
   if r.id == sys.GetLaneRivalId(CBLaneRival()) {
-    return "Getting their people together. You'll hear from them soon.";
+    return CBT(n"Cyberbane-RivalLife-GettingTheirPeopleTogetherYouLl");
   }
   // In the HUD's own words for a countdown (CBWhen, 2.4.2). The cooldown is in fast ticks, a real second each,
   // and this called every 150 of them an hour: an in-game hour is about 450, so the page said six hours for two.
   if r.huntTicks > 0 {
-    return s"Licking their wounds. Back \(CBWhen(r.huntTicks)).";
+    return CBTf(n"Cyberbane-RivalLife-LickingTheirWoundsBack", [s"\(CBWhen(r.huntTicks))"]);
   }
-  return "Around. Keeping their ears open for your name.";
+  return CBT(n"Cyberbane-RivalLife-AroundKeepingTheirEarsOpenFor");
 }
 
 // ---- The announcement -------------------------------------------------------------------------------------
@@ -141,15 +141,15 @@ public func CBRivalAnnounce(sys: ref<CyberbaneSystem>, game: GameInstance, r: re
   let content = sys.GetContent();
   let name = CBRivalDisplayName(content, r);
   let crew = CBIntelSpeaker(r.faction);
-  let who = "That's them!";
+  let who = CBT(n"Cyberbane-RivalLife-ThatSThem");
   if r.killedV > 0 {
-    who = s"That's the one \(name) put down before!";
+    who = CBTf(n"Cyberbane-RivalLife-ThatSTheOnePutDown", [s"\(name)"]);
   } else {
     if r.escapes > 0 || r.sparedByV > 0 {
-      who = s"That's them. The one \(name) walked away from.";
+      who = CBTf(n"Cyberbane-RivalLife-ThatSThemTheOneWalked", [s"\(name)"]);
     } else {
       if r.source == EnumInt(ECBRivalSource.Avenger) {
-        who = s"That's who did it. \(name) wants them.";
+        who = CBTf(n"Cyberbane-RivalLife-ThatSWhoDidItWants", [s"\(name)"]);
       }
     }
   }
@@ -195,7 +195,7 @@ public func CBSendWord(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   }
   if !IsDefined(s) {
     if !calledOut {
-      CBMenuNote(game, "nowhere near here they would agree to meet. Try somewhere else.", 5.0);
+      CBMenuNote(game, CBT(n"Cyberbane-RivalLife-NowhereNearHereTheyWouldAgree"), 5.0);
     }
     return false;
   }
@@ -207,10 +207,10 @@ public func CBSendWord(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   }
   let name = CBRivalDisplayName(sys.GetContent(), r);
   let place = CBPlacePhrase(s.district);
-  let pin = CBMapMarkersOn() ? " It's on your map." : "";
+  let pin = CBMapMarkersOn() ? CBT(n"Cyberbane-StreetIntel-ItSOnYourMap") : "";
   let meant = StrLen(why) > 0 ? " " + why : "";
-  let line = calledOut ? s"You and me. \(CBCapFirst(place)).\(meant) I'll be waiting.\(pin) \(CBRivalCatchphrase(r))"
-                       : s"Got your message. \(CBCapFirst(place)). Come and try.\(pin) \(CBRivalCatchphrase(r))";
+  let line = calledOut ? CBTf(n"Cyberbane-RivalLife-YouAndMeILlBe", [s"\(CBCapFirst(place))", s"\(meant)", s"\(pin)", s"\(CBRivalCatchphrase(r))"])
+                       : CBTf(n"Cyberbane-RivalLife-GotYourMessageComeAndTry", [s"\(CBCapFirst(place))", s"\(pin)", s"\(CBRivalCatchphrase(r))"]);
   CBPhoneSendTinted(game, name, line, CBHudRed());
   CBFileLog(sys, calledOut ? n"CalledOut" : n"WordSent", now, CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
   CBLog.Info(n"Rivals", s"Rival \(r.id) is waiting at their place (\(calledOut ? "they called V out" : "V sent word")).");
@@ -252,7 +252,7 @@ public func CBWordKept(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   sys.AddRenownPoints((25.0 + 10.0 * Cast<Float>(r.rank)) * CBConfig.WordKeptRenownShare() * mult);
   CBTalkFear(sys, game, r.faction, CBConfig.WordKeptFear());
   if CBMessagesOn() {
-    CBHearsayFromStreet(game, s"They named the place, and you went. \(CBRivalDisplayName(sys.GetContent(), r)) didn't walk away from it.", n"");
+    CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalLife-TheyNamedThePlaceAndYou", [s"\(CBRivalDisplayName(sys.GetContent(), r))"]), n"");
   }
 }
 
@@ -314,22 +314,22 @@ public let cbMercyOpen: Bool;
 
 public func CBRivalMercyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> array<ref<CBTalkLine>> {
   let out: array<ref<CBTalkLine>>;
-  let s = CBTalkMakeLine("[Spare] Walk away. Next time I won't stop.", CBTalkActSpare(), t"ChoiceCaptionParts.HandshakeIcon");
+  let s = CBTalkMakeLine(CBT(n"Cyberbane-RivalLife-SpareWalkAwayNextTimeI"), CBTalkActSpare(), t"ChoiceCaptionParts.HandshakeIcon");
   ArrayPush(out, s);
   let other = CBTalkRivalForFaction(sys, game, n"", t.rivalId);
   if IsDefined(other) {
-    let c = CBTalkMakeLine("[Collect] You owe me your life. Where's " + CBRivalDisplayName(sys.GetContent(), other) + "?",
+    let c = CBTalkMakeLine(CBTf(n"Cyberbane-RivalLife-CollectYouOweMeYourLife", [CBRivalDisplayName(sys.GetContent(), other)]),
                            CBTalkActCollect(), t"ChoiceCaptionParts.BountyHuntIcon");
     c.important = true;
     ArrayPush(out, c);
   }
-  ArrayPush(out, CBTalkMakeLine("[Exile] Leave Night City. Tonight. Don't come back.", CBTalkActExile(), t"ChoiceCaptionParts.BackOutIcon"));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalLife-ExileLeaveNightCityTonightDon"), CBTalkActExile(), t"ChoiceCaptionParts.BackOutIcon"));
   // A fourth way to leave them (2.4.4, [55]), and a fifth: set them on somebody of a gang at war with theirs ([57]).
-  ArrayPush(out, CBTalkMakeLine("[Humiliate] Look at you. Crawling. Everybody's going to hear about this.", CBTalkActHumiliate(), TDBID.None()));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalLife-HumiliateLookAtYouCrawlingEverybody"), CBTalkActHumiliate(), TDBID.None()));
   let r = sys.FindRivalById(t.rivalId);
   let target = CBFeudTargetFor(sys, game, r);
   if IsDefined(target) {
-    let so = CBTalkMakeLine("[Set on] " + CBRivalDisplayName(sys.GetContent(), target) + " is the one you want. I know where they sleep.",
+    let so = CBTalkMakeLine(CBTf(n"Cyberbane-RivalLife-SetOnIsTheOneYou", [CBRivalDisplayName(sys.GetContent(), target)]),
                             CBTalkActSetOn(), t"ChoiceCaptionParts.BountyHuntIcon");
     ArrayPush(out, so);
   }
@@ -338,7 +338,7 @@ public func CBRivalMercyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
   if IsDefined(recruit) {
     ArrayPush(out, recruit);
   }
-  ArrayPush(out, CBTalkMakeLine("[Not yet] Stay down. I haven't decided.", CBTalkActLeave(), TDBID.None()));
+  ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalLife-NotYetStayDownIHaven"), CBTalkActLeave(), TDBID.None()));
   return out;
 }
 
@@ -365,10 +365,10 @@ public func CBRivalMercyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pl
     e.mercyChosen = true;
     if RandF() < chance {
       e.exiled = true;
-      return CBTalkSay(CBPick2("Okay. Okay. I'm gone. You'll never see me again.", "Fine. Night City's yours. I'm done."), n"");
+      return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalLife-OkayOkayIMGoneYou"), CBT(n"Cyberbane-RivalLife-FineNightCitySYoursI")), n"");
     }
     CBRivalGiveTrait(r, n"Humiliated");
-    return CBTalkSay(CBPick2("This is my city. I'll crawl back if I have to.", "Run? From you? Never."), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalLife-ThisIsMyCityILl"), CBT(n"Cyberbane-RivalLife-RunFromYouNever")), n"");
   }
   e.mercyChosen = true;
   if choice == CBTalkActRecruit() {
@@ -383,9 +383,9 @@ public func CBRivalMercyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pl
   if choice == CBTalkActCollect() {
     let i = CBIntelGive(sys, game, player, n"", true, r.id);
     if i.kind == CBIntelNone() {
-      return CBTalkSay("I don't know anything worth my life. I swear.", n"");
+      return CBTalkSay(CBT(n"Cyberbane-RivalLife-IDonTKnowAnythingWorth"), n"");
     }
-    return CBTalkSay(CBIntelSpoken(i) + " We're even.", n"");
+    return CBTalkSay(CBTf(n"Cyberbane-RivalLife-WeReEven", [CBIntelSpoken(i)]), n"");
   }
-  return CBTalkSay(CBPick2(s"...I won't forget this. \(CBRivalCatchphrase(r))", "Why? ...Doesn't matter. I owe you."), n"");
+  return CBTalkSay(CBPick2(CBTf(n"Cyberbane-RivalLife-IWonTForgetThis", [s"\(CBRivalCatchphrase(r))"]), CBT(n"Cyberbane-RivalLife-WhyDoesnTMatterIOwe")), n"");
 }

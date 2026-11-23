@@ -179,7 +179,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     sys.AddKillDreadPoints(10.0 * dreadMult);
     CBTerrorDeed(sys, CBConfig.TerrorMassacre());
     if toasts {
-      CBHearsayFromStreet(game, "Heard what you left behind. People are going to be repeating that one.", n"Massacre");
+      CBHearsayFromStreet(game, CBT(n"Cyberbane-Encounter-HeardWhatYouLeftBehindPeople"), n"Massacre");
     }
     CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
     if enc.bodies > 0 {

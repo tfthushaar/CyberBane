@@ -17,7 +17,7 @@ public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
       if CBMessagesOn() {
         // From somebody on the street rather than from the mod. A title is a thing other
         // people decided to call you, so hearing it from them is the right way round.
-        CBHearsayFromContact(game, "People are calling you " + CBTitleDisplay(sys, def) + " now.", n"");
+        CBHearsayFromContact(game, CBTf(n"Cyberbane-TitleEngine-PeopleAreCallingYouNow", [CBTitleDisplay(sys, def)]), n"");
       }
       CBLog.Info(n"Model", s"Title unlocked: \(NameToString(def.id)).");
     }
@@ -97,107 +97,103 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
   }
   let renown = RoundF(score.GetRenown());
   // 2.4.6 ([U15]).
-  if Equals(id, n"T_NUMBER_ONE") { return "Reach the top of the hunters' ladder."; }
-  if Equals(id, n"T_WARLORD") { return "Make a district your own: a Legend, where every gang is broken."; }
-  if Equals(id, n"T_SEASON_SURVIVOR") { return "Live through a gang's open season."; }
-  if Equals(id, n"T_PARTY_CRASHER") { return "Crash three of the gangs' gatherings, deals or sit-downs."; }
-  if Equals(id, n"T_TROPHY_HUNTER") { return "Take a trophy off three named Rivals."; }
-  if Equals(id, n"T_MADE") { return "Become one of a gang's own."; }
+  if Equals(id, n"T_NUMBER_ONE") { return CBT(n"Cyberbane-TitleEngine-ReachTheTopOfTheHunters"); }
+  if Equals(id, n"T_WARLORD") { return CBT(n"Cyberbane-TitleEngine-MakeADistrictYourOwnA"); }
+  if Equals(id, n"T_SEASON_SURVIVOR") { return CBT(n"Cyberbane-TitleEngine-LiveThroughAGangSOpen"); }
+  if Equals(id, n"T_PARTY_CRASHER") { return CBT(n"Cyberbane-TitleEngine-CrashThreeOfTheGangsGatherings"); }
+  if Equals(id, n"T_TROPHY_HUNTER") { return CBT(n"Cyberbane-TitleEngine-TakeATrophyOffThreeNamed"); }
+  if Equals(id, n"T_MADE") { return CBT(n"Cyberbane-TitleEngine-BecomeOneOfAGangS"); }
   if Equals(id, n"T_LIVING_LEGEND") {
-    return CBReqNum("Reach this much Renown", renown, RoundF(CBConfig.TierLegend())) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-ReachThisMuchRenown"), renown, RoundF(CBConfig.TierLegend())) + ".";
   }
   if Equals(id, n"T_MERC_FROM") {
-    return CBReqNum("Reach this much Renown", renown, RoundF(CBConfig.TierLocalName())) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-ReachThisMuchRenown"), renown, RoundF(CBConfig.TierLocalName())) + ".";
   }
   if Equals(id, n"T_CHROME_SAINT") {
-    return CBReqNum("Installed chrome score, from how much of your cyberware capacity or slots you fill and how good the implants are", RoundF(score.GetChrome()), 85) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-InstalledChromeScoreFromHowMuch"), RoundF(score.GetChrome()), 85) + ".";
   }
   if Equals(id, n"T_GLITCH") {
-    return CBReqStyle(sys, ECBArchetype.Netrunner, "Quickhack kills build it.") + "\n"
-         + CBReqNum("Kill people with quickhacks", stats.quickhackKills, 50) + ".";
+    return CBReqStyle(sys, ECBArchetype.Netrunner, CBT(n"Cyberbane-TitleEngine-QuickhackKillsBuildIt")) + "\n"
+         + CBReqNum(CBT(n"Cyberbane-TitleEngine-KillPeopleWithQuickhacks"), stats.quickhackKills, 50) + ".";
   }
   if Equals(id, n"T_PSYCHO_HUNTER") {
-    return CBReqNum("Kill cyberpsychos", stats.psychosKilled, 10) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-KillCyberpsychos"), stats.psychosKilled, 10) + ".";
   }
   if Equals(id, n"T_PSYCHO_WHISPERER") {
-    return CBReqNum("Take cyberpsychos down without killing them", stats.psychosPacified, 5) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-TakeCyberpsychosDownWithoutKillingThem"), stats.psychosPacified, 5) + ".";
   }
   if Equals(id, n"T_FIST") {
-    return CBReqStyle(sys, ECBArchetype.Brawler, "Fists and blunt weapons build it, knockouts included.") + "\n"
-         + CBReqNum("Put people down, dead or breathing", sys.TotalKills() + stats.nonLethal, 100) + ".";
+    return CBReqStyle(sys, ECBArchetype.Brawler, CBT(n"Cyberbane-TitleEngine-FistsAndBluntWeaponsBuildIt")) + "\n"
+         + CBReqNum(CBT(n"Cyberbane-TitleEngine-PutPeopleDownDeadOrBreathing"), sys.TotalKills() + stats.nonLethal, 100) + ".";
   }
   if Equals(id, n"T_UNTOUCHABLE") {
-    return CBReqNum("Win fights of 2 or more kills with your health never under 95%", stats.flawless, 10) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-WinFightsOf2OrMore"), stats.flawless, 10) + ".";
   }
   if Equals(id, n"T_RED_TIDE") {
-    return CBReqNum(s"Massacres: \(CBConfig.MassacreTotalKills()) bodies in one fight, or \(CBConfig.MassacreWindowKills()) within \(RoundF(CBConfig.MassacreWindowSeconds())) seconds", stats.massacres, 5) + ".";
+    return CBReqNum(CBTf(n"Cyberbane-TitleEngine-MassacresBodiesInOneFightOr", [s"\(CBConfig.MassacreTotalKills())", s"\(CBConfig.MassacreWindowKills())", s"\(RoundF(CBConfig.MassacreWindowSeconds()))"]), stats.massacres, 5) + ".";
   }
   if Equals(id, n"T_MAXTAC_PROBLEM") {
-    return CBReqNum("Kill MaxTac officers", CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)), 10) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-KillMaxTacOfficers"), CBKillsByClass(sys, EnumInt(ECBVictimClass.MaxTac)), 10) + ".";
   }
   if Equals(id, n"T_RIVAL_BREAKER") {
-    return CBReqNum("Kill Rivals", stats.rivalsSlain, 5) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-KillRivals"), stats.rivalsSlain, 5) + ".";
   }
   if Equals(id, n"T_MERCIFUL") {
-    return CBReqNum("Take people down without killing them", stats.nonLethal, 100) + ".\n"
-         + s"Never kill a civilian. You have killed \(CBKillsByClass(sys, EnumInt(ECBVictimClass.Civilian))).";
+    return CBTf(n"Cyberbane-TitleEngine-NeverKillACivilianYouHave", [CBReqNum(CBT(n"Cyberbane-TitleEngine-TakePeopleDownWithoutKillingThem"), stats.nonLethal, 100), s"\(CBKillsByClass(sys, EnumInt(ECBVictimClass.Civilian)))"]);
   }
   if Equals(id, n"T_LANDLORD") {
-    return CBReqNum("Collect tribute from gangs afraid of you", CBTotalTributes(sys), 5) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-CollectTributeFromGangsAfraidOf"), CBTotalTributes(sys), 5) + ".";
   }
   if Equals(id, n"T_FACTION_FRIEND") {
     let friend = "";
     let best = CBBestStanding(sys, friend);
-    return CBReqNum("Reach this standing with one gang", best, 75) + CBReqBest(friend) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-ReachThisStandingWithOneGang"), best, 75) + CBReqBest(friend) + ".";
   }
   if Equals(id, n"T_FACTION_NIGHTMARE") {
     let gang = n"";
     let most = CBMostKilledGang(sys, gang);
     let fearNeed = RoundF(CBConfig.TitleFearNeeded());
-    return s"One gang has to lose 75 people to you and fear you at \(fearNeed) or more.\n"
-         + (Equals(gang, n"") ? "You have not fought one yet."
-            : CBCapFirst(CBFactionLabel(gang)) + s": \(Min(most, 75))/75 killed, fear \(RoundF(score.GetFactionFear(gang)))/\(fearNeed).");
+    return CBTf(n"Cyberbane-TitleEngine-OneGangHasToLose75", [s"\(fearNeed)", (Equals(gang, n"") ? CBT(n"Cyberbane-TitleEngine-YouHaveNotFoughtOneYet")
+            : CBTf(n"Cyberbane-TitleEngine-75KilledFear", [CBCapFirst(CBFactionLabel(gang)), s"\(Min(most, 75))", s"\(RoundF(score.GetFactionFear(gang)))", s"\(fearNeed)"]))]);
   }
   if Equals(id, n"T_BUTCHER_OF") {
     let where = "";
     let best = CBBestDistrict(sys, 0, where);
-    return CBReqStyle(sys, ECBArchetype.Butcher, "Killing people builds it, brutally faster.") + "\n"
-         + CBReqNum("Kills in one district", best, 50) + CBReqBest(where) + ".";
+    return CBReqStyle(sys, ECBArchetype.Butcher, CBT(n"Cyberbane-TitleEngine-KillingPeopleBuildsItBrutallyFaster")) + "\n"
+         + CBReqNum(CBT(n"Cyberbane-TitleEngine-KillsInOneDistrict"), best, 50) + CBReqBest(where) + ".";
   }
   if Equals(id, n"T_GHOST_OF") {
     let where = "";
     let best = CBBestDistrict(sys, 1, where);
-    return CBReqStyle(sys, ECBArchetype.Ghost, "Taking people down unseen builds it.") + "\n"
-         + CBReqNum("Quiet non-lethal takedowns in one district", best, 30) + CBReqBest(where) + ".";
+    return CBReqStyle(sys, ECBArchetype.Ghost, CBT(n"Cyberbane-TitleEngine-TakingPeopleDownUnseenBuildsIt")) + "\n"
+         + CBReqNum(CBT(n"Cyberbane-TitleEngine-QuietNonLethalTakedownsInOne"), best, 30) + CBReqBest(where) + ".";
   }
   if Equals(id, n"T_DISTRICT_PROBLEM") {
     let where = "";
     let best = CBBestDistrict(sys, 2, where);
-    return CBReqNum("Reach this much Dread", RoundF(score.GetDread()), 50) + ".\n"
-         + CBReqNum("Reach this much Renown in one district", best, 80) + CBReqBest(where) + ".";
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-ReachThisMuchDread"), RoundF(score.GetDread()), 50) + ".\n"
+         + CBReqNum(CBT(n"Cyberbane-TitleEngine-ReachThisMuchRenownInOne"), best, 80) + CBReqBest(where) + ".";
   }
   if Equals(id, n"T_KONPEKI_GHOST") {
-    return "Finish The Heist, or do both of these:\n"
-         + CBReqStyle(sys, ECBArchetype.Ghost, "Taking people down unseen builds it.") + "\n"
-         + CBReqNum("Kills nobody saw", stats.unattributed, CBConfig.KonpekiUnattributed()) + ".";
+    return CBTf(n"Cyberbane-TitleEngine-FinishTheHeistOrDoBoth", [CBReqStyle(sys, ECBArchetype.Ghost, CBT(n"Cyberbane-TitleEngine-TakingPeopleDownUnseenBuildsIt")), CBReqNum(CBT(n"Cyberbane-TitleEngine-KillsNobodySaw"), stats.unattributed, CBConfig.KonpekiUnattributed())]);
   }
   if Equals(id, n"T_CYBERBANE") {
-    return CBReqNum("Renown", renown, 850) + "\n"
-         + CBReqNum("Dread", RoundF(score.GetDread()), RoundF(CBConfig.TitleDreadNeeded())) + "\n"
-         + CBReqNum("Rivals killed", stats.rivalsSlain, 3) + "\n"
-         + CBReqNum(s"Gangs that fear you at \(RoundF(CBConfig.TitleFearNeeded())) or more", CBCountFactionsFeared(sys, score, CBConfig.TitleFearNeeded()), 3);
+    return CBReqNum(CBT(n"Cyberbane-TitleEngine-Renown"), renown, 850) + "\n"
+         + CBReqNum(CBT(n"Cyberbane-TitleEngine-Dread"), RoundF(score.GetDread()), RoundF(CBConfig.TitleDreadNeeded())) + "\n"
+         + CBReqNum(CBT(n"Cyberbane-TitleEngine-RivalsKilled"), stats.rivalsSlain, 3) + "\n"
+         + CBReqNum(CBTf(n"Cyberbane-TitleEngine-GangsThatFearYouAtOr", [s"\(RoundF(CBConfig.TitleFearNeeded()))"]), CBCountFactionsFeared(sys, score, CBConfig.TitleFearNeeded()), 3);
   }
   return "";
 }
 
 func CBReqBest(where: String) -> String {
-  return StrLen(where) > 0 ? ", best so far " + where : "";
+  return StrLen(where) > 0 ? CBTf(n"Cyberbane-TitleEngine-BestSoFar", [where]) : "";
 }
 
 func CBReqStyle(sys: ref<CyberbaneSystem>, style: ECBArchetype, how: String) -> String {
   let now = sys.GetPrimaryArchetypeIndex();
-  let yours = now >= 0 ? CBArchetypeName(now) : "not settled yet";
-  return CBArchetypeName(EnumInt(style)) + " must be your main fighting style. " + how + " Yours is " + yours + ".";
+  let yours = now >= 0 ? CBArchetypeName(now) : CBT(n"Cyberbane-TitleEngine-NotSettledYet");
+  return CBTf(n"Cyberbane-TitleEngine-MustBeYourMainFightingStyle", [CBArchetypeName(EnumInt(style)), how, yours]);
 }
 
 func CBBestStanding(sys: ref<CyberbaneSystem>, out who: String) -> Int32 {

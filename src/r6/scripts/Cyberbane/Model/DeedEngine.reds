@@ -121,7 +121,7 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
       // The street names you; somebody who works this part of town tells you what they are
       // calling you. A popup about a title was the mod talking, and this is the city.
       if toasts {
-        CBHearsayFromContact(game, "Heard them calling you " + CBTitleDisplayById(sys, content, tid) + " today.", n"");
+        CBHearsayFromContact(game, CBTf(n"Cyberbane-DeedEngine-HeardThemCallingYouToday", [CBTitleDisplayById(sys, content, tid)]), n"");
       }
     }
   }
@@ -139,7 +139,7 @@ public func CBApplyDeed(sys: ref<CyberbaneSystem>, game: GameInstance, def: ref<
   sys.AddLogEntry(entry);
 
   if toasts {
-    CBHearsayFromStreet(game, "Your name came up again today. It is getting around.", n"NameAgain");
+    CBHearsayFromStreet(game, CBT(n"Cyberbane-DeedEngine-YourNameCameUpAgainToday"), n"NameAgain");
   }
   CBEvaluateTitles(sys, game);
 }

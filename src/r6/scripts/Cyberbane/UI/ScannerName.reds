@@ -134,13 +134,13 @@ public func CBScannerNote(npc: ref<NPCPuppet>) -> String {
     return "";
   }
   if npc.cbSurrendered {
-    return "HANDS UP";
+    return CBT(n"Cyberbane-ScannerName-HANDSUP");
   }
   if npc.cbSergeant && !npc.IsDead() {
-    return "CREW SERGEANT";
+    return CBT(n"Cyberbane-ScannerName-CREWSERGEANT");
   }
   if NotEquals(npc.cbLookoutFor, n"") && !npc.IsDead() {
-    return "LOOKOUT: " + StrUpper(CBFactionLabel(npc.cbLookoutFor));
+    return CBTf(n"Cyberbane-ScannerName-LOOKOUT", [StrUpper(CBFactionLabel(npc.cbLookoutFor))]);
   }
   // V's own crew, and whoever killed one of them (Reactions/Crew.reds, 2.5.0).
   let crew = CBCrewScannerNote(npc);
@@ -155,12 +155,12 @@ public func CBScannerNote(npc: ref<NPCPuppet>) -> String {
   if StrLen(npc.cbApexName) > 0 {
     let role: ECBApexRole;
     let place = CBApexSeatRole(npc, role) ? "  /  " + StrUpper(CBRoleName(role)) : "";
-    return "APEX SQUAD: " + StrUpper(CBBarFactionLabel(CBClassifyFaction(npc))) + place;
+    return CBTf(n"Cyberbane-ScannerName-APEXSQUAD", [StrUpper(CBBarFactionLabel(CBClassifyFaction(npc))), place]);
   }
   // A scout's job (2.4.6, [U14]).
   let sys = CyberbaneSystem.Get(npc.GetGame());
   if IsDefined(sys) && CBIsScoutBody(sys, npc) && !npc.IsDead() {
-    return "SCOUT: " + StrUpper(CBFactionLabel(CBClassifyFaction(npc)));
+    return CBTf(n"Cyberbane-ScannerName-SCOUT", [StrUpper(CBFactionLabel(CBClassifyFaction(npc)))]);
   }
   // How their gang sees V, beside their class (2.4.6, [U14]).
   let stance = CBScannerStance(npc);

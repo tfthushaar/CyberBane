@@ -51,7 +51,7 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
   // A Rival is a person, so they get their name. An apex squad member is one of four, so what
   // matters is which one - the same way a MaxTac drop is legible as a heavy, a blade, a
   // netrunner and a shooter rather than four interchangeable enemies.
-  let label = "HUNTING YOU";
+  let label = CBT(n"Cyberbane-BossBar-HUNTINGYOU");
   // The gang, always. Three lanes can fire for three different gangs, so without this a Scav
   // apex squad arriving while a Valentinos crew is still on you reads as one mixed squad.
   let name = CBBarFactionLabel(CBClassifyFaction(npc));
@@ -76,14 +76,14 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
   // One of the hunters' ladder by what they are and their own name (2.5.5): the bar read "HUNTING YOU" over the game's
   // name for their record, a stranger's, when the HUD line and the scanner already called them by theirs.
   if des.IsTagged(id, n"CB_Bounty") {
-    label = "BOUNTY HUNTER";
+    label = CBT(n"Cyberbane-Bounty-BOUNTYHUNTER");
     let hunter = CBBountyScannerName(npc);
     if StrLen(hunter) > 0 {
       name = StrUpper(hunter);
     }
   }
   if des.IsTagged(id, n"CB_Rival") {
-    label = "RIVAL";
+    label = CBT(n"Cyberbane-Whereabouts-RIVAL");
     // Whose body it is, first: a Rival who came with the active one carries their own name (1.9.0).
     let who = CBFindRivalByBody(sys, id);
     if !IsDefined(who) {
@@ -99,9 +99,5 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
 // The gang's name, as a bar wants it: no article, upper case. CBFactionLabel is written for
 // prose ("the Valentinos"), which does not belong on a health bar.
 func CBBarFactionLabel(id: CName) -> String {
-  let label = CBFactionLabel(id);
-  if StrLen(label) == 0 {
-    return "";
-  }
-  return StrUpper(StrReplace(label, "the ", ""));
+  return StrUpper(CBFactionName(id));
 }

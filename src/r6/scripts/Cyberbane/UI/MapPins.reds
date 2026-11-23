@@ -360,28 +360,28 @@ public func CBMemoryPinMark() -> String = "@"
 
 func CBMapAgo(game: GameInstance, at: Float) -> String {
   let ago = CBHudSince(CBGameSeconds(game), at);
-  return StrLen(ago) > 0 ? ago + " ago" : "just now";
+  return StrLen(ago) > 0 ? CBTf(n"Cyberbane-MapPins-Ago", [ago]) : CBT(n"Cyberbane-MapPins-JustNow");
 }
 
 public func CBMapMemoryTitle(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   let book = IsDefined(sys) ? CBMapBook.Get(sys.GetGameInstance()) : null;
   let m = IsDefined(book) ? book.Find(id) : null;
   if !IsDefined(m) {
-    return "Cyberbane";
+    return CBT(n"Cyberbane-Titles-Cyberbane");
   }
   if m.kind == CBMemRivalFell() {
     let r = sys.FindRivalById(m.subject);
-    return IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : "A Rival";
+    return IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : CBT(n"Cyberbane-MapPins-ARival");
   }
   if m.kind == CBMemEventCrashed() {
     return CBEventCaptionOf(m.what, m.a, m.b);
   }
   if m.kind == CBMemTakeover() {
-    return s"\(CBCapFirst(CBFactionLabel(m.a))) took \(CBDistrictLabel(m.district))";
+    return CBTf(n"Cyberbane-MapPins-Took", [s"\(CBCapFirst(CBFactionLabel(m.a)))", s"\(CBDistrictLabel(m.district))"]);
   }
   let crew = CBCrewBook.Get(sys.GetGameInstance());
   let past = IsDefined(crew) ? crew.FindPast(m.subject) : null;
-  return IsDefined(past) ? CBCrewPastName(sys, past) : "One of your crew";
+  return IsDefined(past) ? CBCrewPastName(sys, past) : CBT(n"Cyberbane-Hud-OneOfYourCrew");
 }
 
 public func CBMapMemoryDesc(sys: ref<CyberbaneSystem>, id: Int32) -> String {
@@ -393,23 +393,23 @@ public func CBMapMemoryDesc(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   }
   let ago = CBMapAgo(game, m.at);
   if m.kind == CBMemRivalFell() {
-    return m.byV ? s"Fell here by your hand, \(ago)." : s"Killed here \(ago), and not by you.";
+    return m.byV ? CBTf(n"Cyberbane-MapPins-FellHereByYourHand", [s"\(ago)"]) : CBTf(n"Cyberbane-MapPins-KilledHereAndNotByYou", [s"\(ago)"]);
   }
   if m.kind == CBMemEventCrashed() {
-    return s"You broke it up here, \(ago). They have not forgotten.";
+    return CBTf(n"Cyberbane-MapPins-YouBrokeItUpHereThey", [s"\(ago)"]);
   }
   if m.kind == CBMemTakeover() {
-    return StrLen(CBFactionLabel(m.b)) > 0 ? s"Taken from \(CBFactionLabel(m.b)), \(ago)." : s"Changed hands \(ago).";
+    return StrLen(CBFactionLabel(m.b)) > 0 ? CBTf(n"Cyberbane-MapPins-TakenFrom", [s"\(CBFactionLabel(m.b))", s"\(ago)"]) : CBTf(n"Cyberbane-MapPins-ChangedHands", [s"\(ago)"]);
   }
   let crew = CBCrewBook.Get(game);
   let past = IsDefined(crew) ? crew.FindPast(m.subject) : null;
   if IsDefined(past) && past.by > 0 {
     let killer = sys.FindRivalById(past.by);
     if IsDefined(killer) {
-      return s"Died here fighting for you, \(ago). \(CBRivalDisplayName(sys.GetContent(), killer)) did it.";
+      return CBTf(n"Cyberbane-MapPins-DiedHereFightingForYouDid", [s"\(ago)", s"\(CBRivalDisplayName(sys.GetContent(), killer))"]);
     }
   }
-  return s"Died here fighting for you, \(ago).";
+  return CBTf(n"Cyberbane-MapPins-DiedHereFightingForYou", [s"\(ago)"]);
 }
 
 // What a remembered place is drawn with: a part of the game's own map atlas, and a colour.
