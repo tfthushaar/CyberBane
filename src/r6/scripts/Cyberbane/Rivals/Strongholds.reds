@@ -422,6 +422,7 @@ public func CBStrongholdTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
   if tick % 30 == 7 {
     CBBaseLearnTick(sys, game, book);
   }
+  CBHoldStashTick(sys, game, player);
   if !CBStrongholdsOn() {
     if book.placedBase != 0 {
       CBStrongholdLeave(sys, game, book);
@@ -452,6 +453,7 @@ public func CBStrongholdTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
       let byV = book.placedBase == hash;
       if byV {
         CBStrongholdCleared(sys, game, gang, place);
+        CBHoldStashOwe(game, bi >= 0 ? book.BaseAt(bi) : player.GetWorldPosition(), hash);
       }
       CBStrongholdUnpin(game, rid);
       book.EndHold(i);
@@ -607,4 +609,113 @@ public func CBSetUpHold(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
   }
   CBKitSquadMember(puppet);
   CBApplyCrewBuild(sys, game, puppet);
+}
+
+// ---- The stash (2.7.3) ----------------------------------------------------------------------------------------------
+//
+// A cleared stronghold leaves what its Rival kept there on the floor, to go through: the game's own drop bag, laid the
+// way the game lays one when V drops things from the backpack (RPGManager.DropManyItems: the owner holds the items,
+// LootManager.SpawnItemDropOfManyItems moves them to a bag at a spot). The owner is V, never a body (crash rule 6: loot
+// put on corpses crashed). Only what the game itself bags goes in (materials, consumables); ammo stays in V's pockets
+// and the eddies were paid already. Laid once the fight is over and V is close, so it is there to be found; if the game
+// will not lay it, everything simply stays with V, and the note says so.
+
+public class CBHoldStashBook extends ScriptableSystem {
+  private persistent let m_owed: Bool;
+  private persistent let m_x: Float;
+  private persistent let m_y: Float;
+  private persistent let m_z: Float;
+  private persistent let m_hash: Int32;
+
+  public static func Get(game: GameInstance) -> ref<CBHoldStashBook> {
+    let c = GameInstance.GetScriptableSystemsContainer(game);
+    return IsDefined(c) ? c.Get(n"CBHoldStashBook") as CBHoldStashBook : null;
+  }
+
+  public func Owed() -> Bool { return this.m_owed; }
+  public func At() -> Vector4 { return new Vector4(this.m_x, this.m_y, this.m_z, 1.0); }
+  public func Hash() -> Int32 { return this.m_hash; }
+
+  public func Owe(at: Vector4, hash: Int32) -> Void {
+    this.m_owed = true;
+    this.m_x = at.X;
+    this.m_y = at.Y;
+    this.m_z = at.Z;
+    this.m_hash = hash;
+  }
+
+  public func Clear() -> Void {
+    this.m_owed = false;
+    this.m_x = 0.0;
+    this.m_y = 0.0;
+    this.m_z = 0.0;
+    this.m_hash = 0;
+  }
+}
+
+public func CBHoldStashOwe(game: GameInstance, at: Vector4, hash: Int32) -> Void {
+  let book = CBHoldStashBook.Get(game);
+  if IsDefined(book) {
+    book.Owe(at, hash);
+    CBLog.Info(n"Rivals", "A cleared stronghold's stash is owed, to be laid once the fight is over.");
+  }
+}
+
+func CBHoldStashTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>) -> Void {
+  let book = CBHoldStashBook.Get(game);
+  if !IsDefined(book) || !book.Owed() || player.IsInCombat() || IsDefined(player.GetMountedVehicle()) || !CBWorldStable(game)
+     || Vector4.Distance(player.GetWorldPosition(), book.At()) > CBConfig.StrongholdStashReach() {
+    return;
+  }
+  let at = book.At();
+  let hash = book.Hash();
+  book.Clear();
+  CBHoldStashDrop(sys, game, player, at, hash);
+}
+
+// The items, scaled to V's level the way loot is; then the bag. True when the bag was laid.
+func CBHoldStashDrop(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, at: Vector4, hash: Int32) -> Bool {
+  let ts = GameInstance.GetTransactionSystem(game);
+  let lm = GameInstance.GetLootManager(game);
+  if !IsDefined(ts) || !IsDefined(lm) {
+    return false;
+  }
+  let ids: array<TweakDBID>;
+  let counts: array<Int32>;
+  CBLootRoll(CBLootTierApex(), ids, counts);
+  CBLootRoll(CBLootTierApex() + 1, ids, counts);
+  let scale = CBLootLevelScale(game) * sys.WornPerk().lootMult;
+  let bag: array<DropInstruction>;
+  let i = 0;
+  while i < Min(ArraySize(ids), ArraySize(counts)) {
+    let item = ItemID.FromTDBID(ids[i]);
+    let n = Max(1, RoundF(Cast<Float>(counts[i]) * scale));
+    if ts.GiveItem(player, item, n) {
+      let cat = RPGManager.GetItemCategory(item);
+      if Equals(cat, gamedataItemCategory.General) || Equals(cat, gamedataItemCategory.Consumable) {
+        ArrayPush(bag, DropInstruction.Create(item, n));
+      }
+    }
+    i += 1;
+  }
+  let place = CBBaseName(game, hash);
+  if ArraySize(bag) == 0 {
+    return false;
+  }
+  let ground: Vector4;
+  let snapped: Vector4;
+  let spot = CBNavSnap(game, at.X, at.Y, at.Z, snapped) && CBSettleOnGround(game, snapped, ground) ? ground : at;
+  let laid = lm.SpawnItemDropOfManyItems(player, bag, n"playerDropBag", new Vector4(spot.X, spot.Y, spot.Z + 0.3, 1.0));
+  if laid {
+    CBLog.Info(n"Rivals", s"A cleared stronghold's stash was laid: \(ArraySize(bag)) kinds of item in a bag.");
+    if CBMessagesOn() {
+      CBSystemNote(game, CBTf(n"Cyberbane-Strongholds-Stash", [place]), 7.0);
+    }
+  } else {
+    CBLog.Info(n"Rivals", "The game would not lay a stronghold's stash; its things stay with V.");
+    if CBMessagesOn() {
+      CBSystemNote(game, CBTf(n"Cyberbane-Strongholds-StashKept", [place]), 7.0);
+    }
+  }
+  return laid;
 }

@@ -23,13 +23,19 @@ the next unless a version says otherwise.
 - The people at a gang's home, your guards and a stronghold's garrison also look for hidden spots the game's way when
   every usual spot is in view.
 
+**New: a stronghold's stash**
+- Clear a stronghold and, once the fight is over, whatever its Rival kept there is on the floor where they left it: a bag
+  of crafting materials, rare and epic, sometimes legendary, scaled to your level. Ammo goes straight to you, and the
+  eddies are paid as before. If the game will not lay the bag, everything simply goes into your inventory.
+
 **Changed: loot from crews**
 - Ordinary crew members, escorts and scouts no longer put loot straight into your inventory on top of what their bodies
   drop. Their bodies carry their loot, and wiping out a crew still pays its bounty. Rivals, apex squads and a gang's best
   still leave their extra.
 
-**For translators:** one new line, `Cyberbane-StreetEvents-YouAreEarly`, in `DefineGangHomes` before
-`Cyberbane-StreetEvents-SpottedYouWatching`. Changed in English: `Cyberbane-Settings-LootDrops-Desc`.
+**For translators:** new lines `Cyberbane-StreetEvents-YouAreEarly` (in `DefineGangHomes`, before
+`Cyberbane-StreetEvents-SpottedYouWatching`), `Cyberbane-Strongholds-Stash` and `Cyberbane-Strongholds-StashKept` (in
+`DefineRivalPlaces`). Changed in English: `Cyberbane-Settings-LootDrops-Desc`, `Cyberbane-Settings-Strongholds-Desc`.
 
 Your progress carries over.
 

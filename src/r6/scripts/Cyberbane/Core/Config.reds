@@ -1629,6 +1629,8 @@ public abstract class CBConfig {
   public static func StrongholdTurfLoss() -> Float = 25.0
   public static func StrongholdPay() -> Int32 = 5000
   public static func StrongholdLtGrade() -> Float = 0.8
+  // A cleared stronghold's stash is laid once the fight is over and V is this close to where they kept it (2.7.3).
+  public static func StrongholdStashReach() -> Float = 60.0
   public static func GoodsShare() -> Float = 0.3
   public static func GoodsWorthMult() -> Float = 1.4
   public static func GoodsStalePerDay() -> Float = 0.2

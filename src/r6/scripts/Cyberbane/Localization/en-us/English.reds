@@ -5263,7 +5263,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-RivalSignature", "Signature chrome");
     this.Text("Cyberbane-Settings-RivalSignature-Desc", "Rivals who climb high enough come back on their gang's signature fighters: mantis blades for Maelstrom and the Mox, gorilla arms for the Tyger Claws and the Wraiths, heavy machine guns, a Voodoo Boys netrunner. The street tells you first, their file says how they fight now, they get a boss bar, and they are likelier to drop an iconic.");
     this.Text("Cyberbane-Settings-Strongholds", "Strongholds");
-    this.Text("Cyberbane-Settings-Strongholds-Desc", "A gang that hates you may put one of its top Rivals in a place you cleared on a gig, with lieutenants and a full squad. The street tells you where and it goes on your map. While they hold it, that Rival waits there instead of coming after you. Kill them to take it down for good: the gang loses the place and ground in the district, and you get paid. Left alone, they move on after a week, or sooner once that gang is no longer hostile to you. Only gigs finished with Cyberbane installed count.");
+    this.Text("Cyberbane-Settings-Strongholds-Desc", "A gang that hates you may put one of its top Rivals in a place you cleared on a gig, with lieutenants and a full squad. The street tells you where and it goes on your map. While they hold it, that Rival waits there instead of coming after you. Kill them to take it down for good: the gang loses the place and ground in the district, you get paid, and once the fight is over what they kept there is on the floor to go through. Left alone, they move on after a week, or sooner once that gang is no longer hostile to you. Only gigs finished with Cyberbane installed count.");
     // Said on the street. {0} is the Rival, {1} what they fight with now ("mantis blades").
     this.Text("Cyberbane-Signature-WordIs", "Word is {0} is back, with {1}.");
     this.Text("Cyberbane-Signature-Mantis", "mantis blades");
@@ -5298,6 +5298,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // A note. {0} is the place, {1} the gang, {2} eddies.
     this.Text("Cyberbane-Strongholds-Cleared", "you took {0} off {1}. They lost the place and the ground around it, and there were {2} eddies inside.");
     // On the Rival's file, with a line break at the end. {0} is the place.
+    // Notes once a cleared stronghold's stash is laid (2.7.3). {0} is the place.
+    this.Text("Cyberbane-Strongholds-Stash", "whatever they kept at {0} is on the floor where they left it. Go through it before you leave.");
+    this.Text("Cyberbane-Strongholds-StashKept", "you went through what they kept at {0}. Anything worth having is in your inventory.");
     this.Text("Cyberbane-Strongholds-CardLine", "Holding {0} with half their crew.\n");
   }
 

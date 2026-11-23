@@ -64,7 +64,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   one of theirs against one of yours, and a robbed bag can hold goods to sell to another gang.
 - **Rivals worth their names (2.7.2).** A Rival who climbs comes back as one of their gang's signature fighters: mantis
   blades, gorilla arms, a heavy machine gun, a netrunner's deck. A top Rival may take over a place you cleared on a gig,
-  with lieutenants and a squad, and wait there for you; kill them and the gang loses it.
+  with lieutenants and a squad, and wait there for you; kill them and the gang loses it, and what they kept there is on
+  the floor to go through.
 - **Meetings you can watch (2.7.2).** Turn up early to a sit-down or a deal and watch: they walk in from further out
   now, and if they spot you watching, the street tells you.
 - **Home ground (2.7.1).** The building around each of your apartments counts as home: the lobby, the corridors and the

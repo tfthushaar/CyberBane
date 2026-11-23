@@ -3995,6 +3995,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(bodyBook) {
       bodyBook.Clear();   // nor what any Rival looks like (2.7.2)
     }
+    let stashBook = CBHoldStashBook.Get(game);
+    if IsDefined(stashBook) {
+      stashBook.Clear();  // and no stronghold's stash is owed (2.7.3)
+    }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);
     this.m_installedAt = this.NewBirthStamp();
