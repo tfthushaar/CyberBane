@@ -104,6 +104,10 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The playthrough id this session drew for a save that came back without one (1.8.3). If the
   // save's own id is restored over it, the two differ and the save is not new. Session only.
   private let m_mintedId: CName;
+  public let squadDown: Int32;        // the crew after V: how many of it are down (2.7.7, Spawn/Regroup.reds)
+  public let squadRegrouped: Bool;    // and whether it has pulled back once
+  private let m_pendingWordPhone: Bool;   // asked for in a Rival's thread, so the answer goes back there (2.7.7)
+  private let m_birthDue: Bool;   // a new playthrough waiting for V to be here before it goes on record (2.7.7)
   // The forget chosen on the Hub is already on record in the service, and what the record said
   // before it, so "Keep them" can put it back exactly. Session only.
   private let m_purgeNoted: Bool;
@@ -1124,6 +1128,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBApplyDeathLedger(this, game);
       CBPruneUniqueRivals(this);
     }
+    // A new playthrough that waited for V (2.7.7, VerifyPlaythroughOwner).
+    if this.m_birthDue && CBGameHasVHere(game) && CBPlayerLifePath(game) >= 0 {
+      this.VerifyPlaythroughOwner();
+    }
     if this.m_headStartDue && this.HasContent() {
       this.m_headStartDue = false;
       CBLifepathHeadStart(this, this.m_headStartPath);
@@ -1275,6 +1283,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts (2.4.4)
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
+    CBCrewLifeTick(this, game);         // and their own lives: kit texts as one, asks, funerals (Reactions/CrewLife.reds, 2.7.7)
+    CBRivalTimelineTick(this, game);    // a Rival's calling card, and the ones who turn (Rivals/RivalTimeline.reds, 2.7.7)
     CBChippinInTick(this, game);        // and one of them listening in on an apex fight (Reactions/ChippinIn.reds, 2.7.6)
     CBGuardTick(this, game);            // and at home, watching the house (2.7.2)
     CBVsSideHostilityTick(this, game);  // V's crew and an add-on's people on V's side against V's enemies (2.7.5)
@@ -1676,12 +1686,21 @@ public class CyberbaneSystem extends ScriptableSystem {
     // The save came back with no Cyberbane state at all: a new playthrough, under the id drawn for
     // it in Initialize. If that draw had no service to ask and landed on a taken id, draw again.
     if Equals(this.m_playthroughId, minted) {
+      // Nobody who is V yet (2.7.7): the main menu's world attaches a player with no lifepath, and every game start logged
+      // a playthrough born "with lifepath -1" and put it on record outside the saves, where Start over reads. It waits
+      // for the first settled tick with V here, and goes on record then.
+      if lifepath < 0 || !CBGameHasVHere(game) {
+        this.m_mintedId = minted;
+        this.m_birthDue = true;
+        return;
+      }
+      this.m_birthDue = false;
       if svc.IsPlaythroughIdInUse(this.m_playthroughId) {
         this.m_playthroughId = CBMintPlaythroughId(svc);
       }
       this.m_installedAt = this.NewBirthStamp();
       svc.NoteBirth(this.m_playthroughId, this.m_installedAt, lifepath);
-      CBLog.Info(n"Core", s"Playthrough \(NameToString(this.m_playthroughId)) starts here (lifepath \(lifepath)).");
+      CBLog.Info(n"Core", s"Playthrough \(NameToString(this.m_playthroughId)) starts here (lifepath \(lifepath)). Reputation, rivals and gang standing all start from zero; if this was not a new game, a mod update changed the saved layout and the old state is gone.");
       this.m_headStartDue = true;            // a new playthrough only (Model/Lifepath.reds, 2.3.1)
       this.m_headStartPath = lifepath;
       return;
@@ -2292,8 +2311,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_pendingFind;
   }
 
-  public func RequestSendWord(id: Int32) -> Void {
+  public func RequestSendWord(id: Int32, opt fromPhone: Bool) -> Void {
     this.m_pendingWord = Max(id, 0);
+    this.m_pendingWordPhone = fromPhone;
   }
 
   public func GetPendingWord() -> Int32 {
@@ -2376,8 +2396,13 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     if this.m_pendingWord > 0 {
       let wordId = this.m_pendingWord;
+      let fromPhone = this.m_pendingWordPhone;
       this.m_pendingWord = 0;
-      CBSendWord(this, game, this.FindRivalById(wordId), false);
+      this.m_pendingWordPhone = false;
+      let wordRival = this.FindRivalById(wordId);
+      if !CBSendWord(this, game, wordRival, false) && fromPhone && IsDefined(wordRival) {
+        CBPhoneSendTinted(game, CBRivalDisplayName(this.GetContent(), wordRival), CBT(n"Cyberbane-RealPhone-NotAroundHereILlFind"), CBHudRed());
+      }
     }
     if NotEquals(this.m_pendingPeace, n"") {
       let faction = this.m_pendingPeace;
@@ -3593,6 +3618,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalLivesDaily(this, game, elapsedDays);  // bonds, feuds, returns, letters, chrome (2.4.4)
     CBAlliesDaily(this, game, elapsedDays);      // one of theirs: the offer and the week's duty (2.4.5)
     CBCrewDaily(this, game);                     // V's crew: loyalty, the cut, a solo on offer (2.5.0)
+    CBCrewLifeDaily(this, game);                 // and now and then one of them asks V for something (2.7.7)
+    CBCrewRivalsOffBoard(this, game);            // a Rival on the crew is no Rival on the board (2.7.7)
     CBInformantsDaily(this, game, elapsedDays);  // an informant's gang may find out (2.4.5)
     CBMorningBriefTick(this, game);              // a broker's text at dawn (2.4.6)
     CBRivalProgressionTick(this, game);
@@ -4043,6 +4070,20 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(stashBook) {
       stashBook.Clear();  // and no stronghold's stash is owed (2.7.3)
     }
+    let lifeBook = CBCrewLifeBook.Get(game);
+    if IsDefined(lifeBook) {
+      lifeBook.Clear();   // nor has a story, an ask, a funeral or a home (2.7.7)
+    }
+    let loiter = CBLoiterBook.Get(game);
+    if IsDefined(loiter) {
+      CBDeleteTaggedSafe(game, n"CB_Loiter", false, true);
+      loiter.Forget();    // and nobody of the crew hangs out on a corner (2.7.7)
+    }
+    let timeline = CBRivalTimelineBook.Get(game);
+    if IsDefined(timeline) {
+      CBRivalCardDone(game, timeline);
+      timeline.Clear();   // and no Rival has a history with V (2.7.7)
+    }
     // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
     this.m_playthroughId = CBMintPlaythroughId(svc);
     this.m_installedAt = this.NewBirthStamp();
@@ -4353,7 +4394,9 @@ public class CyberbaneSystem extends ScriptableSystem {
       // gang standing. Six of these in one afternoon of rebuilding is what sent me hunting a
       // spawn bug that did not exist - the Rival lane had nothing to send because the Rival
       // list had just been erased.
-      CBLog.Info(n"Core", s"Fresh Cyberbane state: new playthrough id \(NameToString(this.m_playthroughId)). Reputation, rivals and gang standing all start from zero. If this was not a new game, a mod update changed the saved layout and the old state is gone.");
+      // Said when the playthrough is put on record with V there (VerifyPlaythroughOwner, 2.7.7): the main menu's world
+      // drew one of these at every game start, for nobody.
+      CBLog.Verbose(n"Core", s"No saved Cyberbane state yet: playthrough id \(NameToString(this.m_playthroughId)) drawn.");
     }
   }
 
@@ -4623,6 +4666,11 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // Faction of the hit squad currently deployed (for a Hunter Rival if it loses V, §9.9).
   public func SetActiveSquadFaction(faction: CName) -> Void {
+    // A new crew, or none: its losses are counted afresh (2.7.7, Spawn/Regroup.reds).
+    if NotEquals(faction, this.m_activeSquadFaction) {
+      this.squadDown = 0;
+      this.squadRegrouped = false;
+    }
     this.m_activeSquadFaction = faction;
     // No crew out means no crew's apex either. Cleared here so every place that ends a crew -
     // beaten, lost, called back for the story - ends both without having to remember to.

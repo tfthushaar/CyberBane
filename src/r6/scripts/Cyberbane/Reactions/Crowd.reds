@@ -158,6 +158,10 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
     StimBroadcasterComponent.SendStimDirectly(player, gamedataStimType.SpreadFear, npc, data);
     counted = true;
 
+    // A crowd near V's fight says so out loud (2.7.7), in its own voices, now and then.
+    if player.IsInCombat() && stage >= 2 {
+      CBVoice(CyberbaneSystem.Get(game), game, npc, n"crowd_combat", n"CrowdCombat", 15.0, n"fear_run");
+    }
     // Somebody bolting past you is startling, and no more than that.
     if stage == 3 {
       let b = npc.GetStimBroadcasterComponent();

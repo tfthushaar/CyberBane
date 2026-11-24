@@ -117,12 +117,17 @@ public class CBStreetEvent {
   public let earlySaid: Bool;
   // The closest V came to the place, for the log when it ends without happening (2.7.3).
   public let nearest: Float;
+  // How many times it has run late with V waiting at the place (2.7.7), and whether V has been told a job holds it.
+  public let lateCount: Int32;
+  public let jobHeldTold: Bool;
   // Ticks spent waiting for the ground at the place to load, V near and its time come (2.7.3).
   public let groundWait: Int32;
   // The tick its people may next be tried, after a try that found nowhere out of V's sight (2.7.3).
   public let nextTry: Int32;
   // The group an add-on's kind placed (API/EventKinds.reds, 2.7.4), 0 for none.
   public let apiHandle: Int32;
+  // The gang that asked V to its sit-down (2.7.7, Model/GangBosses.reds), n"" for none.
+  public let invitedBy: CName;
 
   public func Tag() -> CName {
     if Equals(this.kind, CBEvAmbush()) {
@@ -246,7 +251,8 @@ public class CBEventEngine {
       return;
     }
     this.m_next = nowT + CBJitter(RoundF(Cast<Float>(CBConfig.EventGapTicks()) / CBGangLifeOften()), 0.4);
-    if RandF() >= CBConfig.EventChance() {
+    // Night and weather (2.7.7, CBStreetLifeMood): more going on after dark, fewer people out in the rain.
+    if RandF() >= CBConfig.EventChance() * CBStreetLifeMood(game) {
       return;
     }
     let kind = this.Choose(sys, now);
@@ -402,6 +408,10 @@ public class CBEventEngine {
     if CBMessagesOn() {
       CBPhoneFromDistrict(game, district, CBEventWordLine(ev));
     }
+    // A gang that respects V asks V to its sit-down (2.7.7).
+    if Equals(kind, CBEvSitDown()) {
+      ev.invitedBy = CBSitDownInvite(sys, game, ev);
+    }
     CBLog.Info(n"Street", s"A \(NameToString(kind)) is set: \(NameToString(a)) \(NameToString(b)).");
     CBEmit(StringToName("Cyberbane/StreetEvent/" + NameToString(kind)), a, 0.0);   // [91], 2.4.6
     return true;
@@ -443,6 +453,12 @@ public class CBEventEngine {
       CBStreetWhyNot(game, NameToString(ev.kind), sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game)
         ? "the story has the stage" : "a job is at the place, or V is at the job V is tracking");
     }
+    // Said to V (2.7.7): "I went there, waited a whole day, nobody came." A job at the place holds them, and nothing said so.
+    if storyBusy && !ev.placed && now >= ev.from && dist <= CBConfig.MeetSpawnDistance() && !ev.jobHeldTold
+       && sys.GetStoryHold() == CBStoryNone() && !CBPlayerInScene(game) && CBMessagesOn() {
+      ev.jobHeldTold = true;
+      CBSystemNote(game, CBTf(n"Cyberbane-StreetEvents-HeldByAJob", [CBCapFirst(CBFactionLabel(ev.a))]), 7.0);
+    }
     // The place onto the street it stands on, once it is in the world: a data terminal stands against a wall.
     if !ev.anchored && dist <= CBConfig.MeetSpawnDistance() {
       ev.anchored = CBEventSettlePlace(game, ev);
@@ -483,8 +499,14 @@ public class CBEventEngine {
     if ev.placed {
       CBEventWalkIns(game, ev);
     }
-    // A fight: once its people are in the world, the sides are set against each other, and it ends its own way.
-    if ev.placed && CBIsFightKind(ev.kind) {
+    // V opened fire on one side of two gangs' business, and the other side likes V or asked V there (2.7.7): V stands with
+    // them, as if V had said so. "Mox and Tyger Claws were meeting, I wanted to side with the Mox": nothing let V.
+    if ev.placed && ev.vSide == 0 && ev.Sides() == 2 && ev.Lone() == 0 {
+      CBEventSideByDeed(sys, game, player, ev);
+    }
+    // A fight: once its people are in the world, the sides are set against each other, and it ends its own way. Any two
+    // gangs' business V took a side in is one now (2.7.7), and ends when one side is down.
+    if ev.placed && (CBIsFightKind(ev.kind) || ev.vSide > 0) {
       // A front line's standoff: the two sides held off each other, as at a meeting, until it starts.
       let opened = false;
       if !ev.started && Equals(ev.kind, CBEvFrontLine()) {
@@ -505,15 +527,15 @@ public class CBEventEngine {
     // either way before, so gangs the game's own data has at odds (Night City Alive makes many more of them
     // so) could open fire on each other as they appeared, and a meeting whose people killed each other could
     // never be crashed by V, since only V's work counts. Only between these people, and gone with them.
-    if ev.placed && !ev.started && ev.Sides() == 2 && !CBIsFightKind(ev.kind) {
+    if ev.placed && !ev.started && ev.Sides() == 2 && !CBIsFightKind(ev.kind) && ev.vSide == 0 {
       if CBCalmSides(sys, game, ev) || sys.GetTickCount() - ev.placedTick > CBConfig.EventCalmTicks() {
         ev.started = true;
       }
     }
-    if ev.placed && !CBIsFightKind(ev.kind) {
+    if ev.placed && !CBIsFightKind(ev.kind) && ev.vSide == 0 {
       let down = 0;
       for id in ev.ids {
-        if CBTakenOutByV(GameInstance.FindEntityByID(game, id) as ScriptedPuppet) {
+        if CBTakenOutByVSide(game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet) {
           down += 1;
         }
       }
@@ -522,6 +544,20 @@ public class CBEventEngine {
         this.End(game);
         return;
       }
+    }
+    // V waiting at the place and its people not there yet (2.7.7): it runs late rather than ending. A window skipped past
+    // while V waited (the game's own time skip) is the same: the people still come, now. Twice at most.
+    if now >= ev.until && CBEventKindOn(ev.kind) && !ev.placed && dist <= CBConfig.MeetSpawnDistance()
+       && ev.lateCount < CBConfig.EventLateMax() && !Equals(ev.kind, CBEvAmbush()) {
+      ev.lateCount += 1;
+      ev.until = now + (Equals(ev.kind, CBEvSitDown()) ? CBConfig.MeetWindowSeconds() : CBConfig.EventWindowSeconds());
+      ev.nextTry = 0;
+      CBLog.Info(n"Street", s"The \(NameToString(ev.kind)) runs late: V is waiting at the place and nobody is there yet (\(ev.lateCount)).");
+    }
+    // A fight V took a side in ends when one side is down, not on the clock, while V is there (2.7.7): V's new friends were
+    // never left mid-fight because the hour on the pin had passed.
+    if now >= ev.until && ev.vSide > 0 && CBEventKindOn(ev.kind) && dist <= CBConfig.MeetSpawnDistance() {
+      return;
     }
     if now >= ev.until || !CBEventKindOn(ev.kind) {
       if CBEventKindOn(ev.kind) {
@@ -582,6 +618,12 @@ public class CBEventEngine {
     let recB = CBGangTemplate(sys, gangB);
     let perSide = Equals(ev.kind, CBEvAmbush()) ? Max(ev.size, 2) : CBEventPerSide(ev.kind);
     let full = lone > 0 ? lone + perSide : sides * perSide;
+    // Gang business V was told of comes before a hangout (2.7.7): a street full of loiterers left no room, and the meeting
+    // never came. The hangout goes out of V's sight, the way every sweep does, and the next try has the room.
+    if CBSpawnRoom(game) < Max(2, full / 2) {
+      CBDeleteTaggedSafe(game, n"CB_Hangout", true, true);
+      CBStreetWhyNot(game, NameToString(ev.kind), s"no room for its people yet: \(CBSpawnRoomNote(game))");
+    }
     let want = Min(full, CBSpawnRoom(game));
     if lone == 0 {
       want -= want % sides;
@@ -802,6 +844,9 @@ public class CBEventEngine {
       }
       ev.pinned = false;
     }
+    // Whoever stood with V goes back to their own first (2.7.7): a follower walks with V, is never out of V's sight, and so
+    // would never be taken away. Every way an event ends comes through here.
+    CBEventReleaseSide(game, ev);
     let tag = ev.Tag();
     this.m_ev = null;
     CBDeleteTaggedSafe(game, tag, true, true);
@@ -1146,6 +1191,7 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
     return;
   }
   CBWarEventCrashed(sys, game, ev);   // a favour asked for peace (Economy/War.reds, 2.4.0)
+  CBEventConsequences(sys, game, ev); // the side V helped, the side V hurt, the ground (Model/GangBosses.reds, 2.7.7)
   let now = CBGameSeconds(game);
   let where = CBEventDistrict(sys, game);
   let a = CBFactionLabel(ev.a);
@@ -1224,7 +1270,7 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
   if Equals(ev.kind, CBEvAmbush()) {
     return;   // they gave up waiting; nobody tells V about an ambush that never sprang
   }
-  if CBIsFightKind(ev.kind) {
+  if CBIsFightKind(ev.kind) || ev.vSide > 0 {
     if ev.placed {
       CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-WhateverStartedNearThereItFizzled", [s"\(a)"]));
     }
@@ -1236,7 +1282,19 @@ public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref
     CBEventSay(game, CBTf(n"Cyberbane-StreetEvents-SpottedYouWatching", [s"\(CBCapFirst(a))"]));
   }
   if Equals(ev.kind, CBEvSitDown()) {
+    // Its people shot each other, or somebody else shot them (2.7.7): no deal was made, and nobody spoke for anybody. It
+    // "settled" before, whoever was lying on the ground.
+    if ev.placed && CBEventAnyDown(game, ev) {
+      CBWeakenGang(sys, game, ev.a, CBConfig.MeetGangLoss() * 0.5);
+      CBWeakenGang(sys, game, ev.b, CBConfig.MeetGangLoss() * 0.5);
+      if CBMessagesOn() {
+        CBHearsayFromStreet(game, CBTf(n"Cyberbane-StreetEvents-SitDownWentBad", [CBCapFirst(CBFactionLabel(ev.a)), CBFactionLabel(ev.b)]), n"");
+      }
+      CBLog.Info(n"Street", "A sit-down ended in shooting without V's side in it.");
+      return;
+    }
     CBMeetSettled(sys, game, ev);   // what the deal was, and what came of it (2.6.5)
+    CBSitDownSpokeFor(sys, game, ev);   // V there for whoever asked (2.7.7)
     return;
   }
   if Equals(ev.kind, CBEvFuneral()) {
@@ -1298,12 +1356,13 @@ public func CBEventTalkLines(game: GameInstance, t: ref<CBTalkTarget>) -> array<
   let out: array<ref<CBTalkLine>>;
   let life = CBStreetLifeFor(game);
   let ev = IsDefined(life) ? life.Events().Live() : null;
-  let des = GameInstance.GetDynamicEntitySystem();
-  if !IsDefined(ev) || !ev.placed || !IsDefined(t.npc) || !IsDefined(des) || !des.IsTagged(t.npc.GetEntityID(), n"CB_Event") {
+  // One of its people by the event's own list (2.7.7), not by a tag: a sit-down's people are tagged CB_Meet, and asking
+  // for CB_Event gave them nothing to say, ever.
+  if !IsDefined(ev) || !ev.placed || !IsDefined(t.npc) || CBEventSideOf(ev, t.npc) < 0 {
     return out;
   }
-  // A front line squaring up (2.6.1): either side will take a gun on their side.
-  if Equals(ev.kind, CBEvFrontLine()) && !ev.started && ev.vSide == 0 && CBEventSideOf(ev, t.npc) >= 0 {
+  // Two gangs squaring up (2.6.1 a front line, 2.7.7 a sit-down or a deal too): either side takes V on theirs.
+  if CBEventSideOpen(game, ev) {
     let side = CBTalkMakeLine(CBT(n"Cyberbane-StreetEvents-SideIMWithYou"), CBTalkActStandWith(), t"ChoiceCaptionParts.ReinforcementIcon");
     side.important = true;
     ArrayPush(out, side);
@@ -1366,37 +1425,145 @@ public func CBEventSideOf(ev: ref<CBStreetEvent>, p: wref<ScriptedPuppet>) -> In
   return -1;
 }
 
-// V picks a side at a front line (2.6.1): that side takes V as one of theirs, the other turns on V, and it starts.
+// Can V still pick a side here (2.7.7)? Two gangs' business with both sides there, nobody's side picked, V not yet shooting
+// at anybody of it, and a front line not yet started (it squares up first, then it is too late, as it always was).
+public func CBEventSideOpen(game: GameInstance, ev: ref<CBStreetEvent>) -> Bool {
+  if !IsDefined(ev) || !ev.placed || ev.vSide > 0 || ev.Sides() != 2 || ev.Lone() > 0 || CBEventHurtByV(game, ev) {
+    return false;
+  }
+  if CBIsFightKind(ev.kind) && ev.started {
+    return false;
+  }
+  let up0 = 0;
+  let up1 = 0;
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    if CBStillStanding(GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet) {
+      if ev.SideOf(i) == 0 { up0 += 1; } else { up1 += 1; }
+    }
+    i += 1;
+  }
+  return up0 > 0 && up1 > 0;
+}
+
+// V stands with one side (2.7.7). They become V's companions for the fight, on the game's own follower role: V's group,
+// so V's crew never takes them for enemies, the game turns nobody of V's group on them, and V's own stray shots do them no
+// harm (damageSystem.script deals nothing to somebody friendly to whoever fired: FriendlyFireIgnored, which the hit hook
+// leaves alone too, Signals/CombatSignals.reds). cbSidedWithV holds them out of every rule that would turn them on V
+// (CBHeldOutOfFight). The other side turns on V and V's companions, and the two sides on each other. Let go when the event
+// ends (CBEventReleaseSide).
+public func CBEventTakeSide(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, ev: ref<CBStreetEvent>,
+                            side: Int32, opt byDeed: Bool) -> Void {
+  if !IsDefined(ev) || !IsDefined(player) || side < 0 || side > 1 {
+    return;
+  }
+  ev.vSide = side + 1;
+  let pagent = player.GetAttitudeAgent();
+  // V's side first, so the other side's turn counts them among V's companions.
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+    if IsDefined(p) {
+      p.cbEventWalked = true;   // no walk-in order after this: the role is what they follow now
+    }
+    if ev.SideOf(i) == side && CBNpcSafe(sys, p) && CBStillStanding(p) {
+      p.cbSidedWithV = true;
+      CBCancelMove(p);   // one order at a time: any walk in gives way to the role
+      let agent = p.GetAttitudeAgent();
+      if IsDefined(agent) && IsDefined(pagent) {
+        CBTrace("attitude: a gang's side takes V in");
+        agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Friendly);
+        pagent.SetAttitudeTowards(agent, EAIAttitude.AIA_Friendly);
+      }
+      CBCalmTowardCompanions(sys, p);
+      CBMakeFollower(p, player);
+    }
+    i += 1;
+  }
+  i = 0;
+  while i < ArraySize(ev.ids) {
+    let q = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+    if ev.SideOf(i) != side && CBNpcSafe(sys, q) && CBStillStanding(q) {
+      CBMakeHostileToPlayer(game, q);
+      CBMakeHostileToCompanions(sys, q);
+    }
+    i += 1;
+  }
+  ev.started = true;
+  CBStartFight(sys, game, player, ev);
+  let mine = side == 0 ? ev.a : ev.b;
+  let theirs = side == 0 ? ev.b : ev.a;
+  if byDeed && CBMessagesOn() {
+    CBSystemNote(game, CBTf(n"Cyberbane-StreetEvents-SidedByDeed", [CBCapFirst(CBFactionLabel(mine))]), 6.0);
+  }
+  CBLog.Info(n"Street", s"V stood with \(NameToString(mine)) against \(NameToString(theirs)) (\(NameToString(ev.kind))\(byDeed ? ", by opening fire" : "")).");
+}
+
+// V shot at one side and not the other, and the other likes V or asked V to come (2.7.7): V is with them.
+func CBEventSideByDeed(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, ev: ref<CBStreetEvent>) -> Void {
+  let hurt0 = false;
+  let hurt1 = false;
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+    if IsDefined(p) && p.cbDamagedByPlayer {
+      if ev.SideOf(i) == 0 { hurt0 = true; } else { hurt1 = true; }
+    }
+    i += 1;
+  }
+  if Equals(hurt0, hurt1) {
+    return;   // nobody yet, or both: V crashed it, the way it always was
+  }
+  let other = hurt0 ? 1 : 0;
+  let gang = other == 0 ? ev.a : ev.b;
+  let score = sys.GetScore();
+  let posture = IsDefined(score) ? score.GetPosture(gang) : ECBPosture.Neutral;
+  if Equals(gang, ev.invitedBy) || Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) {
+    CBEventTakeSide(sys, game, player, ev, other, true);
+  }
+}
+
+// Everybody who stood with V goes back to their own (the role cleared, their own group back), still friendly to V.
+func CBEventReleaseSide(game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
+  if !IsDefined(ev) || ev.vSide <= 0 {
+    return;
+  }
+  let sys = CyberbaneSystem.Get(game);
+  let i = 0;
+  while i < ArraySize(ev.ids) {
+    let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
+    if IsDefined(p) && p.cbSidedWithV {
+      p.cbSidedWithV = false;
+      if CBNpcSafe(sys, p) && CBStillStanding(p) {
+        CBEndFollower(p);
+      }
+    }
+    i += 1;
+  }
+}
+
+// Any of the event's people down, by anybody.
+func CBEventAnyDown(game: GameInstance, ev: ref<CBStreetEvent>) -> Bool {
+  for id in ev.ids {
+    let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+    if IsDefined(p) && CBIsDown(p) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// V picks a side (2.6.1 a front line, 2.7.7 any two gangs' business): that side fights beside V, the other turns on V.
 public func CBEventStandWith(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let life = CBStreetLifeFor(game);
   let ev = IsDefined(life) ? life.Events().Live() : null;
   let side = CBEventSideOf(ev, t.npc);
   let player = GetPlayer(game);
-  if !IsDefined(ev) || ev.started || ev.vSide > 0 || side < 0 || !IsDefined(player) {
+  if !IsDefined(ev) || !CBEventSideOpen(game, ev) || side < 0 || !IsDefined(player) {
     return CBTalkSay(CBT(n"Cyberbane-StreetEvents-TooLateForThatFindCover"), n"");
   }
-  ev.vSide = side + 1;
-  let pagent = player.GetAttitudeAgent();
-  let i = 0;
-  while i < ArraySize(ev.ids) {
-    let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
-    if CBNpcSafe(sys, p) && CBStillStanding(p) {
-      if ev.SideOf(i) == side {
-        let agent = p.GetAttitudeAgent();
-        if IsDefined(agent) && IsDefined(pagent) {
-          CBTrace("attitude: a front line's side takes V in");
-          agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Friendly);
-        }
-        CBCalmTowardCompanions(sys, p);
-      } else {
-        CBMakeHostileToPlayer(game, p);
-      }
-    }
-    i += 1;
-  }
-  let mine = side == 0 ? ev.a : ev.b;
+  CBEventTakeSide(sys, game, player, ev, side);
   let theirs = side == 0 ? ev.b : ev.a;
-  CBLog.Info(n"Street", s"V stood with \(NameToString(mine)) at a front line against \(NameToString(theirs)).");
   return CBTalkSay(CBLineOf([CBTf(n"Cyberbane-StreetEvents-ThenStayCloseAreAboutTo", [s"\(CBCapFirst(CBFactionLabel(theirs)))"]),
                              CBT(n"Cyberbane-StreetEvents-GoodWeHitThemNowDon"),
                              CBTf(n"Cyberbane-StreetEvents-WithYouOnOurSideAre", [s"\(CBCapFirst(CBFactionLabel(theirs)))"])]), n"");
@@ -1552,18 +1719,25 @@ public let cbEventWalked: Bool;
 // Whoever was placed further out walks to their spot, once, as soon as they are standing in the world (2.6.3): the move
 // order is the one order they get, and never while the fight they came for is on.
 func CBEventWalkIns(game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
-  if ev.started {
-    return;
-  }
   let n = Min(ArraySize(ev.ids), ArraySize(ev.walkAt));
   let i = 0;
   while i < n {
     let to = ev.walkAt[i];
+    let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
     if to.W > 0.0 {
-      let p = GameInstance.FindEntityByID(game, ev.ids[i]) as ScriptedPuppet;
-      if CBStillStanding(p) && !p.cbEventWalked && !CBNpcInCombat(p) {
+      // Walking in only until it has started (a fight's sides set on each other end the walk).
+      if !ev.started && CBStillStanding(p) && !p.cbEventWalked && !CBNpcInCombat(p) {
         p.cbEventWalked = true;
         CBEventWalkTo(p, to);
+      }
+    } else {
+      // Put on the spot (2.7.7): a step towards the middle, their one order. "Gang members appear and stay in the default
+      // pose, and won't react until I hit them": nothing asked anything of them, so nothing woke them up.
+      if CBStillStanding(p) && p.IsAttached() && !p.cbEventWalked && !CBNpcInCombat(p) {
+        p.cbEventWalked = true;
+        let pos = p.GetWorldPosition();
+        let toward = Vector4.Normalize2D(new Vector4(ev.at.X - pos.X, ev.at.Y - pos.Y, 0.0, 0.0));
+        CBEventWalkTo(p, new Vector4(pos.X + toward.X * 0.8, pos.Y + toward.Y * 0.8, pos.Z, 1.0));
       }
     }
     i += 1;
@@ -1581,7 +1755,7 @@ func CBSideCount(game: GameInstance, ev: ref<CBStreetEvent>, side: Int32, out st
       if CBStillStanding(p) && !p.cbMoraleBroken && !p.cbSurrendered {
         standing += 1;
       }
-      if CBTakenOutByV(p) {
+      if CBTakenOutByVSide(game, p) {
         byV += 1;
       }
     }
@@ -1606,7 +1780,7 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
     let hunt = Equals(ev.kind, CBEvFugitive());
     // The one alone is up while standing at all: running in fear is what the hunted and the condemned do.
     if !IsDefined(lone) || !CBStillStanding(lone) {
-      if CBTakenOutByV(lone) {
+      if CBTakenOutByVSide(game, lone) {
         CBEventSay(game, hunt ? CBTf(n"Cyberbane-StreetEvents-YouPutDownTheOneWere", [s"\(a)"]) : CBTf(n"Cyberbane-StreetEvents-YouDidKillingForThem", [s"\(CBPossessive(a))"]));
         return true;
       }

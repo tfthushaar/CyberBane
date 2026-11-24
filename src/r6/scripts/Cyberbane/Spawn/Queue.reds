@@ -143,7 +143,7 @@ public func CBSpawnRoomNote(game: GameInstance) -> String {
   let tags: array<CName> = [n"CB_Squad", n"CB_Escort", n"CB_Apex", n"CB_Rival", n"CB_Lair", n"CB_Orphan", n"CB_Scout",
                             n"CB_Bounty", n"CB_Own", n"CB_Ally", n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Event",
                             n"CB_Patrol", n"CB_Ambush", n"CB_Wannabe", n"CB_Hangout", n"CB_Debtor", n"CB_Witness",
-                            n"CB_Guard", n"CB_Hold"];
+                            n"CB_Guard", n"CB_Hold", n"CB_Mark"];
   let counts: array<Int32>;
   for t in tags {
     ArrayPush(counts, 0);
@@ -536,7 +536,7 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
       // huntTicks is this Rival's own cooldown now rather than their scheduler: it is set when
       // you escape one, so somebody you just shook cannot be picked again straight away.
       // Without honouring it here, escaping would have gone back to meaning nothing, which is
-      // the bug that hollowed out the nemesis loop in the first place.
+      // the bug that hollowed out the Rivals' loop in the first place.
       // And the one test the lane's re-check asks (CBRivalQueueable), so nobody is picked who would be
       // let go again on the next tick.
       // And whose own patience has run out (2.6.5, CBRivalReady).
@@ -1115,6 +1115,7 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   if !IsDefined(sys) || Equals(faction, n"") {
     return;
   }
+  CBCrewCounterBeaten(sys, game, faction);   // a counterattack on the crew's corners held (2.7.7)
   // Their apex squad came with them and is down too: nobody else of it walks into a fight that
   // is over. Read before the line below, which forgets that it came.
   if sys.ActiveSquadHasApex() && Equals(sys.GetApexMusterFaction(), faction) {

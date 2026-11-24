@@ -706,8 +706,13 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
 
   let spawned = 0;
   let used: array<Vector4>;   // where bodies have already gone, so nobody lands on top of one
-  // Assume the worst and clear it on success, so a silent refusal cannot look like a success.
-  CBNoteSpawnBlock(CBBlockNoGround());
+  // Assume the worst and clear it on success, so a silent refusal cannot look like a success. Each spot refused from here
+  // is counted under its own reason (2.7.7), and the one that refused the most is what the log and the Hub name.
+  let rtTally = CyberbaneRuntime.Get();
+  if IsDefined(rtTally) {
+    rtTally.ResetSpawnBlockTally();
+  }
+  CBAssumeSpawnBlock(CBBlockNoGround());
 
   // The game's own answer first. If the navmesh offers places to stand, use them and skip the
   // hand-rolled probing entirely; it is only there for when this comes back with nothing.
@@ -734,18 +739,33 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let at: Vector4;
       // The rest of a group form up near the first, because a squad that arrives together reads
       // as a squad, and every one of them has to be joined to the group (CBPointArrivable).
-      let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at)
-               && !CBSafeAreaBlocksSpawn(game, at, side);
+      // Each test that turns a spot down says which it was (2.7.7); the safe-area gate notes its own.
+      let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at);
+      if !ok {
+        CBNoteSpawnBlock(CBBlockNoGround());
+      }
+      if ok {
+        ok = !CBSafeAreaBlocksSpawn(game, at, side);
+      }
       // Nobody appears where the player is looking (CBArrivalUnseen). V's own side asks it of the first body only, and the
       // rest form up within SpawnGroupRadius; everybody else asks it of every body (2.7.6).
       if ok && (ArraySize(used) == 0 || !side) {
         ok = CBArrivalUnseen(game, ppos, fwd, at, side, inSightOk);
+        if !ok {
+          CBNoteSpawnBlock(CBBlockInView());
+        }
       }
       if ok && ArraySize(used) > 0 {
         ok = Vector4.Distance(at, used[0]) <= CBConfig.SpawnGroupRadius();
+        if !ok {
+          CBNoteSpawnBlock(CBBlockNoGround());
+        }
       }
       if ok {
         ok = CBPointArrivable(game, at, used, ppos, openAir);
+        if !ok {
+          CBNoteSpawnBlock(CBBlockNoPath());
+        }
       }
       if ok {
         let facing = Quaternion.BuildFromDirectionVector(
@@ -753,6 +773,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         if CBCreateSpawn(des, record, appearance, at, facing, squadTag, lastSpawned, extraTag) {
           spawned += 1;
           ArrayPush(used, at);
+        } else {
+          CBNoteSpawnBlock(CBBlockEngineRefused());
         }
       }
     }
@@ -831,7 +853,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
             CBNoteSpawnBlock(CBBlockInView());
           } else {
             if !CBPointIsFree(used, stand) || !CBPointArrivable(game, stand, used, ppos, openAir) {
-              CBNoteSpawnBlock(CBBlockNoGround());
+              CBNoteSpawnBlock(!CBPointIsFree(used, stand) ? CBBlockNoGround() : CBBlockNoPath());
             } else {
               if CBCreateSpawn(des, record, appearance, stand, orient, squadTag, lastSpawned, extraTag) {
                 spawned += 1;
@@ -875,15 +897,29 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         // The one test not asked here is the roof. This is the last place anybody can be put, close
         // to V and joined to V, and a street under a walkway should not be able to stop an arrival
         // outright: a gate that refuses everywhere is how this mod has gone silent before.
-        if !CBSafeAreaBlocksSpawn(game, fallback, side)
-           && CBArrivalUnseen(game, ppos, fwd, fallback, side, inSightOk)
-           && CBPointIsFree(used, fallback)
-           && CBPointArrivable(game, fallback, used, ppos, false)
-           && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned, extraTag) {
-          spawned += 1;
-          ArrayPush(used, fallback);
+        // Each test names itself when it refuses (2.7.7). The else here used to write "out of your sight" whatever had
+        // stopped it, which is what hid a conversation's lock behind 237 wrong log lines.
+        if CBSafeAreaBlocksSpawn(game, fallback, side) {
+          // noted by the gate itself
         } else {
-          CBNoteSpawnBlock(CBBlockInView());
+          if !CBArrivalUnseen(game, ppos, fwd, fallback, side, inSightOk) {
+            CBNoteSpawnBlock(CBBlockInView());
+          } else {
+            if !CBPointIsFree(used, fallback) {
+              CBNoteSpawnBlock(CBBlockNoGround());
+            } else {
+              if !CBPointArrivable(game, fallback, used, ppos, false) {
+                CBNoteSpawnBlock(CBBlockNoPath());
+              } else {
+                if CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned, extraTag) {
+                  spawned += 1;
+                  ArrayPush(used, fallback);
+                } else {
+                  CBNoteSpawnBlock(CBBlockEngineRefused());
+                }
+              }
+            }
+          }
         }
       } else {
         CBNoteSpawnBlock(CBBlockNoGround());
@@ -892,9 +928,15 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     i += 1;
   }
   if spawned > 0 {
-    CBNoteSpawnBlock(CBBlockNone());
+    CBAssumeSpawnBlock(CBBlockNone());
   } else {
-    CBLog.Info(n"Spawn", s"Nothing could be placed: \(CBBlockLabel(CBLastSpawnBlock())).");
+    // The reason that turned down the most spots, with the whole count beside it (2.7.7).
+    let tallyLine = "";
+    if IsDefined(rtTally) {
+      rtTally.AssumeSpawnBlock(rtTally.MostSpawnBlock());
+      tallyLine = rtTally.SpawnBlockTallyLine();
+    }
+    CBLog.Info(n"Spawn", s"Nothing could be placed: \(CBBlockLabel(CBLastSpawnBlock())) (spots refused: \(tallyLine)).");
   }
   return spawned;
 }
@@ -1136,8 +1178,30 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
     }
   }
   CBTrace("remove: one of ours");
-  des.DeleteEntity(id);
-  return true;
+  let deleted = des.DeleteEntity(id);
+  // Not in the world (2.7.7): an apex squad still in its car far off, somebody streamed out. The engine keeps them on the
+  // tag lists until it can take them, so the story hold asked again every tick and logged "called back 4 of ours" thirty-
+  // five times over one scene. Whatever the engine answered, they come off every list of ours now and wait as an orphan
+  // (the orphan sweep takes them once they can go), so nothing asks about them twice.
+  if !IsDefined(ent) && des.IsManaged(id) {
+    CBOrphanOffLists(des, id);
+    return true;
+  }
+  return deleted || !des.IsManaged(id);
+}
+
+// Every tag of ours but the mod's own taken off, and the orphan's put on (2.7.7, CBRemoveOne): no encounter, sweep or count
+// finds them again.
+func CBOrphanOffLists(des: ref<DynamicEntitySystem>, id: EntityID) -> Void {
+  let tags = des.GetTags(id);
+  for t in tags {
+    if NotEquals(t, n"Cyberbane") && NotEquals(t, n"CB_Orphan") {
+      des.UnassignTag(id, t);
+    }
+  }
+  if !des.IsTagged(id, n"CB_Orphan") {
+    des.AssignTag(id, n"CB_Orphan");
+  }
 }
 
 // Is any of Cyberbane's car crew still in a seat?
@@ -1445,7 +1509,7 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     return;
   }
   // The one who owes a gang money (Spawn/LivingStreet.reds, 2.6.4): minding their own business until V leans on them.
-  if des.IsTagged(id, n"CB_Debtor") || des.IsTagged(id, n"CB_Witness") {
+  if des.IsTagged(id, n"CB_Debtor") || des.IsTagged(id, n"CB_Witness") || des.IsTagged(id, n"CB_Mark") {
     CBSetUpStreet(sys, game, puppet, false);
     return;
   }
@@ -1474,6 +1538,10 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
   }
 
   // One of V's crew at a post at home (Reactions/CrewHome.reds, 2.7.2).
+  if des.IsTagged(id, n"CB_Loiter") {
+    CBSetUpLoiter(sys, game, puppet);   // V's crew on a corner (Reactions/CrewLoiter.reds, 2.7.7)
+    return;
+  }
   if des.IsTagged(id, n"CB_Guard") {
     CBSetUpGuard(sys, game, puppet);
     return;
@@ -1555,6 +1623,11 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
   // exactly where they were put. No order at all is the whole of the waiting.
   if !riding && !isLair {
     CBOrderPursue(sys, game, puppet);
+  }
+  // Waiting at their place: one step where they stand (2.7.7, CBWakeStep), or nothing ever asked anything of them and they
+  // could stand in the default pose until hit.
+  if isLair && !riding {
+    CBWakeStep(puppet);
   }
   if isApex {
     CBApplyApexBuff(sys, game, puppet);
@@ -1839,7 +1912,7 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
 
 // ---- Re-armed if they come up neutral (1.9.6) --------------------------------------------------------
 //
-// Another nemesis mod (Stay Dead) measured its spawned squads alive but neutral to V: hostility was set once,
+// Another mod (Stay Dead) measured its spawned squads alive but neutral to V: hostility was set once,
 // at spawn, and had slipped by the time they mattered, for reasons it could not pin down. Cyberbane also sets
 // hostility once (CBMakeHostileToPlayer), so for the first RearmWatchTicks after that every one of ours is
 // looked at, and set hostile again if it reads anything else. Attitude only: no AI order, nobody who is down

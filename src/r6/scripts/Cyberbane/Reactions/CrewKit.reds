@@ -313,9 +313,9 @@ public func CBCrewRankShort(game: GameInstance, m: ref<CBCrewMember>) -> String 
 
 // The fights won it takes to reach this rank by wins alone (Reactions/Crew.reds, CBCrewRank).
 func CBCrewWinsFor(rank: Int32) -> Int32 {
-  if rank <= 2 { return 3; }
-  if rank == 3 { return 7; }
-  return 12;
+  if rank <= 2 { return CBCrewPaceWins(3); }
+  if rank == 3 { return CBCrewPaceWins(7); }
+  return CBCrewPaceWins(12);
 }
 
 // What it takes to reach the next rank, said plainly (2.6.1): "Next, Lieutenant: 5 more wins, or a training (2 more
@@ -499,10 +499,13 @@ public class CBCrewChromeEffect {
   public let armourMult: Float;   // the armour multiplier's gain
   public let abilities: array<TweakDBID>;
   public let words: array<String>;
+  // Arm cyberware (2.7.7): the kind of fighter it makes them, as a signature kind (Rivals/Signature.reds): 1 mantis blades
+  // or a monowire, 2 gorilla arms, 3 a projectile launcher's heavy. 0 for anything else.
+  public let style: Int32;
 
   public func Any() -> Bool {
     return ArraySize(this.stats) > 0 || ArraySize(this.abilities) > 0 || this.critChance > 0.0 || this.critDamage > 0.0
-        || this.headshot > 0.0 || this.weakspot > 0.0 || this.speed > 0.0 || this.armourMult > 0.0;
+        || this.headshot > 0.0 || this.weakspot > 0.0 || this.speed > 0.0 || this.armourMult > 0.0 || this.style > 0;
   }
 
   public func Say(w: String) -> Void {
@@ -689,7 +692,294 @@ func CBCrewChromeAbilities(e: ref<CBCrewChromeEffect>, kind: CName, quality: Flo
       ArrayPush(e.abilities, t"Ability.HasPainEditor");
       e.Say(CBT(n"Cyberbane-CrewKit-NoFlinching"));
       break;
+    // Arm cyberware has no stats of its own to read, so it was never offered (2.7.7). It makes them another kind of fighter:
+    // a body of the kind that fights that way, one their gang's signature fighters have (CBCrewStyleFromChrome), and a
+    // fixed share of damage for it, the way the Sandevistan becomes dodge and speed.
+    case n"MantisBlades":
+    case n"NanoWires":
+      e.style = 1;
+      e.speed += 0.10 + 0.03 * quality;
+      e.Say(CBT(n"Cyberbane-CrewKit-FightsWithBlades"));
+      break;
+    case n"StrongArms":
+      e.style = 2;
+      e.speed += 0.08 + 0.03 * quality;
+      ArrayPush(e.abilities, t"Ability.HasMeleeHitReactionAndTakedownResistance");
+      e.Say(CBT(n"Cyberbane-CrewKit-FightsWithGorillaArms"));
+      break;
+    // What works only on a condition for V (a kill, a dodge), as a fair fixed share for them (2.7.7): never a heal in a
+    // fight, which would break the rule that nothing of Cyberbane's mends itself under fire.
+    case n"HealOnKill":
+      CBCrewChromeStat(e, gamedataStatType.Health, gameStatModifierType.Multiplier, 1.06 + 0.02 * quality);
+      e.Say(CBT(n"Cyberbane-CrewKit-ToughenedByAKillChrome"));
+      break;
+    case n"ReflexRecorder":
+      e.speed += 0.04 + 0.02 * quality;
+      e.Say(CBT(n"Cyberbane-CrewKit-SharperAfterADodgeChrome"));
+      break;
+    case n"ProjectileLauncher":
+      e.style = 3;
+      e.speed += 0.08 + 0.03 * quality;
+      e.Say(CBT(n"Cyberbane-CrewKit-FightsAsAHeavy"));
+      break;
   }
+}
+
+// What it does for them by the numbers (2.7.7): "+18% armour, +10% fire resistance". "More armour" named the kind of bonus
+// and never how much. The first `most` of them.
+public func CBCrewChromeNumbers(e: ref<CBCrewChromeEffect>, most: Int32) -> String {
+  if !IsDefined(e) {
+    return "";
+  }
+  let parts: array<String>;
+  let i = 0;
+  while i < ArraySize(e.stats) {
+    let part = CBCrewStatPart(e.stats[i], e.types[i], e.values[i]);
+    if StrLen(part) > 0 && !ArrayContains(parts, part) {
+      ArrayPush(parts, part);
+    }
+    i += 1;
+  }
+  // What only V could use, at what it is worth to them.
+  let baseChance = CBConfig.CrewCritBaseChance() / 100.0;
+  let baseDamage = CBConfig.CrewCritBaseDamage() / 100.0;
+  let chance = ClampF(baseChance + e.critChance / 100.0, 0.0, 1.0);
+  let dmg = chance * (baseDamage + e.critDamage / 100.0) - baseChance * baseDamage
+          + CBConfig.CrewHeadshotShare() * e.headshot + CBConfig.CrewWeakspotShare() * e.weakspot + e.speed;
+  if dmg > 0.005 {
+    ArrayPush(parts, CBTf(n"Cyberbane-CrewKit-PctDamage", [IntToString(RoundF(dmg * 100.0))]));
+  }
+  if e.armourMult > 0.005 {
+    ArrayPush(parts, CBTf(n"Cyberbane-CrewKit-PctArmour", [IntToString(RoundF(e.armourMult * 100.0))]));
+  }
+  if e.style > 0 && ArraySize(e.words) > 0 {
+    ArrayPush(parts, e.words[ArraySize(e.words) - 1]);
+  }
+  for a in e.abilities {
+    if a == t"Ability.HasPainEditor" {
+      ArrayPush(parts, CBT(n"Cyberbane-CrewKit-NoFlinching"));
+    }
+  }
+  if ArraySize(parts) == 0 {
+    return CBCrewChromeWords(e, most);
+  }
+  let out = "";
+  let n = Min(ArraySize(parts), most);
+  let k = 0;
+  while k < n {
+    out += (k > 0 ? ", " : "") + parts[k];
+    k += 1;
+  }
+  return out;
+}
+
+// One stat as a number and a word: "+30 armour", "+10% fire resistance", "fireproof".
+public func CBCrewStatPart(stat: gamedataStatType, modType: gameStatModifierType, value: Float) -> String {
+  let noun = CBCrewStatNoun(stat);
+  if StrLen(noun) == 0 {
+    return "";
+  }
+  switch stat {
+    case gamedataStatType.BurningImmunity:
+    case gamedataStatType.ElectrocuteImmunity:
+    case gamedataStatType.EMPImmunity:
+    case gamedataStatType.BleedingImmunity:
+    case gamedataStatType.PoisonImmunity:
+      return noun;
+  }
+  if Equals(modType, gameStatModifierType.Multiplier) {
+    return CBTf(n"Cyberbane-CrewKit-PctOf", [IntToString(RoundF((value - 1.0) * 100.0)), noun]);
+  }
+  if Equals(modType, gameStatModifierType.AdditiveMultiplier) {
+    return CBTf(n"Cyberbane-CrewKit-PctOf", [IntToString(RoundF(value * 100.0)), noun]);
+  }
+  // Flat: armour and health are points; the rest the game keeps as percentages.
+  if Equals(stat, gamedataStatType.Armor) || Equals(stat, gamedataStatType.Health) {
+    return CBTf(n"Cyberbane-CrewKit-FlatOf", [IntToString(RoundF(value)), noun]);
+  }
+  return CBTf(n"Cyberbane-CrewKit-PctOf", [IntToString(RoundF(value)), noun]);
+}
+
+public func CBCrewStatNoun(stat: gamedataStatType) -> String {
+  switch stat {
+    case gamedataStatType.Armor: return CBT(n"Cyberbane-CrewKit-NounArmour");
+    case gamedataStatType.Health: return CBT(n"Cyberbane-CrewKit-NounHealth");
+    case gamedataStatType.Evasion: return CBT(n"Cyberbane-CrewKit-NounDodge");
+    case gamedataStatType.MitigationChance: return CBT(n"Cyberbane-CrewKit-NounMitigation");
+    case gamedataStatType.MitigationStrength: return CBT(n"Cyberbane-CrewKit-NounMitigationStrength");
+    case gamedataStatType.BonusDamageAgainstMechanicals: return CBT(n"Cyberbane-CrewKit-NounMachines");
+    case gamedataStatType.ThermalResistance: return CBT(n"Cyberbane-CrewKit-FireResistance");
+    case gamedataStatType.ChemicalResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToChemicals");
+    case gamedataStatType.ElectricResistance: return CBT(n"Cyberbane-CrewKit-ShockResistance");
+    case gamedataStatType.ExplosionResistance: return CBT(n"Cyberbane-CrewKit-BlastResistance");
+    case gamedataStatType.MeleeResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToBladesAndFists");
+    case gamedataStatType.QuickhackResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToQuickhacks");
+    case gamedataStatType.DamageOverTimeResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToBleedingAndBurning");
+    case gamedataStatType.BossResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToTheBigOnes");
+    case gamedataStatType.MechResistance: return CBT(n"Cyberbane-CrewKit-ResistanceToMachines");
+    case gamedataStatType.BurningImmunity: return CBT(n"Cyberbane-CrewKit-Fireproof");
+    case gamedataStatType.ElectrocuteImmunity: return CBT(n"Cyberbane-CrewKit-Shockproof");
+    case gamedataStatType.EMPImmunity: return CBT(n"Cyberbane-CrewKit-Shockproof");
+    case gamedataStatType.BleedingImmunity: return CBT(n"Cyberbane-CrewKit-NoBleeding");
+    case gamedataStatType.PoisonImmunity: return CBT(n"Cyberbane-CrewKit-PoisonProof");
+  }
+  return "";
+}
+
+// Arm cyberware put in (2.7.7): the body they come in fights that way from the next call, one of their old gang's
+// signature fighters when the gang has one, else anybody's of that kind; one who was a Rival keeps their own body and
+// only fights differently in name. The seat follows: blades and gorilla arms fight up close, the launcher is a heavy's.
+public func CBCrewStyleFromChrome(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, e: ref<CBCrewChromeEffect>) -> Void {
+  if !IsDefined(m) || !IsDefined(e) || e.style <= 0 {
+    return;
+  }
+  m.seat = e.style == 3 ? 0 : 2;
+  if m.rival > 0 {
+    return;
+  }
+  let rec = CBCrewStyleRecord(m.faction, e.style, m.seed, CBRecordSex(m.record));
+  if TDBID.IsValid(rec) && CBRecordIsPerson(rec) && IsDefined(TweakDBInterface.GetCharacterRecord(rec)) {
+    m.record = rec;
+    m.look = n"";
+    CBLog.Info(n"Crew", s"One of the crew takes a body that fights the new way (signature kind \(e.style)).");
+  }
+}
+
+// A signature record of this kind: the gang's own first, else every gang's, by the member's seed.
+// `sex`: 1 a woman's body, 2 a man's, 0 not known (CBRecordSex): a body of the same sex as theirs, so they are still who
+// they were, or nothing.
+func CBCrewStyleRecord(gang: CName, style: Int32, seed: Int32, sex: Int32) -> TweakDBID {
+  let kinds: array<Int32>;
+  let recs: array<TweakDBID>;
+  let female: array<Bool>;
+  CBRivalSignatureTable(gang, recs, kinds, female);
+  let i = 0;
+  while i < Min(Min(ArraySize(recs), ArraySize(kinds)), ArraySize(female)) {
+    if kinds[i] == style && (sex == 0 || Equals(sex == 1, female[i])) && TDBID.IsValid(recs[i])
+       && IsDefined(TweakDBInterface.GetCharacterRecord(recs[i])) {
+      return recs[i];
+    }
+    i += 1;
+  }
+  let gangs: array<CName>;
+  ArrayPush(gangs, n"Maelstrom");
+  ArrayPush(gangs, n"TygerClaws");
+  ArrayPush(gangs, n"Wraiths");
+  ArrayPush(gangs, n"Mox");
+  ArrayPush(gangs, n"Militech");
+  let found: array<TweakDBID>;
+  for g in gangs {
+    let gk: array<Int32>;
+    let gr: array<TweakDBID>;
+    let gf: array<Bool>;
+    CBRivalSignatureTable(g, gr, gk, gf);
+    let j = 0;
+    while j < Min(Min(ArraySize(gr), ArraySize(gk)), ArraySize(gf)) {
+      if gk[j] == style && (sex == 0 || Equals(sex == 1, gf[j])) && TDBID.IsValid(gr[j])
+         && IsDefined(TweakDBInterface.GetCharacterRecord(gr[j])) {
+        ArrayPush(found, gr[j]);
+      }
+      j += 1;
+    }
+  }
+  return ArraySize(found) > 0 ? found[CBHashIndex(seed, 23, ArraySize(found))] : TDBID.None();
+}
+
+// The sex a character record's body has (2.7.7): 1 a woman, 2 a man, 0 when the record allows both or says nothing.
+public func CBRecordSex(rec: TweakDBID) -> Int32 {
+  let cr = TweakDBInterface.GetCharacterRecord(rec);
+  if !IsDefined(cr) || cr.GetGendersCount() != 1 {
+    return 0;
+  }
+  let ge = cr.GetGendersItem(0);
+  let g = IsDefined(ge) ? ge.Gender() : null;
+  if !IsDefined(g) {
+    return 0;
+  }
+  if Equals(g.Type(), gamedataGender.Female) { return 1; }
+  if Equals(g.Type(), gamedataGender.Male) { return 2; }
+  return 0;
+}
+
+// How many pieces of chrome V owns and is not wearing that would do nothing for anybody but V (2.7.7), so the list can
+// say why they are not there.
+public func CBCrewChromeLeftOut(game: GameInstance) -> Int32 {
+  let player = GetPlayer(game);
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !IsDefined(player) || !IsDefined(ts) {
+    return 0;
+  }
+  let n = 0;
+  let items: array<wref<gameItemData>>;
+  ts.GetItemListByTag(player, n"Cyberware", items);
+  for d in items {
+    if IsDefined(d) && !d.HasTag(n"Quest") && !RPGManager.IsItemEquipped(player, d.GetID())
+       && !CBCrewChromeRead(ItemID.GetTDBID(d.GetID())).Any() {
+      n += 1;
+    }
+  }
+  return n;
+}
+
+// ---- Their own weapon in their hands (2.7.7, experimental) ---------------------------------------------------------
+//
+// The weapon handed over stays V's, kept for them (CBCrewKit.weapon), and what reaches the fight is how they fight and
+// the damage its grade brings. With "Their own weapon in their hands" on, a copy of the same weapon goes into the body's
+// inventory as it comes into the world and the game's own equip order (AIEquipCommand, core/ai/aiCommand.script) puts it
+// in their hand: the one AI order they get on arrival (crash rule 2; the follower role is a role, not an order). The game
+// may still have them switch to the weapons their record carries in a fight. If they die, the weapon falls where they did
+// and is theirs no longer: the one on the ground is it.
+public func CBCrewWeaponInHandOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().crewWeaponInHand;
+}
+
+@addField(ScriptedPuppet)
+public let cbCrewArmed: Bool;
+
+public func CBCrewArmFromKit(game: GameInstance, puppet: ref<ScriptedPuppet>, m: ref<CBCrewMember>) -> Void {
+  if !CBCrewWeaponInHandOn() || !IsDefined(puppet) || !IsDefined(m) || puppet.cbCrewArmed || !puppet.IsAttached() || puppet.IsDead() {
+    return;
+  }
+  let kb = CBCrewKitBook.Get(game);
+  let k = IsDefined(kb) ? kb.Find(m.id) : null;
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !IsDefined(k) || !k.hasWeapon || !IsDefined(ts) {
+    return;
+  }
+  let rec = ItemID.GetTDBID(k.weapon);
+  if !TDBID.IsValid(rec) || !IsDefined(TweakDBInterface.GetWeaponItemRecord(rec)) {
+    return;
+  }
+  let ai = puppet.GetAIControllerComponent();
+  if !IsDefined(ai) {
+    return;
+  }
+  puppet.cbCrewArmed = true;
+  CBTrace("inventory: one of V's crew is handed their weapon");
+  ts.GiveItem(puppet, ItemID.FromTDBID(rec), 1);
+  let cmd = new AIEquipCommand();
+  cmd.slotId = t"AttachmentSlots.WeaponRight";
+  cmd.itemId = rec;
+  cmd.failIfItemNotFound = true;
+  CBTrace("order: one of V's crew draws their own weapon");
+  ai.SendCommand(cmd);
+  CBLog.Info(n"Crew", "One of the crew came carrying the weapon V gave them.");
+}
+
+// Down for good with it in their hand: it fell with them, and is theirs no longer (nothing to hand back twice).
+public func CBCrewArmedFell(game: GameInstance, puppet: ref<ScriptedPuppet>, m: ref<CBCrewMember>) -> Bool {
+  if !IsDefined(puppet) || !puppet.cbCrewArmed || !IsDefined(m) {
+    return false;
+  }
+  let kb = CBCrewKitBook.Get(game);
+  let k = IsDefined(kb) ? kb.Find(m.id) : null;
+  if !IsDefined(k) || !k.hasWeapon {
+    return false;
+  }
+  k.hasWeapon = false;
+  k.weaponTier = 0;
+  return true;
 }
 
 func CBCrewChromeStat(e: ref<CBCrewChromeEffect>, stat: gamedataStatType, modType: gameStatModifierType, value: Float) -> Void {
@@ -766,7 +1056,9 @@ public func CBCrewTrainHours(k: ref<CBCrewKit>) -> Float {
 public func CBCrewAway(game: GameInstance, id: Int32, now: Float) -> Bool {
   let kb = CBCrewKitBook.Get(game);
   let k = IsDefined(kb) ? kb.Find(id) : null;
-  return (IsDefined(k) && (k.trainUntil > now || k.warUntil > now)) || CBCrewJobAway(game, id, now);
+  return (IsDefined(k) && (k.trainUntil > now || (k.warUntil > now && !CBCrewWarHere(game, k.warOn))))
+      || CBCrewJobAway(game, id, now)
+      || CBCrewResting(game, id, now);   // a day off V gave them (2.7.7); a war's party can come on the war's own streets
 }
 
 // "TRAINING, 6H" or "AT WAR, 12H" for the card, "" when here.
@@ -776,6 +1068,10 @@ public func CBCrewAwayWord(game: GameInstance, id: Int32, now: Float) -> String 
   // A job is kept in its own book, so a member with no kit of their own can still be away on one.
   if CBCrewJobAway(game, id, now) {
     return CBTf(n"Cyberbane-CrewJobs-ONAJOBH", [s"\(CBCrewJobHoursLeft(game, id, now))"]);
+  }
+  let lbRest = CBCrewLifeBook.Get(game);
+  if IsDefined(lbRest) && lbRest.RestUntil(id) > now {
+    return CBTf(n"Cyberbane-CrewLife-DAYOFFH", [s"\(CeilF((lbRest.RestUntil(id) - now) / CBConfig.SecondsPerHour()))"]);
   }
   if !IsDefined(k) {
     return "";
@@ -815,18 +1111,56 @@ public func CBCrewWarTargets(sys: ref<CyberbaneSystem>) -> array<CName> {
 @addField(ScriptedPuppet)
 public let cbCrewKitted: Bool;
 
-public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, m: ref<CBCrewMember>) -> Void {
-  if !IsDefined(puppet) || !IsDefined(m) || puppet.cbCrewKitted || !puppet.IsAttached() || puppet.IsDead() {
-    return;
+// What a member's kit comes to (2.7.7): every multiplier, stat and ability CBCrewApplyKit puts on them, worked out without
+// touching anybody, so the Hub can show their real numbers and what a piece of chrome would change before it goes in.
+public class CBCrewKitNumbers {
+  public let rank: Int32;
+  public let health: Float;
+  public let armour: Float;
+  public let damage: Float;
+  public let npcDamage: Float;
+  public let healthCeiling: Float;
+  public let damageCeiling: Float;
+  public let hitCap: Float;
+  public let evasion: Float;                       // flat, from rank 6
+  public let stats: array<gamedataStatType>;       // chrome's own stats, as the game reads them for anybody
+  public let types: array<gameStatModifierType>;
+  public let values: array<Float>;
+  public let abilities: array<TweakDBID>;          // chrome's and the rank's
+  public let chromeSaid: String;
+  public let smasherSaid: String;
+
+  // A chrome stat summed over every piece, for the Hub: the flat part and the share.
+  public func Sum(stat: gamedataStatType, modType: gameStatModifierType) -> Float {
+    let total = 0.0;
+    let i = 0;
+    while i < ArraySize(this.stats) {
+      if Equals(this.stats[i], stat) && Equals(this.types[i], modType) {
+        total += Equals(modType, gameStatModifierType.Multiplier) ? this.values[i] - 1.0 : this.values[i];
+      }
+      i += 1;
+    }
+    return total;
   }
-  puppet.cbCrewKitted = true;
-  let stats = GameInstance.GetStatsSystem(game);
-  if !IsDefined(stats) {
-    return;
+}
+
+// `pl` is the power level the body has (V's level when there is no body), `baseHealth` the body's health before any of
+// this (0 when there is no body: the match to V's fire is then left out, and the number is the least they get). `extra` is
+// one more piece of chrome, for the preview of putting it in.
+public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, baseHealth: Float, opt extra: TweakDBID) -> ref<CBCrewKitNumbers> {
+  let n = new CBCrewKitNumbers();
+  if !IsDefined(m) {
+    n.rank = 1;
+    n.health = 1.0;
+    n.armour = 1.0;
+    n.damage = 1.0;
+    n.npcDamage = 1.0;
+    return n;
   }
   let kb = CBCrewKitBook.Get(game);
   let k = IsDefined(kb) ? kb.Find(m.id) : null;
   let rank = CBCrewRankOf(game, m);
+  n.rank = rank;
   let steps = Cast<Float>(rank - 1);
   let health = 1.0 + CBConfig.CrewRankHealthStep() * steps;
   let armour = 1.0 + CBConfig.CrewRankArmourStep() * steps;
@@ -836,9 +1170,7 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   let critDamage = 0.0;
   let headshot = 0.0;
   let weakspot = 0.0;
-  let id = Cast<StatsObjectID>(puppet.GetEntityID());
-  CBTrace("stats: kitting one of V's crew");
-  let chromeSaid = "";
+  let chrome: array<TweakDBID>;
   if IsDefined(k) {
     // Training brings better gear: armour and health.
     health += CBConfig.CrewGearStep() * Cast<Float>(k.trained);
@@ -850,34 +1182,39 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
       damage += CBConfig.CrewSharpDamage();
       critChance += CBConfig.CrewSharpCrit();
     }
-    // Each implant as the game has it (CBCrewChromeRead): its own stats on them, its power as the game's own people have
-    // it, and what only V could use turned into its worth.
     let ci = 0;
     while ci < CBCrewChromeSlots() {
       let c = k.ChromeAt(ci);
       ci += 1;
       if TDBID.IsValid(c) {
-        let e = CBCrewChromeRead(c);
-        let si = 0;
-        while si < ArraySize(e.stats) {
-          let mod = RPGManager.CreateStatModifier(e.stats[si], e.types[si], e.values[si]);
-          if IsDefined(mod) {
-            stats.AddModifier(id, mod);
-          }
-          si += 1;
-        }
-        for a in e.abilities {
-          CBGrantAbility(puppet as NPCPuppet, a);
-        }
-        critChance += e.critChance;
-        critDamage += e.critDamage;
-        headshot += e.headshot;
-        weakspot += e.weakspot;
-        damage += e.speed;          // more attacks in the same time
-        armour += e.armourMult;
-        chromeSaid += (StrLen(chromeSaid) > 0 ? "; " : "") + CBCrewItemName(c) + ": " + CBCrewChromeWords(e, 4);
+        ArrayPush(chrome, c);
       }
     }
+  }
+  if TDBID.IsValid(extra) {
+    ArrayPush(chrome, extra);
+  }
+  // Each implant as the game has it (CBCrewChromeRead): its own stats on them, its power as the game's own people have it,
+  // and what only V could use turned into its worth.
+  for c in chrome {
+    let e = CBCrewChromeRead(c);
+    let si = 0;
+    while si < ArraySize(e.stats) {
+      ArrayPush(n.stats, e.stats[si]);
+      ArrayPush(n.types, e.types[si]);
+      ArrayPush(n.values, e.values[si]);
+      si += 1;
+    }
+    for a in e.abilities {
+      ArrayPush(n.abilities, a);
+    }
+    critChance += e.critChance;
+    critDamage += e.critDamage;
+    headshot += e.headshot;
+    weakspot += e.weakspot;
+    damage += e.speed;          // more attacks in the same time
+    armour += e.armourMult;
+    n.chromeSaid += (StrLen(n.chromeSaid) > 0 ? "; " : "") + CBCrewItemName(c) + ": " + CBCrewChromeWords(e, 4);
   }
   // The game lets nobody but V land a critical hit, a headshot bonus or a weak spot (damageSystem.script), so what those
   // stats would do is given as the damage they add on average: the gain over V's own base chance and damage, and the
@@ -889,21 +1226,17 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   damage += CBConfig.CrewHeadshotShare() * headshot + CBConfig.CrewWeakspotShare() * weakspot;
   // Their climb, on the scale the apex squads are built on (2.6.1, Spawn/FactionApex.reds): Adam Smasher's own curves at
   // their power level, a share of him that grows with every rank and every spar, and the same measure of V's fire an apex
-  // squad member takes. A Legend who has sparred with V is past an apex squad member at the highest Apex strength: a
-  // larger share of Smasher (CrewSmasherShareTop against ApexSmasherShareMax), longer under fire, and a tighter limit on
-  // any one hit. A Rookie is a ganger, much as before.
+  // squad member takes. A Legend who has sparred with V is past an apex squad member at the highest Apex strength; a Rookie
+  // is a ganger, much as before.
   let climb = ClampF(Cast<Float>(rank - 1) / 5.0, 0.0, 1.0);
   let sparred = IsDefined(k) ? MinF(Cast<Float>(k.spars) * CBConfig.CrewSmasherSparStep(), CBConfig.CrewSmasherSparMax()) : 0.0;
   let share = CBConfig.CrewSmasherShareTop() * climb + sparred;
   let healthCeiling = CBConfig.CrewMultCeiling();
   let damageCeiling = CBConfig.CrewMultCeiling();
   let npcDamage = 1.0;
-  let hitCap = 0.0;
-  let said = "";
   if share > 0.0 {
-    let sm = CBSmasherScale(game, stats.GetStatValue(id, gamedataStatType.PowerLevel));
-    // As far as V is into the game (2.6.4, Spawn/MeasureV.reds CBVProgress), as for a Rival: a crew V spars with at level 5
-    // is not a share of the last boss.
+    let sm = CBSmasherScale(game, pl);
+    // As far as V is into the game (2.6.4, Spawn/MeasureV.reds CBVProgress), as for a Rival.
     let measure = CBMeasureV(game);
     let progress = CBVProgress(measure);
     if sm.X > 0.0 {
@@ -916,49 +1249,99 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
       npcDamage = smDamage;
       damageCeiling = MaxF(damageCeiling, CBSmasherPart(sm.Y * CBConfig.SmasherDamageScale(), CBConfig.SmasherCeilingShare(), progress));
     }
-    // What an apex squad member at the highest strength would take of V's fire, and a tenth more at Legend.
-    let seconds = CBConfig.ApexMatchSeconds() * 1.5 * climb * CBConfig.CrewPastApex();
-    let underFire = CBMatchHealthMult(measure, stats.GetStatValue(id, gamedataStatType.Health), seconds);
-    health = MaxF(health, underFire);
-    healthCeiling = MaxF(healthCeiling, underFire);
-    hitCap = CBConfig.CrewHitCapRookie() - (CBConfig.CrewHitCapRookie() - CBConfig.CrewHitCapLegend()) * climb;
-    said = CBTf(n"Cyberbane-CrewKit-SmasherXHealthXDamageAt", [s"\(sm.X)", s"\(sm.Y)", s"\(share)", s"\(hitCap)"]);
+    if baseHealth > 0.0 {
+      // What an apex squad member at the highest strength would take of V's fire, and a tenth more at Legend.
+      let seconds = CBConfig.ApexMatchSeconds() * 1.5 * climb * CBConfig.CrewPastApex();
+      let underFire = CBMatchHealthMult(measure, baseHealth, seconds);
+      health = MaxF(health, underFire);
+      healthCeiling = MaxF(healthCeiling, underFire);
+    }
+    n.hitCap = CBConfig.CrewHitCapRookie() - (CBConfig.CrewHitCapRookie() - CBConfig.CrewHitCapLegend()) * climb;
+    n.smasherSaid = CBTf(n"Cyberbane-CrewKit-SmasherXHealthXDamageAt", [s"\(sm.X)", s"\(sm.Y)", s"\(share)", s"\(n.hitCap)"]);
   }
   // What a rank brings with it, the game's own abilities (gmpl_abilities/abilities.tweak).
-  let npc = puppet as NPCPuppet;
   if rank >= 3 {
-    CBGrantAbility(npc, t"Ability.HasDodge");
-    CBGrantAbility(npc, t"Ability.CanCatchUp");
+    ArrayPush(n.abilities, t"Ability.HasDodge");
+    ArrayPush(n.abilities, t"Ability.CanCatchUp");
   }
   if rank >= 4 {
-    CBGrantAbility(npc, t"Ability.CanUseCovers");
-    CBGrantAbility(npc, t"Ability.CanShootWhileMoving");
+    ArrayPush(n.abilities, t"Ability.CanUseCovers");
+    ArrayPush(n.abilities, t"Ability.CanShootWhileMoving");
   }
   if rank >= 5 {
-    CBGrantAbility(npc, t"Ability.HasExtendedHitReactionImmunity");
-    CBGrantAbility(npc, t"Ability.HasMeleeHitReactionAndTakedownResistance");
-    CBGrantAbility(npc, t"Ability.CanUseAntiStun");
+    ArrayPush(n.abilities, t"Ability.HasExtendedHitReactionImmunity");
+    ArrayPush(n.abilities, t"Ability.HasMeleeHitReactionAndTakedownResistance");
+    ArrayPush(n.abilities, t"Ability.CanUseAntiStun");
   }
   if rank >= 6 {
     // Dodging as the game's evasion roll, never a Kerenzikov: cyberware abilities stay off Cyberbane's people (crash
     // rule 5), which 2.6.2 broke here.
-    CBAddFlat(stats, id, gamedataStatType.Evasion, CBConfig.CrewLegendEvasion());
-    CBGrantAbility(npc, t"Ability.CanGuardBreak");
+    n.evasion = CBConfig.CrewLegendEvasion();
+    ArrayPush(n.abilities, t"Ability.CanGuardBreak");
+  }
+  n.healthCeiling = healthCeiling;
+  n.damageCeiling = damageCeiling;
+  n.health = ClampF(health, 1.0, healthCeiling);
+  n.armour = ClampF(armour, 1.0, CBConfig.CrewMultCeiling());
+  n.damage = ClampF(damage, 1.0, damageCeiling);
+  n.npcDamage = ClampF(npcDamage, 1.0, damageCeiling);
+  return n;
+}
+
+// The same numbers for the Hub, with nobody in the world: at V's own level, the least they come with.
+public func CBCrewKitPreview(game: GameInstance, m: ref<CBCrewMember>, opt extra: TweakDBID) -> ref<CBCrewKitNumbers> {
+  let player = GetPlayer(game);
+  let stats = GameInstance.GetStatsSystem(game);
+  let pl = IsDefined(player) && IsDefined(stats) ? stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.PowerLevel) : 1.0;
+  return CBCrewKitCalc(game, m, pl, 0.0, extra);
+}
+
+public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, m: ref<CBCrewMember>) -> Void {
+  if !IsDefined(puppet) || !IsDefined(m) || puppet.cbCrewKitted || !puppet.IsAttached() || puppet.IsDead() {
+    return;
+  }
+  puppet.cbCrewKitted = true;
+  let stats = GameInstance.GetStatsSystem(game);
+  if !IsDefined(stats) {
+    return;
+  }
+  let id = Cast<StatsObjectID>(puppet.GetEntityID());
+  CBTrace("stats: kitting one of V's crew");
+  let n = CBCrewKitCalc(game, m, stats.GetStatValue(id, gamedataStatType.PowerLevel), stats.GetStatValue(id, gamedataStatType.Health));
+  let si = 0;
+  while si < ArraySize(n.stats) {
+    let mod = RPGManager.CreateStatModifier(n.stats[si], n.types[si], n.values[si]);
+    if IsDefined(mod) {
+      stats.AddModifier(id, mod);
+    }
+    si += 1;
+  }
+  let npc = puppet as NPCPuppet;
+  for a in n.abilities {
+    CBGrantAbility(npc, a);
+  }
+  if n.evasion > 0.0 {
+    CBAddFlat(stats, id, gamedataStatType.Evasion, n.evasion);
   }
   CBSetKillLimit(game, puppet, CBConfig.KillableApexSeconds());
-  CBAddMult(stats, id, gamedataStatType.Health, ClampF(health, 1.0, healthCeiling));
-  CBAddMult(stats, id, gamedataStatType.Armor, ClampF(armour, 1.0, CBConfig.CrewMultCeiling()));
-  CBAddMult(stats, id, gamedataStatType.PhysicalDamage, ClampF(damage, 1.0, damageCeiling));
-  CBAddMult(stats, id, gamedataStatType.NPCDamage, ClampF(npcDamage, 1.0, damageCeiling));
-  puppet.cbHitCap = hitCap;   // no single hit takes more than this share of them (Spawn/FactionApex.reds, ApplyDamage)
+  CBAddMult(stats, id, gamedataStatType.Health, n.health);
+  CBAddMult(stats, id, gamedataStatType.Armor, n.armour);
+  CBAddMult(stats, id, gamedataStatType.PhysicalDamage, n.damage);
+  CBAddMult(stats, id, gamedataStatType.NPCDamage, n.npcDamage);
+  puppet.cbHitCap = n.hitCap;   // no single hit takes more than this share of them (Spawn/FactionApex.reds, ApplyDamage)
   CBKeepKillable(game, puppet, false);
   // Topped up to the new maximum, the way the game refills a pool.
   let pools = GameInstance.GetStatPoolsSystem(game);
   if IsDefined(pools) {
     pools.RequestSettingStatPoolMaxValue(id, gamedataStatPoolType.Health, null);
   }
-  CBLog.Info(n"Crew", s"Kitted for the call: rank \(rank), health x\(health), armour x\(armour), damage x\(damage).\(said)"
-                    + (StrLen(chromeSaid) > 0 ? s" Chrome: \(chromeSaid)." : ""));
+  // What the Hub shows as their numbers when last called (2.7.7).
+  let lb = CBCrewLifeBook.Get(game);
+  if IsDefined(lb) {
+    lb.NoteKit(m.id, n.health, n.armour, n.damage);
+  }
+  CBLog.Info(n"Crew", s"Kitted for the call: rank \(n.rank), health x\(n.health), armour x\(n.armour), damage x\(n.damage).\(n.smasherSaid)"
+                    + (StrLen(n.chromeSaid) > 0 ? s" Chrome: \(n.chromeSaid)." : ""));
 }
 
 // The weapon back to V, wherever it was going: on request, and whenever they leave the crew.
@@ -1313,9 +1696,12 @@ func CBCrewSparEnd(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrew
   k.sharpUntil = now + CBConfig.CrewSharpHours() * CBConfig.SecondsPerHour();
   m.loyalty = Min(100, m.loyalty + (how == 1 ? 3 : 2));
   let levelled = false;
+  let rankBefore = CBCrewRankOf(game, m);
   if k.spars % CBConfig.CrewSparsPerTraining() == 0 && k.trained < CBConfig.CrewTrainMax() {
     k.trained += 1;
     levelled = true;
+    CBCrewLifeNote(game, m.id, CBLifeTrained(), n"", 0);
+    CBCrewLifePromoted(sys, game, m, rankBefore, CBCrewRankOf(game, m));
   }
   let line = how == 1 ? CBT(n"Cyberbane-CrewKit-YouGotMeGoodRoundI")
            : (how == 2 ? CBT(n"Cyberbane-CrewKit-ToldYouIWouldnTHold") : CBT(n"Cyberbane-CrewKit-TimeNotBadEitherOfUs"));
@@ -1443,7 +1829,12 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
     }
   }
   let what = CBCrewItemName(ItemID.GetTDBID(item));
-  CBCrewText(sys, game, m, tier >= 3 ? CBTf(n"Cyberbane-CrewKit-SeriousPiece", [what]) : CBTf(n"Cyberbane-CrewKit-PutItToWork", [what]));
+  // What it really does (2.7.7): the way they fight and the damage its grade brings, unless they carry it themselves.
+  let how = CBCrewWeaponInHandOn() ? CBTf(n"Cyberbane-CrewKit-InTheirHands", [CBLowFirst(CBCrewSeatWord(seat))])
+                                   : CBTf(n"Cyberbane-CrewKit-FightAsWithGrade", [CBLowFirst(CBCrewSeatWord(seat)), CBLowFirst(CBCrewTierWord(tier))]);
+  CBCrewBatchText(game, m, (tier >= 3 ? CBTf(n"Cyberbane-CrewKit-SeriousPiece", [what]) : CBTf(n"Cyberbane-CrewKit-PutItToWork", [what])) + " " + how);
+  CBCrewLifeNote(game, m.id, CBLifeWeapon(), n"", tier);
+  CBCrewAskDone(sys, game, CBAskGun(), m.id, tier);
   CBLog.Info(n"Crew", s"V gave one of the crew a weapon (\(CBCrewSeatWord(seat)), tier \(tier)).");
 }
 
@@ -1476,9 +1867,13 @@ func CBCrewInstallChrome(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<
     return;
   }
   k.AddChrome(rec);
-  // What it really does for them, in their words (CBCrewChromeRead): a Mechatronic Core is harder hits on machines.
-  let what = CBCrewChromeWords(e, 3);
-  CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-GotThePutInFeelIt", [s"\(CBCrewItemName(rec))", s"\(CBCapFirst(what))"]));
+  // What it really does for them, by the numbers (2.7.7, CBCrewChromeNumbers): "+18% armour, +10% fire resistance". Three
+  // pieces put in at once are one text (CBCrewBatchText), and the game's own sound for a finished build.
+  let what = CBCrewChromeNumbers(e, 3);
+  CBCrewBatchText(game, m, CBTf(n"Cyberbane-CrewKit-GotThePutInFeelIt", [s"\(CBCrewItemName(rec))", s"\(CBCapFirst(what))"]));
+  CBCrewLifeNote(game, m.id, CBLifeChrome(), n"", 0);
+  CBUiSound(game, n"ui_menu_item_crafting_done", n"CrewChrome", 1.0);
+  CBCrewStyleFromChrome(sys, game, m, e);
   CBLog.Info(n"Crew", s"V had chrome put in one of the crew: \(CBCrewItemName(rec)) (\(CBCrewChromeWords(e, 6))).");
 }
 
@@ -1510,7 +1905,10 @@ func CBCrewKitReturns(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
     let k = IsDefined(m) ? kb.Find(m.id) : null;
     if IsDefined(k) && k.trainUntil > 0.0 && now >= k.trainUntil {
       k.trainUntil = 0.0;
+      let rankBefore = CBCrewRankOf(game, m);
       k.trained += 1;
+      CBCrewLifeNote(game, m.id, CBLifeTrained(), n"", 0);
+      CBCrewLifePromoted(sys, game, m, rankBefore, CBCrewRankOf(game, m));
       m.loyalty = Min(100, m.loyalty + CBConfig.CrewTrainLoyalty());
       CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-BackNowBetterGearAndThey", [s"\(CBCrewRankWord(CBCrewRankOf(game, m)))"]));
       CBLog.Info(n"Crew", "One of the crew is back from training.");

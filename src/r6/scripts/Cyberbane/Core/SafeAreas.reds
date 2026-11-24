@@ -33,11 +33,25 @@ public func CBBlockInView() -> Int32 = 9
 public func CBBlockHostileArea() -> Int32 = 10
 public func CBBlockStory() -> Int32 = 11
 public func CBBlockHomeGround() -> Int32 = 12
+public func CBBlockTalking() -> Int32 = 13
+public func CBBlockNoPath() -> Int32 = 14
+public func CBBlockCount() -> Int32 = 15
 
+// Every refusal is counted for the placement under way (2.7.7), so the log and the Hub name the reason that refused the
+// most spots, never only the last one tried: the last-resort spot used to write "out of your sight" whatever stopped it,
+// 237 times, which hid a conversation's lock and the safe areas behind one wrong word.
 public func CBNoteSpawnBlock(reason: Int32) -> Void {
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) {
     rt.SetLastSpawnBlock(reason);
+  }
+}
+
+// The starting guess of a placement, which is not a refusal of any spot.
+public func CBAssumeSpawnBlock(reason: Int32) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) {
+    rt.AssumeSpawnBlock(reason);
   }
 }
 
@@ -79,6 +93,12 @@ public func CBBlockLabel(reason: Int32) -> String {
   if reason == CBBlockHomeGround() {
     return CBT(n"Cyberbane-Held-HomeGround");
   }
+  if reason == CBBlockTalking() {
+    return CBT(n"Cyberbane-SafeAreas-YouAreTalking");
+  }
+  if reason == CBBlockNoPath() {
+    return CBT(n"Cyberbane-SafeAreas-NoWayToYou");
+  }
   return "";
 }
 
@@ -102,6 +122,13 @@ public func CBPlayerCannotFight(game: GameInstance) -> Bool {
   if CBPlayerNoCombatTag(game) {
     return true;
   }
+  // A conversation's own lock (2.7.7) is not a place where V cannot fight. Street talk keeps V's hands empty with the
+  // safe area's lock while its lines are up, so the wheel picks a line instead of drawing a gun, and lets go the moment
+  // the lines go or a fight starts. Read as "V cannot fight here", it refused every spot for anybody placed from inside a
+  // conversation: "Watch my back" never brought anybody. Inside a game safe area the lock is the place's too, and holds.
+  if CBTalkHandLockOnly(game) {
+    return false;
+  }
   let bbs = GameInstance.GetBlackboardSystem(game);
   if !IsDefined(bbs) {
     return false;
@@ -124,6 +151,24 @@ public func CBPlayerCannotFight(game: GameInstance) -> Bool {
     return false;
   }
   return upper == emptyHands;
+}
+
+// Is V's empty-hands lock only street talk's own (2.7.7)? True while a conversation holds V's hands outside any game safe
+// area. The one question for telling the talk's lock apart from the place's or the story's.
+public func CBTalkHandLockOnly(game: GameInstance) -> Bool {
+  if !CBTalkHoldsHandsNow(game) {
+    return false;
+  }
+  return !CBPlayerInGameSafeArea(game);
+}
+
+public func CBTalkHoldsHandsNow(game: GameInstance) -> Bool {
+  let sys = CyberbaneSystem.Get(game);
+  if !IsDefined(sys) {
+    return false;
+  }
+  let talk = sys.GetStreetTalk();
+  return IsDefined(talk) && talk.HoldsHands();
 }
 
 // Is V inside? Used to keep an arrival out of a corridor or a one room flat, where there is
@@ -501,6 +546,12 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide:
   let inSafe = IsDefined(sysQ) && sysQ.IsInSafeZone();
   if CBPlayerCannotFight(game) && !(optIn && inSafe) {
     CBNoteSpawnBlock(CBBlockCannotFight());
+    return true;
+  }
+  // Mid-conversation (2.7.7): people sent against V wait for the talk to end, as they always did; somebody V asked for in
+  // the conversation (lent gangers, V's crew) comes now.
+  if !onVsSide && CBTalkHoldsHandsNow(game) {
+    CBNoteSpawnBlock(CBBlockTalking());
     return true;
   }
   // 3. On a job, or in a restricted or dangerous zone, when V asked Cyberbane to stay out of them -

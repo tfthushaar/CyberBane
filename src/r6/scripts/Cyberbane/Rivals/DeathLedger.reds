@@ -91,8 +91,8 @@ public class CBPlayerDeathCallback extends DelayCallback {
     // The ledger is applied at session start, which is the only moment that exists when dying
     // means reloading a save. It is not the only moment any more. Death alternatives such as
     // Fenix Rebirth put V back on their feet and the session carries on, so the killer was never
-    // promoted at all for anybody running one, and the part of a nemesis system that makes it a
-    // nemesis system was missing for them.
+    // promoted at all for anybody running one, and the part of the Rivals that makes them Rivals was
+    // missing for them.
     //
     // Who did it is Cyberbane's own knowledge: `cbLastAttacker` is set by the hit hook in
     // CombatSignals.reds. That V died is too, from the game's death event, except where a death

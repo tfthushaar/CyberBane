@@ -1457,6 +1457,10 @@ public class CBStreetTalk {
     }
     if this.m_exchanges == 0 {
       CBLog.Info(n"Talk", s"Prompt up: \(CBTalkTitle(t)).");
+      // A word in their own voice as the talk opens (2.7.7): a greeting, or a scared one's plea.
+      if IsDefined(t.npc) {
+        CBVoice(sys, game, t.npc, t.mood == CBTalkAfraid() ? n"fear_beg" : n"greeting", n"TalkOpens", 10.0);
+      }
       this.m_diagLeft = 1.0;
       this.m_diagCount = 0;
       // A ganger afraid of V, spoken to, does not go on sizing V up (2.6.0): one the game has hostile to V watched V
@@ -1676,6 +1680,12 @@ public class CBStreetTalk {
     }
     if choice == CBTalkActAskHome() {
       return CBTalkAnswerHome(sys, game, t, again);
+    }
+    if choice == CBTalkActAskWorth() {
+      return CBTalkAnswerWorth(sys, game, t, again);
+    }
+    if choice == CBTalkActCrewOther() {
+      return CBCrewOtherAnswer(sys, game, t, CBCrewOfTalk(game, t.npc));
     }
     if choice == CBTalkActSellGoods() {
       return CBGoodsSell(sys, game, t);
@@ -2428,7 +2438,8 @@ func CBTalkOnVsSide(des: ref<DynamicEntitySystem>, npc: wref<ScriptedPuppet>) ->
     return false;
   }
   let id = npc.GetEntityID();
-  return des.IsTagged(id, n"CB_Own") || des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Follower") || des.IsTagged(id, n"CB_Guard");
+  return des.IsTagged(id, n"CB_Own") || des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Follower") || des.IsTagged(id, n"CB_Guard")
+      || des.IsTagged(id, n"CB_Loiter");   // V's crew on a corner (2.7.7)
 }
 
 // The reasons V is told about (CBTalkWhyHint), each kept as one string for the same reason.

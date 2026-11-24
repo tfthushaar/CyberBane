@@ -253,7 +253,7 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
 //
 // A Rival running a crew used to get their health multiplier from a second function applied
 // straight after the apex-grade buff. Two appliers meant nothing knew the product, and the
-// product is what players met: a leader nemesis at the top of the ladder came out at roughly
+// product is what players met: a leader Rival at the top of the ladder came out at roughly
 // eleven times health. The bonus still exists and is still worth the same thing relative to
 // everything else, but it is now one term inside CBApplyApexBuild, where the ceiling can see
 // it. CBRivalRole is passed to CBApplyRivalApexBuff instead.

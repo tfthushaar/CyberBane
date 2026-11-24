@@ -327,11 +327,69 @@ public class CBTalkTruce {
 // Held out of a fight with V by Cyberbane's word (2.6.7): a Rival's people at a facedown or standing back from a fair fight,
 // those walking up calm for one, a crew sergeant's people while he talks, anybody holding while V talks to one of theirs, and
 // the person V is talking to. Not once V has hurt them: then it is their fight.
+// Standing with V in a gang's fight (2.7.7, Spawn/StreetEvents.reds CBEventTakeSide), until it is over.
+@addField(ScriptedPuppet)
+public let cbSidedWithV: Bool;
+
 public func CBHeldOutOfFight(p: wref<ScriptedPuppet>) -> Bool {
-  if !IsDefined(p) || p.cbDamagedByPlayer {
+  if !IsDefined(p) {
     return false;
   }
-  return p.cbFacedownHeld || p.cbFacedownWait || p.cbTruceHeld || (p.cbTalkPartner && p.cbTalkLinesUp);
+  // With V: nothing V or V's crew does turns them, whatever was hit (2.7.7). "Make sure when I side with a gang my crew
+  // doesn't attack them and my hits don't turn them on me."
+  if p.cbSidedWithV && p.IsAttached() && !p.IsDead() {
+    return true;
+  }
+  if p.cbDamagedByPlayer {
+    return false;
+  }
+  return p.cbFacedownHeld || p.cbFacedownWait || p.cbTruceHeld || (p.cbTalkPartner && p.cbTalkLinesUp) || CBSidesWithV(p);
+}
+
+// One of a gang friendly or allied with V (2.7.7): kept out of a fight somebody else started, until V hurts one of them. "I'm
+// allied with the Mox, and when a fight starts near a Mox bagman (a Rival, or the debtor the Mox told me to lean on), the
+// bagmen turn hostile and chase me": nothing held them, so the game's own reflex (a fight nearby, a squad mate in danger)
+// turned them on V. A bagman V robs is hurt by V first, and fights back as he always did.
+public func CBSidesWithV(p: wref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(p) || !p.IsAttached() || p.IsDead() {
+    return false;
+  }
+  let sys = CyberbaneSystem.Get(p.GetGame());
+  if !IsDefined(sys) || !CBNpcSafe(sys, p) || p.IsCrowd() {
+    return false;
+  }
+  let des = GameInstance.GetDynamicEntitySystem();
+  if IsDefined(des) && des.IsTagged(p.GetEntityID(), n"CB_Turned") {
+    return false;   // one of V's crew who turned on V
+  }
+  let gang = CBClassifyFaction(p);
+  let score = sys.GetScore();
+  if !IsNameValid(gang) || !IsDefined(score) || !CBFactionOn(gang) {
+    return false;
+  }
+  let posture = score.GetPosture(gang);
+  if !Equals(posture, ECBPosture.Allied) && !Equals(posture, ECBPosture.Friendly) {
+    return false;
+  }
+  // V turned on their own, close by: then it is their fight too, as it is for any gang. Held regardless, V could cut down a
+  // friendly gang's people one at a time while the rest stood and watched.
+  return !CBGangHurtByVNear(sys, p, gang);
+}
+
+// Somebody of this gang near them that V has hurt and who is still on their feet, or down here now.
+func CBGangHurtByVNear(sys: ref<CyberbaneSystem>, p: wref<ScriptedPuppet>, gang: CName) -> Bool {
+  let reg = sys.GetRegistry();
+  if !IsDefined(reg) {
+    return false;
+  }
+  let at = p.GetWorldPosition();
+  for other in reg.GetAll() {
+    if IsDefined(other) && other.cbDamagedByPlayer && CBNpcSafe(sys, other)
+       && Vector4.Distance(other.GetWorldPosition(), at) <= CBConfig.AllyHurtNearRange() && Equals(CBClassifyFaction(other), gang) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // The game turns people on V by this one door (aiActionHelper.script): somebody seeing a squad mate in danger, a hit nearby,
@@ -341,21 +399,33 @@ public func CBHeldOutOfFight(p: wref<ScriptedPuppet>) -> Bool {
 // which is not V, goes through as the game has it. Cyberbane turns its own people when the word is broken (CBFacedownHostile).
 @wrapMethod(AIActionHelper)
 public static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>, target: ref<GameObject>) -> Bool {
-  // V, or one of V's companions: the game makes them hostile to the whole of the target's group, which is V's.
-  if IsDefined(owner) && IsDefined(target) && CBHeldOutOfFight(owner)
-     && (target.IsPlayer() || ScriptedPuppet.IsPlayerCompanion(target)) {
+  if CBKeepsOutOfFight(owner, target) {
     return false;
   }
   return wrappedMethod(owner, target);
+}
+
+// Both ways round (2.7.7). Somebody held out of a fight with V does not turn on V or V's companions, and V's companions do
+// not turn on them. The game turns whole groups by this door (SetAttitudeTowardsAgentGroup), from whoever was hit towards
+// whoever hit them (targetTrackingComponent.script): one of V's crew clipped by a stray bullet from a friendly gang's
+// people turned V's whole group, V and the crew, on every one of that gang, and the crew shot everybody at the sit-down.
+func CBKeepsOutOfFight(owner: wref<GameObject>, target: wref<GameObject>) -> Bool {
+  if !IsDefined(owner) || !IsDefined(target) {
+    return false;
+  }
+  let held = owner as ScriptedPuppet;
+  if IsDefined(held) && CBHeldOutOfFight(held) && (target.IsPlayer() || ScriptedPuppet.IsPlayerCompanion(target)) {
+    return true;
+  }
+  let them = target as ScriptedPuppet;
+  return IsDefined(them) && ScriptedPuppet.IsPlayerCompanion(owner) && CBHeldOutOfFight(them);
 }
 
 // The game's other door, when it hands somebody a combat target (aiActionHelper.script SetCommandCombatTarget, a combat
 // target picked in aiCoreTasks.script): the same rule.
 @wrapMethod(GameObject)
 public static func ChangeAttitudeToHostile(owner: wref<GameObject>, target: wref<GameObject>) -> Void {
-  let held = owner as ScriptedPuppet;
-  if IsDefined(held) && IsDefined(target) && CBHeldOutOfFight(held)
-     && (target.IsPlayer() || ScriptedPuppet.IsPlayerCompanion(target)) {
+  if CBKeepsOutOfFight(owner, target) {
     return;
   }
   wrappedMethod(owner, target);

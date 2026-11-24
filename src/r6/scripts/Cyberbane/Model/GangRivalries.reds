@@ -128,6 +128,19 @@ public func CBCreditMercy(sys: ref<CyberbaneSystem>, faction: CName, amount: Flo
   fs.standing = ClampF(fs.standing + amount * sys.WornPerk().mercyMult * CBCodeMercy(faction), -100.0, CBConfig.MercyCeiling());
 }
 
+// A corporation's contract done (2.7.7, Spawn/LivingStreet.reds): the one steady way to win a corporation over, whose people
+// are rarely on the street to be helped, spared or fought beside. Not held to the day's small talk (TalkWarmthPerDay), and
+// on to Allied and past it, as a job done for them should be.
+public func CBCreditContract(sys: ref<CyberbaneSystem>, faction: CName, amount: Float) -> Void {
+  if !IsDefined(sys) || Equals(faction, n"") || amount <= 0.0 || CBReputationFrozen() {
+    return;
+  }
+  let fs = sys.EnsureFaction(faction);
+  if IsDefined(fs) {
+    fs.standing = ClampF(fs.standing + amount, -100.0, 100.0);
+  }
+}
+
 // A gang has just come round to V. Called from the posture watch, once per crossing.
 public func CBAnnounceWarming(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, allied: Bool) -> Void {
   let content = CBContent(game);

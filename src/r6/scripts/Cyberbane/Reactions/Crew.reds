@@ -73,6 +73,13 @@ public func CBCrewWhyLeftLying() -> Int32 = 2
 public func CBCrewWhyLost() -> Int32 = 3
 public func CBCrewWhyOldGang() -> Int32 = 4
 public func CBCrewWhyFear() -> Int32 = 5
+// Reasons for a gain, so a temperament can weigh it (2.7.7, Reactions/CrewLife.reds CBCrewTemperScale). Never stored as the
+// last grievance.
+public func CBCrewWhyWin() -> Int32 = 6
+public func CBCrewWhyStayed() -> Int32 = 7
+public func CBCrewWhyPaid() -> Int32 = 8
+public func CBCrewWhyMourned() -> Int32 = 9
+public func CBCrewWhyAsked() -> Int32 = 10
 
 public func CBTalkActRecruit() -> Int32 = 58
 public func CBTalkActLendOne() -> Int32 = 59
@@ -142,6 +149,13 @@ public class CBCrewBook extends ScriptableSystem {
   public let battleHunt: Bool;
   public let overTicks: Int32;
   public let wonCall: Bool;
+  // Whether the crew was really in it (2.7.7): enemies near them for a few seconds, a hit taken or landed by one of them,
+  // or an enemy down while they stood there. "Called the crew, and it counted a win for the Scavs I had already dealt with":
+  // V's combat flag outlasted the fight by a few seconds, so their arrival counted. Session only, like the rest.
+  public let engaged: Bool;
+  public let engageTicks: Int32;
+  public let enemyNear: Bool;
+  public let battleDowned: Int32;   // enemies down near them this fight, for the line when it is won
   public let leaving: Bool;
   public let quiet: Int32;
   public let driving: Int32;
@@ -194,6 +208,10 @@ public class CBCrewBook extends ScriptableSystem {
     this.battleHunt = false;
     this.overTicks = 0;
     this.wonCall = false;
+    this.engaged = false;
+    this.engageTicks = 0;
+    this.enemyNear = false;
+    this.battleDowned = 0;
     this.leaving = false;
     this.quiet = 0;
     this.driving = 0;
@@ -353,8 +371,18 @@ public class CBCrewBook extends ScriptableSystem {
     while ArraySize(this.m_past) > CBConfig.MyCrewPastKept() {
       ArrayErase(this.m_past, 0);
     }
-    ArrayRemove(this.m_members, m);
     let game = GetGameInstance();
+    // Their story ends here (2.7.7, Reactions/CrewLife.reds): one who fell is buried by the rest a day later; anybody else's
+    // story, asks and days off are forgotten. Asked while they are still on the roster, so the count is right.
+    if end == CBCrewEndFell() {
+      CBCrewLifeFell(CyberbaneSystem.Get(game), game, m, district);
+    } else {
+      let lbGone = CBCrewLifeBook.Get(game);
+      if IsDefined(lbGone) {
+        lbGone.Forget(m.id);
+      }
+    }
+    ArrayRemove(this.m_members, m);
     if end == CBCrewEndFell() {
       CBCrewRememberFallen(game, m, by, district, now);   // the memorial, with what they carried (2.6.0)
     }
@@ -505,17 +533,41 @@ public func CBCrewLoyalty(m: ref<CBCrewMember>, delta: Int32, why: Int32) -> Voi
   if !IsDefined(m) {
     return;
   }
-  m.loyalty = Clamp(m.loyalty + delta, 0, 100);
-  if delta < 0 && why != CBCrewWhyNone() {
+  // Who they are decides how much it moves them (2.7.7): a hothead loves a win, the one in it for the money counts eddies.
+  let moved = CBCrewTemperScale(m, delta, why);
+  m.loyalty = Clamp(m.loyalty + moved, 0, 100);
+  if moved < 0 && why != CBCrewWhyNone() && why < CBCrewWhyWin() {
     m.lastWhy = why;
   }
 }
 
 public func CBCrewRank(wins: Int32) -> Int32 {
-  if wins >= 12 { return 4; }
-  if wins >= 7 { return 3; }
-  if wins >= 3 { return 2; }
+  if wins >= CBCrewPaceWins(12) { return 4; }
+  if wins >= CBCrewPaceWins(7) { return 3; }
+  if wins >= CBCrewPaceWins(3) { return 2; }
   return 1;
+}
+
+// How hard the crew's life is (2.7.7, Mod Settings "How hard your crew has it").
+public func CBCrewPace() -> ECBCrewPace {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().crewPace : ECBCrewPace.Standard;
+}
+
+// The wins a rank takes, by the pace: fewer on Easy, more on Hard.
+public func CBCrewPaceWins(wins: Int32) -> Int32 {
+  let pace = CBCrewPace();
+  if Equals(pace, ECBCrewPace.Easy) { return Max(1, RoundF(Cast<Float>(wins) * 0.6)); }
+  if Equals(pace, ECBCrewPace.Hard) { return RoundF(Cast<Float>(wins) * 1.5); }
+  return wins;
+}
+
+// A gang's weight in a war, by the pace.
+public func CBCrewPaceWarFactor() -> Float {
+  let pace = CBCrewPace();
+  if Equals(pace, ECBCrewPace.Easy) { return 0.85; }
+  if Equals(pace, ECBCrewPace.Hard) { return 1.2; }
+  return 1.0;
 }
 
 // The seat their record fills, read off its archetype the way an apex squad's chairs are; a record the game files
@@ -682,6 +734,7 @@ public func CBCrewHurt(m: ref<CBCrewMember>, now: Float) -> Bool {
 public func CBCrewReady(book: ref<CBCrewBook>, m: ref<CBCrewMember>, now: Float) -> Bool {
   return IsDefined(m) && !CBCrewHurt(m, now) && !book.IsOut(m.id) && !CBCrewAway(GetGameInstance(), m.id, now)
       && !CBCrewSparring(GetGameInstance(), m.id) && !CBGuardPosted(GetGameInstance(), m.id)
+      && !CBCrewLoitering(GetGameInstance(), m.id)   // on a corner until they have gone (2.7.7): never two of the same person
       && (m.calledAt <= 0.0 || now - m.calledAt >= CBConfig.MyCrewCallSeconds());
 }
 
@@ -706,9 +759,18 @@ func CBCrewReadyOrder(book: ref<CBCrewBook>, now: Float, minLoyalty: Int32) -> a
 // The crew on the phone (2.7.6, Reactions/CrewNames.reds). One of them about themselves: their own thread, under the name
 // V knows them by. The crew as a whole, or one of them speaking for it (`group`): the crew's group chat, signed with the
 // speaker's first name. Everything went into the one thread before, signed, however little it had to do with the rest.
-public func CBCrewText(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, line: String, opt group: Bool) -> Void {
+public func CBCrewText(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, line: String, opt group: Bool, opt urgent: Bool) -> Void {
   if StrLen(line) == 0 {
     return;
+  }
+  // Answering a call, or warning V of something on V right now (2.7.7): it lands at once, not after the gossip.
+  if urgent {
+    let kbU = CBCrewKitBook.Get(game);
+    if !(IsDefined(kbU) && kbU.deferTexts) {
+      let senderU = IsDefined(m) && !group ? CBCrewThreadName(sys, m) : CBCrewGroupSender(game);
+      CBPhonePost(game, senderU, IsDefined(m) && group ? CBCrewFirst(sys, m) + ": " + line : line, CBCrewColour(game), true, 0, n"", 0, 0);
+      return;
+    }
   }
   // An order carried out while the Hub is still open (CBCrewKitDoNow): the text waits for the game, as everything the
   // world says does, and goes on the next tick (CBCrewKitService).
@@ -750,6 +812,7 @@ func CBCrewJoined(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMe
   if m.kind == CBCrewFrightened() { CBCrewStandingShift(game, m.faction, -CBConfig.CrewStandFrightened()); }
   if m.kind == CBCrewOwed() { CBCrewStandingShift(game, m.faction, -CBConfig.CrewStandOwed()); }
   CBFileLog(sys, n"CrewJoined", now, CBEventDistrict(sys, game), m.faction, Cast<Float>(m.id));
+  CBCrewLifeNote(game, m.id, CBLifeJoined(), CBEventDistrict(sys, game), 0);   // the first line of their story (2.7.7)
   CBCrewText(sys, game, m, line);
   CBLog.Info(n"Crew", s"Somebody joined V's crew (kind \(m.kind), loyalty \(m.loyalty)).");
 }
@@ -791,6 +854,60 @@ public func CBCrewRecruitAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, r
                              CBTf(n"Cyberbane-Crew-YouCouldVeEndedMeIn", [s"\(CBHere(sys))"])]), n"");
 }
 
+// A Rival who joins V's crew leaves the board (2.7.7): out of their chair, their ending "retired", no longer an informant, and
+// Retired, the state every Rival system already leaves alone (the hunt, Rival life and its chrome, whereabouts, strongholds,
+// the tree's living rows). "My man is still a rank 4 Rival who owes me his life and never met me, and I spar with him
+// every day": a Rival who joined stayed a Debtor, on the board, ranking up and going under the knife as a Rival, and one
+// asked by text kept their chair as well. Both ways in come through here. Let go, they owe V again (Debtor); turned,
+// they are a Rival again (Active); fallen, Slain.
+public func CBCrewRivalOffBoard(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Void {
+  if !IsDefined(sys) || !IsDefined(r) {
+    return;
+  }
+  r.state = EnumInt(ECBRivalState.Retired);
+  CBHierarchyFill(sys, r.faction);
+  let rb = CBRivalBook.Get(game);
+  if IsDefined(rb) {
+    rb.SetEnding(r.id, CBEndingRetired(), CBGameSeconds(game));
+  }
+  let intel = CBIntelBook.Get(game);
+  if IsDefined(intel) {
+    let k = intel.InformantCount() - 1;
+    while k >= 0 {
+      if intel.InformantRival(k) == r.id {
+        intel.RemoveInformant(k);   // working for V now, not texting tips from the outside
+      }
+      k -= 1;
+    }
+  }
+}
+
+// Saves from before (2.7.7): every Rival on the crew off the board, once they are seen still on it. From the slow tick.
+public func CBCrewRivalsOffBoard(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let book = CBCrewBook.Get(game);
+  if !IsDefined(sys) || !IsDefined(book) {
+    return;
+  }
+  let i = 0;
+  while i < book.Count() {
+    let m = book.At(i);
+    i += 1;
+    if IsDefined(m) && m.rival > 0 {
+      let r = sys.FindRivalById(m.rival);
+      if IsDefined(r) && r.state != EnumInt(ECBRivalState.Retired) && r.state != EnumInt(ECBRivalState.Slain) {
+        CBCrewRivalOffBoard(sys, game, r);
+        CBLog.Info(n"Crew", "A Rival on V's crew taken off the board.");
+      }
+    }
+  }
+}
+
+// Is this Rival one of V's crew now?
+public func CBRivalRunsWithV(game: GameInstance, r: ref<CBRival>) -> Bool {
+  let book = CBCrewBook.Get(game);
+  return IsDefined(book) && IsDefined(r) && IsDefined(book.FindRival(r.id));
+}
+
 // From the mercy path, once they are let go: the Rival leaves the board and joins the roster.
 public func CBCrewTakeRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, e: ref<CBEscapee>) -> Void {
   let book = CBCrewBook.Get(game);
@@ -798,13 +915,8 @@ public func CBCrewTakeRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: re
     return;
   }
   let now = CBGameSeconds(game);
-  r.state = EnumInt(ECBRivalState.Debtor);   // out of the fight for good, and out of their chair
-  CBHierarchyFill(sys, r.faction);
   CBCloseRivalEncounter(sys, game, r, IsDefined(e) ? e.puppet : null);
-  let rb = CBRivalBook.Get(game);
-  if IsDefined(rb) {
-    rb.SetEnding(r.id, CBEndingRetired(), now);
-  }
+  CBCrewRivalOffBoard(sys, game, r);
   let m = book.Add(CBCrewOwed(), r.recordID, r.appearance, r.faction, r.id, CBConfig.MyCrewLoyaltyOwed(),
                    CBEventDistrict(sys, game), now, CBCrewKillsOf(sys, r.faction));
   CBCrewJoined(sys, game, m, CBLineOf([CBT(n"Cyberbane-Crew-ItSMeSavedYourNumber"),
@@ -827,17 +939,12 @@ public func CBCrewRecruitDebtor(sys: ref<CyberbaneSystem>, game: GameInstance, r
   let now = CBGameSeconds(game);
   let m = book.Add(CBCrewOwed(), r.recordID, r.appearance, r.faction, r.id, CBConfig.MyCrewLoyaltyOwed(),
                    NotEquals(r.origin, n"") ? r.origin : CBEventDistrict(sys, game), now, CBCrewKillsOf(sys, r.faction));
-  let intel = CBIntelBook.Get(game);
-  if IsDefined(intel) {
-    let k = intel.InformantCount() - 1;
-    while k >= 0 {
-      if intel.InformantRival(k) == r.id {
-        intel.RemoveInformant(k);   // working for V now, not texting tips from the outside
-      }
-      k -= 1;
-    }
+  if !IsDefined(m) {
+    return CBT(n"Cyberbane-Crew-CanTNotNow");
   }
+  CBCrewRivalOffBoard(sys, game, r);
   CBFileLog(sys, n"CrewJoined", now, CBEventDistrict(sys, game), m.faction, Cast<Float>(m.id));
+  CBCrewLifeNote(game, m.id, CBLifeJoined(), CBEventDistrict(sys, game), 0);   // the first line of their story, as in person
   sys.AddRenownPoints(CBConfig.MyCrewRenown());
   // A Rival of theirs taken, as on the street (CBCrewJoined): the reply is this thread's text, so that is all it skips.
   CBCrewStandingShift(game, m.faction, -CBConfig.CrewStandOwed());
@@ -1412,7 +1519,7 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
           book.turnMember = m.id;
           book.turnTicks = 0;
         }
-        CBCrewText(sys, game, m, CBCrewOnTheWay(sys, game, m, unasked, escort));
+        CBCrewText(sys, game, m, CBCrewOnTheWay(sys, game, m, unasked, escort), false, true);
       }
     }
   }
@@ -1487,6 +1594,12 @@ public func CBSetUpCrewMember(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     CBKitSquadMember(puppet);
   }
   CBMakeFollower(puppet, player);
+  // When asked for, that weapon in their hand (2.7.7, experimental): after the role, so setting it cannot drop the order.
+  if IsDefined(m) {
+    CBCrewArmFromKit(game, puppet, m);
+  }
+  // In their own voices (2.7.7): into a fight, or a greeting for a walk.
+  CBVoice(sys, game, puppet, book.escort && !CBCrewTrouble(sys, game) ? n"greeting" : n"start_combat", n"CrewArrive", 12.0);
 }
 
 // [C5] With Come on their own: an ambush has sprung on V, and the most loyal are already coming.
@@ -1758,7 +1871,7 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
   // A win needs a fight (2.6.3), and is counted when that fight is over (CBCrewBattleTick, 2.7.6). One won and over a
   // moment ago, the call cut short before the tick counted it (sent home, a car, a held place, V gone on), counts here.
   // Nobody standing (4) or the crew switched off (5) counts nothing.
-  if why != 4 && why != 5 && book.battle && IsDefined(player) && CBCrewFightIsOver(sys, game, book, player) {
+  if why != 4 && why != 5 && book.battle && book.engaged && IsDefined(player) && CBCrewFightIsOver(sys, game, book, player) {
     CBCrewFightWon(sys, game, book, true);
   }
   let won = book.wonCall;
@@ -1773,10 +1886,22 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
     if IsDefined(m) && book.outSeen[i] {
       if book.outDown[i] {
         m.scars += 1;
-        m.hurtUntil = now + CBConfig.MyCrewHurtDays() * CBConfig.SecondsPerDay();
+        // A bed at the crew's home heals them faster (2.7.7, Reactions/CrewLife.reds).
+        m.hurtUntil = now + CBConfig.MyCrewHurtDays() * CBCrewHomeHealFactor(game) * CBConfig.SecondsPerDay();
+        // Their story: the scar, and who gave it when it was a Rival (2.7.7), for the revenge they may ask for.
+        let scarBy = 0;
+        if IsDefined(p) && IsDefined(p.cbLastAttacker) {
+          let byRival = CBFindRivalByBody(sys, p.cbLastAttacker.GetEntityID());
+          scarBy = IsDefined(byRival) ? byRival.id : 0;
+        }
+        CBCrewLifeNote(game, m.id, CBLifeScar(), CBEventDistrict(sys, game), scarBy);
+        if scarBy > 0 {
+          CBRivalTimelineNote(game, scarBy, CBTlScarredCrew());
+          CBRivalCallingCard(sys, game, sys.FindRivalById(scarBy));   // and they let V know it (2.7.7)
+        }
         let stayed = IsDefined(p) && p.IsAttached() && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.MyCrewStayedDistance();
         if stayed {
-          CBCrewLoyalty(m, CBConfig.MyCrewStayedLoyalty(), CBCrewWhyNone());
+          CBCrewLoyalty(m, CBConfig.MyCrewStayedLoyalty(), CBCrewWhyStayed());
           // Alive, and how long they are out (2.6.3): the card only said HURT, so a crew member seen falling read as dead.
           if CBMessagesOn() {
             CBCrewText(sys, game, m, CBTf(n"Cyberbane-Crew-YouStayedWithMeILl", [s"\(RoundF(CBConfig.MyCrewHurtDays() * 24.0))"]));
@@ -1810,9 +1935,7 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
   book.turnTicks = 0;
   book.escort = false;
   book.fought = false;
-  book.battle = false;
-  book.battleHunt = false;
-  book.overTicks = 0;
+  CBCrewBattleReset(game, book);
   book.wonCall = false;
   if !CBMessagesOn() {
     return;
@@ -1892,8 +2015,25 @@ func CBCrewHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
        && !ScriptedPuppet.IsPlayerCompanion(p) && !des.IsTagged(p.GetEntityID(), n"CB_Own") && !ArrayContains(crew, p) {
       let agent = p.GetAttitudeAgent();
       if IsDefined(agent) {
-        let enemy = Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) && (vFighting || CBNpcInCombat(p));
+        // Never a gang's street people standing calm, or anybody standing with V (2.7.7): V in a fight round the corner sent the
+        // crew at a sit-down's Tyger Claws, hostile to V on their own turf but sitting at a table, and the meeting went up with
+        // V's crew in the middle of it. Once they are fighting, they are fair game.
+        let calmStreet = CBStreetPersonTag(des, p.GetEntityID()) && !CBNpcInCombat(p);
+        let enemy = Equals(agent.GetAttitudeTowards(pagent), EAIAttitude.AIA_Hostile) && (vFighting || CBNpcInCombat(p))
+                 && !calmStreet && !p.cbSidedWithV;
         if enemy || p.cbCrewPaired {
+          // Somebody new fighting V (2.7.7): the crew calls out what they are, in their own voices.
+          if enemy && !p.cbCrewPaired {
+            CBCrewWarnVoice(sys, game, CBEnemyWarning(game, des, p));
+          }
+          // Somebody fighting V within reach of one of the crew (2.7.7, CBCrewBattleTick): their fight too.
+          if enemy && IsDefined(book) {
+            for near in crew {
+              if Vector4.Distance(near.GetWorldPosition(), p.GetWorldPosition()) <= CBConfig.MyCrewEngageRadius() {
+                book.enemyNear = true;
+              }
+            }
+          }
           for c in crew {
             let cagent = c.GetAttitudeAgent();
             if IsDefined(cagent) && NotEquals(c.GetEntityID(), p.GetEntityID()) {
@@ -1932,9 +2072,18 @@ public func CBCrewCanDie() -> Bool {
 @addField(ScriptedPuppet)
 public let cbCrewDying: Bool;
 
+// Down once already this call, on Easy (2.7.7, CBCrewDiesOfIt).
+@addField(ScriptedPuppet)
+public let cbCrewFellOnce: Bool;
+
 // Down by the game's follower rule, and to die of it. True when it was.
 func CBCrewDiesOfIt(game: GameInstance, p: ref<ScriptedPuppet>) -> Bool {
   if !CBCrewCanDie() || !IsDefined(p) || p.IsDead() || !StatusEffectSystem.ObjectHasStatusEffectWithTag(p, n"FollowerDefeated") {
+    return false;
+  }
+  // Easy (2.7.7): the first fall of a call is a wound, the game's own knock-down; the second is a death.
+  if Equals(CBCrewPace(), ECBCrewPace.Easy) && !p.cbCrewFellOnce {
+    p.cbCrewFellOnce = true;
     return false;
   }
   CBTrace("status: one of V's crew dies where the game would have knocked them down");
@@ -2012,14 +2161,108 @@ func CBCrewBattleTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
       book.battleHunt = true;
     }
   }
+  // Were they really in it (2.7.7)? Enemies near them for a few seconds, or a hit one of them took or landed.
+  if book.battle {
+    if book.enemyNear {
+      book.engageTicks += 1;
+      if book.engageTicks >= CBConfig.MyCrewEngageTicks() {
+        book.engaged = true;
+      }
+    }
+    if CBCrewHitInFight(game, book) {
+      book.engaged = true;
+    }
+  }
+  book.enemyNear = false;
   if book.battle && CBCrewFightIsOver(sys, game, book, player) {
     book.overTicks += 1;
     if book.overTicks >= CBConfig.MyCrewWonTicks() {
-      CBCrewFightWon(sys, game, book, false);
+      if book.engaged {
+        CBCrewFightWon(sys, game, book, false);
+      } else {
+        // Over before they got into it: V's combat outlasting a fight already finished, or one far from them.
+        CBLog.Info(n"Crew", "A fight ended with V's crew never in it: no win counted.");
+        CBCrewBattleReset(game, book);
+      }
     }
   } else {
     book.overTicks = 0;
   }
+}
+
+// The fight is over, won or not: the next one starts from nothing, and the hits they took in this one stay in it.
+func CBCrewBattleReset(game: GameInstance, book: ref<CBCrewBook>) -> Void {
+  book.battle = false;
+  book.battleHunt = false;
+  book.overTicks = 0;
+  book.engaged = false;
+  book.engageTicks = 0;
+  book.enemyNear = false;
+  book.battleDowned = 0;
+  let i = 0;
+  while i < book.OutCount() {
+    let p = GameInstance.FindEntityByID(game, book.outBody[i]) as ScriptedPuppet;
+    if IsDefined(p) {
+      p.cbFightHitTaken = false;
+      p.cbFightHitDealt = false;
+    }
+    i += 1;
+  }
+}
+
+// One of the crew took a hit or landed one since this fight began (the hit hook writes it on them, Signals/CombatSignals.reds).
+func CBCrewHitInFight(game: GameInstance, book: ref<CBCrewBook>) -> Bool {
+  let i = 0;
+  while i < book.OutCount() {
+    if book.outSeen[i] && !book.outDown[i] {
+      let p = GameInstance.FindEntityByID(game, book.outBody[i]) as ScriptedPuppet;
+      if IsDefined(p) && (p.cbFightHitTaken || p.cbFightHitDealt) {
+        return true;
+      }
+    }
+    i += 1;
+  }
+  return false;
+}
+
+// An enemy went down near one of them while a call is out (2.7.7, from the death handler a frame after the death): they
+// were in the fight. `byMember` is the member whose hit it was, 0 for anybody else's.
+public func CBCrewNoteEnemyDown(sys: ref<CyberbaneSystem>, game: GameInstance, dead: ref<ScriptedPuppet>, byMember: Int32) -> Void {
+  let book = CBCrewBook.Get(game);
+  if !IsDefined(book) || book.OutCount() == 0 || !IsDefined(dead) {
+    return;
+  }
+  let at = dead.GetWorldPosition();
+  let near = byMember > 0;
+  let i = 0;
+  while !near && i < book.OutCount() {
+    let p = GameInstance.FindEntityByID(game, book.outBody[i]) as ScriptedPuppet;
+    if book.outSeen[i] && !book.outDown[i] && CBNpcSafe(sys, p)
+       && Vector4.Distance(p.GetWorldPosition(), at) <= CBConfig.MyCrewEngageRadius() {
+      near = true;
+    }
+    i += 1;
+  }
+  if near {
+    book.engaged = true;
+    book.battleDowned += 1;
+    book.battle = true;   // a fight the game started counts too, with them in it from the first body
+  }
+}
+
+// Which member's body this is, 0 for nobody on the roster out now.
+public func CBCrewMemberOfBody(book: ref<CBCrewBook>, body: EntityID) -> Int32 {
+  if !IsDefined(book) {
+    return 0;
+  }
+  let i = 0;
+  while i < book.OutCount() {
+    if Equals(book.outBody[i], body) {
+      return book.outMember[i];
+    }
+    i += 1;
+  }
+  return 0;
 }
 
 // Over: nobody the hunt sent still standing, no ambush, and V out of combat. Once the hunt's people were in it, the NCPD
@@ -2046,9 +2289,8 @@ func CBCrewAnyStandingHere(book: ref<CBCrewBook>) -> Bool {
 // A fight won (2.7.6, out of the walk's own win, 2.6.3): a win for each of them standing, counted once whatever ends the
 // call after it. On a walk they stay and say so; `ending`, the call is closing and its own line says the rest.
 func CBCrewFightWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, ending: Bool) -> Void {
-  book.battle = false;
-  book.battleHunt = false;
-  book.overTicks = 0;
+  let downed = book.battleDowned;
+  CBCrewBattleReset(game, book);
   book.fought = false;
   book.wonCall = true;
   let now = CBGameSeconds(game);
@@ -2061,7 +2303,7 @@ func CBCrewFightWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBC
     if IsDefined(m) && book.outSeen[i] && !book.outDown[i] {
       let before = CBCrewRankOf(game, m);
       m.wins += 1;
-      CBCrewLoyalty(m, CBConfig.MyCrewWinLoyalty(), CBCrewWhyNone());
+      CBCrewLoyalty(m, CBConfig.MyCrewWinLoyalty(), CBCrewWhyWin());
       if CBCrewRankOf(game, m) > before {
         promoted = m;
         promotedFrom = before;
@@ -2073,19 +2315,15 @@ func CBCrewFightWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBC
     i += 1;
   }
   CBFileLog(sys, n"CrewWon", now, CBEventDistrict(sys, game), n"", 0.0);
-  CBLog.Info(n"Crew", IsDefined(speaker) ? "A fight is won with V's crew: a win for each of them standing." : "A fight is won, with none of V's crew standing.");
-  if !CBMessagesOn() {
-    return;
-  }
-  if IsDefined(speaker) && book.escort && !ending {
-    CBCrewText(sys, game, speaker, CBLineOf([CBT(n"Cyberbane-Crew-CleanStillWithYou"), CBT(n"Cyberbane-Crew-ThatSHandledLeadOn"), CBT(n"Cyberbane-Crew-AnybodyElseWantSomeDidnT")]), true);
+  CBLog.Info(n"Crew", IsDefined(speaker) ? s"A fight is won with V's crew: a win for each of them standing (\(downed) of theirs down near them)." : "A fight is won, with none of V's crew standing.");
+  // Said the moment it is won (2.7.7), in the group chat and in their own voices: the win showed only when they went home.
+  // A call closing on it (`ending`) has its own line.
+  if IsDefined(speaker) && !ending {
+    CBCrewWinLine(sys, game, book, speaker, downed);
   }
   if IsDefined(promoted) {
-    // The rank the card shows (fights and training together); the nickname is news once, on reaching Veteran.
-    let rank = CBCrewRankOf(game, promoted);
-    CBCrewText(sys, game, null, rank >= 3 && promotedFrom < 3
-      ? CBTf(n"Cyberbane-Crew-TheStreetSCallingNowEarned", [s"\(CBCrewFirst(sys, promoted))", s"\(CBCrewNickname(promoted.seat, promoted.seed))"])
-      : CBTf(n"Cyberbane-Crew-IsGettingGoodAtThisNow", [s"\(CBCrewFirst(sys, promoted))", s"\(CBCrewRankWord(rank))"]));
+    // The rank the card shows (fights and training together), with what it lets them do now.
+    CBCrewLifePromoted(sys, game, promoted, promotedFrom, CBCrewRankOf(game, promoted));
   }
 }
 
@@ -2149,6 +2387,7 @@ func CBCrewSellOut(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
 
 // One set to turn does it: the role cleared, hostile to V, and a Rival from now on (the Betrayer).
 func CBCrewTurn(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
+  CBUiSound(game, n"ui_jingle_chip_malfunction", n"CrewTurned", 30.0);   // 2.7.7
   let mid = book.turnMember;
   book.turnMember = 0;
   book.turnTicks = 0;
@@ -2334,7 +2573,12 @@ public func CBCrewBodyDied(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   if m.kind == CBCrewLent() {
     CBCrewStandingShift(game, m.faction, -CBConfig.CrewStandMemberKilled());
   }
+  // The weapon in their hand fell with them (2.7.7): the one on the ground is it, so nothing is handed back twice.
+  let armedFell = CBCrewArmedFell(game, puppet, m);
   book.Remove(m, CBCrewEndFell(), byRival, district, now);
+  if armedFell && CBMessagesOn() {
+    CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewKit-WeaponWhereTheyFell", [CBCrewFirst(sys, m)]), true);
+  }
   CBMapRemember(sys, game, CBMemCrewFell(), puppet.GetWorldPosition(), m.id, m.faction, n"", n"", false);   // [85], 2.5.0
   // One who was a Rival dies as one: on the board as fallen, and not by V's hand.
   if m.rival > 0 {
@@ -2355,7 +2599,8 @@ public func CBCrewBodyDied(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   }
   if CBMessagesOn() {
     let by = byRival > 0 ? CBRivalDisplayName(sys.GetContent(), sys.FindRivalById(byRival)) : "";
-    let wins = m.wins > 0 ? CBTf(n"Cyberbane-Crew-FightsWithYouAndThisIs", [s"\(m.wins)"]) : "";
+    let wins = m.wins == 1 ? CBT(n"Cyberbane-Crew-OneFightWithYouAndThisIs")
+             : (m.wins > 1 ? CBTf(n"Cyberbane-Crew-FightsWithYouAndThisIs", [s"\(m.wins)"]) : "");
     CBCrewText(sys, game, null, StrLen(by) > 0 ? CBTf(n"Cyberbane-Crew-IsDeadDidItYouKnow", [s"\(name)", s"\(by)", s"\(wins)"])
                                                : CBTf(n"Cyberbane-Crew-IsDeadInFindWhoDid", [s"\(name)", s"\(CBHere(sys))", s"\(wins)"]));
     if m.kind == CBCrewLent() && NotEquals(m.faction, n"") {
@@ -2535,7 +2780,7 @@ public func CBCrewPayCut(sys: ref<CyberbaneSystem>, game: GameInstance) -> Strin
   while i < book.Count() {
     let m = book.At(i);
     i += 1;
-    CBCrewLoyalty(m, m.kind == CBCrewPaid() ? CBConfig.MyCrewFairCutPaid() : CBConfig.MyCrewFairCut(), CBCrewWhyNone());
+    CBCrewLoyalty(m, m.kind == CBCrewPaid() ? CBConfig.MyCrewFairCutPaid() : CBConfig.MyCrewFairCut(), CBCrewWhyPaid());
   }
   CBFileLog(sys, n"CrewPaid", CBGameSeconds(game), CBEventDistrict(sys, game), n"", Cast<Float>(owed));
   if CBMessagesOn() {
@@ -2915,7 +3160,9 @@ public func CBCrewScannerNote(npc: ref<NPCPuppet>) -> String {
   }
   let m = book.MemberOfBody(npc.GetEntityID());
   if IsDefined(m) {
-    return CBTf(n"Cyberbane-Crew-YOURCREW", [StrUpper(CBCrewRankWord(CBCrewRankOf(npc.GetGame(), m))), StrUpper(CBCrewSeatWord(m.seat))]);
+    // Their rank, and their loyalty in a word (2.7.7).
+    return CBTf(n"Cyberbane-Crew-YOURCREW", [StrUpper(CBCrewRankWord(CBCrewRankOf(npc.GetGame(), m))), StrUpper(CBCrewSeatWord(m.seat))])
+         + CBTf(n"Cyberbane-Crew-ScanLoyalty", [StrUpper(CBCrewLoyaltyWord(m.loyalty))]);
   }
   let kb = CBCrewKitBook.Get(npc.GetGame());
   if IsDefined(kb) && kb.sparMember > 0 && Equals(kb.sparBody, npc.GetEntityID()) {

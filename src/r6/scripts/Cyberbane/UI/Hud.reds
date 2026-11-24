@@ -240,6 +240,16 @@ public func CBHudLayoutWide() -> Int32 = 1
 public func CBHudLayoutTitles() -> Int32 = 2
 public func CBHudLayoutCrew() -> Int32 = 3    // the crew (2.5.0)
 public func CBHudLayoutLanes() -> Int32 = 4   // what is on its way, on Standing (2.5.0)
+public func CBHudLayoutMember() -> Int32 = 5  // one member's numbers and slots, in the right-hand column (2.7.7)
+// The Member view's column of rows (2.7.7): right of the story, clear of the buttons below it.
+public func CBHudMemberColX() -> Float = 690.0
+public func CBHudMemberColW() -> Float = 630.0
+public func CBHudCrewMemberMode() -> Int32 = 13
+public func CBHudCrewOrderSecond() -> Int32 = 13
+public func CBHudCrewOrderAsk() -> Int32 = 14
+public func CBHudCrewViewName(i: Int32) -> CName {
+  return CBHudWidgetName("cbHubCrewView", i + 1);
+}
 
 // A bar drawn in a row (2.5.0): where it sits on each screen, so no column's text runs under it. Gangs: standing, from
 // the middle. The city and turf: renown and share, where the text meters were. Rivals: rank, and a gang's strength.
@@ -383,6 +393,12 @@ public func CBHudRowColX(col: Int32, layout: Int32) -> Float {
       if col == 1 { return 236.0; }
       return 0.0;
     }
+    if layout == CBHudLayoutMember() {
+      if col == 0 { return 21.0; }
+      if col == 1 { return 180.0; }
+      if col == 2 { return 470.0; }
+      return 0.0;
+    }
     if col == 0 { return 21.0; }
     if col == 1 { return 411.0; }
     if col == 2 { return 626.0; }
@@ -421,6 +437,13 @@ public func CBHudRowColChars(col: Int32, layout: Int32) -> Int32 {
     if col == 0 { return 15; }
     if col == 1 { return 58; }
     if col == 5 { return 16; }
+    return 0;
+  }
+  if layout == CBHudLayoutMember() {
+    if col == 0 { return 11; }
+    if col == 1 { return 30; }
+    if col == 2 { return 0; }
+    if col == 5 { return 12; }
     return 0;
   }
   if col == 0 { return 28; }
@@ -599,6 +622,19 @@ public class CBHud {
   private let m_rowCrew: array<Int32>;                  // the crew member a row stands for (2.5.0); -1 the solo on offer
   private let m_pickCrew: Int32;
   private let m_letGoArmed: Int32;
+  // The Crew page's three views (2.7.7): Roster, Member and Crew, as chips across the top the way the main tabs work.
+  private let m_viewBox: array<wref<inkCanvas>>;
+  private let m_viewBg: array<wref<inkRectangle>>;
+  private let m_viewText: array<wref<inkText>>;
+  private let m_viewShown: Bool;
+  private let m_ordersFrom: Int32;      // the view a member's orders were opened from, for Back
+  private let m_logFilter: Int32;       // the History page's filter (2.7.7): 0 everything
+  // One line saying what the button under the cursor does (2.7.7), in the footer's place.
+  private let m_footer: wref<inkText>;
+  private let m_footerText: String;
+  private let m_actionHelp: String;
+  private let m_extraHelp: array<String>;
+  private let m_rowHelp: array<String>;
   // The Crew page's screens (2.6.0): 0 the roster, 1 picking a weapon, 2 picking chrome, 3 picking a gang for a war,
   // 4 naming the crew, 5 the memorial, 6 the picked one's orders, 7 the crew itself; what is on offer in the list, the
   // name box, the memorial's pick (one up), and whether the Gangs page drew the crew's card.
@@ -714,7 +750,7 @@ public class CBHud {
   // each place (0 for none).
   private let m_treeShown: Bool;
   private let m_treeGang: CName;
-  private let m_treeNemesis: Int32;   // the Rival of the gang drawn V has met most, for their box (2.5.0)
+  private let m_treeGrudge: Int32;   // the Rival of the gang drawn V has met most, for their box (2.5.0)
   private let m_webOrder: array<Int32>; // the gangs' cards, slot by slot, in the order they are shown (2.5.0)
   private let m_hereSlot: Int32;        // the district card V is in, framed white on the maps (2.5.0)
   private let m_actionTop: Float;     // where the buttons start on this page (PlaceActions)
@@ -841,6 +877,11 @@ public class CBHud {
     this.Unhook(this.m_nextBox);
     this.Unhook(this.m_listUpBox);
     this.Unhook(this.m_listDownBox);
+    i = 0;
+    while i < ArraySize(this.m_viewBox) {
+      this.Unhook(this.m_viewBox[i]);
+      i += 1;
+    }
     if this.m_inputBound && IsDefined(this.m_owner) {
       this.m_owner.UnregisterFromGlobalInputCallback(n"OnPostOnRelease", this, n"CBOnGlobalRelease");
       this.m_owner.UnregisterFromGlobalInputCallback(n"OnPostOnRelative", this, n"CBOnWheel");
@@ -1191,7 +1232,7 @@ public class CBHud {
       return this.m_actionOn;
     }
     if Equals(name, CBHudWebToggleName()) {
-      return CBHudHasPicture(this.m_tab);
+      return CBHudHasPicture(this.m_tab) || this.m_tab == CBHudHistoryTab();
     }
     let wbox = this.WebIndex(name);
     if wbox >= 0 {
@@ -1206,6 +1247,9 @@ public class CBHud {
     let k = this.ExtraIndex(name);
     if k >= 0 {
       return this.m_extraOn[k];
+    }
+    if this.ViewIndex(name) >= 0 {
+      return this.m_viewShown;
     }
     if Equals(name, CBHudListUpName()) {
       return this.m_listTop > 0;
@@ -1559,6 +1603,34 @@ public class CBHud {
       r += 1;
     }
 
+    // ---- The Crew page's views (2.7.7): Roster, Member, Crew, beside the picture switch ----
+    ArrayClear(this.m_viewBox);
+    ArrayClear(this.m_viewBg);
+    ArrayClear(this.m_viewText);
+    let vi = 0;
+    while vi < 3 {
+      let vbox = this.NewBox(panel, CBHudCrewViewName(vi), x + 250.0 + Cast<Float>(vi) * 190.0, CBHudContentTop() - 36.0, 180.0, 32.0);
+      let vbg = this.NewBand(vbox, CBHudButtonIdle());
+      let vtext = this.NewText(vbox, 19, n"Semibold", CBHudHead());
+      vtext.SetLetterCase(textLetterCase.UpperCase);
+      vtext.SetHorizontalAlignment(textHorizontalAlignment.Center);
+      vtext.SetFitToContent(false);
+      vtext.SetSize(this.PxSize(180.0, 26.0));
+      vtext.SetMargin(this.PxAt(0.0, 4.0));
+      vtext.SetText(CBHudCrewViewWord(vi));
+      vbox.SetVisible(false);
+      ArrayPush(this.m_viewBox, vbox);
+      ArrayPush(this.m_viewBg, vbg);
+      ArrayPush(this.m_viewText, vtext);
+      vi += 1;
+    }
+    ArrayClear(this.m_rowHelp);
+    let rh = 0;
+    while rh < CBHudRowPool() {
+      ArrayPush(this.m_rowHelp, "");
+      rh += 1;
+    }
+
     // ---- Prose: under the meters, under a list, or beside the titles -----------
     // The game writes its descriptions in its red, and the page does the same on its own screen.
     let body = this.NewText(panel, CBHudBodyFont(), n"Medium", this.m_inTab ? CBHudLabel() : CBHudValue(),
@@ -1595,6 +1667,7 @@ public class CBHud {
     ArrayClear(this.m_extraFrame);
     ArrayClear(this.m_extraText);
     ArrayClear(this.m_extraOn);
+    ArrayClear(this.m_extraHelp);
     let ex = 1;
     while ex <= CBHudExtraActions() {
       let ey = CBHudDetailTop() - 4.0 + Cast<Float>(ex) * (CBHudActionH() + CBHudActionGap());
@@ -1620,6 +1693,7 @@ public class CBHud {
       ArrayPush(this.m_extraFrame, extraFrame);
       ArrayPush(this.m_extraText, extraText);
       ArrayPush(this.m_extraOn, false);
+      ArrayPush(this.m_extraHelp, "");
       ex += 1;
     }
 
@@ -1632,9 +1706,10 @@ public class CBHud {
     // Kept short enough to stop well clear of the Mod Settings button at the right of the same
     // line. It used to also explain Q and E, and ran some way underneath that button; the keys are
     // on the tab bar now, where they are used.
-    footer.SetText(CBHudFit(CBT(n"Cyberbane-Hud-ClickAScreenOrARow"),
-                            w - 260.0 - 40.0, 19, 1));
+    this.m_footerText = CBHudFit(CBT(n"Cyberbane-Hud-ClickAScreenOrARow"), w - 260.0 - 40.0, 19, 1);
+    footer.SetText(this.m_footerText);
     footer.SetVisible(!this.m_inTab);   // as a tab, the game's own button hints say all of this
+    this.m_footer = footer;
 
     let settings = this.NewBox(panel, CBHudSettingsName(), x + w - 260.0, CBHudFooterY() - 8.0, 260.0, 40.0);
     let settingsBg = this.NewBand(settings, CBHudButtonIdle());
@@ -1685,6 +1760,11 @@ public class CBHud {
     i = 0;
     while i < ArraySize(this.m_webBox) {
       this.Hook(this.m_webBox[i]);
+      i += 1;
+    }
+    i = 0;
+    while i < ArraySize(this.m_viewBox) {
+      this.Hook(this.m_viewBox[i]);
       i += 1;
     }
     // The previous/next tab keys. Registered once and left until the menu goes, rather than on
@@ -1764,6 +1844,18 @@ public class CBHud {
       }
       return true;
     }
+    let vk = this.ViewIndex(name);
+    if vk >= 0 {
+      e.Handle();
+      if this.m_viewShown {
+        this.Click();
+        this.m_crewMode = vk == 0 ? 0 : (vk == 1 ? CBHudCrewMemberMode() : 7);
+        this.m_letGoArmed = 0;
+        this.m_listTop = 0;
+        this.Render(sys, game);
+      }
+      return true;
+    }
     let ek = this.ExtraIndex(name);
     if ek >= 0 {
       e.Handle();
@@ -1776,6 +1868,12 @@ public class CBHud {
     // The web of gangs (2.4.3): the switch, and a gang's box picked.
     if Equals(name, CBHudWebToggleName()) {
       e.Handle();
+      if this.m_tab == CBHudHistoryTab() {
+        this.Click();
+        this.m_logFilter = (this.m_logFilter + 1) % 5;
+        this.Render(sys, game);
+        return true;
+      }
       if CBHudHasPicture(this.m_tab) {
         this.Click();
         sys.SetHubVisual(this.m_tab, !sys.HubVisual(this.m_tab));
@@ -2101,6 +2199,15 @@ public class CBHud {
       this.Render(sys, game);
       return;
     }
+    if this.m_tab == CBHudCrewTab() && this.m_crewMode == CBHudCrewMemberMode() {
+      let mcode = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] : 0;
+      if mcode > 0 {
+        this.m_ordersFrom = CBHudCrewMemberMode();
+        this.CrewOrderClicked(game, mcode);
+      }
+      this.Render(sys, game);
+      return;
+    }
     if this.m_tab == CBHudCrewTab() && this.m_crewMode >= 5 {
       let code = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] : 0;
       if this.m_crewMode == 5 {
@@ -2175,7 +2282,7 @@ public class CBHud {
       this.Render(sys, game);
       return;
     }
-    if this.m_tab == CBHudCrewTab() && this.m_crewMode != 0 {
+    if this.m_tab == CBHudCrewTab() && this.m_crewMode != 0 && this.m_crewMode != CBHudCrewMemberMode() {
       // "Back" out of a screen, "Save the name" when naming (2.6.0): a pick list goes back to the orders it came from,
       // the name and the memorial to the crew's own screen, the rest to the roster.
       let mode = this.m_crewMode;
@@ -2197,6 +2304,9 @@ public class CBHud {
         }
       }
       this.m_crewMode = (mode >= 1 && mode <= 2) || mode == 8 || mode == 10 ? 6 : (mode == 4 || mode == 5 || mode == 9 ? 7 : 0);
+      if mode == 6 && this.m_ordersFrom == CBHudCrewMemberMode() {
+        this.m_crewMode = CBHudCrewMemberMode();   // back to the file they were opened from (2.7.7)
+      }
       this.m_pickFallen = 0;
       this.Render(sys, game);
       return;
@@ -2342,6 +2452,7 @@ public class CBHud {
       let cb = CBCrewBook.Get(game);
       if IsDefined(cb) {
         if slot == 1 && this.m_pickCrew > 0 {
+          this.m_ordersFrom = this.m_crewMode;
           this.m_crewMode = 6;
           this.m_letGoArmed = 0;
         }
@@ -2446,6 +2557,25 @@ public class CBHud {
   }
 
   // Which of the buttons under the first this widget name is, or -1.
+  private func ViewIndex(name: CName) -> Int32 {
+    let k = 0;
+    while k < ArraySize(this.m_viewBox) {
+      if Equals(name, CBHudCrewViewName(k)) {
+        return k;
+      }
+      k += 1;
+    }
+    return -1;
+  }
+
+  // Which of the three views the Crew page is on: 0 Roster, 1 Member, 2 Crew; -1 for a screen inside one of them.
+  private func CrewView() -> Int32 {
+    if this.m_crewMode == 0 { return 0; }
+    if this.m_crewMode == CBHudCrewMemberMode() { return 1; }
+    if this.m_crewMode == 7 { return 2; }
+    return -1;
+  }
+
   private func ExtraIndex(name: CName) -> Int32 {
     let k = 0;
     while k < ArraySize(this.m_extraBox) && k < ArraySize(this.m_extraOn) {
@@ -2568,7 +2698,99 @@ public class CBHud {
     }
     this.PaintListButton(this.m_listUpBg, this.m_listUpText, CBHudListUpName());
     this.PaintListButton(this.m_listDownBg, this.m_listDownText, CBHudListDownName());
+    let view = this.CrewView();
+    let vp = 0;
+    while vp < ArraySize(this.m_viewBox) {
+      let onView = view == vp;
+      let hotView = Equals(this.m_hover, CBHudCrewViewName(vp));
+      if IsDefined(this.m_viewBg[vp]) {
+        this.m_viewBg[vp].SetTintColor(onView ? CBHudBandPicked() : (hotView ? CBHudButtonHover() : CBHudButtonIdle()));
+      }
+      if IsDefined(this.m_viewText[vp]) {
+        this.m_viewText[vp].SetTintColor(onView ? CBHudCyan() : CBHudHead());
+      }
+      vp += 1;
+    }
+    this.PaintHelp();
     this.PaintWeb();
+  }
+
+  // What the button under the cursor does, one line where the footer's hint is (2.7.7). "Calls just Sai. They join
+  // whoever's already out."
+  private func PaintHelp() -> Void {
+    if !IsDefined(this.m_footer) {
+      return;
+    }
+    let help = "";
+    if Equals(this.m_hover, CBHudActionName()) {
+      help = this.m_actionHelp;
+    }
+    let k = this.ExtraIndex(this.m_hover);
+    if k >= 0 && k < ArraySize(this.m_extraHelp) {
+      help = this.m_extraHelp[k];
+    }
+    let r = 0;
+    while r < ArraySize(this.m_rowNames) && StrLen(help) == 0 {
+      if Equals(this.m_rowNames[r], this.m_hover) && r < ArraySize(this.m_rowHelp) && this.m_rowShown[r] {
+        help = this.m_rowHelp[r];
+      }
+      r += 1;
+    }
+    let vk = this.ViewIndex(this.m_hover);
+    if vk >= 0 {
+      help = CBHudCrewViewHelp(vk);
+    }
+    if StrLen(help) > 0 {
+      this.m_footer.SetText(CBHudFit(help, CBHudContentW() - (this.m_inTab ? 0.0 : 300.0), 19, 1));
+      this.m_footer.SetTintColor(CBHudCyan());
+      this.m_footer.SetVisible(true);
+    } else {
+      this.m_footer.SetText(this.m_footerText);
+      this.m_footer.SetTintColor(CBHudDim());
+      this.m_footer.SetVisible(!this.m_inTab);
+    }
+  }
+
+  // What a button does when its page did not say (2.7.7): by the page and the button's place on it. 0 is the first button.
+  private func DefaultHelp(slot: Int32) -> String {
+    if this.m_tab == CBHudStandingTab() && slot == 0 {
+      return CBT(n"Cyberbane-Hud-HelpPayBounty");
+    }
+    if this.m_tab == CBHudFactionsTab() && slot == 0 {
+      return CBT(n"Cyberbane-Hud-HelpPayOffGang");
+    }
+    if this.m_tab == CBHudRivalsTab() {
+      if slot == 0 { return CBT(n"Cyberbane-Hud-HelpFindRival"); }
+      if slot == 1 { return CBT(n"Cyberbane-Hud-HelpSendWord"); }
+      if slot == 2 { return CBT(n"Cyberbane-Hud-HelpForgetRival"); }
+      if slot == 3 { return CBT(n"Cyberbane-Hud-HelpForgetAll"); }
+    }
+    if this.m_tab == CBHudHistoryTab() {
+      if slot == 0 { return CBT(n"Cyberbane-Hud-HelpStoryLedger"); }
+      if slot == 1 { return CBT(n"Cyberbane-Hud-HelpUndo"); }
+      if slot == 2 { return CBT(n"Cyberbane-Hud-HelpStartOver"); }
+    }
+    if this.m_tab == CBHudCrewTab() {
+      if this.m_crewMode == 11 && slot == 0 { return CBT(n"Cyberbane-Hud-HelpSendWar"); }
+      if this.m_crewMode == 0 && slot == 0 && this.m_pickCrew == -1 { return CBT(n"Cyberbane-Hud-HelpHire"); }
+    }
+    return "";
+  }
+
+  private func SetRowHelp(idx: Int32, help: String) -> Void {
+    if idx >= 0 && idx < ArraySize(this.m_rowHelp) {
+      this.m_rowHelp[idx] = help;
+    }
+  }
+
+  // The chips show on the Crew page's three views, and nowhere else.
+  private func ShowCrewViews(show: Bool) -> Void {
+    this.m_viewShown = show;
+    for b in this.m_viewBox {
+      if IsDefined(b) {
+        b.SetVisible(show);
+      }
+    }
   }
 
   // Lit under the cursor, dimmed when there is nothing further that way.
@@ -2587,8 +2809,9 @@ public class CBHud {
     }
   }
 
-  private func SetAction(label: String, enabled: Bool) -> Void {
+  private func SetAction(label: String, enabled: Bool, opt help: String) -> Void {
     this.m_actionOn = enabled;
+    this.m_actionHelp = StrLen(help) > 0 || StrLen(label) == 0 ? help : this.DefaultHelp(0);
     // Drawn smaller until it fits, rather than cut (2.5.0).
     this.BoxText(this.m_actionText, label, CBHudActionW() - 24.0, CBHudActionFont(), 14, true);
     if IsDefined(this.m_actionBox) {
@@ -2635,12 +2858,15 @@ public class CBHud {
   }
 
   // The same, for the buttons under it, numbered from 1. "" hides one.
-  private func SetExtra(slot: Int32, label: String, enabled: Bool) -> Void {
+  private func SetExtra(slot: Int32, label: String, enabled: Bool, opt help: String) -> Void {
     let k = slot - 1;
     if k < 0 || k >= ArraySize(this.m_extraBox) || k >= ArraySize(this.m_extraOn) {
       return;
     }
     this.m_extraOn[k] = enabled && StrLen(label) > 0;
+    if k < ArraySize(this.m_extraHelp) {
+      this.m_extraHelp[k] = StrLen(help) > 0 || StrLen(label) == 0 ? help : this.DefaultHelp(slot);
+    }
     this.BoxText(this.m_extraText[k], label, CBHudActionW() - 24.0, CBHudActionFont(), 14, true);
     if IsDefined(this.m_extraBox[k]) {
       this.m_extraBox[k].SetVisible(StrLen(label) > 0);
@@ -2689,6 +2915,7 @@ public class CBHud {
       this.m_rowRival[i] = 0;
       this.m_rowTitle[i] = n"";
       if i < ArraySize(this.m_rowCrew) { this.m_rowCrew[i] = 0; }
+      if i < ArraySize(this.m_rowHelp) { this.m_rowHelp[i] = ""; }
       let seg = 0;
       while seg < CBHudBarSegs() {
         let k = i * CBHudBarSegs() + seg;
@@ -2767,14 +2994,16 @@ public class CBHud {
     }
     this.m_rowTop = top;
     let titles = layout == CBHudLayoutTitles();
+    let member = layout == CBHudLayoutMember();
     let stride = titles ? CBHudTitleRowHeight() : CBHudRowHeight();
-    let rowW = titles ? CBHudTitleListW() : CBHudContentW();
+    let rowW = titles ? CBHudTitleListW() : (member ? CBHudMemberColW() : CBHudContentW());
+    let rowX = member ? CBHudMarginX() + CBHudMemberColX() : CBHudMarginX();
     let rowH = stride - 4.0;
     let textY = titles ? 0.0 : 5.0;
     let r = 0;
     while r < ArraySize(this.m_rowBox) {
       if IsDefined(this.m_rowBox[r]) {
-        this.m_rowBox[r].SetMargin(this.PxAt(CBHudMarginX(), top + Cast<Float>(r) * stride));
+        this.m_rowBox[r].SetMargin(this.PxAt(rowX, top + Cast<Float>(r) * stride));
         this.m_rowBox[r].SetSize(this.PxSize(rowW, rowH));
       }
       if IsDefined(this.m_rowPip[r]) {
@@ -3253,6 +3482,7 @@ public class CBHud {
       if CBGangViewSet(id) {
         out += CBTf(n"Cyberbane-Hud-SetToUnderHowGangsSee", [CBPostureName(posture), CBPostureName(CBPostureFromStanding(fs.standing))]);
       }
+      out += CBGangBossLines(sys, id);   // their boss, and what where V stands gets V (Model/GangBosses.reds, 2.7.7)
     }
     // Two records, said as two (CBForeignHostile): somebody else's is who shoots on sight, and a pay-off
     // or the switch above changes Cyberbane's alone.
@@ -4030,27 +4260,33 @@ public class CBHud {
         let book = CBRivalBook.Get(game);
         let how = IsDefined(book) ? book.Ending(r.id) : CBEndingNone();
         if r.state == EnumInt(ECBRivalState.Retired) {
-          line = CBT(n"Cyberbane-Hud-LEFTNIGHTCITY");
+          // One of V's crew now (2.7.7): said so, not "left Night City".
+          if CBRivalRunsWithV(game, r) {
+            line = CBT(n"Cyberbane-Hud-RUNSWITHYOU");
+            tint = CBHudCyan();
+          } else {
+            line = CBT(n"Cyberbane-Hud-LEFTNIGHTCITY");
+          }
         } else {
           line = how == CBEndingNotByV() ? CBT(n"Cyberbane-Hud-KILLEDNOTBYYOU") : CBT(n"Cyberbane-Hud-DEADBYYOURHAND");
         }
       } else {
         line = CBTf(n"Cyberbane-Hud-RANK", [s"\(r.rank)", StrUpper(hunting ? CBT(n"Cyberbane-Hud-HuntingYou") : CBRivalStateName(r.state))]);
-        // Who they are to V or to another of theirs, in words (2.5.0): a bond and V's nemesis were lines across the
+        // Who they are to V or to another of theirs, in words (2.5.0): a bond and V's oldest grudge were lines across the
         // tree from the middle of one box to the middle of another, and showed only as strokes in the air between
         // them. Otherwise what V and they have been through, or that they have never met.
         let bookT = CBRivalBook.Get(game);
         let with = IsDefined(bookT) ? bookT.BondWith(r.id) : 0;
         let partner = with > 0 ? sys.FindRivalById(with) : null;
-        if r.id == this.m_treeNemesis {
-          lead = CBTf(n"Cyberbane-Hud-YourNemesisMetTimes", [s"\(r.encounters)"]);
+        if r.id == this.m_treeGrudge {
+          lead = CBTf(n"Cyberbane-Hud-YourOldestGrudgeMetTimes", [s"\(CBRivalTimesMet(r))"]);
           leadTint = CBHudRed();
         } else {
           if IsDefined(partner) && StrLen(CBBondWord(bookT.BondKind(r.id))) > 0 {
             lead = CBCapFirst(CBBondWord(bookT.BondKind(r.id))) + " " + CBHudNameNoNick(CBRivalDisplayName(sys.GetContent(), partner));
             leadTint = CBHudCyan();
           } else {
-            lead = r.encounters > 0 ? CBTf(n"Cyberbane-Hud-MetRanSpared", [s"\(r.encounters)", s"\(r.escapes)", s"\(r.sparedByV)"]) : CBT(n"Cyberbane-Hud-NeverMetYou");
+            lead = CBRivalTimesMet(r) > 0 ? CBTf(n"Cyberbane-Hud-MetRanSpared", [s"\(CBRivalTimesMet(r))", s"\(r.escapes)", s"\(r.sparedByV)"]) : CBT(n"Cyberbane-Hud-NeverMetYou");
           }
         }
       }
@@ -4081,7 +4317,7 @@ public class CBHud {
 
   // A gang's leader, their three lieutenants, the rest of their Rivals as the bench, and the fallen, top down: the
   // hierarchy that already exists (CBFactionState leader and lieutenants), with the first empty chair naming who steps
-  // up next (the order CBHierarchyFill uses). A bond, and V's nemesis, are said in the box (TreeBox), not drawn.
+  // up next (the order CBHierarchyFill uses). A bond, and V's oldest grudge, are said in the box (TreeBox), not drawn.
   private func RenderTree(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if !IsDefined(this.m_webRoot) {
       return;
@@ -4146,15 +4382,15 @@ public class CBHud {
       }
       let benchIds: array<Int32>;
       let fallenIds: array<Int32>;
-      this.m_treeNemesis = 0;
+      this.m_treeGrudge = 0;
       let most = 1;
       for r in sys.GetRivals() {
         if IsDefined(r) && Equals(CBTreeGangOf(r), gang) {
           let seated = r.id == leaderId || r.id == lt1Id || r.id == lt2Id || r.id == lt3Id;
           let around = CBRivalStillAround(r) || r.state == EnumInt(ECBRivalState.Debtor) || r.state == EnumInt(ECBRivalState.Dormant);
-          if around && r.encounters > most {
-            most = r.encounters;
-            this.m_treeNemesis = r.id;
+          if around && CBRivalTimesMet(r) > most {
+            most = CBRivalTimesMet(r);
+            this.m_treeGrudge = r.id;
           }
           if !seated {
             if around {
@@ -4805,6 +5041,7 @@ public class CBHud {
     } else {
       out += CBT(n"Cyberbane-Hud-YouHaveNotMadeAnyTrouble");
     }
+    out += CBCrewMapLines(sys, game, d);   // the crew's people, wars and corners here (2.7.7)
     return out;
   }
 
@@ -4849,6 +5086,7 @@ public class CBHud {
       return;
     }
     let top = CBHudContentTop();
+    this.ShowCrewViews(book.Count() > 0 || book.PastCount() > 0);
     if sys.HubVisual(CBHudCrewTab()) {
       this.RenderCrewPicture(sys, game, book, offer);
       top += CBWebHeight() + 24.0;
@@ -4868,17 +5106,18 @@ public class CBHud {
     if IsDefined(m) {
       let first = CBCrewFirst(sys, m);
       if book.IsOut(m.id) && !book.leaving {
-        this.SetAction(book.reqHomeOne == m.id ? CBTf(n"Cyberbane-Hud-SendingOneHome", [first]) : CBTf(n"Cyberbane-Hud-OneHeadHome", [first]), true);
+        this.SetAction(book.reqHomeOne == m.id ? CBTf(n"Cyberbane-Hud-SendingOneHome", [first]) : CBTf(n"Cyberbane-Hud-OneHeadHome", [first]), true,
+                       CBTf(n"Cyberbane-Hud-HelpSendOneHome", [first]));
       } else {
         if book.reqCallOne == m.id {
-          this.SetAction(CBTf(n"Cyberbane-Hud-CallingOne", [first]), true);
+          this.SetAction(CBTf(n"Cyberbane-Hud-CallingOne", [first]), true, CBT(n"Cyberbane-Hud-HelpTakeBack"));
           calling = true;
         } else {
           oneWhy = CBCrewCallBlocked(sys, game, false, true, m.id);
-          this.SetAction(CBTf(n"Cyberbane-Hud-OneNeedYouNow", [first]), StrLen(oneWhy) == 0);
+          this.SetAction(CBTf(n"Cyberbane-Hud-OneNeedYouNow", [first]), StrLen(oneWhy) == 0, CBTf(n"Cyberbane-Hud-HelpCallOne", [first]));
         }
       }
-      this.SetExtra(1, CBTf(n"Cyberbane-Hud-OrdersFor", [first]), true);
+      this.SetExtra(1, CBTf(n"Cyberbane-Hud-OrdersFor", [first]), true, CBTf(n"Cyberbane-Hud-HelpOrders", [first]));
     }
     if offer && this.m_pickCrew == -1 {
       if book.reqHire {
@@ -4890,14 +5129,15 @@ public class CBHud {
     let crewWhy = "";
     if book.Count() > 0 {
       if book.OutCount() > 0 && !book.leaving {
-        this.SetExtra(2, book.reqHome ? CBT(n"Cyberbane-Hud-SendingThemHomeClickToTake") : CBT(n"Cyberbane-Hud-SendYourCrewHome"), true);
+        this.SetExtra(2, book.reqHome ? CBT(n"Cyberbane-Hud-SendingThemHomeClickToTake") : CBT(n"Cyberbane-Hud-SendYourCrewHome"), true,
+                      CBT(n"Cyberbane-Hud-HelpSendCrewHome"));
       } else {
         if book.reqCall {
-          this.SetExtra(2, CBT(n"Cyberbane-Hud-CallingThemClickToTakeIt"), true);
+          this.SetExtra(2, CBT(n"Cyberbane-Hud-CallingThemClickToTakeIt"), true, CBT(n"Cyberbane-Hud-HelpTakeBack"));
           calling = true;
         } else {
           crewWhy = CBCrewCallBlocked(sys, game, false, true);
-          this.SetExtra(2, CBT(n"Cyberbane-Hud-CallYourCrew"), StrLen(crewWhy) == 0);
+          this.SetExtra(2, CBT(n"Cyberbane-Hud-CallYourCrew"), StrLen(crewWhy) == 0, CBT(n"Cyberbane-Hud-HelpCallCrew"));
         }
       }
     }
@@ -4934,12 +5174,11 @@ public class CBHud {
     }
     let bbPage = CBCrewBannerBook.Get(game);
     if book.Count() > 0 || (IsDefined(bbPage) && bbPage.FallenCount() > 0) {
-      this.SetExtra(3, CBT(n"Cyberbane-Hud-WarMoneyNameFallen"), true);
+      this.SetExtra(3, CBT(n"Cyberbane-Hud-WarMoneyNameFallen"), true, CBT(n"Cyberbane-Hud-HelpCrewPage"));
     }
-    let file = CBCrewFile(sys, game, book, m, this.m_pickCrew == -1);
-    if IsDefined(m) && this.m_pickCrew > 0 {
-      file += "\n" + CBCrewKitLines(sys, game, m);
-    }
+    // The picked one in a line or two; everything about them is on the Member view (2.7.7). Written out whole here, it ran
+    // past its lines and stopped at "Rookie, rank 1 of ...".
+    let file = this.m_pickCrew == -1 ? CBCrewFile(sys, game, book, m, true) : CBCrewRosterLine(sys, game, book, m);
     let crewName = CBCrewNameOf(game);
     let named = StrLen(crewName) > 0 ? StrUpper(crewName) + "\n" : "";
     named += CBCrewPowerLine(sys, game);   // what the crew counts for, and the streets it holds (2.7.6)
@@ -4960,7 +5199,7 @@ public class CBHud {
     let top = CBHudContentTop();
     let m = this.m_pickCrew > 0 ? book.Find(this.m_pickCrew) : null;
     let forMember = (this.m_crewMode >= 1 && this.m_crewMode <= 2) || this.m_crewMode == 6 || this.m_crewMode == 8
-                 || this.m_crewMode == 10;
+                 || this.m_crewMode == 10 || this.m_crewMode == CBHudCrewMemberMode();
     if forMember && !IsDefined(m) {
       this.m_crewMode = 0;
       return false;
@@ -4968,8 +5207,8 @@ public class CBHud {
     this.HideWeb();
     if this.m_crewMode == 4 {
       this.ShowNameInput(game, x, top);
-      this.SetAction(CBT(n"Cyberbane-Hud-SaveTheName"), true);
-      this.SetExtra(1, CBT(n"Cyberbane-Hud-Cancel"), true);
+      this.SetAction(CBT(n"Cyberbane-Hud-SaveTheName"), true, CBT(n"Cyberbane-Hud-HelpSaveName"));
+      this.SetExtra(1, CBT(n"Cyberbane-Hud-Cancel"), true, CBT(n"Cyberbane-Hud-HelpCancelName"));
       this.SetBody(x, top + 110.0, w - CBHudActionW() - 40.0,
         CBT(n"Cyberbane-Hud-TypeANameForYourCrew"),
         CBHudMaxLinesFor(this.m_tab));
@@ -4985,8 +5224,8 @@ public class CBHud {
     }
     if this.m_crewMode == 10 {
       this.ShowNameInput(game, x, top);
-      this.SetAction(CBT(n"Cyberbane-Hud-SaveTheName"), true);
-      this.SetExtra(1, CBT(n"Cyberbane-Hud-Cancel"), true);
+      this.SetAction(CBT(n"Cyberbane-Hud-SaveTheName"), true, CBT(n"Cyberbane-Hud-HelpSaveName"));
+      this.SetExtra(1, CBT(n"Cyberbane-Hud-Cancel"), true, CBT(n"Cyberbane-Hud-HelpCancelName"));
       this.SetBody(x, top + 110.0, w - CBHudActionW() - 40.0,
         CBTf(n"Cyberbane-Hud-TypeANameForThem", [CBCrewFullNameNicked(sys, m.kind, m.faction, m.rival, m.seed, false, m.seat)]),
         CBHudMaxLinesFor(this.m_tab));
@@ -5001,7 +5240,13 @@ public class CBHud {
       return true;
     }
     if this.m_crewMode == 7 {
+      this.ShowCrewViews(true);
       this.RenderCrewRecord(sys, game, book);
+      return true;
+    }
+    if this.m_crewMode == CBHudCrewMemberMode() {
+      this.ShowCrewViews(true);
+      this.RenderCrewMember(sys, game, book, m);
       return true;
     }
     if this.m_crewMode == 8 {
@@ -5036,12 +5281,19 @@ public class CBHud {
         let data = this.m_crewMode == 1 ? CBCrewItemData(game, id) : (IsDefined(ts) && IsDefined(player) ? ts.GetItemData(player, id) : null);
         let kind = "";
         let tier = "";
+        let change = "";
         if IsDefined(data) {
           tier = CBCrewTierWord(CBCrewTierOf(RPGManager.GetItemQuality(data)));
           kind = this.m_crewMode == 1 ? CBCrewSeatWord(CBCrewSeatForWeapon(data.GetItemType()))
-                                      : CBCrewChromeWords(CBCrewChromeRead(ItemID.GetTDBID(id)), 1);
+                                      : CBCrewChromeNumbers(CBCrewChromeRead(ItemID.GetTDBID(id)), 2);
+          // Before it goes in (2.7.7): "Armour x1.30 -> x1.48".
+          if this.m_crewMode == 2 && IsDefined(m) {
+            change = CBCrewChromeChange(game, m, ItemID.GetTDBID(id));
+          }
         }
-        this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCrewItemName(ItemID.GetTDBID(id)), kind, tier, "", "", "");
+        this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBCrewItemName(ItemID.GetTDBID(id)), this.m_crewMode == 1 ? kind : "", tier,
+                    this.m_crewMode == 1 ? "" : kind, "", change);
+        this.SetRowHelp(row, this.m_crewMode == 1 ? CBCrewWeaponHelp(data) : (StrLen(change) > 0 ? change + ". " + kind : kind));
         this.m_rowCrew[row] = i + 1;
         row += 1;
         i += 1;
@@ -5054,10 +5306,93 @@ public class CBHud {
                                      : CBT(n"Cyberbane-Hud-YouHaveNoSpareChromeThat");
       }
     }
-    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
+    // Why some of V's chrome is not in the list (2.7.7): it only works for V.
+    if this.m_crewMode == 2 {
+      let left = CBCrewChromeLeftOut(game);
+      if left > 0 {
+        intro += "\n" + (left == 1 ? CBT(n"Cyberbane-Hud-OneChromeOnlyYours") : CBTf(n"Cyberbane-Hud-ChromeOnlyYours", [s"\(left)"]));
+      }
+    }
     let bodyTop = top + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(x, bodyTop, w - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
     return true;
+  }
+
+  // Everything about one of them on one screen (2.7.7, the Member view): their story on the left; on the right their
+  // numbers as the game gets them when they are called, the weapon slot and each chrome slot (a click puts something in),
+  // and their rank with how far it is to the next. The buttons are the roster's.
+  private func RenderCrewMember(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>) -> Void {
+    this.PlaceRows(CBHudLayoutMember());
+    let now = CBGameSeconds(game);
+    let kb = CBCrewKitBook.Get(game);
+    let k = IsDefined(kb) ? kb.Find(m.id) : null;
+    let n = CBCrewKitPreview(game, m);
+    let lay = CBHudLayoutMember();
+    let row = 0;
+    this.SetRow(row, lay, CBHudGreen(), false, false, CBT(n"Cyberbane-Hud-StatHealth"), CBHudMult(n.health), "", "", "", "");
+    this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpStats"));
+    row += 1;
+    this.SetRow(row, lay, CBHudCyan(), false, false, CBT(n"Cyberbane-Hud-StatArmour"), CBHudMult(n.armour), "", "", "", "");
+    this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpStats"));
+    row += 1;
+    this.SetRow(row, lay, CBHudRed(), false, false, CBT(n"Cyberbane-Hud-StatDamage"), CBHudMult(n.damage), "", "", "", "");
+    this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpStats"));
+    row += 1;
+    let extras = CBCrewKitExtrasLine(n);
+    this.SetRow(row, lay, CBHudAmber(), false, false, CBT(n"Cyberbane-Hud-StatChrome"), StrLen(extras) > 0 ? extras : CBT(n"Cyberbane-Hud-StatNothingMore"), "", "", "", "");
+    this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpStatChrome"));
+    row += 1;
+    this.SetRow(row, lay, CBHudLabel(), false, false, CBT(n"Cyberbane-Hud-StatRank"), CBCrewRankShort(game, m), "", "", "", "");
+    this.SetRowBar(row, 470.0, 140.0, CBCrewRankProgress(game, m), CBHudCyan());
+    this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpRankBar"));
+    row += 1;
+    // The weapon slot.
+    let out = book.IsOut(m.id);
+    let free = !out && !CBCrewAway(game, m.id, now);
+    if IsDefined(k) && k.hasWeapon {
+      this.SetRow(row, lay, CBHudLabel(), free, false, CBT(n"Cyberbane-Hud-SlotWeapon"), CBCrewItemName(ItemID.GetTDBID(k.weapon)), "", "", "",
+                  StrUpper(CBCrewTierWord(k.weaponTier)));
+      this.m_rowCrew[row] = CBCrewAskTakeBack();
+      this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpTakeBackWeapon"));
+    } else {
+      this.SetRow(row, lay, CBHudDim(), free, false, CBT(n"Cyberbane-Hud-SlotWeapon"), CBT(n"Cyberbane-Hud-SlotEmptyGive"), "", "", "", "");
+      this.m_rowCrew[row] = CBCrewAskGive();
+      this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpGiveWeapon"));
+    }
+    row += 1;
+    // Each chrome slot, filled or empty.
+    let slot = 0;
+    while slot < CBCrewChromeSlots() && row < CBHudListRows() {
+      let c = IsDefined(k) ? k.ChromeAt(slot) : TDBID.None();
+      if TDBID.IsValid(c) {
+        this.SetRow(row, lay, CBHudAmber(), false, false, CBTf(n"Cyberbane-Hud-SlotChrome", [s"\(slot + 1)"]), CBCrewItemName(c), "", "", "",
+                    "");
+        this.SetRowHelp(row, CBCrewChromeNumbers(CBCrewChromeRead(c), 4));
+      } else {
+        this.SetRow(row, lay, CBHudDim(), free, false, CBTf(n"Cyberbane-Hud-SlotChrome", [s"\(slot + 1)"]), CBT(n"Cyberbane-Hud-SlotEmptyChrome"), "", "", "", "");
+        this.m_rowCrew[row] = CBCrewAskChrome();
+        this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpChrome"));
+      }
+      row += 1;
+      slot += 1;
+    }
+    this.SetBody(CBHudMarginX(), CBHudContentTop(), CBHudMemberColX() - 30.0, CBCrewMemberFile(sys, game, book, m), CBHudMaxLinesFor(this.m_tab));
+    // The roster's buttons: their own call, their orders, the whole crew.
+    let first = CBCrewFirst(sys, m);
+    if out && !book.leaving {
+      this.SetAction(book.reqHomeOne == m.id ? CBTf(n"Cyberbane-Hud-SendingOneHome", [first]) : CBTf(n"Cyberbane-Hud-OneHeadHome", [first]), true,
+                     CBTf(n"Cyberbane-Hud-HelpSendOneHome", [first]));
+    } else {
+      if book.reqCallOne == m.id {
+        this.SetAction(CBTf(n"Cyberbane-Hud-CallingOne", [first]), true, CBT(n"Cyberbane-Hud-HelpTakeBack"));
+      } else {
+        let oneWhy = CBCrewCallBlocked(sys, game, false, true, m.id);
+        this.SetAction(CBTf(n"Cyberbane-Hud-OneNeedYouNow", [first]), StrLen(oneWhy) == 0, CBTf(n"Cyberbane-Hud-HelpCallOne", [first]));
+      }
+    }
+    this.SetExtra(1, CBTf(n"Cyberbane-Hud-OrdersFor", [first]), true, CBTf(n"Cyberbane-Hud-HelpOrders", [first]));
+    this.SetExtra(3, CBT(n"Cyberbane-Hud-WarMoneyNameFallen"), true, CBT(n"Cyberbane-Hud-HelpCrewPage"));
   }
 
   // One member's orders (2.6.0), a row each, carried out back in the game. One asked for says so, and clicked again
@@ -5157,12 +5492,35 @@ public class CBHud {
     let given = CBCrewGivenNameOf(m.id);
     this.CrewOrderRow(8, CBHudCrewOrderRename(), CBT(n"Cyberbane-Hud-RenameThem"), true, false,
                       StrLen(given) > 0 ? given : CBT(n"Cyberbane-Hud-TheNameTheyCameWith"), "");
-    let text = CBTf(n"Cyberbane-Hud-OrdersHappenAsYouPickThem", [CBCrewFile(sys, game, book, m, false), CBCrewKitLines(sys, game, m)]);
+    // Their ask, answered here when it is one the Hub answers (a day off, a cut); else V's second (2.7.7).
+    let lbOrd = CBCrewLifeBook.Get(game);
+    let askHere = IsDefined(lbOrd) && lbOrd.AskId() == m.id && (lbOrd.AskKind() == CBAskDayOff() || lbOrd.AskKind() == CBAskCut());
+    if askHere {
+      let cut = lbOrd.AskKind() == CBAskCut();
+      this.CrewOrderRow(9, CBHudCrewOrderAsk(), cut ? CBTf(n"Cyberbane-Hud-PayTheirCut", [s"\(lbOrd.AskValue())"]) : CBT(n"Cyberbane-Hud-GiveThemTheDayOff"),
+                        cut ? CBHudEddies(game) >= lbOrd.AskValue() : !out, false, CBT(n"Cyberbane-Hud-TheyAskedForIt"), "");
+      this.SetRowHelp(9, cut ? CBT(n"Cyberbane-Hud-HelpPayCut") : CBT(n"Cyberbane-Hud-HelpDayOff"));
+    } else {
+      let second = CBCrewIsSecond(game, m.id);
+      this.CrewOrderRow(9, CBHudCrewOrderSecond(), second ? CBT(n"Cyberbane-Hud-StepDownAsSecond") : CBT(n"Cyberbane-Hud-MakeThemYourSecond"), true, second,
+                        second ? CBT(n"Cyberbane-Hud-YourSecondNow") : "", "");
+      this.SetRowHelp(9, CBT(n"Cyberbane-Hud-HelpSecond"));
+    }
+    this.SetRowHelp(0, IsDefined(k) && k.hasWeapon ? CBT(n"Cyberbane-Hud-HelpTakeBackWeapon") : CBT(n"Cyberbane-Hud-HelpGiveWeapon"));
+    this.SetRowHelp(1, CBT(n"Cyberbane-Hud-HelpChrome"));
+    this.SetRowHelp(2, CBT(n"Cyberbane-Hud-HelpTrain"));
+    this.SetRowHelp(3, CBT(n"Cyberbane-Hud-HelpWar"));
+    this.SetRowHelp(4, CBT(n"Cyberbane-Hud-HelpSpar"));
+    this.SetRowHelp(5, CBT(n"Cyberbane-Hud-HelpWork"));
+    this.SetRowHelp(6, CBT(n"Cyberbane-Hud-HelpJob"));
+    this.SetRowHelp(7, CBT(n"Cyberbane-Hud-HelpLetGo"));
+    this.SetRowHelp(8, CBT(n"Cyberbane-Hud-HelpRename"));
+    let text = CBT(n"Cyberbane-Hud-OrdersShort");
     if out {
       text = CBTf(n"Cyberbane-Hud-WithYouNowOrdersWaitUntil", [text]);
     }
-    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
-    let bodyTop = CBHudContentTop() + 9.0 * CBHudRowHeight() + 24.0;
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
+    let bodyTop = CBHudContentTop() + 10.0 * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
 
@@ -5211,7 +5569,7 @@ public class CBHud {
     }
     let intro = total == 0 ? CBT(n"Cyberbane-CrewJobs-NoTargets")
                            : CBTf(n"Cyberbane-CrewJobs-PickAJob", [CBCrewName(sys, m), CBCrewRankWord(CBConfig.CrewHitMinRank())]);
-    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
   }
@@ -5239,7 +5597,7 @@ public class CBHud {
     }
     let intro = Equals(gang, n"") ? CBT(n"Cyberbane-CrewJobs-NoChallenge")
                                   : (row == 0 ? CBT(n"Cyberbane-CrewJobs-NobodyToSend") : CBTf(n"Cyberbane-CrewJobs-PickForTheChallenge", [CBFactionLabel(gang)]));
-    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
   }
@@ -5291,6 +5649,26 @@ public class CBHud {
       kb.Ask(id, code, noItem, n"");
       CBCrewKitDoNow(CyberbaneSystem.Get(game), game);   // all but a spar, here and now
     }
+    // Only words and books (2.7.7): V's second named or stood down, an ask answered, here and now.
+    if code == CBHudCrewOrderSecond() || code == CBHudCrewOrderAsk() {
+      let sysO = CyberbaneSystem.Get(game);
+      let mo = cb.Find(id);
+      let lbO = CBCrewLifeBook.Get(game);
+      if IsDefined(mo) && IsDefined(lbO) {
+        kb.deferTexts = true;
+        if code == CBHudCrewOrderSecond() {
+          CBCrewMakeSecond(sysO, game, mo);
+        } else {
+          if lbO.AskKind() == CBAskCut() {
+            CBCrewPayAsk(sysO, game, mo);
+          } else {
+            CBCrewGiveDayOff(sysO, game, mo);
+          }
+        }
+        kb.deferTexts = false;
+      }
+      return;
+    }
     if code == CBHudCrewOrderRename() {
       let given = CBCrewGivenNameOf(id);
       let mm = cb.Find(id);
@@ -5330,7 +5708,7 @@ public class CBHud {
       g += 1;
     }
     let intro = row > 0 ? CBT(n"Cyberbane-CrewWar-PickAGang") : CBT(n"Cyberbane-Hud-NoGangToGoToWar");
-    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
   }
@@ -5388,7 +5766,7 @@ public class CBHud {
     }
     text += CBTf(n"Cyberbane-CrewWar-PartyWhatItMeans", [s"\(RoundF(CBConfig.CrewWarHours()))"]);
     this.SetAction(CBT(n"Cyberbane-CrewWar-SendThem"), n > 0 && led);
-    this.SetExtra(1, CBT(n"Cyberbane-Hud-Back"), true);
+    this.SetExtra(1, CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
@@ -5448,6 +5826,18 @@ public class CBHud {
                 CBT(n"Cyberbane-Hud-ClickForTheNext"), "", "");
     this.m_rowCrew[row] = 2;
     row += 1;
+    // The crew's home (2.7.7): one of V's places, made theirs while V stands in it.
+    let lbHome = CBCrewLifeBook.Get(game);
+    let atHome = CBOnHomeGround(game);
+    if IsDefined(lbHome) && (atHome || lbHome.HomeSet()) && row < CBHudListRows() - 2 {
+      let isHere = lbHome.HomeSet() && atHome && Equals(lbHome.HomeDistrict(), sys.GetCurrentDistrict());
+      this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), atHome && !isHere, isHere,
+                  lbHome.HomeSet() ? CBT(n"Cyberbane-Hud-CrewHomeMove") : CBT(n"Cyberbane-Hud-CrewHomeSet"), "", "",
+                  lbHome.HomeSet() ? CBTf(n"Cyberbane-Hud-CrewHomeIn", [CBDistrictLabel(lbHome.HomeDistrict())]) : CBT(n"Cyberbane-Hud-CrewHomeNone"), "", "");
+      this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpCrewHome"));
+      this.m_rowCrew[row] = 9;
+      row += 1;
+    }
     let fallen = IsDefined(bb) ? bb.FallenCount() : 0;
     this.SetRow(row, CBHudLayoutCrew(), fallen > 0 ? CBHudLabel() : CBHudDim(), fallen > 0, false, CBT(n"Cyberbane-Hud-RememberTheFallen"), "", "",
                 fallen > 0 ? (fallen == 1 ? CBT(n"Cyberbane-Hud-OneName") : CBTf(n"Cyberbane-Hud-Names", [s"\(fallen)"])) : CBT(n"Cyberbane-Hud-NobodyYet"), "", "");
@@ -5487,12 +5877,24 @@ public class CBHud {
     }
     text += CBT(n"Cyberbane-Hud-YourCrewHasItsOwnStanding");
     text += CBCrewPowerLine(sys, game);
-    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
+    text += CBCrewPageLines(sys, game);   // V's second, a funeral owed, the wars, the home (2.7.7)
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
 
   private func CrewRecordClicked(game: GameInstance, code: Int32) -> Void {
+    // The crew's home, here (2.7.7): only words and books, so at once.
+    if code == 9 {
+      let lbSet = CBCrewLifeBook.Get(game);
+      let player = GetPlayer(game);
+      let sysSet = CyberbaneSystem.Get(game);
+      if IsDefined(lbSet) && IsDefined(player) && IsDefined(sysSet) && CBOnHomeGround(game) {
+        lbSet.SetHome(player.GetWorldPosition(), sysSet.GetCurrentDistrict());
+        CBMenuNote(game, CBTf(n"Cyberbane-Hud-CrewHomeMade", [CBDistrictLabel(sysSet.GetCurrentDistrict())]), 5.0);
+      }
+      return;
+    }
     // The cut (2.7.6, from the roster): asked here, paid on the first settled tick back in the game; again, taken back.
     if code == 8 {
       let cbPay = CBCrewBook.Get(game);
@@ -5575,7 +5977,7 @@ public class CBHud {
     if n == 0 {
       text = CBT(n"Cyberbane-Hud-THEFALLENNobodyFromYourCrew");
     }
-    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true);
+    this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
@@ -5631,6 +6033,7 @@ public class CBHud {
         this.SetRow(row, CBHudLayoutCrew(), CBCrewStateTint(state), true, m.id == this.m_pickCrew,
           CBCrewName(sys, m), CBCrewSeatWord(m.seat), CBCrewRankShort(game, m), CBCrewFromShort(m), "", state);
         this.SetRowBar(row, CBHudCrewBarX(), CBHudCrewBarW(), Cast<Float>(m.loyalty) / 100.0, CBCrewLoyaltyTint(m.loyalty));
+        this.SetRowHelp(row, CBTf(n"Cyberbane-Hud-HelpPickMember", [CBCrewFirst(sys, m)]));
         this.m_rowCrew[row] = m.id;
         row += 1;
       }
@@ -5697,7 +6100,8 @@ public class CBHud {
           this.m_webBoxEdge[slot].SetTintColor(CBCrewColour(game));   // the crew's colours (2.6.0)
           this.m_webBoxEdge[slot].SetVisible(true);
         }
-        this.BoxBars(slot, mw, mh, Cast<Float>(m.loyalty) / 100.0, tint, -1.0, CBHudCyan());
+        // Loyalty, and the climb to their next rank (2.7.7): fights won towards it.
+        this.BoxBars(slot, mw, mh, Cast<Float>(m.loyalty) / 100.0, tint, CBCrewRankProgress(GetGameInstance(), m), CBHudCyan());
         this.m_boxCrew[slot] = m.id;
       }
       k += 1;
@@ -5798,6 +6202,7 @@ public class CBHud {
     this.HideBars();
     this.HideRows();
     this.HideWeb();
+    this.ShowCrewViews(false);
     this.m_treeShown = false;
     // Every page that has a picture can be read as a list instead (2.5.0): the web, the map, the tree, the crew.
     let pictured = CBHudHasPicture(this.m_tab) && !(this.m_tab == CBHudTurfTab() && !CBTurfWarsOn());
@@ -5806,6 +6211,15 @@ public class CBHud {
     }
     if IsDefined(this.m_webToggleText) && pictured {
       this.m_webToggleText.SetText(sys.HubVisual(this.m_tab) ? CBT(n"Cyberbane-Hud-ShowAsAList") : CBHudPictureWord(this.m_tab));
+    }
+    // The History page's filter, in the same box (2.7.7).
+    if this.m_tab == CBHudHistoryTab() && !this.m_legendShown {
+      if IsDefined(this.m_webToggle) {
+        this.m_webToggle.SetVisible(true);
+      }
+      if IsDefined(this.m_webToggleText) {
+        this.m_webToggleText.SetText(CBTf(n"Cyberbane-Hud-LogFilter", [CBHudLogFilterWord(this.m_logFilter)]));
+      }
     }
     this.SetAction("", false);
     this.HideExtras();
@@ -5855,7 +6269,9 @@ public class CBHud {
         }
         proseW = w - CBHudActionW() - 40.0;
       }
-      this.SetBody(x, lanesEnd + 16.0, proseW, CBHudLegend(sys, game), maxLines);
+      // Right now (2.7.7): who is coming and why, a counterattack, a funeral, an ask, first; then the legend.
+      let nowLine = CBHudRightNow(sys, game);
+      this.SetBody(x, lanesEnd + 16.0, proseW, StrLen(nowLine) > 0 ? nowLine + "\n" + CBHudLegend(sys, game) : CBHudLegend(sys, game), maxLines);
     } else {
       if this.m_tab == CBHudFactionsTab() {
         // The gangs as a list, or as the web of gangs (UI/HubWeb.reds, 2.4.3); the panel below is the same either way.
@@ -5937,7 +6353,7 @@ public class CBHud {
                   page = CBLegendTold(sys, game);
                 } else {
                   let heads = CBScreamsheet(sys, game);
-                  page = StrLen(heads) > 0 ? heads + "\n\n" + CBHudLog(sys) : CBHudLog(sys);
+                  page = StrLen(heads) > 0 ? heads + "\n\n" + CBHudLog(sys, this.m_logFilter) : CBHudLog(sys, this.m_logFilter);
                 }
                 this.SetBody(x, CBHudContentTop(), w, page, maxLines,
                              CBHudDetailTop() - 4.0 - CBHudFooterGap());
@@ -6679,12 +7095,28 @@ func CBRivalSourceLine(source: Int32) -> String {
   return CBT(n"Cyberbane-Hud-TheyRememberYou");
 }
 
+// How many times V and they have met (2.7.7): every meeting since they became a Rival (encounters, what their file counts
+// "since"), and the one they were made in, for one who got away from V, was spared by V, killed V or turned on V. Their row
+// said "Never met you" over a Rival V had spared, because only the meetings since were counted.
+func CBRivalTimesMet(r: ref<CBRival>) -> Int32 {
+  if !IsDefined(r) {
+    return 0;
+  }
+  let born = r.source == EnumInt(ECBRivalSource.Survivor) || r.source == EnumInt(ECBRivalSource.Spared)
+          || r.source == EnumInt(ECBRivalSource.Killer) || r.source == EnumInt(ECBRivalSource.Betrayer)
+          || r.sparedByV > 0 || r.killedV > 0;
+  return r.encounters + (born ? 1 : 0);
+}
+
 // Where they stand now, as a sentence for the file, by the same test as their row in the tree (2.5.5): the file
 // went by the state alone, so the one coming for V read "at large" under a row that said HUNTING YOU, and a dead
 // one read "quiet".
 func CBRivalStateLine(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> String {
   if r.state == EnumInt(ECBRivalState.Slain) {
     return CBT(n"Cyberbane-Hud-TheyAreDead");
+  }
+  if r.state == EnumInt(ECBRivalState.Retired) && CBRivalRunsWithV(GetGameInstance(), r) {
+    return CBT(n"Cyberbane-Hud-TheyRunWithYou");
   }
   if r.state == EnumInt(ECBRivalState.Retired) {
     return CBT(n"Cyberbane-Hud-TheyHaveLeftNightCity");
@@ -6718,7 +7150,7 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
   // The file on whoever was clicked, or on whoever is next when nobody was.
   //
   // The rows carry name, gang, rank, scars and a clock, and never once say what any of this is
-  // about. CBRivalSourceLine is the single most interesting fact about a nemesis - that you spared
+  // about. CBRivalSourceLine is the single most interesting fact about a Rival - that you spared
   // them, or that they put you down once - so it is the first line of the file.
   let r = sys.FindRivalById(pickedId);
   if IsDefined(r) {
@@ -6752,6 +7184,7 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
     out += CBTf(n"Cyberbane-Hud-Says", [CBRivalCatchphrase(r)]);
     // Their story, from what is known of them (Narrative/Telling.reds, [84], 2.4.6).
     out += CBTf(n"Cyberbane-Hud-TheirStory", [CBRivalStory(sys, game, r)]);
+    out += CBRivalTimelineLine(game, r);   // every time you crossed (2.7.7)
     let kinBook = CBIntelBook.Get(game);
     let kinOf = IsDefined(kinBook) ? kinBook.KinOf(r.id) : 0;
     let kinDead = kinOf > 0 ? sys.FindRivalById(kinOf) : null;
@@ -6925,7 +7358,7 @@ public func CBHudSince(now: Float, then: Float) -> String {
   return CBTf(n"Cyberbane-Hud-M", [s"\(RoundF(secs / 60.0))"]);
 }
 
-func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
+func CBHudLog(sys: ref<CyberbaneSystem>, opt filter: Int32) -> String {
   let log = sys.GetLog();
   let n = ArraySize(log);
   if n == 0 {
@@ -6958,16 +7391,44 @@ func CBHudLog(sys: ref<CyberbaneSystem>) -> String {
 
   let shown = 0;
   let now = CBGameSeconds(sys.GetGameInstance());
+  if filter > 0 {
+    out += CBTf(n"Cyberbane-Hud-LogShowing", [CBHudLogFilterWord(filter)]);
+  }
   let i = n - 1;
   while i >= 0 && shown < 18 {
     let e = log[i];
     i -= 1;
-    if IsDefined(e) {
+    // Filtered (2.7.7): fights, the crew, money, Rivals.
+    if IsDefined(e) && (filter <= 0 || CBHudLogGroup(e.kind) == filter) {
       out += CBHudLogLine(sys, e, now) + "\n";
       shown += 1;
     }
   }
   return out;
+}
+
+// Which filter an entry falls under: 1 fights, 2 the crew, 3 money, 4 Rivals (2.7.7).
+public func CBHudLogGroup(kind: CName) -> Int32 {
+  let k = NameToString(kind);
+  if StrBeginsWith(k, "Crew") || Equals(kind, n"SpokeAtSitDown") {
+    return 2;
+  }
+  if StrContains(k, "Rival") {
+    return 4;
+  }
+  if Equals(kind, n"BagmanRobbed") || Equals(kind, n"RacketHit") || StrContains(k, "Tribute") || StrContains(k, "Paid") || StrContains(k, "Peace")
+     || StrContains(k, "Bounty") || StrContains(k, "Tax") || Equals(kind, n"DealCrashed") {
+    return 3;
+  }
+  return 1;
+}
+
+public func CBHudLogFilterWord(f: Int32) -> String {
+  if f == 1 { return CBT(n"Cyberbane-Hud-LogFights"); }
+  if f == 2 { return CBT(n"Cyberbane-Hud-LogCrew"); }
+  if f == 3 { return CBT(n"Cyberbane-Hud-LogMoney"); }
+  if f == 4 { return CBT(n"Cyberbane-Hud-LogRivals"); }
+  return CBT(n"Cyberbane-Hud-LogAll");
 }
 
 // What talking to this gang's people has done today, in one line ("" for nothing yet).
@@ -7048,6 +7509,9 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   }
   if Equals(e.kind, n"Favour") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouDidAFavourForEb", [s"\(gang)", s"\(RoundF(e.value))"]) : CBT(n"Cyberbane-Hud-YouDidSomebodyAFavour");
+  }
+  if Equals(e.kind, n"Contract") {
+    return CBTf(n"Cyberbane-Hud-YouDidAContractFor", [s"\(gang)", s"\(RoundF(e.value))"]);
   }
   if Equals(e.kind, n"MeetCrashed") {
     return CBT(n"Cyberbane-Hud-YouCrashedASitDownBetween");
@@ -7293,7 +7757,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
 
 // One entry as a sentence. This printed the entry's internal name and its raw number, so the
 // file read "RivalCreated (CityCenter) 12", where 12 was a Rival's id.
-func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> String {
+func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float, opt asSentence: Bool) -> String {
   let gang = CBFactionLabel(e.faction);
   let gangCap = CBCapFirst(gang);
   let line = "";
@@ -7380,10 +7844,25 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float) -> 
     line = CBT(e.kind);
   }
   let place = CBDistrictLabel(e.district);
+  let ago = CBHudSince(now, e.at);
+  // In a text (2.7.7, the morning brief): "... from the Tyger Claws (Heywood, 58m ago)." The row's form, "  Heywood, 58m
+  // ago" with no stop, read as a sentence left hanging, with the next one glued on.
+  if asSentence {
+    let tail = place;
+    if StrLen(ago) > 0 {
+      tail += StrLen(tail) > 0 ? CBTf(n"Cyberbane-Hud-Ago", [ago]) : ago;
+    }
+    if StrLen(tail) > 0 {
+      line += " (" + tail + ")";
+    }
+    if StrLen(line) > 0 && !StrEndsWith(line, ".") && !StrEndsWith(line, "!") && !StrEndsWith(line, "?") {
+      line += ".";
+    }
+    return line;
+  }
   if StrLen(place) > 0 {
     line += "  " + place;
   }
-  let ago = CBHudSince(now, e.at);
   if StrLen(ago) > 0 {
     line += CBTf(n"Cyberbane-Hud-Ago", [ago]);
   }

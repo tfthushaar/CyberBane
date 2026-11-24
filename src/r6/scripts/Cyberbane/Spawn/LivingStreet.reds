@@ -29,6 +29,16 @@ public func CBStreetWhyNot(game: GameInstance, feature: String, why: String) -> 
   CBLog.Info(n"Street", s"No \(feature) this time: \(why).");
 }
 
+// Work for the corporations (2.7.7): contracts offered to V. Not CBCorpContractsOn (Spawn/Bounty.reds), the corporations'
+// contracts on V.
+public func CBCorpWorkOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) || !rt.IsEnabled() {
+    return false;
+  }
+  return !rt.HasSettings() || rt.GetSettings().corpWork;
+}
+
 public func CBStreetLifeOn(flag: CName) -> Bool {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.IsEnabled() {
@@ -155,6 +165,20 @@ public func CBSetUpStreet(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
     }
   }
   CBTrackOnMap(game, puppet);
+  CBWakeStep(puppet);
+}
+
+// A step where they stand (2.7.7): the street's people are put in the world with nothing to do, and a body nothing asks
+// anything of could stand in the default pose until it was hit ("they won't react until I damage them, then the
+// animations load in"). A step is a move order like any other, so the next one they get (a walk to a drop, a walk in to a
+// meeting) takes its place (CBIssueMove), and in a fight it does nothing (ignoreInCombat).
+public func CBWakeStep(p: ref<ScriptedPuppet>) -> Void {
+  if !IsDefined(p) || !p.IsAttached() || p.IsDead() || IsDefined(p.cbMoveCmd) {
+    return;
+  }
+  let pos = p.GetWorldPosition();
+  let fwd = p.GetWorldForward();
+  CBStreetWalkNear(p, new Vector4(pos.X + fwd.X * 0.9, pos.Y + fwd.Y * 0.9, pos.Z, 1.0), 0.3);
 }
 
 // Somebody with a claim on V, come to help: V's friend for now, the enemy's enemy.
@@ -191,6 +215,25 @@ func CBTakenOutByV(p: wref<ScriptedPuppet>) -> Bool {
     return true;
   }
   return p.cbDamagedByPlayer && (CBIsDown(p) || p.cbMoraleBroken || p.cbSurrendered);
+}
+
+// One of a gang's own people on the street (2.7.7): at a gathering, hanging out, a bagman, a debtor, a witness, a favour's
+// lookout, a wannabe. There to be talked to or dealt with; nobody of V's starts a fight with them.
+public func CBStreetPersonTag(des: ref<DynamicEntitySystem>, id: EntityID) -> Bool {
+  return IsDefined(des) && (des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") || des.IsTagged(id, n"CB_Hangout")
+      || des.IsTagged(id, n"CB_Bagman") || des.IsTagged(id, n"CB_Debtor") || des.IsTagged(id, n"CB_Witness")
+      || des.IsTagged(id, n"CB_Favour") || des.IsTagged(id, n"CB_Wannabe") || des.IsTagged(id, n"CB_Mark"));
+}
+
+// Taken out by V or by somebody fighting on V's side (2.7.7, CBOnVsSide: V's crew, a gang's people with V, a companion): a
+// meeting V's crew cut down was crashed by V's side, as a fight won with V's crew counts (2.7.6). Asked only of V before, so a
+// sit-down V's crew wiped out "settled" when its window closed, with V speaking for it.
+func CBTakenOutByVSide(game: GameInstance, p: wref<ScriptedPuppet>) -> Bool {
+  if CBTakenOutByV(p) {
+    return true;
+  }
+  return IsDefined(p) && CBIsDown(p) && p.cbLastHitByOther && !EntityID.IsDefined(p.cbLastHitVehicle)
+      && CBOnVsSide(game, p.cbLastAttacker);
 }
 
 public func CBStreetLifeFor(game: GameInstance) -> ref<CBStreetLife> {
@@ -255,6 +298,7 @@ public class CBStreetLife {
   private let m_bagTick: Int32;
   private let m_bagNext: Int32;
   private let m_bagDone: Bool;
+  private let m_bagRan: Bool;   // he saw V coming and ran (2.7.7)
   // Where he is walking the take (2.6.5): his gang's drop, pinned.
   private let m_bagDrop: Vector4;
   private let m_bagHasDrop: Bool;
@@ -284,6 +328,11 @@ public class CBStreetLife {
   private let m_favRestUntil: array<Float>;
   // How many names down a chain of debts this one is (2.6.5): a debtor who pays may give up somebody else who owes.
   private let m_favChain: Int32;
+  // A corporation's contract (2.7.7, favour kind 3): whose people the mark is, what it pays, and the next tick one may be
+  // offered.
+  private let m_favMark: CName;
+  private let m_contractPay: Int32;
+  private let m_contractNext: Int32;
   // The sit-down and the rest of gang life's events (Spawn/StreetEvents.reds, 2.3.3).
   private let m_events: ref<CBEventEngine>;
   // While you were out.
@@ -325,6 +374,7 @@ public class CBStreetLife {
     }
     this.WhileOut(sys, game, player, busy);
     this.Bagman(sys, game, des, player, now, busy);
+    this.ContractOffer(sys, game, player, now, busy);
     this.Favour(sys, game, des, player, now);
     this.Events().Tick(sys, game, des, player, busy);
     this.Surrenders(sys, game, player, now);
@@ -380,7 +430,7 @@ public class CBStreetLife {
       let e = log[i];
       i -= 1;
       if IsDefined(e) && now - e.at <= CBConfig.SecondsPerDay() && CBWhileOutWorthIt(e.kind) {
-        CBSystemNote(game, CBTf(n"Cyberbane-LivingStreet-LastYouHeard", [CBHudLogLine(sys, e, now)]), 9.0);
+        CBSystemNote(game, CBTf(n"Cyberbane-LivingStreet-LastYouHeard", [CBHudLogLine(sys, e, now, true)]), 9.0);
         return;
       }
     }
@@ -411,6 +461,17 @@ public class CBStreetLife {
         } else {
           CBPatrolWalk(sys, game, des, player, n"CB_Bagman");
         }
+      }
+      // V coming at him, gun out or at a run (2.7.7): he bolts with the take, says so in his own voice, and his gang hears.
+      if !this.m_bagDone && !this.m_bagRan && IsDefined(p) && CBNpcSafe(sys, p) && CBStillStanding(p) && !CBNpcInCombat(p)
+         && !p.cbDamagedByPlayer && CBBagmanSeesVComing(game, player, p) {
+        this.m_bagRan = true;
+        CBVoice(sys, game, p, n"fear_run", n"BagmanRuns", 20.0, n"danger");
+        CBOrderFlee(game, p);
+        if CBMessagesOn() {
+          CBPhoneFromGang(game, this.m_bagFaction, CBT(n"Cyberbane-LivingStreet-BagmanRanWarning"));
+        }
+        CBLog.Info(n"Street", "A bagman saw V coming and ran.");
       }
       // The take reached the drop: gone where V cannot follow it.
       if this.m_bagHasDrop && !this.m_bagDone && IsDefined(p) && CBStillStanding(p)
@@ -473,6 +534,7 @@ public class CBStreetLife {
       this.m_bagBody = body;
       this.m_bagTick = now;
       this.m_bagDone = false;
+      this.m_bagRan = false;
       // Where he is taking it (2.6.5): his gang's drop, a place of theirs further off, pinned, so robbing him is a plan.
       let drop: Vector4;
       let dropDistrict: CName;
@@ -558,7 +620,8 @@ public class CBStreetLife {
   }
 
   private func RestGang(game: GameInstance, faction: CName) -> Void {
-    let until = CBGameSeconds(game) + CBConfig.FavourGangRestHours() * CBConfig.SecondsPerHour();
+    let hours = CBIsCorpFaction(faction) ? CBConfig.CorpContractRestHours() : CBConfig.FavourGangRestHours();
+    let until = CBGameSeconds(game) + hours * CBConfig.SecondsPerHour();
     let i = ArrayFindFirst(this.m_favRestGang, faction);
     if i >= 0 && i < ArraySize(this.m_favRestUntil) {
       this.m_favRestUntil[i] = until;
@@ -787,11 +850,15 @@ public class CBStreetLife {
         this.FavourUnpin(game);
       }
     }
+    if this.m_favKind == 3 {
+      this.ContractStep(sys, game, des, player, now);
+      return;
+    }
     let done = false;
     if this.m_favKind == 1 {
-      // Run off by V (CBTakenOutByV). Somebody else putting the lookout down is not V doing the favour.
+      // Run off by V or V's side (CBTakenOutByVSide, 2.7.7). Somebody else putting the lookout down is not V doing the favour.
       let p = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
-      done = CBTakenOutByV(p);
+      done = CBTakenOutByVSide(game, p);
     } else {
       this.DebtorArrive(sys, game, des, player, now);
       let debtor = this.m_favTarget;
@@ -909,6 +976,226 @@ public class CBStreetLife {
     }
   }
 
+  // ---- Corporate contracts (2.7.7) ----------------------------------------------------------------------------
+  //
+  // "I'm in my Kang Tao phase and it's impossible to get any rep with them. A corporate bounty board, go to X and kill Y and
+  // get lots of rep, would be a relief." A corporation's people are almost never on the street to be helped, spared or
+  // fought beside, and Kang Tao's only rival, Arasaka, almost never comes out either. Now and then a corporation that
+  // doesn't hate V texts a contract: one of its rivals' people at a place on V's map, with bodyguards. Put them down (V or
+  // V's side) and it pays well, and the corporation thinks much better of V. One job open at a time, a favour's or a
+  // contract's, on the favour's own place, pin and placing.
+
+  private func ContractOffer(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, now: Int32, busy: Bool) -> Void {
+    if this.m_contractNext == 0 {
+      this.m_contractNext = now + CBConfig.CorpContractEveryTicks();   // never the moment a save loads
+      return;
+    }
+    if this.FavourOpen() || busy || now < this.m_contractNext || !CBCorpWorkOn() || !CBMessagesOn() {
+      return;
+    }
+    this.m_contractNext = now + CBConfig.CorpContractEveryTicks();
+    if player.IsInCombat() || RandF() >= CBConfig.CorpContractChance() {
+      return;
+    }
+    let client = this.ContractClient(sys, game);
+    let mark = IsNameValid(client) ? this.ContractMarkGang(sys, client) : n"";
+    if !IsNameValid(mark) {
+      return;
+    }
+    let at: Vector4;
+    let where: CName;
+    if !this.DebtPlace(sys, game, player, at, where) {
+      CBLog.Info(n"Street", "No contract this time: nowhere to put the mark.");
+      return;
+    }
+    this.m_favFaction = client;
+    this.m_favKind = 3;
+    this.m_favMark = mark;
+    this.m_favAt = at;
+    this.m_favDistrict = where;
+    this.m_favPlaced = false;
+    this.m_favFight = 0;
+    this.m_favLeaned = false;
+    this.m_favTarget = null;
+    this.m_favChain = 0;
+    this.m_favUntil = now + CBConfig.CorpContractLifeTicks();
+    this.m_contractPay = CBConfig.CorpContractPay() + RandRange(0, CBConfig.CorpContractPay() / 2 + 1);
+    let place = NotEquals(where, n"") && NotEquals(where, sys.GetCurrentDistrict()) ? CBDistrictLabel(where) : CBT(n"Cyberbane-Allies-AFewBlocksOver");
+    this.FavourPin(game, at, CBTf(n"Cyberbane-Contracts-Pin", [CBFactionLabel(client), CBFactionLabel(mark)]));
+    this.RestGang(game, client);
+    CBPhoneFromAlly(game, client, CBTf(n"Cyberbane-Contracts-Offer", [CBFactionLabel(mark), place, s"\(this.m_contractPay)"]));
+    CBLog.Info(n"Street", s"A contract from \(NameToString(client)): one of \(NameToString(mark))'s people in \(NameToString(where)), \(this.m_contractPay)eb.");
+  }
+
+  // Who offers (2.7.7): a corporation that is on, doesn't hate V and has a rival to send V after, more often the better it
+  // thinks of V, so the one V works for is the one that keeps calling.
+  private func ContractClient(sys: ref<CyberbaneSystem>, game: GameInstance) -> CName {
+    let score = sys.GetScore();
+    if !IsDefined(score) {
+      return n"";
+    }
+    let corps: array<CName> = [n"Arasaka", n"Militech", n"KangTao"];
+    let names: array<CName>;
+    let weights: array<Float>;
+    let total = 0.0;
+    for c in corps {
+      let posture = score.GetPosture(c);
+      if CBFactionOn(c) && !this.GangResting(game, c) && IsNameValid(this.ContractMarkGang(sys, c))
+         && (Equals(posture, ECBPosture.Neutral) || Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied)) {
+        let fs = sys.FindFaction(c);
+        let w = MaxF(1.0, (IsDefined(fs) ? fs.standing : 0.0) + 30.0);
+        ArrayPush(names, c);
+        ArrayPush(weights, w);
+        total += w;
+      }
+    }
+    if ArraySize(names) == 0 {
+      return n"";
+    }
+    let roll = RandRangeF(0.0, total);
+    let i = 0;
+    while i < ArraySize(names) && i < ArraySize(weights) {
+      roll -= weights[i];
+      if roll <= 0.0 {
+        return names[i];
+      }
+      i += 1;
+    }
+    return names[ArraySize(names) - 1];
+  }
+
+  // Whose people the mark is: one of the client's rivals that is on and has people of its own to put there.
+  private func ContractMarkGang(sys: ref<CyberbaneSystem>, client: CName) -> CName {
+    let out: array<CName>;
+    for g in CBGangRivalsOf(sys.GetContent(), client) {
+      if CBFactionOn(g) && TDBID.IsValid(this.ContractRecord(sys, g, true)) {
+        ArrayPush(out, g);
+      }
+    }
+    return ArraySize(out) > 0 ? out[RandRange(0, ArraySize(out))] : n"";
+  }
+
+  // The mark is one of their best; the guards their rank and file. Only people (CBHunterRecordFit).
+  private func ContractRecord(sys: ref<CyberbaneSystem>, gang: CName, mark: Bool) -> TweakDBID {
+    let rec = mark ? CBApexRosterRecord(gang, 0) : CBGangTemplate(sys, gang);
+    if !CBHunterRecordFit(rec) {
+      rec = mark ? CBGangTemplate(sys, gang) : CBApexRosterRecord(gang, RandRange(1, 4));
+    }
+    return CBHunterRecordFit(rec) ? rec : TDBID.None();
+  }
+
+  // The mark and their guards put round the place once V is close, out of V's sight, the way the one who owes is
+  // (DebtorArrive): on foot and calm, every third tick, all of them in one go.
+  private func ContractArrive(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                              player: ref<PlayerPuppet>, now: Int32) -> Void {
+    let ppos = player.GetWorldPosition();
+    let center = this.m_favAt;
+    let want = 1 + CBConfig.CorpContractGuards();
+    if this.m_favPlaced || now % 3 != 0 || Vector4.Distance(ppos, center) > CBConfig.LairPlaceDistance()
+       || player.IsInCombat() || IsDefined(player.GetMountedVehicle()) || CBStoryHoldNow(game) || CBSpawnRoom(game) < want {
+      return;
+    }
+    let markRec = this.ContractRecord(sys, this.m_favMark, true);
+    let guardRec = this.ContractRecord(sys, this.m_favMark, false);
+    if !TDBID.IsValid(markRec) {
+      return;
+    }
+    let fwd = player.GetWorldForward();
+    let placed = 0;
+    let k = 0;
+    while k < 13 && placed < want {
+      let px = center.X;
+      let py = center.Y;
+      if k > 0 && k <= 6 {
+        let angIn = Cast<Float>(k - 1) * 1.0472;
+        px = center.X + CosF(angIn) * CBConfig.LairSearchRadius();
+        py = center.Y + SinF(angIn) * CBConfig.LairSearchRadius();
+      }
+      if k > 6 {
+        let angOut = Cast<Float>(k - 7) * 1.0472 + 0.5236;
+        px = center.X + CosF(angOut) * CBConfig.LairOuterSearchRadius();
+        py = center.Y + SinF(angOut) * CBConfig.LairOuterSearchRadius();
+      }
+      k += 1;
+      let snapped: Vector4;
+      let spot: Vector4;
+      if CBNavSnap(game, px, py, center.Z, snapped) && CBSettleOnGround(game, snapped, spot)
+         && Vector4.Distance(spot, ppos) >= CBConfig.LairMinDistance() && !CBSafeAreaBlocksSpawn(game, spot)
+         && CBPointHiddenFrom(game, ppos, fwd, spot) && CBStandsWith(game, spot, center, 8.0) && CBPointReachable(game, spot, ppos) {
+        let yaw = RandRangeF(0.0, 6.2831);
+        let facing = Quaternion.BuildFromDirectionVector(new Vector4(CosF(yaw), SinF(yaw), 0.0, 0.0));
+        let rec = placed == 0 || !TDBID.IsValid(guardRec) ? markRec : guardRec;
+        let body: EntityID;
+        if CBCreateSpawn(des, rec, n"", spot, facing, n"CB_Mark", body) {
+          if placed == 0 {
+            this.m_favBody = body;
+          }
+          placed += 1;
+        }
+      }
+    }
+    if placed > 0 {
+      this.m_favPlaced = true;
+      CBLog.Info(n"Street", s"The contract's mark is at the place, with \(placed - 1) guards.");
+    }
+  }
+
+  private func ContractStep(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
+                            player: ref<PlayerPuppet>, now: Int32) -> Void {
+    this.ContractArrive(sys, game, des, player, now);
+    let mark = this.m_favTarget;
+    if this.m_favPlaced && !IsDefined(mark) {
+      let body = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
+      if CBNpcSafe(sys, body) {
+        body.cbFavourMark = true;
+        this.m_favTarget = body;
+        mark = body;
+        CBTrackOnMap(game, body);
+      }
+    }
+    if IsDefined(mark) {
+      if CBTakenOutByVSide(game, mark) {
+        this.ContractDone(sys, game);
+        return;
+      }
+      // Somebody else got there first: the file is closed, nothing owed either way.
+      if CBIsDown(mark) {
+        if CBMessagesOn() {
+          CBPhoneFromAlly(game, this.m_favFaction, CBT(n"Cyberbane-Contracts-Lost"));
+        }
+        CBLog.Info(n"Street", "A contract's mark was put down by somebody else.");
+        this.FavourEnd(game);
+        return;
+      }
+    }
+    if now >= this.m_favUntil {
+      if CBMessagesOn() {
+        CBPhoneFromAlly(game, this.m_favFaction, CBT(n"Cyberbane-Contracts-Expired"));
+      }
+      this.FavourEnd(game);
+    }
+  }
+
+  private func ContractDone(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    let client = this.m_favFaction;
+    let pay = this.m_contractPay;
+    CBStreetGiveMoney(game, pay);
+    CBCreditContract(sys, client, CBConfig.CorpContractStanding());
+    CBTalkSlight(sys, game, this.m_favMark, CBConfig.CorpContractMarkSlight());
+    let mult = 1.0;
+    let rt = CyberbaneRuntime.Get();
+    if IsDefined(rt) && rt.HasSettings() {
+      mult = rt.GetSettings().renownGainMult;
+    }
+    sys.AddRenownPoints(CBConfig.CorpContractRenown() * mult);
+    CBFileLog(sys, n"Contract", CBGameSeconds(game), CBEventDistrict(sys, game), client, Cast<Float>(pay));
+    if CBMessagesOn() {
+      CBPhoneFromAlly(game, client, CBTf(n"Cyberbane-Contracts-Done", [s"\(pay)"]));
+    }
+    CBLog.Info(n"Street", s"A contract for \(NameToString(client)) done; \(pay)eb.");
+    this.FavourEnd(game);
+  }
+
   private func FavourPin(game: GameInstance, at: Vector4, text: String) -> Void {
     this.FavourUnpin(game);
     let ms = GameInstance.GetMappinSystem(game);
@@ -943,8 +1230,11 @@ public class CBStreetLife {
     this.m_favPlaced = false;
     this.m_favFight = 0;
     this.m_favDistrict = n"";
+    this.m_favMark = n"";
+    this.m_contractPay = 0;
     CBDeleteTaggedSafe(game, n"CB_Favour", true, true);
     CBDeleteTaggedSafe(game, n"CB_Debtor", true, true);
+    CBDeleteTaggedSafe(game, n"CB_Mark", true, true);
   }
 
   // ---- The sit-down ----------------------------------------------------------------------------------------
@@ -1189,4 +1479,20 @@ func CBWhileOutWorthIt(kind: CName) -> Bool {
   return Equals(kind, n"RivalCreated") || Equals(kind, n"RivalSlain") || Equals(kind, n"RivalDied") || Equals(kind, n"TurfTaken") || Equals(kind, n"TurfPush")
       || Equals(kind, n"KinSworn") || Equals(kind, n"CalledOut") || Equals(kind, n"Allied") || Equals(kind, n"Peace")
       || Equals(kind, n"RivalExiled") || Equals(kind, n"MeetCrashed") || Equals(kind, n"BagmanRobbed");
+}
+
+// A bagman sees V coming for him (2.7.7): close, and either with a weapon out or at a sprint.
+func CBBagmanSeesVComing(game: GameInstance, player: ref<PlayerPuppet>, bagman: ref<ScriptedPuppet>) -> Bool {
+  if !IsDefined(player) || !IsDefined(bagman) {
+    return false;
+  }
+  let d = Vector4.Distance(player.GetWorldPosition(), bagman.GetWorldPosition());
+  if d > CBConfig.BagmanSpotDistance() {
+    return false;
+  }
+  if IsDefined(GameObject.GetActiveWeapon(player)) {
+    return true;
+  }
+  let psm = CBPlayerPSM(game);
+  return IsDefined(psm) && psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.Locomotion) == EnumInt(gamePSMLocomotionStates.Sprint);
 }

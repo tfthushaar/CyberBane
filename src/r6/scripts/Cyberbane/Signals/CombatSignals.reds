@@ -251,6 +251,12 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   if !IsDefined(evt) || !IsDefined(evt.attackData) {
     return;
   }
+  // A hit the game ignored as friendly fire is no hit (2.7.7): it dealt nothing, showed nothing, and the game's own status
+  // effects skip it (damageSystem.script, FriendlyFireIgnored). Marked as V's, V's stray shot through somebody standing
+  // with V counted as V hurting their gang, and turned it on V.
+  if evt.attackData.HasFlag(hitFlag.FriendlyFireIgnored) {
+    return;
+  }
   let instigator = evt.attackData.GetInstigator();
   // The player, and the player being V. A hit landed as the VR avatar or as Johnny is not V's: it
   // marks nobody as V's to score, breaks nobody's nerve and spares nobody, so a VR bout cannot cost
@@ -277,6 +283,12 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   }
   // Record the attacker on the target so V's killer is known at death time.
   let attacker = instigator as ScriptedPuppet;
+  // In a fight (2.7.7): a hit taken, and one landed by somebody who is not V. Read by V's crew's win (Reactions/Crew.reds,
+  // CBCrewHitInFight) and cleared when that fight is over; only flags on the two people, never shared state here.
+  puppet.cbFightHitTaken = true;
+  if IsDefined(attacker) && !attacker.IsPlayer() && !Equals(attacker.GetEntityID(), puppet.GetEntityID()) {
+    attacker.cbFightHitDealt = true;
+  }
   if IsDefined(attacker) && !attacker.IsPlayer() {
     puppet.cbLastAttacker = attacker;
     // Somebody else's hit, not their own grenade going off under them.
@@ -302,6 +314,13 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
 // The car that landed the last hit on them, when it was a car (2.5.6).
 @addField(ScriptedPuppet)
 public let cbLastHitVehicle: EntityID;
+
+// A hit taken, and one landed, in the fight under way (2.7.7): V's crew counts a win only for a fight they were in.
+@addField(ScriptedPuppet)
+public let cbFightHitTaken: Bool;
+
+@addField(ScriptedPuppet)
+public let cbFightHitDealt: Bool;
 
 func CBNoEntity() -> EntityID {
   let none: EntityID;
@@ -333,7 +352,8 @@ func CBOnVsSide(game: GameInstance, p: wref<ScriptedPuppet>) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
   if IsDefined(des) {
     let id = p.GetEntityID();
-    if des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Guard") || (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned")) {
+    if des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Guard") || des.IsTagged(id, n"CB_Loiter")
+       || (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned")) {
       return true;
     }
   }
@@ -386,6 +406,11 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     CBGuardBodyDied(sysE, game, puppet);
     return;
   }
+  // One of the crew on a corner of the crew's streets (Reactions/CrewLoiter.reds, 2.7.7): hurt, never a kill of their old gang's.
+  if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Loiter") {
+    CBLoiterBodyDied(sysE, game, puppet);
+    return;
+  }
   // One of V's own crew (Reactions/Crew.reds, 2.5.0): theirs to handle, and never a kill of their old gang's. One who
   // turned on V goes on through the rest, as anybody does (a Rival's death, if they became one).
   if IsDefined(sysE) && IsDefined(desD)
@@ -395,12 +420,22 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     }
   }
   // Killed by one of V's crew (2.6.0): their gang thinks less of the crew (Reactions/CrewBanner.reds). Never a spar.
+  // The kill is theirs on their record too (2.7.7, Reactions/CrewLife.reds), and an enemy down near them puts them in
+  // the fight (CBCrewNoteEnemyDown).
+  let crewKiller = 0;
   if IsDefined(sysE) && IsDefined(desD) && puppet.cbLastHitByOther && puppet.IsAttached() {
     let crewHand = puppet.cbLastAttacker;
     if IsDefined(crewHand) && crewHand.IsAttached() && desD.IsTagged(crewHand.GetEntityID(), n"CB_Own")
        && !desD.IsTagged(crewHand.GetEntityID(), n"CB_Turned") && !desD.IsTagged(crewHand.GetEntityID(), n"CB_Spar") {
       CBCrewStandingShift(game, CBClassifyFaction(puppet), -CBConfig.CrewStandKill());
+      crewKiller = CBCrewMemberOfBody(CBCrewBook.Get(game), crewHand.GetEntityID());
+      if crewKiller > 0 {
+        CBCrewLifeKill(game, crewKiller);
+      }
     }
+  }
+  if IsDefined(sysE) && (puppet.cbCrewPaired || crewKiller > 0) {
+    CBCrewNoteEnemyDown(sysE, game, puppet, crewKiller);
   }
   // Somebody who killed one of V's crew, killed by V.
   if IsDefined(sysE) && puppet.cbKilledCrew > 0 && puppet.cbDamagedByPlayer {
@@ -524,6 +559,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     let crewBody = IsDefined(desE) && !desE.IsTagged(puppet.GetEntityID(), n"CB_Bounty")
                    && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad")
                        || (squadApex && desE.IsTagged(puppet.GetEntityID(), n"CB_Apex")));
+    if crewBody && NotEquals(sysE.GetActiveSquadFaction(), n"") {
+      CBSquadLostOne(sysE, game, puppet.GetEntityID());   // losing badly, they may pull back (Spawn/Regroup.reds, 2.7.7)
+    }
     if crewBody && NotEquals(sysE.GetActiveSquadFaction(), n"")
        && CBCountLiveOrSpawningExcept(game, n"CB_Squad", puppet.GetEntityID(), n"CB_Bounty") == 0
        && (!squadApex || CBCountLiveOrSpawningExcept(game, n"CB_Apex", puppet.GetEntityID()) == 0) {
@@ -564,6 +602,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
 
   let tierBefore = sys.GetLastNotifiedTier();
   CBApplyKill(sys, info);
+  if info.lethal {
+    CBCrewWarNoteVKill(sys, game, info.faction);   // V in the crew's war on them (Reactions/CrewLife.reds, 2.7.7)
+  }
   // Already counted in this fight as somebody down; now they are a body. Not a second person.
   CBEncounterRecordKill(sys, info, puppet.cbSparedLogged);
   // The car and the gun somebody saw V fight with (Model/StreetBook.reds).

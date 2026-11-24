@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.7.6.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.7.7.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -44,6 +44,28 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.7
 
+- **Your crew, as people (2.7.7).** Each member has a temperament, a story (where they joined, their scars, their ranks,
+  how many they've put down) and asks you for things now and then: a better gun, a day off, a cut, revenge on the Rival
+  who hurt them. Make one your second to speak for the crew and lead its wars. When one dies, the crew buries them the
+  next evening in their home district, and remembers who came. The Crew page has Roster, Member and Crew views: real
+  numbers, weapon and chrome slots, the climb to the next rank, and a line of help for every button.
+- **Chrome and weapons that do what they say (2.7.7).** Chrome shows what it adds before it goes in, arm chrome makes a
+  member a blade, a brawler or a heavy, and a weapon you hand over says how they'll fight with it (or, with an
+  experimental setting on, they carry it).
+- **Your crew's streets (2.7.7).** Shopkeepers in your districts pay the street tax to you in person, the gang that lost a
+  district tells you when it's coming back so you can be there, your kills count in your crew's wars, and members hang
+  out on the corners you hold.
+- **Rivals and gangs (2.7.7).** Calling cards, a history with every Rival on the Hub, humiliated Rivals who turn, and
+  Rivals who hunt your crew. Gangs have named bosses who invite you to their sit-downs; crashing a gang's business has
+  consequences. Crews losing badly pull back and send more, and bagmen run when you come for them.
+- **Pick a side (2.7.7).** At a sit-down, a deal or a street fight, tell either side "I'm with you" (or open fire on the
+  other side when the gang you like invited you). They fight beside you as companions until it's over: your crew leaves
+  them alone and your stray shots don't turn them on you.
+- **Work for the corporations (2.7.7).** A corporation that doesn't hate you texts contracts now and then: one of its
+  rivals' people on your map, with two bodyguards. Put them down for good pay and a lot of standing with that
+  corporation. **Work for the corporations** in Mod Settings turns them off.
+- **Sounds (2.7.7).** Your crew calls out what's coming, hunters shout as they arrive and their cars honk, and loot, pins
+  and promotions have their own sounds. **Sounds** in Mod Settings turns them off.
 - **Your crew at war, and on the map (2.7.6).** Plan a war: pick the gang and who goes, see the odds, and win by
   strength rather than luck. A win pays: the kitty gets their money, their war chest and the district's own hidden
   stashes go on your map, and your crew gains a hold on their streets. Hold enough and your crew takes the district,
@@ -261,12 +283,19 @@ lives in your saves: a save made while the mod is removed loses it.
   The next time you put that Rival down, the same talk offers **[Recruit] You owe me. Work for me.** A Rival you have
   spared twice may also text you, and you can ask them in the thread. Crouching over somebody down is for questioning
   their people; a Rival on the ground is talked to.
+- **Your crew's lives:** what a member asks of you (a day off, their cut) is answered from their **Orders**, as is
+  **Make them your second**. Give a weapon to answer a member who asked for a better one; put down the Rival who hurt
+  them for revenge. The Crew view (**War, money, name, the fallen**) can make your apartment the crew's home while you
+  stand in it. Shopkeepers in your crew's districts pay you the street tax when you walk up to them. **How hard your crew
+  has it** and **Their own weapon in their hands (experimental)** are under **Your crew** in Mod Settings.
+- **Sounds:** your crew's, the hunters' and the phone's sounds are under **Sounds** on the Messages and HUD page, beside
+  **Voices for the moments**.
 - Cyberbane sets no keys of its own. The only one it offers, for calling your crew, is yours to choose.
 
 ## Settings
 
 Everything is in **Mod Settings > Cyberbane**. The first page, **General**, has what most people
-change: Cyberbane on or off, a preset (Subtle, Default, Dramatic, or one with a shape: Nemesis, Turf war,
+change: Cyberbane on or off, a preset (Subtle, Default, Dramatic, or one with a shape: Blood feud, Turf war,
 Quiet life), where messages go, the hunt line
 at the top of the screen, and map markers. The pages after it go deeper, one subject each, with
 **Advanced** at the bottom.

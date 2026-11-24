@@ -165,6 +165,8 @@ public func CBApiNote(kind: Int32, name: CName, a: Int32, b: Int32) -> Void {
 public func CBApiRivalEvent(r: ref<CBRival>, kind: CName) -> Void {
   if IsDefined(r) && r.id > 0 {
     CBApiNote(CBApiQRival(), kind, r.id, 0);
+    // Every moment of a Rival's comes through here, so their timeline is written here too (Rivals/RivalTimeline.reds, 2.7.7).
+    CBRivalTimelineEvent(r, kind);
   }
 }
 

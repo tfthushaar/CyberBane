@@ -206,6 +206,15 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     return StrLen(hunter) > 0 ? hunter : CBT(n"Cyberbane-Tracking-BountyHunter");
   }
   let gang = CBCapFirst(CBFactionLabel(CBClassifyFaction(puppet)));
+  // A corporation's contract (2.7.7): the mark, and their guards.
+  if des.IsTagged(id, n"CB_Mark") {
+    let lifeC = CBStreetLifeFor(game);
+    let client = IsDefined(lifeC) ? CBFactionLabel(lifeC.FavourFaction()) : "";
+    if puppet.cbFavourMark {
+      return StrLen(client) > 0 ? CBTf(n"Cyberbane-Tracking-ContractMark", [client]) : CBT(n"Cyberbane-Tracking-AContractMark");
+    }
+    return CBTf(n"Cyberbane-Tracking-ContractGuard", [gang]);
+  }
   if puppet.cbFavourMark || des.IsTagged(id, n"CB_Debtor") {
     let life = CBStreetLifeFor(game);
     let owed = IsDefined(life) ? CBFactionLabel(life.FavourFaction()) : "";
@@ -242,6 +251,9 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     return "";
   }
   let id = puppet.GetEntityID();
+  if des.IsTagged(id, n"CB_Mark") {
+    return CBT(n"Cyberbane-Tracking-ContractNote");
+  }
   if puppet.cbFavourMark || des.IsTagged(id, n"CB_Debtor") {
     // What does it, said plainly (2.6.4): words first, fists if they swing, never a body.
     return CBT(n"Cyberbane-Tracking-ADebtToCollectTalkThem");

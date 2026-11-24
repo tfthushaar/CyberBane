@@ -264,7 +264,12 @@ public func CBCrewTurfTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let jb = CBCrewJobBook.Get(game);
   if ArraySize(held) > 0 && IsDefined(jb) {
     let per = RoundF(CBConfig.CrewTurfTaxPerDistrict() * (0.5 + CBCrewWeight(game) / 200.0));
-    let total = per * ArraySize(held);
+    // Half through the crew, half kept by the shops for V to collect in person (2.7.7, CBCrewTaxCollectTick).
+    let inPerson = per / 2;
+    for dOwe in held {
+      CBCrewTaxOwe(game, dOwe, inPerson);
+    }
+    let total = (per - inPerson) * ArraySize(held);
     jb.AddKitty(total);
     CBFileLog(sys, n"CrewTax", now, sys.GetCurrentDistrict(), n"", Cast<Float>(total));
     if CBMessagesOn() {

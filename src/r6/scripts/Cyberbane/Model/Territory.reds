@@ -526,6 +526,12 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
     return;
   }
   book.SetPushAt(i, now);
+  // On the crew's corners (2.7.7): told ahead with a place and an hour, so V can be there; the ground is lost only if
+  // nobody holds it (Reactions/CrewLife.reds).
+  if CBIsCrewTurf(holder) && CBCrewCounterattackTold(sys, game, district, old) {
+    CBFileLog(sys, n"TurfPush", now, district, old, 0.0);
+    return;
+  }
   book.AddLocalLoss(district, holder, CBConfig.TurfPushDamage(), now);
   CBFileLog(sys, n"TurfPush", now, district, old, 0.0);
   CBLog.Info(n"Model", s"\(NameToString(old)) hit back at \(NameToString(holder)) in \(NameToString(district)).");

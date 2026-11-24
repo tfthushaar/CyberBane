@@ -125,6 +125,7 @@ public func CBTalkQuestionLines(sys: ref<CyberbaneSystem>, game: GameInstance, t
   let c = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-AskAnyoneLookingForMe"), CBTalkActAskComing(), t"ChoiceCaptionParts.ReinforcementIcon");
   c.said = CBMaskHas(done, CBTalkActAskComing());
   ArrayPush(out, c);
+  ArrayPush(out, CBTalkWorthLine(t));   // the bounty board, asked of anybody (Reactions/TalkMore.reds, 2.7.7)
   let home = CBGangHomeTalkLine(t);
   if IsDefined(home) {
     ArrayPush(out, home);
@@ -372,6 +373,11 @@ public func CBTalkAnswerMenuAsk(t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
 public func CBTalkAnswerWord(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkAnswer> {
   if again {
     return CBTalkSay(CBT(n"Cyberbane-TalkTopics-ToldYouAlreadyThatSAll"), n"");
+  }
+  // What V has done lately, half the time it is there to tell (2.7.7): the crew's war, a district taken, a Rival put down.
+  let news = CBTalkRecentNews(sys, game);
+  if StrLen(news) > 0 && RandF() < 0.5 {
+    return CBTalkSay(news, n"");
   }
   let r = CBWhisperRumor(sys, game);
   if IsDefined(r) {

@@ -1180,6 +1180,11 @@ public class CBArrivalDismountCallback extends DelayCallback {
     // Parked next to V, having been sent to V: there is nothing left for them to search for.
     if carHere && arrived && !vDriving {
       CBHuntCrewPulledUp(sysD, game);
+      // Heard before they are seen (2.7.7): the car's horn as it pulls up, and the first of them out shouting.
+      CBCarHorn(game, car, n"CarArrives", 10.0);
+      if IsDefined(sysD) {
+        CBArrivalVoices(sysD, game, CBLiveTaggedPresent(game, n"CB_Apex") ? n"CB_Apex" : n"CB_Squad");
+      }
     }
     CBDismountArrivalCrew(game, this.slot);
     CBWatchCrewOut(game, this.slot);

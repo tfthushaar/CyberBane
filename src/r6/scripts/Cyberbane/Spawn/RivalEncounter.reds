@@ -51,7 +51,7 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
     // exactly nothing: they vanished, their hunt clock restarted, and a short while later the
     // same person reappeared behind you. With no way to escape, the only way to resolve a
     // Rival was to kill them, which is the one outcome that stops them ever being promoted -
-    // the nemesis system quietly reduced to a respawning nuisance.
+    // the Rivals quietly reduced to a respawning nuisance.
     //
     // Losing them now promotes them and buys real time before they find you again.
     // Everyone of the encounter still out, the one leading and whoever came with them, the same way
@@ -136,7 +136,7 @@ public func CBTickClocksOnly(sys: ref<CyberbaneSystem>) -> Void {
 // Retiring used to delete them and say nothing, so running was worth exactly nothing: they
 // vanished, their clock restarted, and the same person turned up again shortly after. With no
 // way to escape, the only way to resolve a Rival was to kill them - the one outcome that stops
-// them ever being promoted, which hollowed the whole nemesis idea out.
+// them ever being promoted, which hollowed the whole idea of a Rival out.
 //
 // Reached through CBRivalsShakenOff, from the retire sweep and the moment the hunters give up
 // because you outran them, for every Rival of the encounter. `CBRivalEscapedByPlayer`, which did
@@ -157,6 +157,7 @@ public func CBRivalEscapedByPlayerFor(sys: ref<CyberbaneSystem>, game: GameInsta
     lostBody = GameInstance.FindEntityByID(game, got.spawnedEntityId) as ScriptedPuppet;
   }
   CBNoteRivalSeen(sys, game, got, lostBody);
+  CBRivalTimelineNote(game, got.id, CBTlLostThem());   // V lost them (Rivals/RivalTimeline.reds, 2.7.7)
   got.encounters += 1;
   CBPromoteRival(got, content, CBGameSeconds(game));
   got.huntTicks = CBConfig.RivalAfterEscapeTicks();
@@ -644,7 +645,7 @@ public func CBRivalBringPartners(sys: ref<CyberbaneSystem>, game: GameInstance, 
   }
   // One word from the one leading, naming who came with them.
   if CBToastsOn() && IsDefined(content) && StrLen(names) > 0 {
-    CBPhoneSendTinted(game, CBRivalDisplayName(content, lead), CBTf(n"Cyberbane-RivalEncounter-NotComingAloneThisTimeWanted", [names]), CBHudRed());
+    CBPhoneSendUrgent(game, CBRivalDisplayName(content, lead), CBTf(n"Cyberbane-RivalEncounter-NotComingAloneThisTimeWanted", [names]), CBHudRed());
   }
   CBLog.Info(n"Spawn", s"Rival \(lead.id) brings \(brought) more of \(NameToString(lead.faction))'s Rivals.");
 }
@@ -676,6 +677,9 @@ public func CBPackHandOffLead(sys: ref<CyberbaneSystem>) -> Void {
 public func CBRivalsShakenOff(sys: ref<CyberbaneSystem>, game: GameInstance, onlyGone: Bool) -> Int32 {
   if !IsDefined(sys) {
     return 0;
+  }
+  if sys.GetActiveRivalId() > 0 {
+    CBUiSound(game, n"ui_gmpl_stealth_avoid_combat", n"ShookThemOff", 30.0);   // 2.7.7
   }
   // A list of ids first: every close below changes the team and can move the lead.
   let ids: array<Int32>;

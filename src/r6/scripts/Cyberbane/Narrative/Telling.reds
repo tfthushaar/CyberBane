@@ -11,7 +11,7 @@
 //   [84] a Rival's story        their page tells it from what is known of them
 //   [87] Street Cred            the biggest deeds give a little of the game's own Street Cred, the way the game's
 //                               own bounties do (ExperiencePointsEvent)
-//   [90] presets with a shape   Nemesis, Turf war and Quiet life (Settings/CyberbaneSettings.reds)
+//   [90] presets with a shape   Blood feud, Turf war and Quiet life (Settings/CyberbaneSettings.reds)
 //   [91] events other mods hear Cyberbane/RivalSlain, Cyberbane/HuntStarted and the rest, through the game's callback
 //                               system
 //   [U13] phone threads         a gang's thread can be threatened, stalled or insulted, and a Rival's answered
@@ -216,7 +216,7 @@ public func CBMorningBriefTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     if IsDefined(e) && now - e.at <= CBConfig.BriefHours() * CBConfig.SecondsPerHour() {
       night += 1;
       if CBWhileOutWorthIt(e.kind) {
-        worst = CBHudLogLine(sys, e, now);
+        worst = CBHudLogLine(sys, e, now, true);
       }
     }
   }

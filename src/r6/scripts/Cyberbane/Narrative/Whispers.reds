@@ -216,6 +216,17 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
                                       CBT(n"Cyberbane-Whispers-HeardTheyRunACrew")]));
     }
   }
+  // V's crew walking with V, by name (2.7.7): passers-by and gangers notice who V brought.
+  let crewWith = CBCrewWalkingWith(sys, game);
+  if !st.masked && StrLen(crewWith) > 0 {
+    bag.Add(n"crewnames", 2.5, CBLineOf([CBTf(n"Cyberbane-Whispers-CrewWith1", [crewWith]), CBTf(n"Cyberbane-Whispers-CrewWith2", [crewWith]),
+                                         CBTf(n"Cyberbane-Whispers-CrewWith3", [crewWith])]));
+  }
+  // V's title, more often than the generic lines that used to carry it (2.7.7).
+  let titleWord = CBWhisperTitle(sys);
+  if !st.masked && StrLen(titleWord) > 0 {
+    bag.Add(n"titled", 1.5, CBLineOf([CBTf(n"Cyberbane-Whispers-Titled1", [titleWord]), CBTf(n"Cyberbane-Whispers-Titled2", [titleWord])]));
+  }
   // Something coming near here (Spawn/StreetEvents.reds, [32]).
   let coming = CBEventWhisper(game);
   if StrLen(coming) > 0 {
@@ -750,4 +761,23 @@ public func CBShowWhisper(sys: ref<CyberbaneSystem>, game: GameInstance,
   // and never a text. 1.4.7's first pass sent these as texts from "Passerby" and "Ganger",
   // which in the real phone would have meant contacts nobody could have had a number for.
   CBOverheard(game, CBWhisperSpeaker(faction), CBWhisperLine(sys, game, faction, mood, topic));
+}
+
+// The first name of one of V's crew walking with V now, for the street to say; "" when none is (2.7.7).
+public func CBCrewWalkingWith(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
+  let book = CBCrewBook.Get(game);
+  if !IsDefined(book) || book.OutCount() == 0 || book.leaving {
+    return "";
+  }
+  let i = 0;
+  while i < book.OutCount() {
+    if book.outSeen[i] && !book.outDown[i] {
+      let m = book.Find(book.outMember[i]);
+      if IsDefined(m) {
+        return CBCrewFirst(sys, m);
+      }
+    }
+    i += 1;
+  }
+  return "";
 }

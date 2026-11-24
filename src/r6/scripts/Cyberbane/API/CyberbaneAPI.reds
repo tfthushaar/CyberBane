@@ -288,7 +288,7 @@ public abstract class CyberbaneAPI {
     return CBFactionOn(faction);
   }
 
-  // The preset: 0 Subtle, 1 Default, 2 Dramatic, 3 Custom, 4 Nemesis, 5 Turf war, 6 Quiet life (ECBPreset).
+  // The preset: 0 Subtle, 1 Default, 2 Dramatic, 3 Custom, 4 Blood feud, 5 Turf war, 6 Quiet life (ECBPreset).
   public static func Preset() -> Int32 {
     let rt = CyberbaneRuntime.Get();
     return IsDefined(rt) && rt.HasSettings() ? EnumInt(rt.GetSettings().preset) : EnumInt(ECBPreset.Default);

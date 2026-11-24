@@ -62,6 +62,11 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
                || Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
     if over {
       CBHangoutEnd(game, st);
+    } else {
+      // A friendly gang's people greet V walking past (2.7.7), in their own voice.
+      if !player.IsInCombat() && Vector4.Distance(player.GetWorldPosition(), st.at) <= CBConfig.HangoutGreetDistance() {
+        CBVoiceNearest(sys, game, n"CB_Hangout", CBConfig.HangoutGreetDistance(), n"greeting", n"HangoutGreet", 60.0);
+      }
     }
     return;
   }
@@ -98,7 +103,11 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
     if CBFactionOn(g) && CBFactionFieldsSquads(g) && !st.DoneToday(g, day)
        && !Equals(posture, ECBPosture.Hostile) && !Equals(posture, ECBPosture.Vendetta) && CBHangoutScarce(sys, game, reg, g) {
       st.MarkDone(g, day);   // asked once a day, placed or not
-      if RandF() < CBConfig.HangoutChance() {
+      // Night and weather, and whose streets these are (2.7.7): the gang holding the district hangs out on it more, the
+      // ones who lost it less.
+      let holderHere = CBTurfHolder(sys, game, sys.GetCurrentDistrict());
+      let held = IsNameValid(holderHere) ? (Equals(holderHere, g) ? CBConfig.HeldDistrictHangoutMult() : CBConfig.LostDistrictHangoutMult()) : 1.0;
+      if RandF() < CBConfig.HangoutChance() * CBStreetLifeMood(game) * held {
         CBHangoutStart(sys, game, st, g, now);
         return;
       }
@@ -107,6 +116,20 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
 }
 
 // None of theirs about: nobody of the gang standing within HangoutScarceRange of V.
+// How much is going on in the street (2.7.7): more after dark, less in the rain, least in a downpour by day.
+public func CBStreetLifeMood(game: GameInstance) -> Float {
+  let mood = CBIsNight(game) ? CBConfig.StreetNightMult() : 1.0;
+  let rain = CBRainLevel(game);
+  if rain >= 2 {
+    mood *= CBConfig.StreetRainMult();
+  } else {
+    if rain == 1 {
+      mood *= 0.85;
+    }
+  }
+  return mood;
+}
+
 func CBHangoutScarce(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBNpcRegistry>, gang: CName) -> Bool {
   let player = GetPlayer(game);
   let ppos = player.GetWorldPosition();

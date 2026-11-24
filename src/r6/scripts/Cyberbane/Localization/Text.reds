@@ -28,13 +28,42 @@ public func CBDisplay(kept: String) -> String {
   return StrBeginsWith(kept, "Cyberbane-") ? CBT(StringToName(kept)) : kept;
 }
 
+// A slot that opens a sentence starts it with a capital (2.7.7): "Heads up. the Tyger Claws just sent people your way."
+// 207 English lines put a name or a gang straight after a full stop, and the gang's name carries its article in lower
+// case, so it is done here, where every line is filled in, never line by line. Only a slot after a full stop, a question
+// or an exclamation mark (a closing quote too) or a line break; the very start of a line is left alone, because notes
+// start small on purpose ("Cyberbane: " goes in front of them). An ellipsis is a pause, not an end. Only a plain a to z
+// is raised (CBCapFirst), so a language without capitals is left as it is.
 public func CBTf(key: CName, slots: array<String>) -> String {
   let out = CBT(key);
   let i = 0;
   let n = ArraySize(slots);
   while i < n {
-    out = StrReplaceAll(out, "{" + IntToString(i) + "}", slots[i]);
+    let mark = "{" + IntToString(i) + "}";
+    if StrContains(out, mark) {
+      let capped = CBCapFirst(slots[i]);
+      if NotEquals(capped, slots[i]) {
+        out = CBTfCapAfter(out, mark, capped);
+      }
+      out = StrReplaceAll(out, mark, slots[i]);
+    }
     i += 1;
   }
+  return out;
+}
+
+func CBTfCapAfter(text: String, mark: String, capped: String) -> String {
+  let out = text;
+  // The ellipsis first, kept as it is under a marker no line uses, so ". " below never sees its last dot.
+  out = StrReplaceAll(out, "... " + mark, "<CBEllipsis>" + mark);
+  out = StrReplaceAll(out, ". " + mark, ". " + capped);
+  out = StrReplaceAll(out, ".  " + mark, ".  " + capped);
+  out = StrReplaceAll(out, "! " + mark, "! " + capped);
+  out = StrReplaceAll(out, "? " + mark, "? " + capped);
+  out = StrReplaceAll(out, ".\" " + mark, ".\" " + capped);
+  out = StrReplaceAll(out, "!\" " + mark, "!\" " + capped);
+  out = StrReplaceAll(out, "?\" " + mark, "?\" " + capped);
+  out = StrReplaceAll(out, "\n" + mark, "\n" + capped);
+  out = StrReplaceAll(out, "<CBEllipsis>" + mark, "... " + mark);
   return out;
 }

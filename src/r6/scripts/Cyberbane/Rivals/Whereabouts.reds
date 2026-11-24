@@ -1,6 +1,6 @@
 // Cyberbane - Hunting a Rival down (1.6.2)
 //
-// "It would be peak to track my Nemesis and go ambush them. Like they do with us." Rivals come for
+// "It would be peak to track my Rival down and go ambush them. Like they do with us." Rivals come for
 // V on their own timetable; this is the other direction. Somebody who got away from V is seen
 // somewhere afterwards, the street or a gang that hates theirs tells V where, and if V goes there
 // on foot the Rival is there, not expecting anybody. Catch them unawares and the street hears
@@ -470,7 +470,9 @@ func CBLeadExpiryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
   let k = 0;
   while k < ArraySize(staleName) {
-    let line = CBTf(n"Cyberbane-Whereabouts-MovedOnFromTookTooLong", [s"\(staleName[k])", s"\(CBPlacePhrase(staleWhere[k]))"]);
+    // The place by its name (2.7.7): the phrase brings its own "in", and the line read "moved on from in Pacifica".
+    let staleLabel = CBDistrictLabel(staleWhere[k]);
+    let line = CBTf(n"Cyberbane-Whereabouts-MovedOnFromTookTooLong", [s"\(staleName[k])", StrLen(staleLabel) > 0 ? staleLabel : CBT(n"Cyberbane-Whereabouts-WhereTheyWere")]);
     if IsNameValid(staleFrom[k]) {
       CBPhoneFromAlly(game, staleFrom[k], line);
     } else {
@@ -1141,6 +1143,7 @@ public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance,
     }
   }
   CBLog.Info(n"Rivals", s"Bought rival \(id)'s whereabouts for \(price)eb: \(NameToString(s.district)).");
+  CBUiSound(game, n"ui_hacking_access_granted", n"LeadBought", 3.0);   // 2.7.7
   return true;
 }
 

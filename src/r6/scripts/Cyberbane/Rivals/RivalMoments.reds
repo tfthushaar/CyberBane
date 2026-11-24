@@ -475,6 +475,7 @@ func CBFacedownOpen(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
   sys.GetTruce().Begin(sys, game, CBTruceFacedown(), r.faction, body);
   let name = CBRivalDisplayName(sys.GetContent(), r);
   CBIntelSay(game, 3, name, CBFacedownOpener(sys, game, r), 4.0);
+  CBVoice(sys, game, body, n"start_combat", n"RivalFacedown", 30.0);   // their own voice first (2.7.7)
   if CBToastsOn() && !book.fdHinted {
     book.fdHinted = true;
     CBSystemNote(game, CBTf(n"Cyberbane-RivalMoments-WantsALookAtYouFirst", [s"\(name)"]), 5.0);
@@ -924,6 +925,10 @@ func CBRivalTauntTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
   book.tauntTick = tick;
   if RandF() < CBConfig.TauntChance() {
     CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), r), CBRivalTaunt(r), 3.0);
+    // And in their own voice (2.7.7): a battle cry from the body in the fight.
+    if IsDefined(body) {
+      CBVoice(sys, game, body, n"battlecry_curse", n"RivalTaunt", 25.0, n"start_combat");
+    }
   }
 }
 

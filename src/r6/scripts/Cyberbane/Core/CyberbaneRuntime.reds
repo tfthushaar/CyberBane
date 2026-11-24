@@ -46,6 +46,10 @@ public class CyberbaneRuntime extends ScriptableService {
   // saying anything. A refusal that names itself turns a week of guessing into one sentence
   // from whoever is playing.
   private let m_lastSpawnBlock: Int32;
+  private let m_spawnBlockTally: array<Int32>;   // refusals per reason for the placement under way (2.7.7)
+  public let lastBrokerDistrict: CName;          // the broker who last passed word on, for word from between districts (2.7.7)
+  public let soundKey: array<CName>;             // each sound's last play, for its cooldown (2.7.7, UI/Sounds.reds)
+  public let soundAt: array<Float>;
   // What the street has said lately (Narrative/Lines.reds, 2.3.1): the last LineMemory lines that reached
   // the screen, oldest overwritten first. Session only: it is about what V just heard.
   private let m_said: array<String>;
@@ -469,6 +473,49 @@ public class CyberbaneRuntime extends ScriptableService {
 
   public func SetLastSpawnBlock(reason: Int32) -> Void {
     this.m_lastSpawnBlock = reason;
+    if reason > 0 && reason < CBBlockCount() {
+      while ArraySize(this.m_spawnBlockTally) < CBBlockCount() {
+        ArrayPush(this.m_spawnBlockTally, 0);
+      }
+      this.m_spawnBlockTally[reason] += 1;
+    }
+  }
+
+  public func AssumeSpawnBlock(reason: Int32) -> Void {
+    this.m_lastSpawnBlock = reason;
+  }
+
+  // A placement starts counting afresh (2.7.7, CBSpawnGroup).
+  public func ResetSpawnBlockTally() -> Void {
+    ArrayClear(this.m_spawnBlockTally);
+  }
+
+  // The reason that refused the most spots since the reset, else the last one noted.
+  public func MostSpawnBlock() -> Int32 {
+    let best = 0;
+    let bestN = 0;
+    let i = 1;
+    while i < ArraySize(this.m_spawnBlockTally) {
+      if this.m_spawnBlockTally[i] > bestN {
+        bestN = this.m_spawnBlockTally[i];
+        best = i;
+      }
+      i += 1;
+    }
+    return bestN > 0 ? best : this.m_lastSpawnBlock;
+  }
+
+  // Every reason with its count, for the log line: "safe area 12, in view 3".
+  public func SpawnBlockTallyLine() -> String {
+    let s = "";
+    let i = 1;
+    while i < ArraySize(this.m_spawnBlockTally) {
+      if this.m_spawnBlockTally[i] > 0 {
+        s += (StrLen(s) > 0 ? ", " : "") + CBBlockLabel(i) + " " + IntToString(this.m_spawnBlockTally[i]);
+      }
+      i += 1;
+    }
+    return s;
   }
 
   // Hard reset, asked for in Mod Settings and carried out on the next settled tick.

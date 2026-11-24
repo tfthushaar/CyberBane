@@ -79,13 +79,23 @@ public func CBPhoneDistrictSender(district: CName) -> String {
   return CBPhoneUnknownSender();
 }
 
-// For word that is not about anywhere in particular.
+// For word that is not about anywhere in particular: the broker who works where V is (2.7.7), or, between districts, the
+// last one who did. A broker always has a name, and the same story keeps the same one: a random pick each time the word
+// was passed on sent one rumour from "Broker", then "Unknown Number", then "No Caller ID". `seed` is kept for callers.
 public func CBPhoneStreetSender(seed: Int32) -> String {
-  let s = seed % 4;
-  if s == 0 { return CBPhoneUnknownSender(); }
-  if s == 1 { return CBT(n"Cyberbane-Crew-Broker"); }
-  if s == 2 { return CBT(n"Cyberbane-PhoneMessages-Ripperdoc"); }
-  return CBT(n"Cyberbane-PhoneMessages-NoCallerID");
+  let sys = CyberbaneSystem.Get(GetGameInstance());
+  let here = IsDefined(sys) ? sys.GetCurrentDistrict() : n"";
+  let rt = CyberbaneRuntime.Get();
+  if CBDistrictIndex(here) >= 0 && NotEquals(CBPhoneDistrictSender(here), CBPhoneUnknownSender()) {
+    if IsDefined(rt) {
+      rt.lastBrokerDistrict = here;
+    }
+    return CBPhoneDistrictSender(here);
+  }
+  if IsDefined(rt) && IsNameValid(rt.lastBrokerDistrict) {
+    return CBPhoneDistrictSender(rt.lastBrokerDistrict);
+  }
+  return CBT(n"Cyberbane-PhoneMessages-Mira");
 }
 
 // ---- How messages are delivered -------------------------------------------
@@ -246,6 +256,7 @@ public class CBPhone {
   // to wherever V is when it is due (ReleaseWord, CBDistrictHops).
   private let m_hsFrom: array<CName>;
   private let m_hsSpan: array<Float>;
+  private let m_hsQueuedReal: array<Float>;   // real seconds when it was queued (2.7.7): nothing waits past a few minutes
   // Sim seconds V was last in a fight: nobody's news reaches V in the middle of one.
   private let m_lastFightReal: Float;
   // Stories already told, and when (game seconds), for the repeat window.
@@ -583,6 +594,10 @@ public class CBPhone {
       }
     }
     let due = now + delay;
+    // Somebody typing (2.7.7): the game's own sound while a text that takes a while is on its way.
+    if !urgent && delay >= 3.0 && CBMessagesOn() {
+      CBUiSound(game, n"ui_messenger_typing", n"Typing", 12.0);
+    }
     // A stamp from another session's clock (it starts again with a load) is forgotten.
     if this.m_postLastDue > now + 600.0 {
       this.m_postLastDue = 0.0;
@@ -722,6 +737,8 @@ public class CBPhone {
     }
     ArrayPush(this.m_hsFrom, from);
     ArrayPush(this.m_hsSpan, delay);
+    let tsQ = GameInstance.GetTimeSystem(game);
+    ArrayPush(this.m_hsQueuedReal, IsDefined(tsQ) ? EngineTime.ToFloat(tsQ.GetSimTime()) : 0.0);
     ArrayPush(this.m_hsSender, sender);
     ArrayPush(this.m_hsBody, body);
     ArrayPush(this.m_hsAccent, accent);
@@ -757,7 +774,34 @@ public class CBPhone {
        && (simNow - this.m_lastFightReal) < CBConfig.WordCalmSeconds() {
       return;
     }
-    if this.m_lastWordReal > 0.0 && simNow >= this.m_lastWordReal
+    // News that has waited too long (2.7.7). "Alejandro went under the knife" arrived twenty minutes after it was queued,
+    // when it no longer felt connected to anything: a queue let out one at a time behind the inbox gap and the fight
+    // calm. Word waits a few minutes at most, then comes even inside the gap; word stale past three times that (held
+    // through a long run of fights, say) is let go, unless it carries a gang's offer, which always comes.
+    // Stale ones out first, from the end so nothing moves under the walk; then the oldest overdue one, found afresh.
+    let o = ArraySize(this.m_hsBody) - 1;
+    while o >= 0 {
+      let queued = o < ArraySize(this.m_hsQueuedReal) ? this.m_hsQueuedReal[o] : 0.0;
+      let waited = queued > 0.0 && simNow >= queued ? simNow - queued : 0.0;
+      if waited > CBConfig.HearsayMaxWaitReal() * 3.0 && !IsNameValid(this.m_hsFaction[o]) {
+        CBLog.Info(n"UI", s"Word let go (too old to matter) from \(this.m_hsSender[o]): \(this.m_hsBody[o])");
+        this.DropWord(o);
+      }
+      o -= 1;
+    }
+    let overdue = -1;
+    let oldest = 0.0;
+    let q = 0;
+    while q < ArraySize(this.m_hsBody) {
+      let queuedQ = q < ArraySize(this.m_hsQueuedReal) ? this.m_hsQueuedReal[q] : 0.0;
+      let waitedQ = queuedQ > 0.0 && simNow >= queuedQ ? simNow - queuedQ : 0.0;
+      if waitedQ > CBConfig.HearsayMaxWaitReal() && waitedQ > oldest {
+        oldest = waitedQ;
+        overdue = q;
+      }
+      q += 1;
+    }
+    if overdue < 0 && this.m_lastWordReal > 0.0 && simNow >= this.m_lastWordReal
        && (simNow - this.m_lastWordReal) < CBInboxGapSeconds() {
       return;
     }
@@ -778,12 +822,16 @@ public class CBPhone {
         hops = 1;
       }
       let span = i < ArraySize(this.m_hsSpan) ? this.m_hsSpan[i] : 0.0;
-      let due = this.m_hsDue[i] + span * Cast<Float>(hops);
+      // Where V is when it happened (2.7.7): the people round V tell V first, in half the time.
+      let due = hops == 0 ? this.m_hsDue[i] - span * 0.5 : this.m_hsDue[i] + span * Cast<Float>(hops);
       if due <= now && (pick < 0 || due < pickDue) {
         pick = i;
         pickDue = due;
       }
       i += 1;
+    }
+    if pick < 0 {
+      pick = overdue;
     }
     if pick < 0 {
       return;
@@ -805,6 +853,9 @@ public class CBPhone {
     if pick < ArraySize(this.m_hsSpan) {
       ArrayErase(this.m_hsSpan, pick);
     }
+    if pick < ArraySize(this.m_hsQueuedReal) {
+      ArrayErase(this.m_hsQueuedReal, pick);
+    }
     this.m_lastWordReal = simNow;
     if IsNameValid(key) {
       this.NoteTold(key, now);
@@ -815,6 +866,28 @@ public class CBPhone {
     CBPhoneDeliverNow(game, sender, IsNameValid(faction) ? CBPhoneDemandText(game, faction, body, false) : body, accent, false);
     if IsNameValid(faction) {
       CBPhoneOfferPeace(game, faction);
+    }
+  }
+
+  // One story out of the queue, every list with it (2.7.7).
+  private func DropWord(i: Int32) -> Void {
+    if i < 0 || i >= ArraySize(this.m_hsBody) {
+      return;
+    }
+    ArrayErase(this.m_hsSender, i);
+    ArrayErase(this.m_hsBody, i);
+    ArrayErase(this.m_hsAccent, i);
+    ArrayErase(this.m_hsKey, i);
+    ArrayErase(this.m_hsFaction, i);
+    ArrayErase(this.m_hsDue, i);
+    if i < ArraySize(this.m_hsFrom) {
+      ArrayErase(this.m_hsFrom, i);
+    }
+    if i < ArraySize(this.m_hsSpan) {
+      ArrayErase(this.m_hsSpan, i);
+    }
+    if i < ArraySize(this.m_hsQueuedReal) {
+      ArrayErase(this.m_hsQueuedReal, i);
     }
   }
 
@@ -1512,6 +1585,7 @@ public class CBPhone {
     ArrayClear(this.m_hsDue);
     ArrayClear(this.m_hsFrom);
     ArrayClear(this.m_hsSpan);
+    ArrayClear(this.m_hsQueuedReal);
     this.m_lastFightReal = 0.0;
     ArrayClear(this.m_toldKey);
     ArrayClear(this.m_toldAt);

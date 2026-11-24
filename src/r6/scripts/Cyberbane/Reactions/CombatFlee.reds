@@ -251,6 +251,11 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     }
     if CBRoomToBreak(sys, puppet) {
       CBMoraleBreak(sys, game, puppet, faction, chance);
+      // A Rival V knows, breaking: they beg as they go, in their own voice (2.7.7).
+      let desBreak = GameInstance.GetDynamicEntitySystem();
+      if IsDefined(desBreak) && desBreak.IsTagged(puppet.GetEntityID(), n"CB_Rival") {
+        CBVoice(sys, game, puppet, n"fear_beg", n"RivalFlees", 20.0);
+      }
     }
   }
 }
@@ -487,7 +492,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   // This path did not exist: every mercy created a brand new Rival, so sparing the same person
   // twice was never recorded. CBRivalSparedByV - the function that counts it, can turn them
   // into a Debtor and promotes them - was never called from anywhere in the mod. That also
-  // left the mercy term of the nemesis ladder permanently zero, so a Rival only ever got
+  // left the mercy term of the Rivals' ladder permanently zero, so a Rival only ever got
   // harder from escaping, never from being let go.
   //
   // Asked of the entity id the escapee was logged with, not of the puppet. The puppet is only a

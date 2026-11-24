@@ -70,6 +70,7 @@ public func CBPinPlace(game: GameInstance, at: Vector4, text: String, out id: Ne
     return false;
   }
   id = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(text)), at);
+  CBUiSound(game, n"ui_menu_map_pin_created", n"PinMade", 4.0);   // 2.7.7
   return true;
 }
 

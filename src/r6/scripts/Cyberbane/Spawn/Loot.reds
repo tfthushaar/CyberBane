@@ -227,9 +227,22 @@ public class CBLootDropCallback extends DelayCallback {
     // every bag it drops comes from the player, a vendor or a device. The pickup is the one part
     // worth giving up for a loot system that cannot take the game down with it.
     let i = 0;
+    let best = 0;
     while i < ArraySize(ids) {
       ts.GiveItem(player, ItemID.FromTDBID(ids[i]), counts[i]);
+      let rec = TweakDBInterface.GetItemRecord(ids[i]);
+      if IsDefined(rec) && IsDefined(rec.Quality()) {
+        best = Max(best, CBCrewTierOf(rec.Quality().Type()));
+      }
       i += 1;
+    }
+    // Something worth having (2.7.7): the game's own sting for an epic or legendary find.
+    if best >= 4 || TDBID.IsValid(iconic) {
+      CBUiSound(game, n"ui_loot_rarity_legendary", n"LootRare", 6.0);
+    } else {
+      if best == 3 {
+        CBUiSound(game, n"ui_loot_rarity_epic", n"LootRare", 6.0);
+      }
     }
   }
 }

@@ -771,7 +771,7 @@ func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if IsDefined(content) {
       // What they remember of V goes with it (Rivals/RivalMoments.reds, [L4], 2.4.4).
       let remembers = CBRivalRemembers(game, r);
-      CBPhoneSendTinted(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r) + " " + (StrLen(remembers) > 0 ? remembers + " " : "")
+      CBPhoneSendUrgent(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r) + " " + (StrLen(remembers) > 0 ? remembers + " " : "")
                         + CBRivalCatchphrase(r), CBHudRed());
     }
     // And their people say who they are (Rivals/RivalLife.reds, 1.9.9).
@@ -1089,7 +1089,7 @@ public func CBRivalWarning(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
   // One voice per arrival (2.6.1): V's lookout saw them first; the Rival's own text otherwise. Both came in the same
   // second, saying the same thing.
   if !CBWatcherTipOff(sys, game, CBRivalDisplayName(content, r)) {
-    CBPhoneSendTinted(game, CBRivalDisplayName(content, r), line, CBHudRed());
+    CBPhoneSendUrgent(game, CBRivalDisplayName(content, r), line, CBHudRed());   // on V now (2.7.7)
   }
 }
 
@@ -1263,6 +1263,7 @@ func CBScoutCallIn(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
       CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-Hunt-OurScoutHasEyesOnYou", [s"\(CBCrewComingLine(sys, game, fs))"]));
     }
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout found you and called in the crew.");
+    CBVoiceNearest(sys, game, n"CB_Scout", 60.0, n"stlh_call", n"ScoutCalls", 30.0);   // heard calling it in (2.7.7)
     return;
   }
   CBCrewWarning(sys, game, faction);
@@ -1345,7 +1346,7 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
 // sweep leaves them to whatever they belong to, which clears them when it ends. Not the help (CB_Ally),
 // who fight beside V. One list, so a new kind joins every rule at once.
 public func CBStreetTags() -> array<CName> {
-  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event", n"CB_Ambush", n"CB_Hangout", n"CB_Debtor", n"CB_Witness", n"CB_Api", n"CB_Convoy"];
+  return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event", n"CB_Ambush", n"CB_Hangout", n"CB_Debtor", n"CB_Witness", n"CB_Api", n"CB_Convoy", n"CB_Mark"];
 }
 
 // Is anybody of ours still in the fight with V: close, or able to see V?

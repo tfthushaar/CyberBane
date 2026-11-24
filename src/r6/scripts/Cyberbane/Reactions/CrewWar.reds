@@ -211,7 +211,7 @@ public func CBGangWarPower(sys: ref<CyberbaneSystem>, game: GameInstance, gang: 
   if IsDefined(score) {
     p *= 1.0 - CBConfig.GangWarFearWeight() * ClampF(score.GetFactionFear(gang) / 100.0, 0.0, 1.0);
   }
-  return MaxF(p, 20.0);
+  return MaxF(p, 20.0) * CBCrewPaceWarFactor();   // how hard the crew has it (2.7.7)
 }
 
 // The chance a party of this weight against the gang's wins at all (a win or a decisive win): the nights swing the ratio
@@ -383,6 +383,12 @@ public func CBCrewWarPartyResolve(sys: ref<CyberbaneSystem>, game: GameInstance,
     return false;
   }
   let ours = CBCrewPartyWarPower(sys, game, ids, gang);
+  // V's second leading it, and V in it (2.7.7): each of theirs V put down while it was on.
+  if ArrayContains(ids, CBCrewSecondId(game)) {
+    ours *= 1.0 + CBConfig.CrewSecondWarBonus();
+  }
+  let vHelp = CBCrewWarVHelp(game, gang, false);
+  ours *= 1.0 + vHelp;
   let theirs = CBGangWarPower(sys, game, gang);
   let ratio = ours / theirs;
   let score = ratio * RandRangeF(CBConfig.WarSwingLow(), CBConfig.WarSwingHigh());
@@ -436,8 +442,9 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
       weakest.hurtUntil = now + 0.5 * CBConfig.CrewWarHurtHours() * CBConfig.SecondsPerHour();
       ArrayPush(hurtNames, weakest.id);
     }
-    // The spoils: what their corners held, the kitty's.
-    let spoils = RoundF(CBConfig.WarSpoilsPerMember() * Cast<Float>(n) * (decisive ? 1.0 : 0.6) * (0.5 + strengthBefore / 100.0));
+    // The spoils: what their corners held, the kitty's; more when V was out there with them (2.7.7).
+    let spoils = RoundF(CBConfig.WarSpoilsPerMember() * Cast<Float>(n) * (decisive ? 1.0 : 0.6) * (0.5 + strengthBefore / 100.0)
+                        * (1.0 + CBCrewWarVHelp(game, gang, false)));
     let jb = CBCrewJobBook.Get(game);
     if IsDefined(jb) && spoils > 0 {
       jb.AddKitty(spoils);
@@ -452,6 +459,19 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
     let stashes = CBWarSecretStashes(sys, game, where, decisive ? CBConfig.WarStashesDecisive() : CBConfig.WarStashesWon());
     if stashes > 0 && CBMessagesOn() {
       CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewWar-StashesMarked", [label, s"\(stashes)", place]));
+    }
+    // Who carried it, by name, and V's part when V fought on their streets (2.7.7).
+    let best: ref<CBCrewMember>;
+    for bm in party {
+      if !IsDefined(best) || CBCrewMemberWarPower(game, bm) > CBCrewMemberWarPower(game, best) {
+        best = bm;
+      }
+    }
+    if CBMessagesOn() && IsDefined(best) && n > 1 {
+      CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewWar-Carried", [CBCrewFirst(sys, best)]));
+    }
+    if CBMessagesOn() && CBCrewWarVHelp(game, gang, false) > 0.0 {
+      CBCrewText(sys, game, null, CBT(n"Cyberbane-CrewWar-YouWereThere"));
     }
     CBWarLooseTongue(sys, game, gang);
     if decisive {
@@ -504,6 +524,14 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
   if ArraySize(hurtNames) > 0 && CBMessagesOn() {
     CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewWar-Hurt", [CBCrewNamesList(sys, book, hurtNames), s"\(RoundF(CBConfig.CrewWarHurtHours()))"]));
   }
+  // In each of their stories, and the phone's short chirp for a call that went well or badly (2.7.7, it ends on its own).
+  // V's part in this war is spent.
+  for wm in party {
+    CBCrewLifeNote(game, wm.id, CBLifeWar(), gang, won ? 1 : 0);
+  }
+  CBUiSound(game, won ? n"ui_phone_incoming_call_positive" : n"ui_phone_incoming_call_negative", n"WarResult", 5.0);
+  CBCrewGroupReplies(sys, game, won ? 1 : 2, 0);   // the group chat talks it over
+  CBCrewWarVHelp(game, gang, true);
   // The fallen, last: taking them off the roster changes the book.
   let bb = CBCrewBannerBook.Get(game);
   for f in fallen {

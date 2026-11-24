@@ -10,9 +10,16 @@ enum ECBPreset {
   Default = 1,
   Dramatic = 2,
   Custom = 3,
-  Nemesis = 4,     // 2.4.6, [90]: Rivals first
+  BloodFeud = 4,   // 2.4.6, [90]: Rivals first (2.7.7: renamed)
   TurfWar = 5,     // gangs and districts first
   QuietLife = 6,   // the street and talk, hardly anybody hunting
+}
+
+// How hard the crew's life is (2.7.7): how fast they climb, how hard their wars are, how often a fall is a death.
+enum ECBCrewPace {
+  Easy = 0,
+  Standard = 1,
+  Hard = 2,
 }
 
 enum ECBPronouns {
@@ -70,7 +77,7 @@ enum ECBHomeGround {
 //
 // Off is silence, and it is here rather than only on the Toasts switch because this is the
 // setting a player looking to turn messages off actually opens. A player asked for it: they
-// liked the mechanics and did not want to be told their nemesis had climbed a rank or that
+// liked the mechanics and did not want to be told their Rival had climbed a rank or that
 // somebody was tracking them - they would rather be surprised. Off files nothing, draws nothing
 // and keeps Cyberbane out of the phone, and the gameplay is untouched: they still come, the
 // Hub still brokers peace, and the HUD line is its own setting (ECBHudLine) for anyone who
@@ -174,7 +181,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayValues.Default", "Cyberbane-Settings-Value-Preset-Default")
   @runtimeProperty("ModSettings.displayValues.Dramatic", "Cyberbane-Settings-Value-Preset-Dramatic")
   @runtimeProperty("ModSettings.displayValues.Custom", "Cyberbane-Settings-Value-Preset-Custom")
-  @runtimeProperty("ModSettings.displayValues.Nemesis", "Cyberbane-Settings-Value-Preset-Nemesis")
+  @runtimeProperty("ModSettings.displayValues.BloodFeud", "Cyberbane-Settings-Value-Preset-BloodFeud")
   @runtimeProperty("ModSettings.displayValues.TurfWar", "Cyberbane-Settings-Value-Preset-TurfWar")
   @runtimeProperty("ModSettings.displayValues.QuietLife", "Cyberbane-Settings-Value-Preset-QuietLife")
   public let preset: ECBPreset = ECBPreset.Default;
@@ -596,6 +603,25 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewCanDie-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
   public let crewCanDie: Bool = true;   // 2.6.3: the game's companion knock-down is where they die
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewPace")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewPace-Desc")
+  @runtimeProperty("ModSettings.displayValues.Easy", "Cyberbane-Settings-Value-CrewPace-Easy")
+  @runtimeProperty("ModSettings.displayValues.Standard", "Cyberbane-Settings-Value-CrewPace-Standard")
+  @runtimeProperty("ModSettings.displayValues.Hard", "Cyberbane-Settings-Value-CrewPace-Hard")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let crewPace: ECBCrewPace = ECBCrewPace.Standard;   // 2.7.7
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewWeaponInHand")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewWeaponInHand-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let crewWeaponInHand: Bool = false;   // 2.7.7, experimental
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -1216,6 +1242,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Favours-Desc")
   public let favours: Bool = true;
 
+  // Work for the corporations (2.7.7, Spawn/LivingStreet.reds): contracts offered to V.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
+  @runtimeProperty("ModSettings.category.order", "13")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CorpWork")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CorpWork-Desc")
+  public let corpWork: Bool = true;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
   @runtimeProperty("ModSettings.category.order", "13")
@@ -1582,6 +1616,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Voices")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Voices-Desc")
   public let voices: Bool = true;
+
+  // Sounds (2.7.7, UI/Sounds.reds): typing, pins, loot, the crew's promotions, the apex warning, horns.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
+  @runtimeProperty("ModSettings.category.order", "15")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Sounds")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Sounds-Desc")
+  public let sounds: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
@@ -2082,7 +2124,7 @@ public class CyberbaneSettings {
         // its 1.5 for good.
         this.gangLifeOften = 0.75;
         break;
-      case ECBPreset.Nemesis:
+      case ECBPreset.BloodFeud:
         this.civIntensity = 1.0;
         this.maxReactingCivilians = 6;
         this.moraleIntensity = 1.0;

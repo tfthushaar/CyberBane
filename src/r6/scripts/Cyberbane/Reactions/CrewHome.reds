@@ -290,6 +290,7 @@ public func CBSetUpGuard(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: 
     CBCrewApplyKit(sys, game, puppet, m);
   }
   CBCrewFriendlyToV(game, puppet);
+  CBWakeStep(puppet);   // a step at their post (2.7.7): nothing else asks anything of a guard until trouble comes
 }
 
 // Anybody of Cyberbane's in a fight near a post is the watch's fight too. Told to V once a visit.
@@ -579,6 +580,9 @@ public func CBCrewOfTalk(game: GameInstance, npc: wref<ScriptedPuppet>) -> ref<C
   if !IsDefined(m) && IsDefined(gb) {
     m = book.Find(gb.MemberOfBody(npc.GetEntityID()));
   }
+  if !IsDefined(m) {
+    m = book.Find(CBLoiterMemberOfBody(game, npc.GetEntityID()));   // on a corner (2.7.7)
+  }
   return m;
 }
 
@@ -599,6 +603,11 @@ public func CBCrewTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: re
     let w = CBTalkMakeLine(CBT(n"Cyberbane-CrewHome-AskHeardAnything"), CBTalkActCrewHeard(), t"ChoiceCaptionParts.BountyHuntIcon");
     w.said = CBTalkDid(t.npc, CBTalkActCrewHeard());
     ArrayPush(out, w);
+  }
+  // One of the others, and what they make of them (2.7.7, Reactions/TalkMore.reds).
+  let other = CBCrewOtherLine(sys, game, t, m);
+  if IsDefined(other) {
+    ArrayPush(out, other);
   }
   let d = CBTalkMakeLine(CBT(n"Cyberbane-CrewHome-DismissBackToIt"), CBTalkDismiss(), t"ChoiceCaptionParts.BackOutIcon");
   ArrayPush(out, d);

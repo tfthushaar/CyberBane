@@ -847,6 +847,86 @@ public abstract class CBConfig {
   // A fight the crew stood in counts as won once it has been over this many ticks (2.7.6, CBCrewBattleTick): long enough
   // that a lull is not a win, short enough that sending them home straight after still finds it counted.
   public static func MyCrewWonTicks() -> Int32 = 5
+  // Really in it (2.7.7, CBCrewBattleTick): somebody fighting V this close to one of them for this many ticks, unless one
+  // of them took or landed a hit or an enemy went down near them first.
+  public static func MyCrewEngageRadius() -> Float = 30.0
+  public static func MyCrewEngageTicks() -> Int32 = 4
+  // The crew's own lives (2.7.7, Reactions/CrewLife.reds). A member's story keeps its newest lines, the whole book a few
+  // hundred; kit texts sent within a few ticks of each other go as one.
+  public static func CrewStoryKept() -> Int32 = 12
+  public static func CrewStoryBookCap() -> Int32 = 240
+  public static func CrewStoryShown() -> Int32 = 7
+  public static func CrewGroupReplies() -> Int32 = 2
+  public static func CrewBatchTicks() -> Int32 = 3
+  public static func CrewSecondLoyalty() -> Int32 = 8
+  public static func CrewSecondWarBonus() -> Float = 0.15
+  // Asks: a chance a day while nothing is asked, how long V has, the gap after one, what a cut asks, and what it is worth.
+  public static func CrewAskChance() -> Float = 0.30
+  public static func CrewAskDays() -> Float = 2.0
+  public static func CrewAskGapDays() -> Float = 2.0
+  public static func CrewAskCutBase() -> Int32 = 400
+  public static func CrewAskCutPerRank() -> Int32 = 250
+  public static func CrewAskDoneLoyalty() -> Int32 = 10
+  public static func CrewAskIgnoredLoyalty() -> Int32 = 8
+  // A funeral the evening after, at this hour, open this many hours; what coming and missing it are worth to the rest.
+  public static func CrewFuneralHour() -> Int32 = 20
+  public static func CrewFuneralWindowHours() -> Float = 4.0
+  public static func CrewFuneralLoyalty() -> Int32 = 8
+  public static func CrewFuneralMissLoyalty() -> Int32 = 6
+  // A bed at the crew's home: time out hurt, by this much.
+  public static func CrewHomeHealFactor() -> Float = 0.5
+  // V in the war (2.7.7): each of the gang's people V puts down while the crew's war on them is on adds to the crew's side,
+  // up to a ceiling; the spoils grow with it.
+  // The street tax in person (2.7.7): how much a district's shops keep for V at most, how close V has to be to one of them,
+  // and how much more they pay when they fear V.
+  public static func CrewTaxOwedCap() -> Int32 = 6000
+  public static func CrewTaxShopRange() -> Float = 8.0
+  public static func CrewTaxFearBonus() -> Float = 0.75
+  // A counterattack on the crew's corners (2.7.7): told this many game hours ahead, open this long, their crew this many
+  // ticks behind V's arrival, and what holding or losing it does to the crew's hold there.
+  public static func CrewCounterAheadHours() -> Float = 3.0
+  public static func CrewCounterWindowHours() -> Float = 3.0
+  public static func CrewCounterArriveTicks() -> Int32 = 25
+  public static func CrewCounterHeldFoot() -> Float = 12.0
+  public static func CrewCounterLostFoot() -> Float = 10.0
+  // A Rival's timeline (2.7.7, Rivals/RivalTimeline.reds): how much the book keeps, how much a Rival's line shows.
+  public static func RivalTimelineCap() -> Int32 = 400
+  public static func RivalTimelineShown() -> Int32 = 6
+  // Calling cards: the chance one is left, how far away, how long it waits, how close V has to come, and what it holds.
+  public static func RivalCardChance() -> Float = 0.5
+  public static func RivalCardMin() -> Float = 150.0
+  public static func RivalCardMax() -> Float = 450.0
+  public static func RivalCardDays() -> Float = 2.0
+  public static func RivalCardFindRange() -> Float = 10.0
+  public static func RivalCardEddies() -> Int32 = 150
+  // A humiliated Rival turning, a day; a scarring Rival meeting the member on a job, and what it costs the odds.
+  public static func RivalTurnChance() -> Float = 0.2
+  public static func RivalHuntsCrewChance() -> Float = 0.35
+  public static func RivalHuntsCrewOdds() -> Float = 0.15
+  // What the street talks about (2.7.7, Reactions/TalkMore.reds): things V did in the last this many game hours.
+  public static func TalkNewsHours() -> Float = 48.0
+  // A meeting or gang business that runs late while V waits at the place (2.7.7), at most this many times.
+  public static func EventLateMax() -> Int32 = 2
+  // A friendly gang's people stay out of fights V did not start with them (2.7.7, CBSidesWithV), unless V hurt one of theirs
+  // this close.
+  public static func AllyHurtNearRange() -> Float = 30.0
+  public static func HangoutGreetDistance() -> Float = 8.0
+  // The crew on its corners (2.7.7, Reactions/CrewLoiter.reds): at most this many, this far from V, and this long between.
+  public static func CrewLoiterMax() -> Int32 = 2
+  public static func CrewLoiterDistance() -> Float = 24.0
+  public static func CrewLoiterGapHours() -> Float = 3.0
+  // Hunters who regroup (2.7.7, Spawn/Regroup.reds): at least this many down first, and more sent this many ticks later.
+  public static func RegroupMinDown() -> Int32 = 3
+  public static func RegroupReinforceTicks() -> Int32 = 45
+  // Sit-downs and crashed business (2.7.7, Model/GangBosses.reds): how close V has to have come to have been there, what
+  // speaking for a gang is worth, what the gang V helped thinks of it, the chance of a Rival, and the ground lost.
+  public static func SitDownPresentDistance() -> Float = 40.0
+  public static func SitDownSpokeWarmth() -> Float = 8.0
+  public static func EventHelpedWarmth() -> Float = 5.0
+  public static func EventRivalChance() -> Float = 0.3
+  public static func EventGroundLoss() -> Float = 6.0
+  public static func WarVKillWeight() -> Float = 0.08
+  public static func WarVKillCeiling() -> Float = 0.6
   public static func MyCrewDriveTicks() -> Int32 = 4
   public static func MyCrewLeaveDistance() -> Float = 120.0
   public static func MyCrewStayedDistance() -> Float = 35.0
@@ -1122,7 +1202,7 @@ public abstract class CBConfig {
   public static func LeaderMinRank() -> Int32 = 4
   public static func LieutenantMinRank() -> Int32 = 3
   // Both were far higher (2.0 and 1.4) and both stacked on top of the full apex-grade build,
-  // which is how a leader nemesis became the enemy players could not kill. They are a nudge
+  // which is how a leader Rival became the enemy players could not kill. They are a nudge
   // now, and CBApplyApexGradeBuff clamps the result anyway.
   public static func LeaderHealthMult() -> Float = 1.25
   public static func LieutenantHealthMult() -> Float = 1.1
@@ -1385,6 +1465,8 @@ public abstract class CBConfig {
   public static func HearsayRepeatHours() -> Float = 6.0
   // Stories waiting at once, and how many recently told ones are remembered for that window.
   public static func HearsayQueueCap() -> Int32 = 12
+  // The longest word waits in the queue, in real seconds (2.7.7, CBPhone.ReleaseWord): then it comes inside the inbox gap.
+  public static func HearsayMaxWaitReal() -> Float = 240.0
   public static func HearsayToldCap() -> Int32 = 32
   // The same contact sending the same words inside this many in-game hours is filed once.
   public static func PhoneDuplicateHours() -> Float = 1.0
@@ -1572,7 +1654,7 @@ public abstract class CBConfig {
   // first of four terms. A random trait could add another 42% to health or armour, the
   // Overclocked trait added ten power levels (and the game derives health, armour and damage
   // from power level, so that term multiplies everything again), and a Rival who was running a
-  // crew took a further 2x on top of all of it. A leader nemesis at the top of the ladder came
+  // crew took a further 2x on top of all of it. A leader Rival at the top of the ladder came
   // out near eleven times health behind three and a half times armour, several levels above
   // its own gang. That is the immortal enemy, and no single number in the file looked wrong.
   //
@@ -2115,8 +2197,10 @@ public abstract class CBConfig {
   public static func TextTypingMax() -> Float = 16.0
   public static func TextReactMin() -> Float = 8.0
   public static func TextReactMax() -> Float = 25.0
-  public static func TextUrgentMin() -> Float = 2.0
-  public static func TextUrgentMax() -> Float = 5.0
+  // Urgent (2.7.7): the crew answering a call, somebody on V right now, "they're here". They land on the next tick or
+  // two, never behind the gossip already queued: "On my way" came after the crew was already fighting.
+  public static func TextUrgentMin() -> Float = 0.3
+  public static func TextUrgentMax() -> Float = 1.2
   public static func TextGapMin() -> Float = 3.0
   public static func TextGapMax() -> Float = 7.0
   // How far from V the people of the gang V is talking to hold their fire while the talking lasts (2.6.7,
@@ -2181,6 +2265,13 @@ public abstract class CBConfig {
   public static func BagmanGapTicks() -> Int32 = 1200
   // A roll about every twenty minutes of free roaming. At 0.35 a bagman came about once an hour of play.
   public static func BagmanChance() -> Float = 0.5
+  // How close V has to be, gun out or running, for a bagman to see V coming and bolt (2.7.7).
+  public static func BagmanSpotDistance() -> Float = 14.0
+  // Street life by the hour and the weather (2.7.7, CBStreetLifeMood), and hangouts by who holds the streets.
+  public static func StreetNightMult() -> Float = 1.35
+  public static func StreetRainMult() -> Float = 0.55
+  public static func HeldDistrictHangoutMult() -> Float = 1.5
+  public static func LostDistrictHangoutMult() -> Float = 0.6
   public static func BagmanLifeTicks() -> Int32 = 300
   public static func BagmanTakeBase() -> Int32 = 600
   public static func BagmanGangLoss() -> Float = 3.0
@@ -2188,6 +2279,18 @@ public abstract class CBConfig {
   public static func FavourDistance() -> Float = 55.0
   public static func FavourLifeTicks() -> Int32 = 600
   public static func FavourPay() -> Int32 = 700
+  // Corporate contracts (2.7.7, Spawn/LivingStreet.reds): looked at every five minutes or so, offered on 40% of those while
+  // no job is open, a corporation resting 8 game hours after it offers. Open for an hour. 2500-3750eb, 8 standing (two make
+  // a corporation friendly from nothing, about seven allied), 4 off the mark's own people.
+  public static func CorpContractEveryTicks() -> Int32 = 300
+  public static func CorpContractChance() -> Float = 0.4
+  public static func CorpContractLifeTicks() -> Int32 = 3600
+  public static func CorpContractPay() -> Int32 = 2500
+  public static func CorpContractStanding() -> Float = 8.0
+  public static func CorpContractMarkSlight() -> Float = 4.0
+  public static func CorpContractGuards() -> Int32 = 2
+  public static func CorpContractRenown() -> Float = 6.0
+  public static func CorpContractRestHours() -> Float = 8.0
   public static func FavourWarmth() -> Float = 2.0
   public static func FavourTipChance() -> Float = 0.35
   // Who has work, and where the debt is (2.6.4, Spawn/LivingStreet.reds): the share of a friendly gang's people with a

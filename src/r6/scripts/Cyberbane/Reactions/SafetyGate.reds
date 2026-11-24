@@ -71,7 +71,7 @@ public abstract class CBSafetyGate {
     // were taken for anybody V had put down, and could come back as a Rival (2.5.0).
     let desGate = GameInstance.GetDynamicEntitySystem();
     if IsDefined(desGate) && (desGate.IsTagged(puppet.GetEntityID(), n"CB_Own") || desGate.IsTagged(puppet.GetEntityID(), n"CB_Follower")
-                              || desGate.IsTagged(puppet.GetEntityID(), n"CB_Guard")) {
+                              || desGate.IsTagged(puppet.GetEntityID(), n"CB_Guard") || desGate.IsTagged(puppet.GetEntityID(), n"CB_Loiter")) {
       return false;
     }
     if puppet.IsVendor() {

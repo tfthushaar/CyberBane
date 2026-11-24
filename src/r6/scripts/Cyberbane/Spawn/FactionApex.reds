@@ -557,7 +557,7 @@ func CBAddFlat(stats: ref<StatsSystem>, id: StatsObjectID, stat: gamedataStatTyp
 
 // Where on the ladder is this Rival?
 //
-// The nemesis part of the nemesis system. A Rival starts dangerous and gets worse every time
+// The heart of the Rivals. A Rival starts dangerous and gets worse every time
 // they get away from you or you let them live, which is the deal the mechanic offers: mercy
 // and failure both have a price, and the price is the person you will meet next time.
 //
@@ -583,7 +583,7 @@ public func CBRivalGrade(r: ref<CBRival>) -> Float {
 // Build a Rival to their place on the ladder.
 //
 // `role` is CBRoleLeader, CBRoleLieutenant or CBRoleNone. It used to be a second buff applied
-// from its own function straight after this one, which is how a leader nemesis ended up with
+// from its own function straight after this one, which is how a leader Rival ended up with
 // twice the health of a build that was already at the ceiling. It is one term of one
 // calculation now.
 public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
@@ -716,17 +716,11 @@ public func CBApexArrivalSound(game: GameInstance) -> Void {
   if !IsDefined(player) {
     return;
   }
-  // Played on the player, with no emitter.
-  //
-  // This was AudioSystem.Play with nothing but the event name, and the game never plays this
-  // one that way. psychoSquadAVSystem.script:112 is
-  // `GameObject.PlaySound( evt.av, 'av_maxtac_descent_horn', 'vehicle_general_emitter' )`: an
-  // event authored against a vehicle's emitter. Asking for it with no entity and no emitter is
-  // how you get silence, with nothing in any log to say the call did nothing. Playing it on the
-  // player is the pattern the game uses everywhere it wants something heard regardless of where
-  // it came from, and that is what this wants - the squad is seventy metres out and not in
-  // sight yet when the horn goes.
-  GameObject.PlaySound(player, n"av_maxtac_descent_horn");
+  // 2.7.7: never heard in play. The horn is authored against a MaxTac AV's own emitter (the game plays it only on the AV,
+  // psychoSquadAVSystem.script:112), and played on V with no AV in the world it was silent, on V's entity or with no entity
+  // at all. The game's own sting for being marked for MaxTac plays from anywhere (preventionSystem.script, the same
+  // audio-system call), and the squad's car sounds its own horn as it pulls up (Spawn/Arrival.reds).
+  CBApexWarningSound(game);
 }
 
 // ---- Four, every time ----------------------------------------------------------------

@@ -1052,9 +1052,9 @@ func CBPhoneRivalReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: ref
   }
   if row == CBPhoneRowNamePlace() {
     store.Reply(game, thread, CBT(n"Cyberbane-RealPhone-YouWantMePickAPlace"));
-    if !CBSendWord(sys, game, r, false) {
-      CBPhoneSendTinted(game, name, CBT(n"Cyberbane-RealPhone-NotAroundHereILlFind"), CBHudRed());
-    }
+    // The place is looked for back in the game, on the next settled tick (2.7.7), the way the Hub's call-out is: with the
+    // phone open the game reads the world as not ready, and the search came back "Not around here" more than it should.
+    sys.RequestSendWord(r.id, true);
     return;
   }
   // A taunt, with what V knows of them in it.

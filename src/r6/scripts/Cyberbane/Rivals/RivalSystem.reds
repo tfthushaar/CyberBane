@@ -1376,6 +1376,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   rival.state = EnumInt(ECBRivalState.Slain);
   rival.lastSeenAt = at;
   CBApiRivalEvent(rival, n"Slain");
+  CBCrewLifeRivalDied(game, rival.id);   // revenge one of V's crew asked for (Reactions/CrewLife.reds, 2.7.7)
 
   if byV {
     let stats = sys.GetStats();
@@ -1410,7 +1411,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
     return;
   }
 
-  // Succession (Nemesis-inspired): a crew does not simply lose its best and move on.
+  // Succession: a crew does not simply lose its best and move on.
   // Someone steps into the dead Rival's place carrying the same grudge, and the higher the
   // one you put down, the likelier that is - so a faction cannot be decapitated in one
   // fight. The successor inherits the slain one's standing, one rung down, rather than
@@ -1423,7 +1424,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
     + Cast<Float>(rival.rank) * CBConfig.SuccessionChancePerRank();
   if CBRivalRoll(sys, "succession", succeedChance, rival.recordID, false, rival.faction) {
     // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1, which is
-    // what made every nemesis you killed a clean reset. Made once the fight is over, with the street
+    // what made every Rival you killed a clean reset. Made once the fight is over, with the street
     // saying who picked up where they left off (Rivals/Births.reds, 1.9.1).
     // Sometimes the one who picks it up is family (Rivals/RivalLife.reds, 1.9.9).
     let kin = RandF() < ClampF(CBConfig.KinChance() * CBCodeKin(rival.faction), 0.0, 0.9) ? rival.id : 0;
@@ -1436,7 +1437,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   CBEvaluateTitles(sys, game);
 }
 
-// Autonomous rival progression (Nemesis-inspired): Rivals V has ignored for a
+// Autonomous rival progression: Rivals V has ignored for a
 // while climb the ranks on their own, at most one promotion per in-game day
 // (spec §10.1). The underworld moves even when V isn't looking.
 public func CBRivalProgressionTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {

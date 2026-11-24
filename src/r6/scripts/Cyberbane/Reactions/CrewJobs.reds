@@ -396,6 +396,10 @@ public func CBCrewJobsTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: 
       let gang = jb.GangAt(i);
       let odds = jb.OddsAt(i);
       jb.RemoveAt(i);
+      // A Rival who put them on the ground before may be waiting (Rivals/RivalTimeline.reds, 2.7.7).
+      if IsDefined(m) {
+        odds = CBRivalHuntsCrewOnJob(sys, game, m, odds);
+      }
       if IsDefined(m) {
         if kind == CBCrewJobHit() {
           CBCrewHitResolve(sys, game, book, m, rival, odds, now);
@@ -646,7 +650,7 @@ func CBKittyPaysCut(sys: ref<CyberbaneSystem>, game: GameInstance, jb: ref<CBCre
   while i < book.Count() {
     let m = book.At(i);
     i += 1;
-    CBCrewLoyalty(m, m.kind == CBCrewPaid() ? CBConfig.MyCrewFairCutPaid() : CBConfig.MyCrewFairCut(), CBCrewWhyNone());
+    CBCrewLoyalty(m, m.kind == CBCrewPaid() ? CBConfig.MyCrewFairCutPaid() : CBConfig.MyCrewFairCut(), CBCrewWhyPaid());
   }
   if CBMessagesOn() {
     CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewJobs-KittyPaidTheCut", [s"\(owed)"]));
