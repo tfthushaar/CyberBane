@@ -266,6 +266,14 @@ public func CBPointHiddenFrom(game: GameInstance, ppos: Vector4, fwd: Vector4, a
   return facing <= CBConfig.SpawnMaxFacingCosine();
 }
 
+// Free of anybody this group has put down, and of anybody any other group put down in the last few seconds (2.7.6).
+//
+// "Sometimes they spawn and look like one person but in fact they are 2-3 in the same space, and seem frozen." Only this
+// group's own points were known here, and the people who arrive together are placed by separate calls: a Rival, then their
+// escorts at four metres further out, then a partner; a crew, then its netrunner. Each asked the navmesh the same question
+// from the same spot and was handed the same first answer, so they were created inside each other, where the engine stacks
+// them and none of them can walk: frozen until somebody's alarm pulled them into a fight. Every body made is remembered for
+// a few seconds (CBCreateSpawn), which is as long as it takes them to walk off it.
 func CBPointIsFree(used: array<Vector4>, p: Vector4) -> Bool {
   let i = 0;
   while i < ArraySize(used) {
@@ -274,7 +282,39 @@ func CBPointIsFree(used: array<Vector4>, p: Vector4) -> Bool {
     }
     i += 1;
   }
-  return true;
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.SpawnPointTaken(p, CBSimNow(GetGameInstance()), CBConfig.SpawnMinSeparation());
+}
+
+// The engine's own clock in seconds, which runs on through menus and starts again with a session.
+public func CBSimNow(game: GameInstance) -> Float {
+  let ts = GameInstance.GetTimeSystem(game);
+  return IsDefined(ts) ? EngineTime.ToFloat(ts.GetSimTime()) : 0.0;
+}
+
+// May somebody arriving be put here, as far as V's eyes go (2.7.6)?
+//
+// "Rivals sometimes just appear behind V, during fights and even stealth." "I retreat down an alley, turn to look back,
+// and the alley that was empty now has an enemy spawned out of nowhere directly behind me." "Entered an elevator in H10
+// and two Tygers spawn out of thin air behind me." Everybody sent against V was asked one question: is the spot behind V
+// (CBPointOutOfSight), however close and with nothing in between. Behind V is where V turns next. And when the navmesh
+// had nothing in range (a tight interior, an elevator) its fallback points came with no distance at all.
+//
+// So: V's own side (a crew member, people lent to V) keep the old test; they run up to V. Everybody else is never closer
+// than SpawnMinDistance, and is hidden from V by something solid at the shins, the waist and the head, or far off and out
+// of frame (CBPointHiddenFrom), the test the people who wait for V have always had. Every body of a group asks it: the
+// rest of a crew form up within eighteen metres of the first, which can be round the corner and out in the open.
+func CBArrivalUnseen(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector4, side: Bool, inSightOk: Bool) -> Bool {
+  if inSightOk {
+    return true;
+  }
+  if side {
+    return CBPointOutOfSight(game, ppos, fwd, at);
+  }
+  if Vector4.Distance(ppos, at) < CBConfig.SpawnMinDistance() {
+    return false;
+  }
+  return CBPointHiddenFrom(game, ppos, fwd, at);
 }
 
 // Stand a candidate navmesh point on the floor under it, or refuse it.
@@ -475,6 +515,7 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && EntityID.IsDefined(created) {
     rt.lastSpawnAt = pos;
+    rt.NoteSpawnPoint(pos, CBSimNow(GetGameInstance()));   // nobody else is put here for a few seconds (CBPointIsFree)
   }
   return EntityID.IsDefined(created);
 }
@@ -695,11 +736,10 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       // as a squad, and every one of them has to be joined to the group (CBPointArrivable).
       let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at)
                && !CBSafeAreaBlocksSpawn(game, at, side);
-      // Nobody appears where the player is looking. Only the first body of a group is tested:
-      // the rest form up within SpawnGroupRadius of it, so if the lead is out of frame so are
-      // they, and a squad that arrives together is the point of forming up at all.
-      if ok && ArraySize(used) == 0 {
-        ok = inSightOk || CBPointOutOfSight(game, ppos, fwd, at);
+      // Nobody appears where the player is looking (CBArrivalUnseen). V's own side asks it of the first body only, and the
+      // rest form up within SpawnGroupRadius; everybody else asks it of every body (2.7.6).
+      if ok && (ArraySize(used) == 0 || !side) {
+        ok = CBArrivalUnseen(game, ppos, fwd, at, side, inSightOk);
       }
       if ok && ArraySize(used) > 0 {
         ok = Vector4.Distance(at, used[0]) <= CBConfig.SpawnGroupRadius();
@@ -745,7 +785,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let standing: Vector4;
       if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
          && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing, side)
-         && (ArraySize(used) > 0 || inSightOk || CBPointOutOfSight(game, ppos, fwd, standing))
+         && ((side && ArraySize(used) > 0) || CBArrivalUnseen(game, ppos, fwd, standing, side, inSightOk))
          && CBPointArrivable(game, standing, used, ppos, openAir) {
         if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned, extraTag) {
           spawned += 1;
@@ -787,7 +827,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
           // in V's sight or with no way to V is the wrong point, not a refusal, so the next bearing is tried. Before,
           // the first such point ended the lane under "the game refused the spawn", which in Dogtown's tight streets
           // was most of them.
-          if ArraySize(used) == 0 && !inSightOk && !CBPointOutOfSight(game, ppos, fwd, stand) {
+          if (ArraySize(used) == 0 || !side) && !CBArrivalUnseen(game, ppos, fwd, stand, side, inSightOk) {
             CBNoteSpawnBlock(CBBlockInView());
           } else {
             if !CBPointIsFree(used, stand) || !CBPointArrivable(game, stand, used, ppos, openAir) {
@@ -836,7 +876,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         // to V and joined to V, and a street under a walkway should not be able to stop an arrival
         // outright: a gate that refuses everywhere is how this mod has gone silent before.
         if !CBSafeAreaBlocksSpawn(game, fallback, side)
-           && (inSightOk || CBPointOutOfSight(game, ppos, fwd, fallback))
+           && CBArrivalUnseen(game, ppos, fwd, fallback, side, inSightOk)
            && CBPointIsFree(used, fallback)
            && CBPointArrivable(game, fallback, used, ppos, false)
            && CBCreateSpawn(des, record, appearance, fallback, orient, squadTag, lastSpawned, extraTag) {
@@ -977,8 +1017,13 @@ public func CBUnmountOnce(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Vo
     return;
   }
   puppet.cbUnmountSent = true;
+  puppet.cbUnmountAt = CBSimNow(game);   // a seat still taken a few seconds on is lifted out (CBUnmountStuck, 2.7.6)
   CBAskOutOfCar(puppet);
 }
+
+// When this one was first asked out of a car, in engine seconds (2.7.6).
+@addField(ScriptedPuppet)
+public let cbUnmountAt: Float;
 
 // Again, for somebody already asked who is still sitting there. Only those: the slot tags stay on
 // people for good, and somebody who has never been asked is in a different car, and may be moving.
@@ -1078,6 +1123,12 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
     if IsDefined(p) {
       if VehicleComponent.IsMountedToVehicle(game, id) {
         CBUnmountOnce(game, p);
+        CBUnmountStuck(game, p);   // still sitting there after being asked: lifted out once the car stands still (2.7.6)
+        return false;
+      }
+      // Lying there, dead or down and breathing, where V can still come back to them (2.7.6): not now, whoever asked. They
+      // wait as an orphan and go once V has left them behind (CBSweepOrphans asks this again).
+      if CBIsDown(p) && CBRemainsInReach(game, p.GetWorldPosition()) {
         return false;
       }
       CBUntrackOnMap(game, p);
@@ -1113,11 +1164,37 @@ public func CBSweepOrphans(game: GameInstance) -> Void {
   let i = 0;
   while i < ArraySize(ids) {
     let ent = GameInstance.FindEntityByID(game, ids[i]);
-    if !IsDefined(ent) || CBOutOfView(game, ent.GetWorldPosition()) {
-      CBRemoveOne(game, des, ids[i], crewSeated);
+    let seated = ent as ScriptedPuppet;
+    if IsDefined(seated) && VehicleComponent.IsMountedToVehicle(game, ids[i]) {
+      // Out of the car first, seen or not (2.7.6): getting out is nothing to hide, and one sitting beside V in V's car
+      // was never out of view, so they were never even asked again and sat there for good.
+      CBUnmountOnce(game, seated);
+      CBUnmountStuck(game, seated);
+    } else {
+      if !IsDefined(ent) || CBOutOfView(game, ent.GetWorldPosition()) {
+        CBRemoveOne(game, des, ids[i], crewSeated);
+      }
     }
     i += 1;
   }
+}
+
+// Is somebody lying at `at` still V's to come back to (2.7.6)? Within RemainsSweepDistance of V, or, while V is still in a
+// fight, within RemainsFightDistance; whether V can see the spot or not.
+//
+// "When I kill an enemy and finish the rest of the battle, sometimes they despawn before I get a chance to finish them
+// off." Every removal of somebody down asked only whether V could see them (CBOutOfView), and in a fight V is always
+// turning: whoever lay behind V while V shot at somebody else was taken, two metres away. A downed Rival's encounter
+// closing, a crew given up on, an event over, a runner's mates: each removed whoever wore the tag, down or not, the moment
+// V looked away. The dead had the right rule all along (CBSweepRemains: far and out of view); now everybody lying there
+// has it, in the one place every removal passes (CBRemoveOne).
+public func CBRemainsInReach(game: GameInstance, at: Vector4) -> Bool {
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return false;
+  }
+  let d = Vector4.Distance(player.GetWorldPosition(), at);
+  return d <= CBConfig.RemainsSweepDistance() || (player.IsInCombat() && d <= CBConfig.RemainsFightDistance());
 }
 
 // Could V see something vanish here? Out of view means behind V, round the side, blocked by a
@@ -1848,7 +1925,7 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     i += 1;
     let ent = GameInstance.FindEntityByID(game, id);
     let far = !IsDefined(ent)
-              || Vector4.Distance(ent.GetWorldPosition(), ppos) > reach && CBOutOfView(game, ent.GetWorldPosition());
+              || !CBRemainsInReach(game, ent.GetWorldPosition()) && CBOutOfView(game, ent.GetWorldPosition());
     if far && !des.IsSpawning(id) && !VehicleComponent.IsMountedToVehicle(game, id) {
       let p = ent as ScriptedPuppet;
       if IsDefined(p) {
@@ -1906,7 +1983,7 @@ func CBSweepDownedTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dy
     let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
     if IsDefined(p) && CBNpcSafe(sys, p) && !p.IsDead() && !CBStillStanding(p) {
       let at = p.GetWorldPosition();
-      if Vector4.Distance(at, ppos) > reach && CBOutOfView(game, at) {
+      if !CBRemainsInReach(game, at) && CBOutOfView(game, at) {
         CBRemoveOne(game, des, id, false, true);
       }
     }

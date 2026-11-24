@@ -54,7 +54,7 @@ public func CBHunterName(seed: Int32) -> String {
 public func CBHunterHandle(seed: Int32) -> String {
   let handles = ["the Hound", "Long Arm", "Bird Dog", "Lockjaw", "Steel Trap", "Crosshair", "Packwolf", "Manhunter",
                  "Sure Shot", "Homing", "the Collector", "Repo", "Night Owl", "Snare", "Gunsight", "Leash", "Headhunter"];
-  return handles[CBHashIndex(seed, 7, ArraySize(handles))];
+  return CBEpithetText(handles[CBHashIndex(seed, 7, ArraySize(handles))]);   // translated as every epithet is (2.7.6)
 }
 
 // What they fight with: 0 a gunslinger, 1 a blade, 2 a heavy, 3 a netrunner, 4 a sniper.

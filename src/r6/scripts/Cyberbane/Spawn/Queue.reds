@@ -721,6 +721,14 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       CBRivalWarning(sys, game, r);
       return;
     }
+    // Due, and V is already in a fight: they wait it out and come when it is over (2.7.6), the way a crew's arrival always
+    // has (Spawn/HitSquad.reds). A Rival arriving was the one thing sent into the middle of whatever V was fighting, from
+    // behind, with nobody announcing it again ("rivals just appear behind V during fights"). The lane holds them at zero; the
+    // Hub says why (CBHoldInCombat, Spawn/RivalEncounter.reds).
+    let pr = GetPlayer(game);
+    if IsDefined(r) && IsDefined(pr) && pr.IsInCombat() {
+      return;
+    }
     sys.SetRivalWarned(0);
     if !IsDefined(r) || !CBSpawnRival(sys, game, r, now) {
       // Could not be placed. Put this one on their own cooldown and let the lane go.

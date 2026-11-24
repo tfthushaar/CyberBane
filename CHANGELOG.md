@@ -3,6 +3,96 @@
 What changed in each version, newest first. Your Cyberbane progress carries over from one version to
 the next unless a version says otherwise.
 
+## 2.7.6 (24 November 2026)
+
+**New: works with Fenix Rebirth**
+- With Fenix Rebirth installed, being brought back counts as dying. Whoever killed you becomes a Rival, or climbs the
+  ladder if they already were one, their gang texts you about it, and the death is on your record.
+- The fight you went down in ends where you fell. It's no longer counted as you running from it later (no "Ran, did
+  you?", no Rivals promoted for being shaken off, no standing lost for running).
+- Detected automatically; nothing to set. Cyberbane reads Fenix without depending on it, so either can be updated or
+  removed on its own.
+
+**New: crew wars you plan**
+- **Go to war** on the crew's own page (**War, money, name, the fallen**), or **Send them to start a war** in one
+  member's orders. Pick the gang, then pick who goes: up to six, led by a Lieutenant or better. The Hub tells you the
+  odds before you commit, and it's decided by the strength of both sides, not a coin toss.
+- The crew's group chat reports in while they're out, and the outcome ranges from a rout to a decisive win.
+- Winning pays. The gang bleeds, the kitty gets their money, and their war chest goes on your map: walk up to it and
+  the loot is there. Some of the district's own hidden stashes go on your map too, and the street starts talking.
+- Losing hurts. Everyone comes home injured if they come home, and a rout can cost you your weakest.
+
+**New: your crew takes streets**
+- Your crew now counts for something on the street, shown on the crew's page. The bigger and better it gets, the more
+  seriously people take you everywhere.
+- Win enough wars and your crew takes the district on the turf map, in your crew's colours. The street treats you
+  differently there, and the kitty takes a cut of it.
+- The gang that lost it comes back for it, and your crew tells you when they hit your corners.
+- Settings: **Your crew takes streets** (on by default) under Your crew.
+
+**New: Chippin' In**
+- When a gang's apex squad comes for you, one of your crew who's home or working may be listening. Take a blow that
+  would kill you and they may drop what they're doing to get you back up and fight beside you.
+- Chippin' In stays out of the way when Fenix Rebirth is installed.
+- Settings: **Chippin' In** (the chance, 0 turns it off) under Your crew.
+
+**New: your crew, one at a time**
+- Pick one of your crew on the Hub and the first button is theirs: **Need you. Now.** calls just them (they join
+  whoever's already out), and while they're with you it sends just them home (the rest stay). **Call your crew** calls
+  everybody who can come, the same as the crew key. Their own phone thread has the same two: **Need you. Come to me.**
+  and **Head home. I've got this.**
+- **Rename them**: the name you know them by is the one their texts come under, the one the crew page shows and the
+  one on the wall if they fall. Empty gives them back their own.
+- Each member texts in their own thread about themselves. The crew's group chat, under your crew's name, carries what
+  concerns all of you: calls, wars, the cut, the kitty, the fallen.
+
+**Better: the Hub is easier to use**
+- On the Crew page the buttons follow who you picked: theirs first, then their orders, then the whole crew, then the
+  crew's own page.
+- The crew's own page is **War, money, name, the fallen**, and it opens with what it's for: **Go to war**, then paying
+  the cut, the kitty and any challenge, then the name, the colours and the memorial. Paying the cut moved there from the
+  roster; the roster says when it's owed.
+- One way to start a war: a member's **Send them to start a war** opens the same two screens as **Go to war**, with
+  them already in the party. **Back** goes back one screen.
+- If one of your crew can't come, the Hub says why in plain words.
+- A Rival's buttons: **Call them out** (it was **Send word**, now named like its setting) sits beside finding them, and
+  the two Forgets are together at the bottom.
+- History: **Tell my story** is the first button and **Start over** the last, below **Undo the last Start over**. The
+  one that erases everything used to be the first and brightest button on the page.
+
+**Fixed: enemies appearing out of thin air behind you**
+- Nobody sent after you turns up right behind you any more, in the alley you just ran down or in an elevator with you.
+- A Rival no longer walks into the middle of a fight you're already in.
+
+**Fixed: Rivals standing frozen, several in one spot**
+- A Rival and their escorts no longer turn up stuck inside each other, frozen until someone else's alarm woke them.
+
+**Fixed: downed enemies vanishing before you could finish them**
+- Anyone you put down, dead or still breathing, no longer vanishes while you're still around to finish them.
+- A downed Rival is no longer counted as spared while you're still fighting their people.
+
+**Fixed: your crew in your car**
+- Two of your crew could sit in the same seat, clipping into each other, and one could stay in the car forever, still
+  "with you" after you sent them home. Each now takes a seat of their own, the front one stays free (for Johnny, with
+  The Passenger), and they get out when you send them home.
+- A guard taken off the house watch no longer disappears in front of you.
+
+**Better: what people say**
+- More of what you hear most: the street's everyday whispers, a stranger saying hello, and one more line for every
+  district.
+
+**For translators**
+- Every Rival nickname is translatable now (`DefineEpithets`); a translation only changes what players read, so it
+  renames nobody in a save. A few greetings that were written into the code are keys now too.
+- New sections: `DefineCrewWar` (wars, the crew's streets, and the new whispers) and `DefineEpithets`. New lines in
+  `DefineHud3`, `DefineCrew`, `DefineStreetTalk`, `DefineTalkTopics`, `DefineRivalMoments` and `DefineSettings`.
+- Changed English: the Rival buttons `Cyberbane-Hud-SendWord`, `-SendingWord` and `-WordSent` (now "Call them out",
+  "Calling them out", "Called out"), and the crew page's button name in `Cyberbane-Settings-CrewCallKey-Desc`,
+  `Cyberbane-Settings-CrewDuels-Desc` and `Cyberbane-CrewJobs-ChallengeWhere`. Lines no longer used:
+  `Cyberbane-Hud-SendThemHome`, `-NameColoursTheFallen`, `-PickAGangForToStart` and `-YourCrew`.
+
+Your progress carries over.
+
 ## 2.7.5 (23 November 2026)
 
 **New: works with Much Better Contracts (Repeatable Gigs)**

@@ -27,6 +27,11 @@
 // Read from the faction's profile since 2.7.4 (Data/FactionProfiles.reds: the law's two are the ones that do not); an id
 // with no profile (the game's Police) answers by name as it always did.
 public func CBFactionFieldsSquads(faction: CName) -> Bool {
+  // V's crew holding a district (Model/CrewTurf.reds, 2.7.6) is no gang that fields people: nothing that sends a district
+  // holder's people (a bagman, a patrol, a street clash, an event) may ask for the crew's.
+  if CBIsCrewTurf(faction) {
+    return false;
+  }
   let content = CyberbaneContent.Get();
   let p = IsDefined(content) && NotEquals(faction, n"") ? content.GetFaction(faction) : null;
   if IsDefined(p) {

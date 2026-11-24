@@ -122,6 +122,7 @@ public class CBCrewKitBook extends ScriptableSystem {
   public let deferTexts: Bool;
   public let laterWho: array<Int32>;
   public let laterLines: array<String>;
+  public let laterGroup: array<Bool>;   // for the crew's group chat rather than their own thread (2.7.6)
 
   public static func Get(game: GameInstance) -> ref<CBCrewKitBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -1004,11 +1005,13 @@ public func CBCrewKitService(sys: ref<CyberbaneSystem>, game: GameInstance, book
   let t = 0;
   while t < ArraySize(kb.laterLines) {
     let who = t < ArraySize(kb.laterWho) ? book.Find(kb.laterWho[t]) : null;
-    CBCrewText(sys, game, who, kb.laterLines[t]);
+    let toGroup = t < ArraySize(kb.laterGroup) && kb.laterGroup[t];
+    CBCrewText(sys, game, who, kb.laterLines[t], toGroup);
     t += 1;
   }
   ArrayClear(kb.laterWho);
   ArrayClear(kb.laterLines);
+  ArrayClear(kb.laterGroup);
   // Every order still waiting, in the order asked: a spar, and anything the Hub could not carry out itself.
   let asks: array<ref<CBCrewKitAsk>>;
   for queued in kb.asks {
@@ -1019,6 +1022,7 @@ public func CBCrewKitService(sys: ref<CyberbaneSystem>, game: GameInstance, book
     CBCrewKitCarryOut(sys, game, kb, book, a, now);
   }
   CBCrewKitReturns(sys, game, kb, book, now);
+  CBCrewWarTick(sys, game);   // how the crew's wars are going, in its group chat (Reactions/CrewWar.reds, 2.7.6)
   CBCrewSparTick(sys, game, kb, book, now);
   CBCrewEarnTick(sys, game, kb, book, now);
   CBCrewJobsTick(sys, game, book, now);   // jobs, the kitty, challenges and goods (Reactions/CrewJobs.reds, 2.7.2)
@@ -1040,7 +1044,12 @@ func CBCrewKitCarryOut(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CB
   if a.what == CBCrewAskGive() { CBCrewGiveWeapon(sys, game, kb, m, a.item); }
   if a.what == CBCrewAskChrome() { CBCrewInstallChrome(sys, game, kb, m, a.item); }
   if a.what == CBCrewAskTrain() { CBCrewSendTraining(sys, game, kb, m, now); }
-  if a.what == CBCrewAskWar() { CBCrewSendToWar(sys, game, kb, m, a.gang, now); }
+  if a.what == CBCrewAskWar() {
+    // A war party of one (2.7.6, Reactions/CrewWar.reds): the Hub's war screen sends whole parties itself.
+    let one: array<Int32>;
+    ArrayPush(one, m.id);
+    CBCrewSendWarParty(sys, game, a.gang, one);
+  }
   if a.what == CBCrewAskSpar() { CBCrewSparStart(sys, game, kb, m, now); }
   if a.what == CBCrewAskWork() { CBCrewSetWork(sys, game, m); }   // earning, recruiting, or none (CrewBanner.reds)
   // A job (2.7.2): a Rival's hit, or a gang's bag; and the answer to a challenge.
@@ -1492,17 +1501,6 @@ func CBCrewSendTraining(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<C
   CBLog.Info(n"Crew", s"One of the crew went to train (level \(k.trained + 1), \(cost)eb).");
 }
 
-func CBCrewSendToWar(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, m: ref<CBCrewMember>, gang: CName, now: Float) -> Void {
-  if Equals(gang, n"") || CBCrewRankOf(game, m) < CBConfig.CrewWarMinRank() || CBCrewHurt(m, now) {
-    return;
-  }
-  let k = kb.Kit(m.id);
-  k.warOn = gang;
-  k.warUntil = now + CBConfig.CrewWarHours() * CBConfig.SecondsPerHour();
-  CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-ConsiderItStartedYouWonT", [s"\(CBCapFirst(CBFactionLabel(gang)))"]));
-  CBLog.Info(n"Crew", s"One of the crew went to start a war on \(NameToString(gang)).");
-}
-
 // Back from training or from a war, once their time is up.
 func CBCrewKitReturns(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, book: ref<CBCrewBook>, now: Float) -> Void {
   let i = 0;
@@ -1517,11 +1515,10 @@ func CBCrewKitReturns(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
       CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-BackNowBetterGearAndThey", [s"\(CBCrewRankWord(CBCrewRankOf(game, m)))"]));
       CBLog.Info(n"Crew", "One of the crew is back from training.");
     }
+    // A war's end, for everybody who went with them (2.7.6, Reactions/CrewWar.reds): a war party is everybody sent on the
+    // same gang with the same end, and a war from before 2.7.6 is a party of one.
     if IsDefined(k) && k.warUntil > 0.0 && now >= k.warUntil {
-      let gang = k.warOn;
-      k.warUntil = 0.0;
-      k.warOn = n"";
-      if CBCrewWarResolve(sys, game, kb, book, m, k, gang, now) {
+      if CBCrewWarPartyResolve(sys, game, kb, book, k.warOn, k.warUntil, now) {
         return;   // the roster changed under the walk
       }
     }
@@ -1545,61 +1542,6 @@ public func CBGangHomeDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, ga
     return prof.turf[0];
   }
   return CBEventDistrict(sys, game);
-}
-
-// How a war a crew member started went. True when they did not come back (the roster changed).
-func CBCrewWarResolve(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCrewKitBook>, book: ref<CBCrewBook>,
-                      m: ref<CBCrewMember>, k: ref<CBCrewKit>, gang: CName, now: Float) -> Bool {
-  if Equals(gang, n"") {
-    return false;
-  }
-  let rank = CBCrewRankOf(game, m);
-  let strength = CBGangStrength(sys, gang) / 100.0;
-  let chance = CBConfig.CrewWarBase() + CBConfig.CrewWarPerRank() * Cast<Float>(rank)
-             + 0.03 * Cast<Float>(k.ChromeCount()) + 0.02 * Cast<Float>(k.weaponTier) + 0.03 * Cast<Float>(k.trained)
-             - CBConfig.CrewWarStrengthWeight() * strength;
-  // A gang that already hates the crew is ready for it; one that respects it is caught out (Reactions/CrewBanner.reds).
-  chance += CBConfig.CrewStandWarWeight() * Cast<Float>(CBCrewStandingWith(game, gang)) / 100.0;
-  chance = ClampF(chance, 0.15, 0.9);
-  let label = CBFactionLabel(gang);
-  // Where the war was: on their streets, not wherever V happens to be standing when word comes back (2.6.3).
-  let where = CBGangHomeDistrict(sys, game, gang);
-  if RandF() < chance {
-    CBWeakenGang(sys, game, gang, CBConfig.CrewWarGangLoss());
-    CBTalkSlight(sys, game, gang, CBConfig.CrewWarStanding());
-    CBCrewStandingShift(game, gang, -CBConfig.CrewStandWarWon());
-    let content = sys.GetContent();
-    let enemy = IsDefined(content) ? CBTopEnemyOf(sys, content, gang) : n"";
-    CBCrewStandingShift(game, enemy, CBConfig.CrewStandWarEnemy());   // the enemy of their enemy
-    m.wins += 2;
-    m.loyalty = Min(100, m.loyalty + 5);
-    kb.NoteWarWon();
-    CBFileLog(sys, n"CrewWarWon", now, where, gang, Cast<Float>(m.id));
-    CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-ItSDoneLostCornersPeople", [s"\(CBCapFirst(label))"]));
-    CBLog.Info(n"Crew", s"A crew member's war on \(NameToString(gang)) was won.");
-    return false;
-  }
-  CBCrewStandingShift(game, gang, -CBConfig.CrewStandWarLost());
-  if RandF() < CBConfig.CrewWarDeathShare() {
-    let name = CBCrewName(sys, m);
-    CBFileLog(sys, n"CrewWarLost", now, where, gang, Cast<Float>(m.id));
-    let bb = CBCrewBannerBook.Get(game);
-    if IsDefined(bb) {
-      bb.fallCause = CBCrewFellAtWar();   // for the memorial
-      bb.fallGang = gang;
-    }
-    book.Remove(m, CBCrewEndFell(), 0, where, now);
-    if CBMessagesOn() {
-      CBPhoneSendTinted(game, CBCapFirst(label), CBTf(n"Cyberbane-CrewKit-CameForUsIsnTComing", [s"\(name)", s"\(name)"]), CBHudRed());
-    }
-    CBLog.Info(n"Crew", s"A crew member died in their war on \(NameToString(gang)).");
-    return true;
-  }
-  m.hurtUntil = now + CBConfig.CrewWarHurtHours() * CBConfig.SecondsPerHour();
-  CBTalkSlight(sys, game, gang, CBConfig.CrewWarStanding() * 0.5);
-  CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-WereReadyForMeIGot", [s"\(CBCapFirst(label))"]));
-  CBLog.Info(n"Crew", s"A crew member's war on \(NameToString(gang)) was lost; they came back hurt.");
-  return false;
 }
 
 // What the card says about their kit, a line or two.

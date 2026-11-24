@@ -549,6 +549,27 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.dependency", "myCrew")
   public let crewComeOnOwn: Bool = false;
 
+  // Chippin' In (Reactions/ChippinIn.reds, 2.7.6): the chance in each apex squad fight. 0 is off.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ChippinIn")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ChippinIn-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  @runtimeProperty("ModSettings.min", "0")
+  @runtimeProperty("ModSettings.max", "100")
+  @runtimeProperty("ModSettings.step", "5")
+  public let chippinInChance: Int32 = 25;
+
+  // The crew as a power on the street (Model/CrewTurf.reds, 2.7.6).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewTurf")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewTurf-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let crewTurf: Bool = true;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
   @runtimeProperty("ModSettings.category.order", "5")

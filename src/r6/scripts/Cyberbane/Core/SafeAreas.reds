@@ -333,7 +333,8 @@ public func CBArrivalsHeldBase(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     return true;
   }
   return sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game)
-      || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys) || CBSmasherEventOn(game) || CBMbcContractFight(game);
+      || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys) || CBSmasherEventOn(game) || CBMbcContractFight(game)
+      || CBFenixCaptured(game);   // Fenix Rebirth's capture (Compat/FenixRebirth.reds, 2.7.6)
 }
 
 // The NCPD after V: any wanted level (2.6.5). The gangs lie low while the cops swarm. "When hiding from the NCPD, if a
@@ -375,6 +376,9 @@ public func CBArrivalsHeldWhy(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   if CBMbcContractFight(game) {
     return CBT(n"Cyberbane-Compat-AContractSFight");
+  }
+  if CBFenixCaptured(game) {
+    return CBT(n"Cyberbane-Compat-FenixCaptured");
   }
   if CBHomeHoldsAll(sys) {
     return CBT(n"Cyberbane-Held-HomeGround");

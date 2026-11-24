@@ -357,7 +357,7 @@ public func CBTalkAnswerMenuAsk(t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
     return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-MakeItQuickCitizen"), CBT(n"Cyberbane-TalkTopics-DependsWhatYouReAsking")), n"");
   }
   if t.mood == CBTalkFriendly() {
-    return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-SureChoomWhatDoYouNeed"), CBT(n"Cyberbane-TalkTopics-ForYouAlways"), "Shoot."), n"greeting");
+    return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-SureChoomWhatDoYouNeed"), CBT(n"Cyberbane-TalkTopics-ForYouAlways"), CBT(n"Cyberbane-TalkTopics-Shoot")), n"greeting");
   }
   if t.mood == CBTalkAfraid() {
     return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-WWhatDoYouWantTo"), CBT(n"Cyberbane-TalkTopics-IDonTKnowAnythingI"), CBT(n"Cyberbane-TalkTopics-OkayOkayWhat")), n"fear_beg");
@@ -365,7 +365,7 @@ public func CBTalkAnswerMenuAsk(t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   if t.mood == CBTalkHostile() {
     return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-TalkFast"), CBT(n"Cyberbane-TalkTopics-YouVeGotAMinuteLess")), n"");
   }
-  return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-MakeItQuick"), "Depends.", CBT(n"Cyberbane-TalkTopics-WhatAbout")), n"");
+  return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-MakeItQuick"), CBT(n"Cyberbane-TalkTopics-Depends"), CBT(n"Cyberbane-TalkTopics-WhatAbout")), n"");
 }
 
 // "What's the word on the street?"
@@ -412,6 +412,10 @@ public func CBTalkAnswerTurf(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   }
   let district = sys.GetCurrentDistrict();
   let holder = NotEquals(district, n"") ? CBTurfHolder(sys, game, district) : n"";
+  // V's own crew (Model/CrewTurf.reds, 2.7.6): the street knows whose people these are, and says so to V's face.
+  if CBIsCrewTurf(holder) {
+    return CBTalkSay(CBCrewTurfLine(), n"");
+  }
   let label = CBFactionLabel(holder);
   if StrLen(label) == 0 {
     return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-NobodyOwnsTheseStreetsNotReally"), CBT(n"Cyberbane-TalkTopics-DependsWhoSGotTheMost")), n"");
@@ -474,7 +478,7 @@ public func CBTalkAnswerComing(sys: ref<CyberbaneSystem>, game: GameInstance, t:
   // One getting ready.
   let laneGang = sys.GetLaneTarget(CBLaneSquad());
   if NotEquals(laneGang, n"") {
-    let when = sys.GetLaneTicks(CBLaneSquad()) <= 120 ? CBT(n"Cyberbane-TalkTopics-AnyMinuteNow") : "Soon.";
+    let when = sys.GetLaneTicks(CBLaneSquad()) <= 120 ? CBT(n"Cyberbane-TalkTopics-AnyMinuteNow") : CBT(n"Cyberbane-TalkTopics-Soon");
     return CBTalkSay(CBTalkComingLine(t, laneGang, CBTf(n"Cyberbane-TalkTopics-GArePuttingACrewTogether", [when]), ownGang), n"");
   }
   let laneRival = sys.GetLaneRivalId(CBLaneRival());

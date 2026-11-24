@@ -184,6 +184,69 @@ func CBOnPlayerDeath(player: ref<PlayerPuppet>) -> Void {
   CBLog.Info(n"Signals", "Player died; Death Ledger updated.");
 }
 
+// V went down in a fight and a death alternative stood V up somewhere else (2.7.6, Compat/FenixRebirth.reds). Run on the
+// first settled tick after V arrives.
+//
+// Without a death alternative a death is followed by a load, which throws the fight away with the world; the only thing
+// that carries over is the ledger, which promotes the killer. With one, the fight was still on the books when V got up
+// across the city, and the hunt then ended it the only way it knew for V being gone: V had run. Every Rival of it promoted
+// for being shaken off, standing lost for running, "Ran, did you?", one of the crew coming back with a name for having
+// been given the slip. None of that happened; V lost. So it ends the way a load would have ended it: the one who put V
+// down already promoted by the death (CBPlayerDeathCallback), every encounter closed without anybody counted as got away
+// from, everybody of ours still standing sent off out of sight (V is far away by now), and the gang that sent them in no
+// hurry to send more.
+public func CBFightEndsWithVDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  if !IsDefined(sys) {
+    return;
+  }
+  let ranFrom = sys.GetHuntFaction();
+  // Every Rival of the encounter, the one leading and whoever came with them; a list first, since every close below can
+  // change the team and move the lead.
+  let ids: array<Int32>;
+  if sys.GetActiveRivalId() > 0 {
+    ArrayPush(ids, sys.GetActiveRivalId());
+  }
+  let pack = sys.GetPackRivals();
+  for pid in pack {
+    if !ArrayContains(ids, pid) {
+      ArrayPush(ids, pid);
+    }
+  }
+  let closed = 0;
+  for id in ids {
+    let r = sys.FindRivalById(id);
+    if IsDefined(r) {
+      let body = EntityID.IsDefined(r.spawnedEntityId) ? GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet : null;
+      CBCloseRivalEncounter(sys, game, r, body);
+      closed += 1;
+    }
+  }
+  sys.ClearPack();
+  sys.ClearScout();
+  sys.ClearApexMuster();
+  CBSweepStrayRivalBodies(sys, game);
+  CBDeleteTaggedSafe(game, n"CB_Squad", true, true);
+  CBDeleteTaggedSafe(game, n"CB_Apex", true, true);
+  CBDeleteTaggedSafe(game, n"CB_Escort", true, true);
+  CBDeleteTaggedSafe(game, n"CB_Scout", true, true);
+  if NotEquals(ranFrom, n"") {
+    let fs = sys.FindFaction(ranFrom);
+    if IsDefined(fs) {
+      fs.lastHitSquadAt = CBGameSeconds(game);   // the cooldown a crew starts when it is sent
+    }
+  }
+  sys.GetThreatBar().Hide();
+  sys.SetActiveRivalId(0);
+  sys.SetActiveSquadFaction(n"");
+  sys.SetChaseAwayTicks(0);
+  sys.SetHuntState(CBHuntNone());
+  sys.SetHuntFaction(n"");
+  sys.SetHuntGrade("");
+  sys.SetSpotTicks(0);
+  sys.SetHuntIdleTicks(0);
+  CBLog.Info(n"Signals", s"V went down and was brought back elsewhere: the fight ended where V fell (\(closed) Rival encounters closed, nobody counted as shaken off).");
+}
+
 func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void {
   if !IsDefined(evt) || !IsDefined(evt.attackData) {
     return;

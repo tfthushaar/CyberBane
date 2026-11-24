@@ -235,6 +235,32 @@ func CBRivalBareName(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Str
   return name;
 }
 
+// An epithet as the player reads it (2.7.6): its translation when one is installed, the English otherwise. The English stays
+// what the Rival is (CBRivalEpithet), the name book's key and the test for two Rivals sharing one, so changing the game's
+// language renames nobody. The key is the English with only its letters and digits: "Sore Loser" is
+// Cyberbane-Epithet-SoreLoser (Localization/en-us/English.reds, DefineEpithets).
+public func CBEpithetText(english: String) -> String {
+  if StrLen(english) == 0 {
+    return english;
+  }
+  let s = GetLocalizedTextByKey(StringToName("Cyberbane-Epithet-" + CBEpithetSlug(english)));
+  return StrLen(s) > 0 ? s : english;
+}
+
+public func CBEpithetSlug(english: String) -> String {
+  let keep = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let out = "";
+  let i = 0;
+  while i < StrLen(english) {
+    let c = StrMid(english, i, 1);
+    if StrFindFirst(keep, c) >= 0 {
+      out += c;
+    }
+    i += 1;
+  }
+  return out;
+}
+
 public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> String {
   if !IsDefined(rival) {
     return "";
@@ -397,7 +423,7 @@ public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRiva
   // A nickname is earned (1.8.5): by moving up a rank, or by putting V down. A rank one Rival is
   // just their name, so the ones who have done something stand out, and the same few nicknames are
   // not on everybody.
-  let epithet = CBRivalEarnedNickname(rival) ? CBRivalEpithet(content, rival) : "";
+  let epithet = CBRivalEarnedNickname(rival) ? CBEpithetText(CBRivalEpithet(content, rival)) : "";   // translated (2.7.6)
   let name = first;
   if StrLen(epithet) > 0 {
     name = name + " \"" + epithet + "\"";

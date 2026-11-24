@@ -869,7 +869,7 @@ public func CBRivalFacedownAnswer(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   // Draw, and anything else.
   CBFacedownFight(sys, game, book, r, body, true);
-  return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-YourFuneral"), "Finally."), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-RivalMoments-YourFuneral"), CBT(n"Cyberbane-RivalMoments-Finally")), n"");
 }
 
 func CBStareChance(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, r: ref<CBRival>) -> Float {

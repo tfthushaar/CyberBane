@@ -275,6 +275,57 @@ public class CyberbaneRuntime extends ScriptableService {
     return this.m_mbcProbe;
   }
 
+  // Where bodies were put in the last few seconds, and when (2.7.6, CBPointIsFree): separate groups sent together no
+  // longer land inside each other. Engine seconds; a stamp ahead of the clock is an old session's.
+  private let m_recentSpawnPos: array<Vector4>;
+  private let m_recentSpawnAt: array<Float>;
+
+  public func NoteSpawnPoint(p: Vector4, now: Float) -> Void {
+    this.PruneSpawnPoints(now);
+    ArrayPush(this.m_recentSpawnPos, p);
+    ArrayPush(this.m_recentSpawnAt, now);
+  }
+
+  public func SpawnPointTaken(p: Vector4, now: Float, separation: Float) -> Bool {
+    this.PruneSpawnPoints(now);
+    let n = Min(ArraySize(this.m_recentSpawnPos), ArraySize(this.m_recentSpawnAt));
+    let i = 0;
+    while i < n {
+      if Vector4.Distance(this.m_recentSpawnPos[i], p) < separation {
+        return true;
+      }
+      i += 1;
+    }
+    return false;
+  }
+
+  private func PruneSpawnPoints(now: Float) -> Void {
+    let keepPos: array<Vector4>;
+    let keepAt: array<Float>;
+    let n = Min(ArraySize(this.m_recentSpawnPos), ArraySize(this.m_recentSpawnAt));
+    let i = 0;
+    while i < n {
+      let at = this.m_recentSpawnAt[i];
+      if at <= now && now - at < CBConfig.RecentSpawnSeconds() && ArraySize(keepPos) < CBConfig.RecentSpawnCap() {
+        ArrayPush(keepPos, this.m_recentSpawnPos[i]);
+        ArrayPush(keepAt, at);
+      }
+      i += 1;
+    }
+    this.m_recentSpawnPos = keepPos;
+    this.m_recentSpawnAt = keepAt;
+  }
+
+  // Fenix Rebirth's word on V's rebirths (2.7.6, Compat/FenixRebirth.reds).
+  private let m_fenixProbe: ref<CBFenixProbe>;
+
+  public func GetFenixProbe() -> ref<CBFenixProbe> {
+    if !IsDefined(this.m_fenixProbe) {
+      this.m_fenixProbe = new CBFenixProbe();
+    }
+    return this.m_fenixProbe;
+  }
+
   public func GetSmasherProbe() -> ref<CBSmasherProbe> {
     if !IsDefined(this.m_smasherProbe) {
       this.m_smasherProbe = new CBSmasherProbe();

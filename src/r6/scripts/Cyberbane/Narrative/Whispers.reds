@@ -204,6 +204,18 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
     bag.Add(n"own", 3.0, CBLineOf([CBT(n"Cyberbane-Whispers-TheseAreTheirStreetsNowNobody"), CBT(n"Cyberbane-Whispers-GangsPayToWalkThroughHere"),
                                     CBT(n"Cyberbane-Whispers-ThatSWhoRunsThisPlace")]));
   }
+  // Streets V's crew holds, and a crew big enough to be talked about anywhere (Model/CrewTurf.reds, 2.7.6). A mask hides V,
+  // not whose corners these are.
+  if CBIsCrewTurf(st.turfHolder) {
+    let crewName = CBCapFirst(CBCrewTurfLabel());
+    bag.Add(n"crewturf", 3.0, CBLineOf([CBTf(n"Cyberbane-Whispers-CrewRunsTheseCorners", [crewName]),
+                                        CBT(n"Cyberbane-Whispers-PayTheirPeopleOnTime"), CBT(n"Cyberbane-Whispers-WhoseStreetsNowTheirs")]));
+  } else {
+    if !st.masked && CBCrewWeight(game) >= 50.0 {
+      bag.Add(n"crew", 1.5, CBLineOf([CBT(n"Cyberbane-Whispers-NeverAloneThatOne"), CBT(n"Cyberbane-Whispers-TouchThemAndTheirCrew"),
+                                      CBT(n"Cyberbane-Whispers-HeardTheyRunACrew")]));
+    }
+  }
   // Something coming near here (Spawn/StreetEvents.reds, [32]).
   let coming = CBEventWhisper(game);
   if StrLen(coming) > 0 {
@@ -624,35 +636,43 @@ func CBWhisperDistrict(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
   switch CBDistrictIndex(st.district) {
     case 0:
       lines = [CBT(n"Cyberbane-Whispers-KabukiSGoingToBeBuzzing"), CBT(n"Cyberbane-Whispers-InWatsonYouReOldNews"),
-               CBT(n"Cyberbane-Whispers-SomebodyLlBeSellingTheStory")];
+               CBT(n"Cyberbane-Whispers-SomebodyLlBeSellingTheStory"),
+               CBT(n"Cyberbane-Whispers-WatsonSeenWorse")];
       break;
     case 1:
       lines = [CBT(n"Cyberbane-Whispers-KeepItDownThisIsJapantown"), CBT(n"Cyberbane-Whispers-FolksRoundHerePayGoodMoney"),
-               CBT(n"Cyberbane-Whispers-CharterHillDoesnTNeedThis")];
+               CBT(n"Cyberbane-Whispers-CharterHillDoesnTNeedThis"),
+               CBT(n"Cyberbane-Whispers-WestbrookNicerClothes")];
       break;
     case 2:
       lines = [CBT(n"Cyberbane-Whispers-DonTLookCorpoRuleNumber"), CBT(n"Cyberbane-Whispers-SomebodyCallBuildingSecurityActuallyDon"),
-               CBT(n"Cyberbane-Whispers-NotInFrontOfTheArasaka")];
+               CBT(n"Cyberbane-Whispers-NotInFrontOfTheArasaka"),
+               CBT(n"Cyberbane-Whispers-CorpoPlazaCorpoRules")];
       break;
     case 3:
       lines = [CBT(n"Cyberbane-Whispers-MyAbuelaWarnedMeAboutPeople"), CBT(n"Cyberbane-Whispers-InHeywoodWeRememberFacesThat"),
-               CBT(n"Cyberbane-Whispers-TheValentinosHearEverythingThatHappens")];
+               CBT(n"Cyberbane-Whispers-TheValentinosHearEverythingThatHappens"),
+               CBT(n"Cyberbane-Whispers-HeywoodLooksAfterItsOwn")];
       break;
     case 4:
       lines = [CBT(n"Cyberbane-Whispers-WorkingFolksDonTNeedThis"), CBT(n"Cyberbane-Whispers-ArroyoSSeenWorseNotMuch"),
-               CBT(n"Cyberbane-Whispers-KeepWalkingWeVeGotShifts")];
+               CBT(n"Cyberbane-Whispers-KeepWalkingWeVeGotShifts"),
+               CBT(n"Cyberbane-Whispers-SantoDomingoDoubleShifts")];
       break;
     case 5:
       lines = [CBT(n"Cyberbane-Whispers-PacificaSSeenItAllStill"), CBT(n"Cyberbane-Whispers-NobodyCallsTheCopsInPacifica"),
-               CBT(n"Cyberbane-Whispers-VoodooBoysLlKnowAboutThis")];
+               CBT(n"Cyberbane-Whispers-VoodooBoysLlKnowAboutThis"),
+               CBT(n"Cyberbane-Whispers-PacificaDisappear")];
       break;
     case 6:
       lines = [CBT(n"Cyberbane-Whispers-BarghestWillKnowAboutThisBefore"), CBT(n"Cyberbane-Whispers-InDogtownYouDonTStare"),
-               CBT(n"Cyberbane-Whispers-HansenSPeopleAreAlwaysWatching"), CBT(n"Cyberbane-Whispers-ScrappersLlHaveThatStrippedAnd")];
+               CBT(n"Cyberbane-Whispers-HansenSPeopleAreAlwaysWatching"), CBT(n"Cyberbane-Whispers-ScrappersLlHaveThatStrippedAnd"),
+               CBT(n"Cyberbane-Whispers-DogtownWhoOwnsYou")];
       break;
     case 7:
       lines = [CBT(n"Cyberbane-Whispers-LongWayFromTheCityTo"), CBT(n"Cyberbane-Whispers-OutHereYouHearAName"),
-               CBT(n"Cyberbane-Whispers-ClansLlBeTalkingAboutThis")];
+               CBT(n"Cyberbane-Whispers-ClansLlBeTalkingAboutThis"),
+               CBT(n"Cyberbane-Whispers-BadlandsSunCooks")];
       break;
     default:
       return;
@@ -664,26 +684,39 @@ func CBWhisperDistrict(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
 func CBWhisperGeneric(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> Void {
   CBWhisperDistrict(bag, st);
   if Equals(mood, n"respect") {
-    bag.Add(n"generic", 1.0, CBPick4(
+    // Twice as many as before (2.7.6): these are what the street says most, and four wore thin within an evening.
+    bag.Add(n"generic", 1.0, CBLineOf([
       CBT(n"Cyberbane-Whispers-NowThatSAMercWorth"),
       CBT(n"Cyberbane-Whispers-SolidNoMessNoNoise"),
       CBT(n"Cyberbane-Whispers-IDTakeThatOneOn"),
-      CBT(n"Cyberbane-Whispers-IfYouNeedSomethingDoingThat")));
+      CBT(n"Cyberbane-Whispers-IfYouNeedSomethingDoingThat"),
+      CBT(n"Cyberbane-Whispers-FixersCallThatOneFirst"),
+      CBT(n"Cyberbane-Whispers-NeverSeenThemRattled"),
+      CBT(n"Cyberbane-Whispers-FinishWhatTheyStart"),
+      CBT(n"Cyberbane-Whispers-WantItDoneRight")]));
     return;
   }
   if Equals(mood, n"hate") {
-    bag.Add(n"generic", 1.0, CBPick4(
+    bag.Add(n"generic", 1.0, CBLineOf([
       CBT(n"Cyberbane-Whispers-YouVeGotSomeNerveShowing"),
       CBT(n"Cyberbane-Whispers-LookWhoCrawledOntoOurStreet"),
       CBT(n"Cyberbane-Whispers-KeepWalkingYouReNotWelcome"),
-      CBT(n"Cyberbane-Whispers-OneDayYouLlBeSomewhere")));
+      CBT(n"Cyberbane-Whispers-OneDayYouLlBeSomewhere"),
+      CBT(n"Cyberbane-Whispers-SmileWhileYouCan"),
+      CBT(n"Cyberbane-Whispers-SomebodyCollectsOnYou"),
+      CBT(n"Cyberbane-Whispers-LongMemoriesShortTempers"),
+      CBT(n"Cyberbane-Whispers-AllTheStreetsYouPickedOurs")]));
     return;
   }
-  bag.Add(n"generic", 1.0, CBPick4(
+  bag.Add(n"generic", 1.0, CBLineOf([
     CBT(n"Cyberbane-Whispers-DonTStareChoomJustKeep"),
     CBT(n"Cyberbane-Whispers-EyesDownKeepMoving"),
     CBT(n"Cyberbane-Whispers-IMNotGettingInvolvedNeither"),
-    CBT(n"Cyberbane-Whispers-WhateverThatOneWantsLetThem")));
+    CBT(n"Cyberbane-Whispers-WhateverThatOneWantsLetThem"),
+    CBT(n"Cyberbane-Whispers-DontMakeEyeContact"),
+    CBT(n"Cyberbane-Whispers-CrossTheStreetDontRun"),
+    CBT(n"Cyberbane-Whispers-TheOneFromTheFeeds"),
+    CBT(n"Cyberbane-Whispers-NobodySawAnything")]));
 }
 
 // V's current title, if they have one worth naming.

@@ -74,6 +74,17 @@ protected cb func OnInitialize() -> Bool {
 
 // ---- The map remembering ([85]) -------------------------------------------------------------------------------------
 
+// Kept until what they mark is done with, never faded by time or pushed out by newer ones: a gang's home, a stronghold, and
+// the spoils of a war (2.7.6: a war chest to collect, a hidden stash the crew marked).
+public func CBMemoryStays(kind: Int32) -> Bool {
+  return kind == CBMemGangHome() || kind == CBMemStronghold() || CBMemoryIsSpoils(kind);
+}
+
+// A war's spoils are shown whatever Night City remembers is set to: they are what V won, not a memory.
+public func CBMemoryIsSpoils(kind: Int32) -> Bool {
+  return kind == CBMemWarChest() || kind == CBMemSecretStash();
+}
+
 public func CBMemRivalFell() -> Int32 = 0
 public func CBMemEventCrashed() -> Int32 = 1
 public func CBMemTakeover() -> Int32 = 2
@@ -166,21 +177,36 @@ public class CBMapBook extends ScriptableSystem {
     let i = ArraySize(this.m_memories) - 1;
     while i >= 0 {
       let old = this.m_memories[i];
-      if IsDefined(old) && old.kind == kind && Vector4.Distance(at, new Vector4(old.x, old.y, old.z, 1.0)) < CBConfig.MapMemoryMerge() {
+      // Two of a war's spoils a few metres apart are two things to find (2.7.6), never one taking the other's place.
+      if IsDefined(old) && old.kind == kind && !CBMemoryIsSpoils(kind)
+         && Vector4.Distance(at, new Vector4(old.x, old.y, old.z, 1.0)) < CBConfig.MapMemoryMerge() {
         this.Forget(old);
       }
       i -= 1;
     }
     // The oldest goes by its place in the list. Check above has already let go of any empty entry, and erasing by place
     // means this loop cannot spin whatever the list holds.
-    // A gang's home (Spawn/GangHomes.reds) is never the one to go: the oldest of the rest is.
-    while ArraySize(this.m_memories) >= CBConfig.MapMemoryKept() {
-      let oldest = 0;
-      while oldest < ArraySize(this.m_memories) - 1 && IsDefined(this.m_memories[oldest])
-            && (this.m_memories[oldest].kind == CBMemGangHome() || this.m_memories[oldest].kind == CBMemStronghold()) {
-        oldest += 1;
+    // Only what fades counts towards the cap, and only it goes (2.7.6): a gang's home, a stronghold and a war's spoils stay
+    // until they are done with. Counted as it stood, the oldest of the rest went, or, with the rest all of those, the
+    // newest of the kept ones.
+    if !CBMemoryStays(kind) {
+      let fading = 0;
+      for f in this.m_memories {
+        if IsDefined(f) && !CBMemoryStays(f.kind) {
+          fading += 1;
+        }
       }
-      ArrayErase(this.m_memories, oldest);
+      while fading >= CBConfig.MapMemoryKept() {
+        let oldest = 0;
+        while oldest < ArraySize(this.m_memories) && IsDefined(this.m_memories[oldest]) && CBMemoryStays(this.m_memories[oldest].kind) {
+          oldest += 1;
+        }
+        if oldest >= ArraySize(this.m_memories) {
+          break;
+        }
+        ArrayErase(this.m_memories, oldest);
+        fading -= 1;
+      }
     }
     if this.m_nextId <= 0 {
       this.m_nextId = 1;
@@ -334,7 +360,7 @@ public func CBMapMemoryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   while i >= 0 {
     let m = book.At(i);
     i -= 1;
-    if IsDefined(m) && m.kind != CBMemGangHome() && m.kind != CBMemStronghold() && now - m.at > life {
+    if IsDefined(m) && !CBMemoryStays(m.kind) && now - m.at > life {
       book.Unpin(ms, m.id);
       book.Forget(m);
     }
@@ -346,7 +372,8 @@ public func CBMapMemoryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     i += 1;
     if IsDefined(m) {
       let show = m.kind == CBMemGangHome() ? CBGangHomeShown(sys, game, m.a)
-                 : (m.kind == CBMemStronghold() ? CBStrongholdShown(game, m.subject) : remember);
+                 : (m.kind == CBMemStronghold() ? CBStrongholdShown(game, m.subject)
+                 : (CBMemoryIsSpoils(m.kind) || remember));
       if !show && book.IsPinned(m.id) {
         book.Unpin(ms, m.id);
       } else {
@@ -394,6 +421,13 @@ public func CBMapMemoryTitle(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   if m.kind == CBMemTakeover() {
     return CBTf(n"Cyberbane-MapPins-Took", [s"\(CBCapFirst(CBFactionLabel(m.a)))", s"\(CBDistrictLabel(m.district))"]);
   }
+  // A beaten gang's war chest, and a hidden stash the crew found out about (Reactions/CrewWar.reds, 2.7.6).
+  if m.kind == CBMemWarChest() {
+    return CBTf(n"Cyberbane-CrewWar-ChestPinTitle", [CBCapFirst(CBPossessive(CBFactionName(m.a)))]);
+  }
+  if m.kind == CBMemSecretStash() {
+    return CBT(n"Cyberbane-CrewWar-StashPinTitle");
+  }
   let crew = CBCrewBook.Get(sys.GetGameInstance());
   let past = IsDefined(crew) ? crew.FindPast(m.subject) : null;
   return IsDefined(past) ? CBCrewPastName(sys, past) : CBT(n"Cyberbane-Hud-OneOfYourCrew");
@@ -419,6 +453,12 @@ public func CBMapMemoryDesc(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   if m.kind == CBMemEventCrashed() {
     return CBTf(n"Cyberbane-MapPins-YouBrokeItUpHereThey", [s"\(ago)"]);
   }
+  if m.kind == CBMemWarChest() {
+    return CBTf(n"Cyberbane-CrewWar-ChestPinDesc", [CBFactionLabel(m.a), ago]);
+  }
+  if m.kind == CBMemSecretStash() {
+    return CBTf(n"Cyberbane-CrewWar-StashPinDesc", [ago]);
+  }
   if m.kind == CBMemTakeover() {
     return StrLen(CBFactionLabel(m.b)) > 0 ? CBTf(n"Cyberbane-MapPins-TakenFrom", [s"\(CBFactionLabel(m.b))", s"\(ago)"]) : CBTf(n"Cyberbane-MapPins-ChangedHands", [s"\(ago)"]);
   }
@@ -442,6 +482,7 @@ public func CBMapMemoryPart(sys: ref<CyberbaneSystem>, id: Int32) -> CName {
   if IsDefined(m) && m.kind == CBMemEventCrashed() { return n"dynamic_event"; }
   if IsDefined(m) && m.kind == CBMemTakeover() { return n"outpost"; }
   if IsDefined(m) && m.kind == CBMemStronghold() { return n"outpost"; }
+  if IsDefined(m) && m.kind == CBMemSecretStash() { return n"map_bounty"; }   // the mark the game's own map gives a hidden stash
   return n"";
 }
 
@@ -454,5 +495,7 @@ public func CBMapMemoryTint(sys: ref<CyberbaneSystem>, id: Int32) -> HDRColor {
   if IsDefined(m) && m.kind == CBMemCrewFell() { return CBHudGreen(); }
   if IsDefined(m) && m.kind == CBMemGangHome() { return CBHudCyan(); }
   if IsDefined(m) && m.kind == CBMemStronghold() { return CBHudRed(); }
+  if IsDefined(m) && m.kind == CBMemWarChest() { return CBHudAmber(); }
+  if IsDefined(m) && m.kind == CBMemSecretStash() { return CBHudGreen(); }
   return CBHudRed();
 }

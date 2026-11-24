@@ -424,6 +424,12 @@ public let cbHitCap: Float;
 
 @wrapMethod(StatPoolsManager)
 public static func ApplyDamage(hitEvent: ref<gameHitEvent>, forReal: Bool, out valuesLost: array<SDamageDealt>) -> Void {
+  // Chippin' In (Reactions/ChippinIn.reds, 2.7.6): the blow that would kill V, caught before the game applies it, and
+  // nothing at all while V is down and one of the crew is on the way.
+  let pv = IsDefined(hitEvent) ? hitEvent.target as PlayerPuppet : null;
+  if forReal && IsDefined(pv) && (pv.cbChipArmed > 0 || pv.cbChipDown) && CBChipInCatch(pv, hitEvent) {
+    return;
+  }
   let p = IsDefined(hitEvent) ? hitEvent.target as ScriptedPuppet : null;
   if IsDefined(p) && p.cbHitCap > 0.0 && !p.IsDead() {
     let instigator = hitEvent.attackData.GetInstigator();

@@ -3648,7 +3648,12 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
     if IsDefined(t.npc) && t.npc.cbTalkTimes > 0 {
       return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-YouAgain"), CBT(n"Cyberbane-StreetTalk-BackAlreadyWhatNow"), CBT(n"Cyberbane-StreetTalk-WeJustTalked")), n"");
     }
-    return CBTalkSay(CBPick4("Hey.", "Evening.", CBT(n"Cyberbane-StreetTalk-UhHi"), CBT(n"Cyberbane-StreetTalk-DoIKnowYou")), n"greeting");
+    // Every line here translatable (2.7.6: "Hey." and "Evening." were written into the code), and twice as many: this is
+    // the line a stranger says most.
+    return CBTalkSay(CBLineOf([CBT(n"Cyberbane-StreetTalk-Hey"), CBT(n"Cyberbane-StreetTalk-Evening"), CBT(n"Cyberbane-StreetTalk-UhHi"),
+                               CBT(n"Cyberbane-StreetTalk-DoIKnowYou"), CBT(n"Cyberbane-StreetTalk-YeahCanIHelpYou"),
+                               CBT(n"Cyberbane-StreetTalk-MakeItFastImLate"), CBT(n"Cyberbane-StreetTalk-YouLostChoom"),
+                               CBT(n"Cyberbane-StreetTalk-NotBuyingWhateverItIs")]), n"greeting");
   }
   let label = StrLen(CBFactionLabel(t.faction)) > 0 ? CBFactionLabel(t.faction) : CBT(n"Cyberbane-StreetTalk-TheCrew");
   if t.mood == CBTalkFriendly() {
@@ -3701,7 +3706,9 @@ func CBTalkOnGreet(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
   if IsDefined(t.npc) && t.npc.cbTalkTimes > 0 {
     return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-BackAgainWhatIsItNow"), CBT(n"Cyberbane-StreetTalk-YouAgainMakeItQuick"), CBT(n"Cyberbane-StreetTalk-ThoughtWeWereDone")), n"");
   }
-  return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-HeyYouReAllRightI"), "Choom.", CBT(n"Cyberbane-StreetTalk-EveningKeepItFriendly")), n"greeting");
+  return CBTalkSay(CBLineOf([CBT(n"Cyberbane-StreetTalk-HeyYouReAllRightI"), CBT(n"Cyberbane-StreetTalk-Choom"),
+                             CBT(n"Cyberbane-StreetTalk-EveningKeepItFriendly"), CBT(n"Cyberbane-StreetTalk-YouLookLikeTrouble"),
+                             CBT(n"Cyberbane-StreetTalk-WhatsTheWord"), CBT(n"Cyberbane-StreetTalk-QuietNightSoFar")]), n"greeting");
 }
 
 // A friend of V's passing on where one of their enemies' Rivals is: once a day per gang.
@@ -3761,7 +3768,7 @@ func CBTalkOnDismiss(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
   if t.mood == CBTalkHostile() {
     return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetTalk-WatchYourself"), CBT(n"Cyberbane-StreetTalk-WalkWhileYouCan")), n"bump");
   }
-  return CBTalkSay(CBPick3("Fine.", CBT(n"Cyberbane-StreetTalk-YeahYeah"), CBT(n"Cyberbane-StreetTalk-YourLoss")), n"");
+  return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-Fine"), CBT(n"Cyberbane-StreetTalk-YeahYeah"), CBT(n"Cyberbane-StreetTalk-YourLoss")), n"");
 }
 
 // ---- Antagonize ----------------------------------------------------------------------------------------

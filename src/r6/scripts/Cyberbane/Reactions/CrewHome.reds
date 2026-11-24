@@ -127,9 +127,15 @@ public func CBGuardStandDown(game: GameInstance, id: Int32) -> Void {
   gb.Remove(id);
   let k = gb.BodyIndexOfMember(id);
   if k >= 0 {
+    // Through the one safe removal (2.7.6), never straight out of the world: a guard sent off their post while V stood in
+    // the car park vanished in front of V. One V can see, or one lying hurt near V, goes once V cannot see them.
     let des = GameInstance.GetDynamicEntitySystem();
     if IsDefined(des) {
-      des.DeleteEntity(gb.BodyAt(k));
+      let body = gb.BodyAt(k);
+      if !CBRemoveOne(game, des, body, CBAnyCrewSeated(game, des), true) {
+        des.UnassignTag(body, n"CB_Guard");
+        des.AssignTag(body, n"CB_Orphan");
+      }
     }
     gb.DropBody(k);
   }

@@ -626,13 +626,67 @@ public abstract class CBConfig {
   // A war: from this rank (Lieutenant), away this long, and how it goes.
   public static func CrewWarMinRank() -> Int32 = 4
   public static func CrewWarHours() -> Float = 18.0
-  public static func CrewWarBase() -> Float = 0.3
-  public static func CrewWarPerRank() -> Float = 0.07
-  public static func CrewWarStrengthWeight() -> Float = 0.25
   public static func CrewWarGangLoss() -> Float = 18.0
   public static func CrewWarStanding() -> Float = 12.0
   public static func CrewWarDeathShare() -> Float = 0.35
   public static func CrewWarHurtHours() -> Float = 48.0
+  // War parties (2.7.6, Reactions/CrewWar.reds). Who may go along (a Lieutenant, CrewWarMinRank, leads), and how many.
+  public static func CrewWarFollowMinRank() -> Int32 = 2
+  public static func CrewWarPartyMax() -> Int32 = 6
+  // A member's weight: a base, then per rank, per piece of chrome, per tier of the gun V gave them, per training, a spar's
+  // edge; a party covering more seats fights better together; the crew's hold on those streets and its weight add on.
+  public static func WarPowerBase() -> Float = 20.0
+  public static func WarPowerPerRank() -> Float = 10.0
+  public static func WarPowerPerChrome() -> Float = 6.0
+  public static func WarPowerPerTier() -> Float = 5.0
+  public static func WarPowerPerTrain() -> Float = 5.0
+  public static func WarPowerSharp() -> Float = 5.0
+  public static func WarSeatBonus() -> Float = 0.08
+  public static func WarFootPower() -> Float = 25.0
+  public static func WarWeightPower() -> Float = 0.15
+  // A gang's weight: a base, its strength on its home streets, every district it holds; ready for a crew it hates, caught
+  // out by one it respects; and less for how afraid of V it is.
+  public static func GangWarBase() -> Float = 40.0
+  public static func GangWarPerStrength() -> Float = 1.2
+  public static func GangWarPerDistrict() -> Float = 6.0
+  public static func GangWarStandWeight() -> Float = 0.15
+  public static func GangWarFearWeight() -> Float = 0.2
+  // How far the nights swing the ratio of the two, either way.
+  public static func WarSwingLow() -> Float = 0.8
+  public static func WarSwingHigh() -> Float = 1.25
+  // What it does: the hold on their home streets by outcome, the spoils per member, the chance the weakest is hurt in a
+  // plain win, deaths in a rout, the hidden stashes marked, a defector's price.
+  public static func WarFootDecisive() -> Float = 0.45
+  public static func WarFootWon() -> Float = 0.3
+  public static func WarFootStalemate() -> Float = 0.1
+  public static func WarFootLost() -> Float = 0.15
+  public static func WarFootRouted() -> Float = 0.3
+  public static func WarSpoilsPerMember() -> Float = 250.0
+  public static func WarWonHurtChance() -> Float = 0.35
+  public static func WarRoutDeathBase() -> Float = 0.15
+  public static func WarRoutDeathSpread() -> Float = 0.35
+  public static func WarStashesWon() -> Int32 = 2
+  public static func WarStashesDecisive() -> Int32 = 4
+  public static func WarDefectorPrice() -> Float = 0.5
+  public static func SecretStashReach() -> Float = 12.0
+  // The crew as a power on the street (2.7.6, Model/CrewTurf.reds). Its weight: per member, per rank, per war won (that
+  // many counted at most).
+  public static func CrewWeightPerMember() -> Float = 6.0
+  public static func CrewWeightPerRank() -> Float = 3.0
+  public static func CrewWeightPerWar() -> Float = 4.0
+  public static func CrewWeightWarsCounted() -> Int32 = 10
+  // A foothold fades after this many idle days, by this much a day; a member who lives there and a guard on V's home firm
+  // it up each day; its push in the turf model; the street tax per held district a day.
+  public static func CrewFootGraceDays() -> Float = 3.0
+  public static func CrewFootFadePerDay() -> Float = 0.03
+  public static func CrewFootLivesHere() -> Float = 0.02
+  public static func CrewFootGuard() -> Float = 0.03
+  public static func CrewTurfPush() -> Float = 1.0
+  public static func CrewTurfTaxPerDistrict() -> Float = 250.0
+  // In a district the crew holds, the gang that lost it breaks this much sooner (Reactions/Morale.reds); and the crew's
+  // weight adds to V's menace up to this much (Signals/PlayerBuild.reds).
+  public static func CrewHeldBreakBonus() -> Float = 0.15
+  public static func CrewMenaceShare() -> Float = 15.0
   // A spar: put down this far off; a minute of fighting; stopped when either side is under this much health (percent);
   // they are this much tougher and hit this hard. Sharp for this many game hours after; every few spars a training.
   public static func CrewSparSpawnDistance() -> Float = 25.0
@@ -660,7 +714,6 @@ public abstract class CBConfig {
   public static func CrewStandMemberKilled() -> Int32 = 10     // one of the crew killed by their people
   public static func CrewStandKill() -> Int32 = 1              // one of theirs killed by the crew
   public static func CrewStandEase() -> Int32 = 2              // a game day, back towards nothing
-  public static func CrewStandWarWeight() -> Float = 0.1       // war odds at -100 or +100
   public static func CrewFallenKept() -> Int32 = 10            // the memorial's names (one list of the Hub's rows)
   public static func CrewRecruitChance() -> Float = 0.35       // on top of MyCrewOfferChance, a day
   public static func CrewRecruitDiscount() -> Float = 0.25     // off the solo's price
@@ -1121,6 +1174,22 @@ public abstract class CBConfig {
   // Nobody stands inside anybody else. Enough for two people to be distinct bodies and small
   // enough that a squad still reads as a squad.
   public static func SpawnMinSeparation() -> Float = 1.6
+  // Chippin' In (2.7.6, Reactions/ChippinIn.reds): V's health down and back up, in percent; how long V stays down at least
+  // (the knockdown is 4.1 s), how long at most before getting up alone, and how close they must be to count as there.
+  public static func ChipInDownHealth() -> Float = 5.0
+  public static func ChipInUpHealth() -> Float = 50.0
+  public static func ChipInAloneHealth() -> Float = 25.0
+  public static func ChipInMinDownSeconds() -> Float = 4.5
+  public static func ChipInMaxDownSeconds() -> Float = 14.0
+  public static func ChipInReachDistance() -> Float = 4.0
+  // V's people in V's car (2.7.6, Reactions/CrewCar.reds): how long a seat just given stays theirs while they walk to it,
+  // how long somebody asked out of a car may sit there before being lifted out, and how slow the car must be for that.
+  public static func SeatWalkSeconds() -> Float = 8.0
+  public static func UnmountStuckSeconds() -> Float = 5.0
+  public static func UnmountStillSpeed() -> Float = 1.0
+  // How long a spawn point stays taken for every other group (2.7.6, CBPointIsFree), and how many are remembered.
+  public static func RecentSpawnSeconds() -> Float = 12.0
+  public static func RecentSpawnCap() -> Int32 = 40
   // How far the rest of a group may form up from the first one placed. Keeps a squad together
   // and means only the first point of a group needs the full reachability test.
   public static func SpawnGroupRadius() -> Float = 18.0
@@ -1824,6 +1893,9 @@ public abstract class CBConfig {
   // Our dead and our spent cars are cleared once V is at least this far from them, or they have
   // streamed out (Spawn/Spawner.reds, CBSweepRemains).
   public static func RemainsSweepDistance() -> Float = 70.0
+  // While V is still in a fight, somebody lying there (dead, or down and breathing) stays within this many metres of V
+  // whether V can see them or not (2.7.6, CBRemainsInReach): the fight can move across a street and back.
+  public static func RemainsFightDistance() -> Float = 150.0
   public static func RemainsCap() -> Int32 = 96
   // The most of Cyberbane's people alive in the world at once (Spawn/Spawner.reds, CBSpawnGroup).
   public static func MaxLiveSpawns() -> Int32 = 18

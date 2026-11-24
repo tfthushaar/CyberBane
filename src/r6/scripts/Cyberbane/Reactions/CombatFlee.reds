@@ -376,7 +376,12 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
         // people already booked as mercy. Being near them is the question now: V has to have
         // actually gone. The escapee cap still settles the oldest if a long stay fills it.
         let distance = !gone ? Vector4.Distance(ppos, e.puppet.GetWorldPosition()) : 0.0;
-        let leftThem = !IsDefined(player) || (!gone && distance > CBConfig.SparedLeftDistance());
+        // While V is still fighting, walking off from them is following the fight, not leaving them (2.7.6): V has left
+        // them only beyond the reach they are kept in until then (CBRemainsInReach), so nobody is booked as spared, or a
+        // Rival's encounter closed, for V chasing the rest of the crew forty-five metres down the street.
+        let fighting = IsDefined(player) && player.IsInCombat();
+        let leftThem = !IsDefined(player)
+                    || (!gone && distance > (fighting ? CBConfig.RemainsFightDistance() : CBConfig.SparedLeftDistance()));
         // A Rival's encounter is closed by this resolution, and holding it open for as long as V
         // stays near the body would leave the Rival lane reading as free (CBLiveRivalPresent asks
         // for somebody standing) - the re-queued, "teleporting" Rival. They keep the old timing.
@@ -404,14 +409,17 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
             let empty = IsDefined(player) && !player.IsInCombat() && !IsDefined(GameObject.GetActiveWeapon(player)) && !deciding;
             e.holsterTicks = empty ? e.holsterTicks + 1 : 0;
             leftThem = leftThem || e.holsterTicks >= CBConfig.MercyHolsterTicks() || e.mercyChosen
-                    || (!gone && distance > CBConfig.EscapeDistance());
+                    || (!gone && !fighting && distance > CBConfig.EscapeDistance());
             ready = e.mercyChosen || age >= CBConfig.MercyMinTicks();
           } else {
-            leftThem = leftThem || !player.IsInCombat()
-                    || (!gone && distance > CBConfig.EscapeDistance());
+            // Out of the fight; or, still in it, beyond the reach they are kept in (above).
+            leftThem = leftThem || !fighting;
           }
         }
-        let backstop = e.wasRival && age >= CBConfig.SparedResolveMaxTicks();
+        // The backstop for V staying near them without choosing, never while V is still fighting (2.7.6). Three minutes into
+        // a fight with their crew, a Rival V had put down was settled as spared where they lay, told as "you let them walk",
+        // and their encounter closed, while V was still shooting their people with every intention of coming back to them.
+        let backstop = e.wasRival && age >= CBConfig.SparedResolveMaxTicks() && !fighting;
         if gone || (ready && leftThem) || backstop {
           if !gone && IsDefined(e.puppet) {
             e.puppet.cbMercyOpen = false;

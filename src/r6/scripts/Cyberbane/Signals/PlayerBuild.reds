@@ -50,5 +50,8 @@ public func CBComputePlayerMenace(game: GameInstance) -> Float {
   let m = (level / 60.0) * 55.0
         + MinF(cred / 50.0, 1.0) * 25.0
         + MinF(skills / 300.0, 1.0) * 20.0;
+  // And who V has behind them (Model/CrewTurf.reds, 2.7.6): a merc with a crew that runs streets is somebody else to the
+  // street, everywhere. Everything that reads V's menace (the crowd's fear, a ganger's nerve) reads it.
+  m += CBConfig.CrewMenaceShare() * CBCrewWeight(game) / 100.0;
   return ClampF(m, 0.0, 100.0);
 }

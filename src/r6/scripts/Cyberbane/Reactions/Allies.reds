@@ -88,6 +88,10 @@ public func CBEndFollower(npc: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc) || !npc.IsAttached() {
     return;
   }
+  // Out of V's car first, and their seat given back (Reactions/CrewCar.reds, 2.7.6). The way out of a car is the follower
+  // role's own, so taking the role from somebody in a seat left them in it for good: sent home, turned, a borrowed crew's
+  // hours up, Start over. Every one of those ends the role here.
+  CBRiderLeaves(npc.GetGame(), npc);
   CBTrace("role: a follower goes back to their own");
   AIHumanComponent.SetCurrentRole(npc, new AINoRole());
 }

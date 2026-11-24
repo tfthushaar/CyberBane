@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.7.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.7.6.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -44,6 +44,16 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ### New in 2.7
 
+- **Your crew at war, and on the map (2.7.6).** Plan a war: pick the gang and who goes, see the odds, and win by
+  strength rather than luck. A win pays: the kitty gets their money, their war chest and the district's own hidden
+  stashes go on your map, and your crew gains a hold on their streets. Hold enough and your crew takes the district,
+  takes a daily street tax and is talked about everywhere. **Chippin' In**: in an apex fight, one of your crew may get
+  you back up from a killing blow. Call or send home one member at a time, rename them, and read each one's own thread
+  beside the crew's group chat.
+- **Fenix Rebirth, and fairer fights (2.7.6).** With Fenix Rebirth, being brought back counts as dying: your killer
+  becomes a Rival and the fight ends where you fell. Nobody appears out of thin air behind you any more, Rivals no longer
+  stand frozen in a heap, people you put down stay until you're done with them, and your crew take a seat each in your
+  car and get out when sent home.
 - **Much Better Contracts, side by side (2.7.5).** Detected on its own. Its contracts are jobs to Cyberbane, it sends
   nobody into a fight while one is running, and each contract you are paid for counts as a finished job. A car you took
   from a gang is never deleted with you in it.
@@ -213,10 +223,12 @@ lives in your saves: a save made while the mod is removed loses it.
 - **The Hub:** open the game menu (Inventory, Map, Character...) and pick the **Cyberbane** tab, after
   Journal. With the game's radial menu, open Character and it is beside it. Can't find it? Turn on
   **Hub in the pause menu** (Mod Settings > Cyberbane > Messages and HUD) and it is under Escape instead.
-  Click a gang to pay them off, click a Rival to read their file, buy where they are hiding or forget
-  them, and call or pay your crew. Pick one of your crew and press **Orders** to kit them out, train or
-  spar with them, or send them to work or to war; **Name, colours, the fallen** is for the crew itself.
-  **Show as a list** on a page turns its cards into a list.
+  Click a gang to pay them off, click a Rival to read their file, buy where they are hiding, call them out or forget
+  them, and run your crew. The buttons on a page act on what you picked. On the Crew page, pick one of your crew: the
+  first button calls just them (or sends just them home), **Orders for** them kits them out, trains or spars with them,
+  renames them or sends them to work or to war, and **Call your crew** calls everybody who can come. **War, money,
+  name, the fallen** is the crew's own page: go to war, pay the cut, take the kitty, answer a challenge, name it, change
+  its colours and remember the fallen. **Show as a list** on a page turns its cards into a list.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
   a line. Reach for a weapon and the conversation ends. With a weapon in your hand, the prompt shows
   **Holster to talk** instead, and a greyed prompt also says when somebody just spoke to you, is busy
@@ -224,11 +236,13 @@ lives in your saves: a save made while the mod is removed loses it.
   While you talk to one of a gang, their people nearby hold their fire, and on a gang's restricted ground the warning to
   leave waits until you are done. Afterwards they are as they were, unless the talk changed that. Hurt one of them and
   the hold is off. On hostile ground, where they shoot on sight, step out first.
-- **Calling your crew:** open the **My crew** thread on your phone and pick **Need you. Now.**, press it on the Hub's
-  Crew page, or set a key for it (Mod Settings > Cyberbane > Your crew > **Call your crew (key)**). In a fight, up to
-  three come and go home once it is over; with nothing to fight, two come and walk with you until you send them home
-  (**Go home. I've got this.** on the phone, **Send them home** on the Hub, or the same key). They come to gigs and side
-  jobs; **Your crew on jobs** changes that. Cutscenes, the main story's own missions and safe places like your
+- **Calling your crew:** open the **My crew** thread on your phone and pick **Need you. Now.**, press **Call your
+  crew** on the Hub's Crew page, or set a key for it (Mod Settings > Cyberbane > Your crew > **Call your crew (key)**).
+  In a fight, up to three come and go home once it is over; with nothing to fight, two come and walk with you until you
+  send them home (**Go home. I've got this.** on the phone, **Send your crew home** on the Hub, or the same key). To
+  call or send home just one of them, pick them on the Crew page and press the first button, or use **Need you. Come
+  to me.** and **Head home. I've got this.** in their own phone thread. They come to gigs and side jobs; **Your crew on
+  jobs** changes that. Cutscenes, the main story's own missions and safe places like your
   apartment keep them out. If they can't come, or have to leave, they say why. They can be killed like anybody else, and the fallen go
   on the memorial; turn off **Your crew can die** and the game protects them the way it protects its own companions.
 - **Your crew at home:** on a member's **Orders**, the Work row goes through earning, recruiting and **Watch the
@@ -238,7 +252,7 @@ lives in your saves: a save made while the mod is removed loses it.
   old gang and **Heard anything?**
 - **Jobs, the kitty and challenges:** on a member's **Orders**, **Send them on a job** lists the Rivals they can go
   after (from Veteran) and the gangs whose bag they can take (from Soldier), each with their chance. The kitty, and a
-  challenge waiting for an answer, are on the Crew page under **Name, colours, the fallen**; the kitty is taken when you
+  challenge waiting for an answer, are on the Crew page under **War, money, name, the fallen**; the kitty is taken when you
   are on home ground. **Running the money** is a kind of work on the Work row. Goods from a robbed bag are sold by
   talking to somebody of another gang.
 - **Finding a gang:** ask one of theirs **Where do your people hang out?**, or just go. A gang's home goes on the map
@@ -277,6 +291,9 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
   the metro or going home after a gang has sent people can make them lose you before they arrive.
 - **Gang homes and guards:** **Gang homes** under **Gang life** switches the gangs' places off. **Guards at home**,
   under **Your crew**, sets how many can watch the house (0 to 3, 0 for none).
+- **Your crew at war and on the street:** **Chippin' In** (the chance in each apex fight; 0 is off) and **Your crew takes
+  streets** are under **Your crew**. Wars themselves are on the Hub's Crew page, under **War, money, name, the
+  fallen**: **Go to war**, or **Send them to start a war** in one member's orders.
 - **Crew jobs, Rivals' chrome and strongholds:** **Crew jobs and the kitty** and **Challenges to your crew** are under
   **Your crew**, **Goods in stolen bags** under **Gang life**, and **Signature chrome** and **Strongholds** under
   **Rivals**. All are on by default.
@@ -335,6 +352,9 @@ on an older Cyberbane instead of breaking every script mod on the install.
   Cyberbane sends comes for you at a contract's site, and while a contract is running Cyberbane sends nobody new into a
   fight. Each contract it pays you for counts as a finished job for your Renown; its pay is its own, with no gig bonus on
   top.
+- **Fenix Rebirth:** detected automatically, with no dependency either way. Being brought back counts as dying: the killer
+  becomes or climbs as a Rival, the death is counted, and the fight ends where you fell. Nothing happens while Fenix is
+  bringing you back, and nobody is sent while you're its prisoner. Chippin' In stays off with Fenix installed.
 - **Smasher Encounters:** detected automatically. While Smasher is after you, Cyberbane sends nobody new and turns nobody
   on you at sight, and his Arasaka backup doesn't break and run. Your crew still comes when called.
 - **Equipment-EX and other outfit mods:** your outfit is read as it looks on V.
@@ -358,7 +378,9 @@ Every line Cyberbane shows is in `r6\scripts\Cyberbane\Localization\en-us\Englis
    game and can go wherever your language needs them.
 
 The top of the file explains the rest. Lines you have not translated yet show in English, and the changelog says which
-lines each release adds. Share your translation as a mod of its own on Nexus, with Cyberbane as a requirement.
+lines each release adds. Rival nicknames are translatable too (`DefineEpithets`): a translation changes only what the
+player reads, never who a Rival is, so switching language renames nobody in a save. The log says whether your translation
+loaded ("Translation for ... loaded"). Share your translation as a mod of its own on Nexus, with Cyberbane as a requirement.
 
 ## Reporting a bug
 

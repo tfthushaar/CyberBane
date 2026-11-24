@@ -36,6 +36,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.DefineGangHomes();
     this.DefineCrewHome();
     this.DefineCrewJobs();
+    this.DefineCrewWar();
+    this.DefineEpithets();
     this.DefineRivalPlaces();
     this.DefineCyberbaneAPI();
     this.DefineSmasherEncounters();
@@ -188,12 +190,14 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-MyCrew-Desc", "People can end up working for you: a Rival you spared before and beat down again, a ganger you frightened badly enough, a solo a broker offers, or one lent by a Friendly or Allied gang. Call them from the phone or the Hub when somebody comes for you. Off, and nobody offers, nobody joins, and nobody comes.");
     this.Text("Cyberbane-Settings-CrewComeOnOwn", "Come on their own");
     this.Text("Cyberbane-Settings-CrewComeOnOwn-Desc", "The most loyal of your crew turn up unasked when an ambush springs on you. Off, and they only come when you call.");
+    this.Text("Cyberbane-Settings-ChippinIn", "Chippin' In (chance per apex fight)");
+    this.Text("Cyberbane-Settings-ChippinIn-Desc", "When a gang's apex squad comes for you, one of your crew who is home or working (earning, recruiting, running money, watching the house; never training, at war or out on a job) may be listening. Take a blow that would kill you and they drop what they're doing: you go down, you're covered until they reach you, and they get you back on your feet and fight beside you. Once per fight. Never with Fenix Rebirth installed, which has its own way back. A Second Heart that is ready always goes first. 0 turns it off.");
     this.Text("Cyberbane-Settings-CrewOnJobs", "Your crew on jobs");
     this.Text("Cyberbane-Settings-CrewOnJobs-Desc", "Where your crew comes when you call. Gigs and side jobs: everywhere except the main story's own missions. Never: not near any job on the map. Everywhere but the story: any job, but never into the story itself. A cutscene or a safe place like your apartment always keeps them out.");
     this.Text("Cyberbane-Settings-CrewCanDie", "Your crew can die");
     this.Text("Cyberbane-Settings-CrewCanDie-Desc", "On, your crew can be killed like anybody else, and the ones who fall go on the memorial. Off, the game protects them the way it protects its own companions: hurt badly enough, they go down instead of dying, get back up a little later, and are out for a few hours once the fight is over.");
     this.Text("Cyberbane-Settings-CrewCallKey", "Call your crew (key)");
-    this.Text("Cyberbane-Settings-CrewCallKey-Desc", "A key that calls your crew, or sends them home when they are with you. Not set at first: pick a key nothing else uses. It only works out in the game, never in a menu. The phone (My crew, Need you. Now.) and the Hub's Crew page do the same.");
+    this.Text("Cyberbane-Settings-CrewCallKey-Desc", "A key that calls your crew, or sends them home when they are with you. Not set at first: pick a key nothing else uses. It only works out in the game, never in a menu. The phone (My crew, Need you. Now.) and Call your crew on the Hub's Crew page do the same.");
     this.Text("Cyberbane-Settings-CrewBetrayal", "Betrayal");
     this.Text("Cyberbane-Settings-CrewBetrayal-Desc", "Somebody whose loyalty you let run low may sell you to the people hunting you, or come when called and turn on you in the fight, and live on as a Rival. The crew page and their texts always warn you first. Off, and nobody ever betrays you.");
     this.Text("Cyberbane-Settings-CrewFrightJoin", "Frightened into joining");
@@ -2092,11 +2096,17 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Crew-S", "{0}'s {1}");
     // {0} who
     this.Text("Cyberbane-Crew-SSparringWithYou", "{0}'s sparring with you");
+    // {0} a first name (2.7.6)
+    this.Text("Cyberbane-Crew-SStandingGuard", "{0}'s standing guard at home");
     // {0} who, {1} CeilF((CBConfig.MyCrewCallSeconds() - (now - m.calledAt)) / 60.0)
     this.Text("Cyberbane-Crew-JustGotBackGiveItMinutes", "{0} just got back, give it {1} minutes");
     // {0} parts
     this.Text("Cyberbane-Crew-NobodyCanComeYet", "Nobody can come yet: {0}.");
     this.Text("Cyberbane-Crew-EverybodySHurtBusyOrJust", "Everybody's hurt, busy or just got back.");
+    // One of them called on their own (2.7.6). {0} why, naming them: "Sai just got back, give it 9 minutes"
+    this.Text("Cyberbane-Crew-OneNotReady", "{0}.");
+    // {0} a first name
+    this.Text("Cyberbane-Crew-OneCantComeNow", "{0} can't come right now.");
     this.Text("Cyberbane-Crew-NotIntoTheStoryCallWhen", "Not into the story. Call when it's done.");
     this.Text("Cyberbane-Crew-YouReInTheMiddleOf", "You're in the middle of something. Call after.");
     this.Text("Cyberbane-Crew-SomewhereSafeTheyLlWaitFor", "Somewhere safe. They'll wait for you outside.");
@@ -2316,6 +2326,24 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Crew-HurtBackOnTheirFeetIn", "Hurt: back on their feet in about {0} hours.\n");
     this.Text("Cyberbane-Crew-JustGotBackTheyCanBe", "Just got back. They can be called again within the hour.\n");
     this.Text("Cyberbane-Crew-CallThemLikeThisAndThey", "Call them like this and they might sell you out, or worse. Pay them, win with them, or let them go.\n");
+    // Chippin' In (2.7.6): one of the crew drops their job and gets V back up
+    // {0} their first name. A note: the game puts "Cyberbane: " in front.
+    this.Text("Cyberbane-ChippinIn-HoldOnComing", "{0} heard it go wrong on the line. Stay down: they're coming.");
+    this.Text("Cyberbane-ChippinIn-DroppedItComing", "Dropped everything. I'm coming. Stay down.");
+    this.Text("Cyberbane-ChippinIn-StayDownOnMyWay", "Don't you dare die on me. On my way.");
+    this.Text("Cyberbane-ChippinIn-HeardItAllOnTheLine", "Heard all of it on the line. Hold on, I'm close.");
+    this.Text("Cyberbane-ChippinIn-GroupWentToGetV", "Dropped the job. Going to get the boss.");
+    this.Text("Cyberbane-ChippinIn-CouldntGetThrough", "Can't get through to you. Get up. Get up!");
+    this.Text("Cyberbane-ChippinIn-GotYouUp", "Got you. Up. We're not done here.");
+    this.Text("Cyberbane-ChippinIn-NotTodayUp", "Not today. Up you get.");
+    this.Text("Cyberbane-ChippinIn-OnYourFeet", "On your feet. I've got your back.");
+    this.Text("Cyberbane-ChippinIn-GetUpImClose", "You're up? Good. Almost there, hold them off.");
+    // V answering one of them in their own thread (2.7.6)
+    this.Text("Cyberbane-Crew-ComeToMe", "Need you. Come to me.");
+    this.Text("Cyberbane-Crew-HeadHomeIGotThis", "Head home. I've got this.");
+    // One of them sent home on their own (2.7.6)
+    this.Text("Cyberbane-Crew-HeadingHomeTheRestStay", "Heading home. The rest stay with you.");
+    this.Text("Cyberbane-Crew-CanTWalkHomeLikeThis", "Can't walk home like this. I'll go with the rest.");
   }
 
   // ---- CrewBanner ------------------------------------------------------------------------------------------
@@ -2729,6 +2757,20 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-StreetTalk-BackAlreadyWhatNow", "Back already? What now?");
     this.Text("Cyberbane-StreetTalk-WeJustTalked", "We just talked.");
     this.Text("Cyberbane-StreetTalk-UhHi", "Uh. Hi.");
+    // A stranger, saying hello (2.7.6: these were written into the code, and there were only four)
+    this.Text("Cyberbane-StreetTalk-Hey", "Hey.");
+    this.Text("Cyberbane-StreetTalk-Evening", "Evening.");
+    this.Text("Cyberbane-StreetTalk-YeahCanIHelpYou", "Yeah? Can I help you?");
+    this.Text("Cyberbane-StreetTalk-MakeItFastImLate", "Make it fast, I'm late for a shift.");
+    this.Text("Cyberbane-StreetTalk-YouLostChoom", "You lost, choom?");
+    this.Text("Cyberbane-StreetTalk-NotBuyingWhateverItIs", "Whatever you're selling, I'm not buying.");
+    // Somebody who doesn't mind V
+    this.Text("Cyberbane-StreetTalk-Choom", "Choom.");
+    this.Text("Cyberbane-StreetTalk-YouLookLikeTrouble", "You look like trouble. The good kind, I hope.");
+    this.Text("Cyberbane-StreetTalk-WhatsTheWord", "What's the word?");
+    this.Text("Cyberbane-StreetTalk-QuietNightSoFar", "Quiet night so far. Let's keep it that way.");
+    // Somebody waving V off
+    this.Text("Cyberbane-StreetTalk-Fine", "Fine.");
     this.Text("Cyberbane-StreetTalk-DoIKnowYou", "Do I know you?");
     this.Text("Cyberbane-StreetTalk-TheCrew", "the crew");
     this.Text("Cyberbane-StreetTalk-GoodToSeeYouChoom", "Good to see you, choom.");
@@ -2880,6 +2922,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-TalkTopics-YouVeGotAMinuteLess", "You've got a minute. Less.");
     this.Text("Cyberbane-TalkTopics-MakeItQuick", "Make it quick.");
     this.Text("Cyberbane-TalkTopics-WhatAbout", "What about?");
+    this.Text("Cyberbane-TalkTopics-Shoot", "Shoot.");
+    this.Text("Cyberbane-TalkTopics-Depends", "Depends.");
+    this.Text("Cyberbane-TalkTopics-Soon", "Soon.");
     this.Text("Cyberbane-TalkTopics-ToldYouAlreadyThatSAll", "Told you already. That's all I've got.");
     this.Text("Cyberbane-TalkTopics-YouReStandingOnItThat", "You're standing on it. That's where they found them all. Still gives me chills.");
     this.Text("Cyberbane-TalkTopics-RightHereBodiesEverywhereNotLong", "Right here. Bodies everywhere, not long ago. Nobody's been the same.");
@@ -3226,6 +3271,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-RivalMoments-OkayIMGoneYouLl", "Okay. I'm gone. You'll never see me again.");
     this.Text("Cyberbane-RivalMoments-NightCitySYoursIM", "Night City's yours. I'm out.");
     this.Text("Cyberbane-RivalMoments-YourFuneral", "Your funeral.");
+    this.Text("Cyberbane-RivalMoments-Finally", "Finally.");
     this.Text("Cyberbane-RivalMoments-IMDoneIMDone", "...I'm done. I'm done with all of it.");
     this.Text("Cyberbane-RivalMoments-NobodyWillEverLookAtMe", "Nobody will ever look at me the same. I'm out.");
     this.Text("Cyberbane-RivalMoments-LaughGoOnILlRemember", "Laugh. Go on. I'll remember every second of this.");
@@ -4216,9 +4262,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-OnTheirWayWait", "On their way: wait");
     this.Text("Cyberbane-Hud-ClickAgainToForget", "Click again to forget");
     this.Text("Cyberbane-Hud-ForgetThisRival", "Forget this rival");
-    this.Text("Cyberbane-Hud-WordSent", "Word sent");
-    this.Text("Cyberbane-Hud-SendingWord", "Sending word");
-    this.Text("Cyberbane-Hud-SendWord", "Send word");
+    this.Text("Cyberbane-Hud-WordSent", "Called out");
+    this.Text("Cyberbane-Hud-SendingWord", "Calling them out");
+    this.Text("Cyberbane-Hud-SendWord", "Call them out");
     // {0} count
     this.Text("Cyberbane-Hud-ClickAgainForgetAll", "Click again: forget all {0}");
     this.Text("Cyberbane-Hud-ForgetEveryRival", "Forget every rival");
@@ -4294,7 +4340,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-TheLastTroubleHereWasAgo", "The last trouble here was {0} ago.");
     this.Text("Cyberbane-Hud-YouHaveNotMadeAnyTrouble", "You have not made any trouble here yet.");
     this.Text("Cyberbane-Hud-SendingThemHomeClickToTake", "Sending them home. Click to take it back");
-    this.Text("Cyberbane-Hud-SendThemHome", "Send them home");
     this.Text("Cyberbane-Hud-CallingThemClickToTakeIt", "Calling them. Click to take it back");
     this.Text("Cyberbane-Hud-TheyLlAnswerOnceYouRe", "They'll answer once you're back in the game.\n");
     // {0} StrLower(StrLeft(blocked, 1)), {1} StrRight(blocked, StrLen(blocked) - 1)
@@ -4309,7 +4354,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} book.offerPrice
     this.Text("Cyberbane-Hud-HireTheSoloEb", "Hire the solo: {0}eb");
     this.Text("Cyberbane-Hud-ASoloIsOnOfferPick", "A solo is on offer: pick them to hire them.\n");
-    this.Text("Cyberbane-Hud-NameColoursTheFallen", "Name, colours, the fallen");
     // {0} kbWars.WarsWon()
     this.Text("Cyberbane-Hud-WarsYourCrewStartedAndWon", "Wars your crew started and won: {0}.\n");
     this.Text("Cyberbane-Hud-SaveTheName", "Save the name");
@@ -4321,10 +4365,6 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-PickChromeForFromWhatYou", "Pick chrome for {0}, from what you own and do not wear. It goes in for good and does for them what it does in a fight, by the game's own numbers. Chrome that only helps you (RAM, zoom, stamina) is not listed. Up to {1}.");
     this.Text("Cyberbane-Hud-YouHaveNoSpareWeaponTo", "You have no spare weapon to give: everything is equipped, or there is nothing a person could fight with.");
     this.Text("Cyberbane-Hud-YouHaveNoSpareChromeThat", "You have no spare chrome that would help them in a fight: what you own is installed in you, or only helps you.");
-    // {0} StrLower(CBCrewStandWord(stand))
-    this.Text("Cyberbane-Hud-YourCrew", "your crew: {0}");
-    // {0} name, {1} RoundF(CBConfig.CrewWarHours()), {2} name
-    this.Text("Cyberbane-Hud-PickAGangForToStart", "Pick a gang for {0} to start a war on. Away {1} hours. Won, the gang loses ground and blames you; lost, {2} comes back hurt, or not at all. The weaker the gang, the better the odds, and a gang that already hates your crew is ready for it.");
     this.Text("Cyberbane-Hud-NoGangToGoToWar", "No gang to go to war on: every gang that fields people is friendly with you.");
     this.Text("Cyberbane-Hud-Back", "Back");
     this.Text("Cyberbane-Hud-HandingItBack", "Handing it back...");
@@ -4946,6 +4986,30 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-TheyWillRememberSDisguisesCould", " They Will Remember's disguises could not be read ({0}); this is Cyberbane's own.");
     this.Text("Cyberbane-Hud-TheyWillRememberSDisguisesCould-2", " They Will Remember's disguises could not be read; this is Cyberbane's own.");
     this.Text("Cyberbane-Hud-ShowAsCards", "Show as cards");
+    // Why nobody is being sent, while Fenix Rebirth has V captured (2.7.6)
+    this.Text("Cyberbane-Compat-FenixCaptured", "you woke up somebody's prisoner: get yourself out first");
+    // The crew page's buttons (2.7.6). The first is for the one picked: called on their own, or sent home on their own.
+    // {0} their first name
+    this.Text("Cyberbane-Hud-OneNeedYouNow", "{0}, need you. Now.");
+    this.Text("Cyberbane-Hud-OneHeadHome", "{0}, head home");
+    this.Text("Cyberbane-Hud-CallingOne", "Calling {0}. Click to take it back");
+    this.Text("Cyberbane-Hud-SendingOneHome", "Sending {0} home. Click to take it back");
+    // {0} their first name, {1} why not
+    this.Text("Cyberbane-Hud-CantCallOneNow", "Can't call {0} now: {1}\n");
+    // The whole crew, the same as the crew key in Mod Settings
+    this.Text("Cyberbane-Hud-CallYourCrew", "Call your crew");
+    this.Text("Cyberbane-Hud-SendYourCrewHome", "Send your crew home");
+    // The crew's own page: going to war, paying the cut and the kitty, its name and colours, the memorial
+    this.Text("Cyberbane-Hud-WarMoneyNameFallen", "War, money, name, the fallen");
+    // {0} eddies. "War, money, name, the fallen" is the button above.
+    this.Text("Cyberbane-Hud-CutOwedWhere", "Your crew is owed their cut: {0}eb. Pay it under War, money, name, the fallen, or in the crew's chat on your phone.\n");
+    this.Text("Cyberbane-Hud-TheyWaitOnIt", "they're waiting on it");
+    // Renaming one of the crew (2.7.6)
+    this.Text("Cyberbane-Hud-RenameThem", "Rename them");
+    this.Text("Cyberbane-Hud-TheNameTheyCameWith", "the name they came with");
+    this.Text("Cyberbane-Hud-ANameForThem", "A name for them");
+    // {0} the name they came with
+    this.Text("Cyberbane-Hud-TypeANameForThem", "Type the name you know them by. It is the one their texts come under, the one the crew page shows and the one on the wall if they fall. Leave it empty to go back to {0}.");
   }
 
   // ---- MapPins ---------------------------------------------------------------------------------------------
@@ -5190,11 +5254,375 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   }
 
   // Crew jobs, the kitty, challenges and goods (2.7.2, Reactions/CrewJobs.reds).
+  // ---- Rival nicknames, the part in quotes (2.7.6, Data/Names.reds) --------------------------------------------
+  // The key is the English with only its letters and digits. A Rival keeps the English as who they are, so a
+  // translation here renames nobody in a save: it only changes what the player reads.
+  protected func DefineEpithets() -> Void {
+    // Got away from V
+    this.Text("Cyberbane-Epithet-WhoRan", "Who Ran");
+    this.Text("Cyberbane-Epithet-theSurvivor", "the Survivor");
+    this.Text("Cyberbane-Epithet-LastOneStanding", "Last One Standing");
+    this.Text("Cyberbane-Epithet-StillBreathing", "Still Breathing");
+    this.Text("Cyberbane-Epithet-Lucky", "Lucky");
+    this.Text("Cyberbane-Epithet-Cockroach", "Cockroach");
+    this.Text("Cyberbane-Epithet-NineLives", "Nine Lives");
+    this.Text("Cyberbane-Epithet-theGetaway", "the Getaway");
+    this.Text("Cyberbane-Epithet-NotToday", "Not Today");
+    this.Text("Cyberbane-Epithet-LongShot", "Long Shot");
+    this.Text("Cyberbane-Epithet-WalkedAway", "Walked Away");
+    this.Text("Cyberbane-Epithet-PatchedUp", "Patched Up");
+    this.Text("Cyberbane-Epithet-BadPenny", "Bad Penny");
+    this.Text("Cyberbane-Epithet-Slippery", "Slippery");
+    this.Text("Cyberbane-Epithet-GhostStep", "Ghost Step");
+    this.Text("Cyberbane-Epithet-CloseCall", "Close Call");
+    this.Text("Cyberbane-Epithet-HalfDead", "Half-Dead");
+    this.Text("Cyberbane-Epithet-Stitches", "Stitches");
+    this.Text("Cyberbane-Epithet-SecondWind", "Second Wind");
+    this.Text("Cyberbane-Epithet-Rabbit", "Rabbit");
+    this.Text("Cyberbane-Epithet-BackDoor", "Back Door");
+    this.Text("Cyberbane-Epithet-FireEscape", "Fire Escape");
+    this.Text("Cyberbane-Epithet-ScarTissue", "Scar Tissue");
+    this.Text("Cyberbane-Epithet-EscapeArtist", "Escape Artist");
+    this.Text("Cyberbane-Epithet-NearMiss", "Near Miss");
+    this.Text("Cyberbane-Epithet-Quickstep", "Quickstep");
+    this.Text("Cyberbane-Epithet-SewerRat", "Sewer Rat");
+    this.Text("Cyberbane-Epithet-Runaway", "Runaway");
+    this.Text("Cyberbane-Epithet-SixthLife", "Sixth Life");
+    this.Text("Cyberbane-Epithet-Dodger", "Dodger");
+    this.Text("Cyberbane-Epithet-BloodTrail", "Blood Trail");
+    this.Text("Cyberbane-Epithet-HardCase", "Hard Case");
+    this.Text("Cyberbane-Epithet-Leftover", "Leftover");
+    this.Text("Cyberbane-Epithet-Tourniquet", "Tourniquet");
+    this.Text("Cyberbane-Epithet-GoneGhost", "Gone Ghost");
+    // Spared by V
+    this.Text("Cyberbane-Epithet-theHumbled", "the Humbled");
+    this.Text("Cyberbane-Epithet-SecondChance", "Second Chance");
+    this.Text("Cyberbane-Epithet-IronJaw", "Iron Jaw");
+    this.Text("Cyberbane-Epithet-OwesYou", "Owes You");
+    this.Text("Cyberbane-Epithet-LetGo", "Let Go");
+    this.Text("Cyberbane-Epithet-BorrowedTime", "Borrowed Time");
+    this.Text("Cyberbane-Epithet-theMercyCase", "the Mercy Case");
+    this.Text("Cyberbane-Epithet-Kneeler", "Kneeler");
+    this.Text("Cyberbane-Epithet-OnNotice", "On Notice");
+    this.Text("Cyberbane-Epithet-Grudge", "Grudge");
+    this.Text("Cyberbane-Epithet-TurnedLoose", "Turned Loose");
+    this.Text("Cyberbane-Epithet-Pardoned", "Pardoned");
+    this.Text("Cyberbane-Epithet-theForgiven", "the Forgiven");
+    this.Text("Cyberbane-Epithet-BentKnee", "Bent Knee");
+    this.Text("Cyberbane-Epithet-SoreLoser", "Sore Loser");
+    this.Text("Cyberbane-Epithet-BruisedPride", "Bruised Pride");
+    this.Text("Cyberbane-Epithet-PaperTiger", "Paper Tiger");
+    this.Text("Cyberbane-Epithet-LostFace", "Lost Face");
+    this.Text("Cyberbane-Epithet-StoodDown", "Stood Down");
+    this.Text("Cyberbane-Epithet-GracePeriod", "Grace Period");
+    this.Text("Cyberbane-Epithet-CleanSlate", "Clean Slate");
+    this.Text("Cyberbane-Epithet-theReprieve", "the Reprieve");
+    this.Text("Cyberbane-Epithet-CharityCase", "Charity Case");
+    this.Text("Cyberbane-Epithet-SpitBlood", "Spit Blood");
+    this.Text("Cyberbane-Epithet-GlassJaw", "Glass Jaw");
+    this.Text("Cyberbane-Epithet-GroundFloor", "Ground Floor");
+    this.Text("Cyberbane-Epithet-SmallMercy", "Small Mercy");
+    this.Text("Cyberbane-Epithet-Paroled", "Paroled");
+    this.Text("Cyberbane-Epithet-BadMemory", "Bad Memory");
+    this.Text("Cyberbane-Epithet-Unfinished", "Unfinished");
+    this.Text("Cyberbane-Epithet-ProudAgain", "Proud Again");
+    this.Text("Cyberbane-Epithet-Sleepless", "Sleepless");
+    this.Text("Cyberbane-Epithet-ShoulderChip", "Shoulder Chip");
+    // Killed V
+    this.Text("Cyberbane-Epithet-VKiller", "V-Killer");
+    this.Text("Cyberbane-Epithet-theUndertaker", "the Undertaker");
+    this.Text("Cyberbane-Epithet-Flatline", "Flatline");
+    this.Text("Cyberbane-Epithet-Gravedigger", "Gravedigger");
+    this.Text("Cyberbane-Epithet-LastFace", "Last Face");
+    this.Text("Cyberbane-Epithet-ZeroCount", "Zero Count");
+    this.Text("Cyberbane-Epithet-ToeTag", "Toe Tag");
+    this.Text("Cyberbane-Epithet-theCloser", "the Closer");
+    this.Text("Cyberbane-Epithet-LightsOut", "Lights Out");
+    this.Text("Cyberbane-Epithet-BodyBag", "Body Bag");
+    this.Text("Cyberbane-Epithet-FinalWord", "Final Word");
+    this.Text("Cyberbane-Epithet-Executioner", "Executioner");
+    this.Text("Cyberbane-Epithet-theReaper", "the Reaper");
+    this.Text("Cyberbane-Epithet-CoffinNail", "Coffin Nail");
+    this.Text("Cyberbane-Epithet-MorgueTicket", "Morgue Ticket");
+    this.Text("Cyberbane-Epithet-DeadAir", "Dead Air");
+    this.Text("Cyberbane-Epithet-Endgame", "Endgame");
+    this.Text("Cyberbane-Epithet-theMortician", "the Mortician");
+    this.Text("Cyberbane-Epithet-SixFeet", "Six Feet");
+    this.Text("Cyberbane-Epithet-ColdHands", "Cold Hands");
+    this.Text("Cyberbane-Epithet-Headstone", "Headstone");
+    this.Text("Cyberbane-Epithet-Tombstone", "Tombstone");
+    this.Text("Cyberbane-Epithet-BlackBag", "Black Bag");
+    this.Text("Cyberbane-Epithet-LastRites", "Last Rites");
+    this.Text("Cyberbane-Epithet-WakeCall", "Wake Call");
+    this.Text("Cyberbane-Epithet-Ashes", "Ashes");
+    this.Text("Cyberbane-Epithet-BoneSaw", "Bone Saw");
+    this.Text("Cyberbane-Epithet-Grim", "Grim");
+    this.Text("Cyberbane-Epithet-Hearse", "Hearse");
+    this.Text("Cyberbane-Epithet-Requiem", "Requiem");
+    this.Text("Cyberbane-Epithet-Coroner", "Coroner");
+    this.Text("Cyberbane-Epithet-Eulogy", "Eulogy");
+    this.Text("Cyberbane-Epithet-KillCount", "Kill Count");
+    // Avenging somebody V killed
+    this.Text("Cyberbane-Epithet-Bloodsworn", "Bloodsworn");
+    this.Text("Cyberbane-Epithet-theAvenger", "the Avenger");
+    this.Text("Cyberbane-Epithet-BloodDebt", "Blood Debt");
+    this.Text("Cyberbane-Epithet-theReckoning", "the Reckoning");
+    this.Text("Cyberbane-Epithet-Payback", "Payback");
+    this.Text("Cyberbane-Epithet-Oathbound", "Oathbound");
+    this.Text("Cyberbane-Epithet-Widowmaker", "Widowmaker");
+    this.Text("Cyberbane-Epithet-EyeforanEye", "Eye for an Eye");
+    this.Text("Cyberbane-Epithet-BlackArmband", "Black Armband");
+    this.Text("Cyberbane-Epithet-SettlingUp", "Settling Up");
+    this.Text("Cyberbane-Epithet-NextofKin", "Next of Kin");
+    this.Text("Cyberbane-Epithet-Vendetta", "Vendetta");
+    this.Text("Cyberbane-Epithet-Unforgiven", "Unforgiven");
+    this.Text("Cyberbane-Epithet-BloodPrice", "Blood Price");
+    this.Text("Cyberbane-Epithet-ScarredOath", "Scarred Oath");
+    this.Text("Cyberbane-Epithet-HoldFast", "Hold Fast");
+    this.Text("Cyberbane-Epithet-Ember", "Ember");
+    this.Text("Cyberbane-Epithet-theMourner", "the Mourner");
+    this.Text("Cyberbane-Epithet-Grudgebound", "Grudgebound");
+    this.Text("Cyberbane-Epithet-DebtCollector", "Debt Collector");
+    this.Text("Cyberbane-Epithet-RedLedger", "Red Ledger");
+    this.Text("Cyberbane-Epithet-GraveOath", "Grave Oath");
+    this.Text("Cyberbane-Epithet-BurningBridge", "Burning Bridge");
+    this.Text("Cyberbane-Epithet-LastWish", "Last Wish");
+    this.Text("Cyberbane-Epithet-Ironclad", "Ironclad");
+    this.Text("Cyberbane-Epithet-TearsDry", "Tears Dry");
+    this.Text("Cyberbane-Epithet-HellBent", "Hell Bent");
+    this.Text("Cyberbane-Epithet-NoMercy", "No Mercy");
+    this.Text("Cyberbane-Epithet-Wildfire", "Wildfire");
+    this.Text("Cyberbane-Epithet-Tenfold", "Tenfold");
+    this.Text("Cyberbane-Epithet-BackPay", "Back Pay");
+    this.Text("Cyberbane-Epithet-ColdComfort", "Cold Comfort");
+    this.Text("Cyberbane-Epithet-Heartbreak", "Heartbreak");
+    this.Text("Cyberbane-Epithet-Sworn", "Sworn");
+    this.Text("Cyberbane-Epithet-SaltWound", "Salt Wound");
+    // Hunting V for money
+    this.Text("Cyberbane-Epithet-theHound", "the Hound");
+    this.Text("Cyberbane-Epithet-Bounty", "Bounty");
+    this.Text("Cyberbane-Epithet-Tracker", "Tracker");
+    this.Text("Cyberbane-Epithet-Bloodhound", "Bloodhound");
+    this.Text("Cyberbane-Epithet-LongArm", "Long Arm");
+    this.Text("Cyberbane-Epithet-theCollector", "the Collector");
+    this.Text("Cyberbane-Epithet-Contract", "Contract");
+    this.Text("Cyberbane-Epithet-Headhunter", "Headhunter");
+    this.Text("Cyberbane-Epithet-Pointman", "Pointman");
+    this.Text("Cyberbane-Epithet-Sniffer", "Sniffer");
+    this.Text("Cyberbane-Epithet-Repo", "Repo");
+    this.Text("Cyberbane-Epithet-Trigger", "Trigger");
+    this.Text("Cyberbane-Epithet-Scope", "Scope");
+    this.Text("Cyberbane-Epithet-BirdDog", "Bird Dog");
+    this.Text("Cyberbane-Epithet-NightOwl", "Night Owl");
+    this.Text("Cyberbane-Epithet-theFerret", "the Ferret");
+    this.Text("Cyberbane-Epithet-Lockjaw", "Lockjaw");
+    this.Text("Cyberbane-Epithet-Leash", "Leash");
+    this.Text("Cyberbane-Epithet-Snare", "Snare");
+    this.Text("Cyberbane-Epithet-SteelTrap", "Steel Trap");
+    this.Text("Cyberbane-Epithet-Fetch", "Fetch");
+    this.Text("Cyberbane-Epithet-Tailgate", "Tailgate");
+    this.Text("Cyberbane-Epithet-Shadow", "Shadow");
+    this.Text("Cyberbane-Epithet-Crosshair", "Crosshair");
+    this.Text("Cyberbane-Epithet-Spotter", "Spotter");
+    this.Text("Cyberbane-Epithet-Packwolf", "Packwolf");
+    this.Text("Cyberbane-Epithet-BountyBoard", "Bounty Board");
+    this.Text("Cyberbane-Epithet-Tagger", "Tagger");
+    this.Text("Cyberbane-Epithet-Gunsight", "Gunsight");
+    this.Text("Cyberbane-Epithet-Homing", "Homing");
+    this.Text("Cyberbane-Epithet-SureShot", "Sure Shot");
+    this.Text("Cyberbane-Epithet-Posse", "Posse");
+    this.Text("Cyberbane-Epithet-Manhunter", "Manhunter");
+    // Once of V's crew, turned
+    this.Text("Cyberbane-Epithet-Turncoat", "Turncoat");
+    this.Text("Cyberbane-Epithet-TwoFaces", "Two Faces");
+    this.Text("Cyberbane-Epithet-theSnake", "the Snake");
+    this.Text("Cyberbane-Epithet-Backstab", "Backstab");
+    this.Text("Cyberbane-Epithet-Sellout", "Sellout");
+    this.Text("Cyberbane-Epithet-theViper", "the Viper");
+    this.Text("Cyberbane-Epithet-DoubleCross", "Double-Cross");
+    this.Text("Cyberbane-Epithet-ForkedTongue", "Forked Tongue");
+    this.Text("Cyberbane-Epithet-Smiles", "Smiles");
+    this.Text("Cyberbane-Epithet-OldFriend", "Old Friend");
+    this.Text("Cyberbane-Epithet-Tripwire", "Tripwire");
+    this.Text("Cyberbane-Epithet-Payday", "Payday");
+    this.Text("Cyberbane-Epithet-Cutthroat", "Cutthroat");
+    this.Text("Cyberbane-Epithet-Brother", "Brother");
+    this.Text("Cyberbane-Epithet-SilverTongue", "Silver Tongue");
+    this.Text("Cyberbane-Epithet-LastJob", "Last Job");
+    this.Text("Cyberbane-Epithet-theRat", "the Rat");
+    this.Text("Cyberbane-Epithet-InsideMan", "Inside Man");
+    this.Text("Cyberbane-Epithet-Handshake", "Handshake");
+    this.Text("Cyberbane-Epithet-OpenDoor", "Open Door");
+    // Climbed the ladder
+    this.Text("Cyberbane-Epithet-TwiceBurned", "Twice-Burned");
+    this.Text("Cyberbane-Epithet-theUnbroken", "the Unbroken");
+    this.Text("Cyberbane-Epithet-Scarface", "Scarface");
+    // After a cyberpsychotic break
+    this.Text("Cyberbane-Epithet-Overclocked", "Overclocked");
+    this.Text("Cyberbane-Epithet-Static", "Static");
+    this.Text("Cyberbane-Epithet-theGlitch", "the Glitch");
+    this.Text("Cyberbane-Epithet-Redline", "Redline");
+    this.Text("Cyberbane-Epithet-Feedback", "Feedback");
+    this.Text("Cyberbane-Epithet-ShortCircuit", "Short Circuit");
+    this.Text("Cyberbane-Epithet-Burnout", "Burnout");
+    this.Text("Cyberbane-Epithet-ChromeFever", "Chrome Fever");
+    this.Text("Cyberbane-Epithet-WiredWrong", "Wired Wrong");
+    this.Text("Cyberbane-Epithet-DeadSignal", "Dead Signal");
+    this.Text("Cyberbane-Epithet-Meltdown", "Meltdown");
+    this.Text("Cyberbane-Epithet-Hardwired", "Hardwired");
+    this.Text("Cyberbane-Epithet-Overload", "Overload");
+    this.Text("Cyberbane-Epithet-theMalfunction", "the Malfunction");
+    this.Text("Cyberbane-Epithet-WhiteNoise", "White Noise");
+    this.Text("Cyberbane-Epithet-Fried", "Fried");
+    this.Text("Cyberbane-Epithet-SystemError", "System Error");
+    this.Text("Cyberbane-Epithet-Hollow", "Hollow");
+  }
+
+  // ---- The crew at war, and the crew's streets (2.7.6, Reactions/CrewWar.reds, Model/CrewTurf.reds) ---------------
+  protected func DefineCrewWar() -> Void {
+    // The crew's name in a sentence and on its own, when V has not named it
+    this.Text("Cyberbane-CrewTurf-YourCrew", "your crew");
+    this.Text("Cyberbane-CrewTurf-YourCrewName", "Your crew");
+    // How much the crew counts for, a word for the Crew page
+    this.Text("Cyberbane-CrewTurf-WeightFeared", "feared");
+    this.Text("Cyberbane-CrewTurf-WeightKnown", "known on every corner");
+    this.Text("Cyberbane-CrewTurf-WeightNoticed", "noticed");
+    this.Text("Cyberbane-CrewTurf-WeightNobody", "nobody yet");
+    // {0} the word above, {1} 0-100
+    this.Text("Cyberbane-CrewTurf-PowerLine", "On the street your crew is {0} ({1} of 100).\n");
+    // {0} the districts, a list
+    this.Text("Cyberbane-CrewTurf-HoldsLine", "Its streets: {0}.\n");
+    // The group chat. {0} eddies, {1} the districts
+    this.Text("Cyberbane-CrewTurf-TaxIsIn", "Street tax is in: {0} eddies from {1}. It's in the kitty.");
+    // {0} the gang, {1} the district
+    this.Text("Cyberbane-CrewTurf-HitOurCorners", "{0} came at our corners in {1} last night. We held, but they'll keep coming. Hurt them and they'll think twice.");
+    // {0} the district, {1} the gang that lost it
+    this.Text("Cyberbane-CrewTurf-DistrictIsOurs", "{0} is ours. {1} couldn't hold it. Corners, rent, the lot.");
+    // {0} the district, {1} the gang that took it
+    this.Text("Cyberbane-CrewTurf-DistrictLost", "We lost {0}. {1} pushed us out. We'll get it back.");
+    // The street. {0} the crew, {1} the gang that lost it, {2} the district
+    this.Text("Cyberbane-CrewTurf-StreetSaysCrewTookIt", "{0} have pushed {1} out of {2}. New faces on every corner, and they all answer to you.");
+    // Somebody asked "who runs these streets" in a district V's crew holds. {0} the crew
+    this.Text("Cyberbane-CrewTurf-RunItNowYours", "{0} run it now. Your people. Everybody knows.");
+    this.Text("Cyberbane-CrewTurf-YourPeopleRunIt", "You're asking me? {0} do. Your own, right?");
+    this.Text("Cyberbane-CrewTurf-YouDoYouKnowThat", "You do. You know that. Everybody here pays your people now.");
+    // Who can go to war, and why not. {0} a rank
+    this.Text("Cyberbane-CrewWar-NeedsRank", "needs {0}");
+    this.Text("Cyberbane-CrewWar-WithYou", "with you now");
+    this.Text("Cyberbane-CrewWar-Sparring", "sparring with you");
+    this.Text("Cyberbane-CrewWar-NotForYou", "won't go to war for you");
+    // The odds, in a word
+    this.Text("Cyberbane-CrewWar-OddsWalkIt", "they'll walk it");
+    this.Text("Cyberbane-CrewWar-OddsShouldWin", "they should win");
+    this.Text("Cyberbane-CrewWar-OddsEven", "an even fight");
+    this.Text("Cyberbane-CrewWar-OddsLong", "long odds");
+    this.Text("Cyberbane-CrewWar-OddsSuicide", "suicide");
+    // Between the last two names in a list: "Ryo, Kai and Mina"
+    this.Text("Cyberbane-CrewWar-And", " and ");
+    // Off to war, the group chat. {0} the gang, {1} who goes, {2} hours
+    this.Text("Cyberbane-CrewWar-GoingToWar", "Going to war on {0}: {1}. Back in about {2} hours, one way or another.");
+    // Each of them, their own thread. {0} the gang
+    this.Text("Cyberbane-CrewWar-CountMeIn", "{0}? Count me in. Been a long time coming.");
+    this.Text("Cyberbane-CrewWar-TheyWontKnow", "{0} won't know what hit them. See you on the other side.");
+    this.Text("Cyberbane-CrewWar-BeenWaitingForThis", "Been waiting for you to say it. Let's go.");
+    // How it's going, the group chat. {0} the district, {1} the gang
+    this.Text("Cyberbane-CrewWar-NightOneGood", "First night in {0}: hit three of their corners before {1} knew we were there. Going well.");
+    this.Text("Cyberbane-CrewWar-NightOneEven", "First night in {0}: we hit {1}, they hit back. Nobody's giving an inch.");
+    this.Text("Cyberbane-CrewWar-NightOneBad", "First night in {0}: {1} were ready for us. We're hurting. Still in it.");
+    // {0} the gang
+    this.Text("Cyberbane-CrewWar-NightTwoGood", "{0} are pulling back off their own corners. Couple more hours.");
+    this.Text("Cyberbane-CrewWar-NightTwoEven", "Back and forth all night. Could go either way.");
+    this.Text("Cyberbane-CrewWar-NightTwoBad", "This is going wrong. If we come home, it won't be all of us.");
+    // How it ended. {0} the gang, {1} the district, {2} eddies into the kitty
+    this.Text("Cyberbane-CrewWar-ResultDecisive", "It's over. We broke {0} in {1}, clean. Their corners are ours, and {2} eddies of their money is in the kitty.");
+    this.Text("Cyberbane-CrewWar-ResultWon", "We won. {0} gave up ground in {1}, and paid for it: {2} eddies in the kitty.");
+    // {0} the gang, {1} the district
+    this.Text("Cyberbane-CrewWar-ResultStalemate", "Nobody won in {1}. {0} are bleeding, so are we. We're coming home.");
+    this.Text("Cyberbane-CrewWar-ResultLost", "We lost. {0} held {1} and threw us out. We'll be a while patching up.");
+    this.Text("Cyberbane-CrewWar-ResultRouted", "They slaughtered us in {1}. {0} were waiting. Whoever's left is coming home.");
+    // {0} who, {1} hours
+    this.Text("Cyberbane-CrewWar-Hurt", "{0} took hits. Out for about {1} hours.");
+    // The spoils. {0} the gang's ("the Valentinos'"), {1} the place, {2} the district
+    this.Text("Cyberbane-CrewWar-ChestLeft", "Got {0} war chest out before they could move it. It's waiting for you by {1} in {2}. It's on your map.");
+    // A note when V gets there. {0} the gang's
+    this.Text("Cyberbane-CrewWar-ChestFound", "{0} war chest, right where your crew left it. Go through it.");
+    this.Text("Cyberbane-CrewWar-ChestKept", "you went through {0} war chest. Anything worth having is in your inventory.");
+    // {0} the gang, {1} how many, {2} the district
+    this.Text("Cyberbane-CrewWar-StashesMarked", "One of {0} talked to save his skin: {1} hidden stashes in {2} nobody's emptied yet. They're on your map.");
+    // {0} the Rival, {1} where
+    this.Text("Cyberbane-CrewWar-TongueLoosened", "And somebody talked about {0}: last seen {1}. It's yours if you want it.");
+    // A broker, after a decisive win. {0} the gang, {1} the solo's name, {2} their seat, {3} the price
+    this.Text("Cyberbane-CrewWar-Defector", "After what your crew did to {0}, one of theirs walked. {1}, a {2}. Wants in with you, cheap: {3} eddies.");
+    // Map pins. {0} the gang's (no article), {1} how long ago
+    this.Text("Cyberbane-CrewWar-ChestPinTitle", "{0} war chest");
+    this.Text("Cyberbane-CrewWar-ChestPinDesc", "What {0} kept for a war, taken by your crew {1}. Go and get it.");
+    this.Text("Cyberbane-CrewWar-StashPinTitle", "Hidden stash");
+    this.Text("Cyberbane-CrewWar-StashPinDesc", "Your crew got it out of a beaten gang {0}: something's hidden here, and nobody has found it yet.");
+    // The Crew page
+    this.Text("Cyberbane-CrewWar-GoToWar", "Go to war");
+    this.Text("Cyberbane-CrewWar-OneWarOn", "a war under way");
+    // {0} how many
+    this.Text("Cyberbane-CrewWar-WarsOn", "{0} wars under way");
+    // {0} what they weigh
+    this.Text("Cyberbane-CrewWar-TheyWeigh", "they weigh {0}");
+    this.Text("Cyberbane-CrewWar-PickAGang", "Pick a gang to go to war on. What each weighs is their strength on their own streets, the districts they hold, how ready they are for your crew and how afraid of you they are. Next you pick who goes.");
+    this.Text("Cyberbane-CrewWar-Going", "going");
+    this.Text("Cyberbane-CrewWar-ClickToSend", "click to send them");
+    // {0} the gang, {1} their home district, {2} what they weigh
+    this.Text("Cyberbane-CrewWar-PartyHeader", "WAR ON {0}, on their streets in {1}. They weigh {2}.\n");
+    // {0} a rank, {1} how many at most
+    this.Text("Cyberbane-CrewWar-PartyEmpty", "Pick who goes: anybody of Soldier rank or more who is home and unhurt, led by a {0} or better, up to {1}.\n");
+    // {0} how many, {1} what they weigh, {2} the odds in a word, {3} percent
+    this.Text("Cyberbane-CrewWar-PartyWeighs", "{0} going, weighing {1}: {2}, about {3}% to win.\n");
+    // {0} a rank
+    this.Text("Cyberbane-CrewWar-PartyNeedsLeader", "Somebody has to lead it: send a {0} or better.\n");
+    // {0} hours
+    this.Text("Cyberbane-CrewWar-PartyWhatItMeans", "Each one's weight is rank, chrome, the gun you gave them, training and loyalty; a party that covers more seats fights better together, and your crew's hold on those streets counts. They're gone about {0} hours. Win and the gang bleeds, your crew takes ground there, the kitty is paid, their war chest and the district's hidden stashes go on your map. Lose and they come home hurt, if they come home.");
+    this.Text("Cyberbane-CrewWar-SendThem", "Send them to war");
+    // A note. {0} the gang
+    this.Text("Cyberbane-CrewWar-TheyWent", "your crew is on its way to war with {0}. The crew's group chat will say how it goes.");
+    // More of what the street says most (2.7.6, Narrative/Whispers.reds). Respect:
+    this.Text("Cyberbane-Whispers-FixersCallThatOneFirst", "Fixers call that one first. Everybody else gets the leftovers.");
+    this.Text("Cyberbane-Whispers-NeverSeenThemRattled", "Never seen that one rattled. Not once.");
+    this.Text("Cyberbane-Whispers-FinishWhatTheyStart", "Word is they finish what they start. Rare, round here.");
+    this.Text("Cyberbane-Whispers-WantItDoneRight", "Want something done right? You're looking at it.");
+    // Hate:
+    this.Text("Cyberbane-Whispers-SmileWhileYouCan", "Smile while you can. This street remembers.");
+    this.Text("Cyberbane-Whispers-SomebodyCollectsOnYou", "Somebody's going to collect on you one day. Hope I'm there to see it.");
+    this.Text("Cyberbane-Whispers-LongMemoriesShortTempers", "Walk faster. People here have long memories and short tempers.");
+    this.Text("Cyberbane-Whispers-AllTheStreetsYouPickedOurs", "All the streets in Night City, and you pick ours.");
+    // Fear, and everybody else:
+    this.Text("Cyberbane-Whispers-DontMakeEyeContact", "Don't make eye contact. I mean it.");
+    this.Text("Cyberbane-Whispers-CrossTheStreetDontRun", "Cross the street. Don't run. Just cross.");
+    this.Text("Cyberbane-Whispers-TheOneFromTheFeeds", "That's the one from the feeds. Act normal.");
+    this.Text("Cyberbane-Whispers-NobodySawAnything", "Nobody saw anything, right? Right.");
+    // One more for each district
+    this.Text("Cyberbane-Whispers-WatsonSeenWorse", "Watson's seen worse. Not by much, but worse.");
+    this.Text("Cyberbane-Whispers-WestbrookNicerClothes", "Up here trouble wears nicer clothes. It's still trouble.");
+    this.Text("Cyberbane-Whispers-CorpoPlazaCorpoRules", "Corpo plaza, corpo rules. And the cameras never blink.");
+    this.Text("Cyberbane-Whispers-HeywoodLooksAfterItsOwn", "Heywood looks after its own. You're not one of them.");
+    this.Text("Cyberbane-Whispers-SantoDomingoDoubleShifts", "People down here work double shifts. Nobody needs your kind of overtime.");
+    this.Text("Cyberbane-Whispers-PacificaDisappear", "Pacifica's where people come to disappear. Don't make it easy for them.");
+    this.Text("Cyberbane-Whispers-DogtownWhoOwnsYou", "In Dogtown everybody's owned by somebody. Who owns you?");
+    this.Text("Cyberbane-Whispers-BadlandsSunCooks", "Out here nobody cares how famous you are. The sun cooks you all the same.");
+    // Whispers on streets V's crew holds. {0} the crew
+    this.Text("Cyberbane-Whispers-CrewRunsTheseCorners", "{0} run these corners now. That's the boss.");
+    this.Text("Cyberbane-Whispers-PayTheirPeopleOnTime", "Pay their people on time and nobody gets hurt. That's the deal now.");
+    this.Text("Cyberbane-Whispers-WhoseStreetsNowTheirs", "These used to be somebody else's streets. Not anymore.");
+    // And anywhere, about a merc with a crew that's grown
+    this.Text("Cyberbane-Whispers-NeverAloneThatOne", "That one's never really alone. Their people are always close.");
+    this.Text("Cyberbane-Whispers-TouchThemAndTheirCrew", "Touch that one and their crew comes for you next week.");
+    this.Text("Cyberbane-Whispers-HeardTheyRunACrew", "Heard they run a whole crew now. Took somebody's streets off them.");
+    // The setting
+    this.Text("Cyberbane-Settings-CrewTurf", "Your crew takes streets");
+    this.Text("Cyberbane-Settings-CrewTurf-Desc", "Your crew counts for something on the street, and the more it counts for the more seriously people take you. Wars it wins give it a hold on that gang's streets; with enough of one it takes the district on the turf map, the beaten gang runs sooner there, people tell you your crew runs it, and the kitty takes a street tax every day. The gang that lost it comes back at it. Off, and the crew never takes a district (wars still pay).");
+  }
+
   protected func DefineCrewJobs() -> Void {
     this.Text("Cyberbane-Settings-CrewJobs", "Crew jobs and the kitty");
     this.Text("Cyberbane-Settings-CrewJobs-Desc", "Send one of your crew on a job from their Orders: a hit on one of your Rivals (from Veteran up) or a gang's bag (from Soldier up). They are away a few hours and the odds decide how it goes, shown before you pick. What the crew brings in, from work and jobs, goes into the kitty: it pays their weekly cut by itself, you can take it from the Hub when you are home, and a member running the money drops it at your place every couple of days. Off: no jobs, and earnings come straight to you as before.");
     this.Text("Cyberbane-Settings-CrewDuels", "Challenges to your crew");
-    this.Text("Cyberbane-Settings-CrewDuels-Desc", "Now and then the Tyger Claws or the Valentinos send a challenge: one of theirs against one of yours. Pick somebody on the Hub (Name, colours, the fallen) to win respect and fear, or turn it down and lose face with them.");
+    this.Text("Cyberbane-Settings-CrewDuels-Desc", "Now and then the Tyger Claws or the Valentinos send a challenge: one of theirs against one of yours. Pick somebody on the Hub (War, money, name, the fallen) to win respect and fear, or turn it down and lose face with them.");
     this.Text("Cyberbane-Settings-BagGoods", "Goods in stolen bags");
     this.Text("Cyberbane-Settings-BagGoods-Desc", "Now and then a bagman's bag holds the gang's goods instead of cash. Sell them to somebody of another gang (their enemies pay best and the owners hear of it), or back to the owners for less. Goods go stale in a few days.");
     // Orders and the Hub.
@@ -5255,7 +5683,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-CrewJobs-DuelLostMember", "Lost to {0} best. I'll live. I want a rematch.");
     this.Text("Cyberbane-CrewJobs-Challenge", "One of yours against one of ours. Send your best, and everybody will know who won. You've got till tomorrow.");
     // A note after the challenge text: where V answers it.
-    this.Text("Cyberbane-CrewJobs-ChallengeWhere", "a challenge for your crew: answer it or turn it down on the Hub's Crew page, under Name, colours, the fallen, within a day.");
+    this.Text("Cyberbane-CrewJobs-ChallengeWhere", "a challenge for your crew: answer it or turn it down on the Hub's Crew page, under War, money, name, the fallen, within a day.");
     this.Text("Cyberbane-CrewJobs-ChallengeRefused", "Nobody to send? We thought so.");
     this.Text("Cyberbane-CrewJobs-ChallengeIgnored", "No answer. Your crew's scared of us, and now everybody knows.");
     // {0} is eddies.

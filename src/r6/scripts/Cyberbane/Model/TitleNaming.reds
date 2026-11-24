@@ -46,6 +46,7 @@ public func CBFactionProfileName(id: CName, label: Bool) -> String {
 }
 
 public func CBFactionLabel(id: CName) -> String {
+  if CBIsCrewTurf(id) { return CBCrewTurfLabel(); }   // V's crew, holding a district (2.7.6)
   if Equals(id, n"Maelstrom") { return CBT(n"Cyberbane-TitleNaming-Maelstrom"); }
   if Equals(id, n"TygerClaws") { return CBT(n"Cyberbane-TitleNaming-TheTygerClaws"); }
   if Equals(id, n"Valentinos") { return CBT(n"Cyberbane-TitleNaming-TheValentinos"); }
@@ -69,6 +70,7 @@ public func CBFactionLabel(id: CName) -> String {
 // A gang's name on its own, with no article: a phone contact, a bar over a head (2.7.1). Said where a stripped label used to
 // be ("the Tyger Claws" less "the "), which only works in English.
 public func CBFactionName(id: CName) -> String {
+  if CBIsCrewTurf(id) { return CBCrewTurfName(); }   // V's crew, holding a district (2.7.6)
   if Equals(id, n"Maelstrom") { return CBT(n"Cyberbane-TitleNaming-Maelstrom"); }
   if Equals(id, n"TygerClaws") { return CBT(n"Cyberbane-TitleNaming-TygerClaws"); }
   if Equals(id, n"Valentinos") { return CBT(n"Cyberbane-TitleNaming-Valentinos"); }

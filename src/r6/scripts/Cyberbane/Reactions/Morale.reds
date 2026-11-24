@@ -192,6 +192,10 @@ public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, 
       chance *= CBConfig.MoraleLostGroundMult();
     }
   }
+  // On streets V's crew holds (Model/CrewTurf.reds, 2.7.6), any gang's people are on borrowed ground, and know whose.
+  if NotEquals(faction, n"") && CBCrewHoldsHere(sys, npc.GetGame()) {
+    chance += CBConfig.CrewHeldBreakBonus();
+  }
   // The ceiling goes last, over the slider and the title too: applied before them, Morale intensity
   // at 2.0 turned a 40% ceiling into 80%.
   return ClampF(chance * intensity * sys.WornPerk().breakMult * CBCodeNerve(faction), 0.0, CBConfig.MoraleBreakMaxChance());

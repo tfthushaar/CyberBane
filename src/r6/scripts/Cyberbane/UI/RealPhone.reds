@@ -231,7 +231,14 @@ public func CBPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
   }
   // V's crew (Reactions/Crew.reds, 2.5.0).
   if kind >= CBPhoneAnswerCrew() {
-    for crewRow in CBCrewPhoneRows(sys, game, kind) {
+    // One of them in their own thread (2.7.6): whose it is.
+    let member = 0;
+    if kind == CBPhoneAnswerCrewMember() {
+      let one = CBCrewMemberOfThread(sys, CBCrewBook.Get(game), store.ThreadName(thread));
+      member = IsDefined(one) ? one.id : 0;
+    }
+    let crewRows = CBCrewPhoneRows(sys, game, kind, member);   // a named list, never a call's result straight into a loop
+    for crewRow in crewRows {
       ArrayPush(out, crewRow);
     }
   }

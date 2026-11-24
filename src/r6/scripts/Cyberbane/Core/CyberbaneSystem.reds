@@ -413,7 +413,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   // open a window for someone to walk in. Session-only.
   private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
-  private let m_factsProbed: Bool;            // the deed-fact probe has already run this session (not persisted)
+  // A death alternative's count of V's rebirths this session, as last read, and the fight V fell in still to end on the
+  // next settled tick (Compat/FenixRebirth.reds, 2.7.6). Session-only: Fenix Rebirth's own count starts again with a load.
+  private let m_deathAltSeen: Int32;
+  private let m_deathAltRead: Bool;
+  private let m_vFellPending: Bool;
+  private let m_factsProbed: Bool;           // the deed-fact probe has already run this session (not persisted)
   private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
   private let m_storyHold: Int32;             // why the story has the stage right now, CBStory* (Core/StoryHold.reds; not persisted)
   private let m_storyRestrictTicks: Int32;    // settled ticks in a row a story restriction has been on V (not persisted)
@@ -986,6 +991,9 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.ScheduleFastTick();
       return;
     }
+    // A death alternative carrying V on (Compat/FenixRebirth.reds, 2.7.6). Asked before the gate below, which a rebirth
+    // closes (Fenix Rebirth puts V in a scene tier while it moves V), and which reads the answer through CBVDown.
+    CBFenixTick(this, game, player);
     // A menu / loading screen / scripted scene (incl. the ripperdoc chair) is up: stand down,
     // and keep whatever longer flood settle is already armed.
     if !CBWorldStable(game) {
@@ -1074,6 +1082,11 @@ public class CyberbaneSystem extends ScriptableSystem {
       // The living only; the body goes later, and neither goes while V is watching. And only bodies no
       // Rival out right now owns: with two Rivals out, one going down used to take the other with it.
       CBSweepStrayRivalBodies(this, game);
+    }
+    // V went down in a fight and a death alternative stood V up somewhere else (2.7.6). The fight ended where V fell: on
+    // this first settled tick after it, before the hunt can read V's being gone as V having run.
+    if this.TakeVFell() {
+      CBFightEndsWithVDown(this, game);
     }
 
     // Did the player ask to start over? Same reasoning as the sweep above: this tick is
@@ -1262,6 +1275,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts (2.4.4)
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
     CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
+    CBChippinInTick(this, game);        // and one of them listening in on an apex fight (Reactions/ChippinIn.reds, 2.7.6)
     CBGuardTick(this, game);            // and at home, watching the house (2.7.2)
     CBVsSideHostilityTick(this, game);  // V's crew and an add-on's people on V's side against V's enemies (2.7.5)
     CBApiTick(game);                    // add-ons told what happened since the last tick (API/Listeners.reds, 2.7.4)
@@ -1269,6 +1283,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBApiConvoyTick(this, game);        // add-ons' convoys, on paper or on the road (API/Convoy.reds)
     CBApiHubTick(game);                 // and the clicks on their Hub cards, told once the world has settled
     CBStrongholdTick(this, game);       // cleared gig bases a Rival holds (Rivals/Strongholds.reds, 2.7.2)
+    CBWarChestTick(this, game);         // a beaten gang's war chest, laid when V gets there (Reactions/CrewWar.reds, 2.7.6)
+    CBSecretStashTick(this, game);      // and the district's hidden stashes the crew marked, unmarked once V is there
     CBMbcTick(this, game);              // Much Better Contracts' finished contracts are finished jobs (2.7.5)
     if this.m_tickCount % 5 == 2 {
       CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.0)
@@ -3583,6 +3599,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
     CBTurfTick(this, game);         // a district changing hands is news (Model/Territory.reds)
+    CBCrewTurfTick(this, game);     // the crew's hold on its streets, and the street tax (Model/CrewTurf.reds, 2.7.6)
     // An iconic V picked up anywhere is remembered while V carries it (2.7.0), so it never drops again after it goes in
     // the stash, is sold or is handed to the crew (Spawn/Loot.reds).
     CBLootNoteCarriedIconics(this, CBLootIconics());
@@ -3974,6 +3991,18 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(kitBook) {
       kitBook.Clear();    // nor carries anything of V's, nor has a name (2.6.0)
     }
+    let nameBook = CBCrewNameBook.Get(game);
+    if IsDefined(nameBook) {
+      nameBook.Clear();   // nor goes by a name V gave them (2.7.6)
+    }
+    let crewTurf = CBCrewTurfBook.Get(game);
+    if IsDefined(crewTurf) {
+      crewTurf.Clear();   // nor has a hold on anybody's streets (2.7.6)
+    }
+    let crewWars = CBCrewWarBook.Get(game);
+    if IsDefined(crewWars) {
+      crewWars.Clear();   // nor is at war with anybody (2.7.6)
+    }
     let bannerBook = CBCrewBannerBook.Get(game);
     if IsDefined(bannerBook) {
       bannerBook.Clear(); // nor colours, standing, fallen or a recruiter (2.6.0)
@@ -4058,6 +4087,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_apexBountyArmed = false;
     this.m_turfWatchFaction = n"";
     this.m_pendingRivalSweep = false;
+    this.m_vFellPending = false;
     // Everything 1.8.2 keeps about particular Rivals for the session. Rival ids start again from
     // zero above, so a forget or a purchase still waiting from the Hub, or a body remembered as an old
     // Rival's, would otherwise land on whichever new Rival is given that number: a knocked-out Rival
@@ -4139,6 +4169,32 @@ public class CyberbaneSystem extends ScriptableSystem {
   // would free it underneath the engine (crash safety).
   public func RequestRivalSweep() -> Void {
     this.m_pendingRivalSweep = true;
+  }
+
+  // A death alternative's rebirth count, as last read this session (Compat/FenixRebirth.reds, 2.7.6). Unread until the
+  // first look, which only takes the count as it stands: a rebirth from before Cyberbane looked is not counted twice.
+  public func DeathAltRead() -> Bool {
+    return this.m_deathAltRead;
+  }
+
+  public func DeathAltSeen() -> Int32 {
+    return this.m_deathAltSeen;
+  }
+
+  public func SetDeathAltSeen(n: Int32) -> Void {
+    this.m_deathAltSeen = n;
+    this.m_deathAltRead = true;
+  }
+
+  // V went down and was carried on: the fight ends on the next settled tick (CBFightEndsWithVDown).
+  public func NoteVFell() -> Void {
+    this.m_vFellPending = true;
+  }
+
+  public func TakeVFell() -> Bool {
+    let v = this.m_vFellPending;
+    this.m_vFellPending = false;
+    return v;
   }
 
   public func CountActiveRivals() -> Int32 {

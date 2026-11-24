@@ -271,8 +271,19 @@ public func CBPlayerPSM(game: GameInstance) -> ref<IBlackboard> {
 // three seconds before the death screen (highLevelTransitions.script, DeathEvents), and back to Alive
 // when V is up again (ResurrectEvents, and the respawn on load). The same value the game's own death
 // menu and vision modes read, on 2.31 and 2.5 alike.
+//
+// Or a death alternative is bringing V back (2.7.6): Fenix Rebirth catches the killing hit before the game sees it, so the
+// state machine never says Dead, and from the fall to V's arrival somewhere else the world in front of us is about to be
+// left behind all the same (Compat/FenixRebirth.reds).
 public func CBVDown(game: GameInstance) -> Bool {
-  let psm = CBPlayerPSM(game);
+  let player = GetPlayer(game);
+  if !IsDefined(player) {
+    return false;
+  }
+  if player.cbRebirthPending {
+    return true;
+  }
+  let psm = player.GetPlayerStateMachineBlackboard();
   if !IsDefined(psm) {
     return false;
   }

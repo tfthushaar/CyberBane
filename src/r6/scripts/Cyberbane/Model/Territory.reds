@@ -48,6 +48,10 @@ public func CBGangStrength(sys: ref<CyberbaneSystem>, faction: CName) -> Float {
   if !IsDefined(sys) || Equals(faction, n"") || !CBTurfWarsOn() {
     return 100.0;
   }
+  // V's crew is as strong as it counts for on the street (Model/CrewTurf.reds, 2.7.6), never a gang's record.
+  if CBIsCrewTurf(faction) {
+    return CBCrewWeight(sys.GetGameInstance());
+  }
   let svc = sys.GetPlayService();
   if !IsDefined(svc) {
     return 100.0;
@@ -98,7 +102,9 @@ public func CBGangStrengthWord(strength: Float) -> String {
 
 // V has cost this gang something. Settled callers only (the kill path, a Rival's death, a crew
 // or an apex squad beaten), and it only ever writes a number into the play service.
-public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, amount: Float) -> Void {
+// `at` (2.7.6): the streets it happened on, when that is not where V is standing: a crew war is fought on the gang's own home
+// streets, and its toll on those streets was booked wherever V happened to be.
+public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, amount: Float, opt at: CName) -> Void {
   if !IsDefined(sys) || Equals(faction, n"") || amount <= 0.0 || !CBTurfWarsOn()
      || !CBGangHoldsTurf(sys, faction) {
     return;
@@ -112,7 +118,7 @@ public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
   let dealt = amount * sys.WornPerk().turfMult;
   let after = MaxF(CBConfig.GangStrengthFloor(), before - dealt);
   svc.NoteGangPower(pid, faction, after, CBGameSeconds(game));
-  CBTurfNoteLocalLoss(sys, game, faction, dealt);
+  CBTurfNoteLocalLoss(sys, game, faction, dealt, at);
   // Said once, as they cross: the street notices a gang thinning out before the map does.
   if !CBMessagesOn() {
     return;
@@ -202,7 +208,8 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
   let heldProf = NotEquals(held, n"") ? content.GetFaction(held) : null;
   let def = content.GetDistrict(district);
   let sealed = IsDefined(def) && def.sealed;
-  let invaded = !sealed && IsDefined(heldProf) && !ArrayContains(heldProf.turf, district);
+  // V's crew holding it is outsiders holding it too (2.7.6): the home gangs are the ones fighting their way back in.
+  let invaded = !sealed && ((IsDefined(heldProf) && !ArrayContains(heldProf.turf, district)) || CBIsCrewTurf(held));
   let factions = content.GetFactions();
   let weakestNative = 100.0;
   let natives: array<CName>;
@@ -225,6 +232,15 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
       }
     }
     i += 1;
+  }
+  // V's crew, where it has a hold on the streets (Model/CrewTurf.reds, 2.7.6): its weight there, by its foothold, squared
+  // as every gang's strength is. Only where some gang has streets, and never behind a wall.
+  if ArraySize(natives) > 0 && !sealed {
+    let crewPush = CBCrewTurfWeight(sys, game, district, dIdx);
+    if crewPush > 0.0 {
+      ArrayPush(ids, CBCrewTurfId());
+      ArrayPush(weights, crewPush);
+    }
   }
   if ArraySize(natives) == 0 || !CBTurfWarsOn() || weakestNative >= CBConfig.TurfOpenStrength()
      || !IsDefined(def) || sealed {
@@ -353,10 +369,10 @@ public func CBGangStrengthIn(sys: ref<CyberbaneSystem>, faction: CName, district
 }
 
 // Hurting a gang on its own streets hurts it there twice: once everywhere, once on that block.
-func CBTurfNoteLocalLoss(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, amount: Float) -> Void {
+func CBTurfNoteLocalLoss(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, amount: Float, opt at: CName) -> Void {
   let book = CBTurfBook.Get(game);
   let content = sys.GetContent();
-  let here = CBEventDistrict(sys, game);
+  let here = NotEquals(at, n"") ? at : CBEventDistrict(sys, game);
   let index = CBDistrictIndex(here);
   if !IsDefined(book) || !IsDefined(content) || index < 0 {
     return;
@@ -518,6 +534,10 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   let h = CBFactionLabel(holder);
   if CBMessagesOn() && StrLen(place) > 0 && StrLen(o) > 0 && StrLen(h) > 0 {
     CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-Territory-HitInLastNightTheyWant", [s"\(CBCapFirst(o))", s"\(h)", s"\(place)"]), n"");
+    // On the crew's own corners (2.7.6): the crew tells V, in its group chat.
+    if CBIsCrewTurf(holder) {
+      CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewTurf-HitOurCorners", [CBCapFirst(o), place]));
+    }
   }
 }
 
@@ -533,10 +553,21 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
       book.Add(CBMemTakeover(), spot, now, 0, winner, loser, n"", district, false);
     }
   }
-  CBOweCelebration(game, winner);   // and they celebrate (Spawn/StreetEvents.reds, 2.3.3)
+  if !CBIsCrewTurf(winner) {
+    CBOweCelebration(game, winner);   // and they celebrate (Spawn/StreetEvents.reds, 2.3.3)
+  }
   CBLog.Info(n"Model", s"\(NameToString(winner)) took \(NameToString(district)) from \(NameToString(loser)).");
   if !CBMessagesOn() {
     return;
+  }
+  // V's crew took it, or lost it (2.7.6): the crew says so in its group chat, on top of what the street says.
+  if CBIsCrewTurf(winner) {
+    CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewTurf-DistrictIsOurs", [CBDistrictLabel(district), CBFactionLabel(loser)]));
+    CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-CrewTurf-StreetSaysCrewTookIt", [CBCapFirst(CBCrewTurfLabel()), CBFactionLabel(loser), CBDistrictLabel(district)]), n"");
+    return;
+  }
+  if CBIsCrewTurf(loser) {
+    CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewTurf-DistrictLost", [CBDistrictLabel(district), CBFactionLabel(winner)]));
   }
   let content = sys.GetContent();
   let place = CBDistrictLabel(district);

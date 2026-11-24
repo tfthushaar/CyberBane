@@ -94,12 +94,12 @@ public class CBPlayerDeathCallback extends DelayCallback {
     // promoted at all for anybody running one, and the part of a nemesis system that makes it a
     // nemesis system was missing for them.
     //
-    // Doing it here needs nothing from any other mod, which is the point. Cyberbane already
-    // knows V died and already knows who did it: `cbLastAttacker` is set by the hit hook in
-    // CombatSignals.reds. Hooking a particular death-alternative mod to be told the same thing
-    // added a hard dependency on that mod's own API, and a version of it that did not carry that
-    // API broke redscript compilation for everyone who had it. Never reach into another mod for
-    // something this mod already has.
+    // Who did it is Cyberbane's own knowledge: `cbLastAttacker` is set by the hit hook in
+    // CombatSignals.reds. That V died is too, from the game's death event, except where a death
+    // alternative never lets the game kill V at all: Fenix Rebirth catches the killing hit inside
+    // the damage, so for it the death comes from its own rebirth count, read by reflection
+    // (Compat/FenixRebirth.reds, 2.7.6). Never by name: a bridge that wrapped one of its events
+    // (removed in 1.4.6) broke redscript compilation for everyone on a version without it.
     //
     // If the player does reload instead, none of this survives, because it is save state and the
     // save is about to be replaced by an older one; the ledger entry written in the event does it
