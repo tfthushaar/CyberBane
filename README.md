@@ -125,13 +125,13 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   time to get round.
 - **Your crew, kitted out.** Hand them a weapon from your bag, have spare chrome put in, send them to train, spar with
   them, put them to work earning or recruiting, and send a senior one to start a war on a gang. All from the Hub's Crew
-  page. Details in [CHANGELOG.md](CHANGELOG.md).
+  page.
 - **Your crew as a crew.** Give it a name and colours. It has its own standing with every gang, a card of its own on
   the Gangs page, and a memorial for the ones who died, with what they carried.
 
 ### New in 2.5
 
-Everything added since 2.3.0, in one place. The fixes in each update are in [CHANGELOG.md](CHANGELOG.md).
+Everything added since 2.3.0, in one place. The major changes in each update are in [CHANGELOG.md](CHANGELOG.md).
 
 **The street**
 - **The street reads you.** Witnesses run to tell the gang unless you stop them. Night, rain and your own
@@ -377,8 +377,8 @@ Every line Cyberbane shows is in `r6\scripts\Cyberbane\Localization\en-us\Englis
 3. Translate the second text in each line and leave the first, the key, as it is. `{0}` and `{1}` are filled in by the
    game and can go wherever your language needs them.
 
-The top of the file explains the rest. Lines you have not translated yet show in English, and the changelog says which
-lines each release adds. Rival nicknames are translatable too (`DefineEpithets`): a translation changes only what the
+The top of the file explains the rest. Lines you have not translated yet show in English, so after an update you can
+compare your file with the new `English.reds` to find what was added. Rival nicknames are translatable too (`DefineEpithets`): a translation changes only what the
 player reads, never who a Rival is, so switching language renames nobody in a save. The log says whether your translation
 loaded ("Translation for ... loaded"). Share your translation as a mod of its own on Nexus, with Cyberbane as a requirement.
 
