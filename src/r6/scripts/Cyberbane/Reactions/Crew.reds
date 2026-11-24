@@ -136,6 +136,12 @@ public class CBCrewBook extends ScriptableSystem {
   // fight on the way does not send them home once it is over.
   public let escort: Bool;
   public let fought: Bool;
+  // The fight this call is in (2.7.6, CBCrewBattleTick): one really happened with them there, whether the hunt's people
+  // were in it, how many ticks it has been over, and whether this call has counted a win. Session only, like the rest.
+  public let battle: Bool;
+  public let battleHunt: Bool;
+  public let overTicks: Int32;
+  public let wonCall: Bool;
   public let leaving: Bool;
   public let quiet: Int32;
   public let driving: Int32;
@@ -184,6 +190,10 @@ public class CBCrewBook extends ScriptableSystem {
     ArrayClear(this.outTick);
     this.escort = false;
     this.fought = false;
+    this.battle = false;
+    this.battleHunt = false;
+    this.overTicks = 0;
+    this.wonCall = false;
     this.leaving = false;
     this.quiet = 0;
     this.driving = 0;
@@ -1645,6 +1655,11 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     book.fought = true;
   }
   book.quiet = trouble ? 0 : book.quiet + 1;
+  // The fight they stood in, won (2.7.6): counted once that fight is over, whatever ends the call after it. Only a call
+  // that went quiet counted its win, and quiet waited on everything still to come (an apex squad held back while the NCPD
+  // were after V), so a crew sent home after the fight they won counted nothing: "I have won two fights with my crew but
+  // it shows only one".
+  CBCrewBattleTick(sys, game, book, player);
   book.driving = IsDefined(player.GetMountedVehicle()) ? book.driving + 1 : 0;
   // The one set to turn does it once the fight has them in it ([C7]).
   if book.turnMember > 0 && trouble && up > 0 {
@@ -1658,15 +1673,10 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     if !book.escort {
       why = 0;
     } else {
-      // Walking with V (2.6.3): a fight on the way, over, is a win for whoever is standing, and they stay. Anybody down is
-      // carried home, and the call ends as a fight's does.
-      if book.fought {
-        if CBCrewAnyDown(book) {
-          why = 0;
-        } else {
-          CBCrewEscortWin(sys, game, book);
-          book.fought = false;
-        }
+      // Walking with V (2.6.3): after a fight on the way anybody down is carried home, and the call ends as a fight's
+      // does; the rest stay. The win itself is counted when the fight is over (CBCrewBattleTick, 2.7.6).
+      if book.fought && CBCrewAnyDown(book) {
+        why = 0;
       }
     }
   }
@@ -1745,12 +1755,15 @@ public func CBCrewSendOneHome(sys: ref<CyberbaneSystem>, game: GameInstance, boo
 func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, why: Int32) -> Void {
   let player = GetPlayer(game);
   let now = CBGameSeconds(game);
-  // A win needs a fight: a walk that went quiet without one is no win (2.6.3).
-  let won = why == 0 && book.fought && !CBHuntersOut(sys, game);
+  // A win needs a fight (2.6.3), and is counted when that fight is over (CBCrewBattleTick, 2.7.6). One won and over a
+  // moment ago, the call cut short before the tick counted it (sent home, a car, a held place, V gone on), counts here.
+  // Nobody standing (4) or the crew switched off (5) counts nothing.
+  if why != 4 && why != 5 && book.battle && IsDefined(player) && CBCrewFightIsOver(sys, game, book, player) {
+    CBCrewFightWon(sys, game, book, true);
+  }
+  let won = book.wonCall;
   let ppos = IsDefined(player) ? player.GetWorldPosition() : new Vector4(0.0, 0.0, 0.0, 1.0);
   let speaker: ref<CBCrewMember>;
-  let promoted: ref<CBCrewMember>;
-  let promotedFrom = 0;
   let leftLying: ref<CBCrewMember>;
   let i = 0;
   while i < book.OutCount() {
@@ -1773,15 +1786,6 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
           leftLying = m;
         }
       } else {
-        if won {
-          let before = CBCrewRankOf(game, m);
-          m.wins += 1;
-          CBCrewLoyalty(m, CBConfig.MyCrewWinLoyalty(), CBCrewWhyNone());
-          if CBCrewRankOf(game, m) > before {
-            promoted = m;
-            promotedFrom = before;
-          }
-        }
         if !IsDefined(speaker) || m.loyalty > speaker.loyalty {
           speaker = m;
         }
@@ -1806,9 +1810,10 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
   book.turnTicks = 0;
   book.escort = false;
   book.fought = false;
-  if won {
-    CBFileLog(sys, n"CrewWon", now, CBEventDistrict(sys, game), n"", 0.0);
-  }
+  book.battle = false;
+  book.battleHunt = false;
+  book.overTicks = 0;
+  book.wonCall = false;
   if !CBMessagesOn() {
     return;
   }
@@ -1831,13 +1836,6 @@ func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCr
     if why == 6 {
       CBCrewText(sys, game, speaker, CBLineOf([CBTf(n"Cyberbane-Crew-HeadingBackToCallWhenYou", [s"\(home)"]), CBT(n"Cyberbane-Crew-GoingYouKnowWhereToFind")]), true);
     }
-  }
-  if IsDefined(promoted) {
-    // The rank the card shows (fights and training together); the nickname is news once, on reaching Veteran.
-    let rank = CBCrewRankOf(game, promoted);
-    CBCrewText(sys, game, null, rank >= 3 && promotedFrom < 3
-      ? CBTf(n"Cyberbane-Crew-TheStreetSCallingNowEarned", [s"\(CBCrewFirst(sys, promoted))", s"\(CBCrewNickname(promoted.seat, promoted.seed))"])
-      : CBTf(n"Cyberbane-Crew-IsGettingGoodAtThisNow", [s"\(CBCrewFirst(sys, promoted))", s"\(CBCrewRankWord(rank))"]));
   }
   if IsDefined(leftLying) {
     CBCrewText(sys, game, leftLying, CBLineOf([CBT(n"Cyberbane-Crew-YouLeftMeLyingThereI"), CBT(n"Cyberbane-Crew-WokeUpAloneOnThePavement")]));
@@ -2001,10 +1999,58 @@ func CBCrewAnyDown(book: ref<CBCrewBook>) -> Bool {
 
 // A fight on the walk is over and nobody is down (2.6.3): a win for each of them standing, as a call's end counts it, and
 // they stay with V.
-func CBCrewEscortWin(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
-  if CBHuntersOut(sys, game) {
-    return;   // not over while somebody is still hunting V
+// The fight they were in, each tick of a call (2.7.6): it happened once V is in a fight (the hunt's people out, an ambush,
+// or V in combat) with any of them there and standing, and it is won once it has been over for MyCrewWonTicks.
+func CBCrewBattleTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, player: ref<PlayerPuppet>) -> Void {
+  if !IsDefined(book) || !IsDefined(player) {
+    return;
   }
+  let huntOut = CBHuntersOut(sys, game);
+  if (huntOut || player.IsInCombat() || CBLiveTaggedPresent(game, n"CB_Ambush")) && CBCrewAnyStandingHere(book) {
+    book.battle = true;
+    if huntOut {
+      book.battleHunt = true;
+    }
+  }
+  if book.battle && CBCrewFightIsOver(sys, game, book, player) {
+    book.overTicks += 1;
+    if book.overTicks >= CBConfig.MyCrewWonTicks() {
+      CBCrewFightWon(sys, game, book, false);
+    }
+  } else {
+    book.overTicks = 0;
+  }
+}
+
+// Over: nobody the hunt sent still standing, no ambush, and V out of combat. Once the hunt's people were in it, the NCPD
+// still on V is no longer this fight: their stars keep V in combat after the last of the gang is down.
+func CBCrewFightIsOver(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, player: ref<PlayerPuppet>) -> Bool {
+  if CBHuntersOut(sys, game) || CBLiveTaggedPresent(game, n"CB_Ambush") {
+    return false;
+  }
+  return !player.IsInCombat() || (book.battleHunt && CBPoliceOnV(sys));
+}
+
+// Any of them in the world and on their feet.
+func CBCrewAnyStandingHere(book: ref<CBCrewBook>) -> Bool {
+  let i = 0;
+  while i < book.OutCount() {
+    if book.outSeen[i] && !book.outDown[i] {
+      return true;
+    }
+    i += 1;
+  }
+  return false;
+}
+
+// A fight won (2.7.6, out of the walk's own win, 2.6.3): a win for each of them standing, counted once whatever ends the
+// call after it. On a walk they stay and say so; `ending`, the call is closing and its own line says the rest.
+func CBCrewFightWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, ending: Bool) -> Void {
+  book.battle = false;
+  book.battleHunt = false;
+  book.overTicks = 0;
+  book.fought = false;
+  book.wonCall = true;
   let now = CBGameSeconds(game);
   let speaker: ref<CBCrewMember>;
   let promoted: ref<CBCrewMember>;
@@ -2027,14 +2073,15 @@ func CBCrewEscortWin(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
     i += 1;
   }
   CBFileLog(sys, n"CrewWon", now, CBEventDistrict(sys, game), n"", 0.0);
-  CBLog.Info(n"Crew", "A fight on the walk is won; V's crew stays with V.");
+  CBLog.Info(n"Crew", IsDefined(speaker) ? "A fight is won with V's crew: a win for each of them standing." : "A fight is won, with none of V's crew standing.");
   if !CBMessagesOn() {
     return;
   }
-  if IsDefined(speaker) {
+  if IsDefined(speaker) && book.escort && !ending {
     CBCrewText(sys, game, speaker, CBLineOf([CBT(n"Cyberbane-Crew-CleanStillWithYou"), CBT(n"Cyberbane-Crew-ThatSHandledLeadOn"), CBT(n"Cyberbane-Crew-AnybodyElseWantSomeDidnT")]), true);
   }
   if IsDefined(promoted) {
+    // The rank the card shows (fights and training together); the nickname is news once, on reaching Veteran.
     let rank = CBCrewRankOf(game, promoted);
     CBCrewText(sys, game, null, rank >= 3 && promotedFrom < 3
       ? CBTf(n"Cyberbane-Crew-TheStreetSCallingNowEarned", [s"\(CBCrewFirst(sys, promoted))", s"\(CBCrewNickname(promoted.seat, promoted.seed))"])

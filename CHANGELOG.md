@@ -76,6 +76,8 @@ the next unless a version says otherwise.
   "with you" after you sent them home. Each now takes a seat of their own, the front one stays free (for Johnny, with
   The Passenger), and they get out when you send them home.
 - A guard taken off the house watch no longer disappears in front of you.
+- A fight you win with your crew always counts for each of them standing, even if you send them home straight after
+  it, or more trouble is still on its way.
 
 **Better: what people say**
 - More of what you hear most: the street's everyday whispers, a stranger saying hello, and one more line for every

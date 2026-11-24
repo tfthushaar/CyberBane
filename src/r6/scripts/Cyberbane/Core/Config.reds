@@ -844,6 +844,9 @@ public abstract class CBConfig {
   public static func MyCrewMidSpawnDistance() -> Float = 50.0
   public static func MyCrewFarSpawnDistance() -> Float = 85.0
   public static func MyCrewQuietTicks() -> Int32 = 60
+  // A fight the crew stood in counts as won once it has been over this many ticks (2.7.6, CBCrewBattleTick): long enough
+  // that a lull is not a win, short enough that sending them home straight after still finds it counted.
+  public static func MyCrewWonTicks() -> Int32 = 5
   public static func MyCrewDriveTicks() -> Int32 = 4
   public static func MyCrewLeaveDistance() -> Float = 120.0
   public static func MyCrewStayedDistance() -> Float = 35.0
