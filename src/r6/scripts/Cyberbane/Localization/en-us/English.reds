@@ -193,7 +193,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-Value-CrewPace-Hard", "Hard");
     this.Text("Cyberbane-Settings-CrewWeaponInHand", "Their own weapon in their hands (experimental)");
     this.Text("Cyberbane-Settings-CrewWeaponInHand-Desc", "A weapon you give one of your crew is the weapon they carry into a fight, rather than the way they fight and the damage it brings. They may still switch to their usual gun now and then. If they die with it, it lies where they fell, and it is yours to pick up. Off by default.");
-    this.Text("Cyberbane-Settings-Voices-Desc", "People speak in their own game voices at Cyberbane's moments: a Rival's people as they find you, somebody giving up, a crew's sergeant calling a halt. Only the game's own voice lines. Off, and those moments are subtitles alone.");
+    this.Text("Cyberbane-Settings-Voices-Desc", "People speak in their own game voices at Cyberbane's moments: a Rival's people as they find you, somebody giving up, a crew's sergeant calling a halt. In a conversation they answer in their own voice, and V says V's own recorded words wherever V has them: from V's own voice lines, and with AudioXL installed, from V's lines in the story. Only the game's own recordings. Off, and those moments are subtitles alone.");
     this.Text("Cyberbane-Settings-MorningBrief", "Morning brief");
     this.Text("Cyberbane-Settings-MorningBrief-Desc", "At dawn each in-game day a broker texts you: what happened overnight, who is after you, and what is coming. Quiet when messages are off.");
     this.Text("Cyberbane-Settings-PanicInDark", "Panic in the dark");
@@ -959,7 +959,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-War-YouWorkJapantownYouPayThe", "You work Japantown, you pay the Claws. {0}eb, to any of ours on the street, in the next two days. Don't make us come asking.");
     // {0} book.ProtectAmount()
     this.Text("Cyberbane-War-PayEbProtection", "[Pay] {0}eb. Protection.");
-    this.Text("Cyberbane-War-SideWithThemYourWarIs", "[Side with them] Your war is my war.");
+    this.Text("Cyberbane-War-SideWithThemYourWarIs", "[Side with them] All right, I'm in.");
     // {0} CBCapFirst(CBFactionLabel(enemy))
     this.Text("Cyberbane-War-LieArePlanningAHitOn", "[Lie] {0} are planning a hit on you.");
     this.Text("Cyberbane-War-DealWhatWouldItTakeTo", "[Deal] What would it take to end this?");
@@ -1896,8 +1896,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} CBCapFirst(CBFactionLabel(buyer))
     this.Text("Cyberbane-Allies-HandOverWillWantAWord", "[Hand over] {0} will want a word with you.");
     this.Text("Cyberbane-Allies-WatchMyBackSomeOfYours", "[Watch my back] Some of yours could ride with me for a while.");
-    this.Text("Cyberbane-Allies-QuitTheGangIMOut", "[Quit the gang] I'm out. Tell them I'm done.");
-    this.Text("Cyberbane-Allies-JoinTellThemYesIM", "[Join] Tell them yes. I'm one of yours.");
+    this.Text("Cyberbane-Allies-QuitTheGangIMOut", "[Quit the gang] Right, I'm out.");
+    this.Text("Cyberbane-Allies-JoinTellThemYesIM", "[Join] Hell yeah, I'm in!");
     // {0} CBFactionLabel(after), {1} CBLieDistrictLabel(sys)
     this.Text("Cyberbane-Allies-LieIfAskILeftFor", "[Lie] If {0} ask, I left for {1}.");
     this.Text("Cyberbane-Allies-WelcomeToTheFamilyDonT", "Welcome to the family. Don't make us regret it.");
@@ -1969,8 +1969,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Allies-HoldYourFireIWantTo", "Hold your fire! I want to hear this before we start.");
     // {0} price
     this.Text("Cyberbane-Allies-PayEbAndYouTellThem", "[Pay] {0}eb, and you tell them you never found me.");
-    this.Text("Cyberbane-Allies-ThreatenWalkAwayWhileYouStill", "[Threaten] Walk away while you still can.");
-    this.Text("Cyberbane-Allies-DrawTalkSOver", "[Draw] Talk's over.");
+    this.Text("Cyberbane-Allies-ThreatenWalkAwayWhileYouStill", "[Threaten] Walk away. Do it while you still can.");
+    this.Text("Cyberbane-Allies-DrawTalkSOver", "[Draw] I'ma fucking destroy you.");
     this.Text("Cyberbane-Allies-PleasureWeNeverSawYou", "Pleasure. We never saw you.");
     this.Text("Cyberbane-Allies-MoneyTalksBoysWeReDone", "Money talks. Boys, we're done here.");
     this.Text("Cyberbane-Allies-YouCanTCoverThatYour", "You can't cover that. Your loss.");
@@ -2044,7 +2044,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} gang
     this.Text("Cyberbane-Crew-OnLoan-2", "on loan, {0}");
     this.Text("Cyberbane-Crew-PaidSolo", "paid solo");
-    this.Text("Cyberbane-Crew-RecruitYouOweMeWorkFor", "[Recruit] You owe me. Work for me.");
+    this.Text("Cyberbane-Crew-RecruitYouOweMeWorkFor", "[Recruit] Think you still owe me one.");
     // {0} you
     this.Text("Cyberbane-Crew-WorkForYouIDRather", "Work for you? I'd rather bleed out right here, {0}.");
     this.Text("Cyberbane-Crew-YouLetMeLiveThatDoesn", "You let me live. That doesn't make me yours.");
@@ -2642,7 +2642,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} (body ? "[Body] " : "[Intimidate] ")
     this.Text("Cyberbane-StreetPay-NobodyHearsAboutThisUnderstand", "{0}Nobody hears about this. Understand?");
     // {0} price
-    this.Text("Cyberbane-StreetPay-PayEbKeepAnEyeOut", "[Pay] {0}eb. Keep an eye out for me.");
+    this.Text("Cyberbane-StreetPay-PayEbKeepAnEyeOut", "[Pay {0}eb] Just keep a lookout.");
     this.Text("Cyberbane-StreetPay-AlreadyToldYouISawNothing", "Already told you. I saw nothing.");
     this.Text("Cyberbane-StreetPay-ThatSNotEnoughToForget", "That's not enough to forget a face.");
     this.Text("Cyberbane-StreetPay-ComeBackWithTheEddiesOr", "Come back with the eddies. Or don't.");
@@ -2710,44 +2710,44 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-StreetTalk-Hostile", "hostile");
     this.Text("Cyberbane-StreetTalk-KnowsYou", "knows you");
     this.Text("Cyberbane-StreetTalk-Wary", "wary");
-    this.Text("Cyberbane-StreetTalk-GreetGoodToSeeYouHow", "[Greet] Good to see you. How's the crew?");
-    this.Text("Cyberbane-StreetTalk-GreetHeyThere", "[Greet] Hey there.");
-    this.Text("Cyberbane-StreetTalk-GreetEasyIMJustSaying", "[Greet] Easy. I'm just saying hi.");
-    this.Text("Cyberbane-StreetTalk-CoolEasyNobodyNeedsToBleed", "[Cool] Easy. Nobody needs to bleed today.");
-    this.Text("Cyberbane-StreetTalk-ParleyEasyIMNotHere", "[Parley] Easy. I'm not here to fight.");
-    this.Text("Cyberbane-StreetTalk-GreetRelaxNotHereForTrouble", "[Greet] Relax. Not here for trouble.");
+    this.Text("Cyberbane-StreetTalk-GreetGoodToSeeYouHow", "[Greet] How's it goin'?");
+    this.Text("Cyberbane-StreetTalk-GreetHeyThere", "[Greet] Hey, what's up?");
+    this.Text("Cyberbane-StreetTalk-GreetEasyIMJustSaying", "[Greet] Hey, hey... Calm down...");
+    this.Text("Cyberbane-StreetTalk-CoolEasyNobodyNeedsToBleed", "[Cool] Calm down. Let's just talk.");
+    this.Text("Cyberbane-StreetTalk-ParleyEasyIMNotHere", "[Parley] Calm the fuck down! I just wanna talk!");
+    this.Text("Cyberbane-StreetTalk-GreetRelaxNotHereForTrouble", "[Greet] Look, I don't want any trouble.");
     this.Text("Cyberbane-StreetTalk-GreetEveningOfficer", "[Greet] Evening, officer.");
-    this.Text("Cyberbane-StreetTalk-GreetHeyChoom", "[Greet] Hey, choom.");
+    this.Text("Cyberbane-StreetTalk-GreetHeyChoom", "[Greet] Hello.");
     this.Text("Cyberbane-StreetTalk-AskQuickQuestionOfficer", "[Ask] Quick question, officer.");
-    this.Text("Cyberbane-StreetTalk-AskGotAMinute", "[Ask] Got a minute?");
+    this.Text("Cyberbane-StreetTalk-AskGotAMinute", "[Ask] Can we talk?");
     // {0} CBRivalDisplayName(sys.GetContent(), tipRival)
     this.Text("Cyberbane-StreetTalk-AmbushTipWhereSLyingLow", "[Ambush tip] Where's {0} lying low? I'll pay.");
     this.Text("Cyberbane-StreetTalk-IntimidateYouWorkForMeNow", "[Intimidate] You work for me now.");
-    this.Text("Cyberbane-StreetTalk-AskNeedAnythingDone", "[Ask] Need anything done?");
-    this.Text("Cyberbane-StreetTalk-DealLetSTalkBusiness", "[Deal] Let's talk business.");
-    this.Text("Cyberbane-StreetTalk-DismissCatchYouLater", "[Dismiss] Catch you later.");
+    this.Text("Cyberbane-StreetTalk-AskNeedAnythingDone", "[Ask] Need a hand?");
+    this.Text("Cyberbane-StreetTalk-DealLetSTalkBusiness", "[Deal] All right, what're you offerin'?");
+    this.Text("Cyberbane-StreetTalk-DismissCatchYouLater", "[Dismiss] Nice talkin' to ya.");
     this.Text("Cyberbane-StreetTalk-DismissGetLost", "[Dismiss] Get lost.");
-    this.Text("Cyberbane-StreetTalk-DismissOutOfMyWay", "[Dismiss] Out of my way.");
-    this.Text("Cyberbane-StreetTalk-DismissNotNow", "[Dismiss] Not now.");
+    this.Text("Cyberbane-StreetTalk-DismissOutOfMyWay", "[Dismiss] Outta the way.");
+    this.Text("Cyberbane-StreetTalk-DismissNotNow", "[Dismiss] Got somewhere else to be.");
     this.Text("Cyberbane-StreetTalk-AntagonizeShouldnTYouBeEating", "[Antagonize] Shouldn't you be eating a donut somewhere?");
-    this.Text("Cyberbane-StreetTalk-AntagonizeWhatAreYouLookingAt", "[Antagonize] What are you looking at?");
-    this.Text("Cyberbane-StreetTalk-AntagonizeYourBossKnowYouRe", "[Antagonize] Your boss know you're this soft?");
+    this.Text("Cyberbane-StreetTalk-AntagonizeWhatAreYouLookingAt", "[Antagonize] Eh, fuck you.");
+    this.Text("Cyberbane-StreetTalk-AntagonizeYourBossKnowYouRe", "[Antagonize] Fuck off.");
     this.Text("Cyberbane-StreetTalk-AntagonizeBoo", "[Antagonize] Boo.");
-    this.Text("Cyberbane-StreetTalk-AntagonizeYourCrewSAJoke", "[Antagonize] Your crew's a joke.");
-    this.Text("Cyberbane-StreetTalk-AntagonizeGotAProblem", "[Antagonize] Got a problem?");
+    this.Text("Cyberbane-StreetTalk-AntagonizeYourCrewSAJoke", "[Antagonize] Kiss my ass.");
+    this.Text("Cyberbane-StreetTalk-AntagonizeGotAProblem", "[Antagonize] Fuckin' gonked?");
     this.Text("Cyberbane-StreetTalk-IntimidateBackOffBadge", "[Intimidate] Back off, badge.");
     // {0} t.leadName
     this.Text("Cyberbane-StreetTalk-IntimidateWhereSHidingTalk", "[Intimidate] Where's {0} hiding? Talk.");
-    this.Text("Cyberbane-StreetTalk-LeaveNotWorthIt", "[Leave] Not worth it.");
-    this.Text("Cyberbane-StreetTalk-LeaveTakeItEasy", "[Leave] Take it easy.");
-    this.Text("Cyberbane-StreetTalk-LeaveForgetIt", "[Leave] Forget it.");
-    this.Text("Cyberbane-StreetTalk-WantToEndUpLikeThe", "Want to end up like the last ones?");
+    this.Text("Cyberbane-StreetTalk-LeaveNotWorthIt", "[Leave] Whatever. I'm out.");
+    this.Text("Cyberbane-StreetTalk-LeaveTakeItEasy", "[Leave] Take care.");
+    this.Text("Cyberbane-StreetTalk-LeaveForgetIt", "[Leave] You know what? Never mind...");
+    this.Text("Cyberbane-StreetTalk-WantToEndUpLikeThe", "Any last words?");
     this.Text("Cyberbane-StreetTalk-YouNeverSawMeKeepIt", "You never saw me. Keep it that way.");
-    this.Text("Cyberbane-StreetTalk-ThisDoesnTHaveToGet", "This doesn't have to get ugly. Walk.");
+    this.Text("Cyberbane-StreetTalk-ThisDoesnTHaveToGet", "Walk away. Do it while you still can.");
     this.Text("Cyberbane-StreetTalk-SeeTheseWalkAway", "See these? Walk away.");
     this.Text("Cyberbane-StreetTalk-ICouldCookYourImplantsFrom", "I could cook your implants from here.");
     this.Text("Cyberbane-StreetTalk-IDonTNeedAGun", "I don't need a gun for you.");
-    this.Text("Cyberbane-StreetTalk-WalkAwayNow", "Walk away. Now.");
+    this.Text("Cyberbane-StreetTalk-WalkAwayNow", "Wanna play rough? Gonna get rough.");
     this.Text("Cyberbane-StreetTalk-MoveAlongCitizen", "Move along, citizen.");
     this.Text("Cyberbane-StreetTalk-KeepItCleanTonight", "Keep it clean tonight.");
     this.Text("Cyberbane-StreetTalk-MhmDonTMakeMeRun", "Mhm. Don't make me run your ID.");
@@ -2881,26 +2881,26 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
 
   // ---- TalkTopics ------------------------------------------------------------------------------------------
   protected func DefineTalkTopics() -> Void {
-    this.Text("Cyberbane-TalkTopics-AskWhatSTheWordOn", "[Ask] What's the word on the street?");
+    this.Text("Cyberbane-TalkTopics-AskWhatSTheWordOn", "[Ask] How're things in the streets?");
     this.Text("Cyberbane-TalkTopics-AskWhoRunsTheseStreets", "[Ask] Who runs these streets?");
     this.Text("Cyberbane-TalkTopics-AskAnyoneLookingForMe", "[Ask] Anyone looking for me?");
-    this.Text("Cyberbane-TalkTopics-BackSomethingElse", "[Back] Something else.");
+    this.Text("Cyberbane-TalkTopics-BackSomethingElse", "[Back] Let's talk about something else.");
     // {0} price
-    this.Text("Cyberbane-TalkTopics-PayEb", "[Pay] {0}eb.");
+    this.Text("Cyberbane-TalkTopics-PayEb", "[Pay {0}eb] Here you go.");
     // {0} price
     this.Text("Cyberbane-TalkTopics-PayEbForSafePassage", "[Pay] {0}eb for safe passage.");
     // {0} price
     this.Text("Cyberbane-TalkTopics-PayEbMakeTheCall", "[Pay] {0}eb. Make the call.");
-    this.Text("Cyberbane-TalkTopics-HaggleThatSTooMuch", "[Haggle] That's too much.");
+    this.Text("Cyberbane-TalkTopics-HaggleThatSTooMuch", "[Haggle] No. Askin' too much.");
     // {0} (body ? "[Body] " : "[Intimidate] ")
-    this.Text("Cyberbane-TalkTopics-OrYouCouldJustTellMe", "{0}Or you could just tell me.");
+    this.Text("Cyberbane-TalkTopics-OrYouCouldJustTellMe", "{0}Start talkin'.");
     this.Text("Cyberbane-TalkTopics-ForgetItNeverMind", "[Forget it] Never mind.");
-    this.Text("Cyberbane-TalkTopics-PayWhatDoesItCostTo", "[Pay] What does it cost to walk your streets?");
+    this.Text("Cyberbane-TalkTopics-PayWhatDoesItCostTo", "[Safe passage] How much?");
     this.Text("Cyberbane-TalkTopics-PayCallOffTheCrewYou", "[Pay] Call off the crew you sent after me.");
-    this.Text("Cyberbane-TalkTopics-BusinessYeahBusinessIsGoodWhat", "Business. Yeah. Business is good. What do you need?");
+    this.Text("Cyberbane-TalkTopics-BusinessYeahBusinessIsGoodWhat", "Yeah. Sure. Whatever you need.");
     this.Text("Cyberbane-TalkTopics-AnythingNameIt", "Anything. Name it.");
     this.Text("Cyberbane-TalkTopics-MoneyTalksGoOn", "Money talks. Go on.");
-    this.Text("Cyberbane-TalkTopics-IMListening", "I'm listening.");
+    this.Text("Cyberbane-TalkTopics-IMListening", "Depends what you're payin'.");
     this.Text("Cyberbane-TalkTopics-BusinessWithYouDependsWhatIt", "Business with you? Depends what it pays.");
     this.Text("Cyberbane-TalkTopics-NothingToSellYouNotToday", "Nothing to sell you. Not today.");
     this.Text("Cyberbane-TalkTopics-YourMoneySNoGoodHere", "Your money's no good here.");
@@ -2923,7 +2923,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-TalkTopics-TooLateOrTheyNeverLeft", "Too late, or they never left. Keep your eddies.");
     this.Text("Cyberbane-TalkTopics-AlrightILlTellThemYou", "Alright. I'll tell them you weren't where they thought. Don't make me regret it.");
     this.Text("Cyberbane-TalkTopics-DoneTheyLlTurnAroundNext", "Done. They'll turn around. Next time I can't help you.");
-    this.Text("Cyberbane-TalkTopics-StreetKidCameUpOnThese", "[Street Kid] Came up on these streets myself.");
+    this.Text("Cyberbane-TalkTopics-StreetKidCameUpOnThese", "[Street Kid] Grew up in Heywood. Whole street was my family.");
     this.Text("Cyberbane-TalkTopics-NomadOutInTheBadlandsWe", "[Nomad] Out in the Badlands, we look after our own.");
     this.Text("Cyberbane-TalkTopics-CorpoIKnowHowYourBosses", "[Corpo] I know how your bosses think.");
     this.Text("Cyberbane-TalkTopics-MakeItQuickCitizen", "Make it quick, citizen.");
@@ -3160,14 +3160,14 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-RivalLife-GotYourMessageComeAndTry", "Got your message. {0}. Come and try.{1} {2}");
     // {0} CBRivalDisplayName(sys.GetContent(), r)
     this.Text("Cyberbane-RivalLife-TheyNamedThePlaceAndYou", "They named the place, and you went. {0} didn't walk away from it.");
-    this.Text("Cyberbane-RivalLife-SpareWalkAwayNextTimeI", "[Spare] Walk away. Next time I won't stop.");
+    this.Text("Cyberbane-RivalLife-SpareWalkAwayNextTimeI", "[Spare] Worked out this time. Don't get used to it.");
     // {0} CBRivalDisplayName(sys.GetContent(), other)
     this.Text("Cyberbane-RivalLife-CollectYouOweMeYourLife", "[Collect] You owe me your life. Where's {0}?");
-    this.Text("Cyberbane-RivalLife-ExileLeaveNightCityTonightDon", "[Exile] Leave Night City. Tonight. Don't come back.");
+    this.Text("Cyberbane-RivalLife-ExileLeaveNightCityTonightDon", "[Exile] Go on, get outta here.");
     this.Text("Cyberbane-RivalLife-HumiliateLookAtYouCrawlingEverybody", "[Humiliate] Look at you. Crawling. Everybody's going to hear about this.");
     // {0} CBRivalDisplayName(sys.GetContent(), target)
     this.Text("Cyberbane-RivalLife-SetOnIsTheOneYou", "[Set on] {0} is the one you want. I know where they sleep.");
-    this.Text("Cyberbane-RivalLife-NotYetStayDownIHaven", "[Not yet] Stay down. I haven't decided.");
+    this.Text("Cyberbane-RivalLife-NotYetStayDownIHaven", "[Not yet] Just stay put an' quiet.");
     this.Text("Cyberbane-RivalLife-OkayOkayIMGoneYou", "Okay. Okay. I'm gone. You'll never see me again.");
     this.Text("Cyberbane-RivalLife-FineNightCitySYoursI", "Fine. Night City's yours. I'm done.");
     this.Text("Cyberbane-RivalLife-ThisIsMyCityILl", "This is my city. I'll crawl back if I have to.");
@@ -3256,14 +3256,14 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-RivalMoments-NoRulesThenLightThemUp", "No rules then. Light them up!");
     // {0} CBRivalDisplayName(sys.GetContent(), r)
     this.Text("Cyberbane-RivalMoments-AskedForAFairFightAnd", "{0} asked for a fair fight and got one. Their people watched them lose.");
-    this.Text("Cyberbane-RivalMoments-StareThemDownLookAtMe", "[Stare them down] Look at me. Think hard about this.");
-    this.Text("Cyberbane-RivalMoments-DrawLetSGo", "[Draw] Let's go.");
-    this.Text("Cyberbane-RivalMoments-WalkAwayNotToday", "[Walk away] Not today.");
+    this.Text("Cyberbane-RivalMoments-StareThemDownLookAtMe", "[Stare them down] Gonna regret this.");
+    this.Text("Cyberbane-RivalMoments-DrawLetSGo", "[Draw] Any last words?");
+    this.Text("Cyberbane-RivalMoments-WalkAwayNotToday", "[Walk away] Gotta get goin'.");
     this.Text("Cyberbane-RivalMoments-JustYouAndMeTellYour", "[Just you and me] Tell your people to stay out of it.");
     this.Text("Cyberbane-RivalMoments-CallItEvenILetYou", "[Call it even] I let you live once. We're even.");
     // {0} CBRivalDisplayName(sys.GetContent(), other)
     this.Text("Cyberbane-RivalMoments-AskWhereSThenWeRe", "[Ask] Where's {0}? Then we're done.");
-    this.Text("Cyberbane-RivalMoments-ExileGetOutOfNightCity", "[Exile] Get out of Night City. Tonight.");
+    this.Text("Cyberbane-RivalMoments-ExileGetOutOfNightCity", "[Exile] Go on, get outta here.");
     this.Text("Cyberbane-RivalMoments-FineFINELetSGetThis", "...Fine. FINE. Let's get this over with.");
     this.Text("Cyberbane-RivalMoments-DonTDonTLookAt", "Don't... don't look at me like that.");
     this.Text("Cyberbane-RivalMoments-ThatSItThatSThe", "That's it? That's the look everybody's scared of?");
@@ -3993,7 +3993,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-StreetEvents-Deal", "deal");
     this.Text("Cyberbane-StreetEvents-Collection", "collection");
     this.Text("Cyberbane-StreetEvents-Business", "business");
-    this.Text("Cyberbane-StreetEvents-SideIMWithYou", "[Side] I'm with you.");
+    this.Text("Cyberbane-StreetEvents-SideIMWithYou", "[Side] All right, I'm with you.");
     // Corporate contracts (2.7.7). Offer: {0} whose people the mark is, {1} the place, {2} eddies. Pin: {0} the client, {1} the mark's people.
     this.Text("Cyberbane-Contracts-Offer", "Work, if you want it. One of {0}'s people is in {1} with two guards, and they don't walk away from it. {2}eb, and we remember who helped. It's on your map.");
     this.Text("Cyberbane-Contracts-Pin", "Contract for {0}: one of {1}'s people");
@@ -4006,7 +4006,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Tracking-ContractNote", "A contract: put the target down. The guards will fight.");
     this.Text("Cyberbane-StreetEvents-SidedByDeed", "{0} take that as you standing with them. They fight beside you until it's done.");
     this.Text("Cyberbane-StreetEvents-SitDownWentBad", "The sit-down between {0} and {1} ended in shooting. Nobody made a deal.");
-    this.Text("Cyberbane-StreetEvents-RespectsIMSorryForYour", "[Respects] I'm sorry for your loss.");
+    this.Text("Cyberbane-StreetEvents-RespectsIMSorryForYour", "[Respects] I'm so sorry.");
     this.Text("Cyberbane-StreetEvents-YouAlreadySaidYourPiece", "You already said your piece.");
     this.Text("Cyberbane-StreetEvents-DidnTExpectYouHereThanks", "Didn't expect you here. Thanks for coming.");
     this.Text("Cyberbane-StreetEvents-YouDidnTHaveToCome", "You didn't have to come. It's noticed.");
@@ -5219,11 +5219,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} is the weapon.
     this.Text("Cyberbane-CrewHome-FromTheLocker", "The {0} in your stash. I'll know where it is when I need it.");
     this.Text("Cyberbane-CrewHome-SomebodyClearedMyGun", "Somebody cleared my gun out of the locker, boss.");
-    this.Text("Cyberbane-CrewHome-AskHowAreYouHoldingUp", "[Ask] How are you holding up?");
+    this.Text("Cyberbane-CrewHome-AskHowAreYouHoldingUp", "[Ask] Hangin' in there?");
     // {0} is their old gang ("the Mox").
     this.Text("Cyberbane-CrewHome-AskTellMeAbout", "[Ask] Tell me about {0}.");
-    this.Text("Cyberbane-CrewHome-AskHeardAnything", "[Ask] Heard anything?");
-    this.Text("Cyberbane-CrewHome-DismissBackToIt", "[Dismiss] Back to it.");
+    this.Text("Cyberbane-CrewHome-AskHeardAnything", "[Ask] What's new in the neighborhood?");
+    this.Text("Cyberbane-CrewHome-DismissBackToIt", "[Dismiss] We'll talk later.");
     this.Text("Cyberbane-CrewHome-HoldingBest", "Never better. Wherever you're going, I'm going.");
     this.Text("Cyberbane-CrewHome-HoldingGood", "Good. Work's steady, the crew's solid.");
     this.Text("Cyberbane-CrewHome-HoldingFine", "Doing the job. Ask me again next week.");

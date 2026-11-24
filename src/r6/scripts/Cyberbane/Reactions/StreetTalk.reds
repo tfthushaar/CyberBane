@@ -312,6 +312,14 @@ public func CBTalkOwnBusiness(npc: wref<ScriptedPuppet>) -> Bool {
 
 public func CBTalkWhyOwnBusiness() -> String = "they have business of their own (a vendor, a joytoy, a fixer or a ripperdoc)"
 
+// Somebody V could talk to at all, by who they are rather than what they are doing this minute (2.7.8): a person, whom
+// the Safety Gate lets V speak to (nobody the story wrote, nobody in a quest, no vendor, nobody of V's own), with no
+// business of their own. CBTalkWhyNot asks the same among its other questions; the rest of those are the minute's (a
+// fight, a car, the distance, a word a moment ago), and somebody kept from talking by one of them is still about.
+public func CBTalkableByWho(npc: wref<ScriptedPuppet>) -> Bool {
+  return IsDefined(npc) && npc.IsHuman() && !npc.IsMechanical() && CBSafetyGate.CanTalkTo(npc) && !CBTalkOwnBusiness(npc);
+}
+
 // Their own voice back, as the game would have it now.
 func CBTalkUnhush(npc: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc) {
@@ -575,7 +583,10 @@ public class CBTalkTarget {
 // What they say back.
 public class CBTalkAnswer {
   public let line: String;
+  // One of their voiceset's lines to go with it (Reactions/TalkVoice.reds, 2.7.8): set since 1.9.8 and never played until
+  // then. Under their words unless `voMode` says the game's line is the answer (CBTalkSayTheirs).
   public let vo: CName;
+  public let voMode: Int32;
 }
 
 // Hands the keys on to the talk, while its prompt is up.
@@ -854,6 +865,13 @@ public class CBStreetTalk {
     this.Schedule(game);
     let dt = CBConfig.TalkTickSeconds();
     this.AgeLines(game, dt);
+    // An answer waiting for their own words (2.7.8, Reactions/TalkVoice.reds): theirs once the subtitles have seen them,
+    // Cyberbane's after a moment without. On every tick, the conversation over or not: an answer often ends it.
+    let late = CBTalkVoiceTick(game);
+    if StrLen(late) > 0 {
+      let vNow = CBTalkVoiceState();
+      this.ShowReply(game, IsDefined(vNow) ? vNow.speaker : "", late);
+    }
     if this.m_quietLeft > 0.0 {
       this.m_quietLeft -= dt;
     }
@@ -1556,8 +1574,12 @@ public class CBStreetTalk {
     if line.inactive {
       return;
     }
+    // In V's own voice where V has recorded the words (2.7.8, Reactions/TalkVoice.reds). The answer waits for V to finish
+    // (below), and V's subtitle stays up as long as V speaks.
+    let sysV = CyberbaneSystem.Get(game);
+    let vSays = IsDefined(sysV) ? CBTalkVoiceSayV(sysV, game, line) : 0.0;
     let vWords = CBTalkWords(line.text);
-    let vSecs = CBTalkReadSeconds(vWords, CBConfig.TalkLineSeconds());
+    let vSecs = MaxF(CBTalkReadSeconds(vWords, CBConfig.TalkLineSeconds()), vSays);
     if CBGameSubtitlesOn(game) && CBShowGameSubtitle(game, 2, "V", vWords, vSecs) {
       this.m_vLineLeft = vSecs;
     }
@@ -1577,7 +1599,7 @@ public class CBStreetTalk {
     }
     CBTalkClearHub(game);
     this.m_pending = line.act;
-    this.m_pendingIn = CBConfig.TalkAnswerDelay();
+    this.m_pendingIn = MaxF(CBConfig.TalkAnswerDelay(), vSays + 0.25);
     this.m_stage = CBTalkStageWaiting();
     this.m_exchanges += 1;
   }
@@ -1632,17 +1654,26 @@ public class CBStreetTalk {
         a.line += " " + hint;
       }
     }
+    // In their own voice (2.7.8, Reactions/TalkVoice.reds): the voiceset line the answer names, and a hello for a greeting
+    // that names none. An answer whose words are the game's waits a moment for them (CBTalkVoiceTick, on the tick below);
+    // any other goes up at once, with the line's own words kept off their head.
+    let waitTheirs = false;
+    if IsDefined(a) && StrLen(a.line) > 0 {
+      let vo = a.vo;
+      let mode = a.voMode > 0 ? a.voMode : CBTalkVoiceUnder();
+      if !IsNameValid(vo) && choice == CBTalkGreet() {
+        vo = n"greeting";
+        mode = CBTalkVoiceUnder();
+      }
+      waitTheirs = CBTalkVoiceSay(sys, game, npc, vo, mode, a.line, t.speaker) && mode == CBTalkVoiceTheirs();
+    }
     // In the game's subtitles; with those switched off, on Cyberbane's own line, so the answer is
     // never lost (UI/PhoneMessages.reds, CBOverheard).
-    if IsDefined(a) && StrLen(a.line) > 0 {
-      if CBGameSubtitlesOn(game) {
-        let aSecs = CBTalkReadSeconds(a.line, CBConfig.TalkReplySeconds());
-        if CBShowGameSubtitle(game, 3, t.speaker, a.line, aSecs) {
-          this.m_replyLeft = aSecs;
-        }
-      } else {
-        CBOverheard(game, t.speaker, a.line);
-      }
+    if IsDefined(a) && StrLen(a.line) > 0 && !waitTheirs {
+      this.ShowReply(game, t.speaker, a.line);
+    }
+    if waitTheirs {
+      this.m_replyLeft = CBConfig.TalkVoiceWait() + 0.4;   // nothing else talks over the answer while it waits for them
     }
     // No voice line of the game's under the answer (1.9.8): a random line in their voice, with its own
     // subtitle, never matched what the answer said.
@@ -2310,6 +2341,18 @@ public class CBStreetTalk {
     this.m_lastScrollStep = step;
     this.m_lastScrollByWeapon = byWeapon;
     CBTalkSelect(this.m_game, this.m_index);
+  }
+
+  // The answer, up: in the game's subtitles, or with those switched off on Cyberbane's own line, so it is never lost.
+  private func ShowReply(game: GameInstance, speaker: String, line: String) -> Void {
+    if CBGameSubtitlesOn(game) {
+      let aSecs = CBTalkReadSeconds(line, CBConfig.TalkReplySeconds());
+      if CBShowGameSubtitle(game, 3, speaker, line, aSecs) {
+        this.m_replyLeft = aSecs;
+      }
+    } else {
+      CBOverheard(game, speaker, line);
+    }
   }
 
   // How long V's line and the answer are still up, so nothing else talks over them (Busy). Each line takes
@@ -3443,6 +3486,15 @@ func CBTalkSay(line: String, vo: CName) -> ref<CBTalkAnswer> {
   return a;
 }
 
+// An answer the game's own line says as well as Cyberbane's words would (2.7.8): their line of that name, in their voice and
+// words, with `line` kept for when they have none (Reactions/TalkVoice.reds). Only for answers that carry nothing of
+// Cyberbane's (no name, no place, no price): their words replace these.
+func CBTalkSayTheirs(line: String, vo: CName) -> ref<CBTalkAnswer> {
+  let a = CBTalkSay(line, vo);
+  a.voMode = CBTalkVoiceTheirs();
+  return a;
+}
+
 // ---- What talking does to a reputation, a little at a time ----------------------------------------------
 //
 // Every change goes through these, which hold it to its ceiling for the day and gang (CBTalkTally in the
@@ -3796,7 +3848,7 @@ func CBTalkOnAntagonize(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
     CBTalkConduct(sys, game, n"", -CBConfig.TalkCivAntagonizeConduct());
     if t.mood == CBTalkAfraid() || RandF() < t.fear {
       CBTalkScare(player, t, t.fear >= CBConfig.TalkCivAfraid() ? 3 : 2);
-      return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-LeaveMeAlone"), CBT(n"Cyberbane-StreetTalk-IDonTWantTrouble"), CBT(n"Cyberbane-StreetTalk-Psycho")), n"fear_beg");
+      return CBTalkSayTheirs(CBPick3(CBT(n"Cyberbane-StreetTalk-LeaveMeAlone"), CBT(n"Cyberbane-StreetTalk-IDonTWantTrouble"), CBT(n"Cyberbane-StreetTalk-Psycho")), n"fear_foll");
     }
     return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-TheHellSYourProblem"), CBT(n"Cyberbane-StreetTalk-GetOutOfMyFace"), CBT(n"Cyberbane-StreetTalk-RealToughGoBotherSomeoneElse")), n"bump");
   }
@@ -3808,7 +3860,7 @@ func CBTalkOnAntagonize(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
     if CBTalkFight(sys, game, player, t) {
       return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-YouReDead"), CBT(n"Cyberbane-StreetTalk-BigMistake"), CBT(n"Cyberbane-StreetTalk-BeenWaitingForThis")), n"");
     }
-    return CBTalkSay(CBT(n"Cyberbane-StreetTalk-NotHereNotNowButSoon"), n"bump");
+    return CBTalkSayTheirs(CBT(n"Cyberbane-StreetTalk-NotHereNotNowButSoon"), n"rep_final_warning");
   }
   let gap = CBTalkNerveGap(t) + RandRangeF(-0.15, 0.15);
   if t.mood == CBTalkAfraid() || gap > CBConfig.TalkFoldGap() {
@@ -3860,7 +3912,7 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
           sys.AddDeedDreadPoints(CBConfig.TalkCivDread());
         }
       }
-      return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-OkayIMGoing"), CBT(n"Cyberbane-StreetTalk-PleaseIDidnTSeeAnything"), CBT(n"Cyberbane-StreetTalk-DonTHurtMe")), n"fear_beg");
+      return CBTalkSayTheirs(CBPick3(CBT(n"Cyberbane-StreetTalk-OkayIMGoing"), CBT(n"Cyberbane-StreetTalk-PleaseIDidnTSeeAnything"), CBT(n"Cyberbane-StreetTalk-DonTHurtMe")), n"fear_beg");
     }
     return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-YeahWhateverPoser"), CBT(n"Cyberbane-StreetTalk-IsThatSupposedToScareMe"), CBT(n"Cyberbane-StreetTalk-GoPractiseOnSomeoneElse")), n"bump");
   }
@@ -3876,7 +3928,7 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
        && CBTalkFight(sys, game, player, t) {
       return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetTalk-LetSSeeYouBackThat"), CBT(n"Cyberbane-StreetTalk-WrongOneToPush")), n"");
     }
-    return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-ThatSupposedToScareMe"), CBT(n"Cyberbane-StreetTalk-HeardOfYouThoughtYouD"), CBT(n"Cyberbane-StreetTalk-WalkAwayWhileIMFeeling")), n"bump");
+    return CBTalkSayTheirs(CBPick3(CBT(n"Cyberbane-StreetTalk-ThatSupposedToScareMe"), CBT(n"Cyberbane-StreetTalk-HeardOfYouThoughtYouD"), CBT(n"Cyberbane-StreetTalk-WalkAwayWhileIMFeeling")), n"rep_final_warning");
   }
   // It worked. What they give up depends on what they have.
   CBTalkFear(sys, game, t.faction, CBConfig.TalkLeanFear());
@@ -3900,7 +3952,7 @@ func CBTalkOnIntimidate(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
     return CBTalkSay(CBPick3(CBTf(n"Cyberbane-StreetTalk-HereTakeItAndGo", [s"\(paid)"]), CBTf(n"Cyberbane-StreetTalk-EddiesThatSAllIGot", [s"\(paid)"]), CBTf(n"Cyberbane-StreetTalk-FineWeReSquareRight", [s"\(paid)"])), n"fear_beg");
   }
   CBTalkSendOff(game, t);
-  return CBTalkSay(CBPick3(CBT(n"Cyberbane-StreetTalk-AlrightAlrightIMGone"), CBT(n"Cyberbane-StreetTalk-IMLeavingLookIM"), CBT(n"Cyberbane-StreetTalk-DidnTMeanAnythingByIt")), n"fear_beg");
+  return CBTalkSayTheirs(CBPick3(CBT(n"Cyberbane-StreetTalk-AlrightAlrightIMGone"), CBT(n"Cyberbane-StreetTalk-IMLeavingLookIM"), CBT(n"Cyberbane-StreetTalk-DidnTMeanAnythingByIt")), n"fear_beg");
 }
 
 // Somebody leaned on hard enough gives up where one of their own gang's Rivals is lying low: the same

@@ -58,10 +58,16 @@ public func CBRidesWithV(p: ref<ScriptedPuppet>) -> Bool {
   return (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned")) || des.IsTagged(id, n"CB_Follower");
 }
 
-// A car whose seats are handed out by name through its own AI. A bike, a wreck, a car V is driving by hack or one falling
-// apart is left to the game, which turns all but the bike down anyway.
+// A car whose seats can be handed out by name. A bike, a wreck, a car V is driving by hack or one falling apart is left to
+// the game, which turns all but the bike down anyway.
+//
+// With or without a seat AI of its own (2.7.8). "Both of them still get into the passenger seat." This handed any car with
+// no AI component back to the game, and the game seats followers the old way there, both in the first empty seat; the
+// game's own reserving path asks for the component before it reserves (tweakAISubActions.script, 'first_available'), and so
+// does its seat count (VehicleComponent.GetFirstAvailableSlot), so cars without one are not rare. Seats are now also kept by
+// Cyberbane for V's own people (CBSeatClaimed), so two of them are never sent to one seat, whatever the car can reserve.
 func CBSeatsByName(vehicle: wref<VehicleObject>) -> Bool {
-  if !IsDefined(vehicle) || vehicle.IsDestroyed() || IsDefined(vehicle as BikeObject) || !IsDefined(vehicle.GetAIComponent()) {
+  if !IsDefined(vehicle) || vehicle.IsDestroyed() || IsDefined(vehicle as BikeObject) {
     return false;
   }
   if vehicle.IsVehicleRemoteControlled() {
@@ -86,21 +92,25 @@ func CBBoardWithV(owner: ref<ScriptedPuppet>, vehicle: wref<VehicleObject>, inst
      && now - owner.cbSeatAt < CBConfig.SeatWalkSeconds() && VehicleComponent.IsSlotAvailable(game, vehicle, owner.cbSeatName) {
     return true;
   }
-  ai.ReleaseSeatReservedBy(id);   // whatever they held in this car before is asked for again below
-  let want = CBFreeSeat(game, vehicle);
+  if IsDefined(ai) {
+    ai.ReleaseSeatReservedBy(id);   // whatever they held in this car before is asked for again below
+  }
+  owner.cbSeatName = n"";         // nor is their own claim on a seat of this car in the way of the next one
+  let want = CBFreeSeat(game, vehicle, id);
   if !IsNameValid(want) {
-    owner.cbSeatName = n"";
     return false;
   }
-  let seat = ai.TryReserveSeatOrFirstAvailable(id, want);
-  if !IsNameValid(seat) || !VehicleComponent.IsSlotAvailable(game, vehicle, seat) {
-    ai.ReleaseSeatReservedBy(id);
-    owner.cbSeatName = n"";
-    return false;
-  }
-  let human = owner.GetAIControllerComponent();
-  if IsDefined(human) {
-    human.OnSeatReserved(carId);   // the game's own note of which car holds their reservation, released on death or detach
+  let seat = want;
+  if IsDefined(ai) {
+    seat = ai.TryReserveSeatOrFirstAvailable(id, want);
+    if !IsNameValid(seat) || !VehicleComponent.IsSlotAvailable(game, vehicle, seat) || CBSeatClaimed(game, vehicle, seat, id) {
+      ai.ReleaseSeatReservedBy(id);
+      return false;
+    }
+    let human = owner.GetAIControllerComponent();
+    if IsDefined(human) {
+      human.OnSeatReserved(carId);   // the game's own note of which car holds their reservation, released on death or detach
+    }
   }
   owner.cbSeatCar = carId;
   owner.cbSeatName = seat;
@@ -121,24 +131,49 @@ func CBBoardWithV(owner: ref<ScriptedPuppet>, vehicle: wref<VehicleObject>, inst
   return true;
 }
 
-// The first seat that nobody sits in and nobody has reserved: the back first, the seat beside V last.
-func CBFreeSeat(game: GameInstance, vehicle: wref<VehicleObject>) -> CName {
+// The first seat that nobody sits in, nobody has reserved and none of V's other people is on their way to: the back first,
+// the seat beside V last. The game's cars name their seats with these four and no others (tweaks, seatName).
+func CBFreeSeat(game: GameInstance, vehicle: wref<VehicleObject>, forWhom: EntityID) -> CName {
   let ai = vehicle.GetAIComponent();
-  if !IsDefined(ai) {
-    return n"";
-  }
   let order: array<CName>;
   ArrayPush(order, n"seat_back_left");
   ArrayPush(order, n"seat_back_right");
   ArrayPush(order, n"seat_front_right");
   let i = 0;
   while i < ArraySize(order) {
-    if VehicleComponent.IsSlotAvailable(game, vehicle, order[i]) && !ai.IsSeatReserved(order[i]) {
+    if VehicleComponent.IsSlotAvailable(game, vehicle, order[i]) && !(IsDefined(ai) && ai.IsSeatReserved(order[i]))
+       && !CBSeatClaimed(game, vehicle, order[i], forWhom) {
       return order[i];
     }
     i += 1;
   }
   return n"";
+}
+
+// Is this seat of this car one that another of V's people was given and is still walking to (2.7.8)? Read off their own
+// seat notes, so it holds for a car with no seat AI to reserve it. V's crew and a friendly gang's people riding with V:
+// a handful of people, one look each.
+func CBSeatClaimed(game: GameInstance, vehicle: wref<VehicleObject>, seat: CName, except: EntityID) -> Bool {
+  let des = GameInstance.GetDynamicEntitySystem();
+  if !IsDefined(des) || !IsDefined(vehicle) {
+    return false;
+  }
+  let carId = vehicle.GetEntityID();
+  let now = CBSimNow(game);
+  let tags: array<CName> = [n"CB_Own", n"CB_Follower"];
+  for tag in tags {
+    let ids = des.GetTaggedIDs(tag);
+    for id in ids {
+      if NotEquals(id, except) {
+        let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
+        if IsDefined(p) && Equals(p.cbSeatCar, carId) && Equals(p.cbSeatName, seat) && now >= p.cbSeatAt
+           && now - p.cbSeatAt < CBConfig.SeatWalkSeconds() {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 // Done riding with V: their seat given back, and asked out of the car they are in. Before their follower role goes, which

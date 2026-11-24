@@ -75,9 +75,11 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   }
   st.lookedTick = sys.GetTickCount();
   // Never into the story, a job, a scene, a fight, a safe place or a car; and only with room for them.
+  // Nor with anybody out after V or on their way (2.7.8), as bagmen, turf patrols and wannabes have always waited: the
+  // play log had a Mox hangout set up half a minute into a fight V's crew had been called to, a Rival on the way.
   if sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game) || player.IsInCombat()
      || sys.IsInSafeZone() || IsDefined(player.GetMountedVehicle()) || CBSpawnRoom(game) <= CBConfig.TurfPatrolKeepRoom()
-     || CBHomeKeepsOut(sys) {
+     || CBHomeKeepsOut(sys) || CBHuntersOut(sys, game) || CBHuntPending(sys) {
     return;
   }
   let day = CBGameDay(game);
@@ -115,7 +117,6 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   }
 }
 
-// None of theirs about: nobody of the gang standing within HangoutScarceRange of V.
 // How much is going on in the street (2.7.7): more after dark, less in the rain, least in a downpour by day.
 public func CBStreetLifeMood(game: GameInstance) -> Float {
   let mood = CBIsNight(game) ? CBConfig.StreetNightMult() : 1.0;
@@ -130,12 +131,21 @@ public func CBStreetLifeMood(game: GameInstance) -> Float {
   return mood;
 }
 
+// None of theirs about to talk to: nobody of the gang within HangoutScarceRange of V whom V could talk to.
+//
+// To talk to (2.7.8). "With Lizzie's Braindances installed there are no Cyberbane Mox hanging out at Lizzie's." That mod
+// stands a braindance seller at Lizzie's reception for as long as the club is loaded: one of the game's own Lizzie's
+// Mox (Character.lizzies_mox_female, a main-quest record), put there by its scene and selling through its own menu. Mox
+// by her record, so she was "a Mox about" and the Mox home never got its hangout; written by the story, so Cyberbane's
+// talk never let V speak to her. Lizzie's own bouncer is the same kind of person (a quest record, Invulnerable) without
+// the mod. Hangouts exist because these gangs' people are hard to find to talk to, so only somebody V can talk to,
+// by who they are (CBTalkableByWho), says they are about. Somebody of theirs in a fight or a car is still about.
 func CBHangoutScarce(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBNpcRegistry>, gang: CName) -> Bool {
   let player = GetPlayer(game);
   let ppos = player.GetWorldPosition();
   for p in reg.GetAll() {
     if CBNpcSafe(sys, p) && !p.IsDead() && Vector4.Distance(ppos, p.GetWorldPosition()) <= CBConfig.HangoutScarceRange()
-       && Equals(CBClassifyFaction(p), gang) {
+       && Equals(CBClassifyFaction(p), gang) && CBTalkableByWho(p) {
       return false;
     }
   }

@@ -36,6 +36,8 @@ foreach ($p in @($scc, $vanilla, $cwScripts, $msDir)) {
 & (Join-Path $PSScriptRoot 'check_abilities.ps1')
 # Every key the code asks for is in the English, with as many slots as it passes (2.7.1, see check_loc.ps1).
 & (Join-Path $PSScriptRoot 'check_loc.ps1')
+# No two street-talk lines share an action id (2.7.8, see check_talk_ids.ps1).
+& (Join-Path $PSScriptRoot 'check_talk_ids.ps1')
 
 $sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ("cyberbane-validate-" + [Guid]::NewGuid().ToString('N'))
 $scripts = Join-Path $sandbox 'scripts'

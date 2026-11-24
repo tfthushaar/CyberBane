@@ -162,6 +162,80 @@ func CBGarmentHasStyleTags(rec: ref<Item_Record>) -> Bool {
       || rec.TagsContains(n"Tomboy") || rec.TagsContains(n"Samurai");
 }
 
+// ---- Whose tags they are (2.7.8) ----------------------------------------------------------------
+//
+// "Ever since the latest Equipment-EX / WEAVE updates, outfits don't hide chrome anymore. A full body suit and a face
+// covering helmet, and the chrome rating stays at 89." WEAVE's auto-tagger gives every garment a clothing mod left
+// untagged one of the game's own style tags and a wealth tag, often a gang's too (Casual, Simple, Moxies), so the
+// game's crowds and Cyberbane's look and gang disguises read modded clothes the way they read the game's. Cyberbane
+// read sleeves from those same words: a garment the game tags is either LongSleeve or bare-armed, so a style tag with
+// no LongSleeve meant bare arms. Written by WEAVE it means nothing about sleeves, since WEAVE never writes them, and
+// every modded jacket, coat and body suit read bare-armed: the chrome under them counted in full.
+//
+// So a missing LongSleeve says bare arms only when the game wrote the garment's tags, and that cannot be told from the
+// record once WEAVE has been: with RedFunctions it writes its tags into a TweakXL file that loads at start, where they
+// look exactly like the game's. WEAVE also gives a reaction tag to every garment it scans, the game's own included, and
+// no garment in the game carries one of its own, so with its tagger installed every garment V owns has been through it.
+// While it is installed no style tag is taken as the game's word on sleeves; a garment's kind is.
+//
+// A garment's kind is the price record every garment of that kind inherits (Price.Jacket, Price.TShirt), which no
+// tagger touches. Against the game's own clothes, checked by script (tools/redmod/tweaks): shirts, loose shirts and
+// formal jackets are sleeved, every one; jackets 234 of 249, coats 58 of 64. T-shirts, tank tops, undershirts and
+// dresses never are; vests 3 of 170, and those three carry LongSleeve. Formal shirts (19 of 27) and tight jumpsuits go
+// both ways and say nothing. With WEAVE installed, the game's eighteen bare-armed jackets, coats and formal shirts read
+// as their kind does: the price of knowing nothing else about the rest.
+
+// WEAVE's auto-tagger, looked for once a launch through Codeware reflection, so nothing here names anything of WEAVE's.
+// Without RedFunctions WEAVE ships an empty stand-in under the same name, which tags nothing; the real one is told
+// apart by a function only it has.
+public class CBWeaveProbe {
+  public let state: Int32;   // 0 not looked yet, 1 its tagger is installed, 2 not
+
+  public func Resolve() -> Bool {
+    if this.state == 0 {
+      this.state = 2;
+      let cls = Reflection.GetClass(n"EquipmentEx.AutoTagEngine");
+      if IsDefined(cls) && IsDefined(cls.GetFunction(n"ProcessBatch")) {
+        this.state = 1;
+        CBLog.Info(n"Signals", "WEAVE's auto-tagger found: clothes go by their kind for sleeves, and its face tags count.");
+      }
+    }
+    return this.state == 1;
+  }
+}
+
+// Are the style tags on a garment the game's own word on it? False while WEAVE's tagger is installed (above).
+public func CBStyleTagsAreTheGames() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.GetWeaveProbe().Resolve();
+}
+
+// Sleeves by kind of garment: 1 the game sleeves its own of this kind, 0 it does not, -1 either way or no kind on record.
+// One pass over the garment's price records.
+func CBGarmentKindSleeves(id: ItemID) -> Int32 {
+  let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(id));
+  if !IsDefined(rec) {
+    return -1;
+  }
+  let k = 0;
+  while k < rec.GetBuyPriceCount() {
+    let price = rec.GetBuyPriceItem(k);
+    k += 1;
+    if IsDefined(price) {
+      let p = price.GetID();
+      if p == t"Price.Jacket" || p == t"Price.Coat" || p == t"Price.Shirt" || p == t"Price.LooseShirt"
+         || p == t"Price.FormalJacket" || p == t"Price.Jumpsuit" {
+        return 1;
+      }
+      if p == t"Price.TShirt" || p == t"Price.TankTop" || p == t"Price.Undershirt" || p == t"Price.Vest"
+         || p == t"Price.Dress" {
+        return 0;
+      }
+    }
+  }
+  return -1;
+}
+
 // Is this garment of either of these kinds? The game's kinds of garment are carried in the price record
 // each kind sets and every garment of it inherits (Price.Shorts, Price.Jumpsuit, ...).
 func CBGarmentPricedAs(id: ItemID, a: TweakDBID, b: TweakDBID) -> Bool {
@@ -181,15 +255,21 @@ func CBGarmentPricedAs(id: ItemID, a: TweakDBID, b: TweakDBID) -> Bool {
 }
 
 // One piece from wrist to ankle: a jumpsuit the game tags BodySuit. Its dresses carry the same tag and
-// cover neither arms nor legs.
+// cover neither arms nor legs. Every one of the game's jumpsuits is tagged so, and a clothing mod's built on the game's
+// jumpsuit is not (the tag is set garment by garment, not by the kind), so the kind alone makes one (2.7.8); a tight
+// jumpsuit still needs the tag, since the game makes those both ways.
 func CBGarmentIsSuit(id: ItemID) -> Bool {
   let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(id));
-  return IsDefined(rec) && rec.TagsContains(n"BodySuit")
-      && CBGarmentPricedAs(id, t"Price.Jumpsuit", t"Price.TightJumpsuit");
+  if !IsDefined(rec) {
+    return false;
+  }
+  return CBGarmentPricedAs(id, t"Price.Jumpsuit", t"Price.Jumpsuit")
+      || (rec.TagsContains(n"BodySuit") && CBGarmentPricedAs(id, t"Price.TightJumpsuit", t"Price.TightJumpsuit"));
 }
 
-// Sleeves, as the game records them: 1 long (LongSleeve, or a suit), 0 bare arms (a garment the game
-// tagged that says neither), -1 unknown (no tags at all).
+// Sleeves, as the game records them: 1 long (LongSleeve, or a suit), 0 bare arms (a garment the game tagged that says
+// neither), and otherwise what the game makes garments of its kind with (CBGarmentKindSleeves), -1 for a kind it makes
+// both ways or none. Style tags another mod wrote say nothing about sleeves (CBStyleTagsAreTheGames, 2.7.8).
 func CBGarmentSleeves(id: ItemID) -> Int32 {
   let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(id));
   if !IsDefined(rec) {
@@ -198,7 +278,10 @@ func CBGarmentSleeves(id: ItemID) -> Int32 {
   if rec.TagsContains(n"LongSleeve") || CBGarmentIsSuit(id) {
     return 1;
   }
-  return CBGarmentHasStyleTags(rec) ? 0 : -1;
+  if CBGarmentHasStyleTags(rec) && CBStyleTagsAreTheGames() {
+    return 0;
+  }
+  return CBGarmentKindSleeves(id);
 }
 
 // Shorts or a skirt: a legs garment that leaves the lower legs on show.
@@ -256,8 +339,19 @@ func CBGarmentCoversLegs(id: ItemID, area: gamedataEquipmentArea) -> Bool {
 // and shorts are told apart above. A record's name can only be read with Cyber Engine Tweaks
 // installed, so on any other install no mask ever counted; and a balaclava sits on the head, which
 // was never looked at. The name stays as the fallback for a mask another mod prices its own way.
+//
+// 2.7.8: or what another mod has written on it. The game keeps no word in its records for a helmet that closes over the
+// face; WEAVE does, tagging helmets, balaclavas, gas masks and respirators FullFace and half masks, face plates and
+// visors Mask, and a player can set or take off either tag in its wardrobe. No garment in the game carries either tag
+// itself (only photo mode lists Mask, as a look, never on a record). FullFace hides who V is; Mask does on anything but
+// eyewear the game prices as glasses or a visor, which hides the eyes alone, as it always has here.
 func CBItemIsMask(id: ItemID) -> Bool {
   if CBGarmentPricedAs(id, t"Price.Mask", t"Price.Balaclava") {
+    return true;
+  }
+  let rec = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(id));
+  if IsDefined(rec) && (rec.TagsContains(n"FullFace")
+     || (rec.TagsContains(n"Mask") && !CBGarmentPricedAs(id, t"Price.Glasses", t"Price.Visor"))) {
     return true;
   }
   if !Equals(CBGarmentArea(id), gamedataEquipmentArea.Face) {
@@ -314,23 +408,30 @@ public func CBReadWorn(game: GameInstance, data: ref<EquipmentSystemPlayerData>)
     ArrayPush(worn.garments, id);
   }
   for id in worn.garments {
-    let area = CBGarmentArea(id);
-    if CBGarmentCoversArms(id, area) {
-      worn.arms = true;
-    }
-    if CBGarmentCoversLegs(id, area) {
-      worn.legs = true;
-    }
-    if Equals(area, gamedataEquipmentArea.Face) {
-      worn.face = true;
-    }
-    if CBItemIsMask(id) {
-      worn.face = true;
-      worn.masked = true;
-    }
+    CBCountGarment(worn, id, CBGarmentArea(id), false);
   }
   CBReadTwrDisguise(game, worn);
   return worn;
+}
+
+// What one garment covers, for both readings: the game's clothing areas here, Equipment-EX's outfit slots below (2.7.8,
+// one rule for both). `wholeBody` is a garment worn from shoulders to ankles, an Equipment-EX body slot: it covers the
+// legs unless it is a dress or leaves them bare, and the arms unless it is known to be bare-armed.
+func CBCountGarment(worn: ref<CBWornRead>, id: ItemID, area: gamedataEquipmentArea, wholeBody: Bool) -> Void {
+  if CBGarmentCoversArms(id, area) || (wholeBody && CBGarmentSleeves(id) != 0) {
+    worn.arms = true;
+  }
+  if CBGarmentCoversLegs(id, area)
+     || (wholeBody && !CBGarmentLeavesLegsBare(id) && !CBGarmentPricedAs(id, t"Price.Dress", t"Price.Dress")) {
+    worn.legs = true;
+  }
+  if Equals(area, gamedataEquipmentArea.Face) {
+    worn.face = true;
+  }
+  if CBItemIsMask(id) {
+    worn.face = true;
+    worn.masked = true;
+  }
 }
 
 // The reading for V, for callers that have nothing else to hand.
@@ -486,7 +587,8 @@ public func CBLogEquippedTags(game: GameInstance) -> Void {
     k += 1;
     CBLog.Info(n"Signals", s"Seen: \(TDBID.ToStringDEBUG(ItemID.GetTDBID(g))), sleeves \(CBGarmentSleeves(g)), covers arms \(CBGarmentCoversArms(g, CBGarmentArea(g))), legs \(CBGarmentCoversLegs(g, CBGarmentArea(g))).");
   }
-  CBLog.Info(n"Signals", s"Clothing read: \(ArraySize(worn.garments)) garments seen (\(worn.fromMods) only on V's body); arms covered \(worn.arms), legs \(worn.legs), face \(worn.face), masked \(worn.masked).");
+  let sleevesBy = CBStyleTagsAreTheGames() ? "the game's tags, else the kind" : "the kind (WEAVE retags clothes)";
+  CBLog.Info(n"Signals", s"Clothing read: \(ArraySize(worn.garments)) garments seen (\(worn.fromMods) only on V's body); arms covered \(worn.arms), legs \(worn.legs), face \(worn.face), masked \(worn.masked); sleeves by \(sleevesBy).");
 }
 
 // ---- Equipment-EX (1.9.4) ---------------------------------------------------------------------
@@ -578,8 +680,8 @@ public func CBEqExOutfitSlots(game: GameInstance, out slots: array<TweakDBID>) -
 }
 
 // What an Equipment-EX outfit covers, slot by slot. A garment keeps its own rules (long sleeves,
-// trousers, a mask); the small layers it adds for hands, wrists, elbows, shoulders, thighs, knees and
-// ankles cover a limb once two of its parts are covered.
+// trousers, a mask), and one in a body slot is worn from shoulders to ankles (CBEqExBodySlot, 2.7.8); the small layers
+// it adds for hands, wrists, elbows, shoulders, thighs, knees and ankles cover a limb once two of its parts are covered.
 func CBReadEqExOutfit(game: GameInstance, worn: ref<CBWornRead>, slots: array<TweakDBID>) -> Void {
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
@@ -599,18 +701,13 @@ func CBReadEqExOutfit(game: GameInstance, worn: ref<CBWornRead>, slots: array<Tw
         worn.fromMods += 1;
       }
       let area = CBGarmentArea(id);
-      if CBGarmentCoversArms(id, area) {
-        worn.arms = true;
-      }
-      if CBGarmentCoversLegs(id, area) {
-        worn.legs = true;
-      }
-      if CBItemIsMask(id) || slot == t"OutfitSlots.Mask" || slot == t"OutfitSlots.Balaclava" {
+      CBCountGarment(worn, id, area, CBEqExBodySlot(slot));
+      if slot == t"OutfitSlots.Mask" || slot == t"OutfitSlots.Balaclava" {
         worn.face = true;
         worn.masked = true;
       }
       if slot == t"OutfitSlots.Glasses" || slot == t"OutfitSlots.Eyes" || slot == t"OutfitSlots.EyeLeft"
-         || slot == t"OutfitSlots.EyeRight" || Equals(area, gamedataEquipmentArea.Face) {
+         || slot == t"OutfitSlots.EyeRight" {
         worn.face = true;
       }
       let arm = CBEqExArmPart(slot);
@@ -648,6 +745,15 @@ func CBEqExArmPart(slot: TweakDBID) -> Int32 {
     return 3;
   }
   return -1;
+}
+
+// Equipment-EX's body slots (2.7.8): where it puts what is worn from shoulders to ankles, the game's tight jumpsuits and
+// netrunner suits, its jumpsuits, whole outfits, and anything a clothing mod files there as a body suit. Equipment-EX
+// hides V's chest and legs under all four. A body suit in one of them read as whatever its own record said, and a
+// clothing mod's carries next to nothing, so the suit covered neither arms nor legs.
+func CBEqExBodySlot(slot: TweakDBID) -> Bool {
+  return slot == t"OutfitSlots.BodyUnder" || slot == t"OutfitSlots.BodyInner"
+      || slot == t"OutfitSlots.BodyMiddle" || slot == t"OutfitSlots.BodyOuter";
 }
 
 // And of the leg: 0 thighs, 1 knees, 2 ankles; -1 none.

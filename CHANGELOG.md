@@ -6,6 +6,28 @@ The major changes in each version, newest first. Your progress always carries ov
 
 ## 2.7
 
+### 2.7.8 (24 November 2026)
+- **Equipment-EX 1.3.2 and WEAVE 1.6.4.** Outfits hide your chrome again with WEAVE installed. Modded jackets, coats
+  and body suits cover your arms, a body suit in Equipment-EX's body slots covers your arms and legs, and a helmet or
+  mask WEAVE tags as covering the face hides your face.
+- **Lizzie's Braindances.** The Mox hang out at Lizzie's again with it installed.
+- **Conversations in the game's own voices.** The people you talk to answer in their own voice. When they beg, back
+  down or warn you off, you hear and read the game's own line. V's options are V's own recorded words wherever V has
+  something in the same mood, and V says them: "Get lost.", "Any last words?", "Hangin' in there?", and with
+  [AudioXL](https://www.nexusmods.com/cyberpunk2077/mods/33442) installed, 28 more of V's lines from the story: "Can we
+  talk?", "Need a hand?", "Look, I don't want any trouble.", "Walk away. Do it while you still can." Options nothing of
+  V's fits stay as they were, subtitles alone. Under **Voices for the moments**.
+- **Fixed:** "Keep an eye out for me" charging 100eb instead of 250eb and getting a "never saw you" answer, leaning on a
+  witness getting directions instead of silence, gang jobs vanishing from the map and blocking new ones for a while, two
+  of your crew squeezing into the same seat of some cars,
+  Cyberbane starting up behind the main menu on every launch, a gang hangout setting up in the middle of a fight, and a
+  gang sending its best again straight after you beat them together with their crew.
+- For translators: about 50 of V's options changed to V's own words, across `DefineStreetTalk`, `DefineTalkTopics`,
+  `DefineStreetPay`, `DefineAllies`, `DefineWar`, `DefineCrew`, `DefineCrewHome`, `DefineRivalLife`, `DefineRivalMoments`
+  and `DefineStreetEvents`, two business answers, and the Voices for the moments description. Some prices moved into the
+  tag ("[Pay {0}eb] Just keep a lookout."). A translated option still matches V's voice: V speaks English, and your
+  words show under it.
+
 ### 2.7.7 (24 November 2026)
 - **Your crew, as people.** Each member has a temperament, a story of their own (where they joined, their scars, their ranks, the people they've put down), and now and then asks you for something: a better gun, a day off, a cut, or revenge on the Rival who hurt them. One of them can be your second. When one dies, the rest bury them the next evening, and notice if you came.
 - **A new Crew page.** Roster, Member and Crew views. The Member view shows a member's real numbers, their weapon and chrome slots, how far they are from their next rank and what it brings. Every button says what it does when you point at it.

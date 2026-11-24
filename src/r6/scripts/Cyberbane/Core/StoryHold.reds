@@ -213,6 +213,15 @@ public func CBGameHasVHere(game: GameInstance) -> Bool {
   return CBPlayerIsVHere(GetPlayer(game));
 }
 
+// The main menu's world (2.7.8): the game builds one behind the menu, with a player in it, before any save is loaded.
+// The game's own test, as its settings and pop-up screens ask it (SystemRequestsHandler.IsPreGame), through Codeware's
+// handle on the handler. 2.7.7 waited there for a lifepath, and that world has one: every launch put a playthrough on
+// record outside the saves, where Start over reads, and ran the street's clocks behind the menu.
+public func CBInPreGame() -> Bool {
+  let handler = GameInstance.GetSystemRequestsHandler();
+  return IsDefined(handler) && handler.IsPreGame();
+}
+
 // Has the story taken control of what V can do? As of this instant; see CBStoryRestrictionTags
 // for why the system only acts on this once it has held for a few ticks.
 public func CBPlayerStoryRestricted(game: GameInstance) -> Bool {

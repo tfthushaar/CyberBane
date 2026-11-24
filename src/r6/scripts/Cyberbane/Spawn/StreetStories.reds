@@ -141,8 +141,11 @@ public func CBPlaceHiddenNear(sys: ref<CyberbaneSystem>, game: GameInstance, des
 
 // ---- The witness ---------------------------------------------------------------------------------------------------
 
-public func CBTalkActLeadWitnessAsk() -> Int32 = 32
-public func CBTalkActLeadWitnessPay() -> Int32 = 33
+// Their own numbers (2.7.8). These were 32 and 33, which the street-pay lines already had (Reactions/StreetPay.reds), and
+// the witness's answers come first in talk's chain: "Keep an eye out for me" charged the witness's price and answered "Never
+// saw you", and leaning on a witness got directions instead. tools/check_talk_ids.ps1 now refuses a build where two meet.
+public func CBTalkActLeadWitnessAsk() -> Int32 = 68
+public func CBTalkActLeadWitnessPay() -> Int32 = 69
 
 // Which Rival this person saw (2.6.5), 0 for nobody; and whether V leaned on them.
 @addField(ScriptedPuppet)

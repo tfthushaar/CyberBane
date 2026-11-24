@@ -1118,7 +1118,8 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   CBCrewCounterBeaten(sys, game, faction);   // a counterattack on the crew's corners held (2.7.7)
   // Their apex squad came with them and is down too: nobody else of it walks into a fight that
   // is over. Read before the line below, which forgets that it came.
-  if sys.ActiveSquadHasApex() && Equals(sys.GetApexMusterFaction(), faction) {
+  let cameWithApex = sys.ActiveSquadHasApex();
+  if cameWithApex && Equals(sys.GetApexMusterFaction(), faction) {
     sys.ClearApexMuster();
   }
   sys.SetActiveSquadFaction(n"");   // nobody left to have escaped
@@ -1126,9 +1127,19 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   if !IsDefined(fs) {
     return;
   }
-  sys.NoteCrewBeaten(faction);
+  // A crew that came with its apex squad has had its answer (2.7.8). Sending them spent the gang's kills and cleared the
+  // beaten crew (Spawn/HitSquad.reds); beating them marked it again, and with the kills made in that same fight (22
+  // bodies in the play log) their best were due straight after the best V had just put down, and the gang said so.
+  // A crew that came alone is what calls the apex squad, as it always was.
+  if !cameWithApex {
+    sys.NoteCrewBeaten(faction);
+  }
   CBWeakenGang(sys, game, faction, CBConfig.GangLossCrew());   // a whole crew gone is felt on the street
-  CBLog.Info(n"Spawn", s"Crew from \(NameToString(faction)) wiped out; their apex squad is next in line.");
+  if cameWithApex {
+    CBLog.Info(n"Spawn", s"Crew from \(NameToString(faction)) wiped out with their apex squad.");
+  } else {
+    CBLog.Info(n"Spawn", s"Crew from \(NameToString(faction)) wiped out; their apex squad is next in line.");
+  }
   // Somebody is glad to see that crew gone, and pays for it (Spawn/Loot.reds).
   let crewLabel = CBFactionLabel(faction);
   CBPayBounty(sys, game, faction, RoundF(Cast<Float>(CBConfig.BountyCrew()) * CBLootLevelScale(game) / 50.0) * 50,

@@ -316,6 +316,10 @@ public class CBStreetLife {
   // nothing on the map. The place pin goes once their own marker is up.
   private let m_favPin: NewMappinID;
   private let m_favPinned: Bool;
+  // And comes back whenever that marker is not showing (2.7.8, FavourKeepPin): what it says and where it goes, the place, or
+  // where a lookout was last seen.
+  private let m_favPinText: String;
+  private let m_favPinAt: Vector4;
   // A debt to collect somewhere else (2.6.4): where the one who owes is, which district, whether they are in the world yet,
   // and whether they would sooner fight than pay (0 no, 1 once the talk is over, 2 fighting).
   private let m_favAt: Vector4;
@@ -840,16 +844,16 @@ public class CBStreetLife {
     if !this.FavourOpen() {
       return;
     }
-    // Their own marker is up: the place pin has done its work.
-    if this.m_favPinned {
-      let who: ref<ScriptedPuppet> = this.m_favTarget;
-      if this.m_favKind == 1 {
-        who = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
-      }
-      if IsDefined(who) && who.cbMapped {
-        this.FavourUnpin(game);
-      }
+    // Gone from the world by something else of ours (2.7.8, FavourTargetGone): the job is over, said so, and it does not
+    // count as the gang's favour given.
+    if this.FavourTargetGone(des) {
+      CBLog.Info(n"Street", "A favour's person was taken out of the world by something else; the favour is off.");
+      this.FavourLost(game, this.m_favKind == 1 ? CBT(n"Cyberbane-LivingStreet-ForgetItTheLookoutSGone")
+                            : (this.m_favKind == 2 ? CBT(n"Cyberbane-LivingStreet-ForgetItTheyPaidUpBefore")
+                                                   : CBT(n"Cyberbane-Contracts-Lost")));
+      return;
     }
+    this.FavourKeepPin(sys, game);
     if this.m_favKind == 3 {
       this.ContractStep(sys, game, des, player, now);
       return;
@@ -859,6 +863,13 @@ public class CBStreetLife {
       // Run off by V or V's side (CBTakenOutByVSide, 2.7.7). Somebody else putting the lookout down is not V doing the favour.
       let p = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
       done = CBTakenOutByVSide(game, p);
+      // And it is over (2.7.8): it waited out its clock with nobody left to run off and nothing on the map, holding every
+      // other favour back, as the one who owes and a contract's mark never did.
+      if !done && IsDefined(p) && CBIsDown(p) {
+        CBLog.Info(n"Street", "A favour's lookout was put down by somebody else; the favour is off.");
+        this.FavourLost(game, CBT(n"Cyberbane-LivingStreet-ForgetItTheLookoutSGone"));
+        return;
+      }
     } else {
       this.DebtorArrive(sys, game, des, player, now);
       let debtor = this.m_favTarget;
@@ -884,9 +895,12 @@ public class CBStreetLife {
             }
             CBFileLog(sys, n"FavourKilled", CBGameSeconds(game), CBEventDistrict(sys, game), this.m_favFaction, 0.0);
           }
+          if !byV {
+            this.FavourLost(game, CBT(n"Cyberbane-LivingStreet-ForgetItSomebodyGotToThem"));
+            return;
+          }
           if CBMessagesOn() {
-            CBPhoneFromAlly(game, this.m_favFaction, byV ? CBT(n"Cyberbane-LivingStreet-YouKilledThemNobodyPaysFrom")
-                                                         : CBT(n"Cyberbane-LivingStreet-ForgetItSomebodyGotToThem"));
+            CBPhoneFromAlly(game, this.m_favFaction, CBT(n"Cyberbane-LivingStreet-YouKilledThemNobodyPaysFrom"));
           }
           this.FavourEnd(game);
           return;
@@ -1160,11 +1174,8 @@ public class CBStreetLife {
       }
       // Somebody else got there first: the file is closed, nothing owed either way.
       if CBIsDown(mark) {
-        if CBMessagesOn() {
-          CBPhoneFromAlly(game, this.m_favFaction, CBT(n"Cyberbane-Contracts-Lost"));
-        }
         CBLog.Info(n"Street", "A contract's mark was put down by somebody else.");
-        this.FavourEnd(game);
+        this.FavourLost(game, CBT(n"Cyberbane-Contracts-Lost"));
         return;
       }
     }
@@ -1196,8 +1207,60 @@ public class CBStreetLife {
     this.FavourEnd(game);
   }
 
+  // An open favour is always on the map (2.7.8). "Gang jobs vanish quickly from the map, and then no new one can be taken
+  // for a while." The place pin went for good the first time the person's own marker came up, and that marker is bound to
+  // them: when they streamed out (V drove off, or was chased off by a Rival) it went with them, and the favour, still open
+  // and holding every other favour back, was on the map nowhere. Now the place pin is up whenever their marker is not
+  // showing: at the place for a debt or a contract, where a lookout was last seen for a lookout.
+  private func FavourKeepPin(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    let who: ref<ScriptedPuppet> = this.m_favTarget;
+    if this.m_favKind == 1 {
+      who = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
+      if CBNpcSafe(sys, who) && CBStillStanding(who) {
+        this.m_favPinAt = who.GetWorldPosition();
+      }
+    }
+    if IsDefined(who) && who.IsAttached() && who.cbMapped {
+      this.FavourUnpin(game);
+      return;
+    }
+    if !this.m_favPinned && StrLen(this.m_favPinText) > 0 {
+      this.FavourPin(game, this.m_favPinAt, this.m_favPinText);
+    }
+  }
+
+  // Taken out of the world by something else of ours (2.7.8): no longer wearing the tag they were put out with, and not still
+  // being made. A lookout who held V in combat from too far off is let go that way (CBReleaseTag), removed or handed to the
+  // orphan sweep with the tag off, and the favour waited out its clock for a body that was gone. Streaming out keeps the tag.
+  // The one who owes and a contract's mark only once they have been put at the place.
+  private func FavourTargetGone(des: ref<DynamicEntitySystem>) -> Bool {
+    if !IsDefined(des) || !EntityID.IsDefined(this.m_favBody) || (this.m_favKind != 1 && !this.m_favPlaced) {
+      return false;
+    }
+    let tag = this.m_favKind == 1 ? n"CB_Favour" : (this.m_favKind == 2 ? n"CB_Debtor" : n"CB_Mark");
+    return !des.IsTagged(this.m_favBody, tag) && !des.IsSpawning(this.m_favBody);
+  }
+
+  // Over through nobody's fault of V's (2.7.8): said, and the gang can be asked again straight away. Its rest is for a favour
+  // given, and this one was taken away.
+  private func FavourLost(game: GameInstance, line: String) -> Void {
+    if CBMessagesOn() && StrLen(line) > 0 {
+      CBPhoneFromAlly(game, this.m_favFaction, line);
+    }
+    let i = ArrayFindFirst(this.m_favRestGang, this.m_favFaction);
+    if i >= 0 {
+      ArrayErase(this.m_favRestGang, i);
+      if i < ArraySize(this.m_favRestUntil) {
+        ArrayErase(this.m_favRestUntil, i);
+      }
+    }
+    this.FavourEnd(game);
+  }
+
   private func FavourPin(game: GameInstance, at: Vector4, text: String) -> Void {
     this.FavourUnpin(game);
+    this.m_favPinText = text;
+    this.m_favPinAt = at;
     let ms = GameInstance.GetMappinSystem(game);
     if !IsDefined(ms) || !CBMapMarkersOn() || (at.X == 0.0 && at.Y == 0.0) {
       return;
@@ -1227,6 +1290,11 @@ public class CBStreetLife {
     this.m_favFaction = n"";
     this.m_favKind = 0;
     this.m_favTarget = null;
+    // Nobody's any more (2.7.8): a debt or a contract only sets it once its person is put at the place, and an old id left
+    // here read as their person gone (FavourTargetGone).
+    let none: EntityID;
+    this.m_favBody = none;
+    this.m_favPinText = "";
     this.m_favPlaced = false;
     this.m_favFight = 0;
     this.m_favDistrict = n"";

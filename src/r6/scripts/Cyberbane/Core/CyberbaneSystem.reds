@@ -494,6 +494,12 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Session start (spec §5.3): build runtime objects, register the entity callback
   // once, clean up stray Cyberbane spawns, and (re)start the fast tick.
   private func StartSession() -> Void {
+    // Not behind the main menu (2.7.8, CBInPreGame): nothing there is V's, so nothing starts, no tick, no clock and no
+    // playthrough on record. The world a save loads into has its own system and its own player, and starts then.
+    if CBInPreGame() {
+      CBLog.Info(n"Core", "The main menu's world: Cyberbane waits for a game to be loaded.");
+      return;
+    }
     if !IsDefined(this.m_registry) {
       this.m_registry = new CBNpcRegistry();
     }
@@ -526,6 +532,9 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBPruneUniqueRivals(this);
       this.RenumberRivalZero();
     }
+    // A conversation's voice from the last session is nobody's in this one (2.7.8, Reactions/TalkVoice.reds): the runtime
+    // outlives a load, and an answer still waiting for its words would put them up in the new world.
+    CBTalkVoiceClear();
     // V's chrome and clothes are read on the first settled tick, not here (1.9.5).
     //
     // This used to seed the chrome reading on the spot, and it is the one read that reaches into V's
@@ -1129,7 +1138,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBPruneUniqueRivals(this);
     }
     // A new playthrough that waited for V (2.7.7, VerifyPlaythroughOwner).
-    if this.m_birthDue && CBGameHasVHere(game) && CBPlayerLifePath(game) >= 0 {
+    if this.m_birthDue && CBGameHasVHere(game) && CBPlayerLifePath(game) >= 0 && !CBInPreGame() {
       this.VerifyPlaythroughOwner();
     }
     if this.m_headStartDue && this.HasContent() {
@@ -1689,7 +1698,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       // Nobody who is V yet (2.7.7): the main menu's world attaches a player with no lifepath, and every game start logged
       // a playthrough born "with lifepath -1" and put it on record outside the saves, where Start over reads. It waits
       // for the first settled tick with V here, and goes on record then.
-      if lifepath < 0 || !CBGameHasVHere(game) {
+      // That world has a lifepath (2.7.8, the play log: "starts here (lifepath 0)" on every launch); asked of the game.
+      if lifepath < 0 || !CBGameHasVHere(game) || CBInPreGame() {
         this.m_mintedId = minted;
         this.m_birthDue = true;
         return;

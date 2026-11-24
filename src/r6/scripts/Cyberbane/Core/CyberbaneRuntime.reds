@@ -68,6 +68,12 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_lastMessageAt: Float;
   // Equipment-EX's outfit functions, looked up once a launch (Signals/Concealment.reds, 1.9.5).
   private let m_eqexProbe: ref<CBEqExProbe>;
+  // Whether WEAVE's auto-tagger is installed, looked up once a launch (Signals/Concealment.reds, 2.7.8).
+  private let m_weaveProbe: ref<CBWeaveProbe>;
+  // The conversation's answer being voiced (Reactions/TalkVoice.reds, 2.7.8).
+  private let m_talkVoice: ref<CBTalkVoiceNow>;
+  // Whether AudioXL is installed to play V's lines from the story, looked up once a launch (Reactions/TalkVoice.reds, 2.7.8).
+  private let m_audioXLProbe: ref<CBAudioXLProbe>;
   // They Will Remember's disguise functions, looked up once a launch (Signals/Concealment.reds, 2.4.2).
   private let m_twrDisguiseProbe: ref<CBTwrDisguiseProbe>;
   // They Will Remember's word on who is hostile, by its own gang index, asked on the tick
@@ -190,6 +196,28 @@ public class CyberbaneRuntime extends ScriptableService {
       this.m_eqexProbe = new CBEqExProbe();
     }
     return this.m_eqexProbe;
+  }
+
+  public func GetTalkVoice() -> ref<CBTalkVoiceNow> {
+    if !IsDefined(this.m_talkVoice) {
+      this.m_talkVoice = new CBTalkVoiceNow();
+      this.m_talkVoice.done = true;
+    }
+    return this.m_talkVoice;
+  }
+
+  public func GetAudioXLProbe() -> ref<CBAudioXLProbe> {
+    if !IsDefined(this.m_audioXLProbe) {
+      this.m_audioXLProbe = new CBAudioXLProbe();
+    }
+    return this.m_audioXLProbe;
+  }
+
+  public func GetWeaveProbe() -> ref<CBWeaveProbe> {
+    if !IsDefined(this.m_weaveProbe) {
+      this.m_weaveProbe = new CBWeaveProbe();
+    }
+    return this.m_weaveProbe;
   }
 
   public func GetTwrAttitudeProbe() -> ref<CBTwrAttitudeProbe> {

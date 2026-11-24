@@ -2433,6 +2433,15 @@ public abstract class CBConfig {
   // game that keeps clearing the list leaves it gone a frame at a time, and presses landing then were lost.
   public static func TalkPressGrace() -> Float = 0.6
   public static func TalkReplySeconds() -> Float = 4.0
+  // Voices in a conversation (2.7.8, Reactions/TalkVoice.reds): a line of theirs this many real seconds after it is asked
+  // for is the answer's; an answer in their words waits this long for them before Cyberbane's own go up; a crowd person's
+  // voiceset lines are let through for this long, for the one line.
+  public static func TalkVoiceWindow() -> Float = 5.0
+  // V's lines are short (the longest of those used, by the game's own length map, runs 3.2 seconds): only that long is a
+  // line of V's taken as the option's.
+  public static func TalkVoiceVWindow() -> Float = 3.5
+  public static func TalkVoiceWait() -> Float = 1.0
+  public static func TalkVoiceLinesOpen() -> Float = 2.5
   // Who is afraid: a ganger whose fear of V beats their nerve by this much, a civilian this afraid. A
   // civilian who knows V and V is this well known (or keeps a code) is glad to meet V.
   public static func TalkAfraidMargin() -> Float = 0.2

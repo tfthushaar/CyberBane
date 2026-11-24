@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.7.7.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.7.8.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -34,7 +34,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 ### New in 2.0
 
 - **Talk to anybody.** Walk up to someone with empty hands and press F. Ask questions, buy a Rival's
-  hiding place, pay for safe passage, or talk down a ganger who is about to draw.
+  hiding place, pay for safe passage, or talk down a ganger who is about to draw. They answer in their own game voice,
+  and V says V's own recorded words wherever V has them (more of them with AudioXL, below).
 - **Make the street talk.** Grab a ganger, crouch over one you put down, or scan one, and they give
   something up, sometimes a Rival's fatal flaw.
 - **Rivals with a life.** Catchphrases, family who take a fallen Rival's place, call-outs to a place
@@ -223,6 +224,10 @@ Settings, so keep Mod Settings installed with it.
 Optional: [TweakXL](https://www.nexusmods.com/cyberpunk2077/mods/4197) gives Cyberbane's map pins their own
 CYBERBANE box in the map's custom filters. Everything else works without it.
 
+Optional: [AudioXL](https://www.nexusmods.com/cyberpunk2077/mods/33442) lets V say more of the conversation options in
+V's own voice: 28 of them are V's own words from the story, and AudioXL plays them. Cyberbane brings the sounds; you only
+install AudioXL. Without it those options are subtitles alone.
+
 Use the framework versions that match your game:
 
 | Game | RED4ext | redscript | Codeware | Mod Settings |
@@ -270,7 +275,7 @@ lives in your saves: a save made while the mod is removed loses it.
 - **Your crew at home:** on a member's **Orders**, the Work row goes through earning, recruiting and **Watch the
   house**. Members on watch stand at your building's door and car park while you are on home ground: once you have gone
   in and out of the apartment and parked there, they know where. Stand near your stash and **Give them a weapon** lists
-  its guns too. Talk to one of your crew (look at them, press F) for **How are you holding up?**, **Tell me about** their
+  its guns too. Talk to one of your crew (look at them, press F) for **Hangin' in there?**, **Tell me about** their
   old gang and **Heard anything?**
 - **Jobs, the kitty and challenges:** on a member's **Orders**, **Send them on a job** lists the Rivals they can go
   after (from Veteran) and the gangs whose bag they can take (from Soldier), each with their chance. The kitty, and a
@@ -386,7 +391,11 @@ on an older Cyberbane instead of breaking every script mod on the install.
   bringing you back, and nobody is sent while you're its prisoner. Chippin' In stays off with Fenix installed.
 - **Smasher Encounters:** detected automatically. While Smasher is after you, Cyberbane sends nobody new and turns nobody
   on you at sight, and his Arasaka backup doesn't break and run. Your crew still comes when called.
-- **Equipment-EX and other outfit mods:** your outfit is read as it looks on V.
+- **Equipment-EX, WEAVE and other outfit mods:** your outfit is read as it looks on V. A body suit in Equipment-EX's
+  body slots covers your arms and legs. With WEAVE, a helmet or mask it tags as covering the face hides yours; WEAVE
+  tags every helmet that way, so take the tag off an open helmet in WEAVE's wardrobe if you want your face seen.
+- **Lizzie's Braindances:** works alongside. Its braindance seller keeps to her own business, and the Mox still turn
+  up at Lizzie's to talk to.
 - **Phone Extension:** works alongside.
 - **Companions** (the game's and modded ones) fight the people Cyberbane sends after you.
 - **Story characters, quest NPCs, AMM and romance mods** are never touched.
