@@ -134,8 +134,8 @@ func CBRivalBirth(sys: ref<CyberbaneSystem>, game: GameInstance, b: ref<CBPendin
   }
   let name = CBRivalDisplayName(CBContent(game), r);
   if IsDefined(dead) {
-    CBPhoneFromGang(game, b.faction, CBTf(n"Cyberbane-Births-HasYourNameNowThatIs", [name]));
-    CBPhoneSendTinted(game, name, CBTf(n"Cyberbane-Births-YouPutInTheGroundFamily", [s"\(b.predecessor)"]), CBHudRed());
+    CBGangAnswerLater(game, b.faction, CBTf(n"Cyberbane-Births-HasYourNameNowThatIs", [name]));
+    CBAnswerLater(game, name, CBTf(n"Cyberbane-Births-YouPutInTheGroundFamily", [s"\(b.predecessor)"]), CBHudRed());
     return;
   }
   if spared {

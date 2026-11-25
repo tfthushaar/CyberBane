@@ -119,7 +119,8 @@ public func CBCreditContract(sys: ref<CyberbaneSystem>, faction: CName, amount: 
   }
 }
 
-// A gang has just come round to V. Called from the posture watch, once per crossing.
+// A gang has just come round to V. Called from the posture watch, once per crossing; they say so once word of it has
+// reached them (Word travels).
 public func CBAnnounceWarming(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, allied: Bool) -> Void {
   let content = CBContent(game);
   let enemy = CBTopEnemyOf(sys, content, faction);
@@ -130,16 +131,16 @@ public func CBAnnounceWarming(sys: ref<CyberbaneSystem>, game: GameInstance, fac
   }
   if allied {
     if StrLen(enemyLabel) > 0 {
-      CBPhoneFromAlly(game, faction, CBTf(n"Cyberbane-GangRivalries-YouHaveDoneMoreToThan", [s"\(enemyLabel)"]));
+      CBAllyAnswerLater(game, faction, CBTf(n"Cyberbane-GangRivalries-YouHaveDoneMoreToThan", [s"\(enemyLabel)"]));
     } else {
-      CBPhoneFromAlly(game, faction, CBT(n"Cyberbane-GangRivalries-YouHaveEarnedItOurStreets"));
+      CBAllyAnswerLater(game, faction, CBT(n"Cyberbane-GangRivalries-YouHaveEarnedItOurStreets"));
     }
     return;
   }
   if StrLen(enemyLabel) > 0 {
-    CBPhoneFromAlly(game, faction, CBTf(n"Cyberbane-GangRivalries-WordIsYouHaveBeenMaking", [s"\(enemyLabel)"]));
+    CBAllyAnswerLater(game, faction, CBTf(n"Cyberbane-GangRivalries-WordIsYouHaveBeenMaking", [s"\(enemyLabel)"]));
   } else {
-    CBPhoneFromAlly(game, faction, CBT(n"Cyberbane-GangRivalries-YouAreAllRightByUs"));
+    CBAllyAnswerLater(game, faction, CBT(n"Cyberbane-GangRivalries-YouAreAllRightByUs"));
   }
 }
 

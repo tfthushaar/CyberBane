@@ -192,7 +192,7 @@ func CBLedgerSettle(game: GameInstance, book: ref<CBLedgerBook>, gang: CName) ->
     return;   // nothing new, or they have only let their guard down: no news in that
   }
   CBLog.Info(n"Model", s"\(NameToString(gang)) are preparing for how you fight (\(changed)).");
-  CBPhoneFromGang(game, gang, CBAdaptLine(changed));
+  CBGangAnswerLater(game, gang, CBAdaptLine(changed));
 }
 
 func CBAdaptLine(kind: Int32) -> String {

@@ -1455,9 +1455,9 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-WordTravel")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-WordTravel-Desc")
   @runtimeProperty("ModSettings.min", "0")
-  @runtimeProperty("ModSettings.max", "240")
-  @runtimeProperty("ModSettings.step", "5")
-  public let wordTravelMinutes: Int32 = 30;
+  @runtimeProperty("ModSettings.max", "480")
+  @runtimeProperty("ModSettings.step", "15")
+  public let wordTravelMinutes: Int32 = 180;
 
   // The least time between two pieces of word arriving, in real seconds.
   @runtimeProperty("ModSettings.mod", "Cyberbane")

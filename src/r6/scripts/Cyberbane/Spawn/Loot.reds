@@ -270,20 +270,154 @@ func CBBountyPayer(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
   return best;
 }
 
-func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: CName, baseAmount: Int32,
-                 line: String) -> Void {
+// What a payout is for, so its line can be written when it lands (CBPayoutLine): the text cannot wait in a save, the
+// facts can.
+public func CBPayoutRival() -> Int32 = 0
+public func CBPayoutApex() -> Int32 = 1
+public func CBPayoutCrew() -> Int32 = 2
+
+// Payouts on their way to V. Nobody pays the second a body drops: word has to reach whoever wanted it done, and they
+// have to believe it. (2.7.9) The eddies and the text came the instant the fight ended, which felt like a game paying
+// out rather than a city; now both come together a few in-game hours later, and wait in the save until they do.
+public class CBPayoutBook extends ScriptableSystem {
+  private persistent let m_amount: array<Int32>;
+  private persistent let m_victim: array<CName>;   // the gang of whoever V put down
+  private persistent let m_kind: array<Int32>;
+  private persistent let m_rival: array<Int32>;    // the Rival, for CBPayoutRival
+  private persistent let m_due: array<Float>;      // game seconds
+
+  public static func Get(game: GameInstance) -> ref<CBPayoutBook> {
+    let container = GameInstance.GetScriptableSystemsContainer(game);
+    return IsDefined(container) ? container.Get(n"CBPayoutBook") as CBPayoutBook : null;
+  }
+
+  private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
+    this.Trim();
+  }
+
+  // Parallel arrays from a save that broke off mid-write are cut to the shortest.
+  private func Trim() -> Void {
+    let n = Min(Min(ArraySize(this.m_amount), ArraySize(this.m_victim)), Min(ArraySize(this.m_kind), Min(ArraySize(this.m_rival), ArraySize(this.m_due))));
+    ArrayResize(this.m_amount, n);
+    ArrayResize(this.m_victim, n);
+    ArrayResize(this.m_kind, n);
+    ArrayResize(this.m_rival, n);
+    ArrayResize(this.m_due, n);
+  }
+
+  public func Add(amount: Int32, victim: CName, kind: Int32, rival: Int32, due: Float) -> Void {
+    this.Trim();
+    ArrayPush(this.m_amount, amount);
+    ArrayPush(this.m_victim, victim);
+    ArrayPush(this.m_kind, kind);
+    ArrayPush(this.m_rival, rival);
+    ArrayPush(this.m_due, due);
+  }
+
+  public func Count() -> Int32 { return ArraySize(this.m_due); }
+
+  // The first one due at `now`, -1 for none. One stamped implausibly far ahead (a clock from somewhere else) is due.
+  public func FirstDue(now: Float) -> Int32 {
+    let pick = -1;
+    let i = 0;
+    while i < ArraySize(this.m_due) {
+      let due = this.m_due[i];
+      if (due <= now || due > now + CBConfig.PayoutHoursMax() * 2.0 * CBConfig.SecondsPerHour())
+         && (pick < 0 || due < this.m_due[pick]) {
+        pick = i;
+      }
+      i += 1;
+    }
+    return pick;
+  }
+
+  public func Amount(i: Int32) -> Int32 { return this.m_amount[i]; }
+  public func Victim(i: Int32) -> CName { return this.m_victim[i]; }
+  public func Kind(i: Int32) -> Int32 { return this.m_kind[i]; }
+  public func Rival(i: Int32) -> Int32 { return this.m_rival[i]; }
+
+  public func Remove(i: Int32) -> Void {
+    if i < 0 || i >= ArraySize(this.m_due) {
+      return;
+    }
+    ArrayErase(this.m_amount, i);
+    ArrayErase(this.m_victim, i);
+    ArrayErase(this.m_kind, i);
+    ArrayErase(this.m_rival, i);
+    ArrayErase(this.m_due, i);
+  }
+
+  public func Clear() -> Void {
+    ArrayClear(this.m_amount);
+    ArrayClear(this.m_victim);
+    ArrayClear(this.m_kind);
+    ArrayClear(this.m_rival);
+    ArrayClear(this.m_due);
+  }
+}
+
+// A bounty earned: on its way, not in V's hand yet.
+func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: CName, baseAmount: Int32, kind: Int32,
+                 rivalId: Int32) -> Void {
   let amount = RoundF(Cast<Float>(baseAmount) * sys.WornPerk().bountyMult / 50.0) * 50;
+  let book = CBPayoutBook.Get(game);
+  if amount <= 0 || !CBBountiesOn() || !IsDefined(book) {
+    return;
+  }
+  let now = CBGameSeconds(game);
+  book.Add(amount, victimFaction, kind, rivalId,
+           now + RandRangeF(CBConfig.PayoutHoursMin(), CBConfig.PayoutHoursMax()) * CBConfig.SecondsPerHour());
+  CBLog.Info(n"Loot", s"Bounty earned: \(amount)eb for \(NameToString(victimFaction)), paid once word gets round.");
+}
+
+public func CBBountiesOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
-  if amount <= 0 || (IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().bounties) {
-    return;
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().bounties;
+}
+
+// What the payout is for, in the words of whoever pays it.
+func CBPayoutLine(sys: ref<CyberbaneSystem>, game: GameInstance, kind: Int32, victim: CName, rivalId: Int32) -> String {
+  let label = CBFactionLabel(victim);
+  if kind == CBPayoutApex() {
+    return StrLen(label) > 0 ? CBTf(n"Cyberbane-Loot-YouTookApartTheBestOf", [s"\(label)"]) : CBT(n"Cyberbane-Loot-YouTookApartTheirBest");
   }
+  if kind == CBPayoutCrew() {
+    return StrLen(label) > 0 ? CBTf(n"Cyberbane-Queue-HeardYouDealtWithThatCrew", [s"\(label)"]) : CBT(n"Cyberbane-Queue-HeardYouDealtWithThatCrew-2");
+  }
+  let r = sys.FindRivalById(rivalId);
+  let content = CBContent(game);
+  let name = IsDefined(r) && IsDefined(content) ? CBRivalDisplayName(content, r) : CBT(n"Cyberbane-Loot-ThatOne");
+  return CBTf(n"Cyberbane-Loot-HeardYouPutInTheGround", [s"\(name)"]);
+}
+
+// One payout whose time has come, a tick: the eddies and the word together, from whoever pays, out of their chest.
+// Not in a fight, and never while the world is busy (the tick only runs settled).
+public func CBPayoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+  let book = CBPayoutBook.Get(game);
   let player = GetPlayer(game);
-  let ts = GameInstance.GetTransactionSystem(game);
-  if !IsDefined(player) || !IsDefined(ts) {
+  if !IsDefined(sys) || !IsDefined(book) || book.Count() == 0 || !IsDefined(player) || player.IsInCombat() {
     return;
   }
+  let now = CBGameSeconds(game);
+  if now <= 0.0 {
+    return;   // the clock is not up yet
+  }
+  let i = book.FirstDue(now);
+  if i < 0 {
+    return;
+  }
+  let amount = book.Amount(i);
+  let victim = book.Victim(i);
+  let kind = book.Kind(i);
+  let rivalId = book.Rival(i);
+  book.Remove(i);
+  let ts = GameInstance.GetTransactionSystem(game);
+  if !CBBountiesOn() || amount <= 0 || !IsDefined(ts) {
+    return;   // Bounties switched off since: nobody pays
+  }
+  let line = CBPayoutLine(sys, game, kind, victim, rivalId);
   ts.GiveItem(player, ItemID.FromTDBID(t"Items.money"), amount);
-  let payer = CBBountyPayer(sys, game, victimFaction);
+  let payer = CBBountyPayer(sys, game, victim);
   CBWarSpend(game, payer, Cast<Float>(amount));   // out of whoever pays (Economy/War.reds)
   if CBToastsOn() {
     if NotEquals(payer, n"") {
@@ -292,7 +426,7 @@ func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: C
       CBPhoneFromStreet(game, CBTf(n"Cyberbane-Loot-SomebodyWantedThatDoneEb", [line, s"\(amount)"]));
     }
   }
-  CBLog.Info(n"Loot", s"Bounty paid: \(amount)eb for \(NameToString(victimFaction)).");
+  CBLog.Info(n"Loot", s"Bounty paid: \(amount)eb for \(NameToString(victim)).");
 }
 
 // A Rival is dead by V's hand.
@@ -308,9 +442,7 @@ public func CBPayRivalBounty(sys: ref<CyberbaneSystem>, game: GameInstance, r: r
       amount += CBConfig.BountyLeaderBonus() / 2;
     }
   }
-  let content = CBContent(game);
-  let name = IsDefined(content) ? CBRivalDisplayName(content, r) : CBT(n"Cyberbane-Loot-ThatOne");
-  CBPayBounty(sys, game, r.faction, amount, CBTf(n"Cyberbane-Loot-HeardYouPutInTheGround", [s"\(name)"]));
+  CBPayBounty(sys, game, r.faction, amount, CBPayoutRival(), r.id);
 }
 
 // The last of an apex squad is down.
@@ -324,7 +456,5 @@ public func CBPayApexBounty(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   }
   let scale = 0.6 + 0.4 * CBMenaceScale(sys);
   let amount = RoundF(Cast<Float>(CBConfig.BountyApexSquad()) * scale / 50.0) * 50;
-  let label = CBFactionLabel(faction);
-  CBPayBounty(sys, game, faction, amount,
-              StrLen(label) > 0 ? CBTf(n"Cyberbane-Loot-YouTookApartTheBestOf", [s"\(label)"]) : CBT(n"Cyberbane-Loot-YouTookApartTheirBest"));
+  CBPayBounty(sys, game, faction, amount, CBPayoutApex(), 0);
 }

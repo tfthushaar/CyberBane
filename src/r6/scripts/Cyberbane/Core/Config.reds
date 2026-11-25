@@ -1281,7 +1281,7 @@ public abstract class CBConfig {
   public static func PhoneAttachWaitSeconds() -> Float = 45.0
   // Word getting around (CBPhone.Hearsay). Defaults for the two settings, used before Mod
   // Settings is up.
-  public static func WordTravelMinutesDefault() -> Int32 = 30
+  public static func WordTravelMinutesDefault() -> Int32 = 180
   public static func InboxGapSecondsDefault() -> Int32 = 90
   public static func WordCalmSeconds() -> Float = 60.0
   // Word from further off takes one more travel time a district, up to this many (so at most three times as long).
@@ -1317,9 +1317,9 @@ public abstract class CBConfig {
   // episode is one massacre to the street, not one per lull in the shooting.
   public static func HearsayRepeatHours() -> Float = 6.0
   // Stories waiting at once, and how many recently told ones are remembered for that window.
-  public static func HearsayQueueCap() -> Int32 = 12
-  // The longest word waits in the queue, in real seconds (CBPhone.ReleaseWord): then it comes inside the inbox gap.
-  public static func HearsayMaxWaitReal() -> Float = 240.0
+  public static func HearsayQueueCap() -> Int32 = 24
+  // Word still waiting this many in-game hours after it reached V's part of town is old news (CBPhone.ReleaseWord).
+  public static func HearsayStaleHours() -> Float = 24.0
   public static func HearsayToldCap() -> Int32 = 32
   // The same contact sending the same words inside this many in-game hours is filed once.
   public static func PhoneDuplicateHours() -> Float = 1.0
@@ -1778,6 +1778,10 @@ public abstract class CBConfig {
   public static func BountyRivalPerRank() -> Int32 = 1500
   public static func BountyLeaderBonus() -> Int32 = 3000
   public static func BountyApexSquad() -> Int32 = 9000
+  // A bounty reaches V this many in-game hours after the deed (Spawn/Loot.reds, CBPayoutBook): word has to get round to
+  // whoever wanted it done first.
+  public static func PayoutHoursMin() -> Float = 2.0
+  public static func PayoutHoursMax() -> Float = 4.0
 
   // ---- Difficulty (Spawn/FactionApex.reds, CBDifficultyStepDown) -------------
   public static func ApexHardStepDown() -> Float = 0.85

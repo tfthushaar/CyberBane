@@ -1507,7 +1507,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
       fs.lastHitSquadAt = CBGameSeconds(game);
     }
     if CBToastsOn() && CBFactionFieldsSquads(ranFrom) {
-      CBPhoneFromGangFinal(game, ranFrom, CBT(n"Cyberbane-Spawner-RanDidYouEverybodyIsGoing"));
+      CBGangAnswerLater(game, ranFrom, CBT(n"Cyberbane-Spawner-RanDidYouEverybodyIsGoing"));
     }
   }
   // Take the bars down with them, rather than leaving them up for the tick it would take the
