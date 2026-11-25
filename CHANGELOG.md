@@ -17,6 +17,8 @@ The major changes in each version, newest first. Your progress always carries ov
   after.
 - **The D-pad in conversations.** Scrolling a conversation's options with the D-pad no longer uses a MaxDoc or opens
   the phone.
+- **Appearance Menu Mod.** People you spawn with AMM are left alone: they no longer panic at you, turn on you or get
+  drawn into Cyberbane's street life.
 - **Fixed:** a gang hangout setting up inside your apartment (a Scav on V's couch in H10), your crew's guard at the
   Glen standing in the closed-off space beside the lift, a stronghold's Rival and lieutenants all standing on one spot,
   retired Rivals never coming back with messages off, gangs never warming to you for crashing their rivals' business
