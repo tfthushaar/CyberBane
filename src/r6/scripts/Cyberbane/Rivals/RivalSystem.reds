@@ -833,7 +833,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
   CBLogRival(sys, n"RivalCreated", at, origin, faction, Cast<Float>(r.id), r.id);
   if CBMessagesOn() && !quiet {
-    CBPhoneFromGang(game, faction, CBTf(n"Cyberbane-Births-HasYourNameNowThatIs", [CBRivalDisplayName(content, r)]));
+    CBGangAnswerLater(game, faction, CBTf(n"Cyberbane-Births-HasYourNameNowThatIs", [CBRivalDisplayName(content, r)]));
   }
   CBLog.Info(n"Rivals", s"Rival created id=\(r.id) faction=\(NameToString(faction)).");
   CBApiRivalEvent(r, n"Made");   // extension API

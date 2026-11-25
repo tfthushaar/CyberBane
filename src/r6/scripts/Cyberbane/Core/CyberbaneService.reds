@@ -658,9 +658,14 @@ public class CyberbaneService extends ScriptableService {
       this.NoteGangPower(toId, p.faction, p.strength, p.at);
     }
     for s in seen {
-      let c = new CBSighting();
-      c.playthroughId = toId;
-      c.rivalId = s.rivalId;
+      // One sighting per Rival, as NoteSighting keeps it: a second copy of the same Rival was never found again.
+      let c = this.FindSighting(toId, s.rivalId);
+      if !IsDefined(c) {
+        c = new CBSighting();
+        c.playthroughId = toId;
+        c.rivalId = s.rivalId;
+        ArrayPush(this.m_sightings, c);
+      }
       c.recordID = s.recordID;
       c.x = s.x;
       c.y = s.y;
@@ -669,7 +674,6 @@ public class CyberbaneService extends ScriptableService {
       c.seenAt = s.seenAt;
       c.tippedAt = s.tippedAt;
       c.tipFaction = s.tipFaction;
-      ArrayPush(this.m_sightings, c);
     }
     while ArraySize(this.m_sightings) > CBConfig.CapSightings() {
       ArrayErase(this.m_sightings, 0);

@@ -543,7 +543,7 @@ func CBCrewDuelResolve(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBC
     m.loyalty = Min(100, m.loyalty + 3);
     CBFileLog(sys, n"CrewDuelWon", now, CBEventDistrict(sys, game), gang, Cast<Float>(m.id));
     if CBMessagesOn() {
-      CBPhoneFromGang(game, gang, CBTf(n"Cyberbane-CrewJobs-DuelWon", [who]));
+      CBGangAnswerLater(game, gang, CBTf(n"Cyberbane-CrewJobs-DuelWon", [who]));
     }
     CBLog.Info(n"Crew", s"One of the crew won a duel against \(NameToString(gang)).");
     return;
@@ -552,7 +552,7 @@ func CBCrewDuelResolve(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBC
   CBTalkFear(sys, game, gang, -CBConfig.CrewDuelFear());
   CBFileLog(sys, n"CrewDuelLost", now, CBEventDistrict(sys, game), gang, Cast<Float>(m.id));
   if CBMessagesOn() {
-    CBPhoneFromGang(game, gang, CBTf(n"Cyberbane-CrewJobs-DuelLost", [who]));
+    CBGangAnswerLater(game, gang, CBTf(n"Cyberbane-CrewJobs-DuelLost", [who]));
   }
   CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewJobs-DuelLostMember", [CBPossessive(label)]));
   CBLog.Info(n"Crew", s"One of the crew lost a duel against \(NameToString(gang)).");
@@ -603,7 +603,7 @@ public func CBCrewChallengeRefused(sys: ref<CyberbaneSystem>, game: GameInstance
   jb.ClearChallenge();
   CBTalkFear(sys, game, g, -CBConfig.CrewDuelRefuseFear());
   if CBMessagesOn() {
-    CBPhoneFromGang(game, g, asked ? CBT(n"Cyberbane-CrewJobs-ChallengeRefused") : CBT(n"Cyberbane-CrewJobs-ChallengeIgnored"));
+    CBGangAnswerLater(game, g, asked ? CBT(n"Cyberbane-CrewJobs-ChallengeRefused") : CBT(n"Cyberbane-CrewJobs-ChallengeIgnored"));
   }
   CBLog.Info(n"Crew", s"V's crew \(asked ? "turned down" : "never answered") a challenge from \(NameToString(g)).");
 }

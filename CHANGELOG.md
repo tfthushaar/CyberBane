@@ -6,6 +6,26 @@ The major changes in each version, newest first. Your progress always carries ov
 
 ## 2.7
 
+### 2.7.9 (25 November 2026)
+- **News takes time to travel.** Bounties are paid a few in-game hours after the kill, eddies and text arriving
+  together, and they wait in your save until they do. A gang's answer to what you did (a new Rival taking your name,
+  a gang learning how you fight, a duel's result, you running from a fight, a gang warming to you) reaches you the way
+  word does. **Word travels** now really is in in-game minutes, up to eight hours, and starts at three; turn it down if
+  you want your news sooner.
+- **Message cards go away again.** In Cards mode, cards could stay on screen until the next message replaced them.
+  They now fade on time, and step aside during scenes, menus and while you sit, keeping the rest of their time for
+  after.
+- **The D-pad in conversations.** Scrolling a conversation's options with the D-pad no longer uses a MaxDoc or opens
+  the phone.
+- **Appearance Menu Mod.** People you spawn with AMM are left alone: they no longer panic at you, turn on you or get
+  drawn into Cyberbane's street life.
+- **Fixed:** a gang hangout setting up inside your apartment (a Scav on V's couch in H10), your crew's guard at the
+  Glen standing in the closed-off space beside the lift, a stronghold's Rival and lieutenants all standing on one spot,
+  retired Rivals never coming back with messages off, gangs never warming to you for crashing their rivals' business
+  with messages off, a gang's grudge against finishers never counting for some gangs, the Scavengers not counting the
+  Scrappers as rivals, a split-off save duplicating a Rival's last known place, and crew texts landing in the wrong chat
+  after a reload.
+
 ### 2.7.8 (24 November 2026)
 - **Equipment-EX 1.3.2 and WEAVE 1.6.4.** Outfits hide your chrome again with WEAVE installed. Modded jackets, coats
   and body suits cover your arms, a body suit in Equipment-EX's body slots covers your arms and legs, and a helmet or

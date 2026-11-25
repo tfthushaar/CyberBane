@@ -55,9 +55,58 @@ func CBPointReachable(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
 }
 
 // Does somebody put here stand with the spot they belong to? On its level, within `rise` metres, and joined to it by a
-// real walk (CBPointReachable).
+// real walk. With navmesh under the spot that walk has to reach it (CBWalkJoins); a spot with none near it can only be
+// asked the long way (CBPointReachable).
 public func CBStandsWith(game: GameInstance, at: Vector4, anchor: Vector4, rise: Float) -> Bool {
-  return AbsF(at.Z - anchor.Z) <= rise && CBPointReachable(game, at, anchor);
+  if AbsF(at.Z - anchor.Z) > rise {
+    return false;
+  }
+  let onMesh: Vector4;
+  if CBNavPointUnder(game, anchor, onMesh) {
+    return CBWalkJoins(game, at, onMesh);
+  }
+  return CBPointReachable(game, at, anchor);
+}
+
+// The navmesh right under a point, where a person standing on it would be: within WalkJoinTolerance across and
+// NavFloorSnapHeight down. False where there is none that close (2.7.9).
+public func CBNavPointUnder(game: GameInstance, p: Vector4, out onMesh: Vector4) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  if !IsDefined(nav) {
+    return false;
+  }
+  let found = nav.GetNearestNavmeshPointBelowOnlyHumanNavmesh(new Vector4(p.X, p.Y, p.Z + 1.0, 1.0), 0.5, 6);
+  if Vector4.Length(found) < 1.0 {
+    return false;
+  }
+  let dx = found.X - p.X;
+  let dy = found.Y - p.Y;
+  if SqrtF(dx * dx + dy * dy) > CBConfig.WalkJoinTolerance() || AbsF(found.Z - p.Z) > CBConfig.NavFloorSnapHeight() {
+    return false;
+  }
+  onMesh = found;
+  return true;
+}
+
+// A short walk on the navmesh between two near points, each end found on the navmesh within WalkJoinTolerance of where
+// it is and never further (2.7.9). CBPointReachable lets either end land anywhere within PathEndTolerance, which suits
+// a long way to V and not a step from a post: a closed-off pocket beside a lift, with navmesh of its own a few metres
+// from a post the navmesh did not reach, was "joined" to it and a guard stood in it every time.
+public func CBWalkJoins(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
+  let nav = GameInstance.GetNavigationSystem(game);
+  if !IsDefined(nav) {
+    return true;   // cannot tell; do not silently refuse every spot
+  }
+  let straight = Vector4.Distance(from, to);
+  if straight <= 0.5 {
+    return true;   // the spot itself
+  }
+  let path = nav.CalculatePathOnlyHumanNavmesh(from, to, NavGenAgentSize.Human, CBConfig.WalkJoinTolerance());
+  if !IsDefined(path) {
+    return false;
+  }
+  let walk = path.CalculateLength();
+  return walk > 0.0 && walk <= straight * CBConfig.PathDetourMax() + CBConfig.WalkJoinSlack();
 }
 
 // Is there a ceiling over this point?
@@ -216,6 +265,11 @@ func CBSettleOnGround(game: GameInstance, p: Vector4, out at: Vector4) -> Bool {
   }
   // A floor a long way below the point is not this point's floor.
   if p.Z - ground > CBConfig.SpawnGroundSettle() {
+    return false;
+  }
+  // Nor one above it: the ray from just over the point hit something standing on the floor, a couch or a bench, and a
+  // person put there stood on the seat (2.7.9).
+  if ground - p.Z > CBConfig.SpawnFurnitureRise() {
     return false;
   }
   at = new Vector4(p.X, p.Y, MaxF(p.Z, ground) + CBConfig.NavSpawnClearance(), 1.0);
@@ -543,6 +597,14 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       // The rest of a group form up near the first, because a squad that arrives together reads as a squad, and every
       // one of them has to be joined to the group (CBPointArrivable).
       let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at);
+      // On V's floor, unless V is out under the open sky (2.7.9). Every other route here keeps a spot within
+      // GroundMaxDrop of V; this one took the navmesh's answer as it came, and inside a building that answer can be a
+      // flat several floors up: a Scavs' hangout turned up on V's couch in H10, picked while V was down in the lift.
+      // Out in the open a street a few metres down a hill is still a street, and anywhere under a roof is already
+      // refused for an arrival in the open (CBPointArrivable).
+      if ok && !openAir && AbsF(at.Z - ppos.Z) > CBConfig.GroundMaxDrop() {
+        ok = false;
+      }
       if !ok {
         CBNoteSpawnBlock(CBBlockNoGround());
       }
@@ -1445,7 +1507,7 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
       fs.lastHitSquadAt = CBGameSeconds(game);
     }
     if CBToastsOn() && CBFactionFieldsSquads(ranFrom) {
-      CBPhoneFromGangFinal(game, ranFrom, CBT(n"Cyberbane-Spawner-RanDidYouEverybodyIsGoing"));
+      CBGangAnswerLater(game, ranFrom, CBT(n"Cyberbane-Spawner-RanDidYouEverybodyIsGoing"));
     }
   }
   // Take the bars down with them, rather than leaving them up for the tick it would take the

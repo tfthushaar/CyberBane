@@ -950,9 +950,8 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
     CBLog.Info(n"Spawn", s"Crew from \(NameToString(faction)) wiped out; their apex squad is next in line.");
   }
   // Somebody is glad to see that crew gone, and pays for it (Spawn/Loot.reds).
-  let crewLabel = CBFactionLabel(faction);
   CBPayBounty(sys, game, faction, RoundF(Cast<Float>(CBConfig.BountyCrew()) * CBLootLevelScale(game) / 50.0) * 50,
-              StrLen(crewLabel) > 0 ? CBTf(n"Cyberbane-Queue-HeardYouDealtWithThatCrew", [s"\(crewLabel)"]) : CBT(n"Cyberbane-Queue-HeardYouDealtWithThatCrew-2"));
+              CBPayoutCrew(), 0);
   // Only promise what can follow: a gang that fields an apex, while the apex lane is on and nothing is already on its
   // way. Nor from a gang whose code never sends its best, or with Apex squads off.
   if !CBToastsOn() || !CBHitSquadsOn() || CBLaneDailyCap(CBLaneApex()) <= 0 || !CBApexOnSetting() || !CBCodeSendsApex(faction)

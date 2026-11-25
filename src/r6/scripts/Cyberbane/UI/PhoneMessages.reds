@@ -188,7 +188,6 @@ public class CBPhone {
   // wherever V is when it is due (ReleaseWord, CBDistrictHops).
   private let m_hsFrom: array<CName>;
   private let m_hsSpan: array<Float>;
-  private let m_hsQueuedReal: array<Float>;   // real seconds when it was queued: nothing waits past a few minutes
   // Sim seconds V was last in a fight: nobody's news reaches V in the middle of one.
   private let m_lastFightReal: Float;
   // Stories already told, and when (game seconds), for the repeat window.
@@ -587,7 +586,7 @@ public class CBPhone {
 
   // Somebody will tell V about this, once it has had time to get round.
   public func Hearsay(game: GameInstance, sender: String, body: String, accent: HDRColor,
-                      key: CName, offerFaction: CName, opt from: CName) -> Void {
+                      key: CName, offerFaction: CName, opt from: CName, opt important: Bool) -> Void {
     this.m_game = game;
     if StrLen(body) == 0 {
       return;
@@ -612,7 +611,7 @@ public class CBPhone {
     }
     // Chatter, word with nothing in it for V to answer, spaced out by How much you hear: a couple an in-game hour on
     // Less chatter, one every two on Rarely, never none. A gang's offer or demand always comes.
-    if !IsNameValid(offerFaction) {
+    if !IsNameValid(offerFaction) && !important {
       let amount = CBMessageAmount();
       if !Equals(amount, ECBMessageAmount.Everything) {
         let rarely = Equals(amount, ECBMessageAmount.Rarely);
@@ -643,15 +642,13 @@ public class CBPhone {
     }
     // Not to the minute: two things done together reach V at different times, the way word does. This is how long it
     // takes to get round where it happened; further off, it takes longer again (ReleaseWord).
-    let delay = CBWordTravelSeconds() * RandRangeF(0.6, 1.4);
+    let delay = CBWordTravelSeconds() * RandRangeF(0.75, 1.25);
     if !IsNameValid(from) {
       let sysFrom = CyberbaneSystem.Get(game);
       from = IsDefined(sysFrom) ? CBEventDistrict(sysFrom, game) : n"";
     }
     ArrayPush(this.m_hsFrom, from);
     ArrayPush(this.m_hsSpan, delay);
-    let tsQ = GameInstance.GetTimeSystem(game);
-    ArrayPush(this.m_hsQueuedReal, IsDefined(tsQ) ? EngineTime.ToFloat(tsQ.GetSimTime()) : 0.0);
     ArrayPush(this.m_hsSender, sender);
     ArrayPush(this.m_hsBody, body);
     ArrayPush(this.m_hsAccent, accent);
@@ -687,32 +684,18 @@ public class CBPhone {
        && (simNow - this.m_lastFightReal) < CBConfig.WordCalmSeconds() {
       return;
     }
-    // News that has waited too long. "Alejandro went under the knife" arrived twenty minutes after it was queued, when
-    // it no longer felt connected to anything: a queue let out one at a time behind the inbox gap and the fight calm.
+    // Word that reached V's part of town long ago and is still waiting (a long fight, a long night's sleep) is old news
+    // and goes unsaid, unless it carries a gang's price. (2.7.9) The wait was counted in real seconds, a few minutes at
+    // most, which overrode Word travels: past half an hour of it, every story came at the four-minute mark regardless.
     let o = ArraySize(this.m_hsBody) - 1;
     while o >= 0 {
-      let queued = o < ArraySize(this.m_hsQueuedReal) ? this.m_hsQueuedReal[o] : 0.0;
-      let waited = queued > 0.0 && simNow >= queued ? simNow - queued : 0.0;
-      if waited > CBConfig.HearsayMaxWaitReal() * 3.0 && !IsNameValid(this.m_hsFaction[o]) {
+      if !IsNameValid(this.m_hsFaction[o]) && now - this.m_hsDue[o] > CBConfig.HearsayStaleHours() * CBConfig.SecondsPerHour() {
         CBLog.Info(n"UI", s"Word let go (too old to matter) from \(this.m_hsSender[o]): \(this.m_hsBody[o])");
         this.DropWord(o);
       }
       o -= 1;
     }
-    let overdue = -1;
-    let oldest = 0.0;
-    let q = 0;
-    while q < ArraySize(this.m_hsBody) {
-      let queuedQ = q < ArraySize(this.m_hsQueuedReal) ? this.m_hsQueuedReal[q] : 0.0;
-      let waitedQ = queuedQ > 0.0 && simNow >= queuedQ ? simNow - queuedQ : 0.0;
-      if waitedQ > CBConfig.HearsayMaxWaitReal() && waitedQ > oldest {
-        oldest = waitedQ;
-        overdue = q;
-      }
-      q += 1;
-    }
-    if overdue < 0 && this.m_lastWordReal > 0.0 && simNow >= this.m_lastWordReal
-       && (simNow - this.m_lastWordReal) < CBInboxGapSeconds() {
+    if this.m_lastWordReal > 0.0 && simNow >= this.m_lastWordReal && (simNow - this.m_lastWordReal) < CBInboxGapSeconds() {
       return;
     }
     // The one that has been due longest, among those that have reached V: word that has got round where it happened
@@ -732,16 +715,13 @@ public class CBPhone {
         hops = 1;
       }
       let span = i < ArraySize(this.m_hsSpan) ? this.m_hsSpan[i] : 0.0;
-      // Where V is when it happened: the people round V tell V first, in half the time.
-      let due = hops == 0 ? this.m_hsDue[i] - span * 0.5 : this.m_hsDue[i] + span * Cast<Float>(hops);
+      // Half as long again for each district it still has to cross.
+      let due = this.m_hsDue[i] + span * 0.5 * Cast<Float>(hops);
       if due <= now && (pick < 0 || due < pickDue) {
         pick = i;
         pickDue = due;
       }
       i += 1;
-    }
-    if pick < 0 {
-      pick = overdue;
     }
     if pick < 0 {
       return;
@@ -762,9 +742,6 @@ public class CBPhone {
     }
     if pick < ArraySize(this.m_hsSpan) {
       ArrayErase(this.m_hsSpan, pick);
-    }
-    if pick < ArraySize(this.m_hsQueuedReal) {
-      ArrayErase(this.m_hsQueuedReal, pick);
     }
     this.m_lastWordReal = simNow;
     if IsNameValid(key) {
@@ -794,9 +771,6 @@ public class CBPhone {
     }
     if i < ArraySize(this.m_hsSpan) {
       ArrayErase(this.m_hsSpan, i);
-    }
-    if i < ArraySize(this.m_hsQueuedReal) {
-      ArrayErase(this.m_hsQueuedReal, i);
     }
   }
 
@@ -1122,8 +1096,8 @@ public class CBPhone {
     }
   }
 
-  // Everything of ours off the screen, without forgetting any of it. Called while V is down: the tick stands still
-  // then, so whatever was showing would otherwise freeze there, and if a load follows, stay there.
+  // Everything of ours off the screen, without forgetting any of it (Hold, while the tick stands down): whatever was
+  // showing would otherwise freeze there, and if a load follows, stay there.
   public func Conceal() -> Void {
     if IsDefined(this.m_subRoot) {
       this.m_subRoot.SetVisible(false);
@@ -1138,6 +1112,19 @@ public class CBPhone {
     }
   }
 
+  // The tick is standing down (a scene, a menu, a workspot, the world settling): the cards and the overheard line come off
+  // the screen and their clocks stop, so they are back for the rest of their time once it is over. An overheard line is
+  // a moment and does not wait. (2.7.9) The cards stayed up through all of it, frozen, while the game had its own HUD
+  // hidden.
+  public func Hold(game: GameInstance) -> Void {
+    this.m_subLeft = 0.0;
+    this.Conceal();
+    let ts = GameInstance.GetTimeSystem(game);
+    if IsDefined(ts) && this.m_lastSimTime > 0.0 {
+      this.m_lastSimTime = EngineTime.ToFloat(ts.GetSimTime());
+    }
+  }
+
   // ---- Drawing ------------------------------------------------------------
 
   // Once per fast tick. Delivers anything waiting, then ages the cards, slides the new ones
@@ -1147,6 +1134,14 @@ public class CBPhone {
     this.ReleasePosts(game);  // texts whose time has come
     this.ReleaseWord(game);   // before Deliver, so a story let out this tick is shown this tick
     this.Deliver(game);
+    this.Animate(sys, game);
+  }
+
+  // The cards' clock and their drawing, apart from delivering anything: the tick also runs it on the ticks it spends
+  // letting the world settle (CyberbaneSystem.OnFastTick), when nothing new is delivered but what is up still has to
+  // age.
+  public func Animate(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
+    this.m_game = game;
     // Built on the first settled tick of a session whether or not a card is ever shown, because building is what clears
     // away the cards an earlier session left on the HUD layer (Build).
     if !this.m_built {
@@ -1165,11 +1160,14 @@ public class CBPhone {
     let now = EngineTime.ToFloat(ts.GetSimTime());
     let dt = this.m_lastSimTime > 0.0 ? now - this.m_lastSimTime : 0.0;
     this.m_lastSimTime = now;
-    // A load or a time skip can hand back a nonsense delta; ignore it rather than wiping the
-    // stack in one frame.
-    if dt < 0.0 || dt > 5.0 {
+    // A load, a hitch or a time skip can hand back a nonsense delta: at most a couple of ticks' worth counts, so the
+    // stack is never wiped in one frame. (2.7.9) A long delta used to count for nothing at all, and with the tick standing
+    // down every few seconds (a scene tier coming and going, the world settling) every delta was long: the cards never
+    // aged, and only a new message ever took one down.
+    if dt < 0.0 {
       dt = 0.0;
     }
+    dt = MinF(dt, 2.0 * CBConfig.FastTickSeconds());
     if !this.EnsureBuilt() {
       return;   // no layer yet; the cards keep their time and appear when there is one
     }
@@ -1465,7 +1463,6 @@ public class CBPhone {
     ArrayClear(this.m_hsDue);
     ArrayClear(this.m_hsFrom);
     ArrayClear(this.m_hsSpan);
-    ArrayClear(this.m_hsQueuedReal);
     this.m_lastFightReal = 0.0;
     ArrayClear(this.m_toldKey);
     ArrayClear(this.m_toldAt);
@@ -1842,7 +1839,7 @@ public func CBInboxGapSeconds() -> Float {
 }
 
 func CBHearsayTinted(game: GameInstance, sender: String, body: String, accent: HDRColor,
-                     key: CName, offerFaction: CName, opt from: CName) -> Void {
+                     key: CName, offerFaction: CName, opt from: CName, opt important: Bool) -> Void {
   if !CBMessagesOn() {
     return;
   }
@@ -1850,7 +1847,27 @@ func CBHearsayTinted(game: GameInstance, sender: String, body: String, accent: H
   if !IsDefined(sys) {
     return;
   }
-  sys.GetPhone().Hearsay(game, sender, body, accent, key, offerFaction, from);
+  sys.GetPhone().Hearsay(game, sender, body, accent, key, offerFaction, from, important);
+}
+
+// Somebody's answer to what V did: a gang naming a new Rival, a Rival's own taunt, a gang that learnt how V fights or
+// turned V away. It waits for word to get round (Word travels) as any news does, and How much you hear never lets it go.
+// (2.7.9) These came within seconds of the deed, which no gang manages.
+public func CBAnswerLater(game: GameInstance, sender: String, body: String, accent: HDRColor) -> Void {
+  CBHearsayTinted(game, sender, body, accent, n"", n"", n"", true);
+}
+
+public func CBGangAnswerLater(game: GameInstance, faction: CName, body: String) -> Void {
+  CBAnswerLater(game, CBPhoneGangSender(faction), body, CBHudRed());
+}
+
+public func CBAllyAnswerLater(game: GameInstance, faction: CName, body: String) -> Void {
+  CBAnswerLater(game, CBPhoneGangSender(faction), body, CBHudCyan());
+}
+
+// A gang's answer that carries its price on V: answerable from the phone once it lands, as a demand sent now is.
+public func CBGangDemandLater(game: GameInstance, faction: CName, body: String) -> Void {
+  CBHearsayTinted(game, CBPhoneGangSender(faction), body, CBHudRed(), n"", faction, n"", true);
 }
 
 public func CBHearsayFromStreet(game: GameInstance, body: String, key: CName) -> Void {

@@ -304,7 +304,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-DistrictLineSeconds-Desc", "How long the district line stays up, when it is set to Briefly.");
     this.Text("Cyberbane-Settings-HudLine-Desc", "The line of text at the top of the screen. Everything: the full story, all the time. Hunts only: only while somebody is on their way or out looking. Off: hidden. The Rival and apex bars under it are a setting of their own: Rival and apex bars, under Messages and HUD.");
     this.Text("Cyberbane-Settings-ShowCountdowns-Desc", "Show exact times on the Hub and the HUD line. Off says soon, any moment or later instead.");
-    this.Text("Cyberbane-Settings-Bounties-Desc", "Putting down a Rival, a crew or an apex squad earns you eddies, paid by a gang at war with theirs. This is a reward to you, not the price on your head (that is A price on your head, under Being hunted).");
+    this.Text("Cyberbane-Settings-Bounties-Desc", "Putting down a Rival, a crew or an apex squad earns you eddies, paid by a gang at war with theirs a few in-game hours later, once word has reached them. This is a reward to you, not the price on your head (that is A price on your head, under Being hunted).");
     this.Text("Cyberbane-Settings-ApexTraits-Desc", "Each apex gets two traits of its own, so no two fight the same way. Stands down on its own when New Game Plus is installed.");
     this.Text("Cyberbane-Settings-TwrCompat-Desc", "Auto or On: They Will Remember or Night City Remembers decides who is hostile to you, and Cyberbane follows it: every gang it has hostile is hostile here, hostility on sight is left to it, and nobody it has hostile offers you a word. They Will Remember also takes over crews and disguises. Night City Remembers sends nobody after you, so Cyberbane's crews still come. Off: Cyberbane decides; turn hostility off in the other mod's own settings so the two do not disagree.");
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising for a bug report.");
@@ -525,7 +525,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-EncounterGap", "Minutes between encounters");
     this.Text("Cyberbane-Settings-MessageHold", "How long words stay on screen");
     this.Text("Cyberbane-Settings-WordTravel", "Word travels (in-game minutes)");
-    this.Text("Cyberbane-Settings-WordTravel-Desc", "How long news of what you did (a body, a dead Rival, a payout, a crew changing hands) takes to get round where it happened. From further away it takes longer, a district at a time, and nothing reaches you in the middle of a fight. The same story is only told once while it gets around. 0 sends it as soon as the fight is over.");
+    this.Text("Cyberbane-Settings-WordTravel-Desc", "How long news of what you did (a body, a dead Rival, a crew changing hands, a gang's answer to it) takes to get round where it happened, in in-game minutes. From further away it takes longer, a district at a time, and nothing reaches you in the middle of a fight. The same story is only told once while it gets around. 0 sends it as soon as the fight is over.");
     this.Text("Cyberbane-Settings-InboxGap", "Gap between messages (seconds)");
     this.Text("Cyberbane-Settings-InboxGap-Desc", "The least time between two pieces of news arriving. Anything waiting arrives later, in order. 0 lets them through as soon as they are due.");
     this.Text("Cyberbane-Settings-CyberpsychoRivals", "Spared cyberpsychos come back");

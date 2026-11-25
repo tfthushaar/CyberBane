@@ -898,12 +898,14 @@ public class CyberbaneSystem extends ScriptableSystem {
       if this.m_streamSettleTicks < CBConfig.StreamSettleTicks() {
         this.m_streamSettleTicks = CBConfig.StreamSettleTicks();
       }
-      // V is down: take Cyberbane's line, bars and cards off the screen. The tick stands still until V is up or the
-      // load comes, so whatever they showed froze there, and the HUD layer keeps it through the load.
+      // V is down: take Cyberbane's line and bars off the screen. The tick stands still until V is up or the load comes,
+      // so whatever they showed froze there, and the HUD layer keeps it through the load.
       if CBVDown(game) {
         this.GetThreatBar().Conceal();
-        this.GetPhone().Conceal();
       }
+      // The message cards stand back through any of it, and keep the rest of their time for after (2.7.9): they froze on
+      // screen through every scene, menu and workspot.
+      this.GetPhone().Hold(game);
       CBApiWorldBusy(game);
       this.ScheduleFastTick();
       return;
@@ -935,8 +937,9 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_lastTickGameTime = nowGT;
     if this.m_streamSettleTicks > 0 {
       this.m_streamSettleTicks -= 1;
-      // Keep our own bookkeeping moving while the world settles.
+      // Keep our own bookkeeping moving while the world settles, the message cards' clocks with it (2.7.9).
       CBTickClocksOnly(this);
+      this.GetPhone().Animate(this, game);
       this.SetHuntHoldReason(CBHoldWorldBusy());
       CBApiWorldBusy(game);
       this.ScheduleFastTick();
@@ -985,6 +988,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_storyHold == CBStoryNotV() {
       // Not V at all: the VR avatar, Johnny in a flashback, V in cyberspace or a braindance.
       this.GetThreatBar().Hide();
+      this.GetPhone().Hold(game);
       this.ScheduleFastTick();
       return;
     }
@@ -1128,6 +1132,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBWitnessTick(this, game);          // a witness on their way to a gang gets there, or does not
     CBWarNoteWestbrook(this, game);     // working Japantown, for the Claws
     CBHuntedTick(this, game);           // haunts, and the trail going cold
+    CBPayoutTick(this, game);           // a bounty reaching V once word has got round (Spawn/Loot.reds)
     CBHuntGrowsTick(this, game);        // trackers and open season
     CBBountyTick(this, game);           // the price on V's head and the hunters' ladder
     CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts
@@ -3747,6 +3752,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     let war = CBWarBook.Get(this.GetGameInstance());
     if IsDefined(war) {
       war.Clear();        // and the war starts over
+    }
+    let payouts = CBPayoutBook.Get(this.GetGameInstance());
+    if IsDefined(payouts) {
+      payouts.Clear();    // nor is anybody paying for what the old name did
     }
     let hunt = CBHuntBook.Get(this.GetGameInstance());
     if IsDefined(hunt) {

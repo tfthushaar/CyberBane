@@ -380,7 +380,7 @@ public func CBAlliesDaily(sys: ref<CyberbaneSystem>, game: GameInstance, days: F
       war.SetOneOfTheirs(n"");
       CBFileLog(sys, n"LeftGang", now, CBEventDistrict(sys, game), mine, 0.0);
       if CBMessagesOn() {
-        CBPhoneFromGang(game, mine, CBT(n"Cyberbane-Allies-YouReNotOneOfOurs"));
+        CBGangAnswerLater(game, mine, CBT(n"Cyberbane-Allies-YouReNotOneOfOurs"));
       }
       return;
     }
@@ -415,12 +415,12 @@ func CBGangDuty(sys: ref<CyberbaneSystem>, game: GameInstance, mine: CName, now:
     if done {
       CBTalkWarm(sys, game, mine, CBConfig.DutyStanding(), 100.0);
       if CBMessagesOn() {
-        CBPhoneFromAlly(game, mine, CBT(n"Cyberbane-Allies-YouDidWhatWeAskedThat"));
+        CBAllyAnswerLater(game, mine, CBT(n"Cyberbane-Allies-YouDidWhatWeAskedThat"));
       }
     } else {
       CBTalkSlight(sys, game, mine, CBConfig.DutyStanding());
       if CBMessagesOn() {
-        CBPhoneFromGang(game, mine, CBT(n"Cyberbane-Allies-WeAskedYouDidnTCome"));
+        CBGangAnswerLater(game, mine, CBT(n"Cyberbane-Allies-WeAskedYouDidnTCome"));
       }
     }
   }

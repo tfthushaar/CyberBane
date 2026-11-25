@@ -158,8 +158,9 @@ public func CBSeedFactions(c: ref<CyberbaneContent>) -> Void {
   f = CBMakeFaction(n"Scavengers", -10.0, -0.10, 1.3, 0.4, true, true, "Cyberbane-Faction-Scavengers");
   f.affiliations = [n"Scavengers"];
   // Everybody's enemy: they harvest people, and every crew that has a neighbourhood to protect
-  // has lost somebody to them.
-  f.rivalFactions = [n"Valentinos", n"Maelstrom", n"Mox", n"SixthStreet"];
+  // has lost somebody to them. The Scrappers too: the list is read one way (CBGangsAreRivals), and the Scrappers named
+  // the Scavengers while the Scavengers did not name them back (2.7.9).
+  f.rivalFactions = [n"Valentinos", n"Maelstrom", n"Mox", n"SixthStreet", n"Scrappers"];
   f.turf = [n"Watson"];
   f.turfClaim = 0.3;   // they harvest people out of the ruins; they have never run a district
   c.AddFaction(f);

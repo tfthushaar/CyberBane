@@ -534,7 +534,8 @@ func CBStrongholdPlace(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
   }
   book.SetBaseAt(bi, ground);
   let body: EntityID;
-  if !CBPlaceOneAt(sys, game, r.recordID, r.appearance, ground, n"CB_Hold", body) {
+  let apart: array<Vector4>;   // CBPlaceOneAt keeps each of them off the spot the one before was given
+  if !CBPlaceOneAt(sys, game, r.recordID, r.appearance, ground, n"CB_Hold", body, apart) {
     // Every spot was in V's sight: the place is fine, so try again shortly rather than count it against the base.
     book.nextTryTick = sys.GetTickCount() + 6;
     CBLog.Info(n"Rivals", "A stronghold's Rival could not be placed out of V's sight yet.");
@@ -548,7 +549,7 @@ func CBStrongholdPlace(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
   while lt < 2 && placed < want {
     let rec = CBApexRosterRecord(r.faction, lt);
     let ltBody: EntityID;
-    if TDBID.IsValid(rec) && CBPlaceOneAt(sys, game, rec, n"", ground, n"CB_Hold", ltBody) {
+    if TDBID.IsValid(rec) && CBPlaceOneAt(sys, game, rec, n"", ground, n"CB_Hold", ltBody, apart) {
       des.AssignTag(ltBody, n"CB_HoldLt");
       placed += 1;
     }

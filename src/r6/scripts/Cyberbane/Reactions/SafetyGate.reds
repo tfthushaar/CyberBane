@@ -61,6 +61,11 @@ public abstract class CBSafetyGate {
                               || desGate.IsTagged(puppet.GetEntityID(), n"CB_Guard") || desGate.IsTagged(puppet.GetEntityID(), n"CB_Loiter")) {
       return false;
     }
+    // Somebody Appearance Menu Mod put in the world: its NPCs carry this tag (AMM's Modules/spawn.lua, SpawnNPC). They
+    // are the player's to pose and keep, never somebody to panic at V or turn on V (2.7.9).
+    if IsDefined(desGate) && desGate.IsTagged(puppet.GetEntityID(), n"AMM_NPC") {
+      return false;
+    }
     if puppet.IsVendor() {
       return false;   // leave vendors and their transactions alone (spec §16)
     }
@@ -75,8 +80,8 @@ public abstract class CBSafetyGate {
     if interiors && CBNpcInSafeInterior(puppet) {
       return false;
     }
-    // TODO S-13: unique exclusion list, AMM-spawned, braindance, active-quest-area
-    // exclusions.
+    // The rest of S-13 is covered elsewhere: the story's own people above (cbAuthoredState), V in a braindance or
+    // cyberspace by the story hold (Core/StoryHold.reds), the job V is tracking by its pins above.
     return true;
   }
 }

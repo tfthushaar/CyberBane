@@ -4,10 +4,10 @@
 // at release time. Do not hand-edit the numbers during a release build.
 // Kept ASCII-only because the build script rewrites it programmatically.
 
-public func CyberbaneVersion() -> String = "2.7.8"
+public func CyberbaneVersion() -> String = "2.7.9"
 
 // Numeric form: major*10000 + minor*100 + patch. Used for logging and gating.
-public func CyberbaneVersionCode() -> Int32 = 20708
+public func CyberbaneVersionCode() -> Int32 = 20709
 
 // Current persistent-state schema version (see spec section 19.2). Bump and add a Migrate step whenever the shape of
 // persistent data changes.

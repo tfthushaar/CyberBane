@@ -421,6 +421,10 @@ public abstract class CBConfig {
   public static func HomeRadius() -> Float = 110.0
   public static func HomeMergeDistance() -> Float = 60.0
   public static func HomeMax() -> Int32 = 8
+  // A home's door, the crew's post (2.7.9): learned where V stands on the navmesh once V has walked this far from the
+  // spot V stepped out of the flat, so never inside the lift V came down in; looked for this many ticks.
+  public static func HomeDoorStepOut() -> Float = 4.0
+  public static func HomeDoorWatchTicks() -> Int32 = 45
   public static func HauntShare() -> Float = 0.34
   public static func HauntMinSeconds() -> Float = 7200.0
   public static func HauntSecondsPerSample() -> Float = 80.0
@@ -1118,6 +1122,13 @@ public abstract class CBConfig {
   // How far a raycast floor point may be from the navmesh under it and still be that point.
   public static func NavFloorSnapRadius() -> Float = 1.5
   public static func NavFloorSnapHeight() -> Float = 0.6
+  // A short walk on the navmesh (CBWalkJoins, 2.7.9): how far from the navmesh either end may be, and the slack over a
+  // straight line the walk may take.
+  public static func WalkJoinTolerance() -> Float = 0.75
+  public static func WalkJoinSlack() -> Float = 10.0
+  // A floor found more than this above the navmesh point is not the floor but something standing on it, the seat of a
+  // couch or a bench (2.7.9).
+  public static func SpawnFurnitureRise() -> Float = 0.35
   // How far a candidate point may sit above the floor underneath it and still count as that floor's.
   public static func SpawnGroundSettle() -> Float = 2.0
   // Nobody stands inside anybody else. Enough for two people to be distinct bodies and small
@@ -1270,7 +1281,7 @@ public abstract class CBConfig {
   public static func PhoneAttachWaitSeconds() -> Float = 45.0
   // Word getting around (CBPhone.Hearsay). Defaults for the two settings, used before Mod
   // Settings is up.
-  public static func WordTravelMinutesDefault() -> Int32 = 30
+  public static func WordTravelMinutesDefault() -> Int32 = 180
   public static func InboxGapSecondsDefault() -> Int32 = 90
   public static func WordCalmSeconds() -> Float = 60.0
   // Word from further off takes one more travel time a district, up to this many (so at most three times as long).
@@ -1306,9 +1317,9 @@ public abstract class CBConfig {
   // episode is one massacre to the street, not one per lull in the shooting.
   public static func HearsayRepeatHours() -> Float = 6.0
   // Stories waiting at once, and how many recently told ones are remembered for that window.
-  public static func HearsayQueueCap() -> Int32 = 12
-  // The longest word waits in the queue, in real seconds (CBPhone.ReleaseWord): then it comes inside the inbox gap.
-  public static func HearsayMaxWaitReal() -> Float = 240.0
+  public static func HearsayQueueCap() -> Int32 = 24
+  // Word still waiting this many in-game hours after it reached V's part of town is old news (CBPhone.ReleaseWord).
+  public static func HearsayStaleHours() -> Float = 24.0
   public static func HearsayToldCap() -> Int32 = 32
   // The same contact sending the same words inside this many in-game hours is filed once.
   public static func PhoneDuplicateHours() -> Float = 1.0
@@ -1580,6 +1591,8 @@ public abstract class CBConfig {
   public static func GoodsBuyerStanding() -> Float = 3.0
   public static func GoodsOwnerStanding() -> Float = 3.0
   public static func GuardDefendRange() -> Float = 40.0
+  // How far apart two of the watch stand at one post (2.7.9).
+  public static func GuardSpacing() -> Float = 2.5
   public static func KillableRivalSecondsLow() -> Float = 15.0
   public static func KillableRivalSecondsTop() -> Float = 30.0
   public static func KillableApexSeconds() -> Float = 24.0
@@ -1765,6 +1778,10 @@ public abstract class CBConfig {
   public static func BountyRivalPerRank() -> Int32 = 1500
   public static func BountyLeaderBonus() -> Int32 = 3000
   public static func BountyApexSquad() -> Int32 = 9000
+  // A bounty reaches V this many in-game hours after the deed (Spawn/Loot.reds, CBPayoutBook): word has to get round to
+  // whoever wanted it done first.
+  public static func PayoutHoursMin() -> Float = 2.0
+  public static func PayoutHoursMax() -> Float = 4.0
 
   // ---- Difficulty (Spawn/FactionApex.reds, CBDifficultyStepDown) -------------
   public static func ApexHardStepDown() -> Float = 0.85

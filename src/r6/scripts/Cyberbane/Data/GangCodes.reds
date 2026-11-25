@@ -41,10 +41,12 @@ public func CBCodeMercy(f: CName) -> Float {
 public func CBCodeGrudge(f: CName, info: ref<CBKillInfo>) -> Float {
   let c = CBCodeOf(f);
   if !CBGangCodesOn() || !IsDefined(info) || !IsDefined(c) { return 1.0; }
+  // The most particular first (2.7.9): a finisher is also close work, so asked after the close grudge it was never
+  // reached for a gang that had both.
+  if info.mFinisher && c.grudgeFinisher != 1.0 { return c.grudgeFinisher; }
   if (info.mFists || info.mBlunt || info.mFinisher) && c.grudgeClose != 1.0 { return c.grudgeClose; }
   if info.mFirearm && c.grudgeGun != 1.0 { return c.grudgeGun; }
   if c.grudgeAll != 1.0 { return c.grudgeAll; }
-  if info.mFinisher && c.grudgeFinisher != 1.0 { return c.grudgeFinisher; }
   return 1.0;
 }
 
