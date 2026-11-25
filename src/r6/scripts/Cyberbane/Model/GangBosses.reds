@@ -147,9 +147,12 @@ public func CBEventConsequences(sys: ref<CyberbaneSystem>, game: GameInstance, e
   if Equals(ev.kind, CBEvSitDown()) {
     helped = n"";   // both sides of a sit-down were hurt
   }
-  if IsNameValid(helped) && CBFactionOn(helped) && CBMessagesOn() {
+  // The warmth is theirs whether or not V hears about it (2.7.9): with messages off it never came at all.
+  if IsNameValid(helped) && CBFactionOn(helped) {
     CBTalkWarm(sys, game, helped, CBConfig.EventHelpedWarmth(), 60.0);
-    CBHearsayFromAlly(game, helped, CBTf(n"Cyberbane-GangBosses-Helped", [CBFactionLabel(hurt)]), n"");
+    if CBMessagesOn() {
+      CBHearsayFromAlly(game, helped, CBTf(n"Cyberbane-GangBosses-Helped", [CBFactionLabel(hurt)]), n"");
+    }
   }
   // One of the side V hurt takes it personally: a Rival of theirs, now and then.
   if CBRivalsOn() && RandF() < CBConfig.EventRivalChance() {
