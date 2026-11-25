@@ -1280,8 +1280,10 @@ func CBRivalEndedUpTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
       if book.EndedAt(r.id) <= 0.0 {
         book.SetEnding(r.id, CBEndingRetired(), now);
       } else {
+        // Not held back by the messages setting (2.7.9): coming back to Night City is a Rival's life, not a text, and
+        // with messages off a retired Rival never came back at all. What is only said is still only said with them on.
         if now - book.EndedAt(r.id) >= CBConfig.EndedUpDays() * CBConfig.SecondsPerDay() && RandF() < CBConfig.EndedUpChancePerDay() * days
-           && CBMessagesOn() && CBFactionOn(r.faction) {
+           && CBFactionOn(r.faction) {
           book.SetFlag(r.id, CBRivalFlagEndedUp());
           CBRivalEndedUp(sys, game, r, now);
           return;
@@ -1295,6 +1297,9 @@ func CBRivalEndedUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiva
   let name = CBRivalDisplayName(sys.GetContent(), r);
   CBFileLog(sys, n"RivalEndedUp", now, CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
   let roll = CBHashIndex(r.id, 97, 3);
+  if roll == 0 && !CBMessagesOn() {
+    return;   // what they would have told V, by text; nobody to tell it to
+  }
   if roll == 0 {
     let player = GetPlayer(game);
     let i = IsDefined(player) ? CBIntelGive(sys, game, player, n"", true, r.id) : null;
@@ -1308,7 +1313,9 @@ func CBRivalEndedUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiva
   let rt = CyberbaneRuntime.Get();
   let maxRivals = IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().maxRivals : CBConfig.RivalMaxActiveHardCap();
   if roll <= 1 || sys.CountActiveRivals() >= maxRivals || sys.CountActiveFactionRivals(r.faction) >= CBConfig.RivalMaxPerFaction() {
-    CBPhoneSendTinted(game, name, CBTf(n"Cyberbane-RivalMoments-HeadsUpForOldTimesSake", [s"\(CBCapFirst(CBFactionLabel(r.faction)))"]), CBHudAmber());
+    if CBMessagesOn() {
+      CBPhoneSendTinted(game, name, CBTf(n"Cyberbane-RivalMoments-HeadsUpForOldTimesSake", [s"\(CBCapFirst(CBFactionLabel(r.faction)))"]), CBHudAmber());
+    }
     return;
   }
   // An invitation to finish it: they come back, and may take a chair that stood empty.
@@ -1316,7 +1323,9 @@ func CBRivalEndedUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRiva
   r.huntTicks = CBConfig.RivalAfterEscapeTicks();
   CBRivalGiveTrait(r, n"GrudgeBearer");
   CBHierarchyFill(sys, r.faction);
-  CBPhoneSendTinted(game, name, CBT(n"Cyberbane-RivalMoments-ThoughtICouldLeaveItI"), CBHudRed());
+  if CBMessagesOn() {
+    CBPhoneSendTinted(game, name, CBT(n"Cyberbane-RivalMoments-ThoughtICouldLeaveItI"), CBHudRed());
+  }
 }
 
 // [U9] A climb that came with chrome is something the street hears about.
