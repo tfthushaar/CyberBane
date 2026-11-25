@@ -55,8 +55,7 @@ func CBPointReachable(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
 }
 
 // Does somebody put here stand with the spot they belong to? On its level, within `rise` metres, and joined to it by a
-// real walk. With navmesh under the spot that walk has to reach it (CBWalkJoins); a spot with none near it can only be
-// asked the long way (CBPointReachable).
+// real walk.
 public func CBStandsWith(game: GameInstance, at: Vector4, anchor: Vector4, rise: Float) -> Bool {
   if AbsF(at.Z - anchor.Z) > rise {
     return false;
@@ -69,7 +68,7 @@ public func CBStandsWith(game: GameInstance, at: Vector4, anchor: Vector4, rise:
 }
 
 // The navmesh right under a point, where a person standing on it would be: within WalkJoinTolerance across and
-// NavFloorSnapHeight down. False where there is none that close (2.7.9).
+// NavFloorSnapHeight down. False where there is none that close.
 public func CBNavPointUnder(game: GameInstance, p: Vector4, out onMesh: Vector4) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
   if !IsDefined(nav) {
@@ -89,9 +88,7 @@ public func CBNavPointUnder(game: GameInstance, p: Vector4, out onMesh: Vector4)
 }
 
 // A short walk on the navmesh between two near points, each end found on the navmesh within WalkJoinTolerance of where
-// it is and never further (2.7.9). CBPointReachable lets either end land anywhere within PathEndTolerance, which suits
-// a long way to V and not a step from a post: a closed-off pocket beside a lift, with navmesh of its own a few metres
-// from a post the navmesh did not reach, was "joined" to it and a guard stood in it every time.
+// it is and never further.
 public func CBWalkJoins(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
   if !IsDefined(nav) {
@@ -268,7 +265,7 @@ func CBSettleOnGround(game: GameInstance, p: Vector4, out at: Vector4) -> Bool {
     return false;
   }
   // Nor one above it: the ray from just over the point hit something standing on the floor, a couch or a bench, and a
-  // person put there stood on the seat (2.7.9).
+  // person put there stood on the seat.
   if ground - p.Z > CBConfig.SpawnFurnitureRise() {
     return false;
   }
@@ -597,11 +594,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       // The rest of a group form up near the first, because a squad that arrives together reads as a squad, and every
       // one of them has to be joined to the group (CBPointArrivable).
       let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at);
-      // On V's floor, unless V is out under the open sky (2.7.9). Every other route here keeps a spot within
-      // GroundMaxDrop of V; this one took the navmesh's answer as it came, and inside a building that answer can be a
-      // flat several floors up: a Scavs' hangout turned up on V's couch in H10, picked while V was down in the lift.
-      // Out in the open a street a few metres down a hill is still a street, and anywhere under a roof is already
-      // refused for an arrival in the open (CBPointArrivable).
+      // On V's floor, unless V is out under the open sky.
       if ok && !openAir && AbsF(at.Z - ppos.Z) > CBConfig.GroundMaxDrop() {
         ok = false;
       }

@@ -903,8 +903,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       if CBVDown(game) {
         this.GetThreatBar().Conceal();
       }
-      // The message cards stand back through any of it, and keep the rest of their time for after (2.7.9): they froze on
-      // screen through every scene, menu and workspot.
+      // The message cards stand back through any of it, and keep the rest of their time for after: they froze on screen
+      // through every scene, menu and workspot.
       this.GetPhone().Hold(game);
       CBApiWorldBusy(game);
       this.ScheduleFastTick();
@@ -937,7 +937,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_lastTickGameTime = nowGT;
     if this.m_streamSettleTicks > 0 {
       this.m_streamSettleTicks -= 1;
-      // Keep our own bookkeeping moving while the world settles, the message cards' clocks with it (2.7.9).
+      // Keep our own bookkeeping moving while the world settles, the message cards' clocks with it.
       CBTickClocksOnly(this);
       this.GetPhone().Animate(this, game);
       this.SetHuntHoldReason(CBHoldWorldBusy());

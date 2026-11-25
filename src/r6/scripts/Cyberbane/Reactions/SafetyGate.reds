@@ -62,7 +62,7 @@ public abstract class CBSafetyGate {
       return false;
     }
     // Somebody Appearance Menu Mod put in the world: its NPCs carry this tag (AMM's Modules/spawn.lua, SpawnNPC). They
-    // are the player's to pose and keep, never somebody to panic at V or turn on V (2.7.9).
+    // are the player's to pose and keep, never somebody to panic at V or turn on V.
     if IsDefined(desGate) && desGate.IsTagged(puppet.GetEntityID(), n"AMM_NPC") {
       return false;
     }

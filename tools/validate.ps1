@@ -38,6 +38,8 @@ foreach ($p in @($scc, $vanilla, $cwScripts, $msDir)) {
 & (Join-Path $PSScriptRoot 'check_loc.ps1')
 # No two street-talk lines share an action id (see check_talk_ids.ps1).
 & (Join-Path $PSScriptRoot 'check_talk_ids.ps1')
+# Wrapped game events call wrappedMethod as a statement (see check_wraps.ps1).
+& (Join-Path $PSScriptRoot 'check_wraps.ps1')
 
 $sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ("cyberbane-validate-" + [Guid]::NewGuid().ToString('N'))
 $scripts = Join-Path $sandbox 'scripts'

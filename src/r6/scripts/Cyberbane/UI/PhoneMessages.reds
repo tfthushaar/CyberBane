@@ -685,8 +685,7 @@ public class CBPhone {
       return;
     }
     // Word that reached V's part of town long ago and is still waiting (a long fight, a long night's sleep) is old news
-    // and goes unsaid, unless it carries a gang's price. (2.7.9) The wait was counted in real seconds, a few minutes at
-    // most, which overrode Word travels: past half an hour of it, every story came at the four-minute mark regardless.
+    // and goes unsaid, unless it carries a gang's price.
     let o = ArraySize(this.m_hsBody) - 1;
     while o >= 0 {
       if !IsNameValid(this.m_hsFaction[o]) && now - this.m_hsDue[o] > CBConfig.HearsayStaleHours() * CBConfig.SecondsPerHour() {
@@ -1112,10 +1111,8 @@ public class CBPhone {
     }
   }
 
-  // The tick is standing down (a scene, a menu, a workspot, the world settling): the cards and the overheard line come off
-  // the screen and their clocks stop, so they are back for the rest of their time once it is over. An overheard line is
-  // a moment and does not wait. (2.7.9) The cards stayed up through all of it, frozen, while the game had its own HUD
-  // hidden.
+  // The tick is standing down (a scene, a menu, a workspot, the world settling): the cards and the overheard line come
+  // off the screen and their clocks stop, so they are back for the rest of their time once it is over.
   public func Hold(game: GameInstance) -> Void {
     this.m_subLeft = 0.0;
     this.Conceal();
@@ -1161,9 +1158,7 @@ public class CBPhone {
     let dt = this.m_lastSimTime > 0.0 ? now - this.m_lastSimTime : 0.0;
     this.m_lastSimTime = now;
     // A load, a hitch or a time skip can hand back a nonsense delta: at most a couple of ticks' worth counts, so the
-    // stack is never wiped in one frame. (2.7.9) A long delta used to count for nothing at all, and with the tick standing
-    // down every few seconds (a scene tier coming and going, the world settling) every delta was long: the cards never
-    // aged, and only a new message ever took one down.
+    // stack is never wiped in one frame.
     if dt < 0.0 {
       dt = 0.0;
     }
@@ -1851,8 +1846,7 @@ func CBHearsayTinted(game: GameInstance, sender: String, body: String, accent: H
 }
 
 // Somebody's answer to what V did: a gang naming a new Rival, a Rival's own taunt, a gang that learnt how V fights or
-// turned V away. It waits for word to get round (Word travels) as any news does, and How much you hear never lets it go.
-// (2.7.9) These came within seconds of the deed, which no gang manages.
+// turned V away.
 public func CBAnswerLater(game: GameInstance, sender: String, body: String, accent: HDRColor) -> Void {
   CBHearsayTinted(game, sender, body, accent, n"", n"", n"", true);
 }

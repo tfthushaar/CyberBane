@@ -119,7 +119,7 @@ public class CBCrewKitBook extends ScriptableSystem {
     this.deferTexts = false;
     ArrayClear(this.laterWho);
     ArrayClear(this.laterLines);
-    ArrayClear(this.laterGroup);   // (2.7.9) kept, it put the next lines in the wrong chat
+    ArrayClear(this.laterGroup);   // kept, it put the next lines in the wrong chat
   }
 
   public func Find(id: Int32) -> ref<CBCrewKit> {

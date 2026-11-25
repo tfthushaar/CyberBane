@@ -1,15 +1,8 @@
 // Cyberbane - The D-pad belongs to a conversation while its lines are up
 //
-// Up and down on the pad scroll the lines (ChoiceScrollUp/Down), and the same two buttons are the healing item
-// (UseConsumable) and the phone (PhoneInteract) (r6/config/inputContexts.xml). The game keeps the healing item out of a
-// dialogue by asking whether a list is on the UIInteractions board (DefaultTransition.AreChoiceHubsActive, read by every
-// consumable path of the upper-body state machine), and never keeps the phone out at all: its own dialogues are scenes,
-// and a scene locks the phone by itself. Street talk is not a scene. Its list is on that board, but the game clears the
-// board now and then and the list goes back up a moment later (CBTalkHoldList), so a press in that moment used a MaxDoc,
-// and holding D-pad down to scroll opened the phone (NewHudPhoneGameController.OnAction, BUTTON_HOLD_COMPLETE).
-//
-// From the moment the lines go up until the conversation is over (CBStreetTalk.HoldsHands, the same window V's hands are
-// held for), both buttons answer to the conversation only.
+// Up and down on the D-pad scroll the lines, but the same buttons are the healing item and the phone. Street talk isn't
+// a scene, so the game doesn't lock either of them; from the moment the lines go up until the talk is over
+// (CBStreetTalk.HoldsHands) both answer to the conversation only.
 
 public func CBTalkHoldsPad(game: GameInstance) -> Bool {
   let sys = CyberbaneSystem.Get(game);
@@ -34,5 +27,6 @@ protected cb func OnAction(action: ListenerAction, consumer: ListenerActionConsu
   if Equals(ListenerAction.GetName(action), n"PhoneInteract") && CBTalkHoldsPad(GetGameInstance()) {
     return false;
   }
-  return wrappedMethod(action, consumer);
+  wrappedMethod(action, consumer);   // as a statement, like every wrapped event here
+  return true;
 }

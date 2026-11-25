@@ -51,6 +51,8 @@ if ($offenders) {
 & (Join-Path $PSScriptRoot 'check_loc.ps1')
 # No two street-talk lines share an action id (see check_talk_ids.ps1).
 & (Join-Path $PSScriptRoot 'check_talk_ids.ps1')
+# Wrapped game events call wrappedMethod as a statement (see check_wraps.ps1).
+& (Join-Path $PSScriptRoot 'check_wraps.ps1')
 
 # --- stamp the version -----------------------------------------------------
 # Read/write as UTF-8 without BOM via .NET so the file's encoding is preserved

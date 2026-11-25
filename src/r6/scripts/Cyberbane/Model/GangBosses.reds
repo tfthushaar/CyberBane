@@ -147,7 +147,7 @@ public func CBEventConsequences(sys: ref<CyberbaneSystem>, game: GameInstance, e
   if Equals(ev.kind, CBEvSitDown()) {
     helped = n"";   // both sides of a sit-down were hurt
   }
-  // The warmth is theirs whether or not V hears about it (2.7.9): with messages off it never came at all.
+  // The warmth is theirs whether or not V hears about it: with messages off it never came at all.
   if IsNameValid(helped) && CBFactionOn(helped) {
     CBTalkWarm(sys, game, helped, CBConfig.EventHelpedWarmth(), 60.0);
     if CBMessagesOn() {

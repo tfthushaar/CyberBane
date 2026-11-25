@@ -1280,8 +1280,8 @@ func CBRivalEndedUpTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
       if book.EndedAt(r.id) <= 0.0 {
         book.SetEnding(r.id, CBEndingRetired(), now);
       } else {
-        // Not held back by the messages setting (2.7.9): coming back to Night City is a Rival's life, not a text, and
-        // with messages off a retired Rival never came back at all. What is only said is still only said with them on.
+        // Not held back by the messages setting: coming back to Night City is a Rival's life, not a text, and with
+        // messages off a retired Rival never came back at all. What is only said is still only said with them on.
         if now - book.EndedAt(r.id) >= CBConfig.EndedUpDays() * CBConfig.SecondsPerDay() && RandF() < CBConfig.EndedUpChancePerDay() * days
            && CBFactionOn(r.faction) {
           book.SetFlag(r.id, CBRivalFlagEndedUp());

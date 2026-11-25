@@ -277,8 +277,7 @@ public func CBPayoutApex() -> Int32 = 1
 public func CBPayoutCrew() -> Int32 = 2
 
 // Payouts on their way to V. Nobody pays the second a body drops: word has to reach whoever wanted it done, and they
-// have to believe it. (2.7.9) The eddies and the text came the instant the fight ended, which felt like a game paying
-// out rather than a city; now both come together a few in-game hours later, and wait in the save until they do.
+// have to believe it.
 public class CBPayoutBook extends ScriptableSystem {
   private persistent let m_amount: array<Int32>;
   private persistent let m_victim: array<CName>;   // the gang of whoever V put down

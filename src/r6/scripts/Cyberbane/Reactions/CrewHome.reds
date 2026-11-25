@@ -131,8 +131,7 @@ public func CBGuardStandDown(game: GameInstance, id: Int32) -> Void {
 
 // ---- At their posts --------------------------------------------------------------------------------------------------
 
-// A post at home: the door, then the car park, then the door again; nothing until one is learned. Two at one post stand
-// apart (CBPlaceOneAt's `avoid`): the third used to be put three metres off the door blind, into a wall as often as not.
+// A post at home: the door, then the car park, then the door again; nothing until one is learned.
 func CBGuardPost(homes: ref<CBHomeBook>, home: Int32, slot: Int32) -> Vector4 {
   let door = homes.DoorAt(home);
   let park = homes.ParkAt(home);
@@ -147,8 +146,8 @@ func CBGuardPost(homes: ref<CBHomeBook>, home: Int32, slot: Int32) -> Vector4 {
   return hasPark ? park : new Vector4(0.0, 0.0, 0.0, 0.0);
 }
 
-// The other post at a home from this one, or none (2.7.9): the watch goes to the car park when nowhere at the door will
-// take them, and the other way round.
+// The other post at a home from this one, or none: the watch goes to the car park when nowhere at the door will take
+// them, and the other way round.
 func CBGuardOtherPost(homes: ref<CBHomeBook>, home: Int32, post: Vector4) -> Vector4 {
   let door = homes.DoorAt(home);
   let park = homes.ParkAt(home);
@@ -156,12 +155,7 @@ func CBGuardOtherPost(homes: ref<CBHomeBook>, home: Int32, post: Vector4) -> Vec
   return Vector4.Distance(post, other) >= 0.5 ? other : new Vector4(0.0, 0.0, 0.0, 0.0);
 }
 
-// One body at a post, out of V's sight (2.7.9). The story puts a visitor at a spot made for them, never a guess; the
-// nearest this can come is a post on the navmesh a person has stood on (Spawn/HomeGround.reds, DoorWatch) and spots a
-// real short walk from it (CBStandsWith). The post itself first, then rings round it. A post with no navmesh under it
-// takes nobody: a spot "near" a post in a lift was the closed-off space beside the lift. `avoid`: where others of the
-// same watch already stand. Nobody is put where somebody was put a moment ago either: a stronghold's Rival and both
-// lieutenants all went to the same first spot, one inside the other.
+// One body at a post, out of V's sight.
 func CBPlaceOneAt(sys: ref<CyberbaneSystem>, game: GameInstance, record: TweakDBID, look: CName, at: Vector4, tag: CName,
                   out body: EntityID, avoid: array<Vector4>) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
@@ -289,7 +283,7 @@ public func CBGuardTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
           let w = 0;
           while w < gb.BodyCount() {
             let other = GameInstance.FindEntityByID(game, gb.BodyAt(w)) as ScriptedPuppet;
-            if IsDefined(other) && other.IsAttached() {
+            if CBNpcSafe(sys, other) {
               ArrayPush(standing, other.GetWorldPosition());
             }
             w += 1;

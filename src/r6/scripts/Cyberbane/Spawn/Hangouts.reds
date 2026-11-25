@@ -93,9 +93,8 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
       return;
     }
   }
-  // On the street, a street or two from V: only while V is out under the open sky, so every spot they are given is
-  // too (CBPointArrivable) (2.7.9). With V indoors a spot could be anywhere in the building, a stranger's flat or V's
-  // own before Cyberbane has learned it as home.
+  // On the street, a street or two from V: only while V is out under the open sky, so every spot they are given is too
+  // (CBPointArrivable).
   if !CBArrivalOpenAir(game, player.GetWorldPosition()) {
     return;
   }
@@ -185,9 +184,7 @@ func CBHangoutStart(sys: ref<CyberbaneSystem>, game: GameInstance, st: ref<CBHan
   CBLog.Info(n"Street", s"A few of \(NameToString(gang)) are hanging out near V.");
 }
 
-// Never at V's home or in a safe place (2.7.9). Placement keeps them out of both, but only out of a home Cyberbane has
-// already learned and a safe area the game answers for at that distance; a hangout found in either, at once or once
-// the home is learned, packs up.
+// Never at V's home or in a safe place.
 func CBHangoutPlaceKept(game: GameInstance, at: Vector4) -> Bool {
   if CBHomePointKept(game, at) {
     return true;

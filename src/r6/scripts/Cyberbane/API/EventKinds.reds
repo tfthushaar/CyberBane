@@ -77,7 +77,7 @@ public func CBEventKindIsOwn(kind: CName) -> Bool {
       || Equals(kind, CBEvFuneral()) || Equals(kind, CBEvCelebration()) || Equals(kind, CBEvInitiation())
       || Equals(kind, CBEvRecruitment()) || Equals(kind, CBEvArmsDeal()) || Equals(kind, CBEvExecution())
       || Equals(kind, CBEvFrontLine()) || Equals(kind, CBEvRacket()) || Equals(kind, CBEvFugitive());   // every kind of
-      // Spawn/StreetEvents.reds (2.7.9): Racket and Fugitive were missing, so an add-on could register over them
+      // Spawn/StreetEvents.reds: Racket and Fugitive were missing, so an add-on could register over them
 }
 
 public func CBApiEventHandler(game: GameInstance, kind: CName) -> ref<CBEventKindHandler> {
