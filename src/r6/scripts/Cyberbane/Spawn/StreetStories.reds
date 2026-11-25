@@ -50,6 +50,54 @@ public func CBGangDropPlace(sys: ref<CyberbaneSystem>, game: GameInstance, playe
   return false;
 }
 
+// A place V was sent to and cannot walk into (2.7.10): a place the street remembers can be inside a building the game has
+// locked since (a gig's, once the gig is done), and the debtor, the ransom or the calling card waited there for a V who
+// could never reach it. Asked once V is within DropWayInCheck of it, where a walk can be trusted (Rivals/Strongholds.reds
+// tests the same way). True, with `moved`, when there is no way in from where V stands and a spot just outside is open
+// ground V can walk to; false when the place is fine, V is still far, off the walkable ground, or nowhere better is found.
+public func CBDropWayIn(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, at: Vector4,
+                        out moved: Vector4) -> Bool {
+  if !IsDefined(sys) || !IsDefined(player) || (at.X == 0.0 && at.Y == 0.0) {
+    return false;
+  }
+  let ppos = player.GetWorldPosition();
+  if Vector4.Distance(ppos, at) > CBConfig.DropWayInCheck() || IsDefined(player.GetMountedVehicle()) {
+    return false;
+  }
+  let vGround: Vector4;
+  if !CBNavPointUnder(game, ppos, vGround) {
+    return false;
+  }
+  let target = at;
+  let onMesh: Vector4;
+  if CBNavPointUnder(game, at, onMesh) {
+    target = onMesh;
+  }
+  if CBPointReachable(game, vGround, target) {
+    return false;
+  }
+  // Rings round the place, nearest first: the first spot of open ground V can walk to, usable as any Rival's place is.
+  let ring = 1;
+  while ring <= 4 {
+    let radius = 6.0 + Cast<Float>(ring - 1) * 8.0;
+    let k = 0;
+    while k < 8 {
+      let ang = Cast<Float>(k) * 0.7854;
+      k += 1;
+      let snapped: Vector4;
+      let spot: Vector4;
+      if CBNavSnap(game, at.X + CosF(ang) * radius, at.Y + SinF(ang) * radius, at.Z, snapped)
+         && CBSettleOnGround(game, snapped, spot) && !CBPointCovered(game, spot)
+         && CBLairPointUsable(sys, game, spot) && CBPointReachable(game, vGround, spot) {
+        moved = spot;
+        return true;
+      }
+    }
+    ring += 1;
+  }
+  return false;
+}
+
 // A pin on a place, as the favour's and the sit-down's.
 public func CBPinPlace(game: GameInstance, at: Vector4, text: String, out id: NewMappinID) -> Bool {
   let ms = GameInstance.GetMappinSystem(game);
@@ -313,6 +361,17 @@ public func CBRansomDropTick(sys: ref<CyberbaneSystem>, game: GameInstance, war:
     }
     CBRansomDropEnd(game, war);
     return;
+  }
+  // No way in to the drop any more (2.7.10, CBDropWayIn): the bag is left just outside, and the pin moves with it.
+  let outside: Vector4;
+  if CBDropWayIn(sys, game, player, war.dropAt, outside) {
+    war.dropAt = outside;
+    if war.dropPinned {
+      CBUnpinPlace(game, war.dropPin);
+    }
+    war.dropPinned = CBPinPlace(game, outside, CBTf(n"Cyberbane-Allies-DropTheRansom", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(gang))))"]), war.dropPin);
+    CBSystemNote(game, CBT(n"Cyberbane-StreetStories-DropMovedOutside"), 5.0);
+    CBLog.Info(n"Street", "The ransom drop had no way in; moved just outside.");
   }
   if Vector4.Distance(player.GetWorldPosition(), war.dropAt) > CBConfig.RansomDropReach() || player.IsInCombat() {
     return;

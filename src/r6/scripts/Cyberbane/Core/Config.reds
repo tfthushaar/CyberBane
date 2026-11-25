@@ -1549,6 +1549,12 @@ public abstract class CBConfig {
   public static func StrongholdDays() -> Float = 7.0
   public static func StrongholdChancePerDay() -> Float = 0.25
   public static func StrongholdReach() -> Float = 150.0
+  // Within this of a stronghold's base, no walk from V to it counts against the base (Rivals/Strongholds.reds, the way
+  // in, 2.7.10); further off a long route may simply not be found yet, and it is asked again as V comes closer.
+  public static func StrongholdWayInCheck() -> Float = 60.0
+  // The same for a drop, a debtor's place or a calling card (Spawn/StreetStories.reds, CBDropWayIn): within this, no walk
+  // from V to it moves it just outside, to open ground V can reach.
+  public static func DropWayInCheck() -> Float = 60.0
   public static func StrongholdLeave() -> Float = 250.0
   public static func StrongholdMinRoom() -> Int32 = 6
   public static func StrongholdSize() -> Int32 = 8

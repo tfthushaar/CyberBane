@@ -222,6 +222,17 @@ public func CBRivalTimelineTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
   if !book.cardPinned && CBWorldStable(game) {
     book.cardPinned = CBPinPlace(game, book.CardAt(), CBTf(n"Cyberbane-RivalTimeline-CardPin", [CBRivalDisplayName(sys.GetContent(), r)]), book.cardPin);
   }
+  // No way in to where they left it any more (2.7.10, Spawn/StreetStories.reds, CBDropWayIn): it is just outside instead.
+  let outside: Vector4;
+  if CBWorldStable(game) && CBDropWayIn(sys, game, player, book.CardAt(), outside) {
+    book.SetCard(book.CardRival(), outside, book.CardUntil(), book.CardDistrict());
+    if book.cardPinned {
+      CBUnpinPlace(game, book.cardPin);
+    }
+    book.cardPinned = CBPinPlace(game, outside, CBTf(n"Cyberbane-RivalTimeline-CardPin", [CBRivalDisplayName(sys.GetContent(), r)]), book.cardPin);
+    CBSystemNote(game, CBT(n"Cyberbane-StreetStories-DropMovedOutside"), 5.0);
+    CBLog.Info(n"Rivals", "A calling card's place had no way in; moved just outside.");
+  }
   if Vector4.Distance(player.GetWorldPosition(), book.CardAt()) > CBConfig.RivalCardFindRange() || player.IsInCombat() {
     return;
   }

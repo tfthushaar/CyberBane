@@ -762,6 +762,17 @@ public class CBStreetLife {
     if !TDBID.IsValid(record) {
       return;
     }
+    // No way in to the place any more (2.7.10, Spawn/StreetStories.reds, CBDropWayIn): they wait just outside instead,
+    // and the pin moves with them. Placed only where V can walk, they were never placed at all, and the favour ran out.
+    let outside: Vector4;
+    if CBDropWayIn(sys, game, player, center, outside) {
+      center = outside;
+      this.m_favAt = outside;
+      if StrLen(this.m_favPinText) > 0 {
+        this.FavourPin(game, outside, this.m_favPinText);
+      }
+      CBLog.Info(n"Street", "The debtor's place had no way in; they wait just outside.");
+    }
     let fwd = player.GetWorldForward();
     let k = 0;
     while k < 13 {

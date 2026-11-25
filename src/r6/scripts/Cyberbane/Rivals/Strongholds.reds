@@ -193,6 +193,14 @@ public class CBBaseBook extends ScriptableSystem {
 
   // The placed base is kept when its hold ends: whoever is still standing there leaves with the rest, by the leave check in
   // CBStrongholdTick (V walks away, or the base is gone), and nothing new is placed until they have.
+  // The hold moves to another base (CBStrongholdReroll): same Rival, same gang, a fresh clock.
+  public func MoveHold(i: Int32, base: Int32, until: Float) -> Void {
+    if i >= 0 && i < this.HoldCount() {
+      this.m_sBase[i] = base;
+      this.m_sUntil[i] = until;
+    }
+  }
+
   public func EndHold(i: Int32) -> Void {
     if i >= 0 && i < this.HoldCount() {
       ArrayErase(this.m_sBase, i);
@@ -365,6 +373,42 @@ func CBStrongholdRoll(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
   }
 }
 
+// The base a hold stood on has no way in any more (2.7.10, CBStrongholdPlace): the Rival takes another, by the daily
+// roll's rules (a base not already held, on streets their gang holds, not round V's homes), on a fresh clock, with the
+// pin moved and word sent. With nowhere else, the stronghold ends and the street says so.
+func CBStrongholdReroll(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBBaseBook>, h: Int32, r: ref<CBRival>,
+                        oldPlace: String) -> Void {
+  if !IsDefined(book) || !IsDefined(r) || h < 0 || h >= book.HoldCount() {
+    return;
+  }
+  let homes = CBHomeBook.Get(game);
+  let now = CBGameSeconds(game);
+  CBStrongholdUnpin(game, r.id);
+  let i = 0;
+  while i < book.BaseCount() {
+    let hash = book.BaseHashAt(i);
+    let at = book.BaseAt(i);
+    let d = book.BaseDistrictAt(i);
+    if book.HoldIndexOfBase(hash) < 0 && NotEquals(d, n"") && Equals(CBTurfHolder(sys, game, d), r.faction)
+       && (!IsDefined(homes) || homes.HomeAt(at) < 0) {
+      book.MoveHold(h, hash, now + CBConfig.StrongholdDays() * CBConfig.SecondsPerDay());
+      CBStrongholdPin(sys, game, hash, at, r);
+      if CBMessagesOn() {
+        CBHearsayFromStreet(game, CBTf(n"Cyberbane-Strongholds-Relocated",
+                                       [CBRivalDisplayName(sys.GetContent(), r), oldPlace, CBBaseName(game, hash), CBDistrictLabel(d)]), n"");
+      }
+      CBLog.Info(n"Rivals", s"Rival \(r.id) moved their stronghold: no way in to the last one.");
+      return;
+    }
+    i += 1;
+  }
+  book.EndHold(h);
+  if CBMessagesOn() {
+    CBHearsayFromStreet(game, CBTf(n"Cyberbane-Strongholds-NoWayIn", [CBRivalDisplayName(sys.GetContent(), r), oldPlace]), n"");
+  }
+  CBLog.Info(n"Rivals", s"Rival \(r.id) gave up their stronghold: no way in, and no other base on their streets.");
+}
+
 func CBStrongholdPin(sys: ref<CyberbaneSystem>, game: GameInstance, hash: Int32, at: Vector4, r: ref<CBRival>) -> Void {
   let map = CBMapBook.Get(game);
   if IsDefined(map) {
@@ -529,6 +573,29 @@ func CBStrongholdPlace(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
     if book.BaseFailed(bi) {
       CBStrongholdUnpin(game, r.id);
       CBLog.Info(n"Rivals", "A stronghold's base could not be used twice; dropped.");
+    }
+    return;
+  }
+  // A way in from where V is (2.7.10). A base is the pin of a gig V finished, and the game locks many a gig's building once
+  // it is done, so the ground inside is still there behind a door nobody can open: the garrison stood where V could not
+  // go, and the stronghold could never be cleared. A locked door is no path for a person (the game opens a door to
+  // somebody only when it is unlocked), so a walk from V to the base is the test. Far off, a long route can fail for
+  // reasons of its own (not loaded, too long to search), so it only counts once V is near; twice there and the base is
+  // dropped, and the Rival sets up at another one (CBStrongholdReroll).
+  let vGround: Vector4;
+  if !CBNavPointUnder(game, player.GetWorldPosition(), vGround) {
+    book.nextTryTick = sys.GetTickCount() + 6;   // V is off the walkable ground (a car roof, a ledge): ask again shortly
+    return;
+  }
+  if !CBPointReachable(game, vGround, ground) {
+    if Vector4.Distance(player.GetWorldPosition(), ground) > CBConfig.StrongholdWayInCheck() {
+      book.nextTryTick = sys.GetTickCount() + 10;
+      return;
+    }
+    book.nextTryTick = sys.GetTickCount() + 30;
+    CBLog.Info(n"Rivals", "No way in to a stronghold's base from where V stands.");
+    if book.BaseFailed(bi) {
+      CBStrongholdReroll(sys, game, book, h, r, CBBaseName(game, book.HoldBaseAt(h)));
     }
     return;
   }

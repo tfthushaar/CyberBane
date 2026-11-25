@@ -6,6 +6,14 @@ The major changes in each version, newest first. Your progress always carries ov
 
 ## 2.7
 
+### 2.7.10 (25 November 2026)
+- **No more jobs you can't reach.** A gang's stronghold sits in a place you cleared on a gig, and the game locks many of
+  those buildings once the gig is done, so the Rival waited where you could never get in. Now, when you get close and
+  there's no way in, the Rival moves to another place on their gang's streets, with a text and a new pin; with nowhere
+  else to go, they give the stronghold up. A ransom drop, a debtor you were sent to and a Rival's calling card left
+  somewhere you can't get into are moved just outside instead, and the pin moves with them.
+- **"Eddies", not "eb".** Every price and payment Cyberbane shows now says eddies.
+
 ### 2.7.9 (25 November 2026)
 - **News takes time to travel.** Bounties are paid a few in-game hours after the kill, eddies and text arriving
   together, and they wait in your save until they do. A gang's answer to what you did (a new Rival taking your name,

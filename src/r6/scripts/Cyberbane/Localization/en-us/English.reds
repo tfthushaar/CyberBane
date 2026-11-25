@@ -872,7 +872,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   // ---- GigBonus --------------------------------------------------------------------------------------------
   protected func DefineGigBonus() -> Void {
     // {0} bonus
-    this.Text("Cyberbane-GigBonus-ThrewAnExtraEbOnThat", "Threw an extra {0}eb on that one. Your name is worth something now.");
+    this.Text("Cyberbane-GigBonus-ThrewAnExtraEbOnThat", "Threw an extra {0} eddies on that one. Your name is worth something now.");
   }
 
   // ---- Peace -----------------------------------------------------------------------------------------------
@@ -891,43 +891,43 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Peace-ItsAttitudeSystemIsNotRunning", "its attitude system is not running");
     this.Text("Cyberbane-Peace-ItWouldNotTakeTheQuestion", "it would not take the question");
     // {0} cost
-    this.Text("Cyberbane-Peace-ThereSHardlyAnyOfUs", "There's hardly any of us left. {0}eb to bury our dead, and it's over.");
+    this.Text("Cyberbane-Peace-ThereSHardlyAnyOfUs", "There's hardly any of us left. {0} eddies to bury our dead, and it's over.");
     // {0} cost
-    this.Text("Cyberbane-Peace-YouMadeYourPointEbAnd", "You made your point. {0}eb and nobody of ours comes near you again.");
+    this.Text("Cyberbane-Peace-YouMadeYourPointEbAnd", "You made your point. {0} eddies and nobody of ours comes near you again.");
     // {0} cost
-    this.Text("Cyberbane-Peace-WeReDoneFightingYouEb", "We're done fighting you. {0}eb and we let it go.");
+    this.Text("Cyberbane-Peace-WeReDoneFightingYouEb", "We're done fighting you. {0} eddies and we let it go.");
     // {0} cost
-    this.Text("Cyberbane-Peace-OrPayEbAndItStops", "Or pay {0}eb and it stops.");
+    this.Text("Cyberbane-Peace-OrPayEbAndItStops", "Or pay {0} eddies and it stops.");
     // {0} cost
-    this.Text("Cyberbane-Peace-EbAndWeCallItOff", "{0}eb and we call it off. Your choice.");
+    this.Text("Cyberbane-Peace-EbAndWeCallItOff", "{0} eddies and we call it off. Your choice.");
     // {0} cost
-    this.Text("Cyberbane-Peace-UnlessEbReachesUsFirst", "Unless {0}eb reaches us first.");
+    this.Text("Cyberbane-Peace-UnlessEbReachesUsFirst", "Unless {0} eddies reaches us first.");
     // {0} cost
-    this.Text("Cyberbane-Peace-YouAreStillWalkingAroundEb", "You are still walking around. {0}eb and we let you keep doing it.");
+    this.Text("Cyberbane-Peace-YouAreStillWalkingAroundEb", "You are still walking around. {0} eddies and we let you keep doing it.");
     // {0} cost
-    this.Text("Cyberbane-Peace-OurPriceHasNotChangedEb", "Our price has not changed. {0}eb and we call every one of ours off you.");
+    this.Text("Cyberbane-Peace-OurPriceHasNotChangedEb", "Our price has not changed. {0} eddies and we call every one of ours off you.");
     // {0} cost
-    this.Text("Cyberbane-Peace-EbThatIsWhatItCosts", "{0}eb. That is what it costs to stop being our problem.");
+    this.Text("Cyberbane-Peace-EbThatIsWhatItCosts", "{0} eddies. That is what it costs to stop being our problem.");
     // {0} cost
-    this.Text("Cyberbane-Peace-WeHaveNotForgottenYouEb", "We have not forgotten you. {0}eb and we do.");
+    this.Text("Cyberbane-Peace-WeHaveNotForgottenYouEb", "We have not forgotten you. {0} eddies and we do.");
     // {0} cost
-    this.Text("Cyberbane-Peace-EbSettlesWhatIsBetweenUs", "{0}eb settles what is between us. Think about it.");
+    this.Text("Cyberbane-Peace-EbSettlesWhatIsBetweenUs", "{0} eddies settles what is between us. Think about it.");
     // {0} cost
-    this.Text("Cyberbane-Peace-YouCanKeepLookingOverYour", "You can keep looking over your shoulder, or you can pay {0}eb.");
+    this.Text("Cyberbane-Peace-YouCanKeepLookingOverYour", "You can keep looking over your shoulder, or you can pay {0} eddies.");
     // {0} cost
-    this.Text("Cyberbane-Peace-EbAndWeForgetAboutYou", "{0}eb and we forget about you. Come back when you have it.");
+    this.Text("Cyberbane-Peace-EbAndWeForgetAboutYou", "{0} eddies and we forget about you. Come back when you have it.");
     this.Text("Cyberbane-Peace-Vendetta", "vendetta");
     this.Text("Cyberbane-Peace-Hostility", "hostility");
     // {0} cost, {1} what
-    this.Text("Cyberbane-Peace-EbReceivedTheIsOverDo", "{0}eb received. The {1} is over. Do not make us revisit it.");
+    this.Text("Cyberbane-Peace-EbReceivedTheIsOverDo", "{0} eddies received. The {1} is over. Do not make us revisit it.");
   }
 
   // ---- Tribute ---------------------------------------------------------------------------------------------
   protected func DefineTribute() -> Void {
     // {0} amount
-    this.Text("Cyberbane-Tribute-EbNoStringsWeWouldRather", "{0}eb. No strings. We would rather pay you than fight you, and there's more where that came from.");
+    this.Text("Cyberbane-Tribute-EbNoStringsWeWouldRather", "{0} eddies. No strings. We would rather pay you than fight you, and there's more where that came from.");
     // {0} amount
-    this.Text("Cyberbane-Tribute-EbAsAgreedWeWouldRather", "{0}eb, as agreed. We would rather pay you than fight you.");
+    this.Text("Cyberbane-Tribute-EbAsAgreedWeWouldRather", "{0} eddies, as agreed. We would rather pay you than fight you.");
   }
 
   // ---- War -------------------------------------------------------------------------------------------------
@@ -944,19 +944,19 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-War-District", "district");
     this.Text("Cyberbane-War-Districts", "districts");
     // {0} cut, {1} streets, {2} plural
-    this.Text("Cyberbane-War-YourCutForTheWeekEb", "Your cut for the week: {0}eb. {1} {2} ours, thanks to you.");
+    this.Text("Cyberbane-War-YourCutForTheWeekEb", "Your cut for the week: {0} eddies. {1} {2} ours, thanks to you.");
     // {0} CBDistrictLabel(d)
     this.Text("Cyberbane-War-NobodyRunsAnyMoreButYou", "Nobody runs {0} any more but you. The gangs pass through on your say-so.");
     // {0} toll
-    this.Text("Cyberbane-War-TheGangsPaidTheirWayThrough", "The gangs paid their way through your streets this week: {0}eb.");
+    this.Text("Cyberbane-War-TheGangsPaidTheirWayThrough", "The gangs paid their way through your streets this week: {0} eddies.");
     // {0} CBCapFirst(CBFactionLabel(fs.id)), {1} CBFactionLabel(other)
     this.Text("Cyberbane-War-AndHaveStoppedKillingEachOther", "{0} and {1} have stopped killing each other. They're coming for you together.");
     this.Text("Cyberbane-War-YouDidWhatWeAskedWe", "You did what we asked. We're square. For now.");
     this.Text("Cyberbane-War-YouDidnTPayThatS", "You didn't pay. That's bad for business. Yours.");
     // {0} amount
-    this.Text("Cyberbane-War-YouWorkJapantownYouPayThe", "You work Japantown, you pay the Claws. {0}eb, to any of ours on the street, in the next two days. Don't make us come asking.");
+    this.Text("Cyberbane-War-YouWorkJapantownYouPayThe", "You work Japantown, you pay the Claws. {0} eddies, to any of ours on the street, in the next two days. Don't make us come asking.");
     // {0} book.ProtectAmount
-    this.Text("Cyberbane-War-PayEbProtection", "[Pay] {0}eb. Protection.");
+    this.Text("Cyberbane-War-PayEbProtection", "[Pay] {0} eddies. Protection.");
     this.Text("Cyberbane-War-SideWithThemYourWarIs", "[Side with them] All right, I'm in.");
     // {0} CBCapFirst(CBFactionLabel(enemy))
     this.Text("Cyberbane-War-LieArePlanningAHitOn", "[Lie] {0} are planning a hit on you.");
@@ -977,7 +977,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-War-YouThinkIMStupid", "You think I'm stupid?");
     this.Text("Cyberbane-War-ThereSNothingToEnd", "There's nothing to end.");
     // {0} quote
-    this.Text("Cyberbane-War-EbSendItAndWeRe", "{0}eb. Send it and we're done.");
+    this.Text("Cyberbane-War-EbSendItAndWeRe", "{0} eddies. Send it and we're done.");
     // {0} quote, {1} CBFactionLabel(enemy)
     this.Text("Cyberbane-War-EddiesOfThemOrDoUs", "Eddies, {0} of them. Or do us a favour: break up whatever {1} have going next near here. Do that and we're square.");
   }
@@ -1927,7 +1927,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} CBYou(sys, game), {1} CBFactionLabel(e)
     this.Text("Cyberbane-Allies-FamilyBusinessAreGettingComfortablePut", "Family business, {0}: {1} are getting comfortable. Put down five of them this week, dead or out cold. We'll know.");
     // {0} CBHere(sys), {1} amount
-    this.Text("Cyberbane-Allies-WeHearYouVeGotOne", "We hear you've got one of ours in {0}. {1}eb, you say? We'll see.");
+    this.Text("Cyberbane-Allies-WeHearYouVeGotOne", "We hear you've got one of ours in {0}. {1} eddies, you say? We'll see.");
     // {0} amount, {1} CBYou(sys, game)
     this.Text("Cyberbane-Allies-ForOneOfOursYouVe", "{0} for one of ours. You've got some nerve, {1}. Give us a minute.");
     this.Text("Cyberbane-Allies-TheyLlPayTheyDBetter", "They'll pay. They'd better pay.");
@@ -1936,9 +1936,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Allies-DropTheRansom", "{0} drop: the ransom");
     this.Text("Cyberbane-Allies-AFewBlocksOver", "a few blocks over");
     // {0} amount, {1} place
-    this.Text("Cyberbane-Allies-EbLeftAtOurDropIn", "{0}eb, left at our drop in {1}. Let them walk first. Come alone.");
+    this.Text("Cyberbane-Allies-EbLeftAtOurDropIn", "{0} eddies, left at our drop in {1}. Let them walk first. Come alone.");
     // {0} amount
-    this.Text("Cyberbane-Allies-EbNowLetThemWalkAnd", "{0}eb. Now let them walk, and we never did business.");
+    this.Text("Cyberbane-Allies-EbNowLetThemWalkAnd", "{0} eddies. Now let them walk, and we never did business.");
     this.Text("Cyberbane-Allies-WeDonTPayForOur", "We don't pay for our people. We come and get them.");
     this.Text("Cyberbane-Allies-WeLlTakeItFromHere", "We'll take it from here. Good doing business.");
     this.Text("Cyberbane-Allies-NoNoNotThemAnybodyBut", "No. No, not them, anybody but them...");
@@ -1967,7 +1967,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Allies-EasyTalkFirstThenWeLl", "Easy. {0} talk first. Then we'll see.");
     this.Text("Cyberbane-Allies-HoldYourFireIWantTo", "Hold your fire! I want to hear this before we start.");
     // {0} price
-    this.Text("Cyberbane-Allies-PayEbAndYouTellThem", "[Pay] {0}eb, and you tell them you never found me.");
+    this.Text("Cyberbane-Allies-PayEbAndYouTellThem", "[Pay] {0} eddies, and you tell them you never found me.");
     this.Text("Cyberbane-Allies-ThreatenWalkAwayWhileYouStill", "[Threaten] Walk away. Do it while you still can.");
     this.Text("Cyberbane-Allies-DrawTalkSOver", "[Draw] I'ma fucking destroy you.");
     this.Text("Cyberbane-Allies-PleasureWeNeverSawYou", "Pleasure. We never saw you.");
@@ -2081,17 +2081,17 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Crew-TakeAndRememberWhoYourFriends", "Take {0}. And remember who your friends are, {1}.");
     this.Text("Cyberbane-Crew-Broker", "Broker");
     // {0} CBCrewFirst(sys, recruiter), {1} solo, {2} seat, {3} rank, {4} book.offerPrice
-    this.Text("Cyberbane-Crew-FromYourCrewSentMeFound", "{0} from your crew sent me. Found you {1}: a {2}, a {3} already. {4}eb up front, then the weekly cut, and that's the friends price.");
+    this.Text("Cyberbane-Crew-FromYourCrewSentMeFound", "{0} from your crew sent me. Found you {1}: a {2}, a {3} already. {4} eddies up front, then the weekly cut, and that's the friends price.");
     // {0} CBCrewFirst(sys, recruiter), {1} solo, {2} seat, {3} book.offerPrice
-    this.Text("Cyberbane-Crew-YourVouchesForThisOneFights", "Your {0} vouches for this one: {1}, {2}, fights behind them. {3}eb to sign. Say the word.");
+    this.Text("Cyberbane-Crew-YourVouchesForThisOneFights", "Your {0} vouches for this one: {1}, {2}, fights behind them. {3} eddies to sign. Say the word.");
     // {0} solo, {1} seat, {2} book.offerPrice
-    this.Text("Cyberbane-Crew-GotASoloLookingForSteady", "Got a solo looking for steady work: {0}, a {1}. Wants {2}eb up front, then the weekly cut. Interested?");
+    this.Text("Cyberbane-Crew-GotASoloLookingForSteady", "Got a solo looking for steady work: {0}, a {1}. Wants {2} eddies up front, then the weekly cut. Interested?");
     // {0} solo, {1} seat, {2} book.offerPrice
-    this.Text("Cyberbane-Crew-WordSOutYouReBuilding", "Word's out you're building a crew. {0} wants in: {1}, clean record, {2}eb to sign. Say the word.");
+    this.Text("Cyberbane-Crew-WordSOutYouReBuilding", "Word's out you're building a crew. {0} wants in: {1}, clean record, {2} eddies to sign. Say the word.");
     this.Text("Cyberbane-Crew-ThatSoloFoundOtherWork", "That solo found other work.");
     this.Text("Cyberbane-Crew-YourCrewSFull", "Your crew's full.");
     // {0} book.offerPrice
-    this.Text("Cyberbane-Crew-ComeBackWithEb", "Come back with {0}eb.");
+    this.Text("Cyberbane-Crew-ComeBackWithEb", "Come back with {0} eddies.");
     this.Text("Cyberbane-Crew-HeardGoodThingsAboutThisCrew", "Heard good things about this crew. Didn't think I'd get the chance. Call me.");
     this.Text("Cyberbane-Crew-MoneySInIMYours", "Money's in. I'm yours till it stops. Call when it gets loud.");
     // {0} CBHere(sys)
@@ -2216,9 +2216,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Crew-WeWantBackYouKnowWhy", "We want {0} back. You know why.");
     this.Text("Cyberbane-Crew-IMDoneDonTCall", "I'm done. Don't call this number again.");
     // {0} book.CutOwed
-    this.Text("Cyberbane-Crew-WeekSUpTheCutS", "Week's up. The cut's {0}eb. Everybody's asking.");
+    this.Text("Cyberbane-Crew-WeekSUpTheCutS", "Week's up. The cut's {0} eddies. Everybody's asking.");
     // {0} CBYou(sys, game), {1} book.CutOwed
-    this.Text("Cyberbane-Crew-PaydayEbForTheCrew", "Payday, {0}. {1}eb for the crew.");
+    this.Text("Cyberbane-Crew-PaydayEbForTheCrew", "Payday, {0}. {1} eddies for the crew.");
     this.Text("Cyberbane-Crew-BeenThinkingAboutWhetherThisIs", "Been thinking about whether this is worth it.");
     this.Text("Cyberbane-Crew-YouStillOweMeForThe", "You still owe me for the last job. I don't work for free.");
     this.Text("Cyberbane-Crew-StillThinkingAboutYouLeavingMe", "Still thinking about you leaving me lying there.");
@@ -2228,7 +2228,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Crew-NotAsScaredOfYouAs", "Not as scared of you as I used to be. Just so you know.");
     this.Text("Cyberbane-Crew-NobodySOwedAnything", "Nobody's owed anything.");
     // {0} owed
-    this.Text("Cyberbane-Crew-YouDonTHaveEb", "You don't have {0}eb.");
+    this.Text("Cyberbane-Crew-YouDonTHaveEb", "You don't have {0} eddies.");
     this.Text("Cyberbane-Crew-CutSInEverybodySHappy", "Cut's in. Everybody's happy. For now.");
     this.Text("Cyberbane-Crew-PaidInFullThatSHow", "Paid in full. That's how you keep a crew.");
     // {0} first
@@ -2238,19 +2238,19 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Crew-NeedYouNow", "Need you. Now.");
     this.Text("Cyberbane-Crew-GoHomeIVeGotThis", "Go home. I've got this.");
     // {0} book.CutOwed
-    this.Text("Cyberbane-Crew-HereSTheCutEb", "Here's the cut: {0}eb");
+    this.Text("Cyberbane-Crew-HereSTheCutEb", "Here's the cut: {0} eddies");
     this.Text("Cyberbane-Crew-HereSTheCut", "Here's the cut");
     this.Text("Cyberbane-Crew-WorkForMe", "Work for me.");
     // {0} book.offerPrice
-    this.Text("Cyberbane-Crew-DealEb", "Deal: {0}eb");
+    this.Text("Cyberbane-Crew-DealEb", "Deal: {0} eddies");
     this.Text("Cyberbane-Crew-Deal", "Deal");
     this.Text("Cyberbane-Crew-TooMuch", "Too much");
     this.Text("Cyberbane-Crew-NotNow", "Not now");
     this.Text("Cyberbane-Crew-DoneTheyLlBeOnYour", "Done. They'll be on your crew thread.");
     // {0} book.offerPrice
-    this.Text("Cyberbane-Crew-FineEbAndTheyReYours", "Fine. {0}eb, and they're yours. Last offer.");
+    this.Text("Cyberbane-Crew-FineEbAndTheyReYours", "Fine. {0} eddies, and they're yours. Last offer.");
     // {0} book.offerPrice
-    this.Text("Cyberbane-Crew-GoodPeopleCostMoneyEb", "Good people cost money. {0}eb.");
+    this.Text("Cyberbane-Crew-GoodPeopleCostMoneyEb", "Good people cost money. {0} eddies.");
     this.Text("Cyberbane-Crew-YourLossSomebodyElseWillTake", "Your loss. Somebody else will take them.");
     this.Text("Cyberbane-Crew-WITHYOU", "WITH YOU");
     this.Text("Cyberbane-Crew-HURT", "HURT");
@@ -2264,7 +2264,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} book.Count, {1} CBConfig.MyCrewRoster
     this.Text("Cyberbane-Crew-OfOnTheRoster", "{0} of {1} on the roster.");
     // {0} book.CutOwed
-    this.Text("Cyberbane-Crew-TheyAreOwedEb", " They are owed {0}eb.");
+    this.Text("Cyberbane-Crew-TheyAreOwedEb", " They are owed {0} eddies.");
     this.Text("Cyberbane-Crew-TheCutIsDueWithinA", " The cut is due within a day.");
     // {0} days
     this.Text("Cyberbane-Crew-TheCutIsDueInDays", " The cut is due in {0} days.");
@@ -2273,7 +2273,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Crew-YouCalledYourCrewAndCame", "You called your crew, and {0} came.");
     this.Text("Cyberbane-Crew-YourCrewFoughtBesideYouAnd", "Your crew fought beside you, and won.");
     // {0} n
-    this.Text("Cyberbane-Crew-YouPaidYourCrewTheirCut", "You paid your crew their cut: {0}eb.");
+    this.Text("Cyberbane-Crew-YouPaidYourCrewTheirCut", "You paid your crew their cut: {0} eddies.");
     this.Text("Cyberbane-Crew-YouPutDownTheOneWho", "You put down the one who turned on you.");
     // {0} name
     this.Text("Cyberbane-Crew-JoinedYourCrew", "{0} joined your crew.");
@@ -2313,7 +2313,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} StrLower(CBCrewRankWord(CBCrewRank(bbOffer.offerWins)))
     this.Text("Cyberbane-Crew-YourRecruiterFoundThemTheyCome", "Your recruiter found them: they come as a {0}, more loyal than most. ");
     // {0} StrUpper(solo), {1} book.offerSender, {2} seat, {3} book.offerPrice, {4} found
-    this.Text("Cyberbane-Crew-ASoloPutForwardAEb", "{0}\nA solo {1} put forward: a {2}, {3}eb to sign, then the weekly cut. {4}Paid people are loyal while the money keeps coming. The offer stands for a day.");
+    this.Text("Cyberbane-Crew-ASoloPutForwardAEb", "{0}\nA solo {1} put forward: a {2}, {3} eddies to sign, then the weekly cut. {4}Paid people are loyal while the money keeps coming. The offer stands for a day.");
     this.Text("Cyberbane-Crew-TheCity", "the city");
     // {0} since
     this.Text("Cyberbane-Crew-WithYou", ", with you {0}.");
@@ -2512,7 +2512,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-CrewKit-ThatSTheWorkOfA", " That's the work of a {0} now.");
     this.Text("Cyberbane-CrewKit-ThatWentTooFarILl", "That went too far. I'll live. Give me a couple of days.");
     // {0} total
-    this.Text("Cyberbane-CrewKit-YourCrewSWorkBroughtIn", "Your crew's work brought in {0}eb.");
+    this.Text("Cyberbane-CrewKit-YourCrewSWorkBroughtIn", "Your crew's work brought in {0} eddies.");
     // {0} hurt
     this.Text("Cyberbane-CrewKit-GotHurtDoingIt", " {0} got hurt doing it.");
     this.Text("Cyberbane-CrewKit-ThatWeaponIsNotInYour", "that weapon is not in your bag any more.");
@@ -2525,7 +2525,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} CBCrewItemName(rec), {1} CBCapFirst(what)
     this.Text("Cyberbane-CrewKit-GotThePutInFeelIt", "Got the {0} put in. Feel it already. {1}, next time you call.");
     // {0} cost
-    this.Text("Cyberbane-CrewKit-TrainingCostsEb", "training costs {0}eb.");
+    this.Text("Cyberbane-CrewKit-TrainingCostsEb", "training costs {0} eddies.");
     // {0} RoundF(hours)
     this.Text("Cyberbane-CrewKit-HeadingOutGiveMeHoursAnd", "Heading out. Give me {0} hours, and I'll come back worth more.");
     // {0} CBCapFirst(CBFactionLabel(gang))
@@ -2637,13 +2637,13 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   // ---- StreetPay -------------------------------------------------------------------------------------------
   protected func DefineStreetPay() -> Void {
     // {0} price
-    this.Text("Cyberbane-StreetPay-PayEbYouDidnTSee", "[Pay] {0}eb. You didn't see anything.");
+    this.Text("Cyberbane-StreetPay-PayEbYouDidnTSee", "[Pay] {0} eddies. You didn't see anything.");
     this.Text("Cyberbane-StreetPay-Body", "[Body] ");
     this.Text("Cyberbane-StreetPay-Intimidate", "[Intimidate] ");
     // {0} (body ? "[Body] ": "[Intimidate] ")
     this.Text("Cyberbane-StreetPay-NobodyHearsAboutThisUnderstand", "{0}Nobody hears about this. Understand?");
     // {0} price
-    this.Text("Cyberbane-StreetPay-PayEbKeepAnEyeOut", "[Pay {0}eb] Just keep a lookout.");
+    this.Text("Cyberbane-StreetPay-PayEbKeepAnEyeOut", "[Pay {0} eddies] Just keep a lookout.");
     this.Text("Cyberbane-StreetPay-AlreadyToldYouISawNothing", "Already told you. I saw nothing.");
     this.Text("Cyberbane-StreetPay-ThatSNotEnoughToForget", "That's not enough to forget a face.");
     this.Text("Cyberbane-StreetPay-ComeBackWithTheEddiesOr", "Come back with the eddies. Or don't.");
@@ -2756,11 +2756,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-StreetTalk-PleaseIMJustGoingHome", "Please, I'm just going home.");
     this.Text("Cyberbane-StreetTalk-OkayOkayHi", "Okay. Okay. Hi.");
     // {0} gift
-    this.Text("Cyberbane-StreetTalk-NoWayItSYouHere", "No way. It's you. Here, drinks are on me. {0}eb.");
+    this.Text("Cyberbane-StreetTalk-NoWayItSYouHere", "No way. It's you. Here, drinks are on me. {0} eddies.");
     // {0} gift
-    this.Text("Cyberbane-StreetTalk-WaitTillITellEveryoneTake", "Wait till I tell everyone. Take this, {0}eb, for the stories.");
+    this.Text("Cyberbane-StreetTalk-WaitTillITellEveryoneTake", "Wait till I tell everyone. Take this, {0} eddies, for the stories.");
     // {0} gift
-    this.Text("Cyberbane-StreetTalk-YouReTheRealThingHere", "You're the real thing. Here, {0}eb. Don't argue.");
+    this.Text("Cyberbane-StreetTalk-YouReTheRealThingHere", "You're the real thing. Here, {0} eddies. Don't argue.");
     // {0} title
     this.Text("Cyberbane-StreetTalk-NoWaySayingHiToMe", "No way. {0}, saying hi to me?");
     // {0} title
@@ -2887,11 +2887,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-TalkTopics-AskAnyoneLookingForMe", "[Ask] Anyone looking for me?");
     this.Text("Cyberbane-TalkTopics-BackSomethingElse", "[Back] Let's talk about something else.");
     // {0} price
-    this.Text("Cyberbane-TalkTopics-PayEb", "[Pay {0}eb] Here you go.");
+    this.Text("Cyberbane-TalkTopics-PayEb", "[Pay {0} eddies] Here you go.");
     // {0} price
-    this.Text("Cyberbane-TalkTopics-PayEbForSafePassage", "[Pay] {0}eb for safe passage.");
+    this.Text("Cyberbane-TalkTopics-PayEbForSafePassage", "[Pay] {0} eddies for safe passage.");
     // {0} price
-    this.Text("Cyberbane-TalkTopics-PayEbMakeTheCall", "[Pay] {0}eb. Make the call.");
+    this.Text("Cyberbane-TalkTopics-PayEbMakeTheCall", "[Pay] {0} eddies. Make the call.");
     this.Text("Cyberbane-TalkTopics-HaggleThatSTooMuch", "[Haggle] No. Askin' too much.");
     // {0} (body ? "[Body] ": "[Intimidate] ")
     this.Text("Cyberbane-TalkTopics-OrYouCouldJustTellMe", "{0}Start talkin'.");
@@ -2907,16 +2907,16 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-TalkTopics-YourMoneySNoGoodHere", "Your money's no good here.");
     this.Text("Cyberbane-TalkTopics-YouCanTBuyYourWay", "You can't buy your way out of what you did.");
     // {0} price, {1} hours
-    this.Text("Cyberbane-TalkTopics-EbAndNobodyOfOursTouches", "{0}eb, and nobody of ours touches you. {1} hours. After that you're fair game again.");
+    this.Text("Cyberbane-TalkTopics-EbAndNobodyOfOursTouches", "{0} eddies, and nobody of ours touches you. {1} hours. After that you're fair game again.");
     // {0} price, {1} hours
-    this.Text("Cyberbane-TalkTopics-WalkOurStreetsInOnePiece", "Walk our streets in one piece? {0}eb. Buys you {1} hours.");
+    this.Text("Cyberbane-TalkTopics-WalkOurStreetsInOnePiece", "Walk our streets in one piece? {0} eddies. Buys you {1} hours.");
     this.Text("Cyberbane-TalkTopics-WhatCrewNobodySComingNot", "What crew? Nobody's coming. Not from us.");
     this.Text("Cyberbane-TalkTopics-ThoseAreMyPeopleHopeThey", "Those are my people. Hope they find you.");
     this.Text("Cyberbane-TalkTopics-CallThemOffIDRather", "Call them off? I'd rather watch.");
     // {0} price
-    this.Text("Cyberbane-TalkTopics-TheyReAlreadyMovingEbAnd", "They're already moving. {0}eb and I make a call.");
+    this.Text("Cyberbane-TalkTopics-TheyReAlreadyMovingEbAnd", "They're already moving. {0} eddies and I make a call.");
     // {0} price
-    this.Text("Cyberbane-TalkTopics-EbAndITellThemYou", "{0}eb, and I tell them you were somewhere else.");
+    this.Text("Cyberbane-TalkTopics-EbAndITellThemYou", "{0} eddies, and I tell them you were somewhere else.");
     this.Text("Cyberbane-TalkTopics-ComeBackWhenYouVeGot", "Come back when you've got it.");
     this.Text("Cyberbane-TalkTopics-ThatSNotTheNumberChoom", "That's not the number, choom.");
     this.Text("Cyberbane-TalkTopics-DoneWordGoesRoundYouWalk", "Done. Word goes round: you walk, nobody of ours stops you. For a while.");
@@ -3393,14 +3393,14 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} name
     this.Text("Cyberbane-Whereabouts-WordIsNeverSawItComing", "Word is {0} never saw it coming.");
     // {0} price
-    this.Text("Cyberbane-Whereabouts-NotEnoughEddiesForThatIt", "not enough eddies for that. It costs {0}eb.");
+    this.Text("Cyberbane-Whereabouts-NotEnoughEddiesForThatIt", "not enough eddies for that. It costs {0} eddies.");
     this.Text("Cyberbane-Whereabouts-NobodyCouldFindThemFromHere", "nobody could find them from here. Try again somewhere else.");
     // {0} name, {1} price
-    this.Text("Cyberbane-Whereabouts-HeardYouReAskingAfterI", "Heard you're asking after {0}. I know where they sleep. {1}eb and it's yours.");
+    this.Text("Cyberbane-Whereabouts-HeardYouReAskingAfterI", "Heard you're asking after {0}. I know where they sleep. {1} eddies and it's yours.");
     // {0} name, {1} price
-    this.Text("Cyberbane-Whereabouts-WeKnowWhereEbAndYou", "{0}? We know where. {1}eb, and you didn't get it from us.");
+    this.Text("Cyberbane-Whereabouts-WeKnowWhereEbAndYou", "{0}? We know where. {1} eddies, and you didn't get it from us.");
     // {0} name, {1} price
-    this.Text("Cyberbane-Whereabouts-WordIsYouWantEbBuys", "Word is you want {0}. {1}eb buys you an address.");
+    this.Text("Cyberbane-Whereabouts-WordIsYouWantEbBuys", "Word is you want {0}. {1} eddies buys you an address.");
     // {0} CBCapFirst(CBYou(sys, game))
     this.Text("Cyberbane-Whereabouts-CompanyIsHere", "Company! {0} is here!");
     this.Text("Cyberbane-Whereabouts-WeVeBeenMadeGoGo", "We've been made. Go, go, tell them!");
@@ -3472,13 +3472,13 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} you, {1} amount, {2} who
     this.Text("Cyberbane-Bounty-ThereSAPriceOnYour", "There's a price on your head, {0}. {1} eddies from {2}, and the board's already arguing about who takes it.");
     // {0} CBCapFirst(who), {1} amount, {2} here
-    this.Text("Cyberbane-Bounty-PutEbOnYouEverySolo", "{0} put {1}eb on you. Every solo in {2} just read your name off the board.");
+    this.Text("Cyberbane-Bounty-PutEbOnYouEverySolo", "{0} put {1} eddies on you. Every solo in {2} just read your name off the board.");
     // {0} who, {1} amount, {2} here
     this.Text("Cyberbane-Bounty-WordIsWouldPayToSee", "Word is {0} would pay {1} to see you dead. Watch who's watching you in {2}.");
     // {0} amount, {1} you
     this.Text("Cyberbane-Bounty-EddiesOnThatSMoreThan", "{0} eddies on {1}. That's more than most people see in a year, and every gun for hire knows it.");
     // {0} price
-    this.Text("Cyberbane-Bounty-NotEnoughEddiesToClearThe", "not enough eddies to clear the price any more. It costs {0}eb.");
+    this.Text("Cyberbane-Bounty-NotEnoughEddiesToClearThe", "not enough eddies to clear the price any more. It costs {0} eddies.");
     this.Text("Cyberbane-Bounty-BOUNTYHUNTER", "BOUNTY HUNTER");
     this.Text("Cyberbane-Bounty-BroughtAFriend", " Brought a friend.");
     this.Text("Cyberbane-Bounty-YouReNotEvenOnThe", "You're not even on the board yet. After you, I'm one step higher.");
@@ -3515,7 +3515,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} npc.cbBountyRank
     this.Text("Cyberbane-Bounty-BOUNTYHUNTERRANK", "BOUNTY HUNTER, RANK {0}");
     // {0} amount, {1} CBBountyPosterName(sys, game, book.BountyBy), {2} CBBountyPayOff(sys, game)
-    this.Text("Cyberbane-Bounty-APriceOnYourHeadEddies", "A price on your head: {0} eddies from {1}. Pay {2}eb to have it withdrawn, or kill whoever put it up.");
+    this.Text("Cyberbane-Bounty-APriceOnYourHeadEddies", "A price on your head: {0} eddies from {1}. Pay {2} eddies to have it withdrawn, or kill whoever put it up.");
     // {0} v
     this.Text("Cyberbane-Bounty-YouAreNumberOnTheHunters", "You are number {0} on the hunters' ladder.");
     this.Text("Cyberbane-Bounty-YouAreNotOnTheHunters", "You are not on the hunters' ladder yet.");
@@ -3658,7 +3658,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hunted-WhoeverWasAfterYouLostYou", "Whoever was after you lost you when you changed. They're looking for somebody else now.");
     this.Text("Cyberbane-Hunted-WhoeverWasAfterYouLostYour", "Whoever was after you lost your trail when you crossed over.");
     // {0} price
-    this.Text("Cyberbane-Hunted-PayEbTellThemYouDidn", "[Pay] {0}eb. Tell them you didn't find me.");
+    this.Text("Cyberbane-Hunted-PayEbTellThemYouDidn", "[Pay] {0} eddies. Tell them you didn't find me.");
     this.Text("Cyberbane-Hunted-FindWhatIMJustWalking", "Find what? I'm just walking.");
     this.Text("Cyberbane-Hunted-ThatDoesnTBuyMySilence", "That doesn't buy my silence.");
     this.Text("Cyberbane-Hunted-NeverSawYouNobodyHereBut", "Never saw you. Nobody here but me.");
@@ -3693,7 +3693,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} CBCapFirst(CBPossessive(CBFactionLabel(holder))), {1} watch
     this.Text("Cyberbane-LivingStreet-BagmanIsDoingTheRoundsNear", "{0} bagman is doing the rounds near you with the week's take. {1} Heavy pockets.");
     // {0} take
-    this.Text("Cyberbane-LivingStreet-YouTookTheBagEb", "you took the bag: {0}eb.");
+    this.Text("Cyberbane-LivingStreet-YouTookTheBagEb", "you took the bag: {0} eddies.");
     // {0} CBPossessive(CBFactionLabel(this.m_bagFaction))
     this.Text("Cyberbane-LivingStreet-SomebodyRobbedBagmanWordIsIt", "Somebody robbed {0} bagman. Word is it was you.");
     this.Text("Cyberbane-LivingStreet-NotRightNowComeBackAnother", "Not right now. Come back another time.");
@@ -3719,9 +3719,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} CBIntelWritten(i)
     this.Text("Cyberbane-LivingStreet-AndSomethingExtra", " And something extra: {0}");
     // {0} pay, {1} tip
-    this.Text("Cyberbane-LivingStreet-HeardYouHadToPutThem", "Heard you had to put them on the ground. They paid. {0}eb, and you've got friends here.{1}");
+    this.Text("Cyberbane-LivingStreet-HeardYouHadToPutThem", "Heard you had to put them on the ground. They paid. {0} eddies, and you've got friends here.{1}");
     // {0} pay, {1} tip
-    this.Text("Cyberbane-LivingStreet-SawWhatYouDidEbAnd", "Saw what you did. {0}eb, and you've got friends here.{1}");
+    this.Text("Cyberbane-LivingStreet-SawWhatYouDidEbAnd", "Saw what you did. {0} eddies, and you've got friends here.{1}");
     // {0} next
     this.Text("Cyberbane-LivingStreet-TheyGaveUpANameBefore", "They gave up a name before they paid: somebody in {0} owes us too. Same deal. I marked it.");
     this.Text("Cyberbane-LivingStreet-WeReSquareForTodayNext", "We're square for today. Next time it's you and me.");
@@ -3735,9 +3735,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   // ---- Loot ------------------------------------------------------------------------------------------------
   protected func DefineLoot() -> Void {
     // {0} line, {1} amount
-    this.Text("Cyberbane-Loot-EbFromUs", "{0} {1}eb, from us.");
+    this.Text("Cyberbane-Loot-EbFromUs", "{0} {1} eddies, from us.");
     // {0} line, {1} amount
-    this.Text("Cyberbane-Loot-SomebodyWantedThatDoneEb", "{0} Somebody wanted that done. {1}eb.");
+    this.Text("Cyberbane-Loot-SomebodyWantedThatDoneEb", "{0} Somebody wanted that done. {1} eddies.");
     this.Text("Cyberbane-Loot-ThatOne", "That one");
     // {0} name
     this.Text("Cyberbane-Loot-HeardYouPutInTheGround", "Heard you put {0} in the ground.");
@@ -3973,7 +3973,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} a
     this.Text("Cyberbane-StreetEvents-YouTookTheGunsWereBuying", "You took the guns {0} were buying. The crate's yours, and so is their grudge.");
     // {0} take
-    this.Text("Cyberbane-StreetEvents-YouTookTheirTakeEb", "you took their take: {0}eb.");
+    this.Text("Cyberbane-StreetEvents-YouTookTheirTakeEb", "you took their take: {0} eddies.");
     // {0} CBPossessive(a)
     this.Text("Cyberbane-StreetEvents-YouHitRacketWordIsThey", "You hit {0} racket. Word is they're counting what's left.");
     // {0} CBPossessive(a), {1} CBEventNoun(ev.kind)
@@ -3997,9 +3997,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-StreetEvents-Business", "business");
     this.Text("Cyberbane-StreetEvents-SideIMWithYou", "[Side] All right, I'm with you.");
     // Corporate contracts. Offer: {0} whose people the mark is, {1} the place, {2} eddies. Pin: {0} the client, {1} the mark's people.
-    this.Text("Cyberbane-Contracts-Offer", "Work, if you want it. One of {0}'s people is in {1} with two guards, and they don't walk away from it. {2}eb, and we remember who helped. It's on your map.");
+    this.Text("Cyberbane-Contracts-Offer", "Work, if you want it. One of {0}'s people is in {1} with two guards, and they don't walk away from it. {2} eddies, and we remember who helped. It's on your map.");
     this.Text("Cyberbane-Contracts-Pin", "Contract for {0}: one of {1}'s people");
-    this.Text("Cyberbane-Contracts-Done", "Clean work. {0}eb sent, and we won't forget who did it.");
+    this.Text("Cyberbane-Contracts-Done", "Clean work. {0} eddies sent, and we won't forget who did it.");
     this.Text("Cyberbane-Contracts-Lost", "Somebody else closed that file. Nothing owed.");
     this.Text("Cyberbane-Contracts-Expired", "The window's closed. We'll call when there's more.");
     this.Text("Cyberbane-Tracking-ContractMark", "Contract for {0}");
@@ -4041,7 +4041,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} a
     this.Text("Cyberbane-StreetEvents-TheOneWereHuntingGotAway", "The one {0} were hunting got away. Not your doing.");
     // {0} CBFactionLabel(mine), {1} pay
-    this.Text("Cyberbane-StreetEvents-YouStoodWithAndTheStreet", "You stood with {0}, and the street is theirs. {1}eb, and friends who saw it.");
+    this.Text("Cyberbane-StreetEvents-YouStoodWithAndTheStreet", "You stood with {0}, and the street is theirs. {1} eddies, and friends who saw it.");
     // {0} CBFactionLabel(mine), {1} CBCapFirst(CBFactionLabel(winner))
     this.Text("Cyberbane-StreetEvents-YouStoodWithAndTheyLost", "You stood with {0}, and they lost the street. {1} will remember whose side you were on.");
     // {0} CBCapFirst(CBFactionLabel(winner)), {1} CBFactionLabel(loser)
@@ -4069,7 +4069,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} name
     this.Text("Cyberbane-StreetStories-AskYouSawWhere", "[Ask] You saw {0}. Where?");
     // {0} price
-    this.Text("Cyberbane-StreetStories-PayEbYouNeverSawMe", "[Pay {0}eb] You never saw me.");
+    this.Text("Cyberbane-StreetStories-PayEbYouNeverSawMe", "[Pay {0} eddies] You never saw me.");
     this.Text("Cyberbane-StreetStories-ThenIRememberEverything", "Then I remember everything.");
     this.Text("Cyberbane-StreetStories-NeverSawYouNeverSawThem", "Never saw you. Never saw them either.");
     this.Text("Cyberbane-StreetStories-WhatFaceIMBadWith", "What face? I'm bad with faces.");
@@ -4079,7 +4079,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-StreetStories-ThereWasNeverAnyMoneyLook", "There was never any money. Look around.");
     this.Text("Cyberbane-StreetStories-YouReallyCameWeReComing", "You really came. We're coming too.");
     // {0} war.dropAmount
-    this.Text("Cyberbane-StreetStories-TheBagWasWhereTheySaid", "the bag was where they said: {0}eb.");
+    this.Text("Cyberbane-StreetStories-TheBagWasWhereTheySaid", "the bag was where they said: {0} eddies.");
+    // A note: the place a drop, a debtor or a calling card was left has no way in any more, so it is just outside.
+    this.Text("Cyberbane-StreetStories-DropMovedOutside", "there's no way in there any more. It's just outside instead: the pin has moved.");
   }
 
   // ---- Wannabe ---------------------------------------------------------------------------------------------
@@ -4198,7 +4200,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} ready, {1} crew.Count
     this.Text("Cyberbane-Hud-OfReadyToCall", "{0} of {1} ready to call");
     // {0} crew.CutOwed
-    this.Text("Cyberbane-Hud-OwedEb", "owed {0}eb");
+    this.Text("Cyberbane-Hud-OwedEb", "owed {0} eddies");
     this.Text("Cyberbane-Hud-HowWidelyNightCityKnowsYour", "How widely Night City knows your name.");
     // {0} RoundF(earned)
     this.Text("Cyberbane-Hud-HeldHereByYourStreetCred", "Held here by your Street Cred. What you have done counts {0} so far.");
@@ -4249,18 +4251,18 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} both
     this.Text("Cyberbane-Hud-RightNow", "Right now: {0}.\n");
     // {0} quote
-    this.Text("Cyberbane-Hud-Eb", "{0}eb");
+    this.Text("Cyberbane-Hud-Eb", "{0} eddies");
     this.Text("Cyberbane-Hud-WhatTheyAsk", "what they ask");
     // {0} price
     this.Text("Cyberbane-Hud-YouArePayingThemItGoes", "You are paying them {0}. It goes through in the next few seconds of play,\nand anything they had on its way to you is called off.");
     this.Text("Cyberbane-Hud-CancelThePayment", "Cancel the payment");
     // {0} quote, {1} money
-    this.Text("Cyberbane-Hud-TheyWillCallItOffFor", "They will call it off for {0}eb. You have {1}eb.");
+    this.Text("Cyberbane-Hud-TheyWillCallItOffFor", "They will call it off for {0} eddies. You have {1} eddies.");
     this.Text("Cyberbane-Hud-ClickAgainToPay", "\nClick again to pay.");
     // {0} quote
-    this.Text("Cyberbane-Hud-ConfirmPayEb", "Confirm: pay {0}eb");
+    this.Text("Cyberbane-Hud-ConfirmPayEb", "Confirm: pay {0} eddies");
     // {0} quote
-    this.Text("Cyberbane-Hud-PayThemOffEb", "Pay them off: {0}eb");
+    this.Text("Cyberbane-Hud-PayThemOffEb", "Pay them off: {0} eddies");
     this.Text("Cyberbane-Hud-NotEnoughEddies", "Not enough eddies");
     // {0} quiet
     this.Text("Cyberbane-Hud-Quiet", "quiet {0}");
@@ -4281,9 +4283,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-BuyingAnotherLocation", "Buying another location");
     this.Text("Cyberbane-Hud-ConfirmPutTheWordOut", "Confirm: put the word out");
     // {0} price
-    this.Text("Cyberbane-Hud-AskAroundAboutEb", "Ask around: about {0}eb");
+    this.Text("Cyberbane-Hud-AskAroundAboutEb", "Ask around: about {0} eddies");
     // {0} price
-    this.Text("Cyberbane-Hud-AmbushThemEb", "Ambush them: {0}eb");
+    this.Text("Cyberbane-Hud-AmbushThemEb", "Ambush them: {0} eddies");
     this.Text("Cyberbane-Hud-HideoutsAreOff", "Hideouts are off");
     this.Text("Cyberbane-Hud-OutAfterYouNow", "Out after you now");
     this.Text("Cyberbane-Hud-YouKnowWhereTheyAre", "You know where they are");
@@ -4380,12 +4382,12 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-NothingOnYouRightNowTwo", "Nothing on you right now: two will come and walk with you until you send them home.\n");
     this.Text("Cyberbane-Hud-PayingClickToTakeItBack", "Paying. Click to take it back");
     // {0} book.CutOwed
-    this.Text("Cyberbane-Hud-PayTheCutEb", "Pay the cut: {0}eb");
+    this.Text("Cyberbane-Hud-PayTheCutEb", "Pay the cut: {0} eddies");
     // {0} CBCrewFirst(sys, m)
     this.Text("Cyberbane-Hud-OrdersFor", "Orders for {0}");
     this.Text("Cyberbane-Hud-HiringClickToTakeItBack", "Hiring. Click to take it back");
     // {0} book.offerPrice
-    this.Text("Cyberbane-Hud-HireTheSoloEb", "Hire the solo: {0}eb");
+    this.Text("Cyberbane-Hud-HireTheSoloEb", "Hire the solo: {0} eddies");
     this.Text("Cyberbane-Hud-ASoloIsOnOfferPick", "A solo is on offer: pick them to hire them.\n");
     // {0} kbWars.WarsWon
     this.Text("Cyberbane-Hud-WarsYourCrewStartedAndWon", "Wars your crew started and won: {0}.\n");
@@ -4474,9 +4476,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-ShowAsAList", "Show as a list");
     this.Text("Cyberbane-Hud-PayingItOffClickToTake", "Paying it off. Click to take it back");
     // {0} payOff
-    this.Text("Cyberbane-Hud-ClickAgainPayEb", "Click again: pay {0}eb");
+    this.Text("Cyberbane-Hud-ClickAgainPayEb", "Click again: pay {0} eddies");
     // {0} payOff
-    this.Text("Cyberbane-Hud-PayOffThePriceOnYou", "Pay off the price on you ({0}eb)");
+    this.Text("Cyberbane-Hud-PayOffThePriceOnYou", "Pay off the price on you ({0} eddies)");
     this.Text("Cyberbane-Hud-ClickAgainEraseItAll", "Click again: erase it all");
     this.Text("Cyberbane-Hud-StartOver", "Start over");
     this.Text("Cyberbane-Hud-ShowTheLedger", "Show the ledger");
@@ -4631,7 +4633,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-ClickAgainToForgetThemUntil", "Click again to forget them. Until you go back to the game, you can still keep them.");
     this.Text("Cyberbane-Hud-PuttingTheWordOutSomebodyTexts", "Putting the word out. Somebody texts you a price as soon as you are back in the game.");
     // {0} price
-    this.Text("Cyberbane-Hud-PayingEbForWhereTheyAre", "Paying {0}eb for where they are. It goes through as soon as you are back in the game.");
+    this.Text("Cyberbane-Hud-PayingEbForWhereTheyAre", "Paying {0} eddies for where they are. It goes through as soon as you are back in the game.");
     this.Text("Cyberbane-Hud-WaitingAtTheirPlaceRightNow", "Waiting at their place right now, and not expecting you.");
     this.Text("Cyberbane-Hud-TheStreet", "the street");
     // {0} ago
@@ -4640,11 +4642,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-WordFromSeenGoOnFoot", "Word from {0}: seen {1}{2}. Go on foot and they may not see you coming.");
     this.Text("Cyberbane-Hud-ClickAgainToPutTheWord", "Click again to put the word out for where they are hiding.");
     // {0} price, {1} CBHudEddies(game)
-    this.Text("Cyberbane-Hud-PutTheWordOutAndSomebody", "Put the word out and somebody texts you a price for where they are hiding, about {0}eb. Answer in the thread: take it, push back once, or walk away. Then go there on foot and catch them unawares. You have {1}eb.");
+    this.Text("Cyberbane-Hud-PutTheWordOutAndSomebody", "Put the word out and somebody texts you a price for where they are hiding, about {0} eddies. Answer in the thread: take it, push back once, or walk away. Then go there on foot and catch them unawares. You have {1} eddies.");
     // {0} price
-    this.Text("Cyberbane-Hud-ClickAgainToPayEbFor", "Click again to pay {0}eb for where they are hiding.");
+    this.Text("Cyberbane-Hud-ClickAgainToPayEbFor", "Click again to pay {0} eddies for where they are hiding.");
     // {0} price, {1} CBHudEddies(game)
-    this.Text("Cyberbane-Hud-EbBuysWhereTheyAreHiding", "{0}eb buys where they are hiding. Go there on foot and catch them unawares. You have {1}eb.");
+    this.Text("Cyberbane-Hud-EbBuysWhereTheyAreHiding", "{0} eddies buys where they are hiding. Go there on foot and catch them unawares. You have {1} eddies.");
     this.Text("Cyberbane-Hud-TurnOnTipsOnWhereRivals", "Turn on Tips on where Rivals are (under Rivals in Mod Settings) to buy where they are hiding.");
     this.Text("Cyberbane-Hud-TheirFactionIsSwitchedOffUnder", "Their faction is switched off under Factions in Mod Settings. Nobody of theirs is sent after you or found for you.");
     this.Text("Cyberbane-Hud-NobodySellsWhereTheyAreWhile", "Nobody sells where they are while they are out after you.");
@@ -4675,7 +4677,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} stats.unattributed
     this.Text("Cyberbane-Hud-NeverPinnedOnYou", "      never pinned on you {0}\n");
     // {0} stats.tributeEddies, {1} spent
-    this.Text("Cyberbane-Hud-TributeTakenEbPaidOutFor", "        tribute taken {0}eb      paid out for peace {1}eb\n");
+    this.Text("Cyberbane-Hud-TributeTakenEbPaidOutFor", "        tribute taken {0} eddies      paid out for peace {1} eddies\n");
     // {0} style
     this.Text("Cyberbane-Hud-Style", "        style {0}\n");
     this.Text("Cyberbane-Hud-WarmedToYou", "warmed to you");
@@ -4690,7 +4692,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} who, {1} name
     this.Text("Cyberbane-Hud-YouLeanedOnUntilTheyGave", "You leaned on {0} until they gave up {1}.");
     // {0} who, {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouShookDownForEb", "You shook down {0} for {1}eb.");
+    this.Text("Cyberbane-Hud-YouShookDownForEb", "You shook down {0} for {1} eddies.");
     // {0} gang
     this.Text("Cyberbane-Hud-TalkingToTheirPeopleWarmedTo", "Talking to their people warmed {0} to you.");
     this.Text("Cyberbane-Hud-TalkingToPeopleWarmedThemTo", "Talking to people warmed them to you.");
@@ -4701,21 +4703,21 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-LeaningOnTheirPeopleMadeFear", "Leaning on their people made {0} fear you more.");
     this.Text("Cyberbane-Hud-LeaningOnPeopleMadeTheStreet", "Leaning on people made the street fear you more.");
     // {0} who, {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouPaidEbForWhereA", "You paid {0} {1}eb for where a Rival was hiding.");
+    this.Text("Cyberbane-Hud-YouPaidEbForWhereA", "You paid {0} {1} eddies for where a Rival was hiding.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-AFanStoodYouADrink", "A fan stood you a drink: {0}eb.");
+    this.Text("Cyberbane-Hud-AFanStoodYouADrink", "A fan stood you a drink: {0} eddies.");
     // {0} gang, {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouPaidEbToWalkTheir", "You paid {0} {1}eb to walk their streets in peace for a few hours.");
+    this.Text("Cyberbane-Hud-YouPaidEbToWalkTheir", "You paid {0} {1} eddies to walk their streets in peace for a few hours.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouPaidEbForSafePassage", "You paid {0}eb for safe passage.");
+    this.Text("Cyberbane-Hud-YouPaidEbForSafePassage", "You paid {0} eddies for safe passage.");
     // {0} CBPossessive(gang), {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouRobbedBagmanOfEb", "You robbed {0} bagman of {1}eb.");
+    this.Text("Cyberbane-Hud-YouRobbedBagmanOfEb", "You robbed {0} bagman of {1} eddies.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouRobbedABagmanOfEb", "You robbed a bagman of {0}eb.");
+    this.Text("Cyberbane-Hud-YouRobbedABagmanOfEb", "You robbed a bagman of {0} eddies.");
     // {0} gang, {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouDidAFavourForEb", "You did {0} a favour, for {1}eb.");
+    this.Text("Cyberbane-Hud-YouDidAFavourForEb", "You did {0} a favour, for {1} eddies.");
     // {0} the corporation, {1} eddies
-    this.Text("Cyberbane-Hud-YouDidAContractFor", "You did a contract for {0}, for {1}eb.");
+    this.Text("Cyberbane-Hud-YouDidAContractFor", "You did a contract for {0}, for {1} eddies.");
     this.Text("Cyberbane-Hud-YouDidSomebodyAFavour", "You did somebody a favour.");
     this.Text("Cyberbane-Hud-YouCrashedASitDownBetween", "You crashed a sit-down between two gangs.");
     this.Text("Cyberbane-Hud-YouShotSomebodyWhoHadGiven", "You shot somebody who had given up.");
@@ -4732,10 +4734,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-YouTurnedIntoAnInformant", "You turned {0} into an informant.");
     this.Text("Cyberbane-Hud-AnInformantOfYoursTextedA", "An informant of yours texted a tip.");
     // {0} who, {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouPaidEbToCallOff", "You paid {0} {1}eb to call off the crew coming for you.");
+    this.Text("Cyberbane-Hud-YouPaidEbToCallOff", "You paid {0} {1} eddies to call off the crew coming for you.");
     this.Text("Cyberbane-Hud-YouPaidAWitnessToForget", "You paid a witness to forget what they saw.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouPaidSomebodyEbToKeep", "You paid somebody {0}eb to keep watch for you.");
+    this.Text("Cyberbane-Hud-YouPaidSomebodyEbToKeep", "You paid somebody {0} eddies to keep watch for you.");
     this.Text("Cyberbane-Hud-AKidSquaredUpToYou", "A kid squared up to you for a name. You put them down.");
     this.Text("Cyberbane-Hud-AKidSquaredUpToYou-2", "A kid squared up to you for a name, and won.");
     this.Text("Cyberbane-Hud-AKidSquaredUpToYou-3", "A kid squared up to you for a name. You walked away.");
@@ -4747,9 +4749,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-YouLetOneOfWalkWith", "You let one of {0} walk with their hands up.");
     this.Text("Cyberbane-Hud-YouLetSomebodyWalkWithTheir", "You let somebody walk with their hands up.");
     // {0} CBCapFirst(gang), {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-PutAPriceOnYourHead", "{0} put a price on your head: {1}eb.");
+    this.Text("Cyberbane-Hud-PutAPriceOnYourHead", "{0} put a price on your head: {1} eddies.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-SomebodyPutAPriceOnYour", "Somebody put a price on your head: {0}eb.");
+    this.Text("Cyberbane-Hud-SomebodyPutAPriceOnYour", "Somebody put a price on your head: {0} eddies.");
     this.Text("Cyberbane-Hud-YouPaidOffThePriceOn", "You paid off the price on your head.");
     this.Text("Cyberbane-Hud-WhoeverPutThePriceOnYour", "Whoever put the price on your head is dead, and the price with them.");
     this.Text("Cyberbane-Hud-ThePriceOnYourHeadCame", "The price on your head came down.");
@@ -4764,7 +4766,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-WarnedYouOff", "{0} warned you off.");
     this.Text("Cyberbane-Hud-ACorporationWarnedYouOff", "A corporation warned you off.");
     // {0} RoundF(e.value), {1} gang
-    this.Text("Cyberbane-Hud-ACorporationOfferedYouEbTo", "A corporation offered you {0}eb to kill the leader of {1}.");
+    this.Text("Cyberbane-Hud-ACorporationOfferedYouEbTo", "A corporation offered you {0} eddies to kill the leader of {1}.");
     this.Text("Cyberbane-Hud-ACorporationOfferedYouAContract", "A corporation offered you a contract.");
     // {0} CBCapFirst(gang)
     this.Text("Cyberbane-Hud-SentPeopleToWatchYourBack", "{0} sent people to watch your back.");
@@ -4781,7 +4783,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-YouCameThroughForYourGang", "You came through for your gang.");
     this.Text("Cyberbane-Hud-YouLetYourGangDown", "You let your gang down.");
     // {0} CBCapFirst(gang), {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-PaidEbToGetOneOf", "{0} paid {1}eb to get one of theirs back.");
+    this.Text("Cyberbane-Hud-PaidEbToGetOneOf", "{0} paid {1} eddies to get one of theirs back.");
     this.Text("Cyberbane-Hud-AGangPaidARansom", "A gang paid a ransom.");
     // {0} CBCapFirst(gang)
     this.Text("Cyberbane-Hud-RefusedYourRansomAndCameFor", "{0} refused your ransom and came for their own.");
@@ -4841,9 +4843,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-WonAFightWithTheirEnemies", "{0} won a fight with their enemies in the street.");
     this.Text("Cyberbane-Hud-TwoGangsFoughtInTheStreet", "Two gangs fought in the street.");
     // {0} CBCapFirst(gang), {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-PaidYouEbForAJob", "{0} paid you {1}eb for a job.");
+    this.Text("Cyberbane-Hud-PaidYouEbForAJob", "{0} paid you {1} eddies for a job.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-ACorporationPaidYouEbFor", "A corporation paid you {0}eb for a job.");
+    this.Text("Cyberbane-Hud-ACorporationPaidYouEbFor", "A corporation paid you {0} eddies for a job.");
     // {0} CBCapFirst(gang)
     this.Text("Cyberbane-Hud-PlantedATrackerOnYou", "{0} planted a tracker on you.");
     this.Text("Cyberbane-Hud-SomebodyPlantedATrackerOnYou", "Somebody planted a tracker on you.");
@@ -4863,9 +4865,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-YouPaidScoutToSayThey", "You paid {0} scout to say they never found you.");
     this.Text("Cyberbane-Hud-YouPaidAScoutToSay", "You paid a scout to say they never found you.");
     // {0} CBCapFirst(gang), {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-PaidYouYourCutEb", "{0} paid you your cut: {1}eb.");
+    this.Text("Cyberbane-Hud-PaidYouYourCutEb", "{0} paid you your cut: {1} eddies.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouWerePaidYourCutEb", "You were paid your cut: {0}eb.");
+    this.Text("Cyberbane-Hud-YouWerePaidYourCutEb", "You were paid your cut: {0} eddies.");
     // {0} gang
     this.Text("Cyberbane-Hud-YouThrewInWith", "You threw in with {0}.");
     this.Text("Cyberbane-Hud-YouPickedASideInThe", "You picked a side in the war.");
@@ -4877,12 +4879,12 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-TwoGangsMadeATruceAgainst", "Two gangs made a truce against you.");
     this.Text("Cyberbane-Hud-ADistrictBecameYours", "A district became yours.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-TheGangsPaidTheirWayThrough", "The gangs paid their way through your streets: {0}eb.");
+    this.Text("Cyberbane-Hud-TheGangsPaidTheirWayThrough", "The gangs paid their way through your streets: {0} eddies.");
     // {0} gang
     this.Text("Cyberbane-Hud-YouDidAFavourAndThey", "You did {0} a favour, and they called it off.");
     this.Text("Cyberbane-Hud-AFavourBoughtYouPeace", "A favour bought you peace.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouPaidTheClawsEbFor", "You paid the Claws {0}eb for protection.");
+    this.Text("Cyberbane-Hud-YouPaidTheClawsEbFor", "You paid the Claws {0} eddies for protection.");
     this.Text("Cyberbane-Hud-YouDidnTPayTheClaws", "You didn't pay the Claws' protection.");
     // {0} CBCapFirst(gang)
     this.Text("Cyberbane-Hud-ExecutedSomebodyAndNobodyStoppedThem", "{0} executed somebody, and nobody stopped them.");
@@ -4921,9 +4923,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-YouTookTheGunsWereBuying", "You took the guns {0} were buying.");
     this.Text("Cyberbane-Hud-YouHitAnArmsDeal", "You hit an arms deal.");
     // {0} CBPossessive(gang), {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouHitRacketForEb", "You hit {0} racket for {1}eb.");
+    this.Text("Cyberbane-Hud-YouHitRacketForEb", "You hit {0} racket for {1} eddies.");
     // {0} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouHitARacketForEb", "You hit a racket for {0}eb.");
+    this.Text("Cyberbane-Hud-YouHitARacketForEb", "You hit a racket for {0} eddies.");
     // {0} gang
     this.Text("Cyberbane-Hud-YouBrokeUpSomethingHadPlanned", "You broke up something {0} had planned.");
     this.Text("Cyberbane-Hud-YouBrokeUpAGangS", "You broke up a gang's plans.");
@@ -4954,9 +4956,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // {0} gangCap
     this.Text("Cyberbane-Hud-SworeAVendettaAgainstYou", "{0} swore a vendetta against you.");
     // {0} gang, {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-YouPaidEbToCallIt", "You paid {0} {1}eb to call it off.");
+    this.Text("Cyberbane-Hud-YouPaidEbToCallIt", "You paid {0} {1} eddies to call it off.");
     // {0} gangCap, {1} RoundF(e.value)
-    this.Text("Cyberbane-Hud-PaidYouEbToStayOn", "{0} paid you {1}eb to stay on your good side.");
+    this.Text("Cyberbane-Hud-PaidYouEbToStayOn", "{0} paid you {1} eddies to stay on your good side.");
     // {0} gangCap
     this.Text("Cyberbane-Hud-PutYouDown", "{0} put you down.");
     this.Text("Cyberbane-Hud-SomebodyPutYouDown", "Somebody put you down.");
@@ -5037,7 +5039,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     // The crew's own page: going to war, paying the cut and the kitty, its name and colours, the memorial
     this.Text("Cyberbane-Hud-WarMoneyNameFallen", "War, money, name, the fallen");
     // {0} eddies. "War, money, name, the fallen" is the button above.
-    this.Text("Cyberbane-Hud-CutOwedWhere", "Your crew is owed their cut: {0}eb. Pay it under War, money, name, the fallen, or in the crew's chat on your phone.\n");
+    this.Text("Cyberbane-Hud-CutOwedWhere", "Your crew is owed their cut: {0} eddies. Pay it under War, money, name, the fallen, or in the crew's chat on your phone.\n");
     this.Text("Cyberbane-Hud-TheyWaitOnIt", "they're waiting on it");
     // Renaming one of the crew
     this.Text("Cyberbane-Hud-RenameThem", "Rename them");
@@ -5100,7 +5102,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   protected func DefineRealPhone() -> Void {
     this.Text("Cyberbane-RealPhone-ForgetIt", "Forget it");
     // {0} CBPeaceQuote(sys, game, store.ThreadOffer(thread))
-    this.Text("Cyberbane-RealPhone-PayEbToCallItOff", "Pay {0}eb to call it off");
+    this.Text("Cyberbane-RealPhone-PayEbToCallItOff", "Pay {0} eddies to call it off");
     this.Text("Cyberbane-RealPhone-GiveMeADay", "Give me a day");
     this.Text("Cyberbane-RealPhone-BackOffOrElse", "Back off, or else");
     this.Text("Cyberbane-RealPhone-ComeAndTryIt", "Come and try it");
@@ -5111,26 +5113,26 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-RealPhone-TooMuch", "Too much.");
     this.Text("Cyberbane-RealPhone-ForThatComeOn", "For that? Come on.");
     // {0} CBPeaceQuote(sys, game, faction)
-    this.Text("Cyberbane-RealPhone-FineEbAndThatSThe", "Fine. {0}eb, and that's the last time we move.");
+    this.Text("Cyberbane-RealPhone-FineEbAndThatSThe", "Fine. {0} eddies, and that's the last time we move.");
     // {0} cost
-    this.Text("Cyberbane-RealPhone-ThePriceIsEbTakeIt", "The price is {0}eb. Take it or don't.");
+    this.Text("Cyberbane-RealPhone-ThePriceIsEbTakeIt", "The price is {0} eddies. Take it or don't.");
     // {0} cost
-    this.Text("Cyberbane-RealPhone-EbCallItOff", "{0}eb. Call it off.");
+    this.Text("Cyberbane-RealPhone-EbCallItOff", "{0} eddies. Call it off.");
     this.Text("Cyberbane-RealPhone-IDonTHaveThatOn", "I don't have that on me.");
     this.Text("Cyberbane-RealPhone-NotPayingSendWhoeverYouWant", "Not paying. Send whoever you want.");
     this.Text("Cyberbane-RealPhone-ThenWeWillBeSeeingYou", "Then we will be seeing you.");
     this.Text("Cyberbane-RealPhone-ThenGetItTheOfferWon", "Then get it. The offer won't wait forever.");
     // {0} price
-    this.Text("Cyberbane-RealPhone-DealEb", "Deal. {0}eb.");
+    this.Text("Cyberbane-RealPhone-DealEb", "Deal. {0} eddies.");
     this.Text("Cyberbane-RealPhone-ForgetIt-2", "Forget it.");
     this.Text("Cyberbane-RealPhone-SuitYourselfOfferSGone", "Suit yourself. Offer's gone.");
     // {0} lower
-    this.Text("Cyberbane-RealPhone-FineEbLastOffer", "Fine. {0}eb. Last offer.");
+    this.Text("Cyberbane-RealPhone-FineEbLastOffer", "Fine. {0} eddies. Last offer.");
     // {0} lower
-    this.Text("Cyberbane-RealPhone-EbBecauseILikeYouDon", "{0}eb, because I like you. Don't tell anyone.");
+    this.Text("Cyberbane-RealPhone-EbBecauseILikeYouDon", "{0} eddies, because I like you. Don't tell anyone.");
     this.Text("Cyberbane-RealPhone-PriceIsThePriceTakeIt", "Price is the price. Take it or don't.");
     // {0} price
-    this.Text("Cyberbane-RealPhone-EbNotACentLess", "{0}eb. Not a cent less.");
+    this.Text("Cyberbane-RealPhone-EbNotACentLess", "{0} eddies. Not a cent less.");
     this.Text("Cyberbane-RealPhone-GiveMeADayIM", "Give me a day. I'm thinking about it.");
     this.Text("Cyberbane-RealPhone-INeedTimeToGetIt", "I need time to get it together. Hold your people.");
     // {0} you
@@ -5782,6 +5784,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Strongholds-Emptied", "{0} cleared out of {1}. Whoever ran it is gone.");
     // {0} is the Rival, {1} the place.
     this.Text("Cyberbane-Strongholds-MovedOn", "Word is {0} moved on from {1}.");
+    // The way into a stronghold is shut for good (a gig's building locked after the gig), so they set up elsewhere.
+    // {0} is the Rival, {1} the old place, {2} the new place, {3} its district.
+    this.Text("Cyberbane-Strongholds-Relocated", "There's no way into {1} any more, so {0} moved the crew to {2} in {3}. It's on your map.");
+    // The same, with nowhere else to go. {0} is the Rival, {1} the place.
+    this.Text("Cyberbane-Strongholds-NoWayIn", "There's no way into {1} any more. {0} gave it up, and nobody knows where they went.");
     // A note. {0} is the place, {1} the gang, {2} eddies.
     this.Text("Cyberbane-Strongholds-Cleared", "you took {0} off {1}. They lost the place and the ground around it, and there were {2} eddies inside.");
     // On the Rival's file, with a line break at the end. {0} is the place.
