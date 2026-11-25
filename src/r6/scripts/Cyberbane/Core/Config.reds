@@ -421,6 +421,10 @@ public abstract class CBConfig {
   public static func HomeRadius() -> Float = 110.0
   public static func HomeMergeDistance() -> Float = 60.0
   public static func HomeMax() -> Int32 = 8
+  // A home's door, the crew's post (2.7.9): learned where V stands on the navmesh once V has walked this far from the
+  // spot V stepped out of the flat, so never inside the lift V came down in; looked for this many ticks.
+  public static func HomeDoorStepOut() -> Float = 4.0
+  public static func HomeDoorWatchTicks() -> Int32 = 45
   public static func HauntShare() -> Float = 0.34
   public static func HauntMinSeconds() -> Float = 7200.0
   public static func HauntSecondsPerSample() -> Float = 80.0
@@ -1118,6 +1122,13 @@ public abstract class CBConfig {
   // How far a raycast floor point may be from the navmesh under it and still be that point.
   public static func NavFloorSnapRadius() -> Float = 1.5
   public static func NavFloorSnapHeight() -> Float = 0.6
+  // A short walk on the navmesh (CBWalkJoins, 2.7.9): how far from the navmesh either end may be, and the slack over a
+  // straight line the walk may take.
+  public static func WalkJoinTolerance() -> Float = 0.75
+  public static func WalkJoinSlack() -> Float = 10.0
+  // A floor found more than this above the navmesh point is not the floor but something standing on it, the seat of a
+  // couch or a bench (2.7.9).
+  public static func SpawnFurnitureRise() -> Float = 0.35
   // How far a candidate point may sit above the floor underneath it and still count as that floor's.
   public static func SpawnGroundSettle() -> Float = 2.0
   // Nobody stands inside anybody else. Enough for two people to be distinct bodies and small
@@ -1580,6 +1591,8 @@ public abstract class CBConfig {
   public static func GoodsBuyerStanding() -> Float = 3.0
   public static func GoodsOwnerStanding() -> Float = 3.0
   public static func GuardDefendRange() -> Float = 40.0
+  // How far apart two of the watch stand at one post (2.7.9).
+  public static func GuardSpacing() -> Float = 2.5
   public static func KillableRivalSecondsLow() -> Float = 15.0
   public static func KillableRivalSecondsTop() -> Float = 30.0
   public static func KillableApexSeconds() -> Float = 24.0

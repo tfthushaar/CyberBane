@@ -131,7 +131,8 @@ public func CBGuardStandDown(game: GameInstance, id: Int32) -> Void {
 
 // ---- At their posts --------------------------------------------------------------------------------------------------
 
-// A post at home: the door, then the car park, then the door again a few metres over; nothing until one is learned.
+// A post at home: the door, then the car park, then the door again; nothing until one is learned. Two at one post stand
+// apart (CBPlaceOneAt's `avoid`): the third used to be put three metres off the door blind, into a wall as often as not.
 func CBGuardPost(homes: ref<CBHomeBook>, home: Int32, slot: Int32) -> Vector4 {
   let door = homes.DoorAt(home);
   let park = homes.ParkAt(home);
@@ -141,35 +142,56 @@ func CBGuardPost(homes: ref<CBHomeBook>, home: Int32, slot: Int32) -> Vector4 {
     return park;
   }
   if hasDoor {
-    return slot == 0 ? door : new Vector4(door.X + 3.0, door.Y + 3.0, door.Z, 1.0);
+    return door;
   }
   return hasPark ? park : new Vector4(0.0, 0.0, 0.0, 0.0);
 }
 
-// One body near a post, out of V's sight, the way a gathering's people are placed.
+// The other post at a home from this one, or none (2.7.9): the watch goes to the car park when nowhere at the door will
+// take them, and the other way round.
+func CBGuardOtherPost(homes: ref<CBHomeBook>, home: Int32, post: Vector4) -> Vector4 {
+  let door = homes.DoorAt(home);
+  let park = homes.ParkAt(home);
+  let other = Vector4.Distance(post, door) < 0.5 ? park : door;
+  return Vector4.Distance(post, other) >= 0.5 ? other : new Vector4(0.0, 0.0, 0.0, 0.0);
+}
+
+// One body at a post, out of V's sight (2.7.9). The story puts a visitor at a spot made for them, never a guess; the
+// nearest this can come is a post on the navmesh a person has stood on (Spawn/HomeGround.reds, DoorWatch) and spots a
+// real short walk from it (CBStandsWith). The post itself first, then rings round it. A post with no navmesh under it
+// takes nobody: a spot "near" a post in a lift was the closed-off space beside the lift. `avoid`: where others of the
+// same watch already stand. Nobody is put where somebody was put a moment ago either: a stronghold's Rival and both
+// lieutenants all went to the same first spot, one inside the other.
 func CBPlaceOneAt(sys: ref<CyberbaneSystem>, game: GameInstance, record: TweakDBID, look: CName, at: Vector4, tag: CName,
-                  out body: EntityID) -> Bool {
+                  out body: EntityID, avoid: array<Vector4>) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
   let player = GetPlayer(game);
   if !IsDefined(des) || !IsDefined(player) || !TDBID.IsValid(record) || !CBRecordIsPerson(record) || CBSpawnRoom(game) <= 0 {
     return false;
   }
+  let post: Vector4;
+  if !CBNavPointUnder(game, at, post) {
+    return false;
+  }
   let ppos = player.GetWorldPosition();
   let fwd = player.GetWorldForward();
   let ring = 0;
-  while ring < 3 {
-    let radius = 1.5 + Cast<Float>(ring) * 2.0;
-    let slots = 8;
+  while ring < 4 {
+    // Ring 0 is the post alone.
+    let radius = ring == 0 ? 0.0 : 1.5 + Cast<Float>(ring - 1) * 2.0;
+    let slots = ring == 0 ? 1 : 8;
     let k = 0;
     while k < slots {
       let ang = Cast<Float>(k) * 6.28318 / Cast<Float>(slots);
       k += 1;
       let snapped: Vector4;
       let spot: Vector4;
-      if CBNavSnap(game, at.X + CosF(ang) * radius, at.Y + SinF(ang) * radius, at.Z, snapped)
-         && CBSettleOnGround(game, snapped, spot) && CBPointHiddenFrom(game, ppos, fwd, spot)
-         && CBStandsWith(game, spot, at, CBConfig.GroundMaxDrop()) {
-        let facing = Quaternion.BuildFromDirectionVector(new Vector4(CosF(ang), SinF(ang), 0.0, 0.0));
+      if CBNavSnap(game, post.X + CosF(ang) * radius, post.Y + SinF(ang) * radius, post.Z, snapped)
+         && CBSettleOnGround(game, snapped, spot) && CBPlaceKeepsApart(spot, avoid)
+         && CBPointHiddenFrom(game, ppos, fwd, spot) && CBStandsWith(game, spot, post, CBConfig.GroundMaxDrop()) {
+        // On a ring, facing out from the post, as somebody watching it would; on the post, the way V faces.
+        let facing = Quaternion.BuildFromDirectionVector(ring == 0 ? Vector4.Normalize2D(new Vector4(fwd.X, fwd.Y, 0.0, 0.0))
+                                                                   : new Vector4(CosF(ang), SinF(ang), 0.0, 0.0));
         if CBCreateSpawn(des, record, look, spot, facing, tag, body) {
           return true;
         }
@@ -179,10 +201,10 @@ func CBPlaceOneAt(sys: ref<CyberbaneSystem>, game: GameInstance, record: TweakDB
   }
   // Nowhere hidden that close: the navmesh's own hidden points near the spot, one query (Spawn/Spawner.reds).
   let pts: array<Vector4>;
-  if CBPursuitPointsAround(game, ppos, at, 2, 3.0, CBConfig.PlaceAroundPursuitMax(), pts) {
+  if CBPursuitPointsAround(game, ppos, post, 2, 3.0, CBConfig.PlaceAroundPursuitMax(), pts) {
     for p in pts {
-      if CBPointHiddenFrom(game, ppos, fwd, p) && CBStandsWith(game, p, at, CBConfig.GroundMaxDrop()) {
-        let toward = new Vector4(at.X - p.X, at.Y - p.Y, 0.0, 0.0);
+      if CBPlaceKeepsApart(p, avoid) && CBPointHiddenFrom(game, ppos, fwd, p) && CBStandsWith(game, p, post, CBConfig.GroundMaxDrop()) {
+        let toward = new Vector4(post.X - p.X, post.Y - p.Y, 0.0, 0.0);
         let face = Quaternion.BuildFromDirectionVector(Vector4.Length(toward) > 0.1 ? Vector4.Normalize(toward) : fwd);
         if CBCreateSpawn(des, record, look, p, face, tag, body) {
           return true;
@@ -191,6 +213,17 @@ func CBPlaceOneAt(sys: ref<CyberbaneSystem>, game: GameInstance, record: TweakDB
     }
   }
   return false;
+}
+
+// Far enough from everybody in `avoid`, and from anybody put down in the last few seconds (CBPlaceOneAt).
+func CBPlaceKeepsApart(spot: Vector4, avoid: array<Vector4>) -> Bool {
+  for a in avoid {
+    if Vector4.Distance(spot, a) < CBConfig.GuardSpacing() {
+      return false;
+    }
+  }
+  let none: array<Vector4>;
+  return CBPointIsFree(none, spot);
 }
 
 // On the crew's tick: on home ground, the watch is at its posts; anywhere else, it goes.
@@ -251,8 +284,23 @@ public func CBGuardTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
           if (!TDBID.IsValid(record) || !CBRecordIsPerson(record)) && NotEquals(m.faction, n"") {
             record = CBGangTemplate(sys, m.faction);
           }
+          // Where the rest of the watch stand, so nobody is put on top of them.
+          let standing: array<Vector4>;
+          let w = 0;
+          while w < gb.BodyCount() {
+            let other = GameInstance.FindEntityByID(game, gb.BodyAt(w)) as ScriptedPuppet;
+            if IsDefined(other) && other.IsAttached() {
+              ArrayPush(standing, other.GetWorldPosition());
+            }
+            w += 1;
+          }
           let made: EntityID;
-          if CBPlaceOneAt(sys, game, record, m.look, post, n"CB_Guard", made) {
+          let placed = CBPlaceOneAt(sys, game, record, m.look, post, n"CB_Guard", made, standing);
+          if !placed {
+            let alt = CBGuardOtherPost(homes, here, post);
+            placed = (alt.X != 0.0 || alt.Y != 0.0) && CBPlaceOneAt(sys, game, record, m.look, alt, n"CB_Guard", made, standing);
+          }
+          if placed {
             gb.Placed(made, id);
             CBLog.Info(n"Crew", s"One of the crew took a post at home (slot \(slot + 1)).");
           }

@@ -53,7 +53,8 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
     let posture = IsDefined(score) ? score.GetPosture(st.gang) : ECBPosture.Neutral;
     let over = !CBGatheringsOn() || Vector4.Distance(player.GetWorldPosition(), st.at) > CBConfig.HangoutLeaveDistance()
                || now - st.since > CBConfig.HangoutHours() * CBConfig.SecondsPerHour()
-               || Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
+               || Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)
+               || CBHangoutPlaceKept(game, st.at);
     if over {
       CBHangoutEnd(game, st);
     } else {
@@ -91,6 +92,12 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
       CBHangoutStart(sys, game, st, hg, now, homeAt);
       return;
     }
+  }
+  // On the street, a street or two from V: only while V is out under the open sky, so every spot they are given is
+  // too (CBPointArrivable) (2.7.9). With V indoors a spot could be anywhere in the building, a stranger's flat or V's
+  // own before Cyberbane has learned it as home.
+  if !CBArrivalOpenAir(game, player.GetWorldPosition()) {
+    return;
   }
   for g in CBTurfGangsHere(sys) {
     let posture = score.GetPosture(g);
@@ -155,9 +162,15 @@ func CBHangoutStart(sys: ref<CyberbaneSystem>, game: GameInstance, st: ref<CBHan
     }
   }
   let rt = CyberbaneRuntime.Get();
+  let at = atHome ? home : (IsDefined(rt) ? rt.lastSpawnAt : GetPlayer(game).GetWorldPosition());
+  if CBHangoutPlaceKept(game, at) {
+    CBDeleteTaggedSafe(game, n"CB_Hangout", true, true);
+    CBLog.Info(n"Street", s"A hangout of \(NameToString(gang)) landed in V's home or a safe place; called off.");
+    return;
+  }
   st.gang = gang;
   st.since = now;
-  st.at = atHome ? home : (IsDefined(rt) ? rt.lastSpawnAt : GetPlayer(game).GetWorldPosition());
+  st.at = at;
   let ms = GameInstance.GetMappinSystem(game);
   // A place pin only where their own markers would not show (Mark them on the map at Named only): with Everyone, each of
   // them already wears one, and a pin on top was the same thing twice.
@@ -170,6 +183,17 @@ func CBHangoutStart(sys: ref<CyberbaneSystem>, game: GameInstance, st: ref<CBHan
                                              CBTf(n"Cyberbane-Hangouts-LookingForAFewOfThem", [s"\(CBFactionLabel(gang))"])]));
   }
   CBLog.Info(n"Street", s"A few of \(NameToString(gang)) are hanging out near V.");
+}
+
+// Never at V's home or in a safe place (2.7.9). Placement keeps them out of both, but only out of a home Cyberbane has
+// already learned and a safe area the game answers for at that distance; a hangout found in either, at once or once
+// the home is learned, packs up.
+func CBHangoutPlaceKept(game: GameInstance, at: Vector4) -> Bool {
+  if CBHomePointKept(game, at) {
+    return true;
+  }
+  let sam = GameInstance.GetSafeAreaManager(game);
+  return IsDefined(sam) && sam.IsPointInSafeArea(at);
 }
 
 func CBHangoutEnd(game: GameInstance, st: ref<CBHangoutState>) -> Void {

@@ -72,6 +72,10 @@ public class CBHomeBook extends ScriptableSystem {
   private let m_inCar: Bool;
   private let m_restedRead: Bool;     // the first read of a session only remembers
   private let m_rested: Bool;
+  // V just stepped out of a flat: which home, one up (0 for none), where, and on which tick (DoorWatch).
+  private let m_stepHome: Int32;
+  private let m_stepFrom: Vector4;
+  private let m_stepTick: Int32;
 
   public static func Get(game: GameInstance) -> ref<CBHomeBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -84,6 +88,7 @@ public class CBHomeBook extends ScriptableSystem {
     this.m_inCar = false;
     this.m_restedRead = false;
     this.m_rested = false;
+    this.m_stepHome = 0;
   }
 
   public func Count() -> Int32 {
@@ -237,18 +242,25 @@ public class CBHomeBook extends ScriptableSystem {
       } else {
         if this.m_inFlat > 0 {
           let was = this.m_inFlat - 1;
-          // Out of the flat and still in its building: the door V comes out of.
-          if was < this.Count() && Vector4.Distance(at, this.At(was)) <= CBConfig.HomeRadius() {
-            this.SetDoor(was, at);
+          // Out of the flat and still in its building: the door is looked for from here (DoorWatch).
+          if was < this.Count() && this.HomeAt(at) == was {
+            this.m_stepHome = was + 1;
+            this.m_stepFrom = at;
+            this.m_stepTick = tick;
           }
         }
         this.m_inFlat = 0;
       }
     }
+    if this.m_stepHome > 0 {
+      this.DoorWatch(game, at, tick, IsDefined(player.GetMountedVehicle()));
+    }
     // Where V leaves the car at home.
     let inCar = IsDefined(player.GetMountedVehicle());
     if this.m_inCar && !inCar && this.m_here > 0 {
-      this.SetPark(this.m_here - 1, at);
+      // On the navmesh beside the car when there is some, where the watch can stand (2.7.9).
+      let parked: Vector4;
+      this.SetPark(this.m_here - 1, CBNavPointUnder(game, at, parked) ? parked : at);
     }
     this.m_inCar = inCar;
     // A night in V's own bed.
@@ -260,6 +272,32 @@ public class CBHomeBook extends ScriptableSystem {
       }
       this.m_rested = rested;
       this.m_restedRead = true;
+    }
+  }
+
+  // The door, where the crew stand watch: a spot V's own feet stood on, the way the story puts a visitor at a spot made
+  // for them (2.7.9). It used to be wherever V was on the first read after leaving the flat, often still in the lift,
+  // where there is no navmesh, and a guard was put in the closed-off space beside it. Now it is the navmesh under V once
+  // V has walked a few metres on from there, out of the lift and into the building. Not found in time, or V back in the
+  // flat, in a car or out of the building: the door stays what it was.
+  private func DoorWatch(game: GameInstance, at: Vector4, tick: Int32, inCar: Bool) -> Void {
+    let home = this.m_stepHome - 1;
+    if this.m_inFlat > 0 || inCar || home >= this.Count() || tick - this.m_stepTick > CBConfig.HomeDoorWatchTicks()
+       || this.HomeAt(at) != home {
+      this.m_stepHome = 0;
+      return;
+    }
+    let dx = at.X - this.m_stepFrom.X;
+    let dy = at.Y - this.m_stepFrom.Y;
+    let step = CBConfig.HomeDoorStepOut();
+    if dx * dx + dy * dy < step * step {
+      return;
+    }
+    let standing: Vector4;
+    if CBNavPointUnder(game, at, standing) {
+      this.SetDoor(home, standing);
+      this.m_stepHome = 0;
+      CBLog.Info(n"Spawn", s"A home's door learned where V walked out (home \(home + 1)).");
     }
   }
 
